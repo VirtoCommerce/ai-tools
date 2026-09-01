@@ -79,6 +79,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 | Platform Patterns | `knowledge/api/platform-patterns.md` — known desync, cache, reindex behaviors |
 | Product Types & Properties | `knowledge/domain/products.md` — product types, xAPI fields, configurable sections |
 | Storefront Sitemap | `knowledge/domain/sitemap.md` — full URL map for navigation |
+| **What shipped recently** | `knowledge/domain/release-ledger.md` — `component@version` + docs link + ⚠ BREAKING flag per feature, back ~2 years. Read it before designing a test for, or triaging a failure in, a surface that changed since the env's deployed version; VirtoOZ cannot answer this (its release corpus stops ~9 months back). **Released ≠ deployed** — a capability it records that `/api/platform/modules` does not carry is `NOT_DEPLOYED`, never FAIL. It carries no behaviour, so it can raise a hypothesis but never settle a verdict or ground a `{DOC}` assertion; and it is `exhaustive: false`, so a miss means escalate, not "does not exist" |
 | Payment Matrix | `knowledge/api/order-creation-matrix.md` — 15 payment × shipping combinations |
 | Edge Cases Library | `knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
 

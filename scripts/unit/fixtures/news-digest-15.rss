@@ -1,0 +1,950 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:discourse="http://www.discourse.org/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>news digest - Virto Commerce</title>
+    <link>https://www.virtocommerce.org/c/news-digest/15</link>
+    <description>Topics in the &#39;news digest&#39; category Latest news, release and updates</description>
+    
+      <lastBuildDate>Wed, 26 Aug 2026 11:41:11 +0000</lastBuildDate>
+      <atom:link href="https://www.virtocommerce.org/c/news-digest/15.rss" rel="self" type="application/rss+xml" />
+        <item>
+ <title>Virto’s Release Notes | September 2026</title>
+ <dc:creator><![CDATA[Maria-Volkova-Tula]]></dc:creator>
+ <category>news digest</category>
+ <description><![CDATA[
+ <p>September brings a broad set of improvements across the Virto Commerce platform. This release makes Sales Rep Hub more powerful for managing customer relationships and adds finer control over multi-organization customer memberships. We’ve also strengthened the admin experience with accessibility, mobile, security, and usability improvements.</p>
+<p></p><p></p>
+<h2><a name="p-1524-highlights-1" class="anchor" href="https://www.virtocommerce.org#p-1524-highlights-1" aria-label="Heading link"></a>Highlights</h2>
+<ul>
+<li>Sales Rep Hub major updates.</li>
+<li>Smarter multi-organization customer management.</li>
+<li>Product stock quantities visibility per fulfillment center.</li>
+</ul>
+<h2><a name="p-1524-sales-rep-hub-enhancements-2" class="anchor" href="https://www.virtocommerce.org#p-1524-sales-rep-hub-enhancements-2" aria-label="Heading link"></a>Sales Rep Hub enhancements</h2>
+<p>The Sales Rep Hub, which lets selected users serve a defined set of customer organizations, grew in the following directions this release:</p>
+<h3><a name="p-1524-customizable-dashboard-layout-sales-rep-310020httpsgithubcomvirtocommercevc-module-sales-repreleasestag310020-3" class="anchor" href="https://www.virtocommerce.org#p-1524-customizable-dashboard-layout-sales-rep-310020httpsgithubcomvirtocommercevc-module-sales-repreleasestag310020-3" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-sales-rep/releases/tag/3.1002.0">Customizable dashboard layout. Sales Rep 3.1002.0</a></h3>
+<p>A sales rep can now drag and drop dashboard widgets into the layout that fits how they work, and that layout is saved and restored across sessions and devices:</p>
+<p></p>
+<h3><a name="p-1524-customer-sales-data-and-top-products-queries-sales-rep-310030httpsgithubcomvirtocommercevc-module-sales-repreleasestag310030-4" class="anchor" href="https://www.virtocommerce.org#p-1524-customer-sales-data-and-top-products-queries-sales-rep-310030httpsgithubcomvirtocommercevc-module-sales-repreleasestag310030-4" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-sales-rep/releases/tag/3.1003.0">Customer sales data and top-products queries. Sales Rep 3.1003.0</a></h3>
+<p>A new set of GraphQL queries gives the Hub Dashboard and the customer profile page their numbers: month-to-date and year-to-date order totals with year-over-year comparisons for a customer organization, a ranked list of that organization’s top products by revenue or units, and the cart and customer counts behind the “My customers” dashboard tiles. Sales rep dashboard filters now show only the statuses and categories the rep actually has activity in, scoped to the organization and period on screen.</p>
+<p> <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerOrderStatistics/">CustomerOrderStatistics</a><br>
+ <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepTopSellers/#salesreptopsellers">TopSellers</a><br>
+ <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerCartStatistics/">CustomerCartStatistics</a><br>
+ <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerCounts/">CustomerCounts</a><br>
+ <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepOrderFilterRules/">OrderFilterRules</a></p>
+<h3><a name="p-1524-shared-document-library-for-sales-reps-sales-rep-310060httpsgithubcomvirtocommercevc-module-sales-repreleasestag310060-5" class="anchor" href="https://www.virtocommerce.org#p-1524-shared-document-library-for-sales-reps-sales-rep-310060httpsgithubcomvirtocommercevc-module-sales-repreleasestag310060-5" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-sales-rep/releases/tag/3.1006.0">Shared document library for sales reps. Sales Rep 3.1006.0</a></h3>
+<p>A sales rep is able to publish a shared document library, catalogs, lookbooks, pricing sheets and sales guides, that a customer can open or download from their own account.</p>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/user-guide/latest/sales-rep/document-library">Document library</a></p>
+<h2><a name="p-1524-invites-and-status-for-multi-organization-customers-customer-310210httpsgithubcomvirtocommercevc-module-customerreleasestag310210-6" class="anchor" href="https://www.virtocommerce.org#p-1524-invites-and-status-for-multi-organization-customers-customer-310210httpsgithubcomvirtocommercevc-module-customerreleasestag310210-6" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-customer/releases/tag/3.1021.0">Invites and status for multi-organization customers. Customer 3.1021.0</a></h2>
+<p>A company administrator can invite an existing customer to their organization, resend or cancel pending invitations, and approve, reject, or lock that user’s membership. These actions only affect the user’s membership in that organization and do not affect their membership in any other organization:</p>
+<p></p><p></p>
+<p>On the Frontend, users can view and accept or reject pending invitations from their account dashboard. The organization switcher only shows organizations where their membership is active.</p>
+<p></p><p></p>
+<p> <strong>Breaking changes:</strong></p>
+<ul>
+<li>The invite flow now sends new <code>organization-invite</code> notification templates instead of <code>RegistrationInvitationEmailNotification</code>.Any store-level customization of the old templates stops taking effect and there is no automatic migration.</li>
+<li>The nine new templates ship English-only.</li>
+<li>A global contact status of Rejected or Deleted now blocks sign-in for every organization the contact belongs to, unless a membership-level override exists.</li>
+</ul>
+<p> <a href="https://docs.virtocommerce.org/platform/user-guide/latest/contacts/managing-organization-membership-status">Managing organization membership status</a></p>
+<p> <a href="https://docs.virtocommerce.org/storefront/user-guide/latest/account/company-members">Company members</a></p>
+<h2><a name="p-1524-product-stock-quantities-visible-per-fulfillment-center-inventory-310050httpsgithubcomvirtocommercevc-module-inventoryreleasestag310050-7" class="anchor" href="https://www.virtocommerce.org#p-1524-product-stock-quantities-visible-per-fulfillment-center-inventory-310050httpsgithubcomvirtocommercevc-module-inventoryreleasestag310050-7" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-inventory/releases/tag/3.1005.0">Product stock quantities visible per fulfillment center. Inventory 3.1005.0</a></h2>
+<p>A fulfillment manager can now open a fulfillment center and see the stock quantity of every product held there, instead of only a store-wide total.</p>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/user-guide/latest/inventory/managing-fulfillment-centers/#view-products-in-fulfillment-center">Viewing products in a fulfillment center</a></p>
+<h2><a name="p-1524-logging-in-ucp-ucp-310050httpsgithubcomvirtocommercevc-module-ucpreleasestag310050-8" class="anchor" href="https://www.virtocommerce.org#p-1524-logging-in-ucp-ucp-310050httpsgithubcomvirtocommercevc-module-ucpreleasestag310050-8" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-ucp/releases/tag/3.1005.0">Logging in UCP. UCP 3.1005.0</a></h2>
+<p>UCP requests are now traced end to end with OpenTelemetry, so a failure inside the xAPI catalog search shows up in the Platform’s existing observability tooling instead of disappearing at the protocol boundary.</p>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/Fundamentals/UCP/overview">UCP overview</a></p>
+<h2><a name="p-1524-improved-backup-and-restore-for-catalog-images-and-files-backup-and-restore-310050httpsgithubcomvirtocommercevc-module-backup-restorereleasestag310050-9" class="anchor" href="https://www.virtocommerce.org#p-1524-improved-backup-and-restore-for-catalog-images-and-files-backup-and-restore-310050httpsgithubcomvirtocommercevc-module-backup-restorereleasestag310050-9" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-backup-restore/releases/tag/3.1005.0">Improved backup and restore for catalog images and files. Backup and Restore 3.1005.0</a></h2>
+<p>Backup and restore is being extended to handle catalog images and files reliably, streaming binaries instead of routing them through the browser:</p>
+<p></p><p></p>
+<h2><a name="p-1524-new-notification-template-editor-notification-310130httpsgithubcomvirtocommercevc-module-notificationreleasestag310130-10" class="anchor" href="https://www.virtocommerce.org#p-1524-new-notification-template-editor-notification-310130httpsgithubcomvirtocommercevc-module-notificationreleasestag310130-10" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-notification/releases/tag/3.1013.0">New notification template editor. Notification 3.1013.0</a></h2>
+<p>The admin notification template editor moves from one long vertical scroll to a compact, tabbed workspace: a live preview, a proper JSON editor, variable autocomplete and a full-screen editing mode.</p>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/Fundamentals/Notifications/notification-templates">Notification templates</a></p>
+<h2><a name="p-1524-restriction-of-admin-sign-in-independently-of-api-permissions-platform-310540httpsgithubcomvirtocommercevc-platformreleasestag310540-11" class="anchor" href="https://www.virtocommerce.org#p-1524-restriction-of-admin-sign-in-independently-of-api-permissions-platform-310540httpsgithubcomvirtocommercevc-platformreleasestag310540-11" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-platform/releases/tag/3.1054.0">Restriction of admin sign-in independently of API permissions. Platform 3.1054.0</a></h2>
+<p>A new <code>PlatformUI</code> configuration section lets an administrator decide whether an account may sign in to the admin back-office UI, separately from the permissions that account holds. This makes it possible to give a non-staff account, for example a customer calling protected platform or module API endpoints, access to the API without ever exposing the admin panel to it.</p>
+<pre><code class="lang-auto">"PlatformUI": {​
+ "Access": {​
+ "AllowAdministrators": true, // administrators bypass all rules​
+ "RequireAnyPermission": true, // the pre-existing rule​
+ "AllowedAccountTypes": [], // e.g. [ "Manager", "Administrator" ]​
+ "AllowedPermissions": [], // masks: [ "platform:*", "catalog:*" ]​
+ "DeniedPermissions": [] // masks; wins over AllowedPermissions​
+ }​
+}​
+</code></pre>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/Fundamentals/Security/authorization/restrict-admin-ui-access">Restrict admin UI access</a></p>
+<h2><a name="p-1524-replacing-automapper-pickup-310040httpsgithubcomvirtocommercevc-module-x-pickupreleasestag310040-catalog-csv-importexport-310030httpsgithubcomvirtocommercevc-module-catalog-csv-export-importreleasestag310030-profile-experience-api-310160httpsgithubcomvirtocommercevc-module-profile-experience-apireleasestag310160-12" class="anchor" href="https://www.virtocommerce.org#p-1524-replacing-automapper-pickup-310040httpsgithubcomvirtocommercevc-module-x-pickupreleasestag310040-catalog-csv-importexport-310030httpsgithubcomvirtocommercevc-module-catalog-csv-export-importreleasestag310030-profile-experience-api-310160httpsgithubcomvirtocommercevc-module-profile-experience-apireleasestag310160-12" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-x-pickup/releases/tag/3.1004.0">Replacing AutoMapper. Pickup 3.1004.0</a> + <a href="https://github.com/VirtoCommerce/vc-module-catalog-csv-export-import/releases/tag/3.1003.0">Catalog CSV Import/Export 3.1003.0</a> + <a href="https://github.com/VirtoCommerce/vc-module-profile-experience-api/releases/tag/3.1016.0">Profile Experience API 3.1016.0</a></h2>
+<p>Following up on the <a href="https://www.virtocommerce.org/t/security-advisory-automapper-vulnerability-ghsa-rvv3-g6hj-g44x/843">AutoMapper vulnerability advisory</a>, the team is replacing AutoMapper across the Platform with explicit, hand-written mapping.</p>
+<p> <a href="https://www.virtocommerce.org/t/approach-to-replacing-automapper/860">Approach to replacing AutoMapper</a></p>
+<h2><a name="p-1524-dark-themes-frontend-2550httpsgithubcomvirtocommercevc-frontendreleasestag2550-13" class="anchor" href="https://www.virtocommerce.org#p-1524-dark-themes-frontend-2550httpsgithubcomvirtocommercevc-frontendreleasestag2550-13" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.55.0">Dark themes. Frontend 2.55.0</a></h2>
+<p>The dark mode for our <strong>Mercury</strong> theme has been updated, and a dark mode has been added for the <strong>Red</strong> theme. Dark mode is now available for <strong>Mercury, Coffee, Watermelon, Black-Gold</strong>, and <strong>Red</strong>.</p>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/user-guide/latest/content/managing-themes/#apply-theme-color-scheme">Applying new themes</a></p>
+<h2><a name="p-1524-organization-schema-publication-on-the-homepage-frontend-2550httpsgithubcomvirtocommercevc-frontendreleasestag2550-14" class="anchor" href="https://www.virtocommerce.org#p-1524-organization-schema-publication-on-the-homepage-frontend-2550httpsgithubcomvirtocommercevc-frontendreleasestag2550-14" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.55.0">Organization schema publication on the homepage. Frontend 2.55.0</a></h2>
+<p>Every store can now publish a structured, machine-readable profile of its brand identity on its home page, its name, logo, social profiles, contact information and founding date. AI shopping agents read this Organization schema to confirm a store is who it claims to be and to link the store’s other agent-facing data back to a recognizable entity.</p>
+<pre data-code-title="&quot;Organization" data-code-wrap="json"><code class="lang-json">
+&lt;script type="application/ld+json"&gt;
+{
+ "@context": "https://schema.org",
+ "@type": "OnlineStore",
+ "name": "Yourstore",
+ "url": "https://yourstore.com",
+ "logo": "https://yourstore.com/logo.png",
+ "sameAs": \[
+ "https://twitter.com/yourstore",
+ "https://www.instagram.com/yourstore"
+ \],
+ "contactPoint": {
+ "@type": "ContactPoint",
+ "telephone": "+1-800-000-0000",
+ "contactType": "Customer Service"
+ }
+}
+&lt;/script&gt;
+
+</code></pre>
+<p>An administrator configures the schema per store, with a default value that can be reverted to at any time, and the Frontend renders it on the home page as JSON-LD, along with Open Graph meta tags that improve how the store’s link previews in chat apps and social feeds:<br>
+</p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/user-guide/latest/store/settings/#store-information">Store information</a></p>
+<h2><a name="p-1524-adding-randomness-to-the-product-export-file-name-catalog-csv-importexport-310040httpsgithubcomvirtocommercevc-module-catalog-csv-export-importreleasestag310040-15" class="anchor" href="https://www.virtocommerce.org#p-1524-adding-randomness-to-the-product-export-file-name-catalog-csv-importexport-310040httpsgithubcomvirtocommercevc-module-catalog-csv-export-importreleasestag310040-15" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-catalog-csv-export-import/releases/tag/3.1004.0">Adding randomness to the product export file name. Catalog CSV Import/Export 3.1004.0</a></h2>
+<p>Exported product-catalog CSV files now get a random 6-digit token appended to their file name, so the download link can no longer be guessed:</p>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/user-guide/latest/catalog-csv-export-import/settings/#export-file-name-template">Export file name template</a></p>
+<h2><a name="p-1524-update-product-reviews-design-frontend-2560httpsgithubcomvirtocommercevc-frontendreleasestag2560-16" class="anchor" href="https://www.virtocommerce.org#p-1524-update-product-reviews-design-frontend-2560httpsgithubcomvirtocommercevc-frontendreleasestag2560-16" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.56.0">Update product reviews design. Frontend 2.56.0</a></h2>
+<p>The product-reviews widget on the product detail page is getting a redesign:</p>
+<ul>
+<li>A fractional-fill star rating.</li>
+<li>A pluralized review count.</li>
+<li>Enhanced images preview.</li>
+<li>A keyboard-navigable carousel for customer-submitted review photos.</li>
+</ul>
+<p></p><p></p>
+<h2><a name="p-1524-llmstxt-brand-brief-publication-frontend-2560httpsgithubcomvirtocommercevc-frontendreleasestag2560-17" class="anchor" href="https://www.virtocommerce.org#p-1524-llmstxt-brand-brief-publication-frontend-2560httpsgithubcomvirtocommercevc-frontendreleasestag2560-17" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.56.0">/llms.txt brand brief publication. Frontend 2.56.0</a></h2>
+<p>A store is able to publish a <code>/llms.txt</code> brand brief:</p>
+<p></p><p></p>
+<p>Thus, AI shopping agents can read its policies, product categories and agent capabilities directly, instead of guessing at them:</p>
+<pre><code class="lang-auto"># llms.txt
+# Public brief for AI agents about Yourstore
+# About
+One or two sentences on what you sell, who you sell to, and any defining context.
+# Product Categories
+- Category one
+- Category two
+- Category three
+# Policies
+- Returns: 30 days, full refund.
+- Shipping: free over $30, 3-5 business days.
+- Any other policy worth surfacing, for example cruelty-free, vegan, made-to-order.
+# Agent Capabilities
+- UCP manifest: /.well-known/ucp
+- Supported flows: cart, checkout, tokenized payment.
+- Anything explicitly not supported, for example no subscription products via agent.
+# Contact
+support@yourstore.com
+</code></pre>
+<p> <a href="https://docs.virtocommerce.org/platform/user-guide/latest/store/custom-llms-txt/#custom-llmstxt-file">Custom llms.txt file</a></p>
+<h2><a name="p-1524-simplified-email-and-push-notification-options-for-a-shared-wishlist-frontend-2560httpsgithubcomvirtocommercevc-frontendreleasestag2560-18" class="anchor" href="https://www.virtocommerce.org#p-1524-simplified-email-and-push-notification-options-for-a-shared-wishlist-frontend-2560httpsgithubcomvirtocommercevc-frontendreleasestag2560-18" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.56.0">Simplified email and push notification options for a shared wishlist. Frontend 2.56.0</a></h2>
+<p>Sharing a wishlist with a customer will always notify them on both channels, email and push, instead of asking the sharer to choose which channels to use each time.</p>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/storefront/user-guide/latest/account/lists/#share-lists-with-customers">Share lists with customers</a></p>
+<h2><a name="p-1524-qa-19" class="anchor" href="https://www.virtocommerce.org#p-1524-qa-19" aria-label="Heading link"></a>QA</h2>
+<p>This release adds vc-perf, a new performance-diagnostics plugin for the vc-tools marketplace that any developer building on Virto Commerce can install locally, and reworks the team’s own internal QA pipeline that tests the live product.</p>
+<h3><a name="p-1524-vc-perf-20" class="anchor" href="https://www.virtocommerce.org#p-1524-vc-perf-20" aria-label="Heading link"></a>vc-perf</h3>
+<p><strong>vc-perf</strong> measures performance across three layers, each covering what the other two miss:</p>
+<ul>
+<li>
+<p>L1, BenchmarkDotNet. A code-level A/B comparison between two revisions, an override against the stock code path, or an upstream before/after, with repeatable allocation and timing numbers.</p>
+</li>
+<li>
+<p>L2, a k6 load harness. The live system’s behavior under real concurrency: throughput, p95 latency and GC pressure.</p>
+</li>
+<li>
+<p>L3, dotnet-trace. Attribution: allocation churn, on-CPU time and database command shape, traced back to the call sites that produced them.</p>
+</li>
+</ul>
+<p>A single command, <code>/perf-loop</code>, routes an operation to the layer or layers it needs and returns a ranked list of candidate fixes. <code>/perf-fix</code> and <code>/perf-verify</code> hand a candidate to the existing developer and reviewer agents, then confirm the change actually improved the measurement. vc-perf is advisory only and never gates a build.<br>
+</p><p></p>
+<h3><a name="p-1524-risk-proportional-qa-pipeline-agentic-qa-project-21" class="anchor" href="https://www.virtocommerce.org#p-1524-risk-proportional-qa-pipeline-agentic-qa-project-21" aria-label="Heading link"></a>Risk-proportional QA pipeline. Agentic QA project</h3>
+<p>The team’s internal test pipeline, <code>/qa-test</code>, routes each ticket along two dimensions:</p>
+<ul>
+<li>Which flow it needs (a ready-to-verify bug fix goes straight to a fast verification pass instead of full feature testing), and</li>
+<li>How much depth that flow gets (a small, single-layer change takes the fast path; anything cross-layer, high priority or revenue-critical takes the full path). New test cases are written directly into the production suites instead of going through a separate promotion step, and a failed run now returns a triaged list of actions instead of raw failures that still need interpreting.</li>
+</ul>
+<p>The pipeline’s own reference material, the business-rules oracle and the edge-case library, is now checked against documentation, live behavior and the platform source on every review. Its first run found twenty dangling citations across seven test suites.</p>
+<p></p><p></p>
+<h2><a name="p-1524-marketplace-22" class="anchor" href="https://www.virtocommerce.org#p-1524-marketplace-22" aria-label="Heading link"></a>Marketplace</h2>
+<p>Vendors configuring a product can now set a default value for a configuration option, mark a section as conditional so it only appears when an earlier choice requires it, and set a maximum length on a text-type section. Order line items that include a configuration now show the configuration’s section name, so buyers and fulfillment staff can see at a glance what each selected option belongs to.</p>
+<p></p><p></p>
+<p>For more information, <a href="https://virtocommerce.com/request-demo">request a demo</a></p>
+<h2><a name="p-1524-vc-shell-23" class="anchor" href="https://www.virtocommerce.org#p-1524-vc-shell-23" aria-label="Heading link"></a>VC-Shell</h2>
+<ul>
+<li>
+<p><strong>Improved WCAG 2.2 accessibility</strong>. Improved keyboard navigation, focus management, tap targets, and accessible labels across VC-Shell. Fixed issues with the side menu, dashboard widgets, resize controls, popups, blades, and the scheduler component. Added support for password manager autocomplete and localized ARIA labels.</p>
+</li>
+<li>
+<p><strong>More reliable session-expiry handling</strong>. Improved how expired sessions are detected and handled. Users are now redirected to the login page instead of being sent to blades that cannot load, and error messages no longer expose raw server responses.</p>
+</li>
+<li>
+<p><strong>Improved VcDataTable mobile experience</strong>. Fixed mobile card view issues with scrolling, row expansion, bottom rows, and image column widths.</p>
+</li>
+<li>
+<p><strong>Keyboard shortcuts now available across vendor portal modules</strong>. Keyboard shortcuts are now fully supported and used across all vendor portal modules. Tooltips automatically display the appropriate key combination for the user’s operating system.</p>
+</li>
+<li>
+<p><strong>Hardened AI assistant panel</strong>. Improved security and keyboard interaction for the embedded AI assistant panel, including more reliable shortcut handling and keyboard-based panel dismissal.</p>
+</li>
+</ul>
+<p><a href="https://vc-shell-storybook.govirto.com/">Explore the new features and capabilities</a></p>
+<h2><a name="p-1524-documentation-24" class="anchor" href="https://www.virtocommerce.org#p-1524-documentation-24" aria-label="Heading link"></a>Documentation</h2>
+<p>The documentation site now provides a rolling <strong>Edge</strong> version that continuously tracks the main branch. Numbered documentation versions are released alongside each <strong>Platform</strong> stable release.</p>
+<h2><a name="p-1524-knowledge-hub-25" class="anchor" href="https://www.virtocommerce.org#p-1524-knowledge-hub-25" aria-label="Heading link"></a>Knowledge hub</h2>
+<ul>
+<li>
+<p><strong>Podcast: Why Digital Transformation Fails (And How to Fix It)</strong><br>
+Denis Clifford (Virto) talks with Scott McIntyre and Jon Blum of Infinite Green about why B2B replatforming projects stall — and it’s rarely the stack. The argument: teams pick a vendor before they’ve defined the business problem, then bend the org to fit a pre-built solution. Useful if you’re at the RFP stage and the requirements doc is really a feature checklist.</p>
+<p><a href="https://virtocommerce.com/assets/podcast-why-digital-transformation-fails">Why B2B Digital Transformation Fails | Virto Commerce</a></p>
+</li>
+<li>
+<p><strong>Podcast: Digital Commerce for the Circular Economy</strong><br>
+Denis Clifford joins All Things Circular’s Victoria D’Arcy and Peter Evans on what breaks when you run resale, refurbishment, and take-back on a platform built for one-time sales. Covers lifecycle-aware product data, where manufacturers lose margin to third-party resellers, and the data plumbing behind digital product passports, warranty tracking, and carbon reporting.<br>
+<a href="https://virtocommerce.com/assets/podcast-digital-commerce-for-the-circular-economy">Circular Commerce and the New B2B Tech Stack Podcast</a></p>
+</li>
+<li>
+<p><strong>Playbook: How Leading FMCG, Beverage, and Foodservice Brands Modernize B2B Commerce</strong><br>
+A 12-page playbook built around three real modernizations — HEINEKEN, De Klok Dranken, and Lavazza by Bluespresso — all dealing with high-frequency reordering while expanding into new markets and channels. Includes an evaluation framework (two buying situations, five activation forces) and a self-diagnostic for spotting where the platform, not the strategy, has become the ceiling.</p>
+<p><a href="https://virtocommerce.com/assets/fmcg-b2b-commerce-modernization-playbook">FMCG B2B Commerce Modernization Playbook | Virto Commerce</a></p>
+</li>
+<li>
+<p><strong>2026 Gartner® Hype Cycle™ for Digital Commerce</strong><br>
+Virto is named a Sample Vendor in two profiles: Composable Commerce and API-Based Digital Commerce. The 2026 cycle puts agentic commerce, AI checkout, and answer engine optimization at the innovation trigger, with marketplaces, distributed order management, and personalization further along. Gartner’s evaluation guidance centers on trading architectural flexibility against total cost of ownership.</p>
+<p><a href="https://virtocommerce.com/assets/2026-gartner-hype-cycle-for-digital-commerce">Gartner Hype Cycle for Digital Commerce 2026</a></p>
+</li>
+</ul>
+ <p><small>1 post - 1 participant</small></p>
+ <p><a href="https://www.virtocommerce.org/t/virto-s-release-notes-september-2026/862">Read full topic</a></p>
+ ]]></description>
+ <link>https://www.virtocommerce.org/t/virto-s-release-notes-september-2026/862</link>
+ <pubDate>Wed, 26 Aug 2026 11:41:11 +0000</pubDate>
+ <discourse:topicPinned>No</discourse:topicPinned>
+ <discourse:topicClosed>No</discourse:topicClosed>
+ <discourse:topicArchived>No</discourse:topicArchived>
+ <guid isPermaLink="false">www.virtocommerce.org-topic-862</guid>
+ <source url="https://www.virtocommerce.org/t/virto-s-release-notes-september-2026/862.rss">Virto’s Release Notes | September 2026</source>
+ </item>
+<item>
+ <title>Virto&#39;s Release Notes | August 2026</title>
+ <dc:creator><![CDATA[Maria-Volkova-Tula]]></dc:creator>
+ <category>news digest</category>
+ <description><![CDATA[
+ <p>Welcome to the August 2026 release notes! Summer is winding down and the out-of-office messages are rolling in, but our Odyssey continues and hasn’t slowed for a second!</p>
+<p></p><p></p>
+<p>The headlines of this cycle are:</p>
+<ul>
+<li><strong>Native MCP for UCP</strong>: a verified agentic-commerce endpoint for your store.</li>
+<li><strong>Sales Rep Hub</strong>: a dedicated workspace and back-office app for sales representatives.</li>
+<li><strong>Background Jobs</strong>: a new engine-agnostic background-processing module.</li>
+</ul>
+<h2><a name="p-1518-h-1st_place_medal-native-mcp-for-ucp-first-releasehttpsgithubcomvirtocommercevc-module-ucpreleasestag310040-1" class="anchor" href="https://www.virtocommerce.org#p-1518-h-1st_place_medal-native-mcp-for-ucp-first-releasehttpsgithubcomvirtocommercevc-module-ucpreleasestag310040-1" aria-label="Heading link"></a> <a href="https://github.com/VirtoCommerce/vc-module-ucp/releases/tag/3.1004.0">Native MCP for UCP first release</a></h2>
+<p>Your store becomes buyable inside AI agents. Virto Commerce can now expose a verified <strong>Model Context Protocol</strong> endpoint that speaks the <strong>Universal Commerce Protocol</strong> (UCP) - the open standard, co-developed by Google with Shopify and a coalition of retailers and payment networks, that AI shopping agents use to discover products, build carts, and complete checkout. Turn it on and agents such as Claude, Gemini or your own assistant can transact against your catalog, pricing and orders directly without no bespoke integration per surface.</p>
+<p>Every AI surface that wants to sell your products has, until now, needed its own adapter - an unsustainable matrix of bespoke integrations. UCP collapses that matrix into one protocol: agents speak UCP, your store answers in UCP.<br>
+</p><p></p>
+<p>UCP connects the key stages of the AI-powered shopping journey:<br>
+</p><p></p>
+<p>UCP provides a unified integration layer between AI agents and your commerce stack, connecting agent interfaces with your catalog, pricing, cart, checkout, and order management capabilities:<br>
+</p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/Fundamentals/UCP/overview/">UCP module</a></p>
+<h2><a name="p-1518-h-1st_place_medal-sales-rep-hub-module-first-releasehttpsgithubcomvirtocommercevc-module-sales-repreleasestag310000-2" class="anchor" href="https://www.virtocommerce.org#p-1518-h-1st_place_medal-sales-rep-hub-module-first-releasehttpsgithubcomvirtocommercevc-module-sales-repreleasestag310000-2" aria-label="Heading link"></a> <a href="https://github.com/VirtoCommerce/vc-module-sales-rep/releases/tag/3.1000.0">Sales Rep Hub module first release</a></h2>
+<p>Sales representatives get their own workspace. The new <strong>Sales Rep Hub</strong> turns selected users into reps who serve a defined set of customer organizations, with a back-office app to create and assign them and a hub to work their book of business.</p>
+<p>On the hub, a rep includes:</p>
+<ul>
+<li>
+<p>A <strong>Dashboard</strong> of KPI cards (orders on hold, active projects, orders placed MTD, my customers) with recent orders:<br>
+</p><p></p>
+</li>
+<li>
+<p>A <strong>My customers</strong> page listing every organization they serve with the latest order for each:</p>
+<p></p><p></p>
+</li>
+</ul>
+<p>Reps can contact a customer’s whole organization by push or email in one action.</p>
+<p> <a href="https://docs.virtocommerce.org/storefront/user-guide/latest/account/sales-rep-hub/">Sales Rep Hub. Frontend</a><br>
+ <a href="https://docs.virtocommerce.org/platform/user-guide/latest/sales-rep/overview/">Manage sales representatives. Platform</a><br>
+ <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/GraphQL-Storefront-API-Reference-xAPI/SalesRep/overview/">Sales Rep GraphQL</a></p>
+<h2><a name="p-1518-h-1st_place_medal-background-jobs-module-first-releasehttpsgithubcomvirtocommercevc-module-background-jobsreleasestag310500-3" class="anchor" href="https://www.virtocommerce.org#p-1518-h-1st_place_medal-background-jobs-module-first-releasehttpsgithubcomvirtocommercevc-module-background-jobsreleasestag310500-3" aria-label="Heading link"></a> <a href="https://github.com/VirtoCommerce/vc-module-background-jobs/releases/tag/3.1050.0">Background Jobs module first release</a></h2>
+<p>Background processing is now an engine-agnostic framework. A module defines a serializable payload and an <code>IBackgroundJobHandler&lt;T&gt;</code>, then enqueues work through <code>IBackgroundJob</code>. A single active engine per instance (<strong>Hangfire</strong>, <strong>RabbitMQ</strong>, or <strong>In-Memory</strong>) runs it, selected by configuration. Consumer modules reference only <code>VirtoCommerce.Platform.Core</code> and take no dependency on any specific engine.</p>
+<p>The module ships with:</p>
+<ul>
+<li>Map/Reduce fan-out (checkpoint, resume, exactly-once).</li>
+<li>Recurring jobs (cron or setting-driven).</li>
+<li>Live job progress over SignalR.</li>
+<li>Retry with a dead-letter queue.</li>
+<li>KEDA autoscaling on queue depth.</li>
+</ul>
+<p> <strong>No breaking changes.</strong> Hangfire stays the default engine and existing modules run untouched. RabbitMQ can be enabled as the primary engine with <code>EnableLegacyHangfire=true</code> so custom modules keep working on Hangfire side by side, then flipped off once migrated.</p>
+<p> <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/Fundamentals/Background-Jobs/overview/">Background jobs</a></p>
+<h2><a name="p-1518-page-builder-asset-library-page-builder-310150httpsgithubcomvirtocommercevc-module-pagebuilderreleasestag310150-4" class="anchor" href="https://www.virtocommerce.org#p-1518-page-builder-asset-library-page-builder-310150httpsgithubcomvirtocommercevc-module-pagebuilderreleasestag310150-4" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-pagebuilder/releases/tag/3.1015.0">Page Builder Asset Library. Page Builder 3.1015.0</a></h2>
+<p>Page Builder gets a centralized, per-store <a href="https://docs.virtocommerce.org/platform/user-guide/latest/page-builder/manage-pages-via-office/#manage-assets">Asset Library</a>. Every uploaded file is stored once and referenced by URL, so an image can be reused across pages and components instead of being re-uploaded. It offers folder navigation with breadcrumbs, in-folder search, drag-and-drop upload, delete-with-usage-detection, an asset details panel, and a picker built into the Page Builder image control.</p>
+<p></p><p></p>
+<h2><a name="p-1518-organization-scoped-roles-customer-310140httpsgithubcomvirtocommercevc-module-customerreleasestag310140-frontend-2530httpsgithubcomvirtocommercevc-frontendreleasestag2530-5" class="anchor" href="https://www.virtocommerce.org#p-1518-organization-scoped-roles-customer-310140httpsgithubcomvirtocommercevc-module-customerreleasestag310140-frontend-2530httpsgithubcomvirtocommercevc-frontendreleasestag2530-5" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-customer/releases/tag/3.1014.0">Organization-scoped roles. Customer 3.1014.0</a> + <a href="https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.53.0">Frontend 2.53.0</a></h2>
+<p>A member’s access now comes from two kinds of roles combined:</p>
+<ul>
+<li><strong>Company-wide roles</strong> assigned to the whole organization (every member inherits them automatically)</li>
+<li><strong>Individual roles</strong> assigned to one specific member.</li>
+</ul>
+<p>On the Company members page you can see all the roles each member holds, filter by role, and change the roles you manage in one organization without affecting any other.</p>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/user-guide/latest/contacts/managing-organization-roles/">Manage organization-scoped roles</a><br>
+ <a href="https://docs.virtocommerce.org/storefront/user-guide/latest/account/company-members/#block-unblock-delete-company-members">Managing roles on the Frontend</a></p>
+<h2><a name="p-1518-resilient-large-backup-restore-backup-and-restore-310012httpsgithubcomvirtocommercevc-module-backup-restorereleasestag310012-6" class="anchor" href="https://www.virtocommerce.org#p-1518-resilient-large-backup-restore-backup-and-restore-310012httpsgithubcomvirtocommercevc-module-backup-restorereleasestag310012-6" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-backup-restore/releases/tag/3.1001.2">Resilient large-backup restore. Backup and Restore 3.1001.2</a></h2>
+<p>Restoring large backups no longer hangs on proxy body-size limits. Admins can now pick a <strong>.zip</strong> that already lives in the store’s <strong>backups</strong> storage folder instead of uploading it through the browser. A new <strong>Backup storage</strong> hub opens the list of available backup files.</p>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/user-guide/latest/backup-and-restore/backup">Backup</a><br>
+ <a href="https://docs.virtocommerce.org/platform/user-guide/latest/backup-and-restore/restore">Restore</a></p>
+<h2><a name="p-1518-admin-session-hardening-platform-310420httpsgithubcomvirtocommercevc-platformreleasestag310420-7" class="anchor" href="https://www.virtocommerce.org#p-1518-admin-session-hardening-platform-310420httpsgithubcomvirtocommercevc-platformreleasestag310420-7" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-platform/releases/tag/3.1042.0">Admin session hardening Platform 3.1042.0</a></h2>
+<p>Stale or replayed cookies are now rejected on every request: sign-out rotates the security stamp server-side (“sign out everywhere”), the revalidation interval is configurable and short, and the application cookie is hardened with <code>HttpOnly</code>, <code>SecurePolicy=Always</code>, <code>SameSite=Lax</code>, and a bounded sliding expiration.</p>
+<p> <a href="https://docs.virtocommerce.org/platform/developer-guide/latest/Fundamentals/Security/security-in-depth/#session-revocation-and-cookie-hardening">Session revocation and cookie hardening</a></p>
+<h2><a name="p-1518-continuous-performance-improvements-8" class="anchor" href="https://www.virtocommerce.org#p-1518-continuous-performance-improvements-8" aria-label="Heading link"></a>Continuous performance improvements</h2>
+<p>We continuously work on improving Platform performance, using benchmarks to identify optimization opportunities and measure the impact of changes.</p>
+<ul>
+<li><strong>Benchmark-driven optimization</strong>: Performance improvements are validated with benchmarks before and after changes, ensuring that optimizations are backed by measurable results.</li>
+<li><strong>Shared benchmark logic</strong>: Reusable benchmark building blocks make it easier to measure performance across multiple modules.</li>
+<li><strong>Benchmark Claude skill</strong>: A Claude Code skill helps scaffold and run benchmarks.</li>
+<li><strong>Ready for local development</strong>: Benchmarks can be run locally, helping identify performance regressions before changes are released.</li>
+</ul>
+<p>The equality and hashing performance improvements described above were identified and validated through this ongoing benchmarking process.</p>
+<h2><a name="p-1518-faster-equality-and-hashing-platform-310393httpsgithubcomvirtocommercevc-platformreleasestag310393-9" class="anchor" href="https://www.virtocommerce.org#p-1518-faster-equality-and-hashing-platform-310393httpsgithubcomvirtocommercevc-platformreleasestag310393-9" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-platform/releases/tag/3.1039.3">Faster equality and hashing. Platform 3.1039.3</a></h2>
+<p>A production hot path where <code>ValueObject</code> recomputed its equality components via reflection on every <code>GetHashCode</code>, <code>Equals</code>, and <code>GetCacheKey</code> call has been optimized. The result is a dramatic drop in CPU time and allocations at scale:</p>
+<div class="md-table">
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Time (before → after)</th>
+<th>Allocated (before → after)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GetHashCode (sum over list)</td>
+<td>3,297 μs → 403 μs (<strong>−88%</strong>)</td>
+<td>9,641 KB → 195 KB (<strong>−98%</strong>)</td>
+</tr>
+<tr>
+<td>Distinct().Count()</td>
+<td>3,749 μs → 579 μs (<strong>−85%</strong>)</td>
+<td>9,839 KB → 393 KB (<strong>−96%</strong>)</td>
+</tr>
+<tr>
+<td>Equals (value-equal pairs)</td>
+<td>6,822 μs → 905 μs (<strong>−87%</strong>)</td>
+<td>19,282 KB → 1,406 KB (<strong>−93%</strong>)</td>
+</tr>
+<tr>
+<td>GetCacheKey (total length)</td>
+<td>5,330 μs → 3,268 μs (<strong>−39%</strong>)</td>
+<td>14,762 KB → 8,908 KB (<strong>−40%</strong>)</td>
+</tr>
+<tr>
+<td>GetFlatObjectsListWithInterface​</td>
+<td>87.4 μs → 38.4 μs (<strong>−56%</strong>)​</td>
+<td>131.7 KB → 69.2 KB (<strong>−47%</strong>)​</td>
+</tr>
+</tbody>
+</table>
+</div><h2><a name="p-1518-per-store-asset-cdn-urls-store-310060httpsgithubcomvirtocommercevc-module-storereleasestag310060-xcataloghttpsgithubcomvirtocommercevc-module-x-catalogreleasestag310130-xapihttpsgithubcomvirtocommercevc-module-x-apireleasestag310140-10" class="anchor" href="https://www.virtocommerce.org#p-1518-per-store-asset-cdn-urls-store-310060httpsgithubcomvirtocommercevc-module-storereleasestag310060-xcataloghttpsgithubcomvirtocommercevc-module-x-catalogreleasestag310130-xapihttpsgithubcomvirtocommercevc-module-x-apireleasestag310140-10" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-store/releases/tag/3.1006.0">Per-store asset (CDN) URLs. Store 3.1006.0</a> + <a href="https://github.com/VirtoCommerce/vc-module-x-catalog/releases/tag/3.1013.0">xCatalog</a> + <a href="https://github.com/VirtoCommerce/vc-module-x-api/releases/tag/3.1014.0">xAPI</a></h2>
+<p>Each store can now define its own base URL for public asset links via <strong>Store asset URL</strong>, exposed through the xAPI. Relative paths are combined with it and absolute platform URLs are rebased onto it at query time, no reindexing required. Leave it empty to use the global default, and optionally restrict the absolute-URL rewrite to known hosts in <strong>appsettings.json</strong>.</p>
+<p></p><p></p>
+<h2><a name="p-1518-catalog-linking-permissions-catalog-310370httpsgithubcomvirtocommercevc-module-catalogreleasestag310370-11" class="anchor" href="https://www.virtocommerce.org#p-1518-catalog-linking-permissions-catalog-310370httpsgithubcomvirtocommercevc-module-catalogreleasestag310370-11" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.1037.0">Catalog linking permissions. Catalog 3.1037.0</a></h2>
+<p>Two new permissions control, per role and independently, whether a user can link <strong>categories</strong> (<code>catalog:categories:link</code>) or <strong>products</strong> (<code>catalog:products:link</code>) into virtual catalogs via the Catalog Map / Add → Link flow. Disallowed row types are dimmed in the picker, and the backend returns 403 for a disallowed type with no API bypass.</p>
+<p></p><p></p>
+<p> <strong>Migration note.</strong> Linking previously required <code>catalog:*:update</code> now requires the new <code>*:link</code> permissions. Grant <code>*:link</code> to existing roles that relied on <code>*:update</code>, or linking will start returning 403.</p>
+<h2><a name="p-1518-numerical-sorting-for-facet-terms-catalog-310340httpsgithubcomvirtocommercevc-module-catalogreleasestag310340-12" class="anchor" href="https://www.virtocommerce.org#p-1518-numerical-sorting-for-facet-terms-catalog-310340httpsgithubcomvirtocommercevc-module-catalogreleasestag310340-12" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.1034.0">Numerical sorting for facet terms. Catalog 3.1034.0</a></h2>
+<p>When shoppers filter a catalog by a numeric property (size, length, weight, alcohol content), the facet values now read in natural number order (2, 4, 10, 34, 100) instead of alphabetical text order:</p>
+<p></p><p></p>
+<p> <a href="https://docs.virtocommerce.org/platform/user-guide/latest/catalog/managing-properties/#configure-facets">Configure facets</a></p>
+<h2><a name="p-1518-red-theme-light-and-dark-modes-release-frontend-2530httpsgithubcomvirtocommercevc-frontendreleasestag2530-13" class="anchor" href="https://www.virtocommerce.org#p-1518-red-theme-light-and-dark-modes-release-frontend-2530httpsgithubcomvirtocommercevc-frontendreleasestag2530-13" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.53.0">Red theme (light and dark modes) release. Frontend 2.53.0.</a></h2>
+<p>In addition to the <a href="https://docs.virtocommerce.org/platform/user-guide/latest/content/managing-themes/">Mercury, Coffee, Watermelon and other themes</a>, a new <strong>Red</strong> theme has been released, inlcuding:</p>
+<ul>
+<li>
+<p>Light mode:<br>
+</p><p></p>
+</li>
+<li>
+<p>Dark mode:<br>
+</p><p></p>
+</li>
+</ul>
+<h2><a name="p-1518-bopis-pickup-locations-with-pagination-frontend-2530httpsgithubcomvirtocommercevc-frontendreleasestag2530-14" class="anchor" href="https://www.virtocommerce.org#p-1518-bopis-pickup-locations-with-pagination-frontend-2530httpsgithubcomvirtocommercevc-frontendreleasestag2530-14" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.53.0">BOPIS pickup locations with pagination. Frontend 2.53.0.</a></h2>
+<p>The cart “Pick points” modal now lets shoppers browse, search, and page through every store pickup location in the list and on the map, not just the alphabetically-first 50.</p>
+<p></p><p></p>
+<h2><a name="p-1518-ui-kithttpsvirtostart-main-storybookgovirtocom-15" class="anchor" href="https://www.virtocommerce.org#p-1518-ui-kithttpsvirtostart-main-storybookgovirtocom-15" aria-label="Heading link"></a><a href="https://virtostart-main-storybook.govirto.com/">UI kit</a></h2>
+<p>The UI kit shipped a design-system refresh, released independently of the Frontend and VC-Shell:</p>
+<ul>
+<li>
+<p><strong>Design tokens</strong>: A design-token preset system for consistent component theming.<br>
+</p><p></p>
+</li>
+<li>
+<p><strong>New icons</strong>: Outline (Lucide) icons, plus refreshed module icons.</p>
+<p></p><p></p>
+</li>
+<li>
+<p><strong>Buttons</strong>: Updated UI-kit buttons.<br>
+</p><p></p>
+</li>
+<li>
+<p><strong>VcTable</strong>: Improvements to the VcTable data grid.</p>
+<p></p><p></p>
+<p></p><p></p>
+</li>
+</ul>
+<h2><a name="p-1518-qa-16" class="anchor" href="https://www.virtocommerce.org#p-1518-qa-16" aria-label="Heading link"></a>QA</h2>
+<p>QA shipped <strong>vc-fix</strong>, a full bug-lifecycle toolkit for Virto Commerce distributed as a Claude Code marketplace plugin (8 agents, 16 skills, 8 commands). It files, reproduces, fixes, deploys, and verifies bugs against a live deployment through one chain: <code>/qa-bug → /qa-fix → human merge → /qa-deploy-pr → /qa-verify-fix</code>, but never auto-merges.</p>
+<p>This cycle updates include:</p>
+<ul>
+<li>
+<p><strong>Self-diagnostics</strong>: An opt-in, local feedback loop (<code>vc-self-check\</code> + `/vc-feedback`) that tells whether the plugin’s own commands did the right thing, catching silent failures and, when confirmed, contributing a scrubbed fix upstream without leaking client code.</p>
+</li>
+<li>
+<p><strong>Client-deployment routing</strong>: The autofix pipeline now speaks two trackers and two code hosts (Jira / Azure Boards, GitHub / Azure Repos), routing each bug to the right repo behind a hard client-code-containment invariant.</p>
+</li>
+<li>
+<p><strong>Hotfix lifecycle</strong>: A three-step chain to backport a released fix onto a frozen stable line and verify it live.</p>
+</li>
+<li>
+<p><strong>Regression dashboard and triage</strong>: A self-refreshing per-case HTML report with per-failure traces, cross-run trends, and a <code>qa-triage-results</code> step that classifies each failure and verifies the real ones.</p>
+<p></p><p></p>
+</li>
+</ul>
+<p>Alongside the toolkit, the team stabilized flaky end-to-end tests, enriched CI runs with Platform, database, and Elasticsearch logs for faster failure analysis, and continued growing automated visual and functional regression coverage.</p>
+<h2><a name="p-1518-marketplace-17" class="anchor" href="https://www.virtocommerce.org#p-1518-marketplace-17" aria-label="Heading link"></a>Marketplace</h2>
+<p>Configurable products matured across the catalog and order flow, demoed on the vendor/marketplace side:</p>
+<ul>
+<li>
+<p><strong>Default option values</strong> for configuration sections and <strong>conditional sections</strong> that appear based on earlier selections:<br>
+</p><p></p>
+</li>
+<li>
+<p><strong>Max length</strong> support for text-type sections:<br>
+</p><p></p>
+</li>
+<li>
+<p><strong>Section names on order line items</strong>, so a configured product’s chosen components (ski bag, boot brand/size, binding, and so on) are clearly itemized on the order:<br>
+</p><p></p>
+</li>
+</ul>
+<p>The marketplace also moved to the <strong>Stable 15</strong> baseline this cycle.</p>
+<p>For more information, <a href="https://virtocommerce.com/request-demo">request a demo</a></p>
+<h2><a name="p-1518-vc-shell-18" class="anchor" href="https://www.virtocommerce.org#p-1518-vc-shell-18" aria-label="Heading link"></a>VC-Shell</h2>
+<p>VC-Shell reached <strong>v2.2.0</strong> with a new calendar organism and a framework-wide hotkey layer, on top of a heavy security, accessibility, and performance pass:</p>
+<ul>
+<li>
+<p><strong>VcScheduler</strong>: A new calendar organism with month grid, week timeline, and adaptive mobile agenda; built-in quick-create and event editing; and a full <strong>rrule-backed recurrence engine</strong> (repeat editor, occurrence expansion, this-event vs. all-events edit scope, zone-safe dates).</p>
+</li>
+<li>
+<p><strong>Keyboard shortcuts</strong> :<code>useKeyboardShortcuts</code> with layout-independent matching, OS-aware <code>⌘S</code> / <code>Ctrl+S</code> chips and tooltips, and nav-root dispatch suppressed while modals are open.</p>
+</li>
+<li>
+<p><strong>Security and reliability hardening</strong>: Explicit <code>postMessage</code> origins for the AI-agent bridge, a secure default iframe sandbox, 401 sign-out handling, guarded <code>JSON.parse</code>, and time-bound Module-Federation host loading.</p>
+</li>
+<li>
+<p><strong>Accessibility and performance</strong>: Zero WCAG 2.1 A/AA violations with an axe audit harness, localized aria-labels and errors, lazy-loaded editor and charts, off-screen row skipping, and an environment banner plus navigation loading skeletons in the app shell.</p>
+</li>
+</ul>
+<p> <strong>Breaking change.</strong><code>VcDropdownPanel</code> has been renamed to <strong><code>VcPopover</code></strong> for a clearer public component name.</p>
+<p><a href="https://vc-shell-storybook.govirto.com/">Explore the new features and capabilities</a></p>
+<h2><a name="p-1518-knowledge-hub-19" class="anchor" href="https://www.virtocommerce.org#p-1518-knowledge-hub-19" aria-label="Heading link"></a>Knowledge hub</h2>
+<ul>
+<li>
+<p>Watch a <a href="https://virtocommerce.com/assets/podcast-architecture-behind-decomposable-commerce">B2B eCommerce Show with Virto Commerce Founders!</a></p>
+<p>B2B buyers don’t shop the way B2C shoppers do. They reorder, they work inside approvals and contracts, and B2C experience patterns quietly break under that weight. In this episode, Virto Commerce’s founders explain why — and make the case for decomposable architecture: composition you can adjust one part at a time, instead of assembling and maintaining the whole stack yourself. Along the way, the hidden costs that surface in real projects, multi-region integration, where AI actually changes the economics of flexibility, and what a 13-year customer relationship teaches about building for change.</p>
+</li>
+<li>
+<p>New asset <a href="https://virtocommerce.com/assets/sap-eomm-migration-playbook">SAP Hybris End of Life: Your Migration Playbook + Cases</a> has been released.</p>
+<p>SAP Commerce (Hybris) on-premise reaches end of maintenance on 31 July 2026. That deadline forces a decision — move to SAP Commerce Cloud, keep running on unsupported software, or replatform — and each path carries a different mix of risk, cost, and lock-in. This playbook lays out all three honestly, compares the main composable alternatives side by side, and walks the six steps from audit to go-live. Three real migrations show how it plays out — including how to modernize on your own terms without tearing out the ERP you already run.</p>
+</li>
+<li>
+<p>Explore our <a href="https://virtocommerce.com/assets/enterprise-digital-commerce-decision-guide">Enterprise Digital Commerce Decision Guide</a>.</p>
+<p>Choosing an enterprise commerce platform is a decision you live with for years — and the wrong call means another replatforming before you’ve seen the return. This guide gives you the framework to avoid that: how to define your real requirements, compare build vs. buy vs. composable on their actual trade-offs, model total cost of ownership, and build a business case that ties the investment to revenue and operating results. It closes with a platform evaluation checklist and an implementation roadmap — so you invest with confidence and scale without a costly replatform.</p>
+</li>
+<li>
+<p>Paradigm B2B’s 2026 Combine is out — the independent, analyst-run evaluation of B2B commerce platforms, scored across five strategic pillars and seven product capabilities with no vendor input into the result. Virto Commerce medaled in 9 of its 12 categories: five Gold, two Silver, two Bronze. Analyst Andy Hoar’s read: Virto is “particularly well-suited for midmarket B2B companies looking for a highly-customizable, all-in-one eCommerce platform,” with out-of-the-box Search, OMS, and Marketplaces called out as strengths and advanced intent search a standout.</p>
+</li>
+</ul>
+ <p><small>2 posts - 2 participants</small></p>
+ <p><a href="https://www.virtocommerce.org/t/virtos-release-notes-august-2026/858">Read full topic</a></p>
+ ]]></description>
+ <link>https://www.virtocommerce.org/t/virtos-release-notes-august-2026/858</link>
+ <pubDate>Tue, 28 Jul 2026 15:04:44 +0000</pubDate>
+ <discourse:topicPinned>No</discourse:topicPinned>
+ <discourse:topicClosed>No</discourse:topicClosed>
+ <discourse:topicArchived>No</discourse:topicArchived>
+ <guid isPermaLink="false">www.virtocommerce.org-topic-858</guid>
+ <source url="https://www.virtocommerce.org/t/virtos-release-notes-august-2026/858.rss">Virto&#39;s Release Notes | August 2026</source>
+ </item>
+<item>
+ <title>The Year 2025 Release Notes</title>
+ <dc:creator><![CDATA[Maria-Volkova-Tula]]></dc:creator>
+ <category>news digest</category>
+ <description><![CDATA[
+ <p>The Virto Commerce team wishes you happy holidays! May this season bring joy, warmth, and renewed inspiration as we enter a new year full of opportunities to continue innovating together on the Virto Commerce platform.</p>
+<p>Thank you for your continued trust, valuable feedback, and collaboration. Your partnership is essential to our shared progress and success.</p>
+<p></p><p></p>
+<p><strong>Here are the accomplishments for 2025:</strong></p>
+<ul>
+<li>290 user stories released</li>
+<li>377 bugs fixed</li>
+<li>109 contributions accepted</li>
+<li>2 stable releases launched</li>
+</ul>
+<p>Due to the ongoing enhancements, Virto Commerce has been recognized as a <strong>Niche player</strong> in the 2025 Gartner Magic Quadrant for Digital Commerce - our second consecutive year in the report.<br>
+</p><p></p>
+<p>The 2025 releases focused on strengthening usability, global readiness, and merchandising efficiency, icnluding:</p>
+<ul>
+<li>Accessibility upgrades: stronger keyboard navigation patterns (catalog interaction improvements).​</li>
+<li>Global-ready UI: broad localization coverage across modules (multi-language enablement).​</li>
+<li>Cleaner merchandising UX: facets normalization to unify similar attribute values and improve filtering consistency.​</li>
+<li>Faster catalog setup: pre-filled units of measure + support for custom units.​</li>
+<li>Better international UX: localized units of measure for consistent display across languages/regions.</li>
+</ul>
+<p>Let’s take a look at the main new functionalities:</p>
+<h2><a name="p-1452-platform-and-frontend-1" class="anchor" href="https://www.virtocommerce.org#p-1452-platform-and-frontend-1" aria-label="Heading link"></a>Platform and Frontend</h2>
+<div class="md-table">
+<table>
+<thead>
+<tr>
+<th>Functionality</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/catalog/managing-product-configurations/#add-sections-and-options">Configurable products</a></td>
+<td>Support for products with selectable attributes and dependent options.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/shipping/managing-shipping-methods">BOPIS (Click and collect)</a></td>
+<td>Buy-online-pickup-in-store fulfillment flow introduced.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/catalog/managing-brands-page/">Brands page</a></td>
+<td>Dedicated storefront page for browsing products by brand.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/catalog/managing-properties/#value-type-selection">Color property type</a></td>
+<td>Specialized property type for color-based filtering and display.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/catalog/managing-properties/#value-type-selection">HTML property type</a></td>
+<td>Property type allowing HTML content for product descriptions.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/catalog/managing-units-of-measure/">Unit of measure</a></td>
+<td>Support for selling products in multiple measurement units.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/white-labeling/overview/">Whitelabeling</a></td>
+<td>Customize storefront branding without code changes.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/developer-guide/1.0/GraphQL-Storefront-API-Reference-xAPI/Catalog/objects/FulfillmentCenterType/">Ready for Geo replicated deployment</a></td>
+<td>Support for geo-distributed Platform and Frontend deployments.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/developer-guide/1.0/GraphQL-Storefront-API-Reference-xAPI/Catalog/queries/products/">Purchased before</a></td>
+<td>Display previously purchased products to returning customers.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/catalog/managing-properties/#group-properties">Property groups</a></td>
+<td>Logical grouping of product properties for management and UI.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/integrations/google-analytics/integration/#direct-ga4-integration">GA4 and GTM</a></td>
+<td>Native integration with Google Analytics 4 and Google Tag Manager.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/order-management/overview/">Order management module</a></td>
+<td>Advanced order lifecycle management in the Platform.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/developer-guide/1.0/GraphQL-Storefront-API-Reference-xAPI/Catalog/examples/facets/#rangefacet-result">Range slider</a></td>
+<td>Numeric range filtering component for search and catalog pages.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/catalog/managing-product-variations/#variations-representation-options">B2C SKU selector</a></td>
+<td>Optimized selector for B2C storefronts.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/storefront/user-guide/1.0/shopping/products-purchase-options/#choose-from-product-variations">Expand variations</a></td>
+<td>Display expanded product variations instead of grouped items.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/news/overview/">News</a></td>
+<td>Frontend section for publishing news and announcements.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/loyalty/overview/">Loyalty</a></td>
+<td>Built-in loyalty points and rewards functionality.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/general-guidelines/#multilingual-seo-urls">Multilingual URLs</a></td>
+<td>SEO-friendly localized URLs per language.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/catalog/managing-properties/#normalize-facets">Facets normalization</a></td>
+<td>Improved facet consistency across catalogs and locales.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/page-builder/manage-pages-via-office/">Page Builder office</a></td>
+<td>Administrative interface for managing Page Builder content.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/storefront/user-guide/1.0/shopping/searching-for-products/#barcode-scanner">Barcode scanner</a></td>
+<td>Barcode-based product search and selection.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/storefront/user-guide/1.0/account/review-products/">Product review</a></td>
+<td>Customer reviews and ratings for products.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/storefront/user-guide/1.0/account/back-in-stock-list/">Back-in-stock</a></td>
+<td>Notify customers when out-of-stock products become available.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/developer-guide/1.0/GraphQL-Storefront-API-Reference-xAPI/Catalog/queries/products/#arguments">Product and category name localization</a></td>
+<td>Localized product and category names per language.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/storefront/user-guide/1.0/account/saved-for-later/">Buy now</a></td>
+<td>One-click purchase flow bypassing the cart.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/cybersource/overview/">Cybersource payment method</a></td>
+<td>Integration with the Cybersource payment gateway.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/user-profile/">Account photo</a></td>
+<td>User profile photo support in customer accounts.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/content/managing-linklists/#manage-mega-menu">Catalog mega menu</a></td>
+<td>Multi-level mega menu for catalog navigation.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/seo/managing-broken-links/">Broken link detection</a></td>
+<td>Automatic detection of invalid Frontend URLs.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/seo/managing-broken-links/">Redirect rules</a></td>
+<td>Manage URL redirects for SEO and navigation continuity.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/frontend/search/scoped-search/">Scoped search and search history</a></td>
+<td>Context-aware search with stored user search history.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/storefront/user-guide/1.0/navigation/homepage-layout/#catalog-items-details">“+/− Add to Cart” UX</a></td>
+<td>Instant cart updates without unnecessary reloads after adding/removing products to cart</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/storefront/user-guide/1.0/shopping/checkout-process/">Enter credit card on checkout page</a></td>
+<td>Inline credit card entry during checkout.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/storefront/user-guide/1.0/shopping/save-for-later/">Save for later</a></td>
+<td>Move cart items to a saved list for future purchase.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/storefront/user-guide/1.0/account/lists/">Shared shopping list</a></td>
+<td>Share shopping lists with other users.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/search/elasticsearch-8/">Elastic Search 8 module</a></td>
+<td>Search provider module based on Elasticsearch 8.x.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/search/elasticsearch-9/">Elastic Search 9 module</a></td>
+<td>Search provider module based on Elasticsearch 9.x.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/search-query-syntax/#basic-logical-operators">OR and AND for advanced search</a></td>
+<td>Logical operators support in advanced search queries.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/sql-queries/overview/">SQL query</a></td>
+<td>Direct SQL querying for diagnostics and administration.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/environments-comparison/overview/">Environments comparison</a></td>
+<td>Side-by-side comparison of Platform environments.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/seo/overview/">SEO module</a></td>
+<td>Centralized SEO configuration and optimization tools.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/platform-settings/#user-interface">JSON Platform editor with beautifier</a></td>
+<td>Enhanced JSON editor with formatting and validation.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/seo/debugging-seo-links/">Debug SEO</a></td>
+<td>Tools for diagnosing SEO issues and metadata rendering.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/developer-guide/1.0/GraphQL-Storefront-API-Reference-xAPI/graphiql/%E2%80%8B">GraphQL replaced with Graphiql</a></td>
+<td>A fully integrated API for the entire Platform or with tailored APIs for specific modules.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/developer-guide/1.0/GraphQL-Storefront-API-Reference-xAPI/graphiql/#partial-graphql-schema">Partial GraphQL</a></td>
+<td>A modular and self-contained subset of the overall GraphQL schema that is specific to a particular module</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/general-guidelines/#developer-tools">Developer tools</a></td>
+<td>A section with access to useful diagnostics and integration developer tools</td>
+</tr>
+</tbody>
+</table>
+</div><h2><a name="p-1452-ai-assistance-2" class="anchor" href="https://www.virtocommerce.org#p-1452-ai-assistance-2" aria-label="Heading link"></a>AI assistance</h2>
+<div class="md-table">
+<table>
+<thead>
+<tr>
+<th>Functionality</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/developer-guide/1.0/Platform-Manager/localization/">Platform</a> and <a href="https://docs.virtocommerce.org/storefront/developer-guide/1.0/customization/localization/">Frontend</a> localization</td>
+<td>Localization through JSON-based language files.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/ai-doc-processing/overview/">AI Smart capture</a></td>
+<td>Intelligent document processing that not only recognizes and extracts text from documents, but also understands the context and meaning of the information by combining OCR with AI and machine learning.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/user-guide/1.0/virto-oz/">Enhanced Virto OZ assistant</a></td>
+<td>An integrated AI-powered assistant designed to help users navigate, learn, and work more efficiently with Virto Commerce.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/storefront/user-guide/1.0/navigation/product-page-layout/">Ask me about product</a></td>
+<td>A smart product guide on the Frontend.</td>
+</tr>
+</tbody>
+</table>
+</div><h2><a name="p-1452-marketplace-3" class="anchor" href="https://www.virtocommerce.org#p-1452-marketplace-3" aria-label="Heading link"></a>Marketplace</h2>
+<div class="md-table">
+<table>
+<thead>
+<tr>
+<th>Functionality</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enhanced <a href="https://docs.virtocommerce.org/marketplace/user-guide/1.0/Vendor-portal/communication/">Vendor-Opertaor communication</a></td>
+<td>Vendor and Operator can now communicate with each other from Offer and Order details including files attachments.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/marketplace/user-guide/1.0/Operator-portal/Vendors-management/vendor-onboarding/#add-vendor-from-registration-request">Streamlined registration process</a></td>
+<td>Vendors can submit registration forms to operators themselves to simplify the onboarding process.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/marketplace/user-guide/1.0/Operator-portal/state-machines/">Enhanced management and automation of various states and their transitions</a></td>
+<td>Various states of orders, registration requests, and publication requests and their transitions can now be easily created and edited using the Visual Editor.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/marketplace/user-guide/1.0/Operator-portal/quotes/">Quote module</a></td>
+<td>The Quote module has been improved.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/marketplace/user-guide/1.0/Operator-portal/ai-helper/"> AI helper module</a></td>
+<td>The AI Helper module supports text generation and translation.</td>
+</tr>
+</tbody>
+</table>
+</div><h2><a name="p-1452-vc-shell-4" class="anchor" href="https://www.virtocommerce.org#p-1452-vc-shell-4" aria-label="Heading link"></a>VC-Shell</h2>
+<div class="md-table">
+<table>
+<thead>
+<tr>
+<th>Functionality</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Complete UI Redesign</td>
+<td>* Support for four icon packs (Legacy FontAwesome, Material Symbols, Lucide Icons, Bootstrap Icons) <br> * Updated UI Kit components, and new core services (WidgetService, MenuService, DashboardService) to improve modularity and flexibility.</td>
+</tr>
+<tr>
+<td>Mobile interface optimizations</td>
+<td>Mobile views were enhanced with: <br> * Compact grid layout. <br> * Redesigned toolbar menu. <br> * Toggleable hidden search bar. <br> * Relocated notifications dropdown. <br> * Improved blade navigation via long-press back button and widget limits with dynamic overflow handling.</td>
+</tr>
+<tr>
+<td>Dashboard and widget enhancements</td>
+<td>Dashboard functionality was improved with: <br> * Simplified widget registration. <br> * Drag-and-drop layout management. <br> * Refined placement logic to avoid overlaps. <br> * Performance optimizations across desktop and mobile.</td>
+</tr>
+<tr>
+<td>vc-editor and toolbar improvements</td>
+<td>The vc-editor gained: <br> * Custom toolbar buttons <br> * Font size and font family selectors <br> * Tiptap plugin support. <br> * Storybook examples, making content editing more flexible and developer-friendly.</td>
+</tr>
+<tr>
+<td>Introduction of useBlade composable</td>
+<td>A new useBlade composable enabled direct access to blade instances without dependency injection, simplifying development and improving integration in blades and widgets.</td>
+</tr>
+<tr>
+<td>AI-powered code generation and module generator</td>
+<td>A CLI-based generator for modules, blades, widgets, and forms evolved into an AI-powered tool using Model Context Protocol (MCP), enabling full module generation with a single command and optimized for AI-assisted IDE workflows.</td>
+</tr>
+<tr>
+<td>Embedded AI-Helper Application</td>
+<td>An AI-Helper application was embedded into VC-Shell, providing configurable request logging (Minimal or Verbose) to improve AI-driven development, debugging, and prompt transparency.</td>
+</tr>
+<tr>
+<td><a href="https://docs.virtocommerce.org/platform/developer-guide/1.0/custom-apps-development/vc-shell/vc-shell-overview/">Documentation published</a></td>
+<td>New extensive step-by-step guides have been published.</td>
+</tr>
+</tbody>
+</table>
+</div><h2><a name="p-1452-virto-commerce-products-updates-throughout-the-year-5" class="anchor" href="https://www.virtocommerce.org#p-1452-virto-commerce-products-updates-throughout-the-year-5" aria-label="Heading link"></a>Virto Commerce products updates throughout the year</h2>
+<ul>
+<li><a href="https://www.virtocommerce.org/t/virto-s-release-notes-january-2025/755/2">January 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virtos-release-notes-february-2025/760/1">February 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virto-s-release-notes-march-2025/767/1">March 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virto-s-release-notes-april-2025/769/1">April 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virtos-release-notes-may-2025/778/1">May 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virto-s-release-notes-june-2025/796/1">June 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virto-s-release-notes-july-2025/798/1">July 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virto-s-release-notes-august-2025/801/1">August 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virtos-release-notes-september-2025/805/1">September 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virtos-release-notes-october-2025/807/1">October 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virto-s-release-notes-november-2025/814/1">November 2025</a></li>
+<li><a href="https://www.virtocommerce.org/t/virto-s-release-notes-december-2025/818/1">December 2025</a></li>
+</ul>
+<p>This year has been highly productive for our company, and we are setting our sights on even greater accomplishments ahead. We welcome your ideas and collaboration as we continue building and evolving the B2B innovation platform together.</p>
+<p>Happy holidays, and we look forward to working with you in the coming year!</p>
+ <p><small>1 post - 1 participant</small></p>
+ <p><a href="https://www.virtocommerce.org/t/the-year-2025-release-notes/822">Read full topic</a></p>
+ ]]></description>
+ <link>https://www.virtocommerce.org/t/the-year-2025-release-notes/822</link>
+ <pubDate>Mon, 29 Dec 2025 08:45:06 +0000</pubDate>
+ <discourse:topicPinned>No</discourse:topicPinned>
+ <discourse:topicClosed>No</discourse:topicClosed>
+ <discourse:topicArchived>No</discourse:topicArchived>
+ <guid isPermaLink="false">www.virtocommerce.org-topic-822</guid>
+ <source url="https://www.virtocommerce.org/t/the-year-2025-release-notes/822.rss">The Year 2025 Release Notes</source>
+ </item>
+<item>
+ <title>November 2024 News Digest</title>
+ <dc:creator><![CDATA[Maria-Volkova-Tula]]></dc:creator>
+ <category>news digest</category>
+ <description><![CDATA[
+ <p>As we embrace November’s spirit of gratitude and anticipation, we’re thrilled to bring you the latest updates in the Virto Commerce ecosystem.</p>
+<p><strong>Highlights</strong>:</p>
+<ul>
+<li>AI assistant in documentation</li>
+<li>Platform now localized in 10 languages</li>
+<li>Enhanced product reviews</li>
+</ul>
+<h2><a name="p-1329-documentationhttpsdocsvirtocommerceorg-1" class="anchor" href="https://www.virtocommerce.org#p-1329-documentationhttpsdocsvirtocommerceorg-1" aria-label="Heading link"></a><a href="https://docs.virtocommerce.org/">Documentation</a></h2>
+<p> Virto Commerce documentation has received a major upgrade with the addition of an AI assistant. Now, users can ask the AI any questions about the documentation, and it will provide clear answers, relevant links, and illustrations. The assistant is robust enough to handle queries with typos and transliterations, making navigation through documentation easier than ever before.</p>
+<p>The AI is trained on your data, documents, products, and more to ensure it provides accurate and helpful assistance tailored to your specific needs.</p>
+<p> This technology can be seamlessly integrated into your projects.</p>
+<p>For AI assistant integration, <a href="https://virtocommerce.com/contact-us">contact us</a>.</p>
+<p></p><p></p>
+<h2><a name="p-1329-platform-38540httpsgithubcomvirtocommercevc-platformreleasestag38540-2" class="anchor" href="https://www.virtocommerce.org#p-1329-platform-38540httpsgithubcomvirtocommercevc-platformreleasestag38540-2" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-platform/releases/tag/3.854.0">Platform 3.854.0</a></h2>
+<p>The <code>Microsoft.ApplicationInsights.AspNetCore</code> library has been removed from <code>VirtoCommerce.Platform.Core</code>. Previously, this inclusion made all modules dependent on <code>VirtoCommerce.Platform.Core</code> automatically rely on <code>Microsoft.ApplicationInsights</code>. Now, with the library removed from Core, all dependencies on <code>ApplicationInsights</code> are isolated within the <code>AppInsights</code> module. It leads to a leaner, more efficient platform and clarifies the platform’s architecture.</p>
+<h2><a name="p-1329-platform-38560httpsgithubcomvirtocommercevc-platformreleasestag38560-3" class="anchor" href="https://www.virtocommerce.org#p-1329-platform-38560httpsgithubcomvirtocommercevc-platformreleasestag38560-3" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-platform/releases/tag/3.856.0">Platform 3.856.0</a></h2>
+<p>The Virto Commerce Platform has updated its internal OpenIddict component to version 5. This upgrade helps keep Platform components current, with enhanced compatibility for <a href="http://ASP.NET">ASP.NET</a> Core frameworks up to .NET Core 8.0. OpenIddict 5.0 introduces key features such as relaxed <code>redirect_uri</code> policies for native applications, per-client static token lifetimes, and client assertion support.</p>
+<h2><a name="p-1329-platform-38580httpsgithubcomvirtocommercevc-platformreleasestag38580-4" class="anchor" href="https://www.virtocommerce.org#p-1329-platform-38580httpsgithubcomvirtocommercevc-platformreleasestag38580-4" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-platform/releases/tag/3.858.0">Platform 3.858.0</a></h2>
+<p>The Modules blade has been redesigned to resemble the layout of Visual Studio and enhance the user experience. This new structure also helps organize and display modules more clearly according to their purpose:</p>
+<p></p><p></p>
+<h2><a name="p-1329-platform-38590httpsgithubcomvirtocommercevc-platformreleasestag38590-5" class="anchor" href="https://www.virtocommerce.org#p-1329-platform-38590httpsgithubcomvirtocommercevc-platformreleasestag38590-5" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-platform/releases/tag/3.859.0">Platform 3.859.0</a></h2>
+<p>Our Platform and 23 modules have been localized into 7 additional languages and now they support Deutsch, English, Español (Castellano), Français, Italiano, 日本語 (にほんご), Polski, Português, 中文, русский.</p>
+<p></p>
+<h2><a name="p-1329-product-review-38070httpsgithubcomvirtocommercevc-module-customer-reviewreleasestag38070-6" class="anchor" href="https://www.virtocommerce.org#p-1329-product-review-38070httpsgithubcomvirtocommercevc-module-customer-reviewreleasestag38070-6" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-customer-review/releases/tag/3.807.0">Product Review 3.807.0</a></h2>
+<p>In the Frontend Application, you can now see product reviews right after the product description. Enable the product reviews feature in the Platform to see product rating, creator, and their review sortable by date:</p>
+<p></p><p></p>
+<p>You can also allow or disallow anonymous users to create reviews by configuring the Store settings in the Platform:</p>
+<p></p><p></p>
+<p>The product reviews will be published after approval by the admin.</p>
+<h2><a name="p-1329-builderio-7" class="anchor" href="https://www.virtocommerce.org#p-1329-builderio-7" aria-label="Heading link"></a><a href="http://Builder.io">Builder.io</a></h2>
+<p>New custom components have been added to <a href="http://Builder.io">Builder.io</a> - <code>breadcrumbs</code> and <code>vc-container</code>. <code>vc-container</code> allows images to be uploaded in a format fully supported by the Frontend Application. It eliminates the need for further resizing to fit other elements:</p>
+<p></p><p></p>
+<h2><a name="p-1329-notification-38100httpsgithubcomvirtocommercevc-module-notificationreleasestag38100-8" class="anchor" href="https://www.virtocommerce.org#p-1329-notification-38100httpsgithubcomvirtocommercevc-module-notificationreleasestag38100-8" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-notification/releases/tag/3.810.0">Notification 3.810.0</a></h2>
+<p>The Notification module template now supports Liquid conditions, and the layout rendering engine has been switched from Scriban to Liquid. To configure this, a new <code>TemplateScriptLanguage</code> option has been added, allowing you to set the template language to <code>Default</code> (Scriban) or <code>Liquid</code> via <code>Notifications:LiquidRenderOptions:TemplateLanguage</code>. By default, Liquid is used. Users now gain more control and flexibility over notification templates.</p>
+<h2><a name="p-1329-notification-38110httpsgithubcomvirtocommercevc-module-notificationreleasestag38110-9" class="anchor" href="https://www.virtocommerce.org#p-1329-notification-38110httpsgithubcomvirtocommercevc-module-notificationreleasestag38110-9" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-notification/releases/tag/3.811.0">Notification 3.811.0</a></h2>
+<p>Users can now perform keyword searches within key fields—such as <strong>Subject</strong>, <strong>Body</strong>, <strong>To</strong>, and others—directly in the notification activity feed. This enhancement significantly aids troubleshooting by making it easier to locate specific notifications based on their content:</p>
+<p></p><p></p>
+<h2><a name="p-1329-catalog-38230httpsgithubcomvirtocommercevc-module-catalogreleasestag38230-10" class="anchor" href="https://www.virtocommerce.org#p-1329-catalog-38230httpsgithubcomvirtocommercevc-module-catalogreleasestag38230-10" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.823.0">Catalog 3.823.0</a></h2>
+<p>Users can now configure SEO information for the root catalog. It will be applied to the <code>/category</code> page on the website to enhance search engine optimization. Additionally, users have the option to disable access to the catalog if needed:</p>
+<p></p><p></p>
+<h2><a name="p-1329-catalog-38240httpsgithubcomvirtocommercevc-module-catalogreleasestag38240-11" class="anchor" href="https://www.virtocommerce.org#p-1329-catalog-38240httpsgithubcomvirtocommercevc-module-catalogreleasestag38240-11" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.824.0">Catalog 3.824.0</a></h2>
+<p>The Content field in the Virto Commerce Catalog module has been enhanced to support searches by product descriptions and SEO data. Now, when users search for products, the results will include matches from the Description and SEO fields. The following fields have been added to the search index:</p>
+<ul>
+<li>Full description.</li>
+<li>SEO metadata:
+<ul>
+<li>Page title.</li>
+<li>Meta description.</li>
+<li>Meta keywords.</li>
+</ul>
+</li>
+</ul>
+<p></p><p></p>
+<h2><a name="p-1329-customer-38240httpsgithubcomvirtocommercevc-module-catalogreleasestag38240-12" class="anchor" href="https://www.virtocommerce.org#p-1329-customer-38240httpsgithubcomvirtocommercevc-module-catalogreleasestag38240-12" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.824.0">Customer 3.824.0</a></h2>
+<p>A new <strong>Show contact</strong> widget has been added to the Contacts module, allowing admins to quickly view the Contact blade with details on the contact linked to a particular account:</p>
+<p></p><p></p>
+<h2><a name="p-1329-image-tools-38070httpsgithubcomvirtocommercevc-module-image-toolsreleasestag38070-13" class="anchor" href="https://www.virtocommerce.org#p-1329-image-tools-38070httpsgithubcomvirtocommercevc-module-image-toolsreleasestag38070-13" aria-label="Heading link"></a><a href="https://github.com/VirtoCommerce/vc-module-image-tools/releases/tag/3.807.0">Image Tools 3.807.0</a></h2>
+<p>The module has been reworked to support the following image formats: BMP, GIF, JPEG, PBM, PNG, TIFF, TGA, WebP.</p>
+<p></p><p></p>
+<h2><a name="p-1329-marketplace-14" class="anchor" href="https://www.virtocommerce.org#p-1329-marketplace-14" aria-label="Heading link"></a>Marketplace</h2>
+<p>New modules - Vendor portal, Reviews, and Commissions - have been released.</p>
+<h3><a name="p-1329-vendor-portal-15" class="anchor" href="https://www.virtocommerce.org#p-1329-vendor-portal-15" aria-label="Heading link"></a>Vendor portal</h3>
+<ul>
+<li>
+<p>Offer details will now be displayed on click of the item in the order:<br>
+</p>
+</li>
+<li>
+<p>The <strong>Import</strong> section has been redesigned, now displaying profiles in a user-friendly list format. By selecting a profile from the list, users can easily upload new files or view a history of past import results. The search function has also been added:<br>
+</p><p></p>
+</li>
+</ul>
+<p>For more information, <a href="https://virtocommerce.com/request-demo">request a demo </a></p>
+<h2><a name="p-1329-vc-shell-16" class="anchor" href="https://www.virtocommerce.org#p-1329-vc-shell-16" aria-label="Heading link"></a>VC Shell</h2>
+<ul>
+<li>
+<p>The Quill editor has been replaced with Markdown to improve content portability and readability:<br>
+</p><p></p>
+</li>
+<li>
+<p>In the mobile version, user information has been moved from the navigation menu to a dedicated button on the toolbar. When the user menu button is clicked, the information now appears in the sidebar:</p>
+<p></p><p></p>
+</li>
+<li>
+<p>The language selector has been relocated from the toolbar header to the content area to enhance visual appeal and reduce header clutter. It is now positioned with absolute placement, ensuring it remains easily accessible for language changes at any time:</p>
+<p></p><p></p>
+</li>
+</ul>
+<p><a href="https://vc-shell-storybook.govirto.com/">Explore new VC Shell features and capabilities </a></p>
+ <p><small>1 post - 1 participant</small></p>
+ <p><a href="https://www.virtocommerce.org/t/november-2024-news-digest/743">Read full topic</a></p>
+ ]]></description>
+ <link>https://www.virtocommerce.org/t/november-2024-news-digest/743</link>
+ <pubDate>Mon, 28 Oct 2024 14:27:57 +0000</pubDate>
+ <discourse:topicPinned>No</discourse:topicPinned>
+ <discourse:topicClosed>No</discourse:topicClosed>
+ <discourse:topicArchived>No</discourse:topicArchived>
+ <guid isPermaLink="false">www.virtocommerce.org-topic-743</guid>
+ <source url="https://www.virtocommerce.org/t/november-2024-news-digest/743.rss">November 2024 News Digest</source>
+ </item>
+</channel>
+</rss>

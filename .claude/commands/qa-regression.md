@@ -102,12 +102,19 @@ If the user passes an incompatible combo (e.g. `--seed=b2b` with `catalog` selec
 
 1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, abort — regression on a broken env wastes budget.
 2. **Build & version verification** — fetch full deploy state per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
-   - Record: platform version, theme version, and all module versions
+   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs) — this is the **`declared`** state
+   - Probe `GET {{BACK_URL}}/api/platform/modules` for the **`deployed`** state (ground truth). A failed probe records `UNKNOWN`, never a fallback to `declared`
+   - Record: platform version, theme version, and all module versions, for both
    - Include full deploy state in the regression report header (Step 6)
    - Save to `reports/deploy-state-cache.json` for cross-reference
 3. **Duplicate check** — check `reports/regression/test-run-status.json` for an active run with the same suite selection. If found, block — wait for current run to complete. **First rule out an orphan:** that file is flipped to `completed` only by Step 6 of the owning orchestrator, so an orchestrator that died mid-run leaves it `in_progress` forever and blocks every future run. Run `npm run regression:reap` (read-only) — it classifies the run from file evidence (newest mtime across the run's own results/screenshots, ignoring the watcher-written `regression-report.html`). `ACTIVE` → block as above. `STALLED` → reclaim it with `npm run regression:reap:apply` (marks `status: "stalled"`, never `completed`) and proceed. `SETTLED`/`NO-STATUS` → nothing is running; proceed.
-4. **Context7 query** (for `sprint` and `full` selections) — resolve `/virtocommerce/vc-docs`, query `"platform release notes recent changes"` with `tokens: 8000`. Flag any API contract changes that may cause false failures in existing test cases. Consider running `/qa-test-lifecycle diff` (or `changelog <version>`) first if breaking changes detected.
+4. **Recent-release check** (for `sprint` and `full` selections) — read `.claude/knowledge/domain/release-ledger.md` §1 (latest per component) and the newest §2 month(s), and diff `latestByComponent` against the **`deployed`** state item 2 just probed. Flag any component that shipped a change — a **⚠ BREAKING** row above all — between the last regression run and this build as a **false-failure risk**, and name it in the report header. Consider `/qa-test-lifecycle changelog <version>` first if breaking changes are present.
+
+   This replaced a Context7 query for `"platform release notes recent changes"` against `/virtocommerce/vc-docs`. That corpus does not carry release notes: its newest version page is Platform **3.917.1** while production is past **3.1050**, so the step was re-deriving release knowledge every run from a source ~9 months blind. Fall back to Context7 only if the ledger's `generated:` date is >45 days old.
+
+   **Guardrail — the ledger raises the hypothesis; the evidence decides the verdict.** A breaking change is an equally good explanation for why a *real* bug shipped. If a ledger entry could settle a classification, this step becomes an engine for explaining away production defects at scale, with a citation. So `/qa-triage-results`' `ambiguous → REAL_BUG / CONFIDENCE: LOW` bias is **unchanged**, and a ledger entry may never on its own move a failure from `REAL_BUG` to `STALE_TEST` — that still requires the screenshot plus `/qa-review-tests --verify` reporting CHANGED.
+
+   **Released ≠ deployed.** A case failing because the feature it asserts was never deployed to this env is `NOT_DEPLOYED`/BLOCKED, not FAIL (`agent-dispatch.md § Build Verification`).
 
 ### Step 0.5 — Seed Data (only if `--seed=<profile>` provided)
 

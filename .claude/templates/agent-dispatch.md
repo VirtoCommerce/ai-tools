@@ -147,8 +147,8 @@ Commands that transition JIRA tickets (`/qa-test`, `/qa-verify-fix`, `/qa-bug`) 
 Every command that uses a browser SHOULD run these checks before dispatching agents:
 
 1. **Environment health** — invoke `/qa-env-check endpoints` (or inline: `curl -sk {BACK_URL}/health`)
-2. **Build & version verification** — fetch deployed versions (see Build Verification below)
-3. **Context7 query** — for the target domain(s), verify current module behavior
+2. **Build & version verification** — fetch the `declared`, `deployed` **and** `released-through` state (see Build Verification below)
+3. **Recent-release check** — read `.claude/knowledge/domain/release-ledger.md` §1–§2 for the components in scope and record the Δ vs `deployed`. This is the step that turns "a test failed" into "a test failed on a surface that changed three weeks ago". Fall back to a Context7 query for module behaviour only where the ledger is silent or >45 days stale
 4. **Duplicate check** — scan reports/ for recent runs matching scope
 5. If any pre-flight fails → warn user with specific failure, ask whether to proceed
 
@@ -173,15 +173,69 @@ branch: "vcst-qa"   # default for TEST_ENV=vcst; use the branch matching TEST_EN
 | `backend/packages.json` | `PlatformVersion` + all module IDs with versions |
 | `theme/artifact.json` | Theme package URL with version (e.g., `vc-theme-b2b-vue-2.45.0-pr-2204-de06-de06c786`) |
 
+**That is the `declared` state — what git says SHOULD be on the env, not what is running.** Also probe
+the live platform:
+
+```
+GET {{BACK_URL}}/api/platform/modules      (bearer token; the same call scripts/maintenance/refresh-sitemap.mjs makes)
+```
+
+It returns every installed module with its `id` and `version` — the `deployed` state, and the only
+ground truth. The two disagree routinely: a deploy in flight, a failed deploy, or a partially applied
+one. That gap is exactly what `/qa-hotfix-check` exists to wait on.
+
+**If the probe fails, record `deployed: UNKNOWN` and say so. NEVER fall back to `declared`.** A null
+`deployed` leg collapses the released-vs-deployed distinction this section exists to preserve, and the
+tempting fallback is the wrong value.
+
 ### What to Record
 
-Extract and include in reports/agent prompts:
+Extract and include in reports/agent prompts — four rows, not one:
 
 ```
-Platform: {PlatformVersion from packages.json}
-Theme: {version from artifact.json URL}
-Key modules: {list modules relevant to the test scope with their versions}
+declared (git)      : Platform {PlatformVersion}, Theme {version}, {scope-relevant modules}
+deployed (probed)   : Platform {live version}, {scope-relevant modules}   | or UNKNOWN + reason
+released-through    : Platform {ledger §1}, {scope-relevant components}   | .claude/knowledge/domain/release-ledger.md
+Δ behind upstream   : {components where deployed < released, with both versions}
 ```
+
+### Precedence — four sources, routed by QUESTION not by rank
+
+```
+documented — VirtoOZ MCP                           -> what the docs say behaviour IS
+                                                      (evergreen; ~9 months stale on releases)
+released   — .claude/knowledge/domain/release-ledger.md -> what EXISTS in the product line
+                                                      (fresh to its last refresh; a DIGEST, non-exhaustive)
+declared   — vc-deploy-dev backend/packages.json   -> what SHOULD be on this env (git)
+deployed   — GET {{BACK_URL}}/api/platform/modules -> what IS RUNNING here      <- GROUND TRUTH
+```
+
+| The question | Winner | Never |
+|---|---|---|
+| What is correct behaviour here? | `documented`, then `{OBSERVED}` live | the ledger — it carries no behaviour |
+| Does this capability exist in the product at all? | `released` | `documented` (nine months blind) |
+| Can I test it **on this env**? | `deployed` | `declared`, `released` |
+| Does a recent change explain what I'm seeing? | `released`, as a **hypothesis** | as a verdict |
+| Which version goes in the report? | `deployed`, with the probe timestamp | `declared`, unlabelled |
+
+**The one hard rule.** A capability the ledger records but the deployed probe does not carry is
+**`NOT_DEPLOYED`** — never `FAIL`, never a bug, never "missing feature". The verdict is BLOCKED-on-deploy
+and the next step is `/qa-deploy-pr` or waiting. Filing a bug against a feature that was never deployed,
+and signing off a fix that never landed, are the two worst outcomes available here; they are the same
+mistake in opposite directions.
+
+**When they disagree:**
+
+| Disagreement | Reading | Action |
+|---|---|---|
+| `deployed` < `released` | Env is **behind**. This is the normal, default state. | Feature exists, is not testable here → `NOT_DEPLOYED`. Do not design cases against it; note the Δ in the report header. |
+| `deployed` > `released` | The **ledger** is stale, not the env. | Trust `deployed`. Never conclude "that module doesn't exist" from ledger silence; flag it for `npm run releases:refresh`. |
+| `declared` ≠ `deployed` | Deploy in flight, failed, or partially applied. | `deployed` wins, always. The gap is a finding about the **environment**, not the product. |
+| `documented` ≠ `deployed`, **and** the ledger names a change in that component | Docs are stale **and** the ledger says why. | Docs are invalidated for that component → drop to the `{OBSERVED}` axis. Do **not** file on the doc/behaviour mismatch alone. |
+| `documented` ≠ `deployed`, ledger records nothing | **Unknown** — a real candidate defect. | Run the normal source-verify path before filing. |
+
+**Presence is evidence; absence is not.** The ledger is an editorial monthly digest that declares itself
+`exhaustive: false`. "The ledger doesn't mention it" never licenses "nothing changed".
 
 ### When to Verify PRs
 
@@ -209,4 +263,10 @@ For `/qa-test PR #NNN` and `/qa-verify-fix`:
 
 ### Caching
 
-Store the fetched deploy state in `reports/deploy-state-cache.json` with a timestamp. Reuse within the same hour to avoid redundant GitHub API calls. Invalidate if the user says a new deployment happened.
+Store the fetched deploy state in `reports/deploy-state-cache.json` with a timestamp — all four rows
+(`declared`, `deployed`, `released-through`, `Δ`) in the same file, since a consumer that reads one
+without the others is exactly how the released-vs-deployed distinction gets lost. Reuse within the same
+hour to avoid redundant GitHub API calls and platform probes. Invalidate if the user says a new
+deployment happened. The `released-through` row is a local file read (no API), so it is cheap to
+refresh — but the ledger's own `generated:` date is what bounds its freshness, not this cache's
+timestamp.

@@ -17,9 +17,22 @@
   },
   "environment": "{FRONT_URL}",
   "build": {
+    "$comment": "THREE version facts, not one, because they answer different questions and disagreeing on them produces the two worst QA outcomes available: filing a bug against a feature that was never deployed, and signing off a fix that never landed. `platform`/`theme`/`relevant_modules` are the DECLARED state (vc-deploy-dev backend/packages.json — git). `deployed` is what GET {{BACK_URL}}/api/platform/modules actually reports — the ground truth, and routinely different (deploy in flight, failed, partially applied). A failed probe records the string UNKNOWN and NEVER falls back to declared. Full precedence rule: .claude/templates/agent-dispatch.md § Build Verification.",
     "platform": "{PlatformVersion}",
     "theme": "{theme version}",
-    "relevant_modules": { "module-name": "version" }
+    "relevant_modules": { "module-name": "version" },
+    "deployed": {
+      "$comment": "Probed, not read from git. UNKNOWN is a legal value; an absent/guessed value is not.",
+      "platform": "{live PlatformVersion}|UNKNOWN",
+      "relevant_modules": { "module-name": "version" }
+    },
+    "releasedThrough": {
+      "$comment": "Written by 1b item 2a from .claude/knowledge/domain/release-ledger.md. `ledger_generated` is that file's own `generated:` date — the run's freshness bound (stale after 45 days). `behind[]` lists components where deployed < released, i.e. shipped upstream but not testable here: those are NOT_DEPLOYED, never FAIL. `breaking[]` lists ⚠ BREAKING rows in the component(s) under test — a non-empty array is a FAST->FULL forcing condition (see 1b item 2a), so recording it is what makes that routing decision re-derivable afterwards. Empty arrays are the normal, correct state on a quiet month; null means the ledger was not consulted, which is a gap, not a zero.",
+      "ledger_generated": null,
+      "components": { "component-name": "version" },
+      "behind": [],
+      "breaking": []
+    }
   },
   "agents_dispatched": ["ba-story-writer", "qa-frontend-expert", "qa-backend-expert"],
   "epic": {

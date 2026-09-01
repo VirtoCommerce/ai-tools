@@ -87,6 +87,8 @@
     "schema:check": "node scripts/graphql/refresh-graphql-schema.mjs --check",
     "sitemap:refresh": "node scripts/maintenance/refresh-sitemap.mjs",
     "sitemap:check": "node scripts/maintenance/refresh-sitemap.mjs --check",
+    "releases:refresh": "node scripts/maintenance/refresh-release-ledger.mjs",
+    "releases:check": "node scripts/maintenance/refresh-release-ledger.mjs --check",
     "reports:prune": "node scripts/maintenance/prune-old-artifacts.mjs",
     "reports:prune:apply": "node scripts/maintenance/prune-old-artifacts.mjs --apply",
     "td:validate": "npx tsx scripts/test-data/validate-td-refs.ts",

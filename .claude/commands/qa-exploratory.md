@@ -16,7 +16,7 @@ Every session must end with at least one **net-new scenario** (not in any regres
 /qa-exploratory catalog           # Explore catalog & product pages
 /qa-exploratory B2B               # Explore B2B features (quotes, org management)
 /qa-exploratory mobile            # Explore at mobile viewport (375px)
-/qa-exploratory new               # Explore recently changed areas (from git diff)
+/qa-exploratory new               # Explore recently shipped areas (from the release ledger)
 /qa-exploratory sprint            # Run the current sprint plan's §5.3 charters (auto-picks the most recent plan)
 /qa-exploratory sprint:26-16      # Pin to a specific sprint plan's charters
 /qa-exploratory sprint --charter EXP-02   # Run one charter from that set
@@ -54,7 +54,15 @@ Rationale + the C1–C4 / D1–D3 derivation: `.claude/skills/qa-sbtm/sprint-cha
    - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
    - Record platform version and theme version — include in the session report header
 3. **Duplicate check** — scan `reports/exploratory/` for an `SBTM-*` session on the same domain in the last 24 hours. If found, warn user and show previous findings.
+3a. **What shipped recently** — read `.claude/knowledge/domain/release-ledger.md` §1–§2 for the components in scope (map domain → component via [module-suite-map.md](../knowledge/execution/module-suite-map.md)). Carry the newest 1–2 months' features into Step 5's coverage map.
+
+   **This is the strongest C1 signal this pre-flight can compute.** A feature that shipped last month is in *neither* of Step 5's subtract-lists **by construction**: no suite asserts it (nobody has authored one yet) and `vc-bug-catalog.md` has never recorded a failure in it (nobody has run it here). It is not *probably* uncovered — it is **provably** uncovered. A **⚠ BREAKING** row is stronger still: it names a surface whose contract moved, i.e. C4 latent blast radius with a date on it.
+
+   Two boundaries: the ledger says what was **released upstream**, not what is **deployed** on this env — cross it against the `deployed` probe from item 2 and drop anything `NOT_DEPLOYED`, since a session cannot explore what isn't there. And it carries **no behaviour**, so it tells you *where* to look, never *what correct looks like* — that is item 4 and §5a's BL axis.
+
 4. **Docs query (VirtoOZ MCP)** — via the `/vc-docs` skill, query the target domain against the topic-scoped VirtoOZ tools (`StorefrontUserGuide` for storefront flows, `StorefrontDeveloperGuide` / `FrontendSourceCode` for behavior, `B2BExperts` for B2B) — e.g. `"checkout workflow"`, `"B2B organizations members"`, `"catalog product properties"`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.
+
+   **VirtoOZ answers "how is it meant to work", never "what is new".** Its release corpus stops at Platform 3.917.1 while production is past 3.1050, so for a feature from item 3a it will typically return the *pre-existing* page for that area and nothing about the change. That is not a miss to retry — it is the division of labour: 3a supplies what is new, this step supplies the intended behaviour where docs exist, and where they do not the session is on the `{OBSERVED}` axis (see `agents/qa/shared-instructions.md` §Live-Verification).
 5. **Coverage map** — for the target domain, identify what's *already covered*:
    - Open the CSV suite(s) for the domain (via [module-suite-map.md](../knowledge/execution/module-suite-map.md) → [`regression/suites/`](../../regression/suites)) — list the scenarios already tested
    - Open [vc-bug-catalog.md](../knowledge/oracles/vc-bug-catalog.md) and read the section(s) for the domain (VC-CHECKOUT-*, VC-CART-*, VC-B2B-*, etc.) — list the known failure patterns
@@ -70,6 +78,7 @@ Rationale + the C1–C4 / D1–D3 derivation: `.claude/skills/qa-sbtm/sprint-cha
    | [`vc-bug-catalog.md`](../knowledge/oracles/vc-bug-catalog.md) | subtract | already discovered here — don't re-discover |
    | [`e-commerce-edge-cases-library.md`](../knowledge/oracles/e-commerce-edge-cases-library.md) | **supply** | boundary/failure shapes to go hunting for — **`[THEORETICAL]` first** |
    | [`business-logic.md`](../knowledge/oracles/business-logic.md) | **supply** | the oracle of expected behaviour: what makes an observation a *bug* rather than a *"huh"* |
+   | [`release-ledger.md`](../knowledge/domain/release-ledger.md) (Step 3a) | **supply** | *surfaces* that are provably uncovered — shipped upstream, asserted by no suite, never failed here |
 
    - **ECL — `[THEORETICAL]` is the session's half of the library.** Its 175 `[OBSERVED]` patterns are
      confirmed on this platform, so they belong to `/qa-checklist` and the suites; its 36
@@ -138,7 +147,7 @@ For each session, the agent should:
 | `catalog` | Filters + sort combinations, pagination, empty categories, long product names, variant selection | Tourist | Garbage Collector + Bad Neighborhood |
 | `B2B` | Multi-org switching, quote lifecycle, approval workflow, role permissions, bulk order | B2B Procurement Officer | Scenario Tour + Soap Opera |
 | `mobile` | Touch targets, scroll behavior, hamburger menu, form usability, viewport overflow | Impatient Buyer | Supermodel + Couch Potato |
-| `new` | Read `git log --oneline -20` to find recent changes, focus exploration on affected areas | (depends on area) | Bad Neighborhood + Saboteur |
+| `new` | Read the newest 1–2 months of `.claude/knowledge/domain/release-ledger.md` §2, drop anything `NOT_DEPLOYED` against the live probe, and focus exploration on what remains — **⚠ BREAKING** rows first | (depends on component) | Bad Neighborhood + Saboteur |
 
 Personas live in `skills/qa-sbtm/personas.md`. Tours live in `skills/qa-sbtm/adversarial-heuristics.md`.
 

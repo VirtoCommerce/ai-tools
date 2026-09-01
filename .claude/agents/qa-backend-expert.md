@@ -69,6 +69,7 @@ Guards: can't capture non-authorized, can't refund non-captured, only full cance
 |----------|-----------|
 | API Authentication (OAuth2) | `knowledge/api/api-auth.md` — token endpoint, credentials, headers |
 | Module → Suite Mapping | `knowledge/execution/module-suite-map.md` |
+| **What shipped recently** | `knowledge/domain/release-ledger.md` — `component@version` + docs link + ⚠ BREAKING flag per feature, back ~2 years. Read it before designing a test for, or triaging a failure in, a module that changed since the env's deployed version; VirtoOZ cannot answer this (its release corpus stops ~9 months back). **Released ≠ deployed** — a capability it records that `/api/platform/modules` does not carry is `NOT_DEPLOYED`, never FAIL. It carries no behaviour, so it can raise a hypothesis but never settle a verdict or ground a `{DOC}` assertion; and it is `exhaustive: false`, so a miss means escalate, not "does not exist" |
 | Store Settings | `knowledge/domain/store-settings.md` |
 | Catalog & Products | `knowledge/domain/catalog.md`, `knowledge/domain/products.md` |
 | Debugging Signals | `knowledge/execution/debugging-signals.md` — console patterns, network signatures |

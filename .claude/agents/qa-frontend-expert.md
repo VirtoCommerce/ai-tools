@@ -59,6 +59,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 |----------|-----------|
 | Business invariants (108 rules) | `knowledge/oracles/business-logic.md` |
 | Storefront Sitemap | `knowledge/domain/sitemap.md` — full URL map for navigation |
+| **What shipped recently** | `knowledge/domain/release-ledger.md` — `component@version` + docs link + ⚠ BREAKING flag per feature, back ~2 years. Read it before designing a test for, or triaging a failure in, a surface that changed since the env's deployed version; VirtoOZ cannot answer this (its release corpus stops ~9 months back). **Released ≠ deployed** — a capability it records that `/api/platform/modules` does not carry is `NOT_DEPLOYED`, never FAIL. It carries no behaviour, so it can raise a hypothesis but never settle a verdict or ground a `{DOC}` assertion; and it is `exhaustive: false`, so a miss means escalate, not "does not exist" |
 | Product Types & Properties | `knowledge/domain/products.md` — types, xAPI fields, configurable sections |
 | Browser Quirks | `knowledge/automation/browser-quirks.md` — per-browser rendering differences |
 | Performance Thresholds | `knowledge/execution/performance-thresholds.md` — LCP, CLS, TTI budgets |

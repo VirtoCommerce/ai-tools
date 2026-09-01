@@ -55,6 +55,17 @@ Use Context7 only when VirtoOZ returns no relevant chunks or for non-VC librarie
 5. **If docs don't cover the topic** — say so explicitly; suggest the relevant source-code tool or module repo on GitHub.
 
 ## Rules
+
+> **Deliberate divergence from the `.claude/` copy — do NOT "fix" this by copying that file over.**
+> The project-scoped `.claude/skills/vc-docs/SKILL.md` carries a Step 0 that routes release /
+> version / what's-new questions to a generated `.claude/knowledge/domain/release-ledger.md`,
+> because VirtoOZ is ~9 months stale on releases. That routing is **absent here on purpose**:
+> `vc-fix` does not ship the ledger, and it ships no `scripts/maintenance/`, so it has no way to
+> refresh one. Pointing at a file the plugin does not carry would resolve against the user's CWD
+> and silently miss. A `vc-fix` run is scoped to a named ticket that already states its version,
+> so it never asks "what shipped last month". If that changes, the ledger has to be shipped AND
+> given a refresh path AND a drift guard — not hand-copied into a second unguarded location.
+
 - **Always prefer VirtoOZ over training data** — docs evolve faster than the model.
 - The xAPI was revamped July 2024 from monolithic ExperienceApi to specialized modules — always query latest.
 - Use correct VC terminology: catalogs, price lists, fulfillment centers, dynamic properties, etc.

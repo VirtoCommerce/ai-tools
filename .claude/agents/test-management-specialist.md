@@ -180,6 +180,7 @@ Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 | E2E Scenario Catalog (105) | `skills/qa-plan/e2e-scenario-catalog.md` |
 | Module → Suite Mapping | `knowledge/execution/module-suite-map.md` |
 | Storefront Sitemap | `knowledge/domain/sitemap.md` |
+| **What shipped recently** | `knowledge/domain/release-ledger.md` — `component@version` + docs link + ⚠ BREAKING flag per feature. Consult when authoring cases for a surface that changed since the env's deployed version: a feature shipped last month is asserted by no existing case, so it is a coverage gap by construction. **Released ≠ deployed** (a case asserting an undeployed feature is `NOT_DEPLOYED`, not a FAIL), it carries **no behaviour** so it can never ground an assertion as `{DOC}`, and it is `exhaustive: false` |
 
 ### Judge
 
