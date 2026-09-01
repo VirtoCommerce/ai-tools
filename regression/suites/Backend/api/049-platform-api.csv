@@ -33,9 +33,9 @@ API-004,Pricing API - Get Product Prices,API > Pricing,Critical,BL-API-001; BL-A
 [FORMAT] Currency code matches store configuration
 [FORMAT] Price tiers array included if tier pricing configured",[API] HTTP status 200; [NETWORK] Response includes all requested product IDs; [ADMIN] Prices match values set in Admin pricing module,Missing ListPrice or SalePrice; Currency code mismatch; 404 for valid product IDs,none,Platform API; smoke-baseline,Automated
 API-005,Pricing API - Price Calculation with Quantity,API > Pricing,High,BL-API-001; BL-API-004,ECL-2.1,Tier pricing configured for test products,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; qty_1=1; qty_10=10; qty_100=100,"[ACT] POST {{BACK_URL}}/api/pricing/evaluate with productId={{TEST_SKU}}, quantity=1
-[ASSERT] Record per-unit price at qty=1
+[CAPTURE] Record per-unit price at qty=1
 [ACT] POST with quantity=10
-[ASSERT] Record per-unit price at qty=10
+[CAPTURE] Record per-unit price at qty=10
 [ACT] POST with quantity=100","[MATH] Per-unit price at qty=10 is less than or equal to qty=1
 [MATH] Per-unit price at qty=100 is less than or equal to qty=10
 [FORMAT] Price breakdown shows tier details
@@ -47,7 +47,7 @@ API-006,Inventory API - Check Product Availability,API > Inventory,Critical,BL-A
 [FORMAT] allowBackorder boolean flag present
 [STATE] In-stock status consistent with inStockQuantity value",[API] HTTP status 200; [NETWORK] Response time under 300ms; [ADMIN] Stock quantity matches Admin inventory module value,Response time over 300ms; Missing inStockQuantity; Missing fulfillmentCenter; 404 for valid product,none,Platform API; smoke-baseline,Automated
 API-007,Inventory API - Reserve Stock,API > Inventory,High,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Product with available stock,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; order_qty=1,"[HTTP] GET {{BACK_URL}}/api/inventory/products/{id} to record initial inStockQuantity
-[ASSERT] Record initial inStockQuantity
+[CAPTURE] Record initial inStockQuantity
 [ACT] Place an order for {{TEST_SKU}} (create cart, add item, checkout) to consume stock — no /reserve endpoint exists on the Inventory module
 [WAIT] Wait for order creation confirmation
 [HTTP] GET {{BACK_URL}}/api/inventory/products/{id} to verify stock decreased
@@ -99,7 +99,7 @@ API-011,Customer API - Get Customer Profile,API > Customer,High,BL-API-001; BL-A
 API-012,Customer API - Update Customer Profile,API > Customer,High,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Disposable AGENT-TEST- member account exists (not a live/shared member),admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; agent_test_member_email=AGENT-TEST-api012@test.virtocommerce.com; original_first_name=Test; updated_first_name=UpdatedTest,"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials ({{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}}), context-free (no storeId/organization_id), to obtain Bearer token
 [SETUP] Ensure a disposable AGENT-TEST- member exists (create via POST {{BACK_URL}}/api/members if not present)
 [HTTP] GET {{BACK_URL}}/api/members/{agentTestMemberId} with admin Bearer token to fetch the full member document
-[ASSERT] Record current firstName and the full member object
+[CAPTURE] Record current firstName and the full member object
 [HTTP] PUT {{BACK_URL}}/api/members with the FULL member document, firstName changed to 'UpdatedTest' (PUT is a full-document replace, not a merge-patch)
 [WAIT] Wait for 200/204 response
 [HTTP] GET {{BACK_URL}}/api/members/{agentTestMemberId} with admin Bearer token
@@ -164,7 +164,7 @@ API-019,Catalog API - Update Product,API > Catalog,High,BL-API-001; BL-API-003; 
 [WAIT] Wait for 200 response
 [CAPTURE] Record new product id
 [HTTP] GET {{BACK_URL}}/api/catalog/products/{id}
-[ASSERT] Record current object
+[CAPTURE] Record current object
 [HTTP] POST {{BACK_URL}}/api/catalog/products with the full product object, name set to ""AGENT-TEST Product API019 Edited"" and variations:null
 [WAIT] Wait for 200 response
 [HTTP] GET {{BACK_URL}}/api/catalog/products/{id}
@@ -198,7 +198,7 @@ API-021,Cart API - Apply Coupon,API > Cart,High,BL-API-001; BL-API-003; BL-API-0
 [ACT] Add item {{TEST_SKU}} to cart
 [WAIT] Confirm items added
 [NAV] GET cart totals before coupon
-[ASSERT] Record pre-coupon total
+[CAPTURE] Record pre-coupon total
 [ACT] POST coupon code '@td(COUPON_10PCT.code)' to cart
 [WAIT] Wait for coupon application
 [NAV] GET cart totals after coupon
@@ -264,7 +264,7 @@ API-027,Pagination Edge Case - Page Zero Request,API > Pagination,High,BL-API-00
 [FORMAT] totalCount field is accurate in all responses",[API] No 500 errors for edge case pagination values; [NETWORK] Response time under 5000ms for all pagination requests (aligned with the Failure_Signals threshold below — a 1000ms bar false-failed on a live 1292ms baseline skip=0/take=10 request); [CONSOLE] No unhandled exceptions in server logs,500 Internal Server Error for skip=0 take=0; stack trace in response for negative skip; unhandled exception for edge case pagination; response time over 5000ms for edge case params,none,"Platform API; smoke-baseline; Corrected: relaxed the 1000ms network-latency bar to 5000ms — too strict against observed baseline latency, would keep the case red independent of the pagination product bug (2026-08-25)",Draft
 API-028,Pagination Edge Case - Beyond Total Pages,API > Pagination,High,BL-API-002,ECL-3.1,Admin credentials available; products exist in catalog,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with admin Bearer token, body {""skip"":0,""take"":10}
-[ASSERT] Record totalCount from response
+[CAPTURE] Record totalCount from response
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with body {""skip"":999999,""take"":10}
 [ASSERT] Verify response for skip far beyond total count
 [HTTP] POST {{BACK_URL}}/api/order/customerOrders/search with body {""skip"":999999,""take"":10}","[STATE] Request with skip beyond total returns 200 with empty results array — not an error
@@ -327,7 +327,7 @@ API-033,OPTIONS Preflight Request Returns Proper CORS Response,API > Security,Hi
 [STATE] No Access-Control-Allow-Origin, Access-Control-Allow-Methods, or Access-Control-Allow-Headers present in the 405 response
 [STATE] Behavior is identical for a legitimate origin and an unknown/malicious origin (https://malicious-site.com) — no origin gets CORS allow headers
 [STATE] Consistent 405 preflight behavior across different API endpoints",[API] OPTIONS returns 405 for both legitimate and malicious origins; [NETWORK] No Access-Control-Allow-* headers on the 405 response; [CONSOLE] No CORS errors (browser correctly blocks the actual request client-side after preflight failure),OPTIONS returns 401 (auth required on preflight); OPTIONS returns 200/204 (implies CORS is configured — contradicting deny-by-default); any Access-Control-Allow-* header present in the 405 response; unknown origin treated differently from legitimate origin,none,Platform API; smoke-baseline; DV-002-OK: malicious-site.com is an intentional untrusted third-party origin literal for a negative CORS test — not the SUT's own URL | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
-API-034,Persistent Access Token — Revoked Token Returns 401 (State Transition: Active → Revoked),API > Security > Token Validation,Critical,"BL-AUTH-005, BL-AUTH-006","ECL-3.1, ECL-4.3","GATE: If Authorization__EnablePersistentStorageTokenValidation is not configured true for this environment (check vc-deploy-dev infra/environments.yml @ {{TEST_ENV}}), mark this case SKIPPED with reason 'persistent token validation not enabled on this environment' and stop — do NOT attempt execution and do NOT mark BLOCKED. Platform has Authorization__EnablePersistentStorageTokenValidation=true configured; admin credentials available; ability to obtain two independent tokens.",back_url={{BACK_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[SETUP] Verify Authorization__EnablePersistentStorageTokenValidation=true is configured for {{TEST_ENV}} per the GATE in Preconditions — if not enabled, report SKIPPED with that reason and stop here
+API-034,Persistent Access Token — Revoked Token Returns 401 (State Transition: Active → Revoked),API > Security > Token Validation,Critical,"BL-AUTH-005, BL-AUTH-006","ECL-3.1, ECL-4.3","GATE: If Authorization__EnablePersistentStorageTokenValidation is not configured true for this environment (check vc-deploy-dev infra/environments.yml for the environment under test), mark this case SKIPPED with reason 'persistent token validation not enabled on this environment' and stop — do NOT attempt execution and do NOT mark BLOCKED. Platform has Authorization__EnablePersistentStorageTokenValidation=true configured; admin credentials available; ability to obtain two independent tokens.",back_url={{BACK_URL}}; admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[SETUP] Verify Authorization__EnablePersistentStorageTokenValidation=true is configured for the environment under test per the GATE in Preconditions — if not enabled, report SKIPPED with that reason and stop here
 [AUTH] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN_EMAIL}} password={{ADMIN_PASSWORD}} scope=offline_access — obtain Token-A
 [WAIT] Receive Token-A access_token and refresh_token
 [AUTH] POST {{BACK_URL}}/connect/token again with same credentials — obtain Token-B (separate OpenIddict authorization entry)

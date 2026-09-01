@@ -664,7 +664,15 @@ export function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Fi
   for (const v of stepVars) if (!KNOWN_VARS.has(v) && !captured.has(v))
     push("DV-001", "High", `unknown {{${v}}} token (not a known env var, not runtime-captured)`);
   const scan = `${row.Steps}\n${row.Test_Data}`;
-  if (/https?:\/\/(?!\{\{)/i.test(scan)) push("DV-002", "High", "hardcoded URL in Steps/Test_Data (use {{FRONT_URL}}/{{BACK_URL}}/{{ADMIN_URL}})");
+  // Escape hatch: `DV-002-OK` anywhere in the row records a reviewed exception —
+  // same convention DV-022 already honours (`validate-td-refs.ts`, and documented
+  // in .claude/rules/test-data.md). A negative test legitimately needs a literal
+  // third-party origin it does NOT own: suite 049's API-031/API-033 probe CORS with
+  // `https://evil-site.com` / `https://malicious-site.com`, which is the point of the
+  // case, not a hardcoded-SUT-URL defect. Without this, a correctly-annotated row
+  // carries a permanent High and teaches reviewers to ignore the linter.
+  if (/https?:\/\/(?!\{\{)/i.test(scan) && !/DV-002-OK/.test(Object.values(row).join("\n")))
+    push("DV-002", "High", "hardcoded URL in Steps/Test_Data (use {{FRONT_URL}}/{{BACK_URL}}/{{ADMIN_URL}}); if the literal is a deliberate third-party origin, add DV-002-OK to the row");
   const credScan = lines(row.Steps).filter((l) => /\bfill\b.*(email|password)/i.test(l));
   for (const l of credScan) if (EMAIL_RE.test(l) && !/\{\{/.test(l) && !THROWAWAY_IDENTITY_RE.test(l))
     push("DV-003", "Critical", `hardcoded credential literal: "${truncate(l)}"`);

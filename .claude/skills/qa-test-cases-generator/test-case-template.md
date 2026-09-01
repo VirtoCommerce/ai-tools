@@ -124,7 +124,7 @@ Each step on its own line, prefixed with a type tag.
 
 **Step type tags:**
 
-> These tags apply to **Storefront UI** tests. For other layers see: REST API → `[HTTP]` `[AUTH]` `[SETUP]` `[TEARDOWN]`; GraphQL → `[NAV]` `[AUTH]` `[ACT]` `[GQL]` `[READ]` `[SETUP]` `[TEARDOWN]`; Admin UI → `[BLADE]` `[GRID]` `[SAVE]` `[WIDGET]`. Full definitions in the Layer-Specific Formats section below.
+> These tags apply to **Storefront UI** tests. For other layers see: REST API → `[HTTP]` `[AUTH]` `[SETUP]` `[CAPTURE]` `[TEARDOWN]`; GraphQL → `[NAV]` `[AUTH]` `[ACT]` `[GQL]` `[READ]` `[SETUP]` `[TEARDOWN]`; Admin UI → `[BLADE]` `[GRID]` `[SAVE]` `[WIDGET]`. Full definitions in the Layer-Specific Formats section below.
 
 | Tag | Meaning | Agent Action |
 |-----|---------|-------------|
@@ -437,6 +437,7 @@ Tests executed via `browser_evaluate` (fetch), curl, or a Postman collection aut
 | `[HTTP]` | Send HTTP request (method + endpoint + body) | `browser_evaluate` fetch, curl, or Newman/Postman CLI run of an authored collection |
 | `[AUTH]` | Authenticate and store token | POST to `/connect/token`, save Bearer token |
 | `[SETUP]` | Create prerequisite data via API | POST to create test entity |
+| `[CAPTURE]` | Record a value from a response for a later step or a relational assertion (an id to chain, a baseline to compare against). NOT a check — it asserts nothing, so it never decides pass/fail. Use `[ASSERT]` only for a mid-flow *gate*, and put verdicts in the `Assertions` column. | Read the field out of the response and hold it for the rest of the case |
 | `[TEARDOWN]` | Delete test data via API | DELETE to clean up |
 | `[WAIT]` | Wait for async processing | Poll or delay |
 
