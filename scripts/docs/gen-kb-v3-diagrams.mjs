@@ -149,8 +149,9 @@ function pageOverview() {
   const rare = `${line}dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;`;
 
   p.box("t", 60, 24, 1000, 32, "Как это работает — общий вид", S.title);
-  p.box("ts", 60, 62, 1100, 40,
-    "Кто с кем разговаривает и что кому передаёт. Каждый блок потом раскрывается отдельной схемой — по запросу.",
+  p.box("ts", 60, 62, 1100, 44,
+    "Кто с кем разговаривает и что кому передаёт. Каждый блок потом раскрывается отдельной схемой — по запросу.<br>" +
+    "Сплошные стрелки — то, что происходит само, без людей. Пунктирная — редкое вмешательство человека.",
     S.sub);
 
   p.box("HUM", 60, 180, 220, 120,
@@ -188,7 +189,6 @@ function pageOverview() {
   p.edge("KEEP", "OPER", "", line);
   p.edge("OPER", "KNOW", "", rare, { exitX: 0.55, exitY: 0, entryX: 0.75, entryY: 1 });
   p.edge("KBC", "KBP", "", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.5, points: [[1180, 425], [1180, 265]] });
-  p.edge("KBP", "KBC", "", rare, { exitX: 0.35, exitY: 1, entryX: 0.35, entryY: 0 });
 
   return p.render(1300, 980);
 }
