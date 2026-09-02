@@ -172,22 +172,22 @@ function pageOverview() {
   p.box("KEEP", 340, 600, 300, 150,
     b("Проверяющий механизм") + "<br><br>работает сам, без людей: принимает новое только с доказательством, перепроверяет старое, помечает спорное", O.keeper);
 
-  p.box("OPER", 740, 600, 340, 150,
+  p.box("OPER", 820, 600, 340, 150,
     b("Оператор") + "<br><br>вмешивается редко: убрать неверное, закрепить важное, поставить под сомнение.<br>Читает короткую сводку изменений", O.actor);
 
-  p.box("SRC", 60, 810, 1020, 110,
+  p.box("SRC", 60, 810, 1100, 110,
     b("Источники правды — сам продукт") + "<br>код · работающий стенд · документация · записанные решения команды<br>по ним база наполняется в первый раз и по ним же потом проверяется — а не сама по себе", O.source);
 
   p.edge("HUM", "AGT", "", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.3 });
   p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.75, entryX: 1, entryY: 0.75 });
   p.edge("AGT", "WIN", "", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
-  p.edge("KNOW", "WIN", "", line, { exitX: 0, exitY: 0.75, entryX: 1, entryY: 0.5 });
+  p.edge("KNOW", "WIN", "", line, { exitX: 0, exitY: 0.782, entryX: 1, entryY: 0.5 });
   p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[300, 240], [300, 675]] });
-  p.edge("KEEP", "KNOW", "", line, { exitX: 1, exitY: 0.25, entryX: 0.3, entryY: 1, points: [[690, 637], [690, 555]] });
-  p.edge("SRC", "KEEP", "", line, { exitX: 0.4, exitY: 0, entryX: 0.5, entryY: 1 });
-  p.edge("KEEP", "OPER", "", line);
-  p.edge("OPER", "KNOW", "", rare, { exitX: 0.55, exitY: 0, entryX: 0.75, entryY: 1 });
+  p.edge("KEEP", "KNOW", "", line, { exitX: 1, exitY: 0.25, entryX: 0.13, entryY: 1, points: [[790, 637]] });
+  p.edge("SRC", "KEEP", "", line, { exitX: 0.391, exitY: 0, entryX: 0.5, entryY: 1 });
+  p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.5 });
+  p.edge("OPER", "KNOW", "", rare, { exitX: 0.5, exitY: 0, entryX: 0.658, entryY: 1 });
   p.edge("KBC", "KBP", "", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.5, points: [[1180, 445], [1180, 260]] });
   p.edge("KBP", "KBC", "", line, { exitX: 0.3, exitY: 1, entryX: 0.3, entryY: 0 });
 
