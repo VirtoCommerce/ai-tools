@@ -10,11 +10,11 @@
         <mxCell id="ts" value="Кто с кем разговаривает и что кому передаёт. Каждый блок потом раскрывается отдельной схемой — по запросу.&lt;br&gt;Сплошные стрелки — то, что происходит само, без людей. Пунктирная — редкое вмешательство человека." style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="60" y="62" width="1100" height="44" as="geometry" />
         </mxCell>
-        <mxCell id="HUM" value="Человек" style="swimlane;html=1;rounded=1;arcSize=6;startSize=36;horizontal=1;fillColor=#f0d3da;swimlaneFillColor=#faeff2;strokeColor=#7a2436;fontColor=#7a2436;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+        <mxCell id="HUM" value="Человек&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;менеджер · разработчик&lt;br&gt;тестировщик · аналитик&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=68;horizontal=1;fillColor=#f0d3da;swimlaneFillColor=#faeff2;strokeColor=#7a2436;fontColor=#7a2436;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="60" y="180" width="240" height="150" as="geometry" />
         </mxCell>
-        <mxCell id="HUM-b" value="•&amp;nbsp; менеджер · разработчик · тестировщик · аналитик&lt;br&gt;•&amp;nbsp; ставит задачу&lt;br&gt;•&amp;nbsp; задаёт вопрос&lt;br&gt;•&amp;nbsp; получает ответ с пояснением" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#7a2436;fontFamily=Helvetica;" vertex="1" parent="HUM">
-          <mxGeometry x="0" y="36" width="240" height="114" as="geometry" />
+        <mxCell id="HUM-b" value="•&amp;nbsp; ставит задачу&lt;br&gt;•&amp;nbsp; задаёт вопрос&lt;br&gt;•&amp;nbsp; получает ответ с пояснением" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#7a2436;fontFamily=Helvetica;" vertex="1" parent="HUM">
+          <mxGeometry x="0" y="68" width="240" height="82" as="geometry" />
         </mxCell>
         <mxCell id="AGT" value="Агент-помощник" style="swimlane;html=1;rounded=1;arcSize=6;startSize=36;horizontal=1;fillColor=#f5dfc8;swimlaneFillColor=#fdf6ef;strokeColor=#8f4a1b;fontColor=#8f4a1b;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="350" y="180" width="300" height="150" as="geometry" />
@@ -55,11 +55,11 @@
         <mxCell id="OPER-b" value="•&amp;nbsp; убирает неверное&lt;br&gt;•&amp;nbsp; закрепляет важное&lt;br&gt;•&amp;nbsp; ставит под сомнение&lt;br&gt;•&amp;nbsp; читает сводку изменений&lt;br&gt;•&amp;nbsp; вмешивается редко" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#7a2436;fontFamily=Helvetica;" vertex="1" parent="OPER">
           <mxGeometry x="0" y="36" width="340" height="134" as="geometry" />
         </mxCell>
-        <mxCell id="SRC" value="Источники правды — сам продукт" style="swimlane;html=1;rounded=1;arcSize=6;startSize=36;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="60" y="830" width="1110" height="120" as="geometry" />
+        <mxCell id="SRC" value="Источники&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;код · работающий стенд · документация · записанные решения команды&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="830" width="1110" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="SRC-b" value="•&amp;nbsp; код · работающий стенд · документация · записанные решения команды&lt;br&gt;•&amp;nbsp; наполняют базу в первый раз&lt;br&gt;•&amp;nbsp; служат проверкой для всех знаний" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="SRC">
-          <mxGeometry x="0" y="36" width="1110" height="84" as="geometry" />
+        <mxCell id="SRC-b" value="•&amp;nbsp; наполняют базу в первый раз&lt;br&gt;•&amp;nbsp; служат проверкой для всех знаний" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="SRC">
+          <mxGeometry x="0" y="52" width="1110" height="58" as="geometry" />
         </mxCell>
         <mxCell id="Общ1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" edge="1" parent="1" source="HUM" target="AGT">
           <mxGeometry relative="1" as="geometry" />

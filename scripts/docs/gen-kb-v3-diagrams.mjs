@@ -102,8 +102,8 @@ function page(name) {
      * draw.io swimlane so the separator is a real shape feature rather than a drawn
      * line that drifts out of place when the box is resized by hand.
      */
-    card(id, x, y, w, h, title, bullets, band, body, ink) {
-      const HEAD = 36;
+    card(id, x, y, w, h, title, bullets, band, body, ink, head) {
+      const HEAD = head || 36;
       this.box(
         id, x, y, w, h, title,
         `swimlane;html=1;rounded=1;arcSize=6;startSize=${HEAD};horizontal=1;` +
@@ -179,12 +179,12 @@ function pageOverview() {
     "Сплошные стрелки — то, что происходит само, без людей. Пунктирная — редкое вмешательство человека.",
     S.sub);
 
-  p.card("HUM", 60, 180, 240, 150, "Человек", [
-    "менеджер · разработчик · тестировщик · аналитик",
+  p.card("HUM", 60, 180, 240, 150,
+    "Человек<br><span style=\"font-size:11px;font-weight:normal\">менеджер · разработчик<br>тестировщик · аналитик</span>", [
     "ставит задачу",
     "задаёт вопрос",
     "получает ответ с пояснением",
-  ], ...C.actor);
+  ], ...C.actor, 68);
 
   p.card("AGT", 350, 180, 300, 150, "Агент-помощник", [
     "делает задачу: чинит, проверяет, объясняет",
@@ -227,11 +227,11 @@ function pageOverview() {
     "вмешивается редко",
   ], ...C.actor);
 
-  p.card("SRC", 60, 830, 1110, 120, "Источники правды — сам продукт", [
-    "код · работающий стенд · документация · записанные решения команды",
+  p.card("SRC", 60, 830, 1110, 110,
+    "Источники<br><span style=\"font-size:11px;font-weight:normal\">код · работающий стенд · документация · записанные решения команды</span>", [
     "наполняют базу в первый раз",
     "служат проверкой для всех знаний",
-  ], ...C.source);
+  ], ...C.source, 52);
 
   p.edge("HUM", "AGT", "", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.3 });
   p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.75, entryX: 1, entryY: 0.75 });
