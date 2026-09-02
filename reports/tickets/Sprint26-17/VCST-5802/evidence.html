@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCST-5802 Verification Record</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f7f8fa; --surface:#ffffff; --ink:#1b2028; --muted:#5c6675;
+  --rule:#dfe3e9; --rule-strong:#c3cad4;
+  --accent:#2e6e9e; --pass:#1f7a4d; --red:#b3341f; --amber:#8a6510;
+  --pass-wash:#eef6f1; --red-wash:#fbf0ed; --amber-wash:#faf4e6; --code-bg:#f2f4f7;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#12151a; --surface:#1a1f26; --ink:#e4e8ed; --muted:#8b95a5;
+    --rule:#2a313b; --rule-strong:#3a434f;
+    --accent:#6fb0d8; --pass:#5cc08c; --red:#e8836e; --amber:#d1a341;
+    --pass-wash:#15251d; --red-wash:#2a1a17; --amber-wash:#241d10; --code-bg:#11151a;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#12151a; --surface:#1a1f26; --ink:#e4e8ed; --muted:#8b95a5;
+  --rule:#2a313b; --rule-strong:#3a434f;
+  --accent:#6fb0d8; --pass:#5cc08c; --red:#e8836e; --amber:#d1a341;
+  --pass-wash:#15251d; --red-wash:#2a1a17; --amber-wash:#241d10; --code-bg:#11151a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:40px 24px 72px;display:flex;flex-direction:column;gap:34px}
+h1{font-size:23px;font-weight:600;margin:0;line-height:1.3;text-wrap:balance;letter-spacing:-0.01em}
+h2{font-size:13px;font-weight:600;margin:0;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);font-family:var(--mono)}
+p{margin:0;max-width:66ch}
+section{display:flex;flex-direction:column;gap:13px}
+code,.mono{font-family:var(--mono);font-size:0.88em}
+code{background:var(--code-bg);padding:1px 5px;border:1px solid var(--rule);white-space:nowrap}
+
+header{display:flex;flex-direction:column;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:20px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.verdict{display:inline-flex;align-items:baseline;gap:9px;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--amber);background:var(--amber-wash);border:1px solid var(--amber);padding:5px 11px;align-self:flex-start;letter-spacing:0.04em}
+.verdict .tally{color:var(--muted);font-size:12px}
+
+dl.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:0;margin:0;border:1px solid var(--rule);background:var(--surface)}
+dl.strip>div{padding:10px 13px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:3px}
+dl.strip dt{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
+dl.strip dd{margin:0;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;word-break:break-word}
+
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:660px){.pair{grid-template-columns:1fr}}
+.phase{background:var(--surface);border:1px solid var(--rule);border-top:3px solid var(--rule-strong);padding:15px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.phase.a{border-top-color:var(--red)}
+.phase.b{border-top-color:var(--pass)}
+.phase h3{margin:0;font-family:var(--mono);font-size:12px;letter-spacing:0.09em;text-transform:uppercase;font-weight:500}
+.phase.a h3{color:var(--red)}
+.phase.b h3{color:var(--pass)}
+.phase p{font-size:14px;max-width:none}
+.assert{font-family:var(--mono);font-size:12.5px;line-height:1.5;background:var(--code-bg);border:1px solid var(--rule);padding:10px 11px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;margin:0}
+
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface)}
+.scroll{overflow-x:auto;border:1px solid var(--rule)}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);font-weight:500;background:var(--ground);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.n{font-family:var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;width:1%;white-space:nowrap}
+td.v{font-family:var(--mono);font-size:12.5px;white-space:nowrap;font-weight:500}
+td.m{font-family:var(--mono);font-size:12.5px}
+.ok{color:var(--pass)}.no{color:var(--red)}.mid{color:var(--amber)}
+
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+figure img{display:block;width:100%;height:auto;border:1px solid var(--rule-strong);background:var(--surface)}
+figcaption{font-size:13px;color:var(--muted);max-width:66ch}
+figcaption b{color:var(--ink);font-weight:500}
+.shots{display:flex;flex-direction:column;gap:24px}
+
+ul.notes{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:11px}
+ul.notes li{padding-left:15px;border-left:2px solid var(--rule-strong);font-size:14px;max-width:70ch}
+ul.notes li b{font-weight:600}
+.callout{background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--amber);padding:13px 15px;font-size:14px;display:flex;flex-direction:column;gap:8px}
+.callout.blind{border-left-color:var(--red)}
+footer{border-top:1px solid var(--rule);padding-top:18px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:7px}
+footer .mono{word-break:break-all}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow"><span>VCST-5802</span><span>·</span><span>Bug · Medium</span><span>·</span><span>WCAG 4.1.2</span><span>·</span><span>2026-09-02</span></div>
+  <h1>VcScheduler: the event quick-info popover had no role and no accessible name</h1>
+  <div class="verdict">VERIFIED WITH NOTES <span class="tally">STR 3/3 · 13 pass · 1 not-run · 0 fail</span></div>
+</header>
+
+<section>
+  <h2>The defect</h2>
+  <p>The popover opened by clicking an event chip rendered as a bare <code>div.vc-popover</code> with <code>role = null</code> and <code>aria-label = null</code>, and focus never entered it. Escape did close it and focus was on the chip afterwards, so there was no trap — the gap was role and naming plus focus entry.</p>
+  <p>The <em>same</em> <code>.vc-popover</code> component had already been given a dialog role and a localized name for the &ldquo;+N more&rdquo; overflow popover under VCST-5671, but at the <b>overflow call site</b> rather than in the shared component — so the quick-info call site still carried the original gap.</p>
+</section>
+
+<section>
+  <h2>Fix under test</h2>
+  <p>PR&nbsp;#350 gives all three anchored popovers <code>role="dialog"</code> and an accessible name, and moves focus entry/restore out of the overflow popover into a shared <code>useAnchoredPanelFocus</code>. Dialog semantics stay opt-in props on <code>VcPopover</code> — three call sites opting in, not a change of default.</p>
+  <dl class="strip">
+    <div><dt>Framework</dt><dd>2.6.0-rc.0</dd></div>
+    <div><dt>Surface</dt><dd>vc-shell Storybook</dd></div>
+    <div><dt>Preview bundle</dt><dd>iframe-CYJDt9Tz.js</dd></div>
+    <div><dt>Built</dt><dd>2026-09-02 10:24:15Z</dd></div>
+    <div><dt>Fix PR</dt><dd>vc-shell#350</dd></div>
+    <div><dt>Merged</dt><dd>2026-09-02 10:11:58Z</dd></div>
+    <div><dt>Lane</dt><dd>playwright-chrome</dd></div>
+    <div><dt>Theme</dt><dd>Light</dd></div>
+  </dl>
+</section>
+
+<section>
+  <h2>Reproduction — RED before the fix, GREEN after</h2>
+  <p>The local clone sits at <code>#349</code>, which is <em>exactly</em> pre-#350, so each call site was reverted individually rather than by a blunt tag revert. That isolates this PR per call site.</p>
+  <div class="pair">
+    <div class="phase a">
+      <h3>Phase A · baseline (pre-#350)</h3>
+      <p><b>RED-A — quick-info</b>, the ticket's own defect. 4 failed / 12 passed.</p>
+      <pre class="assert">× exposes the quick-info panel as a
+  named dialog        → false to be true
+× names the panel generically when the
+  event has no title
+× moves focus into the panel when it opens
+  → expected &lt;body&gt; to be &lt;button&gt;
+× hands focus back to the chip that
+  opened it</pre>
+      <p><b>RED-B — quick-create</b>, the third call site the ticket flagged as never inspected. 1 failed / 3 passed.</p>
+      <pre class="assert">× exposes the quick-create panel as a
+  named dialog        → false to be true</pre>
+    </div>
+    <div class="phase b">
+      <h3>Phase B · fixed build (live)</h3>
+      <p>25 tests across the three files, <b>GREEN 3/3</b>. Live on the deployed Storybook, items 1/2/3/5 confirmed on <b>four distinct events</b>.</p>
+      <pre class="assert">a11y tree, panel open:
+
+  dialog "Flash Deal"
+    → role present, name = event title
+  button "Close" [active]
+    → focus entered the panel
+
+On close: focus restored to the EXACT
+opener (e87), not the sibling segment
+(e59). 3 clean closes across two close
+paths — Escape, Close button, Escape.
+
+Full framework suite with #350:
+415 files / 4119 tests / 0 failures</pre>
+    </div>
+  </div>
+  <p><b>RED-B is the point worth keeping.</b> The ticket said quick-create &ldquo;was NOT inspected &mdash; the scope of this defect may be wider than the quick-info popover alone.&rdquo; The dev reported fixing it in the same change. RED-B <em>measures</em> that rather than accepting it.</p>
+</section>
+
+<section>
+  <h2>Item 7 — the check this fix most needed</h2>
+  <p>The shared composable reads <code>document.activeElement</code> <b>before</b> the DOM patch, while the panel still exists. A tick later the node is gone, &ldquo;is focus inside?&rdquo; is false for every close, and focus gets yanked back even when the user deliberately moved on.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Probe</th><th>Observation</th></tr></thead>
+    <tbody>
+      <tr><td>Open panel, Shift+Tab out to <code>e154</code>, Escape</td><td class="m ok">focus STAYED on e154 — not yanked to the e92 opener</td></tr>
+      <tr><td>Open panel, Tab past document end, Escape</td><td class="m ok">no reclaim</td></tr>
+      <tr><td><b>Mutation test</b> — read moved to AFTER the patch</td><td class="m no">&ldquo;returns focus to whatever held it before&rdquo; FAILS; the other four stay green</td></tr>
+    </tbody>
+  </table></div>
+  <p>The mutation test is what makes the guard's own unit test <em>evidence</em> rather than decoration: it fails exactly when the timing is wrong and passes otherwise. Two further vacuous-pass risks the dev flagged were also closed — the <code>VcPopover</code> test stub does expose <code>panelEl</code>, matching the real component's <code>defineExpose</code>, so the focus assertions are not passing for free.</p>
+</section>
+
+<section>
+  <h2>Verification checklist</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>#</th><th>Check</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td><code>role="dialog"</code> present (pre-fix: <code>null</code>)</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">2</td><td>Accessible name is the event title</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">3</td><td>Focus moves to the close control on open</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">4</td><td>Focus returns to the chip on close</td><td class="v ok">PASS 3/3</td></tr>
+      <tr><td class="n">5</td><td>A named dialog, not merely focusable</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">6</td><td>Untitled event names the panel &ldquo;Event details&rdquo;</td><td class="v mid">NOT-RUN</td></tr>
+      <tr><td class="n">7</td><td>User moved focus out first — no reclaim</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">8</td><td>VCST-5671 overflow popover not regressed</td><td class="v ok">PASS*</td></tr>
+      <tr><td class="n">9</td><td>Quick-create: dialog + &ldquo;New event&rdquo; + title-field focus</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">10</td><td>Escape still closes; still no trap</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">11</td><td>Edit/Delete still Tab-reachable</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">12</td><td>No new console errors</td><td class="v ok">0 errors</td></tr>
+      <tr><td class="n">13</td><td>Story render sweep (22 stories)</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">14</td><td>axe-core scan</td><td class="v ok">PASS†</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout">
+    <div><b>Item 6 is NOT-RUN, and deliberately not assumed.</b></div>
+    <div>The <code>&ldquo;Event details&rdquo;</code> fallback could not be exercised: quick-create's Save renders <code>disabled</code> on an empty title, the editor modal shares the same non-empty-title guard, the documented <code>EmitMode</code> empty-title path rendered no event at all, and no fixture ships an untitled event. It is <b>unit-verified</b> (RED-A covers it) and <b>browser-unverified</b> — which is exactly what keeps this run off a clean VERIFIED.</div>
+  </div>
+  <div class="callout">
+    <div><b>* Item 8 — the expectation in the brief was wrong, not the product.</b></div>
+    <div>The brief said the overflow popover is named by the formatted date, taken from the dev's own comment. It is actually <code>aria-label="$t('VC_SCHEDULER.MORE_EVENTS')"</code> &rarr; <b>&ldquo;More events&rdquo;</b>. Settled by diffing <code>MonthMorePopover.vue</code> at <code>#349</code> against <code>main</code>: the name is <b>identical</b> at both, so #350 did not change it and VCST-5671 is not regressed — its focus entry and restore-to-<em>&ldquo;+1 more&rdquo;</em> still work too.</div>
+  </div>
+  <div class="callout blind">
+    <div><b>† Item 14 — axe is blind to this defect, so its clean result proves nothing here.</b></div>
+    <div>axe 4.11.3 loaded (no CSP block) and returned 0 violations, 0 incomplete and 14 rule-passes scoped to <code>.vc-popover</code>. But the <em>pre-fix</em> bare <code>div</code> would likely have scanned equally clean: axe cannot see a missing role on an element with no interactive semantics to contradict, nor a focus transition that never happens. Recorded as <b>non-regression cover only</b>, never as evidence the defect is fixed. The a11y tree and the focus probes are what carry this verdict.</div>
+  </div>
+</section>
+
+<section>
+  <h2>Why the build under test provably contains the fix</h2>
+  <p>The marker here is <b>content, not a version string</b>, and it comes with a control — because on the sibling VCST-5803 run <code>.docs.md</code> prose turned out to be absent from this bundle entirely, making it an invalid marker that would have read as &ldquo;fix not deployed&rdquo;.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Step</th><th>Observation</th></tr></thead>
+    <tbody>
+      <tr><td>Ancestry</td><td class="m">#350 (<code>d1a02a5</code>) &rarr; rc gitHead <code>cb6379d</code>: ahead_by 2, behind_by 0</td></tr>
+      <tr><td>Served constant</td><td class="m">preview bundle declares <code>2.6.0-rc.0</code></td></tr>
+      <tr><td>Content marker</td><td class="m"><code>EVENT_DETAILS:"Event details"</code> and de <code>"Termindetails"</code> both present</td></tr>
+      <tr><td>Proven new</td><td class="m">0 at <code>v2.5.0</code>, 0 at <code>#349</code>, 1 at <code>main</code></td></tr>
+      <tr><td><b>Control</b></td><td class="m">pre-existing <code>ZOOM_OUT</code> key also present &mdash; locale strings <em>are</em> bundled, so a zero would have been meaningful</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="shots">
+  <h2>Evidence</h2>
+  <figure>
+    <img src="screenshots/quickinfo-named-dialog-focus-close.png" alt="July 2026 scheduler with the quick-info popover open on the Flash Deal event, showing its title header, close control, date range and Delete/Edit actions.">
+    <figcaption><b>The named dialog.</b> The panel carries the event title as its accessible name and a real close control, which is where focus lands on open. Pre-fix this was a bare <code>div</code> with <code>role: null</code>, <code>aria-label: null</code>, and focus never entered it. The <em>July 10th &ndash; July 13th</em> range also shows VCST-5678's inclusive-end fix intact on the same surface.</figcaption>
+  </figure>
+  <figure>
+    <img src="screenshots/item7-focus-stays-outside-after-close.png" alt="Scheduler after the quick-info popover was closed, with focus remaining on an event chip outside the panel.">
+    <figcaption><b>Item 7 — focus is not reclaimed.</b> Focus was deliberately moved out of the panel before closing, and it stayed where the user put it rather than being yanked back to the opener. This is the behaviour the before-the-DOM-patch <code>activeElement</code> read exists to protect.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Findings not filed</h2>
+  <ul class="notes">
+    <li><b>Escape from quick-create leaves no focused element.</b> Its opener is a non-focusable day cell, so a keyboard user is dropped to <code>&lt;body&gt;</code>. Pre-existing and not a #350 regression — pre-fix it had no focus management at all. Worth noting that this is the <em>same defect class</em> as VCST-5813 (focus dropped to body with no repair target), so it may belong with that line of work rather than filed alone.</li>
+    <li><b>The Loading story nests ~40 <code>role="status"</code> live regions</b> inside an outer <code>status "Loading events…"</code> — a plausible announcement storm, unverifiable without an assistive-technology pass.</li>
+    <li><b>The overflow popover's accessible name overrides its visible date.</b> <code>aria-label="More events"</code> replaces the visible date header, so a screen-reader user loses the date a sighted user sees — the same class as VCST-5803's 24-hour/12-hour chip mismatch. Out of this ticket's scope, and it is also why the dev's comment describing that name as &ldquo;the formatted date&rdquo; is inaccurate.</li>
+  </ul>
+</section>
+
+<footer>
+  <div><b>Oracle substitution.</b> vc-shell is a separate product: <code>BL-UI-*</code>, <code>critical-ui-scope.md</code>, <code>storefront-selectors.md</code> and the suite manifest cover nothing here. <b><code>BL-A11Y-001</code> and <code>BL-A11Y-003</code> are inapplicable by their own rule text</b>, which scopes them to &ldquo;the accessibility-gated storefront themes&rdquo;. <code>BL-A11Y-002</code> (accessible naming) and <code>BL-A11Y-004</code> (role/state correctness) are stated product-neutrally and are the subject matter, but all their <em>Source</em> and <em>Suite coverage</em> evidence is storefront (<code>client-app/</code>, suite <code>045</code>) — so they are cited <b>by analogy only</b>. Primary oracle: WCAG 4.1.2 Name/Role/Value plus PR #350's own documented contract.</div>
+  <div><b>Instrument, and its calibration.</b> Playwright a11y snapshot <code>[active]</code> marker plus a one-Tab continuation probe, calibrated before any verdict by showing the marker <em>move</em> across two Tabs. <code>browser_evaluate</code> was used only for the allowlisted scoped <code>axe.run(selector)</code> — no <code>document.activeElement</code> read, no eval opt-in.</div>
+  <div><b>Declared limits.</b> No assistive-technology pass was run — nothing here claims screen-reader coverage. Five of the six WCAG 2.2 additions (2.4.11, 2.5.7, 3.2.6, 3.3.7, 3.3.8) are outside what axe can conclude. Regression scope was the framework's own suite, since no <code>config/test-suites.json</code> suite covers vc-shell.</div>
+  <div class="mono">Evidence: reports/tickets/Sprint26-17/VCST-5802/ · verification-report.md · verification-summary.json</div>
+</footer>
+
+</div>
+</body>
+</html>

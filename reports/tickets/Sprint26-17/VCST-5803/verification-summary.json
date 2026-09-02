@@ -1,0 +1,57 @@
+{
+  "ticket": "VCST-5803",
+  "verdict": "VERIFIED",
+  "date": "2026-09-02",
+  "flow": "verify-fix",
+  "ticket_type": "Bug",
+  "product": "vc-shell (framework) — SEPARATE PRODUCT from the Virto storefront",
+  "environment": "https://vc-shell-storybook.govirto.com/ (story data-display-vcscheduler--editing-flow)",
+  "build": {
+    "framework": "2.6.0-rc.0",
+    "storybook_preview_bundle": "assets/iframe-CYJDt9Tz.js",
+    "storybook_last_modified": "2026-09-02T10:24:15Z",
+    "fix_pr": "VirtoCommerce/vc-shell#351",
+    "fix_merge_commit": "9cf874d09865f9d2124d1702eb6a1228e2f4372b",
+    "fix_merged_at": "2026-09-02T10:12:09Z"
+  },
+  "deploy_gate": {
+    "method": "npm gitHead + ancestry arithmetic + served version constant",
+    "rc_git_head": "cb6379d0f51a6858624a5c10f0258b229314acfa",
+    "rc_git_head_commit_message": "release: v2.6.0-rc.0",
+    "ancestry": "fix commit is ancestor of rc gitHead (ahead_by=1, behind_by=0); main is identical to rc gitHead",
+    "served_version_constant": "2.6.0-rc.0",
+    "note": "rc is NOT on the npm latest dist-tag and has no GitHub release tag; reading gh release list or npm latest alone would have manufactured a false BLOCKED"
+  },
+  "agent_used": "ui-ux-expert",
+  "browser": "playwright-chrome (override of Chrome DevTools MCP: needed the Playwright a11y snapshot; click-driven so firefox excluded)",
+  "str_result": "3/3",
+  "baseline_reproduction": "pinned-build — v2.5.0 tag-revert of SchedulerEventEditor.vue against its fix-era test file, 2026-09-02: 3 failed / 13 passed",
+  "baseline_red_assertions": [
+    "shows the last day the event covers, not the exclusive end -> expected 16 to be 15",
+    "treats End = Start as a one-day event rather than an empty range -> expected 2026-07-14T22:00:00.000Z to deeply equal 2026-07-15T22:00:00.000Z",
+    "refuses an End before Start instead of saving into the void -> expected a save emission to be undefined"
+  ],
+  "checklist_total": 12,
+  "checklist_passed": 12,
+  "checklist_failed": 0,
+  "regression": {
+    "suite_coverage": "NONE — no suite in config/test-suites.json covers vc-shell framework components. Suite 092 is tagged vc-shell but targets the Sales Rep module's embedded app on vcst-qa (requiresModules: [sales-rep]), a different surface and deployment.",
+    "substituted_scope": "full @vc-shell/framework unit suite with all three fixes present, cwd=framework/: 414 files / 4112 tests / 0 failures",
+    "harness_artifacts_excluded": "4 file-level failures under repo-root cwd are cwd/build-scope artifacts, not regressions (demonstrated: VcScheduler.style.test.ts passes when cwd=framework/; mf-* need a built @vc-shell/mf-config)"
+  },
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    "Timed chip time-format mismatch: visible label 24-hour (00:00), accessible name 12-hour (12:00 AM) — pre-existing, Low",
+    "End-before-Start refusal is silent (Save disables, no reason given) — arguably by design; a disabled control is validation working",
+    "vc-datepicker does not auto-close on selection; overlay intercepts pointer events and blocks Save until Escape/outside-click — pre-existing",
+    "Storybook story-meta: 'Control of type color only supports string, received boolean' (argTypes mismatch, not the component)"
+  ],
+  "business_rules_verified": [],
+  "oracle_substitution": "No BL-*/BL-UI-*/ECL-* applies (vc-shell is a separate product). Substituted oracle: the component's own vc-scheduler.docs.md contract at main.",
+  "jira_transition": "TESTED (Finish test, applied 2026-09-02; stops at Tested — never Done)",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5803/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5803/"
+}

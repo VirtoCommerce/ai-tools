@@ -1,0 +1,80 @@
+{
+  "ticket": "VCST-5802",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "verdict_reason": "All 13 exercised checklist items PASS across 4 distinct events; 1 item (the untitled-event accessible-name fallback) is NOT-RUN in the browser because no create path on this surface permits an empty title. That element of the fix's own contract is unit-verified but browser-unverified, which is what keeps this off a clean VERIFIED.",
+  "date": "2026-09-02",
+  "flow": "verify-fix",
+  "ticket_type": "Bug",
+  "priority": "Medium",
+  "product": "vc-shell (framework) — SEPARATE PRODUCT from the Virto storefront",
+  "environment": "https://vc-shell-storybook.govirto.com/ (stories data-display-vcscheduler--quick-info-popover, --editing-flow, --more-overflow)",
+  "build": {
+    "framework": "2.6.0-rc.0",
+    "storybook_preview_bundle": "assets/iframe-CYJDt9Tz.js",
+    "storybook_last_modified": "2026-09-02T10:24:15Z",
+    "fix_pr": "VirtoCommerce/vc-shell#350",
+    "fix_merge_commit": "d1a02a5741b176b8d407addb8cfb62855f7824a5",
+    "fix_merged_at": "2026-09-02T10:11:58Z"
+  },
+  "deploy_gate": {
+    "method": "ancestry arithmetic + served version constant + a proven-new CONTENT marker with a validated control",
+    "ancestry": "fix -> rc gitHead cb6379d: ahead_by 2, behind_by 0",
+    "served_version_constant": "2.6.0-rc.0",
+    "content_marker": "EVENT_DETAILS Event details (en) and EVENT_DETAILS Termindetails (de) both present in the served preview bundle",
+    "marker_proven_new": "0 occurrences in framework/locales/en.json at v2.5.0 and at clone HEAD #349; 1 at main",
+    "instrument_control": "the pre-existing ZOOM_OUT locale key also appears in the served bundle, proving locale strings ARE bundled — so a zero would have been meaningful",
+    "instrument_note": "*.docs.md prose is NOT bundled into the Storybook preview bundle and is an INVALID marker there (established on the VCST-5803 run by running the reverse control). Locale strings are the working substitute."
+  },
+  "agent_used": "ui-ux-expert",
+  "browser": "playwright-chrome (override of Chrome DevTools MCP: the core measurement is focus + role + accessible name, whose documented instrument is the Playwright a11y snapshot [active] marker; click-driven so firefox excluded)",
+  "str_result": "3/3 — items 1/2/3/5 observed on 4 distinct events (Flash Deal, Summer Sale, Loyalty pricing review, Back to School Promo); item 4 has 3 clean closes across two close paths (Escape, Close button, Escape), each restoring to the exact opener rather than a sibling segment",
+  "baseline_reproduction": "pinned-build, isolated PER CALL SITE — the clone sits at #349 (exactly pre-#350), so each call site's .vue was reverted individually while keeping the fix-era tests",
+  "baseline_red": {
+    "RED_A_quick_info": "4 failed / 12 passed in MonthEventPopover.test.ts — exposes the quick-info panel as a named dialog (expected false to be true); names the panel generically when the event has no title; moves focus into the panel when it opens (expected body to be button); hands focus back to the chip that opened it",
+    "RED_B_quick_create": "1 failed / 3 passed in QuickCreatePopover.test.ts — exposes the quick-create panel as a named dialog. This MEASURES the dev's claim that quick-create (the third call site the ticket flagged as never inspected) was affected too, rather than accepting it",
+    "green": "25 tests across the three files, GREEN 3/3 on the fixed code"
+  },
+  "vacuous_pass_checks": [
+    "The VcPopover unit stub exposes panelEl (with a comment naming that exact risk), matching the real component's defineExpose of close + panelEl — so the focus assertions are not vacuous. The dev flagged this explicitly for retesting.",
+    "MUTATION TEST of the shared composable's timing guard: moving the document.activeElement read from BEFORE to AFTER the DOM patch made exactly 'returns focus to whatever held it before the panel opened' fail, while the other four — including 'leaves focus alone when the user moved it out of the panel first' — stayed green. The guard test is discriminating, verified rather than accepted."
+  ],
+  "instrument": {
+    "focus": "Playwright a11y snapshot [active] marker + one-Tab continuation probe",
+    "calibrated": "yes, before any verdict — the marker was shown to MOVE: no match -> button New event [active] -> button Previous [active] across two Tabs",
+    "evaluate_policy": "browser_evaluate used ONLY for the allowlisted scoped axe.run(selector); no document.activeElement read, no @allow-eval sentinel",
+    "axe_is_non_discriminating": "axe 4.11.3 loaded (no CSP block) and returned 0 violations / 0 incomplete / 14 rule-passes scoped to .vc-popover — but the PRE-FIX bare div would likely have scanned equally clean, because axe cannot see a missing role on an element with no interactive semantics to contradict, nor a focus transition that never happens. Recorded as NON-REGRESSION COVER ONLY, never as evidence this defect is fixed."
+  },
+  "checklist_total": 14,
+  "checklist_passed": 13,
+  "checklist_failed": 0,
+  "checklist_not_run": 1,
+  "item_7_the_subtle_one": "PASS decisively. With the panel open, Shift+Tab parked focus on e154 (Back to School Promo) OUTSIDE the panel; Escape closed it and focus STAYED on e154 rather than being yanked to the e92 opener. Corroborated by a second variant (Tab past document end -> Escape -> no reclaim). This is the behaviour the before-the-DOM-patch activeElement read exists to protect.",
+  "item_6_not_run": "The untitled-event to Event details fallback could not be exercised: quick-create's Save renders disabled on an empty title (observed live), the editor modal shares the same title-non-empty guard, EmitMode (the documented empty-title path) produced no rendered event on single or double click, and no fixture ships an untitled event. Unit-verified via RED-A, browser-unverified. NOT-RUN, never assumed.",
+  "item_8_expectation_corrected": "The orchestrator's brief stated the overflow popover is named by the formatted date, taken from the dev's own comment. It is actually aria-label = VC_SCHEDULER.MORE_EVENTS, rendering as More events. Established properly by diffing MonthMorePopover.vue at #349 vs main via the API (the agent's own inference used the restored #349 clone, which is #349 by construction, so its reasoning was invalid even though its live observation was right). The name is IDENTICAL at #349 and main — unchanged by #350, so not a regression, and VCST-5671's focus entry/restore also still work.",
+  "regression": {
+    "suite_coverage": "NONE — no suite in config/test-suites.json covers vc-shell framework components (suite 092 is tagged vc-shell but targets the Sales Rep module's embedded app on vcst-qa, requiresModules sales-rep)",
+    "substituted_scope": "full @vc-shell/framework unit suite with PR #350 installed, cwd=framework/: 415 files / 4119 tests / 0 failures (+1 file, +7 tests vs the #351 run — exactly useAnchoredPanelFocus.test.ts arriving)"
+  },
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    "I1 — Escape from QUICK-CREATE leaves no focused element: its opener is a non-focusable day cell, so a keyboard user is dropped to body. Pre-existing, not a #350 regression (pre-fix it had no focus management at all). Same defect CLASS as VCST-5813 (focus dropped to body with no repair target), so it may be worth folding into that line of work rather than filed alone.",
+    "I2 — the Loading story nests ~40 role=status live regions inside an outer status 'Loading events…' — a plausible screen-reader announcement storm, unverifiable without an AT pass.",
+    "I3 (orchestrator's own finding) — the overflow popover's aria-label 'More events' OVERRIDES its visible date header, so a screen-reader user loses the date a sighted user sees. Same class as the VCST-5803 timed-chip 24h/12h mismatch. Not a #350 defect and out of this ticket's scope, but it also means the dev's comment describing that name as 'the formatted date' is inaccurate."
+  ],
+  "business_rules_verified": [],
+  "oracle_substitution": "vc-shell is a separate product: BL-UI-*, critical-ui-scope.md, storefront-selectors.md and the suite manifest cite nothing here. BL-A11Y-001 and BL-A11Y-003 are inapplicable by their own rule text, which scopes them to 'the accessibility-gated storefront themes'. BL-A11Y-002 (accessible naming, WCAG 4.1.2/1.3.1) and BL-A11Y-004 (role/state correctness) are stated product-neutrally and ARE the subject matter, but all their Source and Suite-coverage evidence is storefront (client-app/, suite 045), so they are cited BY ANALOGY only. Primary oracle: WCAG 4.1.2 Name/Role/Value plus PR #350's own documented contract.",
+  "coverage_limits_declared": [
+    "No AT pass was run — nothing here claims screen-reader coverage.",
+    "Five of the six WCAG 2.2 additions (2.4.11, 2.5.7, 3.2.6, 3.3.7, 3.3.8) are outside what axe can conclude.",
+    "vc-popup backdrop-dismiss was not attempted (proven unmeasurable with this MCP); this ticket concerns the anchored vc-popover, closed via Escape and the close control."
+  ],
+  "console_errors": 0,
+  "story_render_sweep": "22 stories swept for render/runtime errors — clean",
+  "at_pass_run": false,
+  "jira_transition": "PENDING USER CONFIRMATION (TESTED)",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5802/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5802/"
+}

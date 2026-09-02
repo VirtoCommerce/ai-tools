@@ -1,0 +1,62 @@
+{
+  "ticket": "VCST-5806",
+  "verdict": "VERIFIED",
+  "date": "2026-09-02",
+  "flow": "verify-fix",
+  "ticket_type": "Bug",
+  "product": "vc-shell / Marketplace Vendor Portal — SEPARATE PRODUCT from the Virto storefront",
+  "environment": "https://vcmp-dev.govirto.com/apps/vendor-portal/ (Light theme, 1920x1080)",
+  "build": {
+    "framework": "2.6.0-rc.0",
+    "vendor_portal_build": "55512",
+    "app_last_modified": "2026-09-02T12:32:12Z",
+    "fix_pr": "VirtoCommerce/vc-shell#347",
+    "fix_merge_commit": "3f614e2dc66cd4251f641173629cd4d104af1c73",
+    "fix_merged_at": "2026-09-01T14:23:47Z"
+  },
+  "deploy_gate": {
+    "method": "npm gitHead + ancestry arithmetic + served version constant + proven-new compiled marker",
+    "ancestry": "fix commit is ancestor of rc gitHead cb6379d (ahead_by=5, behind_by=0)",
+    "served_version_constant": "2.6.0-rc.0",
+    "compiled_marker": "vc-shell-vendors55512.js: ref_key:\"buttonRef\" ... disabled:u.value&&!p.value,\"aria-disabled\":p.value||void 0 ... onBlur:b[0]||(b[0]=g=>p.value=!1)",
+    "marker_proven_new": "aria-disabled had 0 occurrences in vc-button.vue at v2.5.0, 3 at main — so presence is evidence, not coincidence"
+  },
+  "agent_used": "qa-testing-expert",
+  "browser": "playwright-edge (override of firefox: @playwright/mcp + firefox cannot click this product, confirmed 6x)",
+  "str_result": "3/3 on each of the dev's three repros (Sign in keyboard, range toggle keyboard, range toggle mouse)",
+  "baseline_reproduction": "pinned-build — v2.5.0 tag-revert of vc-button.vue against its fix-era test file, 2026-09-02: 3 failed / 15 passed",
+  "baseline_red_assertions": [
+    "does not disable itself natively while it is the focused element -> expected '' to be undefined",
+    "treats loading the same way — it is the same disabled state -> expected '' to be undefined",
+    "announces the disabled state while it is holding focus -> expected undefined to be 'true'"
+  ],
+  "jsdom_caveat": "jsdom does not implement the blur-on-disable rule, so a unit test asserting document.activeElement passes with or without the fix. The unit tests assert the attribute only; the focus behaviour was proven in a real browser here.",
+  "instrument": {
+    "used": "Playwright a11y snapshot [active] marker + one-Tab continuation probe",
+    "evaluate_blocked": "browser_evaluate blocked by .claude/hooks/enforce-real-user.mjs; never attempted, no @allow-eval used",
+    "calibrated": "twice — pre-sign-in and after Log Out; the marker was shown to move (lost when focus left, regained on repair), so [active] is genuine focus not a default"
+  },
+  "decisive_observation": "a11y tree read `button \"Sign in\" [disabled] [active]` — disabled AND holding focus, which a native disabled attribute cannot produce. Tab then continued in place (7D -> 30D; 90D -> 'All orders ->'), never restarting at the document.",
+  "checklist_total": 8,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "key_regression_check": "No form gained a tab stop: 'First page'/'Previous page' (disabled on page 1 of the My Offers blade) still carry native `disabled` and Shift+Tab jumped over both. Re-confirmed on the login page's empty-form Sign in button.",
+  "inertness_check": "Enter and Space on the aria-disabled type=submit Sign in button produced no second security/login POST and no form submission.",
+  "measurement_note": "Repro 1 was measured against a nonexistent account (lockout counters are per-account, so the shared `admin` account could not be locked and both tickets stayed runnable). The auth POST genuinely fired (POST /api/platform/security/login -> 200), so the in-flight disabled state was real. The three successful sign-ins also never dropped to <body>, but they land on the authenticated workspace root — that is VCST-5670's repair, not this fix, and was deliberately not counted as evidence here.",
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    "Misleading failed-login error: a failed sign-in clears Password and raises 'The Password field is required' with the field [invalid], instead of an invalid-credentials message. 3/3 reproducible — but only exercised with a NONEXISTENT account, so a wrong password on a real account is untested; confirm before filing.",
+    "[VcDataTable] Column width crisis: sum(minPx)=1800px > availableWidth=778px on the My Offers list blade at 1920x1080",
+    "[@vc-shell/framework#ai-agent-context] Cannot set context data: no blade id available — repeats per sign-in/route event (5x), framework-internal"
+  ],
+  "business_rules_verified": [],
+  "oracle_substitution": "No BL-*/BL-UI-*/ECL-* applies. Substituted oracle: vc-button.docs.md's disabled-while-focused contract at main. WCAG 2.4.3 Focus Order is the standard.",
+  "console_errors": 0,
+  "at_pass_run": false,
+  "jira_transition": "TESTED (Finish test, applied 2026-09-02; stops at Tested — never Done)",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5806/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5806/"
+}

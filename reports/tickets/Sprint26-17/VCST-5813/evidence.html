@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCST-5813 Verification Record</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f7f8fa; --surface:#ffffff; --ink:#1b2028; --muted:#5c6675;
+  --rule:#dfe3e9; --rule-strong:#c3cad4;
+  --accent:#2e6e9e; --pass:#1f7a4d; --red:#b3341f; --amber:#8a6510;
+  --pass-wash:#eef6f1; --red-wash:#fbf0ed; --code-bg:#f2f4f7;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#12151a; --surface:#1a1f26; --ink:#e4e8ed; --muted:#8b95a5;
+    --rule:#2a313b; --rule-strong:#3a434f;
+    --accent:#6fb0d8; --pass:#5cc08c; --red:#e8836e; --amber:#d1a341;
+    --pass-wash:#15251d; --red-wash:#2a1a17; --code-bg:#11151a;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#12151a; --surface:#1a1f26; --ink:#e4e8ed; --muted:#8b95a5;
+  --rule:#2a313b; --rule-strong:#3a434f;
+  --accent:#6fb0d8; --pass:#5cc08c; --red:#e8836e; --amber:#d1a341;
+  --pass-wash:#15251d; --red-wash:#2a1a17; --code-bg:#11151a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:40px 24px 72px;display:flex;flex-direction:column;gap:34px}
+h1{font-size:23px;font-weight:600;margin:0;line-height:1.3;text-wrap:balance;letter-spacing:-0.01em}
+h2{font-size:13px;font-weight:600;margin:0;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);font-family:var(--mono)}
+p{margin:0;max-width:66ch}
+section{display:flex;flex-direction:column;gap:13px}
+code,.mono{font-family:var(--mono);font-size:0.88em}
+code{background:var(--code-bg);padding:1px 5px;border:1px solid var(--rule);white-space:nowrap}
+
+header{display:flex;flex-direction:column;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:20px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.verdict{display:inline-flex;align-items:baseline;gap:9px;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--pass);background:var(--pass-wash);border:1px solid var(--pass);padding:5px 11px;align-self:flex-start;letter-spacing:0.04em}
+.verdict .tally{color:var(--muted);font-size:12px}
+
+dl.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:0;margin:0;border:1px solid var(--rule);background:var(--surface)}
+dl.strip>div{padding:10px 13px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:3px}
+dl.strip dt{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
+dl.strip dd{margin:0;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;word-break:break-word}
+
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:660px){.pair{grid-template-columns:1fr}}
+.phase{background:var(--surface);border:1px solid var(--rule);border-top:3px solid var(--rule-strong);padding:15px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.phase.a{border-top-color:var(--red)}
+.phase.b{border-top-color:var(--pass)}
+.phase h3{margin:0;font-family:var(--mono);font-size:12px;letter-spacing:0.09em;text-transform:uppercase;font-weight:500}
+.phase.a h3{color:var(--red)}
+.phase.b h3{color:var(--pass)}
+.phase p{font-size:14px;max-width:none}
+.assert{font-family:var(--mono);font-size:12.5px;line-height:1.5;background:var(--code-bg);border:1px solid var(--rule);padding:10px 11px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;margin:0}
+
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface)}
+.scroll{overflow-x:auto;border:1px solid var(--rule)}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);font-weight:500;background:var(--ground);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.n{font-family:var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;width:1%;white-space:nowrap}
+td.v{font-family:var(--mono);font-size:12.5px;white-space:nowrap;font-weight:500}
+td.m{font-family:var(--mono);font-size:12.5px}
+.ok{color:var(--pass)}.no{color:var(--red)}.mid{color:var(--amber)}
+
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+figure img{display:block;max-width:620px;width:100%;height:auto;border:1px solid var(--rule-strong);background:var(--surface)}
+figcaption{font-size:13px;color:var(--muted);max-width:66ch}
+figcaption b{color:var(--ink);font-weight:500}
+
+ul.notes{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:11px}
+ul.notes li{padding-left:15px;border-left:2px solid var(--rule-strong);font-size:14px;max-width:70ch}
+ul.notes li b{font-weight:600}
+.callout{background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--amber);padding:13px 15px;font-size:14px;display:flex;flex-direction:column;gap:8px}
+footer{border-top:1px solid var(--rule);padding-top:18px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:7px}
+footer .mono{word-break:break-all}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow"><span>VCST-5813</span><span>·</span><span>Bug · Low</span><span>·</span><span>WCAG 2.4.3</span><span>·</span><span>2026-09-02</span></div>
+  <h1>Log Out dropped focus to <code>&lt;body&gt;</code>, restarting Tab at the top of the document</h1>
+  <div class="verdict">VERIFIED <span class="tally">STR 3/3 · checklist 8 pass · 1 undecidable</span></div>
+</header>
+
+<section>
+  <h2>The defect</h2>
+  <p>After Log Out, <code>document.activeElement</code> was <code>&lt;body&gt;</code> and the accessibility tree carried no focused node, so the next Tab started at the document&rsquo;s first element and the user re-traversed the whole login page. A screen-reader user also got no announcement of the new context.</p>
+  <p><b>Why VCST-5670&rsquo;s fix could not cover it:</b> that ticket&rsquo;s route watcher repairs focus to <code>&lt;main class="vc-app__workspace"&gt;</code>, which is rendered <code>v-if="isAuthenticated"</code>. Logging out unmounts it, so the watcher&rsquo;s target resolved to null and <code>focusIfLoose</code> correctly declined rather than focusing a detached node. The repair was structurally unavailable on this one route change — not a regression of that fix.</p>
+</section>
+
+<section>
+  <h2>Fix under test</h2>
+  <p>PR&nbsp;#343 gives the unauthenticated layout its own focus target: <code>vc-auth-layout</code>&rsquo;s root <code>&lt;main&gt;</code> gained <code>tabindex="-1"</code> and an <code>onMounted</code> call to <code>focusIfLoose</code> — the same repair the workspace and each blade already perform for their own context.</p>
+  <div class="callout">
+    <div><b>This fix was not named anywhere on the ticket.</b></div>
+    <div>VCST-5813 carried no comment and no linked PR. PR&nbsp;#343 was located by searching the repository during this run. A retester arriving at the ticket cold has nothing to verify against, which is worth correcting on the ticket itself.</div>
+  </div>
+  <dl class="strip">
+    <div><dt>Framework</dt><dd>2.6.0-rc.0</dd></div>
+    <div><dt>Surface</dt><dd>vcmp-dev Vendor Portal</dd></div>
+    <div><dt>App build</dt><dd>55512</dd></div>
+    <div><dt>Deployed</dt><dd>2026-09-02 12:32:12Z</dd></div>
+    <div><dt>Fix PR</dt><dd>vc-shell#343</dd></div>
+    <div><dt>Merged</dt><dd>2026-09-01 14:22:30Z</dd></div>
+    <div><dt>Theme</dt><dd>Light</dd></div>
+    <div><dt>Lane</dt><dd>playwright-edge</dd></div>
+  </dl>
+</section>
+
+<section>
+  <h2>Reproduction — RED before the fix, GREEN after</h2>
+  <div class="pair">
+    <div class="phase a">
+      <h3>Phase A · baseline (pre-fix)</h3>
+      <p><code>vc-auth-layout.vue</code> reverted to tag <code>v2.5.0</code> against its fix-era test file — <b>2 failed / 16 passed</b>.</p>
+      <pre class="assert">× takes focus when it mounts with
+  focus loose
+  → expected &lt;body&gt;&lt;div data-v-app&gt;…&lt;/div&gt;&lt;/body&gt;
+    to be &lt;main class="vc-auth-layout"&gt;…&lt;/main&gt;
+
+× is focusable without being a tab stop
+  → expected null to be '-1'</pre>
+      <p>The first assertion is the reported defect stated exactly: focus on the body where the layout root was expected.</p>
+    </div>
+    <div class="phase b">
+      <h3>Phase B · fixed build (live)</h3>
+      <p>Same test file on the fixed code — <b>GREEN 3/3</b>. Live Log Out on the deployed portal — <b>3/3</b>.</p>
+      <pre class="assert">a11y tree, after Log Out:
+
+  main "vc-auth-layout" [active]
+
+Shift+Tab from the first control left
+the page entirely rather than landing
+on `main` — so tabindex="-1" adds no
+stray tab stop.
+
+Full framework suite, all three fixes:
+414 files / 4112 tests / 0 failures</pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Verification checklist</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>#</th><th>Check</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1–3</td><td>Log Out STR ×3 — layout root reads <code>[active]</code>, not <code>&lt;body&gt;</code></td><td class="v ok">PASS 3/3</td></tr>
+      <tr><td class="n">4a</td><td>Tab from the restored root reaches the first control in the form</td><td class="v mid">UNDECIDABLE</td></tr>
+      <tr><td class="n">4b</td><td>Root is focusable but <em>not</em> a tab stop — no stray stop added</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">5</td><td>Breadth — Forgot password also repairs on arrival</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">6</td><td><code>focusIfLoose</code> repairs, does not steal from a deliberate focus</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">7</td><td>VCST-5670 not regressed — authenticated repair still works</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">8</td><td>No new console errors</td><td class="v ok">0 errors</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout">
+    <div><b>Item 4a is neither a pass nor a defect — it is undecidable on this page, and was not laundered into a pass.</b></div>
+    <div>The <code>vc-auth-layout</code> root <em>is</em> the document&rsquo;s first element, so its first tabbable descendant (&ldquo;Microsoft Entra ID&rdquo;) is <em>also</em> the document&rsquo;s first tab stop. One Tab therefore reaches the same node whether focus started on the root or on <code>&lt;body&gt;</code>, so the probe cannot discriminate here. The load-bearing evidence is the calibrated <code>[active]</code> marker plus item 4b, which <em>is</em> measurable.</div>
+  </div>
+  <p><b>Item 6 was measurable without eval, from both sides.</b> With Sign in deliberately focused, the failed-login re-render (field cleared, alert added) left focus <em>on the button</em> — the root did not reclaim it. On remount, with focus genuinely loose, it did. That is repair-not-dictator behaviour demonstrated in both directions rather than assumed.</p>
+</section>
+
+<section>
+  <h2>Breadth of the fix — verified, and not</h2>
+  <p>PR&nbsp;#343 claims coverage of every page built on this layout. Two were exercised; three were not, and are recorded as <b>NOT-RUN rather than passed</b>.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Page on <code>vc-auth-layout</code></th><th>Status</th><th>Basis</th></tr></thead>
+    <tbody>
+      <tr><td>Sign-in</td><td class="v ok">VERIFIED</td><td>Log Out STR ×3</td></tr>
+      <tr><td>Forgot password</td><td class="v ok">VERIFIED</td><td>focus repaired on arrival</td></tr>
+      <tr><td>Reset password</td><td class="v mid">NOT-RUN</td><td>needs a provisioned account absent on this env</td></tr>
+      <tr><td>Invitation</td><td class="v mid">NOT-RUN</td><td>needs a provisioned account absent on this env</td></tr>
+      <tr><td>Forced password change</td><td class="v mid">NOT-RUN</td><td>needs a provisioned account absent on this env</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Mechanical support, short of running them:</b> the layout root&rsquo;s element reference changed on each auth route change (<code>e1868 → e1929 → e1953</code>), proving the layout genuinely remounts per page — so <code>onMounted → focusIfLoose</code> fires per page. That makes the breadth claim plausible by construction, but it is not a substitute for exercising the three remaining pages.</p>
+</section>
+
+<section>
+  <h2>Why the build under test provably contains the fix</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Step</th><th>Observation</th></tr></thead>
+    <tbody>
+      <tr><td>Ancestry</td><td class="m">fix → rc gitHead <code>cb6379d</code>: ahead_by 9, behind_by 0</td></tr>
+      <tr><td>Served constant</td><td class="m">build 55512 declares framework <code>2.6.0-rc.0</code></td></tr>
+      <tr><td>Compiled marker</td><td class="m">m("main",{ref_key:"rootRef",ref:a,class:"vc-auth-layout",tabindex:"-1"</td></tr>
+      <tr><td>Marker proven new</td><td class="m"><code>tabindex</code>: 0 occurrences in <code>vc-auth-layout.vue</code> at v2.5.0, 1 at main</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Evidence</h2>
+  <figure>
+    <img src="screenshots/5813-post-logout-auth-layout-focused.png" alt="Vendor Portal login page immediately after Log Out, with the auth layout container holding focus.">
+    <figcaption><b>After Log Out.</b> The <code>vc-auth-layout</code> container holds focus, where pre-fix the accessibility tree carried no focused node at all and the next Tab restarted at the document&rsquo;s first element.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Findings not filed</h2>
+  <p>These are shared with the VCST-5806 run — one finding each, not two.</p>
+  <ul class="notes">
+    <li><b>Misleading failed-login error.</b> A failed sign-in clears Password and raises <code>The Password field is required</code> instead of an invalid-credentials message. Reproducible 3/3, but only exercised with a <em>nonexistent</em> account — confirm against a real account with a wrong password before filing.</li>
+    <li><b>VcDataTable column-width crisis</b> on the <em>My Offers</em> list blade at 1920×1080.</li>
+    <li><b>ai-agent-context warning</b> — <code>Cannot set context data: no blade id available</code>, once per sign-in/route event.</li>
+  </ul>
+</section>
+
+<footer>
+  <div><b>Instrument, and its calibration.</b> The a11y snapshot&rsquo;s <code>[active]</code> marker plus a one-Tab continuation probe. <code>browser_evaluate</code> is blocked by the real-user hook and was never attempted. Calibrated twice — pre-sign-in and again after Log Out — and shown to <em>move</em>: the marker was lost when focus left the root and regained on repair, so a <code>main [active]</code> reading is genuine focus rather than a default. The ARIA snapshot was never used as an <code>inert</code> exposure test, and no <code>vc-popup</code> backdrop-dismiss measurement was attempted.</div>
+  <div><b>Oracle substitution.</b> vc-shell is a separate product from the Virto storefront: no <code>BL-*</code>, <code>BL-UI-*</code>, <code>ECL-*</code> or regression suite covers it. PR&nbsp;#343&rsquo;s <code>vc-auth-layout</code> contract was the oracle; WCAG 2.4.3 Focus Order is the standard. The storefront P0 route list was substituted with the vc-shell chain login → dashboard → list blade.</div>
+  <div><b>No assistive-technology pass was run</b> — this was focus and a11y-tree verification, not screen-reader coverage.</div>
+  <div><b>Sibling note.</b> VCST-5670 is itself currently in <em>Reopen</em>; confirming it was not regressed is in scope here, verifying it is not.</div>
+  <div class="mono">Evidence: reports/tickets/Sprint26-17/VCST-5813/ · verification-report.md · verification-summary.json</div>
+</footer>
+
+</div>
+</body>
+</html>

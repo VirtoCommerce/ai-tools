@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCST-5803 Verification Record</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f7f8fa; --surface:#ffffff; --ink:#1b2028; --muted:#5c6675;
+  --rule:#dfe3e9; --rule-strong:#c3cad4;
+  --accent:#2e6e9e; --pass:#1f7a4d; --red:#b3341f; --amber:#8a6510;
+  --pass-wash:#eef6f1; --red-wash:#fbf0ed; --code-bg:#f2f4f7;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#12151a; --surface:#1a1f26; --ink:#e4e8ed; --muted:#8b95a5;
+    --rule:#2a313b; --rule-strong:#3a434f;
+    --accent:#6fb0d8; --pass:#5cc08c; --red:#e8836e; --amber:#d1a341;
+    --pass-wash:#15251d; --red-wash:#2a1a17; --code-bg:#11151a;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#12151a; --surface:#1a1f26; --ink:#e4e8ed; --muted:#8b95a5;
+  --rule:#2a313b; --rule-strong:#3a434f;
+  --accent:#6fb0d8; --pass:#5cc08c; --red:#e8836e; --amber:#d1a341;
+  --pass-wash:#15251d; --red-wash:#2a1a17; --code-bg:#11151a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:40px 24px 72px;display:flex;flex-direction:column;gap:34px}
+h1{font-size:23px;font-weight:600;margin:0;line-height:1.3;text-wrap:balance;letter-spacing:-0.01em}
+h2{font-size:13px;font-weight:600;margin:0;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);font-family:var(--mono)}
+p{margin:0;max-width:66ch}
+section{display:flex;flex-direction:column;gap:13px}
+code,.mono{font-family:var(--mono);font-size:0.88em}
+code{background:var(--code-bg);padding:1px 5px;border:1px solid var(--rule);white-space:nowrap}
+
+header{display:flex;flex-direction:column;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:20px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.verdict{display:inline-flex;align-items:baseline;gap:9px;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--pass);background:var(--pass-wash);border:1px solid var(--pass);padding:5px 11px;align-self:flex-start;letter-spacing:0.04em}
+.verdict .tally{color:var(--muted);font-size:12px}
+
+dl.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:0;margin:0;border:1px solid var(--rule);background:var(--surface)}
+dl.strip>div{padding:10px 13px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:3px}
+dl.strip dt{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
+dl.strip dd{margin:0;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;word-break:break-word}
+
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:660px){.pair{grid-template-columns:1fr}}
+.phase{background:var(--surface);border:1px solid var(--rule);border-top:3px solid var(--rule-strong);padding:15px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.phase.a{border-top-color:var(--red)}
+.phase.b{border-top-color:var(--pass)}
+.phase h3{margin:0;font-family:var(--mono);font-size:12px;letter-spacing:0.09em;text-transform:uppercase;font-weight:500}
+.phase.a h3{color:var(--red)}
+.phase.b h3{color:var(--pass)}
+.phase p{font-size:14px;max-width:none}
+.assert{font-family:var(--mono);font-size:12.5px;line-height:1.5;background:var(--code-bg);border:1px solid var(--rule);padding:10px 11px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;margin:0}
+
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface)}
+.scroll{overflow-x:auto;border:1px solid var(--rule)}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);font-weight:500;background:var(--ground);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.n{font-family:var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;width:1%;white-space:nowrap}
+td.v{font-family:var(--mono);font-size:12.5px;white-space:nowrap;font-weight:500}
+.ok{color:var(--pass)}.no{color:var(--red)}.mid{color:var(--amber)}
+
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+figure img{display:block;width:100%;height:auto;border:1px solid var(--rule-strong);background:var(--surface)}
+figcaption{font-size:13px;color:var(--muted)}
+figcaption b{color:var(--ink);font-weight:500}
+.shots{display:flex;flex-direction:column;gap:24px}
+
+ul.notes{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:11px}
+ul.notes li{padding-left:15px;border-left:2px solid var(--rule-strong);font-size:14px;max-width:70ch}
+ul.notes li b{font-weight:600}
+footer{border-top:1px solid var(--rule);padding-top:18px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:7px}
+footer .mono{word-break:break-all}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow"><span>VCST-5803</span><span>·</span><span>Bug · Medium</span><span>·</span><span>vc-shell framework</span><span>·</span><span>2026-09-02</span></div>
+  <h1>VcScheduler: an all-day event with End&nbsp;=&nbsp;Start saved into the void</h1>
+  <div class="verdict">VERIFIED <span class="tally">STR 3/3 · checklist 12/12</span></div>
+</header>
+
+<section>
+  <h2>The defect</h2>
+  <p>Creating an all-day event whose End equalled its Start saved without complaint, then rendered nowhere and could not be reached by mouse or keyboard — no chip in any day cell, no event button in the accessibility tree, no error, toast or field message. The only visible sign was the empty state disappearing.</p>
+  <p><b>Root cause, confirmed in source:</b> all-day spans store an <em>exclusive</em> end — midnight of the day after the last covered day. The editor bound the raw stored <code>end</code> straight to its End field, so &ldquo;the same day as Start&rdquo; was a zero-length range that laid out to nothing.</p>
+</section>
+
+<section>
+  <h2>Fix under test</h2>
+  <p>PR&nbsp;#351 took the inclusive-field option: <code>endFieldValue</code> displays the last covered day, <code>setEnd</code> converts back to the exclusive boundary on save, and the all-day exemption left the validity check — so an End <em>before</em> Start is now refused too, a case absent from the original report.</p>
+  <dl class="strip">
+    <div><dt>Framework</dt><dd>2.6.0-rc.0</dd></div>
+    <div><dt>Surface</dt><dd>vc-shell Storybook</dd></div>
+    <div><dt>Preview bundle</dt><dd>iframe-CYJDt9Tz.js</dd></div>
+    <div><dt>Built</dt><dd>2026-09-02 10:24:15Z</dd></div>
+    <div><dt>Fix PR</dt><dd>vc-shell#351</dd></div>
+    <div><dt>Merged</dt><dd>2026-09-02 10:12:09Z</dd></div>
+    <div><dt>Story</dt><dd>vcscheduler--editing-flow</dd></div>
+    <div><dt>Lane</dt><dd>playwright-chrome</dd></div>
+  </dl>
+</section>
+
+<section>
+  <h2>Reproduction — RED before the fix, GREEN after</h2>
+  <div class="pair">
+    <div class="phase a">
+      <h3>Phase A · baseline (pre-fix)</h3>
+      <p><code>SchedulerEventEditor.vue</code> reverted to tag <code>v2.5.0</code> against its fix-era test file — <b>3 failed / 13 passed</b>.</p>
+      <pre class="assert">× shows the last day the event covers,
+  not the exclusive end
+  → expected 16 to be 15
+
+× treats End = Start as a one-day event
+  rather than an empty range
+  → expected 2026-07-14T22:00:00.000Z
+    to deeply equal 2026-07-15T22:00:00.000Z
+
+× refuses an End before Start instead of
+  saving into the void
+  → expected a save emission to be undefined</pre>
+    </div>
+    <div class="phase b">
+      <h3>Phase B · fixed build (live)</h3>
+      <p>Same test file on the fixed code — <b>GREEN 3/3</b>. Live STR on the deployed Storybook — <b>3/3</b>, each from a fresh page load with End re-picked through the datepicker.</p>
+      <pre class="assert">✓ shows the last day the event covers
+✓ treats End = Start as a one-day event
+✓ refuses an End before Start
+
+Live: chip renders in the July 15 cell;
+event button present in the a11y tree
+and keyboard-reachable.
+
+Full framework suite, all three fixes:
+414 files / 4112 tests / 0 failures</pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Why the build under test provably contains the fix</h2>
+  <p>The fix shipped in a <b>prerelease</b> that is not on npm&rsquo;s <code>latest</code> dist-tag and carries no GitHub release tag — reading either alone would have reported &ldquo;not shipped&rdquo; and manufactured a false BLOCKED. Containment was settled by arithmetic instead.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Step</th><th>Observation</th></tr></thead>
+    <tbody>
+      <tr><td>npm <code>rc</code> dist-tag</td><td class="mono">2.6.0-rc.0 → gitHead cb6379d</td></tr>
+      <tr><td>That commit</td><td class="mono">&ldquo;release: v2.6.0-rc.0&rdquo; — the immediate child of #351&rsquo;s merge</td></tr>
+      <tr><td>Ancestry</td><td class="mono">fix → rc: ahead_by 1, behind_by 0; main identical to rc</td></tr>
+      <tr><td>Served constant</td><td class="mono">preview bundle declares version 2.6.0-rc.0</td></tr>
+    </tbody>
+  </table></div>
+  <p>Because <code>cb6379d</code> is the release commit sitting directly on top of the fix, any bundle whose version constant reads <code>2.6.0-rc.0</code> necessarily contains it.</p>
+</section>
+
+<section>
+  <h2>Verification checklist</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>#</th><th>Check</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>One-day all-day End field shows the last covered day (7/15, not 7/16)</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">2–4</td><td>STR ×3 — End&nbsp;=&nbsp;Start saves and a chip renders in the July 15 cell</td><td class="v ok">PASS 3/3</td></tr>
+      <tr><td class="n">5</td><td>Event button present in the a11y tree and keyboard-reachable</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">6</td><td>Empty state never vanishes without a chip appearing</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">7</td><td>End before Start refused — Save disabled (new fix behaviour)</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">8</td><td>Timed event&rsquo;s end passes through unchanged</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">9</td><td>Multi-day span still correct; End field = last covered day</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">10</td><td>VCST-5678 not regressed — field and announcement agree</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">11</td><td>No new console errors</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">12</td><td>Story render/runtime error sweep</td><td class="v ok">PASS</td></tr>
+    </tbody>
+  </table></div>
+  <p>Two checks carry more weight than the STR itself. The <b>edit round-trip</b> re-opened a <em>persisted</em> event and rendered End as <code>7/15</code>, testing the conversion against stored data rather than a fresh default. The <b>timed-path contrast</b> showed the same stored value rendering <code>16</code> with All-day off and <code>15</code> with it on — direct evidence that only the all-day branch converts.</p>
+</section>
+
+<section class="shots">
+  <h2>Evidence</h2>
+  <figure>
+    <img src="screenshots/VCST-5803-run1-chip-july15.png" alt="July 2026 month grid with a single event chip labelled Run1 OneDay AllDay occupying only the July 15 cell.">
+    <figcaption><b>STR run 1 — the fix.</b> The chip sits in the July 15 cell <em>only</em> and does not extend into the 16th: the stored exclusive end of <code>7/16 00:00</code> correctly covers one day. Pre-fix, no chip rendered anywhere.</figcaption>
+  </figure>
+  <figure>
+    <img src="screenshots/VCST-5803-item1-endfield-inclusive-7-15.png" alt="Scheduler event editor with All day on and the End field showing 7/15/2026.">
+    <figcaption><b>The End field is now inclusive.</b> A one-day all-day event shows <code>7/15/2026</code> — the last day it covers — closing the loose end VCST-5678 left open.</figcaption>
+  </figure>
+  <figure>
+    <img src="screenshots/VCST-5803-item7-end-before-start-save-disabled.png" alt="Event editor with an End date earlier than Start and the Save button disabled.">
+    <figcaption><b>End before Start is refused.</b> Save is disabled rather than persisting an unreachable record — behaviour the original report never asked for.</figcaption>
+  </figure>
+  <figure>
+    <img src="screenshots/VCST-5803-item9-multiday-span-15to17.png" alt="Month grid with a multi-day chip spanning July 15 to 17.">
+    <figcaption><b>Multi-day makes item 10 conclusive.</b> Field <code>7/17</code>, chip name <em>Jul 15, 2026 – Jul 17, 2026</em>, popover <em>July 15th – July 17th</em> — all three agree, where a VCST-5678 regression would have announced Jul 18.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Findings not filed</h2>
+  <p>All four are pre-existing and unrelated to this fix, so none is a side effect of it.</p>
+  <ul class="notes">
+    <li><b>Timed chip time-format mismatch.</b> Visible label is 24-hour (<code>00:00</code>), accessible name is 12-hour (<code>12:00 AM</code>) — sighted and screen-reader users get different notations for the same value.</li>
+    <li><b>End-before-Start refusal is silent.</b> Save simply disables with no reason given. This satisfies the documented &ldquo;refused rather than saved&rdquo; contract, and a disabled control is validation working — a team judgment call rather than a defect.</li>
+    <li><b>Datepicker does not auto-close on selection.</b> The overlay stays open and intercepts pointer events, so Save is unclickable until Escape or an outside click. Affects Start and End; pre-existing vc-datepicker behaviour.</li>
+    <li><b>Storybook story-meta defect.</b> <code>Control of type color only supports string, received &quot;boolean&quot;</code> on every load — an <code>argTypes</code> mismatch in the story configuration, not the component.</li>
+  </ul>
+</section>
+
+<footer>
+  <div><b>Oracle substitution.</b> vc-shell is a separate product from the Virto storefront: no <code>BL-*</code>, <code>BL-UI-*</code>, <code>ECL-*</code>, <code>critical-ui-scope</code> or <code>storefront-selectors</code> entry covers it, and no regression suite exercises it. The component&rsquo;s own <code>vc-scheduler.docs.md</code> contract at <code>main</code> was used as the correctness oracle; elements were located by role and accessible name.</div>
+  <div><b>Instruments.</b> Playwright accessibility snapshot; <code>browser_evaluate</code> is blocked by the real-user hook and was never attempted. No assistive-technology pass was run — this was a11y-tree and behaviour verification, not screen-reader coverage.</div>
+  <div class="mono">Evidence: reports/tickets/Sprint26-17/VCST-5803/ · verification-report.md · verification-summary.json</div>
+</footer>
+
+</div>
+</body>
+</html>

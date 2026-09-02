@@ -1,0 +1,80 @@
+{
+  "ticket": "VCST-5813",
+  "verdict": "VERIFIED",
+  "date": "2026-09-02",
+  "flow": "verify-fix",
+  "ticket_type": "Bug",
+  "product": "vc-shell / Marketplace Vendor Portal — SEPARATE PRODUCT from the Virto storefront",
+  "environment": "https://vcmp-dev.govirto.com/apps/vendor-portal/ (Light theme)",
+  "build": {
+    "framework": "2.6.0-rc.0",
+    "vendor_portal_build": "55512",
+    "app_last_modified": "2026-09-02T12:32:12Z",
+    "fix_pr": "VirtoCommerce/vc-shell#343",
+    "fix_merge_commit": "87b4bc09c2050812b2bcbcdc7a3f2eb347eaa892",
+    "fix_merged_at": "2026-09-01T14:22:30Z",
+    "fix_pr_provenance": "NOT named on the ticket — no Jira comment and no linked PR existed. Located by repo search during this run."
+  },
+  "deploy_gate": {
+    "method": "npm gitHead + ancestry arithmetic + served version constant + proven-new compiled marker",
+    "ancestry": "fix commit is ancestor of rc gitHead cb6379d (ahead_by=9, behind_by=0)",
+    "served_version_constant": "2.6.0-rc.0",
+    "compiled_marker": "vc-shell-vendors55512.js: m(\"main\",{ref_key:\"rootRef\",ref:a,class:\"vc-auth-layout\",tabindex:\"-1\"",
+    "marker_proven_new": "tabindex had 0 occurrences in vc-auth-layout.vue at v2.5.0, 1 at main"
+  },
+  "agent_used": "qa-testing-expert",
+  "browser": "playwright-edge (override of firefox: cannot click this product)",
+  "str_result": "3/3",
+  "baseline_reproduction": "pinned-build — v2.5.0 tag-revert of vc-auth-layout.vue against its fix-era test file, 2026-09-02: 2 failed / 16 passed",
+  "baseline_red_assertions": [
+    "takes focus when it mounts with focus loose -> expected <body> to be <main class=\"vc-auth-layout\">",
+    "is focusable without being a tab stop -> expected null to be '-1'"
+  ],
+  "instrument": {
+    "used": "Playwright a11y snapshot [active] marker + one-Tab continuation probe",
+    "evaluate_blocked": "browser_evaluate blocked by .claude/hooks/enforce-real-user.mjs; never attempted, no @allow-eval used",
+    "calibrated": "twice — pre-sign-in and after Log Out; the marker was shown to MOVE (lost when focus left the root, regained on repair), so a `main [active]` reading is genuine focus, not a default"
+  },
+  "checklist_total": 9,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "checklist_inconclusive": 1,
+  "inconclusive_detail": "Item 4a (Tab from the restored root reaches the first control in the form) is UNDECIDABLE BY CONSTRUCTION on this page, not a pass and not a defect: the vc-auth-layout root is the document's first element, so its first tabbable descendant ('Microsoft Entra ID') is also the document's first tab stop — one Tab reaches the same node from the root and from <body>. Deliberately not laundered into a pass. The load-bearing evidence is the calibrated [active] marker plus item 4b, which IS measurable.",
+  "item_4b": "PASS — Shift+Tab from the first control left the page entirely rather than landing on `main`, so tabindex=\"-1\" adds no stray tab stop.",
+  "breadth": {
+    "verified": [
+      "sign-in",
+      "forgot password"
+    ],
+    "not_run": [
+      "reset password",
+      "invitation",
+      "forced password change"
+    ],
+    "not_run_reason": "need a provisioned account not available on this env — NOT-RUN, not passed",
+    "mechanical_support": "the root's element ref changed on each auth route change (e1868 -> e1929 -> e1953), proving the layout genuinely remounts per page, so onMounted -> focusIfLoose fires per page. This makes the fix's breadth claim mechanically plausible but does not substitute for running the three pages."
+  },
+  "repair_not_dictator": "PASS — with Sign in deliberately focused, the failed-login re-render (field cleared, alert added) left focus ON the button; the root did not reclaim it. On remount, with focus genuinely loose, it did. Measured from both sides without evaluate.",
+  "sibling_regression": "VCST-5670 not regressed — signing back in still repairs focus into the authenticated workspace (3 observations). Note VCST-5670 is itself currently in Reopen status; verifying it was out of scope for this run.",
+  "regression": {
+    "suite_coverage": "NONE — no suite covers vc-shell (see VCST-5803 summary for the suite-092 distinction)",
+    "substituted_scope": "full @vc-shell/framework unit suite with all three fixes present: 414 files / 4112 tests / 0 failures"
+  },
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    "Misleading failed-login error (shared with VCST-5806's findings — one finding, not two)",
+    "[VcDataTable] Column width crisis on the My Offers list blade",
+    "[@vc-shell/framework#ai-agent-context] Cannot set context data: no blade id available"
+  ],
+  "business_rules_verified": [],
+  "oracle_substitution": "No BL-*/BL-UI-*/ECL-* applies. Substituted oracle: PR #343's vc-auth-layout contract. WCAG 2.4.3 Focus Order is the standard.",
+  "console_errors": 0,
+  "at_pass_run": false,
+  "tooling_notes": "Two interactions initially hit the MCP 5000ms 'visible, enabled and stable' gate (a dashboard range button, one password fill); a 3s settle then succeeded. Recorded so the flake is not later mistaken for a defect. No vc-popup backdrop-dismiss measurement was attempted (proven unmeasurable with this MCP). The ARIA snapshot was never used as an inert exposure test.",
+  "jira_transition": "TESTED (Finish test, applied 2026-09-02; stops at Tested — never Done)",
+  "evidence": "reports/tickets/Sprint26-17/VCST-5813/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-17/VCST-5813/"
+}

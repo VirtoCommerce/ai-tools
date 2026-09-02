@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCST-5806 Verification Record</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f7f8fa; --surface:#ffffff; --ink:#1b2028; --muted:#5c6675;
+  --rule:#dfe3e9; --rule-strong:#c3cad4;
+  --accent:#2e6e9e; --pass:#1f7a4d; --red:#b3341f; --amber:#8a6510;
+  --pass-wash:#eef6f1; --red-wash:#fbf0ed; --code-bg:#f2f4f7;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#12151a; --surface:#1a1f26; --ink:#e4e8ed; --muted:#8b95a5;
+    --rule:#2a313b; --rule-strong:#3a434f;
+    --accent:#6fb0d8; --pass:#5cc08c; --red:#e8836e; --amber:#d1a341;
+    --pass-wash:#15251d; --red-wash:#2a1a17; --code-bg:#11151a;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#12151a; --surface:#1a1f26; --ink:#e4e8ed; --muted:#8b95a5;
+  --rule:#2a313b; --rule-strong:#3a434f;
+  --accent:#6fb0d8; --pass:#5cc08c; --red:#e8836e; --amber:#d1a341;
+  --pass-wash:#15251d; --red-wash:#2a1a17; --code-bg:#11151a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:40px 24px 72px;display:flex;flex-direction:column;gap:34px}
+h1{font-size:23px;font-weight:600;margin:0;line-height:1.3;text-wrap:balance;letter-spacing:-0.01em}
+h2{font-size:13px;font-weight:600;margin:0;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);font-family:var(--mono)}
+p{margin:0;max-width:66ch}
+section{display:flex;flex-direction:column;gap:13px}
+code,.mono{font-family:var(--mono);font-size:0.88em}
+code{background:var(--code-bg);padding:1px 5px;border:1px solid var(--rule);white-space:nowrap}
+
+header{display:flex;flex-direction:column;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:20px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.verdict{display:inline-flex;align-items:baseline;gap:9px;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--pass);background:var(--pass-wash);border:1px solid var(--pass);padding:5px 11px;align-self:flex-start;letter-spacing:0.04em}
+.verdict .tally{color:var(--muted);font-size:12px}
+
+dl.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:0;margin:0;border:1px solid var(--rule);background:var(--surface)}
+dl.strip>div{padding:10px 13px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:3px}
+dl.strip dt{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
+dl.strip dd{margin:0;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;word-break:break-word}
+
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:660px){.pair{grid-template-columns:1fr}}
+.phase{background:var(--surface);border:1px solid var(--rule);border-top:3px solid var(--rule-strong);padding:15px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.phase.a{border-top-color:var(--red)}
+.phase.b{border-top-color:var(--pass)}
+.phase h3{margin:0;font-family:var(--mono);font-size:12px;letter-spacing:0.09em;text-transform:uppercase;font-weight:500}
+.phase.a h3{color:var(--red)}
+.phase.b h3{color:var(--pass)}
+.phase p{font-size:14px;max-width:none}
+.assert{font-family:var(--mono);font-size:12.5px;line-height:1.5;background:var(--code-bg);border:1px solid var(--rule);padding:10px 11px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;margin:0}
+
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface)}
+.scroll{overflow-x:auto;border:1px solid var(--rule)}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);font-weight:500;background:var(--ground);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.n{font-family:var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;width:1%;white-space:nowrap}
+td.v{font-family:var(--mono);font-size:12.5px;white-space:nowrap;font-weight:500}
+td.m{font-family:var(--mono);font-size:12.5px}
+.ok{color:var(--pass)}.no{color:var(--red)}.mid{color:var(--amber)}
+
+figure{margin:0;display:flex;flex-direction:column;gap:8px}
+figure img{display:block;max-width:520px;width:100%;height:auto;border:1px solid var(--rule-strong);background:var(--surface)}
+figcaption{font-size:13px;color:var(--muted);max-width:66ch}
+figcaption b{color:var(--ink);font-weight:500}
+.shots{display:flex;flex-direction:column;gap:24px}
+
+ul.notes{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:11px}
+ul.notes li{padding-left:15px;border-left:2px solid var(--rule-strong);font-size:14px;max-width:70ch}
+ul.notes li b{font-weight:600}
+.callout{background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--amber);padding:13px 15px;font-size:14px;max-width:none;display:flex;flex-direction:column;gap:8px}
+footer{border-top:1px solid var(--rule);padding-top:18px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:7px}
+footer .mono{word-break:break-all}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow"><span>VCST-5806</span><span>·</span><span>Bug · Medium</span><span>·</span><span>WCAG 2.4.3</span><span>·</span><span>2026-09-02</span></div>
+  <h1>A button that disables itself on activation dropped focus to <code>&lt;body&gt;</code></h1>
+  <div class="verdict">VERIFIED <span class="tally">STR 3/3 ×3 repros · checklist 8/8</span></div>
+</header>
+
+<section>
+  <h2>The defect</h2>
+  <p>Activating a dashboard widget&rsquo;s date-range toggle switched the range correctly but left <code>document.activeElement</code> on <code>&lt;body&gt;</code>, so a keyboard user&rsquo;s next Tab restarted at the top of the document. On a dashboard with 45 focusable elements that cost roughly twenty Tab presses to get back.</p>
+  <div class="callout">
+    <div><b>The ticket named the wrong cause, and the real one is broader than the dashboard.</b></div>
+    <div>The report blamed a toggle-group re-render replacing the focused node, plus gridstack&rsquo;s <code>mousedown preventDefault()</code>. Both were checked and neither holds. The actual cause: <b>a natively disabled element cannot hold focus.</b> The toggle sets <code>:disabled="chartLoading"</code> on all three buttons while the chart reloads, so activating the focused one blurs it — and the framework&rsquo;s own <b>Sign in</b> button does the same while its request is in flight, meaning every app on this framework lost focus on login the same way.</div>
+  </div>
+</section>
+
+<section>
+  <h2>Fix under test</h2>
+  <p>PR&nbsp;#347: while a button is the one holding focus it announces its state with <code>aria-disabled</code> instead of the native attribute — inert as before, but still focusable, so the user is where they left off when the work finishes. Every other disabled button keeps the native attribute and stays out of the tab order.</p>
+  <dl class="strip">
+    <div><dt>Framework</dt><dd>2.6.0-rc.0</dd></div>
+    <div><dt>Surface</dt><dd>vcmp-dev Vendor Portal</dd></div>
+    <div><dt>App build</dt><dd>55512</dd></div>
+    <div><dt>Deployed</dt><dd>2026-09-02 12:32:12Z</dd></div>
+    <div><dt>Fix PR</dt><dd>vc-shell#347</dd></div>
+    <div><dt>Merged</dt><dd>2026-09-01 14:23:47Z</dd></div>
+    <div><dt>Theme</dt><dd>Light · 1920×1080</dd></div>
+    <div><dt>Lane</dt><dd>playwright-edge</dd></div>
+  </dl>
+</section>
+
+<section>
+  <h2>Reproduction — RED before the fix, GREEN after</h2>
+  <div class="pair">
+    <div class="phase a">
+      <h3>Phase A · baseline (pre-fix)</h3>
+      <p><code>vc-button.vue</code> reverted to tag <code>v2.5.0</code> against its fix-era test file — <b>3 failed / 15 passed</b>.</p>
+      <pre class="assert">× does not disable itself natively while
+  it is the focused element
+  → expected '' to be undefined
+
+× treats loading the same way — it is
+  the same disabled state
+  → expected '' to be undefined
+
+× announces the disabled state while it
+  is holding focus
+  → expected undefined to be 'true'</pre>
+    </div>
+    <div class="phase b">
+      <h3>Phase B · fixed build (live)</h3>
+      <p>Same test file on the fixed code — <b>GREEN 3/3</b>. Then the decisive sighting in a real browser:</p>
+      <pre class="assert">a11y tree, mid-flight:
+
+  button "Sign in" [disabled] [active]
+
+Disabled AND holding focus — which a
+native `disabled` attribute cannot
+produce.
+
+Tab then continued IN PLACE:
+  7D  → 30D
+  90D → "All orders →"
+never restarting at the document.</pre>
+    </div>
+  </div>
+  <div class="callout">
+    <div><b>Why the browser run is load-bearing and the unit tests are not, on their own.</b></div>
+    <div>jsdom does not implement the blur-on-disable rule, so a unit test asserting <code>document.activeElement</code> passes with or without this fix. The unit tests therefore assert the <em>attribute</em> only. The focus behaviour itself is provable only in a real browser — which is what the table below measures.</div>
+  </div>
+</section>
+
+<section>
+  <h2>The three repros, each run three times</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Repro</th><th>Before</th><th>After</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Sign in — focus, press Enter</td><td class="m no">&lt;body&gt;</td><td class="m ok">stays on the button</td><td class="v ok">PASS 3/3</td></tr>
+      <tr><td>Range toggle — focus 7D, press Enter</td><td class="m no">&lt;body&gt;</td><td class="m ok">stays on 7D</td><td class="v ok">PASS 3/3</td></tr>
+      <tr><td>Range toggle — click 90D</td><td class="m no">&lt;body&gt;</td><td class="m ok">stays on 90D</td><td class="v ok">PASS 3/3</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout">
+    <div><b>How repro 1 was measured, and why it is still valid.</b></div>
+    <div>A successful sign-in navigates away before the in-flight window can be sampled, so it was measured against a <em>nonexistent</em> account — lockout counters are per-account, so the shared <code>admin</code> account could not be locked and both tickets stayed runnable. The auth request genuinely fired (<code>POST /api/platform/security/login → 200</code>), so the disabled state was real. The three successful sign-ins also never dropped to <code>&lt;body&gt;</code>, but they land on the authenticated workspace root — that is VCST-5670&rsquo;s repair, not this fix, and was deliberately not counted as evidence here.</div>
+  </div>
+</section>
+
+<section>
+  <h2>Verification checklist</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>#</th><th>Check</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1–3</td><td>The three repros above, 3× each</td><td class="v ok">PASS 3/3</td></tr>
+      <tr><td class="n">4</td><td>Tab-continuation discriminator — continues in place, not from document top</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">5</td><td><code>aria-pressed</code> genuinely flipped — the range changed, not just focus preserved</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">6</td><td><b>No form gained a tab stop</b> — ordinary disabled buttons keep native <code>disabled</code></td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">7</td><td><code>aria-disabled</code> button is still inert — no second submit</td><td class="v ok">PASS</td></tr>
+      <tr><td class="n">8</td><td>No new console errors</td><td class="v ok">0 errors</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Item 6 is the regression that mattered most</b> — had the fix leaked, every disabled button in every form would have become focusable. Measured on the <em>My Offers</em> blade pagination, where <b>First page</b> and <b>Previous page</b> are both disabled on page 1: Shift+Tab from &ldquo;Page 1&rdquo; jumped straight over both to the preceding row checkbox. Re-confirmed on the login page&rsquo;s empty-form Sign in button. <b>Item 7:</b> Enter <em>and</em> Space on the <code>aria-disabled</code> <code>type=submit</code> button produced no second <code>security/login</code> POST and no form submission.</p>
+</section>
+
+<section>
+  <h2>Why the build under test provably contains the fix</h2>
+  <p>The fix shipped in a prerelease absent from npm&rsquo;s <code>latest</code> dist-tag and carrying no GitHub release tag, so version listings alone would have reported it unshipped.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Step</th><th>Observation</th></tr></thead>
+    <tbody>
+      <tr><td>Ancestry</td><td class="m">fix → rc gitHead <code>cb6379d</code>: ahead_by 5, behind_by 0</td></tr>
+      <tr><td>Served constant</td><td class="m">build 55512 declares framework <code>2.6.0-rc.0</code></td></tr>
+      <tr><td>Compiled marker</td><td class="m">ref_key:"buttonRef" … disabled:u.value&amp;&amp;!p.value, "aria-disabled":p.value||void 0 … onBlur:…p.value=!1</td></tr>
+      <tr><td>Marker proven new</td><td class="m"><code>aria-disabled</code>: 0 occurrences in <code>vc-button.vue</code> at v2.5.0, 3 at main</td></tr>
+    </tbody>
+  </table></div>
+  <p>The marker was validated by diffing the source file across refs, not harvested from the PR&rsquo;s <code>+</code> lines — a <code>+</code> line routinely references an identifier that already existed, which is how a marker&rsquo;s presence can read as &ldquo;deployed&rdquo; for a fix that is thirty commits away.</p>
+</section>
+
+<section class="shots">
+  <h2>Evidence</h2>
+  <figure>
+    <img src="screenshots/5806-signin-disabled-but-still-focused.png" alt="Vendor Portal sign-in form with the Sign in button carrying a visible focus ring.">
+    <figcaption><b>The fix&rsquo;s signature.</b> The Sign in button holds a visible focus ring while in its disabled state, corroborating the a11y-tree reading <code>[disabled] [active]</code>. Pre-fix, focus was on <code>&lt;body&gt;</code> at this moment. (This frame also shows the unrelated misleading-error finding below.)</figcaption>
+  </figure>
+  <figure>
+    <img src="screenshots/5806-range-toggle-keeps-focus-30D.png" alt="Orders dashboard widget with the 30D range button focused and pressed.">
+    <figcaption><b>Range toggle keeps focus.</b> After activation the pressed button retains focus, and one Tab moves to the next control in the widget rather than restarting at the document.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Findings not filed</h2>
+  <ul class="notes">
+    <li><b>Misleading failed-login error.</b> A failed sign-in clears the Password field and raises <code>The Password field is required</code> with the field marked invalid, instead of an invalid-credentials message. Reproducible 3/3. <b>Caveat before anyone files it:</b> only exercised with a <em>nonexistent</em> account, so whether a wrong password on a real account behaves differently is untested.</li>
+    <li><b>VcDataTable column-width crisis.</b> <code>sum(minPx)=1800px &gt; availableWidth=778px. Columns will be squeezed below their minimum widths.</code> on the <em>My Offers</em> list blade at 1920×1080.</li>
+    <li><b>ai-agent-context warning.</b> <code>Cannot set context data: no blade id available</code>, once per sign-in/route event (5× this session). Framework-internal, unrelated to focus.</li>
+    <li><b>Tooling, not a product defect.</b> Two interactions initially hit the MCP 5000&nbsp;ms actionability gate; a 3&nbsp;s settle then succeeded. Recorded so the flake is not later mistaken for a defect.</li>
+  </ul>
+</section>
+
+<footer>
+  <div><b>Instrument, and its calibration.</b> The a11y snapshot&rsquo;s <code>[active]</code> marker plus a one-Tab continuation probe. <code>browser_evaluate</code> is blocked by the real-user hook and was never attempted; no eval opt-in was used. The instrument was calibrated twice — pre-sign-in and after Log Out — and shown to <em>move</em>: the marker was lost when focus left and regained on repair, so an <code>[active]</code> reading is genuine focus rather than a default.</div>
+  <div><b>Oracle substitution.</b> vc-shell is a separate product from the Virto storefront: no <code>BL-*</code>, <code>BL-UI-*</code>, <code>ECL-*</code> or regression suite covers it. <code>vc-button.docs.md</code>&rsquo;s disabled-while-focused contract at <code>main</code> was the oracle; WCAG 2.4.3 Focus Order is the standard. Adjacent regression came from the full framework unit suite with all three fixes present: 414 files / 4112 tests / 0 failures.</div>
+  <div><b>No assistive-technology pass was run</b> — this was focus and a11y-tree verification, not screen-reader coverage.</div>
+  <div class="mono">Evidence: reports/tickets/Sprint26-17/VCST-5806/ · verification-report.md · verification-summary.json</div>
+</footer>
+
+</div>
+</body>
+</html>
