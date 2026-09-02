@@ -126,7 +126,7 @@ explanations before being answered.)
 | 24 | Citation contract | Ids eternal, never reused; consumers: other entries, client deltas (relation + base pin), and anything an agent writes — reports, tickets, PR bodies — via `@kb(id)`; dangling refs caught by the index gate. Client id namespace `KB-C-*` vs platform `KB-*` — collision impossible by construction. No external system is required to cite the base for it to work |
 | 25 | Answer contract | Mandatory minimum with every relayed fact: id + categorical trust + freshness + provenance + dispute flag; caveats voiced only below top trust (quiet at the top, loud where reduced); audit surface = git + the generated catalog — no dedicated UI |
 | 26 | Success metrics | Usage package: live MISS share (falling = coverage), `@kb(id)` citation rate in tasks (rising = adoption), disputes per 100 answers (falling = correctness). The exam is a retrieval regression gate, not a success metric |
-| 27 | Failure mode | Empty-but-true: confident answers only in the main result; an explicit MISS otherwise; relevant drafts/candidates in a separately-fenced **leads** section (operator, translated: "leads, not facts") |
+| 27 | Failure mode | Empty-but-true: confident answers only in the main result; an explicit MISS otherwise; relevant drafts and under-threshold entries in a separately-fenced **leads** section (operator, translated: "leads, not facts") |
 | 28 | Fate of #252/engine | Close unmerged; engine modules move file-by-file into `plugins/vc-kb/` with v3 semantics (fresh PR sequence). **Code is donated; content is not** — no corpus travels with it |
 
 Operational answers recorded alongside: the SessionStart hook must stay light (no
@@ -170,9 +170,12 @@ Three planes of knowledge, one entry contract, one resolver, one autonomous life
   (docs/live/source axes), confirmations, disputes.
 - **Normative plane** (§5.3): decisions, conventions, processes; provenance-based
   evidence; lives until superseded.
-- **Lifecycle** (§6): `draft → candidate → confirmed` — all machine transitions,
-  driven by an internal weighted-evidence score with per-plane thresholds; `disputed`
-  and `pinned` are overlays; `superseded`/`retired` keep files forever.
+- **Lifecycle** (§6): **one entry, one weight** — `draft` (captured, not yet
+  consolidated, no id) becomes an ordinary entry the moment consolidation mints its
+  id, and everything after that is the weighted-evidence score rising or falling.
+  `confirmed` is a **derived label** ("weight cleared the plane threshold"), never a
+  status somebody sets; `disputed` and `pinned` are overlays; `superseded`/`retired`
+  keep files forever.
 - **Anti-self-confirmation** (§7): every trust-raising signal is anchored to an oracle
   *outside the corpus* (source code, live system, docs, authoritative artifacts);
   retrieval is deterministic (no learned feedback loop); goldens come from real usage
@@ -374,26 +377,47 @@ revocation costs nothing when nothing has drifted.
 ### 6.1 Statuses and overlays
 
 ```
-draft ──(gates)──► candidate ──(score ≥ threshold)──► confirmed ──► superseded
-                        │                                  │            (terminal-with-pointer)
-                        └──────────── demotion ◄───────────┘        ──► retired (terminal)
+draft ──(consolidation gates, id minted)──► entry ──► superseded (terminal-with-pointer)
+  no id, awaiting the run                    │    ──► retired    (terminal)
+                                             │
+                    weight rises and falls ──┘  label: lead → unconfirmed → confirmed
 overlays (orthogonal, never statuses): disputed · pinned
 ```
 
 | Status | Meaning | Set by |
 |---|---|---|
-| `draft` | A captured observation with evidence; no id | machine (capture) |
-| `candidate` | Passed structural gates (novelty, evidence shape, dedup); id minted; usable, labeled "not confirmed" | machine (consolidate) |
-| `confirmed` | The weighted evidence score cleared the per-plane threshold | **machine** (consolidate) — the v3 reversal |
+| `draft` | Captured with evidence, **not yet consolidated**; no id. Not a maturity rung — the interval between an in-session write and the next deterministic pass, usually minutes | machine (capture) |
+| `entry` | Cleared the consolidation gates (novelty, evidence shape, dedup); **id minted**; carries a weight from that moment on | machine (consolidate) |
 | `superseded` | Replaced; keeps file/id/body + `supersededBy` | machine (via contradiction resolution §10.3) or human |
 | `retired` | Dead subject, no successor; kept forever for citations | machine (positive evidence of death: feature/module gone from derived layer) or human veto |
+
+**Only two things vary, so only two things are stored**: whether the entry has an
+**id** (the citation contract — §4.3) and what its **weight** is. `confirmed` and
+`candidate` were two names for one object at two weights, and the first of them named
+an approver this design does not have; both are now **labels the resolver derives**
+(§6.2), which is also how they were already computed. Two consequences are deliberate:
+a gate that used to read "status is confirmed" now reads **"weight ≥ the plane
+threshold"**, and because a derived label moves when a threshold is tuned, the digest
+reports the tuning **and how many entries changed label because of it** — a stored
+status made that an event, and a derived one must not make it silent.
+
+**Why the id waits for consolidation.** Minting at capture is tempting — it would
+give an agent something to cite immediately — but the in-session novelty check is the
+writing agent's own, and duplicates are the expected case, not the exception. An id
+minted before the deterministic dedup is an id burned on a duplicate, after which two
+ids about one subject accumulate weight separately and both eventually read as
+confirmed. That is corpus fragmentation — the costlier error of the two ([R§4]) — and
+it is why a repeat sighting is recorded as **a confirmation of the existing entry**
+(§10.1) instead of a new record: the second sighting still does exactly what the
+operator asked of it, it raises weight.
 
 `disputed` (machine or human): trust reads `none` both ways until resolved.
 `pinned` (human only): the machine may not edit, demote, supersede, or retire the entry;
 capture against it still records confirmations/disputes for the digest.
 
-**Rejected**: `approved` as the top-status name (implies an approver; `confirmed`
-states the actual basis — evidence); a sixth `disputed` status (loses lifecycle
+**Rejected**: `approved` anywhere (it implies an approver this design does not have —
+which is also why `confirmed` survives only as a derived label, stating the basis
+rather than an act); a `disputed` status (loses lifecycle
 position — v2's overlay argument stands); numeric trust exposed to consumers — the
 measured finding is harsher than v2 assumed: a **passive** tag (numeric *or*
 categorical) is largely inert, while a blunt "do not trust this" instruction
@@ -441,7 +465,7 @@ Three rules keep the arithmetic from lying:
   per domain per run (default 20, in `brain.json`) above the score threshold — NELL's
   "30 new beliefs per predicate per iteration, minimum posterior 0.75" is the precedent,
   and it is the cheapest deterministic brake on runaway self-promotion there is. Excess
-  candidates wait for the next run; the digest says how many waited.
+  entries wait for the next run; the digest says how many waited.
 
 **Where the negative labels come from without a human.** Knowledge Vault's **Local
 Closed World Assumption** ([R§1]) is directly applicable and costs a set-membership
@@ -451,15 +475,17 @@ engine produces **no** label rather than a fabricated one. That asymmetry is wha
 the pipeline learn from its own corpus without the corpus becoming its own evidence.
 
 **Thresholds** (defaults; per-root tunable in `brain.json`, and recorded in the digest
-whenever tuned): `candidate → confirmed` at **score ≥ 6** AND the per-plane floor —
+whenever tuned): the **confirmed** label at **score ≥ 6** AND the per-plane floor —
 experiential: ≥2 distinct axes or 1 axis + `derivation`; normative: `provenance` +
 ≥1 further event (`practice`, second artifact, or a full `usage` window).
 
 **What agents see is never the number.** The resolver computes a categorical trust
-label: `confirmed` + no flags → **high** (silent); `confirmed` + `verification-due` →
-**medium** (one-line caveat); `candidate` → **medium-low** ("not confirmed — verify
-before load-bearing use"); `draft` → **low** ("a lead, not an answer"); any +
-`disputed` → **none** (symmetric ban both ways). The score itself appears only in the
+label from the weight and the flags: over the threshold, no flags → **high**, and the
+answer says nothing extra; over the threshold + `verification-due` → **medium** (a
+one-line caveat); an id-bearing entry under the threshold → **medium-low** ("not
+confirmed — verify before load-bearing use"); a `draft` → **low** ("a lead, not an
+answer") and it is served only in the fenced leads block (§9.2), never in the main
+result; any + `disputed` → **none** (symmetric ban both ways). The score itself appears only in the
 digest and the index, for the pipeline's own decisions. Rationale: the in-context
 evidence that in-context confidence *metadata* — numeric or passive-categorical — is
 largely inert while phrasing is not ([R§2]); and a number invites arithmetic nobody can
@@ -470,10 +496,10 @@ defend. The label is therefore paired with §6.6's wording rules, not trusted al
 | From → To | Trigger | Actor |
 |---|---|---|
 | — → draft | capture with capture-time evidence (refused without) | machine |
-| draft → candidate | novelty protocol passed (§10.1) + evidence block valid + quarantine/layer-guard clean; id minted | machine |
+| draft → entry | novelty protocol passed (§10.1) + evidence block valid + quarantine/layer-guard clean; id minted | machine |
 | draft → (tombstoned) | consolidation rejects (restates existing → recorded as a confirmation of that entry, not a rejection; or human veto) | machine / human |
-| candidate → confirmed | weighted score ≥ threshold + plane floor + exam gate green on the batch | **machine** |
-| confirmed/candidate → +disputed | dispute capture passes the evidence bar; **or** drift-check `changed`/`retired` on a delta's base pin; **or** failed re-check; **or** human force-dispute | machine / human |
+| weight ≥ threshold (label **confirmed**) | weighted score ≥ threshold + plane floor + exam gate green on the batch; the promotion budget still applies | **machine** — no status is written, the label is recomputed |
+| entry → +disputed | dispute capture passes the evidence bar; **or** drift-check `changed`/`retired` on a delta's base pin; **or** failed re-check; **or** human force-dispute | machine / human |
 | +disputed → cleared | an independent re-check (§10.3) re-confirms the original claim with fresh evidence | machine |
 | +disputed → superseded | the re-check confirms the challenger; the pair is linked `supersedes`/`supersededBy` | machine |
 | confirmed → superseded | a newer confirmed entry replaces it (contradiction resolution or explicit replacement) | machine |
@@ -628,7 +654,8 @@ is *more* orthodox than v2 was, not less: KCS's own economics say "reviewing eve
 article that is created is a huge waste of time and money", and its confidence states
 are earned by **use** (*reuse is review*), not by a reviewer. Its structure maps onto
 v3 almost field for field: content standard → the closed schema + lint gates; WIP /
-Not Validated / Validated / Archived → `draft` / `candidate` / `confirmed` /
+Not Validated / Validated / Archived → `draft` / an entry under the threshold / a
+confirmed-labeled entry /
 `superseded`-`retired` (with archive as a visibility change, never deletion); *flag it
 or fix it* → flagging is permissionless (dispute, drift) while fixing is gated
 (consolidation); earned-and-revocable license levels → capability tiers (capture-only →
@@ -698,7 +725,8 @@ Kept from v1/v2: two entry points (`resolveId`, `lookup`), typed answers always,
   audience-neutral (QA: don't test here; dev: the native mechanism exists — don't
   reinvent it).
 - **Leads section** (§2 Q27): below the confident results, a separately-fenced
-  `leads[]` block carries relevant drafts/candidates labeled "leads, not facts"; a MISS
+  `leads[]` block carries relevant drafts and under-threshold entries labeled "leads,
+  not facts"; a MISS
   with leads is still a MISS.
 - The answer contract (§9.5) rides on every result.
 
@@ -930,7 +958,7 @@ gitignored; aggregated counts only in the digest — no question prose leaves th
 | **Citation rate** (`@kb(id)` per task/report, harvested like `citedBy`) | adoption — the base is actually load-bearing | ↑ good |
 | **Dispute rate** (disputes per 100 served answers) | correctness in the field | ↓ good |
 | Confirmation velocity (evidence events/week) | the flywheel is turning | context |
-| Median time from draft → confirmed | pipeline latency | context |
+| Median time from capture to the confirmed label | pipeline latency | context |
 | **Entry count vs distinct-subject count** | entries rising while subjects stay flat = the corpus is **over-splitting** into duplicate rival entries ([R§1]) | must track together |
 | Exam hit@k/MRR | retrieval regression **gate only** | must not fall |
 
@@ -966,7 +994,7 @@ plugins/vc-kb/
                                   vendor/minisearch.js (pinned, hashed)
   skills/kb-extract/              derived-layer extractors (§11.1)
   skills/kb-bootstrap/            §11.3
-  commands/kb-status.md           corpus health: counts by status, drift, exam trend, usage metrics
+  commands/kb-status.md           corpus health: counts by label and state, drift, exam trend, usage metrics
   hooks/hooks.json                kb-sync.mjs (SessionStart), kb-guard.mjs (PreToolUse)
   rules/knowledge-consumption.md  §9.5 protocol
   templates/                      brain scaffolding (brain.json, taxonomy.json, synonyms.json,
@@ -1027,7 +1055,7 @@ percentages = surviving lines against the module's current size:
 | `resolve.mjs` (341 l) | **rewrite** | ~50% | `resolveId` precedence + MISS object survive; `lookup` is replaced (shadowing dropped for R1 grouping; hand-rolled scorer → MiniSearch; leads section; answer contract v3 with trust block) |
 | `exam.mjs` (329 l) | reuse, extend | ~85% | Goldens/`--check`/metrics/compare/history kept; adds golden-class field (regression vs truth), candidate harvesting feed, supersede-chain acceptance already present |
 | `capture.mjs` (278 l) | reuse, extend | ~80% | Append-only/dedup/tombstones/evidence-refusal kept; adds `--dispute`, `anchors`, `provenance`, confirmation-event emission (novelty outcome 1) |
-| `consolidate.mjs` (568 l) | **rewrite on the same skeleton** | ~60% | The five-gate frame, batch-commit + revert, layer guard, quarantine, tombstoning survive; the promotion decision changes (weighted trust model, candidate stage, plane floors), supersede-with-quote writer → pointer-pair writer, adds consecutive-revert escalation + recheck-queue emission |
+| `consolidate.mjs` (568 l) | **rewrite on the same skeleton** | ~60% | The five-gate frame, batch-commit + revert, layer guard, quarantine, tombstoning survive; the promotion decision changes (weighted trust model, derived labels, plane floors), supersede-with-quote writer → pointer-pair writer, adds consecutive-revert escalation + recheck-queue emission |
 | `drift-check.mjs` (154 l) | **rewrite** | ~40% | Verdict vocabulary (`ok/changed/retired`) and never-auto-resolve stance survive; the sensor changes from quote-inclusion to `base {hash, commit}` comparison + git-diff rendering (v2 R5a), and gains anchor-drift checking for `anchors[]` |
 | `kb-sync.mjs` hook | reuse, minor edits | ~85% | Pure planner + fail-open + pin semantics kept; drift input switches to the new sensor; picks up CI-built derived layer |
 | `kb-guard.mjs` hook | reuse, one fix | ~90% | R1 correction: entry-file `Read`s never counted; rest (escalation, exemptions, fail-open, state) kept |
@@ -1054,7 +1082,7 @@ running exactly as they do today, untouched and out of scope.
 |---|---|---|
 | 1 | **Self-confirmation drift** (NELL-class): the base converges on its own beliefs | §7: evidence must reference oracles outside the corpus (validator-enforced); truth goldens frozen only after source-grounded verification; deterministic retrieval; usage metrics external to the system |
 | 2 | **Confident rot**: a wrong confirmed entry misleads every consumer | Dispute duty + on-read re-checks target exactly the entries being used; anchor drift flags on source change; answer contract forces provenance/freshness into every relay; disputes drop trust to `none` symmetrically |
-| 3 | **A hallucinated capture poisons the corpus** | Capture refuses claims without evidence; drafts are quarantined from confirmed by status; promotion needs multi-source weighted evidence; one session physically cannot reach `confirmed` alone (axis/observation caps) |
+| 3 | **A hallucinated capture poisons the corpus** | Capture refuses claims without evidence; a draft has no id and is served only as a lead; the confirmed label needs multi-source weighted evidence; one session physically cannot reach it alone (axis/observation caps) |
 | 4 | **Mass bad batch** (the copied-dist-folder class) | Anomalous-batch quarantine (applies NOTHING over threshold); layer guard; one batch commit → one `git revert` |
 | 5 | **The safety gate becomes a lock** (Cortex: 6 reverts/day, zero learning) | Consecutive-revert escalation: 2 in a row → hold + loud digest line, never an infinite retry loop |
 | 6 | **Retrieval silently degrades** (library update shifts scoring) | Vendored MiniSearch pinned + hashed into the index meta; exam baselines bound to that hash; exam gate on every batch |
@@ -1107,7 +1135,7 @@ mechanisms in [R§5]; every incident class has a named v3 answer or an explicit
    §14 all change.)
 1. The §1.1 reversal: full autonomy with veto instruments, replacing the meeting model the review asked for — **with §5.4's admission rule as its price**: every entry must name an automated oracle that could contradict it, because the one long-running precedent bought its drift defence with ~1,467 human negative labels a month. *(the load-bearing vote)*
 2. The kind vocabulary (§4.1) and `locator`'s exit from the KB.
-3. Machine-reachable top status `confirmed` + the weighted evidence defaults (§6.2).
+3. Machine-reachable **confirmed** label — no human approval anywhere on the path — plus the weighted evidence defaults and the two stored states (§6.1, §6.2).
 4. The three-plane evidence model, incl. provenance-based proof for normative knowledge (§5).
 5. Staleness = supersession + anchor drift; age only orders the re-check queue (§6.4).
 6. Goldens: regression goldens auto-seeded; truth goldens auto-frozen after source-grounded verification with a digest veto window (§7 item 3).
