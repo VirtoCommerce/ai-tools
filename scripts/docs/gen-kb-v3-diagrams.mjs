@@ -235,13 +235,15 @@ function pageOverview() {
     "сообщает человеку, что изменилось",
   ], ...C.keeper, 52);
 
-  p.card("OPER", 880, 660, 340, 150,
-    "Оператор<br><span style=\"font-size:11px;font-weight:normal\">человек за правила базы; вмешивается редко</span>", [
+  p.card("OPER", 880, 660, 340, 170,
+    "Оператор<br><span style=\"font-size:11px;font-weight:normal\">владелец базы: у общей — сотрудник Virto,<br>у клиентской — сотрудник клиента</span>", [
     "убирает неверное",
     "закрепляет важное",
     "ставит под сомнение",
     "читает сводку изменений",
-  ], ...C.actor, 52);
+    "правит только свою базу",
+    "вмешивается редко",
+  ], ...C.actor, 62);
 
   p.card("SRC", 60, 860, 600, 100,
     "Источники<br><span style=\"font-size:11px;font-weight:normal\">код · стенд · документация · решения команды</span>", [
@@ -260,7 +262,7 @@ function pageOverview() {
   p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.333, entryX: 0, entryY: 0.71, points: [[800, 700], [800, 520]] });
   p.edge("KBC", "KBP", "", line, { exitX: 0.833, exitY: 0, entryX: 0.833, entryY: 1 });
   p.edge("SRC", "KEEP", "", line, { exitX: 0.742, exitY: 0, entryX: 0.5, entryY: 1 });
-  p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.467 });
+  p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.412 });
   p.edge("OPER", "KBC", "", rare, { exitX: 0.353, exitY: 0, entryX: 0.333, entryY: 1 });
   p.edge("OPER", "KBP", "", rare, { exitX: 1, exitY: 0.267, entryX: 1, entryY: 0.5, points: [[1310, 700], [1310, 262]] });
   p.edge("KBP", "KBC", "", line, { exitX: 0.167, exitY: 1, entryX: 0.167, entryY: 0 });
