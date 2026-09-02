@@ -123,6 +123,76 @@ function page(name) {
   };
 }
 
+/* ============================================ 0. Общий вид (для всех) */
+
+/**
+ * The overview is deliberately the least technical thing in this file: it is read by
+ * managers and analysts, not only by engineers. Rules it follows, and they are what
+ * keep it readable — one screen, nine blocks, no jargon (no "resolver", no "index",
+ * no file names), every arrow labelled with what actually happens, and detail deferred
+ * to the per-block pages. If a block needs a second sentence to be understood, it
+ * belongs on its own page instead.
+ */
+function pageOverview() {
+  const p = page("Общий вид");
+
+  const O = {
+    actor: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#f7e6ea;strokeColor=#8e2b3e;fontColor=#5e1a28;fontSize=13;strokeWidth=2;${FONT}`,
+    agent: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#fbf0e6;strokeColor=#a85a22;fontColor=#6f3813;fontSize=13;strokeWidth=2;${FONT}`,
+    window: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#e3f1ee;strokeColor=#0f6f63;fontColor=#093f39;fontSize=13;strokeWidth=3;${FONT}`,
+    store: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#eef2f1;strokeColor=#3d5a55;fontColor=#16211e;fontSize=13;strokeWidth=2;${FONT}`,
+    keeper: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#e3f1ee;strokeColor=#0f6f63;fontColor=#093f39;fontSize=13;strokeWidth=2;${FONT}`,
+    source: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#f2f5f4;strokeColor=#5c6b66;fontColor=#2f3a37;fontSize=13;strokeWidth=2;${FONT}`,
+    lane: `rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#9db3ad;dashed=1;verticalAlign=top;align=center;spacingTop=8;fontColor=#4b5c57;fontStyle=2;fontSize=12;${FONT}`,
+  };
+  const line = `edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;${FONT}`;
+  const rare = `${line}dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;`;
+
+  p.box("t", 60, 24, 1000, 32, "Как это работает — общий вид", S.title);
+  p.box("ts", 60, 62, 1100, 40,
+    "Кто с кем разговаривает и что кому передаёт. Каждый блок потом раскрывается отдельной схемой — по запросу.",
+    S.sub);
+
+  p.box("HUM", 60, 180, 220, 120,
+    b("Человек") + "<br><br>менеджер · разработчик<br>тестировщик · аналитик", O.actor);
+
+  p.box("AGT", 380, 180, 300, 120,
+    b("Агент-помощник") + "<br><br>делает задачу: чинит, проверяет, объясняет.<br>Сам спрашивает базу и сам записывает то, что узнал", O.agent);
+
+  p.box("WIN", 380, 400, 300, 140,
+    b("Одно окно к знаниям") + "<br><br>сюда идут все вопросы.<br>Отвечает и сразу говорит, насколько ответу можно верить.<br>Если ответа нет — так и говорит, а не выдумывает", O.window);
+
+  p.box("KNOW", 780, 150, 380, 370, "Хранилище знаний — баз две, но для спрашивающего это одно целое", O.lane);
+  p.box("KBP", 800, 205, 340, 120,
+    b("Знания о платформе") + "<br><br>то, что верно для любого проекта", O.store);
+  p.box("KBC", 800, 355, 340, 140,
+    b("Знания о проекте клиента") + "<br><br>то, что верно только здесь.<br>Дополняет общие, а не подменяет: читать общие может, менять — нет", O.store);
+
+  p.box("KEEP", 380, 620, 300, 150,
+    b("Проверяющий механизм") + "<br><br>работает сам, без людей: принимает новое только с доказательством, перепроверяет старое, помечает спорное", O.keeper);
+
+  p.box("OPER", 780, 620, 340, 150,
+    b("Оператор") + "<br><br>вмешивается редко: убрать неверное, закрепить важное, поставить под сомнение.<br>Читает короткую сводку изменений", O.actor);
+
+  p.box("SRC", 60, 830, 1100, 110,
+    b("Источники правды — сам продукт") + "<br>код · работающий стенд · документация · записанные решения команды<br>знания проверяются по ним, а не сами по себе", O.source);
+
+  p.edge("HUM", "AGT", "задача · вопрос", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.3 });
+  p.edge("AGT", "HUM", "ответ с пояснением", line, { exitX: 0, exitY: 0.75, entryX: 1, entryY: 0.75 });
+  p.edge("AGT", "WIN", "спрашивает", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
+  p.edge("WIN", "AGT", "отвечает —<br>или говорит «не знаю»", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
+  p.edge("KNOW", "WIN", "", line, { exitX: 0, exitY: 0.75, entryX: 1, entryY: 0.5 });
+  p.edge("AGT", "KEEP", "записывает новое<br>с доказательством", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[300, 240], [300, 695]] });
+  p.edge("KEEP", "KNOW", "принимает<br>подтверждённое", line, { exitX: 1, exitY: 0.25, entryX: 0.3, entryY: 1, points: [[720, 657], [720, 560]] });
+  p.edge("SRC", "KEEP", "сверяет с продуктом<br>и наполняет в первый раз", line, { exitX: 0.4, exitY: 0, entryX: 0.5, entryY: 1 });
+  p.edge("KEEP", "OPER", "сводка", line);
+  p.edge("OPER", "KNOW", "редко: убрать · закрепить · усомниться", rare, { exitX: 0.55, exitY: 0, entryX: 0.75, entryY: 1 });
+  p.edge("KBC", "KBP", "если верно для всех —<br>предложение наверх", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.5, points: [[1250, 425], [1250, 265]] });
+  p.edge("KBP", "KBC", "", rare, { exitX: 0.35, exitY: 1, entryX: 0.35, entryY: 0 });
+
+  return p.render(1440, 1000);
+}
+
 /* =================================================== 1. Процесс целиком */
 
 function pageProcess() {
@@ -443,15 +513,24 @@ function pageBrains() {
 
 /* -------------------------------------------------------------------- main */
 
-const pages = [pageProcess(), pageLifecycle(), pageGates(), pageRecheck(), pageBrains()];
-const chosen = ONE_PAGE ? [pages[ONE_PAGE - 1]] : pages;
-
-const doc =
+const wrap = (list) =>
   `<mxfile host="app.diagrams.net" agent="scripts/docs/gen-kb-v3-diagrams.mjs" version="24.0.0">\n` +
-  chosen.join("\n") +
+  list.join("\n") +
   `\n</mxfile>\n`;
 
-const target = OUT_OVERRIDE ? resolve(OUT_OVERRIDE) : OUT;
-mkdirSync(dirname(target), { recursive: true });
-writeFileSync(target, doc, "utf8");
-process.stdout.write(`kb v3 diagrams — ${chosen.length} page(s), ${doc.split("\n").length} lines\n  ${target}\n`);
+const write = (target, list, what) => {
+  mkdirSync(dirname(target), { recursive: true });
+  const doc = wrap(list);
+  writeFileSync(target, doc, "utf8");
+  process.stdout.write(`${what} — ${list.length} page(s), ${doc.split("\n").length} lines\n  ${target}\n`);
+};
+
+const detail = [pageProcess(), pageLifecycle(), pageGates(), pageRecheck(), pageBrains()];
+
+if (OUT_OVERRIDE) {
+  const one = ONE_PAGE === 0 ? pageOverview() : detail[(ONE_PAGE || 1) - 1];
+  write(resolve(OUT_OVERRIDE), [one], "kb v3 — single page");
+} else {
+  write(resolve(dirname(OUT), "adr-knowledge-base-v3-overview.drawio"), [pageOverview()], "kb v3 — общий вид");
+  write(OUT, detail, "kb v3 — подробные схемы");
+}

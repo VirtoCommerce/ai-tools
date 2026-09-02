@@ -1,0 +1,94 @@
+<mxfile host="app.diagrams.net" agent="scripts/docs/gen-kb-v3-diagrams.mjs" version="24.0.0">
+  <diagram id="Общий вид" name="Общий вид">
+    <mxGraphModel dx="1200" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1440" pageHeight="1000" math="0" shadow="0" adaptiveColors="auto">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t" value="Как это работает — общий вид" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#16211e;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="24" width="1000" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="ts" value="Кто с кем разговаривает и что кому передаёт. Каждый блок потом раскрывается отдельной схемой — по запросу." style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="62" width="1100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="HUM" value="&lt;b&gt;Человек&lt;/b&gt;&lt;br&gt;&lt;br&gt;менеджер · разработчик&lt;br&gt;тестировщик · аналитик" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#f7e6ea;strokeColor=#8e2b3e;fontColor=#5e1a28;fontSize=13;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="180" width="220" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="AGT" value="&lt;b&gt;Агент-помощник&lt;/b&gt;&lt;br&gt;&lt;br&gt;делает задачу: чинит, проверяет, объясняет.&lt;br&gt;Сам спрашивает базу и сам записывает то, что узнал" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#fbf0e6;strokeColor=#a85a22;fontColor=#6f3813;fontSize=13;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="380" y="180" width="300" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="WIN" value="&lt;b&gt;Одно окно к знаниям&lt;/b&gt;&lt;br&gt;&lt;br&gt;сюда идут все вопросы.&lt;br&gt;Отвечает и сразу говорит, насколько ответу можно верить.&lt;br&gt;Если ответа нет — так и говорит, а не выдумывает" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#e3f1ee;strokeColor=#0f6f63;fontColor=#093f39;fontSize=13;strokeWidth=3;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="380" y="400" width="300" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="KNOW" value="Хранилище знаний — баз две, но для спрашивающего это одно целое" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#9db3ad;dashed=1;verticalAlign=top;align=center;spacingTop=8;fontColor=#4b5c57;fontStyle=2;fontSize=12;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="780" y="150" width="380" height="370" as="geometry" />
+        </mxCell>
+        <mxCell id="KBP" value="&lt;b&gt;Знания о платформе&lt;/b&gt;&lt;br&gt;&lt;br&gt;то, что верно для любого проекта" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#eef2f1;strokeColor=#3d5a55;fontColor=#16211e;fontSize=13;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="800" y="205" width="340" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="KBC" value="&lt;b&gt;Знания о проекте клиента&lt;/b&gt;&lt;br&gt;&lt;br&gt;то, что верно только здесь.&lt;br&gt;Дополняет общие, а не подменяет: читать общие может, менять — нет" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#eef2f1;strokeColor=#3d5a55;fontColor=#16211e;fontSize=13;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="800" y="355" width="340" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="KEEP" value="&lt;b&gt;Проверяющий механизм&lt;/b&gt;&lt;br&gt;&lt;br&gt;работает сам, без людей: принимает новое только с доказательством, перепроверяет старое, помечает спорное" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#e3f1ee;strokeColor=#0f6f63;fontColor=#093f39;fontSize=13;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="380" y="620" width="300" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="OPER" value="&lt;b&gt;Оператор&lt;/b&gt;&lt;br&gt;&lt;br&gt;вмешивается редко: убрать неверное, закрепить важное, поставить под сомнение.&lt;br&gt;Читает короткую сводку изменений" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#f7e6ea;strokeColor=#8e2b3e;fontColor=#5e1a28;fontSize=13;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="780" y="620" width="340" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="SRC" value="&lt;b&gt;Источники правды — сам продукт&lt;/b&gt;&lt;br&gt;код · работающий стенд · документация · записанные решения команды&lt;br&gt;знания проверяются по ним, а не сами по себе" style="rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#f2f5f4;strokeColor=#5c6b66;fontColor=#2f3a37;fontSize=13;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="830" width="1100" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="Общ1" value="задача · вопрос" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" edge="1" parent="1" source="HUM" target="AGT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Общ2" value="ответ с пояснением" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="AGT" target="HUM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Общ3" value="спрашивает" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="AGT" target="WIN">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Общ4" value="отвечает —&lt;br&gt;или говорит «не знаю»" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="WIN" target="AGT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Общ5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="KNOW" target="WIN">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Общ6" value="записывает новое&lt;br&gt;с доказательством" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="AGT" target="KEEP">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+            <mxPoint x="300" y="240" />
+            <mxPoint x="300" y="695" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Общ7" value="принимает&lt;br&gt;подтверждённое" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0.3;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="KNOW">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+            <mxPoint x="720" y="657" />
+            <mxPoint x="720" y="560" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Общ8" value="сверяет с продуктом&lt;br&gt;и наполняет в первый раз" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.4;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="SRC" target="KEEP">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Общ9" value="сводка" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;" edge="1" parent="1" source="KEEP" target="OPER">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Общ10" value="редко: убрать · закрепить · усомниться" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0.55;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="OPER" target="KNOW">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Общ11" value="если верно для всех —&lt;br&gt;предложение наверх" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBC" target="KBP">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+            <mxPoint x="1250" y="425" />
+            <mxPoint x="1250" y="265" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Общ12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0.35;exitY=1;exitDx=0;exitDy=0;entryX=0.35;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBP" target="KBC">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
