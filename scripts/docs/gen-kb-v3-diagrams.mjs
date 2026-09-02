@@ -205,16 +205,16 @@ function pageOverview() {
     "говорит «не знаю», если ответа нет",
   ], ...C.window, 52);
 
-  p.box("OPT", 860, 350, 400, 245,
+  p.box("OPT", 760, 395, 710, 270,
     "Есть только у клиентского проекта",
     `rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=top;align=center;spacingTop=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;${FONT}`);
-  p.card("KBP", 880, 200, 360, 125,
+  p.card("KBP", 780, 200, 340, 125,
     "База знаний платформы<br><span style=\"font-size:11px;font-weight:normal\">верное для любого проекта</span>", [
     "отвечает справочной напрямую",
     "отдаёт знания проектам",
     "принимает предложения проектов как черновики",
   ], ...C.store, 52);
-  p.card("KBC", 880, 385, 360, 190,
+  p.card("KBC", 780, 435, 340, 190,
     "База знаний клиентского проекта<br><span style=\"font-size:11px;font-weight:normal\">верное только для этого проекта</span>", [
     "отвечает справочной напрямую",
     "читает общее",
@@ -235,15 +235,23 @@ function pageOverview() {
     "сообщает человеку, что изменилось",
   ], ...C.keeper, 52);
 
-  p.card("OPER", 880, 660, 340, 170,
-    "Оператор<br><span style=\"font-size:11px;font-weight:normal\">владелец базы: у общей — сотрудник Virto,<br>у клиентской — сотрудник клиента</span>", [
+  p.card("OPP", 1180, 200, 270, 160,
+    "Оператор платформы<br><span style=\"font-size:11px;font-weight:normal\">сотрудник Virto</span>", [
     "убирает неверное",
     "закрепляет важное",
     "ставит под сомнение",
     "читает сводку изменений",
-    "правит только свою базу",
     "вмешивается редко",
-  ], ...C.actor, 62);
+  ], ...C.actor, 52);
+
+  p.card("OPC", 1180, 435, 270, 160,
+    "Оператор проекта<br><span style=\"font-size:11px;font-weight:normal\">сотрудник клиента</span>", [
+    "убирает неверное",
+    "закрепляет важное",
+    "ставит под сомнение",
+    "читает сводку изменений",
+    "вмешивается редко",
+  ], ...C.actor, 52);
 
   p.card("SRC", 60, 860, 600, 100,
     "Источники<br><span style=\"font-size:11px;font-weight:normal\">код · стенд · документация · решения команды</span>", [
@@ -256,18 +264,20 @@ function pageOverview() {
   p.edge("AGT", "WIN", "", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
   p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.18, points: [[700, 262], [700, 430]] });
-  p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.485 });
+  p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.788 });
   p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[315, 260], [315, 730]] });
-  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.167, entryX: 0, entryY: 0.72, points: [[760, 670], [760, 290]] });
-  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.333, entryX: 0, entryY: 0.71, points: [[800, 700], [800, 520]] });
-  p.edge("KBC", "KBP", "", line, { exitX: 0.833, exitY: 0, entryX: 0.833, entryY: 1 });
+  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.167, entryX: 0, entryY: 0.72, points: [[730, 670], [730, 290]] });
+  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.333, entryX: 0.118, entryY: 1, points: [[820, 700]] });
+  p.edge("KBC", "KBP", "", line, { exitX: 0.794, exitY: 0, entryX: 0.794, entryY: 1 });
+  p.edge("KBP", "KBC", "", line, { exitX: 0.206, exitY: 1, entryX: 0.206, entryY: 0 });
   p.edge("SRC", "KEEP", "", line, { exitX: 0.742, exitY: 0, entryX: 0.5, entryY: 1 });
-  p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.412 });
-  p.edge("OPER", "KBC", "", rare, { exitX: 0.353, exitY: 0, entryX: 0.333, entryY: 1 });
-  p.edge("OPER", "KBP", "", rare, { exitX: 1, exitY: 0.267, entryX: 1, entryY: 0.5, points: [[1310, 700], [1310, 262]] });
+  p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.667, entryX: 0.444, entryY: 1, points: [[1300, 760]] });
+  p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.833, entryX: 1, entryY: 0.5, points: [[1500, 790], [1500, 280]] });
+  p.edge("OPC", "KBC", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.421 });
+  p.edge("OPP", "KBP", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.64 });
   p.edge("KBP", "KBC", "", line, { exitX: 0.167, exitY: 1, entryX: 0.167, entryY: 0 });
 
-  return p.render(1400, 1040);
+  return p.render(1560, 1040);
 }
 
 /* =================================================== 1. Процесс целиком */
