@@ -161,8 +161,13 @@
         <mxCell id="Общ13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;dashPattern=1 4;exitX=0.794;exitY=0;exitDx=0;exitDy=0;entryX=0.794;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBC" target="KBP">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Общ14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="SRC" target="KEEP">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="Общ14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="SRC" target="KEEP">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+            <mxPoint x="800" y="1080" />
+            <mxPoint x="800" y="900" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="Общ15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.323;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="OPC">
           <mxGeometry relative="1" as="geometry">
