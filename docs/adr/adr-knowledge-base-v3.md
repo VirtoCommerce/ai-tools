@@ -13,16 +13,33 @@
 
 ## 1. Context — how we got to v3, and what changed
 
-The corpus problem is unchanged since v1: ~11,800 lines of knowledge across 37 files, no
-entry contract, no index, no client layer, and a bundled duplicate that measurably
-drifted (18 of 29 shared files; the plugin's `business-logic.md` silently carried 144 of
-196 `BL-*` invariants). Retrieval was a grep over a 1,713-line file.
+**This base starts empty.** It is not a re-housing of anything the repository holds
+today: no existing file is migrated, no existing format is inherited, no existing
+identifier is carried over. v1 and v2 both began from "we have a corpus with problems";
+v3 begins from a question that has nothing to do with any corpus — **what does an agent
+need in order to answer a question about this platform correctly, and how does that
+answer stay correct?** Everything below follows from that question, and the first
+entries will be written by the bootstrap extractors (§11.3) and by agents doing real
+work (§10.2), not by an import.
 
-The path: **v1** ("Two Brains", implemented as PR #252) → **team architecture review**
+Today that knowledge has no home at all: it lives in people's heads, in ticket threads,
+in PR discussions, and in the code itself — where it is *true* but not *answerable*,
+because reading code tells you what happens, not what was decided, what is a trap, or
+what is deliberately different on this deployment. An agent asked "why does the cart
+total behave like this here" has nowhere to ask, cannot tell a confirmed fact from a
+guess, and has no way to find out that what it learned last month stopped being true.
+That is the gap v3 fills, and it is why the design's centre of gravity is the
+*lifecycle* — capture, evidence, re-verification, supersession — rather than storage.
+
+The path that got us here: **v1** ("Two Brains", implemented as PR #252) → **team architecture review**
 (8+1 findings, all accepted — verbatim record reconstructed in [R§0]) → **v2** (the
 response: statuses, meeting ratification, scaling ladders, standalone plugin — never
 ratified) → **the task statement itself changed**. The v3 mandate:
 
+0. **A new base, filled from zero.** No migration, no inherited format, no grandfathered
+   ids. Whatever knowledge exists elsewhere in the repository keeps working where it is;
+   if any of it ever belongs here, it arrives the way every other entry does — captured
+   with evidence and promoted through the gates, on its own merits.
 1. **One base for all roles** — manager, lead, QA, backend dev, frontend dev, analyst.
    The QA oracle was the first *consumer*; v1/v2 mistook it for the *purpose* (QA-shaped
    `kind` vocabulary with `locator` in it; suite-citation-centric indexing).
@@ -62,6 +79,7 @@ containment) · the standalone-plugin decision (unanimous) · **annotate-never-h
 
 | # | Error | v3 answer |
 |---|---|---|
+| 0 | **Framing: designed as a rescue of the existing corpus.** v1's context was that corpus's defects, so its entry model, its ids and its indexing were all shaped by what happened to be on disk — a migration wearing an architecture's clothes | The base is new and starts empty (§1 opening, §2 Q0). Requirements come from what an agent needs to answer and keep correct, and the only two ways anything gets in are deterministic extraction (§11.3) and evidence-carrying capture (§10.2) |
 | 1 | Scale: QA taken for the purpose | Role-neutral vocabulary (§4), fix-cycle is the *first* consumer, not the axis (§2 Q3) |
 | 2 | QA-shaped kinds (`locator`) | New vocabulary; `locator` leaves the KB for QA test infrastructure (§4.1) |
 | 3 | Evidence bar assumed empirical verifiability | Three knowledge planes with per-plane evidence models; provenance-based proof for normative knowledge (§5) |
@@ -81,6 +99,7 @@ explanations before being answered.)
 
 | # | Theme | Decision |
 |---|---|---|
+| 0 | Starting point | **A new base, filled from zero.** No corpus migration, no inherited entry format, no grandfathered identifiers, no dependency on any knowledge file that exists today. Existing knowledge assets keep working where they are and are out of scope for this ADR |
 | 1 | Content boundaries | IN: behavior, API contracts, domain rules, pitfalls; architecture **with rationale**; conventions; processes and ownership. OUT: roadmap (tracker owns it; rots faster than the base confirms) |
 | 2 | Explicitly not knowledge | Secrets/env-URLs/test data (owned by env layers, `@td()`, secret store) · restating code an agent can read (store synthesis + anchors, not paraphrase) · client-identifying data in the platform base (§2a, by construction) · claims without evidence (refused at capture) |
 | 3 | First consumers | Working task agents: the fix cycle (`/qa-bug`, `/qa-fix`, `/qa-verify-fix`, triage) plus "how does X work" questions. Other roles arrive through the same resolver later |
@@ -104,11 +123,11 @@ explanations before being answered.)
 | 21 | Retrieval | Deterministic lexical BM25 via **vendored MiniSearch** + curated synonyms + explicit MISS; embeddings only later, behind a measured exam ceiling, with an embedder passport + canary |
 | 22 | Execution environment | Deterministic zero-dep core (resolve/index/exam/consolidate/extractors) runs in any CI with no network and no keys; every model-bound step (capture, novelty classification, live re-checks) lives only in agent sessions; the pipeline never depends on a model |
 | 23 | Packaging | Standalone plugin **`vc-kb`** (no dependencies); `vc-fix` depends on it (`>=` range); hooks ship in `vc-kb`; dependents keep only call sites |
-| 24 | Citation contract | Ids eternal, never reused; consumers: other entries, client deltas (relation + base pin), QA suites (legacy `BL-*`/`ECL-*` grandfathered), agent reports/tickets via `@kb(id)`; dangling refs caught by the index gate. Client id namespace `KB-C-*` vs platform `KB-*` — collision impossible by construction |
+| 24 | Citation contract | Ids eternal, never reused; consumers: other entries, client deltas (relation + base pin), and anything an agent writes — reports, tickets, PR bodies — via `@kb(id)`; dangling refs caught by the index gate. Client id namespace `KB-C-*` vs platform `KB-*` — collision impossible by construction. No external system is required to cite the base for it to work |
 | 25 | Answer contract | Mandatory minimum with every relayed fact: id + categorical trust + freshness + provenance + dispute flag; caveats voiced only below top trust (quiet at the top, loud where reduced); audit surface = git + the generated catalog — no dedicated UI |
 | 26 | Success metrics | Usage package: live MISS share (falling = coverage), `@kb(id)` citation rate in tasks (rising = adoption), disputes per 100 answers (falling = correctness). The exam is a retrieval regression gate, not a success metric |
 | 27 | Failure mode | Empty-but-true: confident answers only in the main result; an explicit MISS otherwise; relevant drafts/candidates in a separately-fenced **leads** section ("зацепки, не факты") |
-| 28 | Fate of #252/engine | Close unmerged; engine modules migrate file-by-file into `plugins/vc-kb/` with v3 semantics (fresh PR sequence); corpus migration is a separate phase under the new vocabulary |
+| 28 | Fate of #252/engine | Close unmerged; engine modules move file-by-file into `plugins/vc-kb/` with v3 semantics (fresh PR sequence). **Code is donated; content is not** — no corpus travels with it |
 
 Operational answers recorded alongside: the SessionStart hook must stay light (no
 regeneration in hooks — §11.2); derived-layer regeneration happens in the brain repo's
@@ -219,8 +238,11 @@ New in v3:
 namespace prefix is declared in each root's `brain.json` and enforced by the entry
 validator, so a client root physically cannot mint a platform-shaped id and vice versa.
 Different clients never see each other's brains, so cross-client collision does not
-arise. Legacy `BL-*` / `ECL-*` ids are grandfathered verbatim at migration (the
-citation contract; `regression/suites/**.csv` keeps resolving).
+arise. **No identifier is inherited from anywhere.** The base mints its own ids from
+`001` in each namespace; nothing outside it is asked to change, and no pre-existing
+citation scheme is adopted, aliased or re-pointed. If some other system later wants to
+cite the base, it adds `@kb(id)` references of its own — a one-way, additive
+relationship, and the only one the citation contract has to protect.
 
 ### 4.4 Storage format
 
@@ -570,7 +592,8 @@ each anchored **outside the corpus**:
    digest under the human veto window. The self-confirmation loop is broken by the
    source-grounding step, not by a mandatory human.
 4. **The gates stay, plus the gate-becomes-lock escalation.** Layer guard (a scope's
-   confirmed count may not silently fall — the 196→144 class), anomalous-batch
+   confirmed count may not silently fall — an invariant that holds from the first entry
+   onward, since the baseline is whatever the previous run left), anomalous-batch
    quarantine, exam gate with auto-revert — all kept from v1. New: a **consecutive-
    revert counter** — two auto-reverts in a row stop the loop and escalate loudly to
    the digest instead of retrying forever (the Cortex incident where rollback-on-
@@ -877,6 +900,12 @@ its results. (Direct answer to the operator's hook-load concern.)
 
 ### 11.3 Bootstrap (cold start)
 
+**This is the base's entire origin story.** It has exactly two intakes — this one, which
+derives facts from source deterministically, and capture (§10.2), which deposits what
+agents learn while working. There is no third door, and in particular no import: an
+empty base on day one is the intended state, and bootstrap is what makes day one useful
+anyway.
+
 Platform brain: run extractors over `vc-platform`, `vc-module-*`, `vc-frontend` →
 derived tables + aggregate entries (hundreds, not thousands — the "would an agent
 re-ask this every task" selection test; full inventories stay tables). Client brain:
@@ -970,10 +999,17 @@ steps only *feed* it.
 |---|---|---|
 | **P0** | This ADR ratified by the team (including the §1.1 reversal) | nothing below starts before it |
 | **P1** | `plugins/vc-kb/` 0.1.0: engine port with v3 semantics (vocabulary, trust model, annotate-never-hide resolver, MiniSearch, catalog, recheck queue, consecutive-revert escalation), hooks, tests, marketplace entry + tag; `vc-fix` dependency bump; PR #252 closed with a pointer here | fresh PR sequence |
-| **P2** | Derived layer: extractors + `--check` gates + diff-event stream; bootstrap for the platform brain; regression-golden seeding | extractor unit tests against fixture repos |
-| **P3** | **VCST-5819 (re-scoped)**: `VirtoCommerce/vc-knowledge` repo + corpus migration under the v3 vocabulary — `BL-*`/`ECL-*` ids preserved verbatim; layer-guard baseline (196 BL) committed; suites keep resolving | zero dangling citations |
-| **P4** | **VCST-5820 (as filed)**: `/project-init` knowledge stage (find-or-scaffold client brain, §11.3), plugin de-bundling, promotion channel (issue form + `kb ingest-issues`) | E2E on a client-shaped setup |
+| **P2** | **`VirtoCommerce/vc-knowledge` created empty**: layout, `brain.json`, taxonomy, the gates wired into its own CI. It ships with zero entries and that is the correct state | the gates run green on an empty corpus (a gate that only works once there is content is not a gate) |
+| **P3** | **The base fills itself**: extractors + `--check` + diff-event stream, bootstrap over `vc-platform` / `vc-module-*` / `vc-frontend` (§11.3), regression goldens seeded from what bootstrap produced, and the first capture call sites live in `vc-fix` so real work starts depositing entries | extractor unit tests against fixture repos; the first agent-captured entry survives a full consolidation run |
+| **P4** | **VCST-5820 (re-scoped)**: `/project-init` knowledge stage — find-or-scaffold the client brain and bootstrap it (§11.3) — plus the promotion channel (issue form + `kb ingest-issues`) | E2E on a client-shaped setup |
 | **P5** | Usage metrics + digest reporting; truth-golden harvesting loop | first monthly metrics digest |
+
+**Two tickets need re-scoping to match**, and neither keeps its current content: **VCST-5819**
+was written as "repo bootstrap **+ corpus migration**" with a 196-invariant layer-guard
+baseline — the migration half disappears entirely and what remains is P2's empty repo;
+**VCST-5820**'s de-bundling clause assumed the plugins would stop shipping a knowledge
+directory *because the base had absorbed it*, which no longer describes anything. Whatever
+the plugins bundle today is simply out of scope here and keeps working untouched.
 
 ---
 
@@ -987,7 +1023,7 @@ percentages = surviving lines against the module's current size:
 | `fingerprint.mjs` (150 l) | **reuse as-is** | 100% | D5-F re-confirmed; vocabulary-independent; versioned normalization |
 | `kb-paths.mjs` (113 l) | reuse, minor edits | ~90% | `assertWritable`/containment-by-data kept; env prefix already neutral (`VC_KB_`); layout gains `derived/`, `usage.jsonl`, `recheck-queue.json` |
 | `entry.mjs` (403 l) | **rewrite on the same skeleton** | ~65% | Parser/serializer/closed-schema machinery kept verbatim; vocabularies (KINDS/STATUSES), field sets (`anchors`, `provenance`, `evidence[]`, overlays, `base` pin replacing `quotes` — KBE-004 restated), and validation profiles all change |
-| `gen-index.mjs` (360 l) | extend | ~80% | Loader, CSV citation scan, drift ratchet kept; adds trust inputs, domain shards (S2), `catalog.md`, usage-log hooks |
+| `gen-index.mjs` (360 l) | extend | ~75% | Loader and drift ratchet kept; adds trust inputs, domain shards (S2), `catalog.md`, usage-log hooks. Its CSV citation scanner is **dropped** — `citedBy` now counts `@kb(id)` references in what agents write, not cells in someone else's file format |
 | `resolve.mjs` (341 l) | **rewrite** | ~50% | `resolveId` precedence + MISS object survive; `lookup` is replaced (shadowing dropped for R1 grouping; hand-rolled scorer → MiniSearch; leads section; answer contract v3 with trust block) |
 | `exam.mjs` (329 l) | reuse, extend | ~85% | Goldens/`--check`/metrics/compare/history kept; adds golden-class field (regression vs truth), candidate harvesting feed, supersede-chain acceptance already present |
 | `capture.mjs` (278 l) | reuse, extend | ~80% | Append-only/dedup/tombstones/evidence-refusal kept; adds `--dispute`, `anchors`, `provenance`, confirmation-event emission (novelty outcome 1) |
@@ -1003,9 +1039,12 @@ percentages = surviving lines against the module's current size:
 | v2 `review.mjs`/`apply.mjs`/meeting packet | **not built** | 0% | No ratification stage exists; the digest (§8) carries the observability half |
 | Weighted net reuse of the ~2,700-line engine | | **~70%** | |
 
-QA-corpus citation machinery (`Business_Rule`/`Edge_Case_Refs` scanning, `bl:lint`/
-`ecl:lint` semantics) is retained as one consumer among several — demoted from axis to
-edge, per mandate error #1.
+**Code is donated; content is not.** The donor branch contributes modules, not entries:
+nothing in the corpus it was written against travels into the new base, and the
+QA-specific citation machinery it carried (scanning suite CSV columns for
+`Business_Rule` / `Edge_Case_Refs`) is dropped rather than demoted — that scanner exists
+to serve a corpus this base does not inherit. Existing QA oracles and their lints keep
+running exactly as they do today, untouched and out of scope.
 
 ---
 
@@ -1022,7 +1061,7 @@ edge, per mandate error #1.
 | 7 | **Duplicate sprawl** (same fact, many phrasings) | Three-step novelty protocol; fingerprint dedup; near-dup scan; restatements become confirmations, not entries |
 | 8 | **Client data leaks into the platform brain** | §2a by construction: separate repos, readOnly pin cache, `assertWritable`, containment errors by type, promotion via issue-form with client-side identifier lint + platform-side draft-only ingest + platform-evidence requirement to confirm |
 | 9 | **An agent trusts a stale/disputed entry blindly** (STALE: 55.2% even with the update retrieved) | The default view serves **one adjudicated current state per key**; invalidation is written into the body as the supersession banner, not only into a field (§6.6); trust labels travel in-band; relay obligations; `/vc-self-check`-style oracle expectation: citing a disputed/stale entry as fact in an external artifact is a finding |
-| 10 | **Empty-brain death spiral** (every query MISSes → agents stop asking) | Deterministic bootstrap seeds hundreds of derived facts + aggregates day one, client delta included; MISS-with-leads keeps partial value flowing; MISS share is a watched metric |
+| 10 | **Empty-brain death spiral** (every query MISSes → agents stop asking → nothing gets captured → it stays empty). **The headline risk of v3, because the base genuinely starts at zero** — there is no imported corpus to cushion the first weeks | Deterministic bootstrap seeds hundreds of derived facts + aggregates on day one, client delta included (§11.3); MISS-with-leads keeps partial value flowing; capture call sites ship with P3 so real work deposits entries from the start; MISS share is the first watched metric and the one that says whether the flywheel caught. If it has not fallen after the first month of real use, the problem is coverage of *demand*, not volume — read what the MISSes were asking for |
 | 11 | **Verification-due backlog starves** (nobody re-checks) | Queue is bounded and prioritized (due → citedBy → age); on-read flags put the work where the users are; the digest reports queue depth; a starving queue is visible, not silent |
 | 12 | **Fingerprint collision merges converse claims** ("A blocks B"/"B blocks A") | Accepted trade-off, unchanged from v1 D5-F: merge target is always a draft; phrasings kept; consolidation reads the claim, not the hash |
 | 13 | **The digest becomes noise nobody reads** | Digest carries only deltas + escalations; nothing requires reading it (it is observability, not a gate); the loud paths (quarantine, revert-escalation, vetoed-claim re-observation) are few by design |
@@ -1062,6 +1101,10 @@ mechanisms in [R§5]; every incident class has a named v3 answer or an explicit
 
 ## 17. Ratification checklist for the team meeting
 
+0. **The base is new and starts empty** — no migration, no inherited format, no
+   grandfathered ids; existing knowledge assets stay where they are and keep working.
+   (Everything else assumes this; if the team wants an import instead, §11.3, §13.3 and
+   §14 all change.)
 1. The §1.1 reversal: full autonomy with veto instruments, replacing the meeting model the review asked for — **with §5.4's admission rule as its price**: every entry must name an automated oracle that could contradict it, because the one long-running precedent bought its drift defence with ~1,467 human negative labels a month. *(the load-bearing vote)*
 2. The kind vocabulary (§4.1) and `locator`'s exit from the KB.
 3. Machine-reachable top status `confirmed` + the weighted evidence defaults (§6.2).
