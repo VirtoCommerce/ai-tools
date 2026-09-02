@@ -237,7 +237,7 @@ function pageOverview() {
     "отклоняет запись, которую нечем опровергнуть",
     "засчитывает повтор факта в подтверждение записи, новую не создаёт",
     "поднимает доверие записи до высшего сам, без человека",
-    "перепроверяет сразу — при изменении источников, остальное — по очереди",
+    "читает источники: при их изменении перепроверяет сразу, остальное — по очереди",
     "помечает заменённую запись и убирает её из ответов, историю оставляет",
     "ставит спор на противоречащие записи и разрешает его проверкой",
     "не трогает закреплённое оператором и не возвращает снятое им",
@@ -277,7 +277,7 @@ function pageOverview() {
   p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.13, entryX: 0, entryY: 0.6875, points: [[840, 702], [840, 290]] });
   p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.28, entryX: 0.111, entryY: 1, points: [[920, 750]] });
   p.edge("KBC", "KBP", "", cmd, { exitX: 0.794, exitY: 0, entryX: 0.794, entryY: 1 });
-  p.edge("SRC", "KEEP", "", line, { exitX: 0.5, exitY: 0, entryX: 0.5, entryY: 1 });
+  p.edge("KEEP", "SRC", "", line, { exitX: 0.5, exitY: 1, entryX: 0.5, entryY: 0 });
   p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.5, entryX: 0.323, entryY: 1, points: [[1420, 820]] });
   p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.65, entryX: 1, entryY: 0.5, points: [[1670, 868], [1670, 287]] });
   p.edge("OPC", "KBC", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.45 });
