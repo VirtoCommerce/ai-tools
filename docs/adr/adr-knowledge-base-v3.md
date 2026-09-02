@@ -726,7 +726,7 @@ Kept from v1/v2: two entry points (`resolveId`, `lookup`), typed answers always,
   reinvent it).
 - **Leads section** (§2 Q27): below the confident results, a separately-fenced
   `leads[]` block carries relevant drafts and under-threshold entries labeled "leads,
-  not facts"; a MISS
+  not facts" — a draft is served, never hidden, and never in the main result; a MISS
   with leads is still a MISS.
 - The answer contract (§9.5) rides on every result.
 
@@ -827,6 +827,38 @@ Append-only `drafts/`, one file per fingerprint, repeat sightings merge
 root boundary by data (readOnly platform cache), `KbContainmentError` on any client-
 scope emit toward a platform path. New: capture accepts `anchors[]` and `provenance`,
 and a `--dispute <id>` mode (v2 R8) that targets an existing entry.
+
+### 10.2a When the engine runs (§2 Q22, operator question)
+
+Capture writes a draft inside the session. **Consolidation is deterministic and runs in
+the brain repo's CI**: on every push that touches `drafts/` or `entries/`, on a schedule
+for the rotating re-check sweep (§6.5), and locally by explicit command. Never in a
+hook — the SessionStart hook is light by contract (§11.2). A draft therefore waits for
+the next run, which is minutes, not days.
+
+**Why not the moment the agent writes it.** Three reasons, and each of them is a gate
+that has no meaning for a single write:
+
+1. **The gates are batch-level.** Quarantine of an anomalous batch, the layer guard, the
+   exam with auto-revert, and the per-domain promotion budget all judge a run against
+   the corpus. One write is not a batch: there is nothing to compare, and running the
+   exam per write would cost more than the write is worth.
+2. **Independence.** Weight may only be raised by evidence uncorrelated with the writer
+   (§6.2). A pass that confirmed a claim inside the session that made it would be the
+   corpus grading its own homework — the one thing §7 exists to prevent.
+3. **Serialization.** Parallel sessions write drafts at the same time. CI is the single
+   committer, and therefore the only place an id can be minted without a race.
+
+**What does happen at write time**, so the agent is not left blind: the novelty protocol
+(§10.1) runs *before* the write, so "duplicate", "same subject, other aspect" and
+"contradiction" are answered immediately, in-session. Only id minting and weight wait.
+
+**Considered and rejected — content-addressed ids.** Deriving the id from the claim's
+fingerprint would make minting idempotent and race-free, which would let capture mint on
+the spot and would even merge two sessions' identical captures automatically. It fails on
+the citation contract: the fingerprint is over the normalized claim, so **rewording a
+claim changes its id**, and the choice becomes a broken citation or an alias table —
+i.e. the same fragmentation this design refuses, wearing a different hat.
 
 ### 10.3 Contradiction resolution without a human (§2 Q12)
 

@@ -242,10 +242,10 @@
           <mxGeometry x="0" y="52" width="280" height="173" as="geometry" />
         </mxCell>
         <mxCell id="OUT1" value="To the reference desk&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;on request&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1160" y="231" width="300" height="110" as="geometry" />
+          <mxGeometry x="1160" y="231" width="300" height="145" as="geometry" />
         </mxCell>
-        <mxCell id="OUT1-b" value="•&amp;nbsp; records for the agent's answer&lt;br&gt;•&amp;nbsp; the trust label and the source" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="OUT1">
-          <mxGeometry x="0" y="52" width="300" height="58" as="geometry" />
+        <mxCell id="OUT1-b" value="•&amp;nbsp; records for the agent's answer&lt;br&gt;•&amp;nbsp; the trust label and the source&lt;br&gt;•&amp;nbsp; drafts as well — separately, as leads" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="OUT1">
+          <mxGeometry x="0" y="52" width="300" height="93" as="geometry" />
         </mxCell>
         <mxCell id="OUT3" value="To the verification engine&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;continuously&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="1160" y="620" width="300" height="150" as="geometry" />
@@ -288,10 +288,18 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Baz7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.4;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="STORE" target="OUT1">
+        <mxCell id="Baz7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.356;exitDx=0;exitDy=0;entryX=0;entryY=0.379;entryDx=0;entryDy=0;" edge="1" parent="1" source="STORE" target="OUT1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Baz8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.8;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="STORE" target="OUT2">
+        <mxCell id="Baz8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.19;exitDx=0;exitDy=0;entryX=0;entryY=0.793;entryDx=0;entryDy=0;" edge="1" parent="1" source="DRAFT" target="OUT1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+            <mxPoint x="1140" y="575" />
+            <mxPoint x="1140" y="346" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Baz9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.8;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="STORE" target="OUT2">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
             <mxPoint x="1120" y="362" />
