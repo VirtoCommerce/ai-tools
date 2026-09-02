@@ -180,14 +180,14 @@ function pageOverview() {
     "Стрелка показывает направление потока информации. Каждый блок потом раскрывается отдельной схемой — по запросу.",
     S.sub);
 
-  p.card("HUM", 60, 200, 270, 175,
+  p.card("HUM", 60, 260, 270, 175,
     "Человек<br><span style=\"font-size:11px;font-weight:normal\">менеджер · разработчик<br>тестировщик · аналитик</span>", [
     "ставит задачу агенту",
     "задаёт вопрос агенту",
     "получает ответ от агента — при неполном доверии с предупреждением",
   ], ...C.actor, 68);
 
-  p.card("AGT", 380, 180, 380, 190, "Агент-помощник", [
+  p.card("AGT", 380, 240, 380, 190, "Агент-помощник", [
     "делает задачу: чинит, проверяет, объясняет",
     "спрашивает справочную перед работой",
     "передаёт механизму новое — с доказательством",
@@ -196,7 +196,7 @@ function pageOverview() {
     "поясняет человеку, откуда взят ответ",
   ], ...C.agent);
 
-  p.card("WIN", 380, 410, 380, 210,
+  p.card("WIN", 380, 470, 380, 210,
     "Справочная<br><span style=\"font-size:11px;font-weight:normal\">единая дверь к знаниям</span>", [
     "принимает вопросы от агента",
     "собирает ответ из существующих баз",
@@ -206,17 +206,17 @@ function pageOverview() {
     "отвечает «не знаю», если ответа нет, и отдельно даёт зацепки — помечая, что это не факты",
   ], ...C.window, 52);
 
-  p.box("OPT", 860, 425, 790, 305,
+  p.box("OPT", 860, 485, 790, 305,
     "Есть только у клиентского проекта",
     `rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=bottom;align=center;spacingBottom=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;${FONT}`);
-  p.card("KBP", 880, 180, 360, 160,
+  p.card("KBP", 880, 240, 360, 160,
     "База знаний платформы<br><span style=\"font-size:11px;font-weight:normal\">верное для любого проекта</span>", [
     "отдаёт свои записи справочной",
     "отдаёт свои записи базам проектов",
     "принимает предложения проектов как черновики",
     "проверяет предложение своими доказательствами, прежде чем принять",
   ], ...C.store, 52);
-  p.card("KBC", 880, 445, 360, 260,
+  p.card("KBC", 880, 505, 360, 260,
     "База знаний клиентского проекта<br><span style=\"font-size:11px;font-weight:normal\">правда об этом проекте</span>", [
     "отдаёт свои записи справочной",
     "читает записи платформы",
@@ -229,7 +229,7 @@ function pageOverview() {
     "отправляет наверх черновиком то, что верно и без доработок",
   ], ...C.store, 52);
 
-  p.card("KEEP", 380, 660, 380, 320,
+  p.card("KEEP", 380, 720, 380, 320,
     "Механизм проверки и обновления<br><span style=\"font-size:11px;font-weight:normal\">работает по правилам, а не по усмотрению</span>", [
     "принимает от агентов новое только с доказательством",
     "отклоняет запись, которую нечем опровергнуть",
@@ -251,14 +251,14 @@ function pageOverview() {
     "читает сводку изменений — по желанию",
     "вмешивается в уже принятое: работа его не ждёт",
   ];
-  p.card("OPP", 1320, 170, 310, 235,
+  p.card("OPP", 1320, 230, 310, 235,
     "Оператор платформы<br><span style=\"font-size:11px;font-weight:normal\">сотрудник Virto</span>",
     opBullets, ...C.actor, 52);
-  p.card("OPC", 1320, 445, 310, 235,
+  p.card("OPC", 1320, 505, 310, 235,
     "Оператор проекта<br><span style=\"font-size:11px;font-weight:normal\">сотрудник клиента</span>",
     opBullets, ...C.actor, 52);
 
-  p.card("SRC", 380, 1020, 380, 120,
+  p.card("SRC", 880, 943, 380, 120,
     "Источники<br><span style=\"font-size:11px;font-weight:normal\">код · стенд · документация · решения команды</span>", [
     "хранят фактическое состояние продукта",
     "дают материал для первого наполнения пустой базы",
@@ -266,41 +266,41 @@ function pageOverview() {
   ], ...C.source, 52);
 
   const inv = "fillColor=none;strokeColor=none;";
-  const legRow = (i, y, style, text) => {
-    p.box(`la${i}`, 84, y, 1, 1, "", inv);
-    p.box(`lb${i}`, 154, y, 1, 1, "", inv);
+  const legRow = (i, x, style, text) => {
+    p.box(`la${i}`, x, 143, 1, 1, "", inv);
+    p.box(`lb${i}`, x + 70, 143, 1, 1, "", inv);
     p.edge(`la${i}`, `lb${i}`, "", style.replace("orthogonalEdgeStyle", "none"), { exitX: 0, exitY: 0, entryX: 1, entryY: 0 });
-    p.box(`lt${i}`, 166, y - 14, 172, 28, text,
+    p.box(`lt${i}`, x + 82, 129, 200, 28, text,
       `text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;${FONT}`);
   };
-  p.box("LEG", 60, 640, 285, 225, "Как читать стрелки",
-    `rounded=1;arcSize=6;html=1;fillColor=none;strokeColor=#cfd8d5;strokeWidth=2;verticalAlign=top;align=left;spacingLeft=14;spacingTop=10;fontColor=#4b5c57;fontStyle=1;fontSize=12;${FONT}`);
-  legRow(1, 700, line, "постоянный поток работы");
-  legRow(2, 748, rare, "редкое вмешательство человека");
-  legRow(3, 796, cmd, "только по явной команде");
-  p.box("lf", 84, 828, 70, 30, "",
+  p.box("LEG", 60, 116, 1330, 54, "Как читать стрелки",
+    `rounded=1;arcSize=6;html=1;fillColor=none;strokeColor=#cfd8d5;strokeWidth=2;verticalAlign=middle;align=left;spacingLeft=16;fontColor=#4b5c57;fontStyle=1;fontSize=12;${FONT}`);
+  legRow(1, 258, line, "постоянный поток работы");
+  legRow(2, 538, rare, "редкое вмешательство человека");
+  legRow(3, 818, cmd, "только по явной команде");
+  p.box("lf", 1098, 128, 70, 30, "",
     `rounded=1;arcSize=8;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;`);
-  p.box("lft", 166, 829, 172, 28, "блок есть не всегда",
+  p.box("lft", 1180, 129, 200, 28, "блок есть не всегда",
     `text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;${FONT}`);
 
   p.edge("HUM", "AGT", "", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.379 });
   p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.7, entryX: 1, entryY: 0.646 });
-  p.edge("AGT", "WIN", "", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
+  p.edge("AGT", "WIN", "", line, { exitX: 0.495, exitY: 1, entryX: 0.495, entryY: 0 });
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
-  p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.286, points: [[820, 260], [820, 470]] });
+  p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.286, points: [[820, 320], [820, 530]] });
   p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.786 });
-  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[352, 275], [352, 820]] });
-  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.13, entryX: 0, entryY: 0.6875, points: [[840, 702], [840, 290]] });
-  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.28, entryX: 0.111, entryY: 1, points: [[920, 750]] });
+  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[352, 449], [352, 880]] });
+  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.272, entryX: 0, entryY: 0.6875, points: [[840, 807], [840, 350]] });
+  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.372, entryX: 0.5, entryY: 1, points: [[1060, 839]] });
   p.edge("KBC", "KBP", "", cmd, { exitX: 0.794, exitY: 0, entryX: 0.794, entryY: 1 });
-  p.edge("SRC", "KEEP", "", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.75, points: [[800, 1080], [800, 900]] });
-  p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.5, entryX: 0.323, entryY: 1, points: [[1420, 820]] });
-  p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.65, entryX: 1, entryY: 0.5, points: [[1670, 868], [1670, 287]] });
+  p.edge("SRC", "KEEP", "", line, { exitX: 0, exitY: 0.25, entryX: 1, entryY: 0.79 });
+  p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.5, entryX: 0.323, entryY: 1, points: [[1420, 880]] });
+  p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.65, entryX: 1, entryY: 0.5, points: [[1670, 928], [1670, 347]] });
   p.edge("OPC", "KBC", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.45 });
   p.edge("OPP", "KBP", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.669 });
   p.edge("KBP", "KBC", "", line, { exitX: 0.167, exitY: 1, entryX: 0.167, entryY: 0 });
 
-  return p.render(1710, 1200);
+  return p.render(1710, 1260);
 }
 
 /* =================================================== 1. Процесс целиком */
