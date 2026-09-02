@@ -194,7 +194,7 @@ Three planes of knowledge, one entry contract, one resolver, one autonomous life
 | `contract` | An interface commitment: API shape, schema, event, config surface | derived-first | "`createOrderFromCart` requires a validated cart id" |
 | `decision` | An architecture/product decision **with its rationale** | normative | "Modules communicate via domain events, not direct refs — decided in ADR-N" |
 | `convention` | An agreed way of working (code, naming, process-adjacent) | normative | "Admin blades use platform CSS classes, never inline positioning" |
-| `pitfall` | A trap: surprising, dangerous, or repeatedly-tripped-over | experiential | "Firefox+MCP cannot click on the Admin SPA — schedule on chromium" |
+| `pitfall` | A trap: surprising, dangerous, or repeatedly-tripped-over — a **standing property**, never an open defect (§5.2a) | experiential | "A product with no price in the requested currency renders 0.00 rather than hiding — check the price list before reading a total" |
 | `process` | How work flows: release, hotfix, review, escalation | normative | "A hotfix lands on `support/<X.Y>` via cherry-pick + the Release workflow" |
 | `structure` | What exists where: module map, ownership, repo topology | derived-first | "Loyalty lives in vc-module-loyalty; depends on Core + Customer" |
 
@@ -307,6 +307,26 @@ flags, permission constants, storefront routes, component/operation maps.
   deterministic anchor check (a `behavior` claim whose `anchors[]` re-derivation
   confirms the mechanism exists is source-corroborated).
 - Re-checkable: on anchor drift, by rotation, and on read (§6.4).
+
+### 5.2a What is NOT knowledge (the defect boundary)
+
+A bug is not a fact about the platform, and a base that collects bugs becomes a stale
+tracker with worse tooling. The line is **who owns the statement's lifecycle**:
+
+- **A defect with an open ticket belongs to the tracker.** It has an owner, a status and
+  a fix date; the base would only duplicate it and then go quiet when it is fixed. Capture
+  refuses it.
+- **A standing property belongs to the base**, even when it originated in a defect: it
+  holds today, nobody is fixing it this sprint, and knowing it changes how you work. The
+  test is not "is this a bug?" but **"is anyone obliged to make this false, and when?"**
+  — if the answer names a ticket, the tracker owns it.
+- **A workaround for a defect is knowledge only while the defect stands**, and it dies the
+  way everything else does: the fix lands, the anchors move, the re-check fails, the entry
+  is superseded or retired. Nothing special is needed for it, which is the point.
+
+The same boundary keeps the base from becoming a run log: a single failing test, a flaky
+suite, one slow request are events, not facts. What is a fact is the property they reveal,
+if it survives the next run.
 
 ### 5.3 Normative plane — facts with an author
 

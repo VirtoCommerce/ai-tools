@@ -64,7 +64,7 @@
                 <mxCell id="AGT" value="Assistant agent" style="swimlane;html=1;rounded=1;arcSize=6;startSize=36;horizontal=1;fillColor=#f5dfc8;swimlaneFillColor=#fdf6ef;strokeColor=#8f4a1b;fontColor=#8f4a1b;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
                     <mxGeometry x="380" y="240" width="380" height="190" as="geometry"/>
                 </mxCell>
-                <mxCell id="AGT-b" value="•&amp;nbsp; does the work: fixes, tests, explains&lt;br&gt;•&amp;nbsp; asks the reference desk before starting&lt;br&gt;•&amp;nbsp; hands the engine something new — with evidence&lt;br&gt;•&amp;nbsp; confirms to the engine what it relied on&lt;br&gt;•&amp;nbsp; disputes a record that contradicts the product&lt;br&gt;•&amp;nbsp; tells the person where the answer came from" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#8f4a1b;fontFamily=Helvetica;" parent="AGT" vertex="1">
+                <mxCell id="AGT-b" value="•&amp;nbsp; does the work: fixes, tests, explains&lt;br&gt;•&amp;nbsp; asks the reference desk before starting&lt;br&gt;•&amp;nbsp; writes what is new into its project's base — with evidence&lt;br&gt;•&amp;nbsp; confirms the records it relied on&lt;br&gt;•&amp;nbsp; disputes a record that contradicts the product&lt;br&gt;•&amp;nbsp; tells the person where the answer came from" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#8f4a1b;fontFamily=Helvetica;" parent="AGT" vertex="1">
                     <mxGeometry y="36" width="380" height="154" as="geometry"/>
                 </mxCell>
                 <mxCell id="WIN" value="Reference desk&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;the single door to knowledge&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#c9e4de;swimlaneFillColor=#eef7f5;strokeColor=#0d5f55;fontColor=#0d5f55;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
@@ -77,21 +77,21 @@
                     <mxGeometry x="860" y="485" width="790" height="305" as="geometry"/>
                 </mxCell>
                 <mxCell id="KBP" value="Platform knowledge base&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;true for any project&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#dde5e3;swimlaneFillColor=#f4f7f6;strokeColor=#2b3d39;fontColor=#2b3d39;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
-                    <mxGeometry x="880" y="240" width="360" height="160" as="geometry"/>
+                    <mxGeometry x="880" y="240" width="360" height="205" as="geometry"/>
                 </mxCell>
-                <mxCell id="KBP-b" value="•&amp;nbsp; gives its records to the reference desk&lt;br&gt;•&amp;nbsp; gives its records to project bases&lt;br&gt;•&amp;nbsp; takes proposals from projects as drafts&lt;br&gt;•&amp;nbsp; verifies a proposal with its own evidence before accepting it" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" parent="KBP" vertex="1">
-                    <mxGeometry y="52" width="360" height="108" as="geometry"/>
+                <mxCell id="KBP-b" value="•&amp;nbsp; takes drafts from the agent&lt;br&gt;•&amp;nbsp; gives the engine its drafts and the records due for a re-check&lt;br&gt;•&amp;nbsp; gives its records to the reference desk&lt;br&gt;•&amp;nbsp; gives its records to project bases&lt;br&gt;•&amp;nbsp; takes proposals from projects as drafts&lt;br&gt;•&amp;nbsp; verifies a proposal with its own evidence before accepting it" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" parent="KBP" vertex="1">
+                    <mxGeometry y="52" width="360" height="153" as="geometry"/>
                 </mxCell>
                 <mxCell id="KBC" value="Project knowledge base&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;the truth about this project&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#dde5e3;swimlaneFillColor=#f4f7f6;strokeColor=#2b3d39;fontColor=#2b3d39;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
                     <mxGeometry x="880" y="505" width="360" height="260" as="geometry"/>
                 </mxCell>
-                <mxCell id="KBC-b" value="•&amp;nbsp; gives its records to the reference desk&lt;br&gt;•&amp;nbsp; reads the platform's records&lt;br&gt;•&amp;nbsp; overrides platform rules locally&lt;br&gt;•&amp;nbsp; cancels platform rules that do not apply here&lt;br&gt;•&amp;nbsp; extends platform rules with its own&lt;br&gt;•&amp;nbsp; raises a dispute when an overridden rule changes&lt;br&gt;•&amp;nbsp; never writes to the platform base&lt;br&gt;•&amp;nbsp; strips every trace of the project before sending upward&lt;br&gt;•&amp;nbsp; sends upward, as a draft, what holds without customization" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" parent="KBC" vertex="1">
+                <mxCell id="KBC-b" value="•&amp;nbsp; takes drafts from the agent&lt;br&gt;•&amp;nbsp; gives the engine its drafts and the records due for a re-check&lt;br&gt;•&amp;nbsp; gives its records to the reference desk&lt;br&gt;•&amp;nbsp; reads the platform's records&lt;br&gt;•&amp;nbsp; overrides platform rules locally&lt;br&gt;•&amp;nbsp; cancels platform rules that do not apply here&lt;br&gt;•&amp;nbsp; extends platform rules with its own&lt;br&gt;•&amp;nbsp; raises a dispute when an overridden rule changes&lt;br&gt;•&amp;nbsp; never writes to the platform base&lt;br&gt;•&amp;nbsp; strips every trace of the project before sending upward&lt;br&gt;•&amp;nbsp; sends upward, as a draft, what holds without customization" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" parent="KBC" vertex="1">
                     <mxGeometry y="52" width="360" height="208" as="geometry"/>
                 </mxCell>
                 <mxCell id="KEEP" value="Verification and update engine&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;runs by rules, not by discretion&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#c9e4de;swimlaneFillColor=#eef7f5;strokeColor=#0d5f55;fontColor=#0d5f55;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
                     <mxGeometry x="380" y="720" width="380" height="348" as="geometry"/>
                 </mxCell>
-                <mxCell id="KEEP-b" value="•&amp;nbsp; takes new records from agents only with evidence&lt;br&gt;•&amp;nbsp; refuses a record that nothing could refute&lt;br&gt;•&amp;nbsp; counts a repeat of the same fact as confirmation, not a new record&lt;br&gt;•&amp;nbsp; raises a record to full trust on its own, without a human&lt;br&gt;•&amp;nbsp; reads the sources: rechecks at once on a change, the rest in turn&lt;br&gt;•&amp;nbsp; marks a superseded record and drops it from answers, keeps the history&lt;br&gt;•&amp;nbsp; raises a dispute on contradicting records and settles it by checking&lt;br&gt;•&amp;nbsp; never touches what the operator pinned, never restores what they retired&lt;br&gt;•&amp;nbsp; writes only to its own base — never from a project into the platform base&lt;br&gt;•&amp;nbsp; runs outside sessions: on changes and on a schedule&lt;br&gt;•&amp;nbsp; publishes the change digest to the operator" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#0d5f55;fontFamily=Helvetica;" parent="KEEP" vertex="1">
+                <mxCell id="KEEP-b" value="•&amp;nbsp; takes the drafts out of the base and works through them&lt;br&gt;•&amp;nbsp; refuses a draft with no evidence, or with no way to refute it&lt;br&gt;•&amp;nbsp; counts a repeat of the same fact as confirmation, not a new record&lt;br&gt;•&amp;nbsp; raises a record to full trust on its own, without a human&lt;br&gt;•&amp;nbsp; reads the sources: rechecks at once on a change, the rest in turn&lt;br&gt;•&amp;nbsp; marks a superseded record and drops it from answers, keeps the history&lt;br&gt;•&amp;nbsp; raises a dispute on contradicting records and settles it by checking&lt;br&gt;•&amp;nbsp; never touches what the operator pinned, never restores what they retired&lt;br&gt;•&amp;nbsp; writes only to its own base — never from a project into the platform base&lt;br&gt;•&amp;nbsp; runs outside sessions: on changes and on a schedule&lt;br&gt;•&amp;nbsp; publishes the change digest to the operator" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#0d5f55;fontFamily=Helvetica;" parent="KEEP" vertex="1">
                     <mxGeometry y="52" width="380" height="268" as="geometry"/>
                 </mxCell>
                 <mxCell id="OPP" value="Platform operator&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;Virto employee&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#f0d3da;swimlaneFillColor=#faeff2;strokeColor=#7a2436;fontColor=#7a2436;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
@@ -124,7 +124,7 @@
                 <mxCell id="Obsch7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" parent="1" source="WIN" target="AGT" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Obsch8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.286;entryDx=0;entryDy=0;" parent="1" source="KBP" target="WIN" edge="1">
+                <mxCell id="Obsch8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.39;exitDx=0;exitDy=0;entryX=1;entryY=0.286;entryDx=0;entryDy=0;" parent="1" source="KBP" target="WIN" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
                             <mxPoint x="820" y="320"/>
@@ -135,15 +135,7 @@
                 <mxCell id="Obsch9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.786;entryDx=0;entryDy=0;" parent="1" source="KBC" target="WIN" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Obsch10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="AGT" target="KEEP" edge="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <Array as="points">
-                            <mxPoint x="352" y="449"/>
-                            <mxPoint x="352" y="880"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="Obsch11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.272;exitDx=0;exitDy=0;entryX=0;entryY=0.6875;entryDx=0;entryDy=0;" parent="1" source="KEEP" target="KBP" edge="1">
+                <mxCell id="Obsch11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.272;exitDx=0;exitDy=0;entryX=0;entryY=0.537;entryDx=0;entryDy=0;startArrow=classic;startFill=1;" parent="1" source="KEEP" target="KBP" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
                             <mxPoint x="840" y="807"/>
@@ -151,7 +143,7 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="Obsch12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.372;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="KEEP" target="KBC" edge="1">
+                <mxCell id="Obsch12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.372;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;startArrow=classic;startFill=1;" parent="1" source="KEEP" target="KBC" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
                             <mxPoint x="1060" y="839"/>
@@ -182,12 +174,23 @@
                 <mxCell id="Obsch17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.45;entryDx=0;entryDy=0;" parent="1" source="OPC" target="KBC" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="Obsch18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.669;entryDx=0;entryDy=0;" parent="1" source="OPP" target="KBP" edge="1">
+                <mxCell id="Obsch18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.522;entryDx=0;entryDy=0;" parent="1" source="OPP" target="KBP" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="Obsch19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.167;exitY=1;exitDx=0;exitDy=0;entryX=0.167;entryY=0;entryDx=0;entryDy=0;" parent="1" source="KBP" target="KBC" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
+        <mxCell id="AgtKbp" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.747;exitDx=0;exitDy=0;entryX=0;entryY=0.693;entryDx=0;entryDy=0;" edge="1" parent="1" source="AGT" target="KBP">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="AgtKbc" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.95;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="AGT" target="KBC">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="860" y="420" />
+              <mxPoint x="860" y="570" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
             </root>
         </mxGraphModel>
     </diagram>
