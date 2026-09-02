@@ -203,35 +203,37 @@ function pageOverview() {
   ], ...C.window);
 
   p.box("KNOW", 760, 150, 400, 420, "Знания — две базы, но для спрашивающего это одно целое", O.lane);
-  p.card("KBP", 780, 200, 360, 120, "База знаний платформы", [
-    "хранит верное для любого проекта",
+  p.card("KBP", 780, 200, 360, 110,
+    "База знаний платформы<br><span style=\"font-size:11px;font-weight:normal\">верное для любого проекта</span>", [
     "отдаёт знания проектам",
     "принимает предложения проектов как черновики",
-  ], ...C.store);
-  p.card("KBC", 780, 370, 360, 180, "База знаний клиентского проекта", [
-    "хранит верное только для этого проекта",
+  ], ...C.store, 52);
+  p.card("KBC", 780, 370, 360, 180,
+    "База знаний клиентского проекта<br><span style=\"font-size:11px;font-weight:normal\">верное только для этого проекта</span>", [
+    "читает общее",
     "переопределяет правила платформы у себя",
     "отменяет неприменимые правила",
     "дополняет общие правила",
     "не меняет общую базу",
     "предлагает наверх верное для всех",
-  ], ...C.store);
+  ], ...C.store, 52);
 
-  p.card("KEEP", 350, 640, 310, 170, "Механизм проверки и обновления", [
+  p.card("KEEP", 350, 640, 310, 180,
+    "Механизм проверки и обновления<br><span style=\"font-size:11px;font-weight:normal\">работает сам, без людей</span>", [
     "принимает новое только с доказательством",
+    "кладёт подтверждённое в базу",
     "перепроверяет старое по изменениям и по кругу",
-    "заменяет устаревшее новым, старое сохраняет",
+    "заменяет устаревшее, старое сохраняет",
     "помечает спорное, разрешает споры проверкой",
-    "работает сам, без людей",
-  ], ...C.keeper);
+    "сообщает человеку, что изменилось",
+  ], ...C.keeper, 52);
 
-  p.card("OPER", 840, 640, 340, 170,
-    "Оператор<br><span style=\"font-size:11px;font-weight:normal\">человек, отвечающий за правила базы</span>", [
+  p.card("OPER", 840, 640, 340, 150,
+    "Оператор<br><span style=\"font-size:11px;font-weight:normal\">человек за правила базы; вмешивается редко</span>", [
     "убирает неверное",
     "закрепляет важное",
     "ставит под сомнение",
     "читает сводку изменений",
-    "вмешивается редко",
   ], ...C.actor, 52);
 
   p.card("SRC", 60, 860, 600, 100,
@@ -245,12 +247,12 @@ function pageOverview() {
   p.edge("AGT", "WIN", "", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
   p.edge("KNOW", "WIN", "", line, { exitX: 0, exitY: 0.798, entryX: 1, entryY: 0.5 });
-  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[315, 260], [315, 725]] });
-  p.edge("KEEP", "KNOW", "", line, { exitX: 1, exitY: 0.25, entryX: 0.1, entryY: 1, points: [[800, 682]] });
+  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[315, 260], [315, 730]] });
+  p.edge("KEEP", "KNOW", "", line, { exitX: 1, exitY: 0.25, entryX: 0.1, entryY: 1, points: [[800, 685]] });
   p.edge("SRC", "KEEP", "", line, { exitX: 0.742, exitY: 0, entryX: 0.5, entryY: 1 });
-  p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.5 });
+  p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.6 });
   p.edge("OPER", "KNOW", "", rare, { exitX: 0.5, exitY: 0, entryX: 0.625, entryY: 1 });
-  p.edge("KBC", "KBP", "", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.5, points: [[1220, 460], [1220, 260]] });
+  p.edge("KBC", "KBP", "", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.5, points: [[1220, 460], [1220, 255]] });
   p.edge("KBP", "KBC", "", line, { exitX: 0.3, exitY: 1, entryX: 0.3, entryY: 0 });
 
   return p.render(1340, 1030);
