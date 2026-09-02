@@ -153,7 +153,7 @@ function page(name) {
  * The overview is deliberately the least technical thing in this file: it is read by
  * managers and analysts, not only by engineers. Rules it follows, and they are what
  * keep it readable — one screen, nine blocks, no jargon (no "resolver", no "index",
- * no file names), every arrow labelled with what actually happens, and detail deferred
+ * no file names), every arrow backed by a named duty on BOTH blocks it joins, and detail deferred
  * to the per-block pages. If a block needs a second sentence to be understood, it
  * belongs on its own page instead.
  */
@@ -173,112 +173,119 @@ function pageOverview() {
   };
   const line = `edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;${FONT}`;
   const rare = `${line}dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;`;
+  const cmd = `${line}dashed=1;dashPattern=1 4;`;
 
   p.box("t", 60, 24, 1000, 32, "Как это работает — общий вид", S.title);
   p.box("ts", 60, 62, 1180, 56,
     "Кто с кем разговаривает и что кому передаёт. Каждый блок потом раскрывается отдельной схемой — по запросу.<br>" +
-    "Сплошные стрелки — то, что происходит само, без людей. Пунктирная стрелка — редкое вмешательство человека.<br>" +
-    "Пунктирная рамка — блок есть не всегда.",
+    "Сплошные стрелки — постоянный поток работы. Пунктирные — редкое вмешательство человека в базу.<br>" +
+    "Точечная стрелка — только по явной команде. Пунктирная рамка — блок есть не всегда.",
     S.sub);
 
   p.card("HUM", 60, 180, 240, 150,
     "Человек<br><span style=\"font-size:11px;font-weight:normal\">менеджер · разработчик<br>тестировщик · аналитик</span>", [
     "ставит задачу",
     "задаёт вопрос",
-    "получает ответ с пояснением",
+    "получает ответ, а при неполном доверии — предупреждение",
   ], ...C.actor, 68);
 
-  p.card("AGT", 350, 180, 310, 160, "Агент-помощник", [
+  p.card("AGT", 350, 180, 340, 175, "Агент-помощник", [
     "делает задачу: чинит, проверяет, объясняет",
     "спрашивает базу перед работой",
     "записывает новое — с доказательством",
+    "подтверждает то, чем воспользовался",
     "спорит, если база расходится с продуктом",
     "поясняет человеку, откуда взят ответ",
   ], ...C.agent);
 
-  p.card("WIN", 350, 400, 310, 165,
+  p.card("WIN", 350, 400, 340, 190,
     "Справочная<br><span style=\"font-size:11px;font-weight:normal\">единая дверь к знаниям</span>", [
     "принимает все вопросы",
     "собирает ответ из доступных баз",
-    "показывает обе стороны при переопределении",
+    "показывает обе стороны — при переопределении и при споре",
+    "в ответе всегда одно текущее состояние",
     "говорит, насколько ответу верить",
-    "говорит «не знаю», если ответа нет",
+    "говорит «не знаю» — и отдельно даёт зацепки, не факты",
   ], ...C.window, 52);
 
-  p.box("OPT", 760, 395, 710, 270,
+  p.box("OPT", 760, 395, 720, 300,
     "Есть только у клиентского проекта",
     `rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=top;align=center;spacingTop=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;${FONT}`);
-  p.card("KBP", 780, 200, 340, 125,
+  p.card("KBP", 780, 180, 340, 150,
     "База знаний платформы<br><span style=\"font-size:11px;font-weight:normal\">верное для любого проекта</span>", [
-    "отвечает справочной напрямую",
+    "отдаёт свои записи справочной",
     "отдаёт знания проектам",
     "принимает предложения проектов как черновики",
+    "подтверждает предложение своими доказательствами",
   ], ...C.store, 52);
-  p.card("KBC", 780, 435, 340, 190,
-    "База знаний клиентского проекта<br><span style=\"font-size:11px;font-weight:normal\">верное только для этого проекта</span>", [
-    "отвечает справочной напрямую",
+  p.card("KBC", 780, 435, 340, 240,
+    "База знаний клиентского проекта<br><span style=\"font-size:11px;font-weight:normal\">правда об этом проекте</span>", [
+    "отдаёт свои записи справочной",
     "читает общее",
     "переопределяет правила платформы у себя",
     "отменяет неприменимые правила",
     "дополняет общие правила",
+    "замечает, когда изменилось переопределённое",
     "не меняет общую базу",
-    "предлагает наверх верное для всех",
+    "убирает следы проекта перед отправкой наверх",
+    "предлагает наверх то, что верно и без доработок",
   ], ...C.store, 52);
 
-  p.card("KEEP", 350, 630, 310, 205,
-    "Механизм проверки и обновления<br><span style=\"font-size:11px;font-weight:normal\">работает сам, без людей</span>", [
+  p.card("KEEP", 350, 630, 340, 290,
+    "Механизм проверки и обновления<br><span style=\"font-size:11px;font-weight:normal\">работает по правилам, а не по усмотрению</span>", [
     "принимает новое только с доказательством",
-    "кладёт подтверждённое в базу",
-    "перепроверяет по изменениям и по кругу",
-    "заменяет устаревшее, прежнее помечает",
+    "не берёт то, что нечем опровергнуть",
+    "повтор того же факта подтверждает запись, а не создаёт новую",
+    "сам поднимает доверие до высшего — без человека",
+    "перепроверяет по изменениям и по очереди",
+    "возраст сам по себе ничего не устаревает",
+    "заменённое перестаёт быть ответом, история остаётся",
     "помечает спорное, разрешает споры проверкой",
-    "сводит дубли к одной записи",
-    "шлёт оператору сводку изменений",
+    "закреплённое и снятое человеком не трогает",
+    "у каждой базы свой, из проекта в общую не пишет",
+    "публикует сводку изменений",
   ], ...C.keeper, 52);
 
-  p.card("OPP", 1180, 200, 270, 160,
-    "Оператор платформы<br><span style=\"font-size:11px;font-weight:normal\">сотрудник Virto</span>", [
-    "снимает неверное, след остаётся",
-    "закрепляет запись от автозамены",
+  const opBullets = [
+    "снимает неверное — след остаётся",
+    "закрепляет: машина не правит и не снимает",
     "ставит запись под сомнение",
-    "читает сводку изменений",
-    "вмешивается редко",
-  ], ...C.actor, 52);
+    "задаёт правила повышения доверия",
+    "читает сводку — по желанию",
+    "ничто не ждёт его решения",
+  ];
+  p.card("OPP", 1180, 180, 290, 200,
+    "Оператор платформы<br><span style=\"font-size:11px;font-weight:normal\">сотрудник Virto</span>",
+    opBullets, ...C.actor, 52);
+  p.card("OPC", 1180, 435, 290, 200,
+    "Оператор проекта<br><span style=\"font-size:11px;font-weight:normal\">сотрудник клиента</span>",
+    opBullets, ...C.actor, 52);
 
-  p.card("OPC", 1180, 435, 270, 160,
-    "Оператор проекта<br><span style=\"font-size:11px;font-weight:normal\">сотрудник клиента</span>", [
-    "снимает неверное, след остаётся",
-    "закрепляет запись от автозамены",
-    "ставит запись под сомнение",
-    "читает сводку изменений",
-    "вмешивается редко",
-  ], ...C.actor, 52);
-
-  p.card("SRC", 60, 875, 600, 120,
+  p.card("SRC", 350, 940, 340, 120,
     "Источники<br><span style=\"font-size:11px;font-weight:normal\">код · стенд · документация · решения команды</span>", [
     "наполняют базу в первый раз",
     "служат проверкой для всех знаний",
     "меняются — и запускают перепроверку",
   ], ...C.source, 52);
 
-  p.edge("HUM", "AGT", "", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.281 });
-  p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.75, entryX: 1, entryY: 0.8 });
+  p.edge("HUM", "AGT", "", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.257 });
+  p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.75, entryX: 1, entryY: 0.873 });
   p.edge("AGT", "WIN", "", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
-  p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.18, points: [[700, 262], [700, 430]] });
-  p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.788 });
-  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[315, 260], [315, 733]] });
-  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.167, entryX: 0, entryY: 0.72, points: [[730, 664], [730, 290]] });
-  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.333, entryX: 0.118, entryY: 1, points: [[820, 698]] });
-  p.edge("KBC", "KBP", "", line, { exitX: 0.794, exitY: 0, entryX: 0.794, entryY: 1 });
-  p.edge("SRC", "KEEP", "", line, { exitX: 0.742, exitY: 0, entryX: 0.5, entryY: 1 });
-  p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.667, entryX: 0.444, entryY: 1, points: [[1300, 767]] });
-  p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.833, entryX: 1, entryY: 0.5, points: [[1500, 801], [1500, 280]] });
-  p.edge("OPC", "KBC", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.421 });
-  p.edge("OPP", "KBP", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.64 });
+  p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.263, points: [[725, 255], [725, 450]] });
+  p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.816 });
+  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[315, 267], [315, 775]] });
+  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.14, entryX: 0, entryY: 0.733, points: [[745, 671], [745, 290]] });
+  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.3, entryX: 0.118, entryY: 1, points: [[820, 717]] });
+  p.edge("KBC", "KBP", "", cmd, { exitX: 0.794, exitY: 0, entryX: 0.794, entryY: 1 });
+  p.edge("SRC", "KEEP", "", line, { exitX: 0.5, exitY: 0, entryX: 0.5, entryY: 1 });
+  p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.55, entryX: 0.414, entryY: 1, points: [[1300, 790]] });
+  p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.7, entryX: 1, entryY: 0.5, points: [[1520, 833], [1520, 280]] });
+  p.edge("OPC", "KBC", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.417 });
+  p.edge("OPP", "KBP", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.667 });
   p.edge("KBP", "KBC", "", line, { exitX: 0.167, exitY: 1, entryX: 0.167, entryY: 0 });
 
-  return p.render(1560, 1040);
+  return p.render(1580, 1100);
 }
 
 /* =================================================== 1. Процесс целиком */
