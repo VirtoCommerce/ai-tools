@@ -146,8 +146,7 @@
 [NAV] {{FRONT_URL}}/account
 [WAIT] Account page loaded
 [ACT] Navigate to Change Password section
-[WAIT] Change Password form visible
-[ASSERT] Verify information notice or warning text is visible before submitting (as documented in VCST-4531: 'Changing your password will sign you out of all other devices and browsers.')","[DOM] Information notice visible on Change Password page containing text warning about other sessions being signed out (e.g., 'sign you out of all other devices' or equivalent wording)
+[WAIT] Change Password form visible","[DOM] Information notice visible on Change Password page containing text warning about other sessions being signed out (e.g., 'sign you out of all other devices' or equivalent wording)
 [DOM] Change Password form fields visible: Current Password, New Password, Confirm Password
 [STATE] User remains on the current device after seeing the notice (no auto-logout at this point — notice is pre-action)","[NETWORK] No 4xx/5xx on page load
 [CONSOLE] No TypeError or JS errors","Information notice absent from Change Password page (UX regression from VCST-4531 implementation); page errors with 500; console TypeError","Restore password if changed via admin; [PRE:SIGNOUT]","VCST-4531","Draft"
