@@ -102,13 +102,14 @@ function page(name) {
      * draw.io swimlane so the separator is a real shape feature rather than a drawn
      * line that drifts out of place when the box is resized by hand.
      */
-    card(id, x, y, w, h, title, bullets, band, body, ink, head) {
+    card(id, x, y, w, h, title, bullets, band, body, ink, head, optional) {
       const HEAD = head || 36;
       this.box(
         id, x, y, w, h, title,
         `swimlane;html=1;rounded=1;arcSize=6;startSize=${HEAD};horizontal=1;` +
           `fillColor=${band};swimlaneFillColor=${body};strokeColor=${ink};fontColor=${ink};` +
-          `fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;${FONT}`,
+          `fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;` +
+          (optional ? "dashed=1;dashPattern=8 5;" : "") + FONT,
       );
       this.box(
         `${id}-b`, 0, HEAD, w, h - HEAD,
@@ -174,9 +175,10 @@ function pageOverview() {
   const rare = `${line}dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;`;
 
   p.box("t", 60, 24, 1000, 32, "Как это работает — общий вид", S.title);
-  p.box("ts", 60, 62, 1100, 44,
+  p.box("ts", 60, 62, 1180, 56,
     "Кто с кем разговаривает и что кому передаёт. Каждый блок потом раскрывается отдельной схемой — по запросу.<br>" +
-    "Сплошные стрелки — то, что происходит само, без людей. Пунктирная — редкое вмешательство человека.",
+    "Сплошные стрелки — то, что происходит само, без людей. Пунктирная стрелка — редкое вмешательство человека.<br>" +
+    "Пунктирная рамка — блок есть не всегда.",
     S.sub);
 
   p.card("HUM", 60, 180, 240, 150,
@@ -203,15 +205,16 @@ function pageOverview() {
     "говорит «не знаю», если ответа нет",
   ], ...C.window, 52);
 
-  p.box("KNOW", 760, 150, 400, 445,
-    "Знания — база платформы; у клиентского проекта добавляется вторая", O.lane);
-  p.card("KBP", 780, 200, 360, 125,
+  p.box("OPT", 860, 350, 400, 245,
+    "Есть только у клиентского проекта",
+    `rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=top;align=center;spacingTop=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;${FONT}`);
+  p.card("KBP", 880, 200, 360, 125,
     "База знаний платформы<br><span style=\"font-size:11px;font-weight:normal\">верное для любого проекта</span>", [
     "отвечает справочной напрямую",
     "отдаёт знания проектам",
     "принимает предложения проектов как черновики",
   ], ...C.store, 52);
-  p.card("KBC", 780, 370, 360, 195,
+  p.card("KBC", 880, 385, 360, 190,
     "База знаний клиентского проекта<br><span style=\"font-size:11px;font-weight:normal\">верное только для этого проекта</span>", [
     "отвечает справочной напрямую",
     "читает общее",
@@ -232,7 +235,7 @@ function pageOverview() {
     "сообщает человеку, что изменилось",
   ], ...C.keeper, 52);
 
-  p.card("OPER", 840, 640, 340, 150,
+  p.card("OPER", 880, 660, 340, 150,
     "Оператор<br><span style=\"font-size:11px;font-weight:normal\">человек за правила базы; вмешивается редко</span>", [
     "убирает неверное",
     "закрепляет важное",
@@ -250,17 +253,19 @@ function pageOverview() {
   p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.75, entryX: 1, entryY: 0.8 });
   p.edge("AGT", "WIN", "", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
-  p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.44, entryX: 1, entryY: 0.18, points: [[700, 255], [700, 430]] });
-  p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.564, entryX: 1, entryY: 0.485 });
+  p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.18, points: [[700, 262], [700, 430]] });
+  p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.485 });
   p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[315, 260], [315, 730]] });
-  p.edge("KEEP", "KNOW", "", line, { exitX: 1, exitY: 0.25, entryX: 0.1, entryY: 1, points: [[800, 685]] });
-  p.edge("KBC", "KBP", "", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.5, points: [[1220, 467], [1220, 262]] });
+  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.167, entryX: 0, entryY: 0.72, points: [[760, 670], [760, 290]] });
+  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.333, entryX: 0, entryY: 0.71, points: [[800, 700], [800, 520]] });
+  p.edge("KBC", "KBP", "", line, { exitX: 0.833, exitY: 0, entryX: 0.833, entryY: 1 });
   p.edge("SRC", "KEEP", "", line, { exitX: 0.742, exitY: 0, entryX: 0.5, entryY: 1 });
-  p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.6 });
-  p.edge("OPER", "KNOW", "", rare, { exitX: 0.5, exitY: 0, entryX: 0.625, entryY: 1 });
-  p.edge("KBP", "KBC", "", line, { exitX: 0.3, exitY: 1, entryX: 0.3, entryY: 0 });
+  p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.467 });
+  p.edge("OPER", "KBC", "", rare, { exitX: 0.353, exitY: 0, entryX: 0.333, entryY: 1 });
+  p.edge("OPER", "KBP", "", rare, { exitX: 1, exitY: 0.267, entryX: 1, entryY: 0.5, points: [[1310, 700], [1310, 262]] });
+  p.edge("KBP", "KBC", "", line, { exitX: 0.167, exitY: 1, entryX: 0.167, entryY: 0 });
 
-  return p.render(1340, 1030);
+  return p.render(1400, 1040);
 }
 
 /* =================================================== 1. Процесс целиком */
