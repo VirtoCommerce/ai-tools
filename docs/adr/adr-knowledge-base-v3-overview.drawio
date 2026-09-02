@@ -183,121 +183,110 @@
             </root>
         </mxGraphModel>
     </diagram>
-    <diagram id="Platform knowledge base" name="Platform knowledge base">
-    <mxGraphModel dx="1200" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1520" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
+  <diagram id="Platform knowledge base" name="Platform knowledge base">
+    <mxGraphModel dx="1200" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1280" pageHeight="880" math="0" shadow="0" adaptiveColors="auto">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="t" value="Platform knowledge base — three inputs, three outputs" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#16211e;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="60" y="24" width="1300" height="32" as="geometry" />
+        <mxCell id="t" value="Platform knowledge base — in, held, out" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#16211e;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="24" width="1200" height="32" as="geometry" />
         </mxCell>
-        <mxCell id="ts" value="The overview block, opened up: what comes in, what is done with it, what goes out. Inputs on the left, outputs on the right, arrow styles as on the overview. The third output is not drawn on the overview: the base confirms nothing by itself — the engine does the checking, and what it confirms returns through the first input." style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="60" y="62" width="1340" height="56" as="geometry" />
+        <mxCell id="ts" value="Two shelves inside: drafts and shared records. Everything that arrives lands on one of them; everything that leaves is taken from them. Arrow styles as on the overview." style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="62" width="1200" height="56" as="geometry" />
         </mxCell>
-        <mxCell id="IN1" value="From the verification engine&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;a steady flow&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="60" y="210" width="340" height="130" as="geometry" />
+        <mxCell id="IN1" value="From the reference desk&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;a steady flow&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="210" width="340" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="IN1-b" value="•&amp;nbsp; a record that cleared the bar&lt;br&gt;•&amp;nbsp; a mark that supersedes an earlier one&lt;br&gt;•&amp;nbsp; a dispute mark" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="IN1">
-          <mxGeometry x="0" y="52" width="340" height="78" as="geometry" />
+        <mxCell id="IN1-b" value="•&amp;nbsp; new knowledge from an agent&lt;br&gt;•&amp;nbsp; with its evidence and its way to be refuted" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="IN1">
+          <mxGeometry x="0" y="52" width="340" height="58" as="geometry" />
         </mxCell>
-        <mxCell id="IN2" value="From the platform operator&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;rarely, by hand&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="60" y="380" width="340" height="150" as="geometry" />
+        <mxCell id="IN2" value="From a project base&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;on an explicit command&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="360" width="340" height="110" as="geometry" />
         </mxCell>
-        <mxCell id="IN2-b" value="•&amp;nbsp; retiring a wrong record&lt;br&gt;•&amp;nbsp; pinning a record&lt;br&gt;•&amp;nbsp; putting a record in doubt&lt;br&gt;•&amp;nbsp; the rules for raising trust" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="IN2">
-          <mxGeometry x="0" y="52" width="340" height="98" as="geometry" />
+        <mxCell id="IN2-b" value="•&amp;nbsp; a proposal that holds for everyone&lt;br&gt;•&amp;nbsp; with every trace of the project stripped" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="IN2">
+          <mxGeometry x="0" y="52" width="340" height="58" as="geometry" />
         </mxCell>
-        <mxCell id="IN3" value="From a project base&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;on an explicit command&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="60" y="570" width="340" height="130" as="geometry" />
+        <mxCell id="IN3" value="From the verification engine&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;after a run&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="510" width="340" height="125" as="geometry" />
         </mxCell>
-        <mxCell id="IN3-b" value="•&amp;nbsp; a proposal: a rule that holds for everyone&lt;br&gt;•&amp;nbsp; with every trace of the project stripped" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="IN3">
-          <mxGeometry x="0" y="52" width="340" height="78" as="geometry" />
+        <mxCell id="IN3-b" value="•&amp;nbsp; a record that cleared the bar&lt;br&gt;•&amp;nbsp; a supersede mark&lt;br&gt;•&amp;nbsp; a dispute mark" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="IN3">
+          <mxGeometry x="0" y="52" width="340" height="73" as="geometry" />
         </mxCell>
-        <mxCell id="BOX" value="What happens inside" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=bottom;align=center;spacingBottom=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="440" y="160" width="660" height="600" as="geometry" />
+        <mxCell id="IN4" value="From the platform operator&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;rarely, by hand&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="60" y="660" width="340" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="ACC" value="Intake&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;one rule per input&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#c9e4de;swimlaneFillColor=#eef7f5;strokeColor=#0d5f55;fontColor=#0d5f55;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="470" y="210" width="290" height="290" as="geometry" />
+        <mxCell id="IN4-b" value="•&amp;nbsp; retiring a record&lt;br&gt;•&amp;nbsp; pinning a record&lt;br&gt;•&amp;nbsp; putting a record in doubt&lt;br&gt;•&amp;nbsp; the trust thresholds" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="IN4">
+          <mxGeometry x="0" y="52" width="340" height="88" as="geometry" />
         </mxCell>
-        <mxCell id="ACC-b" value="•&amp;nbsp; takes the engine's records as they are — it has already checked them&lt;br&gt;•&amp;nbsp; drops a superseded record from answers, keeps the history&lt;br&gt;•&amp;nbsp; applies the operator's mark and closes it to the machine&lt;br&gt;•&amp;nbsp; never files a project's proposal into the shared records&lt;br&gt;•&amp;nbsp; accepts trust rules from its own operator only" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#0d5f55;fontFamily=Helvetica;" vertex="1" parent="ACC">
-          <mxGeometry x="0" y="52" width="290" height="238" as="geometry" />
+        <mxCell id="BOX" value="What is held inside" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=bottom;align=center;spacingBottom=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="440" y="190" width="400" height="620" as="geometry" />
         </mxCell>
-        <mxCell id="DRAFT" value="Drafts&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;taken in, not yet reconciled with the base&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#c9e4de;swimlaneFillColor=#eef7f5;strokeColor=#0d5f55;fontColor=#0d5f55;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="470" y="540" width="290" height="185" as="geometry" />
+        <mxCell id="DRAFT" value="Drafts&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;taken in, not yet reconciled&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#c9e4de;swimlaneFillColor=#eef7f5;strokeColor=#0d5f55;fontColor=#0d5f55;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="480" y="250" width="320" height="180" as="geometry" />
         </mxCell>
-        <mxCell id="DRAFT-b" value="•&amp;nbsp; sits here until the engine's next pass&lt;br&gt;•&amp;nbsp; served only as a lead, marked &quot;not a fact&quot;&lt;br&gt;•&amp;nbsp; cleared by the platform's own evidence, never by trust in whoever wrote it&lt;br&gt;•&amp;nbsp; the same engine checks them — the base confirms nothing by itself" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#0d5f55;fontFamily=Helvetica;" vertex="1" parent="DRAFT">
-          <mxGeometry x="0" y="52" width="290" height="133" as="geometry" />
+        <mxCell id="DRAFT-b" value="•&amp;nbsp; accepts nothing without evidence&lt;br&gt;•&amp;nbsp; no number yet&lt;br&gt;•&amp;nbsp; served as leads, marked &quot;not a fact&quot;&lt;br&gt;•&amp;nbsp; wait for the engine’s next pass" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#0d5f55;fontFamily=Helvetica;" vertex="1" parent="DRAFT">
+          <mxGeometry x="0" y="52" width="320" height="128" as="geometry" />
         </mxCell>
-        <mxCell id="STORE" value="Shared records&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;what the base answers with&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#dde5e3;swimlaneFillColor=#f4f7f6;strokeColor=#2b3d39;fontColor=#2b3d39;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="800" y="210" width="280" height="225" as="geometry" />
+        <mxCell id="MAIN" value="Shared records&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;what the base answers with&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#dde5e3;swimlaneFillColor=#f4f7f6;strokeColor=#2b3d39;fontColor=#2b3d39;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="480" y="500" width="320" height="270" as="geometry" />
         </mxCell>
-        <mxCell id="STORE-b" value="•&amp;nbsp; one current state per subject&lt;br&gt;•&amp;nbsp; the history of what was replaced and retired&lt;br&gt;•&amp;nbsp; permanent numbers — other records cite them&lt;br&gt;•&amp;nbsp; every record carries a weight; &quot;confirmed&quot; is a weight above the threshold&lt;br&gt;•&amp;nbsp; serves only what is in force, with its trust label" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" vertex="1" parent="STORE">
-          <mxGeometry x="0" y="52" width="280" height="173" as="geometry" />
+        <mxCell id="MAIN-b" value="•&amp;nbsp; each has a permanent number and a weight&lt;br&gt;•&amp;nbsp; &quot;confirmed&quot; means a weight above the threshold&lt;br&gt;•&amp;nbsp; one current state per subject&lt;br&gt;•&amp;nbsp; superseded and retired ones stay as history&lt;br&gt;•&amp;nbsp; an operator’s mark is closed to the machine&lt;br&gt;•&amp;nbsp; serves only what is in force, with its trust label" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" vertex="1" parent="MAIN">
+          <mxGeometry x="0" y="52" width="320" height="218" as="geometry" />
         </mxCell>
         <mxCell id="OUT1" value="To the reference desk&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;on request&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1160" y="231" width="300" height="145" as="geometry" />
+          <mxGeometry x="900" y="250" width="320" height="150" as="geometry" />
         </mxCell>
-        <mxCell id="OUT1-b" value="•&amp;nbsp; records for the agent's answer&lt;br&gt;•&amp;nbsp; the trust label and the source&lt;br&gt;•&amp;nbsp; drafts as well — separately, as leads" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="OUT1">
-          <mxGeometry x="0" y="52" width="300" height="93" as="geometry" />
-        </mxCell>
-        <mxCell id="OUT3" value="To the verification engine&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;continuously&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1160" y="620" width="300" height="150" as="geometry" />
-        </mxCell>
-        <mxCell id="OUT3-b" value="•&amp;nbsp; drafts, for checking&lt;br&gt;•&amp;nbsp; records due for a re-check&lt;br&gt;•&amp;nbsp; what clears comes back through the first input" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="OUT3">
-          <mxGeometry x="0" y="52" width="300" height="98" as="geometry" />
+        <mxCell id="OUT1-b" value="•&amp;nbsp; records for the agent's answer&lt;br&gt;•&amp;nbsp; leads from the drafts — separately" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="OUT1">
+          <mxGeometry x="0" y="52" width="320" height="98" as="geometry" />
         </mxCell>
         <mxCell id="OUT2" value="To project bases&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;continuously&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1160" y="430" width="300" height="130" as="geometry" />
+          <mxGeometry x="900" y="460" width="320" height="130" as="geometry" />
         </mxCell>
-        <mxCell id="OUT2-b" value="•&amp;nbsp; the shared records in full&lt;br&gt;•&amp;nbsp; a project layers over them instead of copying them" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="OUT2">
-          <mxGeometry x="0" y="52" width="300" height="78" as="geometry" />
+        <mxCell id="OUT2-b" value="•&amp;nbsp; the shared records in full" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="OUT2">
+          <mxGeometry x="0" y="52" width="320" height="78" as="geometry" />
         </mxCell>
-        <mxCell id="Baz1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.224;entryDx=0;entryDy=0;" edge="1" parent="1" source="IN1" target="ACC">
+        <mxCell id="OUT3" value="To the verification engine&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;continuously&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="900" y="620" width="320" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="OUT3-b" value="•&amp;nbsp; drafts, for checking&lt;br&gt;•&amp;nbsp; records due for a re-check" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="OUT3">
+          <mxGeometry x="0" y="52" width="320" height="98" as="geometry" />
+        </mxCell>
+        <mxCell id="Baz1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.083;entryDx=0;entryDy=0;" edge="1" parent="1" source="IN1" target="DRAFT">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Baz2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.845;entryDx=0;entryDy=0;" edge="1" parent="1" source="IN2" target="ACC">
+        <mxCell id="Baz2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;dashPattern=1 4;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.917;entryDx=0;entryDy=0;" edge="1" parent="1" source="IN2" target="DRAFT">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Baz3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;dashPattern=1 4;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.514;entryDx=0;entryDy=0;" edge="1" parent="1" source="IN3" target="DRAFT">
+        <mxCell id="Baz3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.269;entryDx=0;entryDy=0;" edge="1" parent="1" source="IN3" target="MAIN">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Baz4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.644;entryDx=0;entryDy=0;" edge="1" parent="1" source="ACC" target="STORE">
+        <mxCell id="Baz4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.852;entryDx=0;entryDy=0;" edge="1" parent="1" source="IN4" target="MAIN">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Baz5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.533;entryDx=0;entryDy=0;" edge="1" parent="1" source="DRAFT" target="OUT3">
+        <mxCell id="Baz5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.278;exitDx=0;exitDy=0;entryX=0;entryY=0.333;entryDx=0;entryDy=0;" edge="1" parent="1" source="DRAFT" target="OUT1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Baz6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.722;exitDx=0;exitDy=0;entryX=0;entryY=0.247;entryDx=0;entryDy=0;" edge="1" parent="1" source="DRAFT" target="OUT3">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-            <mxPoint x="1120" y="632" />
-            <mxPoint x="1120" y="700" />
+            <mxPoint x="860" y="380" />
+            <mxPoint x="860" y="657" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Baz6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.2;entryDx=0;entryDy=0;" edge="1" parent="1" source="STORE" target="OUT3">
+        <mxCell id="Baz7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.222;exitDx=0;exitDy=0;entryX=0;entryY=0.733;entryDx=0;entryDy=0;" edge="1" parent="1" source="MAIN" target="OUT1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-            <mxPoint x="940" y="690" />
-            <mxPoint x="1090" y="690" />
-            <mxPoint x="1090" y="650" />
+            <mxPoint x="870" y="560" />
+            <mxPoint x="870" y="360" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Baz7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.356;exitDx=0;exitDy=0;entryX=0;entryY=0.379;entryDx=0;entryDy=0;" edge="1" parent="1" source="STORE" target="OUT1">
+        <mxCell id="Baz8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.093;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="MAIN" target="OUT2">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Baz8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.19;exitDx=0;exitDy=0;entryX=0;entryY=0.793;entryDx=0;entryDy=0;" edge="1" parent="1" source="DRAFT" target="OUT1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-            <mxPoint x="1140" y="575" />
-            <mxPoint x="1140" y="346" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="Baz9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.8;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="STORE" target="OUT2">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-            <mxPoint x="1120" y="362" />
-            <mxPoint x="1120" y="495" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="Baz9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.722;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="MAIN" target="OUT3">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
