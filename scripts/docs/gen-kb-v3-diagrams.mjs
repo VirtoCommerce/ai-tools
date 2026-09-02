@@ -88,11 +88,34 @@ function page(name) {
 
   return {
     name,
-    box(id, x, y, w, h, label, style) {
+    box(id, x, y, w, h, label, style, parent) {
       cells.push(
-        `        <mxCell id="${esc(id)}" value="${esc(label)}" style="${style}" vertex="1" parent="1">\n` +
+        `        <mxCell id="${esc(id)}" value="${esc(label)}" style="${style}" vertex="1" parent="${esc(parent || "1")}">\n` +
           `          <mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry" />\n` +
           `        </mxCell>`,
+      );
+      return id;
+    },
+    /**
+     * A block the way the team reads it: a title band on top, a rule under it, and
+     * terse bullets below — "читает общее", never "общие может читать". Rendered as a
+     * draw.io swimlane so the separator is a real shape feature rather than a drawn
+     * line that drifts out of place when the box is resized by hand.
+     */
+    card(id, x, y, w, h, title, bullets, band, body, ink) {
+      const HEAD = 36;
+      this.box(
+        id, x, y, w, h, title,
+        `swimlane;html=1;rounded=1;arcSize=6;startSize=${HEAD};horizontal=1;` +
+          `fillColor=${band};swimlaneFillColor=${body};strokeColor=${ink};fontColor=${ink};` +
+          `fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;${FONT}`,
+      );
+      this.box(
+        `${id}-b`, 0, HEAD, w, h - HEAD,
+        bullets.map((t) => "•&nbsp; " + t).join("<br>"),
+        `text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;` +
+          `spacingRight=10;fontSize=12;fontColor=${ink};${FONT}`,
+        id,
       );
       return id;
     },
@@ -136,13 +159,15 @@ function page(name) {
 function pageOverview() {
   const p = page("Общий вид");
 
+  const C = {
+    actor: ["#f0d3da", "#faeff2", "#7a2436"],
+    agent: ["#f5dfc8", "#fdf6ef", "#8f4a1b"],
+    window: ["#c9e4de", "#eef7f5", "#0d5f55"],
+    store: ["#dde5e3", "#f4f7f6", "#2b3d39"],
+    keeper: ["#c9e4de", "#eef7f5", "#0d5f55"],
+    source: ["#e2e8e6", "#f6f8f7", "#3f4d49"],
+  };
   const O = {
-    actor: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#f7e6ea;strokeColor=#8e2b3e;fontColor=#5e1a28;fontSize=13;strokeWidth=2;${FONT}`,
-    agent: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#fbf0e6;strokeColor=#a85a22;fontColor=#6f3813;fontSize=13;strokeWidth=2;${FONT}`,
-    window: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#e3f1ee;strokeColor=#0f6f63;fontColor=#093f39;fontSize=13;strokeWidth=3;${FONT}`,
-    store: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#eef2f1;strokeColor=#3d5a55;fontColor=#16211e;fontSize=13;strokeWidth=2;${FONT}`,
-    keeper: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#e3f1ee;strokeColor=#0f6f63;fontColor=#093f39;fontSize=13;strokeWidth=2;${FONT}`,
-    source: `rounded=1;arcSize=14;whiteSpace=wrap;html=1;fillColor=#f2f5f4;strokeColor=#5c6b66;fontColor=#2f3a37;fontSize=13;strokeWidth=2;${FONT}`,
     lane: `rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#9db3ad;dashed=1;verticalAlign=top;align=center;spacingTop=8;fontColor=#4b5c57;fontStyle=2;fontSize=12;${FONT}`,
   };
   const line = `edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;${FONT}`;
@@ -154,44 +179,74 @@ function pageOverview() {
     "Сплошные стрелки — то, что происходит само, без людей. Пунктирная — редкое вмешательство человека.",
     S.sub);
 
-  p.box("HUM", 60, 180, 220, 120,
-    b("Человек") + "<br><br>менеджер · разработчик<br>тестировщик · аналитик", O.actor);
+  p.card("HUM", 60, 180, 240, 150, "Человек", [
+    "менеджер · разработчик · тестировщик · аналитик",
+    "ставит задачу",
+    "задаёт вопрос",
+    "получает ответ с пояснением",
+  ], ...C.actor);
 
-  p.box("AGT", 340, 180, 300, 120,
-    b("Агент-помощник") + "<br><br>делает задачу: чинит, проверяет, объясняет.<br>Спрашивает базу, поясняет ответ и записывает то, что узнал сам", O.agent);
+  p.card("AGT", 350, 180, 300, 150, "Агент-помощник", [
+    "делает задачу: чинит, проверяет, объясняет",
+    "спрашивает базу перед работой",
+    "поясняет ответ человеку",
+    "записывает то, что узнал",
+  ], ...C.agent);
 
-  p.box("WIN", 340, 380, 300, 150,
-    b("Одно окно к знаниям") + "<br><br>сюда идут все вопросы.<br>Отвечает и сразу говорит, насколько ответу можно верить.<br>Если ответа нет — так и говорит, а не выдумывает", O.window);
+  p.card("WIN", 350, 390, 300, 150, "Одно окно к знаниям", [
+    "принимает все вопросы",
+    "отвечает из обеих баз",
+    "говорит, насколько ответу верить",
+    "говорит «не знаю», если ответа нет",
+  ], ...C.window);
 
-  p.box("KNOW", 740, 150, 380, 390, "Хранилище знаний — баз две, но для спрашивающего это одно целое", O.lane);
-  p.box("KBP", 760, 200, 340, 120,
-    b("Знания о платформе") + "<br><br>то, что верно для любого проекта", O.store);
-  p.box("KBC", 760, 375, 340, 140,
-    b("Знания о проекте клиента") + "<br><br>то, что верно только здесь. Общие может читать, но не менять.<br>Если факт верен для всех — уходит наверх, в общие", O.store);
+  p.box("KNOW", 750, 150, 390, 400, "Хранилище знаний — баз две, для спрашивающего это одно целое", O.lane);
+  p.card("KBP", 770, 200, 350, 110, "Знания о платформе", [
+    "хранит верное для любого проекта",
+    "отдаёт общее проектам",
+  ], ...C.store);
+  p.card("KBC", 770, 370, 350, 150, "Знания о проекте клиента", [
+    "хранит верное только для этого проекта",
+    "читает общее",
+    "не меняет общее",
+    "отдаёт наверх верное для всех",
+  ], ...C.store);
 
-  p.box("KEEP", 340, 600, 300, 150,
-    b("Проверяющий механизм") + "<br><br>работает сам, без людей: принимает новое только с доказательством, перепроверяет старое, помечает спорное", O.keeper);
+  p.card("KEEP", 350, 620, 300, 150, "Проверяющий механизм", [
+    "принимает новое только с доказательством",
+    "перепроверяет старое",
+    "помечает спорное",
+    "работает сам, без людей",
+  ], ...C.keeper);
 
-  p.box("OPER", 820, 600, 340, 150,
-    b("Оператор") + "<br><br>вмешивается редко: убрать неверное, закрепить важное, поставить под сомнение.<br>Читает короткую сводку изменений", O.actor);
+  p.card("OPER", 830, 600, 340, 170, "Оператор", [
+    "убирает неверное",
+    "закрепляет важное",
+    "ставит под сомнение",
+    "читает сводку изменений",
+    "вмешивается редко",
+  ], ...C.actor);
 
-  p.box("SRC", 60, 810, 1100, 110,
-    b("Источники правды — сам продукт") + "<br>код · работающий стенд · документация · записанные решения команды<br>по ним база наполняется в первый раз и по ним же потом проверяется — а не сама по себе", O.source);
+  p.card("SRC", 60, 830, 1110, 120, "Источники правды — сам продукт", [
+    "код · работающий стенд · документация · записанные решения команды",
+    "наполняют базу в первый раз",
+    "служат проверкой для всех знаний",
+  ], ...C.source);
 
   p.edge("HUM", "AGT", "", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.3 });
   p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.75, entryX: 1, entryY: 0.75 });
   p.edge("AGT", "WIN", "", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
-  p.edge("KNOW", "WIN", "", line, { exitX: 0, exitY: 0.782, entryX: 1, entryY: 0.5 });
-  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[300, 240], [300, 675]] });
-  p.edge("KEEP", "KNOW", "", line, { exitX: 1, exitY: 0.25, entryX: 0.13, entryY: 1, points: [[790, 637]] });
-  p.edge("SRC", "KEEP", "", line, { exitX: 0.391, exitY: 0, entryX: 0.5, entryY: 1 });
-  p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.5 });
-  p.edge("OPER", "KNOW", "", rare, { exitX: 0.5, exitY: 0, entryX: 0.658, entryY: 1 });
-  p.edge("KBC", "KBP", "", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.5, points: [[1180, 445], [1180, 260]] });
+  p.edge("KNOW", "WIN", "", line, { exitX: 0, exitY: 0.7875, entryX: 1, entryY: 0.5 });
+  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[310, 255], [310, 695]] });
+  p.edge("KEEP", "KNOW", "", line, { exitX: 1, exitY: 0.25, entryX: 0.103, entryY: 1, points: [[790, 657]] });
+  p.edge("SRC", "KEEP", "", line, { exitX: 0.396, exitY: 0, entryX: 0.5, entryY: 1 });
+  p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.559 });
+  p.edge("OPER", "KNOW", "", rare, { exitX: 0.5, exitY: 0, entryX: 0.641, entryY: 1 });
+  p.edge("KBC", "KBP", "", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.5, points: [[1200, 445], [1200, 255]] });
   p.edge("KBP", "KBC", "", line, { exitX: 0.3, exitY: 1, entryX: 0.3, entryY: 0 });
 
-  return p.render(1300, 980);
+  return p.render(1320, 1010);
 }
 
 /* =================================================== 1. Процесс целиком */
