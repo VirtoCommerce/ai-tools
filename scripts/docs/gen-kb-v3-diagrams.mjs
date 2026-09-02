@@ -194,22 +194,26 @@ function pageOverview() {
     "поясняет человеку, откуда взят ответ",
   ], ...C.agent);
 
-  p.card("WIN", 350, 400, 310, 170, "Одно окно к знаниям", [
+  p.card("WIN", 350, 400, 310, 165,
+    "Справочная<br><span style=\"font-size:11px;font-weight:normal\">единая дверь к знаниям</span>", [
     "принимает все вопросы",
-    "отвечает из обеих баз",
+    "собирает ответ из доступных баз",
     "показывает обе стороны при переопределении",
     "говорит, насколько ответу верить",
     "говорит «не знаю», если ответа нет",
-  ], ...C.window);
+  ], ...C.window, 52);
 
-  p.box("KNOW", 760, 150, 400, 420, "Знания — две базы, но для спрашивающего это одно целое", O.lane);
-  p.card("KBP", 780, 200, 360, 110,
+  p.box("KNOW", 760, 150, 400, 445,
+    "Знания — база платформы; у клиентского проекта добавляется вторая", O.lane);
+  p.card("KBP", 780, 200, 360, 125,
     "База знаний платформы<br><span style=\"font-size:11px;font-weight:normal\">верное для любого проекта</span>", [
+    "отвечает справочной напрямую",
     "отдаёт знания проектам",
     "принимает предложения проектов как черновики",
   ], ...C.store, 52);
-  p.card("KBC", 780, 370, 360, 180,
+  p.card("KBC", 780, 370, 360, 195,
     "База знаний клиентского проекта<br><span style=\"font-size:11px;font-weight:normal\">верное только для этого проекта</span>", [
+    "отвечает справочной напрямую",
     "читает общее",
     "переопределяет правила платформы у себя",
     "отменяет неприменимые правила",
@@ -246,13 +250,14 @@ function pageOverview() {
   p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.75, entryX: 1, entryY: 0.8 });
   p.edge("AGT", "WIN", "", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
-  p.edge("KNOW", "WIN", "", line, { exitX: 0, exitY: 0.798, entryX: 1, entryY: 0.5 });
+  p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.44, entryX: 1, entryY: 0.18, points: [[700, 255], [700, 430]] });
+  p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.564, entryX: 1, entryY: 0.485 });
   p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[315, 260], [315, 730]] });
   p.edge("KEEP", "KNOW", "", line, { exitX: 1, exitY: 0.25, entryX: 0.1, entryY: 1, points: [[800, 685]] });
+  p.edge("KBC", "KBP", "", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.5, points: [[1220, 467], [1220, 262]] });
   p.edge("SRC", "KEEP", "", line, { exitX: 0.742, exitY: 0, entryX: 0.5, entryY: 1 });
   p.edge("KEEP", "OPER", "", line, { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.6 });
   p.edge("OPER", "KNOW", "", rare, { exitX: 0.5, exitY: 0, entryX: 0.625, entryY: 1 });
-  p.edge("KBC", "KBP", "", line, { exitX: 1, exitY: 0.5, entryX: 1, entryY: 0.5, points: [[1220, 460], [1220, 255]] });
   p.edge("KBP", "KBC", "", line, { exitX: 0.3, exitY: 1, entryX: 0.3, entryY: 0 });
 
   return p.render(1340, 1030);
