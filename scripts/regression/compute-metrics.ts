@@ -18,11 +18,23 @@
  * pass-rate criteria are computed; the verdict combines both. This keeps the
  * verdict honest about what was measured vs. supplied.
  *
+ * An open P1/High BLOCKS (quality-gates.md §1a/§2) — it no longer downgrades to a
+ * CONDITIONAL verdict by itself. The deferral path survives but must be DECLARED:
+ * --p1-deferred N asserts that N of the P1s carry a documented workaround + signed risk
+ * acceptance + a monitoring plan, and a declared deferral caps the verdict at CONDITIONAL
+ * (it never yields a clean GO/APPROVED). Release still tolerates <=2 undeferred.
+ *
+ * COMPLETENESS is a criterion too, checked before the pass rate: `executed = passed +
+ * failed`, so BLOCKED sits OUTSIDE the pass-rate denominator and the rate RISES as
+ * blockers accumulate. A run with more than MAX_UNTRIAGED_BLOCKED_PCT of its planned
+ * cases blocked-and-untriaged returns CANNOT EVALUATE; --blocked-triaged N discounts the
+ * ones /qa-triage-results attributed to a documented non-product cause.
+ *
  * Usage:
  *   npx tsx scripts/regression/compute-metrics.ts [--history <path>]
  *       [--run-id <RUN_ID>] [--suites <id,id,...>] [--suite <id>] [--since <ISO>]
  *       [--gate smoke|sprint|release|hotfix|feature]
- *       [--p0-bugs N] [--p1-bugs N] [--json]
+ *       [--p0-bugs N] [--p1-bugs N] [--p1-deferred N] [--blocked-triaged N] [--json]
  *
  * SCOPE. Unscoped, every number aggregates the whole rolling history. `--gate feature`
  * (quality-gates.md §1a) is defined on ONE change-scoped run, so it REFUSES to run
@@ -117,6 +129,14 @@ export function aggregate(entries: RunEntry[], bugJoin?: ReadonlyMap<string, num
     failRate: executed ? round((failed / executed) * 100) : 0,
     blockedRate: planned ? round((blocked / planned) * 100) : 0,
     skipRate: planned ? round((skipped / planned) * 100) : 0,
+    // PLANNED-basis pass rate: passed / planned, i.e. the share of what the run set out to
+    // do that actually went green. Reported beside passRate because the two diverge wildly
+    // and only one of them can be read as "the run went well": REG-2026-07-13-1247 is
+    // 26P / 0F / 32B / 12S — passRate 100%, plannedPassRate 36.6%. A gate quoting only the
+    // first certifies a run that executed a third of its cases as perfect.
+    plannedPassRate: planned ? round((passed / planned) * 100) : 0,
+    // Share of planned cases that produced ANY verdict. 100 - this is blocked + skipped.
+    executedShare: planned ? round((executed / planned) * 100) : 0,
     velocityPerHour: minutes ? round(executed / (minutes / 60)) : null,
     defectDensity: executed ? round(bugs / executed, 3) : 0,
   };
@@ -227,93 +247,298 @@ type Verdict =
   | "BLOCKED"
   | "GO"
   | "CONDITIONAL GO"
-  | "NO-GO";
+  | "NO-GO"
+  // Not a failure — the run cannot SUPPORT a verdict (nothing executed, or too much of it
+  // was blocked and untriaged). main() exits 2 for this, never 1: reporting it as BLOCKED /
+  // NO-GO makes an unmeasured run indistinguishable from a catastrophic regression.
+  | "CANNOT EVALUATE";
 
 export interface GateResult {
   gate: GateType;
   verdict: Verdict;
+  /** Executed-basis: passed / (passed + failed). The threshold criterion. */
   passRate: number;
+  /** Planned-basis: passed / planned. Reported, never thresholded — see aggregate(). */
+  plannedPassRate: number;
+  /** Untriaged BLOCKED as a share of planned — the completeness criterion's input. */
+  blockedShare: number;
   reasons: string[];
 }
 
-/** Evaluate a gate per quality-gates.md §9. p0/p1 are supplied bug counts. */
+/**
+ * Completeness ceiling — the share of PLANNED cases a gate tolerates as BLOCKED without a
+ * documented non-product cause before it refuses to evaluate ("no serious blockers").
+ *
+ * Why a gate needs this at all: `executed = passed + failed`, so BLOCKED is excluded from
+ * the pass-rate DENOMINATOR. The pass rate therefore RISES as blockers accumulate, and
+ * before this criterion existed no gate below `smoke` looked at the blocked count at all —
+ * REG-2026-07-14-0018 (777P / 170F / 371B / 167S of 1485 planned) satisfied every numeric
+ * criterion in the file. Corpus blocked rate is 19.9% (28.6% on suites of 81+ cases), so a
+ * run generally has to be triaged through /qa-triage-results to clear this; that is the
+ * intent, and CANNOT EVALUATE is deliberately cheap to resolve (`--blocked-triaged N`).
+ *
+ * SKIPPED is deliberately NOT counted here. An explicit `Manual` / `Deprecated` lane is
+ * materialised as SKIPPED with its reason (.claude/rules/regression.md §Per-Case Lane
+ * Routing) — an intentional non-execution, not a blocker. Counting the corpus's 838 Manual
+ * + 35 Deprecated cases as blockers would leave the gate permanently unevaluable for
+ * reasons that are by design. The planned-basis pass rate is what exposes them.
+ */
+export const MAX_UNTRIAGED_BLOCKED_PCT = 10;
+
+/**
+ * Pass-rate floor per gate, EXECUTED basis (passed / (passed + failed)).
+ *
+ * One exported constant rather than literals in the branches, because this number is quoted
+ * in ~8 documents and a transcribed copy of it goes stale silently
+ * (`.claude/rules/test-data.md` §GOLDEN RULE). Docs cite `GATE_PASS_FLOOR`, never a figure.
+ *
+ * **Lowered 95 -> 80 for feature/sprint/hotfix on 2026-09-02, by operator decision.** The
+ * recorded counter-argument, so a future reader can weigh it: BLOCKED and SKIPPED are already
+ * outside this denominator, so the artefactual failures (contaminated cart, drifted session,
+ * dead lane) do not depress it — what an 80% floor admits is 1 in 5 EXECUTED cases failing for
+ * product reasons. On the 21-run history at the time, 4 runs moved from NO-GO to GO. The
+ * decision was taken with that on the table, and it is paired with two tightenings that did
+ * not exist before (§0 completeness, and an undeferred P1 now blocking), so the gate is not
+ * uniformly looser than the one it replaces.
+ *
+ * Deliberately NOT changed: `smoke` (100%, binary, P0-only) and `release` (98%) — a production
+ * release aggregates many already-gated features, so a bar beneath the sprint bar it rolls up
+ * would be incoherent. Change `release` here if that is wanted; nothing else needs editing.
+ */
+export const GATE_PASS_FLOOR: Record<GateType, number> = {
+  smoke: 100,
+  feature: 80,
+  sprint: 80,
+  hotfix: 80,
+  release: 98,
+};
+
+/**
+ * Release alone keeps a 2-point conditional band beneath its floor (96-98). The 80% gates are a
+ * SINGLE floor: with the floor at 80 a band underneath it would be a second, quieter threshold
+ * nobody quotes, and "pass more than 80%" is meant to be one number. So at those gates a
+ * CONDITIONAL verdict means exactly one thing — a declared P1 deferral.
+ */
+export const RELEASE_COND_FLOOR = 96;
+
+/** Operator-supplied inputs that no run artifact can carry, so they must be declared. */
+export interface GateInputs {
+  /**
+   * Open P1/High bugs carrying a documented workaround + risk acceptance signed by the
+   * product owner + a monitoring plan. Subtracted from p1Bugs. A deferral CAPS the verdict
+   * at CONDITIONAL GO / APPROVED WITH CONDITIONS — it never buys a clean GO, because the
+   * risk was accepted rather than removed.
+   */
+  p1Deferred?: number;
+  /**
+   * BLOCKED cases triaged (/qa-triage-results) to a documented NON-PRODUCT cause — env,
+   * precondition, contaminated lane. Subtracted before the completeness check. Untriaged
+   * blockers stay counted: an untriaged BLOCKED may well be the product failing.
+   */
+  blockedTriaged?: number;
+}
+
+/**
+ * Evaluate a gate per quality-gates.md §0 (completeness) + §9 (numeric definitions).
+ *
+ * Three families of criterion, applied in this order and for this reason:
+ *   1. SEVERITY  — an open P0/Critical needs no complete run to be decided, so it outranks
+ *                  everything, including an unevaluable run.
+ *   2. COMPLETENESS — did the run measure enough to support ANY verdict? Checked BEFORE the
+ *                  pass rate, because a pass rate computed over a heavily-blocked run is
+ *                  not a weak signal, it is the wrong number (blocked is excluded from its
+ *                  denominator, so blockers push it UP).
+ *   3. PASS RATE — the floor (`GATE_PASS_FLOOR`), finally trustworthy.
+ *
+ * p0/p1 counts and the two GateInputs come from the bug tracker + triage, not from the run
+ * entries, so the verdict stays honest about what was measured vs. what was supplied.
+ */
 export function evaluateGate(
   gate: GateType,
   agg: ReturnType<typeof aggregate>,
   p0Bugs: number,
   p1Bugs: number,
+  inputs: GateInputs = {},
 ): GateResult {
   const pr = agg.passRate;
   const reasons: string[] = [];
+
+  // Both operator inputs are CLAMPED to what the ledger / the run actually contains.
+  // Unclamped, `--p1-deferred 2` against a feature with ZERO open P1s downgraded a clean run to
+  // CONDITIONAL GO — a conditional verdict about bugs that do not exist — because the branch
+  // tests `p1Deferred > 0` rather than "a real P1 was deferred". Same shape for a
+  // `--blocked-triaged` larger than the blocked count. Clamping keeps a stale or copy-pasted
+  // flag from changing a verdict it has no bearing on, in the safe direction: it can never
+  // manufacture a deferral, only ignore one that has nothing to defer.
+  const p1DeferredDeclared = Math.max(0, Number(inputs.p1Deferred ?? 0) || 0);
+  const blockedTriagedDeclared = Math.max(0, Number(inputs.blockedTriaged ?? 0) || 0);
+  const p1Deferred = Math.min(p1DeferredDeclared, Math.max(0, p1Bugs));
+  const blockedTriaged = Math.min(blockedTriagedDeclared, Math.max(0, agg.blocked));
+  const p1Net = Math.max(0, p1Bugs - p1Deferred);
+  const untriagedBlocked = Math.max(0, agg.blocked - blockedTriaged);
+  const blockedShare = agg.planned ? round((untriagedBlocked / agg.planned) * 100) : 0;
+
+  const out = (verdict: Verdict): GateResult => ({
+    gate,
+    verdict,
+    passRate: pr,
+    plannedPassRate: agg.plannedPassRate,
+    blockedShare,
+    reasons,
+  });
+
+  // The word this gate uses for "do not ship". Kept in one place so the three vocabularies
+  // (PASS/FAIL · GO/NO-GO · APPROVED/BLOCKED) cannot drift between the shared pre-checks
+  // and the per-gate branches.
+  const blockVerdict: Verdict = gate === "smoke" ? "FAIL" : gate === "feature" ? "NO-GO" : "BLOCKED";
+
+  // ---- [1] SEVERITY: an open P0/Critical is non-negotiable at every gate -----------------
+  if (p0Bugs > 0) {
+    reasons.push(`${p0Bugs} open P0/Critical bug(s) (non-negotiable)`);
+    return out(blockVerdict);
+  }
+
+  // ---- [2] COMPLETENESS: can this run support a verdict at all? -------------------------
+  // Nothing executed. Distinct from a 0% pass rate — see main()'s exit-2 branch.
+  if (agg.executed === 0) {
+    reasons.push(
+      `no case produced a pass/fail verdict (${agg.planned} planned, ${agg.blocked} blocked, ` +
+        `${agg.skipped} skipped) — this is NOT a 0% pass rate`,
+    );
+    return out("CANNOT EVALUATE");
+  }
+  // "No serious blockers." Smoke keeps its own stricter blocked === 0 && skipped === 0 rule
+  // in its branch below, so it is exempt from the ceiling rather than double-judged by it.
+  if (gate !== "smoke" && blockedShare > MAX_UNTRIAGED_BLOCKED_PCT) {
+    reasons.push(
+      `${untriagedBlocked} of ${agg.planned} planned case(s) BLOCKED and untriaged ` +
+        `(${blockedShare}% > ${MAX_UNTRIAGED_BLOCKED_PCT}% ceiling) — the ${pr}% pass rate excludes ` +
+        `them from its denominator, so it cannot be read as this run's quality. Triage via ` +
+        `/qa-triage-results, then re-run with --blocked-triaged N`,
+    );
+    return out("CANNOT EVALUATE");
+  }
+
+  // ---- [3] PASS RATE + P1 ledger, per gate ----------------------------------------------
   let verdict: Verdict;
 
   if (gate === "smoke") {
     const clean = agg.blocked === 0 && agg.skipped === 0;
-    if (pr >= 99.999 && p0Bugs === 0 && clean) verdict = "PASS";
+    if (pr >= 99.999 && clean) verdict = "PASS";
     else {
       verdict = "FAIL";
       if (pr < 99.999) reasons.push(`P0 pass rate ${pr}% < 100%`);
-      if (p0Bugs > 0) reasons.push(`${p0Bugs} open P0 bug(s)`);
       if (!clean) reasons.push(`${agg.blocked} blocked / ${agg.skipped} skipped (must be 0)`);
     }
   } else if (gate === "hotfix") {
-    if (pr >= 95 && p0Bugs === 0) verdict = "APPROVED";
-    else {
+    // §8 requires 0 open P1 in the hotfix area. The p1 argument was previously ignored on
+    // this branch entirely, so a hotfix with open Highs read as APPROVED against a doc that
+    // said it must not.
+    if (pr < GATE_PASS_FLOOR.hotfix) {
       verdict = "BLOCKED";
-      if (pr < 95) reasons.push(`affected-area pass rate ${pr}% < 95%`);
-      if (p0Bugs > 0) reasons.push(`${p0Bugs} open P0 bug(s) in hotfix area`);
-    }
+      reasons.push(`affected-area pass rate ${pr}% < ${GATE_PASS_FLOOR.hotfix}% floor`);
+    } else if (p1Net > 0) {
+      verdict = "BLOCKED";
+      reasons.push(`${p1Net} open P1/High bug(s) in the hotfix area (§8 requires 0)`);
+    } else verdict = "APPROVED";
   } else if (gate === "feature") {
     // Feature Release Gate (quality-gates.md §1a) — per-feature GO / CONDITIONAL GO / NO-GO.
     // pr = change-scoped (Artifact-C) regression pass rate; p0/p1 = open IN-SCOPE bug counts.
-    // This computes ONLY the pass-rate + bug-count math; the qualitative §1a criteria (AC coverage,
-    // BL-* preserved, NFRs, smoke, /qa-test verdict, security) stay agent-judged and are combined by the
-    // Step-6h verifier. GO floor 95%, conditional band 93-95%, any open P0 or <93% => NO-GO.
-    if (p0Bugs > 0) {
+    // This computes ONLY the severity + completeness + pass-rate math; the qualitative §1a
+    // criteria (AC coverage, BL-* preserved, NFRs, smoke, /qa-test verdict, security) stay
+    // agent-judged and are combined with it by the Step-5e verifier. Single GO floor
+    // (GATE_PASS_FLOOR.feature); below it => NO-GO. CONDITIONAL GO now means only "a High was
+    // deferred", never "the pass rate nearly cleared the bar".
+    if (p1Net > 0) {
       verdict = "NO-GO";
-      reasons.push(`${p0Bugs} open in-scope P0 bug(s) (non-negotiable)`);
-    } else if (pr < 93) {
+      reasons.push(
+        `${p1Net} open in-scope P1/High bug(s) — fix them, or defer explicitly (documented ` +
+          `workaround + signed risk acceptance + monitoring plan) and pass --p1-deferred N`,
+      );
+    } else if (pr < GATE_PASS_FLOOR.feature) {
       verdict = "NO-GO";
-      reasons.push(`change-scoped regression ${pr}% < 93% floor`);
-    } else if (pr >= 95 && p1Bugs === 0) {
+      reasons.push(`change-scoped regression ${pr}% < ${GATE_PASS_FLOOR.feature}% floor`);
+    } else if (p1Deferred === 0) {
       verdict = "GO";
     } else {
       verdict = "CONDITIONAL GO";
-      if (pr < 95) reasons.push(`regression ${pr}% in conditional band (93-94.99%) — risk acceptance required`);
-      if (p1Bugs > 0) reasons.push(`${p1Bugs} open in-scope P1 bug(s) — documented workaround + risk acceptance required`);
+      reasons.push(
+        `${p1Deferred} deferred P1/High bug(s) — a deferral caps this gate at CONDITIONAL GO; ` +
+          `the risk was accepted, not removed`,
+      );
     }
   } else {
     // sprint / release share the same shape, different thresholds.
-    const approveAt = gate === "release" ? 98 : 95;
-    const condFloor = gate === "release" ? 96 : 93;
-    const p1ApprovedMax = gate === "release" ? 2 : 0; // release allows <3 with workaround
-    const p1BlockMin = 3;
+    const approveAt = GATE_PASS_FLOOR[gate];
+    // Release keeps a 2-point band beneath its floor; sprint is a single floor, so its band is
+    // empty by construction (condFloor === approveAt) and the band reason can never fire.
+    const condFloor = gate === "release" ? RELEASE_COND_FLOOR : approveAt;
+    // Open (undeferred) P1s tolerated at all: none at sprint, <=2 at release — a production
+    // release bundles many already-gated features, so stripping its documented-workaround
+    // path would block a whole release on one cosmetic High.
+    const p1CondMax = gate === "release" ? 2 : 0;
 
-    if (p0Bugs > 0) {
+    if (p1Net > p1CondMax) {
       verdict = "BLOCKED";
-      reasons.push(`${p0Bugs} open P0 bug(s) (non-negotiable)`);
-    } else if (p1Bugs >= p1BlockMin) {
-      verdict = "BLOCKED";
-      reasons.push(`${p1Bugs} open P1 bug(s) >= ${p1BlockMin}`);
+      reasons.push(
+        `${p1Net} open P1/High bug(s) > ${p1CondMax} tolerated at this gate — fix them, or defer ` +
+          `explicitly (documented workaround + signed risk acceptance) and pass --p1-deferred N`,
+      );
     } else if (pr < condFloor) {
       verdict = "BLOCKED";
       reasons.push(`pass rate ${pr}% below ${condFloor}% floor`);
-    } else if (pr >= approveAt && p1Bugs <= p1ApprovedMax) {
+    } else if (pr >= approveAt && p1Net === 0 && p1Deferred === 0) {
       verdict = "APPROVED";
     } else {
       verdict = "APPROVED WITH CONDITIONS";
       if (pr < approveAt) reasons.push(`pass rate ${pr}% in conditional band (${condFloor}-${approveAt - 0.01}%) — risk acceptance required`);
-      if (p1Bugs > p1ApprovedMax) reasons.push(`${p1Bugs} open P1 bug(s) — documented workaround + risk acceptance required`);
+      if (p1Net > 0) reasons.push(`${p1Net} open P1/High bug(s) — documented workaround + risk acceptance required`);
+      if (p1Deferred > 0) reasons.push(`${p1Deferred} deferred P1/High bug(s) — workaround + monitoring plan required`);
     }
   }
 
-  return { gate, verdict, passRate: pr, reasons };
+  return out(verdict);
 }
 
-function parseArgs(argv: string[]) {
+/**
+ * Exported for its own unit tests: the numeric-flag guard below is error-handling, and
+ * error-handling that nothing exercises is where a silent wrong answer hides.
+ */
+export function parseArgs(argv: string[]) {
+  const errors: string[] = [];
   const get = (flag: string): string | undefined => {
     const i = argv.indexOf(flag);
     return i !== -1 ? argv[i + 1] : undefined;
+  };
+  /**
+   * A numeric flag with a missing, flag-shaped, or non-numeric value is an ERROR, never 0.
+   *
+   * `Number(get("--p0-bugs") ?? 0)` returned NaN for `--p0-bugs --json` (the next token eaten
+   * as the value) and for a typo like `--p0-bugs one`; every downstream test is `> 0`, which is
+   * false for NaN, so the count silently became ZERO. That fails in the one direction that
+   * matters: a NO-GO caused by an open P0 turns into a GO, and nothing in the output says the
+   * argument was not understood. Same value-lookahead hole `tc:promote --ids` had.
+   */
+  const count = (flag: string): number => {
+    const i = argv.indexOf(flag);
+    if (i === -1) return 0;
+    const raw = argv[i + 1];
+    // An EMPTY value (`--p0-bugs ""`, a shell variable that expanded to nothing) is rejected
+    // too: Number("") is 0, so it was the one unreadable value that still parsed cleanly.
+    if (raw === undefined || raw.startsWith("--") || raw.trim() === "") {
+      errors.push(
+        `${flag} requires a value (got ${
+          raw === undefined ? "end of arguments" : raw.trim() === "" ? "an empty value" : `the next flag "${raw}"`
+        }).`,
+      );
+      return 0;
+    }
+    const n = Number(raw);
+    if (!Number.isInteger(n) || n < 0) {
+      errors.push(`${flag} must be a non-negative whole number (got "${raw}").`);
+      return 0;
+    }
+    return n;
   };
   const suites = get("--suites");
   return {
@@ -324,14 +549,32 @@ function parseArgs(argv: string[]) {
     runId: get("--run-id"),
     since: get("--since"),
     gate: get("--gate"),
-    p0Bugs: Number(get("--p0-bugs") ?? 0),
-    p1Bugs: Number(get("--p1-bugs") ?? 0),
+    p0Bugs: count("--p0-bugs"),
+    p1Bugs: count("--p1-bugs"),
+    // Operator assertions, not measurements — see GateInputs. Defaulting both to 0 keeps
+    // the strict reading when nobody vouches for a deferral or a triaged blocker.
+    p1Deferred: count("--p1-deferred"),
+    blockedTriaged: count("--blocked-triaged"),
     json: argv.includes("--json"),
+    // Reported and acted on by main() BEFORE any number is computed — a run that could not
+    // read its own arguments must not print a confident verdict.
+    errors,
   };
 }
 
 function main(): void {
   const args = parseArgs(process.argv.slice(2));
+
+  // Refuse before computing anything. A malformed numeric flag used to degrade to 0, which
+  // could only ever make a verdict LOOK better than the evidence.
+  if (args.errors.length) {
+    for (const e of args.errors) console.error(`✗ ${e}`);
+    console.error(
+      `  Refusing to evaluate — a bug count that cannot be read is not the same as a count of\n` +
+        `  zero, and defaulting it to zero turns a blocking verdict into a passing one.`,
+    );
+    process.exit(1);
+  }
 
   if (args.gate !== undefined && !isGateType(args.gate)) {
     console.error(
@@ -430,11 +673,20 @@ function main(): void {
 
   const agg = aggregate(entries, bugJoin);
   const trend = trends(entries);
-  const gate = gateType ? evaluateGate(gateType, agg, args.p0Bugs, args.p1Bugs) : null;
+  const gate = gateType
+    ? evaluateGate(gateType, agg, args.p0Bugs, args.p1Bugs, {
+        p1Deferred: args.p1Deferred,
+        blockedTriaged: args.blockedTriaged,
+      })
+    : null;
 
   const blocking = gate
     ? gate.verdict === "BLOCKED" || gate.verdict === "FAIL" || gate.verdict === "NO-GO"
     : false;
+  // CANNOT EVALUATE shares exit 2 with the empty-scope branch above, for the same reason:
+  // the run did not support a verdict. Exiting 1 would make an unmeasured run read as a
+  // failing one, which is the confusion this whole exit-code split exists to prevent.
+  const cannotEvaluate = gate?.verdict === "CANNOT EVALUATE";
 
   if (args.json) {
     console.log(JSON.stringify({ source: args.history, scope: scopeLabel.length ? scopeLabel.join(" + ") : "all", entries: entries.length, aggregate: agg, trends: trend, gate }, null, 2));
@@ -444,6 +696,10 @@ function main(): void {
     console.log(`  Execution: ${agg.passed}P / ${agg.failed}F / ${agg.blocked}B / ${agg.skipped}S of ${agg.planned} planned`);
     console.log(`  Pass ${agg.passRate}%  Fail ${agg.failRate}%  Blocked ${agg.blockedRate}%  Skip ${agg.skipRate}%` +
       (agg.velocityPerHour != null ? `  Velocity ${agg.velocityPerHour}/hr` : ""));
+    // Both bases, always, side by side. Pass ${passRate}% alone is what let a 26P/0F/32B/12S
+    // run be reported as 100%; the second number says 36.6% and settles it.
+    console.log(`  Pass (of planned) ${agg.plannedPassRate}%  —  ${agg.executedShare}% of ` +
+      `${agg.planned} planned case(s) produced a verdict`);
     console.log(`  Defects: ${agg.bugsFound} bug(s), density ${agg.defectDensity} (bugs/executed)`);
 
     const withDir = trend.filter((t) => t.direction !== "insufficient-data");
@@ -461,12 +717,15 @@ function main(): void {
     if (gate) {
       console.log(`\n  Gate (${gate.gate}): ${gate.verdict}`);
       for (const r of gate.reasons) console.log(`    - ${r}`);
+      if (gate.blockedShare > 0)
+        console.log(`    untriaged BLOCKED: ${gate.blockedShare}% of planned ` +
+          `(ceiling ${MAX_UNTRIAGED_BLOCKED_PCT}%; discount triaged ones with --blocked-triaged N)`);
       if (args.p0Bugs === 0 && args.p1Bugs === 0)
         console.log(`    (P0/P1 bug counts assumed 0 — supply --p0-bugs/--p1-bugs from JIRA for a full verdict)`);
     }
   }
 
-  process.exit(blocking ? 1 : 0);
+  process.exit(cannotEvaluate ? 2 : blocking ? 1 : 0);
 }
 
 const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];

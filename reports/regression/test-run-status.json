@@ -1,24 +1,42 @@
 {
-  "runId": "REG-2026-09-01-2316",
+  "runId": "REG-2026-09-02-0930",
   "status": "completed",
-  "startedAt": "2026-09-01T21:16:43.544Z",
-  "finishedAt": "2026-09-01T21:22:07.790Z",
-  "selection": "075d",
+  "startedAt": "2026-09-02T09:30:09.948Z",
+  "selection": "083c,083d,075d --cases critical --also-ids MSNF-072..MSNF-080",
   "environment": "vcst",
   "suites": [
+    {
+      "id": "083c",
+      "name": "Loyalty Missions Storefront",
+      "status": "done",
+      "browser": "playwright-chrome",
+      "lane": "browser",
+      "pass": 16,
+      "fail": 2,
+      "blocked": 5,
+      "skipped": 0
+    },
+    {
+      "id": "083d",
+      "name": "Loyalty Missions E2E",
+      "status": "done",
+      "browser": "playwright-edge",
+      "lane": "browser",
+      "pass": 1,
+      "fail": 1,
+      "blocked": 1,
+      "skipped": 0
+    },
     {
       "id": "075d",
       "name": "Loyalty Missions",
       "status": "done",
-      "lane": "fastpath",
-      "totalCases": 34,
-      "passed": 22,
-      "failed": 8,
+      "lane": "machine",
+      "pass": 5,
+      "fail": 2,
       "blocked": 0,
-      "skipped": 4,
-      "file": "regression/suites/Backend/loyalty/075d-loyalty-missions.csv",
-      "finishedAt": "2026-09-01T21:22:07.790Z"
+      "skipped": 3
     }
   ],
-  "seedGeneration": "20260901211005-4474"
+  "finishedAt": "2026-09-02T10:21:22.933Z"
 }

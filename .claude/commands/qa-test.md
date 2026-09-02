@@ -84,7 +84,7 @@ Stated once, completely. **Everything after this section is the FULL path.**
 2   load the affected domains' BL-* rule TEXT; route ONE execution agent. Stop there.
 3   Artifact B checklist (conditions from 1a's ACs) + Artifact C scope + test data (3a) if needed
 4   one execution agent runs the checklist; then the change-scoped regression (no --also-ids)
-5a  triage · 5b reconcile AC/DoD · 5c verdict · 5d file (severity floor) · 5e report · 5f status
+5a  triage · 5b reconcile AC/DoD · 5c verdict · 5d file (severity floor) · 5e report · 5f status · 5h docs
 ```
 
 **Not run on FAST:** `1c` / `1d` agents · the `1e` Test Model and `1e-plan` · the archetype / UIP / `VC-*`
@@ -418,7 +418,7 @@ reachability precondition.
    [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §Agent dispatch.
 2. **Change-scoped regression (Artifact C)** — as its own **`/qa-regression <ids> --cases critical
    --also-ids <new Draft case IDs>`** run (it owns suite→agent assignment, the browser pool, retries and the
-   run report). Capture its **`RUN_ID`** (5e records it; the release-gate feed keys "≥95%" off it) **and its
+   run report). Capture its **`RUN_ID`** (5e records it; the release-gate feed keys its ≥80% floor off it) **and its
    wall-clock** — the 40-minute window is a claim about time, and an unrecorded one cannot be checked.
    **Carry the run's Scope Exclusions into the Step-5 report**: a suite that contributed zero Critical cases
    and a suite that passed look identical otherwise.
@@ -448,7 +448,8 @@ finding's provenance (5a) and the reconciled AC/DoD state (5b). Full methodology
 | **5d** | File bugs | **Ask first.** **Severity floor: `Critical`/`High`/`Medium` only** — a `Low` keeps its `reports/bugs/open/` draft, is named in the 5e comment and `summary.json.bugs_not_filed`, and gets no tracker item, in either shape. Relationship by provenance: IN-SCOPE → Sub-task · PRE-EXISTING → link only · OUT-OF-SCOPE → standalone + related | inline |
 | **5e** | Report | Feed + independently ratify the Feature Release Gate · post the tracker comment (**incl. the mandatory `Not filed (below severity floor)` line, `None` when empty**) · persist `summary.json` + update the checklist in place with verdicts · output the one chat report | verifier |
 | **5f** | Change status | **After** the report. PASS → TESTED · FAIL → REOPEN with failures + bug links. **TESTED is the terminal state this command may reach — never Done or Cancelled** | — |
-| **5k** | Iterate (`--iterate` only) | The bounded test → fix → re-test loop. **Per round:** 5a–5d + a short round-delta comment + `summary.json` + an appended checklist section. **At loop exit, once:** 5e in full → 5f → 5g. So a `--iterate` run posts **one** QA-Complete comment and makes **one** transition, whatever the round count. Which durable step runs per round vs at exit, and why each: [`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k | round cap · deploy confirm · G0 BAIL → STOP |
+| **5h** | Publish documentation | **After** TESTED, **both paths**. Write the §3/§4/§5 guides for the surface the ticket moved into `reports/ba/`, then post them as **ONE tracker comment with a section per audience** — audiences from the §9.1 layer row, size caps and the three refusals (`layer-unresolved` · `not-deployed` · `not-user-visible`) in [`knowledge/ba/virto-doc-style.md`](../knowledge/ba/virto-doc-style.md) §10. Not a release note: no version literals, and the audience is a floor rather than the only one. **A non-`PASS` verdict scopes this step rather than refusing it** — document the passing paths, omit the failing ones, carry the `Not documented` line and the verbatim verdict; the step already runs only after a human transitioned the ticket to TESTED. Ask before posting; refuse rather than pad | inline |
+| **5k** | Iterate (`--iterate` only) | The bounded test → fix → re-test loop. **Per round:** 5a–5d + a short round-delta comment + `summary.json` + an appended checklist section. **At loop exit, once:** 5e in full → 5f → 5h → 5g. So a `--iterate` run posts **one** QA-Complete comment and makes **one** transition, whatever the round count. Which durable step runs per round vs at exit, and why each: [`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k | round cap · deploy confirm · G0 BAIL → STOP |
 | **5g** | Promote (FULL only) | Harvest `{OBSERVED}` via `--verify --fix`, re-derive G10, then flip `Draft → Automated` via **`npm run tc:promote`** — never by hand-editing the cell. Runs **last and non-blocking**: the close-out is already delivered | **hard STOP** + verifier |
 
 **Severity is graded at 5a and never re-graded at 5d** to move a finding across the floor. Filing and

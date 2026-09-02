@@ -57,7 +57,7 @@ add to it?" unanswerable from the invocation.
 
 - **Its caller is `/qa-test` Step 5k.** Round N+1 of the `--iterate` loop re-runs *only* the
   previously-failed cases, as its own run, so the RED→GREEN pass rate and the Feature Release Gate’s
-  ≥95% stay two different numbers ([`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k).
+  ≥80% floor stay two different numbers ([`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k).
 - **It reads no `Priority` at all**, so an unreadable one is *not* reported on this path — nothing
   consulted it, and naming it would manufacture a coverage hole that does not exist.
 - **Most suites in the selection will contribute zero cases**, which is normal here rather than

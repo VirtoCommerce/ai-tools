@@ -147,6 +147,12 @@ for (const p of PRODUCTS) {
   expectMatch(p.aliasName, 'pack_size', p.packSize);
   expectMatch(p.aliasName, 'list_price', p.listPrice);
   if (p.goalQuantity != null) expectMatch(p.aliasName, 'quantity', p.goalQuantity);
+  // The second-currency AMOUNT is authored (a price is a business key, identical on every env that
+  // carries the currency); the second-currency CODE is runtime and lives in the overlay, so [3] holds
+  // it empty here via RUNTIME_FIELDS_BY_KIND.dualProduct. A case reads the pair to know what the
+  // second-currency row must render — recomputing either by hand is how a fixture and its assertion
+  // stop following the same source.
+  if (p.secondaryListPrice != null) expectMatch(p.aliasName, 'list_price_secondary', p.secondaryListPrice);
 }
 expectMatch(REWARD_USER.aliasName, 'source_alias', REWARD_USER.sourceAlias);
 expectMatch(REWARD_USER.aliasName, 'reward_alias', REWARD_USER.rewardAlias);
@@ -306,6 +312,15 @@ for (const c of covered) if (!suiteCases.includes(c)) fail(`[9] a fixture claims
     }
     if (/listentries['"`]\s*,\s*\{[^}]*\bkeyword\s*:/.test(code)) {
       fail(`[10] ${seederRel} looks a product up through listentries with a fuzzy \`keyword:\` — that response is paged behind the category hits and cannot prove absence; use the exact \`code:\` criterion (see absenceIsProven)`);
+    }
+    // THE RE-ASSERT ITSELF. `ensureProduct` set every product flag in the CREATE body and re-asserted
+    // only `packSize`, so a flag flipped on the platform after creation drifted forever while the
+    // seeder printed success (measured: PERSKU-PTS at `trackInventory: true` against a spec declaring
+    // false, three correct siblings hiding it). That drift has NO data footprint — no alias, no price
+    // row, no overlay field carries the flag — so this static guard cannot detect the drift; what it
+    // CAN do is refuse the removal of the re-assert that prevents it. Detection is td:reconcile [14].
+    if (!/productFlagDrift\s*\(/.test(code)) {
+      fail(`[10] ${seederRel} no longer re-asserts PRODUCT_INVARIANT_FLAGS on an already-existing product — a flag written only into the CREATE body drifts silently and invisibly (trackInventory on a fixture 083d places real orders against, so it drains and blocks MSN-E2E-007 for a reason unrelated to missions). Restore the productFlagDrift() re-assert in ensureProduct.`);
     }
     if (!/documentIds\s*:/.test(code) && !/buildReindexRequest\s*\(/.test(code)) {
       fail(`[10] ${seederRel} has no targeted reindex trigger — this environment's time-based incremental job is disabled (ECL-14.7), so an untargeted reindex can be abandoned rather than merely delayed`);

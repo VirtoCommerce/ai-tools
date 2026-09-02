@@ -1,4 +1,4 @@
-# Step 5 — the close-out: triage → reconcile → verdict → file → report → status → promote
+# Step 5 — the close-out: triage → reconcile → verdict → file → report → status → publish → promote
 
 Methodology for `/qa-test` Step 5. The command states the phase order and the gates; this file is the
 detail. **5a before 5b before 5c is load-bearing:** the verdict is expressed in terms of a finding's
@@ -274,15 +274,27 @@ The 5c verdict is the primary input to the **Feature Release Gate**
 (`.claude/skills/qa-metrics/quality-gates.md` §1a), owned by `qa-lead-orchestrator`. **`/qa-test` does not
 decide release.**
 
-A PASS/PASS-WITH-NOTES run **feeds a GO** only if the team-level criteria also hold: 0 open P0, P1s
-deferred-with-acceptance, change-scoped regression ≥95% (this phase's own `regression.pass_rate`), NFRs
-clean, smoke PASS. A FAIL/BLOCKED is an automatic NO-GO. If the Artifact-C run was deferred or skipped, say
-so — the gate cannot be evaluated on a null pass rate.
+A PASS/PASS-WITH-NOTES run **feeds a GO** only if the team-level criteria also hold: 0 open P0, **0 open
+undeferred P1/High**, change-scoped regression ≥80% (this phase's own `regression.pass_rate`), NFRs clean,
+smoke PASS. A FAIL/BLOCKED is an automatic NO-GO.
+
+Two things about the bug ledger and the run, because both changed on 2026-09-02:
+
+- **An open High blocks — it no longer downgrades on its own.** Either 5d's fix landed, or the High is
+  **declared** deferred: `--p1-deferred N` asserts N of them carry a documented workaround + signed risk
+  acceptance + a monitoring plan. A declared deferral caps the gate at **CONDITIONAL GO**, never a clean
+  GO. Report the declared count in the 5e comment; an undeclared High is a NO-GO, not a note.
+- **Report the run's COMPLETENESS, not only its pass rate** (§0). BLOCKED sits outside the pass-rate
+  denominator, so the rate rises as blockers accumulate; >10% of planned BLOCKED-and-untriaged returns
+  **CANNOT EVALUATE** (exit 2). Triage via `/qa-triage-results` and pass `--blocked-triaged N`, or re-run
+  the blocked cases. If the Artifact-C run was deferred or skipped, say so — the gate cannot be evaluated
+  on a null pass rate, and NOT EVALUATED is neither a pass nor a failure.
 
 **Independent verification (FULL):** a fresh `qa-lead` verifier re-evaluates §1a from the raw inputs — the
 5c verdict, the `reports/bugs/` open-P0/P1 ledger (now current, since 5d already filed), the regression pass
 rate via
-`npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id <regression.run_id> --p0-bugs N --p1-bugs N`
+`npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id <regression.run_id> --p0-bugs N
+--p1-bugs N [--p1-deferred N] [--blocked-triaged N]`
 (`--run-id` **required**; `--suites <ids>` is the fallback), and the smoke result — and ratifies or
 **downgrades**. Recommendation only; a human decides release.
 
@@ -324,7 +336,9 @@ Write `reports/tickets/{SPRINT}/<ticket-key>/summary.json` per
 [`.claude/templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json): `path`, the
 AC-analysis + `ac_dod_estimate` block, counts, the `regression` and `regression_triage` blocks, `bugs_filed`
 with relationship + severity, `bugs_not_filed`, the `promotion` block for 5g, the **`timing`** block, and
-**`layer`** (derived at `1b` item 2b) plus the **`release`** block resolved at 5e.0.
+**`layer`** (derived at `1b` item 2b) plus the **`release`** block resolved at 5e.0. The
+**`documentation`** block is the one field written later — at **5h**, after the transition — because it
+records an action that has not happened yet at this point.
 
 **`--iterate`: written PER ROUND**, at the end of every round, with that round appended to
 `iterations.per_round[]` — the loop can STOP at any round (G0 BAIL, BLOCKED, the cap, a dropped session),
@@ -382,9 +396,9 @@ By default `/qa-test` verifies and reports; it never fixes — it states the nex
 not auto-triggers). This close-out is the `feature-test` flow's; `verify-fix` already ended at its own
 VERIFIED/REOPEN verdict, and `hotfix-verify` handed off before 1b.
 
-- **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate. Done — 5g still runs
-  (non-blocking) if new cases were authored. **Then point at the release note** — see §Release note
-  below.
+- **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate. Done — **5h publishes the
+  documentation to the ticket** (§5h) and 5g still runs (non-blocking) if new cases were authored.
+  **Then point at the release note** — see §Release note below.
 - **FAIL → REOPEN** → `/qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge +
   deploy → `/qa-verify-fix <ticket-key>`. A too-complex/multi-repo bug (G0 BAIL) is handed to a human,
   resuming at `/qa-verify-fix`. Once the fix is deployed, a re-run of `/qa-test <ticket-key>` auto-routes the
@@ -414,6 +428,84 @@ later run (`/ba-analyze docs release --sprint {SPRINT}`), never part of this clo
 
 **The `verify-fix` flow produces no fragment**, by design: it writes `verification-summary.json` rather
 than `summary.json`, and a fix’s release story is the bundle/hotfix narrative `/qa-hotfix` owns.
+
+---
+
+---
+
+## 5h. Publish the documentation to the ticket — after TESTED, both paths
+
+The release-note pointer above hands off a *what shipped* record. **This step delivers the ordinary
+product documentation** — the §3/§4/§5 guides for the surface this ticket moved — and **posts it as one
+comment on the ticket**, so the people who asked for the change read it where they are already looking.
+Shape, audience derivation, size caps and refusals: [`knowledge/ba/virto-doc-style.md`](../../knowledge/ba/virto-doc-style.md) §10.
+
+Runs **after 5f**, on **both paths**. FAST is included deliberately and costs nothing: a P2 config tweak
+refuses `not-user-visible`, which is the correct outcome, not a skipped step.
+
+### 1. Decide whether the ticket earned documentation
+
+Read `summary.json` — `verdict`, `layer`, `build.deployed` — and `testing-checklist.md`. Refuse, with the
+reason, when any of these holds (§10.4):
+
+| Refusal | When |
+|---|---|
+| `layer-unresolved` | `summary.json.layer` is null — never guess, never default to `storefront` |
+| `not-deployed` | the change is not live on the env under test |
+| `not-user-visible` | no `PASS` row a shopper, operator or integrator can act on — including a run in which nothing passed |
+
+**A refusal is a legitimate outcome, not a failure.** State it and stop — no file, no comment.
+
+**The verdict is not one of them.** `FAIL`/`BLOCKED` **scopes** this step rather than refusing it:
+document the conditions that PASSed, omit the ones that did not, and carry the mandatory `Not documented`
+line plus the verbatim verdict (§10.2/§10.4). 5f's release note keeps its `verdict-not-pass` gate —
+*what shipped* and *how do I use this* fail differently, and this step runs only once a human has already
+transitioned the ticket to TESTED. There is likewise no `no-version` refusal here: a how-to does not
+quote a build number, and requiring one would refuse guides that are perfectly writable (§10, head
+table).
+
+### 2. Run the writer, then post
+
+```
+/ba-analyze docs ticket <ticket-key> --publish
+# layer=<layer> · audiences=<derived list> · summary.json: reports/tickets/{SPRINT}/<ticket-key>/summary.json
+```
+
+`ba-doc-writer` runs **alone** (same reason as `doc_scope: release` — there is no per-ticket
+`system_analysis` to have), writes the guides to `reports/ba/`, and returns the composed comment body.
+Audiences come from the **§9.1 layer→audience row**, read for a different purpose — do not re-derive the
+layer and do not build a second map.
+
+**Ask before posting.** The comment is an external write to the tracker; confirmation is required here
+exactly as it is at 5d and 5f, and a subagent never posts it unprompted
+(`.claude/rules/agents.md` §Agent Delegation, and the standing subagent external-write rule).
+
+**The posting mechanics are `tracker-ops.md`'s, not this step's** — read §5a/§5c/§5d **before** the first
+API call, not after the first failure. §2 **Comment** for the endpoint (Jira `addCommentToJiraIssue`,
+Azure Boards the work-item comments REST endpoint); **§5d** for what a delivery is — *the guides in full,
+in the body*, with a split across comments (one per audience) as the only legal response to a body that
+does not fit, and never a `reports/ba/` path standing in for content a reader cannot reach; **§5a** for
+the body dialect (Markdown for Jira, HTML for Azure — never Jira wiki markup) and **§5c** for its one
+carve-out: a screenshot needs an attachment plus a **wiki-markup** reference, which makes the whole Jira
+body wiki. §5c also records the three ADF dead ends, so do not re-probe them.
+
+**Redact and contain first** (§10.4): secrets scrubbed regardless of destination, and on a client project
+every client host, path, identifier and datum. A payload that cannot be shown clean is described in
+prose, never embedded.
+
+### 3. Record it
+
+Write the `documentation` block of `summary.json` (schema:
+[`qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json)) — `published`, `audiences`,
+`files`, `amended`, `comment_posted`, `refusal`. Two distinctions the block exists to keep: a **null**
+block means 5h never ran, while `published: false` with a non-null `refusal` means it ran and declined —
+and `comment_posted: false` alongside `published: true` means the guides were written but the operator
+declined the post. Recording a refusal is the same discipline as the 5e comment’s `Not filed` line
+saying `None`: an omission is indistinguishable from a step nobody ran.
+
+**`--iterate`: 5h runs AT LOOP EXIT, ONCE.** The loop re-tests an unmerged prerelease; documenting a
+build that is about to be replaced publishes instructions for something nobody can use yet, and a
+per-round comment buries the ticket. One documentation comment per run, whatever the round count.
 
 ---
 

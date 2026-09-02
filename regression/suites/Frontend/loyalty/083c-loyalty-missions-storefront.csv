@@ -950,3 +950,385 @@ MSNF-UIP-STORAGE-001,Corrupted cart-cache in browser storage while loading the m
 [DOM] the modal either opens cleanly (self-healing by refetching cart state from the server rather than trusting the corrupted cache) or fails with a scoped, customer-readable error — a full white screen or an unhandled exception is absent in either case {BL}
 [STATE] if the add-to-cart write is attempted, it either succeeds and the cart-cache is repaired to a valid state, or it fails visibly — a write that silently succeeds server-side while the client cache stays corrupted, so the header count is now wrong, is the specific failure this case exists to catch {HYPOTHESIS}
 [REL] if the add-to-cart write is attempted and succeeds, the header cart indicator value = the cart page's own total unit count afterward — a self-consistency check that the corrupted cache did not leave the client showing a stale count while the server holds a different one {BL}",[CONSOLE] no unhandled JS errors attributable to the corrupted cache,"The whole missions page white-screens due to an unrelated cart-cache read; the modal's custom write path throws an unhandled exception the standard add-to-cart flow would not, which would be evidence the batch-write path skips the same defensive parsing",Clear the corrupted storage entry; remove any leftover cart items; sign out,"VCST-5320; UIP-STORAGE (modern-web-attack-surface.md); targets the modal's confirmed-distinct batch cart-write path (MSNF-037), not the generic single addItem flow already covered elsewhere; Archetype:FALLBACK Technique:EG",Draft
+MSNF-072,[JOURNEY] Anonymous mission deep link survives sign-in and lands on the mission it named,Loyalty > Missions > Display Link (L6),Critical,BL-GQL-004,ECL-13.3,"[PRE:CLEAR_SESSION]
+No storefront session exists — no auth cookie and no bearer token in browser storage — so {{FRONT_URL}}/account/missions is requested anonymously, exactly as a customer following a shared link would.
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
+The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public missions @td(MSN_E2E_ORDERVALUE.name), @td(MSN_E2E_PERSKU.name) and @td(MSN_E2E_PERSKU_PTS.name) through loyaltyMissionProgress — all three are Published, public and carry AnyUserGroupCondition, so they are visible to any signed-in account.
+Build under test: vc-frontend PR #2396 (the loyalty routes are registered at bootstrap regardless of authentication state) against VirtoCommerce.Loyalty PR#14. Assertions about that build are grounded on the source read at the deployed SHA, not on product documentation — no VirtoOZ documentation exists for Missions.
+This is the value-chain journey case: one continuous run over route reached (L6a), payload survives (L6b), money reads true (L6c) and meaning reads true (L6d), on the customer own surface. It reads state only and requires no mission to advance, so it stays decidable whatever progress the fixture carries.","@td(MSN_E2E_USER_003.email), @td(MSN_E2E_ORDERVALUE.name)","[NAV] {{FRONT_URL}}/account/missions
+[WAIT] navigation settles on its final URL
+[ACT] record the final URL with its query string
+[ACT] record the identity of the rendered page
+[ACT] type @td(MSN_E2E_USER_003.email) into the sign-in email input
+[ACT] type @td(MSN_E2E_USER_003.password) into the sign-in password input
+[ACT] click 'Sign in'
+[WAIT] authentication completes, the browser settles on its post-login route
+[ACT] record the URL of the post-login route
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] record the loyaltyMissionProgress response body for this page load
+[ACT] count the mission cards rendered in the grid
+[ACT] read the card for @td(MSN_E2E_ORDERVALUE.name)
+[ACT] record the reward figure on that card
+[ACT] record the progress figure on that card
+[ACT] record every entry in the account navigation of the page reached by the redirect
+[ACT] click the open-mission control on the card for @td(MSN_E2E_ORDERVALUE.name)
+[WAIT] the order-goal modal has rendered its target block
+[ACT] record the goal target amount with its currency code","[NAV] the anonymous request for /account/missions ends on the route /sign-in, carrying a returnUrl that resolves back to /account/missions, never on a not-found page {BL}
+[NAV] the post-login route is {{FRONT_URL}}/account/missions rather than the account dashboard, so the link the customer followed is the page they land on, with no second manual navigation {BL}
+[REL] the number of mission cards rendered == the number of mission objects the loyaltyMissionProgress response carries under data {DOC}
+[DOM] a card titled @td(MSN_E2E_ORDERVALUE.name) is present in the grid reached by the redirect {OBSERVED}
+[MATH] the reward figure on that card = @td(MSN_E2E_ORDERVALUE.reward) {OBSERVED}
+[REL] the progress figure on the card == the progress the same loyaltyMissionProgress response returns for that mission, so the card reports the state the API returned rather than a default {DOC}
+[MATH] the goal currency code rendered in the order-goal modal = @td(MSN_E2E_ORDERVALUE.goal_currency), the mission own stored goal currency, not whichever currency the session happens to carry {BL}
+[DOM] an entry labelled 'Missions & challenges' is present in the account navigation on the page reached by the redirect {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:SILENT · Technique:FLOW,Draft
+MSNF-074,A mission payload whose nested product fields error still renders every mission that resolved,Loyalty > Missions > Display Link (L6),Critical,,ECL-14.8,"[PRE:CLEAR_SESSION]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
+The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public missions @td(MSN_E2E_ORDERVALUE.name), @td(MSN_E2E_PERSKU.name) and @td(MSN_E2E_PERSKU_PTS.name) through loyaltyMissionProgress — all three are Published, public and carry AnyUserGroupCondition, so they are visible to any signed-in account.
+The shared graphqlClient sets fetchPolicy on all three loyalty operations and sets no errorPolicy, so Apollo default policy of ""none"" discards data whenever errors[] is non-empty and the page-level catch paints the whole-page error view. That single client setting governs every loyalty query, so one proof settles the surface.
+DISCRIMINATING ARM — this case can only distinguish errorPolicy ""all"" from errorPolicy ""none"" on a response that carries BOTH a populated data collection AND a non-empty errors[]. Prefer inducing one by failing the nested product sub-field with the lane request-interception primitive where the lane exposes one; that primitive is not available on the standard browser-agent regression lane today. If no such response is observed during the run, record BLOCKED:PRECONDITION_UNMET for the discriminating arm and report the observational arm result on its own — a clean payload is never evidence that the policy is right.
+Build under test: vc-frontend PR #2396 (the loyalty routes are registered at bootstrap regardless of authentication state) against VirtoCommerce.Loyalty PR#14. Assertions about that build are grounded on the source read at the deployed SHA, not on product documentation — no VirtoOZ documentation exists for Missions.",@td(MSN_E2E_USER_003.email),"[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form has rendered its email input
+[ACT] type @td(MSN_E2E_USER_003.email) into the sign-in email input
+[ACT] type @td(MSN_E2E_USER_003.password) into the sign-in password input
+[ACT] click 'Sign in'
+[WAIT] authentication completes, the browser settles on its post-login route
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the missions page settles out of its loading state
+[ACT] record the loyaltyMissionProgress response body, including its data collection as well as its errors[] collection
+[ACT] count the mission objects the response carries under data
+[ACT] count the mission cards rendered in the grid
+[ACT] record whether the whole-page error surface is rendered instead of the grid
+[ACT] record which nested product sub-fields, if any, the response reports as errored
+[ACT] where the lane exposes a request-interception primitive, fail the nested product sub-field of one mission on the next load
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the missions page settles out of its loading state a second time
+[ACT] record the response body, the rendered card count, the rendered surface for this second load","[REL] the number of mission cards rendered == the number of mission objects the loyaltyMissionProgress response carries under data, on every load observed {DOC}
+[DOM] while the response carries at least one mission object under data, the whole-page mission-loading error surface is absent and the card grid is visible in its place {SPEC}
+[REL] DISCRIMINATING ARM — on a response whose errors[] is non-empty while data still carries mission objects, the rendered card count == that same data count, so a failed nested product sub-field costs the customer that field and never the whole list {DOC}
+[DOM] a mission whose nested product sub-field failed still renders its own card, which stays visible in the grid, with the failed sub-field degraded in place rather than the card omitted {SPEC}
+[REL] DECIDABILITY GATE — if no response observed in this run carries a non-empty errors[] alongside populated data, the discriminating arm is BLOCKED:PRECONDITION_UNMET and never PASS: a clean payload takes the same path under either errorPolicy {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:SILENT · Technique:EG,Draft
+MSNF-076,Signing in during the session reveals the Missions navigation entry without a page reload,Loyalty > Missions > Display Link (L6),High,,,"[PRE:CLEAR_SESSION]
+No storefront session exists, so the application bootstraps ANONYMOUS and the whole case turns on what that one-shot bootstrap did.
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
+The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public missions @td(MSN_E2E_ORDERVALUE.name), @td(MSN_E2E_PERSKU.name) and @td(MSN_E2E_PERSKU_PTS.name) through loyaltyMissionProgress — all three are Published, public and carry AnyUserGroupCondition, so they are visible to any signed-in account.
+initLoyalty runs once at bootstrap and reads the authentication state at that moment; the build under test lifted that one-shot check off addRoute but left the menu merge behind it, so routes can be registered for an anonymous visitor while the menu entries are not. The full page reload later in this case is the POSITIVE CONTROL: it bootstraps the application authenticated, so the entries it produces are what the in-session read is measured against.
+Build under test: vc-frontend PR #2396 (the loyalty routes are registered at bootstrap regardless of authentication state) against VirtoCommerce.Loyalty PR#14. Assertions about that build are grounded on the source read at the deployed SHA, not on product documentation — no VirtoOZ documentation exists for Missions.",@td(MSN_E2E_USER_003.email),"[NAV] {{FRONT_URL}}/
+[WAIT] the home page has rendered its header
+[ACT] click the header 'Sign in' link
+[WAIT] the sign-in form has rendered its email input
+[ACT] type @td(MSN_E2E_USER_003.email) into the sign-in email input
+[ACT] type @td(MSN_E2E_USER_003.password) into the sign-in password input
+[ACT] click 'Sign in'
+[WAIT] authentication completes, the browser settles on its post-login route
+[ACT] click the header account menu (data-test-id 'account-button')
+[WAIT] the account menu popup has rendered its entries
+[ACT] record every entry the account menu popup (data-test-id 'account-menu') offers, with no page reload in between
+[ACT] click the account-dashboard entry inside the popup (data-test-id 'account-menu')
+[WAIT] the account dashboard has rendered its left navigation
+[ACT] record every entry in the account navigation, still with no full page reload since sign-in
+[ACT] reload the account dashboard through the browser reload control
+[WAIT] the account dashboard has re-rendered its left navigation after the reload
+[ACT] record every entry in the account navigation after the reload","[REL] the set of entries in the account navigation read immediately after the in-session sign-in == the set read after the full page reload of the same URL, so no entry exists only once the application has been bootstrapped a second time {SPEC}
+[DOM] an entry labelled 'Missions & challenges' is present in the account navigation before any reload {SPEC}
+[REL] the points-history entry appears in the pre-reload navigation as well as in the post-reload one, so the two lists agree on it too {SPEC}
+[NAV] activating the missions entry found before the reload lands on {{FRONT_URL}}/account/missions {SPEC}
+[REL] POSITIVE CONTROL — the post-reload navigation carries the missions entry; a control that carries no missions entry either means the feature is gated off on this store rather than bootstrapped late, so the case is BLOCKED:PRECONDITION_UNMET rather than FAIL {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:CONFIG · Technique:ST,Draft
+MSNF-077,"Order-value mission card states the spend target, not only the amount spent so far",Loyalty > Missions > Display Link (L6),Medium,,,"[PRE:CLEAR_SESSION]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
+The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public missions @td(MSN_E2E_ORDERVALUE.name), @td(MSN_E2E_PERSKU.name) and @td(MSN_E2E_PERSKU_PTS.name) through loyaltyMissionProgress — all three are Published, public and carry AnyUserGroupCondition, so they are visible to any signed-in account.
+The order-value mission @td(MSN_E2E_ORDERVALUE.name) carries target @td(MSN_E2E_ORDERVALUE.goal_target) in currency @td(MSN_E2E_ORDERVALUE.goal_currency).
+SPEC CONFLICT, REPORT RATHER THAN RE-FILE: the ticket AC-2 text requires the goal to be readable on the surface the customer looks at first, while design frames F1 and F2 place the target in the modal instead. The ticket filed for this was Cancelled on the design reading. This case holds the AC text against that decision and is expected to expose the conflict; it asserts the AC expectation as written and is never inverted to certify the current rendering. On a divergence, report the conflict to the product owner as UNSPEC-advisory and do not open a new defect.
+Build under test: vc-frontend PR #2396 (the loyalty routes are registered at bootstrap regardless of authentication state) against VirtoCommerce.Loyalty PR#14. Assertions about that build are grounded on the source read at the deployed SHA, not on product documentation — no VirtoOZ documentation exists for Missions.",@td(MSN_E2E_ORDERVALUE.name),"[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form has rendered its email input
+[ACT] type @td(MSN_E2E_USER_003.email) into the sign-in email input
+[ACT] type @td(MSN_E2E_USER_003.password) into the sign-in password input
+[ACT] click 'Sign in'
+[WAIT] authentication completes, the browser settles on its post-login route
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] record every money figure the progress line renders on the card for @td(MSN_E2E_ORDERVALUE.name)
+[ACT] record the accrued amount with its currency code on that card
+[ACT] click the open-mission control on the card for @td(MSN_E2E_ORDERVALUE.name)
+[WAIT] the order-goal modal has rendered its target block
+[ACT] record the goal target amount with its currency code in the modal
+[ACT] record the accrued amount with its currency code in the modal","[DOM] the progress line visible on the card for @td(MSN_E2E_ORDERVALUE.name) states the spend target as well as the amount accrued so far, so the reader can tell how far from the goal they are without opening the modal {SPEC}
+[MATH] the target stated on the card = @td(MSN_E2E_ORDERVALUE.goal_target) {SPEC}
+[REL] POSITIVE CONTROL — the same target value is rendered in the order-goal modal opened from that card, so the value is already carried by the payload the card holds and any omission on the card is a display decision rather than missing data {OBSERVED}
+[REL] the accrued amount on the card == the accrued amount in the modal for that same mission {SPEC}
+[FORMAT] each money figure on the card progress line renders with a currency symbol, with exactly two decimal places {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:RENDER · Technique:EP,Draft
+MSNF-078,Featured-SKU modal cart subtotal sums one currency and labels itself with that currency,Loyalty > Missions > Display Link (L6),High,BL-LOY-003,,"[PRE:CLEAR_SESSION]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
+The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public missions @td(MSN_E2E_ORDERVALUE.name), @td(MSN_E2E_PERSKU.name) and @td(MSN_E2E_PERSKU_PTS.name) through loyaltyMissionProgress — all three are Published, public and carry AnyUserGroupCondition, so they are visible to any signed-in account.
+The cart of @td(MSN_E2E_USER_003.email) is empty at the start; empty it from the cart page before running if it is not. This case touches steppers only and issues no cart write.
+The featured-SKU mission @td(MSN_E2E_PERSKU.name) carries two targets priced in the store default currency, while @td(MSN_E2E_PERSKU_PTS.name) carries a single target @td(MSN_E2E_PRODUCT_PTS.sku) priced in the points currency @td(MSN_E2E_PRODUCT_PTS.currency). That second modal is the POSITIVE CONTROL: the subtotal currency is claimed to be row-derived, and only a modal whose rows carry a different currency can tell a row-derived label from a constant.
+The modal computes its subtotal by summing the row amounts and takes the currency label from the first item it collects, so a row set that is not already normalised to one currency yields a cross-currency sum wearing one currency label.
+DISPOSABLE FIXTURE, TERMINAL ONCE COMPLETED: mission progress is monotonic with no reset path, and a sibling suite placing real orders on these accounts can consume them between seed and execution. Read the mission status chip as the FIRST observation; if the mission under test already reads as completed, stop and record BLOCKED:PRECONDITION_UNMET — never a PASS and never a FAIL.
+A completed featured-SKU mission opens a read-only modal with no steppers, so neither reading can be taken from it.
+Build under test: vc-frontend PR #2396 (the loyalty routes are registered at bootstrap regardless of authentication state) against VirtoCommerce.Loyalty PR#14. Assertions about that build are grounded on the source read at the deployed SHA, not on product documentation — no VirtoOZ documentation exists for Missions.",@td(MSN_E2E_PERSKU.name),"[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form has rendered its email input
+[ACT] type @td(MSN_E2E_USER_003.email) into the sign-in email input
+[ACT] type @td(MSN_E2E_USER_003.password) into the sign-in password input
+[ACT] click 'Sign in'
+[WAIT] authentication completes, the browser settles on its post-login route
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] read the status chip on the card for @td(MSN_E2E_PERSKU.name)
+[ACT] click the open-mission control on the card for @td(MSN_E2E_PERSKU.name)
+[WAIT] the featured-SKU modal has rendered its product rows, its summary block
+[ACT] record the unit price with its currency code on every product row
+[ACT] set the stepper on the row for @td(MSN_E2E_PRODUCT_B.sku) to 2, leaving every other row at zero
+[WAIT] the summary block cart subtotal has recomputed
+[ACT] record the cart subtotal amount with its currency code
+[ACT] set the stepper on the row for @td(MSN_E2E_PRODUCT_A.sku) to 1
+[WAIT] the summary block cart subtotal has recomputed a second time
+[ACT] record the cart subtotal amount with its currency code a second time
+[ACT] record the total-units figure in the summary block
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[ACT] click the open-mission control on the card for @td(MSN_E2E_PERSKU_PTS.name)
+[WAIT] the featured-SKU modal has rendered its product row, its summary block
+[ACT] record the unit price with its currency code on the row for @td(MSN_E2E_PRODUCT_PTS.sku)
+[ACT] set the stepper on that row to 1
+[WAIT] the summary block cart subtotal has recomputed
+[ACT] record the cart subtotal amount with its currency code in this second modal
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed","[MATH] with only the row for @td(MSN_E2E_PRODUCT_B.sku) at a non-zero quantity, the cart subtotal = that row unit price × its stepper quantity, to two decimal places {BL}
+[MATH] with both rows at a non-zero quantity, the cart subtotal = the sum over rows of unit price × stepper quantity, to two decimal places {BL}
+[REL] in each of those two readings, the currency code on the subtotal == the currency code every contributing row carries, so the label does not follow whichever row happens to be collected first {BL}
+[REL] POSITIVE CONTROL — in the modal for @td(MSN_E2E_PERSKU_PTS.name), whose single row is priced in a different currency from the rows of @td(MSN_E2E_PERSKU.name), the subtotal currency code == that row own currency code; two modals reporting the same subtotal currency code over rows that carry different ones show the label is fixed rather than row-derived {OBSERVED}
+[REL] the total-units figure == the sum of the stepper values across the rows {SPEC}
+[FORMAT] exactly one currency code appears across the rows and the subtotal of a single modal, so no modal renders a sum of amounts denominated differently {BL}
+[REL] DECIDABILITY GATE — if both modals resolve to the same currency code because the environment prices every fixture alike, the control arm is BLOCKED:PRECONDITION_UNMET and never PASS: a single-currency row set cannot distinguish a row-derived label from a constant {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:MONEY · Technique:BVA,Draft
+MSNF-079,Mission card and its featured-SKU modal report the same targets-met count on an unchanged cart,Loyalty > Missions > Display Link (L6),Medium,,,"[PRE:CLEAR_SESSION]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
+The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public missions @td(MSN_E2E_ORDERVALUE.name), @td(MSN_E2E_PERSKU.name) and @td(MSN_E2E_PERSKU_PTS.name) through loyaltyMissionProgress — all three are Published, public and carry AnyUserGroupCondition, so they are visible to any signed-in account.
+The cart of @td(MSN_E2E_USER_003.email) is empty at the start; empty it from the cart page before running if it is not. Both readings are taken with the cart untouched, so neither can be an artefact of a cart change made between them.
+The featured-SKU mission @td(MSN_E2E_PERSKU.name) carries two targets. The modal counter seeds from backend progress while design frame F3 specifies it be derived from the modal own stepper quantities; the ticket recording that divergence is already open, so a divergence found here is re-confirmed against it and never re-filed.
+DISPOSABLE FIXTURE, TERMINAL ONCE COMPLETED: mission progress is monotonic with no reset path, and a sibling suite placing real orders on these accounts can consume them between seed and execution. Read the mission status chip as the FIRST observation; if the mission under test already reads as completed, stop and record BLOCKED:PRECONDITION_UNMET — never a PASS and never a FAIL.
+A completed featured-SKU mission opens a read-only modal with no counter to compare, so the status read is what keeps this case decidable.
+Build under test: vc-frontend PR #2396 (the loyalty routes are registered at bootstrap regardless of authentication state) against VirtoCommerce.Loyalty PR#14. Assertions about that build are grounded on the source read at the deployed SHA, not on product documentation — no VirtoOZ documentation exists for Missions.",@td(MSN_E2E_PERSKU.name),"[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form has rendered its email input
+[ACT] type @td(MSN_E2E_USER_003.email) into the sign-in email input
+[ACT] type @td(MSN_E2E_USER_003.password) into the sign-in password input
+[ACT] click 'Sign in'
+[WAIT] authentication completes, the browser settles on its post-login route
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered its line items or its empty state
+[ACT] record the number of cart lines before any mission surface is opened
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] read the status chip on the card for @td(MSN_E2E_PERSKU.name)
+[ACT] record the progress note on that card, with both of its figures
+[ACT] record the loyaltyMissionProgress response body for this page load
+[ACT] click the open-mission control on the card for @td(MSN_E2E_PERSKU.name)
+[WAIT] the featured-SKU modal has rendered its product rows, its summary block
+[ACT] record the targets-met figure with its denominator in the summary block, before any stepper is touched
+[ACT] count the product rows the modal renders
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered its line items or its empty state
+[ACT] record the number of cart lines after both readings were taken","[REL] at modal open, before any stepper is touched, the targets-met figure in the modal == the corresponding figure in the progress note on the card that opened it {SPEC}
+[MATH] the targets-met denominator = the number of featured product rows the modal renders {SPEC}
+[REL] the targets-met figure at open == the progress the loyaltyMissionProgress response returns for that mission on this load, so the counter reports the state the API returned {DOC}
+[REL] the cart line count after both readings == the cart line count before them, so neither figure was moved by a cart change taken between the two observations {OBSERVED}
+[DOM] the counter label in the modal and the progress note on the card are visible with wording consistent with the same underlying measurement, so the reader is never shown two counters that appear to disagree {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:RENDER · Technique:ST,Draft
+MSNF-080,Points-history rows identify which mission granted them,Loyalty > Missions > Display Link (L6),Medium,BL-LOY-015,,"[PRE:CLEAR_SESSION]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
+The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public missions @td(MSN_E2E_ORDERVALUE.name), @td(MSN_E2E_PERSKU.name) and @td(MSN_E2E_PERSKU_PTS.name) through loyaltyMissionProgress — all three are Published, public and carry AnyUserGroupCondition, so they are visible to any signed-in account.
+The account @td(MSN_E2E_USER_003.email) has at least one points-history row at execution time. If the page renders no row at all, record BLOCKED:PRECONDITION_UNMET — an empty list cannot show whether a row would name its mission — and note the balance the page reports against @td(MSN_E2E_USER_003.balance_at_seed).
+EXPECTED TO FAIL, AND NOT AGAINST THIS SURFACE: the ledger types expose amount, createdDate, orderId and orderNumber and carry no mission identifier of any kind, confirmed by schema introspection and recorded as the violation behind BL-LOY-015. The assertion below states the invariant as written and is never inverted to certify the current shape; a failure is attributed to the backend ledger and reported against the accrual story, never filed against the storefront.
+The order reference on a row is the POSITIVE CONTROL: it proves the row template renders references at all, so an absent mission reference is a real gap rather than a surface that renders nothing.
+Build under test: vc-frontend PR #2396 (the loyalty routes are registered at bootstrap regardless of authentication state) against VirtoCommerce.Loyalty PR#14. Assertions about that build are grounded on the source read at the deployed SHA, not on product documentation — no VirtoOZ documentation exists for Missions.",@td(MSN_E2E_USER_003.email),"[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form has rendered its email input
+[ACT] type @td(MSN_E2E_USER_003.email) into the sign-in email input
+[ACT] type @td(MSN_E2E_USER_003.password) into the sign-in password input
+[ACT] click 'Sign in'
+[WAIT] authentication completes, the browser settles on its post-login route
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered its rows or its empty state, no loading skeleton is visible
+[ACT] record every field rendered on each points-history row
+[ACT] record the loyalty operation-log response body for this page load
+[ACT] count the rows the page renders
+[ACT] count the operation-log entries the response carries
+[ACT] record the points balance the page reports
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] record the name of every mission whose card reads as completed","[DOM] every points-history row visible on the page carries a reference naming the mission that granted it, so a reader can tell which mission paid each grant {BL}
+[REL] the number of rows the page renders == the number of operation-log entries the response carries, so no row was dropped before the comparison {DOC}
+[REL] POSITIVE CONTROL — at least one rendered row carries its order reference, which proves the row template renders references at all; where no row carries any reference the surface itself is not rendering and the case is BLOCKED:PRECONDITION_UNMET rather than FAIL {OBSERVED}
+[REL] for every mission whose card reads as completed, a points-history row exists naming that mission, matched on the mission name carrying the run handle @td(MSN_E2E_RUN.run_id) {BL}
+[REL] attribution is per grant, never per balance: a balance delta alone is not accepted as evidence that a given mission paid, because one order settles several missions at once and their grants are indistinguishable in a total {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:SILENT · Technique:EG,Draft
+MSNF-073,Featured-SKU modal prices resolve from the session currency: dual-priced SKU vs single-priced in-modal control,Loyalty > Missions > Display Link (L6),Critical,"BL-PRICE-005, BL-LOY-002",,"[PRE:CLEAR_SESSION]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
+The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public mission @td(MSN_E2E_PERSKU.name) through loyaltyMissionProgress — it is Published, public and carries AnyUserGroupCondition, so it is visible to any signed-in account.
+WHAT THIS CASE DISCRIMINATES, AND WHY THE FIXTURE HAS TO BE SHAPED THIS WAY. The rendered product price is AllPrices.FirstOrDefault() and the resolver-context currencyCode is consumed ONLY for the empty-price fallback, so on a SINGLE-priced product the currency argument is structurally unobservable: one price row means FirstOrDefault() and a currency-aware selection return the same row, and in a second currency both fall to the same empty-price fallback. A modal-versus-product-detail comparison cannot see it either, because a wrong price is wrong on BOTH surfaces. The discriminating reading therefore has to be taken on a DUAL-PRICED row. @td(MSN_E2E_PRODUCT_A.sku) carries a price in @td(MSN_E2E_PRODUCT_A.currency) AND a different price in @td(MSN_E2E_PRODUCT_A.currency_secondary); @td(MSN_E2E_PRODUCT_B.sku) is priced in @td(MSN_E2E_PRODUCT_B.currency) only and is the in-modal control. Both are goal items of @td(MSN_E2E_PERSKU.name), so both rows arrive in the same modal response and neither reading can be blamed on a different request.
+THE TWO AMOUNTS DIFFER ON PURPOSE. Every currency on this environment is registered at exchangeRate 1, so equal amounts would make a CONVERTING implementation indistinguishable from a correctly SELECTING one. With @td(MSN_E2E_PRODUCT_A.list_price) and @td(MSN_E2E_PRODUCT_A.list_price_secondary) a single reading pair separates three outcomes — (i) correct selection: each session shows that session own fixture amount under that session own currency code; (ii) 1:1 exchange-rate conversion: the default-currency AMOUNT appears under the secondary currency CODE; (iii) AllPrices.FirstOrDefault(): the default-currency amount appears under the DEFAULT currency code in both sessions, i.e. the same row served twice.
+DECIDABILITY GATE — evaluate BEFORE any modal price is read, and never from a modal reading. (a) @td(MSN_E2E_PRODUCT_A.list_price) and @td(MSN_E2E_PRODUCT_A.list_price_secondary) must both be non-zero and must differ from one another, and @td(MSN_E2E_PRODUCT_A.currency) must differ from @td(MSN_E2E_PRODUCT_A.currency_secondary); (b) the storefront currency selector must offer @td(MSN_E2E_PRODUCT_A.currency_secondary). If either fails, the discriminating arm is BLOCKED:PRECONDITION_UNMET and never PASS — a single-currency environment, or a fixture that has collapsed back to one price, makes the prices looking right indistinguishable from a currencyCode argument that changed nothing. Read the direction of this gate carefully: it is a gate on the FIXTURE and on the SELECTOR. A modal reading that fails to differ across the two sessions is a FAIL of this case, never a BLOCKED.
+KNOWN OPEN DIVERGENCE, asserted not inverted: @td(MSN_E2E_PRODUCT_B.sku) has no price list in @td(MSN_E2E_PRODUCT_A.currency_secondary), and BL-PRICE-005 requires a product with no price list in the selected currency to present as unavailable rather than to carry a price. This build renders it as a zero amount instead. The assertion that states the rule is therefore expected RED on this build; it is scored on its own line and the currency-selection verdict is read independently of it. Do not weaken it to match what the build does.
+DISPOSABLE FIXTURE, TERMINAL ONCE COMPLETED: mission progress is monotonic with no reset path, and a sibling suite placing real orders on these accounts can consume them between seed and execution. Read the mission status chip as the FIRST observation; if @td(MSN_E2E_PERSKU.name) already reads as completed, stop and record BLOCKED:PRECONDITION_UNMET — never a PASS and never a FAIL. A completed featured-SKU mission opens a read-only modal with no product rows to price, so the status read is also what keeps this case decidable.
+Build under test: vc-frontend PR #2396 (the loyalty routes are registered at bootstrap regardless of authentication state) against VirtoCommerce.Loyalty PR#14. Assertions about that build are grounded on the source read at the deployed SHA, not on product documentation — no VirtoOZ documentation exists for Missions.","@td(MSN_E2E_PERSKU.name), @td(MSN_E2E_PRODUCT_UNIT.sku)","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form has rendered its email input
+[ACT] type @td(MSN_E2E_USER_003.email) into the sign-in email input
+[ACT] type @td(MSN_E2E_USER_003.password) into the sign-in password input
+[ACT] click 'Sign in'
+[WAIT] authentication completes, the browser settles on its post-login route
+[ACT] GATE STEP 1a — record @td(MSN_E2E_PRODUCT_A.list_price) as resolved for this environment
+[ACT] GATE STEP 1b — record @td(MSN_E2E_PRODUCT_A.list_price_secondary) as resolved for this environment
+[ACT] GATE STEP 1c — record @td(MSN_E2E_PRODUCT_A.currency) as resolved for this environment
+[ACT] GATE STEP 1d — record @td(MSN_E2E_PRODUCT_A.currency_secondary) as resolved for this environment. These four fixture declarations are what the discriminating arm rests on, read before any storefront price
+[ACT] click the header currency selector (data-test-id 'currency-selector-button')
+[WAIT] the currency list has rendered its options
+[ACT] GATE STEP 2a — record every currency option the selector offers
+[ACT] GATE STEP 2b — record the currency code currently active
+[ACT] dismiss the currency list without changing the selection
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] read the status chip on the card for @td(MSN_E2E_PERSKU.name)
+[ACT] click the open-mission control on the card for @td(MSN_E2E_PERSKU.name)
+[WAIT] the featured-SKU modal has rendered its product rows
+[ACT] BASELINE — record the price amount with its currency code on the row for @td(MSN_E2E_PRODUCT_A.sku)
+[ACT] BASELINE — record the price amount with its currency code on the row for @td(MSN_E2E_PRODUCT_B.sku)
+[ACT] record every distinct currency code appearing across the modal product rows
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[NAV] {{FRONT_URL}}@td(MSN_E2E_PRODUCT_A.url)
+[WAIT] the product detail page has rendered its price
+[ACT] record the price amount with its currency code
+[NAV] {{FRONT_URL}}@td(MSN_E2E_PRODUCT_B.url)
+[WAIT] the product detail page has rendered its price
+[ACT] record the price amount with its currency code
+[NAV] {{FRONT_URL}}@td(MSN_E2E_PRODUCT_UNIT.url)
+[WAIT] the product detail page has rendered its price
+[ACT] record the independent control price amount with its currency code
+[ACT] click the header currency selector (data-test-id 'currency-selector-button')
+[WAIT] the currency list has rendered its options
+[ACT] click the currency option whose code is @td(MSN_E2E_PRODUCT_A.currency_secondary) — the switch targets that currency specifically, because it is the only currency the dual-priced fixture can discriminate in
+[WAIT] the storefront has re-rendered under the newly selected currency
+[NAV] {{FRONT_URL}}@td(MSN_E2E_PRODUCT_UNIT.url)
+[WAIT] the product detail page has rendered its price
+[ACT] record the independent control price amount with its currency code a second time
+[NAV] {{FRONT_URL}}@td(MSN_E2E_PRODUCT_A.url)
+[WAIT] the product detail page has rendered its price
+[ACT] record the price amount with its currency code a second time
+[NAV] {{FRONT_URL}}@td(MSN_E2E_PRODUCT_B.url)
+[WAIT] the product detail page has rendered its price
+[ACT] record the price amount with its currency code a second time
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_E2E_PERSKU.name)
+[WAIT] the featured-SKU modal has rendered its product rows
+[ACT] DISCRIMINATING READ — record the price amount with its currency code on the row for @td(MSN_E2E_PRODUCT_A.sku)
+[ACT] CONTROL READ — record the price amount with its currency code on the row for @td(MSN_E2E_PRODUCT_B.sku)
+[ACT] CONTROL READ — record whether the row for @td(MSN_E2E_PRODUCT_B.sku) displays an unavailable or out-of-stock marker
+[ACT] CONTROL READ — record whether the quantity stepper on that same row is absent, or present but rendered disabled
+[ACT] record every distinct currency code appearing across the modal product rows a second time
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[ACT] click the header currency selector (data-test-id 'currency-selector-button')
+[WAIT] the currency list has rendered its options
+[ACT] click the option carrying the currency code recorded at GATE STEP 2
+[WAIT] the storefront has re-rendered under the restored currency","[STATE] DECIDABILITY GATE, evaluated from the fixture and the selector before any modal price is read: @td(MSN_E2E_PRODUCT_A.list_price) and @td(MSN_E2E_PRODUCT_A.list_price_secondary) are both non-zero and differ from each other, @td(MSN_E2E_PRODUCT_A.currency) differs from @td(MSN_E2E_PRODUCT_A.currency_secondary), and the currency selector offers @td(MSN_E2E_PRODUCT_A.currency_secondary). If any part of this is not satisfied the discriminating arm is BLOCKED:PRECONDITION_UNMET and never PASS; a modal reading that merely fails to differ is a FAIL of this case, not a BLOCKED {OBSERVED}
+[REL] POSITIVE CONTROL that the switch itself took effect — the independent control product @td(MSN_E2E_PRODUCT_UNIT.sku), which no mission modal renders, reports a currency code on its product detail page after the switch that differs from the one it reported before it and equals @td(MSN_E2E_PRODUCT_A.currency_secondary). A control that does not move proves the session currency never changed, so every arm downstream is BLOCKED:PRECONDITION_UNMET rather than PASS {OBSERVED}
+[MATH] DISCRIMINATOR, amount — modal row amount for @td(MSN_E2E_PRODUCT_A.sku) under session currency @td(MSN_E2E_PRODUCT_A.currency_secondary) = @td(MSN_E2E_PRODUCT_A.list_price_secondary). Neither hypothesised broken reading can satisfy this: AllPrices.FirstOrDefault() serves the same row it served in the default session, while a 1:1 exchange-rate conversion carries the default-currency amount across, so both render @td(MSN_E2E_PRODUCT_A.list_price) here {BL}
+[MATH] BASELINE, amount — modal row amount for @td(MSN_E2E_PRODUCT_A.sku) under the store default session currency = @td(MSN_E2E_PRODUCT_A.list_price), carrying the currency code @td(MSN_E2E_PRODUCT_A.currency), so the discriminator above is read against a baseline that is known good rather than against an assumption {BL}
+[REL] DISCRIMINATOR, denomination — under session currency @td(MSN_E2E_PRODUCT_A.currency_secondary) the modal row for @td(MSN_E2E_PRODUCT_A.sku) carries the currency code @td(MSN_E2E_PRODUCT_A.currency_secondary). Paired with the amount assertion this separates the two broken implementations from each other: amount unchanged AND code unchanged is AllPrices.FirstOrDefault(); amount unchanged BUT code changed is a 1:1 exchange-rate conversion, which BL-PRICE-005 forbids independently of the missions surface {BL}
+[REL] IN-MODAL CONTROL — under session currency @td(MSN_E2E_PRODUCT_A.currency_secondary) the modal row for @td(MSN_E2E_PRODUCT_B.sku), which is priced in @td(MSN_E2E_PRODUCT_B.currency) only, does NOT carry the currency code @td(MSN_E2E_PRODUCT_B.currency). A row still denominated in the default currency proves the response was assembled from the default-currency price rows, whatever the dual-priced row happens to show, and it proves it inside the same modal response rather than across a second request {BL}
+[STATE] Storefront honouring of the platform availability flags, outcome UNDECIDED on this build — under session currency @td(MSN_E2E_PRODUCT_A.currency_secondary), where availabilityData.isAvailable and isBuyable are false for @td(MSN_E2E_PRODUCT_B.sku), the modal row presents as unavailable: no active quantity stepper and no active add-to-cart. A zero amount rendered ALONGSIDE a correct unavailable presentation is NOT a failure of this line — that zero is the platform no-secondary-pricelist condition, not a modal defect. BL-PRICE-005 is the origin of the obligation; what is tested here is the storefront honouring the flags, which the query already selects via the shared availabilityData fragment. Honoured => no finding; ignored => an in-scope mission-modal defect. Scored on its own line; it does not by itself decide the currency-selection arms above {BL}
+[REL] under session currency @td(MSN_E2E_PRODUCT_A.currency_secondary) the modal row price for @td(MSN_E2E_PRODUCT_A.sku) equals, in amount and currency code, the price the same SKU product detail page renders in that same session. Parity is a guard, not the discriminator — a wrong price is wrong on both surfaces — so it catches the modal being wrong DIFFERENTLY from the catalogue, never the modal being wrong the same way {BL}
+[REL] under the store default session currency the modal row prices for @td(MSN_E2E_PRODUCT_A.sku) and @td(MSN_E2E_PRODUCT_B.sku) each equal, in amount and currency code, the price the same SKU product detail page renders in that same session {BL}
+[COUNT] in each of the two readings, exactly one distinct currency code appears across all product rows of the modal, so a mixed-currency row set is absent from a surface whose subtotal labels itself from a single row {BL}
+[FORMAT] every modal row price renders with a currency symbol and exactly two digits after the decimal separator {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:MONEY · Technique:EG,Draft
+MSNF-075,Goal amount and progress amount on one mission card are denominated in the same currency,Loyalty > Missions > Display Link (L6),High,BL-PRICE-005,,"[PRE:CLEAR_SESSION]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
+The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public missions @td(MSN_E2E_ORDERVALUE.name) and @td(MSN_E2E_PERSKU.name) through loyaltyMissionProgress — both are Published, public and carry AnyUserGroupCondition, so they are visible to any signed-in account.
+The order-value mission @td(MSN_E2E_ORDERVALUE.name) carries its own stored goal currency @td(MSN_E2E_ORDERVALUE.goal_currency) and a target of @td(MSN_E2E_ORDERVALUE.goal_target).
+THE CELL THIS CASE EXISTS FOR IS culture x currency, NOT currency ALONE. Top-level mission money is formatted from CultureName by AfterMediatorSend while product money resolves off currencyCode, so the mismatch only becomes reachable when CULTURE is the thing that moves. Varying the session currency alone leaves CultureName pinned and compares two fields that both travel the AfterMediatorSend path — they agree by construction, and a green there says nothing about the mechanism. This case therefore runs TWO arms and reports them separately: ARM 1 varies the session currency at fixed culture and is scored on goal-denomination invariance, because a stored goal must not follow the session; ARM 2 varies the CULTURE at fixed session currency and compares a TOP-LEVEL money field against a PRODUCT money field, which is the only pair on this feature whose two members travel different formatting inputs.
+ARM 2 needs a product money field and the order-value card has none. The primary reading is a product row in the featured-SKU modal opened from @td(MSN_E2E_PERSKU.name) in the SAME page session, so both members of the compared pair come from one route under one culture. That mission is disposable and may already be completed, in which case its modal opens read-only with no product rows — so a corroborating product money reading is ALWAYS taken from the product detail page of @td(MSN_E2E_PRODUCT_UNIT.sku) under the same session currency, and the case records which surface supplied the reading it scored. Taking the second reading unconditionally is deliberate: a conditional step that never fires is indistinguishable from one that fired and found nothing.
+DECIDABILITY GATE, ARM 2 — the storefront language selector must offer at least one locale whose code differs from the one active at sign-in, AND selecting it must be independently confirmed to have taken effect by a NON-MONEY observation: the document root lang attribute must change. If the selector offers only one locale, or the root lang does not move, ARM 2 is BLOCKED:PRECONDITION_UNMET and never PASS — an unconfirmed locale switch makes two fields agreeing a statement about a page that never changed culture. ARM 1 still reports its own verdict in that case. The Test Model cell names de-DE; where the store offers a different second locale that locale serves the same purpose, because the arm needs a culture CHANGE and not one specific culture.
+DECIDABILITY GATE, ARM 1 — the store must offer at least one selectable session currency besides its default; where it does not, ARM 1 is BLOCKED:PRECONDITION_UNMET and ARM 2 still runs.
+Where the card renders no goal target of its own, the goal reading is taken from the order-goal modal opened from that same card, and the case records which surface each of the two readings came from. A comparison built from one reading only is recorded NOT-DECIDABLE, never PASS.
+DISPOSABLE FIXTURE, TERMINAL ONCE COMPLETED: mission progress is monotonic with no reset path, and a sibling suite placing real orders on these accounts can consume them between seed and execution. Read the status chip on the card for @td(MSN_E2E_ORDERVALUE.name) as the FIRST observation; if it already reads as completed, stop and record BLOCKED:PRECONDITION_UNMET — never a PASS and never a FAIL.
+Build under test: vc-frontend PR #2396 (the loyalty routes are registered at bootstrap regardless of authentication state) against VirtoCommerce.Loyalty PR#14. Assertions about that build are grounded on the source read at the deployed SHA, not on product documentation — no VirtoOZ documentation exists for Missions.",@td(MSN_E2E_ORDERVALUE.name),"[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form has rendered its email input
+[ACT] type @td(MSN_E2E_USER_003.email) into the sign-in email input
+[ACT] type @td(MSN_E2E_USER_003.password) into the sign-in password input
+[ACT] click 'Sign in'
+[WAIT] authentication completes, the browser settles on its post-login route
+[ACT] record the currency code shown in the header currency selector
+[ACT] record the document root lang attribute
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] read the status chip on the card for @td(MSN_E2E_ORDERVALUE.name)
+[ACT] record the progress-so-far amount with its currency code on the card for @td(MSN_E2E_ORDERVALUE.name)
+[ACT] record the goal target amount with its currency code wherever the card renders one
+[ACT] click the open-mission control on the card for @td(MSN_E2E_ORDERVALUE.name)
+[WAIT] the order-goal modal has rendered its target block
+[ACT] record the goal target amount with its currency code in the modal
+[ACT] record which surface supplied each of the two goal-target readings taken so far
+[ACT] record the progress-so-far amount with its currency code in the modal
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[ACT] --- ARM 1, session currency varies at fixed culture --- click the header currency selector (data-test-id 'currency-selector-button')
+[WAIT] the currency list has rendered its options
+[ACT] record every currency option the selector offers
+[ACT] click the first currency option whose code differs from the recorded session currency
+[WAIT] the missions page has re-rendered under the newly selected currency
+[ACT] record the progress-so-far amount with its currency code on the same card a second time
+[ACT] click the open-mission control on the card for @td(MSN_E2E_ORDERVALUE.name)
+[WAIT] the order-goal modal has rendered its target block
+[ACT] record the goal target amount with its currency code a second time
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[ACT] click the header currency selector (data-test-id 'currency-selector-button')
+[WAIT] the currency list has rendered its options
+[ACT] click the option carrying the originally recorded session currency code
+[WAIT] the missions page has re-rendered under the restored currency
+[ACT] --- ARM 2, culture varies at fixed session currency --- record the currency code shown in the header currency selector a third time. It must still be the code recorded at sign-in, so that nothing ARM 2 observes is attributable to a currency change
+[ACT] open the storefront language selector
+[WAIT] the locale list has rendered its options
+[ACT] record every locale option the storefront language selector offers. Where only the active locale is offered, ARM 2 is BLOCKED:PRECONDITION_UNMET per the gate in Preconditions
+[ACT] click the locale option whose code differs from the one recorded at sign-in
+[WAIT] the storefront has re-rendered under the newly selected locale
+[ACT] record the document root lang attribute a second time
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] TOP-LEVEL MONEY READ — record the progress-so-far amount with its currency code on the card for @td(MSN_E2E_ORDERVALUE.name)
+[ACT] click the open-mission control on the card for @td(MSN_E2E_ORDERVALUE.name)
+[WAIT] the order-goal modal has rendered its target block
+[ACT] TOP-LEVEL MONEY READ — record the goal target amount with its currency code
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[ACT] PRODUCT MONEY READ, primary — click the open-mission control on the card for @td(MSN_E2E_PERSKU.name)
+[WAIT] the featured-SKU modal has rendered its product rows
+[ACT] record the price amount with its currency code on the first product row of that modal
+[ACT] record whether that modal rendered any product row at all, since a completed featured-SKU mission opens read-only with none
+[ACT] click the modal's Close control
+[WAIT] the modal has been dismissed
+[NAV] {{FRONT_URL}}@td(MSN_E2E_PRODUCT_UNIT.url)
+[WAIT] the product detail page has rendered its price
+[ACT] PRODUCT MONEY READ, corroborating — record the price amount with its currency code on the product detail page. This second product money reading is what carries ARM 2 where the featured-SKU modal rendered no rows
+[ACT] open the storefront language selector
+[WAIT] the locale list has rendered its options
+[ACT] click the option carrying the locale code recorded at sign-in
+[WAIT] the storefront has re-rendered under the restored locale","[REL] ARM 1 — for the one mission @td(MSN_E2E_ORDERVALUE.name), the currency code rendered against the progress-so-far amount == the currency code rendered against its goal target, so the two numbers a customer is asked to compare are denominated alike {BL}
+[MATH] the goal currency code rendered against the target = @td(MSN_E2E_ORDERVALUE.goal_currency), the mission own stored goal currency {BL}
+[MATH] the goal target amount rendered = @td(MSN_E2E_ORDERVALUE.goal_target), so the target figure is the mission stored value rather than a session-converted one {OBSERVED}
+[REL] ARM 1 — after the session currency is switched, the two money fields for that one mission still agree with each other in currency code {BL}
+[REL] ARM 1 DISCRIMINATOR — the goal target reading after the currency switch == the goal target reading before it, in both amount and currency code, because a goal is denominated by the mission and never by the session. A build that re-denominates the stored goal to the session currency fails here on the currency code, and a build that converts it at the registered exchange rate fails here on the amount {BL}
+[STATE] ARM 2 DECIDABILITY GATE, evaluated from the selector and a NON-MONEY observation before any ARM 2 money field is compared: the language selector offered a locale other than the one active at sign-in, that locale was selected, and the document root lang attribute after the switch differs from the one recorded at sign-in. If either is not satisfied ARM 2 is BLOCKED:PRECONDITION_UNMET and never PASS, and ARM 1 still reports its own verdict {OBSERVED}
+[REL] ARM 2 CONTROL — the currency code shown in the header currency selector after the locale switch == the code recorded at sign-in, so nothing ARM 2 observes is attributable to a session-currency change {OBSERVED}
+[REL] ARM 2 DISCRIMINATOR — under the switched locale at unchanged session currency, the currency code rendered against a TOP-LEVEL mission money field on the card or order-goal modal for @td(MSN_E2E_ORDERVALUE.name) == the currency code rendered against a PRODUCT money field, taken from the featured-SKU modal row where that modal rendered rows and otherwise from the corroborating product detail page reading. Top-level mission money is formatted from CultureName by AfterMediatorSend while product money resolves off currencyCode, so this is the only pair on this feature whose two members travel different inputs. A build that lets the locale drive denomination renders the two under different currency codes and fails here, while the ARM 1 pair — two top-level fields that both travel AfterMediatorSend — would still agree {BL}
+[REL] ARM 2 — the currency code rendered against the top-level mission money under the switched locale == the currency code the same field rendered under the original locale, because a culture governs how a number is written and never which currency it is in {BL}
+[MATH] ARM 2 — under the switched locale the goal target amount rendered = @td(MSN_E2E_ORDERVALUE.goal_target), so a locale change alters the presentation of the number and never the number {BL}
+[FORMAT] in every reading both money fields render with a currency symbol and exactly two digits after the decimal separator of the locale then active, so a locale that uses a different decimal separator changes the separator and never the count of fractional digits {BL}
+[REL] the case records which surface supplied each of the two readings in each arm; where only one of a compared pair is rendered anywhere, that comparison is NOT-DECIDABLE and is reported as such rather than as a PASS {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:MONEY · Technique:DT,Draft

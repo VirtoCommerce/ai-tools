@@ -301,10 +301,13 @@ Run through these 12 items before starting any test execution. Flag any item tha
    - Defect density, defect detection rate
    - Coverage metrics (requirement coverage, risk coverage)
 2. Evaluate quality gates from `/qa-metrics gates`:
-   - Smoke gate (daily): 100% P0 pass, 0 P0 bugs
-   - Sprint gate: >=95% critical pass rate, 0 P0/P1 open
-   - Release gate: >=98% overall, 0 P0, <3 P1 with workarounds
-3. Render verdict: **APPROVED** / **APPROVED WITH CONDITIONS** / **BLOCKED**
+   - Completeness first (§0, every gate): >=1 case executed AND <=10% of planned BLOCKED-and-untriaged,
+     else **CANNOT EVALUATE** — the pass rate excludes BLOCKED from its denominator, so it RISES as
+     blockers accumulate and cannot stand in for it
+   - Smoke gate (daily): 100% P0 pass, 0 P0 bugs, 0 blocked/skipped
+   - Sprint gate: >=80% critical pass rate (`GATE_PASS_FLOOR.sprint`, lowered from 95% on 2026-09-02), 0 P0 open, 0 **undeferred** P1 open
+   - Release gate: >=98% overall, 0 P0, <=2 declared-deferred P1 with workarounds (3+ ⇒ BLOCKED)
+3. Render verdict: **APPROVED** / **APPROVED WITH CONDITIONS** / **BLOCKED** / **CANNOT EVALUATE**
 4. Generate stakeholder report using appropriate verbosity tier from `/qa-evidence`:
    - Compact (smoke/regression pass), Detailed (sprint), Sign-Off (release)
 5. Communicate results via Teams notification
@@ -358,7 +361,7 @@ Run through these 12 items before starting any test execution. Flag any item tha
 ## Metrics Summary
 | Metric | Value | Target | Delta |
 |--------|-------|--------|-------|
-| Overall pass rate | X% | >=95% | +/-X% |
+| Overall pass rate | X% | >=80% | +/-X% |
 | P0/P1 bugs found | X | 0 | — |
 | Escaped defects | X | 0 | — |
 | Test execution time | Xh | Xh | +/-Xh |

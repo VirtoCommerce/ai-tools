@@ -11,9 +11,10 @@ Measured per suite execution or aggregated across a regression run.
 
 | Metric | Definition | Formula | Data Source | Target | Action When Off-Target |
 |--------|-----------|---------|-------------|--------|----------------------|
-| **Pass Rate** | Percentage of test cases that passed | (Passed / Total Executed) x 100 | Regression report JSON/MD | >=95% sprint, >=98% release | Triage all failures, determine if bug or env issue |
+| **Pass Rate** | Percentage of test cases that passed | (Passed / Total Executed) x 100 — **Executed = Passed + Failed**, so BLOCKED/SKIPPED are outside the denominator and the rate RISES as blockers accumulate. Always read it beside **Planned Pass Rate** below | Regression report JSON/MD | **>=80% sprint/feature/hotfix** (`GATE_PASS_FLOOR`, lowered from 95% on 2026-09-02), >=98% release | Triage all failures, determine if bug or env issue |
+| **Planned Pass Rate** | Share of what the run set out to do that went green | (Passed / Total Planned) x 100 | Regression report JSON/MD (`plannedPassRate`) | **Reported, never thresholded** — a suite with legitimate `Manual` cases could not pass a planned-basis floor. It exists so "100% on 37% of the suite" is visible | Compare with Pass Rate; a wide gap means the run was incomplete, not clean |
 | **Fail Rate** | Percentage of test cases that failed | (Failed / Total Executed) x 100 | Regression report JSON/MD | <5% sprint, <2% release | Triage all failures, file bugs, assign priority |
-| **Blocked Rate** | Percentage of planned tests that could not execute | (Blocked / Total Planned) x 100 | Regression report JSON/MD | <3% | Resolve blockers (env, data, dependency) before continuing |
+| **Blocked Rate** | Percentage of planned tests that could not execute | (Blocked / Total Planned) x 100 | Regression report JSON/MD | **<3% target**, and a hard **10% gate ceiling** (`quality-gates.md` §0 `MAX_UNTRIAGED_BLOCKED_PCT`) above which every gate below §1 returns CANNOT EVALUATE. The two are not in conflict: 3% is the aspiration, 10% is where a verdict stops being supportable. Corpus actual is 19.9% | Resolve blockers (env, data, dependency) before continuing; triage via `/qa-triage-results` and declare the non-product ones with `--blocked-triaged N` |
 | **Skip Rate** | Percentage of planned tests intentionally skipped | (Skipped / Total Planned) x 100 | Regression report JSON/MD | <5% | Investigate why tests are skipped; update or remove obsolete tests |
 | **Execution Velocity** | Rate of test case execution | Test cases executed / Hours elapsed | Regression report timestamps | UI: ~8/hr, API: ~20/hr | Investigate if <50% of baseline; check env performance, test complexity |
 
@@ -130,9 +131,10 @@ A test is considered flaky when it produces different results (pass/fail) across
 
 | Category | Metric | Formula | Target | Cadence | Data Source |
 |----------|--------|---------|--------|---------|-------------|
-| Execution | Pass Rate | (Passed / Executed) x 100 | >=95% sprint, >=98% release | Per run | Regression report |
+| Execution | Pass Rate | (Passed / Executed) x 100 | >=80% sprint, >=98% release | Per run | Regression report |
+| Execution | Planned Pass Rate | (Passed / Planned) x 100 | reported, not thresholded | Per run | Regression report |
 | Execution | Fail Rate | (Failed / Executed) x 100 | <5% sprint, <2% release | Per run | Regression report |
-| Execution | Blocked Rate | (Blocked / Planned) x 100 | <3% | Per run | Regression report |
+| Execution | Blocked Rate | (Blocked / Planned) x 100 | <3% target; >10% untriaged ⇒ gate CANNOT EVALUATE | Per run | Regression report |
 | Execution | Skip Rate | (Skipped / Planned) x 100 | <5% | Per run | Regression report |
 | Execution | Execution Velocity | Cases / Hours | UI ~8/hr, API ~20/hr | Per run | Report timestamps |
 | Defect | Defect Density | Bugs / Cases executed | <0.1 stable, <0.3 new | Per sprint | Bug + regression reports |

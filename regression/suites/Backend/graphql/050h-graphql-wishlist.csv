@@ -991,3 +991,35 @@ WISH-34,Customer Can Edit a Rep-Shared Wishlist — Item Removal Persists (VCST-
 [ERRORS label=read_back] errors[] empty {SPEC}
 [COUNT label=read_back] data.wishlist.items.length = 0 {SPEC}
 [DATA label=read_back] data.wishlist.itemsCount = 0 {SPEC}","[EVIDENCE] proves VCST-5332's ""Lists can be edited"" AC via an actual customer-initiated mutation on a rep-owned, shared list — not merely a read","customer_edits errors[] non-empty with an authorization/forbidden error (customer cannot edit despite the sharing feature's stated intent), read_back still shows the removed item (mutation didn't persist), itemsCount mismatch between the mutation response and the read-back",none — inline cleanup removes the shared list under the rep's own auth,VCST-5332,Draft
+WISH-035,changeWishlist scope=Customer — Org Maintainer (Non-Rep) Denied the Rep-Only Share Action,GraphQL > Wishlist > Sales Rep Sharing (VCST-5332),Critical,BL-SR-002,,"Runner-native. Caller is ACME_ADMIN (b2b/users.csv USR-001, org role ""Organization maintainer"" — the highest-privilege ORG role in @td(ORG_ACME.id)), holding no sales-rep:access permission. VCST-5332 (""Publish list to customer"") designs changeWishlist(scope=""Customer"", sharedWithId) as a SALES-REP action — this suite's only existing Customer-scope coverage (WISH-33/WISH-34) drives it as SALES_REP, and the storefront rep-share flow issues this same mutation with scope=""Customer"" plus the rep-selected sharedWithId (VCST-5332 design intent; background only  this case establishes all of its own state and depends on no case outside this suite). This case is the mutation-level privilege-boundary control neither WISH-33 nor WISH-34 provides: ACME_ADMIN creates their OWN wishlist (createWishlist with no scope arg defaults to scope=Private — observed contract, see WISH-024/WISH-021 siblings) then calls changeWishlist(scope: ""Customer"", sharedWithId: @td(ORG_TECHFLOW.platform_id)) directly on it — the IDENTICAL mutation shape WISH-33 uses, driven by a non-rep org admin instead of a rep. scope and sharedWithId are confirmed present on InputChangeWishlistType (both plain String scalars, matching WISH-33/34's case-sensitivity caveat — this case reuses their exact PascalCase ""Customer"" spelling) via this session's own runner schema cache (scripts/.graphql-schema.cache.json, refreshed 2026-09-01) — a field-name check only, no live result was asserted from it. The verdict is deliberately NOT read from changeWishlist's own response shape — a denial could arrive as errors[] non-empty OR as a silent no-op, and either is an acceptable secure implementation — it is read from a RE-QUERY of the same wishlist by the SAME caller: scope must still read Private and sharingSetting must still be null. A changed scope on read-back is the leak, regardless of what the mutation call itself returned.","list_name=AGENT-TEST-WL-035-{{RUN_ID}}, target_org=@td(ORG_TECHFLOW.platform_id)","[AUTH role=ACME_ADMIN]
+[GQL-OP admin_me]
+  query { me { id } }
+[GQL-EXEC admin_me]
+[GQL-CAPTURE admin_me.data.me.id → ACME_ADMIN_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{ACME_ADMIN_ID}}"" listName: ""{{list_name}}"" }) { id scope } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP escalate_share]
+  mutation {
+    changeWishlist(command: {
+      listId: ""{{LIST_ID}}""
+      scope: ""Customer""
+      sharedWithId: ""{{target_org}}""
+    }) { id scope sharingSetting { sharedWithId scope access isOwner } }
+  }
+[GQL-EXEC escalate_share]
+[GQL-OP readback]
+  query { wishlist(listId: ""{{LIST_ID}}"") { id scope sharingSetting { sharedWithId scope isOwner } } }
+[GQL-EXEC readback]
+[GQL-OP cleanup]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC cleanup]","[ERRORS label=create_list] errors[] empty {OBSERVED}
+[DATA label=create_list] data.createWishlist.scope = Private {OBSERVED}
+[ERRORS label=escalate_share] errors[] non-empty {OBSERVED}
+[DATA label=escalate_share] errors[0].extensions.code = Forbidden {OBSERVED}
+[DATA label=escalate_share] data.changeWishlist is null {OBSERVED}
+[ERRORS label=readback] errors[] empty {OBSERVED}
+[DATA label=readback] data.wishlist.scope = Private {OBSERVED}
+[DATA label=readback] data.wishlist.sharingSetting.sharedWithId is null {OBSERVED}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql",inline — removeWishlist under ACME_ADMIN's own auth,VCST-5332 · Archetype:SCOPE · Technique:EP,Draft

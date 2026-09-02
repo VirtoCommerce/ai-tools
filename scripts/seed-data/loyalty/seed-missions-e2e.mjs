@@ -51,6 +51,7 @@ import {
 } from '../../lib/loyalty-ephemeral-account.mjs';
 import {
   SEED_PREFIX, PRODUCTS, UNIT_PRODUCT, RUNTIME_FIELDS_BY_KIND,
+  SECONDARY_CURRENCY, SECONDARY_CURRENCY_INTENT, DUAL_PRODUCTS, priceSetsFor,
   MISSIONS, ALL_MISSIONS, MISSION_BY_ALIAS, REWARD_USER, DEFAULT_SWEEP_MAX_AGE_HOURS,
   CASE_MISSIONS, CASE_ACCOUNTS, CASE_ACCOUNT_PREFIX, isCaseMission,
   TARGETING_MISSIONS, isTargetingMission, unreachableTarget, visibilityPolicy, formatVisibility,
@@ -63,6 +64,7 @@ import {
   absenceIsProven, productTeardownVerdict,
   PRODUCT_INDEX_DOCUMENT_TYPE, buildReindexRequest, indexDocumentTypeProblem,
   FUNDED_ACCOUNTS, PTS_PRODUCT, balanceCoversPtsLine,
+  productFlagDrift,
 } from './missions-e2e-specs.mjs';
 import {
   resolveWinningEarning, placeEarnOrder, pollBalanceChange, qtyForTarget, pointsPerUnit,
@@ -115,6 +117,27 @@ function overlay() {
  */
 function resolveIntents(store) {
   const base = resolveCurrencies(store);
+  // The SECOND currency the dual-currency fixture is priced in. NAMED in the spec module, but never
+  // assumed to exist here: `store-alternate` (the first other currency the store declares, sorted)
+  // is AUD on vcst-qa and nothing on this env carries an AUD price, so pricing through that intent
+  // would write a row the storefront resolves as 0.00 — the exact empty-price fallback the defect
+  // already produces. Asserting the declared code against the store's OWN currency list is what turns
+  // "this env cannot host the fixture" into a loud seed failure instead of a silent vacuous fixture.
+  const declared = (store?.currencies || []).map((c) => String(c || '').trim().toUpperCase());
+  if (!declared.includes(SECONDARY_CURRENCY.toUpperCase())) {
+    throw new Error(
+      `store ${STORE_ID} does not declare ${SECONDARY_CURRENCY} (it has: ${declared.join(', ') || 'none'}) — `
+      + `${DUAL_PRODUCTS().map((p) => p.aliasName).join(", ")} carries a second-currency price that would resolve `
+      + 'as 0.00 here, which is indistinguishable from the empty-price fallback the currency-selection defect '
+      + 'itself produces. Add the currency to the store, or seed this set on an env that has it.',
+    );
+  }
+  if (SECONDARY_CURRENCY.toUpperCase() === String(base['store-default']).toUpperCase()) {
+    throw new Error(
+      `the secondary currency (${SECONDARY_CURRENCY}) is the store default on this env — a product priced twice `
+      + 'in one currency asks nothing about currency SELECTION.',
+    );
+  }
   const loyalty = String(loadAliases()?.LOYALTY_SETTINGS?.currency_code || '').trim();
   if (!loyalty) {
     throw new Error(
@@ -129,7 +152,7 @@ function resolveIntents(store) {
       + 'NON-default-currency line counts toward a PerSku quantity target, and it cannot ask that here.',
     );
   }
-  return { ...base, loyalty };
+  return { ...base, loyalty, [SECONDARY_CURRENCY_INTENT]: SECONDARY_CURRENCY };
 }
 
 /**
@@ -275,15 +298,29 @@ async function isIndexed(productId) {
  * to do with missions.
  */
 async function ensureProduct(spec, location, pricelistByCurrency, currencies) {
-  const currency = currencies[spec.currencyIntent];
-  if (!currency) throw new Error(`${spec.aliasName}: currency intent "${spec.currencyIntent}" did not resolve`);
+  // One set per currency the spec declares — `priceSetsFor` is the SINGLE definition, shared with the
+  // guard, of which rows a product needs. A single-priced product yields exactly one set, so nothing
+  // about the existing four products changes.
+  const sets = priceSetsFor(spec, currencies);
+  if (!sets.length) throw new Error(`${spec.aliasName}: currency intent "${spec.currencyIntent}" did not resolve`);
+  const currency = sets[0].currency;
+  const secondary = sets.find((s) => s.role === 'secondary') || null;
+  if (spec.secondaryCurrencyIntent && spec.secondaryListPrice != null && !secondary) {
+    throw new Error(
+      `${spec.aliasName}: the secondary currency intent "${spec.secondaryCurrencyIntent}" did not resolve — `
+      + 'the fixture would be seeded single-priced, and the currency-selection reading it exists for would have '
+      + 'one possible answer whatever the implementation does',
+    );
+  }
+  for (const s of sets) {
+    if (!pricelistByCurrency[s.currency]?.id) throw new Error(`${spec.aliasName}: no pricelist for ${s.currency}`);
+  }
   const pricelist = pricelistByCurrency[currency];
-  if (!pricelist?.id) throw new Error(`${spec.aliasName}: no pricelist for ${currency}`);
 
   let product = await findProductByCode(spec.sku);
   const slug = slugify(spec.sku);
   if (!product) {
-    if (DRY_RUN) { log(`  [DRY] would create ${spec.sku} (${spec.productName})`); return { ...spec, id: `dry-${spec.slot}`, catalogId: location.catalogId, currency, slug, url: `/${slug}` }; }
+    if (DRY_RUN) { log(`  [DRY] would create ${spec.sku} (${spec.productName})`); return { ...spec, id: `dry-${spec.slot}`, catalogId: location.catalogId, currency, secondaryCurrency: secondary?.currency || '', slug, url: `/${slug}` }; }
     const created = await api('POST', '/api/catalog/products', {
       catalogId: location.catalogId,
       categoryId: location.categoryId,
@@ -307,22 +344,36 @@ async function ensureProduct(spec, location, pricelistByCurrency, currencies) {
     verbose(`${spec.sku} exists → ${product.id}`);
   }
 
-  if (DRY_RUN) return { ...spec, id: product.id, catalogId: product.catalogId, currency, slug, url: `/${slug}` };
+  if (DRY_RUN) return { ...spec, id: product.id, catalogId: product.catalogId, currency, secondaryCurrency: secondary?.currency || '', slug, url: `/${slug}` };
 
-  // PACK SIZE, re-asserted every run. This is gap 3: a product whose pack size drifts above 1 makes
-  // the stepper jump (0 -> 2 -> 0) and every "set the quantity to exactly 1" step unachievable — and
-  // it drifts silently, because the product still exists and still adds to cart.
+  // EVERY DECLARED INVARIANT, re-asserted every run — not just packSize, and not just at create time.
+  // A flag written only into the CREATE body drifts SILENTLY: the product still exists, still resolves
+  // by code and still renders, so this seeder printed success on every run while the property the
+  // fixture depends on was gone. Measured on vcst-qa 2026-09-02 — PERSKU-PTS sat at
+  // `trackInventory: true` (availableQuantity 88) against a spec declaring false, while the three
+  // products this loop DID keep correct hid it. PRODUCT_INVARIANT_FLAGS is the single declaration;
+  // td:reconcile [14] probes the same set live, which is the only place the drift is visible.
+  //
+  // GET-merge-PUT, never a partial body: PUT /api/catalog/products REPLACES the entity, so sending
+  // only the changed fields blanks everything else (the same whole-entity hazard as PUT /api/stores).
   const full = await api('GET', `/api/catalog/products/${product.id}`);
-  const livePack = Number(full?.packSize ?? 1) || 1;
-  if (livePack !== spec.packSize) {
-    await api('PUT', '/api/catalog/products', { ...full, packSize: spec.packSize, minQuantity: 1 }, { expectStatus: [200, 204] });
-    log(`  ✓ ${spec.sku}: packSize ${livePack} → ${spec.packSize}`);
+  const drift = productFlagDrift(spec, full);
+  if (drift.length) {
+    const patch = Object.fromEntries(drift.map((d) => [d.field, d.want]));
+    await api('PUT', '/api/catalog/products', { ...full, ...patch, minQuantity: 1 }, { expectStatus: [200, 204] });
+    for (const d of drift) log(`  ✓ ${spec.sku}: ${d.field} ${JSON.stringify(d.got)} → ${JSON.stringify(d.want)}`);
   }
 
+  // BOTH currencies in ONE call. A pricelist carries exactly one currency platform-side, so a second
+  // currency is a second pricelist — and the rows go together because this endpoint writes the price
+  // set it is given: sending them in two calls risks the second write being read as the whole set.
   await api('PUT', '/api/products/prices', [{
     productId: product.id,
-    prices: [{ pricelistId: pricelist.id, productId: product.id, list: spec.listPrice, currency, minQuantity: 1 }],
+    prices: sets.map((s) => ({
+      pricelistId: pricelistByCurrency[s.currency].id, productId: product.id, list: s.list, currency: s.currency, minQuantity: 1,
+    })),
   }], { expectStatus: [200, 204] });
+  if (secondary) log(`  ✓ ${spec.sku}: priced ${spec.listPrice} ${currency} AND ${secondary.list} ${secondary.currency}`);
 
   // Link under the virtual catalog's category (drop a stale root link first — a product linked at the
   // root and under a category renders twice).
@@ -335,6 +386,7 @@ async function ensureProduct(spec, location, pricelistByCurrency, currencies) {
     id: product.id,
     catalogId: product.catalogId || location.catalogId,
     currency,
+    secondaryCurrency: secondary?.currency || '',
     slug: seo?.semanticUrl || slug,
     url: `/${seo?.semanticUrl || slug}`,
   };
@@ -526,6 +578,37 @@ async function resolveStorefrontFacts(products) {
       problems.push(`${p.sku}: the storefront resolves ${amount} ${code} but the fixture declares ${p.listPrice} ${p.currency} — every order-value calculation in 083d is composed from the declared price`);
     }
     if (!live.slug) problems.push(`${p.sku}: the storefront resolves no slug — the PDP link in the mission modal would be broken`);
+
+    // THE SECOND-CURRENCY GATE, and it is the whole reason this fixture is worth having.
+    //
+    // A dual-currency fixture that renders 0.00 in its second currency is WORSE than no fixture: it
+    // looks provisioned, resolves through @td(), passes every static guard, and reproduces exactly the
+    // empty-price fallback the defect under test already produces — so a case would certify the bug's
+    // own output as the expected value. So the seed REFUSES rather than writes: the second price is
+    // read back through the same storefront resolver as the first, and it must come back as the
+    // declared amount in the declared currency.
+    if (p.secondaryCurrency) {
+      const alt = (await gql(query, { s: STORE_ID, c: 'en-US', cu: p.secondaryCurrency, id: p.id }))?.product;
+      const altAmount = Number(alt?.price?.list?.amount);
+      const altCode = alt?.price?.list?.currency?.code;
+      if (!alt) problems.push(`${p.sku}: the storefront product resolver returns nothing for ${p.secondaryCurrency}`);
+      else if (!(altAmount > 0)) {
+        problems.push(
+          `${p.sku}: the storefront resolves no ${p.secondaryCurrency} price (got ${alt?.price?.list?.amount}) — `
+          + 'an empty second-currency price is indistinguishable from the currency-selection defect\'s own fallback, '
+          + 'so the fixture would make the reading it exists for undecidable',
+        );
+      } else if (altAmount !== Number(p.secondaryListPrice) || String(altCode) !== String(p.secondaryCurrency)) {
+        problems.push(`${p.sku}: the storefront resolves ${altAmount} ${altCode} for the second currency but the fixture declares ${p.secondaryListPrice} ${p.secondaryCurrency}`);
+      } else if (altAmount === Number(p.listPrice)) {
+        problems.push(
+          `${p.sku}: both currencies resolve to ${altAmount} — every currency here is registered at exchangeRate 1, `
+          + 'so a converting implementation and a correctly selecting one would predict the same number and the reading decides nothing',
+        );
+      } else {
+        log(`  ✓ ${p.sku}: ${amount} ${code} / ${altAmount} ${altCode} — the two readings diverge, so the currency the modal renders is decidable`);
+      }
+    }
     out.push({ ...p, slug: live.slug || p.slug, url: `/${String(live.slug || p.slug).replace(/^\/+/, '')}` });
   }
   if (problems.length) throw new Error(`fixture products are not usable from the storefront:\n    ${problems.join('\n    ')}`);
@@ -944,15 +1027,18 @@ async function seed() {
     );
   }
   const currencies = resolveIntents(store);
-  log(`  Currencies: default=${currencies['store-default']}  loyalty=${currencies.loyalty}`);
+  log(`  Currencies: default=${currencies['store-default']}  loyalty=${currencies.loyalty}  secondary=${currencies[SECONDARY_CURRENCY_INTENT]}`);
 
   // --- 2. catalog + products -------------------------------------------------
   VIRTUAL_CATALOG_ID = await ensureVirtualCatalog(api);
-  await ensureCurrencies(api, [...new Set([currencies['store-default'], currencies.loyalty])]);
+  // Every currency any product is priced in — derived from the specs through the one shared
+  // `priceSetsFor`, never a hand-kept list that would silently omit a newly added currency.
+  const neededCurrencies = [...new Set(PRODUCTS.flatMap((p) => priceSetsFor(p, currencies).map((s) => s.currency)))];
+  await ensureCurrencies(api, neededCurrencies);
   const location = await ensureLocation();
 
   const pricelistByCurrency = {};
-  for (const c of new Set(PRODUCTS.map((p) => currencies[p.currencyIntent]))) {
+  for (const c of neededCurrencies) {
     pricelistByCurrency[c] = await ensurePricelist(c);
   }
   let resolvedProducts = [];
@@ -1337,6 +1423,10 @@ async function seed() {
   for (const p of resolvedProducts) {
     updates[p.aliasName] = {
       productId: p.id, catalogId: p.catalogId, currency: p.currency, slug: p.slug, url: p.url,
+      // Only a dual-currency product declares it, and only after the live read above proved it
+      // resolves — a recorded second currency is a statement that the second price EXISTS, not that
+      // it was requested.
+      ...(p.secondaryCurrency ? { currency_secondary: p.secondaryCurrency } : {}),
     };
   }
   if (DRY_RUN) { log(`  [DRY] would write ${Object.keys(updates).length} alias overrides`); }
@@ -1408,7 +1498,11 @@ async function deleteProducts() {
  * accumulating.
  */
 async function deleteCatalogScaffolding(catalogIdHint = null) {
-  for (const currency of ['USD', 'PTS', ...new Set(PRODUCTS.map((p) => p.currencyIntent))]) {
+  // Teardown runs without a live store read, so the CODES are named rather than resolved. SECONDARY_CURRENCY
+  // is in the list for the same reason USD and PTS are: the seeder creates `AGENT-TEST-MSN-E2E-EUR`, and a
+  // currency absent from this list is a pricelist teardown silently leaves behind — the residue class the
+  // multi-generation `-USD`/`-PTS` orphans below already demonstrate.
+  for (const currency of ['USD', 'PTS', SECONDARY_CURRENCY, ...new Set(PRODUCTS.map((p) => p.currencyIntent))]) {
     const name = PRICELIST_NAME(currency);
     const search = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(name)}&take=100`, null, { expectStatus: [200, 404] }).catch(() => null);
     // EVERY pricelist carrying this exact name, not the first one. The name is deterministic, so a

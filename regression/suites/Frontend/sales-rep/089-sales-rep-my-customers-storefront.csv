@@ -417,3 +417,11 @@ SR_REP_NOCUSTOMERS holds sales-rep:access as a GLOBAL role with ZERO org members
 [STATE] no row, count, or statistic belonging to ANY org this rep does not serve is visible anywhere on the reached page {BL}
 [NAV] if redirected, the destination is the documented gate target (personal dashboard), not a broken/blank page {DOC}","[API] no salesRepCustomers/salesRepCustomerCounts response for this session returns data scoped to an org outside this rep's (empty) served set, errors[] empty {OBSERVED}
 [CONSOLE] no console errors",an error state renders purely from having zero customers; any other org's data or count leaks onto the reached page; the rep is stranded on a broken blank page instead of the documented gate behavior,none (read-only),VCST-5586,Draft
+SR-FE-055,"Org Maintainer (Privileged Non-Rep) Direct-Hits My Customers — No Access, No Query",Storefront > Sales Rep > Gating,Critical,BL-SR-011,ECL-4.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_ADMIN]
+ACME_ADMIN is an Organization maintainer (elevated org-admin org role) in the SAME org (ORG-001/AcmeCorp) as ACME_BUYER, holding NO sales-rep:access permission.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] route guard resolves and navigation settles","[NAV] final URL is NOT /company/my-customers (route guard redirected the request) {OBSERVED}
+[DOM] ""Sales Rep hub"" section and ""My customers"" link are absent from the account left rail for ACME_ADMIN {OBSERVED}
+[STATE] no salesRepCustomers data rendered anywhere on the page {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql
+[NETWORK] no /graphql request for salesRepCustomers is issued for this session","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-5469 · Archetype:SCOPE · Technique:EP · Verified: live vcst-qa 2026-09-02 (Platform 3.1063.0 · SalesRep 3.1006.0 · theme 2.57.0-pr-2396-80d1) — ACME_ADMIN direct-hit /company/my-customers redirected to /account/dashboard · 0 salesRep* ops on the wire,Draft

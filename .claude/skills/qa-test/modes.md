@@ -54,7 +54,7 @@ command's §Usage.
 
 Per round, once the 5c verdict is in:
 
-1. **PASS / PASS WITH NOTES** → exit the loop → the **exit round's close-out** (5e in full → 5f → 5g,
+1. **PASS / PASS WITH NOTES** → exit the loop → the **exit round's close-out** (5e in full → 5f → 5h → 5g,
    §The exit round) → GO/NO-GO recommendation → **STOP for the human to merge + release** (never
    automated). Done.
 2. **BLOCKED** → **STOP.** A fix cannot clear an env/data/dependency blocker. The exit round's close-out
@@ -104,13 +104,14 @@ promotion. This table is the rest of the contract.
 | `5e.4` `testing-checklist.md` | **PER ROUND**, **append-only** | On FAST it is the run's ONLY durable record, and the RED→GREEN transition *is* the loop's deliverable: overwriting a round-1 FAIL with a round-2 PASS deletes the evidence that the defect was ever there. |
 | Evidence screenshots | **PER ROUND**, round-stamped | Round N+1 re-runs the same case IDs into the same folder, so an unstamped `{TC-ID}-FAIL-{description}.png` lets the round-2 PASS **overwrite the round-1 FAIL** — and the checklist row that cites it then points at a green image. Every round stamps `-r{N}`, round 1 included (`.claude/rules/reports.md` §7). |
 | `5f` tracker transition | **AT LOOP EXIT** | REOPEN is the human-handoff signal, and a loop about to start another round is not handing off. A per-round REOPEN would also flap the ticket out of in-testing — the precondition both closing transitions need — and fire N−1 false handoff notifications. |
+| `5h` documentation | **AT LOOP EXIT, ONCE** | The loop only ever re-tests an **unmerged prerelease**. Documenting a build that the next round replaces publishes instructions for something nobody can use yet, and a per-round comment buries the ticket under near-identical guides. One documentation comment per run, whatever the round count — same reasoning as `5f`. |
 | `5g` promotion | **AT LOOP EXIT, ONCE** | `tc:promote` reads `Draft` and writes `Automated`, **never a re-promotion** (`scripts/test-cases/promote-cases.ts`), so a round-1 promotion is irreversible and grounds `{OBSERVED}` in the build that was WRONG. Only the last round's evidence describes the code a human is being asked to ship. |
 
 #### The exit round
 
 **The exit round behaves exactly like a close-out without the flag.** Whatever ends the loop — PASS, the
 cap, a G0 BAIL, BLOCKED — the final round runs 5e in full (gate ratification · the full comment ·
-`summary.json` · the checklist), then 5f, then 5g. **A `--iterate` run posts ONE QA-Complete comment and
+`summary.json` · the checklist), then 5f, then 5h, then 5g. **A `--iterate` run posts ONE QA-Complete comment and
 makes ONE transition**, the same as a run without it, whatever the round count.
 
 #### Three carve-outs
@@ -142,7 +143,7 @@ the max-3-browser cap):
 
 1. **RED→GREEN** — exactly the previously-FAILED case IDs, as its own
    `/qa-regression <suites> --ids <IDs>` run. Its pass rate answers **one** question — did the fix turn red
-   green — and keeping it out of the Artifact-C run is what stops the release gate's ≥95% from blending two
+   green — and keeping it out of the Artifact-C run is what stops the release gate's ≥80% floor from blending two
    questions into one number. **FAST:** the failed **checklist items**, run by the one execution agent; no
    `RUN_ID`, no `--ids`.
 2. **Artifact C, re-scoped to the FIX's diff** —

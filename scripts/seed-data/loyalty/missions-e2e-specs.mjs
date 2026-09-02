@@ -150,6 +150,11 @@ export const RUNTIME_FIELDS_BY_KIND = {
   // `name` is runtime BECAUSE it is run-scoped — this is the difference from the stable fixture set.
   mission: ['id', 'name', 'run_id', 'goal_currency', 'progress_status_at_seed', 'progress_percent_at_seed'],
   product: ['productId', 'catalogId', 'currency', 'url', 'slug'],
+  // A DUAL-CURRENCY product records one field more: the second currency its second price actually
+  // resolved in. Runtime rather than authored because which currencies a store carries is env state —
+  // the AMOUNT (`list_price_secondary`) is authored and [3b]-checked, the CODE is observed. A case
+  // opens its second-currency session from this field instead of naming EUR itself.
+  dualProduct: ['productId', 'catalogId', 'currency', 'url', 'slug', 'currency_secondary'],
   rewardUser: ['email', 'user_id', 'member_id', 'balance_at_seed'],
   // A per-case mission adds MEASURED fields. `goal_target` is runtime here and authored on a plain
   // `mission`: the target is derived from a live probe cart on the case's own account, because the
@@ -232,19 +237,73 @@ export const UNIT_PRODUCT = {
 
 /** The two PerSku targets. Two, not one, because `all=true` over a single target is indistinguishable
  *  from `all=false` — the ALL semantics need a second row to mean anything. */
+/**
+ * THE SECOND CURRENCY, and why it is a declared constant rather than a discovered one.
+ *
+ * `resolveCurrencies()` already yields a `store-alternate` intent — the first OTHER currency the store
+ * declares, sorted. On vcst-qa that is AUD, and nothing on this environment carries an AUD price, so a
+ * fixture priced through that intent would render 0.00 and the case built on it would assert against a
+ * hole. EUR is the second currency this deployment genuinely prices in (`SEED-20260519-Standards-EUR`,
+ * plus nine pre-existing EUR pricelists; QA-MULTICUR-001 resolves 24.99 USD / 22.49 EUR live), so it is
+ * NAMED — the same shape, and the same reason, as `standard-specs.mjs`'s `SECONDARY_CURRENCY`.
+ *
+ * A currency CODE is a business key, not a runtime id: it is identical on every env that has it, which
+ * is why it belongs in the committed spec. What is NOT assumed is that a given store HAS it — the
+ * seeder asserts the code against the live store's own `currencies[]` and refuses to seed otherwise,
+ * so an env without EUR fails loudly at seed time instead of quietly provisioning a 0.00 row.
+ */
+export const SECONDARY_CURRENCY = 'EUR';
+export const SECONDARY_CURRENCY_INTENT = 'store-secondary';
+
 export const PERSKU_PRODUCTS = [
   {
     aliasName: 'MSN_E2E_PRODUCT_A',
-    kind: 'product',
+    // Its own kind, because it records one runtime field the single-priced products do not: the
+    // resolved second currency. See RUNTIME_FIELDS_BY_KIND.dualProduct.
+    kind: 'dualProduct',
     slot: 'A',
     key: 'PERSKU-A',
     sku: `${PRODUCT_PREFIX}-PERSKU-A`,
     productName: 'AGENT-TEST Missions E2E PerSku Target A',
     listPrice: 10,
     currencyIntent: 'store-default',
+    /**
+     * THE DUAL-CURRENCY HALF (VCST-5346). A SECOND, genuinely different list price in a second
+     * currency, on a product a mission modal already renders.
+     *
+     * `vc-module-x-catalog` ProductType.cs:316 resolves a product's `price` as
+     * `AllPrices.FirstOrDefault() ?? TryCreateInstance(…, GetCurrencyByCode(context.GetValue("currencyCode")))`
+     * — the context currency is consumed ONLY by the empty-price fallback, and the rendered price is
+     * whatever happens to be first in AllPrices. On a SINGLE-priced product that defect is structurally
+     * unobservable: with one price row `FirstOrDefault()` and a correct currency-aware selection return
+     * the same row, and in a second currency both paths fall through to the same empty fallback.
+     * Measured on vcst-qa 2026-09-02, before this fixture existed: every mission featured SKU read
+     * `10 USD` under a USD session and `0 EUR` under an EUR one — a reading equally consistent with a
+     * correct implementation and with the defect, i.e. undecidable (`.claude/rules/test-data.md`
+     * SECOND RULE). A Step-3 gate verifier rejected the case built on it for exactly that reason.
+     *
+     * THE TWO AMOUNTS MUST DIFFER, and 34 vs 10 is not decoration. Every currency on this platform is
+     * registered at `exchangeRate: 1`, so a CONVERTING implementation would render the USD amount under
+     * a EUR label. Three outcomes are therefore separable from one reading pair:
+     *   correct selection → 10.00 USD / 34.00 EUR
+     *   conversion at 1:1 → 10.00 USD / 10.00 EUR      (wrong, and would look right if both were 10)
+     *   FirstOrDefault()  → the SAME row in both sessions, whichever AllPrices happens to order first
+     * Equal amounts collapse the first two, which is the vacuity this fixture exists to remove.
+     *
+     * `MSN_E2E_PRODUCT_B` deliberately stays SINGLE-priced. It is a goal item on the same mission, so a
+     * single `loyaltyMissionProgress` read returns the discriminating row and its control side by side:
+     * B rendering an empty EUR price is the baseline that proves the reading was taken in EUR at all.
+     */
+    secondaryCurrencyIntent: SECONDARY_CURRENCY_INTENT,
+    secondaryListPrice: 34,
     packSize: 1,
     goalQuantity: 1,
-    purpose: 'PerSku target A. packSize 1 so "raise the stepper to exactly 1" is achievable.',
+    purpose:
+      'PerSku target A. packSize 1 so "raise the stepper to exactly 1" is achievable. ALSO the '
+      + 'dual-currency fixture: it carries a second, different list price in a second currency, which '
+      + 'is what makes the featured-SKU price the mission modal renders decidable per currency. '
+      + 'PerSkuGoal progress is a QUANTITY, so the added price row changes no arithmetic anywhere in '
+      + '083d — MSN-E2E-002 still completes at two targets of one unit each.',
   },
   {
     aliasName: 'MSN_E2E_PRODUCT_B',
@@ -291,6 +350,108 @@ export const PTS_PRODUCT = {
 export const PRODUCTS = [UNIT_PRODUCT, ...PERSKU_PRODUCTS, PTS_PRODUCT];
 export const PRODUCT_BY_SLOT = Object.fromEntries(PRODUCTS.map((p) => [p.slot, p]));
 export const PRODUCT_BY_ALIAS = Object.fromEntries(PRODUCTS.map((p) => [p.aliasName, p]));
+
+/**
+ * PRODUCT INVARIANTS — the flags a fixture product must carry on EVERY run, not merely at birth.
+ *
+ * `ensureProduct` set all of these in the CREATE body and re-asserted only `packSize` on a product
+ * that already existed. A create-only flag is a flag that drifts SILENTLY: the product still exists,
+ * still resolves by code, still renders in the modal, so the seeder prints success every run while
+ * the property the fixture depends on is gone. There is no data footprint — no alias, no overlay
+ * field, no price row changes — which is why nothing in this repo could see it.
+ *
+ * Measured on vcst-qa 2026-09-02: `AGENT-TEST-MSN-E2E-PERSKU-PTS` carried `trackInventory: true`
+ * with `availableQuantity: 88` against a spec that declares `trackInventory: false`. The other three
+ * products were still correct, which is exactly why it went unnoticed — and 083d places REAL orders
+ * on every run forever, so that fixture drains and then blocks MSN-E2E-007 for a reason that has
+ * nothing to do with missions. That is the silent-decay class this whole module exists to remove.
+ *
+ * Declared ONCE and consumed three ways, so the three can never disagree:
+ *   - the seeder RE-ASSERTS this set every run (`seed-missions-e2e.mjs` `ensureProduct`);
+ *   - `td:reconcile` [14] PROBES it live — the only place the drift is visible, because a static
+ *     guard reads committed fixtures and this drift lives entirely on the platform;
+ *   - the static guard asserts the seeder still re-asserts it, so removing the fix fails a gate.
+ *
+ * `productType` is deliberately NOT in this set. Changing a live product's type is a different class
+ * of operation from flipping a boolean — a fixture whose type drifted wants a human, not a silent
+ * repair — so it is reported by the live probe's own eyes, never auto-healed.
+ */
+export const PRODUCT_INVARIANT_FLAGS = [
+  {
+    field: 'packSize',
+    of: (spec) => Number(spec.packSize),
+    why: 'the storefront stepper moves in pack-size increments, so a pack size above 1 makes every "set the quantity to exactly 1" step unachievable (the MSN_PERSKU_PRODUCT_B 0 → 2 → 0 failure)',
+  },
+  {
+    field: 'trackInventory',
+    of: () => false,
+    why: '083d places real orders on every run forever, so a stock-tracked fixture drains and starts blocking cases for a reason unrelated to missions',
+  },
+  {
+    field: 'isActive',
+    of: () => true,
+    why: 'an inactive product drops out of loyaltyMissionProgress entirely, so the modal renders a row set the case cannot find its target in — an absence, which is the least diagnosable failure a case can hit',
+  },
+  {
+    field: 'isBuyable',
+    of: () => true,
+    why: 'a non-buyable row renders with a disabled stepper, so the quantity steps every featured-SKU case depends on cannot be performed at all',
+  },
+];
+
+/**
+ * Which declared invariants does this live product violate? PURE — takes the spec and the product
+ * body as read from `GET /api/catalog/products/{id}`, returns one entry per drifted flag.
+ *
+ * An ABSENT field is read as the platform default rather than as drift (`packSize` comes back null on
+ * a product that never set it, and the platform treats that as 1) — inventing drift out of a missing
+ * key would make the seeder rewrite every product on every run and bury a real drift in the noise.
+ */
+export function productFlagDrift(spec, live = {}) {
+  const drift = [];
+  for (const f of PRODUCT_INVARIANT_FLAGS) {
+    const want = f.of(spec);
+    const raw = live?.[f.field];
+    const got = typeof want === 'boolean' ? raw === true : (Number(raw ?? 1) || 1);
+    if (got !== want) drift.push({ field: f.field, want, got, why: f.why });
+  }
+  return drift;
+}
+
+/** One sentence per drifted flag, shared by the seeder's log and the live probe's failure. Pure. */
+export const productFlagDriftMessage = (spec, d) =>
+  `${spec.sku}: ${d.field} is ${JSON.stringify(d.got)} but the spec requires ${JSON.stringify(d.want)} — ${d.why}`;
+
+
+/**
+ * Every product carrying a SECOND-currency list price — the dual-currency fixtures.
+ *
+ * A FUNCTION, not a computed array, for the same reason `FUNDED_ACCOUNTS` is one: derived at call
+ * time, so the guard and the unit tests judge the specs as they stand rather than a snapshot taken at
+ * import. A load-time filter would keep reporting a dual product after the property that made it one
+ * was removed, which is the one thing this set must be able to notice.
+ */
+export const DUAL_PRODUCTS = () => PRODUCTS.filter((p) => p.secondaryCurrencyIntent && p.secondaryListPrice != null);
+
+/**
+ * The per-currency price sets one product needs, resolved against the intent→code map.
+ *
+ * ONE definition, imported by the seeder (which writes the rows) and by the guard (which asserts what
+ * was written) — the same single-source shape as `standard-specs.mjs`'s `buildCurrencyPriceSets`, and
+ * for the same platform reason: a pricelist carries exactly ONE currency, so a second currency is a
+ * second pricelist, never a second row in the first one. A product with no `secondaryListPrice` yields
+ * exactly the one set it always did, so this is additive by construction.
+ */
+export function priceSetsFor(product, currencies = {}) {
+  const sets = [];
+  const primary = currencies[product.currencyIntent];
+  if (primary) sets.push({ currency: primary, list: Number(product.listPrice), role: 'primary' });
+  const second = product.secondaryCurrencyIntent ? currencies[product.secondaryCurrencyIntent] : null;
+  if (second && Number(product.secondaryListPrice) > 0) {
+    sets.push({ currency: second, list: Number(product.secondaryListPrice), role: 'secondary' });
+  }
+  return sets;
+}
 
 /* ── The PTS-SPEND account: why it is a SECOND account and not a funded first ─
  *
@@ -1142,7 +1303,7 @@ export const declaredAliases = () => [
   ...MISSIONS.map((m) => ({ aliasName: m.aliasName, kind: m.journeyOrders != null ? 'journeyMission' : 'mission' })),
   ...CASE_MISSIONS.map((m) => ({ aliasName: m.aliasName, kind: 'caseMission' })),
   ...TARGETING_MISSIONS.map((m) => ({ aliasName: m.aliasName, kind: 'targetingMission' })),
-  ...PRODUCTS.map((p) => ({ aliasName: p.aliasName, kind: 'product' })),
+  ...PRODUCTS.map((p) => ({ aliasName: p.aliasName, kind: p.kind || 'product' })),
   { aliasName: REWARD_USER.aliasName, kind: 'rewardUser' },
   ...CASE_ACCOUNTS.map((a) => ({ aliasName: a.aliasName, kind: a.kind })),
 ];
@@ -1721,6 +1882,46 @@ export function validateSpecShape() {
     push(`the PTS target and the denomination product share the currency intent "${PTS_PRODUCT.currencyIntent}" — MSN-E2E-007 asks whether a NON-default-currency line counts, and cannot ask it in the default currency`);
   }
 
+  // --- the dual-currency fixture (VCST-5346) ----------------------------------
+  //
+  // Every rule here is a VACUITY rule, not a drift rule: each one, broken, leaves a fixture that still
+  // seeds, still resolves and still renders, while the currency-selection question it exists to ask
+  // has the same answer under both readings.
+  if (!DUAL_PRODUCTS().length) {
+    push(
+      'no product declares a second-currency price — with one price row per product, `AllPrices.FirstOrDefault()` '
+      + 'and a correct currency-aware selection return the SAME row, so the featured-SKU price the mission modal '
+      + 'renders cannot distinguish them and no case on it is decidable',
+    );
+  }
+  for (const p of DUAL_PRODUCTS()) {
+    if (p.secondaryCurrencyIntent === p.currencyIntent) {
+      push(`${p.aliasName}: the secondary currency intent is "${p.secondaryCurrencyIntent}", the same as its primary — one currency priced twice asks nothing about currency SELECTION`);
+    }
+    if (!(Number(p.secondaryListPrice) > 0)) {
+      push(`${p.aliasName}: secondaryListPrice=${p.secondaryListPrice} — a zero or absent second price is exactly the empty-price fallback the defect already produces, so the fixture would confirm the bug's own output as if it were the expectation`);
+    }
+    if (Number(p.secondaryListPrice) === Number(p.listPrice)) {
+      push(
+        `${p.aliasName}: both currencies are priced at ${p.listPrice} — every currency on this platform is registered at exchangeRate 1, so a CONVERTING implementation and a correctly SELECTING one predict the same amount. `
+        + 'The two amounts must differ (.claude/rules/test-data.md SECOND RULE: equal values on both sides of a distinction under test are a data defect).',
+      );
+    }
+    if (!targeted.has(p.slot)) {
+      push(`${p.aliasName} (slot ${p.slot}) is targeted by no mission — the dual price is only observable through a mission's featured-SKU items, so an untargeted dual product is never rendered and never read`);
+    }
+    // THE CONTROL. A reading of an empty second-currency price is only interpretable next to one that
+    // is NOT empty in the same response: without a single-priced peer on the same mission, "€0.00" is
+    // indistinguishable from "this reading was never taken in EUR at all".
+    const peers = MISSIONS
+      .filter((m) => missionSlots(m).includes(p.slot))
+      .flatMap((m) => missionSlots(m).filter((s) => s !== p.slot).map((s) => PRODUCT_BY_SLOT[s]))
+      .filter(Boolean);
+    if (peers.length && !peers.some((q) => !q.secondaryCurrencyIntent)) {
+      push(`${p.aliasName} shares its mission(s) with no SINGLE-priced goal item — the single-priced peer is the control that proves a second-currency reading was actually taken in the second currency, so making every peer dual removes it`);
+    }
+  }
+
   // --- reward account ---------------------------------------------------------
   if (!MISSION_BY_ALIAS[REWARD_USER.rewardAlias]) push(`REWARD_USER.rewardAlias "${REWARD_USER.rewardAlias}" is not a declared mission`);
   if (!REWARD_USER.sourceAlias) push('REWARD_USER declares no sourceAlias — the account has to come from somewhere');
@@ -2289,6 +2490,19 @@ export function validateSeededState(overlay, { now = new Date(), maxAgeHours = n
       problems.push(`${p.aliasName}.url "${a.url}" does not match its resolved slug "${a.slug}" — one of the two was composed by hand and will 404`);
     }
   }
+  // The dual-currency fixture, against what the seed actually OBSERVED. The seeder refuses to write an
+  // alias whose second-currency price did not resolve live, so an overlay reaching this point with a
+  // missing or colliding second currency means the write-back and the price rows have come apart.
+  for (const p of DUAL_PRODUCTS()) {
+    const a = o[p.aliasName];
+    if (!a) continue;                                    // absence is already reported above
+    if (!a.currency_secondary) {
+      problems.push(`${p.aliasName}.currency_secondary is empty — the second currency its second price resolved in was never recorded, so a case has nothing to open its second-currency session with and would have to name a currency itself`);
+    } else if (String(a.currency_secondary) === String(a.currency)) {
+      problems.push(`${p.aliasName} resolved BOTH prices in ${a.currency} — the fixture is single-currency in fact whatever the spec declares, and the currency-selection reading has one possible answer`);
+    }
+  }
+
   const ptsOverlay = o[PTS_PRODUCT.aliasName] || {};
   const unitOverlay = o[UNIT_PRODUCT.aliasName] || {};
   if (ptsOverlay.currency && unitOverlay.currency && ptsOverlay.currency === unitOverlay.currency) {

@@ -80,6 +80,23 @@ default; pushing it to an external system is a separate, explicitly-authorized a
 bypass this via Bash→powershell indirection. Codified in memory `feedback_subagent_external_writes`,
 `feedback_subagent_interpreter_bypass`.
 
+**When the write IS authorized, the mechanics are not yours to invent.** Pushing a doc, guide, release
+note or analysis to a ticket follows `.claude/knowledge/execution/tracker-ops.md` — read it BEFORE the
+first API call, not after the first failure:
+
+- **§5d** — publishing a deliverable to a ticket means **the deliverable, in full, in the comment body**.
+  A summary plus a repo path is not a delivery.
+- **§5c** — a Markdown image reference in a Jira comment renders as **nothing**, silently, at `200 OK`.
+  Screenshots require both halves: attach via the REST endpoint (the Atlassian MCP has no attachment
+  tool), then reference them as **wiki markup through the v2 comment API**. That is the single carve-out
+  to the Markdown-everywhere rule in §Body format, and the whole comment body must then be wiki.
+- **§5c also tells you which dead ends not to re-probe** — a hand-built ADF `media` node is rejected
+  whatever you put in `collection`, and an `external` URL posts fine then renders an error string.
+
+Skipping this section costs a round trip every time: VCST-5281 shipped twelve invisible screenshots,
+and a 2026-09-02 run re-derived all four failure modes from scratch because the BA framework had no
+pointer here. Consult it first.
+
 ## Self-check & verify work (MANDATORY)
 
 Before returning any analysis, story, or doc, **verify your own output** — a tool call succeeding is not

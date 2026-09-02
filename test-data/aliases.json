@@ -5691,11 +5691,14 @@
     "name": "AGENT-TEST Missions E2E PerSku Target A",
     "list_price": 10,
     "currency_intent": "store-default",
+    "list_price_secondary": 34,
+    "secondary_currency_intent": "store-secondary",
     "pack_size": 1,
     "quantity": 1,
     "productId": "",
     "catalogId": "",
     "currency": "",
+    "currency_secondary": "",
     "slug": "",
     "url": "",
     "fields": {
@@ -5704,15 +5707,18 @@
       "name": "name",
       "list_price": "list_price",
       "currency_intent": "currency_intent",
+      "list_price_secondary": "list_price_secondary",
+      "secondary_currency_intent": "secondary_currency_intent",
       "pack_size": "pack_size",
       "quantity": "quantity",
       "productId": "productId",
       "catalogId": "catalogId",
       "currency": "currency",
+      "currency_secondary": "currency_secondary",
       "slug": "slug",
       "url": "url"
     },
-    "_notes": "suite 083d fixture product. PerSku target A. packSize 1 so \"raise the stepper to exactly 1\" is achievable. Created with packSize 1 and trackInventory=false: 083d places real orders every run forever, so a stock-tracked fixture would drain, and a pack size above 1 makes the stepper jump (MSN_PERSKU_PRODUCT_B steps 0->2->0) so \"set the quantity to exactly 1\" is unachievable. Stable, NOT run-scoped — a product carries no per-user state. EMPTY-BY-DESIGN: productId/catalogId/currency/slug/url are per-env runtime."
+    "_notes": "suite 083d fixture product. PerSku target A. packSize 1 so \"raise the stepper to exactly 1\" is achievable. Created with packSize 1 and trackInventory=false: 083d places real orders every run forever, so a stock-tracked fixture would drain, and a pack size above 1 makes the stepper jump (MSN_PERSKU_PRODUCT_B steps 0->2->0) so \"set the quantity to exactly 1\" is unachievable. ALSO THE DUAL-CURRENCY FIXTURE (VCST-5346): it carries a SECOND, different list price (list_price_secondary) in a second currency, which is what makes the featured-SKU price a mission modal renders decidable per currency. On a single-priced product the currency-selection defect is structurally unobservable — with one price row, AllPrices.FirstOrDefault() and a correct currency-aware selection return the same row, and in a second currency both fall to the same empty fallback (measured on vcst-qa 2026-09-02: 10 USD / 0 EUR on every mission featured SKU). The two amounts DIFFER on purpose: every currency here is registered at exchangeRate 1, so equal amounts would make a converting implementation indistinguishable from a selecting one. MSN_E2E_PRODUCT_B stays single-priced as the in-modal control. PerSkuGoal progress is a QUANTITY, so the extra price row changes no arithmetic in 083d. Stable, NOT run-scoped — a product carries no per-user state. EMPTY-BY-DESIGN: productId/catalogId/currency/currency_secondary/slug/url are per-env runtime."
   },
   "MSN_E2E_PRODUCT_B": {
     "_inline": true,

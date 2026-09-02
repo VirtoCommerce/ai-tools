@@ -4,278 +4,201 @@
   "flow": "feature-test",
   "ticket_type": "Story",
   "path": "FULL",
-  "date": "2026-08-27",
+  "date": "2026-09-02",
   "sprint": "Sprint26-17",
+  "mode": {
+    "iterate": true,
+    "max_rounds": 2,
+    "rounds_used": 0,
+    "note": "No 5k round ran: filing (5d) had not yet occurred, and /qa-fix requires a filed ticket."
+  },
   "environment": {
     "name": "vcst-qa",
     "front_url": "https://vcst-qa-storefront.govirto.com",
+    "back_url": "https://vcst-qa.govirto.com",
     "platform": "3.1061.0",
-    "modules": {
-      "VirtoCommerce.Loyalty": "3.1006.0-pr-14-1be7"
-    },
-    "theme": "2.57.0-pr-2396-5924-59243682",
-    "browser": "playwright-chrome",
-    "store_null_windows": [
-      {
-        "nulled": "2026-08-27T14:29:56Z",
-        "fields": [
-          "defaultCurrency",
-          "defaultLanguage"
-        ],
-        "repaired": "~16:00Z"
-      },
-      {
-        "nulled": "2026-08-27T16:48:29Z",
-        "fields": [
-          "defaultCurrency",
-          "defaultLanguage",
-          "url"
-        ],
-        "repaired": "2026-08-27T17:02:56Z"
-      }
-    ],
-    "run_windows": [
-      "16:41:46Z-16:46:36Z (between the two null windows)",
-      "17:05:25Z-17:05:40Z (after the second repair)"
+    "modules": { "VirtoCommerce.Loyalty": "3.1006.0-pr-14-da8a" },
+    "theme": "2.57.0-pr-2396-80d1-80d1e3b9",
+    "deployed_equals_declared": true,
+    "deployed_verification": "storefront asset index-DI9BAQOT.js confirmed present inside the declared artifact zip",
+    "store_defaults": { "defaultCurrency": "USD", "defaultLanguage": "en-US", "url": "set" },
+    "releasedThrough": {
+      "ledger": "Loyalty 3.1003.0",
+      "deployed": "3.1006.0-pr-14-da8a",
+      "note": "deployed is a PR prerelease ahead of the ledger; no BREAKING entry recorded for Loyalty"
+    }
+  },
+  "build_delta_since_last_run": {
+    "previous_run": "2026-08-27, verdict FAIL, theme 2.57.0-pr-2396-5924-59243682",
+    "commits": [
+      { "sha": "5a677230", "date": "2026-08-28", "title": "feat: add currency code", "addresses": "VCST-5821 (Cancelled)" },
+      { "sha": "80d1e3b9", "date": "2026-09-02", "title": "fix: register loyalty routes regardless of auth state", "addresses": "VCST-5822 (To do)" }
     ]
   },
+  "layer": "storefront",
+  "layer_derivation": "Every changed path in PR #2396 is under client-app/modules/loyalty/ plus the shared client-app/core/api/graphql/types.ts codegen artifact; the manifest places 083c/083d under Frontend/loyalty. Derived, not defaulted.",
+  "release": {
+    "fragment_written": false,
+    "refusal_reason": "verdict-not-pass",
+    "note": "A release-note fragment is refused because this run's verdict is FAIL. The /ba-analyze docs release pointer is therefore not issued. Recorded explicitly so the absence reads as a decision rather than an omission. This run executed against the pre-2026-09-02 /qa-test contract; the layer and release fields were added afterwards from the updated rules and are accurate for this run."
+  },
   "verdict": "FAIL",
-  "verdict_reason": "IN-SCOPE P1 confirmed live on the repaired store: the SKU mission modal renders product prices in a currency other than the session currency (EUR in a USD session) and disagrees with the PDP price for the same SKU.",
-  "completeness": {
-    "status": "EXECUTED",
-    "executed": "High-value subset driven inline by the orchestrator in a single chrome session",
-    "not_executed": [
-      "Change-scoped regression 002,028,029,075d,083b (blast radius of the shared quantity-control change)",
-      "Step 3 independent verification, judgment half (verifier killed by spend limit)",
-      "Step 5a App Insights correlation (APPINSIGHTS_API_KEY_* empty)",
-      "/qa-review-tests --verify harvest ({SPEC} to {OBSERVED}) before promotion"
-    ],
-    "blocker": "Account spend limit (HTTP 429) reset 18:40 Europe/Budapest — infrastructure, not a product finding",
-    "env_caveat": "B2B-store defaults were nulled twice today by admin. Both of this run’s windows sit OUTSIDE the null windows, and the P1 was re-observed after the second repair, so no finding here rests on a null-window observation."
+  "verdict_reason": "Three in-scope conditions fail against AC-2 and the a11y gap-AC: the mission card omits the goal target (2.e); an untranslated locale renders five raw dotted i18n keys as customer-visible sidebar labels and drops the mission description (2.h/2.i); and all twelve open-mission controls share one accessible name (G11). Both changes actually under test - the currency fix and the route-guard fix - passed.",
+  "changes_under_test": {
+    "5a677230_currency": {
+      "verdict": "PASS",
+      "evidence": "MSNF-073 PASS with real discrimination on a dual-priced fixture (10 USD / 34 EUR) against a single-priced in-modal control. A FirstOrDefault() implementation would have failed both the amount and the denomination assertion; a 1:1 conversion would have failed only the amount."
+    },
+    "80d1e3b9_route_guard": {
+      "verdict": "PASS",
+      "evidence": "MSNF-072 [JOURNEY] PASS - anonymous deep link redirects to sign-in with returnUrl and returns to the named mission. MSNF-076 PASS - the nav entry is present after an in-session sign-in, so the one-shot-bootstrap regression predicted from source did not materialise."
+    }
+  },
+  "regression": {
+    "run_id": "REG-2026-09-02-0930",
+    "suites": ["083c", "083d", "075d"],
+    "selection": "--cases critical --also-ids MSNF-072..MSNF-080",
+    "total": 36, "pass": 22, "fail": 5, "blocked": 6, "skipped": 3, "pass_rate": "61.1%",
+    "lanes": { "083c": "playwright-chrome", "083d": "playwright-edge", "075d": "machine" },
+    "gap_coverage_run": {
+      "reason": "--cases critical excluded the High/Medium cases covering 12 of the 23 conditions, so the main run executed only 11",
+      "cases": 9, "pass": 4, "fail": 2, "blocked": 3
+    },
+    "scope_exclusions": "36 of 119 cases kept by the critical filter. Zero unreadable Priority rows, zero legacy-header refusals, zero missing also-ids, and no suite contributed zero cases. 075d's 3 SKIPPED are declared opt-outs (2 Manual, 1 Deprecated/EX-201) materialised from the plan rather than silently absent.",
+    "narrowing_note": "Artifact C was narrowed from regression:select's fail-open 62-suite / 392-min set to the three mission suites, on 1c source evidence that the shared core/api/graphql/types.ts change is inert (one doc-comment reword plus one optional loyalty-only input field, both TypeScript-only). --target was deliberately NOT used: at --target 40 the selector excluded 083c and 083d - the suites under test - because the untrimmable P0 risk floor alone predicts 245 min."
+  },
+  "timing": {
+    "test_window_start": "2026-09-02T09:30:09Z",
+    "regression_started": "2026-09-02T09:30:09Z",
+    "regression_finished": "2026-09-02T10:21:22Z",
+    "regression_wall_clock_min": 51,
+    "target_window_min": null,
+    "target_note": "no --target trim applied (operator decision)"
+  },
+  "ac_dod": {
+    "conditions_mapped": 23,
+    "conditions_with_verdict": 21,
+    "pass": 12, "fail": 5, "blocked": 4, "uncovered": 2,
+    "ac2_ac3": { "conditions": 15, "decided": 14, "pass": 9, "fail": 3, "blocked": 2, "coverage_pct": 93 },
+    "ac1": "NOT IMPLEMENTED at either layer. Operator decision: tested-around and routed to the PO with design frames F4/F5/F8 as its spec; not counted as a failure of this run's scope.",
+    "dod": "none declared on the ticket",
+    "uncovered_cases_missing": "Conditions 3.a and G12 map to MSNF-026 and MSNF-023, which were DELETED on 2026-08-28 in commit de670ad5 - the VCST-5346 value-chain restructure itself. The checklist map was built from the 2026-08-27 inventory and the IDs were not re-checked against the current CSV. Replacement cases are needed."
   },
   "test_cases": {
     "suite": "regression/suites/Frontend/loyalty/083c-loyalty-missions-storefront.csv",
-    "authored": 68,
-    "id_range": "MSNF-001..MSNF-068",
-    "automation_status": {
-      "Draft": 67,
-      "Manual": 1
-    },
-    "lanes": {
-      "machine": 0,
-      "browser": 67,
-      "manual": 1
-    },
+    "authored": 9,
+    "id_range": "MSNF-072..MSNF-080",
+    "automation_status": { "Draft": 9 },
+    "testCount_before": 68,
+    "testCount_after": 77,
     "gates": {
-      "suites_review": "0 Blocker / 0 Critical; 1 Medium (BL-001 MSNF-018), 1 Informational (TRI-000)",
-      "suites_lint": "OK (130 suites, 37 selections)",
-      "td_validate": "clean",
-      "global_id_uniqueness": "no MSNF- collisions; confined to 083c"
+      "suites_review": "0 Blocker / 0 Critical; 2 Medium BL-001 on MSNF-074 and MSNF-076 - no display-layer mission BL exists to cite, recorded as an oracle gap rather than papered over with an invented citation",
+      "suites_lint": "OK (132 suites, 37 selections)",
+      "td_validate": "083c 662/662 resolved",
+      "global_id_uniqueness": "clean"
+    },
+    "step3_gate": {
+      "first_verdict": "REJECT",
+      "reasons": [
+        "MSNF-073 was vacuous - on single-priced fixtures it could not fail on its own hypothesis, and would have reported PASS certifying the currency fix works on evidence equally consistent with the argument doing nothing",
+        "MSNF-075 did not induce the culture x currency mismatch the Test Model declares un-collapsible"
+      ],
+      "remediation": ["dual-currency featured SKU seeded (10 USD / 34 EUR)", "culture arm added to MSNF-075"],
+      "second_verdict": "APPROVE, conditional on rewording the BL-PRICE-005 line, which conflated 'no amount rendered' with 'presents as unavailable' and would have scored a correct modal as FAIL",
+      "condition_applied_by": "orchestrator"
     },
     "promoted": 0,
-    "promotion_note": "37 of 67 Draft cases are promotable on this run (tc:promote dry run). HELD pending confirmation - 5g requires ratification, and MSNF-059 still carries a {HYPOTHESIS} needing --verify.",
-    "executed": 67,
-    "promotable": 37
-  },
-  "ac_dod_estimate": {
-    "story_conditions": 10,
-    "gap_conditions": 27,
-    "ac_coverage_pct": 70,
-    "ac_coverage_basis": "7 of 10 story conditions carry live evidence this run; AC-1 (x2) unimplementable, AC-2 description only partially observable",
-    "dod": "none declared on the ticket"
+    "promotion_note": "5g not run - deferred pending the filing decision and a re-run of the BLOCKED cases on uncontended fixtures."
   },
   "findings": [
-    {
-      "id": "F1",
-      "severity": "P1",
-      "provenance": "IN-SCOPE",
-      "status": "CONFIRMED_LIVE_x3",
-      "title": "SKU mission modal renders prices in the wrong currency and disagrees with the PDP",
-      "evidence": "USD session; modal SKU #55557702 = EUR 455.00 while its PDP = USD 349.00; SKU #201482 = USD 25.00 in the same modal",
-      "root_cause": "loyaltyMissionProgress exposes no currencyCode argument, so the embedded product loader has no currency context",
-      "bl": [
-        "BL-PRICE-005",
-        "BL-LOY-002"
-      ],
-      "screenshots": [
-        "screenshots/MSNF-028-FAIL-modal-mixed-currency-EUR-USD.png",
-        "screenshots/MSNF-028-FAIL-pdp-same-sku-usd-349.png",
-        "screenshots/MSNF-028-FAIL-modal-mixed-currency-post-repair-1705Z.png"
-      ],
-      "note": "Observed 3x. (1) first seen while B2B-store defaultCurrency was null (14:29:56Z window) - discounted as possibly environmental. (2) re-observed 16:43-16:45Z on the repaired store, ~2 min before a SECOND null window opened at 16:48:29Z. (3) re-observed 17:05Z after the second repair at 17:02:56Z. Identical every time, so it is NOT an artifact of either null window."
-    },
-    {
-      "id": "F2",
-      "severity": "P2",
-      "provenance": "IN-SCOPE",
-      "status": "CONFIRMED_LIVE",
-      "title": "Anonymous deep link to /account/missions returns 404 instead of the sign-in redirect",
-      "evidence": "Logged out: /account/missions => 404 Page not found; control /account/orders => /sign-in?returnUrl=/account/orders",
-      "bl": [
-        "BL-GQL-004"
-      ]
-    },
-    {
-      "id": "F3",
-      "severity": "P3",
-      "provenance": "IN-SCOPE",
-      "status": "CONFIRMED_LIVE",
-      "title": "Two designed CTAs ship as dead locale keys",
-      "evidence": "redeem_products and redeem_banner.catalog exist in 13 locale files, referenced by zero .vue files; live: redeem banner has no Catalog link, order modal has only Close"
-    },
-    {
-      "id": "F4",
-      "severity": "P3",
-      "provenance": "IN-SCOPE",
-      "status": "CONFIRMED_LIVE",
-      "title": "Zero-target mission renders the nonsensical progress label '1 of 0 orders' at 0%",
-      "evidence": "AGENT-TEST-MSN-ZEROTARGET card: note '1 of 0 orders', percent 0%, bar width 0%"
-    },
-    {
-      "id": "F5",
-      "severity": "P3",
-      "provenance": "IN-SCOPE",
-      "status": "CONFIRMED_LIVE",
-      "title": "SKU modal Cart subtotal renders as a bare unformatted 0 with no currency",
-      "evidence": "Cart subtotal definition = '0' while every other money field is formatted"
-    },
-    {
-      "id": "F6",
-      "severity": "N/A",
-      "provenance": "SCOPE_DECISION",
-      "status": "NOT_IMPLEMENTED",
-      "title": "AC-1 (notify about new and completed missions) has no implementation",
-      "evidence": "Backend emits no notification of any kind (0 hits for PushMessage/INotification/SendAsync/templates across 234 files; manifest declares no notification dependency, confirmed live via /api/platform/modules); frontend PR adds no notification surface. The design specifies it precisely (Frames 4, 5, 8).",
-      "route": "PO / product owner - not a frontend defect"
-    },
-    {
-      "id": "F7",
-      "severity": "LOW",
-      "provenance": "PRE-EXISTING",
-      "status": "LINK_ONLY",
-      "title": "Published mission with public=false is visible to customers and pays out points",
-      "evidence": "AGENT-TEST-MSN-PUBLISHED-PRIVATE renders Completed/100% and granted its reward",
-      "existing_draft": "reports/bugs/open/BUG-loyalty-mission-public-flag-has-no-effect.md",
-      "note": "Owned by the parallel VCST-5319 backend session. Linked, not re-filed. Does not fail this ticket."
-    },
-    {
-      "id": "F8",
-      "severity": "P2",
-      "provenance": "IN-SCOPE",
-      "status": "CONFIRMED_LIVE",
-      "title": "Card and modal disagree on progress: the modal Targets met counter seeds from backend progress, not from an empty cart",
-      "cases": [
-        "MSNF-025",
-        "MSNF-030"
-      ],
-      "note": "Exactly the two-sources-of-progress ambiguity the story review predicted (PROPOSED-BL-LOY-MISSION-001)."
-    },
-    {
-      "id": "F9",
-      "severity": "P2",
-      "provenance": "IN-SCOPE",
-      "status": "CONFIRMED_LIVE",
-      "title": "Order-value card shows only the amount spent, never its target - the AC-2 numeric-goal drift",
-      "cases": [
-        "MSNF-024"
-      ]
-    },
-    {
-      "id": "F10",
-      "severity": "P2",
-      "provenance": "IN-SCOPE",
-      "status": "CONFIRMED_LIVE",
-      "title": "Accessibility: every Open mission control shares one generic accessible name; modal background is not hidden from assistive tech",
-      "cases": [
-        "MSNF-046",
-        "MSNF-047"
-      ],
-      "bl": [
-        "BL-A11Y-002"
-      ],
-      "note": "Focus trap PASSES (MSNF-048) and the dialog role IS present, so the ECL-15.1 prediction was only partly borne out."
-    },
-    {
-      "id": "F11",
-      "severity": "P3",
-      "provenance": "IN-SCOPE",
-      "status": "CONFIRMED_LIVE",
-      "title": "Danger date badge is distinguished by dot colour alone - no text, icon or shape",
-      "cases": [
-        "MSNF-017"
-      ],
-      "bl": [
-        "BL-A11Y-003"
-      ]
-    },
-    {
-      "id": "F12",
-      "severity": "P3",
-      "provenance": "IN-SCOPE",
-      "status": "CONFIRMED_LIVE",
-      "title": "Untranslated locale falls back to the raw internal mission name and drops the description entirely",
-      "cases": [
-        "MSNF-068"
-      ]
-    },
-    {
-      "id": "F13",
-      "severity": "LOW",
-      "provenance": "NEEDS_PRODUCT_INPUT",
-      "status": "OBSERVED",
-      "title": "Modal product link opens a new tab, so the modal never closes",
-      "cases": [
-        "MSNF-031"
-      ],
-      "note": "I independently observed this and judged it correct (useBrowserTarget). But useCloseModalOnRouteChange was written for a same-tab click from inside the modal, so as shipped that composable is dead on its stated path. Design intent question, not a confirmed defect - verify intent before filing (feedback_verify_design_intent_before_bug)."
+    { "id": "F1", "severity": "Medium", "provenance": "IN-SCOPE", "status": "CONFIRMED_LIVE", "case": "MSNF-068",
+      "title": "Untranslated locale renders five raw dotted i18n keys as customer-visible sidebar labels",
+      "evidence": "fr locale: Quotes.navigation.route_name, Back_in_stock.navigation.route_name, Shared.account.navigation.links.missions_challenges, Push_messages.menu_item_name, Loyalty.navigation.route_name",
+      "note": "The missions entry itself is among them, so this is partly in scope; the other four belong to sibling modules. Distinct from VCST-5828 (Cancelled), which described only the name/description fallback." },
+    { "id": "F2", "severity": "Medium", "provenance": "IN-SCOPE", "status": "CONFIRMED_LIVE", "case": "MSNF-077",
+      "title": "Order-value mission card omits the spend target, showing only the amount accrued",
+      "evidence": "card reads $234.00 spent with no $50.00 target; the modal renders both, so the value is already in the payload the card holds",
+      "note": "Previously filed as VCST-5825 (Medium) and Cancelled on the reading that design frames F1/F2 place the target in the modal. This is an AC-2-text vs design conflict and needs a PO ruling, not a third re-file on the same grounds." },
+    { "id": "F3", "severity": "Medium", "provenance": "IN-SCOPE", "status": "CONFIRMED_SOURCE_AND_LIVE",
+      "title": "VCST-5843 is marked Done but its fix is absent from the branch, and its trigger is now known to be reachable",
+      "evidence": "No errorPolicy anywhere under client-app/modules/loyalty/; graphqlClient.defaultOptions sets fetchPolicy on all three operations and nothing else, so Apollo's default policy of 'none' still discards data whenever errors[] is non-empty, and missions.vue's catch paints the whole-page error view. MSN-009 produced 58 field-level errors alongside totalCount 29 and populated data.",
+      "note": "Latent rather than currently reproducing in the browser: VCST-5842's backend fix removed the organic trigger. Any client omitting an optional argument reproduces it." },
+    { "id": "F4", "severity": "Medium", "provenance": "PRE-EXISTING", "status": "RECONFIRMED", "case": "MSNF-046",
+      "title": "All twelve open-mission controls expose the identical accessible name 'Open mission'",
+      "existing_ticket": "VCST-5826 (To do)",
+      "note": "Link only - already filed and still open. Focus ring and keyboard reachability both pass; only the shared name fails." },
+    { "id": "F5", "severity": "Medium", "provenance": "OUT-OF-SCOPE (backend)", "status": "CONFIRMED_LIVE", "cases": ["MSNF-080", "MSN-019"],
+      "title": "Points ledger carries no mission attribution - BL-LOY-015 violated",
+      "evidence": "9 of 10 rows are mission grants with object: null; the 10th carries object.orderNumber, proving the row template can render a reference. loyaltyPointsHistory exposes no mission field at all.",
+      "note": "Attribute to the accrual story VCST-5319, not the storefront. Also the root cause of MSN-019's measurement fragility." },
+    { "id": "F6", "severity": "Medium", "provenance": "OUT-OF-SCOPE (xAPI)", "status": "CONFIRMED_LIVE", "case": "MSN-009",
+      "title": "Omitting the optional cultureName argument makes loyaltyMissionProgress throw ARGUMENT_NULL on localizedName and description rather than returning null",
+      "evidence": "58 field-level errors across 29 items alongside HTTP 200 and fully populated data",
+      "note": "Standalone finding; it is the reachable trigger for F3." },
+    { "id": "F7", "severity": "Low", "provenance": "IN-SCOPE", "status": "CONFIRMED_LIVE", "case": "MSNF-068",
+      "title": "Untranslated locale drops the mission description entirely - the name falls back, the description returns null",
+      "existing_ticket": "VCST-5828 (Cancelled)",
+      "note": "Below the severity floor - not filed." },
+    { "id": "F8", "severity": "Low", "provenance": "INCIDENTAL", "status": "OBSERVED",
+      "title": "Every language-selector option carries the active locale's flag alt text, so each option's accessible name states the wrong language",
+      "note": "Below the severity floor - not filed." },
+    { "id": "F9", "severity": "Low", "provenance": "INCIDENTAL", "status": "OBSERVED",
+      "title": "Open-ended mission card renders a bare amber dot with no adjacent text - colour as the sole differentiator (BL-A11Y-003)",
+      "existing_ticket": "VCST-5827 (Cancelled)",
+      "note": "Below the severity floor - not filed." }
+  ],
+  "bugs_filed": [
+    { "key": "VCST-5858", "finding": "F3", "severity_filed": "Medium", "severity_corrected": "P3 (latent)",
+      "status": "CANCELLED as duplicate of a disposition already made", "relationship": "Sub-task of VCST-5346, Relates VCST-5843",
+      "title": "VCST-5843 was resolved Done but its partial-payload fix is absent from every branch",
+      "draft": "reports/bugs/closed/BUG-missions-page-fails-whole-page-on-partial-graphql-response.md",
+      "note": "Operator selected F3 only at the 5d filing gate. F1, F2 and F6 were assessed Medium and file-eligible but were not filed on that decision; F4 links to the open VCST-5826; F5 attributes to VCST-5319.",
+      "closure": "Filed, then closed the same day. A parallel session had already assessed the same finding as won't-fix / P3 (latent) - 'the errorPolicy hardening was considered and declined; the residual gap is latent, not reachable by ordinary use' - with an explicit re-open bar: 'Re-open if a partial response is ever observed in the wild.' I filed before seeing that decision.",
+      "self_correction": "I over-graded this as Medium. The partial-payload shape is reachable at the API layer (MSN-009: HTTP 200, totalCount 29, populated data, 58 errors[] from omitting the optional cultureName), but the SHIPPED storefront passes cultureName, so no ordinary-use path triggers it. That is latent by definition and supports the P3 decline. My evidence does not clear their re-open bar.",
+      "residual_point": "Narrower than the ticket and still true: VCST-5843 is recorded Done, but the outcome was DECLINED, not fixed. Done and Won't Do are different records, and a future reader of VCST-5843 will reasonably assume code shipped. Worth a status correction on that ticket; not worth a defect ticket.",
+      "watch_armed": "Regression case MSNF-074 asserts exactly this and reports BLOCKED:PRECONDITION_UNMET while the trigger is unreachable. It turns red on its own if the condition ever becomes reachable, so the re-open bar is monitored without a manual re-check."
     }
   ],
-  "design_drift": [
-    "Order modal has no banner image (design Frame 2 specifies 170px) and no Redeem products primary button",
-    "Card banner 144px (h-36) vs 150px in the design",
-    "Mobile is a paginated grid vs the design's carousel with dots",
-    "Days-left severity threshold: code danger at <10 days; design renders 8 days as warning"
+  "findings_eligible_but_not_filed_by_operator_decision": [
+    "F1 (Medium, IN-SCOPE) - five raw dotted i18n keys render as customer-visible sidebar labels in fr",
+    "F2 (Medium, IN-SCOPE) - order-value card omits the spend target; previously VCST-5825, Cancelled; needs a PO ruling on AC-2 text vs design F1/F2 rather than a third re-file",
+    "F6 (Medium, OUT-OF-SCOPE xAPI) - omitting the optional cultureName makes the resolver throw ARGUMENT_NULL instead of returning null; it is the reachable trigger for F3"
   ],
-  "positive_observations": [
-    "ECL-14.8 schema sanity check PASSES: balance banner reads 16,630, no data.cart:null, 0 console errors",
-    "Both modals expose a dialog role, contradicting the ECL-15.1 near-certain a11y failure",
-    "All three seeded progress states render correctly (5 days/25% danger, 75% partial, Completed 100%)",
-    "Pagination works: 13 missions across 2 pages, no duplicates across the boundary",
-    "Expired and Draft missions correctly withheld",
-    "OrderValue money fields render in the correct currency ($30.00 spent, $0.00 spent) - the currency defect is confined to items[].product.price",
-    "Disabled Add-to-cart and Decrease at qty 0 is validation working, not a defect"
+  "bugs_not_filed": [
+    "F7 (Low) - untranslated locale drops the mission description; VCST-5828 exists and was Cancelled",
+    "F8 (Low) - language-selector option alt text names the wrong language",
+    "F9 (Low) - open-ended card amber dot with no text differentiator; VCST-5827 exists and was Cancelled"
   ],
-  "regression": {
-    "run_id": "REG-2026-08-27-1731",
-    "suite": "083c",
-    "total": 68,
-    "pass": 38,
-    "fail": 14,
-    "blocked": 15,
-    "skipped": 1,
-    "pass_rate": "55.9%",
-    "lane": "playwright-chrome",
-    "note": "The suite is authored so a case FAILS while its defect exists, so a low pass rate here is the suite working, not a regression. 15 BLOCKED = 7 declared data gaps + 6 MCP tooling gaps (no route-blocking / perf-trace in this lane) + MSNF-005 refused by the command classifier before any store mutation (store verified intact after)."
-  },
-  "regression_triage": {
-    "collected": 30,
-    "by_status": {
-      "FAIL": 14,
-      "BLOCKED": 15,
-      "SKIPPED": 1
-    },
-    "batches": 3,
-    "flaky": 0,
-    "confirmed_bugs": 14,
-    "test_case_fixes": 0,
-    "dismissed": 0
-  },
-  "bugs_filed": [],
-  "release_gate": "NO-GO (recommendation) - an in-scope P1 is open and the change-scoped regression has not run",
+  "test_defects": [
+    { "case": "MSN-009", "class": "TEST_DEFECT", "status": "FIXED_AND_VERIFIED",
+      "detail": "The baseline case selected localizedName and description - locale-dependent fields - without supplying cultureName, so the resolver threw ARGUMENT_NULL. Its failure nonetheless surfaced F6 and the reachable trigger for F3.",
+      "fix": "Added cultureName: \"{{CULTURE_NAME}}\" to the progress query (resolvable token, not the literal en-US the suite's other 88 uses carry). Surgical single-line edit: 1 insertion / 1 deletion, re-parsed and field-compared so that exactly one field changed (MSN-009.Steps) while the 23 other cases sharing that query text were untouched.",
+      "verification": "Re-ran npx tsx scripts/graphql/graphql-runner.ts --case ...:MSN-009 -> PASS 4/4 (errors[] empty against totalCount 29). suites:lint OK, td:validate 075d 173/173." },
+    { "case": "MSN-019", "class": "TEST_DEFECT (measurement)", "status": "DEPRECATED by operator decision 2026-09-02",
+      "detail": "Asserts exactly one new Earned row at amount 300; collides when a sibling mission grants the same amount. Root cause is F5 - BL-LOY-015 is VIOLATED in product, so the ledger exposes no mission identifier and there is no correct field to assert on.",
+      "disposition": "Automation_Status set to Deprecated (EX-201: excluded from execution, runs on no lane). Deprecation is deliberately a human call - TRI-006 keeps it out of tc:demote, which may only reach Manual - and was made by the operator. Retired rather than weakened: an assertion loosened until it cannot fail is worse than one that is red.",
+      "consequence": "The BL-LOY-015 attribution gap loses its only executable witness. It remains recorded as finding F5 and against VCST-5319, and MSNF-080 still asserts the same invariant from the storefront side.",
+      "verification": "Surgical line-level edit; only MSN-019.Automation_Status and .References changed. suites:sync recorded the lane move (075d 29/0/4/1dep -> 28/0/4/2dep), suites:lint OK, td:validate 075d 173/173." },
+    { "case": "MSN-E2E-004", "class": "TEST_DEFECT (measurement)", "status": "FIXED via /qa-review-tests --fix",
+      "detail": "BAL_2 read 5226 against an expected 3920; the +1306 is four co-granting missions on order 2. The Redeemed row matched PTS_LINE_TOTAL exactly, so the spend mechanism was independently confirmed correct. Root cause: the case's own Preconditions claimed the spend checkpoint was unaffected by co-grants, which BL-LOY-007(a) contradicts - order 2 is itself a Mixed Cart order and posts its own Earned row.",
+      "fix": "One exact equality and a single-row DOM check were decomposed into three checks against a positional ledger cursor (no mission identifier needed, since BL-LOY-015 is violated and attribution is impossible): BAL_2 = BAL_1 + EARN_2 - RDM_2 (balance reconciles to the ledger), RDM_2 = PTS_LINE_TOTAL (the amount), RDM_2_COUNT = 1 (the count, per BL-LOY-007b/d). BAL_2 and the rows above the cursor are read from ONE render so a grant counted in the balance but not yet rendered cannot manufacture a false failure.",
+      "rejected_alternative": "The orchestrator proposed BAL_2 = BAL_1 - PTS_LINE_TOTAL + sum(earned). The agent rejected it correctly: if currentBalance is the ledger sum, that equation is an identity and would survive a wrong-amount deduction - the same vacuity failure the Step-3 gate caught on MSNF-073.",
+      "verification": "Diff is 13 insertions / 8 deletions confined to MSN-E2E-004 (6 fields); the other 7 rows verified unchanged by newline-normalized field-by-field comparison against git HEAD. suites:review identical to the pre-edit baseline (1 pre-existing Medium on MSN-E2E-002, 1 Informational; zero Blocker/Critical/High). td:validate 083d 134/134. suites:lint OK.",
+      "strength_gain": "The repaired case catches three failure modes the original caught one of: wrong amount (RDM_2 moves), double deduction (RDM_2_COUNT = 2, or the balance reconciliation breaks if debited twice but logged once), and no deduction (RDM_2 = 0)." },
+    { "case": "MSNF-078", "class": "TEST_DATA_DEFECT",
+      "detail": "PERSKU-PTS is seeded at $0.00 USD instead of a distinct PTS price, with isAvailable and isBuyable both false, so both modals resolve to USD and the currency-label control is undecidable as seeded." }
+  ],
+  "fixture_issues": [
+    "Missions are minted with a backdated window (startDate and periodStart of 2026-08-26 for a 09-02 mint), so they retroactively count orders placed before they existed. This, not concurrency, is the primary cause of the Completed-at-start blocks.",
+    "083c and 083d were run concurrently against the shared LOYALTY_VIP_USER; several cases sign in as the shared account rather than their provisioned per-case accounts. Serialise the pair, or re-point those cases.",
+    "The overlay's *_at_seed fields are stale against generation 20260902085919-b156: MSN_ORDERVALUE records Completed/100% while live reads InProgress/0%."
+  ],
+  "app_insights": "SKIPPED - APPINSIGHTS_API_KEY and APP_ID are unset for this environment; no correlation was performed.",
+  "release_gate": "NO-GO (recommendation) - three in-scope conditions fail, two conditions have no covering case at all, and four are blocked on fixture or tooling issues rather than on product evidence.",
   "next_steps": [
-    "Confirm filing: F1-F5 + F8-F12 as Sub-tasks of VCST-5346; F13 needs design intent first; AC-1 (F6) to the PO; F7 linked to the sibling draft",
-    "Confirm the tracker comment and the FAIL to REOPEN transition",
-    "Confirm 5g promotion of the 37 promotable cases (run /qa-review-tests --verify first to harvest {SPEC} to {OBSERVED} and resolve MSNF-059)",
-    "Run the change-scoped regression 002,028,029,075d,083b for the shared quantity-control blast radius"
+    "5d filing decision (operator): F1, F2, F3 as Sub-tasks of VCST-5346; F4 link-only to VCST-5826; F5 to VCST-5319; F6 standalone",
+    "Re-run MSNF-075, MSN-E2E-001 and MSNF-078 on uncontended, correctly-windowed fixtures",
+    "Author replacement cases for conditions 3.a and G12 - MSNF-023 and MSNF-026 no longer exist",
+    "5g promotion deferred until the BLOCKED cases carry real verdicts"
   ]
 }

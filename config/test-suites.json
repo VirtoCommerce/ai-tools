@@ -3,7 +3,7 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-09-01",
+    "generated": "2026-09-02",
     "totalSuites": 132,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
@@ -203,7 +203,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 49,
+      "testCount": 50,
       "estimatedMinutes": 20,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1555,7 +1555,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 34,
+      "testCount": 35,
       "estimatedMinutes": 21,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1567,7 +1567,7 @@
       "customerApplicability": "universal",
       "clickDriven": true,
       "lanes": {
-        "machine": 33,
+        "machine": 34,
         "browser": 0,
         "manual": 1
       }
@@ -1684,7 +1684,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 119,
+      "testCount": 120,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1699,7 +1699,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 116,
+        "machine": 117,
         "browser": 0,
         "manual": 0,
         "deprecated": 3
@@ -2493,10 +2493,10 @@
       "envRiskGate": "staging",
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 29,
+        "machine": 28,
         "browser": 0,
         "manual": 4,
-        "deprecated": 1
+        "deprecated": 2
       }
     },
     {
@@ -2804,7 +2804,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 68,
+      "testCount": 77,
       "estimatedMinutes": 75,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2975,7 +2975,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 54,
+      "testCount": 55,
       "estimatedMinutes": 84,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3096,7 +3096,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 62,
+      "testCount": 63,
       "estimatedMinutes": 61,
       "agent": "qa-frontend-expert",
       "tags": [

@@ -112,7 +112,7 @@ function main(): void {
   const json = argv.includes("--json");
   const root = resolve(REPO_ROOT, get("--root") ?? "regression/suites");
 
-  if (!prefix || !/^[A-Z][A-Z0-9]*$/.test(prefix)) {
+  if (!prefix || !/^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*$/.test(prefix)) {
     process.stderr.write(
       "Usage: alloc-case-ids.ts --prefix PREFIX --block <name>=<count> [--block ...] [--root <dir>] [--json]\n",
     );

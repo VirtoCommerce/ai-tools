@@ -502,7 +502,7 @@ export function buildRows(
 
   if (!plan.ticket?.trim())
     errors.push("plan: `ticket` is required — Critical/High rows must cite a source of demand");
-  if (!/^[A-Z][A-Z0-9]*$/.test(plan.idPrefix ?? ""))
+  if (!/^[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*$/.test(plan.idPrefix ?? ""))
     errors.push(`plan: \`idPrefix\` "${plan.idPrefix}" must be an uppercase suite prefix (e.g. MISA)`);
 
   const fallbackLayer = (plan.defaults?.layer ?? "storefront") as Layer;
@@ -654,7 +654,7 @@ function parseArgs(argv: string[]): CliArgs {
 
 /** `MISA-041..MISA-052` (or `MISA-041..052`) -> the start number and the count it permits. */
 export function parseIdBlock(block: string): { prefix: string; start: number; count: number } {
-  const m = /^([A-Z][A-Z0-9]*)-(\d+)\.\.(?:\1-)?(\d+)$/.exec(block.trim());
+  const m = /^([A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*)-(\d+)\.\.(?:\1-)?(\d+)$/.exec(block.trim());
   if (!m) throw new Error(`--id-block "${block}" is not PREFIX-NNN..PREFIX-NNN`);
   const start = Number(m[2]);
   const end = Number(m[3]);

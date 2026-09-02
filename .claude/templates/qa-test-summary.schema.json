@@ -50,6 +50,15 @@
     "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|no-version|null",
     "aggregated_into": null
   },
+  "documentation": {
+    "$comment": "Written at 5h, AFTER the 5f transition — the record of the ordinary product DOCUMENTATION published for this ticket (§10 of .claude/knowledge/ba/virto-doc-style.md), which is a different artifact from the `release` block above: that one is a what-shipped record, this one is how-do-I-use-this. Deliberately carries NO version fields — a how-to does not quote a build number, which is why `no-version` is absent from this block's refusal set. `audiences` is derived from the top-level `layer` via the §9.1 row and may hold MORE than one entry (the layer's audience is a floor, not a ceiling — the ordinary §1 rule, unlike the release note's one-per-layer inversion); `sales` is never among them. `files` are the reports/ba/<ticket>-<slug>-<audience>-guide.md paths, and `amended` names any pre-existing guide updated in place rather than forked. `comment_posted` is FALSE when the guides were written but the operator declined the tracker post — distinct from `published:false`, which means nothing was written at all. A null block means 5h never ran (a gap); `published:false` WITH a non-null `refusal` is the opposite — the step ran and declined, and the reason is the finding.",
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": [],
+    "comment_posted": false,
+    "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|null"
+  },
   "agents_dispatched": ["ba-story-writer", "qa-frontend-expert", "qa-backend-expert"],
   "epic": {
     "$comment": "parent = the Epic this story belongs to (null if none). roll_up is written only on an --epic serial run (in the Epic's own summary), combining the child-story verdicts + the cross-story E2E into one Epic recommendation.",

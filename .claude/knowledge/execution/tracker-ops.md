@@ -197,6 +197,25 @@ Images live in a Jira comment only if **both** steps happen:
 `400 ATTACHMENT_VALIDATION_ERROR`. The `media.attrs.id` must be a media-service **UUID**, which the
 attachment REST API does not expose; the wiki-markup path is what resolves it for you.
 
+**The three ADF dead ends, measured 2026-09-02 on VCST-5319 — do not re-probe them:**
+
+| Attempt | Result |
+|---|---|
+| `media.attrs` `{type:"file", id:"<attachmentId>", collection:""}` | `400 ATTACHMENT_VALIDATION_ERROR` |
+| same, `collection` omitted | `400 INVALID_INPUT` — the field is required |
+| same, `collection:"jira-attachments"` | `400 ATTACHMENT_VALIDATION_ERROR` |
+| `media.attrs` `{type:"external", url:"…/attachment/content/<id>"}` | **`201 Created`, then renders `Can only create thumbnails for attached images`** |
+
+The last one is the trap: it is the only variant that *posts successfully*, so a run that stops at the
+status code concludes it worked. `GET /rest/api/3/issue/<KEY>/comment/<id>?expand=renderedBody` is what
+distinguishes them — a rendered `<span class="error">` or zero `file-preview-id` attributes means the
+images are invisible whatever the POST returned.
+
+**Probe on a throwaway comment, never on the deliverable.** Post a one-line test comment, iterate the
+variants against it, then write the real comment once with the form that rendered — and delete the probe
+(`DELETE /rest/api/2/issue/<KEY>/comment/<id>` → `204`). Iterating on the deliverable itself means
+repeatedly overwriting a comment other people may already be reading.
+
 **Verify, don't assume.** Re-read the comment through the **v3** API and confirm each `media` node's
 `attrs.id` is a 36-char UUID:
 ```bash

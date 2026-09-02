@@ -47,6 +47,9 @@ import { selectProbeTargets } from './overlay-specs.mjs';
 import { runStoreDefaultsCheck } from './store/check-store-defaults.mjs';
 import { parse } from 'csv-parse/sync';
 import { REP_ONLY_ORG } from './sales-rep/rep-only-org-specs.mjs';
+import {
+  PRODUCTS as MSN_E2E_PRODUCTS, productFlagDrift, productFlagDriftMessage,
+} from './loyalty/missions-e2e-specs.mjs';
 
 const WARN_ONLY = process.argv.includes('--warn-only');
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -667,6 +670,64 @@ async function checkStoreDefaults() {
   }
 }
 
+/**
+ * [14] LOYALTY-MISSIONS FIXTURE PRODUCT INVARIANTS — a drift ONLY a live probe can see.
+ *
+ * Every static guard in `td:validate:missions-e2e` reads committed fixtures and the per-env overlay.
+ * This drift lives in neither: the seeder wrote `trackInventory: false` into the CREATE body once,
+ * something flipped it on the platform afterwards, and no alias, price row or overlay field records
+ * the flag at all. So the fixture resolved, rendered and passed every gate while carrying the
+ * opposite of what its spec declares — the "resolves but tests nothing" shape, one layer below the
+ * data. Measured on vcst-qa 2026-09-02: `AGENT-TEST-MSN-E2E-PERSKU-PTS` at `trackInventory: true`,
+ * `availableQuantity: 88`, against three correct siblings that hid it.
+ *
+ * Recording the flag into the overlay would NOT have caught it, which is why the check is here and
+ * not in the static validator: the seeder now self-heals the flag, so an overlay written by that
+ * seeder always says "false" and the guard would be asserting its own repair. The drift happens
+ * BETWEEN seeds — an Admin edit, another seeder, an inventory job — and only the platform knows.
+ *
+ * The invariant set is `PRODUCT_INVARIANT_FLAGS` in the side-effect-free spec module, shared verbatim
+ * with the seeder that re-asserts it. Nothing here writes.
+ */
+async function checkMissionFixtureProductFlags() {
+  console.log('\n[14] Loyalty-missions fixture product invariants (083d catalog fixtures)');
+  const reseed = `TEST_ENV=${TEST_ENV} npm run seed:missions-e2e:only`;
+  let checked = 0;
+  let drifted = 0;
+  for (const spec of MSN_E2E_PRODUCTS) {
+    let live = null;
+    try {
+      // Exact `code:`, never a fuzzy `keyword:` — listentries pages categories and products through
+      // ONE window, categories first, so a keyword lookup can report zero rows for a product sitting
+      // in the database the whole time (the absenceIsProven measurement).
+      const r = await api('POST', '/api/catalog/listentries', { code: spec.sku, take: 50 }, { expectStatus: [200, 201, 400, 404] });
+      const hit = (r?.listEntries || r?.results || []).find((e) => e.code === spec.sku && String(e.type).toLowerCase() === 'product');
+      if (!hit) {
+        warn(`${spec.sku} is not on this environment — 083d has not been seeded here (TEST_ENV=${TEST_ENV} npm run seed:missions-e2e)`);
+        continue;
+      }
+      live = await api('GET', `/api/catalog/products/${hit.id}`);
+    } catch (e) {
+      warn(`${spec.sku}: lookup failed — ${String(e.message).slice(0, 120)}`);
+      continue;
+    }
+    checked += 1;
+    const drift = productFlagDrift(spec, live);
+    for (const d of drift) {
+      drifted += 1;
+      fail(`${productFlagDriftMessage(spec, d)}. Fix: \`${reseed}\` re-asserts every declared invariant.`);
+    }
+    // productType is deliberately NOT auto-healed — changing a live product's type is a different
+    // class of operation from flipping a boolean — so it is reported and left to a human.
+    if (live.productType && String(live.productType) !== 'Physical') {
+      warn(`${spec.sku}: productType is "${live.productType}", not Physical — the seeder does not repair this; a fixture whose type drifted needs a human`);
+    }
+    if (!drift.length) ok(`${spec.sku}: every declared invariant holds`);
+  }
+  if (!checked) warn('no 083d fixture product was resolvable — the invariant probe made no observation');
+  else if (!drifted) ok(`${checked} fixture product(s) carry every flag their spec declares`);
+}
+
 /* ── main ─────────────────────────────────────────────────────── */
 (async () => {
   console.log(`=== test-data live reconciliation — TEST_ENV=${TEST_ENV} ===`);
@@ -685,6 +746,7 @@ async function checkStoreDefaults() {
   await checkOverlayGuidLiveness();
   await checkSalesRepServedOrgs();
   await checkStoreDefaults();
+  await checkMissionFixtureProductFlags();
 
   console.log('\n=== Summary ===');
   console.log(`  hard problems: ${problems.length}`);

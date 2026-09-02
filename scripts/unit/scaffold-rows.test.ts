@@ -389,3 +389,21 @@ test("parseIdBlock rejects a reversed or malformed block", () => {
   assert.throws(() => parseIdBlock("MSNA-029..MSNA-024"), /ends before it starts/);
   assert.throws(() => parseIdBlock("24..29"), /is not PREFIX-NNN/);
 });
+
+/* A hyphenated suite prefix is the corpus NORM, not an exotic case: SR-FE, SR-GQL,
+ * B2C-LIST, CAT-GQL, ORD-GQL. The first version of both prefix validators used
+ * /^[A-Z][A-Z0-9]*$/, which rejected every one of them — so the KEEP gate was
+ * unreachable for most of the corpus and authoring silently fell back to hand-typing.
+ * A segment must still START with a letter, so the numeric suffix can never be
+ * absorbed into the prefix. */
+test("parseIdBlock accepts a hyphenated suite prefix", () => {
+  assert.deepEqual(parseIdBlock("SR-FE-055..SR-FE-057"), { prefix: "SR-FE", start: 55, count: 3 });
+  assert.deepEqual(parseIdBlock("B2C-LIST-055..056"), { prefix: "B2C-LIST", start: 55, count: 2 });
+  assert.deepEqual(parseIdBlock("SR-GQL-120..120"), { prefix: "SR-GQL", start: 120, count: 1 });
+});
+
+test("a hyphenated idPrefix survives buildRows", () => {
+  const out = buildRows(plan({ idPrefix: "SR-FE", idStart: 55 }), VOCAB, noSweeps);
+  assert.deepEqual(out.errors, []);
+  assert.equal(out.rows[0].ID, "SR-FE-055");
+});

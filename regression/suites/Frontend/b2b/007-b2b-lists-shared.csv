@@ -573,3 +573,16 @@ State from B2C-LIST-044 (a list shared with a customer organization the signed-i
 [DOM] the remaining item(s) and the rep-recommendation banner are unaffected by the edit {SPEC}","[API] the edit issues a wishlist item-removal mutation scoped to the shared list's id, returning errors[] empty {OBSERVED}
 [API] a subsequent read of the same list (post-reload) reflects the removal — the mutation is round-tripped, not merely reflected client-side {OBSERVED}
 [CONSOLE] no uncaught JS errors during the edit or the reload","the remove control is disabled or hidden for the recipient (edit permission not actually granted to the customer, contradicting the ticket's own 'Lists can be edited' note); the item reappears after reload (edit not persisted server-side); a 403/permission error is returned on the removal mutation; the rep-recommendation banner or remaining items are lost as a side effect of the edit",re-add the removed item to the list (or have the rep re-share a fresh copy) to restore state for future runs; set the list's sharing scope back to Private,"VCST-5335 (Story description: ""Lists can be edited""); VCST-5332 (parent story — review findings there are unrelated to editability)",Draft
+B2C-LIST-055,Publish List to a Customer — org maintainer without sales-rep:access has no Customer scope,B2C Features > Lists > Sales Rep sharing,Critical,BL-SR-002,ECL-7.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_ADMIN]
+1. ACME_ADMIN (USR-001, AcmeCorp / ORG-001, org role 'Organization maintainer') holds no sales-rep:access permission.
+2. ACME_ADMIN owns >=1 own list containing >=1 item, reachable from My Lists.","front_url={{FRONT_URL}}, admin=@td(ACME_ADMIN.email) / @td(ACME_ADMIN.password) — org maintainer, no sales-rep:access; list = any own list with >=1 item","1. [NAV] {{FRONT_URL}}/account/lists
+2. [WAIT] My Lists page loaded with >=1 own list belonging to ACME_ADMIN
+3. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Edit'
+4. [WAIT] 'List settings' dialog opens
+5. [ACT] open the 'Sharing options' dropdown without selecting an option
+6. [ASSERT] snapshot the full set of options the dropdown renders, and whether any customer-picker control is present elsewhere in the dialog","[DOM] verify whether the 'Sharing options' dropdown still offers the scopes a maintainer legitimately holds — Private, the public 'Anyone (readonly)' link, and Organization {OBSERVED}
+[DOM] verify whether 'Customer' is absent from the 'Sharing options' dropdown's rendered option set {OBSERVED}
+[DOM] verify whether no searchable customer picker, 'Message' field, or 'Send via' group mounts anywhere in the 'List settings' dialog for this user {OBSERVED}
+[REL] verify whether the option set rendered to ACME_ADMIN equals the rep's set from B2C-LIST-040 minus exactly 'Customer' — no other scope gained or lost {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5332 · Archetype:SCOPE · Technique:EP; Verified: live vcst-qa 2026-09-02 (Platform 3.1063.0 · SalesRep 3.1006.0 · theme 2.57.0-pr-2396-80d1) — ACME_ADMIN List-settings scopes = Private / Anyone (readonly) / Organization; rep control on the same env + same dialog shows those three PLUS Customer,Draft

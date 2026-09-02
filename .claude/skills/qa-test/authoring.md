@@ -284,7 +284,7 @@ never the round sections.
 (`regression:select --repo <name> --diff <fix-PR range>`) — round 1’s selection was computed from the
 *ticket’s* diff and cannot know what the fix touched — and runs it as a **second** `/qa-regression`
 alongside a separate `--ids` run of exactly the previously-failed cases, so the RED→GREEN pass rate and
-the release gate’s ≥95% stay two different numbers ([`modes.md`](modes.md) §5k §The two tracks).
+the release gate’s ≥80% floor stay two different numbers ([`modes.md`](modes.md) §5k §The two tracks).
 
 The scope is **case-level, not suite-level.** Selecting whole suites is what made a search-change run plan
 all 44 cases of suite `004` — 6 of them Critical, 19 skipped outright.

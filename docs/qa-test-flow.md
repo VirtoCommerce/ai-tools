@@ -279,7 +279,7 @@ sequenceDiagram
   fixable bug (G0–G7, **never merges**; a G0 BAIL STOPs to a human) → `/qa-deploy-pr` deploys the fix's
   **prerelease** to the test env (**confirm each deploy**; no merge, so the §2 guard is never touched) →
   re-runs the previously-FAILED cases (as their **own** `--ids` run, so the RED→GREEN rate and the gate’s
-  ≥95% stay two numbers) + the change-scoped regression **re-scoped to the fix’s own diff** →
+  ≥80% floor stay two numbers) + the change-scoped regression **re-scoped to the fix’s own diff** →
   re-verdicts. PASS exits to the Feature Release Gate (5e); still-FAIL at the cap STOPs with a
   per-round summary; BLOCKED STOPs. **Merge + release are always the human's.** Diagram 2's FAIL branch
   is one round of this loop.
@@ -316,9 +316,14 @@ verdict (plus the team-level release criteria) into the global **GO / NO-GO**:
 | Bug auto-fix (if the story spawns a fix) | G0–G7 auto-fix ladder | open PR | [`.claude/rules/quality-gates.md`](../.claude/rules/quality-gates.md) |
 
 **The feature go/no-go in one line:** a `/qa-test` **PASS**/**PASS WITH NOTES** feeds a **GO** only if
-0 open P0, P1s deferred-with-acceptance, change-scoped regression ≥95%, NFRs clean, and smoke PASS all
-hold; any P0 bug / unmet AC / `BL-*` violation / regression <93% / new security finding, or a `/qa-test`
-FAIL/BLOCKED, is a **NO-GO**.
+0 open P0, **0 open undeferred P1/High**, change-scoped regression ≥80%, NFRs clean, and smoke PASS all
+hold; any P0 bug / **any undeferred High** / unmet AC / `BL-*` violation / regression below the 80% floor / new security
+finding, or a `/qa-test` FAIL/BLOCKED, is a **NO-GO**. The floor came down from 95% to 80% on 2026-09-02
+and the pass-rate conditional band went with it. A High **declared** deferred (`--p1-deferred N`,
+workaround + signed risk acceptance + monitoring plan) caps the gate at **CONDITIONAL GO** rather than
+blocking it. Before the pass rate is read at all, the gate checks **completeness** (`quality-gates.md`
+§0): >10% of planned cases BLOCKED-and-untriaged returns **CANNOT EVALUATE** (exit 2) — not a NO-GO,
+because BLOCKED sits outside the pass-rate denominator and so cannot be judged by it.
 
 ---
 
