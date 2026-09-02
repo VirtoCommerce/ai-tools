@@ -21,6 +21,7 @@ about to change how a step works.
 | [`test-model.md`](test-model.md) | Step 1e — the fault model: why Part 0 comes first, the eight rules the scenario table must satisfy, the nine-clause gate, worked references | Building or reviewing a Test Model |
 | [`authoring.md`](authoring.md) | Steps 2–3 — oracle loading, Artifacts A/B/C, the scaffold + KEEP gate, the per-surface fan-out (3b), review/auto-fix | Authoring cases, or changing how they are authored |
 | [`close-out.md`](close-out.md) | Step 5 — triage, AC/DoD reconciliation, the verdict table, the severity floor on filing, the report, promotion | Triaging findings, filing, or promoting |
+| [`visual-axis.md`](visual-axis.md) | The visual axis — the `visual_surface` derivation, surface → axes → executor, the invariant-blocks/spec-advises verdict rule, the browser budget | A UI-visible ticket, or changing how design/a11y is scheduled |
 | [`modes.md`](modes.md) | `--epic` and `--iterate` (5k) | Running either opt-in mode |
 | [`../../templates/test-model.md`](../../templates/test-model.md) | The Test Model fill-in shape + the authoring-plan JSON shape | Writing the model or a plan |
 
@@ -94,12 +95,19 @@ Every other step, and the entire FAST path, self-checks inline. Diagram + role/h
 |---|---|---|
 | Storefront UI, checkout, cart, search, mobile | `qa-frontend-expert` | `playwright-chrome` |
 | Admin SPA, APIs, modules, GraphQL, backend | `qa-backend-expert` | `playwright-edge` |
-| Storybook components, accessibility, design system | `ui-ux-expert` | Chrome DevTools MCP |
-| Cross-browser, Claude Design or Figma comparison, debugging | `qa-testing-expert` | `playwright-firefox` |
+| Storybook components, accessibility, design system, the `vs. DESIGN` spec diff | `ui-ux-expert` | Chrome DevTools MCP |
+| Cross-browser, debugging | `qa-testing-expert` | `playwright-firefox` |
 
 **Minimum dispatch:** backend-only → `qa-backend-expert`; frontend-only → `qa-frontend-expert`; both → both
-in parallel; UI/component → add `ui-ux-expert`; P0 or critical-revenue → add `qa-testing-expert`. **FAST →
-one execution agent** (the single owning specialist).
+in parallel; **`visual_surface: true` → add `ui-ux-expert`** (the visual lane); P0 or critical-revenue → add
+`qa-testing-expert`. **FAST → one execution agent** (the single owning specialist) **plus the visual lane
+when `visual_surface: true`** — the one documented exception, and the reason for it is in
+[`visual-axis.md`](visual-axis.md) §5.
+
+`visual_surface` is derived at `1b` item 2c, recorded with its sources, and replaces the undefined
+*"UI/component"* trigger this table used to carry — a phrase no gate ever checked was applied. The lane's
+targets, the three axes it runs, the verdict vocabulary and the browser-budget ordering all live in
+[`visual-axis.md`](visual-axis.md); **do not restate them here.**
 
 Each ticket-agent prompt must carry: the ticket ID; **Artifact A** (target suite path + row IDs);
 **Artifact B** checklist; **test data** (the `@td()`/`{{VAR}}` the cases use, confirmed seeded — never

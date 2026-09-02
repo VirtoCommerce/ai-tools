@@ -177,6 +177,26 @@
   "bugs_not_filed": [
     { "$comment": "One entry per confirmed real bug held BELOW the 5d severity floor (Low/P3). Present and empty when there are none — an absent array is indistinguishable from a run that found none. `report` is the durable record; the floor drops a finding from the tracker, never from the run.", "severity": "Low", "provenance": "in-scope|pre-existing|out-of-scope", "summary": "<one line>", "report": "reports/bugs/open/<file>.md" }
   ],
+  "visual": {
+    "$comment": "The design + accessibility axis. `surface` is derived at 1b item 2c beside `layer` (same discipline: derived, never asked, never defaulted) and decides whether the Step-4 visual lane dispatches at all; \"unresolved\" is treated as true, the one place this axis fails OPEN, because a wrongly-skipped visual pass leaves no trace anywhere while a wrongly-run one costs one agent. A NULL block means the step never ran — a gap, not a clean result; `ran:false` WITH a `skipped_reason` is the opposite, the step ran and declined. THE TWO ARRAYS ARE THE POINT: `invariant_failures[]` (BL-A11Y-*/BL-UI-*, all P1 for the a11y set) are ordinary findings — triaged at 5a, graded, filed under the 5d floor, able to fail 5c — while `advisory[]` (vs. DESIGN DRIFT/MISSING/UNSPEC/KNOWN_DIVERGENCE) is reported and NEVER fails the ticket. Keeping them apart is what makes the blocking rule auditable from this artifact instead of only from prose. Per-axis `verdict` null WITH a `skipped_reason` is legal and common — the design_spec axis needs /design-login, unavailable in web sessions and CI, and axe can be blocked by CSP; NEITHER may ever be recorded as a pass. Spec: .claude/skills/qa-test/visual-axis.md. Deliberately NOT owned here: BL-UI-001..005 layout stability, which keeps its existing owner (authoring tags + suite 048c).",
+    "surface": "true|false|unresolved",
+    "surface_source": [],
+    "ran": false,
+    "skipped_reason": null,
+    "targets": [],
+    "axes": {
+      "a11y": { "$comment": "WCAG 2.2 AA + BL-A11Y-001..004. Five of the six WCAG 2.2 additions (2.4.11/2.5.7/3.2.6/3.3.7/3.3.8) are manual-only and a clean axe run says nothing about them; screen-reader output cannot be verified at all. Scope is the gated themes (Coffee + Red).", "ran": false, "verdict": null, "findings": 0, "skipped_reason": null },
+      "design_system": { "$comment": "Live resolved custom properties vs the generated token set (tokens:sync), no hardcoded literals, sized-control token + aspect equality.", "ran": false, "verdict": null, "findings": 0, "skipped_reason": null },
+      "design_spec": { "$comment": "vs. DESIGN against DESIGN_SYSTEM_PROJECT_ID via DesignSync. `unresolved` > 0 downgrades an otherwise-clean axis to WARN and must be printed — a guessed expectation fails every correct implementation.", "ran": false, "verdict": null, "confirmed": 0, "drift": 0, "missing": 0, "unspec": 0, "known_divergence": 0, "unresolved": 0, "skipped_reason": null }
+    },
+    "invariant_failures": [
+      { "$comment": "May fail the ticket. `bug` is the 5d tracker key, or null when held below the severity floor (the reports/bugs/open/ draft still exists and is named in bugs_not_filed).", "invariant": "BL-A11Y-003", "severity": "Critical|High|Medium|Low", "measured": "<the value read>", "bug": null }
+    ],
+    "advisory": [
+      { "$comment": "NEVER fails the ticket. AMBIGUOUS is the one that needs a human: the spec contradicts an invariant or a WCAG criterion, and it is escalated in the 5e report rather than resolved by obeying the spec.", "verdict": "DRIFT|MISSING|UNSPEC|KNOWN_DIVERGENCE|AMBIGUOUS", "item": "<what was compared>", "spec": "<declared>", "live": "<rendered>" }
+    ],
+    "report": null
+  },
   "business_rules_verified": ["BL-CART-001"],
   "appinsights": {
     "checked": true,

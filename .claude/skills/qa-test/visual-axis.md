@@ -1,0 +1,157 @@
+# The visual axis — what runs for which surface, and what its verdict may do
+
+**This file is the only place the `/qa-test` visual axis is specified.** `commands/qa-test.md`,
+`skills/qa-test/SKILL.md`, `authoring.md` and `close-out.md` **cite it and never restate it** — the same
+single-source-of-truth discipline `ticket-routing.md` holds for flow routing.
+
+It exists because the axis had no owner. Before it, `/qa-test` carried five incidental UI lines across four
+files, every one of them *oracle loading for case authoring* — never an execution lane, never a gate, never
+a verdict — and the trigger was two different undefined phrases (*"UI/component"*, *"for a UI surface"*) that
+nothing checked was ever applied. Measured cost: **1 design report across 25 ticket folders**, and the one
+that exists was run by hand. It found 2 High, 1 AMBIGUOUS-escalate, 7 Medium and 4 Low — a WCAG 1.4.1 token
+collision, a 1.63:1 focus ring, four design-specified surfaces absent from code — none of which any other
+axis in the pipeline can see.
+
+---
+
+## 1. `visual_surface` — derived at `1b` item 2c, never asked, never defaulted
+
+The trigger is **one token**, derived beside `layer` in the same block and by the same rules, with its
+sources recorded. Values: `true` · `false` · `unresolved`.
+
+| # | Source | Yields `true` when |
+|---|---|---|
+| 1 | **The PR diff** — `1a`'s extension map | any `.vue` · `.scss` · `.css` · `.html` · a module `**/Scripts/**` blade template · an icon-set or design-token file |
+| 2 | **The derived `layer`** | `storefront` or `admin-spa` (both render to a human); `cross-layer` when either is a member |
+| 3 | **The target suites' manifest tags** | a `layer: frontend` suite, or tags `storefront` / `admin-spa` |
+
+`api` · `module` · `platform` alone yield `false`. Record `visual_surface_source[]` always — following
+`layer_source[]`'s own rule, **null means the source was not consulted, which is a gap, not a zero**.
+
+**`unresolved` is treated as `true`.** This is the one place the axis fails *open*, deliberately and in the
+same direction as *"when in doubt, take FULL"*: a wrongly-skipped visual pass leaves no trace anywhere, while
+a wrongly-run one costs one agent. The asymmetry is the whole argument.
+
+**It is a lane trigger, not an effort trigger.** `visual_surface: true` does **not** force FAST → FULL. A P2
+restyle stays FAST and simply gains this lane — see §5.
+
+---
+
+## 2. The table — surface → axes → executor
+
+| Ticket surface | Axes that run | Executor | Target resolved from |
+|---|---|---|---|
+| **Storefront page or flow** | a11y · design-system · `vs. DESIGN` | `ui-ux-expert` | the route(s) the ticket changes |
+| **Storefront component** | a11y · design-system · `vs. DESIGN` | `ui-ux-expert` | the component, **dual** Storybook + storefront (the two surfaces catch different bug classes) |
+| **Admin SPA blade** | a11y · design-system | `ui-ux-expert` | the blade under change; `vs. DESIGN` only if the design project covers admin |
+| **`api` / `module` / `platform` only** | none | — | — the lane does not dispatch |
+
+The three axes, and where each is specified:
+
+| Axis | What it asserts | Specification |
+|---|---|---|
+| **a11y** | WCAG 2.2 AA + `BL-A11Y-001..004` (all **P1**) — keyboard operability, accessible naming, contrast, axe-clean. `BL-UI-006` touch targets rides along, since 2.5.8 measures it anyway | `skills/qa-accessibility/` |
+| **design-system** | live resolved custom properties vs the generated token set; no hardcoded colour/spacing literals; sized-control token + aspect equality | `skills/qa-design/design-system-consistency.md` |
+| **`vs. DESIGN`** | declared tokens · control geometry · icon name→glyph parity, diffed against the Claude Design project at `DESIGN_SYSTEM_PROJECT_ID` | `skills/qa-design/claude-design-verification.md` |
+
+### Dispatch the agent — do not invoke the command
+
+`/qa-design` is `disable-model-invocation: true`, so `/qa-test` may **not** auto-trigger it — the same
+constraint that makes 5f/5h *point* at `/ba-analyze` rather than run it. That costs nothing here:
+`/qa-design` is itself only an orchestration shell that delegates execution to `ui-ux-expert`. Step 4
+dispatches that agent directly, exactly as it dispatches `qa-frontend-expert` / `qa-backend-expert`, and the
+brief cites the `/qa-design` **skill** as the methodology. `/qa-accessibility` carries no
+`disable-model-invocation` flag and may be invoked directly.
+
+The brief carries: the resolved target · `DESIGN_SYSTEM_PROJECT_ID` · the `BL-A11Y-*` / `BL-UI-*` invariant
+**text** (not just the IDs) · the screenshot path · the verdict vocabulary below.
+
+---
+
+## 3. Verdict handling — invariants block, spec drift advises
+
+Precedence is `BL-UI / BL-A11Y invariant > design spec > UX heuristic`, unchanged from what `/qa-design`
+already declares. A spec match never rescues an invariant FAIL.
+
+| Outcome | Lands in | May fail the ticket? |
+|---|---|---|
+| `BL-A11Y-*` / `BL-UI-*` **FAIL** | `summary.json.visual.invariant_failures[]` | **Yes** — an ordinary finding: triaged at 5a, severity-graded, filed under the existing 5d floor |
+| `vs. DESIGN` **DRIFT** / **MISSING** | `visual.advisory[]` | **No** — recorded and reported, never blocking |
+| **UNSPEC** | `visual.advisory[]` | No — a design project is rarely exhaustive; failing "not in the spec" turns the axis into ignored noise |
+| **KNOWN_DIVERGENCE** | `visual.advisory[]` | No — the spec itself declares it unshipped. Also never a clean PASS |
+| **AMBIGUOUS** | escalate in the report | The spec contradicts an invariant or a WCAG criterion → **escalate, never obey the spec** |
+| **SKIPPED** | `visual.axes.*.skipped_reason` | No — but **never report it as a PASS.** Silence reads as CONFIRMED |
+| **INCONCLUSIVE** — axe did not load (CSP) | `visual.axes.a11y.skipped_reason` | No — and **never clean.** A blocked axe run is an absent measurement, not a passing one |
+
+Two arrays rather than one severity field, because that is what makes the blocking rule auditable from the
+artifact instead of only from this prose.
+
+**`SKIPPED` is the common case, not an error.** `DesignSync` needs `/design-login`, which requires an
+interactive terminal — so the `vs. DESIGN` axis is unavailable in Claude Code on the web and in CI. It
+records `SKIPPED` + the reason there and the other two axes carry on. Same discipline as `tokens:check`
+exiting `2` on an unreachable source rather than passing. A non-zero `unresolved` count from the extractor
+**downgrades an otherwise-clean design axis to WARN**, and the count is printed — a guessed expectation
+fails every correct implementation.
+
+**Three things this axis structurally cannot conclude**, each of which must be reported as manual rather
+than as a PASS:
+
+- **Screen-reader output** — there is no NVDA/JAWS/VoiceOver hookup in the toolkit.
+- **Five of the six WCAG 2.2 additions** (2.4.11 · 2.5.7 · 3.2.6 · 3.3.7 · 3.3.8) — axe covers only 2.5.8,
+  and nascently. A clean axe run says nothing about the other five.
+- **Non-gated themes** — a11y conclusions hold for **Coffee + Red** only; `purple-pink` / `watermelon` are
+  known-unsupported and are visual-only.
+
+---
+
+## 4. Browser budget
+
+`ui-ux-expert` runs on **Chrome DevTools MCP** — a fourth lane beside chrome/firefox/edge, and one the
+`/qa-test` pool did not previously list. The **max-3-concurrent** cap still binds across every lane.
+
+When the checklist agents + regression lanes + this lane exceed 3, run in this order and **state the order
+chosen**: checklist track → visual lane → regression. The ticket verdict is the priority, and the visual
+lane feeds it (5c) while regression feeds the release gate (5e).
+
+Never schedule the visual lane on `playwright-firefox`: this pass is click- and hover-driven, and
+`@playwright/mcp` + firefox cannot click this storefront or the Admin SPA.
+
+---
+
+## 5. What this axis does NOT own
+
+**BL-UI-001..005** — CLS, spacing grid, alignment, content boundary, state-induced shift — are *not* a
+scheduled axis here. They keep their existing owner: loaded at Step 2 for authoring, asserted through the
+measurable tags `[SHIFT] [TOUCH] [SPACING] [ALIGN] [OVERFLOW] [CLS]`, and executed by suite `048c` in
+regression. Adding a second executor would put two owners on one invariant set with no rule for which wins.
+
+**FAST is not re-routed.** `visual_surface: true` adds the lane; it does not promote the ticket to FULL. A
+FAST run still authors no cases, writes no Test Model and runs no verifier — it gains one agent and the
+checklist rows in §6.
+
+**`critical-ui-scope.md` is a scope definition, not a gate.** It is 197/197 `GAP` since its covering suite
+was removed on 2026-07-25. Use it to resolve *which* invariants apply to the component under audit; it
+cannot supply coverage it does not have.
+
+---
+
+## 6. The durable record
+
+On **FAST the Artifact-B checklist is the run's only durable record**, so every visual condition appears in
+it as a row with a verdict, exactly like every other condition. **An uncovered visual condition is listed,
+never omitted** — dropping the row is what makes a checklist look complete when it is not.
+
+The pass also writes its own per-ticket `design-report.md` **into the run's own ticket folder**
+(`reports/tickets/{SPRINT}/<ticket-key>/design-report.md`) — `.claude/rules/reports.md` category 6, which
+already permits a ticket-scoped `/qa-design` run; 30–60 lines, cap 120. Note this is deliberately the
+**ticket-folder** path, not the `reports/tickets/{SPRINT}/qa-design/<slug>-<date>/` tree a standalone
+`/qa-design` invocation uses: dispatched from `/qa-test` the audit belongs to the ticket's evidence, beside
+`summary.json` and the checklist. `reports/tickets/Sprint26-17/VCST-5346/design-report.md` is the precedent.
+
+Its machine half lands in `summary.json.visual`. A `null` `visual` block means the step never ran — a gap,
+not a clean result.
+
+**Scope note.** `critical-ui-scope.md`'s matrix is not only `GAP`-filled, it is **stale**: suite `048c`
+exists with 30 `LAYOUT-*` cases (registered runner-native in `config/test-suites.json`) whose cells the
+matrix still marks `GAP`, and four component rows are flagged as drifted/unenforced. Use it to resolve
+*which invariants apply*; do not read its coverage column as fact, and never auto-edit it.

@@ -107,6 +107,26 @@ bug **this run filed in an earlier round** is **CARRIED**, never PRE-EXISTING. D
 later: the bug stops failing 5c, and the round reports PASS on a defect this same run filed and that is
 still red. Match on the bug key, not on the symptom — it is this ticket’s own Sub-task.
 
+### 7. Visual-lane findings — two classes, and only one of them can fail the ticket
+
+When the Step-4 visual lane ran ([`visual-axis.md`](visual-axis.md)), its findings enter this same triage
+with **no new class and no new severity ladder** — but they split by what produced them, and the split is
+what makes the axis safe to switch on:
+
+| Finding | Treated as | Lands in |
+|---|---|---|
+| A **`BL-A11Y-*` / `BL-UI-*` invariant FAIL** | an ordinary finding — classified, provenanced, severity-graded, filed at 5d under the existing floor, and able to fail 5c | `summary.json.visual.invariant_failures[]` |
+| A **`vs. DESIGN` `DRIFT` / `MISSING` / `UNSPEC` / `KNOWN_DIVERGENCE`** | **advisory** — reported, never filed by this rule, **never** fails 5c | `visual.advisory[]` |
+| **`AMBIGUOUS`** — the spec contradicts an invariant or a WCAG criterion | escalate to the human in the 5e report; **never** resolve it by obeying the spec | `visual.advisory[]` + named in the report |
+| **`SKIPPED` / `INCONCLUSIVE`** (no `/design-login`; axe blocked by CSP) | an absent measurement | `visual.axes.*.skipped_reason` — **never** reported as clean |
+
+Precedence is `BL-UI / BL-A11Y invariant > design spec > UX heuristic`: **a spec match never rescues an
+invariant FAIL.** The reason drift only advises is that most drift rows are cosmetic px deltas where the
+implementation is arguably better than the spec — blocking on those would train everyone to ignore the axis,
+which costs more than the drift does. Note the severity consequence in the other direction: `BL-A11Y-001..004`
+and `BL-UI-006/007` are all **P1**, so a confirmed contrast or keyboard failure clears the 5d floor and
+reaches 5c on its own merits.
+
 **Output:** every finding carrying `class` + `provenance` + `severity` + `duplicate-of?`.
 
 ---
@@ -179,6 +199,13 @@ The verdict follows directly from 5a's triage output + 5b's reconciliation and p
 judgment is introduced here.**
 
 Note that filing and failing are separate decisions: a `Medium` files (5d) without failing the ticket.
+
+**The visual axis reaches this table through `BL-*`, not beside it.** *"all `BL-*` verified"* and *"an
+IN-SCOPE P0/P1 bug"* already carry `BL-A11Y-001..004` and `BL-UI-006/007`, all P1 — so a confirmed contrast,
+keyboard, naming or touch-target failure fails the ticket by the rules that are already here, and no new row
+is needed. What is **not** in this table, deliberately: a `vs. DESIGN` `DRIFT`/`MISSING`. It is advisory
+(5a item 7), appears in the 5e report and `summary.json.visual.advisory[]`, and **never moves this verdict.**
+A run whose only visual finding is spec drift is still a PASS.
 
 ---
 
@@ -368,6 +395,12 @@ This IS the report: verdict, reconciled AC/DoD table + percentages, checklist re
 regression result + triage summary + **Scope Exclusions**, business rules verified, bugs found (with
 provenance + relationship), below-floor findings, release-gate recommendation, and the screenshot folder
 path.
+
+**Plus, when `visual_surface: true`, one Visual axis line** — the three axes with their verdicts, the
+invariant failures, the advisory count, and **any axis that was `SKIPPED`/`INCONCLUSIVE`, with its reason**.
+State a skip explicitly: an omitted axis reads as a clean one, which is the failure this axis exists to stop.
+When `visual_surface` derived `false`, say so in the same one line rather than dropping the section — *not
+applicable* and *not checked* must stay distinguishable.
 
 ---
 

@@ -1,5 +1,5 @@
 ---
-description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /qa-verify-fix inline, else feature-test at a FAST path (a checklist and nothing else) or a FULL path (mandatory Test Model, case authoring, independent verifier gates, promotion). Regression is case-scoped to Critical + the run's new cases inside a 40-minute window. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
+description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /qa-verify-fix inline, else feature-test at a FAST path (a checklist, plus the design/a11y visual lane when the ticket is UI-visible) or a FULL path (mandatory Test Model, case authoring, independent verifier gates, promotion). Regression is case-scoped to Critical + the run's new cases inside a 40-minute window. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
 argument-hint: "<ticket-key> | feature name | PR #NNN | --epic <EPIC-KEY> [--iterate [--max-rounds N]]"
 disable-model-invocation: true
 ---
@@ -80,12 +80,23 @@ Stated once, completely. **Everything after this section is the FULL path.**
 
 ```
 1a  route + fetch (comments + attachments, always)   → name the parent Epic in one line, no sibling analysis
-1b  pre-flight, sprint, duplicate check
-2   load the affected domains' BL-* rule TEXT; route ONE execution agent. Stop there.
+1b  pre-flight, sprint, duplicate check              → incl. 2b layer + 2c visual_surface
+2   load the affected domains' BL-* rule TEXT; route ONE execution agent (+ the visual lane). Stop there.
 3   Artifact B checklist (conditions from 1a's ACs) + Artifact C scope + test data (3a) if needed
-4   one execution agent runs the checklist; then the change-scoped regression (no --also-ids)
+4   one execution agent runs the checklist; the visual lane if visual_surface; then the change-scoped
+    regression (no --also-ids)
 5a  triage · 5b reconcile AC/DoD · 5c verdict · 5d file (severity floor) · 5e report · 5f status · 5h docs
 ```
+
+**The one exception to "one execution agent": the visual lane.** When `1b` item 2c derives
+`visual_surface: true`, FAST **also** dispatches `ui-ux-expert` for the design + accessibility pass
+([`skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md)). This is a deliberate, chosen change to
+FAST's cost promise, not an oversight: a `.scss`-only PR, an icon migration or a P2 restyle is by
+construction *single-layer, single-domain, obvious surface, P2* — so **the class of change most likely to
+break the UI is exactly the class that routes here**, and a one-agent functional checklist cannot see a
+contrast failure, a token collision or a control that drifted from the design. The cost is one agent on a
+fourth browser lane; the alternative was a path that verified everything about a restyle except how it
+looks. FAST is otherwise unchanged — still no cases, no Test Model, no verifier.
 
 **Not run on FAST:** `1c` / `1d` agents · the `1e` Test Model and `1e-plan` · the archetype / UIP / `VC-*`
 sweeps · Artifact A authoring (so **no new test cases and no new regression coverage** — the route back in is
@@ -95,7 +106,8 @@ self-check).
 **Still run on FAST, and load-bearing:** the `BL-*` rule text (the correctness oracle the checklist asserts
 against — dropping it makes a FAST verdict ungrounded rather than merely cheap) · the ticket comments and
 attachments · `5b` (it produces the verdict) · the committed `testing-checklist.md`, which is the run's
-**only** durable record.
+**only** durable record · **the visual lane when `visual_surface: true`** (see the block above), whose
+conditions become checklist rows for exactly that reason.
 
 **`--iterate` is valid on FAST, and this is where it earns most.** 5k needs a filed bug and a
 change-scoped regression, and FAST produces both — it just has no authored cases to re-run, so round N+1
@@ -248,6 +260,21 @@ Per `.claude/templates/agent-dispatch.md`:
       routing decision and the layer, and a human should read it.
     - `layer_source[]` is **always** populated. Following `releasedThrough`’s own rule: null means the
       source was not consulted, which is a gap, not a zero.
+2c. **Resolve `visual_surface` — same block, same discipline.** Does this ticket change something a human
+    LOOKS AT? Derived here, never asked, never defaulted; lands as `summary.json.visual.surface` with
+    `visual.surface_source[]`. It is **one token replacing two undefined phrases** — the old *"UI/component"*
+    dispatch trigger and the old *"for a UI surface"* oracle condition, neither of which anything checked was
+    applied. Derivation table, the three axes it schedules, and the verdict rules:
+    [`skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md).
+
+    In short: `true` when the diff touches `.vue`/`.scss`/`.css`/`.html`/blade markup/icons or tokens, **or**
+    the derived layer is `storefront`/`admin-spa`, **or** a target suite is `layer: frontend`. `api`/`module`/
+    `platform` alone ⇒ `false`. **`unresolved` is treated as `true`** — the one place this axis fails open,
+    in the same direction as *when in doubt, take FULL*: a wrongly-skipped visual pass leaves no trace, a
+    wrongly-run one costs one agent.
+
+    **It is a LANE trigger, not an EFFORT trigger** — it never forces FAST → FULL. A P2 restyle stays FAST
+    and gains the lane.
 3. **Resolve current sprint** — use `reports/tickets/Sprint-current` if present, else the latest `SprintXX-XX` folder; create if missing. This is `{SPRINT}` for output paths (`reports/tickets/{SPRINT}/`). Resolve **before** the duplicate check.
 4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` (per `feedback_duplicate_check_across_all_sprints`) for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
 
@@ -333,10 +360,15 @@ it does not re-derive what Step 1 populated. Skip anything `1c` already returned
 Load, for the identified domains, the **actual rule text and patterns** (not just IDs): `business-logic.md`
 `BL-*` · `e-commerce-edge-cases-library.md` `ECL-*` · the domain checklists via `/qa-checklist` ·
 `skills/qa-plan/e2e-scenario-catalog.md` `E2E-*` (the suite-traceability backbone for Artifact C) ·
-`oracles/vc-bug-catalog.md` `VC-*` (each entry's `Detection probe` is a ready-made scenario) · for a UI
-surface, the `BL-UI-*` invariants + `critical-ui-scope.md` + `qa-design` §State-Stress + the generated
-selectors · `modern-web-attack-surface.md` §`UIP-*`. Then query VirtoOZ docs via `/vc-docs` — **skip when
+`oracles/vc-bug-catalog.md` `VC-*` (each entry's `Detection probe` is a ready-made scenario) · **when `1b`
+item 2c derived `visual_surface: true`**, the `BL-UI-*` **and `BL-A11Y-001..004`** invariants +
+`critical-ui-scope.md` + `qa-design` §State-Stress + the generated selectors **and design tokens** ·
+`modern-web-attack-surface.md` §`UIP-*`. Then query VirtoOZ docs via `/vc-docs` — **skip when
 `1c` delegated to `ba-system-analyzer`**, topping up specific gaps only.
+
+The condition is the derived token, not a judgment call — *"for a UI surface"* used to be an unchecked
+phrase. `BL-A11Y-001..004` are new to this load and are all **P1**: the pipeline previously carried no
+accessibility oracle at any step.
 
 Per-source detail and the sweep-resolution rules:
 [`skills/qa-test/authoring.md`](../skills/qa-test/authoring.md) §Step 2. Agent routing table:
@@ -344,8 +376,9 @@ Per-source detail and the sweep-resolution rules:
 
 **Gate (inline):** every affected domain has its `BL-*`/`ECL-*`/`E2E-*`/`VC-*` loaded and an agent routed;
 **every in-domain defect-shaped `VC-*` entry is either a scenario row or an explicit N/A**; the `Archetype
-sweep` is resolved; for a UI surface the `UIP sweep` is resolved and the UI oracles are loaded. (Verified as
-part of Step 3's gate — no standalone verifier pass here.)
+sweep` is resolved; **when `visual_surface: true`** the `UIP sweep` is resolved, the UI + a11y oracles are
+loaded, and the visual lane is routed. (Verified as part of Step 3's gate — no standalone verifier pass
+here.)
 
 ---
 
@@ -414,8 +447,17 @@ reachability precondition.
 **Execute in order — checklist first, then the scoped regression:**
 
 1. **Checklist + ticket cases** — launch the applicable specialist agent(s) **in a single message** to run
-   Artifact B's checklist and the Artifact-A cases. **FAST = one agent, checklist only.** Prompt contract:
-   [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §Agent dispatch.
+   Artifact B's checklist and the Artifact-A cases. **FAST = one agent, checklist only** (plus the visual
+   lane below). Prompt contract: [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §Agent dispatch.
+
+1b. **Visual lane — when `visual_surface: true`, both paths.** In the **same single message** as (1),
+   dispatch **`ui-ux-expert`** on **Chrome DevTools MCP** for the design + accessibility pass: WCAG 2.2 AA /
+   `BL-A11Y-*` · design-system consistency (tokens, no literals) · the `vs. DESIGN` spec diff against
+   `DESIGN_SYSTEM_PROJECT_ID`. **Dispatch the agent — do not invoke `/qa-design`**, which is
+   `disable-model-invocation: true` and is in any case only a shell that delegates to this same agent; the
+   brief cites the `/qa-design` skill as its methodology. Targets, brief contents, verdict vocabulary and
+   the SKIPPED rule: [`skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md). It writes a
+   per-ticket `design-report.md` (reports category 6) and its machine half into `summary.json.visual`.
 2. **Change-scoped regression (Artifact C)** — as its own **`/qa-regression <ids> --cases critical
    --also-ids <new Draft case IDs>`** run (it owns suite→agent assignment, the browser pool, retries and the
    run report). Capture its **`RUN_ID`** (5e records it; the release-gate feed keys its ≥80% floor off it) **and its
@@ -423,13 +465,17 @@ reachability precondition.
    **Carry the run's Scope Exclusions into the Step-5 report**: a suite that contributed zero Critical cases
    and a suite that passed look identical otherwise.
 
-**Both draw on the same max-3-concurrent-browser cap.** If the checklist agents + regression lanes exceed 3,
-run the checklist track first and regression after (ticket verdict is priority). **State the order chosen.**
+**All three draw on the same max-3-concurrent-browser cap.** If the checklist agents + the visual lane +
+regression lanes exceed 3, run **checklist → visual → regression** and **state the order chosen**: the ticket
+verdict is the priority, the visual lane feeds it (5c), and regression feeds the release gate (5e). Never
+place the visual lane on `playwright-firefox` — the pass is click- and hover-driven.
 
 **Gate (Execution evidenced — inline):** every atomic condition carries **PASS or FAIL evidence**
 (screenshots for critical flows, console/network/trace for failures); the regression track produced a
-**RUN_ID + pass rate**. Reject any "PASS" with no artifact — "all passed" without evidence is not a pass —
-and re-capture before Step 5.
+**RUN_ID + pass rate**; **when `visual_surface: true`, the visual lane reported** — each of its three axes
+carries a verdict or an explicit `SKIPPED` **with a reason**. Reject any "PASS" with no artifact — "all
+passed" without evidence is not a pass — and re-capture before Step 5. **A silently absent visual axis is
+not a clean one**; that is the same rule, applied to the axis rather than to a case.
 
 ---
 

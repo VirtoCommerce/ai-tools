@@ -38,12 +38,21 @@ returned.
   **Silence is not an answer** — a domain's entries are triaged, not skimmed. Skip `BY-DESIGN` and
   `CONVENTION` entries as scenario candidates: those are false-positive guards, and the right use is to
   *avoid filing* the behaviour they describe. Then fill `Archetype sweep`.
-- **For a UI/storefront surface — the oracles that make a UI assertion strong:** `business-logic.md`
-  **Domain 15 `BL-UI-*`** (measurable invariants + their `Verify` recipes), `oracles/critical-ui-scope.md`
-  (36 components × applicable invariants, with real selectors), `skills/qa-design/SKILL.md` **§State-Stress
-  Pass** (the seven states a surface must survive), and `automation/storefront-selectors.md`. Assert these
-  with the **measurable tags** (`[SHIFT] [TOUCH] [SPACING] [ALIGN] [OVERFLOW] [CLS]`), never as prose
-  inside `[DOM]`.
+- **When `1b` item 2c derived `visual_surface: true` — the oracles that make a UI assertion strong:**
+  `business-logic.md` **Domain 15 `BL-UI-*`** (measurable invariants + their `Verify` recipes) **and
+  `BL-A11Y-001..004`** (keyboard operability, accessible naming, contrast, axe-clean — all **P1**, and new
+  to this load: the pipeline previously carried no accessibility oracle at any step),
+  `oracles/critical-ui-scope.md` (36 components × applicable invariants, with real selectors — a scope
+  selector, **not** a coverage claim; its matrix is `GAP`-filled and stale against `048c`),
+  `skills/qa-design/SKILL.md` **§State-Stress Pass** (the seven states a surface must survive),
+  `automation/storefront-selectors.md`, and the generated design tokens (`SPACING_GRID` et al. via
+  `tokens:sync` — never transcribed). Assert these with the **measurable tags**
+  (`[SHIFT] [TOUCH] [SPACING] [ALIGN] [OVERFLOW] [CLS]`), never as prose inside `[DOM]`.
+
+  The condition is the **derived token**, not a judgment call — this bullet used to open *"For a UI/storefront
+  surface"*, a phrase nothing checked was ever applied. Loading these oracles is **authoring-time** work and
+  is separate from *executing* the design + a11y pass, which is the Step-4 visual lane
+  ([`visual-axis.md`](visual-axis.md)). FULL does both; FAST skips authoring and still runs the lane.
 - **`skills/qa-sbtm/modern-web-attack-surface.md` §The `UIP-*` sweep** — resolve all ten probes for a UI
   flow: each covered by a scenario row or waived with a reason. These are the cases a real user produces
   (Back, refresh, two tabs, expired session, deep link) and the corpus has almost none of them:
@@ -261,6 +270,14 @@ Model has `Epic context`, add an integration item for each seam with a Done sibl
 or produces state a sibling owns, so verify the boundary end-to-end, not just the story in isolation.
 
 On FAST the conditions come from `1a`'s ACs directly, since there is no `1d` table.
+
+**When `visual_surface: true`, the visual conditions are rows in this table like any other** — one per
+applicable `BL-A11Y-*` / `BL-UI-*` invariant for the surface under audit, plus the design-system and
+`vs. DESIGN` axes, each with its verdict at 5e. This matters most exactly where the run is cheapest: on FAST
+this file is the **only** durable record, so a visual condition that appears in neither the checklist nor a
+bug draft has been deleted rather than deprioritized. **An uncovered or `SKIPPED` visual condition is listed
+with its reason, never omitted** — the same rule the section already applies to uncovered functional
+conditions, and the reason it exists.
 
 **It is a file, and that is load-bearing on FAST** (`.claude/rules/reports.md` §1, category 6; 30–60 lines,
 cap 120). A FAST run authors no cases and writes no Test Model, so the checklist is the **only** durable

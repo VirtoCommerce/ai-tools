@@ -82,7 +82,7 @@ that hides the consequence of its own decision is half a routing file:
 
 | Path | When | What runs |
 |---|---|---|
-| **FAST** | Bug fix / copy-tweak / config / Technical task; **P2–P3**, single-layer, single-domain, obvious surface. | **A checklist, and nothing else.** `1a`+`1b` → Artifact B checklist (written to the ticket folder) → one execution agent + the critical-case regression → `5a`–`5f`. **No** `1c`/`1d` agents, **no** Test Model, **no** archetype/UIP/`VC-*` sweeps, **no** case authoring, **no** `5g` promotion, **no** independent verifier. |
+| **FAST** | Bug fix / copy-tweak / config / Technical task; **P2–P3**, single-layer, single-domain, obvious surface. | **A checklist, plus the visual lane when the ticket is UI-visible.** `1a`+`1b` → Artifact B checklist (written to the ticket folder) → one execution agent + the critical-case regression → `5a`–`5f`. **No** `1c`/`1d` agents, **no** Test Model, **no** archetype/UIP/`VC-*` sweeps, **no** case authoring, **no** `5g` promotion, **no** independent verifier. |
 | **FULL** | New feature / Story / Epic; **P0–P1**; cross-layer; ≥2 domains; critical-revenue flow; unclear surface. | The whole pipeline: `1c` ‖ `1d` → **Test Model (required)** → case authoring → three hard-STOP verifier gates → `5g` promotion. |
 
 **When in doubt → FULL.**
@@ -94,6 +94,16 @@ Two consequences of the FAST cut, stated so they are chosen rather than discover
   regression protection is itself a reason to route FULL.
 - **The Test Model is mandatory on FULL** — it is what makes a story's context understandable and its
   documentation adequate, which is a need a P2 config tweak does not have.
+
+**The one thing FAST does NOT drop: the visual lane.** A UI-visible ticket runs the design + accessibility
+pass on **both** paths. This is a third axis, orthogonal to flow and effort, and it is decided by the
+`visual_surface` token `/qa-test` §1b item 2c derives — **not** by this matrix, because it is a *lane*
+trigger, not an *effort* trigger: it never promotes FAST to FULL. The reason it survives the FAST cut when
+everything else was dropped is that the cut and the risk point in opposite directions here — a `.scss`-only
+PR, an icon migration or a P2 restyle is *single-layer, single-domain, obvious surface, P2* by construction,
+so **the change most likely to break the UI is the one this row routes**, and a functional checklist cannot
+see a contrast failure or a token collision. Spec:
+[`skills/qa-test/visual-axis.md`](../../skills/qa-test/visual-axis.md).
 
 ---
 
