@@ -225,38 +225,40 @@ function pageOverview() {
     "предлагает наверх верное для всех",
   ], ...C.store, 52);
 
-  p.card("KEEP", 350, 640, 310, 180,
+  p.card("KEEP", 350, 630, 310, 205,
     "Механизм проверки и обновления<br><span style=\"font-size:11px;font-weight:normal\">работает сам, без людей</span>", [
     "принимает новое только с доказательством",
     "кладёт подтверждённое в базу",
-    "перепроверяет старое по изменениям и по кругу",
-    "заменяет устаревшее, старое сохраняет",
+    "перепроверяет по изменениям и по кругу",
+    "заменяет устаревшее, прежнее помечает",
     "помечает спорное, разрешает споры проверкой",
-    "сообщает человеку, что изменилось",
+    "сводит дубли к одной записи",
+    "шлёт оператору сводку изменений",
   ], ...C.keeper, 52);
 
   p.card("OPP", 1180, 200, 270, 160,
     "Оператор платформы<br><span style=\"font-size:11px;font-weight:normal\">сотрудник Virto</span>", [
-    "убирает неверное",
-    "закрепляет важное",
-    "ставит под сомнение",
+    "снимает неверное, след остаётся",
+    "закрепляет запись от автозамены",
+    "ставит запись под сомнение",
     "читает сводку изменений",
     "вмешивается редко",
   ], ...C.actor, 52);
 
   p.card("OPC", 1180, 435, 270, 160,
     "Оператор проекта<br><span style=\"font-size:11px;font-weight:normal\">сотрудник клиента</span>", [
-    "убирает неверное",
-    "закрепляет важное",
-    "ставит под сомнение",
+    "снимает неверное, след остаётся",
+    "закрепляет запись от автозамены",
+    "ставит запись под сомнение",
     "читает сводку изменений",
     "вмешивается редко",
   ], ...C.actor, 52);
 
-  p.card("SRC", 60, 860, 600, 100,
+  p.card("SRC", 60, 875, 600, 120,
     "Источники<br><span style=\"font-size:11px;font-weight:normal\">код · стенд · документация · решения команды</span>", [
     "наполняют базу в первый раз",
     "служат проверкой для всех знаний",
+    "меняются — и запускают перепроверку",
   ], ...C.source, 52);
 
   p.edge("HUM", "AGT", "", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.281 });
@@ -265,13 +267,13 @@ function pageOverview() {
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
   p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.18, points: [[700, 262], [700, 430]] });
   p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.788 });
-  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[315, 260], [315, 730]] });
-  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.167, entryX: 0, entryY: 0.72, points: [[730, 670], [730, 290]] });
-  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.333, entryX: 0.118, entryY: 1, points: [[820, 700]] });
+  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[315, 260], [315, 733]] });
+  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.167, entryX: 0, entryY: 0.72, points: [[730, 664], [730, 290]] });
+  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.333, entryX: 0.118, entryY: 1, points: [[820, 698]] });
   p.edge("KBC", "KBP", "", line, { exitX: 0.794, exitY: 0, entryX: 0.794, entryY: 1 });
   p.edge("SRC", "KEEP", "", line, { exitX: 0.742, exitY: 0, entryX: 0.5, entryY: 1 });
-  p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.667, entryX: 0.444, entryY: 1, points: [[1300, 760]] });
-  p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.833, entryX: 1, entryY: 0.5, points: [[1500, 790], [1500, 280]] });
+  p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.667, entryX: 0.444, entryY: 1, points: [[1300, 767]] });
+  p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.833, entryX: 1, entryY: 0.5, points: [[1500, 801], [1500, 280]] });
   p.edge("OPC", "KBC", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.421 });
   p.edge("OPP", "KBP", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.64 });
   p.edge("KBP", "KBC", "", line, { exitX: 0.167, exitY: 1, entryX: 0.167, entryY: 0 });
