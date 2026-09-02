@@ -839,7 +839,31 @@ The deterministic steps (0, 1-index, 2, 3-scoring) are engine code; the *classif
 of step 3's outcome is made by the capturing agent in-session (it has a model), against
 a rubric shipped in the skill — recorded in the draft so consolidation can audit it.
 
-### 10.2 Capture (v1 mechanics kept)
+### 10.2 Capture (v1 mechanics kept), reached through the one door
+
+**An agent talks to the resolver and to nothing else.** Reading and recording are the
+same door (§9.2): `kb` takes the question or the observation, and what happens behind it
+is not the agent's business. Three things follow, and each of them was a rule an agent
+could forget:
+
+- **The novelty query cannot be skipped**, because it is not a step the writer performs
+  before calling capture — it *is* the first thing recording does (§10.1). By-construction
+  where it used to be by-instruction, the same move as §5.4 and §2a.
+- **The agent does not choose a base.** The door writes to the one writable root — the
+  project's own base where there is one, the platform base on a native install — and the
+  containment check (`assertWritable`, readOnly pin cache) stays exactly where the write
+  happens.
+- **The agent does not learn the storage layout.** `drafts/` versus `entries/` is behind
+  the door, which is what lets §6.1's two states change without touching a single call site.
+
+**The cost, stated plainly:** the resolver was read-only, and a read-only component is
+easy to trust — deterministic, cacheable, offline from the pinned tree. So the door is a
+façade over **two internal paths that do not merge**: the read path stays the read-only
+resolver over both roots, the write path is capture against the single writable root. The
+interface is one; the properties of the core are unchanged. Anyone reading this later:
+the read path did not become mutable, and nothing may make it so.
+
+
 
 Append-only `drafts/`, one file per fingerprint, repeat sightings merge
 (`count++`, phrasing appended, freshest evidence wins), tombstones are final,
