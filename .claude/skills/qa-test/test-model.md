@@ -49,6 +49,29 @@ reasons it cannot be a terminal dump:
    is an intention, not a gate: do not cite it as though a script were enforcing it. The live deterministic
    gates are `tc:scaffold` over the authoring plan (1e-plan) and the appender at Step 3.
 
+### One ticket, one model file — even across `--iterate` rounds
+
+`<date>` is **round 1’s** date (the run’s `date` field), and a later round **amends that same file**.
+A same-day round 2 would otherwise collide on the exact path, and a `-r2` sibling is worse than a
+collision: reason 2 above is that the next ticket on this surface *reuses* the model, and two files for
+one fault model means the reuse picks one at random.
+
+An amendment is a `## Round N` section of 5–15 lines (the 80–160-line band is per model, not per round)
+and may do exactly three things:
+
+1. mark a hypothesis **CONFIRMED**, with the bug key 5d filed for it;
+2. mark one **CLEARED-by-fix**, with the round it went green and the prerelease it went green on;
+3. **add rows for mechanisms the FIX’s diff introduces** — a fix is a change, and it earns the same
+   fault-model treatment the original change got. This is the loop’s one genuinely new coverage
+   obligation, and skipping it is how a fix ships untested.
+
+It may **not** rewrite Part 0. The value chain does not change because a bug was fixed; if it would,
+the fix changed the mechanism, and that is a new ticket rather than a round. The 9-clause gate re-fires
+**only on the amendment’s new rows** — inline, no verifier, exactly like the original
+`Model complete | 1e | inline` gate. Round bookkeeping lives in
+`summary.json.iterations.per_round[].artifacts.model_amendment`; the loop contract is
+[`modes.md`](modes.md) §5k §Artifact refresh between rounds.
+
 The AC table and DoD checklist stay terminal-only; the Artifact B checklist goes to the ticket folder.
 
 ## The eight rules that make the scenario table a fault model

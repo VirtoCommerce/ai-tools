@@ -18,7 +18,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { filterRows, headerLine, parseArgs, renderFiltered } from "../regression/filter-cases.js";
+import { filterRows, headerLine, parseArgs, renderFiltered, selectorFrom } from "../regression/filter-cases.js";
 import { isUsableObservation } from "../lib/estimate-calibration.js";
 import { mergeSuiteResults } from "../lib/suite-results-merge.js";
 import { COLUMNS, parseSuite, type Row } from "../test-cases/append-test-cases-to-suite.js";
@@ -171,6 +171,9 @@ test("a trailing value-taking flag is an error, not a silent no-op", () => {
     const r = args("s.csv", "--priority", "Critical", flag);
     assert.ok("error" in r, `${flag} with no value was accepted`);
   }
+  // `--ids` cannot ride the loop above (it is mutually exclusive with --priority), so it gets its
+  // own line rather than a weaker assertion.
+  assert.ok("error" in args("s.csv", "--ids"), "--ids with no value was accepted");
 });
 
 test("multi-tier is accepted and split — the docstring advertises it", () => {
@@ -201,6 +204,103 @@ test("--scope-out is parsed and defaults to null", () => {
   );
 });
 
+// ---------------------------------------------------------------------------
+// The exact-set path (`--ids`). `/qa-test` Step 5k round N+1 re-runs ONLY the previously-failed
+// cases, which a tier union cannot express: `--also-ids` ADDS to a tier, so the smallest set was
+// always 'a whole tier, plus these'.
+// ---------------------------------------------------------------------------
+
+test("--ids keeps exactly the named cases and nothing else", () => {
+  const rows = [
+    row({ ID: "A-1", Priority: "Critical" }),
+    row({ ID: "A-2", Priority: "Critical" }),
+    row({ ID: "A-3", Priority: "Low" }),
+  ];
+  const r = filterRows(rows, { tiers: [], ids: ["A-2", "A-3"] });
+  assert.deepEqual(r.keptIds, ["A-2", "A-3"]);
+  // A-1 is Critical and still dropped — the exact set is the selection, not a filter over a tier.
+  assert.equal(r.droppedCount, 1);
+});
+
+test("an unreadable Priority is NOT a finding on the --ids path — nothing read it", () => {
+  const rows = [row({ ID: "A-1", Priority: "" }), row({ ID: "A-2", Priority: "???" })];
+
+  // Tier path: both are named, because "not provably Critical" is a coverage hole worth surfacing.
+  assert.equal(filterRows(rows, { tiers: ["Critical"] }).untypeable.length, 2);
+
+  // Exact-set path: the column was never consulted, so reporting it would manufacture a hole that
+  // does not exist — and the row still runs, because the caller named it.
+  const r = filterRows(rows, { tiers: [], ids: ["A-1"] });
+  assert.deepEqual(r.untypeable, []);
+  assert.deepEqual(r.keptIds, ["A-1"]);
+});
+
+test("an --ids entry that matches no row is reported, never silent", () => {
+  const r = filterRows([row({ ID: "A-1", Priority: "Critical" })], { tiers: [], ids: ["A-1", "GONE-9"] });
+  assert.deepEqual(r.keptIds, ["A-1"]);
+  // Per-suite noise by design (the id list is run-global) — but it must still be nameable, so the
+  // orchestrator can reconcile a RUN-WIDE miss, which is the actual finding.
+  assert.deepEqual(r.missingIds, ["GONE-9"]);
+  assert.deepEqual(r.missingAlsoIds, []);
+});
+
+test("--ids and --priority are mutually exclusive, not merged", () => {
+  // A tier union and an exact set answer different questions. Accepting both would leave
+  // "did --ids narrow the tier, or add to it?" unanswerable from the invocation.
+  for (const extra of [["--priority", "Critical"], ["--also-ids", "X-1"]]) {
+    const r = args("s.csv", "--ids", "A-1", ...extra);
+    assert.ok("error" in r, `--ids with ${extra[0]} was accepted`);
+    assert.match((r as { error: string }).error, /one or the other/);
+  }
+});
+
+test("--priority is not required when --ids is given, and is still required otherwise", () => {
+  const ok = args("s.csv", "--ids", "A-1,A-2");
+  assert.ok(!("error" in ok));
+  assert.deepEqual((ok as { ids: string[] }).ids, ["A-1", "A-2"]);
+  assert.deepEqual((ok as { tiers: string[] }).tiers, []);
+
+  assert.match((args("s.csv") as { error: string }).error, /--ids/);
+});
+
+test("parseArgs -> filterRows: every selector arg reaches the filter", () => {
+  // The seam, not either side of it. `--ids` parsed correctly and `filterRows` honoured it, yet the CLI
+  // kept ZERO cases for a live run, because main() built its opts object without `ids` — so the exact-set
+  // path never armed and every row fell through to a tier match against an EMPTY tier set. Both unit
+  // tests passed throughout: one drove filterRows directly, the other only parseArgs. This composes them
+  // the way main() does, so a selector that stops being forwarded fails here.
+  const rows = [
+    row({ ID: "A-1", Priority: "Critical" }),
+    row({ ID: "A-2", Priority: "Low" }),
+    row({ ID: "A-3", Priority: "Low" }),
+  ];
+  // `selectorFrom` is the projection main() actually uses — re-composing the two sides by hand here
+  // would pass even with the seam broken, which is exactly how the bug survived two green suites.
+  const compose = (...argv: string[]) => {
+    const a = args("s.csv", ...argv);
+    assert.ok(!("error" in a), `usage rejected: ${JSON.stringify(a)}`);
+    return filterRows(rows, selectorFrom(a as Parameters<typeof selectorFrom>[0])).keptIds;
+  };
+
+  assert.deepEqual(compose("--ids", "A-2,A-3"), ["A-2", "A-3"], "--ids did not reach filterRows");
+  assert.deepEqual(compose("--priority", "Critical"), ["A-1"], "--priority did not reach filterRows");
+  assert.deepEqual(
+    compose("--priority", "Critical", "--also-ids", "A-3"),
+    ["A-1", "A-3"],
+    "--also-ids did not reach filterRows",
+  );
+});
+test("an --ids selection round-trips every field, same as a tier selection", () => {
+  const rows = [
+    row({ ID: "A-1", Priority: "Low", Title: 'has "quotes", a comma', Steps: "l1\nl2" }),
+    row({ ID: "A-2", Priority: "Critical" }),
+  ];
+  const src = `${COLUMNS.join(",")}\n`;
+  const kept = filterRows(rows, { tiers: [], ids: ["A-1"] }).kept;
+  const out = parseSuite(renderFiltered(src, kept)).rows;
+  assert.equal(out.length, 1);
+  for (const c of COLUMNS) assert.equal(out[0]![c], rows[0]![c], `${c} did not survive`);
+});
 // ---------------------------------------------------------------------------
 // Scope provenance. This is the chain that stopped a 6-of-44 run from calibrating a 44-case suite.
 // ---------------------------------------------------------------------------

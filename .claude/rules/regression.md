@@ -334,6 +334,7 @@ Three commands, run in this order by `regression-orchestrator` Step 3:
 | Command | Does |
 |---|---|
 | `npm run suites:filter -- <resolved.csv> --priority <tier> [--also-ids <ids>] --out <p>` | narrow a resolved CSV to a priority tier (+ named cases) **before** lanes sees it |
+| `npm run suites:filter -- <resolved.csv> --ids <ids> --out <p>` | the **exact-set** form — precisely those cases, no tier. Mutually exclusive with `--priority`/`--also-ids`; reads no `Priority`, so an unreadable one is not a finding here. `/qa-test` 5k's RED→GREEN track is its caller |
 | `npm run suites:lanes -- <ID> --run-id <R> [--csv <resolved>]` | classify every case → `suite-{ID}-lanes.json` + `suite-{ID}-resolved.browser.csv` |
 | `npm run suites:machine -- <ID> --run-id <R>` | run the machine rows via `graphql-runner.ts --case` → `suite-{ID}-results.machine.json` |
 | `npm run suites:merge -- <ID> --run-id <R>` | fold the fragments → the canonical `suite-{ID}-results.json` |
@@ -735,8 +736,9 @@ was never recorded.
 
 | Command | Does |
 |---|---|
-| `npm run tc:promote -- [RUN_ID\|latest] [--suite <ID>]` | dry run: print the per-case decision and the reason for every hold |
-| `npm run tc:promote:apply -- <RUN_ID> [--suite <ID>]` | write the CSVs, then `suites:sync` + `suites:lint` |
+| `npm run tc:promote -- [RUN_ID\|latest] [--suite <ID>] [--ids <IDs>]` | dry run: print the per-case decision and the reason for every hold |
+| `npm run tc:promote:apply -- <RUN_ID> [--suite <ID>] [--ids <IDs>]` | write the CSVs, then `suites:sync` + `suites:lint` |
+| `… -- --ids <IDs>` | restrict to these case ids — a **scope, never a gate**: every `PR-*` rule still runs on what it leaves. A multi-round `--iterate` close-out needs it, because a case is promotable from the run that EXECUTED it, so it promotes once per RUN_ID |
 | `… -- --min-green-runs <N>` | require N trailing green runs, not just this one |
 | `… -- --stamp VCST-1234` | stamp `References` with a ticket key instead of the RUN_ID |
 | `… -- --json` | machine-readable decisions, for a skill to relay |

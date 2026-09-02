@@ -174,7 +174,7 @@ sequenceDiagram
         VF->>VF: RED (pre-fix) to GREEN (fixed) x3 + regression
         VF-->>TR: TESTED, then DONE
     else FAIL  (--iterate: bounded loop, Step 5k, <= max-rounds)
-        note over Orch,Fix: Per round: /qa-fix (no merge) -> /qa-deploy-pr prerelease (confirm) -> re-run failed cases + regression -> re-verdict. PASS exits to the release gate; cap or G0 BAIL STOPs to a human. Merge + release stay human
+        note over Orch,Fix: Per round: /qa-fix (no merge) -> /qa-deploy-pr prerelease (confirm) -> re-run failed cases (--ids, own run) + regression re-scoped to the FIX diff -> re-verdict. Per round it also FILES new bugs, posts a round delta, rewrites summary.json and APPENDS to the checklist; the release gate, the transition and promotion happen once, at loop exit. PASS exits to the release gate; cap or G0 BAIL STOPs to a human. Merge + release stay human
     else BLOCKED
         Orch-->>User: Resolve env/data/dependency, re-run /qa-test
     end
@@ -278,9 +278,18 @@ sequenceDiagram
   `--max-rounds 2`) a FAIL is *driven*, not pointed: per round `/qa-test` runs `/qa-fix` for each IN-SCOPE
   fixable bug (G0–G7, **never merges**; a G0 BAIL STOPs to a human) → `/qa-deploy-pr` deploys the fix's
   **prerelease** to the test env (**confirm each deploy**; no merge, so the §2 guard is never touched) →
-  re-runs the previously-FAILED cases + the change-scoped regression → re-verdicts. PASS exits to the
-  Feature Release Gate (5e); still-FAIL at the cap STOPs with a per-round summary; BLOCKED STOPs. **Merge +
-  release are always the human's.** Diagram 2's FAIL branch is one round of this loop.
+  re-runs the previously-FAILED cases (as their **own** `--ids` run, so the RED→GREEN rate and the gate’s
+  ≥95% stay two numbers) + the change-scoped regression **re-scoped to the fix’s own diff** →
+  re-verdicts. PASS exits to the Feature Release Gate (5e); still-FAIL at the cap STOPs with a
+  per-round summary; BLOCKED STOPs. **Merge + release are always the human's.** Diagram 2's FAIL branch
+  is one round of this loop.
+  **It re-persists as well as re-runs, and the split is the contract:** per round it files new bugs
+  (a bug already filed this run is CARRIED, not re-filed), posts a short round delta, rewrites
+  `summary.json` with the round appended to `iterations.per_round[]`, and **appends** a section to the
+  checklist; the release gate, the full QA-Complete comment, the tracker transition and promotion all
+  happen **once, at loop exit** — so a `--iterate` run makes one transition and posts one QA-Complete
+  comment whatever the round count. Per-round table with the reason for each row:
+  [`skills/qa-test/modes.md`](../.claude/skills/qa-test/modes.md) §5k.
 - **Promotion is append-Draft → execute → harvest → flip, last and non-blocking.** Cases are appended
   `Draft` (Step 3), executed as `Draft` by the automated regression runner (Step 4), and **5g harvests that
   execution as the `--verify` evidence** that upgrades assertions `{HYPOTHESIS}`→`{OBSERVED}` — `--verify`

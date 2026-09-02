@@ -1,6 +1,6 @@
 ---
 description: "Run regression test suites in parallel. Supports scope selection: smoke, critical, sprint, full, frontend, backend, or comma-separated suite IDs. Correlates App Insights logs for the run window. Optional --seed=<profile> pre-seeds test data; --teardown removes AGENT-TEST-* entities after run."
-argument-hint: "[smoke|critical|sprint|sprint:XX-YY|full|frontend|backend|001,004,006] [--cases <tier>] [--also-ids <ids>] [--seed=...] [--teardown] [--no-plan] [--frontend|--backend]"
+argument-hint: "[smoke|critical|sprint|sprint:XX-YY|full|frontend|backend|001,004,006] [--cases <tier>] [--also-ids <ids>] [--ids <ids>] [--seed=...] [--teardown] [--no-plan] [--frontend|--backend]"
 disable-model-invocation: true
 ---
 
@@ -28,6 +28,7 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 /qa-regression marketing --seed=pricing    # Seed price lists before marketing suites
 /qa-regression 004,028 --cases critical    # Only the Critical cases of those suites (change-scoped)
 /qa-regression 004 --cases critical --also-ids SRCH-060,SRCH-061   # ...plus named cases, any priority
+/qa-regression 004,028 --ids SRCH-013,CAT-071   # ONLY these cases (exact set, no tier)
 ```
 
 ### `--cases <tier>` — run a slice of each suite, not the whole suite
@@ -46,6 +47,22 @@ each suite's resolved CSV is narrowed by `npm run suites:filter` *before* `suite
 - **Nothing is dropped silently.** The run report gains a **Scope Exclusions** section naming every
   suite that contributed zero cases, every unreadable `Priority`, every legacy-header refusal, and any
   `--also-ids` that matched nothing.
+
+### `--ids <ids>` — the exact-set counterpart
+
+`--cases <tier>` selects a tier (optionally plus named cases); **`--ids` IS the selection** — precisely
+those case ids and nothing else. The two are **mutually exclusive** (as is `--also-ids`): a tier union
+and an exact set answer different questions, and accepting both leaves "did `--ids` narrow the tier or
+add to it?" unanswerable from the invocation.
+
+- **Its caller is `/qa-test` Step 5k.** Round N+1 of the `--iterate` loop re-runs *only* the
+  previously-failed cases, as its own run, so the RED→GREEN pass rate and the Feature Release Gate’s
+  ≥95% stay two different numbers ([`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k).
+- **It reads no `Priority` at all**, so an unreadable one is *not* reported on this path — nothing
+  consulted it, and naming it would manufacture a coverage hole that does not exist.
+- **Most suites in the selection will contribute zero cases**, which is normal here rather than
+  exceptional. Still report them: an ids-only run’s Scope Exclusions section is what makes the
+  selection re-derivable, and a run-wide id miss (an id in *no* suite) is a real finding.
 
 > **Which suites a selection expands to, and how many, is NOT documented here.**
 > `config/test-suites.json` `selections` is the source of truth, and

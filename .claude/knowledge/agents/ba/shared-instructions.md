@@ -97,18 +97,20 @@ Codified in memory `feedback_agents_self_check_and_verify`.
 
 ## Output policy
 
-All BA deliverables go to **`reports/ba/`** as one of the four allowed report categories
+All BA deliverables go to **`reports/ba/`** as one of the **ten** allowed report categories
 (`.claude/rules/reports.md` is the single source of truth for paths, size caps, screenshot budgets, and
 required sections). Do NOT create intermediate/working/"draft" files — return reasoning via the
 orchestrator, write only the final artifact. Naming: `ba-report-{date}.md`, `{jira-id}-stories.md`,
-`{feature}-{audience}-guide.md` (e.g. `vcst-5009-skyflow-customer-guide.md`). The `/ba-analyze`
+`{feature}-{audience}-guide.md` (e.g. `vcst-5009-skyflow-customer-guide.md`), and — under the two named
+sub-paths — `test-models/<TICKET>-<date>.md` and
+`release-notes/<ticket>-<layer>-release-note.md` / `release-notes/release-<label>.md`. The `/ba-analyze`
 orchestrator owns index generation across runs — do not write your own `README.md` in `reports/ba/`.
 
 ## Knowledge files (read on-demand)
 
 | File | When |
 |------|------|
-| `knowledge/ba/virto-doc-style.md` | **Before authoring any documentation** — the four audience skeletons |
+| `knowledge/ba/virto-doc-style.md` | **Before authoring any documentation** — the four audience skeletons, plus §9 for release notes (where the layer picks the audience) |
 | `knowledge/oracles/business-logic.md` | Before drafting BL proposals or story `Business_Rule` mappings |
 | `knowledge/oracles/e-commerce-edge-cases-library.md` | Negative ACs / pain-point risk cross-refs (ECL-*) |
 | `knowledge/domain/sitemap.md`, `products.md`, `catalog.md`, `store-settings.md` | Storefront/catalog/admin doc references |

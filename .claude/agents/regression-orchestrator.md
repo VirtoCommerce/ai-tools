@@ -108,7 +108,8 @@ The three lanes do **not** share slots.
 1. Read the suite CSV from the manifest's `file` path.
 2. Resolve every `@td(ALIAS.field)` token against `test-data/aliases.json` + the referenced data CSVs.
 3. Write the resolved CSV to `reports/regression/{RUN_ID}/suite-{ID}-resolved.csv`.
-3a. **`--cases <tier>` only — narrow the resolved CSV to those cases, before lanes sees it:**
+3a. **`--cases <tier>` or `--ids <IDs>` only — narrow the resolved CSV to those cases, before lanes
+    sees it:**
 
    ```bash
    npm run suites:filter -- reports/regression/{RUN_ID}/suite-{ID}-resolved.csv \
@@ -145,7 +146,17 @@ The three lanes do **not** share slots.
    time budget, the fix is to drop the suite from the **selection** deliberately, not to let the
    filter appear to have applied.
 
-   **`--also-ids` is how a case that is not in the tier still runs** — `/qa-test` passes its own newly
+   **`--ids <IDs>` is the exact-set form, and it replaces the tier rather than narrowing it.**
+   `npm run suites:filter -- … --ids <IDs> --out … --scope-out …` selects precisely those cases and
+   reads no `Priority` at all — so an unreadable one is *not* a finding on this path (nothing
+   consulted it). It is mutually exclusive with `--priority`/`--also-ids`, and it is what
+   `/qa-test` Step 5k's RED→GREEN track uses to re-run exactly the previously-failed cases. **An
+   empty `tiers` in the sidecar therefore means *ids-only*, never *unfiltered*** — `sourceCases` is
+   still the denominator, and `--scope-out` is just as mandatory. On an ids-only run **most suites in
+   the selection legitimately contribute zero cases**, so the zero-kept line stops being an edge case
+   and becomes the norm; report it, do not treat it as a failure.
+
+  **`--also-ids` is how a case that is not in the tier still runs** — `/qa-test` passes its own newly
    authored `Draft` case IDs, which are in scope by construction whatever their priority. The id list
    is run-global while the filter runs per suite, so **`missingAlsoIds` is expected noise on every
    suite that does not own the case**: reconcile it once at run level (an id missing from *every*
@@ -321,15 +332,16 @@ Write `reports/regression/regression-YYYY-MM-DD.md`:
 | Overall Pass Rate | X% |
 | Case filter (`--cases` runs only) | `<tier>` — N of M cases in scope; K excluded |
 
-## Scope Exclusions   ← `--cases` runs only; omit the section entirely on a full run
+## Scope Exclusions   ← `--cases` / `--ids` runs only; omit the section entirely on a full run
 Built from the `suite-{ID}-filter.json` sidecars in the run dir — **not** from scrollback. Report what
 did NOT run, because a scoped run's silence is otherwise unreadable:
-- per suite: `keptCases` of `sourceCases`, and the tier(s) asked for
+- per suite: `keptCases` of `sourceCases`, and the tier(s) asked for — or, on an ids-only run, that
+  it was an exact set (an empty `tiers` in the sidecar means ids-only, NEVER unfiltered)
 - suites that contributed **zero** cases, by ID (11 of 128 hold no Critical case at all)
 - any case whose `Priority` the filter could not read, by ID — it did not run and it is not a pass
 - any suite refused as legacy 11-column and therefore **run whole**, by ID
-- `--also-ids` entries that matched **no suite in the run** (an id missing from one suite is normal —
-  the list is run-global and the filter is per suite; only a run-wide miss is a finding)
+- `--also-ids` / `--ids` entries that matched **no suite in the run** (an id missing from one suite is
+  normal — the list is run-global and the filter is per suite; only a run-wide miss is a finding)
 
 ## Suite Results
 | Suite | Name | Browser | Tests | Pass | Fail | Rate | Attempts |

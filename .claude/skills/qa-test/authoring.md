@@ -180,6 +180,29 @@ Step 4's scoped regression *will* run them; that is the point.
 
 ---
 
+### Between `--iterate` rounds: never re-author, sometimes add
+
+**Step 3 is not re-runnable for rows a previous round already appended, and it fails two different ways
+depending on how you re-run it.** Re-running `tc:scaffold` with the previous round’s `--id-block` makes
+the appender reject every row on ID collision — dead-ended but safe. Re-running `tc:alloc` first yields
+a **fresh** block, so the same logical rows land under new IDs, and the appender’s only content dedup is
+exact `Title` + `Section` against the target suite — so a **reworded title duplicates silently** in
+permanent coverage, which no gate downstream can detect.
+
+A **loop-confirmed defect does earn a new case**, and it is the best-grounded row the KEEP gate ever
+sees: `plausible:` accepts a filed bug, and a defect this run filed *and then watched go green* is that
+ground at full strength. Three rules on it:
+
+- **Prefer amending.** Grep the target suite for the defect’s observable first. If a case already
+  crosses the mechanism and merely asserted the wrong thing, the fix is
+  `/qa-review-tests file <suite> --fix` on that row — not a new row.
+- **Allocate fresh.** A genuinely new row gets its own `tc:alloc` block; never reach for a block a
+  previous round already spent.
+- **Author it before the round that executes it.** A case authored after the final round is `Draft`
+  with evidence nowhere — PR-002 at 5g, held forever. If that happens anyway, record it in
+  `summary.json.promotion.blocked` with exactly that reason rather than leaving it silently
+  unpromoted.
+
 ## Step 3b — author Artifact A in parallel, ONE BATCH PER EXECUTION SURFACE (FULL only)
 
 Authoring is the serial bottleneck of Step 3, and the partition that makes splitting safe already exists:
@@ -245,9 +268,23 @@ record of what was actually checked — terminal-only would leave the run unaudi
 ends. **Update it in place at Step 5** with each item's verdict, so the committed file is the checklist that
 ran and not the one that was planned. It also carries any finding held below the 5d severity floor.
 
+**On `--iterate` it is APPEND-ONLY.** Round 1 writes the item table with verdicts as above; round N
+appends `## Round N — re-test (<probed version>, prerelease <PR>)` holding only the re-run items, each
+as a transition (`Round 1: FAIL → Round N: PASS`), plus that round’s still-failing items and any
+below-floor finding. **Never edit a round-1 verdict cell in place**: the RED→GREEN transition is the
+loop’s deliverable, overwriting the RED erases the proof, and on FAST there is no other durable record
+of it. Keep each round section ≤15 lines; if the file would exceed the 120-line cap, cut per-item prose,
+never the round sections.
+
 ---
 
 ## Artifact C — regression scope: critical cases + this run's new cases, in 40 minutes
+
+**On `--iterate`, round N+1 re-derives this scope from the FIX’s diff**
+(`regression:select --repo <name> --diff <fix-PR range>`) — round 1’s selection was computed from the
+*ticket’s* diff and cannot know what the fix touched — and runs it as a **second** `/qa-regression`
+alongside a separate `--ids` run of exactly the previously-failed cases, so the RED→GREEN pass rate and
+the release gate’s ≥95% stay two different numbers ([`modes.md`](modes.md) §5k §The two tracks).
 
 The scope is **case-level, not suite-level.** Selecting whole suites is what made a search-change run plan
 all 44 cases of suite `004` — 6 of them Critical, 19 skipped outright.

@@ -99,7 +99,10 @@ attachments · `5b` (it produces the verdict) · the committed `testing-checklis
 
 **`--iterate` is valid on FAST, and this is where it earns most.** 5k needs a filed bug and a
 change-scoped regression, and FAST produces both — it just has no authored cases to re-run, so round N+1
-re-runs the **failed checklist items** plus the regression. FAST is the bug-fix / tweak path, so it is the
+re-runs the **failed checklist items** plus the regression, **re-scoped to the fix’s own diff** rather
+than the ticket's, and the checklist is **appended to** per round rather than overwritten — on FAST it is
+the only durable record, so rewriting a round-1 FAIL as a round-2 PASS deletes the proof the defect
+existed. FAST is the bug-fix / tweak path, so it is the
 likelier place to want a fix-and-retest loop at all. What stays off on FAST inside the loop: the verifier
 re-ratification in 5k step 3, exactly as at every other FAST gate.
 
@@ -159,7 +162,10 @@ step**: its AC table is a field of the Test Model, the single hand-off to `test-
   a stubbed boundary — say which); **this story** = the slice under test. Place the story in the Epic's
   end-to-end flow. Lands in the model's `Epic context`. No parent Epic ⇒ skip with a one-line note.
 - **A PR** — map extensions: `.cs`/`.csproj` → Backend, `.vue`/`.ts`/`.tsx`/`.jsx` → Frontend,
-  `.css`/`.scss` → Styling. **A feature name** — use it to determine the affected areas.
+  `.css`/`.scss` → Styling. This is the coarse read; `1b` item 2b refines it into the layer token set
+  (`storefront`/`admin-spa`/`api`/`module`/`platform`) using the repo identity, which the extension
+  alone cannot give — a `.cs` file is `api` in `*ExperienceApi*` and `module` anywhere else.
+  **A feature name** — use it to determine the affected areas.
 - **Identify applicable domain(s)** — map to the 63 `/qa-checklist` domains.
 
 **Then classify and route** — per `ticket-routing.md`, which owns the matrix:
@@ -212,6 +218,36 @@ Per `.claude/templates/agent-dispatch.md`:
    - **A ⚠ BREAKING change in the component under test forces FULL**, whatever `1a` scored. `ticket-routing.md` says *when in doubt → FULL*; a contract that moved last month is doubt with a date on it, and a FAST run would author no cases and write no Test Model against it.
    - **It feeds `1d`'s AC↔implementation check a third leg.** That check is otherwise static — ACs vs *this* PR's diff — and a breaking change elsewhere in the same component is invisible to that diff while being the likeliest cause of a DRIFT nobody owns.
    - **Released ≠ deployed.** A capability the ledger records that the probe does not carry is `NOT_DEPLOYED` → BLOCKED-on-deploy, never a FAIL and never a filed bug. And the ledger carries **no behaviour**, so it can never ground an assertion as `{DOC}`; that stays `{OBSERVED}`.
+2b. **Resolve the LAYER — derived, never asked, never defaulted.** Derived HERE and persisted at 5e.3
+    (with the rest of `summary.json`); 5e.0 resolves everything downstream of it and 5f only points.
+    It lands as `summary.json.layer`
+    with the ordered sources that voted in `release.layer_source[]`. It is resolved here, not at 5f, so
+    one derivation serves both the FAST/FULL decision (`ticket-routing.md` already routes cross-layer →
+    FULL) and the release note 5f points at, whose whole routing axis is the layer
+    (`.claude/knowledge/ba/virto-doc-style.md` §9). Token set: `storefront` · `admin-spa` · `api` ·
+    `module` · `platform` · `cross-layer`.
+
+    Take the **union of sources 1 and 2**; if it has more than one member, `layer = cross-layer` and the
+    members go in `release.layers[]`. Sources 3–5 are fallbacks, used only when 1 and 2 both yield
+    nothing.
+
+    | # | Source | Yields |
+    |---|---|---|
+    | 1 | **The PR diff** — the extension map in `1a`, refined by repo identity through `ci/lib/repo-router.ts` `REPO_PROFILES` + `resolveOwningSubApp()` | `vc-frontend` → `storefront`; `vc-platform` → `platform`; `vc-module-*` → `module`, narrowed to `admin-spa` on a `moduleFrontendSubApps` path or `**/Scripts/**` + blade markup, and to `api` on `*ExperienceApi*` / `*.Web/Controllers` |
+    | 2 | **`regression.suites[]` → `config/test-suites.json`** | `layer: frontend` → `storefront`, `layer: backend` → `module`; per-suite `concern: api` → `api`, `concern: admin` → `admin-spa`; tags `admin-spa`/`xapi`/`graphql`/`storefront` refine. **Read the DATA, not the manifest's declared `concerns` enum** — the rows carry `e2e` and `graphql` too, which the enum does not list |
+    | 3 | **`build`** — which of `theme` / `relevant_modules` / `platform` actually moved | theme only → `storefront`; a module → `module`; platform → `platform`. Weakest: a deploy bumps versions this ticket never touched |
+    | 4 | **`bugs_filed[]` → fix PR → repo kind** | the same rule as source 1, applied to the fix rather than the change |
+    | 5 | **The ticket's own Components** → `.claude/knowledge/execution/module-suite-map.md` | weakest of all — human-curated and drifts |
+
+    **Three loud failures, and none of them is a default.**
+    - No source yields a token ⇒ `layer: null`, `layer_source: ["UNRESOLVED"]`, and 5f refuses the
+      fragment (`release.refusal: "layer-unresolved"`) and names **no** command. **Never default to
+      `storefront`** — a wrong layer routes the note to the wrong audience, which is worse than no note.
+    - Sources 1 and 2 disagree while `1a` routed the ticket single-layer FAST ⇒ `layers_conflict: true`,
+      surfaced in the fragment’s own footer, not only in JSON. That is a contradiction between the
+      routing decision and the layer, and a human should read it.
+    - `layer_source[]` is **always** populated. Following `releasedThrough`’s own rule: null means the
+      source was not consulted, which is a gap, not a zero.
 3. **Resolve current sprint** — use `reports/tickets/Sprint-current` if present, else the latest `SprintXX-XX` folder; create if missing. This is `{SPRINT}` for output paths (`reports/tickets/{SPRINT}/`). Resolve **before** the duplicate check.
 4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` (per `feedback_duplicate_check_across_all_sprints`) for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
 
@@ -399,7 +435,8 @@ and re-capture before Step 5.
 
 ## Step 5 — Report
 
-Seven ordered phases. **5a before 5b before 5c is load-bearing:** the verdict is expressed in terms of a
+Seven ordered phases, plus **`5k`** — the bounded loop that repeats them, on `--iterate` only.
+**5a before 5b before 5c is load-bearing:** the verdict is expressed in terms of a
 finding's provenance (5a) and the reconciled AC/DoD state (5b). Full methodology:
 [`skills/qa-test/close-out.md`](../skills/qa-test/close-out.md).
 
@@ -411,16 +448,24 @@ finding's provenance (5a) and the reconciled AC/DoD state (5b). Full methodology
 | **5d** | File bugs | **Ask first.** **Severity floor: `Critical`/`High`/`Medium` only** — a `Low` keeps its `reports/bugs/open/` draft, is named in the 5e comment and `summary.json.bugs_not_filed`, and gets no tracker item, in either shape. Relationship by provenance: IN-SCOPE → Sub-task · PRE-EXISTING → link only · OUT-OF-SCOPE → standalone + related | inline |
 | **5e** | Report | Feed + independently ratify the Feature Release Gate · post the tracker comment (**incl. the mandatory `Not filed (below severity floor)` line, `None` when empty**) · persist `summary.json` + update the checklist in place with verdicts · output the one chat report | verifier |
 | **5f** | Change status | **After** the report. PASS → TESTED · FAIL → REOPEN with failures + bug links. **TESTED is the terminal state this command may reach — never Done or Cancelled** | — |
+| **5k** | Iterate (`--iterate` only) | The bounded test → fix → re-test loop. **Per round:** 5a–5d + a short round-delta comment + `summary.json` + an appended checklist section. **At loop exit, once:** 5e in full → 5f → 5g. So a `--iterate` run posts **one** QA-Complete comment and makes **one** transition, whatever the round count. Which durable step runs per round vs at exit, and why each: [`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k | round cap · deploy confirm · G0 BAIL → STOP |
 | **5g** | Promote (FULL only) | Harvest `{OBSERVED}` via `--verify --fix`, re-derive G10, then flip `Draft → Automated` via **`npm run tc:promote`** — never by hand-editing the cell. Runs **last and non-blocking**: the close-out is already delivered | **hard STOP** + verifier |
 
 **Severity is graded at 5a and never re-graded at 5d** to move a finding across the floor. Filing and
 failing stay separate decisions: a `Medium` files without failing the ticket.
 
+**Verifier cadence inside the loop.** On `--iterate`, the **5b** verifier re-ratifies **once per round**
+(the verdict gate is what decides whether there is another round), while the **5e** and **5g** verifier
+dispatches fire **once, at loop exit** — there is one release, so there is one recommendation and one
+promotion. FAST fires none of the three, in the loop exactly as everywhere else.
+
 **Close the loop.** By default `/qa-test` verifies and reports; it never fixes — it states the next command
 and stops. PASS → TESTED, hand to the Feature Release Gate. FAIL → REOPEN → `/qa-fix <ticket-key>` → human
 review + merge + deploy → `/qa-verify-fix <ticket-key>`. BLOCKED → resolve the blocker and re-run from the
-top; no partial credit. With **`--iterate`**, 5k drives that loop itself, bounded
-([`skills/qa-test/modes.md`](../skills/qa-test/modes.md)).
+top; no partial credit. With **`--iterate`**, 5k drives that loop itself, bounded — and it re-persists as
+well as re-runs: per-round filing, comment, `summary.json` and checklist, with the gate, the transition
+and promotion deferred to the exit round
+([`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k).
 
 ---
 
@@ -443,7 +488,8 @@ top; no partial credit. With **`--iterate`**, 5k drives that loop itself, bounde
   table: [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §What persists.
 - **Severity floor on filing (5d): `Critical`/`High`/`Medium` only.** A `Low` is dropped from the tracker,
   never from the run, and never re-graded to move it across the line. It is also outside `--iterate`:
-  `/qa-fix` needs a filed ticket, so 5k only fixes what 5d filed.
+  `/qa-fix` needs a filed ticket, so 5k only fixes what 5d filed — in **every** round, not just the
+  first ([`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k).
 - App Insights correlation (5a) reuses `/qa-monitoring`'s query + dedup + triage machinery scoped to the
   window (no separate live-repro); resolve resources from `APPINSIGHTS_*`, skip gracefully when
   unconfigured; a correlated error gets no separate `BUG-AI-*` draft (5d's `/qa-bug` owns it).

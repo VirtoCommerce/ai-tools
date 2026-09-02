@@ -1,9 +1,10 @@
 {
-  "$comment": "Schema for /qa-test's summary.json (reports/tickets/{SPRINT}/<ticket-key>/summary.json). The ONLY narrative-adjacent artifact /qa-test persists (per .claude/rules/reports.md §1) — it must carry every field a later consumer needs: 1b's cross-sprint duplicate check reads `date`; 5e's Feature Release Gate reads `regression`; 5g records `promotion`. Replace <..> placeholders; 0/[]/null are empty defaults.",
+  "$comment": "Schema for /qa-test's summary.json (reports/tickets/{SPRINT}/<ticket-key>/summary.json). The ONLY narrative-adjacent artifact /qa-test persists (per .claude/rules/reports.md §1) — it must carry every field a later consumer needs: 1b's cross-sprint duplicate check reads `date`; 5e's Feature Release Gate reads `regression`; 5g records `promotion`; `layer` is derived at 1b item 2b and `release` resolved at 5e.0, both persisted at 5e.3, and their only reader is /ba-analyze docs release. Replace <..> placeholders; 0/[]/null are empty defaults.",
   "ticket": "<ticket-key>",
   "ticket_type": "Bug|Story|Task|Technical task|Sub-task|Epic|Tweak",
   "flow": "feature-test|verify-fix|hotfix-verify",
   "path": "fast|full",
+  "layer": "storefront|admin-spa|api|module|platform|cross-layer|null",
   "verdict": "PASS|PASS_WITH_NOTES|FAIL|BLOCKED",
   "date": "YYYY-MM-DD",
   "timing": {
@@ -33,6 +34,21 @@
       "behind": [],
       "breaking": []
     }
+  },
+  "release": {
+    "$comment": "Resolved at 5e.0 and written at 5e.3, for a PASS/PASS_WITH_NOTES verdict (5f only POINTS at /ba-analyze; it computes nothing) \u2014 the MACHINE half of the per-ticket release-note fragment. The prose half is ba-doc-writer's reports/ba/release-notes/<ticket>-<layer>-release-note.md, and this block is the ONLY thing that doc may take a layer, a version or a breaking flag from (ba-doc-writer never re-derives them; a second derivation site is how the two drift). It exists because the top-level `layer` is the axis a release note routes on (layer -> audience -> skeleton, .claude/knowledge/ba/virto-doc-style.md \u00a79) and nothing here recorded it: `regression.suites` carries the layer of what was RE-TESTED, `build` carries versions of what was DEPLOYED, and neither answers 'which surface did THIS ticket change'. A null block means the release step never ran (FAIL/BLOCKED, or a run predating the block) \u2014 a gap, not 'nothing shipped'. `fragment` null WITH a non-null `refusal` is the opposite: the step ran and declined, and the reason is the finding. `component_versions`/`platform_version` are copied from build.deployed (PROBED) \u2014 never from build.relevant_modules (declared git state) and never from release-ledger.md, which records what shipped UPSTREAM, not what is deployed here; UNKNOWN is legal, an absent or guessed version refuses the fragment. `breaking` is true only from build.releasedThrough.breaking[] or a cited contract change in the diff \u2014 never from ticket, PR or commit prose, so breaking:true with breaking_source:null is a defect in the fragment.",
+    "layers": [],
+    "layer_source": [],
+    "layers_conflict": false,
+    "audience": [],
+    "component_versions": {},
+    "platform_version": null,
+    "breaking": false,
+    "breaking_source": null,
+    "user_visible": null,
+    "fragment": null,
+    "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|no-version|null",
+    "aggregated_into": null
   },
   "agents_dispatched": ["ba-story-writer", "qa-frontend-expert", "qa-backend-expert"],
   "epic": {
@@ -67,11 +83,60 @@
   "failed": 0,
   "blocked": 0,
   "iterations": {
-    "$comment": "Only when invoked with --iterate. rounds = how many test(→fix→re-test) rounds ran (initial run = round 1); outcome = how the loop ended.",
+    "$comment": "Only when invoked with --iterate (Step 5k \u2014 .claude/skills/qa-test/modes.md). `rounds` = how many test(->fix->re-test) rounds ran (the initial run IS round 1); `outcome` = how the loop ended. `per_round` is the record 5k step 4 demands in prose \u2014 'a per-round summary (what each round fixed, what still fails)' \u2014 and previously had nowhere to live: every other field in this file is single-valued, so round 2 overwrote round 1's verdict, counts, regression run_id and timing, and the cap-reached hand-off cited per-round numbers no artifact could support. INVARIANT: per_round.length === rounds and per_round[i].round === i+1. WRITTEN AT THE END OF EVERY ROUND, not at loop exit \u2014 the loop can STOP at any round (G0 BAIL, BLOCKED, the cap, a dropped session), and a history persisted only on a clean exit is missing exactly when it is needed. `enabled: true` with an empty per_round is a contradiction, not a default: it means the run claimed the loop and recorded no round.",
     "enabled": false,
     "rounds": 1,
     "max_rounds": 2,
-    "outcome": "passed|max-rounds|bailed|blocked"
+    "outcome": "passed|max-rounds|bailed|blocked",
+    "per_round": [
+      {
+        "$comment": "One entry per round. WHAT THE SINGLE-VALUED TOP-LEVEL FIELDS MEAN ONCE THERE ARE N ROUNDS: `verdict`, `total_cases`/`passed`/`failed`/`blocked`, `regression.*`, `regression_triage.*` and `promotion` are the LATEST round's \u2014 the build a human is being asked to ship \u2014 NOT the best and NOT the first. `bugs_filed`, `bugs_not_filed` and `new_cases_authored` are CUMULATIVE across rounds (a round-1 Sub-task must not vanish from the artifact because round 2 filed nothing). `timing` is the WHOLE run: started_at = round 1's start, finished_at = the last round's finish, steps.step4/steps.step5 summed across rounds. Round 1's own numbers survive ONLY here \u2014 never reconstruct them from the top level.",
+        "round": 1,
+        "verdict": "PASS|PASS_WITH_NOTES|FAIL|BLOCKED",
+        "started_at": "<ISO>",
+        "finished_at": "<ISO>",
+        "build": {
+          "$comment": "What this round ACTUALLY tested, probed from GET {{BACK_URL}}/api/platform/modules \u2014 never assumed from the deploy PR, because /qa-deploy-pr --verify is advisory by its own contract. The loop's whole claim is that the code changed between rounds; unprobed, a 'still failing' round is indistinguishable from a deploy that never landed. UNKNOWN is legal; a guess is not. `deploy_pr` is the /qa-deploy-pr deploy PR (round >=2 only; null on round 1). `deploy_confirmed` records the mandatory human confirm before that deploy \u2014 false on round 1, and false at round >=2 means the loop deployed without asking, which is a defect in the run.",
+          "deployed": { "module-name": "version|UNKNOWN" },
+          "deploy_pr": null,
+          "deploy_confirmed": false
+        },
+        "red_green": {
+          "$comment": "The re-run of exactly the previously-FAILED cases, as its OWN /qa-regression run (--ids), kept out of the Artifact-C run so its pass rate answers one question and the release gate's >=95% keeps answering another. Round 1: all null/empty \u2014 there is no previously-failed set yet, and that is not a gap. FAST: run_id stays null and `checklist_items` carries the re-run items instead of `cases`, because a FAST round re-runs failed checklist items through one agent and produces no RUN_ID.",
+          "run_id": null,
+          "cases": [],
+          "checklist_items": [],
+          "green": [],
+          "still_red": []
+        },
+        "regression": {
+          "$comment": "This round's change-scoped Artifact-C run, RE-SCOPED to the fix's diff (regression:select --repo <name> --diff <fix-PR range>), never reused from round 1 \u2014 round 1's scope came from the ticket's diff and cannot know what the fix touched. A non-null skipped_reason means the gate cannot be evaluated on this round.",
+          "suites": [],
+          "run_id": null,
+          "pass_rate": null,
+          "skipped_reason": null
+        },
+        "counts": { "total_cases": 0, "passed": 0, "failed": 0, "blocked": 0 },
+        "bugs_filed": ["<tracker-key>"],
+        "bugs_carried": [
+          { "$comment": "A bug THIS RUN filed in an earlier round that is still failing. Neither re-filed nor relabelled PRE-EXISTING: it keeps its original IN-SCOPE provenance and severity (so it still fails 5c this round) and gets one comment on its existing Sub-task. Re-filing would produce N tickets for one defect; PRE-EXISTING would stop it failing the ticket that caused it.", "key": "<tracker-key>", "first_round": 1 }
+        ],
+        "bugs_fixed": [
+          { "$comment": "A bug filed in an earlier round whose case(s) went GREEN in this round. Commented on its own Sub-task and recorded here, deliberately NOT transitioned: TESTED is the furthest /qa-test may move anything and Done/Cancelled are forbidden, and the fix is an UNMERGED prerelease, so nothing has shipped. The human who merges closes it.", "key": "<tracker-key>", "filed_round": 1, "cases": [] }
+        ],
+        "qa_fix": [
+          { "$comment": "One /qa-fix invocation per in-scope fixable bug this round. outcome pr-open = G0-G7 cleared and a PR is open (never merged); bail = a G0 BAIL, which STOPs the loop and hands THAT bug to a human. An empty array on a FAIL round means no in-scope fixable bug remained and the loop fell back to the pointer close-out \u2014 a legitimate ending, and one the loop-level `outcome` alone cannot express.", "bug": "<tracker-key>", "outcome": "pr-open|bail", "pr": null, "bail_reason": null }
+        ],
+        "artifacts": {
+          "$comment": "What this round changed in the durable artifacts, so a diff is attributable to a round rather than to 'the run'. `model_amendment` = a `## Round N` section appended to the ONE Step-1e model file (never a second dated file \u2014 a same-day round 2 collides on <TICKET>-<date>.md, and two files split one fault model in two). `cases_authored` = cases authored FROM a loop-confirmed defect, the strongest `plausible:` ground the KEEP gate accepts; they must be authored BEFORE the round that re-runs them or they execute nowhere and 5g holds them at Draft with PR-002. `checklist_section` names the appended section \u2014 the checklist is append-only because the RED->GREEN transition is the loop's deliverable.",
+          "model_amendment": false,
+          "cases_authored": [],
+          "checklist_section": "Round <N>"
+        },
+        "still_failing": ["<one line per condition/case still red at the end of this round>"],
+        "tracker_comment": "delta|full|none"
+      }
+    ]
   },
   "new_cases_authored": 0,
   "promotion": {
@@ -82,7 +147,7 @@
     "reverted": [{ "case": "TC-ID", "reason": "unresolvable data / invented value" }]
   },
   "regression": {
-    "$comment": "The change-scoped Artifact-C /qa-regression run — the Feature Release Gate (5e) is defined on THIS run_id, not whole-history.",
+    "$comment": "The change-scoped Artifact-C /qa-regression run — the Feature Release Gate (5e) is defined on THIS run_id, not whole-history. On an --iterate run this is the FINAL round's Artifact-C run \u2014 the one the gate is computed on; earlier rounds' runs are in iterations.per_round[].regression.",
     "suites": [],
     "run_id": null,
     "pass_rate": null,
@@ -98,7 +163,7 @@
     "report_path": null
   },
   "bugs_filed": [
-    { "$comment": "One entry per confirmed bug filed at 5d. `severity` is recorded so the 5d severity floor is auditable from this artifact rather than only from the comment.", "key": "<tracker-key>", "severity": "Critical|High|Medium", "relationship": "sub-task|related|standalone", "parent_or_linked_ticket": "<ticket-key or existing-bug-key>" }
+    { "$comment": "One entry per confirmed bug filed at 5d. `severity` is recorded so the 5d severity floor is auditable from this artifact rather than only from the comment. On an --iterate run this array is CUMULATIVE across rounds; the round that filed each entry is in iterations.per_round[].bugs_filed.", "key": "<tracker-key>", "severity": "Critical|High|Medium", "relationship": "sub-task|related|standalone", "parent_or_linked_ticket": "<ticket-key or existing-bug-key>" }
   ],
   "bugs_not_filed": [
     { "$comment": "One entry per confirmed real bug held BELOW the 5d severity floor (Low/P3). Present and empty when there are none — an absent array is indistinguishable from a run that found none. `report` is the durable record; the floor drops a finding from the tracker, never from the run.", "severity": "Low", "provenance": "in-scope|pre-existing|out-of-scope", "summary": "<one line>", "report": "reports/bugs/open/<file>.md" }

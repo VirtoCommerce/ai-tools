@@ -8,7 +8,7 @@
 |---|----------|------|------|
 | 1 | Bug report | `reports/bugs/open/` or `reports/bugs/fixed/` — **exactly one, never both** | A confirmed defect with reproducible STR. `/qa-verify-fix` **moves** `open/` → `fixed/` on a VERIFIED verdict (adding a `## Resolution` block) — it is a move, not a copy. A file present in both directories is a defect: the stale `open/` copy makes a fixed bug look outstanding and gets counted twice by any open-bug scan, including the Feature Release Gate's "0 open P0" criterion. When you find one, delete the `open/` copy |
 | 2 | Test cases | `regression/suites/` (CSV) | Adding/updating test coverage. `/qa-test`-authored cases land here directly as `Automation_Status = Draft` (Step 3) and are flipped in-run to `Automated`/`Reviewed` at 5g (last, non-blocking) after execution — never a run-scoped ticket CSV |
-| 3 | BA report | `reports/ba/` — optionally in a **domain subfolder** (the established convention: `Configurable products/`, `Organization roles/`, `Page Builder (CMS)/`, `Sales-rep/`…; spaces are fine, quote the path in shell) | `/ba-analyze` deliverables, `bl-proposals-<date>.md`, and **test-design models** — `reports/ba/test-models/<TICKET>-<date>.md`, the artifact `/qa-test` Step 1e now writes (target 80–160 lines, cap 220). Written on the **FULL path only** — required for every Story, Epic and substantial feature, and not built at all on FAST. It is a durable BA deliverable and is deliberately **exempt** from the `/qa-test` terminal-only rule below: a model that cannot be re-opened cannot be argued with, and the parameter model for a surface is reused across tickets. (Being a file also makes it *lintable in principle* — but `npm run model:lint` is **not implemented**, so that is an intention, not a gate; don't cite it as one.) Hand-authored standalone models may also live directly under `reports/ba/<domain>/` (the pre-existing convention) |
+| 3 | BA report | `reports/ba/` — optionally in a **domain subfolder** (the established convention: `Configurable products/`, `Organization roles/`, `Page Builder (CMS)/`, `Sales-rep/`…; spaces are fine, quote the path in shell) | `/ba-analyze` deliverables, `bl-proposals-<date>.md`, and **test-design models** — `reports/ba/test-models/<TICKET>-<date>.md`, the artifact `/qa-test` Step 1e now writes (target 80–160 lines, cap 220). Written on the **FULL path only** — required for every Story, Epic and substantial feature, and not built at all on FAST. It is a durable BA deliverable and is deliberately **exempt** from the `/qa-test` terminal-only rule below: a model that cannot be re-opened cannot be argued with, and the parameter model for a surface is reused across tickets. (Being a file also makes it *lintable in principle* — but `npm run model:lint` is **not implemented**, so that is an intention, not a gate; don't cite it as one.) Hand-authored standalone models may also live directly under `reports/ba/<domain>/` (the pre-existing convention). **And release notes** — `reports/ba/release-notes/`, a second named sub-path alongside `test-models/`: a per-ticket **fragment** `<ticket>-<layer>-release-note.md` (15–40 lines, cap 60) written by `ba-doc-writer` `doc_scope: release` when `/qa-test` 5f points at it, plus a per-release **aggregate** `release-<label>.md` (40–80, cap 150) that links the fragments. One fragment per ticket **per layer** — the layer picks the audience (`.claude/knowledge/ba/virto-doc-style.md` §9.1), and it is the one place audience *is* the document, because a release note is read as a single *what shipped* record and splitting it four ways yields files nobody can reconcile. `/qa-test` writes only the machine half (`summary.json.layer` + its `release` block); all prose is `ba-doc-writer`'s, and a refused fragment (`verdict-not-pass` · `layer-unresolved` · `not-deployed` · `not-user-visible` · `no-version`) writes no file at all |
 | 4 | Regression summary | `reports/regression/REG-*/` | One consolidated report per run |
 | 5 | Monitoring summary | `reports/monitoring/MONITOR-*/` | One consolidated report per `/qa-monitoring` (App Insights) run |
 | 6 | Per-ticket QA report | `reports/tickets/<Sprint>/<TICKET>/` (or `reports/tickets/<TICKET>/`) | A ticket-scoped audit that has its own standalone value beyond the run that produced it — `/qa-verify-fix`, or a ticket-scoped `/qa-design`/`/qa-accessibility`/`/qa-storybook` run. **Plus `/qa-test`'s `testing-checklist.md`** (Artifact B): on the FAST path `/qa-test` authors no cases and writes no Test Model, so the executed checklist is the run's **only** durable record of what was checked. `/qa-test`'s *other* step artifacts stay terminal-only — see the carve-out below |
@@ -55,6 +55,8 @@ Line caps in §2 apply to **narrative** files. A generated evidence page is exem
 | Functional bug | 50–80 | 120 |
 | Cross-layer bug | 80–120 | 150 |
 | BA report | 80–150 | 250 (exec summary ≤5 sentences; diagram OR prose, not both) |
+| Release note — per-ticket fragment (`reports/ba/release-notes/`) | **15–40** | 60 (one evidence item, never two and never zero; the version/derivation footer is mandatory and counts toward the cap) |
+| Release note — aggregate (`reports/ba/release-notes/release-*.md`) | 40–80 | 150 (link fragments, never inline them; the `Not included` section is mandatory even when empty) |
 | Monitoring summary | **15–40** | 100 (confirmed / needs-review / dismissed tables; reference telemetry by portal link; a truncated top-frames stack — ≤6 lines — is OK for confirmed/needs-review items, but never full multi-frame dumps) |
 | Per-ticket QA report (each file in the folder) | 30–60 | 120 (one file per check type; a bug found during the check still files separately to `reports/bugs/`, referenced by link, not inlined) |
 | BL audit report | **15–40** | 100 (verdict table + Applied + Not-applied + coverage reconciliation; link the oracle diff, don't inline it) |
@@ -76,6 +78,10 @@ Over the hard cap is a review failure — trim before merge. If content genuinel
 **Monitoring summary:** Run ID/date/env/window/layers · Signature counts (seen/new/spiking/triaged/deferred) · Confirmed bugs table (severity, layer, signature, repo, draft link, telemetry link) · Needs-review table · Dismissed table (class, signature, oracle) · "no JIRA filed, no fix attempted" footer.
 
 **BA report:** Title + scope + env · Executive summary (≤5 sentences) · One of: architecture diagram OR prose · Findings table (issue, severity, recommendation) · Open questions/follow-ups.
+
+**Release note (fragment):** Title (what changed, ≤12 words) · the `Layer · Audience · Shipped in · Breaking` strip · **What changed** (1–2 sentences in the derived audience's voice) · **What you can now do** (that audience's own skeleton) · **exactly one** evidence item · an optional `!!! note` (**mandatory** on a PASS WITH NOTES verdict) · the footer re-printing every version literal with its probe source, the verdict, the evidence folder, and the layer derivation. Full skeleton: `.claude/knowledge/ba/virto-doc-style.md` §9.2.
+
+**Release note (aggregate):** Label + window · **⚠ Breaking changes first** whenever any fragment carries one · per-audience sections (one line + a link per fragment) · **`Not included`** — every ticket in the window whose fragment was refused, with its reason (mandatory; an omitted section is indistinguishable from a clean window) · one `Upstream cross-check` line against the release ledger, which may note a ledger row with no fragment but may **never** say "missed" or quote a coverage percentage.
 
 **Per-ticket QA report:** Ticket ID + title + check type (execution / AC-analysis / a11y / storybook / bundle-size / …) · Env (1 line) · Summary (≤3 sentences) · Findings/checks table · Verdict (PASS/FAIL/PARTIAL) · Bugs filed (links only, not inlined).
 
@@ -125,6 +131,14 @@ Real examples from recent reports (BUG-IMP-049 at 315 lines vs 150 target; BA-VC
 | Regression suite (20+ tests) | failures + 1 summary per area | 15–20 |
 | Exploratory session | anomalies only | 10 |
 
+**On a `/qa-test --iterate` run every round stamps `-r{N}`, round 1 included.** Round N+1 re-runs the
+**same** case IDs into the **same** folder, so an unstamped name means the round-2 PASS overwrites the
+round-1 FAIL — and the checklist's `Round 1: FAIL → Round 2: PASS` row then points at an image showing
+green, which is worse than a missing file because it silently contradicts the record. Stamping *every*
+round rather than only round ≥2 avoids the "did round 1 stamp or not" ambiguity when a reader resolves
+an evidence ref. This is the append-only checklist rule applied one layer down, and for the same
+reason: the RED→GREEN transition is what the loop is for, so the RED must survive it.
+
 **Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/`, `reports/tickets/VCST-XXXX/screenshots/`) stay tracked.
 
 ## 6. Console & Network Evidence
@@ -146,6 +160,7 @@ Format: `Failed: POST /graphql (SearchProducts) → 500 Internal Server Error`
 ```
 Screenshots:
   {TC-ID}-FAIL-{description}.png      → TC-004-FAIL-cart-total-wrong.png
+  {TC-ID}-FAIL-r{N}-{description}.png → TC-004-FAIL-r1-cart-total-wrong.png   (--iterate runs ONLY, every round incl. r1)
   {TC-ID}-{description}.png           → TC-001-checkout-confirmation.png
   BUG-{short-name}-{detail}.png       → BUG-price-display-configurable.png
   {component}-{state}-{viewport}.png  → product-card-hover-mobile.png
@@ -165,6 +180,8 @@ Reports:
 
   Testing checklist: testing-checklist.md  (inside reports/tickets/<Sprint>/<TICKET>/ — /qa-test Artifact B)
   Test model:    <TICKET>-YYYY-MM-DD.md  (inside reports/ba/test-models/ — /qa-test Step 1e, FULL path)
+  Release note:  <ticket-lowercase>-<layer>-release-note.md  (inside reports/ba/release-notes/ — the per-ticket fragment)
+  Release aggregate: release-<slugified-label>.md             (same folder — e.g. release-Sprint-42.md, release-platform-3.1054.0.md)
 
 Terminal-only, no file: `/qa-test-lifecycle` (labeled TLC-YYYY-MM-DD-HHMM in chat) and `/qa-test`'s
 ac-analysis + test-execution-report (both fold into one chat report). Persisting from `/qa-test`:
@@ -198,7 +215,9 @@ Report categories don't accumulate forever — each has a lifecycle:
   date on that path (not filesystem mtime). The current sprint is always skipped regardless of age.
 - **`vc/shared/archive/sprints/`** (VC-internal, not one of the ten categories above, but the single
   largest tracked report-like tree in the repo) is pruned by the same `--target=tracked` run.
-- **Durable categories never prune**: `reports/bugs/`, `reports/ba/`, `reports/knowledge/`,
+- **Durable categories never prune**: `reports/bugs/`, `reports/ba/` (**including `release-notes/`** —
+  a release note is the record of what shipped, so it outlives every run that produced it; do not add
+  a prune rule for it), `reports/knowledge/`,
   `regression/suites/` (Test cases), and `reports/exploratory/` (kept for its own 24h duplicate-charter
   check — revisit only if it grows unbounded).
 
