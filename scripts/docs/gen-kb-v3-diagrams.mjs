@@ -269,7 +269,6 @@ function pageOverview() {
   p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.167, entryX: 0, entryY: 0.72, points: [[730, 670], [730, 290]] });
   p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.333, entryX: 0.118, entryY: 1, points: [[820, 700]] });
   p.edge("KBC", "KBP", "", line, { exitX: 0.794, exitY: 0, entryX: 0.794, entryY: 1 });
-  p.edge("KBP", "KBC", "", line, { exitX: 0.206, exitY: 1, entryX: 0.206, entryY: 0 });
   p.edge("SRC", "KEEP", "", line, { exitX: 0.742, exitY: 0, entryX: 0.5, entryY: 1 });
   p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.667, entryX: 0.444, entryY: 1, points: [[1300, 760]] });
   p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.833, entryX: 1, entryY: 0.5, points: [[1500, 790], [1500, 280]] });

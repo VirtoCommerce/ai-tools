@@ -116,20 +116,17 @@
         <mxCell id="Общ10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.794;exitY=0;exitDx=0;exitDy=0;entryX=0.794;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBC" target="KBP">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Общ11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.206;exitY=1;exitDx=0;exitDy=0;entryX=0.206;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBP" target="KBC">
+        <mxCell id="Общ11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.742;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="SRC" target="KEEP">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Общ12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.742;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="SRC" target="KEEP">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.667;exitDx=0;exitDy=0;entryX=0.444;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="OPC">
+        <mxCell id="Общ12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.667;exitDx=0;exitDy=0;entryX=0.444;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="OPC">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
             <mxPoint x="1300" y="760" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Общ14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.833;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="OPP">
+        <mxCell id="Общ13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.833;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="OPP">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
             <mxPoint x="1500" y="790" />
@@ -137,13 +134,13 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Общ15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.421;entryDx=0;entryDy=0;" edge="1" parent="1" source="OPC" target="KBC">
+        <mxCell id="Общ14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.421;entryDx=0;entryDy=0;" edge="1" parent="1" source="OPC" target="KBC">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Общ16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.64;entryDx=0;entryDy=0;" edge="1" parent="1" source="OPP" target="KBP">
+        <mxCell id="Общ15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.64;entryDx=0;entryDy=0;" edge="1" parent="1" source="OPP" target="KBP">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Общ17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.167;exitY=1;exitDx=0;exitDy=0;entryX=0.167;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBP" target="KBC">
+        <mxCell id="Общ16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.167;exitY=1;exitDx=0;exitDy=0;entryX=0.167;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBP" target="KBC">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
