@@ -177,9 +177,7 @@ function pageOverview() {
 
   p.box("t", 60, 24, 1000, 32, "Как это работает — общий вид", S.title);
   p.box("ts", 60, 62, 1180, 56,
-    "Кто с кем разговаривает и что кому передаёт. Каждый блок потом раскрывается отдельной схемой — по запросу.<br>" +
-    "Сплошные стрелки — постоянный поток работы. Пунктирные — редкое вмешательство человека в базу.<br>" +
-    "Точечная стрелка — только по явной команде. Пунктирная рамка — блок есть не всегда.",
+    "Стрелка идёт от того, кто действует. Каждый блок потом раскрывается отдельной схемой — по запросу.",
     S.sub);
 
   p.card("HUM", 60, 200, 270, 175,
@@ -267,13 +265,31 @@ function pageOverview() {
     "дают доказательства для проверки записей",
   ], ...C.source, 52);
 
+  const inv = "fillColor=none;strokeColor=none;";
+  const legRow = (i, y, style, text) => {
+    p.box(`la${i}`, 84, y, 1, 1, "", inv);
+    p.box(`lb${i}`, 154, y, 1, 1, "", inv);
+    p.edge(`la${i}`, `lb${i}`, "", style.replace("orthogonalEdgeStyle", "none"), { exitX: 0, exitY: 0, entryX: 1, entryY: 0 });
+    p.box(`lt${i}`, 166, y - 14, 172, 28, text,
+      `text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;${FONT}`);
+  };
+  p.box("LEG", 60, 640, 285, 225, "Как читать стрелки",
+    `rounded=1;arcSize=6;html=1;fillColor=none;strokeColor=#cfd8d5;strokeWidth=2;verticalAlign=top;align=left;spacingLeft=14;spacingTop=10;fontColor=#4b5c57;fontStyle=1;fontSize=12;${FONT}`);
+  legRow(1, 700, line, "постоянный поток работы");
+  legRow(2, 748, rare, "редкое вмешательство человека");
+  legRow(3, 796, cmd, "только по явной команде");
+  p.box("lf", 84, 828, 70, 30, "",
+    `rounded=1;arcSize=8;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;`);
+  p.box("lft", 166, 829, 172, 28, "блок есть не всегда",
+    `text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;${FONT}`);
+
   p.edge("HUM", "AGT", "", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.379 });
   p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.7, entryX: 1, entryY: 0.646 });
   p.edge("AGT", "WIN", "", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
   p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.286, points: [[820, 260], [820, 470]] });
   p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.786 });
-  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[345, 275], [345, 820]] });
+  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[352, 275], [352, 820]] });
   p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.13, entryX: 0, entryY: 0.6875, points: [[840, 702], [840, 290]] });
   p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.28, entryX: 0.111, entryY: 1, points: [[920, 750]] });
   p.edge("KBC", "KBP", "", cmd, { exitX: 0.794, exitY: 0, entryX: 0.794, entryY: 1 });
