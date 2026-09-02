@@ -1,199 +1,206 @@
-<mxfile host="app.diagrams.net" agent="scripts/docs/gen-kb-v3-diagrams.mjs" version="24.0.0">
-  <diagram id="Общий вид" name="Общий вид">
-    <mxGraphModel dx="1200" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1710" pageHeight="1200" math="0" shadow="0" adaptiveColors="auto">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="t" value="Как это работает — общий вид" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#16211e;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="60" y="24" width="1000" height="32" as="geometry" />
-        </mxCell>
-        <mxCell id="ts" value="Стрелка показывает направление потока информации. Каждый блок потом раскрывается отдельной схемой — по запросу." style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="60" y="62" width="1180" height="56" as="geometry" />
-        </mxCell>
-        <mxCell id="HUM" value="Человек&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;менеджер · разработчик&lt;br&gt;тестировщик · аналитик&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=68;horizontal=1;fillColor=#f0d3da;swimlaneFillColor=#faeff2;strokeColor=#7a2436;fontColor=#7a2436;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="60" y="200" width="270" height="175" as="geometry" />
-        </mxCell>
-        <mxCell id="HUM-b" value="•&amp;nbsp; ставит задачу агенту&lt;br&gt;•&amp;nbsp; задаёт вопрос агенту&lt;br&gt;•&amp;nbsp; получает ответ от агента — при неполном доверии с предупреждением" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#7a2436;fontFamily=Helvetica;" vertex="1" parent="HUM">
-          <mxGeometry x="0" y="68" width="270" height="107" as="geometry" />
-        </mxCell>
-        <mxCell id="AGT" value="Агент-помощник" style="swimlane;html=1;rounded=1;arcSize=6;startSize=36;horizontal=1;fillColor=#f5dfc8;swimlaneFillColor=#fdf6ef;strokeColor=#8f4a1b;fontColor=#8f4a1b;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="380" y="180" width="380" height="190" as="geometry" />
-        </mxCell>
-        <mxCell id="AGT-b" value="•&amp;nbsp; делает задачу: чинит, проверяет, объясняет&lt;br&gt;•&amp;nbsp; спрашивает справочную перед работой&lt;br&gt;•&amp;nbsp; передаёт механизму новое — с доказательством&lt;br&gt;•&amp;nbsp; подтверждает механизму то, чем воспользовался&lt;br&gt;•&amp;nbsp; оспаривает запись, если она расходится с продуктом&lt;br&gt;•&amp;nbsp; поясняет человеку, откуда взят ответ" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#8f4a1b;fontFamily=Helvetica;" vertex="1" parent="AGT">
-          <mxGeometry x="0" y="36" width="380" height="154" as="geometry" />
-        </mxCell>
-        <mxCell id="WIN" value="Справочная&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;единая дверь к знаниям&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#c9e4de;swimlaneFillColor=#eef7f5;strokeColor=#0d5f55;fontColor=#0d5f55;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="380" y="410" width="380" height="210" as="geometry" />
-        </mxCell>
-        <mxCell id="WIN-b" value="•&amp;nbsp; принимает вопросы от агента&lt;br&gt;•&amp;nbsp; собирает ответ из существующих баз&lt;br&gt;•&amp;nbsp; выдаёт одно текущее состояние — заменённое в ответ не берёт&lt;br&gt;•&amp;nbsp; показывает обе стороны, если проект переопределил платформу или если запись оспорена&lt;br&gt;•&amp;nbsp; сообщает агенту, насколько ответу верить&lt;br&gt;•&amp;nbsp; отвечает «не знаю», если ответа нет, и отдельно даёт зацепки — помечая, что это не факты" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#0d5f55;fontFamily=Helvetica;" vertex="1" parent="WIN">
-          <mxGeometry x="0" y="52" width="380" height="158" as="geometry" />
-        </mxCell>
-        <mxCell id="OPT" value="Есть только у клиентского проекта" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=bottom;align=center;spacingBottom=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="860" y="425" width="790" height="305" as="geometry" />
-        </mxCell>
-        <mxCell id="KBP" value="База знаний платформы&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;верное для любого проекта&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#dde5e3;swimlaneFillColor=#f4f7f6;strokeColor=#2b3d39;fontColor=#2b3d39;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="880" y="180" width="360" height="160" as="geometry" />
-        </mxCell>
-        <mxCell id="KBP-b" value="•&amp;nbsp; отдаёт свои записи справочной&lt;br&gt;•&amp;nbsp; отдаёт свои записи базам проектов&lt;br&gt;•&amp;nbsp; принимает предложения проектов как черновики&lt;br&gt;•&amp;nbsp; проверяет предложение своими доказательствами, прежде чем принять" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" vertex="1" parent="KBP">
-          <mxGeometry x="0" y="52" width="360" height="108" as="geometry" />
-        </mxCell>
-        <mxCell id="KBC" value="База знаний клиентского проекта&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;правда об этом проекте&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#dde5e3;swimlaneFillColor=#f4f7f6;strokeColor=#2b3d39;fontColor=#2b3d39;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="880" y="445" width="360" height="260" as="geometry" />
-        </mxCell>
-        <mxCell id="KBC-b" value="•&amp;nbsp; отдаёт свои записи справочной&lt;br&gt;•&amp;nbsp; читает записи платформы&lt;br&gt;•&amp;nbsp; переопределяет у себя правила платформы&lt;br&gt;•&amp;nbsp; отменяет у себя неприменимые правила платформы&lt;br&gt;•&amp;nbsp; дополняет правила платформы своими&lt;br&gt;•&amp;nbsp; ставит спор, когда переопределённое правило изменилось&lt;br&gt;•&amp;nbsp; не пишет в базу платформы&lt;br&gt;•&amp;nbsp; убирает следы проекта перед отправкой наверх&lt;br&gt;•&amp;nbsp; отправляет наверх черновиком то, что верно и без доработок" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" vertex="1" parent="KBC">
-          <mxGeometry x="0" y="52" width="360" height="208" as="geometry" />
-        </mxCell>
-        <mxCell id="KEEP" value="Механизм проверки и обновления&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;работает по правилам, а не по усмотрению&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#c9e4de;swimlaneFillColor=#eef7f5;strokeColor=#0d5f55;fontColor=#0d5f55;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="380" y="660" width="380" height="320" as="geometry" />
-        </mxCell>
-        <mxCell id="KEEP-b" value="•&amp;nbsp; принимает от агентов новое только с доказательством&lt;br&gt;•&amp;nbsp; отклоняет запись, которую нечем опровергнуть&lt;br&gt;•&amp;nbsp; засчитывает повтор факта в подтверждение записи, новую не создаёт&lt;br&gt;•&amp;nbsp; поднимает доверие записи до высшего сам, без человека&lt;br&gt;•&amp;nbsp; читает источники: при их изменении перепроверяет сразу, остальное — по очереди&lt;br&gt;•&amp;nbsp; помечает заменённую запись и убирает её из ответов, историю оставляет&lt;br&gt;•&amp;nbsp; ставит спор на противоречащие записи и разрешает его проверкой&lt;br&gt;•&amp;nbsp; не трогает закреплённое оператором и не возвращает снятое им&lt;br&gt;•&amp;nbsp; пишет только в свою базу — из проекта в базу платформы не пишет&lt;br&gt;•&amp;nbsp; публикует оператору сводку изменений" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#0d5f55;fontFamily=Helvetica;" vertex="1" parent="KEEP">
-          <mxGeometry x="0" y="52" width="380" height="268" as="geometry" />
-        </mxCell>
-        <mxCell id="OPP" value="Оператор платформы&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;сотрудник Virto&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#f0d3da;swimlaneFillColor=#faeff2;strokeColor=#7a2436;fontColor=#7a2436;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1320" y="170" width="310" height="235" as="geometry" />
-        </mxCell>
-        <mxCell id="OPP-b" value="•&amp;nbsp; снимает неверную запись — след остаётся&lt;br&gt;•&amp;nbsp; закрепляет запись — механизм её не правит и не снимает&lt;br&gt;•&amp;nbsp; ставит запись под сомнение: механизм проверит заново&lt;br&gt;•&amp;nbsp; задаёт механизму правила повышения доверия&lt;br&gt;•&amp;nbsp; читает сводку изменений — по желанию&lt;br&gt;•&amp;nbsp; вмешивается в уже принятое: работа его не ждёт" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#7a2436;fontFamily=Helvetica;" vertex="1" parent="OPP">
-          <mxGeometry x="0" y="52" width="310" height="183" as="geometry" />
-        </mxCell>
-        <mxCell id="OPC" value="Оператор проекта&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;сотрудник клиента&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#f0d3da;swimlaneFillColor=#faeff2;strokeColor=#7a2436;fontColor=#7a2436;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1320" y="445" width="310" height="235" as="geometry" />
-        </mxCell>
-        <mxCell id="OPC-b" value="•&amp;nbsp; снимает неверную запись — след остаётся&lt;br&gt;•&amp;nbsp; закрепляет запись — механизм её не правит и не снимает&lt;br&gt;•&amp;nbsp; ставит запись под сомнение: механизм проверит заново&lt;br&gt;•&amp;nbsp; задаёт механизму правила повышения доверия&lt;br&gt;•&amp;nbsp; читает сводку изменений — по желанию&lt;br&gt;•&amp;nbsp; вмешивается в уже принятое: работа его не ждёт" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#7a2436;fontFamily=Helvetica;" vertex="1" parent="OPC">
-          <mxGeometry x="0" y="52" width="310" height="183" as="geometry" />
-        </mxCell>
-        <mxCell id="SRC" value="Источники&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;код · стенд · документация · решения команды&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="380" y="1020" width="380" height="120" as="geometry" />
-        </mxCell>
-        <mxCell id="SRC-b" value="•&amp;nbsp; хранят фактическое состояние продукта&lt;br&gt;•&amp;nbsp; дают материал для первого наполнения пустой базы&lt;br&gt;•&amp;nbsp; дают доказательства для проверки записей" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="SRC">
-          <mxGeometry x="0" y="52" width="380" height="68" as="geometry" />
-        </mxCell>
-        <mxCell id="LEG" value="Как читать стрелки" style="rounded=1;arcSize=6;html=1;fillColor=none;strokeColor=#cfd8d5;strokeWidth=2;verticalAlign=top;align=left;spacingLeft=14;spacingTop=10;fontColor=#4b5c57;fontStyle=1;fontSize=12;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="60" y="640" width="285" height="225" as="geometry" />
-        </mxCell>
-        <mxCell id="la1" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
-          <mxGeometry x="84" y="700" width="1" height="1" as="geometry" />
-        </mxCell>
-        <mxCell id="lb1" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
-          <mxGeometry x="154" y="700" width="1" height="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ1" value="" style="edgeStyle=none;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="la1" target="lb1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="lt1" value="постоянный поток работы" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="166" y="686" width="172" height="28" as="geometry" />
-        </mxCell>
-        <mxCell id="la2" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
-          <mxGeometry x="84" y="748" width="1" height="1" as="geometry" />
-        </mxCell>
-        <mxCell id="lb2" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
-          <mxGeometry x="154" y="748" width="1" height="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ2" value="" style="edgeStyle=none;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="la2" target="lb2">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="lt2" value="редкое вмешательство человека" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="166" y="734" width="172" height="28" as="geometry" />
-        </mxCell>
-        <mxCell id="la3" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
-          <mxGeometry x="84" y="796" width="1" height="1" as="geometry" />
-        </mxCell>
-        <mxCell id="lb3" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
-          <mxGeometry x="154" y="796" width="1" height="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ3" value="" style="edgeStyle=none;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;dashPattern=1 4;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="la3" target="lb3">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="lt3" value="только по явной команде" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="166" y="782" width="172" height="28" as="geometry" />
-        </mxCell>
-        <mxCell id="lf" value="" style="rounded=1;arcSize=8;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="84" y="828" width="70" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="lft" value="блок есть не всегда" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="166" y="829" width="172" height="28" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.379;entryDx=0;entryDy=0;" edge="1" parent="1" source="HUM" target="AGT">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=1;entryY=0.646;entryDx=0;entryDy=0;" edge="1" parent="1" source="AGT" target="HUM">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="AGT" target="WIN">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="WIN" target="AGT">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.286;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBP" target="WIN">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-            <mxPoint x="820" y="260" />
-            <mxPoint x="820" y="470" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="Общ9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.786;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBC" target="WIN">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="AGT" target="KEEP">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-            <mxPoint x="352" y="275" />
-            <mxPoint x="352" y="820" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="Общ11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.13;exitDx=0;exitDy=0;entryX=0;entryY=0.6875;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="KBP">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-            <mxPoint x="840" y="702" />
-            <mxPoint x="840" y="290" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="Общ12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.28;exitDx=0;exitDy=0;entryX=0.111;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="KBC">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-            <mxPoint x="920" y="750" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="Общ13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;dashPattern=1 4;exitX=0.794;exitY=0;exitDx=0;exitDy=0;entryX=0.794;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBC" target="KBP">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="SRC" target="KEEP">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-            <mxPoint x="800" y="1080" />
-            <mxPoint x="800" y="900" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="Общ15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.323;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="OPC">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-            <mxPoint x="1420" y="820" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="Общ16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.65;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="OPP">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-            <mxPoint x="1670" y="868" />
-            <mxPoint x="1670" y="287" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="Общ17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.45;entryDx=0;entryDy=0;" edge="1" parent="1" source="OPC" target="KBC">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.669;entryDx=0;entryDy=0;" edge="1" parent="1" source="OPP" target="KBP">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="Общ19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.167;exitY=1;exitDx=0;exitDy=0;entryX=0.167;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBP" target="KBC">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram id="Общий вид" name="Общий вид">
+        <mxGraphModel dx="338" dy="159" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1710" pageHeight="1200" math="0" shadow="0" adaptiveColors="auto">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="t" value="Как это работает — общий вид" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#16211e;fontFamily=Helvetica;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="24" width="1000" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="ts" value="Стрелка показывает направление потока информации. Каждый блок потом раскрывается отдельной схемой — по запросу." style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#4b5c57;fontFamily=Helvetica;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="62" width="1180" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="HUM" value="Человек&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;менеджер · разработчик&lt;br&gt;тестировщик · аналитик&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=68;horizontal=1;fillColor=#f0d3da;swimlaneFillColor=#faeff2;strokeColor=#7a2436;fontColor=#7a2436;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="200" width="270" height="175" as="geometry"/>
+                </mxCell>
+                <mxCell id="HUM-b" value="•&amp;nbsp; ставит задачу агенту&lt;br&gt;•&amp;nbsp; задаёт вопрос агенту&lt;br&gt;•&amp;nbsp; получает ответ от агента — при неполном доверии с предупреждением" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#7a2436;fontFamily=Helvetica;" vertex="1" parent="HUM">
+                    <mxGeometry y="68" width="270" height="107" as="geometry"/>
+                </mxCell>
+                <mxCell id="AGT" value="Агент-помощник" style="swimlane;html=1;rounded=1;arcSize=6;startSize=36;horizontal=1;fillColor=#f5dfc8;swimlaneFillColor=#fdf6ef;strokeColor=#8f4a1b;fontColor=#8f4a1b;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="180" width="380" height="190" as="geometry"/>
+                </mxCell>
+                <mxCell id="AGT-b" value="•&amp;nbsp; делает задачу: чинит, проверяет, объясняет&lt;br&gt;•&amp;nbsp; спрашивает справочную перед работой&lt;br&gt;•&amp;nbsp; передаёт механизму новое — с доказательством&lt;br&gt;•&amp;nbsp; подтверждает механизму то, чем воспользовался&lt;br&gt;•&amp;nbsp; оспаривает запись, если она расходится с продуктом&lt;br&gt;•&amp;nbsp; поясняет человеку, откуда взят ответ" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#8f4a1b;fontFamily=Helvetica;" vertex="1" parent="AGT">
+                    <mxGeometry y="36" width="380" height="154" as="geometry"/>
+                </mxCell>
+                <mxCell id="WIN" value="Справочная&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;единая дверь к знаниям&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#c9e4de;swimlaneFillColor=#eef7f5;strokeColor=#0d5f55;fontColor=#0d5f55;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="410" width="380" height="210" as="geometry"/>
+                </mxCell>
+                <mxCell id="WIN-b" value="•&amp;nbsp; принимает вопросы от агента&lt;br&gt;•&amp;nbsp; собирает ответ из существующих баз&lt;br&gt;•&amp;nbsp; выдаёт одно текущее состояние — заменённое в ответ не берёт&lt;br&gt;•&amp;nbsp; показывает обе стороны, если проект переопределил платформу или если запись оспорена&lt;br&gt;•&amp;nbsp; сообщает агенту, насколько ответу верить&lt;br&gt;•&amp;nbsp; отвечает «не знаю», если ответа нет, и отдельно даёт зацепки — помечая, что это не факты" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#0d5f55;fontFamily=Helvetica;" vertex="1" parent="WIN">
+                    <mxGeometry y="52" width="380" height="158" as="geometry"/>
+                </mxCell>
+                <mxCell id="OPT" value="Есть только у клиентского проекта" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=bottom;align=center;spacingBottom=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;fontFamily=Helvetica;" vertex="1" parent="1">
+                    <mxGeometry x="860" y="425" width="790" height="305" as="geometry"/>
+                </mxCell>
+                <mxCell id="KBP" value="База знаний платформы&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;верное для любого проекта&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#dde5e3;swimlaneFillColor=#f4f7f6;strokeColor=#2b3d39;fontColor=#2b3d39;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="180" width="360" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="KBP-b" value="•&amp;nbsp; отдаёт свои записи справочной&lt;br&gt;•&amp;nbsp; отдаёт свои записи базам проектов&lt;br&gt;•&amp;nbsp; принимает предложения проектов как черновики&lt;br&gt;•&amp;nbsp; проверяет предложение своими доказательствами, прежде чем принять" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" vertex="1" parent="KBP">
+                    <mxGeometry y="52" width="360" height="108" as="geometry"/>
+                </mxCell>
+                <mxCell id="KBC" value="База знаний клиентского проекта&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;правда об этом проекте&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#dde5e3;swimlaneFillColor=#f4f7f6;strokeColor=#2b3d39;fontColor=#2b3d39;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="445" width="360" height="260" as="geometry"/>
+                </mxCell>
+                <mxCell id="KBC-b" value="•&amp;nbsp; отдаёт свои записи справочной&lt;br&gt;•&amp;nbsp; читает записи платформы&lt;br&gt;•&amp;nbsp; переопределяет у себя правила платформы&lt;br&gt;•&amp;nbsp; отменяет у себя неприменимые правила платформы&lt;br&gt;•&amp;nbsp; дополняет правила платформы своими&lt;br&gt;•&amp;nbsp; ставит спор, когда переопределённое правило изменилось&lt;br&gt;•&amp;nbsp; не пишет в базу платформы&lt;br&gt;•&amp;nbsp; убирает следы проекта перед отправкой наверх&lt;br&gt;•&amp;nbsp; отправляет наверх черновиком то, что верно и без доработок" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" vertex="1" parent="KBC">
+                    <mxGeometry y="52" width="360" height="208" as="geometry"/>
+                </mxCell>
+                <mxCell id="KEEP" value="Механизм проверки и обновления&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;работает по правилам, а не по усмотрению&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#c9e4de;swimlaneFillColor=#eef7f5;strokeColor=#0d5f55;fontColor=#0d5f55;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="660" width="380" height="320" as="geometry"/>
+                </mxCell>
+                <mxCell id="KEEP-b" value="•&amp;nbsp; принимает от агентов новое только с доказательством&lt;br&gt;•&amp;nbsp; отклоняет запись, которую нечем опровергнуть&lt;br&gt;•&amp;nbsp; засчитывает повтор факта в подтверждение записи, новую не создаёт&lt;br&gt;•&amp;nbsp; поднимает доверие записи до высшего сам, без человека&lt;br&gt;•&amp;nbsp; читает источники: при их изменении перепроверяет сразу, остальное — по очереди&lt;br&gt;•&amp;nbsp; помечает заменённую запись и убирает её из ответов, историю оставляет&lt;br&gt;•&amp;nbsp; ставит спор на противоречащие записи и разрешает его проверкой&lt;br&gt;•&amp;nbsp; не трогает закреплённое оператором и не возвращает снятое им&lt;br&gt;•&amp;nbsp; пишет только в свою базу — из проекта в базу платформы не пишет&lt;br&gt;•&amp;nbsp; публикует оператору сводку изменений" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#0d5f55;fontFamily=Helvetica;" vertex="1" parent="KEEP">
+                    <mxGeometry y="52" width="380" height="268" as="geometry"/>
+                </mxCell>
+                <mxCell id="OPP" value="Оператор платформы&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;сотрудник Virto&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#f0d3da;swimlaneFillColor=#faeff2;strokeColor=#7a2436;fontColor=#7a2436;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+                    <mxGeometry x="1320" y="170" width="310" height="235" as="geometry"/>
+                </mxCell>
+                <mxCell id="OPP-b" value="•&amp;nbsp; снимает неверную запись — след остаётся&lt;br&gt;•&amp;nbsp; закрепляет запись — механизм её не правит и не снимает&lt;br&gt;•&amp;nbsp; ставит запись под сомнение: механизм проверит заново&lt;br&gt;•&amp;nbsp; задаёт механизму правила повышения доверия&lt;br&gt;•&amp;nbsp; читает сводку изменений — по желанию&lt;br&gt;•&amp;nbsp; вмешивается в уже принятое: работа его не ждёт" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#7a2436;fontFamily=Helvetica;" vertex="1" parent="OPP">
+                    <mxGeometry y="52" width="310" height="183" as="geometry"/>
+                </mxCell>
+                <mxCell id="OPC" value="Оператор проекта&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;сотрудник клиента&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#f0d3da;swimlaneFillColor=#faeff2;strokeColor=#7a2436;fontColor=#7a2436;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
+                    <mxGeometry x="1320" y="445" width="310" height="235" as="geometry"/>
+                </mxCell>
+                <mxCell id="OPC-b" value="•&amp;nbsp; снимает неверную запись — след остаётся&lt;br&gt;•&amp;nbsp; закрепляет запись — механизм её не правит и не снимает&lt;br&gt;•&amp;nbsp; ставит запись под сомнение: механизм проверит заново&lt;br&gt;•&amp;nbsp; задаёт механизму правила повышения доверия&lt;br&gt;•&amp;nbsp; читает сводку изменений — по желанию&lt;br&gt;•&amp;nbsp; вмешивается в уже принятое: работа его не ждёт" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#7a2436;fontFamily=Helvetica;" vertex="1" parent="OPC">
+                    <mxGeometry y="52" width="310" height="183" as="geometry"/>
+                </mxCell>
+                <mxCell id="SRC" value="Источники&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;код · стенд · документация · решения команды&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#e2e8e6;swimlaneFillColor=#f6f8f7;strokeColor=#3f4d49;fontColor=#3f4d49;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="883" width="380" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="SRC-b" value="•&amp;nbsp; хранят фактическое состояние продукта&lt;br&gt;•&amp;nbsp; дают материал для первого наполнения пустой базы&lt;br&gt;•&amp;nbsp; дают доказательства для проверки записей" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#3f4d49;fontFamily=Helvetica;" vertex="1" parent="SRC">
+                    <mxGeometry y="52" width="380" height="68" as="geometry"/>
+                </mxCell>
+                <mxCell id="LEG" value="Как читать стрелки" style="rounded=1;arcSize=6;html=1;fillColor=none;strokeColor=#cfd8d5;strokeWidth=2;verticalAlign=middle;align=left;spacingLeft=16;fontColor=#4b5c57;fontStyle=1;fontSize=12;fontFamily=Helvetica;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="116" width="1330" height="54" as="geometry"/>
+                </mxCell>
+                <mxCell id="la1" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="258" y="143" width="1" height="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lb1" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="328" y="143" width="1" height="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ1" value="" style="edgeStyle=none;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" parent="1" source="la1" target="lb1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lt1" value="постоянный поток работы" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
+                    <mxGeometry x="340" y="129" width="200" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="la2" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="538" y="143" width="1" height="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lb2" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="608" y="143" width="1" height="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ2" value="" style="edgeStyle=none;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" parent="1" source="la2" target="lb2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lt2" value="редкое вмешательство человека" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
+                    <mxGeometry x="620" y="129" width="200" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="la3" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="818" y="143" width="1" height="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lb3" value="" style="fillColor=none;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="888" y="143" width="1" height="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ3" value="" style="edgeStyle=none;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;dashPattern=1 4;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" parent="1" source="la3" target="lb3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lt3" value="только по явной команде" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
+                    <mxGeometry x="900" y="129" width="200" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="lf" value="" style="rounded=1;arcSize=8;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;" vertex="1" parent="1">
+                    <mxGeometry x="1098" y="128" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="lft" value="блок есть не всегда" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#4b5c57;fontFamily=Helvetica;" vertex="1" parent="1">
+                    <mxGeometry x="1180" y="129" width="200" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.379;entryDx=0;entryDy=0;" parent="1" source="HUM" target="AGT" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=1;entryY=0.646;entryDx=0;entryDy=0;" parent="1" source="AGT" target="HUM" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.495;exitY=1;exitDx=0;exitDy=0;entryX=0.495;entryY=0;entryDx=0;entryDy=0;exitPerimeter=0;entryPerimeter=0;" parent="1" source="AGT-b" target="WIN" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="568" y="380"/>
+                            <mxPoint x="569" y="380"/>
+                            <mxPoint x="569" y="410"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="Общ7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" parent="1" source="WIN" target="AGT" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.286;entryDx=0;entryDy=0;" parent="1" source="KBP" target="WIN" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="820" y="260"/>
+                            <mxPoint x="820" y="470"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="Общ9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.786;entryDx=0;entryDy=0;" parent="1" source="KBC" target="WIN" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="AGT-b" target="KEEP" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="475" y="389"/>
+                            <mxPoint x="352" y="389"/>
+                            <mxPoint x="352" y="820"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="Общ11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.13;exitDx=0;exitDy=0;entryX=0;entryY=0.6875;entryDx=0;entryDy=0;" parent="1" source="KEEP-b" target="KBP" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="840" y="747"/>
+                            <mxPoint x="840" y="290"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="Общ12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP-b" target="KBC-b">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1060" y="779"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="Общ13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;dashPattern=1 4;exitX=0.794;exitY=0;exitDx=0;exitDy=0;entryX=0.794;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBC" target="KBP">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="SRC" target="KEEP-b">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="782" y="913"/>
+                            <mxPoint x="782" y="913"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="Общ15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.323;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="OPC">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1420" y="820"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="Общ16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.65;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="KEEP" target="OPP">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1670" y="868"/>
+                            <mxPoint x="1670" y="287"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="Общ17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.45;entryDx=0;entryDy=0;" edge="1" parent="1" source="OPC" target="KBC">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;strokeColor=#8e2b3e;fontColor=#6b1f2e;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.669;entryDx=0;entryDy=0;" edge="1" parent="1" source="OPP" target="KBP">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="Общ19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.167;exitY=1;exitDx=0;exitDy=0;entryX=0.167;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="KBP" target="KBC">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>
