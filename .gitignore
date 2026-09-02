@@ -160,3 +160,8 @@ reports/vc-fix-plugin-diagnosis.md
 # Serena (semantic code navigation): the shared .serena/project.yml + .serena/.gitignore
 # ARE committed so every teammate gets the same project config. The machine-specific parts
 # (cache/, logs/, project.local.yml) are excluded by .serena/.gitignore itself.
+
+# KB v3 — Russian working copies of the ADR diagrams. The repo is English-only
+# (external artifacts rule); the RU copies exist for the operator and are regenerated
+# by scripts/docs/gen-kb-v3-diagrams.mjs, so they never need to be committed.
+docs/ru/

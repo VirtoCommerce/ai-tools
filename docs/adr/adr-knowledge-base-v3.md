@@ -106,7 +106,7 @@ explanations before being answered.)
 | 4 | Corpus shape | ONE corpus, one entry contract, one resolver; per-kind rules (evidence model, drift sensors) are fields of the type, not separate stores |
 | 5 | Autonomy vs the #252 review decision | **Full autonomy**: machine promotes through mechanical gates; the meeting mode is removed from the architecture; the reversal is recorded (§1.1) and ratified once, with the ADR |
 | 6 | Human powers | All four instruments, none a pipeline stage: retire/veto with a tombstone (machine never resurrects) · **pin** (machine cannot change a pinned entry) · force-dispute (no evidence bar needed; machine cannot clear without fresh proof) · a readable change digest (not a gate) |
-| 7 | Trust raising | Weighted evidence model — independent re-observations, cross-axis (docs/live/source) confirmation, deterministic re-derivation against code, and usage-without-refutation as the **weakest** class (operator: "введи веса; использование без опровержений — меньший вес"). Arithmetic stays internal; agents see categorical labels (§6.2) |
+| 7 | Trust raising | Weighted evidence model — independent re-observations, cross-axis (docs/live/source) confirmation, deterministic re-derivation against code, and usage-without-refutation as the **weakest** class (operator, translated: "introduce weights; use-without-refutation carries the smallest one"). Arithmetic stays internal; agents see categorical labels (§6.2) |
 | 8 | Trust lowering | Contradicting observation with evidence · failed scheduled re-check · source drift under the fact's anchors. Age is NOT a trigger |
 | 9 | Re-verification initiative | All three layers: source-drift events (targeted, immediate) + rotating CI sweep (covers anchor-less knowledge) + on-read flags (the reading agent, who has the live environment, re-checks what is actually being used) |
 | 10 | Trust ceiling without a human | Machine reaches the **top status**; a human mark (`pinned`) is an optional overlay, not a higher rung — no consumer waits for a human |
@@ -126,7 +126,7 @@ explanations before being answered.)
 | 24 | Citation contract | Ids eternal, never reused; consumers: other entries, client deltas (relation + base pin), and anything an agent writes — reports, tickets, PR bodies — via `@kb(id)`; dangling refs caught by the index gate. Client id namespace `KB-C-*` vs platform `KB-*` — collision impossible by construction. No external system is required to cite the base for it to work |
 | 25 | Answer contract | Mandatory minimum with every relayed fact: id + categorical trust + freshness + provenance + dispute flag; caveats voiced only below top trust (quiet at the top, loud where reduced); audit surface = git + the generated catalog — no dedicated UI |
 | 26 | Success metrics | Usage package: live MISS share (falling = coverage), `@kb(id)` citation rate in tasks (rising = adoption), disputes per 100 answers (falling = correctness). The exam is a retrieval regression gate, not a success metric |
-| 27 | Failure mode | Empty-but-true: confident answers only in the main result; an explicit MISS otherwise; relevant drafts/candidates in a separately-fenced **leads** section ("зацепки, не факты") |
+| 27 | Failure mode | Empty-but-true: confident answers only in the main result; an explicit MISS otherwise; relevant drafts/candidates in a separately-fenced **leads** section (operator, translated: "leads, not facts") |
 | 28 | Fate of #252/engine | Close unmerged; engine modules move file-by-file into `plugins/vc-kb/` with v3 semantics (fresh PR sequence). **Code is donated; content is not** — no corpus travels with it |
 
 Operational answers recorded alongside: the SessionStart hook must stay light (no
@@ -289,8 +289,8 @@ flags, permission constants, storefront routes, component/operation maps.
 - Served with provenance `derived @ <commit>` at the **top trust label by definition**.
 - **The regeneration diff is an event stream**: "type `CartType` changed", "module X
   dropped dependency Y" → every lifecycle entry whose `anchors[]` intersect the diff is
-  flagged `verification-due` (§6.4). This is how "изменение в GraphQL-схеме
-  отслеживается": the schema is re-derived, not re-checked, and its diff re-checks
+  flagged `verification-due` (§6.4). This is how the operator question "how is a change in the GraphQL schema tracked?"
+  is answered: the schema is re-derived, not re-checked, and its diff re-checks
   everything downstream. Precedents for diff-classification tooling (graphql-inspector,
   oasdiff, buf breaking): [R§3].
 
@@ -934,7 +934,7 @@ gitignored; aggregated counts only in the digest — no question prose leaves th
 | **Entry count vs distinct-subject count** | entries rising while subjects stay flat = the corpus is **over-splitting** into duplicate rival entries ([R§1]) | must track together |
 | Exam hit@k/MRR | retrieval regression **gate only** | must not fall |
 
-The first three are the success definition ("прирост производительности" proxies);
+The first three are the success definition (proxies for the operator's "throughput gain");
 task-time A/B measurements are explicitly out of scope as the primary signal (noisy,
 expensive) and may be run as spot checks later.
 
