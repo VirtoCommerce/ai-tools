@@ -182,14 +182,14 @@ function pageOverview() {
     "Точечная стрелка — только по явной команде. Пунктирная рамка — блок есть не всегда.",
     S.sub);
 
-  p.card("HUM", 60, 180, 270, 175,
+  p.card("HUM", 60, 200, 270, 175,
     "Человек<br><span style=\"font-size:11px;font-weight:normal\">менеджер · разработчик<br>тестировщик · аналитик</span>", [
     "ставит задачу агенту",
     "задаёт вопрос агенту",
     "получает ответ от агента — при неполном доверии с предупреждением",
   ], ...C.actor, 68);
 
-  p.card("AGT", 350, 180, 380, 190, "Агент-помощник", [
+  p.card("AGT", 380, 180, 380, 190, "Агент-помощник", [
     "делает задачу: чинит, проверяет, объясняет",
     "спрашивает справочную перед работой",
     "передаёт механизму новое — с доказательством",
@@ -198,7 +198,7 @@ function pageOverview() {
     "поясняет человеку, откуда взят ответ",
   ], ...C.agent);
 
-  p.card("WIN", 350, 400, 380, 210,
+  p.card("WIN", 380, 410, 380, 210,
     "Справочная<br><span style=\"font-size:11px;font-weight:normal\">единая дверь к знаниям</span>", [
     "принимает вопросы от агента",
     "собирает ответ из обеих баз",
@@ -208,17 +208,17 @@ function pageOverview() {
     "отвечает «не знаю», если ответа нет, и отдельно даёт зацепки — помечая, что это не факты",
   ], ...C.window, 52);
 
-  p.box("OPT", 760, 395, 730, 315,
+  p.box("OPT", 860, 425, 790, 305,
     "Есть только у клиентского проекта",
-    `rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=top;align=center;spacingTop=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;${FONT}`);
-  p.card("KBP", 780, 180, 340, 160,
+    `rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=bottom;align=center;spacingBottom=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;${FONT}`);
+  p.card("KBP", 880, 180, 360, 160,
     "База знаний платформы<br><span style=\"font-size:11px;font-weight:normal\">верное для любого проекта</span>", [
     "отдаёт свои записи справочной",
     "отдаёт свои записи базам проектов",
     "принимает предложения проектов как черновики",
     "проверяет предложение своими доказательствами, прежде чем принять",
   ], ...C.store, 52);
-  p.card("KBC", 780, 435, 340, 260,
+  p.card("KBC", 880, 445, 360, 260,
     "База знаний клиентского проекта<br><span style=\"font-size:11px;font-weight:normal\">правда об этом проекте</span>", [
     "отдаёт свои записи справочной",
     "читает записи платформы",
@@ -231,7 +231,7 @@ function pageOverview() {
     "отправляет наверх черновиком то, что верно и без доработок",
   ], ...C.store, 52);
 
-  p.card("KEEP", 350, 630, 380, 320,
+  p.card("KEEP", 380, 660, 380, 320,
     "Механизм проверки и обновления<br><span style=\"font-size:11px;font-weight:normal\">работает по правилам, а не по усмотрению</span>", [
     "принимает от агентов новое только с доказательством",
     "отклоняет запись, которую нечем опровергнуть",
@@ -253,38 +253,38 @@ function pageOverview() {
     "читает сводку изменений — по желанию",
     "вмешивается в уже принятое: работа его не ждёт",
   ];
-  p.card("OPP", 1180, 150, 300, 235,
+  p.card("OPP", 1320, 170, 310, 235,
     "Оператор платформы<br><span style=\"font-size:11px;font-weight:normal\">сотрудник Virto</span>",
     opBullets, ...C.actor, 52);
-  p.card("OPC", 1180, 435, 300, 235,
+  p.card("OPC", 1320, 445, 310, 235,
     "Оператор проекта<br><span style=\"font-size:11px;font-weight:normal\">сотрудник клиента</span>",
     opBullets, ...C.actor, 52);
 
-  p.card("SRC", 350, 970, 380, 120,
+  p.card("SRC", 380, 1020, 380, 120,
     "Источники<br><span style=\"font-size:11px;font-weight:normal\">код · стенд · документация · решения команды</span>", [
     "наполняют пустую базу в первый раз",
     "дают механизму доказательства для проверки",
     "меняются — и запускают перепроверку",
   ], ...C.source, 52);
 
-  p.edge("HUM", "AGT", "", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.237 });
-  p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.7, entryX: 1, entryY: 0.887 });
+  p.edge("HUM", "AGT", "", line, { exitX: 1, exitY: 0.3, entryX: 0, entryY: 0.379 });
+  p.edge("AGT", "HUM", "", line, { exitX: 0, exitY: 0.7, entryX: 1, entryY: 0.646 });
   p.edge("AGT", "WIN", "", line, { exitX: 0.25, exitY: 1, entryX: 0.25, entryY: 0 });
   p.edge("WIN", "AGT", "", line, { exitX: 0.75, exitY: 0, entryX: 0.75, entryY: 1 });
-  p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.262, points: [[750, 260], [750, 455]] });
+  p.edge("KBP", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.286, points: [[820, 260], [820, 470]] });
   p.edge("KBC", "WIN", "", line, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.786 });
-  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[315, 275], [315, 790]] });
-  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.13, entryX: 0, entryY: 0.6875, points: [[750, 672], [750, 290]] });
-  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.28, entryX: 0.118, entryY: 1, points: [[820, 720]] });
+  p.edge("AGT", "KEEP", "", line, { exitX: 0, exitY: 0.5, entryX: 0, entryY: 0.5, points: [[345, 275], [345, 820]] });
+  p.edge("KEEP", "KBP", "", line, { exitX: 1, exitY: 0.13, entryX: 0, entryY: 0.6875, points: [[840, 702], [840, 290]] });
+  p.edge("KEEP", "KBC", "", line, { exitX: 1, exitY: 0.28, entryX: 0.111, entryY: 1, points: [[920, 750]] });
   p.edge("KBC", "KBP", "", cmd, { exitX: 0.794, exitY: 0, entryX: 0.794, entryY: 1 });
   p.edge("SRC", "KEEP", "", line, { exitX: 0.5, exitY: 0, entryX: 0.5, entryY: 1 });
-  p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.5, entryX: 0.4, entryY: 1, points: [[1300, 790]] });
-  p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.635, entryX: 1, entryY: 0.5, points: [[1520, 833], [1520, 267]] });
+  p.edge("KEEP", "OPC", "", line, { exitX: 1, exitY: 0.5, entryX: 0.323, entryY: 1, points: [[1420, 820]] });
+  p.edge("KEEP", "OPP", "", line, { exitX: 1, exitY: 0.65, entryX: 1, entryY: 0.5, points: [[1670, 868], [1670, 287]] });
   p.edge("OPC", "KBC", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.45 });
-  p.edge("OPP", "KBP", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.544 });
+  p.edge("OPP", "KBP", "", rare, { exitX: 0, exitY: 0.5, entryX: 1, entryY: 0.669 });
   p.edge("KBP", "KBC", "", line, { exitX: 0.167, exitY: 1, entryX: 0.167, entryY: 0 });
 
-  return p.render(1610, 1130);
+  return p.render(1710, 1200);
 }
 
 /* =================================================== 1. Процесс целиком */
