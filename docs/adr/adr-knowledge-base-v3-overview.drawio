@@ -716,4 +716,73 @@
             </root>
         </mxGraphModel>
     </diagram>
+    <diagram id="Zhiznennyy cikl znaniya" name="The knowledge lifecycle">
+        <mxGraphModel dx="1616" dy="770" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="sm_0"/>
+                <mxCell id="sm_1" parent="sm_0"/>
+                <mxCell id="sm_t" value="The knowledge lifecycle" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#16211e;fontFamily=Helvetica;" parent="sm_1" vertex="1">
+                    <mxGeometry x="60" y="24" width="1300" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="sm_ts" value="Transitions are driven by weighted evidence anchored outside the corpus. Every condition is stated inside its own block. A person intervenes only by veto — pin, dispute, retire." style="text;html=1;align=left;verticalAlign=top;fontSize=11;fontColor=#4b5c57;fontFamily=Helvetica;" parent="sm_1" vertex="1">
+                    <mxGeometry x="60" y="62" width="1340" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_draft" value="Draft&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;status: draft · no id yet&lt;br&gt;&lt;br&gt;• captured by an agent mid-task, with evidence&lt;br&gt;• must name a way to be refuted (refutableBy)&lt;br&gt;• &lt;b&gt;into circulation:&lt;/b&gt; one fast CI pass, minutes not days&lt;/span&gt;" style="rounded=1;arcSize=8;html=1;fillColor=#fff1d6;strokeColor=#c47d18;strokeWidth=2;fontColor=#704406;fontSize=13;fontStyle=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;" parent="sm_1" vertex="1">
+                    <mxGeometry x="60" y="150" width="300" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_unconfirmed" value="In circulation (unconfirmed)&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;status: entry · id minted (KB-*) · trust: medium-low&lt;br&gt;&lt;br&gt;• searchable by every agent at once&lt;br&gt;• gathers confirmations from real sessions&lt;br&gt;• &lt;b&gt;to confirmed:&lt;/b&gt; weight ≥ 6 and the plane floor (two independent axes, or one axis and a derivation)&lt;br&gt;• &lt;b&gt;to disputed:&lt;/b&gt; on anchor drift or a contradiction&lt;/span&gt;" style="rounded=1;arcSize=8;html=1;fillColor=#e3f2fd;strokeColor=#1976d2;strokeWidth=2;fontColor=#0d47a1;fontSize=13;fontStyle=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;" parent="sm_1" vertex="1">
+                    <mxGeometry x="450" y="150" width="340" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_confirmed" value="Confirmed&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;status: entry · weight ≥ 6 · trust: high&lt;br&gt;&lt;br&gt;• corroborated by independent axes: source, live system, docs&lt;br&gt;• served with no caveat attached&lt;br&gt;• &lt;b&gt;to disputed:&lt;/b&gt; when the anchored contract changes&lt;br&gt;• &lt;b&gt;pin:&lt;/b&gt; the operator freezes it as an invariant&lt;/span&gt;" style="rounded=1;arcSize=8;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;strokeWidth=2;fontColor=#1b5e20;fontSize=13;fontStyle=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;" parent="sm_1" vertex="1">
+                    <mxGeometry x="880" y="150" width="340" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_pinned" value="Invariant (pinned overlay)&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;overlay: pinned · set by a person only&lt;br&gt;&lt;br&gt;• protects a critical rule from machine edits&lt;br&gt;• the engine may not edit, demote or retire it&lt;br&gt;• disputes and sightings still accrue, in the digest&lt;/span&gt;" style="rounded=1;arcSize=8;html=1;fillColor=#fff9c4;strokeColor=#fbc02d;strokeWidth=2;fontColor=#f57f17;fontSize=13;fontStyle=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;dashed=1;" parent="sm_1" vertex="1">
+                    <mxGeometry x="1270" y="150" width="290" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_disputed" value="Disputed (arbitration overlay)&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;overlay: disputed · trust drops to none, both ways&lt;br&gt;&lt;br&gt;• raised by anchor drift or a contradicting observation&lt;br&gt;• both sides are served, labelled, neither chosen&lt;br&gt;• enqueued for a re-check automatically&lt;br&gt;• &lt;b&gt;outcome:&lt;/b&gt; cleared back to confirmed, or superseded&lt;/span&gt;" style="rounded=1;arcSize=8;html=1;fillColor=#ffebee;strokeColor=#c62828;strokeWidth=2;fontColor=#b71c1c;fontSize=13;fontStyle=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;dashed=1;" parent="sm_1" vertex="1">
+                    <mxGeometry x="670" y="380" width="340" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_superseded" value="Superseded&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;status: superseded · kept as history&lt;br&gt;&lt;br&gt;• displaced by a newer confirmed entry&lt;br&gt;• keeps a permanent pointer to its successor&lt;br&gt;• excluded from the default view, resolvable by id&lt;/span&gt;" style="rounded=1;arcSize=8;html=1;fillColor=#ede7f6;strokeColor=#512da8;strokeWidth=2;fontColor=#311b92;fontSize=13;fontStyle=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;" parent="sm_1" vertex="1">
+                    <mxGeometry x="1100" y="450" width="340" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_retired" value="Retired (tombstone)&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;status: retired · the file is kept forever&lt;br&gt;&lt;br&gt;• vetoed by a person, or the feature left the codebase&lt;br&gt;• never served in an answer&lt;br&gt;• the fingerprint is tombstoned: the machine cannot resurrect it&lt;/span&gt;" style="rounded=1;arcSize=8;html=1;fillColor=#eceff1;strokeColor=#455a64;strokeWidth=2;fontColor=#263238;fontSize=13;fontStyle=1;align=left;verticalAlign=top;spacingLeft=12;spacingTop=10;" parent="sm_1" vertex="1">
+                    <mxGeometry x="250" y="450" width="340" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="tr_1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;strokeColor=#1976d2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="sm_1" source="st_draft" target="st_unconfirmed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="tr_2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;strokeColor=#2e7d32;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="sm_1" source="st_unconfirmed" target="st_confirmed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="tr_7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;strokeColor=#fbc02d;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="sm_1" source="st_confirmed" target="st_pinned" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="tr_3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;strokeColor=#c62828;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="sm_1" source="st_unconfirmed" target="st_disputed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="tr_3b" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;strokeColor=#c62828;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="sm_1" source="st_confirmed" target="st_disputed">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1050" y="338"/>
+                            <mxPoint x="925" y="338"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="tr_4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;strokeColor=#2e7d32;exitX=0.6;exitY=0;exitDx=0;exitDy=0;entryX=0.3;entryY=1;entryDx=0;entryDy=0;" parent="sm_1" source="st_disputed" target="st_confirmed" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="874" y="319"/>
+                            <mxPoint x="982" y="319"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="tr_5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;strokeColor=#512da8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="sm_1" source="st_disputed" target="st_superseded" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="tr_6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=2;strokeColor=#455a64;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="sm_1" source="st_disputed" target="st_retired" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

@@ -464,6 +464,18 @@ overlays (orthogonal, never statuses): disputed · pinned
 | `superseded` | Replaced; keeps file/id/body + `supersededBy` | machine (via contradiction resolution §10.3) or human |
 | `retired` | Dead subject, no successor; kept forever for citations | machine (positive evidence of death: feature/module gone from derived layer) or human veto |
 
+**Two tempos, and they are not the same clock.** Reading "consolidation" as one event
+gets the cost wrong in both directions, so name them. **Minting is fast**: the
+deterministic CI pass runs on every push touching `drafts/`, takes seconds, and turns a
+draft into an id-bearing entry that is searchable immediately at the `unconfirmed` label
+(§10.2a) — this is what keeps knowledge in circulation from the day it is written.
+**Weight is slow**: the `confirmed` label is not a step of that pass but the sum of
+evidence events accrued afterwards (§6.2), and the derived layer's regeneration plus the
+anchor re-checks it triggers ride the **release** clock instead, moving when a pin moves
+to a new tag (§5.1). What does *not* follow from the split is a shortcut: a release's own
+green test run is not a confirmation mechanism — it contributes ordinary per-entry
+evidence, on the terms §6.2 sets out, like any other observation.
+
 **Only two things vary, so only two things are stored**: whether the entry has an
 **id** (the citation contract — §4.3) and what its **weight** is. `confirmed` and
 `candidate` were two names for one object at two weights, and the first of them named
