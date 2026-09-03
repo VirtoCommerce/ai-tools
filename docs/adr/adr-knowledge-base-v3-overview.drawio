@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="Overview" name="Overview">
-        <mxGraphModel grid="0" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1710" pageHeight="1260" math="0" shadow="0" adaptiveColors="auto">
+        <mxGraphModel dx="1951" dy="906" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1710" pageHeight="1260" math="0" shadow="0" adaptiveColors="auto">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -223,7 +223,7 @@
         <mxCell id="PM" value="Shared records&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:normal&quot;&gt;true for any project&lt;/span&gt;" style="swimlane;html=1;rounded=1;arcSize=6;startSize=52;horizontal=1;fillColor=#dde5e3;swimlaneFillColor=#f4f7f6;strokeColor=#2b3d39;fontColor=#2b3d39;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;strokeWidth=2;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="90" y="540" width="640" height="180" as="geometry" />
         </mxCell>
-        <mxCell id="PM-b" value="•&amp;nbsp; rules and facts about the platform itself&lt;br&gt;•&amp;nbsp; they know nothing about any particular project&lt;br&gt;•&amp;nbsp; permanent numbers — projects cite them&lt;br&gt;•&amp;nbsp; keeps a catalog: the base can be read end to end&lt;br&gt;•&amp;nbsp; a proposal is confirmed by the platform’s own evidence only" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" vertex="1" parent="PM">
+        <mxCell id="PM-b" value="•&amp;nbsp; rules and facts about the platform itself&lt;br&gt;•&amp;nbsp; they know nothing about any particular project&lt;br&gt;•&amp;nbsp; permanent numbers — projects cite them&lt;br&gt;•&amp;nbsp; a proposal is confirmed by the platform’s own evidence only" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;spacingLeft=14;spacingTop=10;spacingRight=10;fontSize=12;fontColor=#2b3d39;fontFamily=Helvetica;" vertex="1" parent="PM">
           <mxGeometry x="0" y="52" width="640" height="128" as="geometry" />
         </mxCell>
         <mxCell id="CBOX" value="The client project’s knowledge base — not always present" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#7d8d87;dashed=1;dashPattern=8 5;strokeWidth=2;verticalAlign=bottom;align=center;spacingBottom=6;fontColor=#4b5c57;fontStyle=2;fontSize=12;fontFamily=Helvetica;" vertex="1" parent="1">
@@ -273,11 +273,11 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Dve2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.2;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="PM" target="WIN">
+        <mxCell id="Dve2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.2;exitDx=0;exitDy=0;entryX=0;entryY=0.35;entryDx=0;entryDy=0;" edge="1" parent="1" source="PM" target="WIN">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
             <mxPoint x="30" y="576" />
-            <mxPoint x="30" y="200" />
+            <mxPoint x="30" y="176" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -289,18 +289,40 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Dve4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="CM" target="WIN">
+        <mxCell id="Dve4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=1;entryY=0.35;entryDx=0;entryDy=0;" edge="1" parent="1" source="CM" target="WIN">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
             <mxPoint x="1550" y="578" />
-            <mxPoint x="1550" y="200" />
+            <mxPoint x="1550" y="176" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Dve5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.284;entryDx=0;entryDy=0;" edge="1" parent="1" source="PM" target="CM">
+        <mxCell id="Dve5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.17;exitY=1;exitDx=0;exitDy=0;entryX=0.17;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="PM" target="PI">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Dve6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;dashPattern=1 4;exitX=0;exitY=0.1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="CM" target="PD">
+        <mxCell id="Dve6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0.17;exitY=1;exitDx=0;exitDy=0;entryX=0.17;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="CM" target="CI">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Dve7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;" edge="1" parent="1" source="PI" target="WIN">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+            <mxPoint x="55" y="825" />
+            <mxPoint x="55" y="248" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Dve8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.8;entryDx=0;entryDy=0;" edge="1" parent="1" source="CI" target="WIN">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+            <mxPoint x="1525" y="835" />
+            <mxPoint x="1525" y="248" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Dve9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.284;entryDx=0;entryDy=0;" edge="1" parent="1" source="PM" target="CM">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Dve10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;dashed=1;dashPattern=1 4;exitX=0;exitY=0.1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="CM" target="PD">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
             <mxPoint x="790" y="559" />
@@ -308,7 +330,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Dve7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;startArrow=classic;startFill=1;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.2;entryDx=0;entryDy=0;" edge="1" parent="1" source="PM" target="PE">
+        <mxCell id="Dve11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;startArrow=classic;startFill=1;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.2;entryDx=0;entryDy=0;" edge="1" parent="1" source="PM" target="PE">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
             <mxPoint x="666" y="740" />
@@ -317,7 +339,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Dve8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;startArrow=classic;startFill=1;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.2;entryDx=0;entryDy=0;" edge="1" parent="1" source="CM" target="CE">
+        <mxCell id="Dve12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;labelBackgroundColor=#ffffff;fontSize=12;strokeWidth=2;strokeColor=#3d5a55;fontColor=#2f3a37;fontFamily=Helvetica;startArrow=classic;startFill=1;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.2;entryDx=0;entryDy=0;" edge="1" parent="1" source="CM" target="CE">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
             <mxPoint x="1426" y="750" />
@@ -330,7 +352,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="The verification engine" name="The verification engine">
-        <mxGraphModel dx="1658" dy="770" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1440" pageHeight="940" math="0" shadow="0" adaptiveColors="auto">
+        <mxGraphModel grid="0" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1440" pageHeight="940" math="0" shadow="0" adaptiveColors="auto">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -421,7 +443,7 @@
         </mxGraphModel>
     </diagram>
     <diagram id="The reference desk" name="The reference desk">
-        <mxGraphModel dx="1658" dy="770" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1460" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
+        <mxGraphModel grid="0" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1460" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
