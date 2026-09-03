@@ -10,17 +10,30 @@
 | **Companion** | `adr-knowledge-base-v3-research.md` — the research digest with sources; facts and assessments separated. Cited here as **[R§n]** |
 | **Meeting packet** | https://claude.ai/code/artifact/fc025b53-edad-46e7-9f6e-ddf1133d9534 — the same decisions in a form a meeting can read end to end; this file stays the record |
 | **Fixed inputs** | The operator questionnaire of 2026-09-01 — 31 answers covering the 27 mandatory themes (§2) |
+| **Review** | Architecture review of 2026-09-03 folded in — items adopted, adapted, or rejected-with-reason at the section they touch; the three internal defects it exposed are fixed in §9.1, §10.2 and §16 |
 
 ## 1. Context — how we got to v3, and what changed
 
-**This base starts empty.** It is not a re-housing of anything the repository holds
-today: no existing file is migrated, no existing format is inherited, no existing
-identifier is carried over. v1 and v2 both began from "we have a corpus with problems";
-v3 begins from a question that has nothing to do with any corpus — **what does an agent
-need in order to answer a question about this platform correctly, and how does that
-answer stay correct?** Everything below follows from that question, and the first
-entries will be written by the bootstrap extractors (§11.3) and by agents doing real
-work (§10.2), not by an import.
+**This base starts empty**, and that sentence carries two claims of very different
+standing — earlier drafts fused them, which is why every proposal to seed content read
+as an attack on the whole design. They are stated apart from here on:
+
+- **Architectural, not negotiable.** No existing format is inherited and no existing
+  identifier is carried over: the entry contract, the id namespaces and the citation
+  contract are the base's own (§4.3), and nothing outside is asked to change. **Whatever
+  ever enters, enters through one of exactly two doors** — deterministic extraction
+  (§11.3) or evidence-carrying capture (§10.2). Even a decision to seed would arrive as
+  capture with evidence, never as a load at weight.
+- **An operator decision about content** (§2 Q0, reaffirmed 2026-09-03): the base is not
+  seeded from any corpus we already hold. Reversing this changes a delivery phase and
+  nothing else — the conditional escape hatch is recorded against §15 risk 10.
+
+v1 and v2 both began from "we have a corpus with problems"; v3 begins from a question
+that has nothing to do with any corpus — **what does an agent need in order to answer a
+question about this platform correctly, and how does that answer stay correct?**
+Everything below follows from that question, and the first entries will be written by
+the bootstrap extractors (§11.3) and by agents doing real work (§10.2), not by an
+import.
 
 Today that knowledge has no home at all: it lives in people's heads, in ticket threads,
 in PR discussions, and in the code itself — where it is *true* but not *answerable*,
@@ -36,10 +49,11 @@ The path that got us here: **v1** ("Two Brains", implemented as PR #252) → **t
 response: statuses, meeting ratification, scaling ladders, standalone plugin — never
 ratified) → **the task statement itself changed**. The v3 mandate:
 
-0. **A new base, filled from zero.** No migration, no inherited format, no grandfathered
-   ids. Whatever knowledge exists elsewhere in the repository keeps working where it is;
-   if any of it ever belongs here, it arrives the way every other entry does — captured
-   with evidence and promoted through the gates, on its own merits.
+0. **A new base, filled from zero.** No inherited format and no grandfathered ids (the
+   architectural half), and no corpus seeding (the operator half — §2 Q0). Whatever
+   knowledge exists elsewhere in the repository keeps working where it is; if any of it
+   ever belongs here, it arrives the way every other entry does — captured with evidence
+   and promoted through the gates, on its own merits.
 1. **One base for all roles** — manager, lead, QA, backend dev, frontend dev, analyst.
    The QA oracle was the first *consumer*; v1/v2 mistook it for the *purpose* (QA-shaped
    `kind` vocabulary with `locator` in it; suite-citation-centric indexing).
@@ -99,7 +113,7 @@ explanations before being answered.)
 
 | # | Theme | Decision |
 |---|---|---|
-| 0 | Starting point | **A new base, filled from zero.** No corpus migration, no inherited entry format, no grandfathered identifiers, no dependency on any knowledge file that exists today. Existing knowledge assets keep working where they are and are out of scope for this ADR |
+| 0 | Starting point | **A new base, filled from zero.** No corpus migration, no inherited entry format, no grandfathered identifiers, no dependency on any knowledge file that exists today. Existing knowledge assets keep working where they are and are out of scope for this ADR. **Reaffirmed 2026-09-03** against a proposal to seed the QA oracles (BL/ECL) through a migration phase — declined for the reasons in §15 risk 10, which also records the one condition under which seeding is revisited |
 | 1 | Content boundaries | IN: behavior, API contracts, domain rules, pitfalls; architecture **with rationale**; conventions; processes and ownership. OUT: roadmap (tracker owns it; rots faster than the base confirms) |
 | 2 | Explicitly not knowledge | Secrets/env-URLs/test data (owned by env layers, `@td()`, secret store) · restating code an agent can read (store synthesis + anchors, not paraphrase) · client-identifying data in the platform base (§2a, by construction) · claims without evidence (refused at capture) |
 | 3 | First consumers | Working task agents: the fix cycle (`/qa-bug`, `/qa-fix`, `/qa-verify-fix`, triage) plus "how does X work" questions. Other roles arrive through the same resolver later |
@@ -226,9 +240,9 @@ New in v3:
 
 | Field | What | Why |
 |---|---|---|
-| `anchors[]` | Machine-checkable pointers into sources: `{repo, ref: <commit>, path, symbol?, hash}` — the hash is of the normalized anchored fragment | The drift sensor for experiential/derived-adjacent knowledge: when regeneration diffs touch an anchor, the entry is flagged for re-check (§6.4). In TMS terms this is the entry's **justification** ([R§1]) — optional only where `refutableBy` names a non-anchor channel |
+| `anchors[]` | Machine-checkable pointers into sources: `{repo, ref: <release tag or commit>, path, symbol, granularity, hash}`. **`symbol` is required wherever the language has a symbol table** (C# via Roslyn, TS/Vue via ts-morph, GraphQL/REST via the schema coordinate of §11.1) and may be omitted only for a format that has none. **`granularity` is `signature` or `body`**, and the hash is taken over the AST-normalized text of that scope — normalization strips comments, whitespace and trivia through the parser, never by regex, so a formatter run (`dotnet format`, Prettier) or a local-variable rename does not move the hash | The drift sensor for experiential/derived-adjacent knowledge: when regeneration diffs touch an anchor, the entry is flagged for re-check (§6.4). In TMS terms this is the entry's **justification** ([R§1]) — optional only where `refutableBy` names a non-anchor channel. **Granularity is chosen by plane, not by taste**: `contract`/`structure` anchor at `signature` (a shape change is what refutes them), while `behavior`/`pitfall` anchor at `body` — a claim about *how tax is computed* is refuted by the computation changing, so signature-only anchoring would blind exactly the plane anchors exist for. Alert fatigue is bounded elsewhere and by design: drift sets `verification-due` and **changes no weight** until a re-check actually fails (§6.2), and a `safe`/`INFO` diff merely re-stamps (§11.1) |
 | `refutableBy` | Closed vocabulary: `derivation` · `anchor` · `observation` · `artifact` · `practice` | The admission rule (§5.4): an entry that can name no automated way to be proved wrong is refused at capture |
-| `provenance` | For normative kinds: `{kind: adr\|pr-discussion\|tracker\|config\|readme, ref, at}` | The birth credential of a decision/convention/process (§5.3) |
+| `provenance` | For normative kinds: `{kind: adr\|pr-discussion\|tracker\|config\|readme\|doc, ref, at}` | The birth credential of a decision/convention/process (§5.3). `doc` covers a project document supplied at onboarding — a PRD, an integration spec, an exported wiki page (§11.3); it is a *credential*, so the `ref` must resolve to a stable location, never to a paste |
 | `evidence[]` | An append-only list of typed evidence **events** (was: a single audited stamp) | The weighted trust model needs the event history, not just the latest stamp (§6.2) |
 | `confirmations` | `{count, lastAt}` (machine-written) | Reuse-is-review made mechanical (v2 R2, kept) |
 | `disputed` | Overlay block `{at, ref, reason}` (machine- or human-written) | A dispute must travel with the entry (v2, kept) |
@@ -283,8 +297,13 @@ obligations* by plane:
 REST routes, GraphQL schema areas, module manifests + dependency graph, settings
 flags, permission constants, storefront routes, component/operation maps.
 
-- Produced by **extractors** (§11.1) from sources at a **pinned commit**; stored under
-  `derived/` as generated tables + aggregate entries that reference them.
+- Produced by **extractors** (§11.1) from sources at a **pinned commit** — and the pin is
+  a **release tag wherever the source publishes one**, never an arbitrary tip-of-branch
+  commit. A dev-branch pin makes the diff event stream (below) fire on work in progress:
+  every intermediate commit re-flags downstream entries, and the re-check queue fills
+  with drift that the release then reverts. Tag-pinned, the stream carries one event per
+  shipped change. Sources with no release cadence (a client fork) pin to a commit and say
+  so in the table header.
 - **No lifecycle.** No statuses, no confirmations, no disputes. A derived fact is not a
   belief — it is a projection of the source; the source is the truth.
 - Regenerated when the pin moves; `--check` regenerates in memory and byte-compares
@@ -328,14 +347,48 @@ The same boundary keeps the base from becoming a run log: a single failing test,
 suite, one slow request are events, not facts. What is a fact is the property they reveal,
 if it survives the next run.
 
+**The failure this boundary is really guarding against** (raised in review, 2026-09-03):
+a developer breaks the shipping calculation, an agent opens the environment, sees `$0`,
+and records *"shipping is free on this deployment"* as platform behavior. Left alone it
+accrues weight and eventually cements a defect as a fact — and a base that says so makes
+the tests that would have caught it look wrong. Two defences, and the first is already
+load-bearing rather than new:
+
+- **The source axis is the real answer.** A bug is behavior the *source does not intend*,
+  so a claim born from a single live sighting on one environment can never reach the
+  `confirmed` label: §5.2's bar is ≥2 independent axes, or one axis plus a deterministic
+  anchor check. Live-alone tops out below the threshold by construction. This is stated
+  here explicitly because it reads as an accident of the evidence model and is in fact
+  the anti-cementing mechanism.
+- **A contradiction with a currently-passing test is a dispute, not a rejection.** Where
+  a capture's claim negates an assertion the regression corpus currently asserts, capture
+  routes it to §10.3's dispute path with a tracker check attached, instead of admitting
+  it quietly. The dispute is the honest state: one of the two is wrong and we do not yet
+  know which.
+
+**Rejected: making the test corpus an admission gate.** The review proposed refusing any
+`behavior` that contradicts a suite assertion. It is refused because the suites are not
+an oracle — they are a second corpus of beliefs, with a measured error rate of its own
+(≈20% of cases return BLOCKED corpus-wide, ~28% on the largest suites; a large majority
+of assertions are presence-only and pass while asserting nothing; retired cases were
+still executing until recently; some assertions are vacuously true by construction).
+Gating knowledge admission on it would couple this base to a corpus the repository is
+actively burning down, and it would breach §7's central rule — a belief corpus may not
+be an oracle; the oracles are source, live system, docs and authoritative artifacts.
+Suite assertions therefore enter as a **weak negative signal** under §6.2's local
+closed-world rule, never as a gate. No new overlay is needed for the outcome either:
+`disputed` already drops trust to `none` symmetrically, which is exactly the requested
+"hold it out of the answer until the ticket resolves".
+
 ### 5.3 Normative plane — facts with an author
 
 `decision`, `convention`, `process` (and `structure`'s ownership half).
 
 - Born from **provenance**: a reference to the authoritative artifact — an ADR, a PR
-  discussion, a tracker decision, a config that encodes the choice. `evidence.method:
-  stated` + `provenance` block. No browser re-check can confirm a rationale; the
-  artifact is the proof.
+  discussion, a tracker decision, a config that encodes the choice, or a project
+  document (`doc`: a PRD, an integration spec, an exported wiki page — the client
+  intake of §11.3). `evidence.method: stated` + `provenance` block. No browser re-check
+  can confirm a rationale; the artifact is the proof.
 - Elevated by **observed practice**: agents that see the convention actually followed
   (a merged PR conforming, a process executed as described) record practice
   confirmations; usage-without-dispute contributes the weakest weight (§6.2).
@@ -494,6 +547,19 @@ values about *that anchor* is a labelled negative; where the corpus covers nothi
 engine produces **no** label rather than a fabricated one. That asymmetry is what lets
 the pipeline learn from its own corpus without the corpus becoming its own evidence.
 
+**Regression results feed this per entry, never per batch.** A completed suite run is a
+legitimate input, and the shape is asymmetric because the evidence is: a **FAIL that
+contradicts an entry** whose anchors the case touches is a strong signal and opens a
+dispute (§5.2a); a **PASS** is a single `observation` event at its ordinary weight and
+cap, on that entry alone. What a green run may **not** do is flip labels in bulk — three
+mechanisms already forbid it and would each fire on such a batch: one run is one
+*correlated* source (the uncorrelated-sources rule above), the per-domain promotion
+budget throttles it, and anomalous-batch quarantine (§7 item 4) is designed to catch
+exactly a mass promotion. The same closed-world rule supplies the negative labels: a
+suite assertion is *coverage* of an anchor, so a capture contradicting one is a labelled
+negative — weak, because of the measured properties of that corpus (§5.2a), and never an
+oracle.
+
 **Thresholds** (defaults; per-root tunable in `brain.json`, and recorded in the digest
 whenever tuned): the **confirmed** label at **score ≥ 6** AND the per-plane floor —
 experiential: ≥2 distinct axes or 1 axis + `derivation`; normative: `provenance` +
@@ -554,8 +620,8 @@ are a `scope` field), no conditional proofs, no global consistency fixpoint — 
 
 ### 6.5 Re-verification — three initiating layers (§2 Q9)
 
-1. **Event-driven**: platform pin moves / a release lands → extractors regenerate →
-   the diff flags every entry whose anchors intersect → `verification-due`.
+1. **Event-driven**: the platform pin moves to a new **release tag** (§5.1) → extractors
+   regenerate → the diff flags every entry whose anchors intersect → `verification-due`.
 2. **Rotating sweep**: the brain repo's CI takes the next slice (N entries by re-check
    priority: verification-due first, then highest-`citedBy`, then oldest
    `lastConfirmed`) and emits a **re-check queue** (`recheck-queue.json`) — CI itself
@@ -702,7 +768,8 @@ README says only "modern ranking algorithm"), **MIT**, **genuinely zero-dependen
 **one self-contained ES file** (78 KB raw / 18 KB gz, no imports — so "vendor a single
 file" is literal), **language-neutral by default** (Unicode tokenizer + lowercase, no
 stemmer, no stopwords ⇒ nothing mis-fires on mixed EN/RU, and Cyrillic tokenizes
-correctly), and free of internal randomness (**no `Math.random`/`Date.now`** in the
+correctly — with the inflection cost that neutrality carries, stated below), and free of
+internal randomness (**no `Math.random`/`Date.now`** in the
 module).
 
 - Fields and boosts: `subject`, `aliases`, `title`, `question` (top), `tags` (mid),
@@ -722,7 +789,31 @@ module).
   the cautionary example.
 - Curated `synonyms.json` per root (domain vocabulary: "PLP" ⇢ "product listing page",
   RU⇢EN bridges for the team's query language), identity until populated.
-- Same normalization pipeline (`claimTokens`) for queries and corpus fields.
+- One normalization pipeline shared **between a query and the corpus fields it is
+  matched against** — that symmetry is non-negotiable, or a query can never match what
+  was indexed. It is *not* the same pipeline as the fingerprint's (below).
+
+**Two normalization pipelines, two separate decisions** (a conflation the 2026-09-03
+review exposed). §10.1 step 0 canonicalizes a claim **before hashing**, and there
+"no stemming" is forced: the fingerprint must be exact and must preserve negation, so a
+stemmer that merges a claim with its converse is a correctness bug. Retrieval is a
+different trade — recall matters more than precision, and the argument from the
+fingerprint does not transfer. Earlier drafts carried it across anyway and presented
+MiniSearch's stemmer-less tokenizer as a positive property on that borrowed basis.
+
+Decided on retrieval's own merits: **retrieval stays stemmer-less too**, and Russian
+morphology is handled by `synonyms.json` + per-entry `aliases`. The cost is stated rather
+than argued away — **a synonym table resolves vocabulary, not inflection**, so "расчёт
+налогов в корзине" will not by itself reach an entry phrased "налог рассчитывается для
+корзины" unless a bridge or an alias covers that pair. What buys the decision: our own
+research warns that rule-based Russian stemming yields invalid stems and that a
+language-specific tool applied blind to mixed EN/RU degrades both halves, and the corpus
+is English-first (code, APIs, schema coordinates and every `subject` slug are English),
+so the exposure is query-side and partly self-correcting as bridges accumulate. **The
+escape hatch is already the ladder**: if the exam shows the gap biting, the A2 rung
+(§9.3) is synonym growth, and a script-conditional stemmer — Cyrillic tokens only,
+applied identically to query and index, fingerprint untouched — is the increment after
+it, taken on a measurement rather than on this argument.
 
 **Rejected**: hand-rolled BM25 — a legitimate *maximum-determinism* fallback (~100 lines;
 scores could then change only by our own commit) but it forfeits fuzzy/prefix matching
@@ -769,8 +860,9 @@ Kept from v1/v2: two entry points (`resolveId`, `lookup`), typed answers always,
   not facts" — a draft is served, never hidden, and never in the main result; a MISS
   with leads is still a MISS. **Drafts are not in the index** (they are not entries
   yet, and the index is rebuilt only per run — §9.1a), so the resolver reads
-  `drafts/` directly: one file per fingerprint, matched on the same normalized tokens,
-  no ranking beyond recency and the repeat `count`. That is affordable because the
+  `drafts/` directly: one JSONL file per fingerprint (§10.2), matched on the same
+  normalized tokens, no ranking beyond recency and the sighting count derived from its
+  lines. That is affordable because the
   directory is small **by construction** — every run empties it into entries or
   tombstones. A drafts directory that stops draining is therefore not a retrieval
   problem to optimise but a signal that consolidation is failing, and §12 counts it.
@@ -891,8 +983,17 @@ the read path did not become mutable, and nothing may make it so.
 
 
 
-Append-only `drafts/`, one file per fingerprint, repeat sightings merge
-(`count++`, phrasing appended, freshest evidence wins), tombstones are final,
+`drafts/` is **append-only JSONL, one file per fingerprint, one line per sighting** —
+and the two halves of that sentence are both load-bearing. The **fingerprint filename**
+is what makes two sessions observing the same thing land on one draft instead of two
+(§10.1); a per-session filename would move dedup to consolidation and forfeit it in the
+leads view. **Line-per-sighting** is what makes concurrent writers safe: two sessions
+appending to one file produce a union that merges deterministically once sorted, whereas
+the earlier wording — one *record* per fingerprint, mutated in place (`count++`, phrasing
+appended) — is a read-modify-write and therefore a genuine conflict every time it races.
+The derived view is unchanged (`count` = line count, phrasings = the union, freshest
+evidence wins); it is now *computed* from the lines rather than maintained in the file.
+§4.4 already reserved JSONL for exactly this job. Tombstones are final,
 **capture refuses an observation without evidence**, `assertWritable` enforces the
 root boundary by data (readOnly platform cache), `KbContainmentError` on any client-
 scope emit toward a platform path. New: capture accepts `anchors[]` and `provenance`,
@@ -906,22 +1007,61 @@ for the rotating re-check sweep (§6.5), and locally by explicit command. Never 
 hook — the SessionStart hook is light by contract (§11.2). A draft therefore waits for
 the next run, which is minutes, not days.
 
-**Why not the moment the agent writes it.** Three reasons, and each of them is a gate
-that has no meaning for a single write:
+**Why not the moment the agent writes it.** Three reasons, ranked by how much weight
+they actually carry — and the ranking matters, because only the first is a reason about
+*place* rather than about timing:
 
-1. **The gates are batch-level.** Quarantine of an anomalous batch, the layer guard, the
-   exam with auto-revert, and the per-domain promotion budget all judge a run against
-   the corpus. One write is not a batch: there is nothing to compare, and running the
-   exam per write would cost more than the write is worth.
-2. **Independence.** Weight may only be raised by evidence uncorrelated with the writer
-   (§6.2). A pass that confirmed a claim inside the session that made it would be the
-   corpus grading its own homework — the one thing §7 exists to prevent.
-3. **Serialization.** Parallel sessions write drafts at the same time. CI is the single
-   committer, and therefore the only place an id can be minted without a race.
+1. **Serialization — decisive, and the one with no local workaround.** Ids are minted
+   globally and are eternal. Parallel sessions write drafts at the same time; two of
+   them minting locally both take the next free id, and the collision is unrecoverable
+   by design (§4.3 — never renumber, never reuse). Avoiding it means a distributed lock,
+   which is CI with extra steps. The same applies to the index and `catalog.md`, which
+   §9.1a rebuilds *whole*: two writers produce two whole rebuilds and a merge conflict
+   on a generated artifact that nothing can resolve semantically. CI is the single
+   committer, and therefore the only place an id can come from.
+2. **The batch does not exist anywhere else.** Quarantine of an anomalous batch, the
+   layer guard, the exam with auto-revert and the per-domain promotion budget all judge
+   a *run against the corpus*, and a run's content is the drafts of many sessions —
+   which converge only where they are pushed. Inside one session the batch is of size
+   one: the gates do not fail, they simply have nothing to measure.
+3. **Independence — the weakest of the three, stated honestly.** Consolidation does not
+   manufacture evidence; it tallies events that already exist, so running the tally near
+   the writer would not by itself be the corpus grading its own homework. What the
+   separation genuinely buys is narrower: the writing session cannot watch its own claim
+   become an id-bearing entry and then cite it inside the same turn — the tight loop
+   that would let a session's own output start earning `usage` weight off itself (§6.2).
 
 **What does happen at write time**, so the agent is not left blind: the novelty protocol
 (§10.1) runs *before* the write, so "duplicate", "same subject, other aspect" and
-"contradiction" are answered immediately, in-session. Only id minting and weight wait.
+"contradiction" are answered immediately, in-session. The draft is also **immediately
+readable** — the resolver reads `drafts/` directly and serves it in the leads block
+(§9.2), so the session that wrote it, and any session sharing the checkout, can see it
+at once. Only **id minting and weight** wait.
+
+**How a draft actually reaches CI.** Capture writes into the writable root's working
+tree; the session then commits the draft lines and pushes them to the brain repo on the
+`drafts/` path — that push is the trigger. Three consequences worth stating because they
+are where this breaks in practice: the push needs a **write credential for the brain
+repo** (on a client install that is the client's own knowledge repo on their own host,
+resolved by `/project-init` alongside the rest of the profile — the platform cache stays
+read-only and `assertWritable` is what enforces it); a session that ends without pushing
+leaves its drafts **local and unconsolidated**, which is recoverable (the next session on
+that checkout pushes them) but invisible until then, so the digest counts local-only
+drafts it can see; and because drafts are append-only JSONL keyed by fingerprint, the
+push conflicts only in the file's line set and resolves by union — no draft is ever lost
+to a merge.
+
+**Considered and rejected — a background job in the agent's own session.** The obvious
+question, since consolidation is deterministic zero-dep code the session could simply
+run itself, and the answer is that *where the code runs* was never the constraint. The
+three reasons above are unchanged by moving it: a local run still has to mint an id
+(reason 1, and now without a single committer), still has a batch of one (reason 2), and
+still sits next to the writer (reason 3). Two facts finish it. **On this harness a
+background process started inside a dispatched sub-agent is killed when that turn ends**
+— which is how a long-running watcher elsewhere in this repo froze mid-run — so the
+mechanism is not reliably available in the place it would be wanted. And the latency it
+would buy is already bought: novelty answers come back in-session, and the draft is
+served as a lead the moment it is written.
 
 **Considered and rejected — content-addressed ids.** Deriving the id from the claim's
 fingerprint would make minting idempotent and race-free, which would let capture mint on
@@ -966,6 +1106,11 @@ flagged `promotable` locally. Promotion is explicit (`kb promote <id>`), and:
    side**: the claim/refs are scanned against the client's own known identifiers
    (org, repo names, hosts, domains from `project-profile.json`) and refused on a hit;
    evidence refs must point at platform-public sources only.
+1a. **Mandatory human preview before anything leaves the client** — `kb promote` renders
+   the exact outbound artifact, byte for byte, and waits for an explicit confirmation;
+   it never sends in the background, and a subagent (which cannot be asked) may not
+   perform this step. This is not belt-and-braces on top of the lint; it is **the**
+   containment mechanism, for the reason spelled out below.
 2. The platform brain's CI ingests issues matching the form (`kb ingest-issues`):
    schema-validated → lands in `drafts/` as an ordinary draft (never directly into
    entries), deduped by fingerprint against open issues and existing drafts. Malformed
@@ -978,6 +1123,20 @@ flagged `promotable` locally. Promotion is explicit (`kb promote <id>`), and:
 This keeps §2a: nothing flows upward automatically; the platform never learns which
 client filed (the issue is filed by a bot/service identity or the operator's own
 GitHub account at their choice — the form carries no client fields).
+
+**Why the human step is load-bearing, and where this design is weaker than §2a's.** The
+telemetry precedent (`vc-self-check`, PR #143/#172) closed its leak class by making the
+outbound artifact a **closed schema with zero free-text fields**, after denylist
+scrubbing had failed the review twice. That move is **not available here**: a knowledge
+claim *is* prose — you cannot enumerate the thing being sent. So the form's structured
+half is closed, but `claim text` and evidence refs are free text, and step 1's identifier
+lint is, honestly named, a **denylist over free text** — the very shape §2a rejects. The
+honest conclusion is therefore not that the form makes this safe by construction, but
+that **promotion is contained by a person, by necessity**: the closed fields narrow what
+can be said, the lint catches the mechanical mistakes, the platform-side draft-only
+ingest and platform-evidence-to-confirm limit the blast radius — and the preview is what
+actually stands between a client's prose and a public repository. §16's entry is
+corrected to say so.
 
 ---
 
@@ -997,6 +1156,7 @@ GitHub account at their choice — the form carries no client fields).
 | Storefront routes / config flags | `vc-frontend` router + config | **ts-morph** walk of the config literals | reimplement (thin) |
 | Component contracts (props/events/slots) | `.vue` SFCs | static AST extraction | **vue-docgen-api** reuse as-is |
 | Client delta | client repos vs platform at `upstreamRef` | same extractors + set difference (custom modules, fork-divergent files, non-native installed modules) | — |
+| Client integration contracts | third-party OpenAPI / JSON-schema / config artifacts the operator points at during onboarding (§11.3) | treated as any other spec: parse, normalize, sorted snapshot | reuse (oasdiff for drift) |
 
 Outputs: `derived/**` tables (JSON/markdown, generated headers) + aggregate `structure`
 /`contract` entries (one per module / schema area / settings group) that cite the
@@ -1046,6 +1206,27 @@ operator interview** (v2 R6's interview is dropped with the human→0 mandate; w
 interview used to seed now comes from the delta computation and normal capture).
 Regression goldens are auto-seeded from aggregates' `question` fields (§7 item 3) so the
 exam gate is armed from day 0; truth goldens grow from usage.
+
+**Doc & context intake (client only).** Client code shows *what was implemented*, never
+*why this deployment is the way it is* — which ERP owns prices and stock, which SLA the
+B2B contract carries, why checkout demands a PO number. So `/project-init` asks one
+question the delta cannot answer: **where the project's documents live** (integration
+specs, PRDs, exported wiki pages, third-party OpenAPI). That is a source-location
+question of the same class as "where is your repo" — it is **not** a reinstatement of
+v2 R6's interview, which asked the operator to *supply knowledge*; the human→0 mandate
+is untouched. The intake then splits by determinism, and the split is the whole point:
+
+- **Machine-readable artifacts** (OpenAPI, JSON-schema, config) go to the extractors
+  (§11.1) — deterministic, zero-LLM, re-derivable, drift-checkable like any other spec.
+- **Prose** cannot go to the extractors: pulling a rule out of a PRD needs a model, and
+  the pipeline is model-free by contract (§13.2) — which is the same reason §2 Q16 kept
+  wiki mining out of cold start. It is therefore a **bootstrap capture session**: an
+  agent reads the documents and captures entries with `provenance {kind: doc}`, through
+  the ordinary door, under the ordinary gates. A pipeline stage was never available for
+  this; a capture session always was.
+
+Everything derived from client documents is `KB-C-*` by construction and can reach the
+platform only through §10.4 — a client PRD is client data.
 
 ---
 
@@ -1105,7 +1286,15 @@ plugins/vc-kb/
 
 `vc-fix` adds `dependencies: [{name: vc-kb, version: ">=0.1.0"}]`, keeps only call
 sites (capture opportunities in `/qa-bug`/`/qa-fix`/`/qa-verify-fix`, resolver
-consultations in triage); `vc-perf` reaches it transitively. Versioning/tags per
+consultations in triage); `vc-perf` reaches it transitively. **Every call site is
+fail-open, and this is a contract, not a courtesy**: if `vc-kb` is absent, unresolvable
+or errors, the caller logs one `[KB: bypassed]` line and continues — a knowledge lookup
+may never block a fix cycle, and a knowledge *write* failing may never lose a fix. The
+rule is not hypothetical here: a dependency range resolves against a per-plugin
+`{name}--v{version}` tag, so a version bump landed without its tag silently strands
+every dependent (`docs/release-process.md` §Step 1 + §Step 5a) — fail-open is what makes
+that a degraded run instead of a broken one. Same absolute stance the hooks already take
+(§9.6, §11.2). Versioning/tags per
 `docs/release-process.md` (the stranded-dependents rule). Cross-plugin invocation via
 the installed-plugin-root resolution pattern (`claude plugin list --json`). During
 transition the `.claude/` mirror + parity test continue; the kb rows leave the mirror
@@ -1191,7 +1380,7 @@ running exactly as they do today, untouched and out of scope.
 | 7 | **Duplicate sprawl** (same fact, many phrasings) | Three-step novelty protocol; fingerprint dedup; near-dup scan; restatements become confirmations, not entries |
 | 8 | **Client data leaks into the platform brain** | §2a by construction: separate repos, readOnly pin cache, `assertWritable`, containment errors by type, promotion via issue-form with client-side identifier lint + platform-side draft-only ingest + platform-evidence requirement to confirm |
 | 9 | **An agent trusts a stale/disputed entry blindly** (STALE: 55.2% even with the update retrieved) | The default view serves **one adjudicated current state per key**; invalidation is written into the body as the supersession banner, not only into a field (§6.6); trust labels travel in-band; relay obligations; `/vc-self-check`-style oracle expectation: citing a disputed/stale entry as fact in an external artifact is a finding |
-| 10 | **Empty-brain death spiral** (every query MISSes → agents stop asking → nothing gets captured → it stays empty). **The headline risk of v3, because the base genuinely starts at zero** — there is no imported corpus to cushion the first weeks | Deterministic bootstrap seeds hundreds of derived facts + aggregates on day one, client delta included (§11.3); MISS-with-leads keeps partial value flowing; capture call sites ship with P3 so real work deposits entries from the start; MISS share is the first watched metric and the one that says whether the flywheel caught. If it has not fallen after the first month of real use, the problem is coverage of *demand*, not volume — read what the MISSes were asking for |
+| 10 | **Empty-brain death spiral** (every query MISSes → agents stop asking → nothing gets captured → it stays empty). **The headline risk of v3, because the base genuinely starts at zero** — there is no imported corpus to cushion the first weeks | Deterministic bootstrap seeds hundreds of derived facts + aggregates on day one, client delta included (§11.3); MISS-with-leads keeps partial value flowing; capture call sites ship with P3 so real work deposits entries from the start; MISS share is the first watched metric and the one that says whether the flywheel caught. If it has not fallen after the first month of real use, the problem is coverage of *demand*, not volume — read what the MISSes were asking for. **The conditional escape hatch (2026-09-03):** if that month says demand is genuinely uncovered, the answer is an **assisted-capture campaign, not a migration** — the existing QA oracles (BL invariants, ECL sections) are used as a *list of questions*, worked through by agents against real sources, and enter as ordinary drafts under the ordinary gates. It is a delivery phase, not an architecture change (§1). Three measured reasons the migration shape was declined instead: a green regression run is near-worthless as evidence here (T-006 — most assertions are presence-only; `tc:yield` — 36 of 4,185 cases have ever caught a bug), so "the suite passed" cannot license a `confirmed` label; joining suites to invariants needs the CSV citation scanner §14 deliberately drops; and §5.4's admission rule refuses whatever names no refutation channel, which is most of the `[THEORETICAL]` half of the ECL — so the exercise is a *conversion with a filter*, never an import, and must be costed as one |
 | 11 | **Verification-due backlog starves** (nobody re-checks) | Queue is bounded and prioritized (due → citedBy → age); on-read flags put the work where the users are; the digest reports queue depth; a starving queue is visible, not silent |
 | 12 | **Fingerprint collision merges converse claims** ("A blocks B"/"B blocks A") | Accepted trade-off, unchanged from v1 D5-F: merge target is always a draft; phrasings kept; consolidation reads the claim, not the hash |
 | 13 | **The digest becomes noise nobody reads** | Digest carries only deltas + escalations; nothing requires reading it (it is observability, not a gate); the loud paths (quarantine, revert-escalation, vetoed-claim re-observation) are few by design |
@@ -1221,7 +1410,7 @@ mechanisms in [R§5]; every incident class has a named v3 answer or an explicit
 - **A separate "human-approved" top status** — no consumer may depend on a human; `pinned` is an overlay, not a rung (§6.1).
 - **Roadmap in the KB** — the tracker owns it; a second copy rots by construction (§2 Q1).
 - **Locators in the KB** — test-asset lifecycle, not platform knowledge (§4.1).
-- **Free-text client→platform promotion with scrubbing** — deny-list scrubbing is the defect class §2a replaced with closed schemas; the issue-form + draft-only ingest + platform-evidence-to-confirm design (§10.4) is the by-construction version.
+- **Unattended client→platform promotion** — the original wording here claimed the issue-form was "the by-construction version" of what denylist scrubbing failed at. That was overstated and is corrected (§10.4): the form's *structured* half is closed, but the claim itself is prose and cannot be enumerated, so the identifier lint over it is a denylist by any honest name. What is rejected is promotion that *sends without a person seeing the exact artifact*; the mandatory preview is the containment, and the closed fields, the lint, the draft-only ingest and the platform-evidence requirement narrow what that person has to catch.
 - **A full ATMS (assumption-based, multi-environment labelling)** — exponential in the worst case, and it buys reasoning across many hypothetical worlds. We have two contexts, platform and client deployment, and they are a `scope` field. The JTMS vocabulary is borrowed (§6.4); the machinery is declined [R§1].
 - **Implementing AGM belief revision as an algorithm** — AGM revises *once*, from a *consistent* belief set, and its own literature records iterated revision as unsolved. We revise continuously from a set that is never fully consistent. Taken: contraction as a first-class operation, minimal change, entrenchment as a named ordering. Rejected outright: the **Success** postulate (§10.3).
 - **A global consistency fixpoint on every change** — NELL's limited-radius propagation is the realistic engineering answer at any real scale; second-order effects surface on later runs [R§1].
@@ -1231,17 +1420,20 @@ mechanisms in [R§5]; every incident class has a named v3 answer or an explicit
 
 ## 17. Ratification checklist for the team meeting
 
-0. **The base is new and starts empty** — no migration, no inherited format, no
-   grandfathered ids; existing knowledge assets stay where they are and keep working.
-   (Everything else assumes this; if the team wants an import instead, §11.3, §13.3 and
-   §14 all change.)
+0. **The base is new and starts empty** — and this is *two* votes, not one (§1):
+   **(0a)** no inherited format, no grandfathered ids, and exactly two intake doors —
+   architectural, and everything else assumes it; **(0b)** no seeding from a corpus we
+   already hold — an operator decision, reaffirmed 2026-09-03 against a BL/ECL migration
+   proposal, reversible by changing a delivery phase alone (§15 risk 10 holds the
+   condition and the shape a reversal would take). A team that wants content on day one
+   should vote 0b, not 0a.
 1. The §1.1 reversal: full autonomy with veto instruments, replacing the meeting model the review asked for — **with §5.4's admission rule as its price**: every entry must name an automated oracle that could contradict it, because the one long-running precedent bought its drift defence with ~1,467 human negative labels a month. *(the load-bearing vote)*
 2. The kind vocabulary (§4.1) and `locator`'s exit from the KB.
 3. Machine-reachable **confirmed** label — no human approval anywhere on the path — plus the weighted evidence defaults and the two stored states (§6.1, §6.2).
 4. The three-plane evidence model, incl. provenance-based proof for normative knowledge (§5).
 5. Staleness = supersession + anchor drift; age only orders the re-check queue (§6.4).
 6. Goldens: regression goldens auto-seeded; truth goldens auto-frozen after source-grounded verification with a digest veto window (§7 item 3).
-7. Vendored MiniSearch + pinning discipline (§9.1).
-8. The promotion channel design (issue form → draft-only ingest → platform-evidence to confirm) and its post-core timing (§10.4).
+7. Vendored MiniSearch + pinning discipline (§9.1) — **including the accepted cost**: retrieval stays stemmer-less, so Russian inflection is covered by the synonym/alias tables and not by the engine; a script-conditional stemmer is a later rung taken on an exam measurement, not now.
+8. The promotion channel design (issue form → **mandatory human preview of the exact outbound artifact** → draft-only ingest → platform-evidence to confirm) and its post-core timing (§10.4). The preview is a vote, not a detail: a knowledge claim is prose and cannot be reduced to a closed schema, so — unlike the telemetry path §2a was modelled on — this channel is contained by a person by necessity, and §16 is corrected to stop claiming otherwise.
 9. `vc-kb` packaging and the delivery phases (§13).
 10. PR #252: close unmerged, donor branch kept (§14).
