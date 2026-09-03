@@ -67,10 +67,49 @@ job is returning network requests to the model — so `Authorization: Bearer …
 land in an agent’s context. This is the closest true analogue to `--secrets` the server offers, and it
 was off.
 
-**Briefing rule:** the `--secrets` “type the variable NAME” instruction applies to `playwright-chrome` /
-`playwright-firefox` / `playwright-edge` **only**. For a Chrome DevTools lane, either rely on the
-pre-signed persistent profile or dispatch the pass to a Playwright lane. Never tell an agent to type a
-plaintext password, and never work around a permission denial on a credential.
+**Third path — let the agent MINT the account through the UI.** For a **role-agnostic** target the
+agent needs no credential at all: it registers one. It chooses the password, so nothing is fetched, and
+the whole flow runs on real-user tools (`take_snapshot` → `fill_form` → `click`) — no `--secrets`, no
+pre-signed profile, and no plaintext secret in a tool call. Measured 2026-09-03 on vcst-qa (theme
+`2.57.0-pr-2444`): `/sign-up` *Personal account* → `/successful-registration`, which does **not**
+auto-login (the header still renders *Sign in*); `/sign-in` with the same credentials then signs in.
+**No verification gate on this store**, so the account is usable immediately.
+
+Four conditions travel with it, and the third decides whether this path is available at all:
+
+- **Verification is store-config, not a constant.** `emailVerificationEnabled`
+  (`knowledge/domain/store-settings.md`; the invariant is BL-AUTH-002). When it is ON, QA mail reaches no
+  inbox and the recovery path is Admin SPA → Security → Users → *Resend link* → Notifications → Preview →
+  extract the `confirmemail?UserId=…&Token=…` URL (`email_verification_testing_workflow` memory) — which
+  needs an **admin** session, i.e. straight back to the credential problem on this lane. Check the
+  setting before committing to this route (`feedback_check_store_settings_before_blocked`).
+- **Prefix it `AGENT-TEST` explicitly.** `uniqueEmail()` in `scripts/lib/random-data.ts` defaults to
+  `agent-<ts>-<id>@qa.test`, but every teardown sweep keys on `AGENT-TEST` (`seed-bopis.mjs`,
+  `reconcile-test-data.mjs` — *"only deletes locations whose LIVE name starts with AGENT-TEST"*), so the
+  default leaves an unidentifiable orphan. Pass `uniqueEmail("AGENT-TEST")`. Even then **nothing sweeps a
+  storefront-registered personal contact** — the prefix sweeps cover catalogs, orgs, BOPIS locations and
+  pricelists; contacts are not covered, so deletion is manual via Admin → Security → Users. The prefix
+  buys findability, never automatic cleanup.
+- **A minted account has NO role and NO data, so it is valid ONLY for a role-agnostic surface.** Public
+  pages, the design system, WCAG/axe, tokens and geometry — fine, and cleaner than a fixture because the
+  empty states are genuine. A **role-gated or data-bearing** surface renders its **empty state**, which is
+  a *different surface* than the one under test and **reads as a pass** — the same failure shape as a case
+  that certifies a defect. VCST-5733's sales-rep hub is the worked example: it needs the sales-rep role
+  plus served customers, so a minted account audits the wrong screen and returns green. When the target is
+  role-gated, use the persistent profile or a Playwright lane instead.
+- **Sign out at the end of the pass, and never promote it to a fixture.** `Remember me` plus the
+  persistent profile makes the throwaway the lane's **standing identity** — the next design/a11y run then
+  audits as that account with no announcement. And being outside `scripts/lib/user-roles.mjs` it must
+  never be cited by a test case as `@td()` or `{{VAR}}`: it is disposable, not a declared fixture.
+
+**Briefing rule — three options, and the brief must NAME which one.** The `--secrets` “type the variable
+NAME” instruction applies to `playwright-chrome` / `playwright-firefox` / `playwright-edge` **only**. A
+Chrome DevTools brief picks one of: (1) the **pre-signed persistent profile** — the default, and the only
+one that reaches a role-gated surface without leaving the lane; (2) **mint an account through the UI** —
+role-agnostic targets only, under the four conditions above; (3) **dispatch the pass to a Playwright
+lane**. Leaving it unstated is what produced the VCST-5733 loss: the agent inferred `--secrets`, and an
+agent left to guess its own auth path burns a turn discovering the lane cannot do it. Never tell an agent
+to type a plaintext password, and never work around a permission denial on a credential.
 
 **A subagent does not inherit `DesignSync`.** Same run, same lane: the `vs. DESIGN` axis was briefed at
 `ui-ux-expert` after the orchestrator had verified `DesignSync` in its own session. Subagents do not get

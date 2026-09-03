@@ -39,7 +39,7 @@ each suite's resolved CSV is narrowed by `npm run suites:filter` *before* `suite
 
 - **Tiers:** `critical` · `high` · `medium` · `low`, or a comma list. `P0`/`P1`/`P2`/`P3` are accepted
   as spellings of the same four tiers — the alias table `append-test-cases-to-suite.ts` already uses.
-- **`--also-ids <ids>`** keeps named cases whatever their priority. This is how `/qa-test` runs its own
+- **`--also-ids <ids>`** keeps named cases whatever their priority. (**Note:** `/qa-test` no longer uses this on its main path — since the C1/C2 split its own new `Draft` cases and its Step-2a `RE-BASE` rows run as an exact `--ids` set at Step 4, and the tier sweep runs bare at 5r. `--also-ids` survives in that command's `--iterate` C2 track and for any caller that genuinely wants a tier union plus named cases.) It is how a caller runs its own
   newly authored `Draft` cases alongside the Critical slice — they are in scope by construction.
 - **Why:** `Critical` is 883 of the 3,969 canonical-header cases (~22%) and ~23% of the estimated
   minutes, which is what puts a change-scoped run inside a 40-minute window. Pair it with
@@ -55,7 +55,7 @@ those case ids and nothing else. The two are **mutually exclusive** (as is `--al
 and an exact set answer different questions, and accepting both leaves "did `--ids` narrow the tier or
 add to it?" unanswerable from the invocation.
 
-- **Its caller is `/qa-test` Step 5k.** Round N+1 of the `--iterate` loop re-runs *only* the
+- **Its callers are `/qa-test` Step 4 (the C1 exact-set run) and Step 5k.** Round N+1 of the `--iterate` loop re-runs *only* the
   previously-failed cases, as its own run, so the RED→GREEN pass rate and the Feature Release Gate’s
   ≥80% floor stay two different numbers ([`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k).
 - **It reads no `Priority` at all**, so an unreadable one is *not* reported on this path — nothing

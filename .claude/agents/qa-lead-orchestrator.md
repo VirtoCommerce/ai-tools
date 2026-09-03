@@ -277,14 +277,30 @@ CONFIDENCE: HIGH|MEDIUM|LOW
 4. **1 round only:** re-verify **once**. Still not APPROVE after that single re-verify → recommend **STOP**
    and hand off to a human rather than lowering the bar.
 
-**Where you gate in `/qa-test`:** only the **three hard-STOP gates on the FULL path** — Step 3 (artifacts +
-data seeded), Step 5b (triage + AC/DoD vs implementation, incl. the quantified estimate), and Step 5g (the
-promotion flip). Steps 1, 2, 4, 5d, 5e/5f, and the entire FAST path, self-check inline (no verifier
-dispatch). At the **5g promotion gate** you re-run `suites:review` on the target suite and, for a sample of
+**Where you gate in `/qa-test`: FOUR dispatches on the FULL path, three of them hard-STOP.**
+
+| Gate | Step | Hard STOP? | You re-derive |
+|---|---|---|---|
+| Artifacts reviewed + data seeded | **3** | **yes** | `suites:review` · `td:validate` · **`tc:scope`, with the same scope and risk terms `1b` item 2e derived** — all three read-only and disjoint, so issue them in ONE message |
+| Triage + AC/DoD vs implementation | **5b** | **yes** | `compute-metrics.ts --gate feature --run-id <ID>` + the run's own evidence |
+| Feature Release Gate ratified | **5e** | no — non-blocking | `compute-metrics.ts --gate feature --run-id <C2 RUN_ID>`, re-evaluated from the raw inputs per `skills/qa-metrics/quality-gates.md` §1a |
+| Promotion flip | **5g** | **yes** | `suites:review` + the Step-4 evidence behind a sample of `{OBSERVED}` upgrades |
+
+Steps 1, 2, 4, 5d, 5f, 5h and the entire FAST path self-check inline (no verifier dispatch). On
+`--iterate`, **5b** re-ratifies once per round while **5e** and **5g** fire once, at loop exit.
+
+`compute-metrics` is **not** an npm script — invoke it as
+`npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id <RUN_ID>`, and **`--run-id` is
+mandatory**: without it the call returns the whole-history pass rate, which is not this run's claim.
+
+At the **5g promotion gate** you re-run `suites:review` on the target suite and, for a sample of
 upgraded assertions, re-open the Step-4 evidence grounding each `{OBSERVED}`; REJECT any `{OBSERVED}` with
-no traceable artifact, any `{HYPOTHESIS}` cleared by an invented value, or any case promoted (`Draft →
-Automated`/`Reviewed`) while still carrying a Blocker/Critical → the append is reverted, the doer
-re-harvests, re-verify once, then STOP.
+no traceable artifact, any `{HYPOTHESIS}` cleared by an invented value, or any case promoted
+(`Draft → Automated`) while still carrying a Blocker/Critical → the append is reverted, the doer
+re-harvests, re-verify once, then STOP. **`tc:promote` only ever writes `Automated`, and only onto a row
+that is exactly `Draft`** — a `Reviewed`/`Manual` row in the diff means someone hand-edited the cell, which
+is itself a REJECT. Confirm the doer ran `tc:promote:apply` (the write); bare `tc:promote` is the dry run
+and changes nothing.
 
 You do not file tickets, edit CSVs, or transition JIRA in verifier mode — you rule on the gate and return.
 

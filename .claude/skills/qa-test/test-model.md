@@ -146,8 +146,12 @@ names a way this feature can be *wrong*, and the case authored from it is the th
    when 2d recorded `UNKNOWN` those oracles are `{HYPOTHESIS}`
    ([`contract-refresh.md`](contract-refresh.md) §3). Fixture drift 2d reported on an op the ticket's own
    diff touches belongs in the model as a chain link and a candidate reverse edge, not as a footnote.
-9. `Archetype sweep` resolved: every archetype in scope for these domains is either covered by a row or
-   **WAIVED with a reason**. Silence is not a waiver.
+9. The `Archetype sweep`, `UIP sweep` and `Probes carried in` rows are **PRESENT** — not yet resolved.
+   Step 2 is what loads the `VC-*` catalog and the `UIP-*` probe set, so resolving them here would mean
+   answering from inputs nobody has read (the template marks all four *"filled in Step 2"*). This clause
+   guarantees the rows exist so Step 2's gate cannot skip a sweep silently; **that** gate is where every
+   archetype and probe must be covered by a row or **WAIVED with a reason**. Silence is not a waiver — it
+   is just checked one step later than this list used to claim.
 
 A missing atomic condition or `ba-system-analyzer` risk area is added before moving on. No fresh-`qa-lead`
 dispatch here — this is the doer's own completeness check.

@@ -292,6 +292,29 @@ The design axis used to be dead: `figma-remote-mcp` exposes only `authenticate` 
 
 > The shared "do not use `evaluate` unless necessary" rule **explicitly permits** `evaluate` for values not exposed in the DOM and for MCP tool limitations. All four measurement channels above qualify and are mandatory for layout-defect testing — eyeballing screenshots cannot find off-grid spacing, 1-px misalignment, or CLS contributions.
 
+### Signing the lane in — your lane has no `--secrets`
+
+Your browser is **Chrome DevTools MCP** (`.claude/rules/agents.md`), and it has **no `--secrets` flag** —
+typing a variable NAME into a password field submits the literal string, the sign-in is refused, and an
+auth-gated route bounces to `/sign-in?returnUrl=…`, which returns every axis as `INCONCLUSIVE`/`SKIPPED`.
+Never type a plaintext password, and never work around a permission denial on a credential.
+
+**Your brief must name the auth path. If it does not, pick by the target and say which you used:**
+
+| Target | Path |
+|---|---|
+| Role-gated or data-bearing (sales-rep hub, orders, B2B org, loyalty tier) | The **pre-signed persistent profile** (`~/.chrome-devtools-mcp/vc-qa-profile`) — already authenticated across MCP restarts. If it is signed out, **STOP and report**; do not improvise a credential |
+| Role-agnostic (public pages, design system, WCAG/axe, tokens, geometry) | **Mint an account through the UI** — `/sign-up` with `uniqueEmail("AGENT-TEST")` and a password you generate, via `take_snapshot` → `fill_form` → `click`. Registration does not auto-login; sign in afterwards |
+| Either, when neither is available | Ask the orchestrator to **dispatch the pass to a Playwright lane** (those carry `--secrets`) |
+
+A minted account has **no role and no data**, so a role-gated surface renders its **empty state** — a
+different surface than the one under test, which **reads as a pass**. That is the one failure this table
+exists to prevent: check the target before minting, and sign out when the pass ends (the profile
+persists, so a throwaway silently becomes the lane's standing identity).
+
+Conditions, cleanup obligations and the measured evidence: [`.claude/rules/mcp-browsers.md`](../rules/mcp-browsers.md)
+§Browser login secrets. Cite it — do not restate it here.
+
 ### Action Space
 
 - **Storybook**: Navigate stories, Controls, Accessibility tab, Actions

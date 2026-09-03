@@ -1,4 +1,4 @@
-# Steps 2–3 — oracle loading, the three artifacts, and the per-surface fan-out
+# Steps 2–3 — oracle loading, the four artifacts, and the per-surface fan-out
 
 Methodology for `/qa-test` Step 2 (Plan) and Step 3 (Write · Review · Provision). The command states the
 sequence and the gates; this file is the detail and the reasoning.
@@ -102,6 +102,17 @@ the chain's question, and equal values on both sides of a distinction under test
 Derive cases from the Test Model's scenarios + chain diagrams + `1d` AC conditions (story + gap-ACs) +
 `E2E-*` scenarios + `BL-*` / `ECL-*` + domain checklists.
 
+**Author from the model AS AMENDED by Step 3x, not from the model as `1e` left it.** The discovery lane
+runs concurrently with 3a and closes before this artifact for exactly this reason
+([`exploratory-lane.md`](exploratory-lane.md)), and it hands over three things this step must consume:
+its **model amendments** (a `GAP` cell that is now a scenario #, a reverse edge that turned out to exist, a
+variant nobody enumerated), its **`{HYPOTHESIS}` → `{OBSERVED}` grounding** per row, and its **`PROMOTE`d
+net-new scenarios**, which are authored **in this run** rather than deferred. The grounding is the one that
+changes the output most: a row whose oracle the lane observed gets an assertion that can be *graded*,
+where the same row authored blind gets a presence check or a `{HYPOTHESIS}` that 5g will hold (`GRD-001`
+escalates a surviving hypothesis to Blocker in a promoted case). A row the lane could not reach is authored
+knowing it is still a hypothesis — that is a fine outcome; silently not knowing which is not.
+
 - **New feature / Story** → **author new** enriched-CSV cases.
 - **Bug fix / enhancement with existing coverage** → **map to existing** suite cases (start from the Step-2
   `E2E-*` → suite mappings), then author **only the gaps**. Mapping to existing coverage runs in **two
@@ -111,7 +122,7 @@ Derive cases from the Test Model's scenarios + chain diagrams + `1d` AC conditio
   fixed *before* a single new row is authored (`/qa-review-tests file <suite> --fix`), because its
   mechanics — a renamed selector, a moved route, a removed arg, a dead `@td()` alias — mean it cannot
   execute at all. A **`RE-BASE`** row is **not a gap to author**: it is an existing case that goes into
-  Artifact C on `--also-ids`, so Step 4 executes it and 5a rewrites its expected value against the run's
+  **Artifact C1's `--ids`**, so Step 4 executes it and 5a rewrites its expected value against the run's
   own evidence — never rewritten here, where the unmerged change would be its own oracle. A
   **`SUPERSEDED`** row is a proposal only. Single source of truth:
   [`coverage-triage.md`](coverage-triage.md).
@@ -155,7 +166,7 @@ npm run tc:alloc    -- --prefix <PREFIX> --block <layer>=<n> [--block ...]   # o
 npm run tc:scaffold -- --plan <plan>.json --id-block <PREFIX-NNN..PREFIX-NNN> --out <staged>.csv
 ```
 
-`scripts/test-cases/scaffold-rows.ts` derives **ten of the fifteen columns** (ID, Section, Priority,
+`scripts/test-cases/scaffold-rows.ts` derives **eleven of the fourteen non-Title columns** (ID, Section, Priority,
 Business_Rule, Edge_Case_Refs, Test_Data, Cross_Layer_Checks, Failure_Signals, Cleanup, References,
 Automation_Status) and leaves only `Preconditions` / `Steps` / `Assertions` blank — the genuinely authored
 half. It emits a `.design.md` sidecar carrying each row's three KEEP answers, which is the audit trail for
@@ -270,9 +281,12 @@ transiently unparsable blocks every concurrent author in the tree, so N parallel
 
 Because each batch self-lints, the Step-3 gate becomes confirmation rather than a fix loop.
 
-**Ordering constraint:** Step 3a (seeding) is serial and upstream of all of this — fan-out buys nothing if
-the fixtures do not resolve yet. Start `test-data-engineer` first and let the API/GraphQL batch (usually
-the one needing least new data) run against existing `@td()` while 3a finishes for the UI batches.
+**Ordering constraint: Artifact A waits for the whole Step-3 wave — do NOT overlap authoring with `3a` or
+`3x`.** Fan-out buys nothing if the fixtures do not resolve yet, and a batch authored beside `3x` is
+authored from exactly the guesses that lane exists to replace. `3a ‖ 3x ‖ B` are concurrent with each
+other; **A alone is downstream of all three**
+([`SKILL.md`](SKILL.md) §What must NOT be parallelised). The fan-out this section describes is *within*
+Artifact A — one batch per execution surface, once the wave has closed.
 
 ---
 
@@ -312,7 +326,38 @@ never the round sections.
 
 ---
 
-## Artifact C — regression scope: critical cases + this run's new cases, in 40 minutes
+## Artifact C — TWO runs, because "did this ticket pass" and "did this break anything else" are two questions
+
+**C1 gates the verdict; C2 gates the release.** They used to be one `/qa-regression` invocation
+(`--cases critical --also-ids <new ids>`) executed at Step 4, which put a ~40-minute suite sweep on the
+critical path to a verdict that never depended on it: 5c's criteria are atomic conditions, reconciled ACs,
+DoD items, `BL-*` and IN-SCOPE bugs — every one of them a claim about *this ticket*. A Critical case failing
+in some other suite is, by 5a's own provenance rules, PRE-EXISTING or OUT-OF-SCOPE, and neither of those
+fails the ticket. The one exception (an IN-SCOPE finding surfacing in a neighbouring suite) is real, and
+§5r handles it by amending a verdict that has been *recorded and not yet published*.
+
+| | Question | Selection | Runs |
+|---|---|---|---|
+| **C1** | Do *this ticket's* cases pass? | `/qa-regression <target suite ids> --ids <new Draft ids + every Step-2a RE-BASE id>` | **Step 4** |
+| **C2** | Did the change break anything else? | `regression:select … --target 40` → `--cases critical` | **5r**, after 5c, overlapped with 5d + drafting 5e |
+
+Three consequences worth stating:
+
+- **`--ids` is an exact set and is mutually exclusive with `--cases`/`--also-ids`.** A tier union and an
+  exact set answer different questions, and accepting both leaves *"did `--ids` narrow the tier, or extend
+  it"* unanswerable. It also reads no `Priority` at all, so an unreadable one is not a finding on the C1
+  path — the same property `5k`'s RED→GREEN track already relies on.
+- **`--also-ids` disappears from this pipeline.** It existed to smuggle this run's own cases into a
+  tier-filtered sweep; with the sweep moved off the verdict path, those cases have a run of their own.
+  `--also-ids` survives in `5k`'s C2, where a tier sweep genuinely does need to carry named ids.
+- **A skipped C1 is stated.** A run that authored no cases and disposed no `RE-BASE` has an empty exact set
+  and no C1 — say so. An omitted regression track reads exactly like a passing one, which is §2's rule
+  applied one level up.
+
+**`5k` reached this split first**, for the same reason, and [`modes.md`](modes.md) §The two tracks of round
+N+1 is now named in these terms rather than in its own.
+
+### C2's selection — critical cases, in 40 minutes
 
 **On `--iterate`, round N+1 re-derives this scope from the FIX’s diff**
 (`regression:select --repo <name> --diff <fix-PR range>`) — round 1’s selection was computed from the
@@ -331,9 +376,9 @@ all 44 cases of suite `004` — 6 of them Critical, 19 skipped outright.
    suite minutes) and **refuses to trim the risk floor** (P0 + `critical-ui-scope`), so a tight budget can
    never quietly delete the P0 gate. Add the suites covering the Done Epic siblings this story integrates
    with, and the target suite(s) that received new `Draft` cases.
-2. **Cases** — `--cases critical` plus `--also-ids <the new Draft case IDs>`. Critical is ~22% of the corpus
-   by count and ~23% by estimated minutes, which is what puts the run inside the window; `--also-ids` is how
-   this run's own new cases execute regardless of their priority.
+2. **Cases** — `--cases critical`. Critical is ~22% of the corpus by count and ~23% by estimated minutes,
+   which is what puts the run inside the window. **No `--also-ids` here** — this run's own new cases have
+   their own exact-set run (C1), which is the whole point of the split.
 3. **State the budget, don't just trust it.** Report the predicted makespan and **every suite `--target`
    excluded**. `scripts/lib/suite-selection.ts` documents its own cost model as wrong by **×18–×88** for
    runner-native suites (`050m` declares 245 min, ran in 2.77), so until `npm run regression:recalibrate`
@@ -349,9 +394,14 @@ filter is what cuts *inside* a floor suite, which is the only place left to cut.
 disappears silently reads exactly like a suite that passed.
 
 Output the concrete suite ID list with a one-line rationale each (`config/test-suites.json` is the source of
-truth for what a selection expands to; don't restate counts). Step 4 runs it as its own `/qa-regression`
+truth for what a selection expands to; don't restate counts). **5r** runs it as its own `/qa-regression`
 run; **never fold suite IDs into a ticket agent's prompt**
 (`feedback_long_runner_sessions_unreliable`).
+
+**The scope is still computed at Step 3, even though the run is at 5r.** It is derived from the ticket's
+diff, which does not change between Step 3 and the verdict, and computing it here means 5r can dispatch the
+instant 5c is recorded rather than spending a turn on `regression:select` first — the latency this split
+exists to remove.
 
 ---
 

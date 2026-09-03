@@ -214,7 +214,10 @@
     "seed:missions-e2e": "npm run seed:loyalty:zero-user && node scripts/seed-data/loyalty/seed-missions-e2e.mjs",
     "seed:missions-e2e:only": "node scripts/seed-data/loyalty/seed-missions-e2e.mjs",
     "seed:missions-e2e:teardown": "node scripts/seed-data/loyalty/seed-missions-e2e.mjs --teardown",
-    "td:validate:missions-e2e": "node scripts/seed-data/loyalty/validate-missions-e2e-data.mjs"
+    "td:validate:missions-e2e": "node scripts/seed-data/loyalty/validate-missions-e2e-data.mjs",
+    "summary:validate": "node scripts/qa-test/validate-summary.mjs",
+    "summary:validate:baseline": "node scripts/qa-test/validate-summary.mjs --update-baseline",
+    "qa-test:doclint": "node scripts/qa-test/doclint.mjs"
   },
   "repository": {
     "type": "git",

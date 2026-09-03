@@ -111,7 +111,7 @@
           "deploy_confirmed": false
         },
         "red_green": {
-          "$comment": "The re-run of exactly the previously-FAILED cases, as its OWN /qa-regression run (--ids), kept out of the Artifact-C run so its pass rate answers one question and the release gate's >=95% keeps answering another. Round 1: all null/empty \u2014 there is no previously-failed set yet, and that is not a gap. FAST: run_id stays null and `checklist_items` carries the re-run items instead of `cases`, because a FAST round re-runs failed checklist items through one agent and produces no RUN_ID.",
+          "$comment": "The re-run of exactly the previously-FAILED cases, as its OWN /qa-regression run (--ids), kept out of the C2 run so its pass rate answers one question and the release gate's >=80% floor keeps answering another (the floor came down from 95% on 2026-09-02; skills/qa-metrics/quality-gates.md owns it). Round 1: all null/empty \u2014 there is no previously-failed set yet, and that is not a gap. FAST: run_id stays null and `checklist_items` carries the re-run items instead of `cases`, because a FAST round re-runs failed checklist items through one agent and produces no RUN_ID.",
           "run_id": null,
           "cases": [],
           "checklist_items": [],
@@ -149,23 +149,38 @@
   },
   "new_cases_authored": 0,
   "promotion": {
-    "$comment": "Filled by 5g (runs last, non-blocking). Cases are appended to regression/suites/ as Draft in Step 3; after Step 4's automated regression run 5g flips each promotable case Draft→Automated (green under the automated runner) or Draft→Reviewed/Manual (checklist-only), reverts non-promotable rows, and leaves a case that failed on a real in-scope bug at Draft with a reason.",
+    "$comment": "Filled by 5g (runs last, non-blocking). Cases are appended to regression/suites/ as Draft in Step 3; after Step 4 has executed them 5g flips each promotable case Draft→Automated via `npm run tc:promote:apply` (bare `tc:promote` is the DRY RUN and writes nothing), reverts non-promotable rows, and leaves a case that failed on a real in-scope bug at Draft with a reason. IT WRITES `Automated` ONLY, and only onto a row that is exactly `Draft` (scripts/test-cases/promote-cases.ts never touches any other status). `Reviewed`/`Manual` is a HUMAN call that 5g never makes \u2014 the `reviewed` array below records such a decision, it does not record something 5g did.",
     "automated": [],
     "reviewed": [],
     "blocked": [{ "case": "TC-ID", "reason": "unresolved {HYPOTHESIS} — <what stayed unknown> | failed on in-scope bug <link>" }],
     "reverted": [{ "case": "TC-ID", "reason": "unresolvable data / invented value" }]
   },
   "regression": {
-    "$comment": "The change-scoped Artifact-C /qa-regression run — the Feature Release Gate (5e) is defined on THIS run_id, not whole-history. On an --iterate run this is the FINAL round's Artifact-C run \u2014 the one the gate is computed on; earlier rounds' runs are in iterations.per_round[].regression.",
-    "suites": [],
-    "run_id": null,
-    "pass_rate": null,
-    "skipped_reason": null
+    "$comment": "TWO runs answering two different questions \u2014 C1 gates the VERDICT, C2 gates the RELEASE, and they must stay separate numbers. Fusing them is what put a ~40-minute suite sweep on the critical path to a verdict whose own criteria (atomic conditions, reconciled ACs, DoD items, BL-*, IN-SCOPE bugs) are every one of them a claim about THIS ticket, while a Critical FAIL in a neighbouring suite is PRE-EXISTING or OUT-OF-SCOPE by 5a's own provenance rules and fails nothing. A null run_id with a null skipped_reason is a GAP, not a clean run. On an --iterate run these are the FINAL round's; earlier rounds are in iterations.per_round[].regression.",
+    "c1": {
+      "$comment": "Step 4, on the verdict path. The exact set: this run's new Draft case IDs + every Step-2a RE-BASE case id, as /qa-regression <suites> --ids <IDs>. --ids IS the selection and is mutually exclusive with --cases/--also-ids; it reads no Priority at all, so an unreadable one is not a finding on this path. Its pass rate is the one 5b reconciles against. SKIPPED when the run authored no cases and disposed no RE-BASE \u2014 state it, because an omitted regression track reads exactly like a passing one.",
+      "suites": [],
+      "ids": [],
+      "run_id": null,
+      "pass_rate": null,
+      "skipped_reason": null
+    },
+    "c2": {
+      "$comment": "5r \u2014 launched the instant 5c is RECORDED (5e is what publishes), overlapped with 5d and drafting 5e. regression:select --target 40 for the suites, then --cases critical; NO --also-ids, because this run's own cases have C1. THE FEATURE RELEASE GATE'S >=80% FLOOR IS DEFINED ON THIS run_id \u2014 not on c1, and not on whole-history. An IN-SCOPE finding here amends the recorded verdict ONCE, via 5c's existing table and with no new criteria. scope_exclusions names every suite that contributed zero Critical cases, because such a suite and a passing suite are otherwise indistinguishable. predicted and actual minutes are both recorded: the cost model is documented as wrong by x18-x88 for runner-native suites, so the prediction is a hint, and only the pair makes regression:recalibrate possible.",
+      "suites": [],
+      "run_id": null,
+      "pass_rate": null,
+      "predicted_minutes": null,
+      "actual_minutes": null,
+      "scope_exclusions": [],
+      "amended_verdict": null,
+      "skipped_reason": null
+    }
   },
   "regression_triage": {
-    "$comment": "Filled by 5a item 0 when Artifact C produced a RUN_ID. invoked = whether /qa-triage-results <run_id> --fix ran; the three arrays mirror its triage-report.md tables (confirmed bugs / test-case fixes applied / dismissed).",
+    "$comment": "Filled by 5a item 0 for the C1 run, and AGAIN at 5r for the C2 run \u2014 /qa-triage-results <run_id> --fix, one invocation per RUN_ID, same taxonomy both times. run_ids[] carries both in execution order, and a C2 entry appearing here is what records that 5r triaged rather than merely ran. The three arrays mirror its triage-report.md tables (confirmed bugs / test-case fixes applied / dismissed) and are CUMULATIVE across both runs.",
     "invoked": false,
-    "run_id": null,
+    "run_ids": [],
     "confirmed_bugs": [],
     "test_fixes_applied": [],
     "dismissed": [],
@@ -177,6 +192,29 @@
   "bugs_not_filed": [
     { "$comment": "One entry per confirmed real bug held BELOW the 5d severity floor (Low/P3). Present and empty when there are none — an absent array is indistinguishable from a run that found none. `report` is the durable record; the floor drops a finding from the tracker, never from the run.", "severity": "Low", "provenance": "in-scope|pre-existing|out-of-scope", "summary": "<one line>", "report": "reports/bugs/open/low/<file>.md" }
   ],
+  "discovery": {
+    "$comment": "Step 3x, the discovery lane (FULL path only). NULL means the lane NEVER RAN; ran:false with a reason means it was skipped; an empty findings array means it ran and found nothing \u2014 three different facts that an absent block would collapse into one. It runs concurrently with 3a (test-data is browserless, so its one chrome/edge lane is free concurrency, never firefox) in a hard 25-minute box, and CLOSES BEFORE Artifact A, because all four of its outputs are inputs to authoring. It invokes /qa-exploratory ticket <key>, which owns the session; this pipeline owns only the charter. charter_sources records each of the five derived sources as covered or NOT_REACHED with a reason \u2014 an omitted source reads as a source with nothing in it. hypotheses_grounded and scenarios_new are kept APART on the same logic that splits visual.invariant_failures from visual.advisory: the first says the lane improved THIS run's cases, the second that it improved the corpus, and the first is the reason the lane runs before authoring rather than after. The lane FILES NO BUGS \u2014 they enter 5a's triage like any other finding. Spec: .claude/skills/qa-test/exploratory-lane.md",
+    "ran": null,
+    "skipped_reason": null,
+    "lane": null,
+    "minutes": null,
+    "charter_sources": {
+      "matrix_gaps": [],
+      "reverse_edges": [],
+      "hypothesis_rows": [],
+      "ac_drift": [],
+      "rebase_rows": []
+    },
+    "hypotheses_grounded": 0,
+    "hypotheses_remaining": 0,
+    "model_amendments": 0,
+    "scenarios_new": [
+      { "$comment": "fate PROMOTE means authored IN THIS RUN (a case id here), not deferred to a later sprint. oracle_ref NONE is a valid and valuable answer \u2014 it routes the row to the Oracle Feedback table.", "id": "EXP-NN", "fate": "PROMOTE|DECLINE", "case_id": null, "oracle_ref": null }
+    ],
+    "oracle_proposals": 0,
+    "bugs_surfaced": [],
+    "report": null
+  },
   "visual": {
     "$comment": "The design + accessibility axis. `surface` is derived at 1b item 2c beside `layer` (same discipline: derived, never asked, never defaulted) and decides whether the Step-4 visual lane dispatches at all; \"unresolved\" is treated as true, the one place this axis fails OPEN, because a wrongly-skipped visual pass leaves no trace anywhere while a wrongly-run one costs one agent. A NULL block means the step never ran — a gap, not a clean result; `ran:false` WITH a `skipped_reason` is the opposite, the step ran and declined. THE TWO ARRAYS ARE THE POINT: `invariant_failures[]` (BL-A11Y-*/BL-UI-*, all P1 for the a11y set) are ordinary findings — triaged at 5a, graded, filed under the 5d floor, able to fail 5c — while `advisory[]` (vs. DESIGN DRIFT/MISSING/UNSPEC/KNOWN_DIVERGENCE) is reported and NEVER fails the ticket. Keeping them apart is what makes the blocking rule auditable from this artifact instead of only from prose. Per-axis `verdict` null WITH a `skipped_reason` is legal and common — the design_spec axis needs /design-login, unavailable in web sessions and CI, and axe can be blocked by CSP; NEITHER may ever be recorded as a pass. Spec: .claude/skills/qa-test/visual-axis.md. Deliberately NOT owned here: BL-UI-001..005 layout stability, which keeps its existing owner (authoring tags + suite 048c).",
     "surface": "true|false|unresolved",
@@ -189,6 +227,9 @@
       "design_system": { "$comment": "Live resolved custom properties vs the generated token set (tokens:sync), no hardcoded literals, sized-control token + aspect equality.", "ran": false, "verdict": null, "findings": 0, "skipped_reason": null },
       "design_spec": { "$comment": "vs. DESIGN against DESIGN_SYSTEM_PROJECT_ID via DesignSync. `unresolved` > 0 downgrades an otherwise-clean axis to WARN and must be printed — a guessed expectation fails every correct implementation.", "ran": false, "verdict": null, "confirmed": 0, "drift": 0, "missing": 0, "unspec": 0, "known_divergence": 0, "unresolved": 0, "skipped_reason": null }
     },
+    "a11y_findings": [
+      { "$comment": "BL-A11Y-* FAILs on a functional/feature/E2E ticket. These are FOUND, EVIDENCED and FILED as their own standalone ticket at their REAL severity — and they do NOT fail 5c. Accessibility is a cross-cutting property of a surface, not an acceptance criterion of the story that touched it, and the defect is usually pre-existing on the component. Kept in a SEPARATE array from invariant_failures[] for the same reason advisory[] is separate: it makes the blocking rule auditable from the artifact instead of only from prose. CARVE-OUT: when the ticket is ABOUT accessibility (a11y/WCAG remediation, ACs naming an accessibility outcome, a /qa-accessibility run) the finding blocks normally and belongs in invariant_failures[] instead. Spec: .claude/skills/qa-test/triage.md 7a", "invariant": "BL-A11Y-00N", "severity": "Critical|High|Medium|Low", "ticket": "<standalone tracker key>", "blocks": false }
+    ],
     "invariant_failures": [
       { "$comment": "May fail the ticket. `bug` is the 5d tracker key, or null when held below the severity floor (the reports/bugs/open/<severity>/ draft still exists and is named in bugs_not_filed).", "invariant": "BL-A11Y-003", "severity": "Critical|High|Medium|Low", "measured": "<the value read>", "bug": null }
     ],
@@ -221,7 +262,7 @@
     }
   },
   "coverage_triage": {
-    "$comment": "Triage of the EXISTING cases this change invalidates, run at Step 2a on BOTH paths. `surface` is derived at 1b item 2e beside layer (2b), visual.surface (2c) and contract.surface (2d) — derived, never asked, never defaulted, \"unresolved\" treated as true, because a skipped triage leaves stale assertions nobody looks at again while a needless one costs one script run. A NULL block means the step never ran (a gap, not a clean triage); surface:false WITH sources is the opposite. WHY THE STEP EXISTS: the pipeline only ever asked what the corpus already COVERS, so a stale row was reachable only by FAILING at Step 4 and being triaged at 5a — and three things stop that firing (regression:select maps changed PATHS and misses a suite whose domain the path does not spell, while reporting unmappedPaths:[] because the fail-open widening needs a total vocabulary miss; --cases critical then drops the High rows; and a row that never runs is never triaged). Measured on VCST-5733: 62 existing assertions on a widget label PR#2444 renames, 45 of the 81 at-risk rows FILTERED_OUT of the run. DISPOSITIONS are a closed set and every hit takes exactly one: CONFIRMED (still correct) · REPAIR (mechanically stale — renamed selector/moved route/removed arg/dead @td() alias — fixed BEFORE the run via /qa-review-tests file <suite> --fix, safe precisely because it moves the mechanics and not the oracle, and leaving it manufactures an artefactual BLOCKED) · RE-BASE (its expected value conflicts with the change — NOT rewritten before the run: the change under test is normally an unmerged PR, so a pre-run rewrite makes the change its own oracle and the case can then only pass; it is carried into Artifact C on --also-ids and 5a rewrites it with the run's own evidence) · SUPERSEDED (the surface is gone — a proposal, never an edit; TRI-006 keeps retirement human). HARD RULE: every FILTERED_OUT row disposed RE-BASE appears in rebased_into_artifact_c[], or its disposition is CONFIRMED/SUPERSEDED with a reason — an undisposed RE-BASE that never runs re-creates the exact gap this step closes. Step 2a files NO bug: a hit is a claim about a test case, never about the product. never_audited is context, not a verdict (TRI-000 reports WHEN a row was audited, never whether it is right). Spec: .claude/skills/qa-test/coverage-triage.md",
+    "$comment": "Triage of the EXISTING cases this change invalidates, run at Step 2a on BOTH paths. `surface` is derived at 1b item 2e beside layer (2b), visual.surface (2c) and contract.surface (2d) — derived, never asked, never defaulted, \"unresolved\" treated as true, because a skipped triage leaves stale assertions nobody looks at again while a needless one costs one script run. A NULL block means the step never ran (a gap, not a clean triage); surface:false WITH sources is the opposite. WHY THE STEP EXISTS: the pipeline only ever asked what the corpus already COVERS, so a stale row was reachable only by FAILING at Step 4 and being triaged at 5a — and three things stop that firing (regression:select maps changed PATHS and misses a suite whose domain the path does not spell, while reporting unmappedPaths:[] because the fail-open widening needs a total vocabulary miss; --cases critical then drops the High rows; and a row that never runs is never triaged). Measured on VCST-5733: 62 existing assertions on a widget label PR#2444 renames, 45 of the 81 at-risk rows FILTERED_OUT of the run. DISPOSITIONS are a closed set and every hit takes exactly one: CONFIRMED (still correct) · REPAIR (mechanically stale — renamed selector/moved route/removed arg/dead @td() alias — fixed BEFORE the run via /qa-review-tests file <suite> --fix, safe precisely because it moves the mechanics and not the oracle, and leaving it manufactures an artefactual BLOCKED) · RE-BASE (its expected value conflicts with the change — NOT rewritten before the run: the change under test is normally an unmerged PR, so a pre-run rewrite makes the change its own oracle and the case can then only pass; it is carried into C1's --ids (NOT --also-ids, which /qa-regression declares mutually exclusive with --ids) and 5a rewrites it with the run's own evidence) · SUPERSEDED (the surface is gone — a proposal, never an edit; TRI-006 keeps retirement human). HARD RULE: every FILTERED_OUT row disposed RE-BASE appears in rebased_into_c1[], or its disposition is CONFIRMED/SUPERSEDED with a reason — an undisposed RE-BASE that never runs re-creates the exact gap this step closes. Step 2a files NO bug: a hit is a claim about a test case, never about the product. never_audited is context, not a verdict (TRI-000 reports WHEN a row was audited, never whether it is right). Spec: .claude/skills/qa-test/coverage-triage.md",
     "surface": "true|false|unresolved",
     "surface_source": [],
     "scope": {
@@ -247,8 +288,8 @@
     "repaired": [
       { "$comment": "Fixed BEFORE the run. Mechanics only — never an expected value.", "case": "<CASE-ID>", "suite": "<suite id>", "what": "<the mechanical staleness>", "relint": "suites:review --fail-on=High clean" }
     ],
-    "rebased_into_artifact_c": [
-      { "$comment": "Carried on --also-ids with its assertion UNCHANGED, so Step 4 can falsify it either way. Its Step-4 result and any 5a rewrite live in the normal triage record, not here.", "case": "<CASE-ID>", "suite": "<suite id>", "run_fate_before": "FILTERED_OUT|WILL_RUN" }
+    "rebased_into_c1": [
+      { "$comment": "Carried in C1's --ids with its assertion UNCHANGED, so Step 4 can falsify it either way. Its Step-4 result and any 5a rewrite live in the normal triage record, not here.", "case": "<CASE-ID>", "suite": "<suite id>", "run_fate_before": "FILTERED_OUT|WILL_RUN" }
     ],
     "superseded_proposals": [
       { "$comment": "Recorded, never edited — retirement is human (TRI-006) and tc:demote may only reach Manual.", "case": "<CASE-ID>", "suite": "<suite id>", "reason": "<the surface the change removes>" }

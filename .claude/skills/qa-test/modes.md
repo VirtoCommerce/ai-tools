@@ -67,10 +67,12 @@ Per round, once the 5c verdict is in:
      build to the test env — **ask before deploying** (it opens its own gated deploy PR). No merge happens:
      the loop always re-tests an **unmerged prerelease**, so the never-auto-merge triple guard
      (`.claude/rules/quality-gates.md` §2) is never touched.
-   - **Re-test (round N+1):** re-run **only the previously-FAILED cases (RED→GREEN) + the change-scoped
-     regression (Artifact C)** against the redeployed env — Step 4 re-scoped (§The two tracks of round
-     N+1), then Steps 5a–5c again (the full verdict gate; on FULL the independent verifier re-ratifies,
-     1 round).
+   - **Re-test (round N+1):** re-run **only the previously-FAILED cases (C1 / RED→GREEN)** at Step 4
+     against the redeployed env, then Steps 5a–5c again (the full verdict gate; on FULL the independent
+     verifier re-ratifies, 1 round) — and **then** the round's **C2**, re-scoped to the fix's diff, at 5r
+     (§The two tracks of round N+1). The order matters to the loop specifically: the round verdict is what
+     decides whether there IS another round, so paying for a suite sweep before that decision buys an
+     answer to a question already settled.
 4. **Cap reached** — still FAIL after `--max-rounds` rounds → **STOP** with a per-round summary (what each
    round fixed, what still fails — read off `summary.json.iterations.per_round[]`, never narrated from
    memory) and hand to a human. **STOP at the cap is a success, not a failure.**
@@ -83,7 +85,7 @@ the invariant that **merge + release are always the human's**. `/qa-test` still 
 ships.
 
 **Without `--iterate`, none of 5k runs** — the pointer close-out in
-[`close-out.md`](close-out.md) §5f is the whole story.
+[`reporting.md`](reporting.md) §5f is the whole story.
 
 ### What each durable step does per round — the loop's other half
 
@@ -95,9 +97,11 @@ promotion. This table is the rest of the contract.
 | Step | Runs | Because |
 |---|---|---|
 | `1e` Test Model | **ONCE** (round 1), **amended** per round | The model is a fault model of the FEATURE. A fix changes which hypotheses are live, not what the feature can be wrong about — so append a `## Round N` amendment to the **same** file (§Artifact refresh between rounds), never re-derive, and never a second dated file. |
-| Step 4's in-testing hop | **ONCE** (round 1) | The ticket does not leave in-testing inside the loop — 5f is at exit — so every later round already satisfies the precondition. If round 1 skipped the hop (no such transition, tracker unconfigured), the **exit** round does it before 5f, exactly as [`close-out.md`](close-out.md) §5f already says. |
+| Step `3x` discovery lane | **ONCE** (round 1) | Its charter is derived from the fault model's own unknowns, and the model is amended rather than re-derived between rounds — so a round-2 session would explore a surface whose unknowns have not moved, on a build that only differs by the fix. The round's own re-test is what interrogates the fix ([`exploratory-lane.md`](exploratory-lane.md) §9). |
+| Step 4's in-testing hop | **ONCE** (round 1) | The ticket does not leave in-testing inside the loop — 5f is at exit — so every later round already satisfies the precondition. If round 1 skipped the hop (no such transition, tracker unconfigured), the **exit** round does it before 5f, exactly as [`reporting.md`](reporting.md) §5f already says. |
 | `5a` · `5b` · `5c` | **PER ROUND** | Already in the enumeration: the verdict gate is what decides whether there is another round. On FULL the 5b verifier re-ratifies **once per round** (one REJECT→fix→re-verify round each). |
 | `5d` file bugs | **PER ROUND**, new findings only | `/qa-fix` needs a filed ticket, so a round that files nothing cannot fix anything and the loop dead-ends at its own precondition. A finding this run already filed is **CARRIED**, not re-filed (§Three carve-outs). |
+| `5r` release regression (C2) | **PER ROUND**, after that round's 5c | The round's fix changes what a sweep would find, so a single sweep at exit would describe only the last build — and the loop's own decision (is there another round?) comes from 5c, which is why C2 sits after it rather than before. Re-scoped to the FIX's diff each round (§The two tracks of round N+1). Its RUN_ID lands in `iterations.per_round[].regression.c2`; only the FINAL round's feeds 5e.1. |
 | `5e.1` Feature Release Gate | **AT LOOP EXIT** | There is one release, so there is one recommendation. A FAIL round is an automatic NO-GO the loop has *already acted on* by starting another round; ratifying per round emits N−1 recommendations about builds that no longer exist. |
 | `5e.2` tracker comment | **PER ROUND** — a **round delta** in rounds 1…N−1, the **full template once**, at exit | The full template every round buries the ticket under near-identical comments. Nothing at all leaves a prerelease deployed to the shared test env with no trace on the ticket. The delta is the minimum that keeps a human able to see the env moved, and why. |
 | `5e.3` persist `summary.json` | **PER ROUND** (rewritten in place; the round appended to `iterations.per_round[]`) | The loop can STOP at any round — G0 BAIL, BLOCKED, the cap, a dropped session — and a history persisted only on a clean exit is missing exactly when it is needed. It is also the only artifact that can support the cap-reached hand-off's per-round claims. |
@@ -138,18 +142,22 @@ it. A green carried bug also stops failing 5c from that round on; that is the wh
 
 #### The two tracks of round N+1, in this order
 
-Same order Step 4 already uses, for the same reason (the ticket verdict is the priority, and both draw on
-the max-3-browser cap):
+**These ARE C1 and C2** ([`authoring.md`](authoring.md) §Artifact C) — the loop reached this split first,
+for the same reason Step 4 and 5r now apply it to round 1: the ticket verdict is the priority, the two runs
+answer different questions, and both draw on the max-3-browser cap.
 
-1. **RED→GREEN** — exactly the previously-FAILED case IDs, as its own
+1. **C1 / RED→GREEN** — exactly the previously-FAILED case IDs, as its own
    `/qa-regression <suites> --ids <IDs>` run. Its pass rate answers **one** question — did the fix turn red
-   green — and keeping it out of the Artifact-C run is what stops the release gate's ≥80% floor from blending two
+   green — and keeping it out of the C2 run is what stops the release gate's ≥80% floor from blending two
    questions into one number. **FAST:** the failed **checklist items**, run by the one execution agent; no
    `RUN_ID`, no `--ids`.
-2. **Artifact C, re-scoped to the FIX's diff** —
+2. **C2, re-scoped to the FIX's diff, and run AFTER the round's verdict** (5r, same as round 1) —
    `npm run regression:select -- --repo <name> --diff <fix-PR range> --target 40 --json`, then
    `--cases critical --also-ids <this run's new Draft ids>`. Round 1's selection was computed from the
-   *ticket's* diff and cannot know what the fix touched.
+   *ticket's* diff and cannot know what the fix touched. Running it after the round verdict is what lets the
+   loop decide whether there IS another round without first paying for a suite sweep — the round cap is the
+   expensive resource here, and spending a C2 to learn a round failed is spending it on a question already
+   answered.
 
 **Both are real `/qa-regression` runs, never ad-hoc agent executions**, precisely so each produces a
 canonical `RUN_ID`: `tc:promote` refuses a run that is not `completed` (PR-013) and the loop must never

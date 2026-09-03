@@ -8,8 +8,13 @@ restate it** — the same single-source-of-truth discipline `ticket-routing.md` 
 It exists because the axis had no owner in this pipeline. `/qa-test` reads the xAPI contract at four
 points — `1c`'s surface analysis, `1d`'s AC↔implementation check, the `1e` fault model, and the
 per-layer authoring pack Step 3b compiles — and **refreshed it at none of them**. The instruction that
-did exist was advisory and unowned: `ba-system-analyzer` and `ba-api-specialist` are told to *"refresh
-via `npm run schema:refresh` if stale"* — a judgment call handed to an agent with no way to make it. The
+did exist was advisory and unowned: `ba-system-analyzer` and `ba-api-specialist` were told to *"refresh
+via `npm run schema:refresh` if stale"* — a judgment call handed to an agent with no way to make it. Both
+definitions have since been corrected to the opposite rule (**"never judge its staleness yourself"**,
+`ba-system-analyzer.md` line 42 / `ba-api-specialist.md` line 93), and they now say what to do when no rev
+arrives: treat the snapshot as UNKNOWN age and report every field name taken from it as **unverified**.
+That is correct and it is also the cost — an unrefreshed run loses its GraphQL grounding rather than
+guessing at it, which is precisely why the refresh belongs to the caller. The
 sibling pipeline already does this properly: `/qa-test-lifecycle` Pre-Flight step 4 runs the refresh for
 a GraphQL scope and passes the file into the delegation payload. `/qa-test` was the outlier.
 
@@ -31,12 +36,11 @@ constant failing silently by *inventing* findings.
 
 ---
 
-## 1. `contract_surface` — derived at `1b` item 2d, never asked, never defaulted
+## 1. `contract_surface` — the token
 
-One token, derived in the same block as `layer` (2b) and `visual_surface` (2c) and by the same rules,
-with its sources recorded. Values: `true` · `false` · `unresolved`.
-
-It is derived **after** 2b, because two of its four sources are 2b's own output.
+Derived at `1b` item 2d, **after 2b** (two of its four sources are 2b's own output). The **shared
+derivation contract** is stated once in [`axes.md`](axes.md) §2 and is **not** repeated here. Values:
+`true` · `false` · `unresolved`; records `contract.surface_source[]`. What is specific to this axis:
 
 | # | Source | Yields `true` when |
 |---|---|---|
@@ -49,7 +53,7 @@ It is derived **after** 2b, because two of its four sources are 2b's own output.
 whose diff touches a `.graphql` document or a composable's query body is `true`**, because the storefront
 is an xAPI *client* and a renamed field breaks it with no backend file in the diff at all.
 
-Record `contract_surface_source[]` **always**. Following `layer_source[]`'s own rule: **null means the
+Record `contract.surface_source[]` **always**. Following `release.layer_source[]`'s own rule: **null means the
 source was not consulted, which is a gap, not a zero.**
 
 **`unresolved` is treated as `true`.** The axis fails *open*, in the same direction as *"when in doubt,
@@ -132,8 +136,9 @@ Refreshing a file nobody was handed changes nothing. Two hand-offs are load-bear
 - **The `1c` / `1d` / `1e` briefs carry the snapshot's REV, not its path.** `1c`'s dispatch already
   passes the raw ticket fields and the diff; it must also carry *"`graphql-schema.md` @ `<refresh
   date>` — refreshed this run"*. An agent told to *consult a file* has no basis on which to judge
-  staleness and — measured in this repo's own agent definitions — is instead told to guess. Being handed
-  a rev removes the judgment call.
+  staleness, and its own definition now correctly forbids it from trying — so **with no rev the agent
+  downgrades every GraphQL field name it uses to unverified**, and the run silently loses the grounding
+  it was supposed to gain. Being handed a rev is what converts that refusal into evidence.
 - **The Step-3b authoring pack carries the refreshed fragments.** `authoring.md` §3b compiles
   selectors/schema fragments into each per-layer brief precisely so four agents do not re-read the
   oracles. That pack must be cut from the refreshed file, or the fan-out efficiently distributes one
@@ -147,15 +152,24 @@ the failure the index exists to prevent.
 
 ---
 
-## 5. Cost, and why it runs on both paths
+## 5. Cost, and the FAST question
 
 One introspection call against `{{BACK_URL}}/graphql` plus one validation pass over 74 documents. No
-agent, no browser lane, no gate for a human to clear. That is the whole cost, and it is why the axis runs
-on **FAST as well as FULL** despite FAST being *"a checklist and nothing else"*: an xAPI field rename or
-a newly-required arg is by construction *single-layer, single-domain, obvious surface, P2* — so, exactly
-as with the visual lane, **the change class most likely to invalidate the contract is the class FAST
-routes.** Unlike the visual lane it is not even an exception to FAST's one-execution-agent rule, because
-it dispatches no agent at all.
+agent, no browser lane, no gate for a human to clear. **Always on FULL. On FAST it is opt-in — `--contract`
+(or `--axes`)** ([`axes.md`](axes.md) §4).
+
+**The argument for running it on FAST is real, and it is why the flag is one keystroke away:** an xAPI
+field rename or a newly-required arg is by construction *single-layer, single-domain, obvious surface,
+P2* — so **the change class most likely to invalidate the contract is the class FAST routes** — and
+unlike the visual lane this is not even an exception to FAST's one-execution-agent rule, because it
+dispatches no agent at all.
+
+**What that argument was missing is a measurement.** This axis was made mandatory on both paths on the
+strength of the reasoning alone, and it is one of four axes that each did the same thing with its own
+locally reasonable case; together they turned FAST into 4–6 agent dispatches and 3 external command
+invocations — the precise *"both paths, always"* failure the FAST/FULL split was created to end. Across
+the 28 recorded `/qa-test` runs, `contract` has been populated **once**. Revisit at 5+ runs and promote
+it back to FAST-by-default on what they show, not on how good the argument sounds.
 
 It is also the cheapest of the three freshness gates the repo runs for this same reason (`tokens:sync` →
 `tokens:check`, `selectors:sync` → `selectors:check`) — and the only one whose stale artifact is read by

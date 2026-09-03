@@ -14,10 +14,11 @@ axis in the pipeline can see.
 
 ---
 
-## 1. `visual_surface` — derived at `1b` item 2c, never asked, never defaulted
+## 1. `visual_surface` — the token
 
-The trigger is **one token**, derived beside `layer` in the same block and by the same rules, with its
-sources recorded. Values: `true` · `false` · `unresolved`.
+Derived at `1b` item 2c. The **shared derivation contract** — derived-never-asked-never-defaulted,
+`surface_source[]` always recorded, `false` recorded with its sources, lane-not-effort — is stated once in
+[`axes.md`](axes.md) §2 and is **not** repeated here. What is specific to this axis:
 
 | # | Source | Yields `true` when |
 |---|---|---|
@@ -25,17 +26,12 @@ sources recorded. Values: `true` · `false` · `unresolved`.
 | 2 | **The derived `layer`** | `storefront` or `admin-spa` (both render to a human); `cross-layer` when either is a member |
 | 3 | **The target suites' manifest tags** | a `layer: frontend` suite, or tags `storefront` / `admin-spa` |
 
-`api` · `module` · `platform` alone yield `false`. Record `visual_surface_source[]` always — following
-`layer_source[]`'s own rule, **null means the source was not consulted, which is a gap, not a zero**.
-
-**`unresolved` is treated as `true`.** This is the one place the axis fails *open*, deliberately and in the
-same direction as *"when in doubt, take FULL"*: a wrongly-skipped visual pass leaves no trace anywhere, while
-a wrongly-run one costs one agent. The asymmetry is the whole argument.
-
-**It is a lane trigger, not an effort trigger.** `visual_surface: true` does **not** force FAST → FULL. A P2
-restyle stays FAST and simply gains this lane — see §5.
+`api` · `module` · `platform` alone yield `false`. **`unresolved` ⇒ `true`** — fails open, because a
+wrongly-skipped visual pass leaves no trace anywhere while a wrongly-run one costs one agent. Values:
+`true` · `false` · `unresolved`. Records `visual.surface_source[]`.
 
 ---
+
 
 ## 2. The table — surface → axes → executor
 
@@ -66,16 +62,50 @@ brief cites the `/qa-design` **skill** as the methodology. `/qa-accessibility` c
 The brief carries: the resolved target · `DESIGN_SYSTEM_PROJECT_ID` · the `BL-A11Y-*` / `BL-UI-*` invariant
 **text** (not just the IDs) · the screenshot path · the verdict vocabulary below.
 
+**Two things the brief MUST also carry, each of which cost a real run when it did not.**
+
+1. **The `vs. DESIGN` expectations as DATA — a subagent cannot read the spec itself.**
+   `.claude/rules/mcp-browsers.md` §*A subagent does not inherit `DesignSync`*: the tool is unavailable
+   inside a dispatched agent, so **the axis is structurally unrunnable there** and can only ever return
+   `SKIPPED`. Dispatching it and reading that `SKIPPED` as normal is how an axis reports clean forever
+   while never running once. So either the **orchestrator reads the design project itself and passes the
+   declared tokens / control geometry / icon mapping into the brief as data**, or the axis runs in the
+   main session. `unresolved` is then *unknown*, never zero.
+2. **No credential variable NAMES on this lane — and the brief must NAME the auth path.** `--secrets` is a
+   `@playwright/mcp` flag; Chrome DevTools MCP has no equivalent, so typing `TEST_USER_PASSWORD` submits
+   that literal string and the sign-in is refused. Measured: VCST-5733's visual axis was briefed exactly
+   that way and all three axes came back `INCONCLUSIVE`/`SKIPPED`, costing a whole agent turn. There are
+   **three** paths and the brief picks one explicitly — an agent left to infer its own is what produced
+   that loss: the **pre-signed persistent profile** (`--userDataDir`, signed in once by hand) for a
+   **role-gated or data-bearing** target; **minting an account through the UI** (`/sign-up`,
+   `uniqueEmail("AGENT-TEST")`, a password the agent generates) for a **role-agnostic** one — public
+   pages, the design system, WCAG/axe, tokens, geometry; or **dispatch to a Playwright lane**. Minting a
+   role-gated target is not a fallback but a wrong answer: the surface renders its **empty state**, which
+   **reads as a pass**. Whichever is chosen, the brief never carries a credential, a variable name, or a
+   workaround for a permission denial
+   (`.claude/rules/mcp-browsers.md` §*Chrome DevTools MCP has no `--secrets`* — conditions and cleanup
+   obligations live there).
+
 ---
 
-## 3. Verdict handling — invariants block, spec drift advises
+## 3. Verdict handling — layout blocks, a11y files separately, spec drift advises
 
 Precedence is `BL-UI / BL-A11Y invariant > design spec > UX heuristic`, unchanged from what `/qa-design`
 already declares. A spec match never rescues an invariant FAIL.
 
+**Precedence and BLOCKING are two different questions, and this table answers the second.** An a11y
+invariant still outranks the spec and the heuristic — a design that specifies a 1.63:1 focus ring is still
+wrong. What changed is what a confirmed a11y FAIL *does to the story*: on a functional / feature / E2E
+ticket it files its own ticket rather than failing that one, because accessibility is a cross-cutting
+property of the surface and the defect is usually pre-existing on the component, inherited by whichever
+story next edits that file. Full rule, the carve-out, and why a non-blocking finding must keep its real
+severity: [`triage.md`](triage.md) §7a.
+
 | Outcome | Lands in | May fail the ticket? |
 |---|---|---|
-| `BL-A11Y-*` / `BL-UI-*` **FAIL** | `summary.json.visual.invariant_failures[]` | **Yes** — an ordinary finding: triaged at 5a, severity-graded, filed under the existing 5d floor |
+| `BL-UI-*` **FAIL** (layout, overflow, alignment, CLS) | `summary.json.visual.invariant_failures[]` | **Yes** — an ordinary finding: triaged at 5a, severity-graded, filed under the existing 5d floor |
+| `BL-A11Y-*` **FAIL**, ticket is functional / feature / E2E | `visual.a11y_findings[]` | **No** — filed as its **own standalone ticket** at its **real severity**, named in the report, never blocking ([`triage.md`](triage.md) §7a) |
+| `BL-A11Y-*` **FAIL**, ticket is *about* accessibility | `visual.invariant_failures[]` | **Yes** — the carve-out: an a11y/WCAG remediation ticket, ACs naming an accessibility outcome, or a `/qa-accessibility` run. The test is the ticket's own ACs, never the finding's severity |
 | `vs. DESIGN` **DRIFT** / **MISSING** | `visual.advisory[]` | **No** — recorded and reported, never blocking |
 | **UNSPEC** | `visual.advisory[]` | No — a design project is rarely exhaustive; failing "not in the spec" turns the axis into ignored noise |
 | **KNOWN_DIVERGENCE** | `visual.advisory[]` | No — the spec itself declares it unshipped. Also never a clean PASS |
@@ -125,9 +155,21 @@ scheduled axis here. They keep their existing owner: loaded at Step 2 for author
 measurable tags `[SHIFT] [TOUCH] [SPACING] [ALIGN] [OVERFLOW] [CLS]`, and executed by suite `048c` in
 regression. Adding a second executor would put two owners on one invariant set with no rule for which wins.
 
-**FAST is not re-routed.** `visual_surface: true` adds the lane; it does not promote the ticket to FULL. A
-FAST run still authors no cases, writes no Test Model and runs no verifier — it gains one agent and the
-checklist rows in §6.
+**Always on FULL. On FAST the lane is opt-in — `--visual` (or `--axes`)** ([`axes.md`](axes.md) §4).
+`visual_surface` still *derives* on FAST and is recorded with its sources; what the flag controls is
+whether the lane **runs**. It never re-routes the ticket: a FAST run with `--visual` still authors no
+cases, writes no Test Model and runs no verifier — it gains one agent and the checklist rows in §6.
+
+**The argument for FAST-by-default is real, and it is why the flag exists.** A `.scss`-only PR, an icon
+migration or a P2 restyle is by construction *single-layer, single-domain, obvious surface, P2* — so **the
+change class most likely to break the UI is exactly the class FAST routes**, and a one-agent functional
+checklist cannot see a contrast failure, a token collision or a control that drifted from the design.
+
+**What it lacked was evidence, and this axis is where that shows most.** Unlike the other two it costs a
+whole **agent on a browser lane**, and it was made mandatory on the cheap path on the strength of the
+argument alone. In the 28 recorded runs it has produced a `visual` block **once**. It is also the axis
+whose third sub-axis is structurally unrunnable in a subagent (§2), so a mandatory lane was partly
+reporting `SKIPPED` by construction. Revisit at 5+ runs.
 
 **`critical-ui-scope.md` is a scope definition, not a gate.** It is 197/197 `GAP` since its covering suite
 was removed on 2026-07-25. Use it to resolve *which* invariants apply to the component under audit; it

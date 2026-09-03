@@ -34,7 +34,7 @@ the Test Model names as a regression surface in its own words — selects 31 sui
 sales-rep, and likewise reports `unmappedPaths: []`. A gap that announces itself is a gap you fix;
 this one reports success.
 
-**2. Artifact C then applies `--cases critical`**, which drops the High rows where most label and
+**2. The change-scoped sweep (now C2) applies `--cases critical`**, which drops the High rows where most label and
 route assertions live: 091 carries 24 High, 093 carries 29.
 
 **3. A row that never executes is never triaged**, so 5a cannot reach it however good it is.
@@ -57,9 +57,10 @@ the right cadence for rot and the wrong one for a change landing today.
 
 ---
 
-## 2. `coverage_surface` — derived at `1b` item 2e, never asked, never defaulted
+## 2. `coverage_surface` — the token
 
-Same discipline as `visual_surface` (2c) and `contract_surface` (2d). Three parts, each derived:
+Derived at `1b` item 2e. The **shared derivation contract** is stated once in [`axes.md`](axes.md) §2 and
+is **not** repeated here; records `coverage_triage.surface`. Three parts, each derived:
 
 | Part | Sources |
 |---|---|
@@ -68,7 +69,7 @@ Same discipline as `visual_surface` (2c) and `contract_surface` (2d). Three part
 | **Oracles** — invariants the ticket amends or contradicts | any `BL-*`/`ECL-*` the `1e` model marks for amendment. VCST-5733's model says *"BL-SR-002 MUST BE AMENDED BEFORE IT IS USED AS AN ORACLE HERE"* — and 7 existing rows cite it |
 
 **Scope is the manifest's own vocabulary, NOT the diff's paths.** This is the whole correction to
-blocker 1. `domain` and `tags` are present on every one of the 132 suites; a changed path is a proxy
+blocker 1. `domain` and `tags` are present on **every** suite in the manifest (a count here would be wrong by the next append — read `config/test-suites.json`); a changed path is a proxy
 for them that demonstrably misses. Paths may still be passed, but they are **additive only** — a path
 token can *add* a suite the vocabulary missed and can never *filter out* one the vocabulary found.
 That is the same asymmetry `selectSuites` applies to its own incomplete repo index, and for the same
@@ -82,10 +83,17 @@ no expensive direction. Record `false` with its sources; an omitted block reads 
 **It is a pre-flight trigger, not an effort trigger.** `coverage_surface: true` dispatches **no
 agent** and does not promote FAST to FULL.
 
-**Why it runs on FAST.** The same argument 2d makes, and it is the stronger one here: a rename, a
+**On FAST it is opt-in — `--coverage` (or `--axes`); on FULL it always runs** ([`axes.md`](axes.md) §4).
+
+**The argument for FAST is the strongest of the three axes', which is why the flag exists:** a rename, a
 restyle, a copy change, a config tweak is *single-layer, single-domain, obvious-surface, P2* **by
 construction**, so the change class that invalidates existing assertions is precisely the class FAST
-routes. Unlike the visual lane this is not even an exception to FAST's one-execution-agent rule.
+routes — and unlike the visual lane this is not even an exception to FAST's one-execution-agent rule. It
+is also the axis with the sharpest measured hole behind it (the 62 stale assertions in §1).
+
+What it does not yet have is a run. `coverage_triage` has been populated in **zero** of the 28 recorded
+runs — the one artifact carrying the key has it as `null`. So the case for making it mandatory on the
+cheap path is currently an argument rather than evidence; revisit at 5+ runs.
 
 ---
 
@@ -98,7 +106,7 @@ and every hit takes exactly one value.
 |---|---|---|---|
 | **`CONFIRMED`** | still correct under the change | nothing | — |
 | **`REPAIR`** | **mechanically** stale — a renamed selector, a moved route, a removed arg, a dead `@td()` alias — so it cannot execute at all | `/qa-review-tests file <suite> --fix`, under Phase 4b's write-scope ceiling + revert-on-regression | **before** the run |
-| **`RE-BASE`** | asserting an **expected value** the change contradicts | keep the assertion as it stands; carry the case into Artifact C on `--also-ids` | resolved **by** the run, at 5a |
+| **`RE-BASE`** | asserting an **expected value** the change contradicts | keep the assertion as it stands; carry the case into **C1's `--ids`** | resolved **by** the run, at 5a |
 | **`SUPERSEDED`** | asserting a surface the change removes | a proposal, recorded — never an edit | human |
 
 ### 3a. The `REPAIR` / `RE-BASE` split is the load-bearing rule
@@ -119,7 +127,7 @@ The split is exactly the line between the two:
   failure, which is the corpus's measured artefactual-BLOCKED class (19.9% overall, 28.6% on suites
   of 81+ cases).
 - **`RE-BASE` moves the oracle, so only the run may do it.** The old assertion is kept, the case is
-  carried into Artifact C, and Step 4 executes it. If it fails and the new behaviour matches the AC,
+  carried into C1, and Step 4 executes it. If it fails and the new behaviour matches the AC,
   5a's **existing** test-defect path rewrites it — grounded in that run's own evidence, with a
   `{OBSERVED}` that traces to an artifact. If it fails and the new behaviour does *not* match the AC,
   the old case was right and the finding is a bug. **Both outcomes are reachable, which is the entire
@@ -130,7 +138,7 @@ written before the change, executed against the change.
 
 ### 3b. Two hard rules
 
-**A `FILTERED_OUT` row disposed `RE-BASE` MUST be carried on `--also-ids`** — or its disposition is
+**A `FILTERED_OUT` row disposed `RE-BASE` MUST be carried in C1's `--ids`** — or its disposition is
 `CONFIRMED`/`SUPERSEDED` with a stated reason. A `RE-BASE` that never executes is precisely the
 invisible class this axis exists to find; leaving one undisposed re-creates the gap inside the
 mechanism built to close it. This is the same rule Artifact C already follows for its Scope
@@ -181,7 +189,7 @@ holes lie.
 
 ### The decisions that were live forks
 
-- **Exact scope matching, looser row matching.** Scope partitions 132 suites and must not
+- **Exact scope matching, looser row matching.** Scope partitions the manifest's suites and must not
   over-select, so a term matches a `domain`/`tag` exactly — `order` cannot capture `orders`. Inside a
   row the search is case-insensitive substring, because it reads prose an author hand-wrote where
   `Recent orders`, `Recent Orders` and `recent orders` are one assertion — all three spellings are

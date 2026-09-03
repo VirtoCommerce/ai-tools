@@ -260,7 +260,7 @@ BLOCKED ❌ → escalate to qa-lead
    - **Admin UI / Storefront / E2E layers**: `/qa-test-cases-generator VCST-XXXX --layer admin|storefront|e2e`
    - **Storefront journey cases**: for features listed in `e2e-scenario-catalog.md` (E2E-*) or flows with cross-screen state (checkout, cart→order, BOPIS end-to-end, login+purchase), prefer one journey case over a set of atomic screen cases — see Frontend Journey Exception above
    - All cases: enriched 15-column CSV with **layer-specific tags** from `test-case-template.md`
-   - **All generated cases start with `Automation_Status = Draft`** — they are NOT regression-eligible until promoted to `Reviewed` in step 7 below
+   - **All generated cases start with `Automation_Status = Draft`.** `Draft` is a real, executable state, **not a holding pen**: the regression runner does **not** skip it, which is what lets the authoring run execute its own new cases. Promotion (step 7) records that a case has *earned* its status from evidence — it is not what makes the case runnable
    - Domain checklists as input: storefront → `domain-checklists.md`, admin/API → `backend-admin-checklists.md`. REAL labels from step 3. P0: happy + negative, P1: errors + edge cases
    - Minimum per API/GraphQL operation: 1 happy path + 2 negative cases (missing auth, invalid input)
    - Each test case must record which technique produced it (EP, BVA, Decision Table, Pairwise, State Transition, Classification Tree, Error Guessing) for traceability
@@ -268,14 +268,27 @@ BLOCKED ❌ → escalate to qa-lead
    1. Run `/qa-review-tests file <path>` on the freshly generated CSV. Fix all Blockers and Critical findings; reduce Highs where practical
    2. Verdict must be ≥ **PASS WITH WARNINGS** (zero Blockers, ≤3 Criticals). If NEEDS FIXES, iterate on the cases and re-review
    2b. **Grounding gate (Dimension 10 / GRD-*)** — every assertion must be grounded (`{SPEC}`/`{BL}`/`{DOC}`/`{OBSERVED}`); zero `{HYPOTHESIS}`/untagged. For a **new feature** (behavior grounded only by `{SPEC}`/`{HYPOTHESIS}` after offline generation), run `/qa-review-tests file <path> --verify --fix` against the deployed build so `qa-testing-expert` confirms each behavior live and upgrades it to `{OBSERVED}` — this live pass is MANDATORY before promotion; ungrounded assertions block it
-   3. Hand off to `qa-lead-orchestrator` with the review report and request approval to promote `Draft → Reviewed`
-   4. **You do NOT self-promote** — only after `qa-lead-orchestrator` explicit approval, update `Automation_Status` from `Draft` to `Reviewed` (then author assigns execution mode: `Automated` / `Manual` / `Semi-Automated`)
+   3. Hand off to `qa-lead-orchestrator` with the review report and request approval to promote `Draft → Reviewed`. **Under `/qa-test` there is no hand-off** — step 9's table applies: you return the appended row IDs and the run's own **5g** gate promotes them from its execution evidence
+   4. **You do NOT self-promote, under either caller.** Via `/qa-test-lifecycle` 6P: only after `qa-lead-orchestrator` approval, update `Automation_Status` from `Draft` to `Reviewed` (then author assigns execution mode: `Automated` / `Manual` / `Semi-Automated`). Via `/qa-test` 5g: **never edit the cell by hand at all** — `npm run tc:promote:apply` writes it, and it writes `Automated` **only**, from a real `RUN_ID`; `Reviewed`/`Manual` stay a human call
    5. Cases rejected by the lead: address feedback, regenerate if needed, re-run review
 8. **Ensure test data** — provision the combinations prepared in step 5b: `/qa-seed-data <domains>`
    seeds the gap fixtures (they are `seeded=false` templates until then) and writes real IDs back so
    `@td(COMBO_ALIAS.field)` resolves. Document `{{VAR}}` bindings + the `@td()` combination aliases in
    the Test_Data column. (Step 5b designs + authors the data; this step provisions it.)
-9. **Organize into suites** — Only `Reviewed` cases go into regression-eligible suites. API→`Backend/api/049-*`, GraphQL→`Backend/graphql/050*`, Admin→`Backend/<module>/*`, Storefront→`Frontend/<area>/*`, E2E→feature suite. `Draft` cases live in `reports/tickets/Sprint-current/VCST-XXXX/` until promoted
+9. **Organize into suites — cases land in `regression/suites/` as `Draft`, never in a ticket folder.**
+   API→`Backend/api/049-*`, GraphQL→`Backend/graphql/050*`, Admin→`Backend/<module>/*`,
+   Storefront→`Frontend/<area>/*`, E2E→feature suite. Append with
+   `append-test-cases-to-suite.ts … --check-global-ids`, never a hand-rolled append, then `suites:sync`.
+   **There is no `reports/tickets/**/test-cases.csv`** — `.claude/rules/reports.md` §1 forbids it, and a
+   case parked outside the corpus is a case no runner can reach.
+
+   **Who flips the status, and when, depends on the caller** — this is the one place the two pipelines
+   differ, and getting it wrong strands the cases:
+
+   | Caller | Append | Flip |
+   |---|---|---|
+   | **`/qa-test` Step 3** | you append `Draft` **during the run** | **`/qa-test` 5g** flips it in-run via `npm run tc:promote:apply`, after Step 4 has executed the case. You do not hand off |
+   | **`/qa-test-lifecycle` Phase 6P** | 6P appends (handoff / re-promotion / non-`/qa-test` sources) | 6P flips `Draft → Reviewed` on `qa-lead-orchestrator` approval — step 7 below |
 10. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95% overall (each applicable layer must have cases for a requirement to count as fully covered)
 11. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
 12. **Deliver Feature Test Matrix** — Test plan path, cases by layer × priority (Draft vs Reviewed counts), coverage %, delegation per layer, JIRA links

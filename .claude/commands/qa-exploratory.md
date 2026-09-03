@@ -1,7 +1,6 @@
 ---
 description: "Discover scenarios the regression suite doesn't cover. Discovery-first exploratory session — every run must surface a net-new scenario."
-argument-hint: "[sprint|sprint:XX-YY|checkout|catalog|B2B|mobile|new]"
-disable-model-invocation: true
+argument-hint: "[sprint|sprint:XX-YY|ticket <KEY>|checkout|catalog|B2B|mobile|new]"
 ---
 
 # /qa-exploratory — Scenario Discovery Session
@@ -20,7 +19,13 @@ Every session must end with at least one **net-new scenario** (not in any regres
 /qa-exploratory sprint            # Run the current sprint plan's §5.3 charters (auto-picks the most recent plan)
 /qa-exploratory sprint:26-16      # Pin to a specific sprint plan's charters
 /qa-exploratory sprint --charter EXP-02   # Run one charter from that set
+/qa-exploratory ticket VCST-1234  # /qa-test Step 3x — charter derived from that ticket's Test Model
 ```
+
+**Three charter sources, and the mode names which one.** Ad-hoc (`checkout`, `catalog`, …) authors the
+charter here, from the coverage map; `sprint` reads it from the plan's §5.3; `ticket` receives it from
+`/qa-test`'s Test Model. **No mode invents a charter another mode owns** — `sprint` STOPs without a plan,
+and `ticket` STOPs without a model.
 
 ---
 
@@ -46,6 +51,36 @@ loads it and skips the ad-hoc charter authoring in "Exploration Charter" below.
    — the charter says *what* to explore, pre-flight establishes *against what build*.
 
 Rationale + the C1–C4 / D1–D3 derivation: `.claude/skills/qa-sbtm/sprint-charter-selection.md`.
+
+### Step 0b — `ticket` mode: the charter comes from the Test Model
+
+Only for `ticket <KEY>`. This is **`/qa-test` Step 3x**, run concurrently with that pipeline's test-data
+provisioning (3a) and **before** it authors a single case — so the session's job is to convert the fault
+model's *unknowns* into observations while there is still time for authoring to use them. Sibling of
+Step 0a: the charter is **received, not authored**.
+
+1. **Read the charter payload** `/qa-test` passes (its shape:
+   [`.claude/skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §6). Its mission
+   is five derived sources — unresolved mechanism-matrix `GAP`/`WAIVED` cells · unresolved reverse edges ·
+   `{HYPOTHESIS}` oracles to ground · ACs `1d` flagged DRIFT/NOT-FOUND/CONTRADICTS · Step-2a `RE-BASE` rows.
+   **That IS the charter — do not re-derive it, do not widen it.**
+2. **No Test Model, or no unresolved cell in any of the five?** → **STOP** and report the lane skipped with
+   that reason. Never improvise a mission, exactly as Step 0a never improvises a charter set the plan does
+   not contain. A `/qa-test` FAST run reaches here with no model by construction and is the normal skip.
+3. **Box: 25 minutes hard** (~5 setup · ~15 explore · ~5 write-up), not the 30 of the standard session —
+   it is running inside another pipeline's critical path, and on overrun `/qa-test` proceeds on what
+   returned. **Spend the box in charter order**: the five sources first, the open half with whatever
+   remains. Getting that backwards produces a pleasant session and no answers to the questions asked.
+4. **Return the three extra fields the caller needs**, beyond the ordinary §Output tables: model
+   amendments (with evidence), the **`{OBSERVED}` value per `{HYPOTHESIS}` row** (or *not reached + reason*),
+   and per mission item 1–5 *covered* or *NOT REACHED + reason*. A `PROMOTE` `Fate` here means the caller
+   authors that case **in the same run**, not in a later sprint — so name the scenario precisely enough to
+   author from.
+5. **File nothing.** Bugs go back to the caller; `/qa-test` 5a triages them, 5d applies the severity floor.
+   Everything else in Steps 0.1–0.5 below still runs — the charter says *what* to explore, pre-flight
+   establishes *against what build*.
+
+Rationale, the charter derivation table and the record: [`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md).
 
 ### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
@@ -233,6 +268,8 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 - **Lane: `playwright-chrome` or `playwright-edge` — never `playwright-firefox`.** An exploratory session is click-driven by definition, and `@playwright/mcp` + firefox resolves the element then times out on Playwright's actionability gate for this storefront and the Admin SPA (`.claude/rules/agents.md`, confirmed 6×). A firefox placement costs the entire 30-minute session, not a degraded one — if both chromium lanes are busy, QUEUE. **This deliberately overrides `qa-testing-expert`'s default `playwright-firefox` assignment in `.claude/rules/agents.md`** — that file's own hard rule ("never schedule a click-driven suite on firefox") outranks its per-agent default table, and an exploratory session is click-driven by construction. Dispatch `qa-testing-expert` (or `qa-frontend`/`qa-backend-expert` per the charter's `owner`) onto the charter's `lane`.
 - **Capture-back is mandatory**: every net-new scenario carries a `Fate` (PROMOTE to a `Draft` case, or DECLINE with a reason). A session whose findings reach no runner buys a one-off verdict and no regression protection
 - In `sprint` mode the charter comes from the plan's §5.3 (`exploratoryCharters[]`) — run it as written, in series, ≤5; never widen the mission or add a domain the plan did not chart
+- In `ticket` mode the charter comes from `/qa-test`'s Test Model (Step 0b) — five derived sources, a **25-minute** box rather than 30 (it runs inside another pipeline's critical path), the mission items spent **first** and the open half with what remains. **File nothing**: bugs go back to the caller, whose 5a triages and 5d applies the severity floor. **STOP if there is no model or no unresolved cell** — never improvise a mission, exactly as `sprint` mode never improvises a charter set
+- **This command is model-invocable, deliberately** — it is a step in `/qa-test` (3x), and a pipeline step nothing may call is a step that never runs, which is how discovery came to sit at one session in the life of the repo. It is safe to be: read-only against the product, files no tracker item, transitions nothing, edits no oracle, and its only write is its own category-8 report. The guard against an unprompted run is that every mode **STOPs without a charter it was given**, not a frontmatter flag
 - Monitor console and network throughout
 - Capture screenshots for every bug found
 - Don't try to fix bugs — just document them
