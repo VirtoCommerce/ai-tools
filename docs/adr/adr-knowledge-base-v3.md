@@ -733,6 +733,26 @@ language-map bug, and a company whose flagship moved to AGPL Rust); **FlexSearch
 (contextual/proximity scoring, **not BM25, no IDF**); **lunr** (no release since
 2020-08); **wink-bm25-text-search** (four runtime dependencies).
 
+### 9.1a Who builds the index, and when
+
+The index and `catalog.md` are **built by the consolidation run** (§10.2a), in the same
+pass and in a fixed order: work through the drafts → update weights → apply supersessions
+→ **rebuild the index and the catalog from the entries** → run the exam. They are
+derived artifacts, so nothing else may write them, and the resolver never repairs one it
+finds stale — `--check` fails instead.
+
+**Rebuilt whole, never patched incrementally.** An incremental updater would be a second
+implementation of "what the index should contain", and the two drift the first time an
+edit path is missed — silently, because a stale index does not error, it just stops
+finding things. A full rebuild is also what makes the byte-stability rules of §9.1
+meaningful: the same corpus always produces the same file. The cost is milliseconds at
+this scale, and the S2 shard layout keeps it that way as the corpus grows.
+
+The practical consequence is worth stating plainly, because it is the one thing a
+newcomer gets wrong: **a new entry becomes findable by search at the next run, not at
+the moment of writing.** Exact `@kb(id)` resolution bypasses the index entirely and
+works immediately (§9.1), and drafts are served meanwhile as leads — by the path below.
+
 ### 9.2 Resolution semantics
 
 Kept from v1/v2: two entry points (`resolveId`, `lookup`), typed answers always, the
@@ -747,7 +767,13 @@ Kept from v1/v2: two entry points (`resolveId`, `lookup`), typed answers always,
 - **Leads section** (§2 Q27): below the confident results, a separately-fenced
   `leads[]` block carries relevant drafts and under-threshold entries labeled "leads,
   not facts" — a draft is served, never hidden, and never in the main result; a MISS
-  with leads is still a MISS.
+  with leads is still a MISS. **Drafts are not in the index** (they are not entries
+  yet, and the index is rebuilt only per run — §9.1a), so the resolver reads
+  `drafts/` directly: one file per fingerprint, matched on the same normalized tokens,
+  no ranking beyond recency and the repeat `count`. That is affordable because the
+  directory is small **by construction** — every run empties it into entries or
+  tombstones. A drafts directory that stops draining is therefore not a retrieval
+  problem to optimise but a signal that consolidation is failing, and §12 counts it.
 - The answer contract (§9.5) rides on every result.
 
 ### 9.3 Storage/scaling ladder (v2 R3, kept)
