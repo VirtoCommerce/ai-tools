@@ -41,6 +41,43 @@ Suites that sign into the storefront/Admin SPA must enter real passwords via the
 - **Setup:** copy `templates/.env.playwright.local.template` → `.env.playwright.local` (auto-gitignored by the `.env.*.local` rule), fill from the team secret store, and add `"--secrets", ".env.playwright.local"` to each Playwright server's args (see `templates/.mcp.json.example`). Reconnect/restart the MCP after editing.
 - The file is **not** suffix-promoted (read raw by the MCP) — put the concrete value for whichever env you run browser suites against, matching that env's `.env.local` values.
 
+#### Chrome DevTools MCP has **no `--secrets`** — do not brief an agent as if it does
+
+`--secrets` is a **`@playwright/mcp` flag only**. `chrome-devtools-mcp` (Google’s) exposes no
+name-substitution or secret-redaction option at all — verified against `npx chrome-devtools-mcp@latest
+--help` on 2026-09-02. Typing a variable NAME into a password field on that lane submits **the literal
+string**, the sign-in is refused, and an auth-gated route bounces to `/sign-in?returnUrl=…`.
+
+This bit a real run: `/qa-test` VCST-5733’s visual axis was dispatched to `ui-ux-expert` (whose lane IS
+Chrome DevTools, per `.claude/rules/agents.md`) with a brief telling it to type `TEST_USER_PASSWORD`.
+All three axes came back `INCONCLUSIVE`/`SKIPPED` — correctly reported as blocked rather than clean,
+but a whole agent turn was lost. The agent then tried to print the credential and to route it via the
+clipboard; **both were denied by the permission classifier, and stopping there was the right call.**
+
+**How to sign a Chrome DevTools lane in — persistent profile, not secrets.** `--isolated` defaults to
+`false` and `--userDataDir` defaults to a stable cache path, so **the profile already persists across
+MCP restarts**. Sign in **once, by hand**, in that profile and every later session is already
+authenticated — strictly stronger than `--secrets`, because the credential never reaches an agent, a
+tool call, or the transcript at any point. The repo now pins the path explicitly
+(`--userDataDir <home>/.chrome-devtools-mcp/vc-qa-profile`) so a cache clean cannot silently wipe the
+session, and sets `--viewport 1920x1080` to match the Playwright lanes.
+
+**Also now set: `--redactNetworkHeaders`.** It defaults to **`false`**, and this is the lane whose whole
+job is returning network requests to the model — so `Authorization: Bearer …` from an xAPI call could
+land in an agent’s context. This is the closest true analogue to `--secrets` the server offers, and it
+was off.
+
+**Briefing rule:** the `--secrets` “type the variable NAME” instruction applies to `playwright-chrome` /
+`playwright-firefox` / `playwright-edge` **only**. For a Chrome DevTools lane, either rely on the
+pre-signed persistent profile or dispatch the pass to a Playwright lane. Never tell an agent to type a
+plaintext password, and never work around a permission denial on a credential.
+
+**A subagent does not inherit `DesignSync`.** Same run, same lane: the `vs. DESIGN` axis was briefed at
+`ui-ux-expert` after the orchestrator had verified `DesignSync` in its own session. Subagents do not get
+it, so that axis is **unrunnable inside a subagent** and must report `SKIPPED` — `unresolved` is then
+*unknown*, never zero. Either the orchestrator reads the spec itself and passes the declared
+expectations into the brief **as data**, or the axis runs in the main session.
+
 ## Storybook Visual Regression
 
 Visual regression baselines are captured on-demand by the `/qa-storybook` skill (delegated to `ui-ux-expert` agent). No persistent `storybook/` directory is needed — baselines are stored in test evidence directories per ticket. Naming convention: `{story-name}-{viewport}.png` (e.g., `basic-desktop.png`, `hover-state-tablet.png`). See `skills/qa-storybook/` for methodology and guides.

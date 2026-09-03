@@ -64,8 +64,8 @@ Sidebar `nav[aria-label="Primary navigation"]`, scoped scan:
 
 | Finding | Draft |
 |---|---|
-| Dialog accessible name computes as "Confirmation Close" | `reports/bugs/open/BUG-vc-shell-dialog-accessible-name-includes-close.md` |
-| Mobile (390 px) popup loses heading + close control — **one detail unverified, may re-grade** | `reports/bugs/open/BUG-vc-shell-mobile-popup-loses-heading-and-close.md` |
+| Dialog accessible name computes as "Confirmation Close" | `reports/bugs/open/low/BUG-vc-shell-dialog-accessible-name-includes-close.md` |
+| Mobile (390 px) popup loses heading + close control — **one detail unverified, may re-grade** | `reports/bugs/open/low/BUG-vc-shell-mobile-popup-loses-heading-and-close.md` |
 
 **Not defects:** product images fail with `ERR_NAME_NOT_RESOLVED` on 8 requests to `vcmarketplace-platform.dev.govirto.com` (**environment/asset-host config**, not code); `clickhandler`/`isvisible` Vue props serialized into the DOM (informational, 4.1.1 is retired); collapsed-submenu tab-reachability (**unverified lead** — not tabbed).
 

@@ -1,8 +1,6 @@
 {
   "//": "TEMPLATE — copy to .mcp.json (gitignored) and replace every <PLACEHOLDER>. Restart the MCP servers after editing. Windows uses `cmd /c npx`; on Linux/macOS drop the `cmd` + `/c` and call `npx` directly.",
-
   "//secrets": "The `--secrets .env.playwright.local` on each Playwright server lets a suite log in by typing the secret NAME (e.g. browser_type text=B2B_USER_PASSWORD) — the MCP substitutes the value + redacts it, so no password enters the agent transcript. Point it at the SCOPED file (templates/.env.playwright.local.template → .env.playwright.local, login passwords ONLY) — NEVER at .env.local, which also holds API tokens/keys. Drop the two `--secrets` lines if you don't run browser-login suites. See .claude/rules/mcp-browsers.md.",
-
   "mcpServers": {
     "playwright-chrome": {
       "type": "stdio",
@@ -49,7 +47,12 @@
       "args": [
         "/c",
         "npx",
-        "chrome-devtools-mcp@1.6.0"
+        "chrome-devtools-mcp@1.6.0",
+        "--redactNetworkHeaders",
+        "--viewport",
+        "1920x1080",
+        "--userDataDir",
+        "<ABSOLUTE-PATH>/.chrome-devtools-mcp/vc-qa-profile"
       ],
       "env": {}
     },

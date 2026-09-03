@@ -23,7 +23,7 @@ Create a structured bug report from a description, screenshot, or observed issue
    - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
    - Record platform version, theme version, and modules relevant to the bug area — include in the bug report (Step 3)
 2. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design.
-3. **Duplicate check** — scan `reports/bugs/open/` and `reports/bugs/fixed/` for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
+3. **Duplicate check** — scan `reports/bugs/open/**` (**recurse** — it is foldered `critical-high/`/`medium/`/`low/`, `.claude/rules/reports.md` §1a; a one-level scan finds nothing and reports "no duplicate") and `reports/bugs/fixed/` for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
 
 ## Step 1 — Gather Bug Details
 
@@ -174,8 +174,9 @@ routing confidence LOW and say why — `/qa-fix` will still re-validate, but an 
 
 > **Skills:** Use `/qa-evidence compact|detailed` for report verbosity tier. Use `/qa-defect classify` for defect type taxonomy and root cause categories.
 
-Generate a report in `reports/bugs/open/` using this naming convention:
+Generate a report in the severity folder its own **Severity** matches — `reports/bugs/open/critical-high/` (Critical/P0 · High/P1), `reports/bugs/open/medium/` (Medium/P2) or `reports/bugs/open/low/` (Low/P3), per `.claude/rules/reports.md` §1a — using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-VCST-XXXX.md` (if a JIRA ticket is known)
+The severity stated in the report is the source of truth and the folder mirrors it, so write the report first and file it second; a straddling grade (`Low–Medium`) files at the LOWER bucket and says so in the report.
 
 ### Bug Report Folder Structure
 
@@ -240,7 +241,7 @@ When moving to `fixed/`, add a Resolution block below the status:
 
 ### Report Template
 
-> **Scope: local markdown report only** (`reports/bugs/open/BUG-*.md`). For the JIRA ticket payload (Severity / Priority / Labels / Component / Affects Version / Assignee / Linked Issues), use the Frontend + Backend templates in [`skills/qa-defect/defect-report-templates.md`](../skills/qa-defect/defect-report-templates.md) — invoked via `/qa-defect classify` in Step 5. The two templates intentionally diverge: this one adds VC-specific **Status lifecycle**, **4-Layer Validation**, **Module Versions**, **Root Cause Analysis**, and the **Fix Routing** block below; the `/qa-defect` templates carry the JIRA fields.
+> **Scope: local markdown report only** (`reports/bugs/open/<severity>/BUG-*.md`). For the JIRA ticket payload (Severity / Priority / Labels / Component / Affects Version / Assignee / Linked Issues), use the Frontend + Backend templates in [`skills/qa-defect/defect-report-templates.md`](../skills/qa-defect/defect-report-templates.md) — invoked via `/qa-defect classify` in Step 5. The two templates intentionally diverge: this one adds VC-specific **Status lifecycle**, **4-Layer Validation**, **Module Versions**, **Root Cause Analysis**, and the **Fix Routing** block below; the `/qa-defect` templates carry the JIRA fields.
 
 ### Fix Routing block (REQUIRED — the `/qa-fix` handoff contract)
 

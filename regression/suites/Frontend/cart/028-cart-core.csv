@@ -439,7 +439,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [ASSERT] verify all items display with valid prices in current currency
 [ACT] switch currency to target currency where one product has no price
 [WAIT] wait for cart to recalculate","[DOM] product without new-currency price shows warning message or is removed — element absent from DOM
-[STATE] cart flags the missing-price item with a ""no longer available for purchase"" warning and disables its quantity stepper; the item's price cell may still render a zero-value price (0.00 in the target currency) alongside the warning — a known PDP-only gap (reports/bugs/open/BUG-non-usd-price-zero-display.md), not a cart defect; the subtotal excludes the missing-price item
+[STATE] cart flags the missing-price item with a ""no longer available for purchase"" warning and disables its quantity stepper; the item's price cell may still render a zero-value price (0.00 in the target currency) alongside the warning — a known PDP-only gap (reports/bugs/open/critical-high/BUG-non-usd-price-zero-display.md), not a cart defect; the subtotal excludes the missing-price item
 [DOM] remaining items show correct new-currency prices (visible)
 [MATH] subtotal excludes flagged/removed item = sum of (unit price × quantity) for all included line items (2 decimal places)
 [STATE] checkout blocked if flagged item remains in cart

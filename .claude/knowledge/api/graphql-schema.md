@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-08-28)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-09-02)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -26,16 +26,16 @@
 12. **Pass the ambient context — `cultureName`, `storeId`, `userId`, `organizationId` — on almost every query and mutation.**
     Most xAPI operations resolve against an implied context, and **omitting a context arg is not an error**:
     the server substitutes a default and returns `200` with data that is wrong, empty, or `null`. There is no
-    message to notice. Measured on this schema (106 queries, derived at refresh):
+    message to notice. Measured on this schema (108 queries, derived at refresh):
 
     | Context arg | Queries accepting it | Required | Optional |
     |---|---|---|---|
-    | `cultureName` | 59 (56%) | 3 | 56 |
-    | `storeId` | 62 (58%) | 32 | 30 |
+    | `cultureName` | 61 (56%) | 3 | 58 |
+    | `storeId` | 63 (58%) | 32 | 31 |
     | `userId` | 31 (29%) | 2 | 29 |
-    | `organizationId` | 13 (12%) | 2 | 11 |
+    | `organizationId` | 14 (13%) | 2 | 12 |
 
-    **82 of 106 queries (77%) accept at least one; 72 (68%) accept one OPTIONALLY** —
+    **84 of 108 queries (78%) accept at least one; 74 (69%) accept one OPTIONALLY** —
     that last figure is the exposure, because those are the calls that can quietly answer for a context you
     never chose. Mutations take the same fields inside the `command:` wrapper (see Rule 1), so the same rule applies.
 
@@ -141,10 +141,6 @@ pageContext(domain: String, cultureName: String, permalink: String, organization
 ### Orders
 
 ```
-salesRepOrderFilterRules(storeId: String, cultureName: String, organizationId: String, period: SalesRepStatisticsPeriodInput)
-salesRepOrderSortRules(storeId: String, cultureName: String)
-salesRepOrders(after: String, first: Int, keyword: String, sort: String, organizationId: String, storeId: String, filter: String, period: SalesRepStatisticsPeriodInput, cultureName: String)
-salesRepCustomerOrderStatistics(organizationId: String, storeId: String, currencyCode: String, cultureName: String)
 order(id: String, number: String, cultureName: String)
 payments(facet: String, filter: String, sort: String, cultureName: String, userId: String, after: String, first: Int)
 orderLineItemStatuses(cultureName: String)
@@ -153,6 +149,12 @@ paymentStatuses(cultureName: String)
 orders(after: String, first: Int, sort: String, facet: String, filter: String, cultureName: String, userId: String)
 organizationOrders(after: String, first: Int, sort: String, facet: String, filter: String, cultureName: String, organizationId: String)
 shipmentStatuses(cultureName: String)
+salesRepCustomerOrder(id: String!, cultureName: String)
+salesRepCustomerOrders(after: String, first: Int, organizationId: String, storeId: String, cultureName: String, filter: String, facet: String, sort: String)
+salesRepOrderFilterRules(storeId: String, cultureName: String, organizationId: String, period: SalesRepStatisticsPeriodInput)
+salesRepOrderSortRules(storeId: String, cultureName: String)
+salesRepOrders(after: String, first: Int, keyword: String, sort: String, organizationId: String, storeId: String, filter: String, period: SalesRepStatisticsPeriodInput, cultureName: String)
+salesRepCustomerOrderStatistics(organizationId: String, storeId: String, currencyCode: String, cultureName: String)
 ```
 
 ### Other
@@ -181,6 +183,8 @@ searchHistory(storeId: String!, maxCount: Int!)
 loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, userId: String, operationType: String)
 loyaltyBalance(userId: String, orderId: String)
 loyaltyMissionProgress(after: String, first: Int, keyword: String, sort: String, storeId: String!, statuses: [String], completedStartDate: DateTime, completedEndDate: DateTime, cultureName: String, currencyCode: String, isStarted: Boolean, userId: String)
+checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
+currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: [String], regionIds: [String], cities: [String], ids: [String])
 customerSalesReps(after: String, first: Int, keyword: String, sort: String, storeId: String)
 salesRepCustomerFilterRules(storeId: String, cultureName: String)
 salesRepCustomer(organizationId: String!)
@@ -191,8 +195,6 @@ salesRepTopSellerFilterRules(storeId: String, cultureName: String, organizationI
 salesRepTopSellerSortRules(storeId: String, cultureName: String)
 salesRepTopSellers(organizationId: String, storeId: String, filter: String, sort: String, period: SalesRepStatisticsPeriodInput, take: Int, currencyCode: String, cultureName: String)
 salesRepCustomerCounts(organizationId: String, storeId: String)
-checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
-currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: [String], regionIds: [String], cities: [String], ids: [String])
 canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
 customerReviews(after: String, first: Int, keyword: String, sort: String, storeId: String!, entityId: String!, entityType: String!, filter: String)
 ```
@@ -357,9 +359,9 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `activateBackInStockSubscription` | `ActivateBackInStockSubscriptionCommandType` |
 | `deactivateBackInStockSubscription` | `DeactivateBackInStockSubscriptionCommandType` |
 | `saveSearchQuery` | `InputSaveSearchQueryType` |
+| `registerByInvitation` | `InputRegisterByInvitationType` |
 | `saveSalesRepLayout` | `InputSalesRepLayout` |
 | `sendCustomerCommunication` | `InputSendCustomerCommunicationType` |
-| `registerByInvitation` | `InputRegisterByInvitationType` |
 
 ### Payment
 
@@ -531,7 +533,7 @@ Fields: `key`, `value`
 
 ### Organization
 
-Fields: `id`, `outerId`, `memberType`, `name`, `status`, `phones`, `emails`, `groups`, `seoObjectType`, `seoInfo(storeId: String!, cultureName: String!)`, `defaultBillingAddress`, `defaultShippingAddress`, `addresses(after: String, first: Int, sort: String)`, `dynamicProperties`, `description`, `businessCategory`, `ownerId`, `parentId`, `myStatusInOrganization`, `contacts(after: String, first: Int, searchPhrase: String, sort: String, roleIds: [String], statuses: [String])`
+Fields: `id`, `outerId`, `memberType`, `name`, `status`, `phones`, `emails`, `groups`, `seoObjectType`, `seoInfo(storeId: String!, cultureName: String!)`, `defaultBillingAddress`, `defaultShippingAddress`, `addresses(after: String, first: Int, sort: String)`, `dynamicProperties`, `description`, `businessCategory`, `ownerId`, `parentId`, `myStatusInOrganization`, `contactRoles(storeId: String, cultureName: String)`, `assignableRoles(storeId: String, cultureName: String)`, `contacts(after: String, first: Int, searchPhrase: String, sort: String, roleIds: [String], statuses: [String], storeId: String, cultureName: String)`
 
 ### ContactType
 
@@ -639,7 +641,7 @@ Fields: `storeId: String!`, `organizationId: String`, `urlSuffix: String`, `emai
 
 ### InputChangeOrganizationContactRoleType
 
-Fields: `memberId: String!`, `roleIds: [String!]`
+Fields: `memberId: String!`, `storeId: String`, `roleIds: [String!]`
 
 ### InputLockUnlockOrganizationContactType
 

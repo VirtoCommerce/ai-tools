@@ -25,7 +25,10 @@ import { parse } from 'csv-parse/sync';
 import {
   ORDERS_CSV, WINDOW_COLUMN, windowDaysFor, rollingRows, windowBounds, validateRollingShape, aliasNameFor,
   RECENCY_COLUMN, NEWEST_IN_ORG, newestRows, validateRecencyContracts,
+  AUTHORSHIP_MATRIX, AUTHORSHIP_ALIASES, AUTHORSHIP_CONTROLLED_COLUMNS, authorshipRow,
+  validateAuthorshipShape, customerRoleFor, servedOrgKeysFor,
 } from './sales-rep-orders-specs.mjs';
+import { requiredProductSlots } from './sales-rep-stats-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const readCsv = (rel) => parse(readFileSync(join(ROOT, rel), 'utf8'), { columns: true, skip_empty_lines: true, trim: true, relax_quotes: true, relax_column_count: true });
@@ -123,6 +126,75 @@ for (const r of newest) {
   if (!rivals.length) warn(`${r.order_key}: created ${at} — no other ${r.org} fixture has a recorded date, so this check proves nothing; the live seeder pass is the real guarantee`);
   else if (!ahead.length) ok(`${r.order_key}: created ${at} — ahead of every recorded ${r.org} fixture date (${rivals.map(([k]) => k).join(', ')})`);
   else warn(`${r.order_key}: created ${at} — OUTRANKED on ${env} by ${ahead.map(([k, d]) => `${k}@${d}`).join(', ')}. SR-GQL-013's allStores assertion will FAIL until \`TEST_ENV=${env} npm run seed:sales-rep\` re-posts it. This is what REG-2026-08-26-1631 hit.`);
+}
+
+
+// 5. AUTHORSHIP x ORG-SCOPE — the VCST-5733 matrix can still DISCRIMINATE.
+//    Same class of check as [2]: every one of these three rows is well-formed on its own, and the
+//    fixture is still worthless the moment the RELATIONSHIP between them collapses — the pair drifts
+//    into two orgs, or onto one customer, or someone bumps one row's status. None of that is visible
+//    row-by-row, and the surface under test would then behave identically whether it authorizes by
+//    authorship or by org scope. Same reason td:validate:variation-stock asserts two quantities
+//    DIVERGE rather than merely exist.
+console.log(`\n[5] ${ORDERS_CSV}: the AUTHORSHIP x ORG-SCOPE matrix can still make VCST-5733 fail`);
+const authorship = validateAuthorshipShape(rows, {
+  orgRows: orgs,
+  repRows: readCsv('test-data/sales-rep/sales-reps.csv'),
+  userRows: readCsv('test-data/b2b/users.csv'),
+  reservedProductSlots: requiredProductSlots(),
+});
+for (const p of authorship) fail(p);
+if (!authorship.length) {
+  const cells = Object.fromEntries(Object.keys(AUTHORSHIP_MATRIX).map((k) => [k, authorshipRow(rows, k)]));
+  const served = servedOrgKeysFor(readCsv('test-data/sales-rep/sales-reps.csv'));
+  for (const [k, meta] of Object.entries(AUTHORSHIP_MATRIX)) {
+    const r = cells[k];
+    const role = customerRoleFor(r);
+    ok(`${meta.alias} (${r.order_key}): ${r.org} / ${r.store} / ${r.status} / ${r.total} / customer=${role.kind === 'buyer' ? `buyer ${role.userKey}` : 'the rep'} / productSlot ${meta.productSlot}`);
+  }
+  ok(`AUTHORSHIP isolated: ${cells.repPlaced.order_key} and ${cells.buyerPlaced.order_key} share org ${cells.repPlaced.org} and match on ${AUTHORSHIP_CONTROLLED_COLUMNS.join('/')}, differing ONLY in the customer`);
+  ok(`ORG SCOPE isolated: ${cells.notServed.order_key} is rep-authored like ${cells.repPlaced.order_key} but sits in ${cells.notServed.org}, which is NOT in the rep's served set (${served.join(';')}) and whose status is Active (so a null result has exactly one cause)`);
+  ok(`product slots ${Object.values(AUTHORSHIP_MATRIX).map((m) => m.productSlot).join('/')} are distinct and clear of the ${requiredProductSlots()} slot(s) sales-rep-stats-specs reserves for its BL-SR-008 ranking assertions`);
+}
+
+// 5b. The three matrix aliases are registered, CSV-backed, and carry NO GUID in the committed base.
+console.log('\n[5b] aliases.json: the matrix aliases are wired and GUID-free (DV-021)');
+const aliasRegistry = JSON.parse(readFileSync(join(ROOT, 'test-data', 'aliases.json'), 'utf8'));
+for (const [cellKey, meta] of Object.entries(AUTHORSHIP_MATRIX)) {
+  const a = aliasRegistry[meta.alias];
+  if (!a) { fail(`alias ${meta.alias} is missing from test-data/aliases.json — the cases for the ${meta.cell} cell could not resolve anything`); continue; }
+  if (a.file !== 'sales-rep/sales-rep-orders') fail(`alias ${meta.alias}: file="${a.file}", expected sales-rep/sales-rep-orders — syncEnvAliases matches on file+filter, so a wrong file means the seeder never writes its runtime id`);
+  if (a.filter?.order_key !== meta.orderKey) fail(`alias ${meta.alias}: filter.order_key="${a.filter?.order_key}", expected "${meta.orderKey}"`);
+  // `id` is what salesRepCustomerOrder(id:) takes, so an alias without it cannot express the query.
+  for (const f of ['id', 'number', 'customerId']) {
+    if (!a.fields?.[f]) fail(`alias ${meta.alias}: no "${f}" field — salesRepCustomerOrder takes an ID, a storefront case asserts the visible number, and the divergence assertion needs customerId`);
+  }
+  for (const [f, v] of Object.entries(a.fields || {})) {
+    if (GUID_RE.test(String(v).trim())) fail(`alias ${meta.alias}: field "${f}" maps to a GUID literal — the committed base alias must map to a CSV COLUMN, with runtime ids in aliases.<env>.json (DV-021)`);
+  }
+}
+if (!problems.length) ok(`${AUTHORSHIP_ALIASES.join(', ')} wired to ${ORDERS_CSV} with id/number/customerId, no committed GUID`);
+
+// 5c. Did the last seed actually record the divergence LIVE? The static checks above prove the
+//     fixture is DESIGNED to discriminate; only the seeded customerIds prove it CAME OUT that way.
+//     A buyer whose account failed to resolve would collapse the pair onto the rep, and nothing
+//     static could see it. Time/env-dependent, so this warns rather than failing.
+console.log(`\n[5c] aliases.${env}.json: the seeded customerIds actually DIVERGE on this env`);
+const seededCustomer = (alias) => overlay[alias]?.customerId || '';
+const repPlacedCid = seededCustomer(AUTHORSHIP_MATRIX.repPlaced.alias);
+const buyerPlacedCid = seededCustomer(AUTHORSHIP_MATRIX.buyerPlaced.alias);
+const notServedCid = seededCustomer(AUTHORSHIP_MATRIX.notServed.alias);
+if (!repPlacedCid || !buyerPlacedCid) {
+  warn(`no seeded customerId recorded for ${!repPlacedCid ? AUTHORSHIP_MATRIX.repPlaced.alias : ''}${!repPlacedCid && !buyerPlacedCid ? ' / ' : ''}${!buyerPlacedCid ? AUTHORSHIP_MATRIX.buyerPlaced.alias : ''} on ${env} — run \`TEST_ENV=${env} npm run seed:sales-rep\`; until then the divergence is designed but unproven on this env`);
+} else if (repPlacedCid === buyerPlacedCid) {
+  fail(`${AUTHORSHIP_MATRIX.repPlaced.alias} and ${AUTHORSHIP_MATRIX.buyerPlaced.alias} were SEEDED WITH THE SAME customerId (${repPlacedCid}) on ${env} — the authorship pair has collapsed into two identical orders, so "read-only for someone else's order" cannot fail. The usual cause is the buyer account not resolving at seed time; re-seed and check the seeder log.`);
+} else {
+  ok(`seeded customerIds diverge: ${AUTHORSHIP_MATRIX.repPlaced.alias}=${repPlacedCid} vs ${AUTHORSHIP_MATRIX.buyerPlaced.alias}=${buyerPlacedCid}`);
+}
+if (notServedCid && repPlacedCid && notServedCid !== repPlacedCid) {
+  fail(`${AUTHORSHIP_MATRIX.notServed.alias} was seeded with customerId ${notServedCid} but ${AUTHORSHIP_MATRIX.repPlaced.alias} with ${repPlacedCid} — the org-scope arm must share the rep-authored customer, or a null result is explainable by authorship as well as by org scope`);
+} else if (notServedCid && repPlacedCid) {
+  ok(`${AUTHORSHIP_MATRIX.notServed.alias} shares the rep-authored customerId (${notServedCid}) — a null result there isolates ORG SCOPE`);
 }
 
 console.log('\n=== sales-rep orders drift/vacuity check ===');

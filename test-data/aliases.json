@@ -4224,6 +4224,22 @@
     "name": "AGENT-TEST-SR-CART-WEST",
     "_notes": "Second active cart, in ORG-004/AcmeWest, so the cross-customer dashboard cart count is >1 and cross-org cart scoping is exercised (BL-SR-002/BL-SR-006). Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
   },
+  "SR_REP_LOCKABLE": {
+    "file": "sales-rep/sales-reps",
+    "filter": {
+      "rep_key": "SR_REP_LOCKABLE"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store"
+    },
+    "_notes": "VCST-5733 case #21 — the ACCOUNT-STATE gate rep, UNLOCKED AT REST. PR #14 wires EnsureAuthenticatedAsync -> CheckCurrentUserState into SalesRepQueryBuilder.BeforeMediatorSend, so every sales-rep query re-checks the account state at QUERY time, not at token time. That gate is only reachable by locking an account AFTER its token was issued: SR_REP_BLOCKED is already locked, so /connect/token refuses it (400 invalid_grant) and the GraphQL layer is never entered. Procedure: (1) POST /connect/token as this rep, (2) TEST_ENV=<env> npm run sr:lock, (3) re-issue the sales-rep query on the STILL-VALID token and assert the account-state refusal, (4) TEST_ENV=<env> npm run sr:unlock. Note the PR-84 memoization of CheckUserState caches the verdict per REQUEST, so the lock is observed on the NEXT request, not mid-request. USE THIS REP, NEVER SR_REP_PRIMARY (~40 cases in 050m/089/091/093 depend on primary being unlocked) — scripts/seed-data/sales-rep/set-rep-account-lock.mjs enforces that with a hard allowlist. Teardown needs no extra step: is_locked=false => repFixtureStatus Approved => clearRepStaleLockout clears any lockout on every reseed, so a run that dies mid-lock self-heals. Serves ORG-002 so a post-unlock query returns real data. Runtime GUIDs live in aliases.<env>.json (npm run seed:sales-rep)."
+  },
   "SR_REP_LAYOUT": {
     "file": "sales-rep/sales-reps",
     "filter": {
@@ -4525,6 +4541,63 @@
       "createdDate": "created_date"
     },
     "notes": "The NON-New in-window order (Processing). ROLLING-WINDOW order on ORG_ACME (ORG-001), seeded by npm run seed:sales-rep and drift-guarded by npm run td:validate:sr-orders. CustomerOrder.createdDate is SERVER-ASSIGNED and silently ignored on POST/PUT, so a past-dated order is impossible - but the 7-day window INCLUDES NOW, so a freshly created order lands inside it by construction. That also means the order AGES OUT: the seeder adds FRESHNESS as an extra idempotency term (sales-rep-orders-specs.mjs isFresh) and rebuilds the order once it falls outside the window, because the base content-based idempotency happily leaves a correct-but-stale order in place - which is how these cases came to assert against an empty window. NEVER a fixed seed date; the instant comes from the server at seed time. .number resolves the order_key, NOT the platform order number - the seeder prefixes it with AGENT-TEST-, so the live number is 'AGENT-TEST-' + @td(...number). .id / .createdDate are runtime and live in aliases.<env>.json only. It exists so SR-CP-057 can DISCRIMINATE: the card's value counts New-status orders only, while its delta is the same window's ALL-status volume. With only New orders in the window the two figures coincide and the assertion cannot fail - the vacuity the td:validate:sr-orders shape check exists to catch."
+  },
+  "ORDER_REP_PLACED": {
+    "file": "sales-rep/sales-rep-orders",
+    "filter": {
+      "order_key": "SRO-TF-REP-PLACED"
+    },
+    "fields": {
+      "number": "order_number",
+      "orderKey": "order_key",
+      "org": "org",
+      "store": "store",
+      "status": "status",
+      "total": "total",
+      "customerRole": "customer_role",
+      "id": "order_id",
+      "createdDate": "created_date",
+      "customerId": "customer_id"
+    },
+    "notes": "VCST-5733 AUTHORSHIP matrix cell 'served org x REP-authored' — the order SR_REP_PRIMARY placed itself, in TechFlow (ORG-002). Its customerId IS the rep's own ApplicationUser id, which is the value salesRepOrders pins criteria.CustomerId to, so this order must appear in BOTH salesRepOrders and salesRepCustomerOrders and must open on the buyer page /account/orders/:id with Pay-now / Reorder live. Unlike the older SR_ORDER_* aliases, .number is the FULL platform order number (the order_number column, derived as 'AGENT-TEST-' + order_key and drift-guarded), so a storefront case asserts @td(ORDER_REP_PLACED.number) directly against the visible number with no prefix arithmetic. It is the CONTROL for both arms of the matrix: ORDER_BUYER_PLACED varies ONLY the customer (same org/store/status/items_count), ORDER_NOT_SERVED varies ONLY the organization — that one-factor-at-a-time shape is what makes 'does this surface route by authorship independently of org scope?' decidable, and td:validate:sr-orders check [5] fails if it collapses. Runtime .id / .createdDate / .customerId live ONLY in aliases.<env>.json (npm run seed:sales-rep); the committed CSV carries business keys and blank runtime columns."
+  },
+  "ORDER_BUYER_PLACED": {
+    "file": "sales-rep/sales-rep-orders",
+    "filter": {
+      "order_key": "SRO-TF-BUYER-PLACED"
+    },
+    "fields": {
+      "number": "order_number",
+      "orderKey": "order_key",
+      "org": "org",
+      "store": "store",
+      "status": "status",
+      "total": "total",
+      "customerRole": "customer_role",
+      "id": "order_id",
+      "createdDate": "created_date",
+      "customerId": "customer_id"
+    },
+    "notes": "VCST-5733 AUTHORSHIP matrix cell 'served org x BUYER-authored' — an order in the SAME org as ORDER_REP_PLACED (TechFlow/ORG-002) placed by a DIFFERENT customer: the seeded TechFlow buyer USR-007, whose ApplicationUser id the seeder resolves live by email (never a committed GUID). It must appear in salesRepCustomerOrders (org-scoped, criteria.CustomerId is never set) and must NOT appear in salesRepOrders (which pins criteria.CustomerId to the caller), and must open READ-ONLY in the hub with Print only. THE SAME ORG IS LOAD-BEARING: if this order sat in a different org from ORDER_REP_PLACED, a read-only rendering would be explained equally well by org-scoping and by authorship, and both a correct and a broken implementation would produce the same observation. store/status/items_count are held identical to ORDER_REP_PLACED for the same reason; only total differs (126.00 vs 118.00) so a case can say which order it read. Assert the divergence directly: @td(ORDER_BUYER_PLACED.customerId) must differ from @td(ORDER_REP_PLACED.customerId). Runtime .id / .createdDate / .customerId live ONLY in aliases.<env>.json (npm run seed:sales-rep)."
+  },
+  "ORDER_NOT_SERVED": {
+    "file": "sales-rep/sales-rep-orders",
+    "filter": {
+      "order_key": "SRO-EU-NOT-SERVED"
+    },
+    "fields": {
+      "number": "order_number",
+      "orderKey": "order_key",
+      "org": "org",
+      "store": "store",
+      "status": "status",
+      "total": "total",
+      "customerRole": "customer_role",
+      "id": "order_id",
+      "createdDate": "created_date",
+      "customerId": "customer_id"
+    },
+    "notes": "VCST-5733 AUTHORSHIP matrix cell 'UNSERVED org x REP-authored' — the negative fixture. It lives in ORG-005 (Acme-EU-Operations), an org SR_REP_PRIMARY holds NO membership on (verified live on vcst 2026-09-02: zero organization memberships, and salesRepCustomerOrders(organizationId: ORG-005) returns totalCount 0 for the rep). salesRepCustomerOrder(id: @td(ORDER_NOT_SERVED.id)) MUST return null and the salesRepCustomerOrders list must never contain @td(ORDER_NOT_SERVED.number). THE ORACLE IS null, NOT AN ERROR: vc-module-sales-rep PR #14 loads the order by id and THEN filters it through IsVisibleAsync on served OrganizationId, so an assertion expecting a 403 or an errors[] entry produces a false FAIL. IT IS REP-AUTHORED ON PURPOSE, and that is load-bearing: the rep is this order's own customer, so the ONLY thing separating it from ORDER_REP_PLACED — which IS returned — is the organization, which is what makes a null attributable to ORG SCOPE rather than to authorship. A buyer-authored version would be explainable by either dimension, and an implementation that authorized by authorship alone (the pre-VCST-5733 salesRepOrders rule) would WRONGLY return this order. ORG_SUSPENDED (ORG-006) is DELIBERATELY NOT the host: its status is Suspended, which gives the exclusion a second candidate cause and makes the case unable to attribute the one it is about — td:validate:sr-orders check [5] refuses any host whose committed status is not Active. Runtime .id / .createdDate / .customerId live ONLY in aliases.<env>.json (npm run seed:sales-rep)."
   },
   "CAT_EMPTY": {
     "_inline": true,

@@ -200,7 +200,14 @@ export function collectAttributions(bugsRoot: string, knownCaseIds: ReadonlySet<
       // A directory we do not recognise may hold real reports. Say so rather
       // than silently excluding it from the denominator.
       if (!NON_REPORT_DIRS.has(sub.trim().toLowerCase())) {
-        const mdCount = readdirSync(dir).filter((f) => f.endsWith(".md")).length;
+        const countMd = (d: string): number =>
+          readdirSync(d).reduce((n, f) => {
+            const full = join(d, f);
+            if (statSync(full).isDirectory())
+              return NON_REPORT_DIRS.has(f.trim().toLowerCase()) ? n : n + countMd(full);
+            return f.endsWith(".md") ? n + 1 : n;
+          }, 0);
+        const mdCount = countMd(dir);
         if (mdCount)
           console.error(
             `⚠ reports/bugs/${sub}/ holds ${mdCount} report(s) but is not a known lifecycle ` +
@@ -209,12 +216,30 @@ export function collectAttributions(bugsRoot: string, knownCaseIds: ReadonlySet<
       }
       continue;
     }
-    for (const f of readdirSync(dir)) {
-      if (!f.endsWith(".md")) continue;
-      const full = join(dir, f);
-      const parsed = parseFoundBy(readFileSync(full, "utf-8"), knownCaseIds);
-      out.push({ bugFile: join(sub, f), lifecycle, ...parsed });
-    }
+    // Walk the lifecycle dir RECURSIVELY. A lifecycle dir may be foldered by
+    // severity (`open/critical-high/`, `open/medium/`, `open/low/`), and the
+    // former one-level scan then read zero `.md` in `open/` and silently dropped
+    // every open bug from `tc:yield`, `tc:rank`'s proven-catcher guard and
+    // `compute-metrics`' defectDensity — with NO warning, because `open` IS a
+    // known lifecycle dir, so the unknown-dir notice above never fires. Same
+    // "an unattributed bug is RECORDED, never dropped" rule the LIFECYCLE_DIRS
+    // exact-match comment above exists for.
+    // The lifecycle is the TOP-LEVEL dir's, never a nested one's: severity is
+    // declared inside the report and is not a lifecycle.
+    const walkReports = (cur: string, rel: string): void => {
+      for (const f of readdirSync(cur)) {
+        const full = join(cur, f);
+        if (statSync(full).isDirectory()) {
+          if (NON_REPORT_DIRS.has(f.trim().toLowerCase())) continue;
+          walkReports(full, join(rel, f));
+          continue;
+        }
+        if (!f.endsWith(".md")) continue;
+        const parsed = parseFoundBy(readFileSync(full, "utf-8"), knownCaseIds);
+        out.push({ bugFile: join(rel, f), lifecycle, ...parsed });
+      }
+    };
+    walkReports(dir, sub);
   }
   return out;
 }

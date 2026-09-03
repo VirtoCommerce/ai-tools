@@ -16,8 +16,12 @@ import {
   parseFoundBy,
   expandShorthand,
   indexAttributions,
+  collectAttributions,
   type Attribution,
 } from "../lib/defect-attribution.js";
+import { mkdtempSync, mkdirSync, writeFileSync as writeFile } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const KNOWN = new Set([
   "CUST-090", "B2C-MBR-025", "B2C-MBR-032", "COMP-E2E-023", "CUST-085",
@@ -140,4 +144,44 @@ test("indexAttributions derives the run+suite join and keeps unattributed visibl
   assert.equal(idx.byCase.get("CUST-090")?.length, 1);
   // A monitoring bug with no case is signal about where cases AREN'T.
   assert.equal(idx.unattributedBySource.get("monitoring"), 1);
+});
+
+// A lifecycle dir may be foldered by severity (`open/critical-high/`, …). The
+// collector's original one-level scan read zero `.md` in such an `open/` and
+// dropped every open bug from tc:yield / tc:rank / compute-metrics — silently,
+// because `open` IS a known lifecycle dir, so the unknown-dir warning never
+// fired. These two pin the recursion, and pin that a SEVERITY folder does not
+// become a lifecycle.
+test("collectAttributions walks severity subfolders inside a lifecycle dir", () => {
+  const root = mkdtempSync(join(tmpdir(), "bugs-"));
+  mkdirSync(join(root, "open", "critical-high"), { recursive: true });
+  mkdirSync(join(root, "open", "low"), { recursive: true });
+  mkdirSync(join(root, "open", "screenshots"), { recursive: true });
+  mkdirSync(join(root, "fixed"), { recursive: true });
+  writeFile(join(root, "open", "critical-high", "BUG-a.md"), ["# a", "", REAL.regression, ""].join("\n"));
+  writeFile(join(root, "open", "low", "BUG-b.md"), ["# b", "", "no provenance", ""].join("\n"));
+  writeFile(join(root, "open", "screenshots", "BUG-not-a-report.md"), "# nope\n");
+  writeFile(join(root, "fixed", "BUG-c.md"), ["# c", "", "no provenance", ""].join("\n"));
+
+  const rows = collectAttributions(root, KNOWN);
+  assert.equal(rows.length, 3, "nested reports are collected; NON_REPORT_DIRS is skipped");
+
+  const byFile = new Map(rows.map((r) => [r.bugFile.split("\\").join("/"), r]));
+  // Severity is declared INSIDE the report — the folder must not set lifecycle.
+  assert.equal(byFile.get("open/critical-high/BUG-a.md")?.lifecycle, "open");
+  assert.equal(byFile.get("open/low/BUG-b.md")?.lifecycle, "open");
+  assert.equal(byFile.get("fixed/BUG-c.md")?.lifecycle, "fixed");
+  // The nested report's provenance still parses, so yield is not lost.
+  assert.deepEqual(byFile.get("open/critical-high/BUG-a.md")?.caseIds, ["CUST-090"]);
+});
+
+test("a flat lifecycle dir still works after the recursion change", () => {
+  const root = mkdtempSync(join(tmpdir(), "bugs-flat-"));
+  mkdirSync(join(root, "open"), { recursive: true });
+  writeFile(join(root, "open", "BUG-flat.md"), ["# flat", "", REAL.regression, ""].join("\n"));
+
+  const rows = collectAttributions(root, KNOWN);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].bugFile.split("\\").join("/"), "open/BUG-flat.md");
+  assert.equal(rows[0].lifecycle, "open");
 });

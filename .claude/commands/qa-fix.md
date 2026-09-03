@@ -70,7 +70,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
    `getJiraIssue`; Azure Boards → `az boards work-item show` / ADO REST (see
    [`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §2). Use the ticket **key format the
    tracker gave you** verbatim (`ABC-123` for Jira, a bare `12345` for Azure Boards — not always `VCST-`).
-   Confirm it's a Bug in a workable status. Load the linked `/qa-bug` report from `reports/bugs/open/`
+   Confirm it's a Bug in a workable status. Load the linked `/qa-bug` report from `reports/bugs/open/**` (recurse the severity folders — §1a)
    (or `fixed/`) **if one exists** — it's the preferred input, not a hard requirement. (Match the report
    to the ticket by the tracker's key format: for Azure Boards' bare numeric ids match `AB#<n>` / `#<n>`,
    NOT a bare `<n>` substring — `521` would otherwise false-match `VCST-5218`.)
@@ -82,7 +82,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
      the ticket description/STR/attachments; the Fix Routing block is absent, so Gate 1 derives the route
      via `suggestRepo()` (it already handles a missing block), and the live reproduction is done in the
      Phase 1 root-cause step by the routed QA expert. On PASS this writes the standard
-     `reports/bugs/open/*.md` so all downstream gates see the usual report.
+     `reports/bugs/open/<severity>/*.md` so all downstream gates see the usual report.
    - **Report, no ticket** (rare) → proceed off the report.
 3. `/qa-env-check endpoints`; **build verify — source depends on `projectType`:** native platform →
    deployed versions via GitHub MCP from `vc-deploy-dev` (branch matching `TEST_ENV`, default `vcst-qa`);

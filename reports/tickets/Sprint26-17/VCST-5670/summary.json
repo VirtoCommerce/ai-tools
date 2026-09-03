@@ -70,7 +70,7 @@
     { "key": "VCST-5859", "severity": "Medium", "relationship": "sub-task", "parent_or_linked_ticket": "VCST-5670", "summary": "Ctrl+backslash maximize drops focus to <body> when focus is in the sidebar; restore does not recover it. 3/3." }
   ],
   "bugs_not_filed": [
-    { "severity": "Low", "provenance": "out-of-scope", "summary": "App-switcher icons return 404 (x3) when the app-hub popover opens", "report": "reports/bugs/open/BUG-vc-shell-app-switcher-icon-404s.md" }
+    { "severity": "Low", "provenance": "out-of-scope", "summary": "App-switcher icons return 404 (x3) when the app-hub popover opens", "report": "reports/bugs/open/low/BUG-vc-shell-app-switcher-icon-404s.md" }
   ],
   "severity_grading_note": "VCST-5859 graded Medium to match VCST-5806 (Medium) for the same WCAG 2.4.3 focus-to-<body> class, with the aggravator that restore does not recover. Tracker precedent for this class is inconsistent (VCST-5812 and VCST-5813 are Low), so the grade was put to the operator rather than decided silently; operator chose Medium.",
   "measurement_notes": [

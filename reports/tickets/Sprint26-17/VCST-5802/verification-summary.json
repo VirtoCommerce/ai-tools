@@ -73,7 +73,7 @@
   "console_errors": 0,
   "story_render_sweep": "22 stories swept for render/runtime errors — clean",
   "at_pass_run": false,
-  "jira_transition": "PENDING USER CONFIRMATION (TESTED)",
+  "jira_transition": "TESTED (Ready for test -> On QA -> Testing -> Finish test -> Tested, applied 2026-09-02; stops at Tested — never Done)",
   "evidence": "reports/tickets/Sprint26-17/VCST-5802/evidence.html",
   "evidence_artifact": null,
   "artifacts": "reports/tickets/Sprint26-17/VCST-5802/"

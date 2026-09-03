@@ -42,7 +42,7 @@ Network ordering confirms the two client-initiated calls run in the wrong order:
 
 ## Related
 
-- Same **ghost-order class** as `reports/bugs/open/BUG-AN-cart-card-number-no-luhn-ghost-order.md` (Authorize.Net, card-number/Luhn trigger). Different processor + trigger — file distinct; confirm during fix whether the order-before-payment sequencing is a shared checkout code path across payment modules (candidate to fix once, upstream of the processor).
+- Same **ghost-order class** as `reports/bugs/open/low/BUG-AN-cart-card-number-no-luhn-ghost-order.md` (Authorize.Net, card-number/Luhn trigger). Different processor + trigger — file distinct; confirm during fix whether the order-before-payment sequencing is a shared checkout code path across payment modules (candidate to fix once, upstream of the processor).
 - Sibling: CyberSource CVV plaintext/no-masking (`BUG-cybersource-cvv-microform-plaintext-not-masked.md`) — the enabler for an invalid CVV reaching Place Order.
 
 ## Fix Routing (→ /qa-fix)

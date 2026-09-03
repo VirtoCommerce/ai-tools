@@ -1,42 +1,88 @@
 {
-  "runId": "REG-2026-09-02-0930",
+  "runId": "REG-2026-09-02-2055",
   "status": "completed",
-  "startedAt": "2026-09-02T09:30:09.948Z",
-  "selection": "083c,083d,075d --cases critical --also-ids MSNF-072..MSNF-080",
+  "startedAt": "2026-09-02T20:55:00.000Z",
+  "selection": "050m,089,090,091,093,097,014 --cases critical --also-ids SR-GQL-121..130,SR-CO-001..025",
   "environment": "vcst",
+  "ticket": "VCST-5733",
   "suites": [
     {
-      "id": "083c",
-      "name": "Loyalty Missions Storefront",
+      "id": "050m",
+      "name": "GraphQL xAPI — Sales Rep (scoped /graphql/sales-rep)",
+      "status": "done",
+      "browser": "playwright-firefox",
+      "lane": "split",
+      "pass": 55,
+      "fail": 1,
+      "blocked": 0,
+      "skipped": 0
+    },
+    {
+      "id": "089",
+      "name": "Sales Rep — My Customers (storefront UI/E2E)",
       "status": "done",
       "browser": "playwright-chrome",
       "lane": "browser",
-      "pass": 16,
+      "pass": 11,
+      "fail": 0,
+      "blocked": 2,
+      "skipped": 0
+    },
+    {
+      "id": "090",
+      "name": "Sales Rep — My Sales Reps (storefront, buyer-facing)",
+      "status": "done",
+      "browser": "playwright-chrome",
+      "lane": "browser",
+      "pass": 5,
+      "fail": 0,
+      "blocked": 0,
+      "skipped": 0
+    },
+    {
+      "id": "091",
+      "name": "Sales Rep — Customer Profile (storefront)",
+      "status": "done",
+      "browser": "playwright-edge",
+      "lane": "browser",
+      "pass": 12,
+      "fail": 0,
+      "blocked": 2,
+      "skipped": 0
+    },
+    {
+      "id": "093",
+      "name": "Sales Rep — Hub Dashboard (storefront)",
+      "status": "done",
+      "browser": "playwright-edge",
+      "lane": "browser",
+      "pass": 9,
       "fail": 2,
+      "blocked": 4,
+      "skipped": 0
+    },
+    {
+      "id": "097",
+      "name": "Sales Rep — Customer Orders (storefront)",
+      "status": "done",
+      "browser": "playwright-chrome",
+      "lane": "browser",
+      "pass": 12,
+      "fail": 8,
       "blocked": 5,
       "skipped": 0
     },
     {
-      "id": "083d",
-      "name": "Loyalty Missions E2E",
+      "id": "014",
+      "name": "Orders Frontend",
       "status": "done",
       "browser": "playwright-edge",
-      "lane": "browser",
-      "pass": 1,
-      "fail": 1,
-      "blocked": 1,
-      "skipped": 0
-    },
-    {
-      "id": "075d",
-      "name": "Loyalty Missions",
-      "status": "done",
-      "lane": "machine",
-      "pass": 5,
-      "fail": 2,
+      "lane": "split",
+      "pass": 2,
+      "fail": 4,
       "blocked": 0,
-      "skipped": 3
+      "skipped": 1
     }
   ],
-  "finishedAt": "2026-09-02T10:21:22.933Z"
+  "finishedAt": "2026-09-02T22:04:58.592Z"
 }

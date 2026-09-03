@@ -491,7 +491,42 @@ export async function relinkUsersToContacts(contactMap) {
 export function hasStaleLockout(user, status, now = Date.now()) {
   if (isLockedStatus(status)) return false; // Locked is the INTENDED state for this fixture
   const end = user?.lockoutEnd ? new Date(user.lockoutEnd).getTime() : 0;
-  return end > now || (user?.accessFailedCount || 0) > 0;
+  // The LIVE `status` counts too, not just `lockoutEnd`. A lock is written as TWO fields —
+  // `status` (which the PUT persists) and `lockoutEnd` (which only POST /lock moves) — so a run
+  // that set one and failed before the other leaves a residue that reading either field alone
+  // cannot see. Keying on `lockoutEnd` only meant a residual `status: 'Locked'` was invisible to
+  // every self-heal path AND to `--unlock`'s idempotency short-circuit, so nothing recovered it.
+  return end > now || (user?.accessFailedCount || 0) > 0 || isLockedStatus(user?.status);
+}
+
+/**
+ * Move an account's lockout and VERIFY it landed. Returns true when the account ended in the
+ * requested state.
+ *
+ * `PUT /api/platform/security/users` cannot write `lockoutEnd`: measured on vcst 2026-09-02, it
+ * returns `{ succeeded: true, errors: [] }`, persists `status`, and SILENTLY DISCARDS `lockoutEnd`
+ * in BOTH directions — so it can neither set nor clear a lockout. Every caller that used the PUT
+ * was therefore a no-op that announced success; `POST /users/{ACCOUNT_GUID}/lock|/unlock` is the
+ * pair that works, and it keys on the GUID (the email form returns `succeeded: false` with an
+ * empty `errors` array, a failure with no message).
+ *
+ * `status` is still worth PUTting by the caller — it is the half the PUT genuinely applies — but it
+ * must be written ALONGSIDE this, never instead of it, or the two fields disagree.
+ */
+export async function setLockoutVerified(userId, email, wantLocked) {
+  if (!userId) return false;
+  const verb = wantLocked ? 'lock' : 'unlock';
+  const res = await api('POST', `/api/platform/security/users/${userId}/${verb}`, {}, { expectStatus: [200, 201, 204] });
+  // Read back rather than trusting the envelope — the whole point of this helper is that the
+  // envelope lied. Verify by GUID: the by-email GET is documented cache-flaky (200 + stale body).
+  const after = await getUserById(userId);
+  const end = after?.lockoutEnd ? new Date(after.lockoutEnd).getTime() : 0;
+  const lockedNow = end > Date.now();
+  if (lockedNow !== wantLocked) {
+    console.log(`    WARN: could NOT ${verb} ${email} — lockoutEnd is still ${after?.lockoutEnd ?? 'null'} (POST returned ${JSON.stringify(res)}). The account will misbehave at /connect/token; fix it in Admin.`);
+    return false;
+  }
+  return true;
 }
 
 // --- Security accounts (status-aware) ---
@@ -515,20 +550,32 @@ export async function ensureSecurityAccount(email, password, contactId, status =
       let dirty = false;
       if (contactId && full.memberId !== contactId) { full.memberId = contactId; dirty = true; }
       // Reconcile the special states so a reused account still reflects the CSV oracle.
+      // A lockout move is deferred to `setLockoutVerified` AFTER the PUT below, because the PUT
+      // cannot carry `lockoutEnd` at all (see that helper). Only the fields the PUT does persist
+      // are staged here.
+      let wantLockout = null; // null = leave alone, true = lock, false = clear
       if (isLockedStatus(status)) {
         const end = full.lockoutEnd ? new Date(full.lockoutEnd).getTime() : 0;
-        if (!(end > Date.now())) { full.lockoutEnabled = true; full.lockoutEnd = '9999-12-31T23:59:59Z'; dirty = true; }
+        if (!(end > Date.now())) { full.lockoutEnabled = true; wantLockout = true; dirty = true; }
       } else if (isUnconfirmedStatus(status)) {
         if (full.emailConfirmed !== false) { full.emailConfirmed = false; dirty = true; }
       }
       // Clear a stale lockout left by an abuse suite (see hasStaleLockout) so the fixture is
       // usable again — symmetrical with the Locked branch above, which SETS the lockout on purpose.
       if (hasStaleLockout(full, status)) {
-        full.lockoutEnd = null; full.lockoutEnabled = false; full.accessFailedCount = 0;
+        full.lockoutEnabled = false; full.accessFailedCount = 0;
+        // Reset the STATUS half too. `hasStaleLockout` now also fires on a residual live
+        // `status: 'Locked'`, and that half is only repairable through this PUT.
+        full.status = isLockedStatus(status) ? 'Locked' : (full.status === 'Locked' ? 'Approved' : full.status);
+        wantLockout = false;
         dirty = true;
-        console.log(`    ↻ cleared stale lockout on ${email}`);
       }
       if (dirty) await api('PUT', '/api/platform/security/users', full, { expectStatus: [200, 204] });
+      // Then the lockout half, verified. Announce only what actually landed — the old code printed
+      // "cleared stale lockout" unconditionally after a PUT that never moved the field.
+      if (wantLockout !== null && await setLockoutVerified(full.id || existing.id, email, wantLockout)) {
+        console.log(`    ↻ ${wantLockout ? 'set lockout on' : 'cleared stale lockout on'} ${email} (verified)`);
+      }
       // Password LAST: the PUT above round-trips the account, and resetpassword is a separate
       // endpoint (the user PUT does not carry a password), so ordering is independent — but doing
       // it after the state reconcile means a cleared lockout is already in effect.
@@ -1044,9 +1091,14 @@ export async function ensurePersonalAccount(u) {
     if (u.pwDeclared && !DRY_RUN) {
       const full = await getUserById(existing.id) || existing;
       if (hasStaleLockout(full, u.status)) {
-        full.lockoutEnd = null; full.lockoutEnabled = false; full.accessFailedCount = 0;
+        full.lockoutEnabled = false; full.accessFailedCount = 0;
+        if (full.status === 'Locked' && !isLockedStatus(u.status)) full.status = 'Approved';
         await api('PUT', '/api/platform/security/users', full, { expectStatus: [200, 204] });
-        console.log(`    ↻ cleared stale lockout on ${u.email}`);
+        // The PUT above cannot clear `lockoutEnd` — only POST /unlock can, and only a read-back
+        // proves it. Report the outcome instead of announcing one.
+        if (await setLockoutVerified(full.id || existing.id, u.email, false)) {
+          console.log(`    ↻ cleared stale lockout on ${u.email} (verified)`);
+        }
       }
       await reconcilePasswordSafe(u.email, u.password);
     }

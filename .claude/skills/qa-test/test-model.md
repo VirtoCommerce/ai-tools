@@ -140,7 +140,12 @@ names a way this feature can be *wrong*, and the case authored from it is the th
 7. **Every** scenario row carries all five: cell · defect hypothesis · archetype · technique · oracle. No
    blanks, no "TBD", no hypothesis that merely restates the step ("check that X works").
 8. Every oracle is `{BL-…}`/`{SPEC}`/`{DOC}` — or, if `{OBSERVED}`/`{HYPOTHESIS}`, the row says what would
-   make it a real oracle. An expected value read off the live system is not an oracle.
+   make it a real oracle. An expected value read off the live system is not an oracle. **A `{DOC}` oracle
+   citing a GraphQL field, arg or response shape must rest on the snapshot `1b` item 2d refreshed *this
+   run*** — a field name from an unrefreshed `graphql-schema.md` is an expected value of unknown age, and
+   when 2d recorded `UNKNOWN` those oracles are `{HYPOTHESIS}`
+   ([`contract-refresh.md`](contract-refresh.md) §3). Fixture drift 2d reported on an op the ticket's own
+   diff touches belongs in the model as a chain link and a candidate reverse edge, not as a footnote.
 9. `Archetype sweep` resolved: every archetype in scope for these domains is either covered by a row or
    **WAIVED with a reason**. Silence is not a waiver.
 

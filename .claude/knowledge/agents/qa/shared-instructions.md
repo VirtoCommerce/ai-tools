@@ -159,9 +159,11 @@ Full decision tree, JS recipes, and CSV-runner recipes: `knowledge/execution/liv
 ### 2. Validate GraphQL against the live schema
 
 Before authoring or reviewing any query/mutation:
-- Consult `knowledge/api/graphql-schema.md` (live introspection snapshot — 86 queries / 134 mutations / 36 types as of last refresh).
+- Consult `knowledge/api/graphql-schema.md` — the live introspection snapshot. **Read its own header for the rev and the counts; do not trust a count written here.** This line used to transcribe "86 queries / 134 mutations / 36 types"; the live schema reads **108 / 140 / 54** (probed 2026-09-02), so the transcription was wrong by 22 queries, 6 mutations and 18 types — the `.claude/rules/test-data.md` §GOLDEN RULE failure in its purest form, and a working demonstration of exactly the drift this section is about.
 - For ad-hoc inline checks: `npx tsx scripts/graphql/graphql-runner.ts --query "<inline>"`.
-- Schema is refreshed via `npm run schema:refresh`; fixtures are bumped/renamed via `npm run graphql:fixtures:update`; CI gate is `npm run graphql:fixtures:validate`.
+- **Two artifacts go stale independently, and one command does not refresh both.** `npm run schema:refresh` rewrites `knowledge/api/graphql-schema.md` (what YOU read) and nothing else. `npm run graphql:fixtures:validate:refresh` re-introspects, rewrites `scripts/.graphql-schema.cache.json` (what the RUNNER reads) and validates the 74 fixtures, exiting non-zero on drift. Fixtures are bumped/renamed via `npm run graphql:fixtures:update`.
+- **`npm run graphql:fixtures:validate` without `--refresh` is not a freshness check.** `loadSchemaCache` has no age check, so it passes clean against an arbitrarily old cache — and the cache is a single shared file, not one per env, so it may hold a different environment's contract (`test-data/graphql/index.json` records the `backUrl` + `lastValidated` it was built from — read them). `npm run schema:check` is a liveness check, never a drift gate.
+- **Never judge the snapshot's staleness from the snapshot.** A caller that refreshed it hands you the rev; with no rev, treat it as UNKNOWN age. Spec: `.claude/skills/qa-test/contract-refresh.md`.
 - The canonical runner is `scripts/graphql/graphql-runner.ts` — **never write custom JS to execute CSV-defined GraphQL cases.**
 
 ### 3. Verify selectors & state against the live UI

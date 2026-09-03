@@ -1,0 +1,470 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SR-CO-001,[JOURNEY] Customer profile to All orders to filtered list to open own order and back,Sales Rep > Customer Orders > Storefront,Critical,"BL-SR-002, BL-SR-011",ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id) (TechFlow). Fixtures pinned live for this run: @td(ORDER_REP_PLACED.number) (TechFlow, placed by this rep), @td(ORDER_BUYER_PLACED.number) (TechFlow, placed by a buyer -- same org, different author), @td(ORDER_NOT_SERVED.number) (Acme-EU -- an org the rep does NOT serve, must never appear). The two TechFlow orders differ ONLY in who placed them, so a scope failure cannot be explained away by org-scoping instead of authorship.","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id), frontUrl={{FRONT_URL}}","--- SCREEN: Customer Profile -> All Orders Entry Point ---
+[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the row/customer-name cell for @td(ORG_TECHFLOW.name)
+[WAIT] customer profile page rendered
+[KEY] record the profile URL and the breadcrumb segment text list
+[WAIT] the Recent Orders block on the profile is visible
+[ACT] click the ""All orders"" link inside the Recent Orders block
+[WAIT] navigation settles
+--- SCREEN: Customer-Scoped Orders List ---
+[KEY] record the landing URL, the page heading text, and the full breadcrumb segment list
+[WAIT] the order grid has rendered at least one row
+[KEY] record every rendered order number and, where a Customer column is rendered, every rendered Customer value
+--- SCREEN: Filter, Sort, Page ---
+[ACT] apply a status filter for a status present among this customer's orders
+[WAIT] the grid re-renders filtered
+[ACT] sort by Date
+[WAIT] the grid re-renders sorted
+[ACT] navigate to page 2 of the result
+[WAIT] the grid re-renders page 2
+[KEY] record the rendered row set after each of the three actions above
+--- SCREEN: Open Order Placed By The Rep ---
+[ACT] clear the filter
+[WAIT] the grid re-renders unfiltered
+[ACT] return to page 1
+[WAIT] page 1 renders
+[ACT] open the row for @td(ORDER_REP_PLACED.number)
+[WAIT] navigation settles on the order's destination page
+[KEY] record the destination URL and which of Pay now / Reorder are enabled
+--- SCREEN: Open Order Placed By A Buyer ---
+[ACT] navigate back to the customer-scoped orders list
+[ACT] open the row for @td(ORDER_BUYER_PLACED.number)
+[WAIT] navigation settles on the order's destination page
+[KEY] record the destination URL and the full set of enabled action controls
+--- SCREEN: Return Via Breadcrumb ---
+[ACT] click the customer segment of the breadcrumb
+[WAIT] navigation settles
+[KEY] record the resulting URL and whether the profile's Orders context is still active","[NAV] the ""All orders"" link lands on /company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders -- the customer-scoped route, never /company/customer-orders (cross-customer) and never /account/orders (buyer route) {SPEC}
+[STATE] the breadcrumb on the landing page names @td(ORG_TECHFLOW.name) as its own segment, distinct from the generic ""Sales Rep hub"" and ""My customers"" segments {SPEC}
+[REL] every rendered order number on the landing page belongs to {@td(ORDER_REP_PLACED.number), @td(ORDER_BUYER_PLACED.number)} or another TechFlow order -- @td(ORDER_NOT_SERVED.number) is absent from every screen this journey visits {BL}
+[STATE] both @td(ORDER_REP_PLACED.number) and @td(ORDER_BUYER_PLACED.number) are present in the rendered set before any filter is applied -- the buyer-placed order proves scope is membership-based, not creator-based {BL}
+[REL] where a Customer column is rendered, every value in it reads @td(ORG_TECHFLOW.name) -- no other customer leaks into this scoped view {BL}
+[STATE] applying the status filter, then sorting, then paging to page 2 never re-admits @td(ORDER_NOT_SERVED.number) and never widens the scope back to the cross-customer route (URL still carries @td(ORG_TECHFLOW.platform_id)) {BL}
+[NAV] opening @td(ORDER_REP_PLACED.number) lands on /account/orders/<id> with Pay now and Reorder both enabled {SPEC}
+[NAV] opening @td(ORDER_BUYER_PLACED.number) does NOT land on /account/orders/<id> -- it opens the hub's read-only order page, whose only enabled action is Print {SPEC}
+[NAV] clicking the breadcrumb's customer segment returns to @td(ORG_TECHFLOW.name)'s profile URL, with its Orders context still active, not the profile's bare default landing state {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SCOPE · Technique:FLOW,Draft
+SR-CO-002,Breadcrumb on the customer-scoped route retains the customer segment,Sales Rep > Customer Orders > Storefront,High,PROPOSED-BL-SR-SCOPE,ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id).","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the customer-scoped orders grid has rendered
+[KEY] record the ordered list of breadcrumb link texts","[STATE] the breadcrumb segment list is Account, Sales Rep hub, My customers, @td(ORG_TECHFLOW.name), Orders, in that order {SPEC}
+[DOM] the @td(ORG_TECHFLOW.name) breadcrumb segment renders as an <a>/role=""link"" element, not a <span>/plain-text node, inside the breadcrumb nav {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:PARITY · Technique:EG | Promoted: REG-2026-09-02-2055 (2026-09-02),Automated
+SR-CO-003,Breadcrumb on the cross-customer route does NOT name any single customer,Sales Rep > Customer Orders > Storefront,Medium,,ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves more than one organization, including @td(ORG_TECHFLOW.platform_id) and @td(ORG_ACME.platform_id).",rep=@td(SR_REP_PRIMARY.email),"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the customer-scoped orders grid has rendered
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the cross-customer orders grid has rendered
+[KEY] record the ordered list of breadcrumb link texts on the cross-customer route","[STATE] the cross-customer route's breadcrumb contains no organization-name segment -- neither @td(ORG_TECHFLOW.name) (the previously visited customer) nor any other served customer's name {SPEC}
+[REL] the cross-customer route's breadcrumb segment count is exactly one less than the customer-scoped route's (no customer segment), every other segment equal {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:PARITY · Technique:EG,Draft
+SR-CO-004,Breadcrumb customer segment returns to that customer profile,Sales Rep > Customer Orders > Storefront,High,PROPOSED-BL-SR-SCOPE,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id).","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the customer-scoped orders grid has rendered
+[ACT] click the @td(ORG_TECHFLOW.name) breadcrumb segment with the mouse
+[WAIT] navigation settles
+[KEY] record the resulting URL and page heading
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the customer-scoped orders grid has rendered
+[ACT] press Tab repeatedly until the @td(ORG_TECHFLOW.name) breadcrumb segment holds visible keyboard focus
+[ACT] press Enter
+[WAIT] navigation settles
+[KEY] record the resulting URL and page heading","[NAV] the mouse click on the customer breadcrumb segment lands on /company/my-customers/@td(ORG_TECHFLOW.platform_id) {SPEC}
+[REL] activating the same segment by keyboard (Tab + Enter) lands on the identical URL as the mouse click {SPEC}
+[DOM] the breadcrumb segment shows a visible focus indicator while it holds keyboard focus {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:RENDER · Technique:ST | Promoted: REG-2026-09-02-2055 (2026-09-02),Automated
+SR-CO-005,Returning to the customer profile after filtering keeps the profile in its Orders context,Sales Rep > Customer Orders > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id); its profile's Recent Orders block is populated.","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)
+[WAIT] customer profile page rendered with its Recent Orders context visible
+[KEY] record the profile URL and the active section/scroll position
+[ACT] click ""All orders"" to reach the customer-scoped orders list
+[WAIT] the customer-scoped orders grid has rendered
+[ACT] apply a status filter
+[WAIT] the grid re-renders filtered
+[ACT] sort by Date
+[WAIT] the grid re-renders sorted
+[ACT] navigate to page 2
+[WAIT] the grid re-renders page 2
+[ACT] navigate back via the customer breadcrumb segment
+[WAIT] navigation settles on the profile","[NAV] the resulting URL is the same customer profile URL recorded before the excursion {SPEC}
+[REL] the Recent-Orders block's viewport position and its rendered row set are identical before and after the excursion to the orders list -- asserted as a pre/post relation because that block sits at the top of the profile's main content, so 'positioned at Recent Orders' is not on its own falsifiable {OBSERVED}
+[STATE] the profile's own Recent Orders block shows the same content it showed before the excursion -- the filter/sort/page state applied on the full list does not leak back into the profile's own summary block {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:LIFECYCLE · Technique:ST | Promoted: REG-2026-09-02-2055 (2026-09-03),Automated
+SR-CO-006,Changing a filter while on page N resets the grid to page 1,Sales Rep > Customer Orders > Storefront,High,BL-SR-012,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+A served customer has enough orders across more than one status to span >=3 pages for at least one status filter (live-discover which org/status combination qualifies).",rep=@td(SR_REP_PRIMARY.email),"[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the cross-customer orders grid has rendered
+[ACT] apply a status filter that leaves a multi-page (>=3 pages) result
+[WAIT] the grid re-renders filtered
+[ACT] navigate to page 3
+[WAIT] page 3 renders
+[KEY] record the active page indicator, the row count, and the order number of the first rendered row (ORDER_PAGE3_FIRST)
+[ACT] narrow the status filter further, to a combination with fewer than 3 pages of results
+[WAIT] the grid re-renders
+[KEY] record the active page indicator and the order number of the first rendered row (ORDER_NARROWED_FIRST)","[STATE] the active page indicator reads page 1 immediately after the narrower filter is applied, not page 3 {BL}
+[REL] ORDER_NARROWED_FIRST != ORDER_PAGE3_FIRST -- the grid re-fetched page 1 of the new filter rather than continuing to display the stale page-3 result set relabeled as page 1 {BL}
+[STATE] the rendered row count is non-zero when the narrowed filter has at least one matching order -- the grid does not show an empty result purely because it stayed on page 3 of a now-shorter result set {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-09-02-2055 (2026-09-02),Automated
+SR-CO-007,Paging to page 2 shows no order that appeared on page 1,Sales Rep > Customer Orders > Storefront,Critical,PROPOSED-BL-SR-PAGING,ECL-14.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+A served customer or the cross-customer view has enough orders to span >=2 pages at the default page size (live-discover the row count needed). Network capture is available to read the outgoing GraphQL request variables for the page-2 navigation.",rep=@td(SR_REP_PRIMARY.email),"[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered page 1
+[KEY] record the full set of order numbers rendered on page 1
+[ACT] navigate to page 2
+[WAIT] page 2 renders
+[KEY] record the full set of order numbers rendered on page 2
+[KEY] intercept the outgoing GraphQL request for the page-2 navigation and record its after/cursor variable value","[REL] the set of order numbers on page 2 is disjoint from the set on page 1 -- no order number appears on both pages {OBSERVED}
+[REL] the deduplicated union of the page-1 and page-2 order-number sets has the same cardinality as the sum of the two pages' row counts -- confirming no row silently disappears between the pages either {OBSERVED}
+[NET] the page-2 request's after argument is a numeric offset equal to the number of rows already rendered (page size x pages consumed), NOT an opaque edge cursor -- the storefront pages salesRepCustomerOrders by index, so the upstream edge-cursor off-by-one is unreachable from this UI {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:BOUNDARY · Technique:BVA,Draft
+SR-CO-008,Created-date range includes orders on both boundary days in the rep local timezone,Sales Rep > Customer Orders > Storefront,High,BL-SR-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+@td(ORG_TECHFLOW.platform_id) has a known first and last order in its history; live-discover their created dates. The rep's effective timezone offset is recorded so the boundary-day distinction is observable.","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the grid has rendered
+[KEY] live-discover the earliest and latest order creation dates in this customer's history -- call them D_FIRST and D_LAST -- and, via the same API, the customer's TOTAL_ORDERS_IN_WINDOW count for [D_FIRST, D_LAST] inclusive
+[ACT] open the date-range filter
+[ACT] set the start bound to D_FIRST
+[ACT] set the end bound to D_LAST
+[WAIT] the grid re-renders filtered
+[KEY] record the rendered row count (RENDERED_ROW_COUNT) and the Date cell values at the top and bottom of the grid","[STATE] the order created on D_FIRST is present in the filtered results {BL}
+[STATE] the order created on D_LAST is present in the filtered results {BL}
+[MATH] RENDERED_ROW_COUNT = TOTAL_ORDERS_IN_WINDOW -- none excluded purely because its creation timestamp falls on a range boundary day {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-09-02-2055 (2026-09-02),Automated
+SR-CO-009,"A rep serving zero customers sees the no-data empty state, distinct from a zero-match state",Sales Rep > Customer Orders > Storefront,Medium,BL-SR-012,ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]
+SR_REP_NOCUSTOMERS serves zero customer organizations.",rep=@td(SR_REP_NOCUSTOMERS.email),"[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the page settles out of its loading state
+[KEY] record the rendered heading and body text, and whether a clear-filter control is offered","[DOM] the empty-state heading/body communicates that the rep serves no customers -- not a generic ""no results match your filters"" message {BL}
+[DOM] no ""Clear filters""/""Reset"" button or link element is present anywhere in the empty-state region, since no filter was ever applied {BL}
+[STATE] no infinite spinner or blank page is shown in place of the empty state {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:FALLBACK · Technique:EP,Draft
+SR-CO-010,Opening an order the rep did NOT place lands on a read-only page with no payment or reorder action,Sales Rep > Customer Orders > Storefront,Critical,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+@td(ORDER_BUYER_PLACED.number) was placed by a buyer in @td(ORG_TECHFLOW.platform_id), a customer SR_REP_PRIMARY serves.","rep=@td(SR_REP_PRIMARY.email), buyerOrder=@td(ORDER_BUYER_PLACED.number)","[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the grid has rendered
+[ACT] open the row for @td(ORDER_BUYER_PLACED.number)
+[WAIT] navigation settles on the order's destination page
+[KEY] record the destination URL and every enabled/disabled action control","[NAV] the destination URL matches /company/my-customers/<org>/orders/<id> (the hub's read-only route) {SPEC}
+[REL] the destination URL is never /account/orders/<id> -- the buyer-facing route is unreachable via this row {SPEC}
+[STATE] the Pay-now control is never present, enabled, or clickable anywhere on the page {BL}
+[STATE] the Reorder control is never present, enabled, or clickable anywhere on the page {BL}
+[STATE] Print is the only enabled action control on the page {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SCOPE · Technique:ST | Promoted: REG-2026-09-02-2055 (2026-09-02),Automated
+SR-CO-011,Opening an order the rep DID place lands on the buyer page with its actions intact,Sales Rep > Customer Orders > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+@td(ORDER_REP_PLACED.number) was placed by SR_REP_PRIMARY in @td(ORG_TECHFLOW.platform_id).","rep=@td(SR_REP_PRIMARY.email), ownOrder=@td(ORDER_REP_PLACED.number)","[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the grid has rendered
+[ACT] open the row for @td(ORDER_REP_PLACED.number)
+[WAIT] navigation settles on the order's destination page
+[KEY] record the destination URL and every enabled action control","[NAV] the destination URL is the buyer-facing route /account/orders/<id>, not the hub's read-only route {SPEC}
+[STATE] Pay now and Reorder are both present and enabled, exactly as for the buyer who could have placed this order {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:PARITY · Technique:ST,Draft
+SR-CO-012,A typed buyer-page URL for a served customer order the rep did not place is refused,Sales Rep > Customer Orders > Storefront,Critical,BL-SR-002,ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+@td(ORDER_BUYER_PLACED.id) belongs to a customer SR_REP_PRIMARY serves but was placed by a buyer, not the rep -- the rep is neither the order's own customer, an org member, nor an administrator.","rep=@td(SR_REP_PRIMARY.email), buyerOrder=@td(ORDER_BUYER_PLACED.id)","[NAV] {{FRONT_URL}}/account/orders/@td(ORDER_BUYER_PLACED.id)
+[WAIT] navigation settles","[STATE] the buyer-facing page does NOT render the order for this serving-but-non-member, non-placing, non-admin rep -- it refuses, redirects, or errors rather than rendering Pay now/Reorder for an order that is not theirs {BL}
+[DOM] the order-total, line-item, and status-chip elements on the rendered page are all absent or blank whenever the underlying GraphQL response for this order carries a non-empty errors[] array {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SCOPE · Technique:EG,Draft
+SR-CO-013,Search input and status chips render localized labels and never execute injected markup,Sales Rep > Customer Orders > Storefront,High,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The store secondary language is DISCOVERED from the store configured languages at run time (never a hardcoded locale) -- if the store carries only one language, record SKIPPED with that reason rather than passing.","rep=@td(SR_REP_PRIMARY.email), culture={{CULTURE_NAME}}","[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] open the language switcher
+[KEY] record every offered language
+[KEY] if only one language is offered, record SKIPPED with reason ""single-language store"" and stop
+[ACT] select a language other than the default
+[WAIT] the page reloads under the selected locale
+[KEY] record every status chip's rendered label and the Date/Total cell format for the first row
+[ACT] type a search term containing markup (e.g. <img src=x onerror=alert(1)>) into the search input
+[ACT] submit the search
+[WAIT] the search settles","[DOM] the status-chip element's text content does NOT match the raw-enum regex shape (a bare word like 'New' with no surrounding text) and does NOT match the untranslated-i18n-key regex shape (a string starting with 'sales-rep.') {BL}
+[DOM] the first row's Date cell and Total cell text use the selected locale's date and currency format (day/month order, decimal and thousands separators) rather than the default locale's format string {BL}
+[STATE] the markup-bearing search term never triggers a live script execution -- no new console error and no alert dialog appears after submission {BL}
+[DOM] after submitting a markup-bearing search term, the orders-grid region contains zero elements matching 'img[src*=onerror]' and zero matching 'script', its empty-state element carries a reset/clear-search control, no dialog is raised, and the console error count is unchanged from the pre-search baseline. The term is never echoed back, so there is no escaped sequence to assert on {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:MONEY · Technique:EG | Promoted: REG-2026-09-02-2055 (2026-09-03),Automated
+SR-CO-014,Reopening a filtered and sorted order URL restores that view or degrades to a safe default,Sales Rep > Customer Orders > Storefront,High,PROPOSED-BL-SR-STATE,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id).","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the customer-scoped orders grid has rendered
+[ACT] apply a status filter
+[WAIT] the grid re-renders filtered
+[ACT] sort by Date ascending
+[WAIT] the grid re-renders sorted
+[KEY] record the full URL, the active filter, the active sort direction, and the rendered row count
+[ACT] navigate directly to that same recorded URL as a fresh full-page load (as a bookmarked link or a colleague opening it fresh would)
+[WAIT] the page renders","[STATE] the customer scope (@td(ORG_TECHFLOW.platform_id)) is preserved after the reload -- the grid never widens to the cross-customer view {SPEC}
+[STATE] EITHER the filter and sort are restored exactly as recorded, OR the page degrades to a named safe default (unfiltered, default sort) while staying on the correct customer scope -- landing on a DIFFERENT, unrequested filter/sort is the failure this case exists to catch {OBSERVED}
+[REL] after the reload the rendered row count equals the route's default page size and the first row is the most recent by createdDate -- phrased on the branch that actually occurs, because filter/sort are never restored on this build and an 'if restored' clause is vacuous {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:LIFECYCLE · Technique:ST | Promoted: REG-2026-09-02-2055 (2026-09-03),Automated
+SR-CO-015,A failed or slow facet request leaves the filter drawer honest rather than empty or stale,Sales Rep > Customer Orders > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves at least two customers with different order-status histories (@td(ORG_TECHFLOW.platform_id) and @td(ORG_ACME.platform_id)). Network interception is available to throttle/block the facet request (modern-web-attack-surface.md UIP-NET mechanics).",rep=@td(SR_REP_PRIMARY.email),"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the filters drawer's status option list has loaded
+[ACT] open the filters drawer
+[KEY] record the offered status options and their counts
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)/orders
+[ACT] block or throttle the facet/status-options request before opening the filters drawer
+[ACT] open the filters drawer
+[WAIT] the drawer settles into whatever state the blocked/slow request produces","[STATE] the drawer opened on @td(ORG_ACME.platform_id)'s list does not silently keep showing @td(ORG_TECHFLOW.platform_id)'s prior status options and counts -- it either shows Acme's own options or visibly indicates the facet data is loading/unavailable {OBSERVED}
+[DOM] when the facet request is blocked or slow, the drawer's status-option list area shows a skeleton/spinner element or an inline error-message element -- not the previous org's option list with no loading/error indicator present {HYPOTHESIS}
+[STATE] no status chip in the drawer, present or stale, causes a filter to be silently applied against the wrong customer's data {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:STALE · Technique:EG,Draft
+SR-CO-016,The filters drawer is usable at 375px and meets WCAG 2.2 AA for keyboard and target size,Sales Rep > Customer Orders > Storefront,High,"BL-A11Y-001, BL-A11Y-002",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]",rep=@td(SR_REP_PRIMARY.email),"[NAV] {{FRONT_URL}}/company/customer-orders
+[VIEWPORT] 375x812
+[ACT] open the filters drawer
+[SNAP] filters drawer open at 375px
+[PROBE:TOUCH] measure the bounding boxes of the Apply and Reset buttons and every status checkbox
+[PROBE:OVERFLOW] measure the drawer's content box against its visible viewport area
+[ACT] tab through the drawer using only the keyboard, from the first control to Apply
+[WAIT] keyboard focus reaches the Apply button
+[PROBE:SPACING] measure the gap between adjacent status checkboxes
+[VIEWPORT] 1920x1080
+[ACT] open the filters drawer
+[SNAP] filters drawer open at 1920px
+[PROBE:ALIGN] measure the drawer's control alignment against the 375px capture
+[ACT] run an axe-core scan against the open drawer at both viewports","[SHIFT] no unexpected layout shift occurs while the drawer opens at either viewport {BL}
+[TOUCH] every interactive control in the drawer (checkboxes, Apply, Reset, date inputs) measures at least 24x24px at 375px (WCAG 2.2 SC 2.5.8) {BL}
+[OVERFLOW] the Apply and Reset buttons are fully contained within the visible viewport at 375px -- neither is clipped nor requires horizontal scroll to reach {BL}
+[SPACING] the measured gap between adjacent status checkboxes matches a value in SPACING_GRID_PX (scripts/lib/design-tokens.generated.ts) rather than an ad hoc value -- the constant is named, never a transcribed number {OBSERVED}
+[ALIGN] every keyboard-focused control in the Tab walk shows a visible focus indicator, in order: status checkboxes -> date inputs -> Reset -> Apply {BL}
+[STATE] the axe-core scan reports zero critical/serious violations for the open drawer at both viewports {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:RENDER · Technique:EG,Draft
+SR-CO-017,Sales Rep customer-orders list — browser Back after a completed submit / payment,Sales Rep > Customer Orders > Storefront,High,PROPOSED-BL-SR-STATE,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+This surface is read-only (order list + print-only order detail) -- there is no payment/submit action to duplicate, so this probe targets the closest state-changing client action: applying a filter, then navigating into and back out of a read-only order page.",,"[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] apply a status filter
+[WAIT] the grid re-renders filtered
+[KEY] record the rendered order-number row set (PRE_BACK_ROWS) and the active filter-chip set (PRE_BACK_CHIPS)
+[ACT] open a row for an order not placed by the rep (read-only hub view)
+[WAIT] the read-only order page has rendered
+[ACT] press the browser Back button
+[WAIT] navigation settles
+[KEY] record the rendered order-number row set (POST_BACK_ROWS) and the active filter-chip set (POST_BACK_CHIPS)","[NAV] Back lands on the customer-orders list, not a blank page or a router error {SPEC}
+[REL] POST_BACK_ROWS either equals PRE_BACK_ROWS, or equals the route's unfiltered default first page -- never a third, silently-different row set. The equality-only form contradicted this case's own degrade allowance {OBSERVED}
+[REL] POST_BACK_CHIPS equals PRE_BACK_CHIPS -- the previously applied status filter is still active, or (per SR-CO-014's own contract) degrades to a named safe default, never a silently DIFFERENT filter {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:REPLAY · Technique:EG,Draft
+SR-CO-018,Sales Rep customer-orders list — deep-link straight to a step that needs prior state,Sales Rep > Customer Orders > Storefront,High,BL-SR-002,ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]",,"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders/@td(ORDER_BUYER_PLACED.id)
+[WAIT] navigation settles, having never visited the list or profile route this session
+[KEY] record the deep-linked page's order number, status text, and breadcrumb segment list (DEEP_ORDER, DEEP_STATUS, DEEP_BREADCRUMB)
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the customer-scoped orders grid has rendered
+[ACT] open the row for @td(ORDER_BUYER_PLACED.number)
+[WAIT] the read-only order page renders via the normal click-through path
+[KEY] record this page's order number, status text, and breadcrumb segment list (CLICK_ORDER, CLICK_STATUS, CLICK_BREADCRUMB)","[DOM] the order detail page's own heading and order-number text elements are visible in the DOM on the deep-linked load -- the page is not a blank <body>, a router error boundary, or an unhandled-exception overlay {OBSERVED}
+[STATE] the page is gated by the same route guard as reaching it via the list (SalesRep.Enabled + sales-rep:access) -- a deep link is not a way to bypass the gate {BL}
+[REL] DEEP_ORDER equals CLICK_ORDER and DEEP_STATUS equals CLICK_STATUS -- the deep-linked render is not a different or stale record than the one reached via the normal click-through path {OBSERVED}
+[REL] DEEP_BREADCRUMB equals CLICK_BREADCRUMB and both name @td(ORG_TECHFLOW.name) -- the deep-linked breadcrumb is not a blank or placeholder segment {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SCOPE · Technique:EG | Promoted: REG-2026-09-02-2055 (2026-09-03),Automated
+SR-CO-019,Sales Rep customer-orders list — refresh mid-flow / during a redirect,Sales Rep > Customer Orders > Storefront,High,PROPOSED-BL-SR-STATE,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]",,"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the grid has rendered
+[ACT] click through to open an order, triggering the route navigation
+[WAIT] the navigation begins (destination request is in flight) -- this is the deliberate race window for the next step
+[ACT] press F5 the instant the navigation to the order page begins
+[WAIT] the page settles","[STATE] when the order page is mounted (its own heading/order-number elements present), the list page's own grid-header element is never present in the DOM {OBSERVED}
+[STATE] when the list page is mounted instead, the order page's own heading element is never present in the DOM {OBSERVED}
+[STATE] no order-related mutation is duplicated -- since this surface is read-only, the specific risk here is a stuck loading state or a corrupted route, not a double-submit {HYPOTHESIS}
+[NAV] after the refresh settles, the URL is a valid, navigable route -- not a blank or 500 intermediate state {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:REPLAY · Technique:EG,Draft
+SR-CO-020,Sales Rep customer-orders list — session / token expires mid-flow,Sales Rep > Customer Orders > Storefront,High,BL-SR-011,ECL-1.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Session/token TTL can be forced to expire or be revoked without reloading the page.",,"[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the grid has rendered
+[ACT] force the session token to expire or be revoked, without reloading the page
+[ACT] apply a filter or open an order row, triggering a fresh authenticated request
+[WAIT] the page settles into its response to the failed request","[DOM] a graceful re-authentication prompt or a redirect to sign-in is visible -- a raw unhandled 401, a blank page, and a permanently spinning grid are all absent {BL}
+[DOM] no raw GraphQL error object, stack frame, or HTTP status code is visible to the customer {BL}
+[NAV] after re-authenticating, the rep lands back on the customer-orders route rather than a generic dashboard {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:FALLBACK · Technique:EG,Draft
+SR-CO-021,"Sales Rep customer-orders list — a dependency is blocked, slow, 500, or returns malformed JSON",Sales Rep > Customer Orders > Storefront,High,BL-SR-012,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]",,"[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[KEY] record the rendered order-number row set (BASELINE_ROWS)
+[ACT] block the SalesRepCustomerOrders GraphQL operation before it resolves
+[WAIT] the page settles into its response to the blocked request
+[ACT] unblock the request
+[ACT] override its response to return HTTP 500 with an empty body
+[ACT] reload the page
+[WAIT] the page settles
+[ACT] override the response with malformed JSON
+[ACT] reload the page
+[WAIT] the page settles","[DOM] a blocked orders request replaces only the grid's own container with an inline error-message element, while the header nav, breadcrumb links, and filters-drawer trigger remain present and clickable elsewhere on the page {HYPOTHESIS}
+[DOM] a forced 500 renders an error-message element together with a ""Retry""/""Try again"" button, not an empty <body> or a blank grid container {HYPOTHESIS}
+[STATE] BASELINE_ROWS are never shown again once the 500/malformed-JSON error state renders -- the grid does not fall back to stale previously-loaded rows instead of the error state {HYPOTHESIS}
+[STATE] a malformed-JSON response does not throw an unhandled parse error that crashes the page -- it degrades to the same scoped error state, with no new unhandled-rejection console entry {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:FALLBACK · Technique:EG,Draft
+SR-CO-022,Sales Rep customer-orders list — autofill / password manager / paste populates the form,Sales Rep > Customer Orders > Storefront,High,PROPOSED-BL-SR-STATE,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+This surface has no credential fields; the relevant autofill/paste targets are the order-search input and the filter drawer's date inputs.",,"[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the grid has rendered
+[ACT] paste a value into the order-search input (a bulk-populate paste, not keystroke typing)
+[WAIT] observe whether the grid reacts
+[ACT] paste a value into the filter drawer's Start date input
+[WAIT] observe whether validation runs","[STATE] pasting into the search input triggers the same filtering behavior as typing it -- the search is not wired to keystroke events only {OBSERVED}
+[STATE] pasting into the date input triggers the same format validation as typing it -- an invalid pasted value is not silently accepted because validation listens for keystrokes only {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SILENT · Technique:EG | Promoted: REG-2026-09-02-2055 (2026-09-03),Automated
+SR-CO-023,"Sales Rep customer-orders list — zoom 200–400%, reduced motion, dark mode, print",Sales Rep > Customer Orders > Storefront,High,BL-UI-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]",,"[NAV] {{FRONT_URL}}/company/customer-orders
+[VIEWPORT] zoom 200%
+[SNAP] customer-orders grid at 200% zoom
+[VIEWPORT] zoom 400%
+[SNAP] customer-orders grid at 400% zoom
+[ACT] emulate prefers-reduced-motion: reduce
+[ACT] emulate prefers-color-scheme: dark
+[ACT] reload the page
+[WAIT] the page renders under both emulated media features
+[ACT] open @td(ORDER_BUYER_PLACED.number)'s read-only order page
+[ACT] emulate print media
+[SNAP] the read-only order page under print media","[OVERFLOW] every control (filters, Apply, order rows, Print) remains reachable and unclipped at 200% and 400% zoom {HYPOTHESIS}
+[DOM] under prefers-color-scheme: dark, the grid's row text and the breadcrumb link text both render with a contrast ratio >=4.5:1 against their background (WCAG 1.4.3) -- no text element renders in the same or a near-identical color as its background {BL}
+[DOM] under prefers-reduced-motion: reduce, the filters-drawer open/close transition and any grid loading-skeleton animation are instantaneous or disabled -- clicking Apply/Reset does not require waiting on a CSS transitionend event to become clickable again {HYPOTHESIS}
+[DOM] the print rendering of the read-only order page shows the order content, not the site nav/header/filters chrome, and the Print control itself is absent from the printed output {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:RENDER · Technique:EG,Draft
+SR-CO-024,Sales Rep customer-orders list — data state: empty · exactly one · many · overflowing,Sales Rep > Customer Orders > Storefront,High,BL-SR-012,ECL-14.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]
+Four data states are exercised: SR_REP_NOCUSTOMERS (zero customers -> zero orders), a served customer with exactly one order (live-discover one, or the fewest-orders customer available -- record the actual count reached), @td(ORG_TECHFLOW.platform_id) (many orders, multi-page), and an order row with an unusually long product title or a high line-item count (live-discover one) for the overflow state.",,"[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the page settles
+[KEY] record the empty-state rendering (zero customers, zero orders)
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the grid has rendered (many/multi-page state)
+[KEY] record whether pagination controls, row density, and column widths hold up at this row count
+[UI] reach the exactly-one-order state via a single-result facet on a served customer (a status whose facet count is 1) -- do NOT live-discover a customer with exactly one order: order counts on this env are 62/16/14/2/0, so the minimum non-zero is 2 and that precondition is unsatisfiable
+[KEY] record the single-row rendering -- no orphaned pagination control, no ""load more"" affordance with nothing to load
+[KEY] live-discover an order row with an unusually long product title or a high line-item count and open it
+[KEY] record whether the overflowing content is truncated, wrapped, or clipped","[DOM] the zero-orders state (SR_REP_NOCUSTOMERS) shows a heading/body-text element containing wording equivalent to ""you serve no customers yet"" (the same empty-state element established in SR-CO-009) -- not an empty grid container with a header row and zero rows, and not a blank page {BL}
+[DOM] the exactly-one-order state renders exactly one grid row and no pagination-control element ('Next'/page-number buttons) is present in the DOM at all {OBSERVED}
+[OVERFLOW] the many-orders (multi-page) state holds its column widths and row density -- no column collapses or overlaps at the observed row count {OBSERVED}
+[OVERFLOW] the long-title/high-line-item row wraps or truncates its overflowing text with an ellipsis/tooltip rather than clipping it silently or breaking the row's layout {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:BOUNDARY · Technique:EG,Draft
+SR-CO-025,"Keyword search matches a known order by its order number, and a no-match search is distinguishable",Sales Rep > Customer Orders > Storefront,High,BL-SR-012,,"Rep signed in and on the customer-scoped orders route for ORG_TECHFLOW, with the unfiltered row set captured first so the search can be shown to have narrowed it.","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id), knownOrder=@td(ORDER_BUYER_PLACED.number)","[PRE:SIGNIN_AS] sign in as @td(SR_REP_PRIMARY.email) through the storefront UI, typing the VARIABLE NAME TEST_USER_PASSWORD so the MCP --secrets substitution redacts it
+[NAV] open {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[UI] capture the unfiltered rendered order-number set as UNFILTERED_ROWS
+[UI] type @td(ORDER_BUYER_PLACED.number) into the ""Search by number, name or other data"" box and commit it (Enter and, separately, the search button — both must behave the same)
+[NET] capture the outgoing /graphql request and record the filter argument it sent as SEARCH_FILTER_ARG
+[UI] capture the rendered order-number set as SEARCH_ROWS
+[UI] clear the search, then search a string that matches nothing (a run-unique token from live-discover, never a hardcoded literal) and capture NOMATCH_ROWS plus the empty-state text","[STATE] SEARCH_ROWS contains @td(ORDER_BUYER_PLACED.number) {SPEC}
+[REL] SEARCH_ROWS is a strict subset of UNFILTERED_ROWS — the search NARROWED the list rather than returning it unchanged, which is how a no-op search is caught {SPEC}
+[STATE] SEARCH_FILTER_ARG is non-empty and carries the searched order number — a request that sent no filter at all proves the box is inert {OBSERVED}
+[STATE] both Enter and the search button produce the same SEARCH_ROWS {OBSERVED}
+[STATE] NOMATCH_ROWS is empty AND the rendered empty state is the filter-aware ""nothing matched"" variant offering a way to clear the search, never the generic no-orders state and never a bare blank grid {BL}
+[STATE] the no-match result never renders the unfiltered list — a filter-field drift was proven live to yield 0 rows with no error, so a silent fall-back to everything is the opposite failure and equally in scope {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SILENT · Technique:EP | Promoted: REG-2026-09-02-2055 (2026-09-03),Automated
+SR-CO-026,A zero-match filter combination still renders the active status filter and a control that removes it,Sales Rep > Customer Orders > Storefront,High,BL-SR-012,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id). A date range that matches none of this customer's orders is available (live-discover a window before the earliest order or after the latest).","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the orders grid has rendered
+[ACT] open the filters drawer
+[ACT] select a status filter present among this customer's orders (record it as APPLIED_STATUS)
+[ACT] click Apply
+[WAIT] the grid re-renders filtered by APPLIED_STATUS
+[ACT] open the filters drawer again
+[ACT] set the date-range filter to a window that matches none of this customer's orders
+[ACT] click Apply
+[WAIT] the grid re-renders to zero rows
+[KEY] intercept the outgoing salesRepCustomerOrders GraphQL request for this zero-match filter combination and record its filter argument (ZEROMATCH_FILTER_ARG) and whether the response's term_facets array is empty
+[ACT] open the filters drawer once more
+[KEY] record whether the status-option group is present in the drawer's DOM, and whether a control that removes only APPLIED_STATUS (a chip close icon or an unchecked checkbox) is present, separate from the drawer's overall Reset control","[REL] ZEROMATCH_FILTER_ARG still carries the APPLIED_STATUS term -- the status filter itself is not dropped by the zero-match date range {OBSERVED}
+[DOM] the drawer's status-option group element is present in the DOM for this zero-match query, even though the response's term_facets array is empty {BL}
+[DOM] a control that removes APPLIED_STATUS alone is present in the drawer and is distinct from the all-or-nothing Reset control {BL}
+[STATE] using that per-filter control (not Reset) re-renders the grid with the date range still active and APPLIED_STATUS cleared {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:RENDER · Technique:DT,Draft
+SR-CO-027,The zero-match empty state names the filter that produced it and offers an inline way to clear it,Sales Rep > Customer Orders > Storefront,Medium,BL-SR-012,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id). A single filter value that matches none of this customer's orders is available (live-discover a status or date range with zero matches).","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the orders grid has rendered with at least one row
+[KEY] record the unfiltered row count (UNFILTERED_COUNT)
+[ACT] open the filters drawer
+[WAIT] the drawer has opened
+[ACT] select a filter value that matches none of this customer's orders
+[ACT] click Apply
+[WAIT] the grid re-renders to zero rows
+[KEY] record the empty-state's rendered text content and enumerate every focusable/interactive element inside the empty-state region
+[ACT] activate the empty state's clear/reset control, if one is present
+[WAIT] the grid settles","[DOM] the empty-state text names or otherwise identifies the applied filter as the cause of the zero rows, not the generic wording SR-CO-009 uses for ""the rep has no customers"" {BL}
+[REL] the zero-match empty-state region contains at least one focusable, interactive clear/reset element -- unlike the zero-customers empty state (SR-CO-009), which per BL-SR-012 has none {BL}
+[REL] activating that control restores the rendered row count to UNFILTERED_COUNT and removes the applied filter's chip {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:RENDER · Technique:EG,Draft
+SR-CO-028,The my-customers order count is bounded by the customer own creator-agnostic order total,Sales Rep > Customer Orders > Storefront,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id), which has both rep-authored and buyer-authored orders (mirrors SR-CO-001's fixture pair) so the two counts are expected to diverge.","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the my-customers grid has rendered
+[KEY] record the order-count figure for the @td(ORG_TECHFLOW.name) row (MYCUST_COUNT)
+[ACT] click through to @td(ORG_TECHFLOW.name)'s customer-scoped orders list
+[WAIT] the customer-scoped orders grid has rendered
+[ACT] open the filters drawer
+[WAIT] the drawer has rendered its per-status facet counts
+[KEY] record every rendered per-status facet count and sum them (LIST_TOTAL) -- this list renders no total-count figure of its own, and the facet counts are scope-wide rather than filtered, so their sum is this customer own order total","[STATE] MYCUST_COUNT is a rendered, non-blank numeric figure on the my-customers row {OBSERVED}
+[STATE] LIST_TOTAL, summed from the rendered per-status facet counts, is a positive integer {OBSERVED}
+[MATH] MYCUST_COUNT <= LIST_TOTAL -- the rep-created subset can never exceed this customer's creator-agnostic total, since BL-SR-002 scopes MYCUST_COUNT to orders the rep created while the customer-scoped list is deliberately creator-agnostic {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:PARITY · Technique:EG,Draft
+SR-CO-029,Two customers open in two tabs keep independent organization scope and filter state,Sales Rep > Customer Orders > Storefront,Critical,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves both @td(ORG_TECHFLOW.platform_id) and @td(ORG_BUILDRIGHT.platform_id). Two browser tabs of the same authenticated session are available.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_TECHFLOW.platform_id), orgB=@td(ORG_BUILDRIGHT.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] tab 1's orders grid has rendered
+[ACT] apply a status filter in tab 1
+[WAIT] tab 1's grid re-renders filtered
+[KEY] record tab 1's rendered order-number set (TAB1_ROWS) and the organizationId sent on its filter request (TAB1_ORG_ARG)
+[ACT] open a second tab of the same session
+[NAV] tab 2: {{FRONT_URL}}/company/my-customers/@td(ORG_BUILDRIGHT.platform_id)/orders
+[WAIT] tab 2's orders grid has rendered
+[ACT] apply a different status filter in tab 2
+[WAIT] tab 2's grid re-renders filtered
+[KEY] record tab 2's rendered order-number set (TAB2_ROWS) and the organizationId sent on its filter request (TAB2_ORG_ARG)
+[ACT] return to tab 1
+[ACT] trigger a fresh request in tab 1 (re-apply the sort or refresh the filter)
+[WAIT] tab 1's grid re-renders
+[KEY] intercept tab 1's outgoing salesRepCustomerOrders request after acting in tab 2 and record its organizationId and filter arguments (TAB1_POST_ORG_ARG, TAB1_POST_FILTER_ARG)","[REL] TAB1_ORG_ARG equals @td(ORG_TECHFLOW.platform_id) and TAB2_ORG_ARG equals @td(ORG_BUILDRIGHT.platform_id) -- each tab's own request carries its own route's organizationId {OBSERVED}
+[REL] TAB1_POST_ORG_ARG still equals @td(ORG_TECHFLOW.platform_id) after acting in tab 2 -- tab 1's next request is not repointed at tab 2's organization {OBSERVED}
+[REL] TAB1_POST_FILTER_ARG still carries tab 1's own applied filter, not tab 2's -- filter state is not shared across tabs of the same session {OBSERVED}
+[STATE] TAB1_ROWS never renders any order belonging to @td(ORG_BUILDRIGHT.platform_id), and TAB2_ROWS never renders any order belonging to @td(ORG_TECHFLOW.platform_id) {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SCOPE · Technique:ST,Draft
+SR-CO-030,"Switching customer within the SPA does not carry the previous customer's filter, sort or page",Sales Rep > Customer Orders > Storefront,High,BL-SR-012,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves both @td(ORG_TECHFLOW.platform_id) and @td(ORG_BUILDRIGHT.platform_id), each with enough orders to support a status filter, a non-default sort, and page 2. The status chosen for the first customer must itself have a facet count exceeding the grid page size, otherwise the filtered result is one page and the page-carryover assertion is vacuous.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_TECHFLOW.platform_id), orgB=@td(ORG_BUILDRIGHT.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the grid has rendered
+[ACT] apply a status filter
+[WAIT] the grid re-renders filtered
+[ACT] sort by Date
+[WAIT] the grid re-renders sorted
+[ACT] navigate to page 2, if available
+[WAIT] the grid re-renders page 2 (or stays on page 1 if fewer than 2 pages exist -- record which)
+[KEY] record the active status filter, sort direction and page indicator for @td(ORG_TECHFLOW.platform_id) (TF_FILTER, TF_SORT, TF_PAGE)
+[ACT] navigate in-app to @td(ORG_BUILDRIGHT.name)'s customer-scoped orders list (via my-customers, not a fresh page load)
+[WAIT] @td(ORG_BUILDRIGHT.platform_id)'s grid has rendered
+[KEY] record the active status filter, sort direction and page indicator now shown (BR_FILTER, BR_SORT, BR_PAGE), and whether the drawer's Reset control is enabled or disabled
+[ACT] open the filters drawer for @td(ORG_BUILDRIGHT.platform_id)
+[KEY] record the offered facet counts (BR_FACETS)","[REL] BR_FILTER is not TF_FILTER -- @td(ORG_TECHFLOW.platform_id)'s applied status filter did not carry over to @td(ORG_BUILDRIGHT.platform_id) {OBSERVED}
+[STATE] BR_PAGE reads page 1, not the page number reached on the previous customer {BL}
+[STATE] the drawer's Reset control is disabled (or otherwise indicates no filter is active) immediately after the switch, since no filter has yet been applied to @td(ORG_BUILDRIGHT.platform_id) {OBSERVED}
+[REL] BR_FACETS are @td(ORG_BUILDRIGHT.platform_id)'s own facet counts, not @td(ORG_TECHFLOW.platform_id)'s carried over {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:STALE · Technique:ST,Draft
+SR-CO-031,Selecting two statuses returns their union and the facet counts still reconcile with totalCount,Sales Rep > Customer Orders > Storefront,High,,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id), which has orders in at least two distinct statuses. Live-discover two statuses whose facet counts are each non-zero AND whose SUM does not exceed the grid page size, so the union renders on a single page -- assertion 1 compares a rendered row count against facet totals and is undecidable once the union spills to page 2.","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the grid has rendered
+[ACT] open the filters drawer
+[KEY] record the unfiltered totalCount and the individual facet count for two distinct statuses (STATUS_A, STATUS_A_COUNT, STATUS_B, STATUS_B_COUNT)
+[ACT] select only STATUS_A
+[ACT] click Apply
+[WAIT] the grid re-renders filtered
+[KEY] record the rendered row count (STATUS_A_ROWS)
+[ACT] open the drawer again
+[ACT] additionally select STATUS_B, leaving STATUS_A still checked
+[ACT] click Apply
+[WAIT] the grid re-renders filtered
+[KEY] record the rendered row count (COMBINED_ROWS) and every status value rendered in the grid's status column","[MATH] COMBINED_ROWS = STATUS_A_COUNT + STATUS_B_COUNT -- two selected statuses combine as a union, not an intersection {OBSERVED}
+[REL] COMBINED_ROWS > STATUS_A_ROWS -- adding the second status strictly widens the result set rather than narrowing or leaving it unchanged {OBSERVED}
+[STATE] every status value rendered in the grid's status column after the combined filter is either STATUS_A or STATUS_B -- no third status leaks in and no row from either selected status is missing {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SILENT · Technique:DT,Draft

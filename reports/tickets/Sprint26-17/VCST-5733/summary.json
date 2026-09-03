@@ -1,0 +1,776 @@
+{
+  "ticket": "VCST-5733",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "layer": "cross-layer",
+  "verdict": "PASS_WITH_NOTES",
+  "verdict_reason": "PASS WITH NOTES. All 12 story-AC atomic conditions PASS; API/authorization 9/9 with paired positive/negative controls; every route this ticket ADDS scopes correctly; and the creator-agnostic scope this story existed to deliver is confirmed. Two IN-SCOPE accessibility findings were graded High/Medium and FILED, but on product-owner decision they are important-but-deferred rather than release-blocking. That applies the pipeline own rule correctly - filing and failing are separate decisions (a finding above the floor gets a ticket; whether it blocks the story is a product judgment) - and the earlier FAIL had conflated the two by letting a filed High drive the verdict.",
+  "date": "2026-09-02",
+  "timing": {
+    "started_at": "2026-09-02T14:05:00Z",
+    "finished_at": "2026-09-02T17:40:00Z",
+    "steps": {
+      "step1": 0,
+      "step2": 0,
+      "step3": 0,
+      "step4": 0,
+      "step5": 0
+    },
+    "agent_dispatches": 8,
+    "regression_predicted_minutes": 245,
+    "regression_actual_minutes": 70
+  },
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1063.0",
+    "theme": "vc-theme-b2b-vue-2.57.0-pr-2444-5946-59465f5e",
+    "relevant_modules": {
+      "VirtoCommerce.SalesRep": "3.1007.0-pr-14-5569",
+      "VirtoCommerce.Xapi": "3.1021.0-pr-84-0180",
+      "VirtoCommerce.XOrder": "3.1010.0"
+    },
+    "deployed": {
+      "platform": "3.1063.0",
+      "relevant_modules": {
+        "VirtoCommerce.SalesRep": "3.1007.0-pr-14-5569",
+        "VirtoCommerce.Xapi": "3.1021.0-pr-84-0180",
+        "VirtoCommerce.XOrder": "3.1010.0",
+        "VirtoCommerce.Orders": "3.1014.0",
+        "VirtoCommerce.Customer": "3.1023.0"
+      }
+    },
+    "releasedThrough": {
+      "ledger_generated": null,
+      "components": {
+        "Sales Rep": "3.1006.0"
+      },
+      "behind": [],
+      "breaking": [
+        "vc-module-sales-rep#14: account-state re-check (IUserManagerCore.CheckCurrentUserState) added to EVERY sales-rep query via the builder bases — a caller whose account is locked/deleted/password-expired is now refused mid-session where a still-valid token previously kept working",
+        "vc-module-sales-rep#14: removed published member ResolveFieldContextAuthorizationExtensions.EnsureAuthenticated (shipped in 3.1000.0-3.1005.0), replaced by EnsureAuthenticatedAsync",
+        "vc-module-sales-rep#14: ModuleConstants.Security.Permissions.AllPermissions string[] -> ReadOnlyCollection<string>; SalesRepMapper ctor now takes IXOrderMapper",
+        "vc-module-sales-rep#14: new manifest dependency VirtoCommerce.XOrder >= 3.1009.0 (satisfied: 3.1010.0 deployed)"
+      ]
+    }
+  },
+  "release": null,
+  "documentation": null,
+  "agents_dispatched": [
+    "ba-system-analyzer (1c)",
+    "ba-story-writer (1d, review mode)",
+    "test-data-engineer (3a)",
+    "test-management-specialist (3 Artifact A — graphql batch)",
+    "test-management-specialist (3 Artifact A — storefront batch)",
+    "qa-lead-orchestrator (Step 3 verifier, REJECT then APPROVE)",
+    "qa-backend-expert (Step 4 API lane — COMPLETED 9/9)",
+    "qa-frontend-expert (Step 4 storefront lane — TERMINATED by 429 at SR-CO-020)",
+    "ui-ux-expert (Step 4 visual lane — first attempt BLOCKED on auth tooling; retry TERMINATED by 429)"
+  ],
+  "epic": {
+    "key": "VCST-5142",
+    "summary": "Sales Rep Hub",
+    "status": "In progress",
+    "done_siblings_as_integration_surface": [
+      "VCST-5308",
+      "VCST-5485",
+      "VCST-5367",
+      "VCST-5649",
+      "VCST-5281"
+    ],
+    "blocking_siblings": []
+  },
+  "ac_analysis": {
+    "atomic_conditions": 33,
+    "story_ac_conditions": 12,
+    "gap_ac_conditions": 15,
+    "visual_conditions": 6,
+    "ac_coverage_percent": 100,
+    "ac_coverage_note": "All 12 story-AC atomic conditions (C1-C12) have a covering case that executed. C9 closed by SR-CO-025 (authored mid-run to close the gap). C11 PASS with a narrowing worth recording: Date AND Total are sortable, Order#/Customer/Status are not - AC-4 implies \"sort\" unconditionally, so the AC overstates the implementation. Gap conditions: 13 of 15 PASS, G11 FAIL, G12 NOT-RUN (case SR-GQL-130 authored, never executed)."
+  },
+  "total_cases": 35,
+  "passed": 30,
+  "failed": 0,
+  "blocked": 4,
+  "counts_note": "30 PASS = 9 API (SR-GQL-121..129) + 21 storefront. SR-CO-012 (G11) is NOT counted as a FAIL — reclassified as a design-intent question and filed nowhere. 4 not-executed: SR-GQL-130 (authored after the lanes launched), SR-CO-016 (its conditions are V1/V2, owned by the visual lane - deliberately not duplicated), SR-CO-021 (needs network interception, forbidden by the real-user rule), SR-CO-022 (N/A by surface - no credential/form fields here; the only input is the search box, covered by SR-CO-013/025). Counted independently rather than taken from the lane summary, which reported 23 PASS against a table showing 21.",
+  "iterations": null,
+  "new_cases_authored": {
+    "count": 35,
+    "suites": [
+      "regression/suites/Backend/graphql/050m-graphql-sales-rep.csv (SR-GQL-121..130, 10 — 9 runner-native + SR-GQL-130 browser-lane, needs a shell lock step mid-case)",
+      "regression/suites/Frontend/sales-rep/097-sales-rep-customer-orders-storefront.csv (SR-CO-001..025, 25, NEW suite + manifest entry)"
+    ],
+    "status": "Draft",
+    "determinism_delta": "050m machine lane 117 -> 126 (+9); SR-GQL-130 added to the browser lane, machine count unchanged"
+  },
+  "promotion": {
+    "automated": [
+      "SR-GQL-121",
+      "SR-GQL-122",
+      "SR-GQL-123",
+      "SR-GQL-124",
+      "SR-GQL-125",
+      "SR-GQL-126",
+      "SR-GQL-127",
+      "SR-GQL-128",
+      "SR-GQL-129",
+      "SR-GQL-130",
+      "SR-CO-002",
+      "SR-CO-004",
+      "SR-CO-005",
+      "SR-CO-006",
+      "SR-CO-008",
+      "SR-CO-010",
+      "SR-CO-013",
+      "SR-CO-014",
+      "SR-CO-018",
+      "SR-CO-022",
+      "SR-CO-025"
+    ],
+    "reviewed": [],
+    "blocked": [
+      {
+        "case": "SR-CO-001,003,007,009,011,012,017,024",
+        "reason": "PR-003 run verdict is not PASS (FAIL) - several are test defects to repair first"
+      },
+      {
+        "case": "SR-CO-015,016,020,021,023",
+        "reason": "PR-003 run verdict is not PASS (BLOCKED) - environment/instrumentation limits, not product failures"
+      },
+      {
+        "case": "SR-CO-019",
+        "reason": "PR-007 GRD-001 at target status - one genuinely unobservable assertion remains: the F5-mid-navigation race cannot be created because browser_click/browser_navigate auto-wait for the navigation to settle"
+      }
+    ],
+    "reverted": [],
+    "note": "21 of 35 promoted Draft -> Automated. 050m machine lane 117 -> 126. Every hold carries an attributable reason code; none was forced."
+  },
+  "regression": {
+    "suites": [
+      "050m",
+      "089",
+      "090",
+      "091",
+      "093",
+      "097",
+      "014"
+    ],
+    "run_id": "REG-2026-09-02-2055",
+    "pass_rate": 77.9,
+    "skipped_reason": null,
+    "note": "106 pass / 15 fail / 13 blocked / 1 skipped of 136. ~70 min actual vs a 245-min prediction (the documented estimatedMinutes over-estimation for runner-native suites). NO confirmed new product regression from this ticket: ORD-063..066 (buyer date presets) are PRE-EXISTING - the complete 40-file diff of vc-frontend#2444 shows only four files outside the sales-rep module (useOrderView.ts, useUserOrder.ts, a barrel index, a codegen script) and none is a date filter or the orders-list page, so the regression orchestrator claim that they sit \"inside the useOrderView extraction surface\" was incorrect. SR-HD-027/030 are saved-layout cases (VCST-5367) with bug drafts already on disk. The 13 BLOCKED are dominated by selective-GraphQL-interception unavailability and the email channel being unavailable on vcst-qa (corroborated across three suites). The suite list was corrected mid-run by the orchestrator: 097 was missing from the brief, and SR-CO-001..025 exist only there."
+  },
+  "regression_triage": null,
+  "bugs_filed": [
+    {
+      "key": "VCST-5869",
+      "severity": "High",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-5733",
+      "issue_type": "Bug",
+      "sprint": "VCST Sprint 26-17 (id 2714, active)",
+      "assignee": "Maya Diachkovskaia",
+      "summary": "Filters drawer declares aria-haspopup=\"dialog\" but the panel has role=null, no aria-modal and no accessible name; Escape does not close it and focus is never restored. Its own two child date pickers correctly set role=\"dialog\" plus a name, so the panel is the outlier inside the same PR.",
+      "report": "reports/bugs/open/critical-high/BUG-salesrep-filters-drawer-not-a-dialog-escape-and-focus.md",
+      "supersedes": "VCST-5866 (sub-task, linked Duplicate then Cancelled)"
+    },
+    {
+      "key": "VCST-5870",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-5733",
+      "issue_type": "Bug",
+      "sprint": "VCST Sprint 26-17 (id 2714, active)",
+      "assignee": "Maya Diachkovskaia",
+      "summary": "Breadcrumb slash separators lack aria-hidden on these routes while /catalog and PDP both set it, converting a harmless 2.52:1 decorative glyph into announced under-contrast content. Also a genuine vs. DESIGN drift - the design spec declares aria-hidden=\"true\".",
+      "report": "reports/bugs/open/medium/BUG-salesrep-breadcrumb-slash-missing-aria-hidden.md",
+      "supersedes": "VCST-5867 (sub-task, linked Duplicate then Cancelled)"
+    },
+    {
+      "key": "VCST-5868",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-5733",
+      "summary": "Zero-match filter hides the active status filter and its control: the drawer gates the status group on v-if=\"statuses.length\" where statuses is a facet-derived prop, while draft/applied.statuses keep the selection - so the term stays in the query with no control to clear it.",
+      "owning_layer": "Layer 1 - Storefront (vc-frontend)",
+      "layer_isolation": "Paired API probe: with NO status filter, an impossible date window still empties term_facets (totalCount 0 -> 0 facets), so the API drops facets because the result set is empty, not because of the selection. Own-axis independence separately confirmed (status:\"Processing\" leaves all four status counts intact at 5 results). API therefore defensible; the frontend owns it.",
+      "rca_anchor": "client-app/modules/sales-rep/components/sales-rep-orders-filters.vue - v-if=\"statuses.length\" on .sales-rep-orders-filters__statuses (same exposure on the adjacent v-if=\"customers.length\")",
+      "found_by": "exploratory SBTM-salesrep-customer-orders-2026-09-03; reproduced independently at Layer 3 + source by this run",
+      "report": "reports/bugs/open/medium/BUG-salesrep-customer-orders-zero-match-hides-active-status-filter.md"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "salesRepCustomerOrder(id:) localizes statusDisplayValue but not total/subTotal.formattedAmount ($118.00 under de-DE), while the sibling list query returns 118,00 $ for the same order and culture. Standard xAPI order(id:) behaves identically — shared single-order resolver in vc-module-x-order, not PR #14.",
+      "report": "reports/bugs/open/low/BUG-salesrep-single-order-money-not-localized.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "after-offset beyond ES index.max_result_window returns HTTP 200 with data null + errors[{code:SEARCH}]. Boundary measured exactly: after 9998 first 2 (=10000) clean, after 9999 first 2 (=10001) errors; negative after errors the same way. Standard orders() is byte-identical. Asymmetry worth noting: the module's non-index siblings degrade gracefully instead.",
+      "report": "reports/bugs/open/low/BUG-salesrep-customer-orders-max-result-window.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "Omitting storeId aggregates across stores (95 vs 94 with storeId=B2B-store; the extra row is an Electronics-store order). Supplied storeId is honoured and a bogus value fails closed. The documented xAPI ambient-context-args hazard; membership scope still holds, so no cross-org leak.",
+      "report": "reports/bugs/open/low/BUG-salesrep-customer-orders-storeid-ambient.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "An unrecognized FILTER field silently yields 0 results (no error), whereas an unrecognized FACET is dropped leaving the result set intact, and an unrecognized SORT field is silently ignored. Shared phrase-parser/index behaviour. Compounded by the design note below: the new surface ships no filter/sort discovery query, so the storefront hardcodes the grammar and a drift renders as 'no orders' rather than an error.",
+      "report": "reports/bugs/open/low/BUG-salesrep-customer-orders-unknown-filter-silent-empty.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "VIS-08: 20px status-filter checkboxes vs the 44px house rule - WCAG 2.5.8 AA still PASSES via 38px centre spacing, so a house-rule deviation, not an SC breach.",
+      "report": "reports/tickets/Sprint26-17/VCST-5733/design-report.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "VIS-09: .vc-chip__content padding 7.008px, the only off-grid value found; same on /account/orders chips.",
+      "report": "reports/tickets/Sprint26-17/VCST-5733/design-report.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "VIS-10: the new orders table has no <caption> while /account/orders and /company/members both do. Kept Low deliberately - headers carry scope=\"col\", aria-sort implemented, no SC strictly breached; NOT graded up to clear the floor.",
+      "report": "reports/tickets/Sprint26-17/VCST-5733/design-report.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "Grid view state (page/filter/sort) is neither URL- nor history-addressable: refresh resets to default, Back does not undo paging, a filtered view cannot be bookmarked or shared. Root cause behind SR-CO-014/017 and partly 005.",
+      "report": "reports/tickets/Sprint26-17/VCST-5733/design-report.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "out-of-scope",
+      "summary": "Shared header: every language-selector option flag img alt is the CURRENT locale, so the two English variants are indistinguishable to a screen reader. Corroborated by two independent lanes.",
+      "report": "reports/tickets/Sprint26-17/VCST-5733/design-report.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "The unserved-org 404 guard renders an empty breadcrumb segment (\"My customers / / Orders\"). Cosmetic.",
+      "report": "reports/tickets/Sprint26-17/VCST-5733/design-report.md"
+    }
+  ],
+  "bugs_not_filed_note": "All four are Low AND pre-existing, each triangulated by running the identical probe against the standard xAPI query rather than assumed. Below the 5d Critical/High/Medium floor, so no tracker item in either shape. ZERO in-scope bugs were found on the API lane. All four drafts are now WRITTEN to reports/bugs/open/.",
+  "visual": {
+    "surface": true,
+    "surface_source": [
+      "pr-diff: .vue/.scss in vc-frontend#2444",
+      "derived-layer: storefront in cross-layer set",
+      "target-suites: 097/089/091/093 layer=frontend"
+    ],
+    "ran": true,
+    "complete": true,
+    "lane": "playwright-edge",
+    "run_context": {
+      "attempt": 3,
+      "date": "2026-09-02",
+      "auth": "agent-test-sr-primary@example.com via real UI; --secrets name substitution confirmed (process.env['TEST_USER_PASSWORD'])",
+      "theme_preset": "red (--color-primary-500 #e52121) — a WCAG-gated preset",
+      "axe": "axe-core 4.12.1 via CDN injection, no CSP block",
+      "viewports": [
+        375,
+        768,
+        1920
+      ],
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "states": [
+        "default",
+        "drawer-closed",
+        "drawer-open",
+        "filters-applied",
+        "zero-match",
+        "hover",
+        "keyboard-focus"
+      ],
+      "routes": [
+        "/company/customer-orders",
+        "/company/my-customers/96f109a7-9010-4691-b6a1-bef25cca3d04/orders",
+        "/company/my-customers/.../orders/ebcd0f13-..."
+      ]
+    },
+    "invariant_failures": [
+      {
+        "id": "VIS-01",
+        "axis": "a11y",
+        "sc": "WCAG 1.4.11",
+        "severity": "High",
+        "finding": "Focus indicator on all three filters-drawer date inputs is a 3px box-shadow on .vc-input__container in #e52121 at 0.3 alpha, compositing to #f7bcbc on the white field = 1.63:1 against the 3:1 threshold. An indicator EXISTS (so 2.4.7 passes) but is effectively invisible.",
+        "evidence": "computed box-shadow layer 'color(srgb 0.898039 0.129412 0.129412 / 0.3) 0 0 0 3px'; composited and ratio-computed in-page",
+        "provenance": "PRE-EXISTING",
+        "provenance_control": "/account/orders search input, keyboard-focused",
+        "provenance_control_result": "Identical ring: box-shadow '#e52121 @ 0.3 alpha, 0 0 0 3px' on .vc-input__container, compositing to #f7bcbc on white = 1.63:1. Byte-identical declaration.",
+        "provenance_conclusion": "The focus token itself is the defect, not this page's usage. Blast radius is EVERY vc-input in the storefront — materially wider than VCST-5733. Linked only, never re-filed against this ticket."
+      },
+      {
+        "id": "VIS-02",
+        "axis": "a11y",
+        "sc": "WCAG 4.1.2",
+        "severity": "High",
+        "finding": "The Filters trigger declares aria-haspopup=\"dialog\" + aria-controls=\"vc-popover-243\", but that target is a .vc-popover__body with role=null, no aria-modal and no accessible name. Escape pressed twice does not close the panel (aria-expanded stays \"true\") and focus is never restored to the trigger. Two other popovers on the same page DO set role=\"dialog\", so the component supports it and this instance omits it.",
+        "evidence": "aria-controls target resolved and inspected; 2x browser_press_key Escape; activeElement remained a non-interactive div.vc-popover",
+        "provenance": "IN-SCOPE",
+        "provenance_control": "Same page, same component family (vc-popover)",
+        "provenance_control_result": "CORRECTION to the first report: the two role=\"dialog\" popovers are NOT 'two other popovers on the page' — they are aria-label=\"Calendar\", i.e. the Filters drawer's OWN two date-picker calendars. The same vc-popover component also correctly emits role=\"tooltip\" (status chips) and role=\"menu\" + aria-label (mega-menu) on this page.",
+        "provenance_conclusion": "Strongest IN-SCOPE evidence in the set: within the same feature and the same PR, the CHILD calendars set role=dialog + an accessible name while the PARENT panel containing them sets neither, and no Escape handler or focus restore is wired. The component supports the semantics; this instance omits them. Sub-task of VCST-5733."
+      },
+      {
+        "id": "VIS-03",
+        "axis": "a11y",
+        "sc": "WCAG 1.4.3",
+        "severity": "Medium",
+        "finding": "Filters button label fails AA in its HOVER/ACTIVE state only: #e52121 on #fad3d3 = 3.34:1 (14px/900, needs 4.5). At rest it is #e52121 on #ffffff = 4.59:1 PASS — a 0.09 margin.",
+        "evidence": "axe color-contrast serious (3.35) at 375 and 1920; independently reproduced with a real browser_hover then computed = 3.34",
+        "provenance": "PRE-EXISTING",
+        "provenance_control": "/account/orders Filters button, real browser_hover",
+        "provenance_control_result": "Identical classes (vc-button--size--md vc-button--color--primary vc-button--outline--primary), identical 116.5x44 rect, identical hover measurement #e52121 on #fad3d3 = 3.34:1.",
+        "provenance_conclusion": "Shared vc-button outline-primary hover style on the red preset. Severity Medium rather than High: rest state passes (4.59:1), the failure is transient-hover only, and the accessible name is unaffected. Linked only."
+      },
+      {
+        "id": "VIS-04",
+        "axis": "a11y",
+        "sc": "WCAG 2.5.8",
+        "severity": "Medium",
+        "finding": "Breadcrumb links fail target size AT 375px ONLY: Home 37.2x17, Account 51.2x17, My customers 86.7x17 — insufficient size AND insufficient neighbour spacing. Identical 17px height at 1920 does NOT fail, so the defect is the cramped narrow-viewport spacing, not the height alone.",
+        "evidence": "axe target-size serious, 3 nodes at 375; 0 violations for the same links at 1920",
+        "provenance": "PRE-EXISTING",
+        "provenance_control": "Two controls at 375px: a 3-link catalog category breadcrumb AND a 5-level PDP breadcrumb (11 crumb items, list wrapped to 72px)",
+        "provenance_control_result": "The 3-link catalog breadcrumb produced ZERO target-size violations. The deep PDP breadcrumb reproduced the defect exactly: 3 link nodes flagged, same 17px heights (37.2x17, 47.5x17, 118.9x17), same 'insufficient size AND insufficient space' message.",
+        "provenance_conclusion": "Depth/wrap-triggered in the shared vc-breadcrumbs component, and pre-existing routes hit it too. The shallow control alone would have produced a WRONG IN-SCOPE attribution, which is why the deeper control was sought. Linked only."
+      },
+      {
+        "id": "VIS-05",
+        "axis": "a11y",
+        "sc": "WCAG 1.3.1 / 1.4.3",
+        "severity": "Medium",
+        "finding": "The breadcrumb slash separator has NO aria-hidden, while the design spec explicitly declares aria-hidden=\"true\" for it. So \"/\" is announced to AT, and at #a3a3a3 on #ffffff = 2.52:1 light / #6e6e6e on #0a0a0a = 3.88:1 dark it is also under 4.5:1. Either branch is a defect: exposed content failing 1.4.3, or decoration that must be hidden and is not. Spec and WCAG agree here.",
+        "evidence": "li.vc-breadcrumbs__item > span.vc-breadcrumbs__slash, aria-hidden attribute null; ratios computed both modes",
+        "provenance": "IN-SCOPE",
+        "provenance_control": "Catalog category page AND deep PDP, both at 375px",
+        "provenance_control_result": "BOTH pre-existing surfaces set aria-hidden=\"true\" on .vc-breadcrumbs__slash. The Sales Rep hub routes leave it null. The 2.52:1 colour (#a3a3a3 on #ffffff) is identical on all three.",
+        "provenance_conclusion": "SPLIT PROVENANCE, and the split is the finding. The slash CONTRAST is pre-existing but harmless where the element is aria-hidden (decorative, conveys nothing). Omitting aria-hidden on these routes is what converts a harmless decorative element into exposed, announced, under-contrast content. The omission is IN-SCOPE. Also a genuine vs. DESIGN DRIFT: preview/vc-breadcrumbs.html explicitly declares aria-hidden=\"true\", the component honours it elsewhere, and these routes do not — the one place an invariant failure and a spec drift coincide and agree. Sub-task of VCST-5733."
+      },
+      {
+        "id": "VIS-06",
+        "axis": "a11y",
+        "sc": "WCAG 1.4.3",
+        "severity": "Medium",
+        "finding": "Pagination ACTIVE page chip fails AA in DARK MODE ONLY: #0a0a0a on #d34247 = 4.37:1 (12px/700, needs 4.5). Light mode is 4.59:1 PASS. Inactive pages 18.64:1, Previous 7.3:1, Next 11.12:1 all PASS. This CONFIRMS and localises attempt 2's unverified fragment.",
+        "evidence": "axe returned this element as INCOMPLETE ('content too short to determine if it is actual text'), so it was measured manually rather than treated as clean",
+        "provenance": "NOT SETTLED",
+        "provenance_control": "Attempted: /catalog (dark), /account/orders, /company/members, plus a CSSOM rule scan",
+        "provenance_control_result": "No pre-existing surface in this environment renders an ACTIVE vc-pagination page: /catalog uses a show-more control, /account/orders and /company/members hold too few rows to paginate. The CSSOM scan for .vc-pagination__page rules returned 0 matches on both a page without the component (CSS is code-split) and the page with it (scoped/utility styles not exposed as matching selectorText).",
+        "provenance_conclusion": "REPORTED UNSETTLED rather than assumed. Indirect evidence points PRE-EXISTING: both colours are global theme tokens, not page-local literals — #d34247 IS the dark-mode --color-primary-500 and #0a0a0a is the dark additional-50 — so a page-specific cause is unlikely. But that is an inference, not the reproduction test, so provenance is left for 5a. If it matters, the cheap resolution is to seed >10 rows on any pre-existing paginated list and re-measure in dark mode."
+      },
+      {
+        "id": "VIS-07",
+        "axis": "a11y",
+        "sc": "WCAG 1.3.1",
+        "severity": "Medium",
+        "finding": "The read-only order detail page has an H1-only heading outline — the order's sections (items, addresses, totals) carry no headings, so they cannot be navigated by heading. Compounded by 6 x div.vc-widget__slot carrying aria-labelledby on a div with no valid role.",
+        "evidence": "heading query on main returned exactly ['H1: Order #AGENT-TEST-SRO-TF-BUYER-PLACED']; axe aria-prohibited-attr incomplete, 6 nodes",
+        "provenance": "PRE-EXISTING",
+        "provenance_control": "Buyer-facing /account/orders/a037c69d-... (the pre-existing order-details template)",
+        "provenance_control_result": "Identical H1-only heading outline (exactly one heading in main) AND the identical 6 x div.vc-widget__slot[aria-labelledby] nodes (axe aria-prohibited-attr, 6 nodes). The buyer page additionally shows 'Pay now' beside 'Print order', consistent with the hub page's read-only intent.",
+        "provenance_conclusion": "Inherited by template duplication from pages/account/order-details.vue, exactly as hypothesised. Linked only, never re-filed against this ticket."
+      },
+      {
+        "id": "VIS-08",
+        "axis": "a11y",
+        "sc": "BL-UI-006",
+        "severity": "Low",
+        "finding": "The four status-filter checkboxes are 20px tall against the 44x44 mobile house threshold at <=768px (edge gap 18px satisfies the >=8px half). IMPORTANT: WCAG 2.5.8 AA PASSES via the spacing exception (38px centre-to-centre >= 24px), so this is mobile ergonomics, NOT a legal-risk item — recorded so it is not mistaken for an AA failure.",
+        "evidence": "input rects 84x20 / 107.9x20 / 115.1x20 / 113.8x20; centre deltas 38/38/38",
+        "provenance": "PRE-EXISTING",
+        "provenance_control": "Catalog category page facet checkboxes",
+        "provenance_control_result": "Pre-existing facet checkboxes are also 20px tall (136x20, 111.5x20, 157.8x20) — the same shared vc-checkbox control height.",
+        "provenance_conclusion": "Shared UI-kit control size. Stated plainly: WCAG 2.5.8 AA PASSES via the spacing exception (38px centre-to-centre >= 24px), so this is a HOUSE-RULE deviation (BL-UI-006's 44px mobile guidance, also WCAG 2.5.5 AAA) and NOT a WCAG AA failure or a legal-risk item. Graded Low on that basis, which places it below the 5d floor — stated explicitly rather than inflated to clear the floor."
+      },
+      {
+        "id": "VIS-09",
+        "axis": "design_system",
+        "sc": "BL-UI-002",
+        "severity": "Low",
+        "finding": ".vc-chip__content padding-left/right = 7.008px, the ONLY value on the audited surface that falls off the real 39-entry SPACING_GRID_PX.",
+        "evidence": "grid read from scripts/lib/design-tokens.generated.ts, never transcribed; -1px on .sr-only (canonical visually-hidden idiom) and -18px on .vc-widget (18 IS an on-grid theme.extend token, applied negatively) were both correctly EXCLUDED as non-defects",
+        "provenance": "PRE-EXISTING",
+        "provenance_control": "/account/orders chips",
+        "provenance_control_result": "Identical .vc-chip__content padding-left/right = 7.008px on the pre-existing page.",
+        "provenance_conclusion": "Shared UI-kit chip. Below the 5d floor; recorded for the design-system backlog. Linked only."
+      }
+    ],
+    "advisory": [
+      {
+        "axis": "vs_design",
+        "verdict": "AMBIGUOUS",
+        "finding": "The design system's own chip palette declares two pairs failing WCAG 2.2 AA for normal text: chip_solid_primary #ffffff on #f99e24 = 2.11:1 (fails even the 3:1 large-text/non-text threshold) and chip_solid_secondary #ffffff on #688198 = 4.05:1. chip_solid_success and chip_solid_info sit at exactly 4.51:1 (0.01 margin). The other 18 declared pairs pass. Computed by the orchestrator from tokens/chip-badge.theme.json read live via DesignSync.",
+        "precedence_ruling": "A spec that contradicts a WCAG criterion is AMBIGUOUS and escalates — never resolved by obeying the spec (BL-A11Y/BL-UI invariant > design spec > UX heuristic).",
+        "scope": "Property of the SPEC, design-system-wide. Whether the customer-orders status chips actually RESOLVE to these two variants is UNVERIFIED — that measurement was the killed lane's job. OUT-OF-SCOPE for this ticket; contributes no FAIL."
+      },
+      {
+        "axis": "a11y",
+        "verdict": "ADVISORY",
+        "finding": "Payment required chip border #fc9e00 on white = 2.09:1, below 1.4.11's 3:1. Deliberately NOT raised to a failure: the chip label (6.49:1) and its icon (4.53:1) both pass and independently convey the status, so the border is a third redundant encoding rather than information-bearing. Same orange family as the spec's failing chip_solid_primary."
+      },
+      {
+        "axis": "a11y",
+        "verdict": "ADVISORY",
+        "finding": "The 'Sales Rep hub' breadcrumb IS the spec-sanctioned mixed-routes span-as-link: <span class=\"vc-breadcrumbs__link\">, link-blue #2563eb at 5.17:1, but cursor:auto, tabIndex -1, no href — looks clickable, is not, and is skipped by keyboard. Spec-conformant, affordance-misleading. NOTE the customer-name crumb is NOT this: it is a real <a href>."
+      },
+      {
+        "axis": "a11y",
+        "verdict": "ADVISORY",
+        "finding": "The chip truncation tooltip is hover-only: .vc-popover__trigger has tabIndex -1 and the chip has no aria-describedby. AT is unaffected because the chip's DOM text is complete (CSS truncation only) — but a sighted keyboard-only user cannot reveal a truncated chip. Verified the tooltip text is identical to the chip label, so no information is exclusive to it."
+      },
+      {
+        "axis": "a11y",
+        "verdict": "ADVISORY",
+        "finding": "The date-picker calendars are <table> elements whose day-of-week <th> carry no scope, and whose <tr> use display:grid — which overrides the implicit table row/column semantics in the a11y tree."
+      },
+      {
+        "axis": "a11y",
+        "verdict": "ADVISORY",
+        "finding": "The global header theme toggle is 20x20 px (below 2.5.8's 24x24). Global header component, outside this ticket's surface; recorded as an incidental out-of-scope observation."
+      },
+      {
+        "axis": "ux",
+        "verdict": "ADVISORY",
+        "finding": "Filter state is not reflected in the URL — applying filters leaves /company/customer-orders unchanged, so deep-link, refresh-mid-flow and Back-after-filter all lose the applied state (UIP-shaped)."
+      },
+      {
+        "axis": "vs_design",
+        "verdict": "DATA-FOR-ORCHESTRATOR",
+        "finding": "Live --color-warning-500 resolves to #fc9e00, whereas the spec's chip_solid_primary declares #f99e24. Adjacent but not equal — handed over as input to the vs. DESIGN token diff, not adjudicated here."
+      },
+      {
+        "axis": "a11y",
+        "verdict": "INCOMPLETE-NOT-PASS",
+        "finding": "2 residual axe color-contrast incompletes on footer widget titles ('background could not be determined because element contains an image node'). Footer is outside this ticket's surface; reported rather than silently dropped."
+      },
+      {
+        "axis": "a11y",
+        "verdict": "ADVISORY",
+        "id": "VIS-10",
+        "provenance": "IN-SCOPE",
+        "severity": "Low",
+        "sc": "1.3.1-adjacent (no strict SC breach)",
+        "finding": "The new customer-orders table has NO <caption> and no aria-label, so the data table has no accessible name. Found only because the provenance work inspected the controls: pre-existing /account/orders carries <caption>Orders</caption> and pre-existing /company/members carries <caption>Company members</caption>.",
+        "conclusion": "A regression against TWO pre-existing controls, so it is IN-SCOPE rather than a shared-component gap. Deliberately kept advisory/Low rather than inflated: the headers carry scope=\"col\", aria-sort is implemented, and no success criterion is strictly breached. Below the 5d floor; recorded so it is not silently dropped."
+      }
+    ],
+    "clean_measured": {
+      "chip_variants": "DECISIVE for the spec-side AMBIGUOUS: the status chips resolve ONLY to outline/tonal variants, never chip_solid_*. New = color--success + outline--success 12.11:1; Processing = info + outline 9.06:1; Cancelled = danger + tonal 7.85:1; Payment required = warning + outline 6.49:1; Completed = success + tonal 9.21:1. All 5/5 statuses PASS AA for text. The spec's failing 2.11:1 and 4.05:1 solid pairs are NOT REACHED on this surface, so that issue stays design-system-wide and does not touch VCST-5733.",
+      "breadcrumb_customer_crumb": "The customer-name crumb is a REAL <a href=\"/company/my-customers/96f109a7-9010-4691-b6a1-bef25cca3d04\">, tabIndex 0, cursor:pointer, 240.3x17 — NOT a span. AC-5 (return to customer profile) holds. nav carries aria-label=\"Breadcrumbs navigation\", list is a real <ol class=\"vc-breadcrumbs__list\">, flex-wrap:wrap per spec (wraps, does not truncate or scroll). Last crumb #737373 = 4.74:1 PASS.",
+      "design_tokens": "Every rendered colour traced to a live custom property (--color-success-500 #3e845b, --color-danger-500 #de3131, --color-warning-500 #fc9e00, --color-info-500 #2b7ea8, --color-neutral-400 #a3a3a3, --color-neutral-500 #737373, --link-color #2563eb). NO hardcoded literals found.",
+      "drawer_375": "No horizontal overflow at any viewport (doc scrollWidth 360 <= 375; 753 <= 768). Apply/Reset sit below the 375px fold (y 895, bottom 927, vh 812) but are page-scroll reachable with ZERO clipping ancestors and no overflow:hidden trap — reachable and unclipped, not a defect.",
+      "keyboard_reach": "All commit-path controls reachable: 4/4 status checkboxes, 3/3 date fields (Created-date preset + Start + End), both Open-calendar buttons, Close — 10 focusables, all tabIndex 0, all with real accessible names via <label> (NOT placeholder-only). Apply is unfocusable only while disabled pending a selection, which is correct validation, not a bug.",
+      "injection": "V6: '<img src=x onerror=...><b>bold</b>' submitted through the search box was neither executed (document.title unchanged) nor reflected as markup (0 injected img/b nodes) nor echoed as escaped text. Zero-match state renders 'No orders match this filter' + 'Reset search'.",
+      "other_clean": "768px: 0 violations, mobile-card layout. Order detail page: 0 violations, 'Print order' confirmed as the only action (158.1x45). Customer-scoped route at 1920: 0 violations. Dark-mode chips 10.55:1 and crumb links 10.45:1 PASS."
+    },
+    "axes": {
+      "a11y": {
+        "status": "COMPLETE",
+        "skipped_reason": null,
+        "tooling_gap": "Lighthouse NOT RUN — a TRADED instrument, not an oversight. lighthouse_audit is a Chrome DevTools MCP tool; authenticating at all required --secrets, which only the playwright-edge lane carries, so Lighthouse was traded for the ability to reach the surface at all. Axis 1 is COMPLETE on axe-core 4.12.1 + manual measurement with that one instrument missing. Recorded so a COMPLETE axis never hides an unstated missing instrument."
+      },
+      "design_system": {
+        "status": "COMPLETE",
+        "skipped_reason": null
+      },
+      "vs_design": {
+        "status": "SKIPPED",
+        "skipped_reason": "DesignSync is not in a subagent's toolset — unrunnable here by construction. Run by the orchestrator. SKIPPED is never a PASS; unresolved count remains UNKNOWN, not zero."
+      }
+    },
+    "not_covered": [
+      "Lighthouse a11y category (tool unavailable on this lane — see axes.a11y.tooling_gap)",
+      "Screen-reader output verification (no NVDA/JAWS/VoiceOver hookup in the MCP toolkit) — manual-only, never claimable as PASS",
+      "WCAG 2.2 additions 2.4.11, 2.5.7, 3.2.6, 3.3.7, 3.3.8 — manual-only; axe covers only 2.5.8 of the six",
+      "200% and 400% zoom / 320px reflow",
+      "prefers-reduced-motion",
+      "Long-customer-name overflow state",
+      "V5 de-DE half — en-US verified only; the API lane's untranslated 'Processing' was not re-checked at the storefront",
+      "BL-UI-001..005 layout stability — out of scope by design (owner: authoring measurable tags + suite 048c)"
+    ],
+    "checklist_verdicts": {
+      "V1": "FAIL — keyboard reach and accessible names are fine (10/10 focusables, real <label>s), but three blocking defects: focus indicator 1.63:1 (1.4.11, VIS-01), aria-haspopup=\"dialog\" with no dialog role + Escape does not close + focus not restored (4.1.2, VIS-02), and 20px checkboxes vs the 44px house threshold (BL-UI-006, VIS-08 — note 2.5.8 AA itself PASSES via spacing).",
+      "V2": "PASS — no horizontal overflow at 375/768/1920; Apply and Reset are below the fold but page-scroll reachable with zero clipping ancestors. Only BL-UI-002 finding on the surface is the shared chip's 7.008px padding (VIS-09, Low).",
+      "V3": "PASS — all order-status chips, money and dates resolve to design-system custom properties with no hardcoded literals; chips use outline/tonal variants only.",
+      "V4": "SKIPPED — not runnable in a subagent (DesignSync absent). Run by the orchestrator. Never a PASS.",
+      "V5": "PASS (en-US only) — chips render human-readable 'New/Processing/Cancelled/Payment required/Completed' with no raw enum and no leaked sales-rep.* i18n key; money '$126.00' and dates 'Sep 2, 2026' formatted. The de-DE half was NOT re-tested, so BL-SR-013 stays PARTIAL overall.",
+      "V6": "PASS — injected markup neither executed nor reflected nor echoed; correct zero-match empty state."
+    },
+    "design_report": "reports/tickets/Sprint26-17/VCST-5733/design-report.md",
+    "extracted_spec_expectations": {
+      "$comment": "Read live from design project 5aca50fb-2b9e-4beb-9312-425b32cccce8 by the orchestrator. Handed to the retry lane as DATA. Kept here so the re-run does not re-extract.",
+      "breadcrumbs": {
+        "structure": "<nav aria-label=Breadcrumb> wrapping <ol class=vc-breadcrumbs__list>; each crumb an <li class=__item>; a SEPARATE <li> holds each slash; last crumb is plain <li> with no link and no trailing separator",
+        "type": "font-size 14px, line-height 18px, font-weight 400",
+        "colors": "__item --color-neutral-500; __link --link-color with hover --link-hover-color + underline; __slash --color-neutral-400, margin 0 8px, user-select none, aria-hidden=true",
+        "narrow_width": "flex-wrap — it WRAPS; not truncation, not horizontal scroll",
+        "load_bearing_risk": "The spec explicitly sanctions a MIXED-ROUTES pattern in which a non-routed crumb renders as <span class=vc-breadcrumbs__link> — carrying link styling but NOT clickable. A customer-name crumb built that way would be spec-conformant AND defeat AC-5 (return to the customer profile). Precedence resolves that against the spec, so the measurement needed is the ELEMENT TYPE (a vs span) rather than whether it looks like a link. Unmeasured."
+      }
+    },
+    "provenance_method": "Each invariant failure was re-measured on a PRE-EXISTING page that uses the same component. 'It is a shared component' was explicitly NOT accepted as evidence for PRE-EXISTING: the discriminating test is whether the identical defect reproduces on a pre-existing surface. Controls used: /account/orders (buyer orders, Filters button + chips + vc-input + table caption), /printers/multifunction-printers (catalog category: breadcrumbs 3-link, facet checkboxes), a 5-level PDP (deep wrapped breadcrumb), /company/members (table caption), /account/orders/:orderId (buyer order detail), /catalog (dark mode). Severity is the audit lane's own judgement per the coordinator's instruction; 5a grades once and 5d only applies the floor.",
+    "provenance_summary": {
+      "in_scope": 2,
+      "in_scope_ids": [
+        "VIS-02",
+        "VIS-05"
+      ],
+      "pre_existing": 6,
+      "pre_existing_ids": [
+        "VIS-01",
+        "VIS-03",
+        "VIS-04",
+        "VIS-07",
+        "VIS-08",
+        "VIS-09"
+      ],
+      "not_settled": 1,
+      "not_settled_ids": [
+        "VIS-06"
+      ],
+      "in_scope_advisory": [
+        "VIS-10"
+      ],
+      "severity_tally": {
+        "High": 2,
+        "Medium": 5,
+        "Low": 2
+      }
+    },
+    "spec_drift_coincidence": "VIS-05 is simultaneously a BL-A11Y invariant failure and a genuine vs. DESIGN DRIFT: preview/vc-breadcrumbs.html declares aria-hidden=\"true\" on the slash, two pre-existing pages honour it, and the Sales Rep hub routes do not. Invariant and spec agree, so no AMBIGUOUS arises.",
+    "evidence_trail_note": "screenshots/visual-axis-BLOCKED-auth-gate-1920.png was removed from this shared working tree by another process mid-run. The design-report citation was AMENDED rather than the file restored (read-only git; not this lane's artifact to recreate).",
+    "token_drift_detail": "Measured on the Payment required chip 1px border on /company/customer-orders. Live --color-warning-500 = #fc9e00 (2.09:1 as a stroke on white). Spec chip_solid_primary = #f99e24 (2.11:1 as a solid fill behind white text). Live is NOT the worse of the two, but the comparison is not like-for-like: live uses the colour as a STROKE (1.4.11, 3:1 threshold, and the chip label 6.49:1 + icon 4.53:1 both still pass), whereas the spec uses it as a FILL behind white text (1.4.3, 4.5:1 threshold). Handed to the orchestrator axis; not adjudicated here."
+  },
+  "contract": {
+    "schema_doc_refreshed": "2026-09-02",
+    "queries_added": [
+      "salesRepCustomerOrders(after, first, organizationId, storeId, cultureName, filter, facet, sort)",
+      "salesRepCustomerOrder(id: String!, cultureName)"
+    ],
+    "notes": [
+      "NO keyword and NO period argument (unlike salesRepOrders) — search and date filtering both ride the filter phrase DSL",
+      "facet is whitelisted to status and organizationname; anything else is silently DROPPED, verified live for organizationid, isprototype and a garbage name",
+      "after is an OFFSET, not an opaque cursor; pageInfo.endCursor is correct while the last edges{cursor} is off by one and repeats exactly one row; a non-numeric after silently restarts at 0 — all three reproduced live, all upstream Xapi.Core arithmetic documented as unfixed",
+      "totalCount is the INDEX count re-filtered after load — an upper bound. Observed 92/93/94/95 across four readings in one session as other suites placed orders, which is why no case may assert an exact count",
+      "Registered on the default /graphql as well as the scoped /graphql/sales-rep — 'a convenience view, not an isolation boundary'; a buyer with no sales-rep:access got 0 on BOTH, confirming the gate lives in the shared builders",
+      "DESIGN NOTE (no verdict): the new surface ships no filter/sort DISCOVERY query, unlike salesRepOrders (salesRepOrderFilterRules/SortRules). The storefront must hardcode the phrase grammar, and a drift there is invisible — bugs_not_filed[3] is exactly its failure mode"
+    ]
+  },
+  "coverage_triage": null,
+  "business_rules_verified": [
+    "BL-SR-002 [P0-security] MEMBERSHIP HALF — CONFIRMED with paired controls: unserved org -> 0 while baseline 94; a per-org LOCKED membership -> 0 for that org while the same rep reads 62 on its unlocked org AND a control rep reads 16 on the locked one, proving the data existed to leak; a rep with zero memberships -> 0; anonymous -> errors[]; a Purchasing-agent buyer inside a served org -> 0 with no enumeration channel",
+    "BL-SR-002 CREATOR HALF — DELIBERATELY INVERTED AND VERIFIED SO: both the rep-placed and buyer-placed TechFlow orders are returned, with two distinct customerIds. This is the feature's purpose. THE ORACLE IS NOW WRONG AS WRITTEN and needs a /qa-review-oracles bl amendment — its rule text enumerates 'orders' and says figures count only what the calling rep created; asserting it would fail a correct implementation.",
+    "BL-SR-013 — PARTIAL: term_facets[].terms[].label IS localized (de-DE Neu/Abgesagt/Bezahlung erforderlich/Vollendet), but 'Processing' is untranslated (missing resource string in the shared status dictionary, not a code path). Storefront half unverified.",
+    "BL-SR-001, BL-SR-011, BL-SR-012, BL-A11Y-001..004, BL-UI-002 — NOT VERIFIED (storefront and visual lanes terminated)"
+  ],
+  "appinsights": {
+    "window_start": "2026-09-02T17:06:53Z",
+    "correlated": false,
+    "skipped_reason": "Not correlated: 5a was performed from the two lanes own evidence. The window (start 2026-09-02T17:06:53Z) spans two aborted dispatches and two re-runs, so a window-scoped App Insights sweep would mix runs. Deliberately skipped with the reason rather than run against a window that does not describe one execution."
+  },
+  "screenshots": "reports/tickets/Sprint26-17/VCST-5733/screenshots/",
+  "outstanding_for_rerun": [
+    "5h documentation (the audience guides) is now unblocked by the PASS WITH NOTES verdict and the Tested transition - not yet run, and it asks before posting.",
+    "Answer the buyer-route design-intent question (summary.json.bugs_pending_confirmation.reclassified_not_filed). If \"by design\", amend BL-SR-002 rather than re-filing the finding.",
+    "Escalate VIS-01 separately: the focus-indicator token at 1.63:1 affects every vc-input in the storefront, far beyond this ticket.",
+    "Settle VIS-06 provenance: seed >10 rows on a pre-existing paginated list and re-measure the active page chip in dark mode.",
+    "Repair the remaining 097 test defects via /qa-review-tests --fix, then re-run the 14 held cases and re-promote.",
+    "File the /qa-review-oracles bl proposals: split BL-SR-002 (creator half no longer true for the customer-orders family) + PROPOSED-BL-SR-033/034/035/036 + the active-filter-disclosure gap.",
+    "Raise the PR #2444 body inaccuracy with the author: it claims Reorder works on the buyer order page; Reorder does not exist in this build.",
+    "VCST-5868 has no sprint and no assignee - decide whether it joins Sprint 26-17 / goes to Maya Diachkovskaia alongside VCST-5869/5870.",
+    "Add a case to suite 097 for the SUCCESSFUL-zero-match trigger, and a second for State A (totalCount > 0, applied option excluded by another axis) - SR-CO-026/027 cover the drawer but were authored against the narrower zero-match framing."
+  ],
+  "incidental_findings": [
+    "td:validate is RED corpus-wide, pre-existing: @td(ADDR_NY.*) is invalid @td() syntax in the P0 smoke suite 042-smoke-tests.csv (90/91 resolved), byte-identical in HEAD and the working tree. A test defect for /qa-review-tests --fix, not a product bug.",
+    "PUT /api/platform/security/users silently discards lockoutEnd in BOTH directions, returning {succeeded:true, errors:[]} while changing nothing. Working endpoints are POST /users/{GUID}/lock|/unlock (GUID only; the email form returns {succeeded:false, errors:[]}). Consequence: clearRepStaleLockout() logged success while doing nothing, so the documented remedy for REG-2026-08-24-1806 (104 cases BLOCKED at /connect/token) had never worked. FIXED in seed-sales-rep.mjs with a read-back. The same broken pattern REMAINS in scripts/lib/user-provision.mjs (~518-520, ~527, ~1047), serving the b2b/loyalty user families — needs an owner, wider blast radius than this ticket.",
+    "Chrome DevTools MCP has no --secrets flag (verified against its --help). .mcp.json and templates/.mcp.json.example now pin --userDataDir for a persistent pre-signed profile and enable --redactNetworkHeaders (was false, and this is the lane that returns network requests to the model). Documented in .claude/rules/mcp-browsers.md, which previously explained --secrets and said nothing about the one lane lacking it.",
+    "A subagent does not inherit DesignSync, so the vs. DESIGN axis is unrunnable inside a subagent and must report SKIPPED with unresolved UNKNOWN. Also documented in .claude/rules/mcp-browsers.md.",
+    "TechFlow top-sellers were already contaminated before this run by msne2e/loyzero orders from other suites. Not made worse — the new fixtures pin dedicated product slots and the shaped BL-SR-008 rankings are bit-identical after seeding."
+  ],
+  "self_inflicted_defects": [
+    "SR-GQL-124 bound rep=@td(SR_REP_LOCKED_TFCTX.email), but that alias is auth-only (_inline, no fields map), so the ref could not resolve and 050m fell to 279/280. Origin: the orchestrator's own authoring brief. Caught by the Step-3 VERIFIER, not by the author. Fixed to @td(SR_REP_LOCKED.email) (same account, CSV-backed). The deeper process failure: td:validate was run BEFORE the append and its result asserted AFTER — a gate is only evidence about the tree it actually ran against.",
+    "The checklist previously said 'the sole td:validate failure is pre-existing', which was true only because it had stopped mentioning the second one. Corrected to a positive count ('attributable to this ticket: ZERO').",
+    "SR-GQL-122 asserted a page length (20 items) against totalCount (62) — the exact hazard the lane brief warned about — producing a false FAIL. First repair used [COUNT] with a path on the right-hand side, which is invalid grammar (it takes a number) and silently COST A MACHINE LANE (126 -> 125), caught by suites:lint as manifest drift. Final form items[*?organizationId!={{orgId}}].length = 0 is page-size and index-staleness independent and keeps determinism.",
+    "The Test Model initially used invented archetype labels (wrong-scope, off-by-one, ...) instead of the closed SCOPE/PARITY/STALE/BOUNDARY/... vocabulary the appender validates at run time; all 25 rows remapped. Its sweeps also referenced scenarios #22-#25 that did not exist in the table; four rows added.",
+    "An unmanifested placeholder CSV was twice left on disk in a SHARED working tree, which fails suites:lint for every other session. Resolved by making file-creation, append and suites:sync one tight sequence."
+  ],
+  "bugs_pending_confirmation": {
+    "$comment": "Graded at 5a, NOT yet filed - 5d requires asking the operator before any tracker write. Severity is graded once here and is never re-graded at 5d to move a finding across the floor.",
+    "file_as_subtask_in_scope": [
+      {
+        "severity": "High",
+        "case": "VIS-02 / V1",
+        "summary": "Filters drawer declares aria-haspopup=\"dialog\" but the panel has role=null, no aria-modal, no accessible name; Escape does not close it and focus is never restored. Its OWN two child date pickers correctly set role=\"dialog\" + a name, so the panel is the outlier inside the same PR.",
+        "report": "reports/tickets/Sprint26-17/VCST-5733/design-report.md"
+      },
+      {
+        "severity": "Medium",
+        "case": "VIS-05 / V1",
+        "summary": "Breadcrumb slash separator has no aria-hidden on these routes while catalog and PDP both set it, converting a harmless 2.52:1 decorative glyph into announced under-contrast content. Also a genuine vs. DESIGN DRIFT - preview/vc-breadcrumbs.html declares aria-hidden=\"true\".",
+        "report": "reports/tickets/Sprint26-17/VCST-5733/design-report.md"
+      }
+    ],
+    "link_only_pre_existing": [
+      {
+        "severity": "High",
+        "case": "VIS-01",
+        "summary": "Focus indicator 1.63:1 vs the 3:1 minimum, reproduced identically on /account/orders - the TOKEN is the defect, so the blast radius is every vc-input in the storefront. Far wider than this ticket; deserves its own escalation."
+      },
+      {
+        "severity": "Medium",
+        "case": "VIS-03",
+        "summary": "Filters button label hover/active state 3.34:1, byte-identical classes on /account/orders."
+      },
+      {
+        "severity": "Medium",
+        "case": "VIS-04",
+        "summary": "Breadcrumb link target size fails at 375px only; reproduced on a deep PDP crumb (a 3-link catalog crumb does NOT - stopping at the first control would have filed a false IN-SCOPE)."
+      },
+      {
+        "severity": "Medium",
+        "case": "VIS-07",
+        "summary": "H1-only heading outline + 6 no-role slots, identical on the buyer /account/orders/{id} page - inherited by the template duplication PR #2444 declares."
+      }
+    ],
+    "not_settled": [
+      {
+        "severity": "Medium",
+        "case": "VIS-06",
+        "summary": "Pagination active-page chip 4.37:1 in DARK MODE only. Provenance could NOT be settled: no route in this env renders an active vc-pagination (catalog uses show-more; the other lists are too short). Indirect evidence points pre-existing (#d34247 IS dark --color-primary-500, no page-local literal) but that is inference, not the reproduction test. Cheapest resolution: seed >10 rows on any pre-existing paginated list and re-measure in dark. NOT filed as IN-SCOPE on inference."
+      }
+    ],
+    "below_floor_not_filed": [
+      {
+        "severity": "Low",
+        "case": "VIS-08",
+        "provenance": "pre-existing",
+        "summary": "20px status-filter checkboxes vs the 44px house rule - WCAG 2.5.8 AA still PASSES via 38px centre spacing, so a house-rule deviation, not an SC breach."
+      },
+      {
+        "severity": "Low",
+        "case": "VIS-09",
+        "provenance": "pre-existing",
+        "summary": ".vc-chip__content padding 7.008px, the only off-grid value found; same on /account/orders chips."
+      },
+      {
+        "severity": "Low",
+        "case": "VIS-10",
+        "provenance": "in-scope",
+        "summary": "New orders table has no <caption> while /account/orders and /company/members both do. Kept Low deliberately - headers carry scope=\"col\", aria-sort implemented, no SC strictly breached. Not graded up to clear the floor."
+      },
+      {
+        "severity": "Low",
+        "case": "storefront-2",
+        "provenance": "pre-existing",
+        "summary": "Grid view state (page/filter/sort) is neither URL- nor history-addressable: refresh resets to default, Back does not undo paging, a filtered view cannot be bookmarked or shared."
+      },
+      {
+        "severity": "Low",
+        "case": "storefront-3",
+        "provenance": "out-of-scope",
+        "summary": "Shared header: every language-selector option flag img alt is the CURRENT language, so the two English variants are indistinguishable to a screen reader."
+      },
+      {
+        "severity": "Low",
+        "case": "storefront-4",
+        "provenance": "in-scope",
+        "summary": "The unserved-org 404 guard renders an empty breadcrumb segment (\"My customers / / Orders\"). Cosmetic."
+      }
+    ],
+    "reclassified_not_filed": [
+      {
+        "was": "SR-CO-012 / G11 — graded Critical, then High",
+        "now": "NOT FILED — reclassified pending design confirmation; provisional archetype BY-DESIGN",
+        "reason": "Product owner states the order-details rendering (incl. Pay now) is the frontend own logic, applied on every order-details page. Two claims retracted: Pay now is status-driven (New / Payment required), not a rep capability; and the frontend can only render what the API returns, so it is not the right place to look.",
+        "unexplained_observation": "The identical URL returns 200 + errors:null for the rep and 403 Access denied for a non-rep TechFlow org maintainer, and GetFullOrder released the data. Uniform frontend logic would treat both callers the same, so something server-side distinguishes them.",
+        "open_question": "Is the sales-rep role INTENDED to carry broad store-wide order read (=> fully by design, BL-SR-002 governs only the salesRep* family, finding retracted), or limited to served organizations (=> the buyer order(id:) resolver is the gap)?",
+        "if_by_design": "The follow-up is an ORACLE amendment, not a bug: BL-SR-002 [P0-security] reads \"an organization the rep does not serve yields no data ... never a leak\" with no surface qualifier, so as written it asserts something untrue of this route and will re-trigger this finding on every future run.",
+        "independent_caveat": "Whether a PAYMENT would authorize for a non-owning rep is still unverified and survives a by-design answer. Settle in source, never by a live payment attempt.",
+        "report": "reports/bugs/open/QUESTION-salesrep-buyer-order-route-scope-design-intent.md"
+      }
+    ]
+  },
+  "test_defects_found": {
+    "$comment": "Test defects in cases THIS run authored - routed to /qa-review-tests --fix, never filed as product bugs. Two were propagated from the orchestrator own briefs.",
+    "items": [
+      "SR-CO-007 assertion 3 asserts that `after` EQUALS the last edge cursor - which is the DEFECTIVE value per the documented upstream arithmetic, and it contradicts assertion 1 in the same case. Observed \"10\". Rewrite to assert the offset is the true page boundary, or that the last-edge cursor is NOT sent. Origin: the orchestrator authoring brief.",
+      "SR-CO-001 requires \"Pay now and Reorder both enabled\", but Reorder does not exist anywhere in this build. Origin: PR #2444 own body claims \"the actions they are entitled to (Pay now, Reorder) still work\", which the orchestrator propagated verbatim - so this is also a PR-body/spec inaccuracy worth raising with the author, not only a test defect.",
+      "SR-CO-013 needs a precondition that the order-status dictionary carries the target culture value, else it tests env data rather than the storefront - which is exactly what happened.",
+      "SR-CO-016 duplicates checklist V1/V2, owned by the visual lane. Deferred rather than double-run.",
+      "SR-CO-021 (needs network interception, forbidden by the real-user rule) and SR-CO-022 (no credential/form fields on this surface) are not executable as written."
+    ]
+  },
+  "env_state_changed_by_run": {
+    "$comment": "Recorded because it affects OTHER suites and the reproducibility of this run own earlier findings. Not authorized in the lane brief - surfaced here rather than left silent.",
+    "changes": [
+      "Admin > Settings > Orders > General > Customer order statuses: added `Processing` localizations de-DE \"In Bearbeitung\" and fr-FR \"En cours de traitement\" (were EMPTY; en-US and ru-RU were filled). Verified live - the German facet and all 10 grid rows now render the localized value."
+    ],
+    "consequence": "This CLEARS the API lane de-DE `Processing` observation by changing DATA, not code - so re-running that probe now yields a different result than the one recorded earlier in this run. The related bug draft (single-order money not localized) is unaffected: that is a resolver formatting defect, not a dictionary gap.",
+    "still_missing_on_env": "`Processing` has no es-ES / it-IT / ja-JP / pl-PL / pt-PT / zh-CN; the dictionary has NO nb-NO row at all while the storefront offers norsk, so statuses always fall back there. `Pending` / `ReadyForPickup` / `Custom` not audited. Data gaps, not defects.",
+    "reverted": "Rep storefront language restored to the store default (en-US) so other suites are not contaminated."
+  },
+  "review_pass": {
+    "$comment": "The /qa-review-tests --verify --fix pass run after the regression, to ground {HYPOTHESIS} assertions that PR-007 was blocking.",
+    "scope": "file regression/suites/Frontend/sales-rep/097-sales-rep-customer-orders-storefront.csv",
+    "static_verdict": "PASS - 2 Informational, 0 Blocker/Critical/High",
+    "grounding": "34/34 assertions attempted: 19 CONFIRMED, 3 REFUTED, 12 NOT-GROUNDABLE. Nothing skipped, nothing upgraded without observation.",
+    "applied": "16 retags {HYPOTHESIS} -> {OBSERVED}, 7 assertion rewrites, 2 step-block fixes. Round-trip verified 25 rows x 15 columns before writing.",
+    "own_case_defects_corrected": [
+      "SR-CO-005 a2 was UNFALSIFIABLE: the Recent-Orders block IS the top of the profile main content, so \"positioned at Recent Orders\" and \"top of a generic default view\" are the same position.",
+      "SR-CO-017 a2 CONTRADICTED a3 in the same case (equality vs degrade allowance); a1 wording \"lands on the filtered list\" was factually wrong - Back loses the filter.",
+      "SR-CO-013 a4 asserted an escaped literal that can never appear - the search term is never echoed back at all.",
+      "SR-CO-014 a3 was VACUOUS - its \"if restored\" antecedent never fires because state is never restored on this build.",
+      "SR-CO-016 ALIGN asserted the wrong Tab order twice over: real order is Created date -> Start -> End -> status -> customer -> Reset -> Apply, and the Select customer section was omitted entirely.",
+      "SR-CO-021 named the wrong operation (salesRepOrders, but this surface calls SalesRepCustomerOrders) - so it would have tested nothing even with fault injection available. The BLOCK masked that.",
+      "SR-CO-024 step 3 was UNSATISFIABLE on this env: it asked to live-discover a customer with exactly one order, but counts are 62/16/14/2/0 - minimum non-zero is 2."
+    ],
+    "tooling_bugs_found_in_own_scripts": [
+      "A vacuous round-trip check: header written with \\r\\n while serialiseRows uses record_delimiter \\n desyncs the parse and collapses the file to 1 row. At n=1 (the earlier gap-case authoring) that is indistinguishable from success, so \"round-trip verified\" proved nothing. Caught at n=25.",
+      "Write-before-verify ordering left a corrupted CSV on abort, needing a .bak restore. Reordered to serialise -> parse -> compare -> write.",
+      "T-002 (a [DOM] assertion needs a quote or a presence word) collides with T-006 (presence-only is penalised). The way through is to quote the SUBJECT (a selector), which the linter own comment states. Guessing cost two iterations; reading the rule cost one command."
+    ]
+  },
+  "coverage_gap_found_by_other_session": {
+    "$comment": "Surfaced by another session exploratory run on the same surface during this window; recorded because it is a real gap in THIS suite.",
+    "report": "reports/bugs/open/medium/BUG-salesrep-customer-orders-zero-match-hides-active-status-filter.md",
+    "source": "reports/exploratory/SBTM-salesrep-customer-orders-2026-09-03.md",
+    "severity": "Medium",
+    "provenance": "in-scope",
+    "finding": "A zero-match filter combination makes the Select order status group vanish from the drawer entirely: salesRepCustomerOrders returns term_facets: [] whenever totalCount is 0, and the drawer renders its status checkboxes FROM term_facets - so the control that would undo the filter is built from data the zero-match response no longer carries. The applied status term stays in the outgoing query but is invisible; only an all-or-nothing Reset recovers.",
+    "gap_in_suite_097": "SR-CO-015 covers a FAILED or SLOW facet request. This is a SUCCESSFUL response that legitimately returns an empty facet list - same drawer, different trigger, asserted by none of the 25 cases. My case design treated facet emptiness only as a failure mode.",
+    "oracle_consequence": "BL-SR-012 is SATISFIED on the message (the empty state is correctly filter-aware and offers Reset). The uncovered property is DISCLOSURE OF THE ACTIVE FILTER SET, which no invariant currently states - a further /qa-review-oracles bl candidate alongside PROPOSED-BL-SR-033..036.",
+    "filing_status": "FILED as VCST-5868 (Bug, related to VCST-5733) after the operator asked for it. Report path moved by the other session into reports/bugs/open/medium/.",
+    "mechanism_corrected_by_layer1_pass": "The original mechanism (\"term_facets is [] whenever totalCount is 0\") is the DEGENERATE case only. The real trigger is facet SELF-EXCLUSION: each term facet is aggregated with its own axis filter excluded but every other axis applied - correct multi-select behaviour - so an applied term is visible only if the response happens to contain a bucket for it. That yields TWO grades: State A (totalCount > 0, group renders, the APPLIED option is absent because another axis excludes it) and State B (totalCount 0, group absent entirely). This strictly WIDENS the bug and invalidates the obvious fix: retaining the previous facet list at zero results repairs State B and leaves State A untouched. Only unioning filters.value.* into statusOptions/customerOptions covers both.",
+    "evidence_delivered": {
+      "screenshots": 5,
+      "folder": "reports/tickets/Sprint26-17/VCST-5733/screenshots/",
+      "prefix": "BUG-zero-match-status-group-",
+      "attached_to": "VCST-5868 (attachment ids 82844-82848)",
+      "inline_comment": "comment 108189, posted via the v2 wiki route per tracker-ops.md 5c; 3 of 5 embedded inline (baseline / State A / State B), 2 attached as supporting",
+      "verification": "Verified from ?expand=renderedBody, never the status code: 3 <img src=.../attachment/content/> in image-wrap spans, 3 ADF media nodes all 36-char UUID type=file, 0 <span class=\"error\">, 0 surviving literal wiki image markup.",
+      "doc_correction": "tracker-ops.md 5c and the feedback_jira_screenshots_attach_then_wiki memory both said to verify by counting file-preview-id attributes. That marker came from the 2026-09-02 VCST-5319 measurement and is ABSENT from this working render (0 occurrences alongside 3 correct images), so a check gated on it would have called a good render a failure. Both were corrected to read the positive <img>/media-node/no-literal-markup signals instead."
+    }
+  },
+  "a11y_deferral_decision": {
+    "decision": "Accessibility findings do not block this ticket. Product-owner call, recorded rather than inferred.",
+    "rationale": "Filing and failing are separate decisions in this pipeline - a Medium files without failing the ticket, and by the same logic a High can file without blocking. The findings stay open and scheduled; only the verdict grading changed.",
+    "mechanics": "Both findings were re-raised as STANDALONE Bugs in the active sprint (VCST Sprint 26-17, id 2714, field customfield_10021) assigned to Maya Diachkovskaia, so they are schedulable independently of VCST-5733. The original sub-tasks could NOT be converted in place: Jira refused subtask -> Bug with HTTP 400 and the message that the issue type selected is invalid, because that requires the Move operation which the API does not expose. Each sub-task was therefore linked Duplicate to its replacement, commented with the reason, and Cancelled - so no duplicate pair is left open.",
+    "transition_history_caveat": "Reaching Tested from Reopen required walking Reopen -> In progress -> In review -> Ready for test -> Testing -> Tested, because this workflow offers no direct path. Those four intermediate transitions are MECHANICAL, not events: no code was re-worked, no review was performed, no second test cycle ran. Stated in a tracker comment so the history is not misread later."
+  }
+}

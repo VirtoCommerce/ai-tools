@@ -104,7 +104,24 @@ Derive cases from the Test Model's scenarios + chain diagrams + `1d` AC conditio
 
 - **New feature / Story** → **author new** enriched-CSV cases.
 - **Bug fix / enhancement with existing coverage** → **map to existing** suite cases (start from the Step-2
-  `E2E-*` → suite mappings); author **only the gaps**.
+  `E2E-*` → suite mappings), then author **only the gaps**. Mapping to existing coverage runs in **two
+  directions**, and this bullet is where only one of them was encoded: it asked which rows already cover
+  the surface and never which rows the change makes **wrong**. Step 2a has already answered the second
+  question deterministically — **carry its dispositions in, do not re-derive them.** A **`REPAIR`** row is
+  fixed *before* a single new row is authored (`/qa-review-tests file <suite> --fix`), because its
+  mechanics — a renamed selector, a moved route, a removed arg, a dead `@td()` alias — mean it cannot
+  execute at all. A **`RE-BASE`** row is **not a gap to author**: it is an existing case that goes into
+  Artifact C on `--also-ids`, so Step 4 executes it and 5a rewrites its expected value against the run's
+  own evidence — never rewritten here, where the unmerged change would be its own oracle. A
+  **`SUPERSEDED`** row is a proposal only. Single source of truth:
+  [`coverage-triage.md`](coverage-triage.md).
+
+**Precedence: amend an existing case before authoring a new one that asserts the same observable.** Grep
+the target suite for the observable first; if a case already crosses the mechanism and merely asserts the
+wrong thing, the fix is that row, not a second row beside it. This generalises to every run the rule the
+`--iterate` section below states for round 2 ("Prefer amending") — two rows asserting one observable is
+permanent coverage maintained twice that can disagree with itself, and the appender's only content dedup
+is exact `Title` + `Section`, so it will not notice.
 
 ### Split the targets by EXECUTION SURFACE before authoring a single row
 
@@ -235,7 +252,7 @@ introduce:
 | 1 | `npm run tc:alloc` and hand each batch **only its own** `--id-block` | `--check-global-ids` reads the corpus at APPEND time, so two batches both pass and then both write. A cross-suite duplicate ID silently overwrites the other suite's per-case results and failure evidence at run time. `tc:scaffold` refuses to spill past its block. |
 | 2 | Author the **`[JOURNEY]` / `Technique:FLOW` case itself**, before fan-out, and put it in every batch brief as the baseline they refine | It traverses the whole chain by definition. Per-layer batches each writing their own produce N partial journeys and no owner of the chain — the failure the 71-case storefront suite that placed zero orders represents. |
 | 3 | Resolve **every blank cell** of the 1e variants × links matrix and assign each cell to exactly one batch | Cell ownership is what makes duplication structurally impossible. With it there is no cross-batch dedup pass to run; without it two batches both claim a cell, or both skip it. |
-| 4 | Compile a per-layer **authoring pack** into the brief — the extracted `BL-*`/`ECL-*` rule text, the batch's matrix rows, the journey case, the layer's selectors/schema fragments | Step 2 already loaded the oracles once. Four agents re-reading `business-logic.md` + ECL + `critical-ui-scope` + `vc-bug-catalog` + `graphql-schema.md` is 4× the dominant token cost for zero extra information — that alone can make the fan-out cost more than it saves. |
+| 4 | Compile a per-layer **authoring pack** into the brief — the extracted `BL-*`/`ECL-*` rule text, the batch's matrix rows, the journey case, the layer's selectors/schema fragments. **Cut the schema fragments from the snapshot `1b` item 2d refreshed, and stamp the pack with its rev** | Step 2 already loaded the oracles once. Four agents re-reading `business-logic.md` + ECL + `critical-ui-scope` + `vc-bug-catalog` + `graphql-schema.md` is 4× the dominant token cost for zero extra information — that alone can make the fan-out cost more than it saves. The pack is also the fan-out's single point of contract failure: cut from an unrefreshed snapshot it distributes one stale contract to every batch at once, and the resulting cases fail at Step 4 as what look like product defects ([`contract-refresh.md`](contract-refresh.md) §4). A GraphQL batch reads `test-data/graphql/index.json` before authoring a new fixture — 74 ops already exist. |
 
 **Batch contract** (each batch is one `test-management-specialist`):
 

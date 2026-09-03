@@ -20,7 +20,9 @@ a judgment call a gate does not settle, or when you are about to change how a st
 | Steps 2–3 — oracles, the three artifacts, scaffold + fan-out | [`skills/qa-test/authoring.md`](../skills/qa-test/authoring.md) |
 | Step 5 — triage, verdict, filing, report, promotion | [`skills/qa-test/close-out.md`](../skills/qa-test/close-out.md) |
 | `--epic` · `--iterate` | [`skills/qa-test/modes.md`](../skills/qa-test/modes.md) |
-| Verifier mode · agent routing · the agent prompt contract · what persists | [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) |
+| Verifier mode · agent routing · the agent prompt contract · what persists · **concurrency (what batches, what must stay serial)** | [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) |
+| `1b` 2d — the GraphQL schema + fixture refresh | [`skills/qa-test/contract-refresh.md`](../skills/qa-test/contract-refresh.md) |
+| Step 2a — triaging the EXISTING corpus against the change | [`skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md) |
 
 ## Usage
 ```
@@ -80,9 +82,12 @@ Stated once, completely. **Everything after this section is the FULL path.**
 
 ```
 1a  route + fetch (comments + attachments, always)   → name the parent Epic in one line, no sibling analysis
-1b  pre-flight, sprint, duplicate check              → incl. 2b layer + 2c visual_surface
+1b  pre-flight, sprint, duplicate check              → incl. 2b layer + 2c visual_surface + 2d contract
+                                                       refresh + 2e coverage_surface
 2   load the affected domains' BL-* rule TEXT; route ONE execution agent (+ the visual lane). Stop there.
-3   Artifact B checklist (conditions from 1a's ACs) + Artifact C scope + test data (3a) if needed
+2a  tc:scope the EXISTING corpus; dispose every hit (CONFIRMED / REPAIR / RE-BASE / SUPERSEDED)
+3   Artifact B checklist (conditions from 1a's ACs) + Artifact C scope (incl. the RE-BASE ids on
+    --also-ids) + test data (3a) if needed
 4   one execution agent runs the checklist; the visual lane if visual_surface; then the change-scoped
     regression (no --also-ids)
 5a  triage · 5b reconcile AC/DoD · 5c verdict · 5d file (severity floor) · 5e report · 5f status · 5h docs
@@ -107,7 +112,13 @@ self-check).
 against — dropping it makes a FAST verdict ungrounded rather than merely cheap) · the ticket comments and
 attachments · `5b` (it produces the verdict) · the committed `testing-checklist.md`, which is the run's
 **only** durable record · **the visual lane when `visual_surface: true`** (see the block above), whose
-conditions become checklist rows for exactly that reason.
+conditions become checklist rows for exactly that reason · **the `1b` item 2d contract refresh when
+`contract_surface: true`** — it costs one introspection call and no agent, and an xAPI field rename is
+*single-layer, single-domain, P2* by construction, so the change class that invalidates the contract is
+the class FAST routes ([`skills/qa-test/contract-refresh.md`](../skills/qa-test/contract-refresh.md) §5) ·
+**`1b` item 2e + Step 2a**, on the same argument applied to existing assertions rather than to the contract:
+FAST authors nothing, so the corpus it leaves behind is the *only* coverage this ticket has, and a stale
+row it never disposes is one nothing will look at again.
 
 **`--iterate` is valid on FAST, and this is where it earns most.** 5k needs a filed bug and a
 change-scoped regression, and FAST produces both — it just has no authored cases to re-run, so round N+1
@@ -118,7 +129,8 @@ existed. FAST is the bug-fix / tweak path, so it is the
 likelier place to want a fix-and-retest loop at all. What stays off on FAST inside the loop: the verifier
 re-ratification in 5k step 3, exactly as at every other FAST gate.
 
-**Gate (FAST, inline):** the checklist covers every atomic condition; `npm run td:validate` is green. No
+**Gate (FAST, inline):** the checklist covers every atomic condition; `npm run td:validate` is green;
+**every Step-2a `tc:scope` hit is disposed** (`REPAIR` fixed, `RE-BASE` on `--also-ids`). No
 `suites:review` — nothing was authored.
 
 ---
@@ -131,6 +143,7 @@ A step passes its gate or **STOPS**. Three are hard-STOP gates verified by a **f
 | Gate | Where | Verified by |
 |---|---|---|
 | Model complete | 1e (9 clauses) | inline (doer's own check) |
+| Existing coverage disposed | Step 2a | inline — re-derived at Step 3's gate (`tc:scope`, same args) |
 | **Artifacts reviewed + data seeded** | Step 3 | **fresh `qa-lead` verifier — hard STOP** |
 | Execution evidenced | Step 4 | inline |
 | **Triage + AC/DoD sound** | 5b | **fresh `qa-lead` verifier — hard STOP** |
@@ -222,7 +235,17 @@ the missing repro basis, rather than forcing an empty verification.
 
 #### 1b — Pre-flight, sprint resolution & duplicate check
 
-Per `.claude/templates/agent-dispatch.md`:
+Per `.claude/templates/agent-dispatch.md`.
+
+**Run this as TWO I/O waves, not nine sequential steps.** Items 1, 2, 2a, 3→4 and 2b's local reads
+consume only `1a`'s fetch, so they are independent: **issue them in ONE message** (wave A). Then derive
+`2b`, `2c`, `2e` from what came back — pure computation, no tool call (`2e` only *derives*; its scan runs
+at Step 2a). Then **one message** for `2d`'s two
+refreshers (wave B), which is the only item gated on a derived token and the only one that costs real
+time (~8.6 s). Items 3 → 4 stay ordered as written; both are millisecond globs, so splitting them buys
+nothing. Measured rationale and the list of things that must **not** be parallelised — the serial suite
+append, one `suites:sync`, no verifier beside its own doer, no two suites on one disposable fixture set:
+[`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §Concurrency.
 
 1. **Environment health** — `/qa-env-check endpoints`. If unhealthy, warn user.
 2. **Build & version** — GitHub MCP `get_file_contents` on `backend/packages.json` + `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`, or the branch matching `TEST_ENV`). Record platform + theme + ticket-relevant module versions — this is the **`declared`** (git) state. Then probe `GET {{BACK_URL}}/api/platform/modules` for the **`deployed`** state, which is the ground truth and routinely differs (deploy in flight, failed, or partially applied). A failed probe records `deployed: UNKNOWN` — **never** fall back to `declared`. **PR testing:** confirm the PR's artifact version appears in `packages.json`/`artifact.json`; if not deployed → offer `/qa-deploy-pr <ticket-key>` (**ask first**) or warn and ask whether to wait.
@@ -275,6 +298,58 @@ Per `.claude/templates/agent-dispatch.md`:
 
     **It is a LANE trigger, not an EFFORT trigger** — it never forces FAST → FULL. A P2 restyle stays FAST
     and gains the lane.
+2d. **Refresh the API CONTRACT before any agent reads it — both paths.** Derive `contract_surface` in this
+    same block, after 2b and by the same discipline (derived, never asked, never defaulted; `unresolved`
+    treated as `true`); it lands as `summary.json.contract.surface` with `contract.surface_source[]`. When
+    `true`, run **both** refreshers here — they refresh two different artifacts and neither freshens the
+    other — **concurrently, in ONE message**. They share no write target (`graphql-schema.md` vs the
+    cache + its own report) and each introspects independently, so there is no order to preserve; measured
+    10.4 s serial → 8.6 s parallel, because the fixture pass hides entirely under the introspection.
+
+    ```bash
+    npm run schema:refresh                      # → .claude/knowledge/api/graphql-schema.md (what 1c/1d/1e read) — ~8.5s
+    npm run graphql:fixtures:validate:refresh   # → the schema cache + the 74-fixture gate (non-zero on drift) — ~1.8s
+    ```
+
+    Both exit codes are read; a failure in either is its own record (§3), so run them together rather than
+    letting the first failure hide the second.
+
+    **This is a step, not a suggestion, and it must run BEFORE `1c` dispatches** — `1c`, `1d`, `1e` and the
+    Step-3b authoring pack all read `graphql-schema.md`, so a refresh after them changes nothing. The
+    briefs then carry the snapshot's **rev** (`graphql-schema.md @ <refresh date> — refreshed this run`),
+    never just its path: `ba-system-analyzer` and `ba-api-specialist` are otherwise told to refresh *"if
+    stale"*, which is a judgment they have no basis to make.
+
+    **Three rules, cited not restated** ([`skills/qa-test/contract-refresh.md`](../skills/qa-test/contract-refresh.md)):
+    a failed refresh records `UNKNOWN` and **never** falls back to the committed snapshot (same rule as
+    `build.deployed`), downgrading every `{DOC}` GraphQL oracle to `{HYPOTHESIS}`; **fixture drift on an op
+    the ticket's own diff touches is a `1e` finding** (a moved contract is a chain link and a candidate
+    reverse edge), drift elsewhere is recorded and not chased, and neither files a bug from the gate alone;
+    and `contract_surface: false` is **recorded with its sources**, because an omitted contract block reads
+    as a clean refresh. `npm run schema:check` is a liveness check, **not** a drift gate — never cite it as
+    one. Derivation table, the two-artifact split and the cost argument: that file.
+2e. **Resolve `coverage_surface` — which EXISTING rows this change may make wrong.** Derived here, after
+    2d, by the same discipline (derived, never asked, never defaulted); it lands as
+    `summary.json.coverage_triage.surface` with its sources. 2b–2d ask *what did this change touch*; this
+    one asks *what did it INVALIDATE*, which nothing in the pipeline asked before — the corpus was read in
+    one direction only (*which suites already cover this, so I author the gaps*). Three parts, all derived:
+
+    | Part | From | Feeds |
+    |---|---|---|
+    | **scope** | the ticket's `1a` domain(s) + the derived `layer` + the target suites' manifest `domain`/`tags`/`requiresModules` vocabulary — **not** the diff paths | `--domain` / `--suite` / `--module` |
+    | **observables** | the concrete strings the change MOVES, read off the diff + the PR body: a renamed label or heading, a moved route, a renamed GraphQL field/op/arg, a changed selector, a renamed `@td()` alias | `--observable "<phrase>"` (repeatable) |
+    | **oracles** | any `BL-*`/`ECL-*` the ticket **amends or contradicts** | `--oracle <ID>[,<ID>]` |
+
+    Scope comes from the manifest's own vocabulary — present on **every** suite — and never from path
+    tokens: a changed-path token may only **ADD** a suite, never filter one out (the same asymmetry
+    `selectSuites` applies to its repo index). That is exactly why `regression:select --path` drops a suite
+    whose domain no path segment spells, reporting an empty `unmappedPaths` because the vocabulary matched
+    *something* and the fail-open widening never fired.
+
+    **`unresolved` ⇒ `true`** — fail open, same direction as 2c and 2d: a skipped triage leaves stale rows
+    nobody will look at again, a needless one costs one script run. `false` is **recorded with its
+    sources**, because an omitted coverage block reads as a clean scan. Both paths. The scan itself is
+    **Step 2a**; this item only produces its arguments.
 3. **Resolve current sprint** — use `reports/tickets/Sprint-current` if present, else the latest `SprintXX-XX` folder; create if missing. This is `{SPRINT}` for output paths (`reports/tickets/{SPRINT}/`). Resolve **before** the duplicate check.
 4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` (per `feedback_duplicate_check_across_all_sprints`) for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
 
@@ -290,6 +365,12 @@ returns:
 - **Related flows & integration boundaries** — adjacent features / cross-domain seams (cart ↔ checkout, org ↔ membership, …).
 - **Known pain points / historical failures** — cross-referenced to `vc-bug-catalog.md` (`VC-*`) + prior bugs.
 - **Docs grounding** — VirtoOZ/VC-doc references for how the feature is *supposed* to behave.
+
+**Hand it the contract's REV, not its path.** When `1b` item 2d refreshed, the brief carries
+`graphql-schema.md @ <refresh date> — refreshed this run` plus any fixture drift the gate reported. Without
+the rev, the agent's own definition tells it to refresh *"if stale"* — a judgment it cannot make, so it
+guesses ([`skills/qa-test/contract-refresh.md`](../skills/qa-test/contract-refresh.md) §4). When 2d recorded
+`UNKNOWN`, say so in the brief: contract claims from that snapshot are hypotheses, not grounding.
 
 On internal error, gather context inline (from the `1a` fields + the diff + `.claude/knowledge/`) rather than
 retrying the delegation. The `1e` model carries the same fields either way.
@@ -363,7 +444,10 @@ Load, for the identified domains, the **actual rule text and patterns** (not jus
 `oracles/vc-bug-catalog.md` `VC-*` (each entry's `Detection probe` is a ready-made scenario) · **when `1b`
 item 2c derived `visual_surface: true`**, the `BL-UI-*` **and `BL-A11Y-001..004`** invariants +
 `critical-ui-scope.md` + `qa-design` §State-Stress + the generated selectors **and design tokens** ·
-`modern-web-attack-surface.md` §`UIP-*`. Then query VirtoOZ docs via `/vc-docs` — **skip when
+`modern-web-attack-surface.md` §`UIP-*` · **when `1b` item 2d derived `contract_surface: true`**, the
+**refreshed** `api/graphql-schema.md` + `api/graphql-test-cases-runner.md` + the
+`test-data/graphql/index.json` fixture inventory (read it **before** proposing a new fixture — 74 ops
+already exist, each with its `usedBy[]`). Then query VirtoOZ docs via `/vc-docs` — **skip when
 `1c` delegated to `ba-system-analyzer`**, topping up specific gaps only.
 
 The condition is the derived token, not a judgment call — *"for a UI surface"* used to be an unchecked
@@ -377,8 +461,84 @@ Per-source detail and the sweep-resolution rules:
 **Gate (inline):** every affected domain has its `BL-*`/`ECL-*`/`E2E-*`/`VC-*` loaded and an agent routed;
 **every in-domain defect-shaped `VC-*` entry is either a scenario row or an explicit N/A**; the `Archetype
 sweep` is resolved; **when `visual_surface: true`** the `UIP sweep` is resolved, the UI + a11y oracles are
-loaded, and the visual lane is routed. (Verified as part of Step 3's gate — no standalone verifier pass
+loaded, and the visual lane is routed; **when `contract_surface: true`** the schema loaded here is the one
+2d refreshed (or its `UNKNOWN` is carried forward), not a snapshot of unknown age. (Verified as part of Step 3's gate — no standalone verifier pass
 here.)
+
+---
+
+## Step 2a — Triage existing coverage
+
+**Both paths.** After Step 2 (it needs the loaded `BL-*`/`ECL-*` text to judge a hit) and **before Step 3**
+— authoring has to know which existing rows it is *amending* before it writes a new one.
+
+A stale row used to be reachable only by FAILING at Step 4 and being triaged at 5a, and two mechanisms
+guarantee that some never get that far: `regression:select` maps changed **paths** to suites by path token,
+and its fail-open widening fires only when the vocabulary matched **nothing**; Artifact C then applies
+`--cases critical`, dropping the High rows where most label and route assertions live. A row that never
+executes is never triaged.
+
+Run the scan with the `1b` item 2e arguments:
+
+```bash
+npm run tc:scope -- --domain <d>[,<d>] --observable "<phrase>" [--observable "<phrase>"] \
+  --oracle <ID>[,<ID>] --cases critical [--also-ids <new Draft case IDs>] [--json]
+```
+
+Scope needs ≥1 of `--domain` / `--suite` / `--module`; risk terms need ≥1 of `--observable` (**one phrase
+per flag**, so a comma stays inside the phrase) / `--oracle`. Pass `--cases`/`--also-ids` **exactly as
+Artifact C will**, so `runFate` predicts *this* run and not a hypothetical one. Exit `0` = a worklist was
+produced (an empty one included) · `1` = bad usage · `2` = a suite named with `--suite` could not be
+scanned. A legacy 11-column suite is **refused, never scanned** (`parseSuite` maps positionally) and lands
+in `unscannable[]`.
+
+**`runFate` is the column this step exists for.**
+
+| `runFate` | Means | Consequence |
+|---|---|---|
+| `WILL_RUN` | Artifact C executes it | **self-announcing** — it goes red at Step 4 and 5a triages it |
+| `FILTERED_OUT` | in a scoped suite, dropped by the tier filter | **invisible forever** unless disposed here — this is the coverage hole |
+| `NOT_EXECUTING` | explicit `Manual` / `Deprecated` (EX-200 / EX-201) | opted out **by intent** — not a coverage hole |
+
+**Then dispose every hit — a closed four-value vocabulary:**
+
+| Disposition | Means | Action |
+|---|---|---|
+| `CONFIRMED` | still correct under the change | nothing |
+| `REPAIR` | the row's **mechanics** are stale — renamed selector, moved route, removed arg, dead `@td()` alias — so it cannot execute at all | **fix BEFORE the run**: `/qa-review-tests file <suite> --fix` |
+| `RE-BASE` | the row's **expected value** conflicts with the change | **do NOT rewrite.** Keep the old assertion, carry the row into Artifact C on `--also-ids`, let Step 4 execute it |
+| `SUPERSEDED` | the change removes the surface the row asserts | **proposal only** — retirement is human (TRI-006) |
+
+**The `REPAIR` / `RE-BASE` split is the load-bearing rule.** The change under test is normally an
+**unmerged PR**, so rewriting a row's expected value to match it *before* the run makes the change its own
+oracle — the case can then only pass, which is precisely the *no case may invert its assertion to certify a
+known defect* failure. `REPAIR` is safe for the mirror-image reason: it moves the **mechanics and not the
+oracle**, and leaving it unfixed manufactures a BLOCKED that reads as a product failure (the corpus's
+19.9% artefactual-BLOCKED class). A `RE-BASE` row that FAILS at Step 4 is then updated by **5a's existing
+test-defect path**, with the run's own evidence — this step adds no new repair mechanism.
+
+**Three hard rules:**
+- A `FILTERED_OUT` row disposed `RE-BASE` **must** be carried on Artifact C's `--also-ids`, or its
+  disposition is `CONFIRMED`/`SUPERSEDED` **with a reason**. An undisposed `RE-BASE` that never runs
+  re-creates the exact gap this step exists to close.
+- **The scan is a claim about a TEST CASE, never about the product.** Step 2a **files no bug** — the same
+  rule as 2d's contract drift.
+- **`neverAudited` is context, not a verdict.** TRI-000 reports *when* a row was audited, never whether it
+  is right.
+
+**It runs on FAST too**, for 2d's argument exactly: a rename / restyle / config tweak is *single-layer,
+single-domain, obvious surface, P2* **by construction**, so the change class that invalidates existing
+assertions is the class FAST routes. It dispatches **no agent**, so it is not an exception to FAST's
+one-execution-agent rule.
+
+**Gate (inline):** every hit carries a disposition; every `REPAIR` is applied and re-linted; every
+`RE-BASE` is in Artifact C's `--also-ids` or re-dispositioned with a reason; every `unscannable[]` suite
+and every `unmatchedObservables[]` term is **stated** — an unscanned suite is not a clean one, and an
+observable that matched nothing is either a well-covered rename or a wrong phrase, and you cannot tell
+which from silence. Re-verified at Step 3's hard-STOP gate.
+
+Single source of truth, cited and never restated:
+[`.claude/skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md).
 
 ---
 
@@ -413,9 +573,11 @@ against fixtures that already resolve.
 
 **Artifact C — case-scoped, not suite-scoped, inside a 40-minute window.** `npm run regression:select --
 --repo <repo> --changed-files <file> --target 40 --json` for the suites (it refuses to trim the P0 +
-`critical-ui-scope` risk floor), then `--cases critical --also-ids <new Draft case IDs>` for the cases.
-**State the predicted makespan and every suite `--target` excluded** — the cost model is documented as wrong
-by ×18–×88 for runner-native suites, so the number is a hint, not a fact.
+`critical-ui-scope` risk floor), then `--cases critical --also-ids <new Draft case IDs + every Step-2a
+RE-BASE case id>` for the cases. **State the predicted makespan and every suite `--target` excluded** —
+the cost model is documented as wrong by ×18–×88 for runner-native suites, so the number is a hint, not a
+fact. `--also-ids` is the only way a `FILTERED_OUT` `RE-BASE` row executes at all, so an id missing from it
+is a disposition that was never carried out.
 
 **Review & auto-fix (FULL only):** every newly authored case through `/qa-review-tests file <target-suite>
 --fix`, deterministic core first, under Phase 4b's write-scope ceiling + revert-on-regression. A case that
@@ -423,10 +585,15 @@ can't pass review is flagged, not shipped.
 
 **Gate (Artifacts reviewed + data seeded — hard STOP):** new cases pass the review dimensions (0 blocker /
 0 critical); **every atomic condition + risk area maps to a case or checklist item**; required data seeded to
-a green `td:validate`. **Independent verification (1 round):** a fresh `qa-lead` verifier **re-runs
-`suites:review`** on the touched suite and **re-runs `td:validate`** — not the author's word — then re-reads
-the Test Model and confirms each atomic condition has a covering case. REJECT on any blocker/critical or
-uncovered condition → REASONS + FIX → doer (+ `test-data-engineer`) fixes → re-verify once → STOP.
+a green `td:validate`; **every Step-2a `tc:scope` hit carries a disposition, every `REPAIR` is fixed and
+re-linted, and every `RE-BASE` is either in Artifact C's `--also-ids` or re-dispositioned with a reason**.
+**Independent verification (1 round):** a fresh `qa-lead` verifier **re-runs
+`suites:review`** on the touched suite, **re-runs `td:validate`**, and **re-runs `tc:scope` with the same
+arguments 2e derived** — all three read-only and disjoint, so issue them in **one message** — not the
+author's word — then re-reads
+the Test Model and confirms each atomic condition has a covering case. REJECT on any blocker/critical, any
+uncovered condition, **or any `tc:scope` hit without a disposition** → REASONS + FIX → doer (+
+`test-data-engineer`) fixes → re-verify once → STOP.
 
 ---
 
@@ -530,7 +697,12 @@ and promotion deferred to the exit round
   delegation. If the tracker MCP is unavailable, skip transitions and ask the user for ticket details.
 - **What persists:** `summary.json` + `testing-checklist.md` + evidence screenshots under
   `reports/tickets/{SPRINT}/<ticket-key>/`; the FULL-path Test Model to `reports/ba/test-models/`; new test
-  cases to `regression/suites/`. `ac-analysis.md` and `test-execution-report.md` are **never written** — the
+  cases to `regression/suites/`. Inside `summary.json`, the derived axes each keep their own block —
+  `visual` (2c), `contract` (2d) and **`coverage_triage` (2e + Step 2a): the `tc:scope` arguments used, the
+  per-disposition counts, and the `RE-BASE` case ids carried into Artifact C's `--also-ids`** — so the
+  Step-3 gate's "every hit disposed" claim is auditable from the artifact and not only from the chat
+  report, and a `null` block means the scan never ran.
+  `ac-analysis.md` and `test-execution-report.md` are **never written** — the
   AC table lives in working context and every finding is delivered once, in the Step-5 chat report. Full
   table: [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §What persists.
 - **Severity floor on filing (5d): `Critical`/`High`/`Medium` only.** A `Low` is dropped from the tracker,

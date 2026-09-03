@@ -61,7 +61,7 @@ Admin-only path with a **correct outcome** (the edit is refused, nothing persist
 
 ## Related
 
-- `reports/bugs/open/BUG-mission-save-validation-accepts-negative-reward.md` — quotes a dev comment claiming *"Add mission validation on saving on backend (currently none, can even edit a Published mission)"* is completed. This finding is evidence that whatever landed guards the *state* but does not surface the refusal correctly.
+- `reports/bugs/open/medium/BUG-mission-save-validation-accepts-negative-reward.md` — quotes a dev comment claiming *"Add mission validation on saving on backend (currently none, can even edit a Published mission)"* is completed. This finding is evidence that whatever landed guards the *state* but does not surface the refusal correctly.
 - Suite `075d` `MSN-006` asserts `409` and is expected to fail until this is mapped; `075e` `MSNA-013` covers the equivalent Admin-UI read-only guard.
 
 ## Cleanup

@@ -208,8 +208,18 @@ attachment REST API does not expose; the wiki-markup path is what resolves it fo
 
 The last one is the trap: it is the only variant that *posts successfully*, so a run that stops at the
 status code concludes it worked. `GET /rest/api/3/issue/<KEY>/comment/<id>?expand=renderedBody` is what
-distinguishes them — a rendered `<span class="error">` or zero `file-preview-id` attributes means the
-images are invisible whatever the POST returned.
+distinguishes them — a rendered `<span class="error">` means the images are invisible whatever the POST
+returned.
+
+**Read the POSITIVE signal off the `<img>`, not off `file-preview-id`.** That attribute was the marker on
+the 2026-09-02 VCST-5319 measurement and it does **not** appear on a working wiki render: verified
+2026-09-03 on VCST-5868, where a correct `!file.png|width=700!` renders as
+`<span class="image-wrap"><img src=".../rest/api/3/attachment/content/<attachmentId>" width=…>` with
+**zero** `file-preview-id` occurrences. A check gated on that attribute would have called three correctly
+rendered images a failure. The three signals that did hold: one `<img src=…/attachment/content/…>` per
+image in `renderedBody`; via the v3 read below, one ADF `media` node per image whose `attrs.id` is a
+36-char UUID with `type: "file"`; and **zero** surviving literal `!…png!` in `renderedBody`, which proves
+the wiki markup was converted rather than printed.
 
 **Probe on a throwaway comment, never on the deliverable.** Post a one-line test comment, iterate the
 variants against it, then write the real comment once with the form that rendered — and delete the probe

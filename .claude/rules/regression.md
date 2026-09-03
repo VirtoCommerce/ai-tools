@@ -667,6 +667,92 @@ A regression run tells you *which* tests failed; **`/qa-triage-results [RUN_ID|l
 
 Full methodology: the `/qa-triage-results` skill (`triage-taxonomy.md` + `routing-and-fix.md`). Interactive-first; a headless `ci/run-triage-results.ts` twin is a documented follow-up.
 
+## Existing-Coverage Triage — which rows does this change make WRONG?
+
+The scaffold below gates a case *before it is written*. This gates the cases that already exist, and it
+closes the one direction the corpus was never read in. Every reader asked *which suites already cover
+this, so I author only the gaps*; nothing asked *which existing rows does this change make wrong*. So a
+stale row was reachable only by FAILING at Step 4 and being triaged afterwards — reactive by
+construction, and only for the rows that ran at all.
+
+Measured on VCST-5733 (2026-09-02), three things compound to make sure a stale row never runs.
+`npm run regression:select -- --path client-app/pages/company/customer-orders.vue` selects 37 suites and
+**EXCLUDES 089/091/093** because no path segment is the literal token `sales-rep` — and it reports
+`unmappedPaths: []`, because the fail-open widening in `suite-selection.ts` fires only when the
+vocabulary matched **nothing**, and `orders`/`account` matched, so selection believes it mapped cleanly
+and never widens. Artifact C then applies `--cases critical`, dropping the High rows where most label and
+route assertions live (091: 24 High, 093: 29 High). And a row that never executes is never triaged. The
+concrete hole: PR #2444 renames the hub widget to "My recent orders" across 13 locales, and the existing
+suites assert the OLD label **62 times** (093: 43, 091: 19). The Dim-11 rotation is no backstop either —
+almost nothing in the corpus carries an `Audited:` stamp, and **not one** of the rows in the four suites
+the two FULL `/qa-test` runs touched does. The stamped share is a moving number (every append changes
+it, and the append that added this section moved it), so it is measured once in
+[`skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md) §1 and cited from here —
+a count transcribed into four files is wrong in four places at once, silently (§GOLDEN RULE).
+
+| Command | Does |
+|---|---|
+| `npm run tc:scope -- --domain <d>[,<d>] \| --suite <ids> \| --module <m>` | **scope** — from the manifest's own vocabulary; ≥1 required |
+| `… --observable <phrase> [--observable …] \| --oracle <ID>[,<ID>]` | **risk terms** — the moved observable / amended invariant to hunt; ≥1 required. One phrase per `--observable` flag, so a comma stays inside it |
+| `… --cases <tier>[,<tier>] [--also-ids <ids>]` | predict the run Artifact C will actually execute |
+| `… --json` | machine-readable worklist |
+
+Core `scripts/test-cases/scope-existing-coverage.ts`; unit tests
+`scripts/unit/scope-existing-coverage.test.ts`. Output: `scopedSuites[]` (with the reason each was
+scoped — domain/tag/module/named/path), `hits[]` (suite, case, title, priority, `Automation_Status`, the
+matched term + the column it matched in, cited oracles, `lastAudited`, `runFate`), plus `unscannable[]`,
+`unmatchedObservables[]` and a `counts{}` block. Exit `0` on a produced worklist (an empty one included),
+`1` on bad usage, `2` when a suite named on `--suite` could not be scanned — a named request must never
+be silently ignored, while a suite reached by vocabulary lands in `unscannable[]` instead.
+
+**`runFate` is the point of the tool, not a column on it.** A stale row that `WILL_RUN` is
+self-announcing: it goes red at Step 4 and triage picks it up. A stale row that will not run is invisible
+forever. `NOT_EXECUTING` (explicit `Manual`/`Deprecated`, EX-200/EX-201) is opted out **by intent** and is
+therefore *not* a coverage hole — only `FILTERED_OUT` is, which is why the two are separate values rather
+than one.
+
+Six decisions, each of which was a live fork:
+
+- **Scope comes from the manifest's own `domain`/`tags`/`requiresModules` vocabulary**, present on every
+  suite — never from path tokens, which is the signal that demonstrably missed. A `--changed-files`-style
+  path token can only **ADD** a suite, never filter one out: the same asymmetry `selectSuites` already
+  applies to its incomplete repo index, and for the same reason — a hit is evidence FOR a suite, never
+  against one.
+- **Scope matching is EXACT on a normalised term; matching INSIDE a row is deliberately not.** `order`
+  must not capture `orders` and turn a triage worklist into the whole tree — the rule `pathTokens`
+  already follows. Within a row the search is case-insensitive substring, because it searches prose an
+  author hand-wrote, where `Recent orders` / `Recent Orders` / `recent orders` are the same assertion and
+  all three spellings are live in 091/093.
+- **Only assertion-bearing columns are searched** — Title, Section, Preconditions, Test_Data, Steps,
+  Assertions, Cross_Layer_Checks, Failure_Signals. A term hitting an `Archetype:` stamp in `References`
+  or a `Cleanup` note says nothing about what the row asserts.
+- **A legacy 11-column suite is REFUSED** and reported in `unscannable[]`, never scanned. `parseSuite`
+  maps positionally, so its `Steps` lands in `Test_Data` and its `Priority` is not `Priority`; scanning
+  would report the right rows for the wrong reasons and predict `runFate` off the wrong column. Same
+  refusal `filter-cases.ts` and `plan-lanes.ts` make.
+- **It delegates rather than re-deciding.** The priority-tier table comes from `filterRows`, so
+  `critical`/`P0` cannot come to mean different things in the scope report and in the run it predicts;
+  the audit stamp comes from `parseAuditStamp`, so the report and the TRI-000 rotation agree.
+- **Fail-open, and always named.** Doubt WIDENS the worklist (matching `filter-cases.ts`, inverting
+  `case-classifier.ts`) because a wrongly-included row costs one triage line while a wrongly-excluded one
+  is a stale assertion nobody looks at again. An unscannable suite and an observable that matched nothing
+  are both printed even on an otherwise clean run.
+
+**It answers only the deterministic half** — which rows mention a moved observable, which cite an amended
+oracle, and whether each will run. Whether a row is actually WRONG is judgment, and belongs to
+`/qa-review-tests` Dimension 11 against its docs + live + source evidence bar. Exactly the split between
+`lint-test-cases.ts` TRI-000 (*when* was this audited) and `--triangulate` (*is the tag true*), and
+between `bl:lint` (the citation resolves) and Dimension 6 (it is the RIGHT citation).
+
+Measured on VCST-5733: `npm run tc:scope -- --domain sales-rep --observable "Recent orders"
+--observable "All orders" --oracle BL-SR-002 --cases critical` → 7 suites in scope, 358 rows scanned,
+**81 at risk: 35 WILL_RUN · 45 FILTERED_OUT · 1 NOT_EXECUTING**, 81 never audited.
+
+Consumed by `/qa-test` `1b` item 2e (the derived `coverage_surface` token) and its **Step 2a**, which runs
+this before authoring on **both paths** and routes each hit to one of four dispositions —
+`CONFIRMED` / `REPAIR` / `RE-BASE` / `SUPERSEDED`. Single source of truth for those:
+`.claude/skills/qa-test/coverage-triage.md`.
+
 ## Pre-Authoring Scaffold — the plan is the gate, and the boilerplate is derived
 
 Promotion (below) made the *end* of a case's life checkable. This is the other end. Authoring was

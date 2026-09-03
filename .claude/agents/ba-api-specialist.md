@@ -90,7 +90,7 @@ mcp__github__search_code: query="org:VirtoCommerce [HttpPost] [Route] [Authorize
 When the slug is unclear, search rather than guess: `mcp__github__search_repositories` with `org:VirtoCommerce vc-module-<keyword>`.
 
 **Existing project knowledge to consult before re-deriving the API surface:**
-- `knowledge/api/graphql-schema.md` — live introspected snapshot of the xAPI GraphQL schema (queries, mutations, input types, return types). Faster than re-introspecting; refresh via `npm run schema:refresh` if it looks stale.
+- `knowledge/api/graphql-schema.md` — live introspected snapshot of the xAPI GraphQL schema (queries, mutations, input types, return types). Faster than re-introspecting. **Do not judge its staleness — the file cannot tell you whether the live schema moved.** A caller that refreshed it hands you the rev (`/qa-test` `1b` item 2d, `/qa-test-lifecycle` Pre-Flight 4); with no rev, treat the snapshot as UNKNOWN age and either run `npm run schema:refresh` or report the field names you took from it as unverified. Spec: `.claude/skills/qa-test/contract-refresh.md`.
 - `knowledge/api/graphql-test-cases-runner.md` — canonical authoring contract for the QA team's runner-native GraphQL test cases (consumed by `scripts/graphql/graphql-runner.ts`). When you flag coverage gaps for GraphQL endpoints, point downstream test-authoring agents (test-management-specialist, qa-backend-expert) at this format. New GraphQL tests MUST be written in this format, not as Postman requests or GraphiQL UI flows.
 - `knowledge/api/api-auth.md` — Platform OAuth2 token flow (consistent with how the runner acquires tokens via `[AUTH role=…]`).
 - `knowledge/execution/module-suite-map.md` — module-to-test-suite mapping (use to flag "Postman has X requests but `regression/suites/Backend/<module>/` already covers Y").
@@ -99,7 +99,7 @@ When the slug is unclear, search rather than guess: `mcp__github__search_reposit
 - `test-data/README.md` + `test-data/aliases.json` — `@td(ALIAS.field)` resolver registry (catalogs, products, orgs, payment cards, addresses, coupons). Reference these when documenting required vars / example payloads instead of hardcoding GUIDs/SKUs/emails.
 
 **Live GraphQL introspection (when schema snapshot looks stale or a new mutation is suspected):**
-- `POST {api_base_url}/graphql` with the standard introspection query — or run `npm run schema:refresh` (writes both the cached `scripts/.graphql-schema.cache.json` and updates `knowledge/api/graphql-schema.md`).
+- `POST {api_base_url}/graphql` with the standard introspection query — or run `npm run schema:refresh`, which writes **`knowledge/api/graphql-schema.md` and nothing else**. It does **NOT** write `scripts/.graphql-schema.cache.json`: that cache is written only by `npm run graphql:fixtures:validate:refresh` (and by `graphql-runner.ts`), so refreshing the doc leaves the runner's cache exactly as stale as it was. `loadSchemaCache` has **no age check**, so a cacheless-refresh `npm run graphql:fixtures:validate` passes clean against an arbitrarily old cache — refresh both, or say which one you refreshed.
 - One-off probe: `npx tsx scripts/graphql/graphql-runner.ts --query "{ __type(name: \"TypeName\") { fields { name } } }"` — validates without sending a real request.
 
 **From Live Swagger UI (browser):**

@@ -239,7 +239,7 @@ force it, is the one move this rule must not cause.
 
 Silence is the failure mode this pipeline is built against, so a below-floor finding lands in three places:
 
-1. Its **`reports/bugs/open/` draft stays** (5a's `--fix` pass wrote it, or write it here). That is the
+1. Its **`reports/bugs/open/low/` draft stays** (a below-floor finding is `Low`/P3 by definition, so `low/` is always its folder — `.claude/rules/reports.md` §1a) (5a's `--fix` pass wrote it, or write it here). That is the
    durable record, and what a human promotes from later if the finding recurs or the grade is disputed.
 2. **5e's tracker comment names it** — count plus one line each, under `Not filed (below severity floor)`,
    with the draft path. A reviewer who wants it filed can say so; a reviewer who never sees it cannot.
@@ -338,7 +338,7 @@ Change-scoped regression: [suite IDs] — [pass rate] ([RUN_ID]).
 Regression triage: [N] confirmed bugs, [M] test-case fixes applied, [K] dismissed.
 App Insights (test window): [N] correlated — [confirmed/needs-review/none].
 Business rules verified: [BL-* list]. Bugs: [list, with relationship — sub-task/linked/standalone — or None].
-Not filed (below severity floor): [N] Low — [one line each + reports/bugs/open/<file>.md], or None.
+Not filed (below severity floor): [N] Low — [one line each + reports/bugs/open/low/<file>.md], or None.
 Release gate: [GO/CONDITIONAL GO/NO-GO recommendation]. Decision: [verdict].
 Release note: [<layer>/<audience> — /ba-analyze docs release <ticket-key>], or "none — <refusal>".
 Evidence: reports/tickets/{SPRINT}/<ticket-key>/screenshots/
@@ -582,7 +582,15 @@ every surviving `{HYPOTHESIS}` is resolved or reworded; `suites:lint` green. A f
 **re-runs `suites:review`** on the target suite and, for a sample of upgraded assertions, **re-opens the
 Step-4 evidence** grounding each `{OBSERVED}`. REJECT any `{OBSERVED}` with no traceable artifact, any
 `{HYPOTHESIS}` cleared by an invented value, any case promoted while still carrying a Blocker/Critical →
-revert the append (`git checkout` target CSV + manifest) → fix → re-verify once → STOP.
+revert the append → fix → re-verify once → STOP.
+
+**Reverting an append is a row-level edit, NEVER a `git checkout`.** Remove the appended rows with the
+same surgical discipline the promoter writes with (locate each record by its own raw text, delete only
+those bytes, re-parse and field-compare the survivors), then `suites:sync`. A `git checkout`/`restore`
+on the CSV or the manifest is forbidden by `.claude/rules/regression.md` §WORKING IN A SHARED TREE —
+several sessions hold uncommitted work in this tree, the manifest in particular is shared state written
+by `suites:sync`, and the 2026-08-28 loss was exactly this reflex reaching past its intended target.
+For a baseline to diff against, read `git show HEAD:<path>` into the scratchpad.
 
 An ungrounded `{OBSERVED}` is worse than a `Draft` case: it puts a fabricated expectation into permanent
 coverage. **The author never self-certifies this** — only `qa-lead-orchestrator` or the user promotes.

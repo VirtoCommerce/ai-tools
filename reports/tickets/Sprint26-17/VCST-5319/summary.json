@@ -83,7 +83,7 @@
       "severity": "Medium",
       "relationship": "standalone Bug, Relates to VCST-5319",
       "summary": "Save-validation accepts a negative reward (amount -1, HTTP 200)",
-      "report": "reports/bugs/open/BUG-mission-save-validation-accepts-negative-reward.md"
+      "report": "reports/bugs/open/medium/BUG-mission-save-validation-accepts-negative-reward.md"
     }
   ],
   "bugs_linked_not_refiled": [
@@ -93,7 +93,7 @@
     }
   ],
   "bugs_out_of_scope_filed": [
-    "reports/bugs/open/BUG-cart-mutations-target-shadow-cart-not-rendered-cart.md"
+    "reports/bugs/open/critical-high/BUG-cart-mutations-target-shadow-cart-not-rendered-cart.md"
   ],
   "promotion": {
     "run_id": "REG-2026-09-01-2050",

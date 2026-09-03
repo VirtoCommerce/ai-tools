@@ -8,7 +8,11 @@
  * written to test-data/aliases.<env>.json (never committed into the CSV).
  * NOTE: aliases.<env>.json is a COMMITTED shared overlay — after a reseed that changes rep GUIDs,
  * re-commit it so teammates/CI resolve the same @td(SR_REP_*.id) values. A stale overlay resolves
- * to deleted/old entities. (Order GUIDs are NOT written to the overlay — orders resolve by number.)
+ * to deleted/old entities. Order GUIDs ARE written to the overlay for rows carrying a DATE contract
+ * (rolling-window / newest-in-org) or an AUTHORSHIP contract (the VCST-5733 matrix) — the latter
+ * because `salesRepCustomerOrder(id:)` takes an ID, so @td(ORDER_NOT_SERVED.id) is the fixture. Every
+ * other order row is date- and id-agnostic and resolves by number, which is why it writes back
+ * nothing rather than churning the overlay on each reseed.
  *
  * The module is deployed on the QA environments (vcst, vcptcore) — run with the matching `TEST_ENV`.
  *
@@ -45,8 +49,10 @@ import {
 import {
   CSV_KEY as ORDERS_CSV_KEY, windowDaysFor, isFresh,
   NEWEST_IN_ORG, newestRows, isStrictlyNewest,
+  customerRoleFor, isAuthorshipRow, AUTHORSHIP_MATRIX, ROLE_REP,
 } from './sales-rep-orders-specs.mjs';
-import { hasStaleLockout } from '../../lib/user-provision.mjs';
+import { requiredProductSlots } from './sales-rep-stats-specs.mjs';
+import { hasStaleLockout, setLockoutVerified, __setApi } from '../../lib/user-provision.mjs';
 
 const OWNER_NAME = 'AGENT-TEST-SR-Owner-Acme';
 const OWNER_PHONE = '+1-206-555-0142';
@@ -121,8 +127,8 @@ async function confirmRepEmail(email) {
  * A password reset does NOT clear a non-empty `LockoutEnd` or reset `accessFailedCount`, so a rep
  * that collected failed logins stays unauthenticable AFTER a credential-repairing reseed — the
  * exact state REG-2026-08-24-1806 hit, where 104 cases in 050m were BLOCKED at
- * `POST /connect/token`. Symmetrical with `ensureSecurityAccount()`'s stale-lockout branch, which
- * already does this for the CSV-driven b2b users.
+ * `POST /connect/token`. Shares its repair with `ensureSecurityAccount()`'s stale-lockout branch via
+ * the shared `setLockoutVerified()`, so both surfaces clear a lockout the one way that works.
  *
  * `status` comes from `repFixtureStatus(row)`, so SR_REP_BLOCKED — whose lockout is the fixture —
  * is excluded by `hasStaleLockout()` itself rather than by a branch here.
@@ -131,9 +137,25 @@ async function clearRepStaleLockout(email, status) {
   if (!email || DRY_RUN) return false;
   const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
   if (!u || !u.id || !hasStaleLockout(u, status)) return false;
-  u.lockoutEnd = null; u.lockoutEnabled = false; u.accessFailedCount = 0;
+  // `PUT /api/platform/security/users` CANNOT clear `lockoutEnd`. Measured on vcst 2026-09-02: the
+  // PUT returns `{ succeeded: true, errors: [] }`, persists `status`, and SILENTLY DISCARDS
+  // `lockoutEnd` in both directions — so the previous implementation logged "cleared stale lockout"
+  // on every reseed while the lockout stayed exactly where it was. That is the worst shape a repair
+  // can have: the remedy for REG-2026-08-24-1806 (104 cases in 050m BLOCKED at /connect/token)
+  // reported success and changed nothing, so the same lockout survived every subsequent re-seed.
+  //
+  // `POST /users/{ACCOUNT_GUID}/unlock` is the endpoint that works. It keys on the GUID — the
+  // userName/email form returns `{ succeeded: false, errors: [] }`, a failure with no message.
+  // `status` is the half the PUT DOES persist, so it is repaired here; the `lockoutEnd` half goes
+  // through the shared `setLockoutVerified` (POST /unlock + read-back) so there is ONE
+  // implementation of that repair rather than a sales-rep-local copy that can drift from it.
+  u.status = status; u.lockoutEnabled = false; u.accessFailedCount = 0;
   await api('PUT', '/api/platform/security/users', u, { expectStatus: [200, 204] });
-  log(`  ↻ cleared stale lockout on ${email}`);
+  __setApi(api); // the helper carries its OWN module-level TOKEN (null here) — authenticate it
+                 // through THIS seeder's seed-common client, or the POST /unlock goes out as
+                 // `Bearer null` and 401s on exactly the residue this repair exists to clear.
+  if (!await setLockoutVerified(u.id, email, false)) return false;
+  log(`  ↻ cleared stale lockout on ${email} (verified)`);
   return true;
 }
 
@@ -365,7 +387,35 @@ const isSyntheticItem = (it) =>
  * `freshOk` so the rebuild reuses this function's proven delete-then-create path — deleting here and
  * re-entering would make the fresh search race the deletion through the ES index.
  */
-async function ensureOrder(row, orgs, customerId, products = [], { forceRebuild = false } = {}) {
+/**
+ * The ApplicationUser (login) id an order must carry as `customerId`, per the row's declared
+ * `customer_role` (sales-rep-orders-specs.mjs). `rep` — the blank default every pre-VCST-5733 row
+ * relies on — is the primary rep's own account id, which is what `salesRepOrders` matches
+ * `criteria.CustomerId` against. `buyer:<user_id>` resolves the named b2b/users.csv row's account id
+ * LIVE by email, so no GUID is ever committed.
+ *
+ * A buyer that cannot be resolved THROWS rather than falling back to the rep. Falling back is the
+ * silent-failure direction: the authorship pair would collapse into two orders with the same
+ * customer, `td:validate:sr-orders` (static) could not see it, and the "read-only for someone
+ * else's order" assertion would pass while testing nothing.
+ */
+async function resolveRowCustomerId(row, primaryUserId) {
+  const role = customerRoleFor(row);
+  if (role.kind === ROLE_REP) return primaryUserId;
+  if (role.kind === 'invalid') {
+    throw new Error(`order ${row.order_key}: customer_role="${role.raw}" is not "rep" or "buyer:<user_id>" — refusing to guess an attribution`);
+  }
+  const user = loadCsv('test-data/b2b/users.csv').find((u) => u.user_id === role.userKey);
+  if (!user?.email) throw new Error(`order ${row.order_key}: customer_role names user "${role.userKey}", absent from test-data/b2b/users.csv`);
+  const id = await resolveUserId(user.email);
+  if (!id) {
+    throw new Error(`order ${row.order_key}: buyer ${role.userKey} (${user.email}) has no ApplicationUser account on this env — seed the b2b users first (npm run seed:b2b). NOT falling back to the rep: that would silently collapse the authorship pair.`);
+  }
+  verbose(`order ${row.order_key} attributed to buyer ${role.userKey} (${user.email}) account ${id}`);
+  return id;
+}
+
+async function ensureOrder(row, orgs, customerId, products = [], { forceRebuild = false, productSlot = null } = {}) {
   const org = orgs[row.org];
   if (!org) { log(`  WARN: order ${row.order_key} — org ${row.org} unknown, skip`); return; }
   const number = `${ORDER_MARK}-${row.order_key}`;
@@ -412,9 +462,17 @@ async function ensureOrder(row, orgs, customerId, products = [], { forceRebuild 
   // order.Total == the CSV total; only product IDENTITY comes from the live catalog. Fewer products
   // than items → cycle. If NONE were discovered (dry-run / bare catalog) we fall back to synthetic
   // placeholders — non-browsable, so don't reuse those for reorder tests; seed the catalog first.
+  // A row may PIN its product slot (the VCST-5733 authorship rows do). Pinning exists so those
+  // orders add units/revenue only to products no other sales-rep fixture asserts a ranking on —
+  // an unsatisfiable slot THROWS rather than wrapping back onto slot 0, because wrapping would put
+  // line volume onto exactly the products `sales-rep-stats-specs` shapes for BL-SR-008.
+  if (productSlot != null && products.length && productSlot + n > products.length) {
+    throw new Error(`order ${row.order_key}: pinned productSlot ${productSlot} + ${n} item(s) exceeds the ${products.length} discovered product(s) — refusing to wrap onto a ranking-asserting slot`);
+  }
   const items = Array.from({ length: n }, (_, i) => {
     const price = i === 0 ? firstPrice : per;
-    const p = products.length ? products[i % products.length] : null;
+    const slot = productSlot != null ? productSlot + i : i % Math.max(1, products.length);
+    const p = products.length ? products[slot] : null;
     return p
       ? { sku: p.sku, productId: p.id, catalogId: p.catalogId, name: p.name, quantity: 1, price, productType: 'Physical', currency: 'USD' }
       : { sku: `AGENT-TEST-SR-SKU-${i + 1}`, productId: `${SYNTHETIC_PRODUCT_PREFIX}${i + 1}`, catalogId: SYNTHETIC_CATALOG_ID, name: `AGENT-TEST-SR Item ${i + 1}`, quantity: 1, price, productType: 'Physical', currency: 'USD' };
@@ -540,6 +598,15 @@ async function main() {
   log(`Sales Rep role: ${roleId || '(service default)'}`);
   const repWriteback = {};
   const orderWriteback = {};
+  // Per-ROW order failures are collected rather than thrown, because a throw out of the Phase-4 loop
+  // skips Phase 5 entirely — and that loses the write-back for orders already created in THIS run
+  // (including rolling-window rows `ensureOrder` deleted and recreated) plus every rep that seeded
+  // fine. The overlay then keeps ids of entities that no longer exist, which is the stale-overlay
+  // class `td:reconcile` [11] and §DISPOSABLE FIXTURES exist to prevent, and it presents later as a
+  // product failure rather than a seed failure. Both triggers are ordinary env states (b2b users not
+  // seeded; a catalog too small to satisfy a pinned slot), not programmer errors. So: persist what
+  // succeeded, then fail loud with the full list — never fail silently, and never fail before saving.
+  const orderFailures = [];
   let primaryRepEmail = null;
   for (const row of reps) {
     const { contactId, userId, lockedMembershipId } = await ensureRep(row, orgs, roleId);
@@ -575,10 +642,31 @@ async function main() {
     verbose(`orders attributed to SR_REP_PRIMARY account id ${primaryUserId}`);
     // Discover real catalog products once (env-resilient, not hardcoded) to back the line items.
     const maxItems = Math.max(1, ...orders.map((r) => parseInt(r.items_count, 10) || 1));
-    const products = await discoverCatalogProducts(api, maxItems);
+    // The authorship rows PIN slots above everything sales-rep-stats-specs reserves, so discovery
+    // has to reach that far or their pins are unsatisfiable (ensureOrder then throws rather than
+    // wrapping onto a ranking-asserting product).
+    const maxPinnedSlot = Math.max(-1, ...Object.values(AUTHORSHIP_MATRIX).map((m) => m.productSlot));
+    const wantProducts = Math.max(maxItems, requiredProductSlots(), maxPinnedSlot + maxItems + 1);
+    const products = await discoverCatalogProducts(api, wantProducts);
     if (products.length) verbose(`line items use ${products.length} real catalog product(s): ${products.map((p) => p.sku).join(', ')}`);
     else if (!DRY_RUN) log('  WARN: no catalog products discovered — line items keep synthetic placeholders (seed catalog first for reorder/PDP-link cases).');
-    for (const row of orders) await ensureOrder(row, orgs, primaryUserId, products);
+    if (products.length && products.length < maxPinnedSlot + 1) {
+      log(`  WARN: only ${products.length} product(s) discovered but the authorship rows pin slots up to ${maxPinnedSlot} — those rows will fail loudly rather than silently share a ranking-asserting product.`);
+    }
+    const slotFor = (row) => Object.values(AUTHORSHIP_MATRIX).find((m) => m.orderKey === row.order_key)?.productSlot ?? null;
+    for (const row of orders) {
+      // customerId is per ROW now, not per run: `customer_role` is the AUTHORSHIP dimension the
+      // VCST-5733 fixtures vary, and it is the only thing separating SRO-TF-REP-PLACED from
+      // SRO-TF-BUYER-PLACED (same org, store, status, item count — deliberately).
+      try {
+        const rowCustomerId = await resolveRowCustomerId(row, primaryUserId);
+        await ensureOrder(row, orgs, rowCustomerId, products, { productSlot: slotFor(row) });
+      } catch (e) {
+        // Collected, NOT swallowed — `orderFailures` makes the run exit non-zero after Phase 5.
+        orderFailures.push({ order_key: row.order_key, message: String(e.message) });
+        log(`  FAIL: order ${row.order_key} not seeded — ${String(e.message).slice(0, 200)}`);
+      }
+    }
 
     // Phase 4b — MAXIMALITY. A row declaring `recency_contract=newest-in-org` must be its org's most
     // recent order, because SR-GQL-013 asserts the GLOBAL (no-storeId) `lastOrder` is the one on the
@@ -619,7 +707,7 @@ async function main() {
         .map((o) => `${o.number}@${o.createdDate}`);
       log(`  order ${number} ${DRY_RUN ? 'WOULD BE re-posted' : 're-posting'} to satisfy ${NEWEST_IN_ORG} (was ${self.createdDate}, outranked by ${beatenBy.join(', ') || '(tie)'})`);
       if (DRY_RUN) continue;
-      await ensureOrder(row, orgs, primaryUserId, products, { forceRebuild: true });
+      await ensureOrder(row, orgs, await resolveRowCustomerId(row, primaryUserId), products, { forceRebuild: true, productSlot: slotFor(row) });
     }
 
     // Date-contract rows write back their server-assigned id AND createdDate. The date is runtime
@@ -627,12 +715,16 @@ async function main() {
     // a rolling-window fixture has aged out of the window SR-CP-057 / SR-HD-048 assert against, or
     // that a `newest-in-org` fixture has been outranked (the SR-GQL-013 premise). A row with no
     // date contract is date-agnostic, so recording its instant would be noise.
-    const dated = orders.filter((r) => windowDaysFor(r) !== null || newestRows([r]).length > 0);
+    // The AUTHORSHIP rows write back for a different reason: `salesRepCustomerOrder(id:)` takes an
+    // ID, so @td(ORDER_NOT_SERVED.id) is the whole point of that fixture and an empty overlay field
+    // makes the case untestable rather than failing. Their `created_date` carries no contract but is
+    // recorded anyway, so a later triage can tell a stale fixture from a product bug.
+    const dated = orders.filter((r) => windowDaysFor(r) !== null || newestRows([r]).length > 0 || isAuthorshipRow(r));
     for (const row of dated) {
       const number = `${ORDER_MARK}-${row.order_key}`;
       const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 1 });
       const o = (found?.results || [])[0];
-      if (o) orderWriteback[row.order_key] = { order_id: o.id, created_date: o.createdDate };
+      if (o) orderWriteback[row.order_key] = { order_id: o.id, created_date: o.createdDate, customer_id: o.customerId };
       else log(`  WARN: date-contract order ${number} not found after seeding — its @td alias will resolve empty`);
     }
   }
@@ -643,6 +735,16 @@ async function main() {
   if (ownerId) writeEnvAliasOverride({ SR_OWNER_ACME: { id: ownerId } });
 
   log(DRY_RUN ? 'DRY RUN complete (no writes).' : 'Seed complete. Runtime GUIDs written to aliases.<env>.json.');
+
+  // Phase 6 — fail loud, AFTER the write-back above persisted everything that did succeed.
+  // Ordering is the whole point: the run still exits non-zero (a partial fixture set must never
+  // read as a clean seed), but the overlay is consistent with what is actually on the env.
+  if (orderFailures.length) {
+    log(`\n${orderFailures.length} order(s) FAILED to seed — the overlay above reflects only what succeeded:`);
+    for (const f of orderFailures) log(`  - ${f.order_key}: ${f.message}`);
+    log('Fix the cause and re-run; `npm run seed:b2b` first if a buyer account was missing.');
+    process.exit(1);
+  }
 }
 
 main().catch((e) => { console.error('SEED FAILED:', e.message); process.exit(1); });

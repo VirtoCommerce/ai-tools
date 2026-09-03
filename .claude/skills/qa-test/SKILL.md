@@ -22,6 +22,8 @@ about to change how a step works.
 | [`authoring.md`](authoring.md) | Steps 2–3 — oracle loading, Artifacts A/B/C, the scaffold + KEEP gate, the per-surface fan-out (3b), review/auto-fix | Authoring cases, or changing how they are authored |
 | [`close-out.md`](close-out.md) | Step 5 — triage, AC/DoD reconciliation, the verdict table, the severity floor on filing, the report, promotion | Triaging findings, filing, or promoting |
 | [`visual-axis.md`](visual-axis.md) | The visual axis — the `visual_surface` derivation, surface → axes → executor, the invariant-blocks/spec-advises verdict rule, the browser budget | A UI-visible ticket, or changing how design/a11y is scheduled |
+| [`contract-refresh.md`](contract-refresh.md) | The contract-refresh axis — the `contract_surface` derivation at `1b` 2d, the two-artifacts/two-commands split, `UNKNOWN` never falling back, drift as a `1e` input | A ticket touching GraphQL/xAPI, or changing when the schema + fixtures are refreshed |
+| [`coverage-triage.md`](coverage-triage.md) | The coverage-triage axis — the `coverage_surface` derivation at `1b` 2e, Step 2a's four dispositions, and why a `RE-BASE` is resolved BY the run rather than before it | A change that renames, moves or removes something existing cases already assert |
 | [`modes.md`](modes.md) | `--epic` and `--iterate` (5k) | Running either opt-in mode |
 | [`../../templates/test-model.md`](../../templates/test-model.md) | The Test Model fill-in shape + the authoring-plan JSON shape | Writing the model or a plan |
 
@@ -54,6 +56,7 @@ result:
 | Regression Scope Exclusions | the suite passed | name every suite that contributed zero cases |
 | 5d below-floor findings | nothing minor was found | `Not filed (below severity floor): None` |
 | A checklist condition with no case | condition covered | list it as uncovered |
+| An absent `contract` block | the schema was fresh | record `contract_surface` + its sources, or `UNKNOWN` |
 
 ## Effort routing, and why the FAST/FULL line sits where it does
 
@@ -88,6 +91,63 @@ gates only — Step 3, Step 5b, Step 5g. What makes it independent rather than c
 
 Every other step, and the entire FAST path, self-checks inline. Diagram + role/hand-off detail:
 `docs/qa-test-flow.md`.
+
+## Concurrency — the unit to save is a ROUND-TRIP, not a second
+
+Measured on vcst-qa, 2026-09-02, so the optimisation is aimed at the right thing: **every deterministic
+script in this pipeline costs 1–2 s except one.**
+
+| Script | Wall clock |
+|---|---|
+| `schema:refresh` / `schema:check` (live introspection) | **~8.5 s** |
+| `graphql:fixtures:validate:refresh` (74 documents) | ~1.8 s |
+| `suites:lint` (corpus-wide) | ~1.9 s |
+| `td:validate` | ~1.3 s |
+| `regression:select` | ~1.2 s |
+
+Total deterministic script time across a whole FULL run is well under a minute. So **squeezing script
+wall-clock is not where the time is** — parallelising 2d's pair saves 1.8 s, and that is close to the
+ceiling for this kind of win. Two things actually cost:
+
+1. **Round-trips.** A numbered list of independent operations, walked one tool call per turn, spends a
+   full model turn per item. `1b` has **seven** independent probes/reads; done one at a time that is
+   seven turns to accomplish ~3 s of work. Batching them into one message is worth far more than every
+   script optimisation in the table above, combined.
+2. **Agent dispatches**, which are minutes each. The pipeline already parallelises these where it can —
+   `1c ‖ 1d` in one message, Step 3b one batch per execution surface, Step 4's execution agents inside
+   the max-3 browser cap. That work is done; do not re-derive it.
+
+**So the rule is: independent operations go out in ONE message; dependent ones state what they consume.**
+This is the harness's own guidance applied per step, not a new mechanism.
+
+### `1b` is two I/O waves, not nine steps
+
+| Wave | Contains | Consumes |
+|---|---|---|
+| **A** — one message | item 1 env health · item 2 build/version (both GitHub reads + the `/api/platform/modules` probe) · item 2a release-ledger read · item 2b's local reads (suite manifest, repo-router) · item 3 sprint resolve → item 4 duplicate check | only `1a`'s fetch |
+| *(no I/O)* | derive **2b** `layer`, then **2c** `visual_surface` and **2e** `coverage_surface` — pure computation over what Wave A returned | Wave A |
+| **B** — one message | **2d**'s two refreshers, concurrently ([`contract-refresh.md`](contract-refresh.md) §2) · **2e**'s `npm run tc:scope` ([`coverage-triage.md`](coverage-triage.md) §4) | `2b`'s token |
+
+Items 3 → 4 stay ordered inside Wave A as the command states. They are both local globs costing
+milliseconds, so splitting them buys nothing — **and that is the general test: parallelise where the
+operations are independent *and* the cost is real.** Reordering something free to look concurrent is
+churn.
+
+### What must NOT be parallelised — each for a reason the repo paid for
+
+Do not read the above as "parallelise everything." Every entry here is a place where concurrency has a
+known cost, and three were measured:
+
+| Never | Because |
+|---|---|
+| `2d` concurrently with `1c` / `1d` / `1e` / the 3b pack | they READ what it writes; a refresh that races its readers is a refresh that did nothing |
+| Two writers on one suite CSV — the Step-3b append stays **serial**, `suites:sync` runs **once** | `suites:lint`/`sync` hard-fail on a parse error anywhere in the corpus, so N parallel writers multiply a tree-wide outage by N and block every other author in the tree (`.claude/rules/regression.md` §WORKING IN A SHARED TREE — measured: one mid-write invalid CSV blocked two sessions' gates for ~15 min) |
+| `suites:sync` ‖ `suites:lint` | lint reads what sync wrote |
+| Artifact A ‖ 3a | cases are authored against fixtures that already resolve — that is why 3a runs first |
+| Two suites ‖ on one disposable fixture set | **measured**: `075d` lost 5 of 34 cases to fixtures suite `083d` had already consumed on the same accounts. Serialise with a re-seed between, or give each its own accounts (`.claude/rules/test-data.md` §The scope of "isolated") |
+| More than 3 browser agents, or two agents on one session | the lane cap is hard, and a shared session means agents fighting over navigation and cookies |
+| A verifier ‖ its own doer | the verifier re-derives evidence *after* the doer's write; concurrent, it verifies a half-finished step. The three gates are sequential by design |
+| `--iterate` rounds | test → fix → deploy → re-test is inherently serial |
 
 ## Agent dispatch — routing and the prompt contract
 

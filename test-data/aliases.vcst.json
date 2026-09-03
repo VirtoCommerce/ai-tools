@@ -1371,5 +1371,24 @@
   "MSN_PERSKU_PTS": {
     "id": "3e486de8-8e72-46ab-974a-76ee7a5d70ba",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
+  },
+  "ORDER_REP_PLACED": {
+    "id": "a037c69d-7b41-41a3-ba90-15817f19a553",
+    "createdDate": "2026-09-02T15:52:19.8822992Z",
+    "customerId": "31c6feef-f7b2-46ae-a965-1b94280e7ef0"
+  },
+  "ORDER_BUYER_PLACED": {
+    "id": "ebcd0f13-7dca-498d-96a1-1b4d2ec65dac",
+    "createdDate": "2026-09-02T15:52:24.7805952Z",
+    "customerId": "557dee63-a7ea-4932-9ef2-3635f353e7a2"
+  },
+  "ORDER_NOT_SERVED": {
+    "id": "d0af627e-373a-42db-b156-c6dbab15f40f",
+    "createdDate": "2026-09-02T15:52:28.2422314Z",
+    "customerId": "31c6feef-f7b2-46ae-a965-1b94280e7ef0"
+  },
+  "SR_REP_LOCKABLE": {
+    "id": "85b99e4d-517c-4143-85b2-616eceddd545",
+    "user_id": "2461c44f-b3a2-42d8-a910-e4eb5377fb03"
   }
 }

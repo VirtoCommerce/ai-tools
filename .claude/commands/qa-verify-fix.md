@@ -339,7 +339,7 @@ was actually published per Step 6A's `projectType` gate.)
 
 Output to the user: verdict, STR result, checklist score, regressions found, JIRA transition, and artifact paths.
 
-**Bug report lifecycle:** locate any matching local bug report in `reports/bugs/open/` (by ticket ID or title keywords), then route by verdict:
+**Bug report lifecycle:** locate any matching local bug report under `reports/bugs/open/**` (by ticket ID or title keywords — **recurse** the `critical-high/`/`medium/`/`low/` folders, §1a), then route by verdict — a VERIFIED move lands FLAT in `fixed/`, dropping the severity folder:
 
 | Verdict | Action on the local bug report |
 |---------|-------------------------------|

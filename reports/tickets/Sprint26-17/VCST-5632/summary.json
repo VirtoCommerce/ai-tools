@@ -72,8 +72,8 @@
     { "key": "VCST-5862", "severity": "Medium", "relationship": "standalone", "parent_or_linked_ticket": "VCST-5632", "summary": "25 colour-contrast violations, Light theme; .vc-user-info__role at 2.41:1 (WCAG 1.4.3)" }
   ],
   "bugs_not_filed": [
-    { "severity": "Low", "provenance": "out-of-scope", "summary": "Dialog accessible name computes as Confirmation Close - the close button sits inside the labelling h3", "report": "reports/bugs/open/BUG-vc-shell-dialog-accessible-name-includes-close.md" },
-    { "severity": "Low", "provenance": "out-of-scope", "summary": "Mobile 390px confirmation popup loses its heading, title and close control. ONE DETAIL UNVERIFIED (whether the body question still renders) - may re-grade above the floor if it does not", "report": "reports/bugs/open/BUG-vc-shell-mobile-popup-loses-heading-and-close.md" }
+    { "severity": "Low", "provenance": "out-of-scope", "summary": "Dialog accessible name computes as Confirmation Close - the close button sits inside the labelling h3", "report": "reports/bugs/open/low/BUG-vc-shell-dialog-accessible-name-includes-close.md" },
+    { "severity": "Low", "provenance": "out-of-scope", "summary": "Mobile 390px confirmation popup loses its heading, title and close control. ONE DETAIL UNVERIFIED (whether the body question still renders) - may re-grade above the floor if it does not", "report": "reports/bugs/open/low/BUG-vc-shell-mobile-popup-loses-heading-and-close.md" }
   ],
   "not_defects": [
     { "class": "environment", "summary": "Product images fail with ERR_NAME_NOT_RESOLVED on 8 requests to vcmarketplace-platform.dev.govirto.com - asset-host/base-URL config on vcmp-dev, not an rc code regression" },

@@ -175,7 +175,7 @@
     { "$comment": "One entry per confirmed bug filed at 5d. `severity` is recorded so the 5d severity floor is auditable from this artifact rather than only from the comment. On an --iterate run this array is CUMULATIVE across rounds; the round that filed each entry is in iterations.per_round[].bugs_filed.", "key": "<tracker-key>", "severity": "Critical|High|Medium", "relationship": "sub-task|related|standalone", "parent_or_linked_ticket": "<ticket-key or existing-bug-key>" }
   ],
   "bugs_not_filed": [
-    { "$comment": "One entry per confirmed real bug held BELOW the 5d severity floor (Low/P3). Present and empty when there are none — an absent array is indistinguishable from a run that found none. `report` is the durable record; the floor drops a finding from the tracker, never from the run.", "severity": "Low", "provenance": "in-scope|pre-existing|out-of-scope", "summary": "<one line>", "report": "reports/bugs/open/<file>.md" }
+    { "$comment": "One entry per confirmed real bug held BELOW the 5d severity floor (Low/P3). Present and empty when there are none — an absent array is indistinguishable from a run that found none. `report` is the durable record; the floor drops a finding from the tracker, never from the run.", "severity": "Low", "provenance": "in-scope|pre-existing|out-of-scope", "summary": "<one line>", "report": "reports/bugs/open/low/<file>.md" }
   ],
   "visual": {
     "$comment": "The design + accessibility axis. `surface` is derived at 1b item 2c beside `layer` (same discipline: derived, never asked, never defaulted) and decides whether the Step-4 visual lane dispatches at all; \"unresolved\" is treated as true, the one place this axis fails OPEN, because a wrongly-skipped visual pass leaves no trace anywhere while a wrongly-run one costs one agent. A NULL block means the step never ran — a gap, not a clean result; `ran:false` WITH a `skipped_reason` is the opposite, the step ran and declined. THE TWO ARRAYS ARE THE POINT: `invariant_failures[]` (BL-A11Y-*/BL-UI-*, all P1 for the a11y set) are ordinary findings — triaged at 5a, graded, filed under the 5d floor, able to fail 5c — while `advisory[]` (vs. DESIGN DRIFT/MISSING/UNSPEC/KNOWN_DIVERGENCE) is reported and NEVER fails the ticket. Keeping them apart is what makes the blocking rule auditable from this artifact instead of only from prose. Per-axis `verdict` null WITH a `skipped_reason` is legal and common — the design_spec axis needs /design-login, unavailable in web sessions and CI, and axe can be blocked by CSP; NEITHER may ever be recorded as a pass. Spec: .claude/skills/qa-test/visual-axis.md. Deliberately NOT owned here: BL-UI-001..005 layout stability, which keeps its existing owner (authoring tags + suite 048c).",
@@ -190,12 +190,73 @@
       "design_spec": { "$comment": "vs. DESIGN against DESIGN_SYSTEM_PROJECT_ID via DesignSync. `unresolved` > 0 downgrades an otherwise-clean axis to WARN and must be printed — a guessed expectation fails every correct implementation.", "ran": false, "verdict": null, "confirmed": 0, "drift": 0, "missing": 0, "unspec": 0, "known_divergence": 0, "unresolved": 0, "skipped_reason": null }
     },
     "invariant_failures": [
-      { "$comment": "May fail the ticket. `bug` is the 5d tracker key, or null when held below the severity floor (the reports/bugs/open/ draft still exists and is named in bugs_not_filed).", "invariant": "BL-A11Y-003", "severity": "Critical|High|Medium|Low", "measured": "<the value read>", "bug": null }
+      { "$comment": "May fail the ticket. `bug` is the 5d tracker key, or null when held below the severity floor (the reports/bugs/open/<severity>/ draft still exists and is named in bugs_not_filed).", "invariant": "BL-A11Y-003", "severity": "Critical|High|Medium|Low", "measured": "<the value read>", "bug": null }
     ],
     "advisory": [
       { "$comment": "NEVER fails the ticket. AMBIGUOUS is the one that needs a human: the spec contradicts an invariant or a WCAG criterion, and it is escalated in the 5e report rather than resolved by obeying the spec.", "verdict": "DRIFT|MISSING|UNSPEC|KNOWN_DIVERGENCE|AMBIGUOUS", "item": "<what was compared>", "spec": "<declared>", "live": "<rendered>" }
     ],
     "report": null
+  },
+  "contract": {
+    "$comment": "The API contract-refresh axis. `surface` is derived at 1b item 2d beside `layer` (2b) and `visual.surface` (2c), same discipline: derived, never asked, never defaulted, \"unresolved\" treated as true — the axis fails OPEN because a skipped refresh leaves the run reading a snapshot of unknown age while a needless one costs one introspection call. A NULL block means the step never ran (a gap, not a clean refresh); surface:false WITH sources is the opposite — it ran and correctly declined. TWO ARTIFACTS, TWO COMMANDS, and neither freshens the other: `schema` is .claude/knowledge/api/graphql-schema.md (npm run schema:refresh — what 1c/1d/1e and the Step-3b authoring pack READ), `fixtures` is scripts/.graphql-schema.cache.json + the 74 test-data/graphql documents (npm run graphql:fixtures:validate:refresh — the gate, exits non-zero on drift). `schema.refreshed` takes the string UNKNOWN on an unreachable endpoint and NEVER falls back to the committed snapshot's own date (same rule as build.deployed); UNKNOWN downgrades every {DOC} GraphQL oracle to {HYPOTHESIS}. `fixtures.drift_in_scope[]` is the consequential array: an op the TICKET'S OWN DIFF touches is a 1e finding (a moved contract is a chain link and a candidate reverse edge), while `drift_out_of_scope[]` is recorded and not chased (cross-check build.releasedThrough.breaking[]). Neither array files a bug from the gate alone — a schema-validation failure is a claim about a query document, not about product behaviour. npm run schema:check is a liveness check, NOT a drift gate. Spec: .claude/skills/qa-test/contract-refresh.md",
+    "surface": "true|false|unresolved",
+    "surface_source": [],
+    "schema": {
+      "refreshed": "YYYY-MM-DD|UNKNOWN|null",
+      "unknown_reason": null,
+      "queries": 0,
+      "mutations": 0
+    },
+    "fixtures": {
+      "refreshed": "YYYY-MM-DD|UNKNOWN|null",
+      "validated_against_env": "{TEST_ENV}",
+      "total": 0,
+      "failed": 0,
+      "drift_in_scope": [
+        { "$comment": "An op the ticket's own diff touches — a 1e Test Model input, and the OLD shape belongs in the regression scope. Fix the fixture via npm run graphql:fixtures:update.", "fixture": "mutations/<op>.graphql", "error": "<validation error>", "model_ref": "<scenario # or link in the Test Model>" }
+      ],
+      "drift_out_of_scope": [
+        { "$comment": "Pre-existing drift or an unannounced upstream break. Recorded, named in the Step-5 report, NOT chased — fixing it is /qa-test-lifecycle's.", "fixture": "queries/<op>.graphql", "error": "<validation error>", "breaking_row": null }
+      ]
+    }
+  },
+  "coverage_triage": {
+    "$comment": "Triage of the EXISTING cases this change invalidates, run at Step 2a on BOTH paths. `surface` is derived at 1b item 2e beside layer (2b), visual.surface (2c) and contract.surface (2d) — derived, never asked, never defaulted, \"unresolved\" treated as true, because a skipped triage leaves stale assertions nobody looks at again while a needless one costs one script run. A NULL block means the step never ran (a gap, not a clean triage); surface:false WITH sources is the opposite. WHY THE STEP EXISTS: the pipeline only ever asked what the corpus already COVERS, so a stale row was reachable only by FAILING at Step 4 and being triaged at 5a — and three things stop that firing (regression:select maps changed PATHS and misses a suite whose domain the path does not spell, while reporting unmappedPaths:[] because the fail-open widening needs a total vocabulary miss; --cases critical then drops the High rows; and a row that never runs is never triaged). Measured on VCST-5733: 62 existing assertions on a widget label PR#2444 renames, 45 of the 81 at-risk rows FILTERED_OUT of the run. DISPOSITIONS are a closed set and every hit takes exactly one: CONFIRMED (still correct) · REPAIR (mechanically stale — renamed selector/moved route/removed arg/dead @td() alias — fixed BEFORE the run via /qa-review-tests file <suite> --fix, safe precisely because it moves the mechanics and not the oracle, and leaving it manufactures an artefactual BLOCKED) · RE-BASE (its expected value conflicts with the change — NOT rewritten before the run: the change under test is normally an unmerged PR, so a pre-run rewrite makes the change its own oracle and the case can then only pass; it is carried into Artifact C on --also-ids and 5a rewrites it with the run's own evidence) · SUPERSEDED (the surface is gone — a proposal, never an edit; TRI-006 keeps retirement human). HARD RULE: every FILTERED_OUT row disposed RE-BASE appears in rebased_into_artifact_c[], or its disposition is CONFIRMED/SUPERSEDED with a reason — an undisposed RE-BASE that never runs re-creates the exact gap this step closes. Step 2a files NO bug: a hit is a claim about a test case, never about the product. never_audited is context, not a verdict (TRI-000 reports WHEN a row was audited, never whether it is right). Spec: .claude/skills/qa-test/coverage-triage.md",
+    "surface": "true|false|unresolved",
+    "surface_source": [],
+    "scope": {
+      "$comment": "The tc:scope arguments actually used — recorded so the Step-3 verifier can re-run the identical scan, and so a later reader can tell a narrow triage from a thorough one. Scope comes from the manifest's own domain/tags/requiresModules vocabulary, never from diff paths; a path token may only ADD a suite, never filter one out.",
+      "domains": [],
+      "modules": [],
+      "suites_named": [],
+      "observables": [],
+      "oracles": [],
+      "cases_filter": "critical|critical,high|null"
+    },
+    "counts": {
+      "$comment": "Straight from tc:scope --json. filtered_out is the coverage hole: a stale row that WILL run goes red at Step 4 and gets triaged, a stale row that will not run is invisible forever. not_executing (explicit Manual/Deprecated, EX-200/EX-201) is opted out by intent and is NOT a hole — kept as its own count so the number that measures real holes cannot lie.",
+      "suites_scoped": 0,
+      "rows_scanned": 0,
+      "hits": 0,
+      "will_run": 0,
+      "filtered_out": 0,
+      "not_executing": 0,
+      "never_audited": 0
+    },
+    "dispositions": { "confirmed": 0, "repair": 0, "rebase": 0, "superseded": 0 },
+    "repaired": [
+      { "$comment": "Fixed BEFORE the run. Mechanics only — never an expected value.", "case": "<CASE-ID>", "suite": "<suite id>", "what": "<the mechanical staleness>", "relint": "suites:review --fail-on=High clean" }
+    ],
+    "rebased_into_artifact_c": [
+      { "$comment": "Carried on --also-ids with its assertion UNCHANGED, so Step 4 can falsify it either way. Its Step-4 result and any 5a rewrite live in the normal triage record, not here.", "case": "<CASE-ID>", "suite": "<suite id>", "run_fate_before": "FILTERED_OUT|WILL_RUN" }
+    ],
+    "superseded_proposals": [
+      { "$comment": "Recorded, never edited — retirement is human (TRI-006) and tc:demote may only reach Manual.", "case": "<CASE-ID>", "suite": "<suite id>", "reason": "<the surface the change removes>" }
+    ],
+    "unscannable": [
+      { "$comment": "Reported, never read as an absence of risk. A legacy 11-column suite is REFUSED because parseSuite maps positionally, so its Priority is not Priority and runFate would be predicted off the wrong column.", "suite": "<suite id>", "reason": "legacy header|file not found|unparsable CSV" }
+    ],
+    "unmatched_observables": []
   },
   "business_rules_verified": ["BL-CART-001"],
   "appinsights": {

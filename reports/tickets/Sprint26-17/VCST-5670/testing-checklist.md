@@ -52,7 +52,7 @@ It is a **prerelease**, not a stable release. `vc-button--disabled` was discarde
 
 | Finding | Draft |
 |---|---|
-| App-switcher icons 404 (×3) | `reports/bugs/open/BUG-vc-shell-app-switcher-icon-404s.md` |
+| App-switcher icons 404 (×3) | `reports/bugs/open/low/BUG-vc-shell-app-switcher-icon-404s.md` |
 
 **Data touched:** product `PLV4` ("Product Level 4 x y z q", Draft/Inactive) — `Localized name en-US` set to `QA-TMP-5670` via *Save as draft*, then cleared and saved again (net zero); 3 further edits typed and **discarded**; delete dialog opened 6× and dismissed every time, **Confirm never pressed**. Verified clean in a fresh session afterwards: **466 products** (baseline 466), PLV4 still Draft/Inactive, localized name empty, no unsaved-changes alert.
 

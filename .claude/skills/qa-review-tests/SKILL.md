@@ -383,6 +383,8 @@ Output: Per-case verification result:
 
 > **Ordering is fixed:** static review (Steps 2–5) → live verification (Step 6) → triangulation (Step 8) → **then** one apply pass. When `--triangulate` is set, run Step 8 **before** applying, because a DRIFT rewrite needs the gathered evidence to rewrite *to*. Never apply fixes before the axes are gathered.
 
+> **`file <suite> --fix` is the executor `/qa-test` Step 2a routes a `REPAIR` disposition to** — an existing row whose *mechanics* went stale against the change under test (renamed selector, moved route, removed argument, dead `@td()` alias), repaired **before** that run executes anything, because such a row cannot execute at all. A **`RE-BASE`** deliberately does **not** come here before the run: that row's *expected value* conflicts with the change, and the change is normally an **unmerged PR** — rewriting the assertion to match it first would make the change its own oracle, after which the case can only pass. It is executed instead, and 5a's test-defect path rewrites it with the run's own evidence. Disposition rules: [`.claude/skills/qa-test/coverage-triage.md`](../qa-test/coverage-triage.md).
+
 When `--fix` is specified:
 1. Present the review report first (Step 5)
 2. For each Blocker and Critical finding, propose a specific fix

@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-09-02",
-    "totalSuites": 132,
+    "generated": "2026-09-03",
+    "totalSuites": 134,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1684,7 +1684,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 120,
+      "testCount": 129,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1699,11 +1699,34 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 117,
+        "machine": 126,
         "browser": 0,
         "manual": 0,
         "deprecated": 3
       }
+    },
+    {
+      "id": "050m2",
+      "name": "GraphQL xAPI — Sales Rep, procedural (multi-tool: shell + query)",
+      "file": "regression/suites/Backend/graphql/050m2-graphql-sales-rep-procedural.csv",
+      "domain": "sales-rep",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 1,
+      "estimatedMinutes": 8,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "sales-rep",
+        "b2b",
+        "scoped-schema"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference"
     },
     {
       "id": "050n",
@@ -3187,6 +3210,31 @@
       ],
       "customerApplicability": "universal",
       "envRiskGate": "staging"
+    },
+    {
+      "id": "097",
+      "name": "Sales Rep — Customer Orders (storefront)",
+      "file": "regression/suites/Frontend/sales-rep/097-sales-rep-customer-orders-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 31,
+      "estimatedMinutes": 40,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "customer-orders",
+        "orders",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
     }
   ],
   "selections": {
@@ -3320,6 +3368,7 @@
       },
       "exclude": [
         "050m",
+        "050m2",
         "092",
         "092b",
         "094"
@@ -3333,6 +3382,7 @@
         "046",
         "047",
         "050m",
+        "050m2",
         "063",
         "068",
         "069",
@@ -3342,31 +3392,36 @@
         "091",
         "092",
         "092b",
-        "093"
+        "093",
+        "097"
       ]
     },
     "full": {
       "all": true,
       "exclude": [
         "050m",
+        "050m2",
         "089",
         "090",
         "091",
         "092",
         "092b",
         "093",
-        "096"
+        "096",
+        "097"
       ]
     },
     "sales-rep": {
       "include": [
         "050m",
+        "050m2",
         "089",
         "090",
         "091",
         "092",
         "092b",
-        "093"
+        "093",
+        "097"
       ]
     },
     "domain:purchase-flow": {
@@ -3434,7 +3489,8 @@
         "concern": "api"
       },
       "exclude": [
-        "050m"
+        "050m",
+        "050m2"
       ]
     },
     "concern:admin": {
