@@ -5,11 +5,19 @@ gate and cites this file for the detail. Read it when you are running `1a`/`1b`,
 pipeline establishes before it dispatches anything.
 
 **Everything downstream depends on this step and nothing here is optional.** `1a` decides which pipeline
-runs at all; `1b` establishes what build it runs against and derives the four axes. A wrong answer here is
+runs at all; `1b` establishes what build it runs against and derives the five axes. A wrong answer here is
 not corrected later — it is inherited by every step that follows.
 
-The **derivation contract for the four axes** (2b–2e) is [`axes.md`](axes.md); this file covers the fetch,
-the classification, the routing branch, and the wave structure.
+The **derivation contract for the five axes** (2b–2f) is [`axes.md`](axes.md); this file covers the fetch,
+the classification, the routing branch, the **opening status hop** that closes `1a`, and the wave
+structure.
+
+**`1a` ends with the OPENING STATUS HOP** — on the `feature-test` branch only, after routing, `qa-lead`
+moves the ticket to its in-testing status with no confirmation. Rules, skips and the record:
+[`.claude/knowledge/execution/ticket-status-transitions.md`](../../knowledge/execution/ticket-status-transitions.md).
+It is here rather than at Step 4 because *in testing* means **QA owns this ticket**, which is true when the
+run is accepted — at Step 4 the board read the ticket as unclaimed through `1a`-`3`, i.e. through the
+context gathering, the Test Model, authoring and seeding that are 30+ minutes of real QA work on FULL.
 
 ---
 
@@ -85,8 +93,9 @@ Per `.claude/templates/agent-dispatch.md`.
 
 **Run this as TWO I/O waves, not nine sequential steps.** Items 1, 2, 2-release, 3→4 and 2b's local reads
 consume only `1a`'s fetch, so they are independent: **issue them in ONE message** (wave A). Then derive
-`2b`, `2c`, `2e` from what came back — pure computation, no tool call. Then **one message** for wave B:
-`2d`'s two refreshers **and `2e`'s `tc:scope` scan**, the two items gated on a derived token. `2d` is the
+`2b`, `2c`, `2e`, `2f` from what came back — pure computation, no tool call. Then **one message** for wave
+B: `2d`'s two refreshers **and `2e`'s `tc:scope` scan **and `2f`'s `td:validate` resolution check**, the
+items gated on a derived token. `2d` is the
 one that costs real time (~8.6 s); `tc:scope` is ~1 s, and holding it until Step 2a buys a round-trip and
 nothing else.
 
@@ -105,7 +114,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
    - **A ⚠ BREAKING change in the component under test forces FULL**, whatever `1a` scored. `ticket-routing.md` says *when in doubt → FULL*; a contract that moved last month is doubt with a date on it, and a FAST run would author no cases and write no Test Model against it.
    - **It feeds `1d`'s AC↔implementation check a third leg.** That check is otherwise static — ACs vs *this* PR's diff — and a breaking change elsewhere in the same component is invisible to that diff while being the likeliest cause of a DRIFT nobody owns.
    - **Released ≠ deployed.** A capability the ledger records that the probe does not carry is `NOT_DEPLOYED` → BLOCKED-on-deploy, never a FAIL and never a filed bug. And the ledger carries **no behaviour**, so it can never ground an assertion as `{DOC}`; that stays `{OBSERVED}`.
-2b–2e. **Derive the four PRE-FLIGHT AXES — one mechanism, four instances.** Pure computation over
+2b–2f. **Derive the five PRE-FLIGHT AXES — one mechanism, five instances.** Pure computation over
     what wave A returned; no operator input. Single source of truth for the contract they share and the
     ways they differ: [`skills/qa-test/axes.md`](axes.md). **Cite it; do not restate it.**
 
@@ -115,22 +124,25 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
     | **2c** | `visual_surface` | `.vue`/`.scss`/`.css`/`.html`/blade/icons/tokens in the diff · derived layer `storefront`/`admin-spa` · a target suite `layer: frontend` | `true` | Step 4 dispatches `ui-ux-expert` ([`visual-axis.md`](visual-axis.md)) |
     | **2d** | `contract_surface` | `.graphql`/`*ExperienceApi*`/`*.Web/Controllers`/GraphType files · derived layer `api` · suite tags `graphql`/`xapi` · an AC naming a query/mutation/field | `true` | **both** refreshers, concurrently, in ONE message ([`contract-refresh.md`](contract-refresh.md)) |
     | **2e** | `coverage_surface` | the ticket's `1a` domains + derived layer + the target suites' manifest `domain`/`tags`/`requiresModules` — **never diff paths** (a path token may only ADD a suite) · the observables the change moves · the `BL-*`/`ECL-*` it amends | `true` | `tc:scope` in wave B, **scope + risk terms only** ([`coverage-triage.md`](coverage-triage.md)) |
+    | **2f** | `data_surface` | the `1e-plan` rows' (FAST: the Artifact-B conditions') own `@td()`/`{{VAR}}` refs → `npm run td:validate` in wave B · the Part-0 value chain: does any link under test need a **divergence** the existing fixtures lack · the ticket/diff: a new entity type, store/org/role, pricing or inventory shape | `true` | Step **3a** dispatches `test-data-engineer`. **`false` ⇒ no dispatch**, and the run names the fixtures covering the plan ([`authoring.md`](authoring.md) §3a) |
 
     **The union of 2b's sources 1 and 2 decides `layer`**; more than one member ⇒ `cross-layer`, with the
     members in `release.layers[]` and sources 3–5 used only when 1 and 2 both yield nothing. Sources 1 and
     2 disagreeing while `1a` routed the ticket single-layer FAST ⇒ `layers_conflict: true`, surfaced in the
     fragment's own footer — a contradiction between the routing decision and the layer is for a human.
 
-    **Three rules, from `axes.md` §2 — they apply to all four and are not repeated per axis:** each token
+    **Three rules, from `axes.md` §2 — they apply to all five and are not repeated per axis:** each token
     is **derived, never asked, never defaulted**; each records `<axis>.surface_source[]` **always**, where
     `null` means the source was not consulted (a gap, not a zero); and a **`false` is recorded with its
     sources**, because an omitted block reads as a clean axis. **None of them changes the effort** — an
     axis is a LANE trigger, never an EFFORT trigger, and never promotes FAST → FULL.
 
-    **Effort (`axes.md` §4): FULL derives and runs all four. FAST derives `layer` only** — `2c`/`2d`/`2e`
-    are **opt-in** there via `--visual` / `--contract` / `--coverage` / `--axes`, default off. Each has run
-    at most **once in 28 recorded runs**, so mandatory-on-FAST was a prediction rather than a measurement;
-    revisit per axis at 5+ runs.
+    **Effort (`axes.md` §4): FULL derives and runs all five. FAST derives and applies `layer` and
+    `data_surface`** — the first because 5f/5h need it and it dispatches nothing, the second because it can
+    only ever *remove* a dispatch, so gating it behind a flag would restore the cost it exists to end. The
+    other **three** — `2c`/`2d`/`2e` — are **opt-in** there via `--visual` / `--contract` / `--coverage` /
+    `--axes`, default off. Each of those has run at most **once in 28 recorded runs**, so mandatory-on-FAST
+    was a prediction rather than a measurement; revisit per axis at 5+ runs.
 
     **2d is the only axis that issues I/O in `1b`, and it must run BEFORE `1c` dispatches** — `1c`, `1d`,
     `1e` and the Step-3b authoring pack all read `graphql-schema.md`, so a refresh after them changes

@@ -70,6 +70,20 @@ export const SPECS = [
       { key: 'C', name: 'Seat', type: 'Product', isRequired: false,
         options: [{ name: 'Basic', price: 0 }, { name: 'Comfort', price: 30 }, { name: 'Racing', price: 60 }] },
     ] },
+  // VCST-5735 (/compare v2). The compare table keys its configuration rows `config:<label>`, so two
+  // sections that SHARE a display label are the only shape that can show one row overwriting the
+  // other. Nothing in the corpus had it: all 22 pre-existing specs carry distinct section names, so
+  // the collision was unreachable however many configurables a case put side by side. The two
+  // sections are deliberately given DIFFERENT option sets and prices — same label, different
+  // content — because identical content would make the two rows indistinguishable even when the
+  // implementation is correct, and the case could not tell a collapse from a coincidence.
+  { csvId: 'CFG-033', family: 'base', name: 'AGENT-TEST-CFG-Dup-Section-Label', code: 'AGENT-TEST-CFG-033', basePrice: 140,
+    sections: [
+      { key: 'A', name: 'Finish', type: 'Product', isRequired: true,
+        options: [{ name: 'Exterior Matte', price: 0 }, { name: 'Exterior Gloss', price: 15 }] },
+      { key: 'B', name: 'Finish', type: 'Product', isRequired: false,
+        options: [{ name: 'Interior Walnut', price: 25 }, { name: 'Interior Oak', price: 40 }] },
+    ] },
   { csvId: 'CFG-FILE', family: 'base', name: 'AGENT-TEST-Config-FileUpload', code: 'AGENT-TEST-CFG-FILE', basePrice: 80,
     // File-attachment fixture — backs CFG-GQL-055b (VCST-5173 configurationSection type:"File").
     sections: [

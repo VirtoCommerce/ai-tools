@@ -1,0 +1,968 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CMP-001,"[JOURNEY] Compare v2 end to end — add from catalog, group into tabs, filter, pin, add to cart",Catalog > Product Compare v2,Critical,BL-CART-007,ECL-3.2,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+@td(PROD_CMP_A.sku) and @td(PROD_CMP_B.sku) both sit in 'Compare Fixtures > Group A', so a correct build puts them in ONE tab.
+Cart may hold anything — the case reads the cart line COUNT before and after, not an absolute total.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), a_name=@td(PROD_CMP_A.name), b_sku=@td(PROD_CMP_B.sku), b_name=@td(PROD_CMP_B.name)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page renders
+[CAPTURE] record the number of cart lines rendered as the baseline
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the category tab strip renders
+[ACT] click the category tab carrying both fixtures
+[WAIT] the compare table renders its product columns
+[CAPTURE] record every characteristic row label under 'All' with its two rendered cell strings
+[ACT] click the pin control on a characteristic row whose two cells render the same value
+[WAIT] that row moves into the pinned block above the table
+[ACT] click 'Differences'
+[WAIT] the row list re-renders
+[ACT] click 'Add to cart' in the column for @td(PROD_CMP_A.name)
+[WAIT] the add-to-cart notification for @td(PROD_CMP_A.name) appears
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart line list renders","[DOM] @td(PROD_CMP_A.name) and @td(PROD_CMP_B.name) are both present as columns of ONE category tab, not split across two {DOC}
+[MATH] product columns rendered in that tab = 2 {DOC}
+[REL] the active category tab's badge count equals the number of product columns rendered {DOC}
+[REL] the pinned row is still rendered under 'Differences', while at least one unpinned row that showed identical cells under 'All' is no longer rendered {SPEC}
+[REL] the cart line for @td(PROD_CMP_A.sku) is rendered on the cart page at the quantity shown in that product's 'Min. order qty' compare cell {DOC}
+[MATH] cart lines rendered after the add = baseline cart lines + 1 {DOC}","[API] the addItem mutation returns HTTP 200 with an empty errors[] — the VERDICT is the rendered cart line, never the response (VC-CART-004)
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Compare page renders two tabs where one is expected, cart badge unchanged >3s after 'Add to cart', pinned row disappears when Differences is switched on, spinner visible >5s, 4xx/5xx on /graphql",Remove @td(PROD_CMP_A.sku) from the cart; clear the localStorage key 'compareProducts',VCST-5735 · Archetype:SILENT · Technique:FLOW,Draft
+CMP-002,Compare table settles and stays interactive with divergent quantity constraints,Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+SCOPE NOTE: the plan asked for THREE products with divergent quantity constraints; the fixture set backs TWO — @td(PROD_MOQ.sku) (min 7 / pack 1 / max 21 / stock 40) and @td(PROD_PACK.sku) (min 10 stored, 12 as reported / pack 4 / max 80 / stock 96), the only pair in one tab ('Compare Fixtures > Group B') that diverges on all four fields. Equal constraints would make this case vacuous, so the pair is the case.
+BUILD NOTE: vcst-qa runs a PRODUCTION theme build, where Vue's 'Maximum recursive updates exceeded' warning is compiled out. The console axis is corroboration only; what this case SCORES is that the table settles and stays interactive.","url={{FRONT_URL}}, moq_sku=@td(PROD_MOQ.sku), moq_name=@td(PROD_MOQ.name), pack_sku=@td(PROD_PACK.sku), pack_name=@td(PROD_PACK.name)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_MOQ.sku)
+[WAIT] the results grid renders a card for @td(PROD_MOQ.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_MOQ.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_PACK.sku)
+[WAIT] the results grid renders a card for @td(PROD_PACK.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_PACK.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns
+[ACT] click 'Differences'
+[WAIT] the row list re-renders
+[ACT] click 'All'
+[WAIT] the row list re-renders","[MATH] characteristic rows rendered under 'All' = the M reported in the 'Differ: N of M rows' readout {DOC}
+[REL] the 'Min. order qty' cells of the two columns render different values {DOC}
+[REL] the table answers the 'Differences' and 'All' switches after the first render — the row list rendered after switching back to 'All' equals the row list rendered before the switch {OBSERVED}
+[DOM] every product column is present with its heading rendered once the table has settled — none is left blank or stuck in a loading state {OBSERVED}","[CONSOLE] no Vue warning and no 'Maximum recursive updates exceeded' entry while the table renders (compiled out on a production build — corroboration only)
+[NETWORK] no 4xx/5xx on /graphql","Table never finishes painting, tab/filter clicks stop having any effect, CPU pegged with the page unresponsive, 'Maximum recursive updates exceeded' in the console on a dev build, spinner visible >5s",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:RENDER · Technique:ST,Draft
+CMP-003,Clear category and Clear all are reachable below the md breakpoint,Catalog > Product Compare v2,Critical,BL-UI-006,ECL-7.4,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+KNOWN AT AUTHORING (PR #2452 head d1e45b04): below the md breakpoint the stylesheet applies 'hidden' to '.compare-table__clear-category' and to the page's '.compare-products__actions' wrapper (which holds 'Clear all'), and no overflow menu was built. These assertions are therefore EXPECTED TO FAIL on the current build. They state the required behaviour (ticket description bullet 9 — secondary actions move into an overflow menu below md). Do NOT invert them to match the build.
+'Restore products' lives only in the empty state, so a phone user who cannot reach a clear control cannot reach restore either.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[VIEWPORT] 375
+[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns
+[PROBE:TOUCH] .compare-products","[DOM] at 375px a control that empties the WHOLE compare list is present and hit-testable — 'Clear all' itself, or an overflow menu that contains it {SPEC}
+[DOM] at 375px a control that clears the ACTIVE CATEGORY is present and hit-testable — 'Clear category' itself, or an overflow menu that contains it {SPEC}
+[REL] the set of list-management controls a customer can reach at 375px equals the set reachable at 1280px, whether directly or through an overflow menu {SPEC}
+[TOUCH] belowAA == 0 {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","No clear control anywhere in the 375px DOM, no overflow (three-dot) trigger in the header row, per-product remove is the only removal path, clear control present but zero-sized or behind an overlay",Clear the localStorage key 'compareProducts'; restore the viewport to 1280x900,VCST-5735 · Archetype:FALLBACK · Technique:ST,Draft
+CMP-004,A sixth add in a full category is refused with a message and does not change the list,Catalog > Product Compare v2,High,,ECL-3.2,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+All six 'Compare Fixtures > Group A' products are used: five fill the category to its limit, the sixth is the one that must be refused.
+VC-LIST-001: a refused add AT the limit is the guard working. Do NOT file it as a bug — this case exists to prove the refusal is visible and leaves the list untouched.","url={{FRONT_URL}}, p1=@td(PROD_CMP_A.sku), p2=@td(PROD_CMP_B.sku), p3=@td(PROD_PROP_PRICE.sku), p4=@td(PROD_LONGNAME.sku), p5=@td(PROD_CMP_FILL_1.sku), p6=@td(PROD_CMP_FILL_2.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_PROP_PRICE.sku)
+[WAIT] the results grid renders a card for @td(PROD_PROP_PRICE.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_PROP_PRICE.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[CAPTURE] the localStorage key 'compareProducts' now holds 5 entries
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_2.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_2.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_2.name)
+[WAIT] a notification appears","[DOM] the warning notification text reads 'Only 5 products from the same category can be compared' {DOC}
+[DOM] the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_2.name) is NOT left in the pressed state — its aria-pressed attribute is 'false' {DOC}
+[MATH] entries in the localStorage key 'compareProducts' after the refused add = 5 {DOC}
+[REL] the site header's Compare badge count is unchanged by the refused add {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Sixth product is added anyway, control flips to the pressed state before the refusal, no notification at all, notification quotes a limit other than the theme's product_compare_limit",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:BOUNDARY · Technique:BVA,Draft
+CMP-005,Clear all is confirmation gated and Restore returns the exact pre-clear list,Catalog > Product Compare v2,High,,ECL-7.3,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+Three entries across TWO tabs: @td(PROD_CMP_A.sku) and @td(PROD_CMP_B.sku) in 'Group A', @td(PROD_CMP_C.sku) in 'Group C'.
+OBSERVED at 3x: restore is not a strict round-trip on the ACTIVE TAB — the selected tab can change across clear then restore. That is deliberately outside the identity assertions below, which compare SETS of (product, tab) pairs.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku), c_sku=@td(PROD_CMP_C.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_C.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_C.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_C.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the category tab strip renders two tabs
+[CAPTURE] record each tab label with its badge count
+[ACT] click 'Clear all'
+[WAIT] the confirmation dialog renders
+[ACT] click 'Cancel'
+[WAIT] the dialog closes
+[ACT] click 'Clear all'
+[WAIT] the confirmation dialog renders
+[ACT] click 'Clear'
+[WAIT] the empty-state heading renders
+[ACT] click 'Restore products'
+[WAIT] the category tab strip renders again","[DOM] the confirmation dialog body text reads 'All 3 products will be removed from comparison.' {DOC}
+[REL] after 'Cancel' the set of category tabs with their badge counts is identical to the set recorded before the dialog opened {SPEC}
+[DOM] the empty-state heading reads 'Your compare list is empty' {DOC}
+[REL] after 'Restore products' the set of (product name, category tab) pairs is identical to the set recorded before 'Clear all' {SPEC}
+[MATH] entries in the localStorage key 'compareProducts' after Restore = 3 {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Clear all empties the list with no dialog, dialog count disagrees with the number of entries, Cancel still clears, Restore brings back a different set or duplicates an entry, Restore pushes a category over its limit",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:LIFECYCLE · Technique:ST,Draft
+CMP-006,A single-product tab disables the Differences toggle and reports a coherent row count,Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+Exactly ONE entry: @td(PROD_CMP_C.sku), the only product in 'Compare Fixtures > Group C'.
+KNOWN AT AUTHORING: with one product the All/Differences control is disabled and every row still renders, while the readout above it reads 'Differ: 0 of <N> rows'. The design spec declares the toggle behaviour (nothing can differ below two products) but declares NOTHING about suppressing the readout, so this case asserts the coherence that IS declared. The readability of a differences count beside a disabled filter is raised as an oracle gap, not asserted here.","url={{FRONT_URL}}, c_sku=@td(PROD_CMP_C.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_C.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_C.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_C.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders one product column","[DOM] with exactly one product in the tab both 'All' and 'Differences' are disabled {DOC}
+[REL] the M in the 'Differ: N of M rows' readout equals the number of characteristic rows actually rendered in the table {SPEC}
+[MATH] the N in the 'Differ: N of M rows' readout = 0 {SPEC}
+[DOM] every rendered characteristic row carries a value for the single product — no row is present with an empty cell {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Differences selectable with one product, empty board rendered instead of all rows, M disagrees with the rendered row count, a row rendered whose only cell is the em-dash placeholder",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:FALLBACK · Technique:BVA,Draft
+CMP-007,Removing the middle column of three removes only that product,Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+Three entries in ONE tab ('Compare Fixtures > Group A'), added in this order so the middle column is @td(PROD_CMP_B.sku): @td(PROD_CMP_A.sku), @td(PROD_CMP_B.sku), @td(PROD_PROP_PRICE.sku).","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku), c_sku=@td(PROD_PROP_PRICE.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_PROP_PRICE.sku)
+[WAIT] the results grid renders a card for @td(PROD_PROP_PRICE.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_PROP_PRICE.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders three product columns
+[CAPTURE] record the three column headings left to right
+[ACT] click the 'Remove from compare' control on the middle column
+[WAIT] a removal notification appears","[REL] the two remaining columns are exactly the first and third products recorded, still in that left-to-right order {SPEC}
+[MATH] product columns rendered after the removal = 2 {SPEC}
+[REL] the entries left in the localStorage key 'compareProducts' are exactly the two remaining products' ids {DOC}
+[DOM] a removal notification naming @td(PROD_CMP_B.name) is present {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Wrong column disappears, two columns disappear, notification names a product that is still on screen, remaining columns re-order themselves, a neighbouring configured column loses its configuration row",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:LIFECYCLE · Technique:ST,Draft
+CMP-008,A pre-v2 compare list in localStorage resolves to a clean empty state,Catalog > Product Compare v2,High,,ECL-7.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+The v1 build stored a compare list under TWO keys, both deleted from the codebase by this change (vc-frontend client-app/core/constants/local-storage-keys.ts): 'productCompareListIds' (a JSON array of product ids) and 'configProductsToCompare' (a JSON array of configured entries). 'localProductConfigurations' survives and is still read by the product page. The v2 key is 'compareProducts'.
+The correct behaviour is EITHER a migration of the prior payload OR a clean empty list — not a broken page. This case scores the clean-empty-list arm; the absence of a migration is recorded as evidence, not asserted.","url={{FRONT_URL}}, a_id=@td(PROD_CMP_A.id), b_id=@td(PROD_CMP_B.id)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[ACT] in the browser console, write a JSON array holding @td(PROD_CMP_A.id), @td(PROD_CMP_B.id) to the localStorage key 'productCompareListIds'
+[ACT] in the browser console, write an empty JSON array to the localStorage key 'configProductsToCompare'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the page settles","[DOM] the empty-state heading reads 'Your compare list is empty' {DOC}
+[MATH] entries in the localStorage key 'compareProducts' = 0 {DOC}
+[DOM] the error state is NOT rendered — no element carrying data-test-id 'compare-error-state' is present {DOC}
+[DOM] 'Restore products' is absent — the restore buffer is in-memory and page-scoped, so a fresh load can offer nothing {DOC}
+[REL] the site header's Compare badge shows the same count as the number of entries in 'compareProducts', which is zero {DOC}","[CONSOLE] no TypeError or JS error while the legacy keys are present
+[NETWORK] no 4xx/5xx on /graphql
+[API] EVIDENCE ONLY (does not fail the case): record whether 'productCompareListIds' and 'configProductsToCompare' are still present in localStorage after the page loads — nothing reads or removes them, so every v1 customer keeps orphaned keys forever","Blank page or JS crash on load, 'Failed to load data' error state, page renders products from the legacy key (which would mean the migration exists and the rest of this case is mis-scoped), Restore products offered on a fresh load","Clear the localStorage keys 'compareProducts', 'productCompareListIds' and 'configProductsToCompare'",VCST-5735 · Archetype:SILENT · Technique:EG,Draft
+CMP-009,Three products at 375px keep the label column locked and the document unscrolled,Catalog > Product Compare v2,High,"BL-UI-004, BL-UI-005",ECL-1.6,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+Three entries in 'Compare Fixtures > Group A', one of them @td(PROD_LONGNAME.sku), whose name carries a 62-character UNBROKEN alphanumeric run — a name made of short words gives the browser somewhere to wrap and cannot reproduce the VCST-5831 overflow shape in a 112px column.
+BL-UI-004 exempts the table's OWN horizontal scroller; what must not scroll sideways is the DOCUMENT.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku), long_sku=@td(PROD_LONGNAME.sku), long_name=@td(PROD_LONGNAME.name)","[VIEWPORT] 375
+[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders three product columns
+[REFLOW]
+[PROBE:OVERFLOW]
+[PROBE:ALIGN] .compare-table__product","[OVERFLOW] horizontal == false {BL}
+[ALIGN] heightDrift <= 1 {BL}
+[REL] the row-label column stays at the viewport start edge while the product columns are scrolled horizontally — its left offset before and after the scroll is unchanged {SPEC}
+[DOM] the product title cell for @td(PROD_LONGNAME.name) is present inside its own column box — its rendered width is not greater than the width of the sibling product columns {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","documentElement.scrollWidth exceeds innerWidth, the long name pushes its column wider than its siblings, product names all truncate to the point that no column is identifiable, label column scrolls away with the body",Clear the localStorage key 'compareProducts'; restore the viewport to 1280x900,VCST-5735 · Archetype:RENDER · Technique:ST,Draft
+CMP-010,Differences does not present a row whose rendered cells are indistinguishable,Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+@td(PROD_CMP_A.sku) and @td(PROD_CMP_B.sku) are paired in ONE tab on four axes at once: one property identical, one differing, one BOOLEAN differing, and one whose RAW values differ while the rendered strings collide (Number 1234.5678 vs 1234.5679). Stock 12 vs 340 is a second, storage-independent pair.
+KNOWN AT AUTHORING — read before triaging a FAIL. Two rows, 'Price per unit' and 'Availability', are PERMANENT: compare-table.vue keeps them under 'Differences' whatever their values, so two identical-looking cells on THOSE rows are by design and are excluded below. Every other row is filtered on a value comparison that uses exactly the string the cell renders, so the invariant asserted here should hold. Do NOT invert these assertions if it does not.
+The 3x session reported an Availability row showing two identical '9999+' cells under Differences; against PR-head source that is the permanent-row exemption, not a raw-versus-formatted comparison defect. The customer complaint is real; the mechanism named in the model is not the one in the code.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns
+[CAPTURE] record every row label under 'All' together with the two rendered cell strings
+[ACT] click 'Differences'
+[WAIT] the row list re-renders
+[CAPTURE] record every row label still rendered under 'Differences'
+[ACT] click 'All'
+[WAIT] the row list re-renders
+[CAPTURE] re-record every row label with its two rendered cell strings","[REL] every row surviving the 'Differences' filter, other than the permanent 'Price per unit' and 'Availability' rows and other than any pinned row, renders two cells whose visible text differs {DOC}
+[MATH] the N in the 'Differ: N of M rows' readout = the number of rows recorded under 'All' whose two cells rendered different strings {DOC}
+[REL] the row whose two cells rendered the SAME string under 'All' is no longer rendered under 'Differences', unless it is pinned or is one of the two permanent rows {SPEC}
+[DOM] the 'Availability' row is present under 'Differences' even when both of its cells render the same value — it is one of the two permanent rows {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A non-permanent row survives Differences with two identical cells, a row with visibly different cells is filtered out, Differ count disagrees with the number of genuinely differing rows, Differences renders an empty board",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:MONEY · Technique:EP,Draft
+CMP-011,A parent-category product and a child-category product do not produce two identically labelled tabs,Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+@td(PROD_CMP_PARENT.sku) sits at depth 1 ('Compare Nested') and @td(PROD_CMP_CHILD.sku) at depth 2 under a parent of the SAME NAME ('Compare Nested > Compare Nested'). The compare key joins the first two Category breadcrumb itemIds, so the keys differ; the tab LABEL is the last of those crumbs, so both tabs carry the same visible string. That collision is the fixture — renaming either category removes it silently.
+No BL invariant declares that category tabs must be uniquely labelled, so the uniqueness expectation below is tagged {HYPOTHESIS} and phrased as a question. It is raised as a /qa-review-oracles candidate (PROPOSED-BL-CAT-015).","url={{FRONT_URL}}, parent_sku=@td(PROD_CMP_PARENT.sku), child_sku=@td(PROD_CMP_CHILD.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_PARENT.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_PARENT.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_PARENT.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_CHILD.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_CHILD.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_CHILD.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the category tab strip renders
+[CAPTURE] record every tab label with its badge count
+[ACT] click the first category tab
+[WAIT] the compare table re-renders
+[ACT] click the second category tab
+[WAIT] the compare table re-renders","[MATH] category tabs rendered = 2 {DOC}
+[MATH] badge count of each of the two tabs = 1 {DOC}
+[REL] each tab renders exactly the one product whose category key it carries, and no product is rendered under both tabs {DOC}
+[DOM] verify whether the two tabs are distinguishable to a customer — the label is the last of the first two Category crumbs, so a child category sharing its parent's name yields two tabs with identical visible labels {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Both products collapse into one tab, a product appears under both tabs, a tab renders with an empty label, badge counts disagree with the rendered column counts",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:PARITY · Technique:EG,Draft
+CMP-012,A configurable product offers a customize link rather than an add-to-cart control,Catalog > Product Compare v2,High,BL-CAT-006,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+@td(CFG_LAPTOP.name) is a configurable product with two required Product sections. Added from a catalog card it carries NO configuration, so its compare column must route to the product page rather than offering a one-click add.
+The configurable-product aliases expose name / slug / url / id / price — there is no .sku field on them, which is why this case navigates and searches by name and url.","url={{FRONT_URL}}, cfg_name=@td(CFG_LAPTOP.name), cfg_url=@td(CFG_LAPTOP.url)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(CFG_LAPTOP.name)
+[WAIT] the results grid renders a card for @td(CFG_LAPTOP.name)
+[ACT] click the 'Add to Compare' control on the card for @td(CFG_LAPTOP.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders the product column for @td(CFG_LAPTOP.name)
+[ACT] click the customize control in that column
+[WAIT] the product page renders","[DOM] the configurable product's compare column renders a customize link — no 'Add to cart' button is present in that column {BL}
+[NAV] activating the customize control navigates to {{FRONT_URL}}@td(CFG_LAPTOP.url) {DOC}
+[REL] the price cell for the unconfigured configurable column renders a from-price, not the single fixed price a configured entry would show {DOC}
+[STATE] no cart line is created by anything done in the compare column — the cart line count is unchanged {BL}","[NETWORK] no addItem mutation is issued from the compare page for the configurable column
+[CONSOLE] no TypeError or JS error on the page under test","An enabled 'Add to cart' button in a configurable column, a customize link that 404s, a cart line created with no configuration, a fixed price shown for an unconfigured configurable",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:FALLBACK · Technique:ST,Draft
+CMP-013,A failed configured-price lookup does not silently show the base price,Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+@td(CFG_LAPTOP.name) added to compare FROM ITS PRODUCT PAGE with both required sections selected, so the entry carries a configuration and the page issues a configured-line-item request for it.
+The failure is induced by blocking that request at the network layer. No BL invariant covers silent price substitution, so the expectations below are tagged {HYPOTHESIS} and phrased as questions (PROPOSED-BL-CAT-018).","url={{FRONT_URL}}, cfg_name=@td(CFG_LAPTOP.name), cfg_url=@td(CFG_LAPTOP.url)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}@td(CFG_LAPTOP.url)
+[WAIT] the configuration sections render
+[ACT] select an option in each required configuration section
+[WAIT] the configured price updates
+[ACT] click the 'Add to Compare' control on the product page
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[ACT] block the network request carrying the createConfiguredLineItem operation
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders the configured product column","[DOM] verify whether the price cell for the configured column falls back to the product's base price when the configured-price request fails — a base price presented as the configured price is a price the customer did not choose {HYPOTHESIS}
+[REL] verify whether the price rendered for the configured column with the request blocked differs from the price rendered for the same product added WITHOUT a configuration {HYPOTHESIS}
+[DOM] verify whether any user-visible indication is present that a price could not be loaded {HYPOTHESIS}
+[STATE] no cart line is created while the configured price is unresolved {BL}","[CONSOLE] a Logger.error entry is emitted for the rejected configured-line-item request — the rejection is swallowed there and nowhere else
+[NETWORK] the blocked createConfiguredLineItem request is visible as a failed request while the page still renders
+[API] in the UNBLOCKED control run the createConfiguredLineItem mutation returns HTTP 200 with an empty errors[] — HTTP 200 alone is not success in xAPI","Base price rendered with no distinction from a configured price, no error indication anywhere, whole table replaced by the error state for one failed configured price, price cell left blank",Clear the localStorage key 'compareProducts'; remove the network block,VCST-5735 · Archetype:SILENT · Technique:EG,Draft
+CMP-014,Add to cart from the compare table honours minimum order quantity and pack size,Catalog > Product Compare v2,Critical,"BL-CART-006, BL-CART-007, BL-CAT-001",,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+The compare table is a THIRD add-to-cart surface after the product page and quick-add (VC-CART-006). It has no quantity stepper, so one click must add a VALID quantity.
+FIXTURE FACT — get this right or the case is vacuous: @td(PROD_PACK.sku) STORES minQuantity 10 with packSize 4, and the read path rounds a minimum UP onto the pack grid, so xAPI reports 12 and the compare cell renders 12. Assert the DERIVED value, never the stored 10. There is no observable 'MOQ is not a multiple of pack size' state on the storefront.
+Verify the RENDERED cart, never the mutation response — VC-CART-004 is a silent no-op that a response check passes.","url={{FRONT_URL}}, moq_sku=@td(PROD_MOQ.sku), moq_min=@td(PROD_MOQ.minQuantity), pack_sku=@td(PROD_PACK.sku), pack_min=@td(PROD_PACK.minQuantity), pack_size=@td(PROD_PACK.packSize)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page renders
+[CAPTURE] record the number of cart lines rendered as the baseline
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_MOQ.sku)
+[WAIT] the results grid renders a card for @td(PROD_MOQ.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_MOQ.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_PACK.sku)
+[WAIT] the results grid renders a card for @td(PROD_PACK.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_PACK.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns
+[CAPTURE] record the 'Min. order qty' cell of each column
+[ACT] click 'Add to cart' in the column for @td(PROD_MOQ.name)
+[WAIT] the add-to-cart notification for @td(PROD_MOQ.name) appears
+[ACT] click 'Add to cart' in the column for @td(PROD_PACK.name)
+[WAIT] the add-to-cart notification for @td(PROD_PACK.name) appears
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart line list renders","[MATH] the quantity on the rendered cart line for @td(PROD_MOQ.sku) = @td(PROD_MOQ.minQuantity) {DOC}
+[MATH] the quantity on the rendered cart line for @td(PROD_PACK.sku) = ceil(@td(PROD_PACK.minQuantity) / @td(PROD_PACK.packSize)) * @td(PROD_PACK.packSize) {DOC}
+[REL] for each product the quantity on its rendered cart line equals the value its 'Min. order qty' compare cell displayed {DOC}
+[MATH] cart lines rendered after both adds = baseline cart lines + 2 {DOC}
+[DOM] no quantity validation error is present on either cart line {BL}","[API] the addItem mutation returns HTTP 200 with an empty errors[] — the VERDICT is the rendered cart line, never the response (VC-CART-004)
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Cart line added at quantity 1, cart line added at the stored minimum instead of the pack-rounded one, cart unchanged after a successful-looking notification, quantity validation error on the cart line, 'Add to cart' disabled for a product that is in stock and buyable",Remove @td(PROD_MOQ.sku) and @td(PROD_PACK.sku) from the cart; clear the localStorage key 'compareProducts',VCST-5735 · Archetype:BOUNDARY · Technique:BVA,Draft
+CMP-015,Switching organization does not carry the previous org's comparison and prices,Catalog > Product Compare v2,Critical,"BL-B2B-001, BL-CROSS-008, BL-CROSS-004",,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+@td(MULTI_ORG_TF_BR.email) belongs to TWO organizations with distinct per-org roles, so the org switcher is available in the account menu.
+BL-CROSS-008 requires cart, pricing and lists to swap ATOMICALLY on an organization change; a partial swap is a critical defect. Nothing in this change writes 'compareProducts' on an org switch, which is what this case probes.","url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR.email), password=@td(MULTI_ORG_TF_BR.password), a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form renders
+[ACT] fill 'Email': @td(MULTI_ORG_TF_BR.email)
+[ACT] fill 'Password': @td(MULTI_ORG_TF_BR.password)
+[ACT] click 'Sign in'
+[WAIT] the account menu renders in the top header
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns
+[CAPTURE] record the price cell of each column
+[ACT] open the account-menu popup in the top header
+[WAIT] the popup renders
+[ACT] select the second organization in the organization switcher
+[WAIT] the page re-renders under the new organization
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page settles","[REL] every price cell rendered on the compare page after the switch equals the price the same SKU renders on its own product page under the newly selected organization {BL}
+[STATE] the previous organization's prices are not still displayed on the compare page after the switch {BL}
+[REL] switching back to the first organization restores the price cells recorded before the switch {BL}
+[DOM] verify whether the compare SELECTION itself is meant to be per-organization or per-browser — nothing writes 'compareProducts' on an organization change, so the previous organization's products remain listed {HYPOTHESIS}","[API] the products query issued after the switch carries the new organizationId
+[CONSOLE] no TypeError or JS error during the organization switch
+[NETWORK] no 4xx/5xx on /graphql","Prices unchanged after the switch, some cells re-priced and others not, compare page shows a product the new organization cannot buy with no indication, sign-out leaves the list readable to the next user of the machine",Clear the localStorage key 'compareProducts'; switch back to the first organization; sign out via the account-menu popup,VCST-5735 · Archetype:SCOPE · Technique:ST,Draft
+CMP-016,Two configurations differing only in a file section are kept as separate entries,Catalog > Product Compare v2,Medium,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+@td(CFG_FILE_UPLOAD.name) carries a single optional File configuration section, so two adds can differ ONLY in the uploaded file. Two distinct small files are needed for the two adds.
+The alias exposes name / slug / url / id / price — there is no .sku field on a configurable alias.
+No BL invariant declares that configurations a customer can tell apart must be distinct entries, so the expectations below are tagged {HYPOTHESIS} and phrased as questions (PROPOSED-BL-CAT-019).","url={{FRONT_URL}}, cfg_name=@td(CFG_FILE_UPLOAD.name), cfg_url=@td(CFG_FILE_UPLOAD.url)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}@td(CFG_FILE_UPLOAD.url)
+[WAIT] the File configuration section renders
+[ACT] upload the first file into the File configuration section
+[WAIT] the upload is listed on the section
+[ACT] click the 'Add to Compare' control on the product page
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[ACT] replace the uploaded file with the second file
+[WAIT] the second upload is listed on the section
+[ACT] click the 'Add to Compare' control on the product page
+[WAIT] the page settles
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders","[MATH] verify whether product columns for @td(CFG_FILE_UPLOAD.name) after the two adds = 2 {HYPOTHESIS}
+[REL] verify whether the entry count in the localStorage key 'compareProducts' after the second add is one greater than after the first {HYPOTHESIS}
+[DOM] verify whether any notification is present when a second add resolves to an existing entry — a silent no-op leaves the customer believing both configurations are being compared {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Second add produces no column and no notification, second add replaces the first column, both columns render identical configuration rows, compare control flips state with nothing added",Clear the localStorage keys 'compareProducts' and 'localProductConfigurations',VCST-5735 · Archetype:SILENT · Technique:EP,Draft
+CMP-017,Two configuration sections sharing a display label render as separate rows,Catalog > Product Compare v2,Medium,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+@td(CFG_DUPLABEL.name) is the only configurable in the corpus whose TWO configuration sections share one display label ('Finish'), with deliberately different option sets and prices — identical content would leave the rows indistinguishable even on a correct build.
+The compare table keys configuration rows by label ('config:<label>') after the section id was dropped from the properties payload, which is the mechanism under test. No BL invariant covers it, so the expectations are {HYPOTHESIS} (PROPOSED-BL-CAT-019).","url={{FRONT_URL}}, cfg_name=@td(CFG_DUPLABEL.name), cfg_url=@td(CFG_DUPLABEL.url)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}@td(CFG_DUPLABEL.url)
+[WAIT] both configuration sections render
+[ACT] select a different option in each of the two sections sharing the label 'Finish'
+[WAIT] the configured price updates
+[ACT] click the 'Add to Compare' control on the product page
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders the product column for @td(CFG_DUPLABEL.name)","[MATH] verify whether configuration rows rendered for @td(CFG_DUPLABEL.name) = the number of configured sections on the entry, which is 2 {HYPOTHESIS}
+[REL] verify whether both selected option values are readable in the comparison — neither section's value is absent from the table {HYPOTHESIS}
+[DOM] verify whether two configuration sections sharing the display label 'Finish' collapse into a single row, so one section's selected value is simply not shown {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","One 'Finish' row where two sections were configured, a 'Finish' row whose value matches only one section, a configuration row rendered with an em-dash placeholder for a section that was configured",Clear the localStorage keys 'compareProducts' and 'localProductConfigurations',VCST-5735 · Archetype:SILENT · Technique:EP,Draft
+CMP-018,Switching currency on the compare page refreshes prices or states they are unavailable,Catalog > Product Compare v2,High,"BL-PRICE-005, BL-CROSS-004",ECL-12.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+ENVIRONMENT GAP — read before triaging a FAIL. vcst-qa carries no EUR PRODUCT pricelist, so every AGENT-TEST product renders a zero amount once the currency is switched to EUR. A zero price here is BLOCKED on that known environment gap, never a FAIL of this ticket. What this case SCORES is whether the price cells react to the switch at all and in which currency they render.
+The compare page reads storeId, currencyCode and cultureName ONCE at setup and refetches products only when the set of product ids changes, which is the mechanism under test.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns
+[CAPTURE] record the price cell string of each column
+[ACT] select a different currency from the currency selector without leaving the page
+[WAIT] the page settles
+[ACT] select the original currency from the currency selector
+[WAIT] the page settles","[REL] after the currency switch every price cell renders in the newly selected currency — no cell is left showing the previous currency's symbol {BL}
+[REL] switching back to the store's default currency restores the price cell strings recorded at the start {BL}
+[FORMAT] every price cell matches /^[^0-9]*[0-9][0-9.,]*$/ after each switch, with no cell left blank {DOC}
+[DOM] verify whether a fresh products request is present in the network log after the currency switch — the request context is captured once at setup and the refetch is keyed on the product ids only {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Price cells keep the previous currency symbol, price cells go blank, some cells convert and others do not, a full page reload is required before the currency takes effect, price row disappears",Clear the localStorage key 'compareProducts'; restore the store's default currency,VCST-5735 · Archetype:MONEY · Technique:ST,Draft
+CMP-019,An add or remove in one browser tab updates an open compare page in another,Catalog > Product Compare v2,High,,ECL-7.3,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+Two browser tabs on the same profile. Tab 1 sits on the compare page; tab 2 does the adding and removing.
+OBSERVED at 3x: cross-tab propagation is live and sub-second, not reload-gated. This case pins that behaviour rather than probing for a race.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders one product column
+[CAPTURE] record the column headings and the header Compare badge count in this tab
+[ACT] open a second browser tab on {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[ACT] switch back to the first tab without reloading it
+[WAIT] the compare table re-renders
+[ACT] switch to the second tab
+[WAIT] the results grid renders
+[ACT] click the 'Remove from Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'false'
+[ACT] switch back to the first tab without reloading it
+[WAIT] the compare table re-renders","[REL] the first tab's compare table gains a column for @td(PROD_CMP_B.name) after the second tab's add, with no manual reload of the first tab {OBSERVED}
+[REL] the first tab's compare table returns to the column set recorded at the start after the second tab's remove {OBSERVED}
+[REL] the header Compare badge in the first tab reports the same count as the header Compare badge in the second tab at every point {OBSERVED}
+[MATH] product columns in the first tab after the second tab's remove = 1 {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","First tab still shows the pre-add column set after several seconds, badge and table disagree within one tab, first tab shows a duplicate column, first tab throws on the storage event",Clear the localStorage key 'compareProducts'; close the second tab,VCST-5735 · Archetype:RACE · Technique:ST,Draft
+CMP-020,The per-tab counter and the global compare badge stay mutually coherent,Catalog > Product Compare v2,Medium,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+Three entries across TWO tabs: two in 'Group A', one in 'Group C'. The page counter is scoped to the ACTIVE category while the site header's Compare badge counts every entry, so the two numbers legitimately disagree.
+OBSERVED at 3x: a counter reading '3 of 5 added in <category>' beside a header badge reading 7. Defensible, but two disagreeing totals on one screen invite a false bug report, which is why the readability question is carried as a {HYPOTHESIS} line rather than asserted.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku), c_sku=@td(PROD_CMP_C.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_C.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_C.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_C.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the category tab strip renders two tabs
+[CAPTURE] record the page counter text, every tab badge count, and the header Compare badge count
+[ACT] click the other category tab
+[WAIT] the compare table re-renders","[MATH] the count in the page counter = the badge count of the ACTIVE category tab {DOC}
+[MATH] the header Compare badge count = the sum of every category tab's badge count, which is 3 {OBSERVED}
+[REL] switching category tab changes the page counter to the new tab's count while the header Compare badge is unchanged {OBSERVED}
+[DOM] verify whether any label is present that tells the customer which scope each number covers — the per-category counter and the global header badge legitimately disagree and the page names neither scope {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Page counter shows the global total, header badge shows the active tab's total, counter total field shows something other than the per-category limit, counter omits the category name while a category is selected",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:PARITY · Technique:EG,Draft
+CMP-021,Compare table — loading / skeleton state under a throttled network,Catalog > Product Compare v2,High,"BL-UI-001, BL-UI-003",,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+State-stress sweep row: BL-UI-001 (layout stability) and BL-UI-003 (no state-induced shift) hold in the default render and are only exercised while the products request is in flight, so a default-state-only audit reports this surface as clean.
+The loading state is reachable only while the compare page has entries but no resolved products, i.e. throttled or blocked network on first paint.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[THROTTLE] slow3g
+[NAV] {{FRONT_URL}}/compare
+[SNAP] before = .compare-products__head
+[WAIT] the compare table renders both product columns
+[SNAP] after = .compare-products__head
+[PROBE:CLS]
+[THROTTLE] none","[DOM] while the products request is in flight the element carrying data-test-id 'compare-loading-state' is present, and neither the empty state nor the error state is present {DOC}
+[CLS] value <= 0.1 {BL}
+[SHIFT] before vs after topDelta == 0 {BL}
+[REL] the page heading, breadcrumbs and 'Clear all' render before the products resolve and do not move when they do {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Empty state flashes before the products resolve, header jumps down when the table appears, loader replaces the whole page including the heading, spinner visible >5s with the request already complete",Clear the localStorage key 'compareProducts'; remove the network throttle,VCST-5735 · Archetype:RENDER · Technique:EP,Draft
+CMP-022,Compare page — empty state with no entries in storage,Catalog > Product Compare v2,High,BL-UI-006,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+State-stress sweep row: the empty state is reached simply by clearing the compare list, which every other case in this suite does as setup and none of them audits.
+'Restore products' is offered only when something was removed during THIS page load, so it must be absent on a fresh load.",url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the empty-state heading renders
+[PROBE:TOUCH] .compare-products__empty-state","[DOM] the empty-state heading reads 'Your compare list is empty' {DOC}
+[DOM] the empty-state description reads 'Add products from the catalog to compare their characteristics side by side. You can compare up to 5 products per category.' {DOC}
+[DOM] 'Clear all' is disabled while the list is empty {DOC}
+[DOM] 'Restore products' is absent on a fresh load with nothing removed, while 'Add products' is present {DOC}
+[TOUCH] belowAA == 0 {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Empty state describes a global limit rather than a per-category one, 'Clear all' enabled at zero entries, 'Restore products' offered on a fresh load, empty state renders an empty table instead",none,VCST-5735 · Archetype:RENDER · Technique:EP,Draft
+CMP-023,Compare table — error state when the products request fails,Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+State-stress sweep row: the error state is reachable only when the compare page holds entries AND the products request fails, so it is invisible to any default-state audit.
+Induced by blocking or 500-ing the xAPI products request for the compare page.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[ACT] block the xAPI products request
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the error state renders
+[ACT] unblock the xAPI products request
+[ACT] click 'Try again'
+[WAIT] the compare table renders both product columns","[DOM] the element carrying data-test-id 'compare-error-state' renders the text 'Failed to load data' with a 'Try again' control {DOC}
+[REL] activating 'Try again' with the request restored renders the same product columns the entries name {DOC}
+[DOM] the error is scoped to the table — the page heading, breadcrumbs and 'Clear all' are still present while the error state is shown {DOC}
+[DOM] the empty-state heading 'Your compare list is empty' is absent while the error state is shown — a failed load must not read as an empty list {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Empty state rendered on a failed request, whole page replaced by an error, 'Try again' does nothing, error state persists after a successful retry",Clear the localStorage key 'compareProducts'; remove the request block,VCST-5735 · Archetype:RENDER · Technique:EP,Draft
+CMP-024,Compare table — five products in one category at desktop width,Catalog > Product Compare v2,High,"BL-UI-004, BL-UI-005",,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+State-stress sweep row: the multi-item state is 'Compare Fixtures > Group A' filled to its five-product limit, which is the widest the table can legitimately get.
+The design spec declares a '+ Add product' tile gated on count < limit; the implementation renders none. Its absence is advisory against the SPEC and correct against the TICKET, so it is carried as a question, not a failure.","url={{FRONT_URL}}, p1=@td(PROD_CMP_A.sku), p2=@td(PROD_CMP_B.sku), p3=@td(PROD_PROP_PRICE.sku), p4=@td(PROD_LONGNAME.sku), p5=@td(PROD_CMP_FILL_1.sku)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_PROP_PRICE.sku)
+[WAIT] the results grid renders a card for @td(PROD_PROP_PRICE.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_PROP_PRICE.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders five product columns
+[REFLOW]
+[PROBE:OVERFLOW]
+[PROBE:ALIGN] .compare-table__product","[OVERFLOW] horizontal == false {BL}
+[ALIGN] heightDrift <= 1 {BL}
+[MATH] product columns rendered = 5 {DOC}
+[REL] all five columns are reachable through the table's own horizontal scroller while the row-label column stays at the start edge {SPEC}
+[DOM] verify whether an add-product affordance is offered from a table below its limit — the design spec declares a '+ Add' slot and the implementation renders none {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Document scrolls sideways, header scroller and body scroller drift out of sync, columns of unequal height, the fifth column unreachable, long product name widens its own column",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:RENDER · Technique:EP,Draft
+CMP-025,Compare table — dark theme preset,Catalog > Product Compare v2,High,BL-A11Y-003,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+State-stress sweep row: the table's zebra striping, hover tint and sticky-header separation are all token-driven, so contrast and separation must be re-checked under a dark preset — they are invisible to a default-preset audit.
+Emulating prefers-color-scheme does NOT switch this storefront's theme; the preset must be toggled through the store's own theme selector.
+A BL-A11Y finding on a feature ticket files as its own standalone ticket at its real severity and does not fail this run.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns
+[ACT] switch the storefront theme preset to a dark preset
+[WAIT] the page re-renders under the dark preset","[REL] every text-on-background pair in the compare table meets the same contrast threshold under the dark preset as under the default preset {BL}
+[DOM] the alternating row background remains visible as a distinct band against the default row background under the dark preset — the two do not resolve to one colour {BL}
+[REL] the sticky header block stays visually separated from the scrolling body under the dark preset, as it is under the default preset {BL}
+[DOM] the pin control's pinned state stays distinguishable from its unpinned state under the dark preset, by more than colour alone {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Row label text below the contrast threshold, zebra striping invisible, sticky header indistinguishable from the body, pinned state conveyed by colour alone, availability chip unreadable",Clear the localStorage key 'compareProducts'; restore the default theme preset,VCST-5735 · Archetype:RENDER · Technique:EP,Draft
+CMP-026,Compare page — deep link to a category tab (UIP-DEEP),Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+UIP-DEEP sweep row. The add notification now carries a deep link of the form /compare?category=<categoryKey>, so an arbitrary or stale key can reach the page from outside.
+The category key is the join of the first two Category breadcrumb itemIds — read the real one out of the localStorage key 'compareProducts' rather than composing it.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), c_sku=@td(PROD_CMP_C.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_C.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_C.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_C.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[CAPTURE] read the categoryKey of @td(PROD_CMP_C.sku) from the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/compare?category=<the categoryKey just read>
+[WAIT] the compare table renders
+[NAV] {{FRONT_URL}}/compare?category=not-a-real-category-key
+[WAIT] the compare table renders
+[NAV] {{FRONT_URL}}/compare?category=
+[WAIT] the compare table renders","[REL] the deep link carrying a categoryKey present in storage opens with that category's tab selected and its products rendered {DOC}
+[DOM] a deep link carrying an unknown category key falls back to the first tab — the table is present, not blank {OBSERVED}
+[DOM] a deep link carrying an empty category value falls back to the first tab — the table is present, not blank {OBSERVED}
+[REL] a deep link to any category with an EMPTY compare list renders the empty state rather than a table with no columns {DOC}","[CONSOLE] no TypeError or JS error on any of the three deep links
+[NETWORK] no 4xx/5xx on /graphql","Blank page on an unknown key, console error on an empty key, tab strip rendered with no tab selected, deep link selects a tab that holds no products",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:SCOPE · Technique:EG,Draft
+CMP-027,Compare page — reload after Clear all does not resurrect the list (UIP-REFRESH),Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+UIP-REFRESH sweep row. The restore buffer is in-memory and page-scoped by design: it offers an undo only for as long as the customer stays on the page that showed them the empty state.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns
+[ACT] click 'Clear all'
+[WAIT] the confirmation dialog renders
+[ACT] click 'Clear'
+[WAIT] the empty-state heading renders
+[ACT] reload the page
+[WAIT] the empty-state heading renders","[DOM] after the reload 'Restore products' is absent — the in-memory buffer does not survive a page load {DOC}
+[MATH] entries in the localStorage key 'compareProducts' after the reload = 0 {DOC}
+[REL] a reload performed with a POPULATED list instead re-renders the same tabs and the same product columns as before the reload {DOC}
+[DOM] the header Compare badge count is absent after the reload {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","'Restore products' still offered after a reload, cleared products reappear after a reload, badge still counts cleared entries, reload of a populated list drops a tab",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:REPLAY · Technique:EG,Draft
+CMP-028,Compare list across two tabs and a sign-out in one of them (UIP-TABS),Catalog > Product Compare v2,High,BL-AUTH-007,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+UIP-TABS sweep row. The compare list is backed by browser storage, not by the session, so signing out in one tab does not by itself empty it. Whether it SHOULD is not declared anywhere, which is why the expectations are questions.
+Two tabs on the same profile, both signed in as @td(MULTI_ORG_TF_BR.email).","url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR.email), password=@td(MULTI_ORG_TF_BR.password), a_sku=@td(PROD_CMP_A.sku)","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form renders
+[ACT] fill 'Email': @td(MULTI_ORG_TF_BR.email)
+[ACT] fill 'Password': @td(MULTI_ORG_TF_BR.password)
+[ACT] click 'Sign in'
+[WAIT] the account menu renders in the top header
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders one product column
+[ACT] open a second browser tab on {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] sign out from the account-menu popup in the second tab
+[WAIT] the header renders the signed-out state
+[ACT] switch back to the first tab without reloading it
+[WAIT] the compare page settles","[DOM] verify whether a compare list built while signed in is expected to survive a sign-out on a shared machine — nothing clears 'compareProducts' on sign-out {HYPOTHESIS}
+[REL] verify whether the first tab's compare page still renders the same product column after the second tab signs out {HYPOTHESIS}
+[DOM] the first tab does not render a stale signed-in header while the session is gone — its header state matches the second tab's {HYPOTHESIS}
+[STATE] no unhandled authorization error is surfaced to the customer in the first tab after the sign-out {BL}","[CONSOLE] no TypeError or unhandled promise rejection in the first tab after the sign-out
+[NETWORK] no unauthenticated 4xx storm on /graphql from the first tab","First tab keeps acting as the signed-out user's session, repeated 401s from the first tab, compare page crashes on the session change, header state disagrees between tabs indefinitely",Clear the localStorage key 'compareProducts'; close the second tab,VCST-5735 · Archetype:RACE · Technique:EG,Draft
+CMP-029,Compare page — corrupted and stale compare storage (UIP-STORAGE),Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+UIP-STORAGE sweep row. Three storage shapes are probed in turn: unparsable text, a well-formed array holding a productId that no longer resolves, and a well-formed array holding an entry whose categoryKey names a category the product no longer sits in.
+Only the first shape has a declared expectation. The other two are questions — the change never re-derives categoryKey after the entry is written, and nothing declares what an unresolvable entry should do.","url={{FRONT_URL}}, a_id=@td(PROD_CMP_A.id)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[ACT] in the browser console, write the text 'not-json' to the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the page settles
+[ACT] in the browser console, write an array holding one entry with a productId that does not exist to the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the page settles
+[ACT] in the browser console, write an array holding @td(PROD_CMP_A.id) with a categoryKey that names a different category to the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the page settles","[DOM] with unparsable text in the key the empty-state heading 'Your compare list is empty' is present, and no error state is present {DOC}
+[DOM] verify whether the remaining resolvable products are still present when one entry names a product that no longer resolves, rather than the whole table being replaced by an error state {HYPOTHESIS}
+[REL] verify whether an entry whose stored categoryKey no longer matches the product's category is re-keyed or left under the stale tab — the key is written at add time and never re-derived {HYPOTHESIS}
+[MATH] the number of product columns the page renders = the number of well-formed, resolvable entries in the key {HYPOTHESIS}","[CONSOLE] no uncaught TypeError on any of the three storage shapes
+[NETWORK] no 4xx/5xx on /graphql","White screen on reload, uncaught JSON parse error, whole page replaced by an error state for one unresolvable entry, page renders a column with no product data",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:STALE · Technique:EG,Draft
+CMP-030,"Compare page — blocked, slow or malformed dependency responses (UIP-NET)",Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+UIP-NET sweep row. Three dependency failures are probed: the products request 500s, the products request returns only SOME of the requested ids, and a configured-price request fails while the rest of the table is fine.
+The partial-failure notification is a declared string, which is what makes the second probe assertable rather than a guess.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[ACT] make the xAPI products request return HTTP 500
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the error state renders
+[ACT] make the xAPI products request return only one of the two requested product ids
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the page settles","[DOM] a 500 on the products request renders the scoped error state carrying data-test-id 'compare-error-state' — the page itself is still present {DOC}
+[DOM] when only some requested products resolve, the notification reads 'Couldn't load some compared products. Please try again.' {DOC}
+[REL] when only some requested products resolve, the products that DID resolve are still rendered as columns {DOC}
+[DOM] the page heading, breadcrumbs and 'Clear all' are present through every dependency failure {DOC}","[CONSOLE] no uncaught TypeError on any dependency failure
+[NETWORK] the induced 500 is visible on /graphql while the page still renders","Whole-page crash on a 500, infinite spinner, partial load silently drops products with no notification, error state shown when only one product failed",Clear the localStorage key 'compareProducts'; remove every request override,VCST-5735 · Archetype:FALLBACK · Technique:EG,Draft
+CMP-031,Compare table at 200% and 400% browser zoom (UIP-VIEW),Catalog > Product Compare v2,High,"BL-UI-004, BL-A11Y-001",,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+UIP-VIEW sweep row. Zoom crosses the md breakpoint, and three controls are stylesheet-hidden below md: the row pin, the row info tooltip, and 'Clear category'. So zoom reproduces the same functional loss CMP-003 records at 375px, on a desktop viewport.
+A BL-A11Y finding on a feature ticket files as its own standalone ticket at its real severity and does not fail this run.","url={{FRONT_URL}}, a_sku=@td(PROD_CMP_A.sku), b_sku=@td(PROD_CMP_B.sku)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns
+[CAPTURE] record which table controls are present at 100% zoom
+[ACT] set the browser zoom to 200%
+[WAIT] the page reflows
+[PROBE:OVERFLOW]
+[ACT] set the browser zoom to 400%
+[WAIT] the page reflows","[OVERFLOW] horizontal == false {BL}
+[REL] every control present at 100% zoom is still present at 200% zoom — the tab strip, the All/Differences pair, 'Clear all' and each per-product remove control {BL}
+[DOM] at 400% zoom the row pin control and the row info tooltip trigger are still present — both are stylesheet-hidden below the md breakpoint, which zoom crosses {BL}
+[DOM] at 400% zoom the table's own horizontal scroller is still operable and the row-label column is still present {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Document scrolls sideways at 200%, controls disappear as zoom crosses the md breakpoint, label column collapses to zero width, table scroller unreachable, sticky header overlaps the site header",Clear the localStorage key 'compareProducts'; reset the browser zoom to 100%,VCST-5735 · Archetype:RENDER · Technique:EG,Draft
+CMP-032,"Compare table across zero, one, five and overflowing entries (UIP-DATA)",Catalog > Product Compare v2,High,BL-UI-004,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+localStorage key 'compareProducts' is EMPTY on the lane's browser profile at case start. It is shared per browser profile, so NEVER assume an empty list — step 1 clears it explicitly.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Live tab layout: Group A (6 products) / Group B (2) / Group C (1) / 'Compare Nested' (1) / its child (1) / uncategorized (1).
+UIP-DATA sweep row: zero entries, exactly one, the five-per-category maximum, an overflowing product name (a 62-character unbroken run), and a product with ZERO Category breadcrumbs, which must land in its own uncategorized tab rather than being dropped.","url={{FRONT_URL}}, p1=@td(PROD_CMP_A.sku), p2=@td(PROD_CMP_B.sku), p3=@td(PROD_PROP_PRICE.sku), p4=@td(PROD_LONGNAME.sku), long_name=@td(PROD_LONGNAME.name), p5=@td(PROD_CMP_FILL_1.sku), nocat_sku=@td(PROD_CMP_NOCAT.sku)","[NAV] {{FRONT_URL}}/
+[WAIT] the home page renders
+[ACT] in the browser console, remove the localStorage key 'compareProducts'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the empty-state heading renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_NOCAT.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_NOCAT.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_NOCAT.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders one product column
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_PROP_PRICE.sku)
+[WAIT] the results grid renders a card for @td(PROD_PROP_PRICE.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_PROP_PRICE.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the category tab strip renders two tabs
+[PROBE:OVERFLOW]","[DOM] with zero entries the empty-state heading reads 'Your compare list is empty' {DOC}
+[MATH] with exactly one entry product columns rendered = 1, and both 'All' and 'Differences' are disabled {DOC}
+[MATH] with the category filled to its limit product columns rendered = 5 {DOC}
+[REL] the zero-breadcrumb product @td(PROD_CMP_NOCAT.name) is rendered under its own tab and is not dropped from the list {DOC}
+[OVERFLOW] horizontal == false {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Zero-category product silently dropped, its tab rendered with an empty label, grid breaks at one column, fifth column unreachable, long name widens its column, table renders with zero rows",Clear the localStorage key 'compareProducts',VCST-5735 · Archetype:BOUNDARY · Technique:EG,Draft
+CMP-033,Two different configurations of one parent render as two distinct columns,Catalog > Product Compare v2,Critical,BL-CAT-006,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts' and is shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK'. A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction here cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY. Two entries of one parent consume two of that category's five slots.
+@td(CFG_LAPTOP.name) carries two REQUIRED Product sections — 'RAM' and 'Storage' — each with three differently priced options (documented in test-data/products/configurable-products.csv section_details). The configured price is the base price plus the two selected option prices, which is what lets two configurations of one parent tell themselves apart by VALUE rather than by label.
+The configurable aliases expose name / slug / url / id / price — there is no .sku field, which is why this case navigates by url.
+GraphQL returns ONE product for one product id, so a second column can only come from re-pairing each compare ENTRY with that product. The degenerate sibling — two configurations differing only in a file section, which are meant to collapse — already showed a silent no-op, so the general path is treated as suspect rather than as obviously fine.","url={{FRONT_URL}}, cfg=@td(CFG_LAPTOP.name), cfgUrl=@td(CFG_LAPTOP.url), cfgBase=@td(CFG_LAPTOP.price)","[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] click 'Clear all'
+[WAIT] the confirmation dialog renders
+[ACT] click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}@td(CFG_LAPTOP.url)
+[WAIT] the 'RAM' configuration section renders
+[ACT] record the listed price of every option in the 'RAM' section
+[ACT] record the listed price of every option in the 'Storage' section
+[ACT] select the lowest-priced option in the 'RAM' section
+[WAIT] the configured price updates
+[ACT] select the lowest-priced option in the 'Storage' section
+[WAIT] the configured price updates
+[ACT] record the configured price shown on the product page as PRICE_LOW
+[ACT] click the 'Add to Compare' control on the product page
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[ACT] select the highest-priced option in the 'RAM' section
+[WAIT] the configured price updates
+[ACT] select the highest-priced option in the 'Storage' section
+[WAIT] the configured price updates
+[ACT] record the configured price shown on the product page as PRICE_HIGH
+[ACT] click the 'Add to Compare' control on the product page
+[WAIT] the page settles
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders a product column for @td(CFG_LAPTOP.name)
+[ACT] record the price cell of every column carrying @td(CFG_LAPTOP.name)
+[ACT] record the configuration rows of every column carrying @td(CFG_LAPTOP.name)
+[ACT] click the customize control in the column priced PRICE_LOW
+[WAIT] the product page renders
+[ACT] record the option selections restored on the product page
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders
+[ACT] click the remove control on the column priced PRICE_HIGH
+[WAIT] the compare table re-renders","[MATH] product columns rendered for @td(CFG_LAPTOP.name) = 2 — one per compare ENTRY, not one per product id {SPEC}
+[REL] one column's price cell equals PRICE_LOW recorded on the product page, the other equals PRICE_HIGH — each column carries its OWN configured price, and neither shows @td(CFG_LAPTOP.price) unless that is the configuration it holds {DOC}
+[MATH] PRICE_HIGH minus PRICE_LOW = (highest 'RAM' option price minus lowest 'RAM' option price) + (highest 'Storage' option price minus lowest 'Storage' option price), taken from the option prices recorded in steps, and the two column price cells differ by that same amount — derived from the options, never from a transcribed total {DOC}
+[REL] the configuration rows of the PRICE_LOW column name the two lowest-priced options recorded in steps, the rows of the PRICE_HIGH column name the two highest-priced ones — neither column repeats the other's selections {SPEC}
+[NAV] the customize control in the PRICE_LOW column navigates to {{FRONT_URL}}@td(CFG_LAPTOP.url) with that column's own configuration restored — the option selections on the product page equal the configuration rows of the column that was clicked, not an empty configurator, not the other column's selections {BL}
+[MATH] after the PRICE_HIGH column is removed, product columns for @td(CFG_LAPTOP.name) = 1, the survivor's price cell = PRICE_LOW, its configuration rows unchanged from the ones recorded before the removal {SPEC}","[NETWORK] the compare page issues ONE product query carrying the shared product id — two columns come from re-pairing two entries with that one product, never from a second fetch
+[NETWORK] no 4xx/5xx on /graphql
+[CONSOLE] no TypeError or JS error on the page under test","One column where two configurations were added, both columns showing the same configured price, both columns showing identical configuration rows, the second add flipping the control with nothing added and no notification, a customize link that opens the configurator with nothing preselected or with the other column's selections, removing one column emptying both or changing the survivor's configuration",Clear the compare list through the UI: 'Clear all' confirmed with 'OK',VCST-5735 · Archetype:SILENT · Technique:ST,Draft
+CMP-034,"A product with variations shows a variations link and its count, never an add-to-cart control",Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts' and is shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK'. A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction here cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY.
+@td(PROD_CMP_VARIATIONS.name) (SKU @td(PROD_CMP_VARIATIONS.sku)) is the seeded variations parent, sitting in the Group A tab beside the plain compare fixtures: hasVariations true with @td(PROD_CMP_VARIATIONS.variationCount) variations, measured live on the env when it was seeded.
+compare-table.vue branches THREE ways on product kind — isConfigurable, hasVariations, plain. This case covers the hasVariations branch only; the configurable branch belongs to the configurable-column case and is not restated here.
+The count in the variations control label is the component's OWN arithmetic (variations.length + 1). The fixture guarantees only the seeded variation count, exposed as @td(PROD_CMP_VARIATIONS.variationCount) — assert against that alias, never against a transcribed number.
+The minimum-order-quantity and pack-size premise of the compare add-to-cart case does NOT apply to this column: a variations parent offers no add-to-cart control at all, so adding a cart step here would exercise the wrong branch and would hide the defect this case exists to catch.
+The seeded variations carry mainProductId and have NO product page of their own — navigate the PARENT via {{FRONT_URL}}@td(PROD_CMP_VARIATIONS.url).","url={{FRONT_URL}}, varProduct=@td(PROD_CMP_VARIATIONS.name), varSku=@td(PROD_CMP_VARIATIONS.sku), varUrl=@td(PROD_CMP_VARIATIONS.url), varCount=@td(PROD_CMP_VARIATIONS.variationCount)","[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] click 'Clear all'
+[WAIT] the confirmation dialog renders
+[ACT] click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}@td(PROD_CMP_VARIATIONS.url)
+[WAIT] the product page for @td(PROD_CMP_VARIATIONS.name) renders
+[ACT] click the 'Add to Compare' control on the product page
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders the product column for @td(PROD_CMP_VARIATIONS.name)
+[ACT] record the label of the action control in that column
+[ACT] record every control rendered in that column
+[ACT] record every product column rendered in the tab holding @td(PROD_CMP_VARIATIONS.name)
+[ACT] activate the variations control recorded in that column
+[WAIT] the product page renders","[MATH] the count in the variations control label for @td(PROD_CMP_VARIATIONS.name) = @td(PROD_CMP_VARIATIONS.variationCount) + 1 — the component's own variations.length + 1 arithmetic; a label reading exactly @td(PROD_CMP_VARIATIONS.variationCount), or any other total, means that formula moved and the customer is being told a number that matches nothing {SPEC}
+[DOM] the @td(PROD_CMP_VARIATIONS.name) column offers that variations control as its only action — an 'Add to cart' button is never rendered in it, so a cart line is never created from this column without a variant being chosen {SPEC}
+[NAV] activating the variations control navigates to {{FRONT_URL}}@td(PROD_CMP_VARIATIONS.url) — the parent page where the variant is chosen; the seeded variations carry mainProductId and have no product page of their own to land on {OBSERVED}
+[MATH] product columns rendered for the seeded variation SKUs = 0 while columns for @td(PROD_CMP_VARIATIONS.name) = 1 — one parent occupies one compare entry, so @td(PROD_CMP_VARIATIONS.variationCount) variants never consume that category's five slots {OBSERVED}","[NETWORK] no add-to-cart request is issued from the compare page for the @td(PROD_CMP_VARIATIONS.name) column
+[NETWORK] no 4xx/5xx on /graphql
+[CONSOLE] no TypeError or JS error on the page under test","An 'Add to cart' button rendered in a variations column, a variations control whose count equals @td(PROD_CMP_VARIATIONS.variationCount) rather than that plus the parent, a count that matches neither, a variations control that 404s or lands on a variant with no product page, each variation rendered as its own compare column, the column falling through to the plain-product branch with a flat price and a cart control",Clear the compare list through the UI: 'Clear all' confirmed with 'OK',VCST-5735 · Archetype:FALLBACK · Technique:EG,Draft
+CMP-035,The price row for a variations product uses its minimum variation price and compares on that,Catalog > Product Compare v2,High,,,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts' and is shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK'. A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction here cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv). Theme setting product_compare_limit = 5, enforced PER CATEGORY.
+Two products in the SAME Group A tab: @td(PROD_CMP_VARIATIONS.name), a variations parent whose parent price is @td(PROD_CMP_VARIATIONS.price) and whose minimum variation price is @td(PROD_CMP_VARIATIONS.minVariationPrice), and the plain @td(PROD_CMP_A.sku) at @td(PROD_CMP_A.price). The parent price and the minimum variation price are seeded APART on purpose — td:validate:compare fails if they are ever equalised, because equal values make both branches of getDisplayPrice return the same string and this case would then pass whichever branch ran.
+getDisplayPrice feeds BOTH the price cell and the row difference signature, so the price row compares a MINIMUM-VARIATION price against a plain product's actual price. The PR declares and unit-tests that branch, which is why the price-source expectation is {SPEC}; what SHOULD happen when two product kinds meet on one row has no invariant, so those lines stay {HYPOTHESIS} (PROPOSED-BL-CAT-016). BL-PRICE-005 in the Business_Rule cell is the currency-price-list invariant and is a borrowed citation here — it does not declare which price a variations parent shows.
+Price is a PERMANENT row: the 'Differences' filter renders it whether or not the values differ, so its presence is never evidence of a difference. Do not assert that it disappears.
+NOT DECIDABLE HERE, stated: the inverse fixture — a variations parent whose minimum variation price coincides with a plain product's price, so the row reads equal while the buyable prices differ — is not seeded, so this case can show only that the comparison is made across kinds, not that it misreports equality.","url={{FRONT_URL}}, varProduct=@td(PROD_CMP_VARIATIONS.name), varUrl=@td(PROD_CMP_VARIATIONS.url), varPrice=@td(PROD_CMP_VARIATIONS.price), varMinPrice=@td(PROD_CMP_VARIATIONS.minVariationPrice), plain=@td(PROD_CMP_A.sku), plainUrl=@td(PROD_CMP_A.url), plainPrice=@td(PROD_CMP_A.price)","[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] click 'Clear all'
+[WAIT] the confirmation dialog renders
+[ACT] click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}@td(PROD_CMP_A.url)
+[WAIT] the product page for @td(PROD_CMP_A.sku) renders
+[ACT] click the 'Add to Compare' control on the product page
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}@td(PROD_CMP_VARIATIONS.url)
+[WAIT] the product page for @td(PROD_CMP_VARIATIONS.name) renders
+[ACT] click the 'Add to Compare' control on the product page
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns in the Group A tab
+[ACT] record the price cell of each of the two columns
+[ACT] record every row rendered under the 'All' view
+[ACT] click 'Differences'
+[WAIT] the table re-renders under the Differences filter
+[ACT] record every row still rendered under 'Differences'","[REL] the price cell for @td(PROD_CMP_VARIATIONS.name) equals @td(PROD_CMP_VARIATIONS.minVariationPrice) — the cheapest variation a customer can actually buy — not @td(PROD_CMP_VARIATIONS.price); the fixture seeds those two apart, so exactly one of them can match {SPEC}
+[REL] verify whether that cell carries a from-price treatment while the @td(PROD_CMP_A.sku) column renders its single price @td(PROD_CMP_A.price) with no such prefix — a minimum rendered as a flat price is a price nobody can pay for that parent {HYPOTHESIS}
+[REL] the value the price row compares for the variations column is the same value its cell shows — @td(PROD_CMP_VARIATIONS.minVariationPrice) against @td(PROD_CMP_A.price) for the plain column — so with those two seeded apart the price row is reported as DIFFERING {SPEC}
+[REL] under 'Differences' the price row is still rendered for both columns because it is permanent, shown regardless of whether the values differ, while a row whose values are identical across the two columns is dropped — the price row's presence is never the signal, the values in it are {SPEC}
+[MATH] verify whether the Differences readout can call two products equal on price when their real prices differ: it compares a MINIMUM against an ACTUAL, so equality on this row = @td(PROD_CMP_VARIATIONS.minVariationPrice) equal to the plain product's price, which is not the same claim as the two products being equally priced {HYPOTHESIS}","[NETWORK] no 4xx/5xx on /graphql
+[CONSOLE] no TypeError or JS error on the page under test
+[STATE] no cart line is created from either column — nothing in the price row is a purchase control","The variations column showing @td(PROD_CMP_VARIATIONS.price), a minimum rendered with no from-price treatment, the price row disappearing under 'Differences', the readout comparing a value other than the one the cell shows, both columns reported as equal on price while their cells differ, an identical-valued row surviving the Differences filter",Clear the compare list through the UI: 'Clear all' confirmed with 'OK',VCST-5735 · Archetype:MONEY · Technique:EP,Draft

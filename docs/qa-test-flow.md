@@ -278,6 +278,10 @@ sequenceDiagram
   `--max-rounds 2`) a FAIL is *driven*, not pointed: per round `/qa-test` runs `/qa-fix` for each IN-SCOPE
   fixable bug (G0–G7, **never merges**; a G0 BAIL STOPs to a human) → `/qa-deploy-pr` deploys the fix's
   **prerelease** to the test env (**confirm each deploy**; no merge, so the §2 guard is never touched) →
+  **`5k.0` round entry: probes the deployed build, then re-reads the board** — the ticket’s sub-tasks and
+  linked bugs, each fix-ready one verified by an **inline `/qa-verify-fix`**, a VERIFIED one hopping to
+  `TESTED` **only when its fix is merged AND in that probed build** (prerelease-green is comment-only;
+  every other verdict stays CARRIED and defers its `REOPEN` to loop exit) →
   re-runs the previously-FAILED cases (as their **own** `--ids` run, so the RED→GREEN rate and the gate’s
   ≥80% floor stay two numbers) + the change-scoped regression **re-scoped to the fix’s own diff** →
   re-verdicts. PASS exits to the Feature Release Gate (5e); still-FAIL at the cap STOPs with a
@@ -287,8 +291,9 @@ sequenceDiagram
   (a bug already filed this run is CARRIED, not re-filed), posts a short round delta, rewrites
   `summary.json` with the round appended to `iterations.per_round[]`, and **appends** a section to the
   checklist; the release gate, the full QA-Complete comment, the tracker transition and promotion all
-  happen **once, at loop exit** — so a `--iterate` run makes one transition and posts one QA-Complete
-  comment whatever the round count. Per-round table with the reason for each row:
+  happen **once, at loop exit** — so a `--iterate` run makes one transition **on the ticket under test**
+  and posts one QA-Complete comment whatever the round count (a bug sub-task verified at round entry takes
+  its own hop, capped at `TESTED`). Per-round table with the reason for each row:
   [`skills/qa-test/modes.md`](../.claude/skills/qa-test/modes.md) §5k.
 - **Promotion is append-Draft → execute → harvest → flip, last and non-blocking.** Cases are appended
   `Draft` (Step 3), executed as `Draft` by the automated regression runner (Step 4), and **5g harvests that

@@ -4,7 +4,7 @@ Fill-in shape for the durable Test Model written to `reports/ba/test-models/<TIC
 (`.claude/rules/reports.md` category 3; 80–160 lines, cap 220).
 
 **The methodology — why Part 0 is derived first, the eight rules the scenario table must satisfy, the
-nine-clause gate, and the worked references — lives in
+ten-clause gate, and the worked references — lives in
 [`.claude/skills/qa-test/test-model.md`](../skills/qa-test/test-model.md). Read that before filling this
 in.** This file is the shape only, so it can be copied without carrying the argument with it.
 
@@ -25,7 +25,8 @@ Value chain:  [one line per link, in the user's words: trigger → effect → pe
 Chain diagrams: [Mermaid, in the file. `flowchart` ALWAYS (the journey: primary path + alternate/error branches);
                  + `sequenceDiagram` when the chain crosses layers or any part is async (job/queue/webhook/settlement);
                  + `stateDiagram-v2` when the entity has a lifecycle, or an effect is expected to REVERSE (cancel/refund/expire/revoke)]
-Variants:     [the kinds of the thing — goal types / processors / product kinds / role kinds. Different code paths through the SAME link, so they are matrix ROWS, not input partitions]
+Variants:     [the kinds of the thing — goal types / processors / product kinds / role kinds. Different code paths through the SAME link, so they are matrix ROWS, not input partitions. DERIVE THEM FROM THE LAYER THAT BRANCHES on the thing under test — and where several layers branch differently, take the UNION, not whichever layer you read first]
+Mechanism coverage matrix: [columns = chain links, rows = variants — BOTH derived from Part 0, never by reading your own scenario table back. A matrix filled from the scenario list fills completely by construction, so a mechanism with no scenario has no row to be uncovered in. Map scenarios in AFTER the axes exist; re-derive after any rewrite of the table, since renumbering drops rows silently]
 Mechanism coverage matrix: [variants × chain links; every cell holds a scenario # or `GAP` / `WAIVED + reason`. No blank cells — a blank is a hole nobody can see, a GAP is a decision someone can argue with]
 Reverse edges: [per forward effect that moves money/points/stock/entitlement: what moves it back → covered by # | ABSENT IN PRODUCT (a finding to report, never a blank)]
 Fixture lifecycle: [any state that is TERMINAL once reached (a completed mission, a consumed coupon, a shipped order) — a case that must observe an ADVANCE needs a per-run fixture, not a shared one, or it passes once and never again]

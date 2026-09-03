@@ -281,7 +281,7 @@ CONFIDENCE: HIGH|MEDIUM|LOW
 
 | Gate | Step | Hard STOP? | You re-derive |
 |---|---|---|---|
-| Artifacts reviewed + data seeded | **3** | **yes** | `suites:review` · `td:validate` · **`tc:scope`, with the same scope and risk terms `1b` item 2e derived** — all three read-only and disjoint, so issue them in ONE message |
+| Artifacts reviewed + data resolved | **3** | **yes** | `suites:review` · `td:validate` · **`tc:scope`, with the same scope and risk terms `1b` item 2e derived** — all three read-only and disjoint, so issue them in ONE message. **When `data_surface` was `false`, re-derive the skip** rather than the seed: the planned rows resolve AND no link under test needs a divergence the fixtures lack (`skills/qa-test/authoring.md` §3a) |
 | Triage + AC/DoD vs implementation | **5b** | **yes** | `compute-metrics.ts --gate feature --run-id <ID>` + the run's own evidence |
 | Feature Release Gate ratified | **5e** | no — non-blocking | `compute-metrics.ts --gate feature --run-id <C2 RUN_ID>`, re-evaluated from the raw inputs per `skills/qa-metrics/quality-gates.md` §1a |
 | Promotion flip | **5g** | **yes** | `suites:review` + the Step-4 evidence behind a sample of `{OBSERVED}` upgrades |
@@ -314,6 +314,29 @@ You do not file tickets, edit CSVs, or transition JIRA in verifier mode — you 
 
 ## OPERATIONS
 
+### Status custodian — you are the ONLY actor that moves a ticket
+
+**Single source of truth: [`knowledge/execution/ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md).**
+Read it before any transition; the table below is the Jira-shaped illustration of it, not a second copy
+of the rules, and where the two ever disagree that file wins.
+
+Four obligations, and they are yours alone:
+
+1. **Sole actor.** A status transition is an outward-facing write to a shared board — it moves work in
+   someone else's queue, notifies watchers, and on Jira gates what is reachable next. No specialist, no
+   runner, no verifier, no doer and **no sub-agent** transitions a ticket, not even while already in the
+   tracker posting a comment. One that believes a transition is due **reports it up**; you make the move.
+   Same containment as the external-write discipline in `knowledge/agents/*/shared-instructions.md`.
+2. **At most two hops per run** — one in (at **`1a`**, the moment the `feature-test` route resolves —
+   never confirmed, and long before the first dispatch) and one out (after
+   the report, **always** confirmed). Never past `TESTED`: `Done`, `Cancelled` and `Closed` are release
+   decisions and belong to a human, on every tracker.
+3. **Every verdict has an answer, including BLOCKED** — which transitions **nothing** and requires a
+   comment naming the blocker. TESTED would be a lie; REOPEN files an env blocker into the dev queue as
+   though it were a product defect.
+4. **Record the hop, and record the skip.** `summary.json.status_transitions[]`, with the reason. A
+   transition nobody can reconstruct afterwards is the failure this record exists to close.
+
 ### JIRA Workflow
 
 ```
@@ -344,6 +367,11 @@ transitionJiraIssue({ issueKey: "VCST-XXXX", transition: "Need fixes" })  // Fai
 ```
 
 **Rules:** Only pick up READY FOR TEST. Always transition to TESTING first. Comment before REOPEN. Verify fix version before TESTED.
+
+**These transition names are this project's Jira workflow, not a contract.** Resolve them **live** and
+match on the target's `to.name` (`knowledge/execution/tracker-ops.md` §Live transition discovery) — a
+hardcoded name is how a run fails on a project whose workflow was renamed, and on Azure Boards there are
+no transition names at all.
 
 ### Communication Templates
 

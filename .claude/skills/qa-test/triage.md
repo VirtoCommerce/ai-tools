@@ -80,7 +80,7 @@ Ambiguous → **real bug / LOW**, never relabelled as a test-defect. A test-defe
 | **PRE-EXISTING** | dedup match, or reproduces pre-change | link, don't re-file, don't fail this ticket |
 | **IN-SCOPE** | in what this ticket changed | fails this ticket; files as a Sub-task at 5d |
 | **OUT-OF-SCOPE incidental** | unrelated defect found opportunistically | files as its own standalone ticket + a *related* link; doesn't fail this ticket unless a P0 revenue-flow break |
-| **CARRIED** (`--iterate` only) | dedup match is a bug **this run filed in an earlier round** | keeps its original IN-SCOPE provenance **and** severity, so it still fails this ticket; files nothing; one comment on its existing Sub-task |
+| **CARRIED** (`--iterate` only) | dedup match is a bug **this run filed in an earlier round** | keeps its original IN-SCOPE provenance **and** severity, so it still fails this ticket; files nothing; one comment on its existing Sub-task. **The match set comes from `5k.0`'s live read of the ticket's sub-tasks + linked bugs, not from the run's memory of what it filed** — a sub-task someone fixed, merged and deployed mid-run was verified there and is `bugs_fixed`, not CARRIED ([`modes.md`](modes.md) §Round entry) |
 
 Unclear → treat **IN-SCOPE** (fail-safe).
 

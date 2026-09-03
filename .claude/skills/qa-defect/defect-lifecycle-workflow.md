@@ -295,7 +295,7 @@ Run 2-3 related checks in the same feature area:
 
 | STR Result | Regression | Side Effects | Decision | JIRA Transition |
 |-----------|-----------|-------------|----------|----------------|
-| Pass 3/3 | All pass | None | **VERIFIED** | TESTED → DONE |
+| Pass 3/3 | All pass | None | **VERIFIED** | → **TESTED**, and STOP — a QA flow never sets `DONE` (`knowledge/execution/ticket-status-transitions.md` §9.5); the human who merges closes it |
 | Pass 3/3 | All pass | None | **VERIFIED (BA/PO)** | TESTED → VERIFY BY BA/PO |
 | Pass 3/3 | 1+ fail | — | **REOPEN** | TESTED → REOPEN (new regression) |
 | Fail any | — | — | **REOPEN** | TESTED → REOPEN (fix incomplete) |

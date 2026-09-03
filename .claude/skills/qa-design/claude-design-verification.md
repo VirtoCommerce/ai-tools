@@ -29,8 +29,10 @@ DesignSync list_projects                  → discovery only, and INCOMPLETE (se
 
 ### The source is named, not discovered
 
-`DESIGN_SYSTEM_PROJECT_ID` in `.env.defaults` is the storefront design system, and the axis
-starts from it. **Do not resolve the source by searching `list_projects`.** That method returns
+The axis starts from **the ticket's own Prototype link** (`claude.ai/design/p/<uuid>?file=…`), or
+an explicit `--design <uuid>`. **There is no env-var default** — `DESIGN_SYSTEM_PROJECT_ID` was
+removed 2026-09-03; see §A global default is the same error, below. **Do not resolve the source by
+searching `list_projects`.** That method returns
 only projects the caller can *write* to, and the storefront system is held on share access — so
 discovery does not list it at all. A run that trusts discovery either finds nothing, or finds a
 different design system and diffs against that.
@@ -41,6 +43,38 @@ palette, no icon artboards at all. Every token would have read as DRIFT, and the
 have reported "no spec coverage" for a component whose spec is ~100 mapped pairs plus two
 dedicated stroke artboards. A wrong source is worse than no source: it yields confident findings
 about a product nobody was auditing.
+
+### A global default is the same error, one step removed
+
+`DESIGN_SYSTEM_PROJECT_ID` (`.env.defaults`) used to be the fallback source. It was **removed
+2026-09-03**, and not because it was inconvenient — because it is wrong-by-construction the moment
+a second prototype exists, and wrong *silently*, which is worse than the name-search failure above.
+A name search at least lands somewhere visibly unrelated; a stale global id lands on a project with
+**the right name and the right filenames** and a spec that has since moved.
+
+Measured on VCST-5735. The ticket's own Prototype link named project
+`518d0b90-…` ("Virto Commerce Frontend Design System"); the env var named
+`5aca50fb-…` ("VC New Front Design 2026"). **Both hold
+`ui_kits/storefront/CompareScreenV2.jsx`**, and the env var's copy was the older one — different
+pin icons (`star`/`star-outline` vs the current `pin`/`pin-outline`), a "Pinned characteristics"
+section header since deleted, and no tab-badge override. A default run diffs the live storefront
+against that, reports icon DRIFT on glyph names the design has already changed, and reports a
+section header MISSING that was deliberately removed. Nothing warns.
+
+So: **the source is per ticket.** Read its Prototype link, note the `file=` param (the artboard the
+ticket itself treats as authoritative), and confirm with `get_project`. No link and no `--design`
+⇒ `SKIPPED` with that reason — an axis that announces it did not run costs one line, while one
+that runs against the wrong revision costs a review cycle and the reader's trust in every other
+row. A **Figma** link on the ticket is not a substitute: Figma is a documented manual fallback, so
+an unread Figma node is an `unresolved` entry, never coverage.
+
+Two corollaries worth stating, both learned the same day. A prototype can **contradict itself** —
+VCST-5735's toast is declared centred-bottom in `CompareScreenV2.jsx` and bottom-right in the
+`index.html` the ticket links; that is `unresolved`, never a clean DRIFT against whichever half you
+happened to read. And the ticket's named `file=` is often a **bundled harness** (`index.html`,
+`compare-v2.html` → `app.bundle.js`), so the declared values live in the sibling `.jsx`; say which
+file fed the expectations, because a hand-relayed extract has an UNKNOWN `unresolved` count rather
+than zero.
 
 Confirm the project before reading it: `get_project` must return
 `type: PROJECT_TYPE_DESIGN_SYSTEM`. It returns no `canEdit` for a share-access project, which is

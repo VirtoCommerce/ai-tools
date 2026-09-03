@@ -125,8 +125,8 @@ test("EVERY manifest suite gets more turns than it has cases", () => {
 test("full: derived global budget covers the selection, unlike the old $80 default", () => {
   const suites = selection("full");
   const minutes = suites.reduce((sum, s) => sum + minutesOf(s), 0);
-  assert.equal(suites.length, 124, "manifest drift: full's suite count changed");
-  assert.equal(minutes, 2934, "manifest drift: full's total estimate changed");
+  assert.equal(suites.length, 125, "manifest drift: full's suite count changed");
+  assert.equal(minutes, 2960, "manifest drift: full's total estimate changed");
 
   const budget = globalBudgetFor(suites);
   assert.ok(budget >= 140, `expected >= $140, got $${budget.toFixed(2)}`);

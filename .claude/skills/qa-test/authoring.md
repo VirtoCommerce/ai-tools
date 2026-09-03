@@ -68,10 +68,50 @@ Agent routing table and the dispatch minimums: [`SKILL.md`](SKILL.md) §Agent di
 
 ---
 
-## Step 3a — provision test data FIRST, dispatched by the ORCHESTRATOR
+## Step 3a — provision test data, CONDITIONALLY, dispatched by the ORCHESTRATOR
 
-Cases are authored *against fixtures that already resolve*, never against imagined ones — so this runs
-**before** Artifact A, not after the review pass.
+Cases are authored *against fixtures that already resolve*, never against imagined ones — so when this
+runs, it runs **before** Artifact A, not after the review pass.
+
+### Whether it runs at all — `data_surface` (`1b` item 2f)
+
+**It is a step for tickets that need data that does not exist yet, not a fixed cost of every run.** The
+token derives like every other pre-flight axis — derived, never asked, never defaulted, recorded with its
+sources, `unresolved` ⇒ `true` ([`axes.md`](axes.md)). Sources, in order:
+
+| Source | Reads |
+|---|---|
+| the `1e-plan` authoring plan (FULL) / the Artifact-B conditions (FAST) | every `@td(…)` / `{{VAR}}` the planned rows name |
+| `npm run td:validate` | does each of those actually RESOLVE against this env |
+| the Test Model Part 0 value chain | does any link under test need a **divergence** the existing fixtures do not have |
+| the ticket + diff | a new entity type, a new store/org/role, a new pricing or inventory shape |
+
+**`true` when any of the last three is unsatisfied. `false` only when the first two are green AND the
+third is answered.** That third clause is the whole reason this is a token rather than a one-line
+shortcut: *"existing data is enough"* is **two** claims, and only the cheap one was ever checked.
+
+1. **Do the fixtures RESOLVE?** Deterministic — `td:validate` answers it.
+2. **Are they DISCRIMINATING on the links under test?** Judgment — `.claude/rules/test-data.md` §SECOND
+   RULE. Loyalty Missions is the measured case: every `@td()` resolved, every guard was green, and the
+   seeded orders were flat $30 with no shipping, tax or discount — so the feature's central question
+   (does the goal accrue `order.Total` or merchandise value?) was **undecidable from the data**, and both
+   the right and the wrong implementation predicted `$30.00`. A fixture set can satisfy every validator
+   and still make the run vacuous.
+
+So a `false` is not *"the aliases resolve"* — it is *"the aliases resolve **and** no link under test needs
+a divergence these fixtures lack"*, and the run **states which existing fixtures cover the plan**. An
+unstated skip reads exactly like a satisfied one.
+
+**Why it fails open.** A wrong `false` authors cases against data that cannot answer them: those come
+back BLOCKED at Step 4 and get triaged as product defects — the expensive, misleading direction. A wrong
+`true` costs one browserless agent inside time the wave already spends on `3x` and `B`. So doubt
+dispatches.
+
+**It gates the dispatch, never the ownership.** When authoring later surfaces a fixture need, the answer
+is still `test-data-engineer` (below) — a `false` at 2f is a prediction, not a licence to write a seeder
+inline.
+
+### When it runs
 
 **The orchestrator dispatches `test-data-engineer` directly** (`/qa-generate-data <feature>` →
 `/qa-seed-data <domain>`), because dispatching a peer agent is an orchestration act and `test-data-engineer`
@@ -81,8 +121,8 @@ agent and **never executed**.
 
 `test-data-engineer` owns the whole job end-to-end: design the combinations, author the
 specs/seeder/`@td()` aliases/drift-guard + its unit test, **and RUN the seed live** against the non-prod
-env, ending on a green `td:validate` (+ any `td:validate:<domain>` guard it added). Skip with a one-line
-note only when every planned case resolves against existing `@td()`/`{{VAR}}` data.
+env, ending on a green `td:validate` (+ any `td:validate:<domain>` guard it added). The skip condition is
+now the derived `data_surface` above rather than a judgment made at dispatch time.
 
 A fixture that cannot be seeded is reported as such and its dependent cases are marked BLOCKED — never
 authored against data that does not exist. **Seeder files authored by any other agent are unvalidated

@@ -36,6 +36,36 @@ Diagram selection is not decorative either:
 | `sequenceDiagram` | the chain crosses layers, or any part is async (job / queue / webhook / settlement) |
 | `stateDiagram-v2` | the entity has a lifecycle, or an effect is expected to **reverse** (cancel / refund / expire / revoke) |
 
+### The matrix is only a check if its ROWS and COLUMNS are derived independently of the scenario list
+
+*"No blank cells"* is the gate because a blank is a hole someone can see. That property survives only while
+the axes come from the **mechanism**. Populate the matrix by reading your own scenario table and it can
+confirm nothing the table does not already say: every cell fills, nothing is blank, and a mechanism with no
+scenario has **no row to be uncovered in**. The check silently degrades into a restatement of the thing it
+was meant to check.
+
+So derive the matrix from Part 0 — chain links as columns, variants as rows — and *then* map scenarios into
+it. A cell you cannot fill is the finding; a row you cannot name is a bigger one.
+
+**Variants are partitioned by the branch under test, not by entity identity.** Ask which layer *branches*
+on the thing being tested, and when several layers branch differently the variant set is their **union** —
+not whichever layer you happened to read first.
+
+**A rewrite of the scenario table is a lossy operation.** Renumbering, re-prioritising or re-deriving the
+table after new context lands drops rows silently, because nothing reconciles the new list against the old.
+Diff them, or re-derive the matrix from the chain afterwards and see which cells went empty.
+
+> Worked example — VCST-5735 (compare v2), both failures in one model, both showing a full matrix.
+> **(1)** Variants were taken from the storage composable, which branches two ways on *entry identity*
+> (configurable vs plain), while the render component branched **three** ways (configurable → customize
+> link · `hasVariations` → variations link · else → add-to-cart). The whole `hasVariations` branch — its
+> control, its `minVariationPrice` display, and its effect on the price row's `differs` signature — had no
+> row. **(2)** A scenario covering *the headline capability* (one configurable parent added twice with two
+> different configurations, which is the sole reason the entry↔product re-pairing exists) was present in
+> the first draft, lost in a rewrite after late context arrived, and never noticed — because the matrix
+> row for that variant was then filled from the rewritten table, with the surviving *edge* scenarios.
+> Both gaps were found by a human reading the model, not by any gate.
+
 ## Why it is a durable file
 
 Written to `reports/ba/test-models/<TICKET>-<date>.md` — `.claude/rules/reports.md` **category 3**. Three
@@ -44,6 +74,21 @@ reasons it cannot be a terminal dump:
 1. A model nobody can re-open cannot be **argued with**, which is the whole point of having one.
 2. The parameter model for a surface (cart, checkout, org roles) does not change per ticket, so as a file
    it is **reused**; as terminal output it dies with the session.
+
+   **Part 0 is also what fills the map's `Test object` block for the next ticket.**
+   `.claude/knowledge/domain/functionality-map.md` derives four of the five things a tester needs about
+   an object — operations, the data it is tested against, variants, constraints — and **cannot** derive
+   the fifth: what the surface is FOR. That comes from a Part 0 value chain and nowhere else, so a domain
+   with no model reads `UNDECLARED` (measured: 1 of 13). Writing this model is what changes that, which
+   is the same incentive shape as the `Audited:` stamp being the rotation state.
+
+   **Reason 2 had no reader until 2026-09-03, and it shows.** Nothing in the pipeline ever opened an
+   existing model, so "reused" was an aspiration: `reports/ba/test-models/` already carries
+   `VCST-5346-2026-08-28.md` **and** `VCST-5346-2026-09-02.md` — one ticket, one surface, two fault
+   models, which is the fork the section below forbids arriving by a different door. **Find the prior
+   model through [`.claude/knowledge/domain/functionality-map.md`](../../knowledge/domain/functionality-map.md)**
+   (`1b` item 2-map reads your domain's section and the `1c` brief carries the path). A prior model for
+   this surface is **amended, never forked** — the same rule as a same-day round 2, for the same reason.
 3. A file is **lintable in principle** — Part 0, the five fault-model parts and the resolved sweeps could
    be checked rather than asserted. **`npm run model:lint` is not implemented**, so today this third reason
    is an intention, not a gate: do not cite it as though a script were enforcing it. The live deterministic
@@ -66,7 +111,7 @@ and may do exactly three things:
    obligation, and skipping it is how a fix ships untested.
 
 It may **not** rewrite Part 0. The value chain does not change because a bug was fixed; if it would,
-the fix changed the mechanism, and that is a new ticket rather than a round. The 9-clause gate re-fires
+the fix changed the mechanism, and that is a new ticket rather than a round. The 10-clause gate re-fires
 **only on the amendment’s new rows** — inline, no verifier, exactly like the original
 `Model complete | 1e | inline` gate. Round bookkeeping lives in
 `summary.json.iterations.per_round[].artifacts.model_amendment`; the loop contract is

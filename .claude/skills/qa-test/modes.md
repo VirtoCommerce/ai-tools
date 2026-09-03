@@ -67,6 +67,10 @@ Per round, once the 5c verdict is in:
      build to the test env — **ask before deploying** (it opens its own gated deploy PR). No merge happens:
      the loop always re-tests an **unmerged prerelease**, so the never-auto-merge triple guard
      (`.claude/rules/quality-gates.md` §2) is never touched.
+   - **Probe the build, then re-read the board (`5k.0`):** record this round's own probed
+     `GET {{BACK_URL}}/api/platform/modules` value, then fetch the ticket's sub-tasks and linked bugs and
+     verify each fix-ready one **before** re-running anything (§Round entry). The order is not cosmetic:
+     the transition gate at round entry is evaluated against the probed build.
    - **Re-test (round N+1):** re-run **only the previously-FAILED cases (C1 / RED→GREEN)** at Step 4
      against the redeployed env, then Steps 5a–5c again (the full verdict gate; on FULL the independent
      verifier re-ratifies, 1 round) — and **then** the round's **C2**, re-scoped to the fix's diff, at 5r
@@ -99,6 +103,7 @@ promotion. This table is the rest of the contract.
 | `1e` Test Model | **ONCE** (round 1), **amended** per round | The model is a fault model of the FEATURE. A fix changes which hypotheses are live, not what the feature can be wrong about — so append a `## Round N` amendment to the **same** file (§Artifact refresh between rounds), never re-derive, and never a second dated file. |
 | Step `3x` discovery lane | **ONCE** (round 1) | Its charter is derived from the fault model's own unknowns, and the model is amended rather than re-derived between rounds — so a round-2 session would explore a surface whose unknowns have not moved, on a build that only differs by the fix. The round's own re-test is what interrogates the fix ([`exploratory-lane.md`](exploratory-lane.md) §9). |
 | Step 4's in-testing hop | **ONCE** (round 1) | The ticket does not leave in-testing inside the loop — 5f is at exit — so every later round already satisfies the precondition. If round 1 skipped the hop (no such transition, tracker unconfigured), the **exit** round does it before 5f, exactly as [`reporting.md`](reporting.md) §5f already says. |
+| **`5k.0` round entry** | **PER ROUND (≥2)** — a baseline read only on round 1 | The board is the source of truth for what this run filed and for what has since been fixed, and it **moves between rounds without the loop being told**: a human merges and deploys a sub-task fix, a developer links a new bug. Verification is a full inline `/qa-verify-fix` per fix-ready bug, which is also the only way a bug with **no covering case** — every bug a FAST round files — can be verified at all (§Round entry). Its own hops are recorded in `status_transitions[]` against the BUG key, never the ticket. |
 | `5a` · `5b` · `5c` | **PER ROUND** | Already in the enumeration: the verdict gate is what decides whether there is another round. On FULL the 5b verifier re-ratifies **once per round** (one REJECT→fix→re-verify round each). |
 | `5d` file bugs | **PER ROUND**, new findings only | `/qa-fix` needs a filed ticket, so a round that files nothing cannot fix anything and the loop dead-ends at its own precondition. A finding this run already filed is **CARRIED**, not re-filed (§Three carve-outs). |
 | `5r` release regression (C2) | **PER ROUND**, after that round's 5c | The round's fix changes what a sweep would find, so a single sweep at exit would describe only the last build — and the loop's own decision (is there another round?) comes from 5c, which is why C2 sits after it rather than before. Re-scoped to the FIX's diff each round (§The two tracks of round N+1). Its RUN_ID lands in `iterations.per_round[].regression.c2`; only the FINAL round's feeds 5e.1. |
@@ -107,16 +112,100 @@ promotion. This table is the rest of the contract.
 | `5e.3` persist `summary.json` | **PER ROUND** (rewritten in place; the round appended to `iterations.per_round[]`) | The loop can STOP at any round — G0 BAIL, BLOCKED, the cap, a dropped session — and a history persisted only on a clean exit is missing exactly when it is needed. It is also the only artifact that can support the cap-reached hand-off's per-round claims. |
 | `5e.4` `testing-checklist.md` | **PER ROUND**, **append-only** | On FAST it is the run's ONLY durable record, and the RED→GREEN transition *is* the loop's deliverable: overwriting a round-1 FAIL with a round-2 PASS deletes the evidence that the defect was ever there. |
 | Evidence screenshots | **PER ROUND**, round-stamped | Round N+1 re-runs the same case IDs into the same folder, so an unstamped `{TC-ID}-FAIL-{description}.png` lets the round-2 PASS **overwrite the round-1 FAIL** — and the checklist row that cites it then points at a green image. Every round stamps `-r{N}`, round 1 included (`.claude/rules/reports.md` §7). |
-| `5f` tracker transition | **AT LOOP EXIT** | REOPEN is the human-handoff signal, and a loop about to start another round is not handing off. A per-round REOPEN would also flap the ticket out of in-testing — the precondition both closing transitions need — and fire N−1 false handoff notifications. |
+| `5f` tracker transition | **AT LOOP EXIT** | REOPEN is the human-handoff signal, and a loop about to start another round is not handing off. A per-round REOPEN would also flap the ticket out of in-testing — the precondition both closing transitions need — and fire N−1 false handoff notifications. **Bug-level hops follow the same rule, with one exception:** a bug verified green on a **merged and deployed** fix hops to `TESTED` at round entry — that is monotonic, no later round can un-merge it — while a bug still failing keeps its in-testing state and takes its `REOPEN` at exit (§Which hop a verified bug takes). |
 | `5h` documentation | **AT LOOP EXIT, ONCE** | The loop only ever re-tests an **unmerged prerelease**. Documenting a build that the next round replaces publishes instructions for something nobody can use yet, and a per-round comment buries the ticket under near-identical guides. One documentation comment per run, whatever the round count — same reasoning as `5f`. |
 | `5g` promotion | **AT LOOP EXIT, ONCE** | `tc:promote` reads `Draft` and writes `Automated`, **never a re-promotion** (`scripts/test-cases/promote-cases.ts`), so a round-1 promotion is irreversible and grounds `{OBSERVED}` in the build that was WRONG. Only the last round's evidence describes the code a human is being asked to ship. |
+
+#### Round entry (`5k.0`) — re-read the board before re-running anything
+
+The loop's carried and fixed bug sets used to come from the run's own memory of what 5d filed, and its
+RED→GREEN set from the previously-failed cases. Both are claims about the **tracker**, derived from
+something that is not the tracker — the same failure the cap-reached hand-off rule already names one level
+up (*read off `summary.json`, never narrated from memory*). Three things the loop could not see: a
+sub-task a **human** fixed, merged and deployed between rounds (re-tested as *still failing*, or never
+re-verified at all); a bug a developer **linked** to the ticket mid-run; and any bug with **no covering
+case** — which is *every* bug a FAST round files, because a FAST finding comes off a checklist item and
+carries no case id, so nothing in `red_green` can ever speak for it.
+
+So each round **≥2** opens by reading the tracker, in this order — **after** the deploy and **after** the
+build probe, because the transition gate below is evaluated against the probed build:
+
+1. **Fetch the bug universe from the board.** The ticket's **sub-tasks** (where 5d files every IN-SCOPE
+   bug) *and* its **linked / related issues** (Jira: the issue links + `getJiraIssueRemoteIssueLinks`;
+   Azure Boards: the work item's `Child` / `Related` links). This set — not the run's memory — is what the
+   round reasons about; a key present here and absent from `bugs_filed` is a mid-run arrival, and saying so
+   is the point.
+2. **Classify each by status role, resolved live**, exactly as `1a` does — `fix-ready` / `not-fixed` /
+   `testable` ([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md)). Only a **`fix-ready`**
+   bug is verified: a `not-fixed` one has no fix to prove RED→GREEN against, so it stays **CARRIED** with
+   no verification pass — the same fail-safe `1a` applies to a `fix-ready` Bug with no repro basis. A bug
+   already at a terminal QA state (`TESTED`, or closed by a human) is **skipped as done**, which is what
+   makes this step idempotent across rounds.
+3. **Verify each fix-ready bug by running `/qa-verify-fix <bug-key>` inline** — its Steps 0–7 as written,
+   the same inline execution `1a` uses for the `verify-fix` flow. Deliberately **not** an inference off the
+   C1 result: a bug with no covering case cannot be verified that way at all, and a case going green proves
+   *that case's assertion*, not the bug's own STR. Dispatch them **concurrently inside the max-3 browser
+   cap**, on distinct lanes, and **never firefox** for a click-driven repro
+   ([`.claude/rules/agents.md`](../../rules/agents.md)). Each writes its own category-6 artifacts under
+   `reports/tickets/<Sprint>/<BUG-KEY>/`, so the round's per-bug evidence is a file rather than a claim.
+4. **Then — and only then — re-run the round's failed scope**: C1 / the failed checklist items (item 3 of
+   the enumeration above). A bug just verified VERIFIED does **not** drop its cases from C1: verify-fix
+   proves the STR, and C1 is what produces the canonical `RUN_ID` that 5g's promotion refuses to work
+   without (PR-013).
+
+**Round 1 reads the same set and verifies nothing.** It has no prior round's filings and no redeploy, so
+there is nothing of the loop's own to verify — but recording the set as the loop's **baseline** is what
+makes a round-2 delta computable and a mid-run fix by someone else *attributable* instead of a surprise.
+One tracker read, inside a step already holding the tracker open.
+
+##### Which hop a verified bug takes — and the single gate on it
+
+`TESTED` is the furthest anything QA runs may move
+([`ticket-status-transitions.md`](../../knowledge/execution/ticket-status-transitions.md) §9 rule 5: never
+`Done`, never `Cancelled`, never `Closed`, in any flow, on any tracker). Inside the loop exactly **one**
+row of `/qa-verify-fix`'s own decision matrix takes its hop:
+
+| Round-entry verdict | Hop on the BUG | Also |
+|---|---|---|
+| **VERIFIED** / **VERIFIED WITH NOTES**, and the fix is **merged AND present in this round's probed build** | → **`TESTED`** (ask first — the closing-hop confirmation rule applies to a bug exactly as it does to the ticket) | the local report moves `open/<severity>/` → `fixed/` **flat**, with its `## Resolution` block (`.claude/rules/reports.md` §1); recorded in `round_entry[]` **and** `bugs_fixed` |
+| **VERIFIED**, but green only on the loop's own **unmerged prerelease** | **none** | comment only. Nothing has shipped, so `TESTED` would publish a QA verdict on a build nobody can obtain |
+| merge state or build state **UNKNOWN** | **none** | fail safe — the same discipline `build.deployed` UNKNOWN already follows: a guess here closes a bug against a build that may never have landed |
+| `FIX_INCOMPLETE` · `INTERMITTENT` · `NEW_REGRESSION` · `BLOCKED` | **none — deferred to loop exit** | stays **CARRIED**; one comment naming the round it is still failing at and that the loop is re-fixing it |
+
+**The merged-AND-deployed gate is the whole rule.** The ban on transitioning a green carried bug was never
+about the bug — it was about the **build**: the loop re-tests an *unmerged prerelease*, so nothing has
+shipped and no QA state on that bug is honest. Once the fix is merged and the round's probed build carries
+it, that reason is gone and `TESTED` is exactly right. Read it off evidence, never off intent: the bug's
+fix PR is **`MERGED`**, **and** the owning component's version in `per_round[].build.deployed` is a release
+rather than the loop's own `/qa-deploy-pr` prerelease blob for that PR. Either half unproven ⇒ `UNKNOWN` ⇒
+no hop, and say which half.
+
+**Verify-fix's opening hop on the bug is allowed; its closing hops are not.** On Jira `TESTED` is reachable
+only from the in-testing status, so the inline run makes that (reversible, unconfirmed) move on the bug as
+it always does. Taking its `REOPEN` hop mid-loop would flap the bug *out* of in-testing every round and
+fire N−1 false handoff notifications — §5's reasoning for the ticket under test, applied to its sub-tasks.
+A bug the loop therefore leaves in in-testing is the **BLOCKED shape** — in-testing plus a comment saying
+why nobody is closing it — and it gets its honest closing hop at **loop exit**: still failing ⇒ `REOPEN`
+with the failure list, which is the moment the loop actually hands off. Every such hop and skip appends to
+`status_transitions[]` with the bug key, like any other (§8 of that file).
+
+**And `/qa-verify-fix`'s own matrix stops at `TESTED` too.** Its all-pass row used to read
+`TESTED (Finish test) → DONE (Move to Done)`, which no run may do — corrected in place; the standing
+`feedback_verify_fix_stops_at_tested` guidance was already the operative rule.
 
 #### The exit round
 
 **The exit round behaves exactly like a close-out without the flag.** Whatever ends the loop — PASS, the
 cap, a G0 BAIL, BLOCKED — the final round runs 5e in full (gate ratification · the full comment ·
 `summary.json` · the checklist), then 5f, then 5h, then 5g. **A `--iterate` run posts ONE QA-Complete comment and
-makes ONE transition**, the same as a run without it, whatever the round count.
+makes ONE transition on the ticket under test**, the same as a run without it, whatever the round count.
+
+**5f at exit also closes out the bugs the loop left open.** Every bug round entry moved into in-testing and
+did not hop (still failing, or green only on a prerelease) gets its honest closing hop **here**, where the
+loop is actually handing off: still failing ⇒ `REOPEN` with the failure list; green on an unmerged
+prerelease ⇒ **no hop**, and the comment says *green on prerelease `<PR>`, awaiting merge* — the same
+verdict-shaped rule 5f applies to the ticket, one level down. Each is recorded in `status_transitions[]`
+against the bug key, hops and skips alike.
 
 #### Three carve-outs
 
@@ -129,12 +218,15 @@ fails 5c this round), files nothing, and gets **one** comment on its existing Su
 is still failing at. Recorded in `iterations.per_round[].bugs_carried`. Severity still never moves (5a
 item 5).
 
-**A carried bug that goes GREEN is recorded and commented, and deliberately not transitioned.** Its
-Sub-task gets `fixed in the round-N prerelease (<PR>) — cases <IDs> green (<RUN_ID>)`, and the round records
-it in `bugs_fixed`. It does **not** reach Done or Cancelled — forbidden to `/qa-test` at any round (§5f) —
-and it does not even reach TESTED, because the loop re-tests an **unmerged prerelease**: nothing has
-shipped, so the only honest state is "green on a prerelease, awaiting merge". The human who merges closes
-it. A green carried bug also stops failing 5c from that round on; that is the whole point.
+**A carried bug that goes GREEN is recorded and commented, and transitioned only when the fix has actually
+shipped to the env.** Its Sub-task gets `fixed in the round-N prerelease (<PR>) — cases <IDs> green
+(<RUN_ID>)`, and the round records it in `bugs_fixed`. It never reaches `Done` or `Cancelled` — forbidden to
+`/qa-test` at any round (§5f) — and while it is green only on the loop's **unmerged prerelease** it does not
+reach `TESTED` either: nothing has shipped, so the only honest state is "green on a prerelease, awaiting
+merge", and the human who merges closes it. **The one case that does hop is a fix that got merged AND is
+present in this round's probed build** — round entry verifies it with an inline `/qa-verify-fix` and moves
+it to `TESTED` (§Which hop a verified bug takes). A green carried bug also stops failing 5c from that round
+on; that is the whole point.
 
 **Below-floor findings stay outside the loop, per round.** 5d does not file a `Low` in round 2 either, so
 5k still only ever fixes what 5d filed — and the round-delta comment carries the same mandatory
@@ -191,6 +283,7 @@ mid-loop (the CSV is then newer than that run) — **name it in the report and d
 
 ```
 QA re-test — round N of M. Prerelease: <fix PR> deployed to {ENV} (<module> <version>, probed).
+Round entry: [N] sub-tasks + [N] linked bugs read; verified [keys|None] → TESTED [keys|None] (merged+deployed); carried [keys|None].
 RED-GREEN: [X] previously-failed cases re-run — [green]/[still red] (<RUN_ID>).
 Change-scoped regression (re-scoped to the fix): [suite IDs] — [pass rate] (<RUN_ID>).
 Round verdict: [verdict]. Bugs: filed [keys|None] · still failing [keys|None] · green this round [keys|None].
@@ -212,7 +305,7 @@ mark one **CLEARED-by-fix** with the round it went green, and **add rows for mec
 introduces** (a fix is a change, and it earns the same fault-model treatment the original change got; this
 is the loop's one genuinely new coverage obligation). It may **not** rewrite Part 0: the value chain does
 not change because a bug was fixed, and if it would, the fix changed the mechanism and that is a new ticket,
-not a round. The 9-clause gate re-fires **only on the amendment's new rows**, inline, no verifier.
+not a round. The 10-clause gate re-fires **only on the amendment's new rows**, inline, no verifier.
 
 **Authored cases (Artifact A) — never re-author, sometimes add.** Do **not** re-run Step 3 for round-1
 rows: re-running `tc:scaffold` with round 1's `--id-block` makes the appender reject every row on ID
@@ -245,7 +338,11 @@ cut per-item prose, never the round sections.
 
 Every round appends one entry to `summary.json.iterations.per_round[]` (schema:
 [`qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json)) — `rounds`, `max_rounds` and
-`outcome` stay as the loop-level counters. The invariant is `per_round.length === rounds`. Round 1's own
+`outcome` stay as the loop-level counters, and each round's `round_entry[]` records one row per bug the
+board handed it — key, source (`subtask`/`linked`), status role, the inline verify-fix verdict, and the hop
+taken or the reason none was (a bug read and skipped as already-terminal is a row, not an absence: an empty
+`round_entry` on a round ≥2 means the board was never read). The invariant is
+`per_round.length === rounds`. Round 1's own
 verdict, counts and `regression.run_id` survive **only** there: every other field in `summary.json` is
 single-valued and carries the **latest** round's value, so never reconstruct an earlier round from the top
 level.

@@ -48,7 +48,7 @@ The three axes, and where each is specified:
 |---|---|---|
 | **a11y** | WCAG 2.2 AA + `BL-A11Y-001..004` (all **P1**) — keyboard operability, accessible naming, contrast, axe-clean. `BL-UI-006` touch targets rides along, since 2.5.8 measures it anyway | `skills/qa-accessibility/` |
 | **design-system** | live resolved custom properties vs the generated token set; no hardcoded colour/spacing literals; sized-control token + aspect equality | `skills/qa-design/design-system-consistency.md` |
-| **`vs. DESIGN`** | declared tokens · control geometry · icon name→glyph parity, diffed against the Claude Design project at `DESIGN_SYSTEM_PROJECT_ID` | `skills/qa-design/claude-design-verification.md` |
+| **`vs. DESIGN`** | declared tokens · control geometry · icon name→glyph parity, diffed against the Claude Design project **named by the ticket's own Prototype link** (no global default — `DESIGN_SYSTEM_PROJECT_ID` was removed 2026-09-03; a ticket with no design link ⇒ `SKIPPED`) | `skills/qa-design/claude-design-verification.md` |
 
 ### Dispatch the agent — do not invoke the command
 
@@ -59,8 +59,11 @@ dispatches that agent directly, exactly as it dispatches `qa-frontend-expert` / 
 brief cites the `/qa-design` **skill** as the methodology. `/qa-accessibility` carries no
 `disable-model-invocation` flag and may be invoked directly.
 
-The brief carries: the resolved target · `DESIGN_SYSTEM_PROJECT_ID` · the `BL-A11Y-*` / `BL-UI-*` invariant
-**text** (not just the IDs) · the screenshot path · the verdict vocabulary below.
+The brief carries: the resolved target · **the design project id resolved from the ticket's Prototype link,
+plus the artboard its `file=` param names** (there is no `DESIGN_SYSTEM_PROJECT_ID` to inherit — removed
+2026-09-03; if the ticket carries no design link, the brief says so and the axis returns `SKIPPED`) · the
+`BL-A11Y-*` / `BL-UI-*` invariant **text** (not just the IDs) · the screenshot path · the verdict vocabulary
+below.
 
 **Two things the brief MUST also carry, each of which cost a real run when it did not.**
 

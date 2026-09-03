@@ -6734,5 +6734,295 @@
       "groups_at_seed": "groups_at_seed"
     },
     "_notes": "suite 083d (MSN-E2E-009) per-run account, one half of the TARGETING PAIR. EMPTY-BY-DESIGN: minted per seed into the AGENT-TEST-msne2e- sweep namespace. The pair is minted seconds apart into the same org with the same password and differs in member.Groups ALONE, because that is the only input UserGroupIsCondition reads — two long-lived shared accounts would differ on org, balance, order history and every other group they carry, and \"the member saw it and the outsider did not\" would name none of them. groups_at_seed is READ off the member entity, never echoed from the request. THE OUTSIDER half: outside the audience, and the reason \"the VIP user sees the VIP mission\" becomes a claim rather than a truism — that observation is equally true of a mission with no targeting at all, which is precisely what produced the retracted 2026-08-27 bug. If it ever turns up INSIDE the group the pair can only agree and the guard fails."
+  },
+  "PROD_CMP_A": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-001"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "Compare column A (VCST-5735). Shares the Group A tab with PROD_CMP_B. Carries INLINE product properties: AgentTestCompareShared (identical on B — must NOT appear under Differences), AgentTestCompareDiffers, AgentTestCompareFlag (BOOLEAN, true here / false on B), AgentTestCompareOnlyOnAlpha (absent on B — the row must still render, because a row is auto-hidden only when EVERY product lacks a value) and AgentTestCompareFormatCollision (Number 1234.5678 vs B's 1234.5679 — raw values differ, formatted strings collide). Stock 12 vs B's 340 is the second, storage-independent format collision. NAVIGATE VIA {{FRONT_URL}}@td(PROD_CMP_A.url); /product/<sku> renders an SPA soft-404.",
+    "_status": "authored-20260903"
+  },
+  "PROD_CMP_B": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-002"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "Compare column B (VCST-5735) — the deliberate counterpart of PROD_CMP_A on four axes at once (identical / differing / BOOLEAN / formatted-string collision). Same tab as A. See the PROD_CMP_A notes for the full pairing.",
+    "_status": "authored-20260903"
+  },
+  "PROD_PROP_PRICE": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-003"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "Product carrying inline properties literally named Price, SKU and Availability (VCST-5735). The compare implementation prefixes row keys field: / property: / config: precisely so a catalog property cannot shadow the built-in row; nothing else in the corpus exercises that guard. Same tab as PROD_CMP_A, so a two-column compare shows both a built-in Price row and a property Price row.",
+    "_status": "authored-20260903"
+  },
+  "PROD_LONGNAME": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-004"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "Long-name overflow fixture (VCST-5735, sibling shape of VCST-5831). The name carries a 62-character UNBROKEN alphanumeric run: a name made of short words gives the browser somewhere to wrap and cannot overflow a 112px mobile compare column.",
+    "_status": "authored-20260903"
+  },
+  "PROD_CMP_FILL_1": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-005"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "Filler #5 of the Group A tab (VCST-5735). Group A holds SIX products against the five-per-category compare limit, so a case can fill the tab and then observe the sixth being refused.",
+    "_status": "authored-20260903"
+  },
+  "PROD_CMP_FILL_2": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-006"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "Filler #6 of the Group A tab — the product expected to be REFUSED once Group A holds five (VCST-5735).",
+    "_status": "authored-20260903"
+  },
+  "PROD_MOQ": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-010"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "Quantity-divergence fixture A (VCST-5735): minQuantity 7 / packSize 1 / maxQuantity 21 / stock 40. Paired with PROD_PACK in the SAME category tab, because the suspected compare render loop only triggers when two products in one tab disagree on these fields — equal values make the case vacuous. Divergence on all four fields is asserted by `npm run td:validate:compare`.",
+    "_status": "authored-20260903"
+  },
+  "PROD_PACK": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-011"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "Quantity-divergence fixture B (VCST-5735): minQuantity 10 STORED / packSize 4 / maxQuantity 80 / stock 96. MEASURED LIVE on vcst-qa 2026-09-03: xAPI reports minQuantity **12** (ceil(10/4)*4) — the read path rounds a minimum UP onto the pack grid, so a MOQ that is not a multiple of the pack size is NOT observable on the storefront however it is stored. A case must assert 12 in the compare column, never 10. Live on vcst-qa every AGENT-TEST product is minQuantity=1/packSize=1 and the only real MOQ divergence (the imported Printers) is packSize=1 throughout, so no pre-existing product could serve this.",
+    "_status": "authored-20260903"
+  },
+  "PROD_CMP_C": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-020"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "A plain product in a THIRD category tab (VCST-5735), so the tab strip is exercised with at least two tabs and a case can prove a product lands in the tab its category dictates.",
+    "_status": "authored-20260903"
+  },
+  "PROD_CMP_PARENT": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-030"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "Depth-1 category placement (VCST-5735) — exactly ONE Category breadcrumb, so the tab key is a single id. Pairs with PROD_CMP_CHILD, which sits one level deeper under a category of the SAME NAME: the two tab keys differ (X vs X/Y) while both labels render the same string, because the label is the LAST of the first two Category crumbs.",
+    "_status": "authored-20260903"
+  },
+  "PROD_CMP_CHILD": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-031"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "Depth-2 placement under a same-named parent category (VCST-5735). Key <parent>/<child>, label identical to PROD_CMP_PARENT's tab. Renaming either category removes the collision silently, so td:validate:compare asserts the two names match.",
+    "_status": "authored-20260903"
+  },
+  "PROD_CMP_NOCAT": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-040"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty"
+    },
+    "notes": "The uncategorized fixture (VCST-5735): created with categoryId=null and linked at the store virtual-catalog ROOT, so its breadcrumbs are Catalog > Product with ZERO Category entries and its compare key is the empty string. Its storefront path has no category segment.",
+    "_status": "authored-20260903"
+  },
+  "PROD_CMP_VARIATIONS": {
+    "file": "compare/compare-products",
+    "filter": {
+      "cmp_id": "CMP-050"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "category": "category_path",
+      "price": "price",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "id": "platform_id",
+      "minQuantity": "min_quantity",
+      "packSize": "pack_size",
+      "maxQuantity": "max_quantity",
+      "stock": "stock_qty",
+      "variationCount": "variation_count",
+      "minVariationPrice": "min_variation_price"
+    },
+    "notes": "The VARIATION-parent compare fixture (VCST-5735). compare-table.vue branches three ways on product kind — isConfigurable (CFG_LAPTOP / CFG_FILE_UPLOAD / CFG_DUPLABEL), hasVariations (THIS), plain (every other PROD_CMP_*) — and getDisplayPrice() returns minVariationPrice on the hasVariations branch and price on the others, feeding BOTH the Price row and the differs computation. So this column compares a MINIMUM-VARIATION price against its Group A tab-mates' ordinary prices. Assert @td(PROD_CMP_VARIATIONS.minVariationPrice) ($34.99), NOT .price ($89.99) — the two diverge on purpose, and td:validate:compare FAILS if they are ever equalised (equal values make getDisplayPrice return the same string on both branches, so the case would pass whichever ran; that is why INV_VARIATION_MASTER, whose price == minVariationPrice == $59.99, could not serve). 3 variations (AGENT-TEST-CMP-VAR-S/M/L at 34.99 / 44.99 / 54.99) — @td(PROD_CMP_VARIATIONS.variationCount) is 3; the compare link renders the component's own variations.length + 1. The variations are real catalog products with mainProductId set and have NO independent PDP route — navigate the PARENT via {{FRONT_URL}}@td(PROD_CMP_VARIATIONS.url).",
+    "_status": "authored-20260903"
+  },
+  "CFG_DUPLABEL": {
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-033"
+    },
+    "fields": {
+      "id": "product_id_guid",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price"
+    },
+    "notes": "VCST-5735 /compare v2 — a configurable whose TWO configuration sections share one display label (\"Finish\"). The compare table keys configuration rows config:<label>, so a shared label is the only shape that can show one row overwriting the other; all 22 pre-existing configurable specs carry distinct section names, so the collision was unreachable however many configurables a case put side by side. The two sections carry DIFFERENT option sets and prices on purpose — identical content would make the rows indistinguishable even when the implementation is correct. Seeded by scripts/seed-data/products/seed-configurable.mjs --only CFG-033; drift-guarded by td:validate:cfg. NAVIGATE VIA {{FRONT_URL}}@td(CFG_DUPLABEL.url).",
+    "_status": "authored-20260903"
   }
 }

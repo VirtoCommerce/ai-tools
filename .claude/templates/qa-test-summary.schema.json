@@ -59,6 +59,28 @@
     "comment_posted": false,
     "refusal": "verdict-not-pass|layer-unresolved|not-deployed|not-user-visible|null"
   },
+  "status_transitions": [
+      {
+        "$comment": "Every status hop this run made, AND every hop it skipped, with the reason. Single source of truth for the rules: .claude/knowledge/execution/ticket-status-transitions.md. WHY IT EXISTS: a skipped transition previously left NO trace in any artifact, so \"the ticket was never moved\" and \"the ticket was moved and the note was lost\" were indistinguishable after the fact — and the 5f table had two rows for a four-value verdict vocabulary, so a BLOCKED run silently left the ticket parked in in-testing. A run makes at most TWO hops: the opening hop at 1a, the moment the feature-test route resolves (never confirmed, reversible, and on Jira the precondition both closing transitions need; it moved here from Step 4 because in-testing means QA OWNS the ticket, which is true when the run is accepted rather than when the first browser opens — at Step 4 the ticket read as unclaimed through 30+ minutes of context, modelling, authoring and seeding) and the closing hop at 5f (always confirmed, terminal for the run). qa-lead is the only actor: no specialist, runner, verifier, doer or sub-agent transitions a ticket. NULL for this whole field means no hop was even attempted, which is a gap and not a clean run (the axes.md §2 rule one level down); an EMPTY ARRAY means the run reached the tracker and deliberately made no move. On --iterate the closing hop appears ONCE, at loop exit, whatever the round count.",
+        "hop": "opening",
+        "at": "1a",
+        "from": "READY FOR TEST",
+        "to": "TESTING",
+        "transition": "On QA",
+        "confirmed": false,
+        "actor": "qa-lead"
+      },
+      {
+        "hop": "closing",
+        "at": "5f",
+        "from": "TESTING",
+        "to": null,
+        "transition": null,
+        "confirmed": true,
+        "actor": "qa-lead",
+        "skipped": "verdict BLOCKED — blocker comment posted, ticket stays in-testing awaiting a re-run"
+      }
+    ],
   "agents_dispatched": ["ba-story-writer", "qa-frontend-expert", "qa-backend-expert"],
   "epic": {
     "$comment": "parent = the Epic this story belongs to (null if none). roll_up is written only on an --epic serial run (in the Epic's own summary), combining the child-story verdicts + the cross-story E2E into one Epic recommendation.",
@@ -110,6 +132,22 @@
           "deploy_pr": null,
           "deploy_confirmed": false
         },
+        "round_entry": [
+          {
+            "$comment": "Step 5k.0 — ONE ROW PER BUG THE BOARD HANDED THIS ROUND, read live from the ticket's sub-tasks + linked/related issues AFTER the deploy and AFTER the build probe, and BEFORE the failed scope is re-run (.claude/skills/qa-test/modes.md §Round entry). It exists because the loop's carried/fixed sets were previously derived from the run's own memory of what 5d filed, so three things were invisible: a sub-task a HUMAN fixed+merged+deployed between rounds, a bug a developer LINKED mid-run, and any bug with no covering case — every bug a FAST round files, since a FAST finding comes off a checklist item and carries no case id. Only a `fix-ready` bug is verified, by a FULL inline /qa-verify-fix (never inferred from the C1 result: a case going green proves that case's assertion, not the bug's STR). Empty on round 1 is legal ONLY as the baseline read (verified: false on every row); EMPTY ON A ROUND >=2 MEANS THE BOARD WAS NEVER READ, which is a gap, not a clean round. `hop` is capped at TESTED and is taken ONLY on a VERIFIED verdict whose fix is MERGED and present in build.deployed — green on the loop's own unmerged prerelease, or either half UNKNOWN, records hop null with the reason. FIX_INCOMPLETE/INTERMITTENT/NEW_REGRESSION/BLOCKED never hop here: verify-fix's REOPEN would flap the bug out of in-testing every round, so it is deferred to loop exit. The hop itself is ALSO recorded in status_transitions[] against the BUG key.",
+            "key": "<tracker-key>",
+            "source": "subtask|linked",
+            "status_role": "fix-ready|not-fixed|testable|terminal",
+            "verified": false,
+            "verify_verdict": "VERIFIED|VERIFIED_WITH_NOTES|FIX_INCOMPLETE|NEW_REGRESSION|INTERMITTENT|BLOCKED|null",
+            "fix_pr": null,
+            "fix_merged": "yes|no|UNKNOWN",
+            "in_probed_build": "yes|no|UNKNOWN",
+            "hop": null,
+            "hop_skipped": "<why no hop — e.g. green on unmerged prerelease | fix_merged UNKNOWN | still failing, deferred to loop exit | already terminal>",
+            "report_moved": false
+          }
+        ],
         "red_green": {
           "$comment": "The re-run of exactly the previously-FAILED cases, as its OWN /qa-regression run (--ids), kept out of the C2 run so its pass rate answers one question and the release gate's >=80% floor keeps answering another (the floor came down from 95% on 2026-09-02; skills/qa-metrics/quality-gates.md owns it). Round 1: all null/empty \u2014 there is no previously-failed set yet, and that is not a gap. FAST: run_id stays null and `checklist_items` carries the re-run items instead of `cases`, because a FAST round re-runs failed checklist items through one agent and produces no RUN_ID.",
           "run_id": null,
@@ -131,7 +169,7 @@
           { "$comment": "A bug THIS RUN filed in an earlier round that is still failing. Neither re-filed nor relabelled PRE-EXISTING: it keeps its original IN-SCOPE provenance and severity (so it still fails 5c this round) and gets one comment on its existing Sub-task. Re-filing would produce N tickets for one defect; PRE-EXISTING would stop it failing the ticket that caused it.", "key": "<tracker-key>", "first_round": 1 }
         ],
         "bugs_fixed": [
-          { "$comment": "A bug filed in an earlier round whose case(s) went GREEN in this round. Commented on its own Sub-task and recorded here, deliberately NOT transitioned: TESTED is the furthest /qa-test may move anything and Done/Cancelled are forbidden, and the fix is an UNMERGED prerelease, so nothing has shipped. The human who merges closes it.", "key": "<tracker-key>", "filed_round": 1, "cases": [] }
+          { "$comment": "A bug filed in an earlier round whose case(s) went GREEN in this round. Commented on its own Sub-task and recorded here. TRANSITIONED ONLY WHEN THE FIX HAS SHIPPED TO THE ENV: green on the loop's own UNMERGED prerelease means nothing has shipped, so no QA state on that bug is honest and it stays comment-only (the human who merges closes it); a fix that is MERGED and present in build.deployed is verified at round entry by an inline /qa-verify-fix and hops to TESTED — see round_entry[] and modes.md §Which hop a verified bug takes. TESTED remains the furthest /qa-test may move anything; Done/Cancelled/Closed are forbidden in every flow.", "key": "<tracker-key>", "filed_round": 1, "cases": [], "hop": null }
         ],
         "qa_fix": [
           { "$comment": "One /qa-fix invocation per in-scope fixable bug this round. outcome pr-open = G0-G7 cleared and a PR is open (never merged); bail = a G0 BAIL, which STOPs the loop and hands THAT bug to a human. An empty array on a FAIL round means no in-scope fixable bug remained and the loop fell back to the pointer close-out \u2014 a legitimate ending, and one the loop-level `outcome` alone cannot express.", "bug": "<tracker-key>", "outcome": "pr-open|bail", "pr": null, "bail_reason": null }
@@ -225,7 +263,7 @@
     "axes": {
       "a11y": { "$comment": "WCAG 2.2 AA + BL-A11Y-001..004. Five of the six WCAG 2.2 additions (2.4.11/2.5.7/3.2.6/3.3.7/3.3.8) are manual-only and a clean axe run says nothing about them; screen-reader output cannot be verified at all. Scope is the gated themes (Coffee + Red).", "ran": false, "verdict": null, "findings": 0, "skipped_reason": null },
       "design_system": { "$comment": "Live resolved custom properties vs the generated token set (tokens:sync), no hardcoded literals, sized-control token + aspect equality.", "ran": false, "verdict": null, "findings": 0, "skipped_reason": null },
-      "design_spec": { "$comment": "vs. DESIGN against DESIGN_SYSTEM_PROJECT_ID via DesignSync. `unresolved` > 0 downgrades an otherwise-clean axis to WARN and must be printed — a guessed expectation fails every correct implementation.", "ran": false, "verdict": null, "confirmed": 0, "drift": 0, "missing": 0, "unspec": 0, "known_divergence": 0, "unresolved": 0, "skipped_reason": null }
+      "design_spec": { "$comment": "vs. DESIGN via DesignSync, against the project the TICKET's own Prototype link names — per ticket, never a global default (DESIGN_SYSTEM_PROJECT_ID removed 2026-09-03; no design link on the ticket ⇒ ran:false + skipped_reason). `unresolved` > 0 downgrades an otherwise-clean axis to WARN and must be printed — a guessed expectation fails every correct implementation, and a hand-relayed extract has an UNKNOWN unresolved count rather than zero.", "ran": false, "verdict": null, "confirmed": 0, "drift": 0, "missing": 0, "unspec": 0, "known_divergence": 0, "unresolved": 0, "skipped_reason": null }
     },
     "a11y_findings": [
       { "$comment": "BL-A11Y-* FAILs on a functional/feature/E2E ticket. These are FOUND, EVIDENCED and FILED as their own standalone ticket at their REAL severity — and they do NOT fail 5c. Accessibility is a cross-cutting property of a surface, not an acceptance criterion of the story that touched it, and the defect is usually pre-existing on the component. Kept in a SEPARATE array from invariant_failures[] for the same reason advisory[] is separate: it makes the blocking rule auditable from the artifact instead of only from prose. CARVE-OUT: when the ticket is ABOUT accessibility (a11y/WCAG remediation, ACs naming an accessibility outcome, a /qa-accessibility run) the finding blocks normally and belongs in invariant_failures[] instead. Spec: .claude/skills/qa-test/triage.md 7a", "invariant": "BL-A11Y-00N", "severity": "Critical|High|Medium|Low", "ticket": "<standalone tracker key>", "blocks": false }
@@ -299,6 +337,24 @@
     ],
     "unmatched_observables": []
   },
+  "test_data": {
+      "$comment": "The 2f test-data axis — the fifth derived pre-flight token (axes.md), and the only one that SUBTRACTS: it decides whether Step 3a dispatches test-data-engineer at all. Derived, never asked, never defaulted; \"unresolved\" treated as true. WHY IT EXISTS: 3a was an unconditional member of the Step-3 wave under a \"seeded env, green td:validate\" gate, with the only escape hatch one sentence in authoring.md phrased \"skip ONLY when every planned case resolves\" — default-on with a burden of proof to skip, so an opus agent was dispatched on runs whose cases resolved entirely against fixtures the environment already held. A false requires BOTH claims, not one: the planned @td()/{{VAR}} refs RESOLVE (deterministic, td:validate) AND no link under test needs a DIVERGENCE the fixtures lack (judgment, .claude/rules/test-data.md §SECOND RULE — Loyalty Missions resolved every alias and still left the mechanism question undecidable on flat $30 orders). fixtures_covering[] is mandatory when surface is false: an unstated skip reads exactly like a satisfied seed. It fails OPEN because authoring against data that cannot answer the question yields BLOCKED cases triaged as product defects, while a needless dispatch costs one browserless agent inside time the wave already spends. A NULL block means the axis never derived (a gap); surface:false WITH sources is the opposite.",
+      "surface": false,
+      "surface_source": [
+        "1e-plan: 14 planned rows, all @td() refs already declared",
+        "td:validate: green",
+        "value chain: no link needs a divergence beyond PROD_MOQ vs PROD_PACK"
+      ],
+      "dispatched": false,
+      "fixtures_covering": [
+        "@td(PROD_MOQ)",
+        "@td(PROD_PACK)",
+        "{{B2B_USER_EMAIL}}"
+      ],
+      "divergence_resolved": true,
+      "td_validate": "green",
+      "seed_run": null
+    },
   "business_rules_verified": ["BL-CART-001"],
   "appinsights": {
     "checked": true,

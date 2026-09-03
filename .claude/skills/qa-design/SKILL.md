@@ -16,7 +16,7 @@ Validate design system consistency and run UX heuristic evaluations against the 
 ```
 /qa-design ProductCard               # Audit one component against the design system
 /qa-design checkout flow             # UX heuristic evaluation of a flow
-/qa-design VcIcon                    # vs. DESIGN runs by default against DESIGN_SYSTEM_PROJECT_ID
+/qa-design VcIcon                    # vs. DESIGN runs by default; source = the TICKET's Prototype link
 /qa-design VcIcon --design "<uuid>"  # override WHICH design project to diff against
 /qa-design https://figma.com/...     # Figma frame as a manual fallback reference
 ```
@@ -58,7 +58,7 @@ Delegate to `ui-ux-expert` via the **Agent tool** (`subagent_type: ui-ux-expert`
    - **7a. Alert semantics (WCAG 4.1.3):** a warning that is styled like an alert but carries no `role="alert"`/`status`/`aria-live` is never announced to a screen reader. Run `alertSemanticsAuditSnippet(selector)` + `classifyAlertSemantics()` on suspected message slots (default targets `.vc-alert--danger/--warning`, `line-item__after`, `[class*="error"]/[class*="warning"]`). Advisory **WARN** — confirm the flagged element is a genuine status message before filing. Cite **WCAG 4.1.3** / classifier `WCAG-4.1.3`. (Surfaced by VCST-4400: the over-stock message is not in a live region.)
 8. **Audit focus indicators (WCAG 2.4.7)** with `LAYOUT_SNIPPETS.focusIndicatorAudit` + `classifyFocusIndicator()`. Mandatory on `/sign-in`, `/sign-up`, `/cart`, `/checkout/payment` (revenue-critical keyboard flows). Pin to **PROPOSED-BL-UI-009**. The snippet now **skips disabled controls** and separates confirmed `missing` from `indeterminate` (a programmatic `.focus()` often doesn't trigger `:focus-visible`, where themes put the ring). `indeterminate` items make the classifier return **WARN, not FAIL** — **confirm them with a real keyboard-Tab pass before filing** (a scripted focus that shows no ring is NOT proof of a missing ring; VCST-4400 hit 29 such false positives).
 9. **Audit image aspect ratios** with `imageAspectAuditSnippet(selector)` + `classifyImageAspect()` on pages with product images, hero banners, logos, or CMS imagery. Pin to **PROPOSED-BL-UI-010**.
-10. **Design spec comparison — runs by DEFAULT, not on request.** The source is `DESIGN_SYSTEM_PROJECT_ID` (`.env.defaults`); `--design` only overrides *which* project. Extract the spec, then diff tokens / control geometry / icon parity / **icon stroke** against the live values and report a per-axis verdict. Full protocol in [claude-design-verification.md](claude-design-verification.md); §Design spec comparison below is the summary. If the source cannot be reached, emit `SKIPPED` with the reason — never PASS.
+10. **Design spec comparison — runs by DEFAULT, not on request.** The source is **the ticket's own Prototype link** (`claude.ai/design/p/<uuid>?file=…`), confirmed via `get_project`; `--design` only overrides *which* project. There is **no global default** — `DESIGN_SYSTEM_PROJECT_ID` was removed 2026-09-03, because one id is wrong as soon as two prototypes exist and a stale spec produces a wall of DRIFT that reads as substantive. Extract the spec, then diff tokens / control geometry / icon parity / **icon stroke** against the live values and report a per-axis verdict. Full protocol in [claude-design-verification.md](claude-design-verification.md); §Design spec comparison below is the summary. If the source cannot be reached, emit `SKIPPED` with the reason — never PASS.
     - Default-on is deliberate. Opt-in is how this axis sat dead for months behind the unusable Figma MCP: an axis nobody remembers to request is an axis that does not exist. A reachable design system is now diffed on every component run.
 11. **Icon stroke ladders (`DESIGN-STROKE`)** — for any icon-bearing surface, `iconStrokeAuditSnippet(spec)` + `classifyIconStroke(result, spec)`. Check the mechanism before the numbers: `vector-effect: non-scaling-stroke` is what makes `stroke-width` equal on-screen px, so if it is absent every bucket comparison is meaningless and THAT is the finding. Also catches the fill trap (a `fill` other than `none` floods an outline glyph into a blob while passing every geometry check) and a `--lucide-stroke-width` pin on `:root`, which flattens every bucket at once.
 
@@ -126,12 +126,17 @@ Methodology + the full contract: **[claude-design-verification.md](claude-design
 Deterministic core: **[`scripts/lib/verify-design-spec.ts`](../../../scripts/lib/verify-design-spec.ts)** —
 do not hand-roll the snippets, same rule as `measure-layout.ts`.
 
-1. **Resolve the source** — `DESIGN_SYSTEM_PROJECT_ID` (or `--design <uuid>`) → `get_project`
-   (confirm `PROJECT_TYPE_DESIGN_SYSTEM`) → `list_files` → `get_file` for only the artboards in
-   scope (256 KiB cap). **Never resolve it by searching `list_projects`** — that lists only
-   projects you can *write* to, so a share-access design system is invisible and a name search
-   lands on an unrelated project instead. Read-only throughout: no DesignSync write method belongs
-   in a QA run.
+1. **Resolve the source — from the TICKET, or `--design <uuid>`; there is no global default.**
+   Read the ticket's **Prototype** link (`claude.ai/design/p/<uuid>?file=…`; its `file=` param names
+   the artboard the ticket treats as authoritative) → `get_project` (confirm
+   `PROJECT_TYPE_DESIGN_SYSTEM`) → `list_files` → `get_file` for only the artboards in scope
+   (256 KiB cap). **Never resolve it by searching `list_projects`** — that lists only projects you
+   can *write* to, so a share-access design system is invisible and a name search lands on an
+   unrelated project instead. **And never fall back to an env var**: `DESIGN_SYSTEM_PROJECT_ID` was
+   removed 2026-09-03 after a default run diffed the live storefront against an OLDER copy of the
+   very file the ticket linked — two projects carried `ui_kits/storefront/CompareScreenV2.jsx`, and
+   the env var named the stale one, silently. No ticket link and no flag ⇒ `SKIPPED` with that
+   reason. Read-only throughout: no DesignSync write method belongs in a QA run.
 2. **Extract** — `extractDesignSpec(html, { path })` → tokens, geometry, icon map, `cards`
    (`@dsCard group`), and `unresolved[]`. The extractor **never guesses**: a `var()` indirection, an
    unreadable table header, a prose row, a partially-parsing size scale each become an `unresolved`
@@ -207,7 +212,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 - **UX heuristic findings ≥ 3** must be filed as bugs (P1 or higher).
 - **The design spec is not the top authority** — precedence is `BL-UI invariant > design spec > UX heuristic`. A BL-UI violation is a FAIL even when the implementation matches the design; a spec that conflicts with an invariant or a WCAG criterion is `AMBIGUOUS` → escalate, never silently obey.
 - **A skipped design axis is never a pass** — no authorized `DesignSync` source (the default in web sessions and CI) means `designAxisSkipped(reason)`, reported explicitly. `UNSPEC` is likewise never a failure: a design project is rarely exhaustive, and failing "not in the spec" turns the axis into ignored noise.
-- **The design source is named, never discovered** — resolve `DESIGN_SYSTEM_PROJECT_ID` (or an explicit `--design <uuid>`) and confirm the type. `list_projects` returns only *writable* projects, so a share-access design system does not appear in it; a name search then diffs against whatever it did find. Diffing the storefront against the wrong design system is worse than not running the axis, because every token reads as DRIFT and the report looks substantive.
+- **The design source is named, never discovered — and the name comes from the TICKET.** Resolve it from the ticket's own Prototype link (or an explicit `--design <uuid>`) and confirm the type. `list_projects` returns only *writable* projects, so a share-access design system does not appear in it; a name search then diffs against whatever it did find. Diffing the storefront against the wrong design system is worse than not running the axis, because every token reads as DRIFT and the report looks substantive. **A global default is a species of the same error**, which is why `DESIGN_SYSTEM_PROJECT_ID` is gone: it stays correct only until a second prototype exists, and then it is wrong *silently* — VCST-5735's ticket linked one project while the env var named another, both holding the same filename, the env var's copy older. Prefer a stated `SKIPPED` over any inherited id.
 - **A mismatch the spec itself predicts is `KNOWN_DIVERGENCE`, not a bug** — a design system routinely ships a rule ahead of the code and says so in the artboard ("applied in Figma but not yet implemented in code"). Filed naively, one such sentence produces a defect on every element it governs. Record it, count it, report it, do not file it — and do not let it claim a clean PASS either. Invoke it only where the artboard declares it; an assumed divergence is just a way to make failures disappear.
 - **Scope icon parity by surface** — one call-site name legitimately maps to different glyphs on different surfaces (`adjustments` → `settings-2` in the Sales Hub, `sliders-horizontal` on the PDP). Keyed by name alone, half of every such pair reports DRIFT against a mapping that never applied there.
 - **Check the stroke mechanism before the stroke numbers** — `vector-effect: non-scaling-stroke` is what makes `stroke-width` equal on-screen px. Absent, no bucket comparison means anything, so report that one fact rather than thousands of individual weight deviations.

@@ -159,24 +159,51 @@ applicable* and *not checked* must stay distinguishable.
 
 ---
 
-## 5f. Change status — with confirmation, skip if the tracker MCP is unconfigured
+## 5f. Change status — `qa-lead` only, ask first, and BLOCKED is a row
 
-Strictly **after** the report is posted.
+Strictly **after** the report is posted. **Single source of truth for the whole state machine:**
+[`.claude/knowledge/execution/ticket-status-transitions.md`](../../knowledge/execution/ticket-status-transitions.md)
+— cite it, never restate it. What this section owns is the 5f-shaped summary of it.
 
-| Outcome | Transition |
-|---|---|
-| PASS / PASS WITH NOTES | `Finish test` → TESTED |
-| FAIL | `Need fixes` → REOPEN, with a comment listing failures + filed bug links |
+| Verdict | Transition | Also required |
+|---|---|---|
+| PASS / PASS WITH NOTES | `Finish test` → TESTED | `PASS WITH NOTES` is a PASS; the notes live in the comment, never in a different transition |
+| FAIL | `Need fixes` → REOPEN | The comment lists every failure and every filed bug link, posted **before** the transition |
+| **BLOCKED** | **none — deliberately** | A **mandatory comment** naming the blocker (env / data / dependency / not-deployed), what it blocks, and that the ticket awaits a re-run. It stays in-testing |
 
-On Jira both closing transitions require the in-testing status (the Step 4 move); if that was skipped, do
+**Why BLOCKED transitions nothing, and why it needed a row.** This table had two rows for a four-value
+verdict vocabulary, so a blocked run left the ticket in in-testing with no comment obligation and no rule
+— reading to everyone else as *QA is testing this* while nothing was. Both alternatives are worse: TESTED
+is a lie, and REOPEN files an env/data blocker into the developer queue as though it were a product
+defect. So the honest state is *still in testing, and here is why nobody is testing it*, and the comment
+is what makes that readable — which is why it is mandatory rather than nice-to-have. A run that STOPs at
+a gate before 5f is the same shape: the opening hop stays, and the close-out says so.
+
+**Confirmation is asymmetric, and that is deliberate.** The `1a` opening hop is **never** confirmed
+(reversible, and the operator implied it by invoking the command); this closing hop **always is** (it is
+terminal for the run, it notifies watchers, and REOPEN hands work to another team). Both used to be
+stated in two places with two different answers.
+
+**`qa-lead` is the only actor.** No specialist, runner, verifier, doer or sub-agent transitions a ticket,
+including while it is already in the tracker posting a comment; it reports up instead.
+
+On Jira both closing transitions require the in-testing status (the `1a` move); if that was skipped, do
 the in-testing hop first (discover live). On Azure Boards set `System.State` directly. **TESTED is the
-terminal state this command may reach — never Done or Cancelled.**
+terminal state this command may reach — never Done or Cancelled.** Every hop **and every skip** appends to
+`summary.json.status_transitions[]`.
 
-**`--iterate`: the transition happens AT LOOP EXIT ONLY** — one transition per run, whatever the round
+**`--iterate`: the transition happens AT LOOP EXIT ONLY** — one transition on the ticket under test per run, whatever the round
 count. REOPEN is the human-handoff signal, and a loop about to start another round is not handing off; a
 per-round REOPEN would also flap the ticket out of in-testing, which is the precondition both closing
 transitions need. The ticket therefore stays in-testing across rounds, so the Step-4 hop fires once — and
 if round 1 skipped it, the exit round does it here, exactly as the paragraph above already requires.
+
+**A BUG the loop verified is a different ticket, and it has its own hop** — taken by the inline
+`/qa-verify-fix` at round entry, capped at `TESTED`, and only when that bug's fix is merged and present in
+the round's probed build; everything else the loop left in in-testing closes out here at 5f alongside the
+ticket ([`modes.md`](modes.md) §Round entry ·
+[`ticket-status-transitions.md`](../../knowledge/execution/ticket-status-transitions.md) §5a). It does not
+make this a two-transition run: the count above is per ticket.
 
 ### Close the loop
 

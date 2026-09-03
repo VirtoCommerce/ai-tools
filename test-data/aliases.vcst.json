@@ -1390,5 +1390,47 @@
   "SR_REP_LOCKABLE": {
     "id": "85b99e4d-517c-4143-85b2-616eceddd545",
     "user_id": "2461c44f-b3a2-42d8-a910-e4eb5377fb03"
+  },
+  "PROD_CMP_A": {
+    "id": "b2c64e9c-62f6-4538-87f8-71acf42f9e4e"
+  },
+  "PROD_CMP_B": {
+    "id": "74f75fa4-4fe7-4052-9b24-bcc8678a4d84"
+  },
+  "PROD_PROP_PRICE": {
+    "id": "64feae37-d2cb-45ff-a319-c2172fb69bcc"
+  },
+  "PROD_LONGNAME": {
+    "id": "5cc421f6-d629-487f-a591-7caa91530026"
+  },
+  "PROD_CMP_FILL_1": {
+    "id": "84cd9d11-99ce-4eb5-8119-51a3aa93303d"
+  },
+  "PROD_CMP_FILL_2": {
+    "id": "29875701-7aa3-41c3-86f4-b3d660ccba44"
+  },
+  "PROD_MOQ": {
+    "id": "06f663b7-9bde-4fc5-bb6c-94c4a3d58a34"
+  },
+  "PROD_PACK": {
+    "id": "2666922f-e94e-46fe-aa3f-c0e3131ab11c"
+  },
+  "PROD_CMP_C": {
+    "id": "f305d153-a7ef-45db-bf4d-94a2821e3ae8"
+  },
+  "PROD_CMP_PARENT": {
+    "id": "ab1384e5-9e94-4f1f-a353-b455a8d7dd68"
+  },
+  "PROD_CMP_CHILD": {
+    "id": "6b254d6a-5c8b-4522-84f6-78b1c9b4ca7d"
+  },
+  "PROD_CMP_NOCAT": {
+    "id": "26264b9b-3241-4255-a5e3-62875afa4a0f"
+  },
+  "CFG_DUPLABEL": {
+    "id": "6836b85c-398c-42b1-9b89-c867fa460f2c"
+  },
+  "PROD_CMP_VARIATIONS": {
+    "id": "56d839e7-c86c-49a2-a32e-5add2766b742"
   }
 }

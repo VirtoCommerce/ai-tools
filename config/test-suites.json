@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-09-03",
-    "totalSuites": 134,
+    "totalSuites": 135,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -3235,6 +3235,27 @@
       ],
       "customerApplicability": "reference",
       "clickDriven": true
+    },
+    {
+      "id": "098",
+      "name": "Product Compare v2",
+      "file": "regression/suites/Frontend/catalog/098-product-compare.csv",
+      "domain": "catalog-search",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P2",
+      "testCount": 35,
+      "estimatedMinutes": 26,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "catalog",
+        "compare",
+        "product-compare",
+        "storefront",
+        "sprint"
+      ],
+      "customerApplicability": "universal",
+      "clickDriven": true
     }
   ],
   "selections": {
@@ -3280,7 +3301,8 @@
         "002",
         "003",
         "051",
-        "053"
+        "053",
+        "098"
       ]
     },
     "search": {

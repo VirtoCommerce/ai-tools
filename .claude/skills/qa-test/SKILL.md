@@ -19,7 +19,7 @@ about to change how a step works.
 | File | Covers | Read it when |
 |---|---|---|
 | [`preflight.md`](preflight.md) | Steps **1a–1b** — the fetch, the classify/route branch, the two I/O waves | Running or changing pre-flight |
-| [`test-model.md`](test-model.md) | Step 1e — the fault model: why Part 0 comes first, the eight rules the scenario table must satisfy, the nine-clause gate, worked references | Building or reviewing a Test Model |
+| [`test-model.md`](test-model.md) | Step 1e — the fault model: why Part 0 comes first, the eight rules the scenario table must satisfy, the ten-clause gate, worked references | Building or reviewing a Test Model |
 | [`authoring.md`](authoring.md) | Steps 2–3 — oracle loading, Artifacts A/B/C1/C2, the scaffold + KEEP gate, the per-surface fan-out (3b), review/auto-fix | Authoring cases, or changing how they are authored |
 | [`close-out.md`](close-out.md) | Step 5 **spine** — AC/DoD reconciliation, the verdict table, the release regression (5r), the severity floor on filing | Deciding what the run concluded |
 | [`triage.md`](triage.md) | **5a** — correlate, validate evidence, classify, provenance, severity, dedup | Turning raw results into findings |

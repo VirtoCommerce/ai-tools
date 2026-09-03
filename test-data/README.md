@@ -61,6 +61,8 @@ test-data/
 │   ├── test-users.csv              # 50 personal user templates
 │   ├── agent-user-pool.csv         # 3 dedicated users for parallel agents (1 per browser slot)
 │   └── seed-agent-users.md         # REST API seeding scripts for agent pool users
+├── compare/                         # /compare tab + characteristic fixtures (VCST-5735) — SEEDED
+│   └── compare-products.csv        # 12 products across 6 tabs; ids in aliases.<env>.json
 ├── wishlists/                       # Two-store wishlist fixture (VCST-5705) — SEEDED
 │   └── two-store-wishlists.csv     # 1 customer x 2 stores x 2 products; ids in aliases.<env>.json
 ├── organizations/                   # B2B organizations (legacy, special chars)
@@ -249,6 +251,19 @@ Marketing promotions and coupon codes for VCST-4590 testing. Covers 4 reward typ
 ### 14. Variation stock (inventory/variation-stock.csv)
 A master product plus a genuine **variation** child (`mainProductId`), with **divergent** non-zero stock at the store's **main** fulfillment center (VCST-5546 / INV-047). Equal quantities would make "the variation row shows its own inventory, not the master's aggregate" unfalsifiable, so the guard requires them to differ. Seed: `npm run seed:variation-stock`; guard: `npm run td:validate:variation-stock`. Aliases: `INV_VARIATION_STOCKED`, `INV_VARIATION_MASTER`. This seeder also writes `FC_EAST`'s runtime GUID to the overlay — before it, `@td(FC_EAST.id)` resolved to the bare CSV business key `FFC-001`, which is not a platform id on any env.
 
+### 14a. Compare (compare/compare-products.csv)
+Twelve products across **six** compare tabs for the `/compare` v2 redesign (VCST-5735). The page groups the list by `getProductCategoryKey` — the itemIds of the FIRST TWO `Category` breadcrumbs joined by `/`, labelled by the LAST of those two — so a fixture set living in one category proves nothing about tabs. Seeded: **Group A** (six products against a per-category limit of **five**, so the cap is observable), **Group B** (`PROD_MOQ` / `PROD_PACK`, whose minQuantity / packSize / maxQuantity / stock all DIVERGE, because the suspected render loop only triggers when two products in ONE tab disagree), **Group C**, a **parent/child pair** whose keys differ (`X` vs `X/Y`) while both tabs render the SAME label, and one product with **no category at all** (key `""` → the `uncategorized` tab).
+
+Two independent **formatted-string collisions** carry the fixture that matters most: `differs` is computed over FORMATTED strings, so a discriminating row needs two RAW values that differ while their rendered strings do not — a Number property at `1234.5678` vs `1234.5679` (both format to `1234.568`) and stock `12` vs `340` (both render the same in-stock label). Properties are **inline**, not catalog-defined, so nothing leaks onto the other ~100 products of the shared seed catalog; the "auto-hidden row" case (every product lacks a value) already exists for free as the inherited `AGENT_TEST_VP9279_1786951191351`.
+
+Source of truth: `scripts/seed-data/compare/compare-specs.mjs` (the CSV mirrors only its derivable business columns; `platform_id` is committed BLANK). Seed: `npm run seed:compare`; guard: `npm run td:validate:compare`. Aliases: `PROD_CMP_A` / `PROD_CMP_B` / `PROD_CMP_C`, `PROD_MOQ`, `PROD_PACK`, `PROD_PROP_PRICE`, `PROD_LONGNAME`, `PROD_CMP_FILL_1` / `_2`, `PROD_CMP_PARENT`, `PROD_CMP_CHILD`, `PROD_CMP_NOCAT` — plus `CFG_DUPLABEL` (CFG-033), a configurable with two sections sharing one display label, which lives in the configurable domain.
+
+**Two live platform behaviours are RECORDED here rather than designed around** — both measured on vcst-qa 2026-09-03, both silent:
+
+1. xAPI rounds `minQuantity` UP onto the pack grid. `PROD_PACK` stores 10 with packSize 4 and RENDERS **12**, so a MOQ that is not a multiple of its pack size is not observable on the storefront however it is stored. A case must assert 12, never 10; the guard asserts the divergence survives the rounding, so two stored minimums that round to the same multiple fail loudly instead of quietly agreeing.
+2. A product **created** carrying a property literally named `Price` never enters the search index at all — a controlled four-way probe (four fresh products, one reindex, polled to 80 s) gave `none=1  Price=0  SKU=1  Availability=1`. The product exists in the catalog and is simply absent from xAPI, so the storefront cannot see it. `PROD_PROP_PRICE` is therefore seeded in **two phases**: created bare, indexed, then given its properties (adding the same property to an already-indexed document does survive). The seeder probes xAPI for the document and reports a timeout as a FAILED fixture, never as a pause.
+
+Because that product is invisible to the search index, the seeder resolves it by its **overlay id** when the code lookup misses — otherwise a re-seed would create a duplicate and teardown would walk past it while still reporting zero residue. For the same class of reason the seeder resolves its own CATEGORIES by a DB-backed browse instead of `ensureCategoryPath`, whose keyword lookup lags a write: three `Compare Fixtures` roots accumulated across three runs before that was fixed, and one fixture landed in a different `Group A` than its five tab-mates.
 ### 15. Loyalty missions (no CSV — `scripts/seed-data/loyalty/missions-specs.mjs`)
 The VCST-5319 mission fixtures have **no committed data file**: the side-effect-free spec module IS the
 source of truth, and everything runtime (mission GUIDs, the resolved currency/locale codes, the banner

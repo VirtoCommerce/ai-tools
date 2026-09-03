@@ -245,15 +245,28 @@ reads as "to the mapped state" only.
 
 | STR Result | Regression | Side Effects | Decision | JIRA Transition(s) |
 |-----------|-----------|-------------|----------|----------------|
-| Pass 3/3 | All pass | None | **VERIFIED** | TESTING → TESTED (`Finish test`) → DONE (`Move to Done`) |
+| Pass 3/3 | All pass | None | **VERIFIED** | TESTING → TESTED (`Finish test`) — **STOP there** |
 | Pass 3/3 | All pass | Minor (P3) | **VERIFIED WITH NOTES** | TESTING → TESTED (`Finish test`) — add note in comment |
 | Pass 3/3 | 1+ fail | — | **FIX OK, NEW REGRESSION** | TESTING → TESTED (`Finish test`) + file new bug via `/qa-bug` |
 | Fail any | — | — | **FIX INCOMPLETE** | TESTING → REOPEN (`Need fixes`) |
 | Pass 2/3 | — | — | **INTERMITTENT** | TESTING → REOPEN (`Need fixes`, note intermittent) |
 | Blocked | — | — | **BLOCKED** | No transition, comment with blocker |
 
+**`TESTED` is the terminus — never `DONE`, `Cancelled` or `Closed`.** `DONE` is a release decision and it
+is not QA's to set on a bug whose fix PR may still be open; `knowledge/execution/ticket-status-transitions.md`
+§9.5 forbids it in every flow, on every tracker. The all-pass row above used to read
+`TESTED (Finish test) → DONE (Move to Done)`; that second hop is removed, not deprecated.
+
 **Ask the user before transitioning the ticket.** Skip if the tracker is not configured (Atlassian MCP for
 Jira, the ADO helper for Azure Boards).
+
+**When this command runs INLINE from `/qa-test` 5k.0 (a `--iterate` round entry), only the VERIFIED row's
+hop is taken.** The opening in-testing hop on the bug still fires (on Jira `TESTED` is reachable only from
+there), and `TESTED` additionally requires the fix to be **merged and present in that round's probed
+build** — green on the loop's own unmerged prerelease is comment-only. Every other row's transition,
+`REOPEN` included, is **deferred to loop exit**: a per-round `REOPEN` would flap the bug out of in-testing
+and fire a false handoff each round. Rules: `.claude/skills/qa-test/modes.md` §Round entry ·
+`ticket-status-transitions.md` §5a.
 
 **JIRA comment for VERIFIED (TESTING > TESTED):**
 ```

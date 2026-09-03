@@ -66,6 +66,7 @@ const TEARDOWN_STEPS = [
   { name: 'variation-stock', script: 'inventory/seed-variation-stock.mjs', args: ['--teardown'] },
   { name: 'inventory', script: 'inventory/seed-inventory.mjs', args: ['--teardown'] },
   { name: 'pricing', script: 'pricing/seed-pricing.mjs', args: ['--teardown'] },
+  { name: 'compare', script: 'compare/seed-compare.mjs', args: ['--teardown'] },
   { name: 'configurable', script: 'products/seed-configurable.mjs', args: ['--teardown'] },
   { name: 'products', script: 'products/seed-standard-products.mjs', args: ['--teardown'] },
   { name: 'properties', script: 'catalog/seed-catalog-properties.mjs', args: ['--teardown'] },
@@ -102,6 +103,9 @@ const STEPS = [
   { name: 'store', script: 'store/seed-store.mjs', required: true, priority: 80 },
   { name: 'properties', script: 'catalog/seed-catalog-properties.mjs', required: true, priority: 30 },
   { name: 'products', script: 'products/seed-standard-products.mjs', required: true, priority: 40 },
+  // Compare fixtures own their two ad-hoc category roots and need the catalog structure + a
+  // fulfillment center, so they follow the standard products phase and precede configurables.
+  { name: 'compare', script: 'compare/seed-compare.mjs', required: false, priority: 45 },
   { name: 'configurable', script: 'products/seed-configurable.mjs', required: false, priority: 50 },
   // NOTE: no generic 'pricing' phase — standard-products + configurable price their OWN products
   // (distinct per-product prices). The generic seed-pricing.mjs set a FLAT 99.99 pricelist at high
