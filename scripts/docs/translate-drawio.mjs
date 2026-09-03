@@ -60,9 +60,27 @@ const keys = Object.keys(map).sort((a, b) => b.length - a.length);
 const decode = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"');
 const encode = (s) => s.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+/* A phrase is replaced only where it stands as a whole: a key that happens to be a
+ * prefix of a longer word must not be swapped inside it. Without this, "редко" turned
+ * "редкое" into "rarelyе" — caught by the Cyrillic check downstream, but only after the
+ * fact, and a Latin-only collision would have passed silently. */
+const LETTER = /\p{L}/u;
+const whole = (s, k, at) =>
+  !LETTER.test(s[at - 1] || "") && !LETTER.test(s[at + k.length] || "");
+
 const translate = (raw) => {
   let s = decode(raw);
-  for (const k of keys) if (s.includes(k)) s = s.split(k).join(map[k]);
+  for (const k of keys) {
+    let at = s.indexOf(k);
+    while (at !== -1) {
+      if (whole(s, k, at)) {
+        s = s.slice(0, at) + map[k] + s.slice(at + k.length);
+        at = s.indexOf(k, at + map[k].length);
+      } else {
+        at = s.indexOf(k, at + 1);
+      }
+    }
+  }
   return encode(s);
 };
 
