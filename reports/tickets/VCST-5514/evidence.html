@@ -1,0 +1,166 @@
+<title>VCST-5514 — Fix Verification Evidence</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --surface:#ffffff; --surface-2:#eef1f4; --border:#d8dee6;
+    --ink:#1b2430; --ink-soft:#54606f; --ink-faint:#8290a0;
+    --accent:#0f8a5f; --accent-soft:#d6f0e4;
+    --ring:#e52121; --ring-soft:#fde0e0;
+    --code-bg:#f2f4f7; --code-ink:#243244;
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0e1319; --surface:#161d26; --surface-2:#1c2530; --border:#2a3644;
+      --ink:#e7edf3; --ink-soft:#a9b6c4; --ink-faint:#6d7c8c;
+      --accent:#3ecf94; --accent-soft:#123528;
+      --ring:#ff6a6a; --ring-soft:#3a1a1a;
+      --code-bg:#0c1116; --code-ink:#cbd6e2;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f6f7f9; --surface:#ffffff; --surface-2:#eef1f4; --border:#d8dee6;
+    --ink:#1b2430; --ink-soft:#54606f; --ink-faint:#8290a0;
+    --accent:#0f8a5f; --accent-soft:#d6f0e4; --ring:#e52121; --ring-soft:#fde0e0;
+    --code-bg:#f2f4f7; --code-ink:#243244;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1319; --surface:#161d26; --surface-2:#1c2530; --border:#2a3644;
+    --ink:#e7edf3; --ink-soft:#a9b6c4; --ink-faint:#6d7c8c;
+    --accent:#3ecf94; --accent-soft:#123528; --ring:#ff6a6a; --ring-soft:#3a1a1a;
+    --code-bg:#0c1116; --code-ink:#cbd6e2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;padding:40px 24px 72px;display:flex;flex-direction:column;gap:28px}
+  .verdict{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:20px 24px}
+  .badge{font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.08em;
+    color:#fff;background:var(--accent);padding:6px 12px;border-radius:999px}
+  .verdict h1{margin:0;font-size:20px;font-weight:650;letter-spacing:-.01em}
+  .verdict .sub{color:var(--ink-soft);font-size:14px;margin-top:2px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-faint);
+    margin:0 0 12px;font-weight:650}
+  .strip{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-family:var(--mono);font-size:12px;background:var(--surface-2);border:1px solid var(--border);
+    color:var(--ink-soft);padding:5px 10px;border-radius:8px}
+  .chip b{color:var(--ink);font-weight:600}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px}
+  p{margin:0 0 10px;max-width:66ch}
+  p:last-child{margin-bottom:0}
+  code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);color:var(--code-ink);
+    padding:1px 6px;border-radius:5px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:640px){.grid2{grid-template-columns:1fr}}
+  figure{margin:0;display:flex;flex-direction:column;gap:8px}
+  figure img{width:100%;height:auto;border:1px solid var(--border);border-radius:10px;background:#fff;display:block}
+  figcaption{font-size:12px;color:var(--ink-soft)}
+  .tag{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:6px}
+  .tag.red{color:var(--ring);background:var(--ring-soft)}
+  .tag.grn{color:var(--accent);background:var(--accent-soft)}
+  .tblwrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);font-weight:650}
+  td.mono,th.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .ok{color:var(--accent);font-weight:650}
+  ul.chk{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+  ul.chk li{display:flex;gap:10px;font-size:14px;align-items:baseline}
+  ul.chk li::before{content:"✓";color:var(--accent);font-weight:700;flex:none}
+  .foot{color:var(--ink-faint);font-size:12.5px;border-top:1px solid var(--border);padding-top:16px}
+  .foot code{font-size:11.5px}
+  a{color:var(--accent)}
+</style>
+
+<div class="wrap">
+  <div class="verdict">
+    <span class="badge">VERIFIED</span>
+    <div>
+      <h1>VCST-5514 — VcSelect button focus issue</h1>
+      <div class="sub">Fix reproduced RED→GREEN on the live fixed build · STR 3/3 · 10/10 checks pass</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Build &amp; environment</h2>
+    <div class="strip">
+      <span class="chip"><b>Env</b> vcst-qa</span>
+      <span class="chip"><b>Storefront</b> 2.55.0-pr-2411-b7e6</span>
+      <span class="chip"><b>PR</b> vc-frontend#2411</span>
+      <span class="chip"><b>Pre-fix baseline</b> 2.55.0-pr-2407</span>
+      <span class="chip"><b>Date</b> 2026-08-04</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>The bug &amp; root cause</h2>
+    <p>The <code>VcSelect</code> dropdown toggle rendered a raw <code>&lt;button&gt;</code> with bespoke
+      <code>vc-select__arrow</code> styling, and <code>VcMenuItem</code> drew its focus ring with a fixed
+      <code>rounded</code> radius and default offset — so the focus indicator did not match the control's
+      button styling or the item's own corner shape.</p>
+    <p>PR&nbsp;#2411 swaps the chevron for the shared <code>VcButton</code> (ghost neutral, disabled wiring
+      preserved, readonly still hides the arrow), and changes the menu-item focus to
+      <code>-outline-offset-2</code> + <code>rounded-[inherit]</code> so the ring follows each item's
+      inherited radius. Two files: <code>vc-select.vue</code>, <code>vc-menu-item.vue</code>.</p>
+  </section>
+
+  <section>
+    <h2>Before → After — menu-item focus ring</h2>
+    <div class="grid2">
+      <figure>
+        <img src="screenshots/VCST-5514-BEFORE-menuitem-focus.png" alt="Menu item focus ring before the fix">
+        <figcaption><span class="tag red">BEFORE</span> pre-fix build (2407) — fixed <code>rounded</code> ring</figcaption>
+      </figure>
+      <figure>
+        <img src="screenshots/VCST-5514-AFTER-menuitem-focus.png" alt="Menu item focus ring after the fix">
+        <figcaption><span class="tag grn">AFTER</span> fixed build (2411) — inherited-radius ring</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Live GREEN — Sort-by dropdown on 2411</h2>
+    <figure>
+      <img src="screenshots/VCST-5514-GREEN-menuitem-focus-live.png" alt="Sort by dropdown open on the live fixed build with the Featured item focus-highlighted">
+      <figcaption><span class="tag grn">GREEN</span> <code>/search</code> Sort-by open, "Featured" keyboard-focused; ring follows the rounded top corner</figcaption>
+    </figure>
+  </section>
+
+  <section class="card">
+    <h2>Objective measurement — computed focus styles (read-only)</h2>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Target</th><th class="mono">outline</th><th class="mono">offset</th><th class="mono">radius</th><th>:focus-visible</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>Toggle chevron = <code>VcButton</code> ghost neutral</td><td class="mono">3px solid</td><td class="mono">0px</td><td class="mono">6px</td><td class="mono">—</td><td class="ok">✔</td></tr>
+          <tr><td>Menu item — top (rounded)</td><td class="mono">2px solid</td><td class="mono">-2px</td><td class="mono">8px 8px 0 0</td><td class="mono">true</td><td class="ok">✔</td></tr>
+          <tr><td>Menu item — middle (square)</td><td class="mono">2px solid</td><td class="mono">-2px</td><td class="mono">0</td><td class="mono">true</td><td class="ok">✔</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:12px;color:var(--ink-soft);font-size:13px">Toggle <code>class</code> on the fixed build:
+      <code>vc-button … vc-button--ghost--neutral vc-button--icon vc-select__arrow</code> — the shared button, not the old raw element.
+      The <code>-2px</code> offset + inherited radius confirm both fix aspects; identical across all 3 STR runs.</p>
+  </section>
+
+  <section class="card">
+    <h2>Checklist &amp; regression — 10/10 PASS</h2>
+    <ul class="chk">
+      <li>STR reproduced on fixed build (focus toggle + menu items)</li>
+      <li>Reported focus issue resolved; root cause addressed (element swap + inherited-radius ring)</li>
+      <li>Sort selection works — Enter → <code>?sort=name-ascending</code>, combobox value persists</li>
+      <li>Dropdown open/close via toggle click, Escape, and keyboard Arrow/Enter</li>
+      <li>No new console errors (4 present, all unrelated: demo-catalog 404s, GA 413)</li>
+      <li>BL-UI-007 — keyboard operable with a visible focus state</li>
+    </ul>
+  </section>
+
+  <div class="foot">
+    Baseline not fabricated: pre-fix env observed live on <code>2407</code> at session start plus the prior QA
+    <code>BEFORE-*</code> captures &amp; the reporter's ticket screenshots. Evidence:
+    <code>reports/tickets/VCST-5514/screenshots/</code>. Deploy PR
+    <a href="https://github.com/VirtoCommerce/vc-deploy-dev/pull/6266">vc-deploy-dev#6266</a> (theme→2411) still open; the
+    <code>vcst-qa</code> branch already carries the pin and the artifact is live.
+  </div>
+</div>

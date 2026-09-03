@@ -1,0 +1,58 @@
+{
+  "ticket": "VCST-5536",
+  "ticket_type": "Story",
+  "priority": "Medium",
+  "path": "FULL (feature, cross-layer) — inline orchestration, re-run with evidence",
+  "verdict": "PASS",
+  "date": "2026-08-05",
+  "run_note": "Full re-run of the prior same-day PASS at user request — re-executed all 12 checks live and captured real screenshots (prior run left none) + restored env after validation mutation.",
+  "environment": "local (start-local) — storefront http://localhost/ , platform http://localhost:8090 , store B2B-store",
+  "note_environment": "Tested on LOCAL, not vcst-qa: feature not yet deployed to vcst-qa (impl PRs XFrontend #10 + vc-frontend #2415 and theme deploy PRs open). Local stack has both parts built.",
+  "build": {
+    "platform": "local",
+    "theme": "vc-frontend Ver. 2.55.0-pr-2415 (footer-confirmed local build)",
+    "relevant_modules": { "VirtoCommerce.XFrontend": "PR #10 (local build)" }
+  },
+  "agents_dispatched": ["inline-orchestrator (direct execution: playwright-chrome DOM + Platform API)"],
+  "ac_analysis": {
+    "story_acs": 3,
+    "impl_coverage": { "satisfied": 3, "drift": 0, "contradicts": 0, "not_found": 0 },
+    "expanded_contract": "7 typed per-store XFrontend.BrandProfile.* fields (comment-driven), all nullable, validated",
+    "conditions_total": 12,
+    "conditions_with_evidence": 12
+  },
+  "total_cases": 12,
+  "passed": 12,
+  "failed": 0,
+  "blocked": 0,
+  "checks": [
+    "Backend: 7 XFrontend.BrandProfile.* settings present on Store (GET) — PASS",
+    "Backend: settings editable via Platform API (PUT /api/stores -> 204 on mutate + restore) — PASS",
+    "Frontend: exactly 1 JSON-LD OnlineStore node on / — PASS",
+    "Frontend: all 8 JSON-LD fields populated from settings (name/url/logo/description/slogan/sameAs[3]/contactPoint/foundingDate) — PASS",
+    "Frontend: site-wide OpenGraph tags present (og:site_name/description/image/title/url/type) — PASS",
+    "OG: og:image sourced from BrandProfile ShareImageUrl — PASS",
+    "Validation: SameAs dedup + drop relative + drop non-http(s) [linkedin,linkedin,/about-us,ftp://,x.com] -> [linkedin,x.com] — PASS",
+    "Validation: ContactPhone '(800) 555-1234 ext. 200' -> contactPoint omitted — PASS",
+    "Validation: FoundingDate '2026-02-30' -> foundingDate omitted — PASS",
+    "Gating: /de/ 1 node, same @id (#organization) — PASS",
+    "Gating: /catalog 0 nodes (site-wide OG fallbacks remain, by design) — PASS",
+    "Gating: 404 route 0 nodes (any-2-letters=home trap avoided) — PASS"
+  ],
+  "new_cases_authored": 0,
+  "regression": { "suites": [], "run_id": null, "pass_rate": null, "skipped_reason": "local env, feature-focused E2E; JSON-LD feature not suited to the browser regression runner (needs settings mutation + DOM inspection). Automated coverage is a follow-up." },
+  "app_insights": { "queried": false, "skipped_reason": "localhost — no App Insights resource" },
+  "bugs_filed": [],
+  "observations": [
+    "Obs1 (carried forward, NOT re-verified this run): LogoUrl accepts a non-absolute/non-URL string and resolves it relative to origin (unlike SameAs it is not dropped). Low/data-quality; open question for the dev whether LogoUrl should get SameAs-strict validation.",
+    "Obs2 (by design): og:title/og:description on the homepage are page-owned (CMS) and override the BrandProfile fallback; BrandProfile description still appears in the JSON-LD.",
+    "Obs3 (ENV, not a bug): /catalog logs 32x ERR_NAME_NOT_RESOLVED for storeasseturl.net placeholder asset domain — local env data config."
+  ],
+  "business_rules_verified": ["schema.org OnlineStore contract", "E.164-style phone validation (country code required)", "absolute-URL sameAs validation", "calendar-valid ISO date round-trip", "homepage-only JSON-LD gating"],
+  "screenshots": "reports/tickets/Sprint26-15/VCST-5536/screenshots/",
+  "screenshot_files": [
+    "01-homepage-rendered.png",
+    "02-jsonld-og-live-dom.png",
+    "03-validation-drops-bad-input.png"
+  ]
+}

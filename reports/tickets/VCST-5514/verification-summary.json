@@ -1,0 +1,26 @@
+{
+  "ticket": "VCST-5514",
+  "verdict": "VERIFIED",
+  "date": "2026-08-04",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "n/a (frontend-only fix)",
+    "theme": "2.55.0-pr-2411-b7e6-b7e60370",
+    "relevant_modules": {},
+    "pr_build": "vc-theme-b2b-vue-2.55.0-pr-2411-b7e6 (vc-frontend#2411, confirmed live)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-prior-run + pinned-build (pre-fix 2407 observed live at session start)",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-UI-007"],
+  "jira_transition": "Ready for test -> Testing (On QA) -> Tested",
+  "evidence": "reports/tickets/VCST-5514/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/VCST-5514/"
+}

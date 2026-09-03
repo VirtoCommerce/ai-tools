@@ -1,0 +1,63 @@
+{
+  "ticket": "VCST-5433",
+  "title": "[Dark] Implement red.dark preset",
+  "verdict": "PASS",
+  "date": "2026-08-04",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "theme": "vc-theme-b2b-vue-2.55.0-pr-2407 (VCST-5433 build, deployed & live)",
+    "source_pr": "VirtoCommerce/vc-frontend#2407 (OPEN, not yet merged to dev)",
+    "active_store_preset": "red"
+  },
+  "agents_dispatched": ["orchestrator-inline (narrow visual/theme scope)"],
+  "ac_analysis": {
+    "story_acs": 0,
+    "weak_acs": 0,
+    "gap_acs_added": 5,
+    "note": "Ticket had NO description and NO acceptance criteria; ACs derived from PR #2407 + red.dark.json oracle",
+    "impl_coverage": { "satisfied": 5, "drift": 0, "contradicts": 0, "not_found": 0 },
+    "conditions_total": 5,
+    "conditions_with_evidence": 5
+  },
+  "total_cases": 12,
+  "passed": 12,
+  "failed": 0,
+  "blocked": 0,
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-WL-003 (themePresetName drives active preset; dark availability gated by darkPresets registration)"],
+  "coverage_note": "Full storefront sweep in red.dark (anonymous + authenticated) at user request — 12 pages/flows across home, catalog, PDP, configurable PDP, sign-in, sign-up, contacts, account dashboard, cart/single-page-checkout, order detail, addresses, lists",
+  "checks": [
+    {"id": "TC-1", "desc": "red preset gains working dark mode (registered in darkPresets)", "result": "PASS", "evidence": "vc-dark-available=true; Theme toggle present in header"},
+    {"id": "TC-2", "desc": "Toggling dark applies red.dark palette matching spec", "result": "PASS", "evidence": "body_bg #121212, body_text #eeeeee, primary_500 #d34247, accent_500 #00809d, vc-bg-solid-primary #d34247/#fff — all match red.dark.json oracle exactly"},
+    {"id": "TC-3", "desc": "Home page renders in red.dark", "result": "PASS", "evidence": "VCST-5433-home-red-dark.png"},
+    {"id": "TC-4", "desc": "Catalog/search: facets, chips, cards, checkboxes", "result": "PASS", "evidence": "VCST-5433-catalog-red-dark.png (Show in stock chip, red checkbox, green stock badges, red discount badge)"},
+    {"id": "TC-5", "desc": "PDP (simple) + configurable PDP (options)", "result": "PASS", "evidence": "VCST-5433-pdp-red-dark.png, VCST-5433-pdp-configurable-red-dark.png (red radio, steppers, outline ADD TO CART)"},
+    {"id": "TC-6", "desc": "vc-button solid + outline + secondary + disabled variants", "result": "PASS", "evidence": "sign-in (solid/outline), configurable PDP (outline), cart (disabled PLACE ORDER), order-detail (PAY NOW solid / PRINT outline)"},
+    {"id": "TC-7", "desc": "vc-alert danger + warning + info variants", "result": "PASS", "evidence": "signin-alert (danger), cart (warning 'Complete all required information'), signup (info password tips)"},
+    {"id": "TC-8", "desc": "vc-badge success/info/danger + vc-chip", "result": "PASS", "evidence": "dashboard (New=green, Processing=blue), lists (count badge), catalog (filter chip), cart (6 VARIATIONS chip)"},
+    {"id": "TC-9", "desc": "Cart / single-page checkout (coupons, forms, summary)", "result": "PASS", "evidence": "VCST-5433-cart-red-dark.png"},
+    {"id": "TC-10", "desc": "Account dashboard (orders table, status, spend donut)", "result": "PASS", "evidence": "VCST-5433-account-dashboard-red-dark.png"},
+    {"id": "TC-11", "desc": "Order detail + Addresses", "result": "PASS", "evidence": "VCST-5433-order-detail-red-dark.png, VCST-5433-addresses-red-dark.png"},
+    {"id": "TC-12", "desc": "Lists + Sign-up + Contacts (CMS)", "result": "PASS", "evidence": "VCST-5433-lists-red-dark.png, VCST-5433-signup-red-dark.png, VCST-5433-contacts-red-dark.png"}
+  ],
+  "exploratory": {
+    "charter": "Red.dark visual/theming risk charter (home, sign-in, catalog)",
+    "heuristic": "SFDPOT (visual)",
+    "findings": { "bugs": 0, "questions": 1, "observations": 2, "risks": 0 }
+  },
+  "appinsights": {
+    "checked": false,
+    "reason": "CSS/theme-only change; no backend behavior under test. Only window errors were an expected invalid-login 401 (test action) and pre-existing stale-image 404s",
+    "layers": [],
+    "window_minutes": 0,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "correlated_failures": []
+  },
+  "out_of_scope_notes": [
+    "default.dark & mercury.dark (VCST-5452, bundled in same PR) not verifiable on vcst-qa (store preset fixed to red) — belongs to VCST-5452",
+    "PR #2407 still OPEN/unmerged though its build is live on vcst-qa (normal pre-merge QA)",
+    "B2B org-specific pages (company members/org management) not swept — logged-in fixture is a personal B2C user; identical component set, low risk",
+    "Mobile/responsive not swept — red.dark is a color-token-only change (no layout), so it applies identically at mobile widths; low risk"
+  ],
+  "screenshots": "reports/tickets/Sprint26-15/VCST-5433/screenshots/"
+}
