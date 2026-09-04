@@ -1,7 +1,7 @@
 {
   "$comment": "Schema for /qa-test's summary.json (reports/tickets/{SPRINT}/<ticket-key>/summary.json). The ONLY narrative-adjacent artifact /qa-test persists (per .claude/rules/reports.md §1) — it must carry every field a later consumer needs: 1b's cross-sprint duplicate check reads `date`; 5e's Feature Release Gate reads `regression`; 5g records `promotion`; `layer` is derived at 1b item 2b and `release` resolved at 5e.0, both persisted at 5e.3, and their only reader is /ba-analyze docs release. Replace <..> placeholders; 0/[]/null are empty defaults.",
   "ticket": "<ticket-key>",
-  "ticket_type": "Bug|Story|Task|Technical task|Sub-task|Epic|Tweak",
+  "ticket_type": "Bug|Story|Task|Technical task|Review task|Sub-task|Epic|Tweak",
   "flow": "feature-test|verify-fix|hotfix-verify",
   "path": "fast|full",
   "layer": "storefront|admin-spa|api|module|platform|cross-layer|null",

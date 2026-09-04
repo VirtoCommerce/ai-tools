@@ -44,6 +44,8 @@ a judgment call a gate does not settle, or when you are about to change how a st
 /qa-test <ticket-key> --contract         # + the GraphQL schema + fixture refresh
 /qa-test <ticket-key> --coverage         # + tc:scope over the existing corpus
 /qa-test <ticket-key> --axes             # all three
+/qa-test <ticket-key> --release-regression   # + C2, the change-scoped Critical sweep
+                                         #   (only meaningful on a Review task, where C2 is off by default)
 ```
 
 **Argument normalization — there is no argv parser, so state what you resolved.** This command is a prompt,
@@ -57,6 +59,8 @@ line before Step 1, rather than acting on a guess.
 | `--max-rounds N` with no `--iterate` | **`--iterate --max-rounds N`** | a round cap is meaningless without the loop |
 | `--axes` | `--visual --contract --coverage` | all three; `layer` derives on both paths regardless |
 | any axis flag on a FULL run | **no-op, say so in one line** | FULL already derives and runs all four |
+| `--release-regression` on a `Review task` | **runs C2 at `5r`** | that type has C2 off by default (`ticket-routing.md` §5a) |
+| `--release-regression` on any other type | **no-op, say so in one line** | C2 already runs there |
 | a second bare token that is not a ticket key, `PR #N`, or a flag | **STOP and ask** | never silently fold it into the target or a flag value |
 
 `--iterate` and `--epic` **compose** (the loop tries to fix a failing child story before the chain
@@ -94,7 +98,9 @@ never restate it here.** `1a` resolves them and its own table carries the per-fl
 1. **FLOW** — which pipeline runs at all: `verify-fix` · `hotfix-verify` · `feature-test`.
 2. **EFFORT** — FAST or FULL, **only** within `feature-test`. FULL for a new feature / Story / Epic, P0–P1,
    cross-layer, ≥2 domains, a critical-revenue flow, or an unclear surface; FAST for a bug fix / copy-tweak /
-   config / Technical task that is P2–P3, single-layer, single-domain, obvious surface. **When in doubt, take
+   config / Technical task — or a `Review task` contribution whose PR diff is one-file and
+   single-surface (`ticket-routing.md` §5a, which also defaults its `coverage` axis ON) — that is
+   P2–P3, single-layer, single-domain, obvious surface. **When in doubt, take
    FULL** — a real regression is worse missed than a fast run saved
    ([`SKILL.md`](../skills/qa-test/SKILL.md) §Effort routing).
 

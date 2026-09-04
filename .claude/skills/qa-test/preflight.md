@@ -66,7 +66,7 @@ context gathering, the Test Model, authoring and seeding that are 30+ minutes of
 
 Then branch on the resolved FLOW:
 
-- **`feature-test`** (Story / Task / Technical task / Epic, and a `not-fixed` Bug) → continue to `1b` and
+- **`feature-test`** (Story / Task / Technical task / Review task / Epic, and a `not-fixed` Bug) → continue to `1b` and
   run the five-step pipeline at the resolved FAST/FULL effort. (A `not-fixed` Bug runs FAST to
   reproduce/characterize the defect live and attach fresh evidence — there is no fix to *verify* yet;
   state the next step is `/qa-fix <ticket-key>`.) This is the rest of this document.

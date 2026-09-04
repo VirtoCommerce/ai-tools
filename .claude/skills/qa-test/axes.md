@@ -109,6 +109,16 @@ dispatch, so making it opt-in would restore the always-on cost it exists to end.
 both paths — on FAST it gates the same `3a`, which that path had always described as *"test data if
 needed"* without ever saying who decides.
 
+**One per-type exception — and it is a TYPE default, not a new always-on axis.** A `Review task`
+([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5a) runs **`coverage` by default on
+FAST**. That type is a *contribution* — a fix or improvement to behaviour that already exists and that
+existing rows already assert — so *"which existing rows does this change make wrong?"* is what the
+ticket is **about**, not a speculative extra; and because its priority is auto-set and it carries no
+ACs, Step 2a is also the only step that reads the change against the corpus at all. `visual` and
+`contract` stay opt-in there exactly as everywhere else. This is the shape the "revisit at 5+ runs"
+rule below asks for — promote an axis where the evidence for it actually is, per type, rather than
+flipping it on for every FAST run.
+
 This restores a promise the pipeline had quietly inverted. `SKILL.md` §Effort routing records that the
 FAST/FULL split was made precisely because the old design marked everything expensive
 *"both paths, always"* — and by 2026-09-03 that phrase (or its equivalent) had reappeared **15+ times**

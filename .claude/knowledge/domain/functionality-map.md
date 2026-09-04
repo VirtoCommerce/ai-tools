@@ -4,11 +4,11 @@
 > `npm run map:check` is the drift gate. Editing it by hand is reverted by the next refresh,
 > silently. To change what it says, change the source it is derived from.
 >
-> **Rev:** 2026-09-03
+> **Rev:** 2026-09-04
 > **Sources:** `config/test-suites.json` (135 suites, 13 domains) ·
 > the suite CSVs' own `BL-*`/`ECL-*` citations · `.claude/knowledge/oracles/business-logic.md` ·
-> `reports/ba/` (47 docs) · `reports/ba/test-models/` (5) ·
-> `.claude/knowledge/domain/` (6) · `reports/tickets/` (26 runs)
+> `reports/ba/` (49 docs) · `reports/ba/test-models/` (6) ·
+> `.claude/knowledge/domain/` (6) · `reports/tickets/` (27 runs)
 
 ---
 
@@ -76,12 +76,12 @@ rendering artifact: the row says `none`.
 | `communication` | 4 | 121 | backend | 13 | 16 | 0 | 0 | 0 |
 | `content-cms` | 6 | 271 | backend | 16 | 12 | 0 | 0 | 0 |
 | `cross-cutting` | 13 | 322 | backend + frontend | 77 | 41 | 0 | 0 | 0 |
-| `customer-b2b` | 20 | 663 | backend + frontend | 71 | 31 | 18 | 0 | 0 |
+| `customer-b2b` | 20 | 663 | backend + frontend | 71 | 31 | 20 | 0 | 0 |
 | `marketing` | 7 | 209 | backend + frontend | 15 | 15 | 0 | 1 | 0 |
 | `observability` | 1 | 23 | backend | 1 | 0 | 0 | 0 | 0 |
 | `platform-config` | 12 | 338 | backend | 20 | 10 | 1 | 0 | 0 |
-| `purchase-flow` | 32 | 925 | backend + frontend | 86 | 35 | 1 | 0 | 0 |
-| `sales-rep` | 9 | 399 | backend + frontend | 36 | 11 | 11 | 1 | 0 |
+| `purchase-flow` | 32 | 925 | backend + frontend | 86 | 35 | 1 | 1 | 0 |
+| `sales-rep` | 9 | 405 | backend + frontend | 37 | 11 | 13 | 1 | 0 |
 
 **Domain knowledge — the whole set, always available.** Each of these is broader than one
 domain, so they are listed in full rather than attributed away: a doc that reaches no domain
@@ -271,7 +271,7 @@ nothing from a sub-agent CWD because there is no top-level `knowledge/` director
 - **Tags**: VCST-5239 · a11y · account · admin · admin-spa · api · b2b · bulk-order · catalog · checkout · company · conditions · configurations · contacts · contracts · crud · currency-override · customer · dashboard · e2e · earning · graphql · invites · loyalty
 - **Oracles cited by those suites**: 71 `BL-*` (**6 not declared in the oracle** — `npm run bl:lint` owns that) · 31 `ECL-*`
 - **Domain knowledge**: none
-- **Prior BA analysis** (18): [`view-customer-profile.md`](../../../reports/ba/Sales-rep/sales-rep-view-customer-profile/view-customer-profile.md) *(2026-09-03)* · [`vcst-5346-loyalty-missions-customer-guide.md`](../../../reports/ba/vcst-5346-loyalty-missions-customer-guide.md) *(2026-09-03)* · [`missions-admin-guide-2026-09-02.md`](../../../reports/ba/Loyalty&Mixed cart/missions-admin-guide-2026-09-02.md) *(2026-09-02)* · [`bl-proposals-2026-08-28.md`](../../../reports/ba/bl-proposals-2026-08-28.md) *(2026-08-28)* · [`missions-design-gaps-2026-08-28.md`](../../../reports/ba/Loyalty&Mixed cart/missions-design-gaps-2026-08-28.md) *(2026-08-28)* · [`test-model-VCST-5320-2026-08-27.md`](../../../reports/ba/Loyalty&Mixed cart/test-model-VCST-5320-2026-08-27.md) *(2026-08-27)* · [`ba-admin-doc-VCST-5281-org-membership-status-2026-08-07.md`](../../../reports/ba/Organization roles/ba-admin-doc-VCST-5281-org-membership-status-2026-08-07.md) *(2026-08-07)* · [`ba-customer-doc-VCST-5281-member-status-invites-2026-08-07.md`](../../../reports/ba/Organization roles/ba-customer-doc-VCST-5281-member-status-invites-2026-08-07.md) *(2026-08-07)* · [`ba-VCST-4907-customer-sales-reps-developer-2026-07-21.md`](../../../reports/ba/Sales-rep/ba-VCST-4907-customer-sales-reps-developer-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-customers-customer-guide-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-customers-customer-guide-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-customers-sales-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-customers-sales-2026-07-21.md) *(2026-07-21)* · [`ba-customer-doc-VCST-5239-member-roles-2026-07-09.md`](../../../reports/ba/Organization roles/ba-customer-doc-VCST-5239-member-roles-2026-07-09.md) *(2026-07-09)* · [`ba-vcst-5104-admin-multi-currency-order-totals-2026-06-24.md`](../../../reports/ba/Loyalty&Mixed cart/ba-vcst-5104-admin-multi-currency-order-totals-2026-06-24.md) *(2026-06-24)* · [`ba-vcst-5104-customer-mixed-cart-loyalty-order-2026-06-24.md`](../../../reports/ba/Loyalty&Mixed cart/ba-vcst-5104-customer-mixed-cart-loyalty-order-2026-06-24.md) *(2026-06-24)* · [`ba-vcst-5104-developer-ordertotals-graphql-2026-06-24.md`](../../../reports/ba/Loyalty&Mixed cart/ba-vcst-5104-developer-ordertotals-graphql-2026-06-24.md) *(2026-06-24)* · [`VCST-5028-customer-doc-2026-06-19.md`](../../../reports/ba/Organization roles/VCST-5028-customer-doc-2026-06-19.md) *(2026-06-19)* · [`ba-loyalty-mixed-cart-developer-2026-06-10.md`](../../../reports/ba/Loyalty&Mixed cart/ba-loyalty-mixed-cart-developer-2026-06-10.md) *(2026-06-10)* · [`ba-loyalty-mixed-cart-shopping-customer-2026-06-10.md`](../../../reports/ba/Loyalty&Mixed cart/ba-loyalty-mixed-cart-shopping-customer-2026-06-10.md) *(2026-06-10)*
+- **Prior BA analysis** (20): [`vcst-5733-customer-orders-customer-guide.md`](../../../reports/ba/Sales-rep/sales-rep-customer-orders/vcst-5733-customer-orders-customer-guide.md) *(2026-09-04)* · [`vcst-5733-customer-orders-developer-guide.md`](../../../reports/ba/Sales-rep/sales-rep-customer-orders/vcst-5733-customer-orders-developer-guide.md) *(2026-09-04)* · [`view-customer-profile.md`](../../../reports/ba/Sales-rep/sales-rep-view-customer-profile/view-customer-profile.md) *(2026-09-03)* · [`vcst-5346-loyalty-missions-customer-guide.md`](../../../reports/ba/vcst-5346-loyalty-missions-customer-guide.md) *(2026-09-03)* · [`missions-admin-guide-2026-09-02.md`](../../../reports/ba/Loyalty&Mixed cart/missions-admin-guide-2026-09-02.md) *(2026-09-02)* · [`bl-proposals-2026-08-28.md`](../../../reports/ba/bl-proposals-2026-08-28.md) *(2026-08-28)* · [`missions-design-gaps-2026-08-28.md`](../../../reports/ba/Loyalty&Mixed cart/missions-design-gaps-2026-08-28.md) *(2026-08-28)* · [`test-model-VCST-5320-2026-08-27.md`](../../../reports/ba/Loyalty&Mixed cart/test-model-VCST-5320-2026-08-27.md) *(2026-08-27)* · [`ba-admin-doc-VCST-5281-org-membership-status-2026-08-07.md`](../../../reports/ba/Organization roles/ba-admin-doc-VCST-5281-org-membership-status-2026-08-07.md) *(2026-08-07)* · [`ba-customer-doc-VCST-5281-member-status-invites-2026-08-07.md`](../../../reports/ba/Organization roles/ba-customer-doc-VCST-5281-member-status-invites-2026-08-07.md) *(2026-08-07)* · [`ba-VCST-4907-customer-sales-reps-developer-2026-07-21.md`](../../../reports/ba/Sales-rep/ba-VCST-4907-customer-sales-reps-developer-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-customers-customer-guide-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-customers-customer-guide-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-customers-sales-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-customers-sales-2026-07-21.md) *(2026-07-21)* · [`ba-customer-doc-VCST-5239-member-roles-2026-07-09.md`](../../../reports/ba/Organization roles/ba-customer-doc-VCST-5239-member-roles-2026-07-09.md) *(2026-07-09)* · [`ba-vcst-5104-admin-multi-currency-order-totals-2026-06-24.md`](../../../reports/ba/Loyalty&Mixed cart/ba-vcst-5104-admin-multi-currency-order-totals-2026-06-24.md) *(2026-06-24)* · [`ba-vcst-5104-customer-mixed-cart-loyalty-order-2026-06-24.md`](../../../reports/ba/Loyalty&Mixed cart/ba-vcst-5104-customer-mixed-cart-loyalty-order-2026-06-24.md) *(2026-06-24)* · [`ba-vcst-5104-developer-ordertotals-graphql-2026-06-24.md`](../../../reports/ba/Loyalty&Mixed cart/ba-vcst-5104-developer-ordertotals-graphql-2026-06-24.md) *(2026-06-24)* · [`VCST-5028-customer-doc-2026-06-19.md`](../../../reports/ba/Organization roles/VCST-5028-customer-doc-2026-06-19.md) *(2026-06-19)* · [`ba-loyalty-mixed-cart-developer-2026-06-10.md`](../../../reports/ba/Loyalty&Mixed cart/ba-loyalty-mixed-cart-developer-2026-06-10.md) *(2026-06-10)* · [`ba-loyalty-mixed-cart-shopping-customer-2026-06-10.md`](../../../reports/ba/Loyalty&Mixed cart/ba-loyalty-mixed-cart-shopping-customer-2026-06-10.md) *(2026-06-10)*
 - **Prior test models** (0): none — the first FULL run on this domain writes one
 - **Release notes**: [`vcst-5319-module-release-note.md`](../../../reports/ba/release-notes/vcst-5319-module-release-note.md)
 - **Already tested here** (1): VCST-5733 → PASS_WITH_NOTES
@@ -365,7 +365,7 @@ nothing from a sub-agent CWD because there is no top-level `knowledge/` director
 - **Oracles cited by those suites**: 86 `BL-*` (**14 not declared in the oracle** — `npm run bl:lint` owns that) · 35 `ECL-*`
 - **Domain knowledge**: none
 - **Prior BA analysis** (1): [`order-history-filter-persistence-stories.md`](../../../reports/ba/order-history-filter-persistence-stories.md) *(2026-06-08)*
-- **Prior test models** (0): none — the first FULL run on this domain writes one
+- **Prior test models** (1): [`VCST-5738`](../../../reports/ba/test-models/VCST-5738-2026-09-04.md) *(2026-09-04, declared)*
 - **Already tested here** (0): no run has verified a BL in this domain
 - **Checklist**: `/qa-checklist purchase-flow`
 
@@ -379,15 +379,15 @@ nothing from a sub-agent CWD because there is no top-level `knowledge/` director
   - **Tested against** (the data whose properties the assertions read): 67 `@td()` alias(es) — ACME_BUYER, ADDRESS_SEARCH, ADDR_NO_MATCH_TERM, ADDR_NY, ADDR_SINGLE_CHAR_TERM, AUTHORIZENET_VISA, BOPIS, BOPIS_BVA_100, BOPIS_BVA_101, BOPIS_BVA_151 … · 117 `{{VAR}}` token(s)
   - **Variants** (what changes its behaviour without changing its code): 2 config flag(s) — `checkout_purchase_order_enabled` (`true`) · `product_quantity_control` (`"stepper"`). Store-level defaults (currency, language, catalog, payment methods) always apply: [`.claude/knowledge/domain/store-settings.md`](store-settings.md)
   - **Constraints** (what must always hold — what a violation COSTS): 86 `BL-*` — **33 P0** · 36 P1 · 3 P2 · 14 undeclared · 35 `ECL-*`. Severity is the oracle's own tag, read and never inferred
-  - **Reverse edges** (does every forward effect on money / points / stock / entitlement undo?): **`UNDECLARED`** — no model resolved them. An unresolved reverse edge is itself a finding
+  - **Reverse edges** (does every forward effect on money / points / stock / entitlement undo?): resolved in VCST-5738's model
 
 ### sales-rep
 
-- **Suites** (9, 399 cases): 050m, 050m2, 089, 090, 091, 092, 092b, 093 … (+1)
+- **Suites** (9, 405 cases): 050m, 050m2, 089, 090, 091, 092, 092b, 093 … (+1)
 - **Tags**: admin · b2b · backend · crud · customer-orders · customer-profile · embedded-app · feature-gated · graphql · hub-dashboard · my-customers · my-sales-reps · orders · permissions · sales-rep · saved-layout · scoped-schema · storefront · vc-shell · xapi
-- **Oracles cited by those suites**: 36 `BL-*` · 11 `ECL-*`
+- **Oracles cited by those suites**: 37 `BL-*` · 11 `ECL-*`
 - **Domain knowledge**: none
-- **Prior BA analysis** (11): [`customize-your-layout.md`](../../../reports/ba/Sales-rep/sales-rep-customize-dashboard-layout/customize-your-layout.md) *(2026-09-03)* · [`read-your-dashboard.md`](../../../reports/ba/Sales-rep/sales-rep-hub-dashboard/read-your-dashboard.md) *(2026-09-03)* · [`view-customer-profile.md`](../../../reports/ba/Sales-rep/sales-rep-view-customer-profile/view-customer-profile.md) *(2026-09-03)* · [`ba-VCST-4907-customer-sales-reps-developer-2026-07-21.md`](../../../reports/ba/Sales-rep/ba-VCST-4907-customer-sales-reps-developer-2026-07-21.md) *(2026-07-21)* · [`ba-VCST-4907-sales-rep-visibility-admin-2026-07-21.md`](../../../reports/ba/Sales-rep/ba-VCST-4907-sales-rep-visibility-admin-2026-07-21.md) *(2026-07-21)* · [`ba-vcst-5304-developer-salesrepcustomers-graphql-2026-07-21.md`](../../../reports/ba/Sales-rep/ba-vcst-5304-developer-salesrepcustomers-graphql-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-customers-admin-guide-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-customers-admin-guide-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-customers-customer-guide-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-customers-customer-guide-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-customers-sales-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-customers-sales-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-sales-reps-maintainer-guide-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-sales-reps-maintainer-guide-2026-07-21.md) *(2026-07-21)* · [`ba-VCST-5293-sales-rep-admin-guide-2026-07-20.md`](../../../reports/ba/Sales-rep/ba-VCST-5293-sales-rep-admin-guide-2026-07-20.md) *(2026-07-20)*
+- **Prior BA analysis** (13): [`vcst-5733-customer-orders-customer-guide.md`](../../../reports/ba/Sales-rep/sales-rep-customer-orders/vcst-5733-customer-orders-customer-guide.md) *(2026-09-04)* · [`vcst-5733-customer-orders-developer-guide.md`](../../../reports/ba/Sales-rep/sales-rep-customer-orders/vcst-5733-customer-orders-developer-guide.md) *(2026-09-04)* · [`customize-your-layout.md`](../../../reports/ba/Sales-rep/sales-rep-customize-dashboard-layout/customize-your-layout.md) *(2026-09-03)* · [`read-your-dashboard.md`](../../../reports/ba/Sales-rep/sales-rep-hub-dashboard/read-your-dashboard.md) *(2026-09-03)* · [`view-customer-profile.md`](../../../reports/ba/Sales-rep/sales-rep-view-customer-profile/view-customer-profile.md) *(2026-09-03)* · [`ba-VCST-4907-customer-sales-reps-developer-2026-07-21.md`](../../../reports/ba/Sales-rep/ba-VCST-4907-customer-sales-reps-developer-2026-07-21.md) *(2026-07-21)* · [`ba-VCST-4907-sales-rep-visibility-admin-2026-07-21.md`](../../../reports/ba/Sales-rep/ba-VCST-4907-sales-rep-visibility-admin-2026-07-21.md) *(2026-07-21)* · [`ba-vcst-5304-developer-salesrepcustomers-graphql-2026-07-21.md`](../../../reports/ba/Sales-rep/ba-vcst-5304-developer-salesrepcustomers-graphql-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-customers-admin-guide-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-customers-admin-guide-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-customers-customer-guide-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-customers-customer-guide-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-customers-sales-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-customers-sales-2026-07-21.md) *(2026-07-21)* · [`salesrep-my-sales-reps-maintainer-guide-2026-07-21.md`](../../../reports/ba/Sales-rep/salesrep-my-sales-reps-maintainer-guide-2026-07-21.md) *(2026-07-21)* · [`ba-VCST-5293-sales-rep-admin-guide-2026-07-20.md`](../../../reports/ba/Sales-rep/ba-VCST-5293-sales-rep-admin-guide-2026-07-20.md) *(2026-07-20)*
 - **Prior test models** (1): [`VCST-5733`](../../../reports/ba/test-models/VCST-5733-2026-09-02.md) *(2026-09-02, declared)*
 - **Already tested here** (2): VCST-5729 → PASS_WITH_NOTES · VCST-5733 → PASS_WITH_NOTES
 - **Checklist**: `/qa-checklist sales-rep`
@@ -403,9 +403,9 @@ nothing from a sub-agent CWD because there is no top-level `knowledge/` director
     - L5  I open one order                                                      → my own order opens actionable on the buyer page; anyone else's opens read-only in the hub
     - Unlocks: analysing a customer's purchasing history without leaving the hub.
   - **Operations exercised** (lower bound, measured — `name(` in this domain's suites): 17 of 108 schema ops — §Queries > Other (9) · §Queries > Orders (6) · §Queries > Cart (2). Full surface: [`.claude/knowledge/api/graphql-schema.md`](../../../.claude/knowledge/api/graphql-schema.md)
-  - **Tested against** (the data whose properties the assertions read): 21 `@td()` alias(es) — ORDER_BUYER_PLACED, ORDER_NOT_SERVED, ORDER_REP_PLACED, ORG_ACME, ORG_ACMEWEST, ORG_BUILDRIGHT, ORG_REP_ONLY, ORG_SUSPENDED, ORG_TECHFLOW, SR_ADMIN_CUSTOMER_ONLY … · 37 `{{VAR}}` token(s)
+  - **Tested against** (the data whose properties the assertions read): 21 `@td()` alias(es) — ORDER_BUYER_PLACED, ORDER_NOT_SERVED, ORDER_REP_PLACED, ORG_ACME, ORG_ACMEWEST, ORG_BUILDRIGHT, ORG_REP_ONLY, ORG_SUSPENDED, ORG_TECHFLOW, SR_ADMIN_CUSTOMER_ONLY … · 38 `{{VAR}}` token(s)
   - **Variants** (what changes its behaviour without changing its code): no config flag attributed. Store-level defaults (currency, language, catalog, payment methods) always apply: [`.claude/knowledge/domain/store-settings.md`](store-settings.md)
-  - **Constraints** (what must always hold — what a violation COSTS): 36 `BL-*` — **3 P0** · 19 P1 · 13 P2 · 1 undeclared · 11 `ECL-*`. Severity is the oracle's own tag, read and never inferred
+  - **Constraints** (what must always hold — what a violation COSTS): 37 `BL-*` — **3 P0** · 20 P1 · 13 P2 · 1 undeclared · 11 `ECL-*`. Severity is the oracle's own tag, read and never inferred
   - **Reverse edges** (does every forward effect on money / points / stock / entitlement undo?): resolved in VCST-5733's model
 
 ## 4. Which domains a change is likely to touch
@@ -449,11 +449,11 @@ in [`.claude/knowledge/automation/storefront-config-flags.md`](../../../.claude/
 |---|---|
 | Domains | 13 |
 | Suites read | 135 of 135 |
-| BA docs placed | 33 of 47 |
-| Test models placed | 3 of 5 (2 by their own `Domains:` line) |
+| BA docs placed | 35 of 49 |
+| Test models placed | 4 of 6 (3 by their own `Domains:` line) |
 | Knowledge docs placed | 1 of 6 |
 | Ambiguous tokens (attribute nothing) | 47 |
-| Runs recording a verified BL invariant | 2 of 26 — the rest reach no domain because the field is empty, not because nothing was tested |
+| Runs recording a verified BL invariant | 2 of 27 — the rest reach no domain because the field is empty, not because nothing was tested |
 | **Purpose DECLARED** | **2 of 13 domains** — the other 11 have no Test Model Part 0, so nothing in the repo states what those surfaces are for. This is the map's most actionable number |
 | Schema operations harvested | 108 from `.claude/knowledge/api/graphql-schema.md` |
 | Config flags parsed | 36 from `.claude/knowledge/automation/storefront-config-flags.md` · 25 attributed |

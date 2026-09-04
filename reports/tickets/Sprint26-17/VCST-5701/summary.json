@@ -1,0 +1,187 @@
+{
+  "ticket": "VCST-5701",
+  "flow": "feature-test",
+  "ticket_type": "Task",
+  "path": "fast",
+  "date": "2026-09-04T13:17:03.592Z",
+  "sprint": "Sprint26-17",
+  "verdict": "BLOCKED",
+  "blocker": "QA Storybook preview renders no stories (chunk iframe-DqwQmL1L.js); the only surface able to flip vertical/horizontal/disabled. Prop-watcher half of the fix therefore has no behavioural evidence.",
+  "env": {
+    "name": "vcst",
+    "front": "https://vcst-qa-storefront.govirto.com",
+    "back": "https://vcst-qa.govirto.com",
+    "storybook": "https://vcst-qa-storybook.govirto.com"
+  },
+  "build": {
+    "declared": "vc-theme-b2b-vue-2.57.0-pr-2455-0242-0242ba90 (vc-deploy-dev@vcst-qa theme/artifact.json)",
+    "deployed": "Platform 3.1063.0 (login-page HTML); theme fingerprint-confirmed in /assets/index-DPieVzRp.js",
+    "fingerprint_verified": true,
+    "fingerprints": [
+      "attributeFilter with disabled/tabindex/href/contenteditable/role",
+      "flush post watcher",
+      "100ms debounce"
+    ],
+    "storybook_qa": {
+      "chunk": "assets/iframe-DqwQmL1L.js",
+      "generatedAt": "2026-09-04T11:53:53.943Z",
+      "carries_fix": true,
+      "renders": false
+    },
+    "storybook_dev": {
+      "chunk": "assets/iframe-CIPvoytP.js",
+      "generatedAt": "2026-09-04T07:22:39.088Z",
+      "carries_fix": false,
+      "renders": true
+    },
+    "releasedThrough": {
+      "ledger_through": "3.1054.0",
+      "note": "deployed 3.1063.0 > ledger; trust deployed, ledger stale. No BREAKING row for vc-frontend."
+    }
+  },
+  "layer": "storefront",
+  "layers_conflict": false,
+  "layer_sources": [
+    "PR #2455 diff -> vc-frontend (frontend kind)",
+    "theme is the only build that moved"
+  ],
+  "visual": {
+    "surface": true,
+    "ran": true,
+    "opt_in": "operator request mid-run (equivalent to --visual)",
+    "surface_source": [
+      "client-app/ui-kit/.../vc-scrollbar.vue in diff",
+      "derived layer storefront"
+    ],
+    "invariant_failures": [],
+    "advisory": [
+      "BL-A11Y-004 axe: 1 Critical button-name (PDP variations widget) - pre-existing, unrelated",
+      "BL-A11Y-004 axe: 2 Serious (color-contrast Builder.io, list search-dropdown) - pre-existing",
+      "focus-ring contrast 2.11:1 vs WCAG 1.4.11 3:1 - Default preset ONLY; Coffee/Red NOT measured"
+    ],
+    "ticket_own_outcome": "scrollable-region-focusable: 0 violations, 0 incompletes on all surfaces"
+  },
+  "contract": {
+    "surface": false,
+    "ran": false,
+    "surface_source": [
+      "no .graphql/ExperienceApi/Controllers/GraphType in diff",
+      "layer != api",
+      "no AC names a query or field"
+    ]
+  },
+  "coverage_triage": {
+    "surface": true,
+    "ran": false,
+    "reason": "FAST, --coverage not passed",
+    "local_check": "23 corpus rows mention scrollbar, all horizontal-overflow layout; none asserts tabindex or a focusable scroll region; no row invalidated"
+  },
+  "test_data": {
+    "surface": false,
+    "dispatched": false,
+    "td_validate": "green (DV-021/022/023)",
+    "covering_fixtures": "live catalog + existing .env B2B role; no seeding required"
+  },
+  "regression": {
+    "c1": {
+      "run": false,
+      "reason": "FAST authors no cases; no RE-BASE ids; exact-set run would be empty"
+    },
+    "c2": {
+      "run": false,
+      "reason": "deferred to the re-run",
+      "selected": [
+        "039",
+        "040a",
+        "040b",
+        "040c",
+        "041",
+        "042",
+        "044",
+        "048c",
+        "049",
+        "078",
+        "078b",
+        "078c",
+        "078d"
+      ],
+      "predictedMakespanMinutes": 71,
+      "targetMinutes": 40,
+      "trimmed": 0,
+      "widened": true,
+      "unmappedPaths": [
+        "vc-frontend/client-app/ui-kit/components/atoms/scrollbar/vc-scrollbar.vue"
+      ]
+    }
+  },
+  "conditions": {
+    "total": 12,
+    "pass": 8,
+    "blocked": 2,
+    "fail_unrelated": 1,
+    "pass_with_findings": 1
+  },
+  "agents": [
+    {
+      "agent": "qa-frontend-expert",
+      "lane": "playwright-chrome",
+      "surface": "storefront"
+    },
+    {
+      "agent": "ui-ux-expert",
+      "lane": "chrome-devtools",
+      "surface": "storybook"
+    }
+  ],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "severity": "Low/P3",
+      "note": "type absent from attributeFilter while FOCUSABLE_SELECTOR reads a non-hidden input"
+    },
+    {
+      "severity": "Low/P3",
+      "note": "controls absent from attributeFilter while selector reads audio/video with controls"
+    },
+    {
+      "severity": "Low/P3",
+      "note": "noBar absent from the watcher deps; --no-bar grows the client box, scrollbar-gutter:stable is Firefox-only"
+    }
+  ],
+  "documented_not_filed": {
+    "comment": "108300",
+    "reason": "operator instruction: document in one comment, create no tickets",
+    "items": [
+      "P0 QA Storybook preview dead",
+      "Medium Vertical story cannot exercise its own axis props",
+      "Medium focus-ring contrast 2.11:1 (Default preset only)",
+      "Critical button-name (pre-existing)",
+      "Serious list (pre-existing)",
+      "Low Rocket Loader on Storybook hosts"
+    ]
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "confirmed": false,
+      "applied": true
+    },
+    {
+      "at": "5f",
+      "to": null,
+      "applied": false,
+      "skipped": "verdict BLOCKED transitions nothing per ticket-status-transitions.md §4; mandatory blocker comment posted as 108300"
+    }
+  ],
+  "tracker_comment": {
+    "id": "108300",
+    "api": "v2 wiki markup",
+    "images_inline": 3,
+    "verification": "renderedBody: 3 img attachment nodes, 0 literal !file.png!, 0 span.error",
+    "note": "first post rendered 4 span.error from square brackets inside monospace; fixed by removing brackets, updated via PUT"
+  },
+  "next_step": "Rebuild/redeliver the QA Storybook image, then re-run C1/C2 (~15 min) with a remount-marker check and a sub-100ms latency bound; then 5r C2 sweep and close out."
+}
