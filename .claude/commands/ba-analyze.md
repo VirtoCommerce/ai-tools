@@ -1,7 +1,7 @@
 ---
 description: "Run business analysis: system architecture, user flows, API audit, documentation, per-ticket documentation published to the tracker, and layer-routed release notes. Coordinates 4 BA specialist agents."
 argument-hint: "[full|flows|api|docs|docs ticket <TICKET> [--publish]|docs release <TICKET|--sprint S|--version V>|stories|module <name>]"
-disable-model-invocation: true
+
 ---
 
 # /ba-analyze — Virto Commerce Business Analyst Agent
