@@ -59,6 +59,32 @@ Real examples from recent reports (BUG-IMP-049 at 315 lines vs 150 target; BA-VC
 
 ## 5. Screenshot Rules
 
+### 5.0 MANDATORY — a tracker comment that makes a UI claim carries its screenshots INLINE
+
+If a comment asserts something a human LOOKS AT — a screen, a label, a control, a state, a rendered
+value — the evidence is **embedded in that comment**. A reader must never have to open a repo path or
+an evidence folder to see what the comment describes. This binds bug reports (`/qa-bug`), fix
+verification (`/qa-verify-fix`) and any documentation comment alike.
+
+**Two things that are NOT delivery, and both post `200 OK`:** a Markdown image reference
+(`![alt](path)` — repo path, relative path or bare filename), which the Markdown→ADF conversion drops
+with no error; and naming the file in prose (*"Screenshot: `foo.png`"*), which leaves the reader
+unable to see it. A path is a reference, not a screenshot.
+
+**Mechanism, per tracker — cited, never restated here:** see the screenshot carve-out in
+[`knowledge/execution/tracker-ops.md`](../../knowledge/execution/tracker-ops.md). Jira: attach via
+REST, then `!filename.png|width=700!` through the **v2** comment API (the whole body becomes wiki
+markup). Azure Boards: `ado.mjs upload-attachment --file <path>` → `{ url }`, then an inline
+`<img src="{url}">`.
+
+**Verification is part of the posting step; a status code is not verification.** For Jira, read
+`GET /rest/api/3/issue/<KEY>/comment/<id>?expand=renderedBody` and require one
+`<img src=…/attachment/content/<id>>` per image, **zero** surviving literal `!….png!`, and **zero**
+`<span class="error">`. Do not gate on `file-preview-id` — it is absent from a working wiki render.
+
+**A claim with no capturable screenshot says so explicitly**, so a reader can tell *"nothing to show"*
+from *"the evidence was dropped"*.
+
 **Always capture:** test FAILs, confirmed bugs (annotated), visual regressions (before/after), final state of critical flows (checkout confirmation, order created), Figma deviations, error states (console error, 500 toast).
 
 **Skip:** every navigation step in a passing test, loading spinners, login page (unless testing auth), successful form fills mid-flow, same page across browsers when all pass, redundant confirmations of the same bug.

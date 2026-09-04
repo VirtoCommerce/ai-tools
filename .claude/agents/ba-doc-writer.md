@@ -7,6 +7,9 @@ applicability: universal
 applicability_rationale: "User-facing docs + admin guides. Pure docs craft."
 ---
 
+> **MANDATORY — screenshots go INLINE in the comment.** A UI claim posted without its image embedded is not delivered: Markdown `![](path)` and prose file paths both post `200 OK` and render nothing. Attach, then reference `!file.png|width=700!` via the **v2** comment API, then VERIFY from `?expand=renderedBody` (one `<img …/attachment/content/N>` per image, zero surviving `!….png!`, zero `<span class="error">`). Mechanism + the ADF dead ends: `knowledge/execution/tracker-ops.md` §5c. Policy + the verification gate: `.claude/rules/reports.md` §5.0. A non-visual claim says so explicitly rather than silently shipping no image.
+
+
 # BA Doc Writer
 
 > **REAL-USER RULE.** You don't drive browsers directly, but user-facing docs must describe what a real customer/admin sees and does — click sequences, screenshots of actual UI, real navigation paths — never an internal API call as the "how-to." If a step says "submit a form," the doc must say which button the user clicks and what the user sees on success. Full rule: `.claude/knowledge/agents/qa/shared-instructions.md` §Browser Interaction.

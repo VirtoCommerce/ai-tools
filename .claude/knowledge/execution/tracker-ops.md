@@ -168,6 +168,8 @@ note) MUST be:
 
 ## 5c. Screenshots in a Jira comment — attach first, then wiki markup (2026-08-07)
 
+> **This section is the MECHANISM. That screenshots MUST be embedded inline is policy — `.claude/rules/reports.md` §5.0 — and it binds documentation, bug reports and fix verification alike. Posting a UI claim with no inline image, or with a Markdown/prose file reference, is a non-delivery, not a cosmetic miss. The `?expand=renderedBody` check below is part of the posting step, not an optional follow-up.**
+
 A Markdown image reference in a Jira comment **silently renders as nothing**. `![alt](path)` pointing
 at a repo path, or at a bare filename, is dropped by the Markdown→ADF conversion with no error and no
 warning — the comment posts `200 OK` and simply has no image. Naming the file in prose ("Screenshot:

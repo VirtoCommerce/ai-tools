@@ -142,6 +142,51 @@ Real examples from recent reports (BUG-IMP-049 at 315 lines vs 150 target; BA-VC
 
 ## 5. Screenshot Rules
 
+### 5.0 MANDATORY — a tracker comment that makes a UI claim carries its screenshots INLINE, or it is not delivered
+
+**A delivery requirement, not a formatting preference, and it binds every tracker comment:**
+documentation (`/qa-test` 5e + 5h, `/ba-analyze docs ticket --publish`), bug reports (`/qa-bug`), fix
+verification (`/qa-verify-fix`), monitoring drafts, and hotfix delivery. If a comment asserts something
+a human LOOKS AT — a screen, a label, a control, a state, a layout, a rendered value — the evidence is
+embedded in that comment. A reader must never have to open a repo path, an evidence folder or a linked
+file to see what the comment describes.
+
+**Two things that are NOT delivery, and both post `200 OK`:**
+
+| Not delivery | What actually happens |
+|---|---|
+| Markdown `![alt](path)` — repo path, relative path, or bare filename | Dropped by the Markdown→ADF conversion. No image, no error, no warning |
+| Naming the file in prose — *"Screenshot: `foo.png`"*, *"Evidence: `reports/tickets/…`"* | The reader still cannot see it. A path is a reference, not a screenshot |
+
+**The requirement is tracker-agnostic; the mechanism is not.** On **Azure Boards** it is
+`ado.mjs upload-attachment --file <path>` → `{ url }`, then an inline `<img src="{url}">` in the
+body (`knowledge/execution/tracker-ops.md`). On **Jira** it is attach-then-wiki, specified ONCE in
+[`knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md) **§5c**: attach via the
+REST attachment endpoint, then reference `!filename.png|width=700!` through the **v2** comment API,
+which flips the whole body to wiki markup. **Cite §5c; never restate the mechanism** — including here.
+Hand-built ADF `media` nodes are a documented dead end and §5c lists all four failed variants,
+including the one that returns `201` and then renders an error.
+
+**Verification is PART OF THE STEP; a status code is not verification.** After posting, read
+`GET /rest/api/3/issue/<KEY>/comment/<id>?expand=renderedBody` and require all three:
+
+1. one `<img src=…/rest/api/3/attachment/content/<id>>` **per image**;
+2. **zero** surviving literal `!….png!` — proves the markup was converted rather than printed;
+3. **zero** `<span class="error">`.
+
+Do **not** gate on `file-preview-id`: it is absent from a working wiki render, so a check keyed on it
+calls correct images a failure (§5c).
+
+**A claim with no capturable screenshot says so explicitly** — an API-only or non-visual claim is
+labelled as such, so a reader can tell *"nothing to show"* from *"the evidence was dropped"*.
+
+Measured cost of getting this wrong: VCST-5281 posted two complete guides with **twelve invisible
+screenshots**; on 2026-09-04 VCST-5733's 5h comment went out in Markdown with **zero** images and was
+reposted as wiki markup with four — caught by the operator, not by the pipeline. Hence a gate with a
+verification step rather than a note.
+
+### 5.1 What to capture
+
 **Always capture:** test FAILs, confirmed bugs (annotated), visual regressions (before/after), final state of critical flows (checkout confirmation, order created), Figma deviations, error states (console error, 500 toast).
 
 **Skip:** every navigation step in a passing test, loading spinners, login page (unless testing auth), successful form fills mid-flow, same page across browsers when all pass, redundant confirmations of the same bug.

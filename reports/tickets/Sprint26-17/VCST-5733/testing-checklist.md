@@ -19,13 +19,13 @@ when it is off, and it is off by default); `XOrder 3.1010.0` ≥ the 3.1009.0 fl
 | C3 | No order from any other organization appears, in rows **or** in the count | AC-2 | SR-GQL-123 | **PASS** |
 | C4 | An order the rep did **not** place IS present (creator-agnostic scope — the defect the story exists to fix) | AC-2 | SR-GQL-121, SR-CO-001 | **PASS** |
 | C5 | Breadcrumb on the customer-scoped route reads `… / My customers / {customer} / Orders` | AC-3 | SR-CO-002 | **PASS** |
-| C6 | Breadcrumb on the cross-customer route names **no** single customer | AC-3 | SR-CO-003 | **PASS** |
+| C6 | Breadcrumb on the cross-customer route names **no** single customer | AC-3 | SR-CO-003 | **PASS** (case FAILs on a *second* assertion demanding a segment delta of 1; the real delta is 2 and **C5 passed asserting that 6-segment form** — over-specified assertion, not a product defect) |
 | C7 | The breadcrumb customer segment is a working link back to the profile (mouse **and** keyboard) | AC-3/AC-5 | SR-CO-004 | **PASS** |
 | C8 | Paging via Previous/Next + numbered pages re-fetches and pages are **disjoint** | AC-4a | SR-CO-007, SR-GQL-128 | **PASS** |
 | C9 | Keyword search matches by order number | AC-4b | SR-CO-025 | PASS |
 | C10 | Sorting by Date reverses, and reversal is observable | AC-4c | SR-CO-001 | **PASS** |
 | C11 | Which columns are sortable is stated (AC-4 implies "sort" unconditionally; only Date shows an affordance in the implementation screenshot) | AC-4c | SR-CO-001 | PASS (note: Date **and** Total sortable; Order#/Customer/Status not) |
-| C12 | Returning to the profile keeps it in its Orders context | AC-5 | SR-CO-005 | **PASS** |
+| C12 | Returning to the profile keeps it in its Orders context | AC-5 | SR-CO-005 | **PASS (09-02; NOT re-run in C1)** — and `SR-CO-001`'s secondary miss is counter-evidence: the widget returns with its **All** tab pressed, i.e. no distinct persistent Orders context. Treat as UNVERIFIED on this build |
 
 ## Gap conditions (no AC covers these — from 1d, each mapped to an invariant)
 
@@ -36,15 +36,15 @@ when it is off, and it is off by default); `XOrder 3.1010.0` ≥ the 3.1009.0 fl
 | G3 | A non-whitelisted `facet` is dropped and never aggregates across the index (**scope-leak defence**) | BL-SR-002 | SR-GQL-125 | **PASS** |
 | G4 | Facet counts sum to the scope total and ignore their own axis' selection | PROPOSED-BL-SR-034 | SR-GQL-126 | **PASS** |
 | G5 | An unrecognized facet name is dropped, not rejected | — | SR-GQL-127 | **PASS** |
-| G6 | A zero-customer rep gets the "no data" state, distinct from "nothing matched" | BL-SR-012 | SR-CO-009 | **PASS** |
+| G6 | A zero-customer rep gets the "no data" state, distinct from "nothing matched" | BL-SR-012 | SR-CO-009 | **PASS** for distinctness — the product *does* separate the two by wording. **FINDING:** the no-data copy reads "No orders yet" rather than naming the no-customers cause |
 | G7 | Changing a filter resets paging to page 1 | PROPOSED-BL-SR-035 | SR-CO-006 | **PASS** |
 | G8 | Created-date range includes orders on both boundary days in the rep's local timezone | BL-SR-001 | SR-CO-008 | **PASS** |
 | G9 | An order the rep did **not** place opens read-only — no Pay-now / Reorder | {SPEC} PR#2444 | SR-CO-010 | **PASS** |
-| G10 | An order the rep **did** place opens on the buyer page with actions intact | {SPEC} PR#2444 | SR-CO-011 | **PASS** |
+| G10 | An order the rep **did** place opens on the buyer page with actions intact | {SPEC} PR#2444 | SR-CO-011 | **PASS** — Pay now + Print order enabled on the buyer route. Case FAILs only on **Reorder, which does not exist in this build** (see §Carried FAILs — a PR-body inaccuracy, not a product defect) |
 | G11 | A **typed** buyer-page URL for a served customer's order the rep did not place is refused (two pages, two authorization rules, one order) | {HYPOTHESIS} | SR-CO-012 | RECLASSIFIED — design-intent question, not filed |
 | G12 | A locked **account** is refused at query time on a token issued before the lock | {OBSERVED} — PR#14 breaking change | SR-GQL-130 | NOT-RUN (case authored, never executed) |
 | G13 | Deep-link / refresh of a filtered URL restores the view or degrades safely, never losing customer scope | UIP-DEEP/REFRESH | SR-CO-014 | **PASS** |
-| G14 | A failed or slow facet request leaves the filter drawer honest, not stale from the previous customer | VCST-5589 precedent | SR-CO-015 | **PASS** |
+| G14 | A failed or slow facet request leaves the filter drawer honest, not stale from the previous customer | VCST-5589 precedent | SR-CO-015 | **BLOCKED** (corrected 09-04 — was **PASS**; the *failed-or-slow* mechanism was never exercised: no route/abort/throttle tool on the MCP lane. The two interception-free assertions did pass) |
 | G15 | Multi-organization customer: only the navigated-from org's orders show, and the page says which org | PROPOSED-BL-SR-033 | SR-GQL-122 | **PASS** |
 
 ## Visual axis (`visual_surface: true` — design + accessibility, `skills/qa-test/visual-axis.md`)
@@ -254,3 +254,27 @@ decision, not the severity floor: only the Low would have been withheld by the f
 **Not run:** `5r` C2 release regression · `5g` promotion (the 6 new cases stay `Draft`; note
 `tc:promote` can never re-promote, so `SR-CO-032/034/035/036` are promotable from **this** run id only) ·
 `5h` documentation. **Not measured:** CLS, screen-reader output, non-Chromium accessible-name behaviour.
+
+## Verdict corrections — applied 2026-09-04 after the C1 run (5h cross-check)
+
+The two tables above were filled at 5e from the **2026-09-02** run and were not reconciled against
+`REG-2026-09-04-1015`. Cross-checking every cited case against that run's own `suite-097-results.json`
+found **nine rows whose table verdict differed from the executed case verdict**. Only one was wrong:
+
+| Row | Table said | Executed | Disposition |
+|---|---|---|---|
+| **G14** | PASS | **BLOCKED** | **CORRECTED.** A BLOCKED is not a PASS — the *failed-or-slow* facet mechanism was never exercised |
+| C6 | PASS | FAIL | Verdict **kept**; note added. The condition's own assertion passed; assertion 2 was over-specified and contradicted C5, which passed |
+| G6 | PASS | FAIL | Verdict **kept** for the distinctness clause; the wording finding is now named in the row |
+| G10 | PASS | FAIL | Verdict **kept**; the FAIL is the non-existent Reorder control, already classified here as a PR-body inaccuracy |
+| C1 C2 C4 C10 C11 | PASS | FAIL | Verdicts **kept** — all five are covered by `SR-CO-001`, whose failing assertion is G10's Reorder. No C-row concerns Reorder |
+| C12 | PASS | not in C1 | Re-marked **UNVERIFIED on this build** (counter-evidence from `SR-CO-001`) |
+
+**The structural finding matters more than the one corrected cell.** `SR-CO-001` alone covers **five**
+conditions under a single case-level verdict, so its FAIL can only either falsely red all five or be
+silently ignored for all five — and it was silently ignored. A condition table keyed on case-level
+verdicts cannot express "assertion 3 of 9 failed, and it belongs to a different condition". Filling the
+Verdict column **per assertion**, not per case, is the fix; recorded here rather than papered over.
+
+Not a re-litigation of the run: the verdict stays **PASS WITH NOTES**. G14 moving PASS → BLOCKED removes
+a claim that was never earned; it does not add a failure.

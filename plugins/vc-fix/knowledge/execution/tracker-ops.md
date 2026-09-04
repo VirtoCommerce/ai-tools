@@ -83,12 +83,23 @@ resolve/comment/transition ops and for commit/PR cross-links (Azure: `AB#12345`)
 > markup** (`h2.`, `*bold*`, `{code}…{code}`, `{{mono}}`) — it renders as literal text. Summaries/titles
 > are plain text, no markup.
 >
+> **ONE carve-out, and only one — a comment that must DISPLAY screenshots cannot be Markdown.**
+> A Markdown image reference (`![alt](path)`) and a prose file path both post `200 OK` and render
+> NOTHING. Such a comment is attached first, then written as **wiki markup** with
+> `!filename.png|width=700!` through the **v2** comment API, and VERIFIED from
+> `?expand=renderedBody` (one `<img …/attachment/content/N>` per image, zero surviving `!….png!`,
+> zero `<span class="error">`). On Azure Boards the equivalent is `ado.mjs upload-attachment`
+> then an inline `<img src="{url}">`. Embedding is MANDATORY for any UI claim, not a style choice —
+> policy and the verification gate: `.claude/rules/reports.md` §5.0.
+>
 > **Comment & body style — clear, brief, understandable (both trackers).** Format alone isn't enough;
 > the content must read fast. Every comment/field body you push (bug filing, `/qa-fix` status,
 > `/qa-verify-fix` verdict, `/qa-defect` note) is: **structured** (Markdown headings / short bullets /
 > a small table, never a wall of text); **brief — lead with the outcome** (`✅ Verified fixed @ build X`,
 > `Routed to vc-module-cart, PR #NN`), then only the evidence that matters — no investigation logs or
-> step-by-step narration; **evidence referenced, not inlined** (PR link, screenshot, BL-* id), obeying
+> step-by-step narration; **evidence referenced, not inlined** (PR link, BL-* id) — **except a
+> SCREENSHOT, which is always embedded inline per the carve-out above; a referenced image is an
+> invisible one** — obeying
 > the size caps in `.claude/rules/reports.md`; and **verified to render** (bold/lists/code actually
 > format) — a literal `**` / `| … |` wall means the wrong dialect was sent, so fix and re-post.
 Auth (never passwords): Jira via the Atlassian MCP OAuth (or `JIRA_API_TOKEN`+`JIRA_EMAIL`);
