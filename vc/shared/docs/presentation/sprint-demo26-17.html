@@ -1,0 +1,1130 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprint 26-17 Demo — Agentic QA</title>
+<style>
+  :root {
+    --ink:#0d141f; --ink-2:#131c2b; --surface:#f7f9fb; --surface-2:#ffffff; --card:#ffffff;
+    --line:#dbe3ec; --text:#16202e; --text-soft:#4d5c70; --text-faint:#7c8aa0;
+    --accent:#0f9d8f; --accent-ink:#0a6e64; --accent-soft:#e2f4f1;
+    --agent:#5566e0; --agent-soft:#e8eafb;
+    --pass:#1f9d57; --warn:#c98a1a; --crit:#d1495b;
+    --shadow:0 1px 2px rgba(13,20,31,.05), 0 12px 32px -14px rgba(13,20,31,.22);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  /* Deck is committed to a light visual world by request. */
+  :root[data-theme="dark"] {
+    --ink:#05090f; --ink-2:#0a1119; --surface:#0b111a; --surface-2:#0f1824; --card:#111c2a;
+    --line:#243447; --text:#e7edf5; --text-soft:#9fb0c4; --text-faint:#6a7c92;
+    --accent:#3fd0bf; --accent-ink:#7fe6da; --accent-soft:#0f2b2a;
+    --agent:#8b98f2; --agent-soft:#181f3a;
+    --pass:#43c47e; --warn:#e0ab53; --crit:#f0788a;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 40px -18px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; }
+  body {
+    font-family: var(--sans);
+    background: var(--surface);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .deck { height:100vh; width:100vw; position:relative; }
+
+  .slide {
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; justify-content:center;
+    padding: clamp(28px, 6vw, 96px);
+    padding-bottom: 92px;
+    opacity:0; visibility:hidden;
+    transform: translateY(14px);
+    transition: opacity .45s ease, transform .45s ease, visibility .45s;
+    overflow-y:auto;
+  }
+  .slide.active { opacity:1; visibility:visible; transform:none; }
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition:none; transform:none; }
+  }
+  .wrap { width:100%; max-width:1080px; margin:0 auto; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px; letter-spacing:.22em; text-transform:uppercase;
+    color: var(--accent-ink); font-weight:600;
+    display:flex; align-items:center; gap:10px; margin:0 0 22px;
+  }
+  .eyebrow::before { content:""; width:26px; height:2px; background:var(--accent); display:inline-block; }
+  .eyebrow.j { color:var(--agent); }
+  .eyebrow.j::before { background:var(--agent); }
+
+  h1 { font-size: clamp(34px, 6.2vw, 72px); line-height:1.03; letter-spacing:-.03em;
+       font-weight:800; margin:0 0 20px; text-wrap:balance; }
+  h2 { font-size: clamp(26px, 4vw, 46px); line-height:1.06; letter-spacing:-.025em;
+       font-weight:780; margin:0 0 14px; text-wrap:balance; }
+  .lead { font-size: clamp(16px, 2.1vw, 22px); line-height:1.5; color:var(--text-soft);
+          max-width:64ch; margin:0; }
+  p { line-height:1.55; }
+  .mono { font-family: var(--mono); }
+  .cmd {
+    font-family: var(--mono); font-size:.88em; font-weight:600;
+    color: var(--accent-ink); background: var(--accent-soft);
+    padding: 2px 8px; border-radius:6px; white-space:nowrap;
+    border:1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+  .cmd.j { color:var(--agent); background:var(--agent-soft);
+    border-color:color-mix(in srgb, var(--agent) 30%, transparent); }
+
+  /* ---- title slide ---- */
+  .title-grid { display:flex; flex-direction:column; gap:34px; }
+  .thesis { display:flex; gap:14px; flex-wrap:wrap; margin-top:6px; }
+  .thesis .chip {
+    font-family:var(--mono); font-size:13px; font-weight:600; padding:9px 14px; border-radius:999px;
+    border:1px solid var(--line); background:var(--card); color:var(--text);
+  }
+  .thesis .chip b { color:var(--accent-ink); }
+  .kicker { font-family:var(--mono); font-size:13.5px; color:var(--text-soft); letter-spacing:.02em; }
+  .kicker b { color:var(--text); font-weight:700; }
+
+  .metrics { display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line); }
+  .metrics div { padding:14px 26px 14px 0; margin-right:26px; border-right:1px solid var(--line); }
+  .metrics div:last-child { border-right:0; margin-right:0; }
+  .metrics .n { font-family:var(--mono); font-size:24px; font-weight:700; letter-spacing:-.02em;
+    display:block; font-variant-numeric:tabular-nums; }
+  .metrics .k { font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--text-faint); margin-top:4px; display:block; }
+
+  /* ---- section divider ---- */
+  .divider { background:
+      radial-gradient(120% 90% at 100% 0%, var(--accent-soft), transparent 55%),
+      var(--surface); }
+  .divider.j { background:
+      radial-gradient(120% 90% at 100% 0%, var(--agent-soft), transparent 55%),
+      var(--surface); }
+  .divider .part { font-family:var(--mono); font-size:13px; letter-spacing:.24em; text-transform:uppercase;
+     color:var(--text-faint); font-weight:600; margin:0 0 16px; }
+  .divider h1 { max-width:15ch; }
+  .divider .sub { font-size:clamp(16px,2vw,21px); color:var(--text-soft); max-width:58ch; margin:18px 0 0; line-height:1.5; }
+  .rail { display:flex; gap:10px; flex-wrap:wrap; margin-top:30px; }
+  .rail span { font-family:var(--mono); font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:8px;
+     background:var(--card); border:1px solid var(--line); color:var(--text-soft); }
+
+  /* ---- pillar cards ---- */
+  .pillars { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:10px; }
+  .pillar { background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px 24px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+    display:flex; flex-direction:column; }
+  .pillar::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent); }
+  .pillar.jx::before { background:var(--agent); }
+  .pillar.gx::before { background:var(--pass); }
+  .pillar .pk { font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; }
+  .pillar h3 { font-size:20px; letter-spacing:-.02em; margin:8px 0 10px; line-height:1.14; }
+  .pillar p { margin:0; font-size:14.5px; color:var(--text-soft); line-height:1.5; }
+  /* margin-top:auto pins this block to the card floor, so the dashed rules line up
+     across the three cards regardless of how long each paragraph runs. Don't add a
+     margin-top override below this — it would cancel the auto and break the alignment. */
+  .pillar .blind { margin-top:auto; padding-top:12px; border-top:1px dashed var(--line);
+    font-family:var(--mono); font-size:12.5px; color:var(--crit); line-height:1.45; }
+  .pillar .blind b { color:var(--text-faint); font-weight:600; display:block; letter-spacing:.12em;
+    text-transform:uppercase; font-size:10.5px; margin-bottom:4px; }
+
+  /* ---- feature slide layout ---- */
+  .feat { display:grid; grid-template-columns: 1.05fr .95fr; gap:clamp(24px,4vw,56px); align-items:center; }
+  .feat .body ul { margin:18px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:14px; }
+  .feat .body li { position:relative; padding-left:30px; font-size:15.5px; line-height:1.5; color:var(--text); }
+  .feat .body li::before {
+    content:"✓"; position:absolute; left:0; top:-1px; color:var(--accent);
+    font-weight:800; font-family:var(--mono); font-size:15px;
+  }
+  .feat.j .body li::before { color:var(--agent); }
+  .feat .body li b { font-weight:700; }
+  .feat .body li span { color:var(--text-soft); }
+
+  /* terminal panel */
+  .term { background:var(--ink); border:1px solid var(--line); border-radius:14px; overflow:hidden;
+    box-shadow:var(--shadow); font-family:var(--mono); font-size:13.5px; line-height:1.7; }
+  .term .bar { background:var(--ink-2); padding:11px 15px; display:flex; align-items:center; gap:7px;
+    border-bottom:1px solid rgba(255,255,255,.07); }
+  .term .bar i { width:11px; height:11px; border-radius:50%; display:inline-block; }
+  .term .bar i:nth-child(1){ background:#e0788a; }
+  .term .bar i:nth-child(2){ background:#e0ab53; }
+  .term .bar i:nth-child(3){ background:#43c47e; }
+  .term .bar .t { margin-left:8px; color:#7c8aa0; font-size:12px; letter-spacing:.03em; }
+  .term .body2 { padding:18px 18px; color:#c5d2e2; white-space:pre-wrap; }
+  .term .body2 .p { color:#3fd0bf; }
+  .term .body2 .c { color:#e7edf5; font-weight:600; }
+  .term .body2 .g { color:#43c47e; }
+  .term .body2 .w { color:#e0ab53; }
+  .term .body2 .d { color:#6a7c92; }
+  .term .body2 .a { color:#8b98f2; }
+  .term .body2 .r { color:#f0788a; }
+  .term.wide { font-size:13px; }
+
+  .tag-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+  .tag { font-family:var(--mono); font-size:12px; font-weight:600; padding:5px 11px; border-radius:7px;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--text-soft); }
+  .tag.j { color:var(--agent); border-color:color-mix(in srgb,var(--agent) 34%,var(--line)); background:var(--agent-soft); }
+
+  /* proud / grid of 4 */
+  .proud { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:6px; }
+  .proud .p { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px;
+    box-shadow:var(--shadow); }
+  .proud .p .h { display:flex; align-items:center; gap:11px; font-weight:750; font-size:16.5px; letter-spacing:-.01em; }
+  .proud .p .h .m { font-family:var(--mono); color:var(--accent-ink); font-size:13.5px; font-weight:800;
+     background:var(--accent-soft); border-radius:7px; padding:3px 9px; white-space:nowrap; }
+  .proud .p .h .m.j { color:var(--agent); background:var(--agent-soft); }
+  .proud .p p { margin:10px 0 0; font-size:14px; color:var(--text-soft); line-height:1.5; }
+
+  /* ---- pipeline schema: 5 steps × owner / goal / gate, then the outputs ---- */
+  .schema { display:grid; grid-template-columns:4.4rem repeat(5,1fr); gap:9px 10px; margin-top:4px; align-items:stretch; }
+  .schema .rl { font-family:var(--mono); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; display:flex; align-items:center; justify-content:flex-end;
+    padding-right:4px; text-align:right; }
+
+  .schema .st { background:var(--card); border:1px solid var(--line); border-radius:11px;
+    padding:11px 12px 12px; box-shadow:var(--shadow); position:relative; text-align:center; }
+  .schema .st .n { font-family:var(--mono); font-size:12px; font-weight:800; color:#fff;
+    background:var(--agent); width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
+    margin:0 auto 7px; }
+  .schema .st .nm { font-size:14px; font-weight:750; letter-spacing:-.01em; line-height:1.2; }
+  /* connector between step heads */
+  .schema .st::after { content:""; position:absolute; top:22px; right:-10px; width:10px; height:1.5px;
+    background:var(--line); }
+  /* the 6th grid child is the LAST step card (row 1 = row-label + 5 steps). `:last-child`
+     would never match here — the grid's last child is a gate cell, not a step. */
+  .schema .st:nth-child(6)::after { display:none; }
+
+  .schema .cell { background:var(--surface-2); border:1px solid var(--line); border-radius:9px;
+    padding:10px 11px; font-size:12.5px; line-height:1.38; color:var(--text-soft); display:flex;
+    align-items:center; justify-content:center; text-align:center; }
+  .schema .cell.owner { font-family:var(--mono); font-size:11.5px; color:var(--text); font-weight:600; }
+  .schema .cell.goal { color:var(--text); }
+
+  .schema .gate { border-radius:9px; padding:9px 8px; font-family:var(--mono); font-size:11px;
+    font-weight:700; text-align:center; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:3px; letter-spacing:.04em; }
+  .schema .gate.soft { background:var(--surface-2); border:1px dashed var(--line); color:var(--text-faint); }
+  .schema .gate.hard { background:var(--agent); border:1px solid var(--agent); color:#fff; }
+  .schema .gate small { font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:0;
+    opacity:.9; text-transform:none; }
+
+  .ends { margin-top:20px; border:1px solid var(--line); border-left:4px solid var(--pass);
+    border-radius:12px; background:var(--card); box-shadow:var(--shadow); padding:15px 20px;
+    display:grid; grid-template-columns:8.2rem 1fr; gap:16px; align-items:center; }
+  .ends .lb { font-family:var(--mono); font-size:10px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--pass); font-weight:700; line-height:1.4; }
+  .ends .items { display:flex; flex-wrap:wrap; gap:8px; }
+  .ends .items span { font-size:12.5px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:7px; padding:6px 11px; color:var(--text); }
+  .ends .items span b { color:var(--pass); font-weight:700; }
+  .ends .items span.human { border-color:color-mix(in srgb,var(--warn) 50%,var(--line)); background:#fdf7ea; }
+  :root[data-theme="dark"] .ends .items span.human { background:#2a2113; }
+  .ends .items span.human b { color:var(--warn); }
+  @media (max-width:1000px){ .schema { grid-template-columns:3.4rem repeat(5,1fr); gap:6px; }
+    .schema .st .nm { font-size:12px; } .schema .cell { font-size:11px; } }
+
+  /* value rows — the "before / after" of a pipeline change */
+  .value { display:flex; flex-direction:column; gap:0; margin-top:6px;
+    border-top:1px solid var(--line); }
+  .value .row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);
+    gap:10px 30px; padding:17px 0; border-bottom:1px solid var(--line); align-items:baseline; }
+  .value .was { font-size:14.5px; color:var(--text-faint); }
+  .value .was b { display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--text-faint); font-weight:600; margin-bottom:5px; }
+  .value .now { font-size:15.5px; color:var(--text); line-height:1.5; }
+  .value .now b { display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--agent); font-weight:600; margin-bottom:5px; }
+  .value .now em { font-style:normal; font-weight:700; }
+  @media (max-width:860px){ .value .row { grid-template-columns:1fr; gap:4px; } }
+
+  /* gates — two columns of different gate kinds */
+  .gatecols { display:grid; grid-template-columns:1.1fr .9fr; gap:clamp(20px,3.5vw,44px); margin-top:8px; }
+  .gatecol h3 { font-size:17px; letter-spacing:-.01em; margin:0 0 4px; }
+  .gatecol .ch { font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; margin-bottom:12px; display:block; }
+  .gatecol ol, .gatecol ul { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px; }
+  .gatecol li { background:var(--card); border:1px solid var(--line); border-radius:11px;
+    padding:13px 16px; font-size:14.5px; line-height:1.5; box-shadow:var(--shadow); }
+  .gatecol li .gk { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--agent);
+    margin-right:9px; }
+  .gatecol.det li .gk { color:var(--accent-ink); }
+  .gatecol li span { color:var(--text-soft); }
+  @media (max-width:860px){ .gatecols { grid-template-columns:1fr; } }
+
+  .callout { margin-top:26px; padding:18px 22px; border-radius:12px; border:1px dashed color-mix(in srgb,var(--accent) 45%,var(--line));
+     background:var(--accent-soft); color:var(--accent-ink); font-size:15.5px; line-height:1.5; }
+  .callout b { color:var(--accent-ink); }
+  .callout.j { border-color:color-mix(in srgb,var(--agent) 45%,var(--line)); background:var(--agent-soft); color:var(--agent); }
+  .callout.j b { color:var(--agent); }
+
+  /* chrome */
+  .progress { position:fixed; top:0; left:0; height:3px; background:var(--accent); z-index:40; transition:width .45s ease; }
+  .hud { position:fixed; bottom:20px; left:0; right:0; z-index:40; display:flex; justify-content:center;
+    align-items:center; gap:18px; pointer-events:none; }
+  .hud .grp { pointer-events:auto; display:flex; align-items:center; gap:14px;
+    background:color-mix(in srgb,var(--card) 88%, transparent); backdrop-filter:blur(8px);
+    border:1px solid var(--line); border-radius:999px; padding:7px 10px 7px 16px; box-shadow:var(--shadow); }
+  .counter { font-family:var(--mono); font-size:13px; color:var(--text-soft); font-variant-numeric:tabular-nums; }
+  .counter b { color:var(--text); }
+  .dots { display:flex; gap:7px; }
+  .dots button { width:8px; height:8px; border-radius:50%; border:none; background:var(--line); cursor:pointer; padding:0;
+    transition:background .2s, transform .2s; }
+  .dots button.on { background:var(--accent); transform:scale(1.35); }
+  .dots button.sec { background:color-mix(in srgb,var(--agent) 50%, var(--line)); }
+  .dots button.on.sec { background:var(--agent); }
+  .navbtn { width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:var(--surface-2);
+    color:var(--text); cursor:pointer; font-size:15px; display:grid; place-items:center; transition:background .15s,border-color .15s; }
+  .navbtn:hover { border-color:var(--accent); color:var(--accent-ink); }
+  .navbtn:focus-visible, .dots button:focus-visible, .toggle button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  .toggle { position:fixed; top:16px; right:16px; z-index:40; display:flex; gap:8px; }
+  .toggle button { font-family:var(--mono); font-size:12px; font-weight:600; padding:7px 12px; border-radius:8px;
+    border:1px solid var(--line); background:color-mix(in srgb,var(--card) 88%, transparent); color:var(--text-soft);
+    cursor:pointer; backdrop-filter:blur(8px); }
+  .toggle button:hover { color:var(--accent-ink); border-color:var(--accent); }
+
+  .notes { position:fixed; left:0; right:0; bottom:0; z-index:50; transform:translateY(102%);
+    transition:transform .3s ease; background:var(--ink); color:#c5d2e2; border-top:2px solid var(--accent);
+    padding:20px clamp(28px,6vw,96px) 24px; max-height:44vh; overflow-y:auto; box-shadow:0 -18px 40px -18px rgba(0,0,0,.5); }
+  .notes.open { transform:none; }
+  .notes .nh { font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:#3fd0bf;
+    font-weight:700; margin-bottom:10px; }
+  .notes .nb { font-size:14.5px; line-height:1.6; max-width:82ch; }
+  .notes .nb strong { color:#e7edf5; }
+
+  @media (max-width: 860px) {
+    .pillars { grid-template-columns:1fr; }
+    .feat { grid-template-columns:1fr; }
+    .proud { grid-template-columns:1fr; }
+    .slide { padding-bottom:96px; }
+  }
+
+  /* ---- 26-17 additions: figures, axis table, evidence strip ---- */
+
+  /* diagrams inherit the deck tokens; nothing here hardcodes a hue that only
+     works on one ground. Stroke/text default to currentColor via .fig svg. */
+  .fig { margin:0; }
+  .fig svg { display:block; width:100%; max-width:100%; height:auto; color:var(--text-soft); }
+  .fig figcaption { font-family:var(--mono); font-size:11.5px; line-height:1.5; color:var(--text-faint);
+    margin-top:11px; letter-spacing:.01em; }
+  .fig .sv-box { fill:var(--card); stroke:var(--line); }
+  .fig .sv-box-a { fill:var(--accent-soft); stroke:var(--accent); }
+  .fig .sv-box-j { fill:var(--agent-soft); stroke:var(--agent); }
+  .fig .sv-t { fill:var(--text); font-family:var(--sans); font-weight:650; }
+  .fig .sv-s { fill:var(--text-faint); font-family:var(--mono); }
+  .fig .sv-a { stroke:var(--text-faint); fill:none; }
+  .fig .sv-a-hot { stroke:var(--accent); fill:none; }
+  .fig .sv-a-j { stroke:var(--agent); fill:none; }
+  .fig .sv-dead { stroke:var(--crit); fill:none; }
+
+  /* axis contract table */
+  .axes { width:100%; border-collapse:collapse; margin-top:8px; font-size:13.5px; }
+  .axes th { font-family:var(--mono); font-size:10.5px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; text-align:left; padding:0 14px 9px 0;
+    border-bottom:1px solid var(--line); }
+  .axes td { padding:12px 14px 12px 0; border-bottom:1px solid var(--line); vertical-align:top;
+    color:var(--text-soft); line-height:1.45; }
+  .axes td.k { font-family:var(--mono); font-size:12.5px; font-weight:700; color:var(--text); white-space:nowrap; }
+  .axes td.k em { display:block; font-style:normal; font-family:var(--sans); font-size:11px;
+    font-weight:600; color:var(--text-faint); letter-spacing:.04em; margin-top:3px; }
+  .axes td.f { font-family:var(--mono); font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .axes td.f.closed { color:var(--crit); }
+  .axes td.f.open { color:var(--pass); }
+  .axes td.f.sub { color:var(--agent); }
+  .axes tr:last-child td { border-bottom:0; }
+  @media (max-width:860px){ .axes, .axes tbody, .axes tr, .axes td { display:block; }
+    .axes thead { display:none; } .axes tr { padding:12px 0; border-bottom:1px solid var(--line); }
+    .axes td { border:0; padding:2px 0; } }
+
+  /* evidence strip — a measured claim with its source */
+  .ev { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:24px; }
+  .ev .e { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px;
+    box-shadow:var(--shadow); }
+  .ev .e .n { font-family:var(--mono); font-size:26px; font-weight:800; letter-spacing:-.03em;
+    color:var(--crit); display:block; font-variant-numeric:tabular-nums; line-height:1; }
+  .ev .e .n.ok { color:var(--pass); }
+  .ev .e .n.j { color:var(--agent); }
+  .ev .e p { margin:9px 0 0; font-size:13px; line-height:1.45; color:var(--text-soft); }
+  @media (max-width:860px){ .ev { grid-template-columns:repeat(2,1fr); } }
+
+  /* two-column split for a before/after argument that needs prose either side */
+  .split2 { display:grid; grid-template-columns:1fr 1fr; gap:clamp(20px,3.5vw,44px); margin-top:10px;
+    align-items:start; }
+  @media (max-width:860px){ .split2 { grid-template-columns:1fr; } }
+
+  /* ticket ledger */
+  .ledger { display:flex; flex-direction:column; border-top:1px solid var(--line); margin-top:8px; }
+  .ledger .r { display:grid; grid-template-columns:7.5rem 1fr 8.5rem; gap:18px; padding:14px 0;
+    border-bottom:1px solid var(--line); align-items:baseline; }
+  .ledger .r .key { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent-ink); }
+  .ledger .r .what { font-size:14.5px; line-height:1.45; color:var(--text); }
+  .ledger .r .what span { color:var(--text-soft); }
+  .ledger .r .st { font-family:var(--mono); font-size:10.5px; letter-spacing:.13em; text-transform:uppercase;
+    font-weight:700; text-align:right; color:var(--pass); }
+  .ledger .r .st.wip { color:var(--warn); }
+  @media (max-width:860px){ .ledger .r { grid-template-columns:1fr; gap:4px; }
+    .ledger .r .st { text-align:left; } }
+</style>
+
+<div class="progress" id="progress"></div>
+
+<div class="toggle">
+  <button id="themeBtn" title="Toggle light / dark">◐ theme</button>
+  <button id="notesBtn" title="Presenter notes (N)">▤ notes</button>
+</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 · TITLE -->
+  <section class="slide active">
+    <div class="wrap title-grid">
+      <p class="eyebrow">Sprint 26-17 · Agentic QA</p>
+      <div>
+        <h1>The pipeline learned what to look at, before it looks.</h1>
+        <p class="lead">Last sprint the marketplace gained a second plugin. This sprint the
+        <b>internal pipeline</b> gained a memory and a set of eyes: it reads what already exists,
+        names the mechanism under test before it writes a single case, and checks four things about
+        the change that nothing was checking at all.</p>
+      </div>
+      <div class="metrics">
+        <div><span class="n">26</span><span class="k">PRs merged</span></div>
+        <div><span class="n">5</span><span class="k">pre-flight axes</span></div>
+        <div><span class="n">2</span><span class="k">paths, sharply split</span></div>
+        <div><span class="n">3</span><span class="k">verifier gates</span></div>
+      </div>
+      <p class="kicker">Running order: <b>why the corpus measured the wrong thing</b> →
+      <b>the fault model and the five axes</b> → <b>the machinery underneath</b> → questions.</p>
+    </div>
+  </section>
+
+  <!-- 2 · SECTION A DIVIDER -->
+  <section class="slide divider">
+    <div class="wrap">
+      <p class="part">Section one</p>
+      <h1>/qa-test grew up</h1>
+      <p class="sub">Six PRs on one command. It stopped being a script that walks screens and became a
+      pipeline that names a mechanism, derives what to check, and spends effort in proportion to what
+      is actually at risk.</p>
+      <div class="rail">
+        <span>Step 1e — a fault model</span>
+        <span>FAST restored</span>
+        <span>5 derived axes</span>
+        <span>discovery lane 3x</span>
+        <span>--iterate round 2</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · THE DIAGNOSIS -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Why any of this</p>
+      <h2>A suite can be well-written, strongly asserted, and unable to notice the feature is broken.</h2>
+      <p class="lead">Loyalty Missions is the case that drove the whole sprint. Every case was
+      individually defensible. Collectively they tested the screens and never the mechanism.</p>
+      <div class="ev">
+        <div class="e"><span class="n">0</span>
+          <p>orders placed by the storefront suite — for a feature whose entire premise is that
+          <b>placing an order</b> makes progress.</p></div>
+        <div class="e"><span class="n">11%</span>
+          <p>coverage of the mechanism end to end: order → progress → completion → points credited.</p></div>
+        <div class="e"><span class="n">1</span>
+          <p>case on the last link — spending what the feature grants — written on the final day.</p></div>
+        <div class="e"><span class="n">0</span>
+          <p>BL-* invariants existed for the domain, so the corpus <b>recorded behaviour</b> instead of
+          judging it.</p></div>
+      </div>
+      <div class="callout" style="margin-top:26px">
+        And the ranker scored that suite <b>strong</b>. Assertion strength tells you whether a check
+        <em>can</em> fail; chain coverage tells you whether anyone cares if it does. Only the second one
+        culls a case that tests nothing.
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · THE FAULT MODEL -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Step 1e · the fix</p>
+      <h2>Name the chain first. Every other technique refines a link that is already named.</h2>
+      <p class="lead" style="margin-bottom:24px">EP, BVA, decision tables, state transitions, pairwise —
+      all parameter-space techniques. None can name a value chain, so run against an unnamed one they
+      faithfully produce per-screen checks that pass while the feature does not work.</p>
+
+      <figure class="fig">
+        <svg viewBox="0 0 1000 252" role="img"
+             aria-label="A five-link value chain from placing an order to points being spendable. One journey case traverses every link; parameter-space techniques only refine the first link, and the last link is left unreached.">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="currentColor"></path>
+            </marker>
+            <marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"></path>
+            </marker>
+          </defs>
+
+          <text class="sv-s" x="20" y="22" font-size="11">Technique:FLOW — the [JOURNEY] case, authored first</text>
+          <path class="sv-a-hot" d="M95 30 L95 46 L903 46 L903 60" stroke-width="1.6" marker-end="url(#ahA)"></path>
+
+          <rect class="sv-box" x="20" y="66" width="150" height="56" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="95" y="90" font-size="12.5" text-anchor="middle">Place an order</text>
+          <text class="sv-s" x="95" y="107" font-size="10" text-anchor="middle">trigger</text>
+
+          <rect class="sv-box" x="222" y="66" width="150" height="56" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="297" y="90" font-size="12.5" text-anchor="middle">Progress accrues</text>
+          <text class="sv-s" x="297" y="107" font-size="10" text-anchor="middle">effect</text>
+
+          <rect class="sv-box" x="424" y="66" width="150" height="56" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="499" y="90" font-size="12.5" text-anchor="middle">Balance persisted</text>
+          <text class="sv-s" x="499" y="107" font-size="10" text-anchor="middle">state</text>
+
+          <rect class="sv-box" x="626" y="66" width="150" height="56" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="701" y="90" font-size="12.5" text-anchor="middle">Shown to the user</text>
+          <text class="sv-s" x="701" y="107" font-size="10" text-anchor="middle">surface</text>
+
+          <rect class="sv-box-a" x="828" y="66" width="150" height="56" rx="9" stroke-width="1.4"></rect>
+          <text class="sv-t" x="903" y="90" font-size="12.5" text-anchor="middle">Points spendable</text>
+          <text class="sv-s" x="903" y="107" font-size="10" text-anchor="middle">what it unlocks</text>
+
+          <g stroke-width="1.3">
+            <line class="sv-a" x1="170" y1="94" x2="215" y2="94" marker-end="url(#ah)"></line>
+            <line class="sv-a" x1="372" y1="94" x2="417" y2="94" marker-end="url(#ah)"></line>
+            <line class="sv-a" x1="574" y1="94" x2="619" y2="94" marker-end="url(#ah)"></line>
+            <line class="sv-a" x1="776" y1="94" x2="821" y2="94" marker-end="url(#ah)"></line>
+          </g>
+          <g class="sv-s" font-size="9" text-anchor="middle">
+            <text x="193" y="86">writes</text>
+            <text x="395" y="86">saves</text>
+            <text x="597" y="86">renders</text>
+            <text x="799" y="86">unlocks</text>
+          </g>
+
+          <path class="sv-a" d="M20 140 L20 152 L170 152 L170 140" stroke-width="1.2"></path>
+          <text class="sv-s" x="95" y="172" font-size="10.5" text-anchor="middle">EP · BVA · DT · ST · PW</text>
+          <text class="sv-s" x="95" y="187" font-size="10.5" text-anchor="middle">refine only THIS link</text>
+          <text class="sv-t" x="95" y="209" font-size="11.5" text-anchor="middle">where the cases piled up</text>
+
+          <path class="sv-dead" d="M828 140 L828 152 L978 152 L978 140" stroke-width="1.2" stroke-dasharray="4 4"></path>
+          <text class="sv-s" x="903" y="172" font-size="10.5" text-anchor="middle">reached last,</text>
+          <text class="sv-s" x="903" y="187" font-size="10.5" text-anchor="middle">or not at all</text>
+          <text class="sv-t" x="903" y="209" font-size="11.5" text-anchor="middle" fill="var(--crit)">the hole</text>
+
+          <line class="sv-a" x1="20" y1="232" x2="978" y2="232" stroke-width="1" stroke-dasharray="3 5"></line>
+          <text class="sv-s" x="499" y="248" font-size="10" text-anchor="middle">Part 0 states the chain in the reader&#8217;s own words, draws it, and publishes a variants × links matrix with no blank cells</text>
+        </svg>
+        <figcaption>The chain is what a scenario matrix gets built against, one link at a time. A blank
+          matrix cell is a hole nobody can see; an unresolved reverse edge is a finding to report.</figcaption>
+      </figure>
+
+      <div class="tag-row">
+        <span class="tag j">condition space per link</span>
+        <span class="tag j">explicit N → M reduction</span>
+        <span class="tag j">cell · hypothesis · archetype · technique · oracle</span>
+        <span class="tag j">gated before a case exists</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · FAST vs FULL -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Step 1a · routing</p>
+      <h2>FAST is a checklist and nothing else — that promise is now literally true.</h2>
+      <p class="lead" style="margin-bottom:24px">The old split dropped the two analysis agents and left
+      everything expensive marked <em>both paths, always</em>. Most recorded runs take FAST, so that is
+      exactly where the cost was sitting.</p>
+
+      <figure class="fig">
+        <svg viewBox="0 0 1000 214" role="img"
+             aria-label="The full pipeline drawn as eight stages left to right, with a bypass arc showing that the FAST path skips analysis, the fault model, authoring and promotion, going straight from pre-flight to execution.">
+          <defs>
+            <marker id="bh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="currentColor"></path>
+            </marker>
+            <marker id="bhA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"></path>
+            </marker>
+          </defs>
+
+          <!-- the FAST bypass -->
+          <path class="sv-a-hot" d="M69 104 L69 40 L684 40 L684 100" stroke-width="2" marker-end="url(#bhA)"></path>
+          <text x="376" y="31" font-size="11.5" text-anchor="middle" font-weight="700"
+                fill="var(--accent)" font-family="var(--mono)">FAST skips all of this</text>
+
+          <!-- shared stages -->
+          <rect class="sv-box" x="17" y="104" width="105" height="52" rx="9" stroke-width="1.3"></rect>
+          <text class="sv-t" x="69" y="127" font-size="11" text-anchor="middle">1a route</text>
+          <text class="sv-s" x="69" y="143" font-size="9" text-anchor="middle">flow + path</text>
+
+          <rect class="sv-box" x="140" y="104" width="105" height="52" rx="9" stroke-width="1.3"></rect>
+          <text class="sv-t" x="192" y="127" font-size="11" text-anchor="middle">1b pre-flight</text>
+          <text class="sv-s" x="192" y="143" font-size="9" text-anchor="middle">5 axes</text>
+
+          <!-- FULL-only stages -->
+          <rect class="sv-box-j" x="263" y="104" width="105" height="52" rx="9" stroke-width="1.3" stroke-dasharray="5 4"></rect>
+          <text class="sv-t" x="315" y="127" font-size="11" text-anchor="middle">1c ‖ 1d</text>
+          <text class="sv-s" x="315" y="143" font-size="9" text-anchor="middle">analysis</text>
+
+          <rect class="sv-box-j" x="386" y="104" width="105" height="52" rx="9" stroke-width="1.3" stroke-dasharray="5 4"></rect>
+          <text class="sv-t" x="438" y="127" font-size="11" text-anchor="middle">1e model</text>
+          <text class="sv-s" x="438" y="143" font-size="9" text-anchor="middle">fault model</text>
+
+          <rect class="sv-box-j" x="509" y="104" width="105" height="52" rx="9" stroke-width="1.3" stroke-dasharray="5 4"></rect>
+          <text class="sv-t" x="561" y="127" font-size="11" text-anchor="middle">3 · 3x</text>
+          <text class="sv-s" x="561" y="143" font-size="9" text-anchor="middle">author + explore</text>
+
+          <!-- shared again -->
+          <rect class="sv-box" x="632" y="104" width="105" height="52" rx="9" stroke-width="1.3"></rect>
+          <text class="sv-t" x="684" y="127" font-size="11" text-anchor="middle">4 execute</text>
+          <text class="sv-s" x="684" y="143" font-size="9" text-anchor="middle">+ regression</text>
+
+          <rect class="sv-box" x="755" y="104" width="105" height="52" rx="9" stroke-width="1.3"></rect>
+          <text class="sv-t" x="807" y="127" font-size="11" text-anchor="middle">5 close-out</text>
+          <text class="sv-s" x="807" y="143" font-size="9" text-anchor="middle">verdict + file</text>
+
+          <rect class="sv-box-j" x="878" y="104" width="105" height="52" rx="9" stroke-width="1.3" stroke-dasharray="5 4"></rect>
+          <text class="sv-t" x="930" y="127" font-size="11" text-anchor="middle">5g promote</text>
+          <text class="sv-s" x="930" y="143" font-size="9" text-anchor="middle">Draft → Automated</text>
+
+          <g stroke-width="1.2">
+            <line class="sv-a" x1="122" y1="130" x2="135" y2="130" marker-end="url(#bh)"></line>
+            <line class="sv-a" x1="245" y1="130" x2="258" y2="130" marker-end="url(#bh)"></line>
+            <line class="sv-a" x1="368" y1="130" x2="381" y2="130" marker-end="url(#bh)"></line>
+            <line class="sv-a" x1="491" y1="130" x2="504" y2="130" marker-end="url(#bh)"></line>
+            <line class="sv-a" x1="614" y1="130" x2="627" y2="130" marker-end="url(#bh)"></line>
+            <line class="sv-a" x1="737" y1="130" x2="750" y2="130" marker-end="url(#bh)"></line>
+            <line class="sv-a" x1="860" y1="130" x2="873" y2="130" marker-end="url(#bh)"></line>
+          </g>
+
+          <!-- verifier gates -->
+          <g>
+            <circle cx="561" cy="170" r="9" fill="var(--agent)"></circle>
+            <text x="561" y="174" font-size="9.5" text-anchor="middle" fill="#fff" font-weight="700" font-family="var(--mono)">V</text>
+            <circle cx="807" cy="170" r="9" fill="var(--agent)"></circle>
+            <text x="807" y="174" font-size="9.5" text-anchor="middle" fill="#fff" font-weight="700" font-family="var(--mono)">V</text>
+            <circle cx="930" cy="170" r="9" fill="var(--agent)"></circle>
+            <text x="930" y="174" font-size="9.5" text-anchor="middle" fill="#fff" font-weight="700" font-family="var(--mono)">V</text>
+          </g>
+          <text class="sv-s" x="983" y="197" font-size="10" text-anchor="end">V = a fresh verifier instance, never the step&#8217;s own doer · FULL only · one re-verify round, then STOP</text>
+        </svg>
+        <figcaption>FAST keeps the four shared stages and a committed checklist. Everything dashed is
+          FULL-only — and a FAST run therefore adds no regression coverage, which is why its checklist
+          is now a file rather than terminal output.</figcaption>
+      </figure>
+
+      <div class="callout" style="margin-top:22px">
+        Three axes were made <b>opt-in on FAST</b> for the same reason. Each had been made mandatory on a
+        locally reasonable argument of identical shape, and together they had returned FAST to four-to-six
+        agent dispatches. Measured across the recorded runs: the visual axis blocked <b>1</b>, the contract
+        axis <b>1</b>, coverage triage <b>0</b>. Arguments, not measurements — revisit at five.
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · THE FIVE AXES -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Step 1b · pre-flight</p>
+      <h2>Five things the pipeline now derives about a change — none of them asked.</h2>
+      <p class="lead" style="margin-bottom:20px">Each was added the same way: a token, a gate, a record,
+      a skill file. Generalising them into one contract exposed the difference the shared boilerplate
+      had been hiding.</p>
+      <table class="axes">
+        <thead>
+          <tr><th>Axis</th><th>The question it answers</th><th>On doubt</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="k">layer<em>2b</em></td>
+            <td>Which surface did this ticket move? It routes the release note and the documentation
+              audience — a wrong answer reaches the wrong readers.</td>
+            <td class="f closed">fails CLOSED</td>
+          </tr>
+          <tr>
+            <td class="k">visual_surface<em>2c</em></td>
+            <td>Does this change something a human <em>looks at</em>? Dispatches a design and
+              accessibility pass that the pipeline previously did not have at all.</td>
+            <td class="f open">fails open</td>
+          </tr>
+          <tr>
+            <td class="k">contract_surface<em>2d</em></td>
+            <td>Is the API contract we are about to read still current? It was read at four points and
+              refreshed at none, and the fixture gate passes clean against any age of cache.</td>
+            <td class="f open">fails open</td>
+          </tr>
+          <tr>
+            <td class="k">coverage_surface<em>2e</em></td>
+            <td>Which <em>existing</em> rows does this change make wrong? The corpus had only ever been
+              read for what it already covers.</td>
+            <td class="f open">fails open</td>
+          </tr>
+          <tr>
+            <td class="k">data_surface<em>2f</em></td>
+            <td>Does this ticket need data that does not exist yet? The only axis that can
+              <em>remove</em> work rather than add it.</td>
+            <td class="f sub">subtracts only</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout j" style="margin-top:24px">
+        The shared rule: <b>derived, never asked, never defaulted</b>, and always recorded with its
+        sources — because a null means the source was never consulted, which is a gap and not a zero.
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · WHAT COVERAGE TRIAGE FOUND -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Axis 2e · worked example</p>
+      <h2>A stale test case had exactly one way to be found: fail, and get triaged afterwards.</h2>
+      <div class="split2">
+        <div>
+          <p class="lead" style="font-size:16.5px">Three things compound so that it never even fails.</p>
+          <ul style="margin:18px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:13px;">
+            <li style="position:relative; padding-left:26px; font-size:14.5px; line-height:1.5;">
+              <b style="position:absolute; left:0; color:var(--crit); font-family:var(--mono);">1</b>
+              Suite selection maps changed <b>paths</b>, and the mapping misses — it excluded the three
+              suites the ticket was entirely about, then <em>reported itself fully mapped</em>.</li>
+            <li style="position:relative; padding-left:26px; font-size:14.5px; line-height:1.5;">
+              <b style="position:absolute; left:0; color:var(--crit); font-family:var(--mono);">2</b>
+              The change-scoped run then keeps only the critical tier, dropping the rows where most
+              label and route assertions live.</li>
+            <li style="position:relative; padding-left:26px; font-size:14.5px; line-height:1.5;">
+              <b style="position:absolute; left:0; color:var(--crit); font-family:var(--mono);">3</b>
+              A row that never executes is never triaged. Silently, with no error anywhere.</li>
+          </ul>
+          <div class="callout" style="margin-top:22px; font-size:14.5px">
+            One PR renamed a hub widget across thirteen locales. The existing suites assert the
+            <b>old</b> label <b>62 times</b> — in suites where not one row carries an audit stamp.
+          </div>
+        </div>
+        <div>
+          <span class="ch" style="font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+            text-transform:uppercase; color:var(--text-faint); font-weight:600; display:block;
+            margin-bottom:12px;">Four dispositions, and one of them is load-bearing</span>
+          <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px;">
+            <li style="background:var(--card); border:1px solid var(--line); border-radius:11px; padding:13px 16px; font-size:14px; line-height:1.5; box-shadow:var(--shadow);">
+              <span class="gk" style="font-family:var(--mono); font-size:12px; font-weight:700; color:var(--accent-ink); margin-right:9px;">CONFIRMED</span>
+              <span style="color:var(--text-soft)">still correct, leave it.</span></li>
+            <li style="background:var(--card); border:1px solid var(--line); border-radius:11px; padding:13px 16px; font-size:14px; line-height:1.5; box-shadow:var(--shadow);">
+              <span class="gk" style="font-family:var(--mono); font-size:12px; font-weight:700; color:var(--accent-ink); margin-right:9px;">REPAIR</span>
+              <span style="color:var(--text-soft)">the <b>mechanics</b> went stale — renamed selector, moved
+              route, dead alias. Fixed <em>before</em> the run: it cannot otherwise reach its own assertion.</span></li>
+            <li style="background:var(--agent-soft); border:1px solid var(--agent); border-radius:11px; padding:13px 16px; font-size:14px; line-height:1.5; box-shadow:var(--shadow);">
+              <span class="gk" style="font-family:var(--mono); font-size:12px; font-weight:700; color:var(--agent); margin-right:9px;">RE-BASE</span>
+              <span style="color:var(--text-soft)">the <b>expected value</b> conflicts. Deliberately
+              <em>not</em> rewritten first — the change is an unmerged PR, so rewriting the oracle to match
+              it means the case can only pass. Carried into the run instead, and rewritten afterwards
+              with the run&#8217;s own evidence.</span></li>
+            <li style="background:var(--card); border:1px solid var(--line); border-radius:11px; padding:13px 16px; font-size:14px; line-height:1.5; box-shadow:var(--shadow);">
+              <span class="gk" style="font-family:var(--mono); font-size:12px; font-weight:700; color:var(--accent-ink); margin-right:9px;">SUPERSEDED</span>
+              <span style="color:var(--text-soft)">the surface is gone — a proposal, never an edit.
+              Retirement stays human.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · SECTION B DIVIDER -->
+  <section class="slide divider j">
+    <div class="wrap">
+      <p class="part">Section two</p>
+      <h1>The machinery underneath</h1>
+      <p class="sub">A pipeline is only as good as what it runs on. Regression got faster and
+      finer-grained, the oracles started maintaining themselves, and two knowledge surfaces appeared
+      that simply did not exist before.</p>
+      <div class="rail">
+        <span>per-case lane routing</span>
+        <span>dependency-closed suite split</span>
+        <span>ECL citation gate</span>
+        <span>value-ordered promotion</span>
+        <span>release ledger</span>
+        <span>vs. DESIGN</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · REGRESSION -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Regression</p>
+      <h2>A suite stopped being the unit of execution.</h2>
+      <p class="lead" style="margin-bottom:22px">Cases that a runner can execute deterministically were
+      riding browser agents because a handful of their siblings are prose. The prize is not wall-clock —
+      it is verdict quality: a case on a browser lane comes back BLOCKED for reasons about
+      <em>how it ran</em> rather than about the product.</p>
+
+      <figure class="fig">
+        <svg viewBox="0 0 1000 300" role="img"
+             aria-label="One suite CSV is classified per case into four lanes: machine and browser lanes execute and write fragments, manual and deprecated lanes do not execute. A deterministic merger folds all four into one results envelope.">
+          <defs>
+            <marker id="ch" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <rect class="sv-box" x="16" y="122" width="132" height="56" rx="9" stroke-width="1.3"></rect>
+          <text class="sv-t" x="82" y="146" font-size="12" text-anchor="middle">One suite CSV</text>
+          <text class="sv-s" x="82" y="163" font-size="9.5" text-anchor="middle">mixed cases</text>
+
+          <rect class="sv-box-j" x="200" y="122" width="150" height="56" rx="9" stroke-width="1.4"></rect>
+          <text class="sv-t" x="275" y="146" font-size="12" text-anchor="middle">Classifier</text>
+          <text class="sv-s" x="275" y="163" font-size="9.5" text-anchor="middle">per case, fail-closed</text>
+
+          <line class="sv-a" x1="148" y1="150" x2="194" y2="150" stroke-width="1.3" marker-end="url(#ch)"></line>
+          <text class="sv-s" x="171" y="142" font-size="9" text-anchor="middle">parse</text>
+
+          <rect class="sv-box" x="418" y="26" width="176" height="46" rx="8" stroke-width="1.3"></rect>
+          <text class="sv-t" x="506" y="47" font-size="11.5" text-anchor="middle">machine lane</text>
+          <text class="sv-s" x="506" y="62" font-size="9" text-anchor="middle">runner executes</text>
+
+          <rect class="sv-box" x="418" y="94" width="176" height="46" rx="8" stroke-width="1.3"></rect>
+          <text class="sv-t" x="506" y="115" font-size="11.5" text-anchor="middle">browser lane</text>
+          <text class="sv-s" x="506" y="130" font-size="9" text-anchor="middle">agent executes</text>
+
+          <rect class="sv-box" x="418" y="162" width="176" height="46" rx="8" stroke-width="1.3" stroke-dasharray="5 4"></rect>
+          <text class="sv-t" x="506" y="183" font-size="11.5" text-anchor="middle">manual lane</text>
+          <text class="sv-s" x="506" y="198" font-size="9" text-anchor="middle">a person runs this</text>
+
+          <rect class="sv-box" x="418" y="230" width="176" height="46" rx="8" stroke-width="1.3" stroke-dasharray="5 4"></rect>
+          <text class="sv-t" x="506" y="251" font-size="11.5" text-anchor="middle">deprecated lane</text>
+          <text class="sv-s" x="506" y="266" font-size="9" text-anchor="middle">nobody does</text>
+
+          <g stroke-width="1.2">
+            <path class="sv-a" d="M350 150 L384 150 L384 49 L412 49" marker-end="url(#ch)"></path>
+            <path class="sv-a" d="M350 150 L384 150 L384 117 L412 117" marker-end="url(#ch)"></path>
+            <path class="sv-a" d="M350 150 L384 150 L384 185 L412 185" stroke-dasharray="4 4" marker-end="url(#ch)"></path>
+            <path class="sv-a" d="M350 150 L384 150 L384 253 L412 253" stroke-dasharray="4 4" marker-end="url(#ch)"></path>
+          </g>
+
+          <rect class="sv-box-j" x="672" y="122" width="146" height="56" rx="9" stroke-width="1.4"></rect>
+          <text class="sv-t" x="745" y="146" font-size="12" text-anchor="middle">Merger</text>
+          <text class="sv-s" x="745" y="163" font-size="9.5" text-anchor="middle">deterministic</text>
+
+          <g stroke-width="1.2">
+            <path class="sv-a" d="M594 49 L636 49 L636 138 L666 138" marker-end="url(#ch)"></path>
+            <path class="sv-a" d="M594 117 L636 117 L636 144 L666 144" marker-end="url(#ch)"></path>
+            <path class="sv-a" d="M594 185 L636 185 L636 156 L666 156" stroke-dasharray="4 4" marker-end="url(#ch)"></path>
+            <path class="sv-a" d="M594 253 L636 253 L636 162 L666 162" stroke-dasharray="4 4" marker-end="url(#ch)"></path>
+          </g>
+          <text class="sv-s" x="648" y="78" font-size="9">writes a fragment</text>
+          <text class="sv-s" x="648" y="207" font-size="9">never dispatched —</text>
+          <text class="sv-s" x="648" y="220" font-size="9">materialised as SKIPPED</text>
+
+          <rect class="sv-box-a" x="856" y="122" width="128" height="56" rx="9" stroke-width="1.4"></rect>
+          <text class="sv-t" x="920" y="146" font-size="12" text-anchor="middle">One envelope</text>
+          <text class="sv-s" x="920" y="163" font-size="9.5" text-anchor="middle">counts from rows</text>
+          <line class="sv-a" x1="818" y1="150" x2="850" y2="150" stroke-width="1.3" marker-end="url(#ch)"></line>
+
+          <text class="sv-s" x="16" y="212" font-size="10">Invariants:</text>
+          <text class="sv-s" x="16" y="230" font-size="10">no case lost</text>
+          <text class="sv-s" x="16" y="246" font-size="10">no case counted twice</text>
+          <text class="sv-s" x="16" y="262" font-size="10">every row carries its lane</text>
+          <text class="sv-s" x="16" y="278" font-size="10">idempotent re-merge</text>
+        </svg>
+        <figcaption>The planned set comes from the classifier, not from the fragments — so a lane that
+          dies before writing surfaces as BLOCKED, rather than producing a smaller, greener,
+          faster-looking suite.</figcaption>
+      </figure>
+
+      <div class="tag-row">
+        <span class="tag">115-case smoke suite → 4 dependency-closed siblings</span>
+        <span class="tag">smoke 83 min → 39</span>
+        <span class="tag">BLOCKED rate: 13.5% at ≤15 cases · 28.6% at 81+</span>
+        <span class="tag">a dependency may not leave its suite</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · ORACLES -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">The oracles</p>
+      <h2>Truth and value are two gates, in that order.</h2>
+      <div class="split2" style="margin-top:20px">
+        <div>
+          <span style="font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+            color:var(--text-faint); font-weight:600; display:block; margin-bottom:12px;">The edge-case library had no owner</span>
+          <p style="font-size:15px; color:var(--text-soft); margin:0 0 14px;">Test cases cite its sections,
+          and <b>nothing had ever checked those citations resolved</b> — no declared writer, no gate of
+          any kind. The first run found <b>20 dangling references cited by roughly 65 live cases across
+          7 suites</b>, including one section that has never existed.</p>
+          <p style="font-size:15px; color:var(--text-soft); margin:0 0 14px;">Most of those turned out to
+          be the library <em>missing content the authors expected</em> rather than authors mis-citing —
+          so the sections were written at the numbers already in use. The gate went from 20 findings to
+          zero.</p>
+          <div class="callout" style="margin-top:6px; font-size:14.5px">
+            The gate proves a reference <b>exists</b>. It cannot prove it is the <b>right</b> one — nine
+            cases cited &ldquo;Subscription &amp; Recurring Billing&rdquo; meaning &ldquo;Loyalty &amp;
+            Points&rdquo; and no gate could object. That call stays with the review skill.
+          </div>
+        </div>
+        <div>
+          <span style="font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+            color:var(--text-faint); font-weight:600; display:block; margin-bottom:12px;">And a second gate on what gets carried</span>
+          <p style="font-size:15px; color:var(--text-soft); margin:0 0 16px;">The evidence bar only ever
+          asked <em>is this true</em>. Both oracles then grew under it alone, and the value spread out
+          unevenly — of 211 invariants, <b>70 are low value and 22 are cited by no test case at all</b>.</p>
+          <div class="ev" style="grid-template-columns:1fr; gap:11px; margin-top:0">
+            <div class="e"><span class="n j" style="font-size:17px">business × product</span>
+              <p>Scored separately and combined by <b>conjunction, never a sum</b> — so thirty citations
+              cannot carry a cosmetic rule into a file whose job is judging pass or fail.</p></div>
+            <div class="e"><span class="n ok" style="font-size:17px">growth only</span>
+              <p>A <em>correction</em> to an existing entry applies whatever its value. Holding one back
+              would leave a known-false rule in a file other skills judge against.</p></div>
+            <div class="e"><span class="n" style="font-size:17px">IDs are a contract</span>
+              <p>Never renumber a surviving entry. It silently repoints every previously-correct
+              citation, and no gate can detect that — so it is forbidden rather than checked.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · NEW KNOWLEDGE SURFACES -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">New this sprint</p>
+      <h2>Three things the pipeline can now read that did not exist a fortnight ago.</h2>
+      <div class="pillars" style="margin-top:22px">
+        <div class="pillar">
+          <div class="pk">generated · release ledger</div>
+          <h3>What actually shipped upstream</h3>
+          <p>The documentation corpus stops at Platform 3.917.1 while production is past 3.1050 — roughly
+          nine months of releases nothing in the toolchain could see.</p>
+          <div class="blind"><b>Three rules travel with it</b>Released upstream is not deployed here ·
+          it declares itself non-exhaustive · it carries no behaviour, so it can raise a hypothesis and
+          never settle a verdict.</div>
+        </div>
+        <div class="pillar jx">
+          <div class="pk">generated · functionality map</div>
+          <h3>Prior art finally has a reader</h3>
+          <p>47 analysis deliverables sat in the reports tree covered by a single line telling one agent
+          to <em>skim</em> them for duplicates. Test models were made durable so the next ticket could
+          reuse them, and nothing ever opened one — one surface has two contradictory models.</p>
+          <div class="blind"><b>The finding it produced on run one</b>1 of 13 domains has a declared
+          purpose. An undeclared one says so rather than inventing a guess.</div>
+        </div>
+        <div class="pillar gx">
+          <div class="pk">live · vs. DESIGN</div>
+          <h3>The dead axis came back</h3>
+          <p>The design-tool integration exposes two auth calls and caps at about six requests a month,
+          so the one defect class where every invariant passes but the build no longer matches the
+          design had <em>no executor at all</em>. Now a real diff of tokens, control geometry and icon
+          glyph parity.</p>
+          <div class="blind"><b>Precedence, so it cannot mislead</b>Invariant beats spec beats
+          heuristic. A skip is reported as a skip, never as a pass.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · THE GUARDS THAT WERE MISSING -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Fixed</p>
+      <h2>Three guarantees that held only when someone remembered.</h2>
+      <div class="proud" style="margin-top:20px">
+        <div class="p">
+          <div class="h"><span class="m">frontmatter</span> A description YAML could not parse</div>
+          <p>A long unquoted description containing a colon and a space — which in YAML <em>is</em> the
+          key-value separator. The parser abandoned the whole block and the skill loaded with
+          <b>empty metadata</b>. Present for a month, because nothing checked. A second file had the
+          identical defect.</p>
+        </div>
+        <div class="p">
+          <div class="h"><span class="m">the guard</span> And now something does check</div>
+          <p>A scanner over every markdown component both surfaces ship, hunting the values a YAML
+          parser mis-reads. It <b>cannot pass vacuously</b> — it asserts a floor on the corpus, because
+          a guard that silently checks zero files is the exact failure it exists to prevent.</p>
+        </div>
+        <div class="p">
+          <div class="h"><span class="m">CI</span> The unit suite was never run</div>
+          <p>Six workflows existed and all six drive QA pipelines against the product; not one ran this
+          repository&#8217;s own tests. Every guarantee documented as enforced — including a byte-identity
+          check the docs call CI-enforced — held on memory alone. <b>A guard nobody runs is a comment.</b></p>
+        </div>
+        <div class="p">
+          <div class="h"><span class="m">hygiene</span> Split by confidence</div>
+          <p>The secret scanner graded an ordinary base64 config value as a certain credential and
+          <em>failed readiness</em> on it — blocking on a harmless value is precisely what teaches
+          everyone to switch a check off. Certain hits may block; suspected hits only ever warn.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 · TICKETS -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Delivered against tickets</p>
+      <h2>The process work paid for itself on real tickets in the same sprint.</h2>
+      <div class="ledger">
+        <div class="r">
+          <span class="key">VCST-5320</span>
+          <span class="what">Missions &amp; Challenges — <span>the ticket that produced the fault-model
+          diagnosis, then got a model and fixtures of its own.</span></span>
+          <span class="st">Landed</span>
+        </div>
+        <div class="r">
+          <span class="key">VCST-5735</span>
+          <span class="what">Compare products — <span>test model, fixtures and run evidence; the first
+          ticket driven end to end by the new Step 1e.</span></span>
+          <span class="st">Landed</span>
+        </div>
+        <div class="r">
+          <span class="key">VCST-5704</span>
+          <span class="what">Page-wide anchor links in Page Builder — <span>regression coverage.</span></span>
+          <span class="st">Landed</span>
+        </div>
+        <div class="r">
+          <span class="key">VCST-5745</span>
+          <span class="what">CSV export file-name token — <span>suite registered, cases aligned to
+          shipped behaviour and promoted on run evidence.</span></span>
+          <span class="st">Landed</span>
+        </div>
+        <div class="r">
+          <span class="key">044 · 049</span>
+          <span class="what">Security and Platform API suites — <span>triangulated against docs, live and
+          source; every high-severity finding cleared.</span></span>
+          <span class="st">Landed</span>
+        </div>
+        <div class="r">
+          <span class="key">VCST-5733</span>
+          <span class="what">Sales-rep customer orders — <span>round-one findings, design report and
+          evidence; the first run to exercise the visual axis for real.</span></span>
+          <span class="st wip">In flight</span>
+        </div>
+      </div>
+      <p class="kicker" style="margin-top:26px">VCST-5733 is also the run that found the design axis needs
+      a signed-in browser lane — <b>a finding about our own tooling, produced by our own tooling.</b></p>
+    </div>
+  </section>
+
+  <!-- 14 · CLOSE -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Where that leaves us</p>
+      <h2>Three shifts, and they are all the same shift.</h2>
+      <p class="lead" style="margin-bottom:8px">Stop trusting that something was checked. Make it
+      checkable, and then check it.</p>
+      <div class="pillars" style="margin-top:24px">
+        <div class="pillar">
+          <div class="pk">Design</div>
+          <h3>Name the mechanism first</h3>
+          <p>A value chain before a parameter space. Every case now has to say what it reads, what a
+          customer would see fail, and why that failure is plausible here — before it is written, which
+          is the only point at which culling it is cheap.</p>
+        </div>
+        <div class="pillar jx">
+          <div class="pk">Scope</div>
+          <h3>Read what already exists</h3>
+          <p>Prior analysis, prior models, the current contract, and the rows this change makes wrong.
+          Every one of those was on disk and unread. Prior art is a hypothesis to triangulate, never a
+          baseline to trust.</p>
+        </div>
+        <div class="pillar gx">
+          <div class="pk">Cost</div>
+          <h3>Effort tracks risk</h3>
+          <p>FAST is a checklist. FULL buys a model, authoring and three independent verifiers. Three
+          axes are opt-in on FAST until the measurements say otherwise — and merge and release are still
+          human.</p>
+        </div>
+      </div>
+      <p class="kicker" style="margin-top:34px; text-align:center">Thank you · questions &amp; walkthrough · press <b>N</b> for talking points</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="hud">
+  <div class="grp">
+    <button class="navbtn" id="prev" aria-label="Previous slide">&lsaquo;</button>
+    <span class="counter"><b id="cur">1</b> / <span id="total">14</span></span>
+    <div class="dots" id="dots"></div>
+    <button class="navbtn" id="next" aria-label="Next slide">&rsaquo;</button>
+  </div>
+</div>
+
+<div class="notes" id="notes" aria-live="polite">
+  <div class="nh" id="notesHead">Presenter notes</div>
+  <div class="nb" id="notesBody"></div>
+</div>
+
+<script>
+  // Committed to light by request; the toggle still lets you flip to dark if a room needs it.
+  document.documentElement.setAttribute('data-theme', 'light');
+
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const cur = document.getElementById('cur');
+  const progress = document.getElementById('progress');
+  document.getElementById('total').textContent = slides.length;
+  // dot indices 7 (0-based) onward belong to section two (the machinery)
+  const SECTION_TWO_START = 7;
+  let i = 0;
+
+  const notes = [
+    "Open here, 30 seconds. One line of framing: 'last sprint we shipped a second plugin to customers; this sprint we fixed how we ourselves decide what to test.' Read the four numbers, give the running order, move on. Do NOT start explaining the axes here — slide 6 does that.",
+    "Section-one divider. Pause so the room resets. The one thing to say out loud: six pull requests all landed on ONE command, which is unusual and deliberate — /qa-test is where the cost of a bad decision compounds, because every case the pipeline writes lives in the corpus forever.",
+    "THE MOST IMPORTANT SLIDE IN THE DECK. Do not rush it. Walk the four numbers left to right and let the third one land — one case on the last link, written on the final day. Then the callout, which is the whole thesis: the ranker called that suite STRONG, because assertion strength asks 'can this check fail' and nothing was asking 'would anyone care'. If someone gets defensive, be explicit that no individual author did anything wrong — every case was defensible; the method was what failed.",
+    "The fix. Point at the diagram rather than reading the bullets. Three passes: the chain along the middle, the single accent arrow above it that is the journey case, then the two brackets underneath — cases piled up under link one, nothing under link five. Then the killer line: EP, BVA, pairwise and the rest are parameter-space techniques; they refine a link that has ALREADY been named, and none of them can name the chain. If asked what enforces it: a planned row is rejected before authoring unless it names its observable, the customer-visible failure, and why that failure is plausible here — a null-hypothesis phrasing like 'could fail to render' is refused by name.",
+    "FAST vs FULL. The diagram is the argument — the accent arc IS the change. Say the measured part: most recorded runs take FAST, so leaving the expensive work marked 'both paths, always' meant the split saved nothing on the path everyone actually uses. Then the callout, which is the honest bit: we had made three axes mandatory on FAST on arguments that all had the same shape, and when we measured them they had blocked one run, one run, and zero. We reversed it. Revisit at five.",
+    "The five axes, as a table — read the column headings, then only the rows the room cares about. For engineers: 2d, because a stale contract has no symptom of its own, it just manufactures cases that fail later and get triaged as product defects. For leadership: 2e, which is the next slide anyway. The single rule to say out loud is the bottom callout: derived, never asked, never defaulted. The operator is not a source.",
+    "The worked example, and the one people find counter-intuitive. Take the left column as a sequence — selection missed, the tier filter dropped the rest, and a row that never runs is never triaged. Then the right column, and spend your time on RE-BASE: the change under test is normally an UNMERGED pull request, so if you rewrite a case's expected value to match it before the run, the case can only pass. You have made the change its own oracle, in the very run that reports it green. REPAIR is safe because it moves the mechanics and not the oracle.",
+    "Section-two divider. Colour shifts to indigo. Reset: 'that was how we decide what to test; this is what it runs on.' Read the rail as the menu.",
+    "Regression. Lead with the second sentence, not the first — the prize is verdict quality, not speed. A case riding a browser lane comes back BLOCKED for reasons about how it ran, not about the product, and those get triaged as if they were product failures. Point at the two dashed lanes: manual means a person runs this, deprecated means nobody does, and folding them together would make the manual count lie. The invariant list at bottom-left is the part to stress — the planned set comes from the classifier, so a lane that dies shows up as BLOCKED rather than as a smaller, greener suite.",
+    "Oracles. Left column first, and let the number do the work: nothing had ever checked that a cited edge-case section existed, and the first run found twenty dangling references across about sixty-five live cases. Most were the library missing content, not authors being careless — worth saying, it changes how the room hears it. Right column: the value gate. The line that lands is 'thirty citations cannot carry a cosmetic rule into a file whose job is judging pass or fail'. If asked whether this deletes anything: no — low value is not evidence an entry is dead, and corrections apply regardless of value.",
+    "Three new knowledge surfaces. Pick two. The release ledger is the easiest to explain — our docs source stops about nine months behind production, so 'has this changed recently' was unanswerable. The functionality map is the one with the sharpest finding: forty-seven analysis documents on disk, one instruction telling one agent to skim them for duplicates, and a durable test-model folder that nothing ever opened — one surface ended up with two contradictory models. The blind-spot line on each card is the honest half; read at least one of them.",
+    "The guards. Frame it as one story, not four fixes: each of these was a guarantee we had written down and were not enforcing. The YAML one is the best telling — a colon and a space inside an unquoted description, the parser gives up, the skill loads with empty metadata, and it sat there for a month because nothing looked. Then land the general form: a guard nobody runs is a comment. If someone asks about the base64 one, it is the reverse failure — a check so eager it blocks on a harmless value, which is how you teach a team to turn checks off.",
+    "Tickets, so the room can see the process work was not academic. Do not read all six — say that VCST-5320 is where the diagnosis came from and VCST-5735 is the first ticket driven end to end by the new design step. Close on the kicker: the in-flight run found that our own design axis needs a signed-in browser lane, which is the tooling catching a defect in the tooling. That is the loop working.",
+    "Close on the three cards and the one sentence above them — stop trusting that something was checked, make it checkable, then check it. Design, scope, cost. End by repeating that merge and release are still human, then open for questions."
+  ];
+
+  slides.forEach((_, n) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Go to slide ' + (n+1));
+    if (n >= SECTION_TWO_START) b.classList.add('sec');
+    b.addEventListener('click', () => go(n));
+    dotsWrap.appendChild(b);
+  });
+  const dotBtns = Array.from(dotsWrap.children);
+
+  function go(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    dotBtns.forEach((d, k) => d.classList.toggle('on', k === i));
+    cur.textContent = i + 1;
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+    document.getElementById('notesBody').innerHTML = notes[i] || '';
+    document.getElementById('notesHead').textContent = 'Presenter notes · slide ' + (i+1);
+  }
+  const nextS = () => go(i + 1);
+  const prevS = () => go(i - 1);
+
+  document.getElementById('next').addEventListener('click', nextS);
+  document.getElementById('prev').addEventListener('click', prevS);
+
+  const notesEl = document.getElementById('notes');
+  document.getElementById('notesBtn').addEventListener('click', () => notesEl.classList.toggle('open'));
+
+  const root = document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); nextS(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevS(); }
+    else if (e.key === 'Home') { go(0); }
+    else if (e.key === 'End') { go(slides.length - 1); }
+    else if (e.key.toLowerCase() === 'n') { notesEl.classList.toggle('open'); }
+  });
+
+  go(0);
+</script>
