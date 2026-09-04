@@ -1,19 +1,23 @@
 {
-  "generatedIso": "2026-08-24T13:48:08.625Z",
+  "generatedIso": "2026-09-04T11:19:46.619Z",
   "env": "vcst",
   "frontUrl": "https://vcst-qa-storefront.govirto.com",
   "backUrl": "https://vcst-qa.govirto.com",
   "storeId": "B2B-store",
   "themeVersion": null,
   "platform": {
-    "maxPlatformVersion": "3.1057.0",
+    "maxPlatformVersion": "3.1062.0",
     "moduleCount": 87
   },
-  "storeTotalProducts": 4520,
+  "storeTotalProducts": 4626,
   "navCategories": [
     {
       "slug": "accessories",
       "name": "Accessories"
+    },
+    {
+      "slug": "agent-test-empty-category",
+      "name": "AGENT-TEST-Empty-Category"
     },
     {
       "slug": "alcoholic-drinks",
@@ -140,6 +144,14 @@
       "name": "Clothing"
     },
     {
+      "slug": "seed-compare-fixtures",
+      "name": "Compare Fixtures"
+    },
+    {
+      "slug": "seed-compare-nested",
+      "name": "Compare Nested"
+    },
+    {
       "slug": "seed-electronics",
       "name": "Electronics"
     },
@@ -162,6 +174,10 @@
     {
       "slug": "seed-loyalty-fixtures",
       "name": "Loyalty Fixtures"
+    },
+    {
+      "slug": "seed-loyalty-missions-e2e",
+      "name": "Loyalty Missions E2E"
     },
     {
       "slug": "seed-personal-care",
@@ -237,5 +253,316 @@
       "slug": "products-with-options/wonderful-beds",
       "name": "Wonderful beds"
     }
-  ]
+  ],
+  "routes": {
+    "available": true,
+    "base": "C:\\Users\\mutyk\\My Projects\\vc-frontend",
+    "provenance": {
+      "head": "17c99c7c8df935670bc4fd4fead0c7078ae0f7ec",
+      "headDate": "2026-08-26T10:32:39Z",
+      "branch": "dev",
+      "remoteHead": "c4046f560a35fe0b9f260f2ef353129792b45c98",
+      "behindRemote": true,
+      "note": null
+    },
+    "fileCount": 17,
+    "parseErrors": 0,
+    "paths": [
+      {
+        "path": "@mount:Account",
+        "source": "modules/back-in-stock/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "back-in-stock",
+        "source": "modules/back-in-stock/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "@mount:Account",
+        "source": "modules/loyalty/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "points-history",
+        "source": "modules/loyalty/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": ":articleId",
+        "source": "modules/news/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "author/:authorId/:tag?",
+        "source": "modules/news/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "tag/:tag?",
+        "source": "modules/news/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "@mount:Account",
+        "source": "modules/purchase-requests/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "@mount:Account",
+        "source": "modules/push-messages/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "/push-message/:messageId",
+        "source": "modules/push-messages/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "notifications",
+        "source": "modules/push-messages/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": ":quoteId",
+        "source": "modules/quotes/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "@mount:Account",
+        "source": "modules/quotes/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "edit",
+        "source": "modules/quotes/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "quotes",
+        "source": "modules/quotes/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": "@mount:Company",
+        "source": "modules/sales-rep/index.ts",
+        "kind": "module"
+      },
+      {
+        "path": ":listId",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": ":orderId",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "addresses",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "change-password",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "dashboard",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "lists",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "orders",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "payment",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "profile",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "saved-credit-cards",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "saved-for-later",
+        "source": "router/routes/account.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/checkout/:cartId?",
+        "source": "router/routes/checkout.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/checkout/completed",
+        "source": "router/routes/checkout.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/checkout/payment/:status(success|failure)",
+        "source": "router/routes/checkout.ts",
+        "kind": "core"
+      },
+      {
+        "path": "billing",
+        "source": "router/routes/checkout.ts",
+        "kind": "core"
+      },
+      {
+        "path": "payment",
+        "source": "router/routes/checkout.ts",
+        "kind": "core"
+      },
+      {
+        "path": "review",
+        "source": "router/routes/checkout.ts",
+        "kind": "core"
+      },
+      {
+        "path": "shipping",
+        "source": "router/routes/checkout.ts",
+        "kind": "core"
+      },
+      {
+        "path": "info",
+        "source": "router/routes/company.ts",
+        "kind": "core"
+      },
+      {
+        "path": "members",
+        "source": "router/routes/company.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/:pathMatch(.*)*",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/400",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/403",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/404",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/500",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/account",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/account/confirmemail",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/account/impersonate/:userId",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/auth/callback",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/blocked",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/branch/:branchId",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/bulk-order",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/category/:categoryId",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/company",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/compare",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/confirm-invitation",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/forgot-password",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/product/:productId",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/reset-password",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/set-password",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/shared-list/:sharingKey",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/sign-up",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      },
+      {
+        "path": "/successful-registration",
+        "source": "router/routes/main.ts",
+        "kind": "core"
+      }
+    ]
+  }
 }

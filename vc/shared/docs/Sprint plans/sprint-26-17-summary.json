@@ -1,0 +1,97 @@
+{
+  "sprint": "Sprint26-17",
+  "startDate": "2026-08-24",
+  "endDate": "2026-09-07",
+  "datesInferred": true,
+  "sprintOpenAtPlanTime": true,
+  "doneCounts": {"stories": 6, "bugs": 20, "tasks": 14, "spikes": 0, "total": 40},
+  "sprintIssueTotal": 71,
+  "outOfScopeCount": 23,
+  "testRelevantCount": 17,
+  "mergedFrontendPRs": 12,
+  "mergedModulePRs": 23,
+  "mergedOrgWidePRs": 135,
+  "mergedVcShellPRs": 37,
+  "domains": [
+    {"name": "Catalog browse & xAPI paging", "score": 25, "level": "Critical"},
+    {"name": "AutoMapper Wave 3 - response mapping", "score": 25, "level": "Critical"},
+    {"name": "Cart / gift promotions (money)", "score": 20, "level": "Critical"},
+    {"name": "Loyalty Missions", "score": 20, "level": "Critical"},
+    {"name": "Sales Rep hub & Document library", "score": 20, "level": "Critical"},
+    {"name": "Company roles configurable", "score": 16, "level": "Critical"},
+    {"name": "CMS / Page Builder", "score": 12, "level": "High"},
+    {"name": "Platform / caching & jobs", "score": 12, "level": "High"},
+    {"name": "UI kit - icons & focus", "score": 12, "level": "High"},
+    {"name": "Search / OpenSearch Member index", "score": 9, "level": "Medium"},
+    {"name": "Backup / restore (cross-sprint)", "score": 9, "level": "Medium"},
+    {"name": "Auth / Login on behalf", "score": 8, "level": "Medium"}
+  ],
+  "suitesActivated": [
+    "042", "001", "002", "008", "029", "030", "033", "082", "083", "083c", "083d", "089", "091", "093", "097",
+    "078", "078b", "078c", "078d", "020", "026", "027", "027b", "049", "050a", "050b1", "050b2", "050b3",
+    "050b4", "050b5", "050c", "050d", "050k", "050m", "051", "059", "060", "061", "063", "064", "075",
+    "075d", "075e", "092", "092b", "095"
+  ],
+  "newCasesEstimate": "45-70",
+  "coverageGapCount": 10,
+  "criticalTickets": ["VCST-5730", "VCST-5450", "VCST-5346", "VCST-5319", "VCST-5801", "VCST-5661", "VCST-5881"],
+  "exploratoryCharters": [
+    {"id": "EXP-01", "domain": "AutoMapper Wave 3 (cross-module)", "signals": ["C2"], "anchor": "VCST-5661",
+     "mission": "Discover a silently-dropped or mis-mapped response field across the six AutoMapper-removal PRs - the documented failure mode is not an error",
+     "candidateScenarios": [
+       "x-cart #138: same cart via GraphQL cart() vs REST /api/carts/{id}, diff every field, money/discount/gift first",
+       "x-order #50: order with custom + dynamic properties, GraphQL order() vs Admin order-detail payload",
+       "x-catalog #110 FacetMappingContext: faceted response facet metadata vs Admin catalog property definitions",
+       "x-pickup #11: BOPIS fulfilment-centre fields, xPickup GraphQL vs Admin FFC data"
+     ],
+     "technique": "Boundary-of-features two-path field diff", "lane": "playwright-edge", "timeboxMin": 30, "owner": "qa-backend-expert"},
+    {"id": "EXP-02", "domain": "Cart gift-merge compounding x mapper-rewrite seam", "signals": ["C2"], "anchor": "VCST-5801 / GAP-02",
+     "mission": "Confirm or refute that repeated sign-out/guest/sign-in cycles compound the gift-to-paid overcharge after the fix, and whether the AutoMapper rewrite reintroduces or masks it",
+     "candidateScenarios": [
+       "repeat the guest-to-account merge twice in one session with the same gift-eligible product",
+       "sign out after the first merge and back in - is the gift still offered, and does accepting it merge into the existing paid line",
+       "does the gift-aware product-key comparison survive end-to-end through the AutoMapper-rewritten cart response"
+     ],
+     "technique": "State Transition + Boundary-of-features", "lane": "playwright-chrome", "timeboxMin": 30, "owner": "qa-frontend-expert"},
+    {"id": "EXP-03", "domain": "Company roles configurable per store - settings v2 seam", "signals": ["C2", "C3"], "anchor": "VCST-5450 / GAP-05",
+     "mission": "Discover where per-store role configurability breaks the seam between Initialize-Applications, member filters, invite and change-role",
+     "candidateScenarios": [
+       "different allowed-role set per store on one org, then switch store - does the picker match the ACTIVE store's dictionary or a cached Initialize-Applications payload",
+       "change a member's role while that store's settings-v2 dictionary is mid-edit in another Admin session",
+       "a store with an EMPTY dictionary - whitelist fallback (ORGROLE-003) or silent deny-all"
+     ],
+     "technique": "Feature-pair matrix + State Transition", "lane": "playwright-edge", "timeboxMin": 30, "owner": "qa-backend-expert"}
+  ],
+  "exploratoryNotChartered": [
+    {"domain": "Sales Rep hub & Document library", "verdict": "D3 - charted 2026-09-03, under 24h, same surface (that session is the origin of VCST-5868); VCST-5730's new route is a genuine C1 but D3 outranks any C signal", "routedTo": "GAP-03"},
+    {"domain": "Catalog browse & xAPI paging", "verdict": "D1 exact oracle - root cause diagnosed to file and line", "routedTo": "GAP-01 + section 6"},
+    {"domain": "Loyalty Missions", "verdict": "deeply pre-covered (142 cases) + a thorough session 2026-08-28 (over 24h, not D3); this sprint's diff adds no fresh uncovered surface", "routedTo": "no action this cycle"},
+    {"domain": "CMS / Page Builder", "verdict": "D1 for VCST-5704 and VCST-5848; VCST-5847 not in the Done set", "routedTo": "GAP-04, GAP-07 + section 6"},
+    {"domain": "Platform / Redis backplane", "verdict": "D1 + tooling mismatch - correctness is a message-count assertion, not a UI exploration", "routedTo": "GAP-06 -> /qa-perf-measure"},
+    {"domain": "UI kit icons & focus", "verdict": "D1 - single assertable geometry/token defects, the DESIGN-STROKE axis's target", "routedTo": "GAP-08 + section 6"},
+    {"domain": "Search / OpenSearch Member index", "verdict": "Medium, below threshold, D1", "routedTo": "section 6"},
+    {"domain": "Login on behalf SSO", "verdict": "Medium, below threshold, D1", "routedTo": "section 6 (suite 082)"},
+    {"domain": "Backup / restore binary sidecar", "verdict": "Medium; cross-sprint, not in this Done set", "routedTo": "no action this cycle"},
+    {"domain": "vc-shell / Vendor Portal", "verdict": "D2 - separate product, no QA surface in this repo", "routedTo": "none; count recorded in section 2.4 only"},
+    {"domain": "White Labeling", "verdict": "queued from 26-16 as C4 but re-evaluated on this sprint's merits: no White Labeling ticket or PR in the 26-17 inventory, and the triggering defect was fixed and covered by 067/070/071 last sprint. Declined - no fresh signal", "routedTo": "re-queue only on a future vc-module-white-labeling change"},
+    {"domain": "Lists / Wishlist sharing", "verdict": "26-16 EXP-03 was blocked and never executed, but no Lists/Wishlist ticket appears in the 26-17 Done set - stale carry-over, no fresh signal", "routedTo": "backlog; revisit when a sprint touches 007/050h/050l"},
+    {"domain": "Background jobs Hangfire to RabbitMQ", "verdict": "26-16 EXP-05 was blocked and never executed; no new background-jobs ticket this sprint and suite 095 already covers the 26-16 shipment. VCST-5566 is a different subsystem (Redis pub/sub cache invalidation, not job execution)", "routedTo": "backlog; the credential gap that blocked three 26-16 charters is an environment problem and should be raised with ops"}
+  ],
+  "step0Sitemap": {
+    "rev": 8,
+    "changed": true,
+    "platformLine": {"from": "3.1057.0", "to": "3.1062.0"},
+    "moduleCount": 87,
+    "totalProducts": {"from": 4520, "to": 4626},
+    "navCategories": {"from": 49, "to": 53},
+    "navCategoriesAdded": ["agent-test-empty-category", "seed-compare-fixtures", "seed-compare-nested", "seed-loyalty-missions-e2e"],
+    "navCategoriesAddedNote": "all four are QA seed fixtures provisioned by this repo's own seeders (VCST-5735 compare, VCST-5346/5319 missions), not merchandising categories",
+    "section2Rederived": true,
+    "section2Note": "Section 2 Account/Corporate was carried forward from rev 4 (May 2026) and was ~4 months stale: it was missing /account/missions (VCST-5346) and the entire /company/* Sales Rep hub (/company/sales-reps, /company/dashboard, /company/my-customers, /company/my-customers/:organizationId, /company/documents), plus /account/addresses as a route row. Re-derived from the vc-frontend router source (router/routes/{account,company,checkout,constants}.ts + modules/{loyalty,sales-rep}/index.ts), not from citation counts or a live guess.",
+    "rootCause": "sitemap:refresh crawls only catalog nav + versions over xAPI and is structurally blind to SPA client-side routes behind an auth guard, so a story that ships a whole page yields an EMPTY sitemap diff. Compounded by two route sources: company.ts declares only info + members and account.ts has no missions, while everything else is added at bootstrap via router.addRoute(\"Account\"|\"Company\") from nine modules in client-app/modules/.",
+    "toolingFix": "scripts/maintenance/refresh-sitemap.mjs gained a ROUTE AXIS (--frontend <path> / VC_FRONTEND_PATH, defaults to a sibling ../vc-frontend) that inventories both route sources and diffs them, plus a staleness guard that probes HEAD and git ls-remote origin and prints a WARNING when the checkout is behind - a stale route list reads as authoritative and is worse than none. It reports UNAVAILABLE with a reason rather than zero routes when no checkout exists, and freshness never counts as a change so it cannot force a spurious rev bump. Documented as /qa-sitemap Step 1b.",
+    "knownLimitation": "at plan time the local ../vc-frontend checkout was at 17c99c7 (2026-08-26), behind origin/dev, so the recorded route baseline omits the three routes that shipped after that date. Self-correcting: the next run on a fresh checkout reports them as ADDED."
+  },
+  "artifacts": "vc/shared/docs/Sprint plans/",
+  "_notes": "Jira sprint name carries a space ('Sprint 26-17'); sprint = \"Sprint26-17\" returns 0 issues. The sprint object's startDate/endDate were not retrievable through the MCP field projection, so the window is INFERRED from 26-16's close plus the 14-day cadence - do not quote it as fetched. Sprint was still OPEN at plan time (33 of 71 Story+Bug not Done); re-run after close. The dominant scope fact is the ratio: 40 Done but only 17 test-relevant, because 17 Done Bugs + 2 Done Tasks are vc-shell / Vendor Portal (a separate product, D2) and 3 Tasks are this repo's own tooling. All 47 suite IDs in suitesActivated were verified present in config/test-suites.json (135 suites) and layer-checked against their CSV directory. Three of the six Critical domains fail SILENTLY - AutoMapper Wave 3 field drops, the VCST-5801 gift-merge overcharge, and VCST-5881's catalog paging - which is what section 4.2 orders around."
+}

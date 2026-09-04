@@ -10,6 +10,7 @@ Keeps `.claude/knowledge/domain/sitemap.md` current against the live storefront.
 
 Two halves:
 - **Deterministic core** — `scripts/maintenance/refresh-sitemap.mjs` (npm `sitemap:refresh`): pulls structure + versions over xAPI GraphQL + the Platform modules API. No browser, CI-safe. Writes a **per-environment** snapshot `.claude/knowledge/domain/sitemap-snapshot.<env>.json` (env = resolved `TEST_ENV`, or `--label`) and prints a diff vs the previous snapshot for that env.
+- **Route axis** — the same script reads the **`vc-frontend` router source** and inventories every declared route path (Step 1b). This exists because the xAPI axis is blind to storefront routes: they are SPA client-side records behind an auth guard, so **a story that ships a whole page produced an empty sitemap diff**. Measured 2026-09-04 — §2 had been carried forward from rev 4 (May 2026) and was missing `/account/missions` (VCST-5346) plus the entire `/company/*` Sales Rep hub (VCST-5730/5469/5308/5409).
 - **Write-up (this command)** — reads the diff and, only if it is non-empty, rewrites the affected sections of `sitemap.md` in prose, bumps the rev, appends a changelog row, and syncs the plugin mirror.
 
 ## Flags
@@ -17,6 +18,7 @@ Two halves:
 | Flag | Effect |
 |------|--------|
 | `--check` | Run `sitemap:check` only (verify the env is reachable + queryable, print the diff, write nothing). No edits. |
+| `--frontend <path>` | Path to a **`vc-frontend` checkout** for the ROUTE axis (Step 1b). Defaults to a sibling `../vc-frontend`, then `.fix-workspace/vc-frontend`; also reads `VC_FRONTEND_PATH`. Without one the route axis reports `UNAVAILABLE` — never zero routes. |
 | `--no-browser` | Skip the optional browser pass that fills the SPA-rendered theme "Ver." and refreshes per-category counts. Structure + platform version still update. |
 
 ## Environment (vcst vs a client deployment)
@@ -50,6 +52,36 @@ Read its stderr diff block and the final `SITEMAP_CHANGED=yes|no` trailer. The s
 
 **Diff gate:** if `SITEMAP_CHANGED=no`, report "sitemap already current (rev N)" and **STOP** — do not touch `sitemap.md`. This is the common, correct outcome on a quiet sprint.
 
+### Step 1b — The ROUTE axis (same script, no extra command)
+
+The same run also inventories the storefront's declared routes and diffs them, printing
+`route ADDED (n): …` / `route REMOVED (n): …`. **Read this before concluding a sprint changed nothing** —
+catalog nav can be static while a story shipped a whole new page.
+
+**Two route sources, and reading only the first under-reports badly:**
+
+| Source | Where | Holds |
+|---|---|---|
+| Core | `client-app/router/routes/{account,company,checkout,cart,main}.ts` | dashboard · profile · addresses · change-password · orders(+`:orderId`,`/payment`) · saved-for-later · lists(+`:listId`) · saved-credit-cards · coupons · checkout sub-steps. **`company.ts` declares ONLY `info` + `members`** |
+| Modules | `client-app/modules/<m>/{index.ts,routes.ts}` via `router.addRoute("Account"\|"Company", …)` at bootstrap | **everything else** — `/account/missions`, `/account/points-history`, `/account/quotes`, `/account/back-in-stock`, and the whole `/company/*` Sales Rep hub |
+
+Three rules travel with it:
+
+- **It is a path-LITERAL inventory, not a resolved route table.** Enough for the diff to fire when a route
+  appears or disappears — which is the whole job. It does not resolve nesting, and `@mount:Account` /
+  `@mount:Company` entries record which parent a module mounts onto.
+- **A listed route is config- and permission-GATED, so its absence on an env is normal** and is *not*
+  evidence the route does not exist: `/account/missions` needs Loyalty `ENABLED_KEY` **and**
+  `MISSIONS_ENABLED_KEY`; `/company/documents` needs `isSalesRepsEnabled()` **and** `documents:read`.
+  Nav links are merged behind a **one-shot `isAuthenticated` check at bootstrap**, so signing in mid-session
+  gives a reachable URL with **no nav link** until a full reload (VCST-5346 #19).
+- **The axis is only as fresh as the checkout, and it says so.** It probes HEAD + `git ls-remote origin`
+  and prints `routes: WARNING — checkout is BEHIND origin/<branch> …` when the working copy is behind;
+  a stale route list is worse than none because it reads as authoritative. **Pull the checkout, then re-run,
+  before trusting an "unchanged" route result.** With no checkout at all it reports `UNAVAILABLE` with a
+  reason and **never** zero routes. Freshness is printed on every run and deliberately does **not** count
+  as a change, so it cannot force a spurious rev bump.
+
 ### Step 2 — Optional browser pass (skip with `--no-browser` or `--check`)
 
 Two facts the deterministic core can't get:
@@ -65,6 +97,7 @@ Edit `.claude/knowledge/domain/sitemap.md`, touching **only** what the diff flag
 | sitemap.md section | Source |
 |---|---|
 | Header "Storefront (theme) version" / §13 | `themeVersion` (browser) + `platform.maxPlatformVersion` / `moduleCount` |
+| **§2 Account / Corporate / Sales Rep hub routes** | **`routes[]` (Step 1b).** Add a new route with its owning module and its config/permission gate. Never from a citation count or a guess — the router is the source of truth |
 | §3 Top-Level Categories | `navCategories[]` (+ grid counts from the browser pass) |
 | §4 Seed categories | the `/seed-*` slugs within `navCategories[]` |
 | §5 `/products-with-options` | `productsWithOptions[]` |

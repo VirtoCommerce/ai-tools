@@ -5,17 +5,17 @@ applicability_rationale: "Full storefront URL map. Customer's sitemap differs by
 
 # Sitemap: FRONT_URL
 
-**Generated:** August 24, 2026 (rev 7 — deterministic axis; body carried from rev 5, July 20 2026)
+**Generated:** September 4, 2026 (rev 8 — deterministic axis; body carried from rev 5, July 20 2026)
 **Base URL:** FRONT_URL (from `FRONT_URL` env var) — vcst-qa
 **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver.") *(was 2.49.0 in May)*
-**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = 3.1057.0; 87 modules loaded) *(rev 6, 2026-08-07 deterministic re-crawl: was 3.1039.0 / 86 modules)*
-**Store total products:** 4,520 *(was 4,523 at rev 6)* · nav categories 49 · `/products-with-options` subcategories 7
+**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = 3.1062.0; 87 modules loaded) *(rev 7, 2026-08-24: was 3.1057.0 / 87 modules)*
+**Store total products:** 4,626 *(was 4,520 at rev 7)* · nav categories 53 *(was 49)* · `/products-with-options` subcategories 7
 
 > **Note on the version fields:** the storefront footer "Ver." (`2.54.0-pr-2382`) is the **vc-frontend theme** version — earlier revs of this doc mislabeled it "Platform version". The actual VirtoCommerce **platform** runs on the `3.10xx` assembly line (resolved from `/api/platform/modules`).
 
 ## Overview
 
-B2B e-commerce storefront on Virto Commerce. **This rev was crawled as a guest** (unauthenticated) — the catalog is store-level so the top-level inventory/counts match the B2B signed-in view; the authenticated-only §2 Account and §7 Admin sections carry forward from rev 4 and were **not** re-verified this pass. Catalog content has been **re-seeded again since the May 2026 rev** — top-level inventory below reflects the current (guest, 2026-07-20) state and differs substantially from rev 4: a new family of `/seed-*` categories replaced the May `SEED-20260518/19-*` fixtures, `Products with options` grew 11→48, `Rental home` moved `/homes`→`/sweet-home`, `Bolts` is a top-level category again, and `[en-US] TV` was dropped. Treat all IDs/slugs/counts as drift candidates; resolve via `@td()` / `live-discover` (see `.claude/rules/test-data.md`).
+B2B e-commerce storefront on Virto Commerce. **This rev was crawled as a guest** (unauthenticated) — the catalog is store-level so the top-level inventory/counts match the B2B signed-in view; §2 Account was **re-derived from the vc-frontend router source at rev 8** (previously carried forward from rev 4, May 2026, and ~4 months stale — it was missing `/account/missions` and the entire `/company/*` Sales Rep hub); §7 Admin still carries forward from rev 4 and was **not** re-verified. Catalog content has been **re-seeded again since the May 2026 rev** — top-level inventory below reflects the current (guest, 2026-07-20) state and differs substantially from rev 4: a new family of `/seed-*` categories replaced the May `SEED-20260518/19-*` fixtures, `Products with options` grew 11→48, `Rental home` moved `/homes`→`/sweet-home`, `Bolts` is a top-level category again, and `[en-US] TV` was dropped. Treat all IDs/slugs/counts as drift candidates; resolve via `@td()` / `live-discover` (see `.claude/rules/test-data.md`).
 
 ## Available Languages
 
@@ -74,7 +74,14 @@ The site supports **15 languages** with locale-specific URLs:
 
 ## 2. Account Pages
 
-All account pages require authentication. Account sidebar is organized into **4 groups** (unchanged from March):
+All account pages require authentication. Account sidebar is organized into **4 groups** (unchanged from March) plus the module-contributed Sales Rep hub.
+
+> **Two route sources, and only one of them is statically readable — this is why §2 kept going stale.**
+> **Core routes** are declared in `vc-frontend` `client-app/router/routes/{account,company,checkout,cart,main}.ts`. `account.ts` declares only dashboard · change-password · profile · addresses · orders(+`:orderId`,`:orderId/payment`) · saved-for-later · lists(+`:listId`) · saved-credit-cards · coupons; **`company.ts` declares only `info` and `members`.**
+> **Module routes** are added at bootstrap by `router.addRoute("Account"|"Company", …)` from the nine modules in `client-app/modules/` (back-in-stock, customer-reviews, loyalty, news, purchase-requests, push-messages, quotes, sales-rep, google-analytics/federated). **Everything else in the tables below comes from there** — `/account/missions`, `/account/points-history`, `/account/quotes`, `/account/back-in-stock`, `/account/notifications` and the whole `/company/*` Sales Rep hub.
+> Consequences: (1) `npm run sitemap:refresh` **cannot see any of them** — it crawls nav categories, `/products-with-options` and the platform line over xAPI, so a story that ships a page produces an empty sitemap diff; (2) a module route is **config- and permission-gated**, so its absence on a given env is normal and is *not* evidence the route does not exist; (3) grepping only `router/routes/` under-reports the surface. Enumerate `client-app/modules/*/index.ts` for `addRoute` as well.
+> Nav-link caveat (VCST-5346 #19): loyalty and sales-rep merge their menu entries behind a **one-shot `isAuthenticated` check at bootstrap**, so a user who signs in *during* a session reaches the route by URL while the nav link stays absent until a full reload.
+
 
 ### Purchasing
 | Page | URL | Description |
@@ -91,7 +98,8 @@ All account pages require authentication. Account sidebar is organized into **4 
 |------|-----|-------------|
 | Coupons & promotions | `/account/coupons` | All coupons & promotions (coupon cards with code, description, expiry) |
 | Notifications | `/account/notifications` | User notifications |
-| Points History | `/account/points-history` | Loyalty points history |
+| Points History | `/account/points-history` | Loyalty points history — **module route**, gated on Loyalty `ENABLED_KEY` |
+| **Missions & Challenges** | **`/account/missions`** | **Loyalty missions/challenges cards (VCST-5346, shipped Sprint 26-17, PR #2396). Module route, DOUBLE-gated: Loyalty `ENABLED_KEY` **and** `MISSIONS_ENABLED_KEY` — absent entirely when either is off** |
 
 ### Corporate
 | Page | URL | Description |
@@ -99,10 +107,23 @@ All account pages require authentication. Account sidebar is organized into **4 
 | Company Info | `/company/info` | Company information |
 | Company Members | `/company/members` | Company members management |
 
+### Sales Rep hub (`/company/*` — module routes)
+
+Registered by the **`sales-rep` frontend module** (`client-app/modules/sales-rep/index.ts` → `router.addRoute("Company", …)`), not the core router — `company.ts` declares only `info` and `members`. All five are gated on `isSalesRepsEnabled()`; the hub left-rail widget additionally on `SALES_REP_ACCESS_PERMISSION`.
+
+| Page | URL | Description |
+|------|-----|-------------|
+| Sales reps | `/company/sales-reps` | Buyer-facing "my sales reps" contact info (VCST-5409); stays in the Corporate widget |
+| Hub dashboard | `/company/dashboard` | Sales Rep hub dashboard, saved widget layout (VCST-5469) |
+| My customers | `/company/my-customers` | Served-customer list; nav link carries a total-count badge |
+| Customer profile | `/company/my-customers/:organizationId` | Per-customer profile (VCST-5308) |
+| **Document library** | **`/company/documents`** | **Approved sales materials from the `sales-rep-documents` assets folder (VCST-5730, shipped Sprint 26-17 — PR #2439 + `vc-module-sales-rep` #12). Additionally gated by its own `beforeEnter` on `documents:read`: without that permission the route, the nav link AND the dashboard widget are all absent** |
+
 ### User
 | Page | URL | Description |
 |------|-----|-------------|
 | Profile | `/account/profile` | User profile settings |
+| Addresses | `/account/addresses` | Personal-account addresses. **Route-level `beforeEnter`**: a corporate member is redirected to `/account/dashboard`, so for a B2B user the URL is unreachable, not merely hidden |
 | Change Password | `/account/change-password` | Password management |
 | Saved Credit Cards | `/account/saved-credit-cards` | Saved payment methods |
 
@@ -557,6 +578,20 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 
 ---
 
+## Changelog (vs. August 24, 2026 rev 7)
+
+| Area | Delta |
+|------|-------|
+| Nav categories | 49 → **53**. ADDED (4): `agent-test-empty-category`, `seed-compare-fixtures`, `seed-compare-nested`, `seed-loyalty-missions-e2e`. None removed or renamed. **All four are QA seed fixtures, not merchandising categories** — they were provisioned by this repo's own seeders for VCST-5735 (compare products) and VCST-5346/5319 (loyalty missions). Do not treat them as catalog content; they are teardown-eligible `AGENT-TEST`/`seed-*` data |
+| Store total products | 4,520 → **4,626** (+106; consistent with the same fixture seeding) |
+| Platform assembly line | max module-required `platformVersion` 3.1057.0 → **3.1062.0**; modules loaded **87 — unchanged** |
+| `/products-with-options` | 7 subcategories — **unchanged** |
+| Storefront (theme) version | **not resolved this pass** — SPA-rendered, the deterministic crawler cannot read it; the rev-5 value `2.54.0-pr-2382` stands and is stale by at least two sprints. Resolve via browser before quoting it |
+| **§2 Account — 6 missing routes added** | `/account/missions` (VCST-5346, Sprint 26-17) · `/account/addresses` (existed in prose only, never as a route row) · and the whole **Sales Rep hub**: `/company/sales-reps`, `/company/dashboard`, `/company/my-customers`, `/company/my-customers/:organizationId`, `/company/documents` (VCST-5730, Sprint 26-17). §2 had been carried forward from **rev 4 (May 2026)** and the Sales Rep hub shipped after it, so the doc was ~4 months stale on the surface Sprints 26-16 and 26-17 were actively testing |
+| **Why they were missing (root cause, now documented in §2)** | These are **module-contributed routes** — added at bootstrap via `router.addRoute("Account"|"Company", …)` from `client-app/modules/*/index.ts` — not core `router/routes/` declarations. `sitemap:refresh` crawls only catalog nav + versions over xAPI, so **a story that ships a page yields an empty sitemap diff**. §2 now carries the two-route-sources note plus each route's config/permission gate so this is self-correcting |
+| Provenance of the §2 additions | Read from **source** on `vc-frontend@dev`: `router/routes/account.ts`, `router/routes/company.ts`, `router/routes/checkout.ts`, `router/routes/constants.ts`, `modules/loyalty/index.ts`, `modules/sales-rep/index.ts`. **Not** live-crawled this rev and **not** taken from citation counts — the router is the source of truth for a static route |
+| Scope of this rev | **Deterministic xAPI crawl** (`npm run sitemap:refresh`, 2026-09-04, `/qa-test-plan Sprint26-17` Step 0) **+ a source-read of the vc-frontend router and module route registrations** for §2. §§3–9 carried forward, **not** re-verified |
+
 ## Changelog (vs. August 7, 2026 rev 6)
 
 | Area | Change |
@@ -618,6 +653,6 @@ See git history of this file for prior revisions.
 
 ---
 
-**Last Updated:** August 24, 2026 (rev 7)
+**Last Updated:** September 4, 2026 (rev 8)
 **Tool Used:** Playwright (Chrome) MCP — live crawl (guest) + `/api/platform/modules` (authed) for platform version
-**Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Carried forward from rev 4 (not re-verified):** §2 Account pages, §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.
+**Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Re-derived from source at rev 8:** §2 Account + Corporate + Sales Rep hub routes (vc-frontend `router/routes/` + `modules/*/index.ts`). **Carried forward from rev 4 (not re-verified):** §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.
