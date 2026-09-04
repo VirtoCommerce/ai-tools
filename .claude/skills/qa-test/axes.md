@@ -52,12 +52,12 @@ Every axis obeys all five. Where an axis differs, it is §3, and it says so expl
 
 ## 3. Where they differ — and 2b is the one that matters
 
-**`layer` fails CLOSED. The other three fail OPEN.** This is the single most consequential rule in the
+**`layer` and `data_surface` fail CLOSED. The other three fail OPEN.** This is the single most consequential rule in the
 block, and it was the one the shared *"same discipline"* phrasing concealed.
 
 | | `layer` (2b) | `visual_surface` (2c) | `contract_surface` (2d) | `coverage_surface` (2e) | `data_surface` (2f) |
 |---|---|---|---|---|---|
-| **Unresolved ⇒** | **`null` + `UNRESOLVED`** | `true` | `true` | `true` | `true` |
+| **Unresolved ⇒** | **`null` + `UNRESOLVED`** | `true` | `true` | `true` | **`false`** |
 | Shape | 6 values + `cross-layer` | boolean | boolean | boolean | boolean |
 | Dispatches an agent? | no | **yes** (`ui-ux-expert`) | no | no | **yes** (`test-data-engineer`) |
 | Costs I/O in `1b`? | no | no | **yes** (~8.6 s) | yes (~1 s, wave B) | yes (~1 s, wave B) |
@@ -80,16 +80,35 @@ a *"seeded env, green `td:validate`"* gate, while the only escape hatch was one 
 default-on with a burden of proof to skip. So an opus `test-data-engineer` was dispatched on runs whose
 cases resolved entirely against fixtures the environment already held.
 
-It still fails **open** (`true`), for a sharper reason than the others: authoring against data that does
-not exist produces cases that come back BLOCKED and get triaged as product defects, while a needless
-dispatch costs one browserless agent inside time Step 3 already spends on `3x` and `B`. And "existing
-data is enough" is **two** claims rather than one — the fixtures must *resolve* **and** be
-*discriminating* on the links under test, the second being what `.claude/rules/test-data.md` §SECOND
-RULE measures (Loyalty Missions: flat $30 orders resolved perfectly and left the feature's central
+**And because it SUBTRACTS, it is the one fail-open axis that was wrong — it now fails CLOSED**
+(`unresolved ⇒ false`, dispatch nothing, state the skip). Fail-open here recreated the exact flaw the
+paragraph above names: *default-on with a burden of proof to skip*. An axis that dispatches an opus agent
+whenever it is unsure is not subtracting — the subtraction only happened when someone could affirmatively
+prove `false`. Measured 2026-09-04 on VCST-5738: a 20-line storefront transport change derived
+`data_surface: true`, and the dispatched agent built a seeder + spec module + validator + unit tests + two
+`package.json` scripts + aliases + docs in a tracked rules file — all reverted, because the "missing data"
+was a **shopping cart**, which three UI clicks create.
+
+**The burden is now on NEEDING a fixture, and one distinction decides it:**
+
+| The data is | Then | Because |
+|---|---|---|
+| **Session state a user creates** — a cart and its lines, a comparison list, a search, a draft quote | **`false`.** Create it in-test through the real UI, and name that as the covering answer | it is not a fixture at all. Seeding it builds permanent infrastructure for what a click produces, and the seeded copy then drifts from what a real user would have |
+| **Seeded reference data** — products, orgs, roles, pricelists, inventory, loyalty balances | judge normally (below) | it must pre-exist, be `@td()`-resolvable, and be identical on every env |
+| **A PRODUCT capability you have not confirmed exists** — a second addressable cart, a shared list | **`false`, and establish it first** | *"can this even exist?"* is a source/live question worth minutes. Dispatching a build agent to find out means it builds first and answers second |
+
+For genuinely seeded data a `false` still needs **two** claims, not one — the fixtures must *resolve*
+**and** be *discriminating* on the links under test, the second being what `.claude/rules/test-data.md`
+§SECOND RULE measures (Loyalty Missions: flat $30 orders resolved perfectly and left the feature's central
 question undecidable). Only the second needs judgment, which is why the token gates the dispatch rather
 than replacing it.
 
-**The three fail-open axes are not equally flat, and none of them needs to claim it is flattest.** Each
+**The residual risk of failing closed, stated rather than hidden:** authoring against data that does not
+exist yields BLOCKED cases triaged as product defects. That is caught one step later — Step 3's gate
+re-derives whether every planned case resolves — and a fixture need surfacing there still goes to
+`test-data-engineer`, never to an inline seeder.
+
+**The three REMAINING fail-open axes are not equally flat, and none needs to claim it is flattest.** Each
 simply states its own trade: a wrongly-run visual lane costs **one agent**; a wrongly-run contract refresh
 costs **one introspection call**; a wrongly-run coverage scan costs **one script run**. Against that, a
 skipped visual pass leaves no trace, a skipped refresh leaves the run reading a snapshot of unknown age,

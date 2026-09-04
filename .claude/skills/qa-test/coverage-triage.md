@@ -181,6 +181,13 @@ produced (even an empty one) · `1` bad usage · `2` an explicitly named `--suit
 |---|---|
 | `WILL_RUN` | executes under the planned Artifact-C selection. A stale row here is **self-announcing** — it goes red at Step 4 and 5a triages it |
 | `FILTERED_OUT` | in scope but the case filter drops it. A stale row here is **invisible forever**. This is the coverage hole |
+
+**`FILTERED_OUT` is NOT COMPUTABLE in `1b` wave B, and a `0` there is not a clean result.** Wave B runs
+scope + risk terms only (no `--cases`), and with no priority tier nothing *can* be filtered out — the
+count is **structurally** zero whatever the corpus holds. It becomes real at the **Step-3 gate re-run**,
+where Artifact A exists and the tier is known. Record wave B's value as `not-yet-computable`, never as
+zero. The worked example below reports 45 `FILTERED_OUT` **because it passed `--cases critical`** — the
+one flag wave B forbids; read it as the Step-3 shape, not the wave-B one.
 | `NOT_EXECUTING` | explicitly `Manual` or `Deprecated` (EX-200/EX-201) — opted out **by intent**, so "it will not run" is correct and it is *not* a hole |
 
 `NOT_EXECUTING` is a separate value rather than a flavour of `FILTERED_OUT` for the reason
