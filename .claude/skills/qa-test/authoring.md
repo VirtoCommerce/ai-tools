@@ -77,18 +77,33 @@ runs, it runs **before** Artifact A, not after the review pass.
 
 **It is a step for tickets that need data that does not exist yet, not a fixed cost of every run.** The
 token derives like every other pre-flight axis — derived, never asked, never defaulted, recorded with its
-sources, `unresolved` ⇒ `true` ([`axes.md`](axes.md)). Sources, in order:
+sources, `unresolved` ⇒ **`false`** — it fails **CLOSED** ([`axes.md`](axes.md)). Sources, in order — **a
+ladder over the four data layers of [`.claude/rules/test-data.md`](../../rules/test-data.md), not a flat list:**
 
 | Source | Reads |
 |---|---|
 | the `1e-plan` authoring plan (FULL) / the Artifact-B conditions (FAST) | every `@td(…)` / `{{VAR}}` the planned rows name |
 | `npm run td:validate` | does each of those actually RESOLVE against this env |
+| **`live-discover`** — `scripts/lib/live-discover.ts`, decision tree in [`live-discovery.md`](../../knowledge/execution/live-discovery.md) | **can the environment supply it ALREADY?** `discoverFirstAvailableProduct` · `discoverProductBySku` · `discoverVirtualCatalogRoot` · `discoverFirstAddress` · `discoverFirstCart` · `discoverAnyActiveCoupon`. For *"are there ≥N products"* use the plural `discoverCatalogProducts(api, count)` in `scripts/lib/seed-common.mjs` — the six primitives above are singular/nullable |
 | the Test Model Part 0 value chain | does any link under test need a **divergence** the existing fixtures do not have |
 | the ticket + diff | a new entity type, a new store/org/role, a new pricing or inventory shape |
 
-**`true` when any of the last three is unsatisfied. `false` only when the first two are green AND the
-third is answered.** That third clause is the whole reason this is a token rather than a one-line
-shortcut: *"existing data is enough"* is **two** claims, and only the cheap one was ever checked.
+**`false` when layer 1, 2 OR 3 can supply every planned row** — the refs resolve, *or* the entity is
+discoverable from what the env already holds — **AND** no link under test needs a divergence those values
+lack. **`true` only when the data is absent from the environment AND undiscoverable.** The divergence
+clause is the whole reason this is a token rather than a one-line shortcut: *"existing data is enough"* is
+**two** claims, and only the cheap one was ever checked.
+
+**The reuse-first rule already existed — in the wrong place.** [`/qa-generate-data`](../qa-generate-data/SKILL.md)
+§5 opens with *"**Reuse** — does an existing `aliases.json` entry / `test-data/` row / **live platform
+entity** already satisfy this state? … author nothing."* That is the correct procedure, and it lived
+**inside the agent Step 3a dispatches** — so it ran only after the dispatch had already been paid for.
+Lifting it into 2f *is* the change: the same question, asked before the cost instead of after.
+
+**Discovery answers *does it exist*, never *is it discriminating*.** `.claude/rules/test-data.md` §SECOND
+RULE still binds in full: `live-discover` selects on **availability, not suitability**, so pin currency,
+price shape, stock and catalog scope on every dimension the feature reads. Discovering "any two buyable
+products" for a money-summing surface will eventually hand you one in EUR and one in USD.
 
 1. **Do the fixtures RESOLVE?** Deterministic — `td:validate` answers it.
 2. **Are they DISCRIMINATING on the links under test?** Judgment — `.claude/rules/test-data.md` §SECOND
@@ -102,10 +117,12 @@ So a `false` is not *"the aliases resolve"* — it is *"the aliases resolve **an
 a divergence these fixtures lack"*, and the run **states which existing fixtures cover the plan**. An
 unstated skip reads exactly like a satisfied one.
 
-**Why it fails open.** A wrong `false` authors cases against data that cannot answer them: those come
-back BLOCKED at Step 4 and get triaged as product defects — the expensive, misleading direction. A wrong
-`true` costs one browserless agent inside time the wave already spends on `3x` and `B`. So doubt
-dispatches.
+**Why it fails CLOSED** (changed 2026-09-04 — it used to fail open, and `axes.md` §3 carries the argument).
+Fail-open recreated the very flaw this section names: *default-on with a burden of proof to skip*. An axis
+that dispatches an opus agent whenever it is unsure is not subtracting. So doubt now **skips and states
+the skip**. The residual risk is real and is caught one step later: a wrong `false` authors cases against
+data that cannot answer them, and **Step 3's gate re-derives whether every planned case resolves** before
+any of them execute.
 
 **It gates the dispatch, never the ownership.** When authoring later surfaces a fixture need, the answer
 is still `test-data-engineer` (below) — a `false` at 2f is a prediction, not a licence to write a seeder

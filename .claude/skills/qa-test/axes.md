@@ -94,7 +94,8 @@ was a **shopping cart**, which three UI clicks create.
 | The data is | Then | Because |
 |---|---|---|
 | **Session state a user creates** — a cart and its lines, a comparison list, a search, a draft quote | **`false`.** Create it in-test through the real UI, and name that as the covering answer | it is not a fixture at all. Seeding it builds permanent infrastructure for what a click produces, and the seeded copy then drifts from what a real user would have |
-| **Seeded reference data** — products, orgs, roles, pricelists, inventory, loyalty balances | judge normally (below) | it must pre-exist, be `@td()`-resolvable, and be identical on every env |
+| **Already in the env and DISCOVERABLE** — any product, catalog root, address, coupon, cart | **`false`.** Resolve it at **layer 3** (`live-discover`) and NAME the primitive in the record | seeding what the env already holds maintains a second copy that drifts out of step with it. Products also have a **plural** probe — `discoverCatalogProducts(api, count)` in `scripts/lib/seed-common.mjs`, already used by four seeders — so *"are there ≥N buyable products"* is answerable. Pricelists, coupons, orgs and inventory have **no count primitive**, so there the honest answer is a singular non-null probe or a stated assumption — not a seeder |
+| **Seeded reference data that discovery could NOT supply** — a new entity type, a new store/org/role, a new pricing or inventory shape | judge normally (below) | it must pre-exist, be `@td()`-resolvable, and be identical on every env |
 | **A PRODUCT capability you have not confirmed exists** — a second addressable cart, a shared list | **`false`, and establish it first** | *"can this even exist?"* is a source/live question worth minutes. Dispatching a build agent to find out means it builds first and answers second |
 
 For genuinely seeded data a `false` still needs **two** claims, not one — the fixtures must *resolve*
