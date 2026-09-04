@@ -1,6 +1,6 @@
-# OPEN QUESTION (not filed): is a sales rep intended to read any order via the buyer route?
+# ANSWERED (never filed): is a sales rep intended to read any order via the buyer route? — **YES, BY DESIGN**
 
-**Status:** **NOT FILED — reclassified pending design confirmation.** Provisional archetype `BY-DESIGN`
+**Status:** **NOT FILED — RESOLVED 2026-09-04 as BY DESIGN** by the assignee (VCST-5733 comment 108208). See the ANSWERED section at the foot of this file; the header claims below are retained as written and three of them are retracted there.**Superseded header, kept for the record:** NOT FILED — reclassified pending design confirmation. Provisional archetype `BY-DESIGN`
 (`vc-bug-catalog` §Defect archetypes: *"The behaviour is intentional. Filing it is the bug."*)
 **Type:** Authorization scope — a design-intent question, not a confirmed defect
 **Provenance:** IN-SCOPE — introduced by the widened rep visibility in `vc-module-sales-rep#14` / `vc-module-x-api#84` being consumed by the pre-existing buyer-order resolver
@@ -109,3 +109,77 @@ pathway should match.
 **Nothing was filed and no tracker item exists for this.** The file is the run's record of a question
 raised and reclassified, not an open defect. If the answer is "by design", delete it and amend
 `BL-SR-002` instead; if the answer is "should be scoped", re-grade and file it then.
+
+---
+
+# ANSWERED — 2026-09-04. Verdict: **BY DESIGN.** Not a defect.
+
+**Answered by:** Kirill Iusupov (assignee), VCST-5733 comment **108208**, 2026-09-03 19:07 +0300.
+Fetched from the tracker on 2026-09-04, not quoted from memory.
+
+## The answer, verbatim
+
+> **Order access follows organization membership, not what the hub displays.**
+>
+> When a sales rep is assigned to a customer, the rep is stored as a member of that customer's
+> organization. The storefront grants full buyer rights on an order to anyone who belongs to the
+> organization that placed it — so a rep can open any order of any customer they serve on the
+> buyer-facing order page and act on it there, payment included. Orders belonging to organizations
+> the rep does not serve are refused (403 error).
+>
+> So the hub listing another rep's orders without a pay action is presentation, not an access
+> boundary — the same order stays reachable and payable through its buyer-facing page. This is not
+> new behaviour or specific to this work; it follows from how membership and order access already
+> fit together.
+>
+> Worth an explicit decision on whether a rep should be able to act as a buyer on a
+> colleague's customer order, original design decision was made based on client-project ("LEO")
+> pre-existing specifics (sales reps were organization members)
+
+## What this resolves, and what it does not
+
+**Resolved — the QA question.** *Is a serving rep reading a customer's order via the buyer route a
+defect?* **No.** A rep assigned to a customer **is a member of that customer's organization**, and the
+buyer route grants full buyer rights to any organization member. So the observed behaviour is the
+documented membership rule working, not an escalation. Three consequences:
+
+1. **`BL-SR-002` was NOT violated.** Its membership half held throughout — the order belonged to an
+   organization the rep **does** serve. This report's header claimed the invariant was violated; that
+   claim is **retracted**. The rep was never outside membership scope, so there was no leak to find.
+2. **Provenance was wrong too.** The header says IN-SCOPE, introduced by `vc-module-sales-rep#14` /
+   `vc-module-x-api#84`. The assignee states it is *"not new behaviour or specific to this work"* — it
+   follows from pre-existing membership semantics. **PRE-EXISTING, and by design.**
+3. **`CanAccessOrderAuthorizationRequirement` is satisfied, not bypassed.** This report reasoned that a
+   serving rep is *"none of"* administrator / `order.CustomerId == caller` / org-member. That was the
+   error: the rep **is** the third one. The non-rep maintainer is refused precisely because they are
+   *not* an org member — which is the rule working, not a contrast that indicts the rep path.
+
+**Not resolved — and it is not QA's to resolve.** The assignee explicitly raises *"worth an explicit
+decision on whether a rep **should** be able to act as a buyer on a colleague's customer order"*, noting
+the original decision came from the **"LEO"** client project where sales reps were organization members.
+That is a **product decision about intended capability**, not a question about whether the code matches
+its spec. It is recorded here and named in the QA close-out; it belongs to the product owner.
+
+## Follow-through already completed
+
+- **`BL-SR-002` amended** — audit `reports/knowledge/BL-AUDIT-2026-09-04.md`. Its creator-scoped half was
+  written as governing *"every sales-rep figure"*, which is false for the `salesRepCustomerOrders` /
+  `salesRepCustomerOrder` family. It now splits into a universal **membership** half and a
+  statistics-and-rankings-only **creator** half, with that family explicitly carved out as deliberately
+  creator-agnostic. **ID unchanged** — 54 cases cite it.
+- **Test case `SR-CO-012` re-dispositioned `RE-BASE`.** It asserts the buyer page *"refuses, redirects, or
+  errors"* for this rep. It ran unmodified in `REG-2026-09-04-1015` and **FAILED**, reproducing exactly
+  what the assignee describes: the page renders in full, HTTP 200, no errors. The case's expected value —
+  not the product — is what is wrong, and it was deliberately **not** pre-repaired so the run's own
+  evidence would rebase it rather than the change becoming its own oracle.
+
+## Disposition of this file
+
+This report's own closing instruction was: *"If the answer is 'by design', delete it and amend
+`BL-SR-002` instead."* **Both conditions are now met** — the answer is by-design and `BL-SR-002` is
+amended. The file is nonetheless **kept**, deliberately: it carries three retracted claims and the
+reasoning that produced them, which is worth more as a record of how a membership-scope question gets
+mis-read than the tidiness of deleting it. It is **no longer an open question** — nothing here needs
+action from anyone except the product decision above, which is the assignee's own ask.
+
+**Nothing was ever filed for this, and nothing should be.**

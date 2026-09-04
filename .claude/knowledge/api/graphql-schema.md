@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-09-03)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-09-04)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation

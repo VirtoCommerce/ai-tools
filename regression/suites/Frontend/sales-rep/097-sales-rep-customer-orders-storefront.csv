@@ -468,3 +468,129 @@ SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id), which has orders in at leas
 [REL] COMBINED_ROWS > STATUS_A_ROWS -- adding the second status strictly widens the result set rather than narrowing or leaving it unchanged {OBSERVED}
 [STATE] every status value rendered in the grid's status column after the combined filter is either STATUS_A or STATUS_B -- no third status leaks in and no row from either selected status is missing {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SILENT · Technique:DT,Draft
+SR-CO-032,"Zero-match status chip keeps its localized label under a non-English culture, never the raw machine term",Storefront > Sales Rep > Customer Orders > Active filter chips,High,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id). The storefront offers German (de-DE) as a selectable language -- verify via the language switcher before proceeding; if German is not offered, record SKIPPED with reason ""store does not offer de-DE"" and stop. en-US CANNOT be used for this case: every status term equals its own label under en-US (probed: New/New, Processing/Processing), so only a non-English culture makes the fallback observable. A search term that matches none of this customer's orders is available (a random alphanumeric string), and a future created-date window (2030) that also matches none of this customer's orders is available.","rep={{SALES_REP_EMAIL}}, pwd={{TEST_USER_PASSWORD}}, front={{FRONT_URL}}, org=@td(ORG_TECHFLOW.platform_id)","--- BLOCK: no-match SEARCH TERM with an active status filter ---
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the orders grid has rendered at least one row
+[ACT] open the language switcher
+[KEY] record every offered language; if German (de) is not among them, record SKIPPED with reason ""store does not offer de-DE"" and stop
+[ACT] select German (Deutsch / de) from the language list
+[WAIT] the page reloads under de-DE
+[ACT] open the filters drawer
+[ACT] select a status filter present among this customer's orders
+[ACT] click Apply
+[WAIT] the grid re-renders filtered
+[KEY] record the active status chip's rendered text (CHIP_LABEL_BEFORE)
+[ACT] type a search term into the order-search input that matches none of this customer's orders
+[ACT] submit the search
+[WAIT] the grid re-renders to zero rows
+[KEY] record the active status chip's rendered text (CHIP_LABEL_ZEROMATCH)
+[ACT] clear the order-search input
+[ACT] submit the empty search
+[WAIT] the grid re-renders with rows restored
+[KEY] record the active status chip's rendered text (CHIP_LABEL_RESTORED)
+--- BLOCK: no-match DATE RANGE with an active status filter ---
+[ACT] open the filters drawer
+[ACT] set the created-date range to 01.01.2030 - 31.12.2030, a window that matches none of this customer's orders
+[ACT] click Apply
+[WAIT] the grid re-renders to zero rows
+[KEY] record the active status chip's rendered text (CHIP_LABEL_DATERANGE_ZEROMATCH) and the rendered text of the two date-range chips (DATE_CHIPS_ZEROMATCH)","[REL] CHIP_LABEL_BEFORE is the de-DE localized status label (e.g. ""In Bearbeitung""), not the raw English machine term {OBSERVED}
+[REL] CHIP_LABEL_ZEROMATCH differs from CHIP_LABEL_BEFORE and equals the raw English machine term (e.g. ""Processing"") -- the chip label falls back to the unlocalized term exactly when the result set is empty, because the label lookup source (statusOptions, facet-derived) is empty on a zero-match query {OBSERVED}
+[REL] CHIP_LABEL_RESTORED equals CHIP_LABEL_BEFORE -- restoring a non-empty result set flips the chip back to its localized label, so the fallback tracks totalCount rather than being a one-way mislabel {OBSERVED}
+[REL] CHIP_LABEL_DATERANGE_ZEROMATCH equals CHIP_LABEL_ZEROMATCH (the same raw-term fallback), while DATE_CHIPS_ZEROMATCH still render in the de-DE date format (e.g. ""Beginn: 1.1.2030"") -- the defect is isolated to the status chip's label lookup, not a page-wide localization failure {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:FALLBACK · Technique:EG,Draft
+SR-CO-033,A zero-match filter is disclosed as a closable chip and its close control clears the term and restores the list,Storefront > Sales Rep > Customer Orders > Active filter chips,High,BL-SR-012,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id). A created-date window that matches none of this customer's orders is available (live-discover a window before the earliest order or after the latest). en-US is sufficient -- this case is about disclosure and control presence, not label text. NOTE (BY DESIGN, confirmed by the assignee 2026-09-03): the drawer's Status and ""Kunde auswaehlen"" checkbox groups are hidden when the facet response returns zero terms (v-if=""statuses.length""). This case does NOT assert those drawer groups stay visible -- it asserts only that the active status remains disclosed as a chip outside the drawer, and that the chip's close control clears the term and restores the list.","rep={{SALES_REP_EMAIL}}, pwd={{TEST_USER_PASSWORD}}, front={{FRONT_URL}}, org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the orders grid has rendered at least one row
+[ACT] open the filters drawer
+[ACT] select a status filter present among this customer's orders (record it as APPLIED_STATUS)
+[ACT] click Apply
+[WAIT] the grid re-renders filtered by APPLIED_STATUS
+[KEY] record the chips rendered in the active-filter chip row (CHIPS_BEFORE)
+[ACT] open the filters drawer again
+[ACT] set the created-date range to a window that matches none of this customer's orders
+[ACT] click Apply
+[WAIT] the grid re-renders to zero rows
+[KEY] record the chips rendered in the active-filter chip row (CHIPS_ZEROMATCH); separately note (context only, not asserted) whether the drawer's Status checkbox group is present in the DOM
+[ACT] click the close (x) control on the chip corresponding to APPLIED_STATUS
+[WAIT] the grid re-renders
+[KEY] intercept the outgoing salesRepCustomerOrders request and record its filter argument (POST_REMOVE_FILTER_ARG) and the resulting row count","[STATE] CHIPS_ZEROMATCH still includes a chip for APPLIED_STATUS -- the active status filter remains disclosed as a chip even though the result set is empty and the drawer's facet-derived groups have gone empty {OBSERVED}
+[REL] a chip close (x) control exists for the APPLIED_STATUS chip in CHIPS_ZEROMATCH, distinct from the drawer's all-or-nothing Reset control {OBSERVED}
+[REL] POST_REMOVE_FILTER_ARG no longer carries the APPLIED_STATUS term while still carrying the zero-match date range -- the chip's close control removes only that one term {OBSERVED}
+[STATE] the resulting row count after the close click is greater than zero -- removing the status term restores rows, so the close control both clears the term and re-renders the list {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SILENT · Technique:ST,Draft
+SR-CO-034,Closing only the start-date chip of a custom range leaves the drawer preset selector agreeing with what is applied,Storefront > Sales Rep > Customer Orders > Active filter chips,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id) with order history reaching back at least one month, so the ""Letzter Monat"" (Last month) preset yields a non-empty result. The both-dates-empty branch is UNOBSERVABLE for this defect: the drawer's first preset entry IS ""Benutzerdefiniertes Datum"" (Custom date), so a stale preset selection and a correctly-reset one render identically there -- this case MUST apply a NAMED, non-custom preset (""Letzter Monat"") for staleness to be visible.","rep={{SALES_REP_EMAIL}}, pwd={{TEST_USER_PASSWORD}}, front={{FRONT_URL}}, org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the orders grid has rendered
+[ACT] open the filters drawer
+[ACT] select the ""Letzter Monat"" (Last month) date preset from the preset selector
+[ACT] click Apply
+[WAIT] the grid re-renders filtered by the applied range
+[KEY] record the rendered chips for the applied range (expect a Beginn/Start chip and an Ende/End chip) and the drawer's preset-selector value (PRESET_BEFORE, expect ""Letzter Monat"")
+[ACT] close only the Beginn (Start-date) chip
+[WAIT] the grid re-renders
+[KEY] intercept the outgoing salesRepCustomerOrders request and record its created-date filter argument (APPLIED_RANGE_AFTER)
+[ACT] open the filters drawer
+[KEY] record the drawer's preset-selector value (PRESET_AFTER) and whether the drawer's Start-date and End-date input fields are visible","[STATE] APPLIED_RANGE_AFTER carries only an upper bound (createddate:[TO <the original end date>], no lower bound) -- the outgoing filter is now open-ended on the start side, reflecting that only the Ende chip remains {SPEC}
+[REL] PRESET_AFTER still equals PRESET_BEFORE (""Letzter Monat"") even though the applied range no longer matches that preset's real window -- the preset selector does not reset when only one of the two dates is cleared {SPEC}
+[STATE] with PRESET_AFTER showing a non-custom, named preset, the drawer's Start-date and End-date input fields are hidden -- the drawer offers no way to see or correct the real, open-ended range it silently disagrees with {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:STALE · Technique:DT,Draft
+SR-CO-035,Removing one filter chip fires exactly one salesRepCustomerOrders request,Storefront > Sales Rep > Customer Orders > Active filter chips,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id). Network capture is available to count outgoing salesRepCustomerOrders POST requests. This case is a REGRESSION GUARD -- a prior hypothesis that closing one chip fires two requests was checked live on this build and refuted; the assertions below pin the correct (single-request) behavior so a future regression is caught.","rep={{SALES_REP_EMAIL}}, pwd={{TEST_USER_PASSWORD}}, front={{FRONT_URL}}, org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the orders grid has rendered
+[ACT] open the filters drawer
+[ACT] set the created-date range's start date to a date before this customer's earliest order
+[ACT] set the created-date range's end date to a date at or after this customer's latest order
+[ACT] click Apply
+[WAIT] the grid re-renders filtered
+[KEY] record the current cumulative count of outgoing salesRepCustomerOrders POST requests (REQUEST_COUNT_BEFORE)
+[ACT] click the close (x) control on the Ende (End-date) chip
+[WAIT] the grid settles
+[KEY] record the count of NEW salesRepCustomerOrders POST requests fired since REQUEST_COUNT_BEFORE (REQUESTS_AFTER_END_CLOSE) and their filter arguments
+[ACT] open the filters drawer
+[ACT] set the created-date range's start date to a new date before this customer's earliest order
+[ACT] set the created-date range's end date to a new date at or after this customer's latest order
+[ACT] click Apply
+[WAIT] the grid re-renders filtered
+[KEY] record the current cumulative request count (REQUEST_COUNT_BEFORE_2)
+[ACT] click the close (x) control on the Beginn (Start-date) chip
+[WAIT] the grid settles
+[KEY] record the count of NEW salesRepCustomerOrders POST requests fired since REQUEST_COUNT_BEFORE_2 (REQUESTS_AFTER_START_CLOSE) and their filter arguments","[STATE] REQUESTS_AFTER_END_CLOSE equals exactly 1, and its filter argument carries a lower bound with no upper bound (the Ende term removed) {OBSERVED}
+[STATE] REQUESTS_AFTER_START_CLOSE equals exactly 1, and its filter argument carries an upper bound with no lower bound (the Beginn term removed) {OBSERVED}
+[REL] neither chip-close click fires a second salesRepCustomerOrders request -- the drawer's deep watch on the applied prop does not re-emit a change event when only page-level filter state changes {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:RACE · Technique:ST,Draft
+SR-CO-036,A long organization name in the drawer customer options stays distinguishable and its count badge stays visible,Storefront > Sales Rep > Customer Orders > Active filter chips,Medium,BL-UI-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves at least four customer organizations sharing a long common name prefix (this environment's fixtures are named AGENT-TEST-Org-*, 32-34 characters). The cross-customer route is used (this drawer's Customer facet does not exist on the org-scoped route). Today's four org names diverge before their clip point, so no two are visually ambiguous on this fixture set -- this case asserts the invariants that must hold regardless (badge visibility, accessible-name recoverability, name distinctness), never ""no clipping occurs"" (false at 375px) or ""two options collide"" (not true today).","rep={{SALES_REP_EMAIL}}, pwd={{TEST_USER_PASSWORD}}, front={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] open the filters drawer
+[KEY] record, for every rendered customer option at the default (1920px) viewport: its visible label text, whether the label is visually clipped (ellipsis), and whether its count badge is fully visible (OPTIONS_DESKTOP)
+[ACT] read the computed accessible name of each customer option's control (e.g. its checkbox) at 1920px (ACCESSIBLE_NAMES_DESKTOP)
+[ACT] resize the viewport to 375px
+[WAIT] the drawer re-renders at 375px
+[KEY] record the same three properties (label text, clipped or not, badge visibility) for every customer option at 375px (OPTIONS_MOBILE)
+[ACT] read the computed accessible name of each customer option's control at 375px (ACCESSIBLE_NAMES_MOBILE)","[STATE] for every customer option in OPTIONS_DESKTOP and OPTIONS_MOBILE, the count badge is fully visible -- never clipped or overlapped -- regardless of whether the organization-name label itself is clipped {BL}
+[REL] ACCESSIBLE_NAMES_MOBILE equals ACCESSIBLE_NAMES_DESKTOP for every option -- the full, untruncated organization name remains present in each option's accessible name even where the visible label text clips at 375px {OBSERVED}
+[STATE] every value in ACCESSIBLE_NAMES_MOBILE is distinct from every other -- no two customer options share an accessible name, so the rep can still distinguish and select the intended customer through the accessible name even when visible labels clip {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:RENDER · Technique:EG,Draft
+SR-CO-037,Each filter chip close button carries an accessible name that identifies the filter it removes,Storefront > Sales Rep > Customer Orders > Active filter chips,Medium,BL-A11Y-003,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id) with enough order history to support both a status filter and a two-boundary created-date range simultaneously (so the chip row renders at least 3 chips: status, start date, end date). A known, separate finding (focus falls to the document root after Reset filters) is NOT part of this case's scope.","rep={{SALES_REP_EMAIL}}, pwd={{TEST_USER_PASSWORD}}, front={{FRONT_URL}}, org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the orders grid has rendered
+[ACT] open the filters drawer
+[ACT] select a status filter present among this customer's orders
+[ACT] set the created-date range's start date to a date before this customer's earliest order
+[ACT] set the created-date range's end date to a date at or after this customer's latest order
+[ACT] click Apply
+[WAIT] the grid re-renders filtered, and the active-filter chip row shows at least three chips (status, start date, end date)
+[KEY] record the computed accessible name of each chip's close (x) control (CHIP_CLOSE_NAMES) alongside which filter term each chip visually represents
+[ACT] tab through the toolbar using only the keyboard, starting from the ""Filters"" drawer-trigger button, recording the ordered sequence of elements that receive focus, ending at the ""Reset filters"" control (TAB_ORDER)
+[ACT] with focus on the ""Reset filters"" control, press Enter
+[WAIT] the grid re-renders","[STATE] every close (x) control's accessible name in CHIP_CLOSE_NAMES is unique and identifies which filter it removes (e.g. names the status term, ""Beginn""/Start date, or ""Ende""/End date) -- no two chip close controls share the same accessible name {BL}
+[SHAPE] TAB_ORDER lists the Filters drawer-trigger, each chip's close control, then the Reset filters control, in the expected order, with no control skipped {OBSERVED}
+[REL] the active-filter chip count after pressing Enter on the focused Reset filters control is exactly 0, down from its pre-Enter count -- the grid re-renders unfiltered, so the control is operable by keyboard alone {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:RENDER · Technique:EG,Draft

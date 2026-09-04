@@ -1,88 +1,25 @@
 {
-  "runId": "REG-2026-09-02-2055",
+  "runId": "REG-2026-09-04-1015",
   "status": "completed",
-  "startedAt": "2026-09-02T20:55:00.000Z",
-  "selection": "050m,089,090,091,093,097,014 --cases critical --also-ids SR-GQL-121..130,SR-CO-001..025",
-  "environment": "vcst",
+  "startedAt": "2026-09-04T10:15:00.000Z",
+  "finishedAt": "2026-09-04T09:10:17.948Z",
+  "selection": "097 --ids SR-CO-001,003,007,009,011,012,015,016,017,020,021,023,024,026,027,028,029,030,031,032,033,034,035,036,037",
+  "env": "vcst",
   "ticket": "VCST-5733",
   "suites": [
     {
-      "id": "050m",
-      "name": "GraphQL xAPI — Sales Rep (scoped /graphql/sales-rep)",
-      "status": "done",
-      "browser": "playwright-firefox",
-      "lane": "split",
-      "pass": 55,
-      "fail": 1,
-      "blocked": 0,
-      "skipped": 0
-    },
-    {
-      "id": "089",
-      "name": "Sales Rep — My Customers (storefront UI/E2E)",
-      "status": "done",
-      "browser": "playwright-chrome",
-      "lane": "browser",
-      "pass": 11,
-      "fail": 0,
-      "blocked": 2,
-      "skipped": 0
-    },
-    {
-      "id": "090",
-      "name": "Sales Rep — My Sales Reps (storefront, buyer-facing)",
-      "status": "done",
-      "browser": "playwright-chrome",
-      "lane": "browser",
-      "pass": 5,
-      "fail": 0,
-      "blocked": 0,
-      "skipped": 0
-    },
-    {
-      "id": "091",
-      "name": "Sales Rep — Customer Profile (storefront)",
-      "status": "done",
-      "browser": "playwright-edge",
-      "lane": "browser",
-      "pass": 12,
-      "fail": 0,
-      "blocked": 2,
-      "skipped": 0
-    },
-    {
-      "id": "093",
-      "name": "Sales Rep — Hub Dashboard (storefront)",
-      "status": "done",
-      "browser": "playwright-edge",
-      "lane": "browser",
-      "pass": 9,
-      "fail": 2,
-      "blocked": 4,
-      "skipped": 0
-    },
-    {
       "id": "097",
-      "name": "Sales Rep — Customer Orders (storefront)",
+      "name": "Sales Rep Customer Orders - Storefront",
       "status": "done",
       "browser": "playwright-chrome",
+      "agent": "qa-frontend-expert",
+      "testCount": 25,
+      "pass": 11,
+      "fail": 11,
+      "blocked": 3,
       "lane": "browser",
-      "pass": 12,
-      "fail": 8,
-      "blocked": 5,
-      "skipped": 0
-    },
-    {
-      "id": "014",
-      "name": "Orders Frontend",
-      "status": "done",
-      "browser": "playwright-edge",
-      "lane": "split",
-      "pass": 2,
-      "fail": 4,
-      "blocked": 0,
-      "skipped": 1
+      "skipped": 0,
+      "attempts": 1
     }
-  ],
-  "finishedAt": "2026-09-02T22:04:58.592Z"
+  ]
 }

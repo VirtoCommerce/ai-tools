@@ -118,3 +118,5 @@ long-customer-name state, V5's de-DE half. `BL-UI-001..005` out of scope (owner:
 (2.11:1). Live is **not** the worse of the two, but the comparison is not like-for-like: live uses it
 as a *stroke* (1.4.11, 3:1, label+icon still pass), the spec as a *fill behind white text* (1.4.3,
 4.5:1). Yours to adjudicate.
+
+---

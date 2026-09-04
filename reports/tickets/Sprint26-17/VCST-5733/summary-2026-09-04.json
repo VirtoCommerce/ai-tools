@@ -1,0 +1,400 @@
+{
+  "ticket": "VCST-5733",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "layer": "cross-layer",
+  "date": "2026-09-04",
+  "verdict": "PASS_WITH_NOTES",
+  "verdict_reason": "PASS WITH NOTES. All 12 story-AC conditions hold and no IN-SCOPE P0/P1 bug exists (close-out.md 5c). C1 returned 11 PASS / 11 FAIL / 3 BLOCKED of 25, but the 11 FAILs are 5 stale assertions (RE-BASE), 1 test-authoring defect (REPAIR), and 5 real findings all Medium or below. VCST-5868 is substantively fixed - the chip row delivers disclosure and undo, verified three independent ways; its two cases fail only because they assert the remedy in the OLD location (in the drawer / inside the empty state). SR-CO-016 was investigated as a potential blocker and is NOT one: Reset/Apply need vertical scroll but are neither clipped nor unreachable, and the 20px checkboxes pass WCAG 2.5.8 via the spacing exception at 38px centre-to-centre (the case asserts a flat 24x24, stricter than the SC).",
+  "run_state": "COMPLETE",
+  "stopped_at": null,
+  "iterations": {
+    "requested_max_rounds": 2,
+    "rounds_completed": 1,
+    "exited_at_round": 1,
+    "exit_reason": "Verdict is PASS WITH NOTES, and the loop continues only on FAIL (modes.md 5k step 1). --max-rounds 2 is a cap, not a target; no Medium was inflated to P1 to earn a second round."
+  },
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "declared_theme": "vc-theme-b2b-vue-2.57.0-pr-2444-a247-a247b3ab",
+    "deployed": {
+      "platform": "3.1063.0",
+      "platform_source": "login-page HTML Version='3.1063.0' (/api/platform/modules needs an admin token)",
+      "VirtoCommerce.SalesRep": "3.1007.0-pr-14-5569",
+      "VirtoCommerce.Xapi": "3.1021.0-pr-84-0180",
+      "VirtoCommerce.XOrder": "3.1010.0",
+      "VirtoCommerce.Orders": "3.1014.0"
+    },
+    "delta_since_last_run": {
+      "commit": "a247b3ab6200ee3a7132bcb6c5a519625a2accb2",
+      "message": "fix: filter ui issues",
+      "repo": "VirtoCommerce/vc-frontend",
+      "pr": 2444,
+      "files": 17,
+      "scope": "all under client-app/modules/sales-rep/ — storefront only",
+      "deployed_at": "2026-09-04T06:49:07Z",
+      "deploy_workflow": "Cloud theme deployment — completed/success",
+      "backend_changed": false
+    },
+    "prs_under_test_all_unmerged": [
+      "vc-module-sales-rep#14",
+      "vc-frontend#2444",
+      "vc-module-x-api#84"
+    ]
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "transition_id": "4",
+      "confirmed": false,
+      "actor": "qa-lead"
+    },
+    {
+      "hop": "closing",
+      "at": "5f",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test",
+      "transition_id": "8",
+      "confirmed": true,
+      "actor": "qa-lead",
+      "note": "Comment 108257 posted BEFORE the transition, per rule 2. Transition resolved live against to.name; never past TESTED."
+    }
+  ],
+  "axes": {
+    "layer": {
+      "value": "cross-layer",
+      "sources": [
+        "ticket spans api+module+storefront",
+        "this round's delta is storefront-only"
+      ]
+    },
+    "visual": {
+      "surface": true,
+      "sources": [
+        "2 .vue files with template AND <style> changes",
+        "new UI controls (chip row)",
+        "new VcChip/VcBadge usage"
+      ],
+      "axes": {
+        "a11y": {
+          "ran": true,
+          "lane": "playwright-edge",
+          "axe": "0 violations (light, dark, both routes), axe-core 4.10.2, no CSP block"
+        },
+        "design_system": {
+          "ran": true,
+          "lane": "playwright-edge"
+        },
+        "vs_design": {
+          "ran": false,
+          "skipped_reason": "VCST-5733 carries no Claude Design Prototype link (checked: description, all 6 comments, all 4 attachments); DESIGN_SYSTEM_PROJECT_ID was removed 2026-09-03 so there is no default. SKIPPED is never a PASS."
+        }
+      },
+      "invariant_failures": [],
+      "advisory": [
+        "off-grid component internals .vc-chip__content padding-left 7.008px and vc-badge padding 0 3.008px — PRE-EXISTING, same 7.008px recorded as VIS-09 on 2026-09-02",
+        "AMBIGUOUS: VcBadge outline sm border #e52121 is --color-primary-500 under the Red preset, i.e. brand primary, NOT a danger-palette misuse. Whether brand-primary suits a neutral facet count is a design-owner call — escalated, filed as nothing."
+      ],
+      "not_measured": [
+        "BL-UI-001 CLS — no PerformanceObserver('layout-shift') on this pass. NOT a pass.",
+        "screen-reader output — manual-only per contract, may never be reported as PASS",
+        "non-Chromium accessible-name separator behaviour"
+      ],
+      "lane_note": "First dispatch went to Chrome DevTools MCP and returned SKIPPED — the persistent profile ~/.chrome-devtools-mcp/vc-qa-profile holds NO session, so /company/customer-orders bounced to /sign-in. That agent correctly declined to work around the credential. Re-dispatched to playwright-edge, which carries --secrets. One-time fix: sign that profile in by hand once."
+    },
+    "contract": {
+      "surface": true,
+      "sources": [
+        "target suites 050m/050m2 carry graphql+xapi tags",
+        "prior contract state was 2 days old"
+      ],
+      "schema_doc_refreshed": "2026-09-04 — 108 queries / 140 mutations / 54 types",
+      "fixtures_refreshed": true,
+      "fixture_drift_in_scope": [],
+      "fixture_drift_out_of_scope": [],
+      "note": "74/74 fixtures pass, zero drift. Both refreshers run because neither freshens the other."
+    },
+    "coverage_triage": {
+      "surface": true,
+      "command": "npm run tc:scope -- --domain sales-rep --observable \"Reset filters\" --observable \"status_option\" --observable \"Completed (\" --observable \"filter chip\" --oracle BL-SR-002",
+      "measured": {
+        "suitesScoped": 9,
+        "rowsScanned": 405,
+        "hits": 49,
+        "willRun": 49,
+        "filteredOut": 0,
+        "notExecuting": 0,
+        "neverAudited": 49,
+        "_note": "These are counts{} for the RECORDED command (observables + oracle). The oracle axis ALONE returns hits:38 — a different command. Earlier revisions of this file reported 38 here, which mislabelled a filtered subset as the raw readout."
+      },
+      "dispositioned": {
+        "CONFIRMED": 37,
+        "RE_BASE": 1,
+        "REPAIR": 0,
+        "SUPERSEDED": 0,
+        "UNCLEAR": 0
+      },
+      "gap": null,
+      "note_25_of_38": "25 of the 38 are in 050m, a backend GraphQL suite whose module is probed UNCHANGED in this build, so the BL-SR-002 amendment question for those is untouched by this delta.",
+      "derived": {
+        "cite_BL_SR_002": 38,
+        "observable_only": 11,
+        "observable_only_detail": "SIX of the 11 are this run's own new rows (SR-CO-032..037), needing no disposition; the other five are pre-existing chip rows on other surfaces (SR-FE-045/046/047, SR-CP-009, SR-HD-011)."
+      },
+      "resolution": "RESOLVED. All 38 oracle-axis hits dispositioned (see coverage_triage_disposition). filteredOut remained 0 throughout, so no coverage hole was ever concealed — a stale WILL_RUN row is self-announcing at Step 4."
+    },
+    "test_data": {
+      "surface": false,
+      "scope_of_the_claim": "Derived over the DELTA's six new cases (SR-CO-032..037) ONLY. It is NOT a claim about SR-GQL-130.",
+      "resolves": "td:validate — suite 097 resolves 155/155. Corpus-wide is NOT green: 6727 refs, 1 failure (042-smoke-tests.csv @td(ADDR_NY.*), invalid syntax, pre-existing, unrelated).",
+      "discriminating": "Live-probed and live-CONFIRMED by the verifier: salesRepCustomerOrders status term_facets have term===label under en-US (New/New, Processing/Processing) but DIVERGE under de-DE (Processing vs 'In Bearbeitung') and ru-RU. So SR-CO-032's defect is undecidable on the default locale. Recorded as a hard precondition on the case rather than seeded as new data.",
+      "covering_fixtures": [
+        "SALES_REP_EMAIL (agent-test-sr-primary@example.com, serves multiple orgs)",
+        "ORG_TECHFLOW/ACME/BUILDRIGHT organizationName facets",
+        "the 5 live order statuses on B2B-store"
+      ]
+    }
+  },
+  "artifacts_produced": {
+    "test_model": "reports/ba/test-models/VCST-5733-2026-09-02.md — AMENDED (not forked), +6 rows #26-#31, reduction 48->6, 1e gate passed inline, now 220 lines (at the cap)",
+    "authoring_plan": "scratchpad plan-storefront.json — tc:scaffold --check OK, 6 rows, all three KEEP questions answerable",
+    "new_cases": "regression/suites/Frontend/sales-rep/097-sales-rep-customer-orders-storefront.csv — SR-CO-032..037 appended, Draft, 31->37 rows, suites:sync run once, suites:lint OK",
+    "design_report": "reports/tickets/Sprint26-17/VCST-5733/design-report-2026-09-04.md (84 lines; split from the 09-02 report rather than appended, to respect the 120-line per-file cap without destroying prior evidence)",
+    "findings_ledger": "reports/tickets/Sprint26-17/VCST-5733/findings-2026-09-04-round1-INCOMPLETE.md",
+    "screenshots": "reports/tickets/Sprint26-17/VCST-5733/screenshots/ — 13 files, all -r1- stamped (7 EXP-r1-*, 6 VIS-r1-*)",
+    "testing_checklist": "PENDING — will be appended with REAL per-case verdicts from REG-2026-09-04-1015, not from the discovery lane's observations. Draft at scratchpad/checklist-append.md."
+  },
+  "steps_run": {
+    "4": "C1 COMPLETE - REG-2026-09-04-1015",
+    "1a": "route + fetch (6 comments, 4 attachments) + opening status hop",
+    "1b": "both I/O waves, all five axes derived",
+    "1c": "SKIPPED — the delta is one commit whose full patch was read directly; no ba-system-analyzer dispatch",
+    "1d": "SKIPPED — ACs unchanged since the 09-02 review; carried",
+    "1e": "Test Model amended, gate passed",
+    "1e-plan": "tc:scaffold --check passed",
+    "2a": "coverage triage run — observable axis dispositioned, ORACLE AXIS NOT (see above)",
+    "3a": "SKIPPED — data_surface false for the delta's cases, covering fixtures named",
+    "3x": "discovery lane COMPLETE — 25-min box, chrome; 2 hypotheses confirmed, 1 refuted, 1 downgraded, 2 new findings, 5 charter items covered, 3 NOT REACHED and named",
+    "3b": "authoring COMPLETE — 6 rows, suites:review green, appended serially",
+    "step3_gate": "REJECTED x3 (all audit-trail, never content); blocker dispositioned; cleared by OPERATOR OVERRIDE",
+    "5a_through_5h": "5a triage, 5b reconcile, 5c verdict, 5e comment (108257), 5f transition (Tested) DONE. 5d filed nothing (operator). 5r C2 NOT run (see c2_not_run). 5g NOT run. 5h documentation NOT run."
+  },
+  "c1_prepared_not_run": {
+    "suite": "regression/suites/Frontend/sales-rep/097-sales-rep-customer-orders-storefront.csv",
+    "ids": [
+      "SR-CO-001",
+      "SR-CO-003",
+      "SR-CO-007",
+      "SR-CO-009",
+      "SR-CO-011",
+      "SR-CO-012",
+      "SR-CO-015",
+      "SR-CO-016",
+      "SR-CO-017",
+      "SR-CO-020",
+      "SR-CO-021",
+      "SR-CO-023",
+      "SR-CO-024",
+      "SR-CO-026",
+      "SR-CO-027",
+      "SR-CO-028",
+      "SR-CO-029",
+      "SR-CO-030",
+      "SR-CO-031",
+      "SR-CO-032",
+      "SR-CO-033",
+      "SR-CO-034",
+      "SR-CO-035",
+      "SR-CO-036",
+      "SR-CO-037"
+    ],
+    "count": 25,
+    "composition": "6 new + 6 never-executed Drafts (026-031) + 8 prior FAILs + 5 prior BLOCKED",
+    "excluded": {
+      "SR-GQL-130": "Lives in 050m2-graphql-sales-rep-procedural.csv (NOT 050m — the 2026-09-02 summary.json misrecords this and the error was inherited and repeated here before the verifier caught it). Classified BROWSER lane (EX-010+EX-011). Its precondition is a mid-session account lock for which NO FIXTURE EXISTS, so it would only reproduce a BLOCK; and it exercises the account-lock breaking change from vc-module-sales-rep PR #14, whose module is probed UNCHANGED. Stays NOT-RUN for the same stated fixture reason, carried."
+    }
+  },
+  "c2_not_run": {
+    "reason": "5r never reached — it runs after the 5c verdict.",
+    "target_40_caveat": "regression:select --target 40 trims EVERY sales-rep suite and keeps only the P0 risk floor, because 050m's estimatedMinutes is 245 while the 2026-09-02 run measured 70 minutes ACTUAL for seven suites — the documented x18-x88 over-estimation. C2 must therefore be selected deliberately and its prediction stated, not trusted. Both verifiers judged this sound rather than a gate override."
+  },
+  "findings_not_filed": {
+    "policy": "5d never ran, so NOTHING was filed and no tracker comment was posted. All findings below are evidenced and persisted locally, awaiting a human decision.",
+    "in_scope_medium": [
+      "A1 — the active-filter chip falls back to the raw English machine term in the zero-match state. de-DE: chip reads 'In Bearbeitung'; drive the result set to zero and the SAME chip flips to 'Processing' on an otherwise fully German page. REVERSIBLE (restoring rows flips it back) which is the control confirming the mechanism: label = statusOptions.find(o => o.name === status)?.label ?? status, and statusOptions is facet-derived, hence empty exactly when totalCount is 0. TWO routes, the second ordinary: a search term matching nothing while a status filter is active. INVISIBLE on en-US, present on all 12 other locales. Case SR-CO-032. Would file as a Sub-task.",
+      "A2 — the drawer preset selector goes stale against the applied range and the drawer cannot correct it. Preset 'Letzter Monat' -> close ONLY the Beginn chip -> selector still reads 'Letzter Monat' while the query is open-ended createddate:[TO \"2026-09-03T21:59:59.999Z\"]. Aggravating: a non-custom preset HIDES the Start/End inputs, so the chip row is the only honest surface. Mechanism: the watch on props.applied resets selectedRange only when BOTH dates are falsy. Case SR-CO-034. Would file as a Sub-task."
+    ],
+    "a11y_standalone_never_blocks": [
+      "B1 — all six chip close buttons share one accessible name, the literal 'Close chip' / 'Chip schließen'. Triple-confirmed: rendered attribute, Chromium AX tree, axe accessibleTextVirtual. closeButtonAriaLabel is passed at ZERO call sites in all of client-app. WCAG 2.4.6/4.1.2. Medium. UI-kit default is PRE-EXISTING; a247b3ab is the first place it produces a collision.",
+      "B2 — 'Reset filters' destroys the focused element; document.activeElement becomes body, dumping a keyboard user to the top of the tab order. Reproduces on BOTH routes. WCAG 2.4.3. Medium. NEW in a247b3ab. Same CLASS as the open VCST-5869 (drawer 'focus never returns') — link as a sibling, do not duplicate; control and mechanism differ."
+    ],
+    "out_of_scope_incidental_medium": [
+      "C1 — an unparseable date disables Apply with NO message. de-DE inputs are DD.MM.YYYY; '12.31.2030' leaves Anwenden dead and no error renders. Source-confirmed: showRangeError fires only for start-after-end, while isRangeValid ALSO requires each date to parse — so a malformed date blocks Apply on a predicate the message does not cover. The invalid_range string exists in all 13 locales and is never reached. Lines 213-217 are in NO hunk of a247b3ab => PRE-EXISTING, newly discovered.",
+      "C2 — language-selector options are prefixed with the ACTIVE language, and two options collide byte-for-byte: under de-DE both en-GB and en-US compute to 'Deutsch (Deutschland) English', indistinguishable to a screen reader and to automation. Not a PR #2444 surface."
+    ],
+    "below_floor_low_not_filed": [
+      "D1 — drawer option labels clip at 375px; the full value has no title/aria-label/aria-describedby, and a vc-tooltip wrapper IS present in the markup but renders nothing because the checkbox input overlays the row and intercepts pointer events. Recoverable only via the accessible name. NO clipping at 1920px and the count badge stays fully visible in every case; the four current org names diverge BEFORE the cut point, so no two options are ambiguous today — latent, not live. Low/P3 => does not file.",
+      "D2 — the accessible name has no separator node: axe accname computes 'New56' while Chromium's AX tree reports 'New 56'. The accname spec does not guarantee the space, so non-Chromium AT may announce the run-on form. Firefox/WebKit UNVERIFIED and screen-reader output is manual-only. Low, explicitly unconfirmed.",
+      "D3 — BL-UI-006 mobile 44x44 guidance: chip closes are 28x28 with a minimum close-to-close edge gap of exactly 8.0px. AA-binding 2.5.8 PASSES at 28px via the spacing exception, and 28px is the UI-kit vc-chip md value. Graded Low deliberately rather than inflated into a blocker."
+    ],
+    "duplicate_check": "All of the above checked recursively across reports/bugs/** (open/ is severity-foldered, so a one-level glob would have missed everything) and across every reports/tickets/*/ sprint. No existing report for any of them. Nearest hits were different surfaces or a REJECTED locale-routing bug."
+  },
+  "refuted_hypotheses": [
+    "The applied prop + deep watch causes a duplicate refetch — REFUTED: exactly 1 salesRepCustomerOrders POST per chip close, measured twice by request-index delta. Authored as SR-CO-035, a passing guard.",
+    "Customer chips mislabel because they never look up a label — REFUTED: the facet is organizationName where term===label by nature, so the missing lookup is harmless.",
+    "VcIcon name='reset' resolves to nothing (the Lucide-migration hazard) — REFUTED: icon-aliases.ts:62 maps reset -> rotate-ccw, and it is correctly aria-hidden.",
+    "The deleted status_option i18n key still has a referrer — REFUTED: zero referrers repo-wide.",
+    "The three new common.* keys are missing — REFUTED: reset_filters, starts_from, ends_to all present.",
+    "VcChip clickable is a div with a click handler (mouse-only Reset) — REFUTED: renders a real <button type='button' tabindex='0'>; Space verified live, Enter native.",
+    "The count moving into a sibling VcBadge drops it from the checkbox accessible name — REFUTED: Chromium AX reports 'New 56'."
+  ],
+  "linked_bugs_carried": [
+    {
+      "key": "VCST-5868",
+      "severity": "Medium",
+      "status": "REFINEMENT",
+      "status_role": "not-fixed",
+      "disposition": "CARRIED, NOT transitioned. Evidence indicates both halves it names are now addressed — the active filter IS disclosed as a chip and its close control DOES remove the term — and it appears fixed incidentally by the story's own PR (no fix PR is linked to the bug). The drawer still hides the status group, but the assignee declared that facet-hiding BY DESIGN on 2026-09-03, so that is not the defect. Only a fix-ready bug is verified/hopped; REFINEMENT is not-fixed, so the status decision is a human's."
+    },
+    {
+      "key": "VCST-5869",
+      "severity": "High",
+      "status": "On hold",
+      "disposition": "CARRIED. a247b3ab touched the drawer's option rendering, not its dialog semantics. Finding B2 is a sibling of this."
+    },
+    {
+      "key": "VCST-5870",
+      "severity": "Medium",
+      "status": "On hold",
+      "disposition": "CARRIED. Untouched by the delta."
+    },
+    {
+      "key": "VCST-5866 / VCST-5867",
+      "status": "Cancelled",
+      "disposition": "Superseded by 5869/5870, linked Duplicate. No action."
+    }
+  ],
+  "stale_assertions_found": [
+    "PR #2444's body claims Reorder works on the buyer order page. REORDER DOES NOT EXIST IN THIS BUILD. Verified independently by the first verifier against the screenshot SR-CO-011-rep-placed-buyer-page-actions.png already in evidence, which shows Pay Now only. That single inaccuracy is the root of SR-CO-001 (the [JOURNEY] case) and SR-CO-011 failing on 2026-09-02, and it was already on that run's outstanding list unactioned. RE-BASE, not a product defect.",
+    "SR-CO-012 asserts a serving rep is REFUSED on a typed buyer-page URL. Jira comment 108208 (2026-09-03) states order access follows ORGANIZATION MEMBERSHIP, so a serving rep holds full buyer rights there BY DESIGN, inherited from the LEO client project. RE-BASE. Deliberately NOT pre-repaired: rewriting an expected value before the run makes the change its own oracle."
+  ],
+  "known_defects_in_this_artifact": [
+    "The 2026-09-02 summary.json still records SR-GQL-130 under 050m-graphql-sales-rep.csv instead of 050m2-graphql-sales-rep-procedural.csv. NOT corrected here — editing a completed run's record was judged out of scope for this gate by both verifiers. It is a live landmine: anyone invoking C1 from that citation will silently find nothing."
+  ],
+  "human_decisions_required": [
+    "Whether any of the 35 Critical/High cases citing BL-SR-002 across 050m/050m2/089/091/093/097 need RE-BASE against the amended oracle. Not yet judged — assumed clean by omission, which is what the gate rejected. Mitigating: all 38 are WILL_RUN and none is FILTERED_OUT, so staleness would surface as a red result rather than as an invisible hole.",
+    "Whether to authorize filing the 6 findings above (2 IN-SCOPE Medium as Sub-tasks, 2 a11y Medium as standalone, 2 OUT-OF-SCOPE incidental Medium as standalone). Nothing has been filed.",
+    "Whether to post the explanatory comment on VCST-5733, which is currently sitting in Testing with nobody testing it.",
+    "Whether to split BL-SR-002 per the 09-02 /qa-review-oracles proposal — its creator half is no longer true for the customer-orders family.",
+    "Whether to have test-data-engineer author a mid-session-account-lock fixture to finally close G12 / SR-GQL-130, open since 2026-09-02."
+  ],
+  "step3_gate": {
+    "rounds": 3,
+    "outcomes": [
+      "REJECT",
+      "REJECT",
+      "REJECT"
+    ],
+    "contract": "one repair round, then STOP for a human",
+    "cleared_by": "OPERATOR OVERRIDE — not by an APPROVE. The operator directed the run to continue after round 2, and to accept the gate after round 3.",
+    "substance_verdict": "SOUND on all three rounds. Round 3 independently re-derived all 38 BL-SR-002 hits, read raw CSV text for 8 self-chosen rows, and found NO wrongly-CONFIRMED row. It also established that BL-SR-009/BL-SR-010 were ALREADY split on this exact salesRepCustomerOrders boundary on 2026-09-03, so the surface-split rule has direct precedent rather than being reasoning invented to justify CONFIRMED.",
+    "rejection_class": "All three rejections were the SAME class and none was about test content: a number stated without being derived from the exact thing it claimed to describe. (1) \"7 suites in scope\" transcribed from the worked example in CLAUDE.md instead of read from the run. (2) SR-GQL-130 cited under suite 050m, an error inherited from the 2026-09-02 summary.json and repeated unchecked. (3) hits:38 presented as the recorded command's raw counts{} when 38 is a DIFFERENT command's count — the recorded one returns 49. This is the repo's own GOLDEN RULE failure, committed three times inside the artifact whose sole purpose is reproducibility.",
+    "all_fixed": true
+  },
+  "coverage_triage_disposition": {
+    "total_hits_recorded_command": 49,
+    "of_which_cite_BL_SR_002": 38,
+    "observable_only": 11,
+    "observable_only_note": "SIX of the 11 are this round's own new rows (SR-CO-032..037) and need no disposition; the other five are pre-existing rule-chip/profile-chip/dashboard-chip rows on other surfaces.",
+    "CONFIRMED": 37,
+    "RE_BASE": 1,
+    "REPAIR": 0,
+    "SUPERSEDED": 0,
+    "UNCLEAR": 0,
+    "re_base": "SR-CO-012 — asserts a serving rep is REFUSED on a typed buyer-page URL; contradicted by Jira comment 108208 (membership => full buyer rights BY DESIGN, inherited from the LEO client project). Carried into C1 UNREWRITTEN so the run's own evidence rebases it — rewriting beforehand would make the change its own oracle.",
+    "rule": "A SURFACE split, not a per-case one. The creator half of BL-SR-002 is false ONLY for the salesRepCustomerOrders/salesRepCustomerOrder family; every other sales-rep surface keeps both halves; the membership half holds everywhere.",
+    "incidental_citations": [
+      "SR-GQL-130 (really BL-SR-011)",
+      "SR-FE-051 (BL-SR-004)",
+      "SR-CP-054 (BL-SR-004)",
+      "SR-HD-053 (BL-SR-004)",
+      "SR-CO-010 (action gating, PROPOSED-BL-SR-036)",
+      "SR-CO-018 (route guard, not org membership)",
+      "SR-CP-052 (PROPOSED-BL-SR-FRESHNESS-001)"
+    ],
+    "incidental_note": "Dimension-6 citation quality, not a disposition issue. Route to /qa-review-tests --fix. Seven loose citations on a [P0-security] invariant also inflate its measured product value, which is the input oracles:rank scores."
+  },
+  "c1_run": {
+    "run_id": "REG-2026-09-04-1015",
+    "suite": "097",
+    "cases": 25,
+    "lane": "playwright-chrome",
+    "status": "completed",
+    "passed": 11,
+    "failed": 11,
+    "blocked": {
+      "cases": [
+        "SR-CO-015",
+        "SR-CO-021",
+        "SR-CO-023"
+      ],
+      "cause": "LANE CAPABILITY gap, re-attributed: the Playwright MCP lane has no request route/abort/fulfill/throttle and no media-emulation tooling. This is NOT the prior run's env/email cause. Not a fixture problem and not a product problem."
+    },
+    "skipped": 0,
+    "pass_rate": 44,
+    "pass": [
+      "SR-CO-007",
+      "SR-CO-017",
+      "SR-CO-020",
+      "SR-CO-028",
+      "SR-CO-029",
+      "SR-CO-030",
+      "SR-CO-031",
+      "SR-CO-032",
+      "SR-CO-034",
+      "SR-CO-035",
+      "SR-CO-036"
+    ],
+    "fail_decomposition": {
+      "re_base_stale_assertions": {
+        "cases": [
+          "SR-CO-001",
+          "SR-CO-011",
+          "SR-CO-012",
+          "SR-CO-026",
+          "SR-CO-027"
+        ],
+        "note": "001/011: PR #2444 body claims Reorder works on the buyer order page; Reorder does NOT exist in this build - root cause of these two failing here AND on 09-02. 012: buyer-page access follows org membership BY DESIGN (Jira 108208). 026/027: assert the VCST-5868 remedy in the OLD location - 026 in the drawer (and against the by-design facet hiding), 027 inside the empty state - while the fix put it in the chip row."
+      },
+      "repair_authoring_defect": {
+        "cases": [
+          "SR-CO-033"
+        ],
+        "note": "Assertion is logically unsatisfiable: demands a positive row count under a zero-match precondition its own assertion 3 also requires. Introduced by the orchestrator brief, which carried the discovery lane prose without preserving its constraint that the list stayed empty BECAUSE the search term was still active. Orchestrator error, not a runner or authoring-agent error."
+      },
+      "real_findings": {
+        "cases": [
+          "SR-CO-003",
+          "SR-CO-009",
+          "SR-CO-024",
+          "SR-CO-016",
+          "SR-CO-037"
+        ],
+        "note": "003 breadcrumb segment delta 2 not 1. 009/024 a zero-customer rep gets \"No orders yet\" instead of a no-customers state (BL-SR-012). 016 Low - see verdict_reason. 037 a11y, standalone, non-blocking."
+      }
+    },
+    "notable": "SR-CO-020 converted BLOCKED -> PASS: the runner found a real-user token-revocation path (sign out in a second tab) the precondition admits."
+  },
+  "bugs_filed": [],
+  "bugs_not_filed_note": "NOTHING was filed - operator decision at 5d, not a severity-floor outcome. All 7 findings (2 IN-SCOPE Medium, 2 a11y Medium, 2 OUT-OF-SCOPE incidental Medium, 1 Low) are recorded here, in findings-2026-09-04-round1-INCOMPLETE.md, and in design-report-2026-09-04.md, with 13 -r1- stamped screenshots. Only the Low would have been withheld by the floor; the other 6 were above it and were withheld by choice.",
+  "promotion": {
+    "run": false,
+    "reason": "5g not run. It is FULL-path, last and non-blocking, and requires a fresh qa-lead verifier round plus user confirmation; the operator declined a further verifier round for time. The 6 new cases (SR-CO-032..037) stay Draft. Note tc:promote can never re-promote, so nothing is lost by deferring - but SR-CO-032/034/035/036 passed and would be promotable from THIS run id only."
+  }
+}

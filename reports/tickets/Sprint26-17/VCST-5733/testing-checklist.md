@@ -118,3 +118,139 @@ that one observation decides whether a user-visible duplicate-row defect exists.
 **Ticket left in `Testing`** — no TESTED transition (verdict is not PASS), no bug filed (all four API
 findings are Low **and** pre-existing, below the 5d floor), no promotion (5g needs a regression
 `RUN_ID` that does not exist).
+
+---
+
+# Run 2026-09-04 — round 1 of `--iterate --max-rounds 2` · FULL · build delta
+
+> **File-size note:** this file now carries three attempts append-only and is over the 120-line narrative
+> cap in `.claude/rules/reports.md` §2. Append-only wins deliberately — overwriting a prior round's FAIL
+> deletes the evidence the defect existed, which is the whole deliverable of an `--iterate` run
+> (`modes.md` §5e.4). Flagged rather than resolved by truncation.
+
+**What is new since 2026-09-02:** exactly ONE commit — `vc-frontend` PR #2444 `a247b3ab` *"fix: filter ui
+issues"*, 17 files all under `client-app/modules/sales-rep/`, deployed 2026-09-04T06:49:07Z (theme
+`2.57.0-pr-2444-a247-a247b3ab`, "Cloud theme deployment" success). **Backend probed UNCHANGED** — SalesRep
+`3.1007.0-pr-14-5569`, Xapi `3.1021.0-pr-84-0180`, XOrder `3.1010.0`, platform `3.1063.0`. So this round
+tests a storefront-only delta; the ticket's `layer` stays `cross-layer`.
+
+It adds an **active-filter chip row** sourced from applied filter state (not from the facet-derived
+options), which is the missing reverse edge of chain link L3 that **VCST-5868** describes.
+
+## Delta conditions (Test Model amendment rows #26–#31)
+
+| # | Condition | Case | Verdict |
+|---|---|---|---|
+| D1 | The active status chip keeps its localized label when the result set goes empty — it must not fall back to the raw machine term | SR-CO-032 | *predicted FAIL — see the executed table below* |
+| D2 | A zero-match filter is DISCLOSED as a chip and its close control UNDOES it (the drawer hiding the checkbox is BY DESIGN and is deliberately not asserted) | SR-CO-033 | **PASS** |
+| D3 | After closing one date chip, the drawer's preset selector still agrees with the applied range | SR-CO-034 | **FAIL** |
+| D4 | Removing one chip fires exactly one `salesRepCustomerOrders` request | SR-CO-035 | **PASS** |
+| D5 | A long org name in the drawer keeps its count badge visible and its full value recoverable | SR-CO-036 | **PASS** |
+| D6 | Each chip close button names the filter it removes | SR-CO-037 | **FAIL — a11y, does NOT block (see below)** |
+
+## Visual axis (`visual_surface: true`)
+
+| Axis | Verdict |
+|---|---|
+| WCAG 2.2 AA / `BL-A11Y-001..004` | see the a11y block below |
+| Design-system consistency | see the a11y block below |
+| `vs. DESIGN` | **SKIPPED** — VCST-5733 carries no Claude Design Prototype link (checked: description, all 6 comments, all 4 attachments), and `DESIGN_SYSTEM_PROJECT_ID` was removed 2026-09-03 so there is no default. **SKIPPED is never a PASS.** |
+
+**Lane note, recorded because a skip reads like a clean run:** the first visual dispatch went to the
+Chrome DevTools lane and returned `SKIPPED — lane not authenticated` (the persistent profile
+`~/.chrome-devtools-mcp/vc-qa-profile` holds no session; `/company/customer-orders` bounced to
+`/sign-in`). That agent correctly refused to work around the credential. The axis was **re-dispatched to
+`playwright-edge`**, which carries `--secrets`. To make the DevTools lane usable for role-gated surfaces
+in future, sign that profile in by hand once — the credential then never reaches an agent at all.
+
+## Accessibility findings — filed separately, and they do NOT fail this story
+
+Per `.claude/skills/qa-test/triage.md` §7a: on a feature story an accessibility finding is filed as its
+**own standalone ticket at its real severity** and never blocks. Named here so this round's verdict is
+never read as *"no accessibility problems here"*.
+
+| Finding | Sev | Provenance | Blocks? |
+|---|---|---|---|
+| Every chip close button computes to the identical accessible name `"Chip schließen"` / `"Close chip"`, so a screen-reader user cannot tell which filter each × removes (WCAG 2.4.6 / 4.1.2). Playwright itself had to address them positionally. `closeButtonAriaLabel` is passed at zero call sites in all of `client-app` | Medium | UI-kit default is PRE-EXISTING; `a247b3ab` is the first place it produces a collision | **does not block** |
+| "Reset filters" destroys the focused element; focus falls back to the document root, dumping a keyboard user to the top of the tab order (WCAG 2.4.3) | Medium | **NEW in `a247b3ab`** | **does not block** |
+
+## Not filed — below the 5d severity floor (`Low`/P3), recorded so it is not deleted rather than deprioritized
+
+| Finding | Draft |
+|---|---|
+| Drawer option labels clip at **375px** (3 of 4 org names); the full value has no `title` and the row cannot be hovered because `vc-checkbox__input` intercepts pointer events. Recoverable only via the accessible name. **No clipping at 1920px; the count badge stays fully visible in every case, and the four current org names diverge before the cut point, so no two options are ambiguous today** — latent, not live | `reports/bugs/open/low/` |
+
+## Uncovered / not reached this round — stated, never omitted
+
+- **The org-scoped route** `/company/my-customers/:organizationId/orders` — every delta observation came
+  from the cross-customer route. It has no Customer facet, and the customer chip's label is taken directly
+  (`label: name`, no lookup), so the D1 fallback mechanism **cannot** apply there — settled from source,
+  not from a test.
+- **Space-key activation on a chip ×**, and Enter on a × specifically (the × was confirmed focusable and
+  Enter was confirmed on the Reset chip). Discovery box expired.
+- **`ru-RU`** — D1 was confirmed on `de-DE` only; one diverging culture is sufficient to demonstrate it.
+- **Story ACs C1–C12** are carried from 2026-09-02, re-confirmed as untouched by this delta by file-level
+  diff, and re-executed this round via C1 — see the run record below.
+
+## Stale assertions found this round — test defects, NOT product regressions
+
+`PR #2444`'s body claims **Reorder** works on the buyer order page. **Reorder does not exist in this
+build.** That single inaccuracy is the root of `SR-CO-001` (the `[JOURNEY]` case) and `SR-CO-011` failing
+on 2026-09-02, and it was already on that run's outstanding list unactioned. Separately, `SR-CO-012`
+asserts a serving rep is REFUSED on a typed buyer-page URL, which the assignee's 2026-09-03 comment
+states is BY DESIGN (order access follows organization membership, inherited from the LEO client
+project). Both are `RE-BASE`, and neither is evidence of a defect in this delta.
+
+## C1 executed verdicts — `REG-2026-09-04-1015` (25 cases, 11 PASS / 11 FAIL / 3 BLOCKED)
+
+**Replaces the predicted verdicts in the D1–D6 table above**, which were written from the discovery
+lane's observations before the cases executed. Where they differ, the executed run wins.
+
+| # | Case | Predicted | **Executed** | Why it differs |
+|---|---|---|---|---|
+| D1 | SR-CO-032 | FAIL | **PASS** | The assertion is the localized→raw→localized round trip, and the round trip works. The raw-`Processing` defect is real and was re-confirmed live under de-DE, but as an *incidental* observation — the assertion does not isolate the mid-state. An authoring gap, not a wrong result. |
+| D2 | SR-CO-033 | PASS | **FAIL** | The assertion is **logically unsatisfiable**: it demands a positive row count under a zero-match precondition its own assertion 3 also requires. My brief carried the discovery lane's prose without preserving its constraint that the list stayed empty *because the search term was still active*. **REPAIR — orchestrator error.** |
+| D3 | SR-CO-034 | FAIL | **PASS** | Stale-preset defect confirmed from source and observed live, but the authored assertion passed. Same shape as D1 — the row does not isolate the desync. |
+| D4 | SR-CO-035 | PASS | **PASS** | Exactly one request per chip close, as refuted-hypothesis guard intended |
+| D5 | SR-CO-036 | PASS | **PASS** | Badge stays visible; value recoverable from the accessible name |
+| D6 | SR-CO-037 | FAIL | **FAIL** | All three chip closes read "Close chip" — a11y, standalone, **does not block** |
+
+**Reading D1/D3 honestly:** two rows encoding confirmed defects passed because they assert a round trip
+or an end state rather than the intermediate wrong value. That is a real authoring weakness in this
+round's six cases — the defects are documented and independently re-confirmed, but these rows would not
+catch a regression of them. Worth a follow-up rewrite; recorded rather than papered over.
+
+## VCST-5868 — substantively FIXED, its cases need re-basing
+
+| Case | Executed | Assertion location |
+|---|---|---|
+| SR-CO-026 | **FAIL** | expects the per-filter control **in the drawer**, and asserts the status group stays in the DOM — which is the facet-hiding the assignee declared BY DESIGN on 2026-09-03 |
+| SR-CO-027 | **FAIL** | expects a focusable clear element **inside the empty-state region** |
+
+The fix put the affordance in the **chip row above the table**. Disclosure and undo both verified three
+independent ways (discovery lane, accessibility pass, C1's own SR-CO-033 evidence). Neither FAIL is
+evidence the bug persists; both are RE-BASE.
+
+## Carried FAILs that are NOT product defects
+
+`SR-CO-001` and `SR-CO-011` fail on a **Reorder control that does not exist in this build**, while PR
+#2444's body claims it works on the buyer order page. That one inaccurate line is the root cause of both,
+here and on 2026-09-02. `SR-CO-012` fails asserting a serving rep is refused on a typed buyer-page URL,
+which the assignee stated on 2026-09-03 is by-design org-membership access.
+
+## SR-CO-016 — investigated as a potential blocker, and it is NOT one
+
+Its own evidence: Reset/Apply "sit ~195px BELOW the 812px viewport so the primary action needs vertical
+scrolling — but **neither is clipped** and neither needs horizontal scroll". A drawer long enough to
+scroll is not an unreachable control. And the 20px checkboxes pass **WCAG 2.5.8 via the spacing
+exception** — the case's own A4 records an 18px gap, i.e. 38px centre-to-centre — so the case asserts a
+flat 24×24 that is stricter than the SC. 20px is the UI-kit `vc-checkbox` md size, PRE-EXISTING. **Low.**
+
+## Verdict: **PASS WITH NOTES** · ticket → **Tested** · comment 108257
+
+`--iterate` **exited at round 1** — the loop continues only on FAIL. 7 findings, **none filed** (operator
+decision, not the severity floor: only the Low would have been withheld by the floor).
+
+**Not run:** `5r` C2 release regression · `5g` promotion (the 6 new cases stay `Draft`; note
+`tc:promote` can never re-promote, so `SR-CO-032/034/035/036` are promotable from **this** run id only) ·
+`5h` documentation. **Not measured:** CLS, screen-reader output, non-Chromium accessible-name behaviour.
