@@ -23,12 +23,39 @@ Derived at `1b` item 2c. The **shared derivation contract** — derived-never-as
 | # | Source | Yields `true` when |
 |---|---|---|
 | 1 | **The PR diff** — `1a`'s extension map | any `.vue` · `.scss` · `.css` · `.html` · a module `**/Scripts/**` blade template · an icon-set or design-token file |
-| 2 | **The derived `layer`** | `storefront` or `admin-spa` (both render to a human); `cross-layer` when either is a member |
+| 2 | **The derived `layer`** | **ELIGIBILITY, not a trigger.** `storefront` / `admin-spa` / a `cross-layer` including either makes the ticket *eligible*; it does **not** by itself yield `true`. See the pinning note below |
 | 3 | **The target suites' manifest tags** | a `layer: frontend` suite, or tags `storefront` / `admin-spa` |
 
-`api` · `module` · `platform` alone yield `false`. **`unresolved` ⇒ `true`** — fails open, because a
+`api` · `module` · `platform` yield `false`. **`unresolved` ⇒ `true`** — fails open, because a
 wrongly-skipped visual pass leaves no trace anywhere while a wrongly-run one costs one agent. Values:
 `true` · `false` · `unresolved`. Records `visual.surface_source[]`.
+
+**Why source 2 is eligibility and not a trigger — it was PINNING the axis true** (corrected 2026-09-04).
+The three sources are OR'd, so a bare `layer: storefront` made **every** storefront ticket `true` no
+matter what its diff held — and the storefront is the dominant surface here. Source 3 does not discriminate
+either, since the target suites of a storefront ticket are `layer: frontend` essentially by definition. So
+two of the three sources were decorative and the axis was **effectively pinned `true`** — the exact defect
+[`axes.md`](axes.md) §3 diagnoses for `data_surface` (*"an axis that dispatches an opus agent whenever it
+is unsure is not subtracting"*), against a measured yield of **one block in 28 runs**.
+
+**So `true` needs eligibility PLUS one positive rendered-surface signal:**
+
+| Signal | Example |
+|---|---|
+| a rendering file in the diff (source 1) | `.vue` · `.scss` · `.css` · `.html` · blade · icon set · design tokens |
+| a changed rendered VALUE | a label, heading, currency/date format, empty-state copy, a status chip |
+| changed DOM structure, order or TIMING | rows added/removed, a list re-ordered, an optimistic update, a spinner/skeleton window — layout stability (`BL-UI-001..005`) is a function of DOM churn, not of file extension |
+| a new or changed interactive affordance | a control, dialog, drawer, focus target, keyboard path |
+
+**An eligible ticket with NO such signal is `false`** — a pure-logic change with no rendered consequence
+(a computation, a log line, an internal rename). **Doubt is still `true`**: the fail-open direction is
+unchanged, and "is there a rendered consequence?" is answered `true` whenever it cannot be answered.
+
+Worked example, VCST-5738 (2026-09-04): the diff was **`.ts`-only** — no `.vue`/`.scss`/`.css` — so under
+the old rule it was `true` purely because `layer: storefront`, which taught nothing. Under this rule it is
+**still `true`, but for a reason that is checkable**: it changes *when* cart rows leave the DOM (an
+optimistic removal plus a 1000 ms debounce), which is row-churn signal 3. A reader can now contradict that;
+before, they could only observe that the ticket was on the storefront.
 
 ---
 

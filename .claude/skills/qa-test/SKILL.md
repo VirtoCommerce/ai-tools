@@ -233,7 +233,9 @@ lane when `visual_surface: true`** — the one documented exception, reasoned in
 targets, the three axes it runs, the verdict vocabulary and the browser-budget ordering all live in
 [`visual-axis.md`](visual-axis.md); **do not restate them here.**
 
-Each ticket-agent prompt must carry: the ticket ID; **Artifact A** (target suite path + row IDs);
+Each ticket-agent prompt must carry: the ticket ID; **Artifact A — FULL path only** (target suite path +
+row IDs; **omitted on FAST, which authors none**, and the Scope line then reads *"run ONLY the checklist
+above"*);
 **Artifact B** checklist; **test data** (the `@td()`/`{{VAR}}` the cases use, confirmed seeded — never
 hardcode IDs, `.claude/rules/test-data.md`); the **`BL-*`** rule text + **`ECL-*`** patterns from Step 2;
 the browser server; env URLs; the screenshot path; and the evidence-capture policy. **Artifact C is NOT in
@@ -246,7 +248,7 @@ Context: [what changed]
 Environment: {FRONT_URL} / {BACK_URL}   Browser: {BROWSER_SERVER}
 Screenshot output: reports/tickets/{SPRINT}/<ticket-key>/screenshots/
 
-Test cases (Artifact A): <target-suite.csv> — rows [IDs]
+Test cases (Artifact A): <target-suite.csv> — rows [IDs]      # FULL only — omit this line on FAST
 Testing checklist (Artifact B): [from Step 3]
 Test data: [the @td()/{{VAR}} the cases use — confirmed seeded; resolve at runtime, never hardcode]
 
@@ -276,6 +278,7 @@ Per [`.claude/rules/reports.md`](../../rules/reports.md) §1 — that file is th
 | `summary.json` (incl. `timing`, `bugs_not_filed`) | `reports/tickets/{SPRINT}/<ticket-key>/` | 6 |
 | `testing-checklist.md` (Artifact B) | same folder | 6 |
 | Evidence screenshots | same folder `screenshots/` | 6 |
+| `design-report.md` — **only when the Step-4 visual lane ran** (`visual_surface: true`) | same folder | 6 |
 | Test Model (FULL only) | `reports/ba/test-models/<TICKET>-<date>.md` | 3 |
 | New test cases | `regression/suites/<layer>/<module>/*.csv` | 2 |
 | Discovery session report (3x, FULL only) | `reports/exploratory/SBTM-<ticket-key>-<date>.md` | 8 |

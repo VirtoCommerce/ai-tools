@@ -1,0 +1,52 @@
+{
+  "env": "vcst-qa",
+  "org": "AGENT-TEST-Org-TechFlow-20260310",
+  "orgId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+  "memberId": "a429dc7d-a6ef-40ab-9fd4-b3210757cb1a",
+  "contact": "David Kim",
+  "actor": "agent-test-multiorg-20260615@yopmail.com (Organization maintainer, org-scoped token)",
+  "steps": [
+    [
+      "0 ORIGINAL",
+      [
+        "org-employee",
+        "purchasing-agent"
+      ]
+    ],
+    [
+      "1 SETUP roleIds:[org-employee,purchasing-agent]",
+      "{\"succeeded\":true,\"errors\":[]}"
+    ],
+    [
+      "2 STATE after setup",
+      [
+        "org-employee",
+        "purchasing-agent"
+      ]
+    ],
+    [
+      "3 REPLAY the UI payload roleIds:[org-employee] (same role re-selected = user intends NO change)",
+      "{\"succeeded\":true,\"errors\":[]}"
+    ],
+    [
+      "4 STATE after UI-equivalent save",
+      [
+        "org-employee",
+        "purchasing-agent"
+      ]
+    ],
+    [
+      "5 RESTORE",
+      "{\"succeeded\":true,\"errors\":[]}"
+    ],
+    [
+      "6 FINAL (must equal ORIGINAL)",
+      [
+        "org-employee",
+        "purchasing-agent"
+      ]
+    ]
+  ],
+  "restored": true,
+  "dataLossProven": false
+}

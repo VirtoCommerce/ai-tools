@@ -1,0 +1,169 @@
+{
+  "op": "Organization.assignableRoles",
+  "orgId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+  "org": "AGENT-TEST-Org-TechFlow-20260310",
+  "tokenStoreId": "B2B-store",
+  "platformRoleTotal": 60,
+  "globalMembershipRolesWhitelist": "allowedValues: [] (empty = allow-all per BL-B2B-011)",
+  "runs": [
+    {
+      "run": 1,
+      "storeId": "(OMITTED)",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 3,
+      "roles": [
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 1,
+      "storeId": "B2B-store",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 4,
+      "roles": [
+        "Advanced Sales Representative",
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 1,
+      "storeId": "Electronics",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 3,
+      "roles": [
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 1,
+      "storeId": "NOT-A-REAL-STORE",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 3,
+      "roles": [
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 2,
+      "storeId": "(OMITTED)",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 3,
+      "roles": [
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 2,
+      "storeId": "B2B-store",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 4,
+      "roles": [
+        "Advanced Sales Representative",
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 2,
+      "storeId": "Electronics",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 3,
+      "roles": [
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 2,
+      "storeId": "NOT-A-REAL-STORE",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 3,
+      "roles": [
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 3,
+      "storeId": "(OMITTED)",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 3,
+      "roles": [
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 3,
+      "storeId": "B2B-store",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 4,
+      "roles": [
+        "Advanced Sales Representative",
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 3,
+      "storeId": "Electronics",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 3,
+      "roles": [
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    },
+    {
+      "run": 3,
+      "storeId": "NOT-A-REAL-STORE",
+      "http": 200,
+      "graphqlErrors": 0,
+      "roleCount": 3,
+      "roles": [
+        "Organization employee",
+        "Organization maintainer",
+        "Purchasing agent"
+      ],
+      "traceId": "(none returned)"
+    }
+  ]
+}
