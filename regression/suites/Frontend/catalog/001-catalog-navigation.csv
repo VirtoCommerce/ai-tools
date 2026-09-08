@@ -77,34 +77,32 @@
 [CONSOLE] no TypeError or JS errors","Brand link does not navigate to a filtered listing; listing shows unfiltered/all products; console TypeError","none","Coverage Gap Analysis","Draft"
 "CAT-040","PDP SEO - Meta Tags and Open Graph Tags","Catalog > SEO","Medium","BL-CAT-006",,"Any product with SEO info configured (meta title and description set in admin) exists in the B2B virtual catalog","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}} (resolve any in-stock product slug at runtime)
 [WAIT] Wait for PDP to fully render
-[ACT] Open browser DevTools Elements panel
-[ASSERT] Inspect <head> section for meta tags
-[ASSERT] Verify meta title tag is present and non-empty
-[ASSERT] Verify meta description tag is present and non-empty
-[ASSERT] Verify og:url tag is present and points to the product's own resolved PDP URL (per BL-SEO-003: this theme's @unhead/vue implementation uses og:url as its sole canonical-URL signal — no link[rel=canonical] is emitted, by design, verified live 2026-07-15)
-[ASSERT] Verify og:title, og:description, og:image tags are present
-[ASSERT] Verify og:image points to a valid product image URL","[DOM] <title> or meta[name=title] is present and non-empty
-[DOM] meta[name=description] is present with meaningful content (not empty or placeholder)
-[DOM] meta[property=og:url] present with content matching current PDP URL (no query params) — per BL-SEO-003, do NOT assert link[rel=canonical]; its absence is the documented default, not a violation
-[DOM] meta[property=og:title] present and non-empty
-[DOM] meta[property=og:description] present and non-empty
-[DOM] meta[property=og:image] present with non-empty image URL","[NETWORK] og:image URL returns HTTP 200 (image is accessible)
-[CONSOLE] no TypeError or JS errors","Meta title missing or showing generic site title; meta description empty; og:url absent or pointing to wrong page; og:tags missing; og:image returning 404; console TypeError","none","Checklist #4 SEO, GAP-CS-02; Corrected: dropped invalid link[rel=canonical] assertion per BL-SEO-003 (TCA-2026-08-05)","Draft"
+[ACT] `browser_evaluate`: return { title: document.title, metaTitle: document.querySelector('meta[name=title]')?.content ?? null, metaDescription: document.querySelector('meta[name=description]')?.content ?? null, ogUrl: document.querySelector('meta[property=""og:url""]')?.content ?? null, ogTitle: document.querySelector('meta[property=""og:title""]')?.content ?? null, ogDescription: document.querySelector('meta[property=""og:description""]')?.content ?? null, ogImage: document.querySelector('meta[property=""og:image""]')?.content ?? null } — capture the PDP <head> SEO tag set in one call. Browser_snapshot's a11y tree does not expose <head> meta content (REG-2026-09-07-1342 triage). This read-only <head> inspection is allowlisted in hooks/enforce-real-user.mjs via the document.title pattern, so it is not forbidden by the real-user rule.
+[ASSERT] Verify captured title (document.title) or metaTitle (meta[name=title]) is non-empty
+[ASSERT] Verify captured metaDescription is present and non-empty
+[ASSERT] Verify captured ogUrl points to the product's own resolved PDP URL (per BL-SEO-003: this theme's @unhead/vue implementation uses og:url as its sole canonical-URL signal — no link[rel=canonical] is emitted, by design, verified live 2026-07-15)
+[ASSERT] Verify captured ogTitle, ogDescription, ogImage are all present (non-null)
+[ASSERT] Verify captured ogImage is a well-formed URL pointing to a product image","[DOM] captured title (document.title) or metaTitle (meta[name=title]) is present and non-empty
+[DOM] captured metaDescription is present with meaningful content (not empty or placeholder)
+[DOM] captured ogUrl is present and matches current PDP URL (no query params) — per BL-SEO-003, do NOT assert link[rel=canonical]; its absence is the documented default, not a violation
+[DOM] captured ogTitle is present and non-empty
+[DOM] captured ogDescription is present and non-empty
+[DOM] captured ogImage is present with non-empty image URL","[NETWORK] og:image URL returns HTTP 200 (image is accessible)
+[CONSOLE] no TypeError or JS errors","Meta title missing or showing generic site title; meta description empty; og:url absent or pointing to wrong page; og:tags missing; og:image returning 404; console TypeError","none","Checklist #4 SEO, GAP-CS-02; Corrected: dropped invalid link[rel=canonical] assertion per BL-SEO-003 (TCA-2026-08-05); Corrected: reassigned <head> meta-tag assertions from a11y-tree snapshot to a single browser_evaluate read (allowlisted read-only SEO <head> inspection, hooks/enforce-real-user.mjs) — REG-2026-09-07-1342 triage (2026-09-07)","Draft"
 "CAT-041","Category Page SEO - JSON-LD BreadcrumbList and Canonical URL","Catalog > SEO","Medium","BL-CAT-001, BL-CAT-006",,"Category page with at least one level of subcategory hierarchy exists","url={{FRONT_URL}}","[NAV] Navigate to any subcategory page on {{FRONT_URL}} (a category with parent > child structure)
 [WAIT] Wait for page to fully render
-[ACT] Open browser DevTools Elements panel
-[ASSERT] Inspect <head> for og:url (per BL-SEO-003: this theme uses og:url as its sole canonical-URL signal — no link[rel=canonical] is emitted, by design)
-[ASSERT] Search for <script type=application/ld+json> in page source
-[ASSERT] Verify JSON-LD contains @type: BreadcrumbList
-[ASSERT] Verify breadcrumb items match the visible breadcrumb trail on page
-[ASSERT] Verify each breadcrumb item has name and item (URL) properties","[DOM] meta[property=og:url] present with content matching current category URL — per BL-SEO-003, do NOT assert link[rel=canonical]
-[DOM] JSON-LD script tag present with @type: BreadcrumbList
+[ACT] `browser_evaluate`: return { ogUrl: document.querySelector('meta[property=""og:url""]')?.content ?? null, jsonLdRaw: [...document.querySelectorAll('script[type=""application/ld+json""]')].map(s => s.textContent) } — capture og:url plus the raw JSON-LD script content(s) in one call. Browser_snapshot's a11y tree exposes neither <head> nor script content (REG-2026-09-07-1342 triage). This read-only inspection is allowlisted in hooks/enforce-real-user.mjs via the script[type=""application/ld+json""] pattern, so it is not forbidden by the real-user rule.
+[ASSERT] Verify captured ogUrl matches the current category URL (per BL-SEO-003: this theme uses og:url as its sole canonical-URL signal — no link[rel=canonical] is emitted, by design)
+[ASSERT] Parse each entry in captured jsonLdRaw as JSON; verify at least one parses successfully with @type: BreadcrumbList
+[ASSERT] Verify the parsed BreadcrumbList's itemListElement entries match the visible breadcrumb trail on page (same count, same order)
+[ASSERT] Verify each itemListElement has @type: ListItem, position, name, and item (URL) properties","[DOM] captured ogUrl is present and matches current category URL — per BL-SEO-003, do NOT assert link[rel=canonical]
+[DOM] captured jsonLdRaw is present with at least one entry parsing as JSON with @type: BreadcrumbList
 [DOM] BreadcrumbList itemListElement array has correct number of items matching visible breadcrumbs
 [DOM] Each itemListElement has @type: ListItem, position (integer), name, and item (URL)
 [DOM] Breadcrumb positions are sequential starting from 1
-[FORMAT] JSON-LD is valid JSON (no parse errors)","[NETWORK] GET category page returns HTTP 200
+[FORMAT] captured jsonLdRaw entry is valid JSON (no parse errors)","[NETWORK] GET category page returns HTTP 200
 [CONSOLE] no JSON parse errors from structured data
-[CONSOLE] no TypeError or JS errors","og:url missing or pointing to wrong category; JSON-LD absent from page; BreadcrumbList items not matching visible breadcrumbs; JSON-LD parse errors; console TypeError","none","Checklist #4 SEO, GAP-CS-02; Corrected: dropped invalid link[rel=canonical] assertion per BL-SEO-003 (TCA-2026-08-05); JSON-LD BreadcrumbList assertion still needs independent grounding — not addressed by this fix","Draft"
+[CONSOLE] no TypeError or JS errors","og:url missing or pointing to wrong category; JSON-LD absent from page; BreadcrumbList items not matching visible breadcrumbs; JSON-LD parse errors; console TypeError","none","Checklist #4 SEO, GAP-CS-02; Corrected: dropped invalid link[rel=canonical] assertion per BL-SEO-003 (TCA-2026-08-05); JSON-LD BreadcrumbList assertion still needs independent grounding — not addressed by this fix; Corrected: reassigned <head>/JSON-LD assertions from a11y-tree snapshot to a single browser_evaluate read (allowlisted read-only SEO/JSON-LD <head> inspection, hooks/enforce-real-user.mjs) — REG-2026-09-07-1342 triage (2026-09-07)","Draft"
 "CAT-042","Multi-Level Category Navigation with Breadcrumbs","Catalog > Navigation","Medium","BL-CAT-001",,"Category hierarchy exists with at least 3 levels (top-level > subcategory > sub-subcategory)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} main catalog page
 [ACT] Click on a top-level category in the navigation menu
 [WAIT] Wait for top-level category page to load
@@ -173,12 +171,13 @@
 [ASSERT] Verify the URL remains as the slug URL (no redirect to an ID-based URL)
 [ASSERT] Verify the category heading is non-empty
 [ASSERT] Verify products are listed on the category page
-[ASSERT] Verify the og:url meta tag matches the slug URL (per BL-SEO-003: this theme uses og:url as its canonical-URL signal — no link[rel=canonical] is emitted, by design)","[NAV] Slug URL resolves to the correct category page without redirect to an ID-based URL
+[ACT] `browser_evaluate`: return { ogUrl: document.querySelector('meta[property=""og:url""]')?.content ?? null } — capture the category page's og:url tag. Browser_snapshot's a11y tree does not expose <head> meta content (REG-2026-09-07-1342 triage). This read-only og:/twitter: meta inspection is allowlisted in hooks/enforce-real-user.mjs (added 2026-09-07 for this case), so it is not forbidden by the real-user rule.
+[ASSERT] Verify captured ogUrl matches the slug URL (per BL-SEO-003: this theme uses og:url as its canonical-URL signal — no link[rel=canonical] is emitted, by design)","[NAV] Slug URL resolves to the correct category page without redirect to an ID-based URL
 [DOM] Category heading is non-empty
 [DOM] Products are displayed on the page
-[DOM] meta[property=og:url] content equals the current slug URL (not an ID-based URL) — per BL-SEO-003, do NOT assert link[rel=canonical]
+[DOM] captured ogUrl is present and equals the current slug URL (not an ID-based URL) — per BL-SEO-003, do NOT assert link[rel=canonical]
 [STATE] No 301/302 redirect from slug to ID URL","[NETWORK] GET slug URL returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Slug URL returning 404; slug redirecting to an ID-based URL; og:url pointing to a different URL; heading empty; console TypeError","none","Coverage Gap Analysis; GAP-CS-14; Corrected: dropped invalid link[rel=canonical] assertion per BL-SEO-003 (TCA-2026-08-05)","Draft"
+[CONSOLE] no TypeError or JS errors","Slug URL returning 404; slug redirecting to an ID-based URL; og:url pointing to a different URL; heading empty; console TypeError","none","Coverage Gap Analysis; GAP-CS-14; Corrected: dropped invalid link[rel=canonical] assertion per BL-SEO-003 (TCA-2026-08-05); Corrected: reassigned og:url assertion from a11y-tree snapshot to a browser_evaluate read (allowlisted read-only og:/twitter: meta inspection added to hooks/enforce-real-user.mjs 2026-09-07) — REG-2026-09-07-1342 triage (2026-09-07)","Draft"
 "CAT-056","Catalog Listing Page Renders Correctly at 768px Tablet Viewport","Catalog > Responsive","Medium","BL-CAT-001",,"Category with products exists; storefront accessible","url={{FRONT_URL}}","[NAV] Navigate to any category listing page on {{FRONT_URL}}
 [ACT] Resize the browser viewport to 768x1024 (tablet portrait)
 [WAIT] Wait for layout to reflow
@@ -424,4 +423,4 @@ Customer holds a wishlist in the CURRENT store ({{STORE_ID}}) containing @td(WIS
 [DOM] the wishlist button on the storeA product's card DOES render the in-wishlist / remove-from-list state {SPEC}
 [STATE] the in-wishlist marker on this store's catalog grid reflects only wishlists scoped to {{STORE_ID}} — a wishlist entry created in another store never lights up the marker here {SPEC}","[API] the wishlist-membership lookup underlying the catalog grid's markers is scoped by storeId (the FindWishlistsByProductsAsync fix) {SPEC}
 [CONSOLE] no uncaught JS errors while the grid renders wishlist markers
-[NETWORK] no 4xx/5xx on the wishlist-lookup request",wishlist button shows an in-wishlist/filled state for the storeB-only product; wishlist button shows the neutral/unfilled state for the storeA product; console TypeError while rendering markers; test executed on a single-store deployment and reported PASS instead of SKIPPED,none — read-only browse; no state change,VCST-5705,Draft
+[NETWORK] no 4xx/5xx on the wishlist-lookup request",wishlist button shows an in-wishlist/filled state for the storeB-only product; wishlist button shows the neutral/unfilled state for the storeA product; console TypeError while rendering markers; test executed on a single-store deployment and reported PASS instead of SKIPPED,none — read-only browse; no state change,VCST-5705 | Promoted: REG-2026-09-07-1342 (2026-09-07),Automated

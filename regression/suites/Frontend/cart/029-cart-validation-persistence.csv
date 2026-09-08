@@ -476,9 +476,20 @@ adminPassword={{ADMIN_PASSWORD}}","[ACT] add product to cart (qty 1)
 [API] addItem mutation response errors[] is empty",no out-of-stock indicator on cart; checkout allowed with out-of-stock item; no removal prompt; other items affected,Restore inventory in admin; remove item from cart,Coverage Gap Analysis; VCST-3926,Manual
 CART-046,Checkout Blocked by Out-of-Stock Item,Cart > Validation,Critical,BL-CART-001,"ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: A dedicated AGENT-TEST out-of-stock product (@td(PROD_OOS.sku)) must be maintained in QA catalog with inventory permanently set to 0. This product serves as a stable OOS fixture — do not restore its inventory. Also requires one standard in-stock product in cart. Run /qa-seed-data to provision OOS fixture.","url={{FRONT_URL}}/cart
+ADMIN-DESTRUCTIVE: Constructs the out-of-stock line via add-while-in-stock-then-admin-reduce-to-zero — the same sequence CART-023/CART-045 use — because a permanently-0-stock SKU's own PDP renders no add-to-cart control (only a stock-alert affordance), so it cannot be placed into a cart through real-user UI actions at all (confirmed live under REG-2026-09-07-1342: BLOCKED, TEST_STEPS_DEFECT — not a product defect). Run in isolated environment only; do not run during parallel regression. Restore inventory in Cleanup. Allow 30-60s search index lag after inventory change.","url={{FRONT_URL}}/cart
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with mixed availability items
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}","[ACT] add a standard in-stock product to cart (qty 1)
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] add a second, different in-stock product to cart (qty 1)
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[NAV] log in to {{ADMIN_URL}}
+[ACT] navigate to the first product's inventory settings, set inventory to 0, save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart
+[ACT] refresh page
 [ASSERT] verify out-of-stock item shows unavailable status
 [ACT] click 'Proceed to Checkout' button
 [WAIT] wait for validation response
@@ -490,9 +501,11 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart with mixed ava
 [STATE] after removing unavailable item, checkout proceeds normally
 [STATE] in-stock items not affected by validation block
 [DOM] error message is user-friendly and actionable (visible)
-[STATE] verify checkout proceeds","[API] changeCartItemQuantity or checkout mutation returns blocking error for out-of-stock
+[STATE] verify checkout proceeds","[ADMIN] verify inventory set to 0 in admin
+[API] changeCartItemQuantity or checkout mutation returns blocking error for out-of-stock
+[API] addItem mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",checkout proceeds with out-of-stock item; error message vague or missing; in-stock items blocked unnecessarily; error not cleared after removal,Remove all test items from cart,Coverage Gap Analysis; VCST-3926,Manual
+[NETWORK] no 4xx/5xx",checkout proceeds with out-of-stock item; error message vague or missing; in-stock items blocked unnecessarily; error not cleared after removal,Restore inventory in admin; remove all test items from cart,Coverage Gap Analysis; VCST-3926 | Corrected: 2026-09-07 (REG-2026-09-07-1342) — precondition rebuilt via add-then-admin-reduce-to-zero (mirrors CART-023/CART-045); the assumed permanently-0-stock @td(PROD_OOS.sku) cannot be added to cart via storefront UI at all (add-to-cart guard blocks it by design),Manual
 CART-047,Cart Item Quantity Exceeds Available Stock,Cart > Validation,Critical,BL-CART-001,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; product in cart; product has limited stock (e.g., 3 units available)","url={{FRONT_URL}}/cart
@@ -656,20 +669,36 @@ admin_password={{ADMIN_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}
 [API] addItem mutation response errors[] is empty",unavailable product shown as normal; checkout proceeds; no error message; cart crashes on load,Reactivate product in admin; remove from cart,Coverage Gap Analysis; VCST-3926,Manual
 CART-082,Cart Validation - Multiple Simultaneous Errors Displayed,Cart > Validation > Multiple,Medium,BL-CART-001,ECL-2.1,"[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
-SEED REQUIRED: Requires two validation states simultaneously: (1) @td(PROD_OOS.sku) (permanent OOS fixture, inventory=0) added to cart, and (2) a second product with low stock ({{LOW_STOCK_SKU}}, stock ≤ 5) with qty set above available stock. Both seeds must exist. Run /qa-seed-data first.","url={{FRONT_URL}}
+ADMIN-DESTRUCTIVE: Requires two validation states simultaneously: (1) the out-of-stock line constructed via add-while-in-stock-then-admin-reduce-to-zero — the same sequence CART-023/CART-045 use, because a permanently-0-stock SKU's own PDP renders no add-to-cart control and cannot be placed into a cart via real-user UI actions (confirmed live under REG-2026-09-07-1342, same root cause as CART-046) — and (2) @td(PROD_LOW_STOCK.sku) (low-stock fixture) added with qty set above its available stock. Run in isolated environment only; do not run during parallel regression. Restore inventory in Cleanup. Allow 30-60s search index lag after inventory change.","url={{FRONT_URL}}
 user={{USER_EMAIL}}
-password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart containing: 1 out-of-stock item + 1 over-max-quantity item
+password={{USER_PASSWORD}}
+admin={{ADMIN_URL}}
+adminUser={{ADMIN_EMAIL}}
+adminPassword={{ADMIN_PASSWORD}}
+low_stock_sku=@td(PROD_LOW_STOCK.sku)","[ACT] add a standard in-stock product to cart (qty 1)
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] add @td(PROD_LOW_STOCK.sku) to cart
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
+[ACT] increase @td(PROD_LOW_STOCK.sku)'s quantity to exceed available stock
+[WAIT] wait for the quantity-change validation response
+[NAV] log in to {{ADMIN_URL}}
+[ACT] navigate to the first product's inventory settings, set inventory to 0, save
+[WAIT] wait 30-60s for search index to update
+[NAV] return to {{FRONT_URL}}/cart
+[ACT] refresh page
 [ASSERT] verify BOTH validation errors are shown simultaneously (not just the first)
 [ASSERT] verify each error message is associated with the correct line item
 [ASSERT] verify checkout is blocked
 [ACT] resolve one error (remove out-of-stock item)
 [ASSERT] verify first error cleared but second error still shown
-[ACT] resolve second error (adjust quantity)","[DOM] multiple error messages displayed simultaneously on different line items (visible)
+[ACT] resolve second error (adjust quantity to the stock ceiling)","[DOM] multiple error messages displayed simultaneously on different line items (visible)
 [DOM] each error is item-specific not a single generic message — element absent from DOM
 [STATE] checkout unblocks only after ALL validation errors resolved
-[STATE] verify all errors cleared and checkout unblocked","[API] getCart returns multiple validation errors
+[STATE] verify all errors cleared and checkout unblocked","[ADMIN] verify inventory set to 0 in admin
+[API] getCart returns multiple validation errors
+[API] addItem mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 5xx",only one error shown at a time; generic error replaces item-specific errors; fixing one error hides the other; checkout unblocks with remaining errors,Remove test items from cart,Coverage Gap Analysis,Manual
+[NETWORK] no 5xx",only one error shown at a time; generic error replaces item-specific errors; fixing one error hides the other; checkout unblocks with remaining errors,Restore inventory in admin; remove test items from cart,"Coverage Gap Analysis | Corrected: 2026-09-07 (REG-2026-09-07-1342) — precondition rebuilt via add-then-admin-reduce-to-zero (mirrors CART-023/CART-045, same root cause as CART-046); the assumed permanently-0-stock @td(PROD_OOS.sku) cannot be added to cart via storefront UI at all",Manual
 CART-096,Cart Persistence - Quantity at Maximum Available Stock Persists Correctly Across Sign-Out/Sign-In (Boundary),Cart > Persistence,High,"BL-CART-008, BL-CART-001","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 SEED REQUIRED: low-stock fixture @td(PROD_LOW_STOCK.sku) (stock <= 10) exists in catalog and B2B virtual catalog. Design Technique: Boundary Value Analysis (persistence at the max-stock quantity boundary, not just an arbitrary mid-range quantity).","url={{FRONT_URL}}
@@ -687,7 +716,7 @@ low_stock_sku=@td(PROD_LOW_STOCK.sku)","[NAV] navigate to {{FRONT_URL}}/seed-tes
 [NAV] navigate to {{FRONT_URL}}/cart","[STATE] line item quantity after sign-in equals the max-stock quantity recorded before sign-out — not silently reduced/re-capped on restore {OBSERVED} (live-verified: qty=5 = stock ceiling for @td(PROD_LOW_STOCK.sku)/QA-LOW-001 survived sign-out → sign-in unchanged; '+' disabled, 'Decrease quantity' enabled, line total $74.95, subtotal $74.95)
 [DOM] the cart line renders no stock-exceeded message — specifically the ""You can order maximum N item(s)"" text is ABSENT from the line item — for a quantity that was valid (== max stock) when saved {OBSERVED} (live-verified at qty=5: no such text anywhere on the page)","[API] getCart query response errors[] is empty after re-login
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on cart restore",quantity is silently reduced below the max-stock value on restore; a spurious over-stock warning appears for a quantity that matches current available stock; quantity resets to 1,Remove item from cart,Coverage Gap Analysis; VCST-3926,Draft
+[NETWORK] no 4xx/5xx on cart restore",quantity is silently reduced below the max-stock value on restore; a spurious over-stock warning appears for a quantity that matches current available stock; quantity resets to 1,Remove item from cart,Coverage Gap Analysis; VCST-3926 | Promoted: REG-2026-09-07-1342 (2026-09-07),Automated
 CART-097,Price Change During Session - Admin Sets Price to Zero Blocks or Flags the Line (Negative),Cart > Price Changes,High,"PROPOSED-BL-PRICE-009, BL-PRICE-008, BL-CART-002","ECL-4.1, ECL-14.2, ECL-14.4","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 [PRE:RESET_CART]
 ADMIN-DESTRUCTIVE: Mutates product price on shared AGENT-TEST fixture. Run in isolated environment only; do not run during parallel regression. Restore original price in Cleanup. Allow 30-60s search index lag after price update. Design Technique: Error Guessing (an invalid/degenerate $0.00 price during an active session).","url={{FRONT_URL}}/cart

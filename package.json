@@ -126,6 +126,7 @@
     "report:regression:open": "npx tsx scripts/regression/generate-regression-html-report.ts --open",
     "report:regression:portable": "npx tsx scripts/regression/generate-regression-html-report.ts --embed-images",
     "report:regression:watch": "npx tsx scripts/regression/generate-regression-html-report.ts --watch --open",
+    "regression:close": "npx tsx scripts/regression/close-run.ts",
     "regression:reap": "npx tsx scripts/regression/reap-stalled-run.ts",
     "regression:reap:apply": "npx tsx scripts/regression/reap-stalled-run.ts --apply",
     "regression:plan": "npx tsx scripts/regression/plan-run.ts",

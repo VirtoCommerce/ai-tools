@@ -1,25 +1,30 @@
 {
-  "runId": "REG-2026-09-04-1015",
+  "runId": "REG-2026-09-08-0931",
   "status": "completed",
-  "startedAt": "2026-09-04T10:15:00.000Z",
-  "finishedAt": "2026-09-04T09:10:17.948Z",
-  "selection": "097 --ids SR-CO-001,003,007,009,011,012,015,016,017,020,021,023,024,026,027,028,029,030,031,032,033,034,035,036,037",
+  "startedAt": "2026-09-08T07:32:13Z",
+  "finishedAt": "2026-09-08T07:39:59Z",
+  "selection": "001 --ids CAT-049 — round 3 re-verification after the marketplace-cache hook patch",
   "env": "vcst",
-  "ticket": "VCST-5733",
+  "sprint": "Sprint26-17",
+  "note": "Round 3, CAT-049 only. Round 2 (REG-2026-09-07-2255) BLOCKED it: the hook that executes is C:/Users/mutyk/.claude/plugins/cache/vc-tools/vc-fix/0.8.7/hooks/enforce-real-user.mjs, not either repo copy, and it lacked the og:/twitter: allowlist entry. That cache copy has now been patched locally (backup .bak-pre-og-20260908-0930) and verified ALLOW by direct invocation. CAT-040/CAT-041 results stay in REG-2026-09-07-2255 and are not re-run.",
   "suites": [
     {
-      "id": "097",
-      "name": "Sales Rep Customer Orders - Storefront",
+      "id": "001",
+      "name": "Catalog Navigation",
+      "file": "regression/suites/Frontend/catalog/001-catalog-navigation.csv",
       "status": "done",
       "browser": "playwright-chrome",
       "agent": "qa-frontend-expert",
-      "testCount": 25,
-      "pass": 11,
-      "fail": 11,
-      "blocked": 3,
-      "lane": "browser",
+      "testCount": 1,
+      "layer": "Frontend",
+      "pass": 0,
+      "fail": 1,
+      "blocked": 0,
       "skipped": 0,
-      "attempts": 1
+      "attempts": 1,
+      "scopedIds": [
+        "CAT-049"
+      ]
     }
   ]
 }

@@ -1,0 +1,99 @@
+{
+  "ticket": "VCST-5860",
+  "flow": "verify-fix",
+  "verdict": "VERIFIED",
+  "date": "2026-09-07",
+  "environment": {
+    "name": "vcmp-dev",
+    "url": "https://vcmp-dev.govirto.com/apps/vendor-portal/",
+    "product": "vc-shell / Marketplace Vendor Portal",
+    "theme": "Light (portal default; no Coffee theme on this product)"
+  },
+  "build": {
+    "appVersion": "2.1.2-rc.0",
+    "assetBuildId": "42234",
+    "lastModified": "2026-09-07T11:14:10Z",
+    "frameworkVersion": "2.6.0-rc.0"
+  },
+  "fix": {
+    "repo": "VirtoCommerce/vendor-portal",
+    "pr": 153,
+    "mergeCommit": "ea5d3e6cf80d514c3c6ef4ab9fa9ad34eff0bb5b",
+    "mergedAt": "2026-09-04T12:55:28Z",
+    "layer": "app"
+  },
+  "deployGate": {
+    "deployed": true,
+    "method": "commit-ancestry + rendered-attribute read",
+    "evidence": "PR #153 merged 2026-09-04 is an ancestor of vendor-portal@dev HEAD d008baba (2026-09-07T11:03:11Z); asset build 42234 published 2026-09-07T11:14:10Z, i.e. after that commit"
+  },
+  "baseline_red": {
+    "source": "ticket description (original /qa-bug capture) - no live RED possible, fix already deployed",
+    "observed": "<button class=\"vc-button vc-button-secondary vc-button--sm vc-button--selected\" type=\"button\" aria-pressed=\"true\">",
+    "instruments": [
+      "axe button-name (impact critical)",
+      "ARIA snapshot: group > button [pressed], button - both nameless"
+    ]
+  },
+  "post_fix_green": {
+    "consecutiveRuns": 3,
+    "observed": "<button class=\"vc-button vc-button-secondary vc-button--sm vc-button--selected\" type=\"button\" aria-label=\"Products View\" aria-pressed=\"true\">",
+    "ariaSnapshot": "button \"Products View\" [pressed]; button \"Category View\"",
+    "axeButtonName": {
+      "load1": {
+        "violations": 0,
+        "passes": 34
+      },
+      "load2": {
+        "violations": 0,
+        "passes": 60
+      },
+      "load3": {
+        "violations": 0,
+        "passes": 60
+      }
+    },
+    "operability": "addressable and clickable via getByRole('button', { name: 'Products View' })",
+    "ariaPressedStillTracking": true
+  },
+  "limits": [
+    "No AT pass was run - this is an accessible-name computation, not screen-reader output."
+  ],
+  "evidence": [
+    "screenshots/VCST-5860-GREEN-products-view-toggles.png"
+  ],
+  "status_transitions": [
+    {
+      "hop": "to-testing",
+      "transition": "On QA (id 4)",
+      "to": "Testing",
+      "applied": true,
+      "at": "2026-09-07T15:11:55+0300",
+      "by": "this run"
+    },
+    {
+      "hop": "to-tested",
+      "transition": "Finish test (id 8)",
+      "to": "Tested",
+      "applied": true,
+      "at": "2026-09-07T15:12:11+0300",
+      "by": "this run",
+      "note": "resolved live off to.name; QA stops at Tested"
+    },
+    {
+      "hop": "to-done",
+      "to": "Done",
+      "applied": false,
+      "by": "NOT this run",
+      "at": "2026-09-07T15:16:13+0300",
+      "note": "observed in the changelog attributed to Elena Mutykova ~4 min after the Tested hop. This session made exactly two transition calls, neither targeting Done. Either a human closed it or a project automation did under the same identity. Recorded rather than claimed."
+    }
+  ],
+  "comment": {
+    "id": "108468",
+    "dialect": "wiki (v2 API)",
+    "inlineImages": 1,
+    "renderedBodyVerified": true
+  },
+  "final_observed_status": "Done (as at 2026-09-07T12:26Z)"
+}

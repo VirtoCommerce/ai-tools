@@ -354,13 +354,16 @@ async function ensureProduct(spec, location, pricelistByCurrency, currencies) {
   // products this loop DID keep correct hid it. PRODUCT_INVARIANT_FLAGS is the single declaration;
   // td:reconcile [14] probes the same set live, which is the only place the drift is visible.
   //
-  // GET-merge-PUT, never a partial body: PUT /api/catalog/products REPLACES the entity, so sending
+  // GET-merge-POST, never a partial body: this endpoint REPLACES the entity, so sending
   // only the changed fields blanks everything else (the same whole-entity hazard as PUT /api/stores).
+  // The verb is POST, not PUT: the platform dropped PUT on /api/catalog/products (live `Allow:`
+  // header reads `DELETE, GET, PATCH, POST`, and PUT returns 405). `seed-common.mjs` already
+  // uses POST for this same whole-entity update; this call site had not been migrated.
   const full = await api('GET', `/api/catalog/products/${product.id}`);
   const drift = productFlagDrift(spec, full);
   if (drift.length) {
     const patch = Object.fromEntries(drift.map((d) => [d.field, d.want]));
-    await api('PUT', '/api/catalog/products', { ...full, ...patch, minQuantity: 1 }, { expectStatus: [200, 204] });
+    await api('POST', '/api/catalog/products', { ...full, ...patch, minQuantity: 1 }, { expectStatus: [200, 201, 204] });
     for (const d of drift) log(`  ✓ ${spec.sku}: ${d.field} ${JSON.stringify(d.got)} → ${JSON.stringify(d.want)}`);
   }
 

@@ -1,0 +1,45 @@
+{
+  "ticket": "VCST-5905",
+  "verdict": "VERIFIED",
+  "date": "2026-09-07",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1064.0",
+    "theme": "vc-theme-b2b-vue-2.57.0-alpha.2490",
+    "relevant_modules": {
+      "VirtoCommerce.SalesRep": "3.1008.0-pr-19-5e0f",
+      "VirtoCommerce.XOrder": "3.1011.0",
+      "VirtoCommerce.Xapi": "3.1020.0"
+    },
+    "pr_build": "VirtoCommerce.SalesRep_3.1008.0-pr-19-5e0f.zip",
+    "pr": "VirtoCommerce/vc-module-sales-rep#19",
+    "pr_state": "OPEN (unmerged prerelease)",
+    "deploy_commit": "vc-deploy-dev@vcst-qa 6f7ed60a (2026-09-07T15:38:36Z)",
+    "deployment_confirmed_by": "GET /api/platform/modules — live version match"
+  },
+  "agent_used": "inline (qa-verify-fix orchestration; no browser lane available)",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED from live telemetry — App Insights vcst-qa `exceptions` + `requests`, operation `POST graphql/SalesRepCustomerOrders`: 5x System.TypeLoadException / resultCode 500 between 2026-09-07T13:58:17Z and 14:19:05Z on SalesRep 3.1007.0; zero occurrences after the 15:38:36Z deploy. Corroborated by the original /qa-bug report.",
+  "checklist_total": 10,
+  "checklist_passed": 9,
+  "checklist_failed": 0,
+  "checklist_not_captured": 1,
+  "not_captured": [
+    "Layer 1 storefront confirmation — all three Playwright lanes held by ACTIVE regression run REG-2026-09-07-1342 (verified via `npm run regression:reap`); Chrome DevTools lane cannot reach a role-gated surface (no --secrets). Owning layer is L3; suites 091/093/097 in that run cover the field 42 times."
+  ],
+  "adjacent_checks": { "total": 11, "passed": 11 },
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "BL-SR-002 (P0-security) — membership scope holds: 96 rep-visible orders of 8248 store-wide, 0 of 96 rows outside the rep's 5 served orgs",
+    "BL-SR-009 — every facet term round-trips as a status filter at the same count; unknown value fails CLOSED (totalCount 0, no error)",
+    "BL-SR-010 — sort direction honoured and reverses ordering (createdDate desc/asc heads differ)",
+    "BL-SR-013 — facet vocabulary localized, no raw enum key leak",
+    "facet<->total reconciliation on the rewritten ToFacets path: 73+10+10+2+1 = 96 = unfaceted totalCount"
+  ],
+  "jira_transition": "TESTED",
+  "evidence": "reports/tickets/Sprint26-18/VCST-5905/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-18/VCST-5905/"
+}

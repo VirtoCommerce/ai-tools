@@ -456,8 +456,15 @@ export function planSuite(input: SuitePlanInput): SuiteDecision {
       decision.reasons.push(`${REASONS.PR003_NOT_PASS}: ${ran.status}`);
       continue;
     }
-    if (ran.lane && !EXECUTING_LANES.has(ran.lane)) {
-      decision.reasons.push(`${REASONS.PR004_NON_EXECUTING_LANE}: ${ran.lane}`);
+    // FAIL CLOSED on an unknown lane. This was `if (ran.lane && …)`, which SKIPPED the check
+    // whenever the lane was absent — and since no browser runner writes a per-case `lane`, the
+    // guard was inert for every promotion made through this path. A PASS whose lane cannot be
+    // established is doubt, and doubt leaves the case at Draft (the same asymmetry as PR-002/003):
+    // a missed promotion costs one more run, a wrong one puts an unexecuted case into permanent
+    // regression coverage. `readRunEvidence` derives "browser" from the envelope, so a legitimate
+    // browser-lane PASS still promotes; only a genuinely undeterminable lane is held here.
+    if (!ran.lane || !EXECUTING_LANES.has(ran.lane)) {
+      decision.reasons.push(`${REASONS.PR004_NON_EXECUTING_LANE}: ${ran.lane ?? "lane not recorded"}`);
       continue;
     }
     if (input.isFlaky(caseId)) {
@@ -535,7 +542,16 @@ export function readRunEvidence(runDir: string): RunEvidence {
         ambiguousIds.add(c.id);
         continue;
       }
-      runCases.set(c.id, { status: c.status, lane: c.lane });
+      // LANE, derived when the row does not carry one. The browser runner agents write
+      // `id/status/notes/durationMs` and no `lane` (measured: 0 of 129 rows across suites 089/082/083
+      // in REG-2026-09-07-1342), while `suite-results-merge.ts` DOES stamp every row it materialises.
+      // So an absent `lane` means "a browser agent wrote this envelope directly", and the envelope's
+      // own `browser` field is the evidence for it. An explicit lane always wins, which is what keeps
+      // PR-004 able to see a `manual`/`deprecated` row that the merger stamped.
+      runCases.set(c.id, {
+        status: c.status,
+        lane: c.lane || (suite.browser ? "browser" : undefined),
+      });
     }
     suites.set(suite.suiteId, { runCases, ambiguousIds });
   }

@@ -1,0 +1,263 @@
+{
+  "ticket": "VCST-5862",
+  "flow": "verify-fix",
+  "verdict": "BLOCKED",
+  "blocker": "fix-partially-deployed (framework half absent)",
+  "date": "2026-09-07",
+  "environment": {
+    "name": "vcmp-dev",
+    "url": "https://vcmp-dev.govirto.com/apps/vendor-portal/",
+    "product": "vc-shell / Marketplace Vendor Portal",
+    "theme": "Light (Dark and Green not audited)"
+  },
+  "build": {
+    "appVersion": "2.1.2-rc.0",
+    "assetBuildId": "42234",
+    "lastModified": "2026-09-07T11:14:10Z",
+    "frameworkVersion": "2.6.0-rc.0"
+  },
+  "fix": [
+    {
+      "repo": "VirtoCommerce/vc-shell",
+      "pr": 356,
+      "mergeCommit": "477cb529900c9db4504710d52ab098eb84047594",
+      "mergedAt": "2026-09-04T12:52:08Z",
+      "layer": "framework",
+      "deployed": false
+    },
+    {
+      "repo": "VirtoCommerce/vendor-portal",
+      "pr": 154,
+      "mergeCommit": "2a19284573e889eee45827969c4901421b60f88e",
+      "mergedAt": "2026-09-04T12:55:37Z",
+      "layer": "app",
+      "deployed": true
+    }
+  ],
+  "deployGate": {
+    "deployed": "partial",
+    "frameworkHalf": {
+      "deployed": false,
+      "markerAbsent": {
+        "marker": "--environment-banner-text-color",
+        "hits": 0,
+        "file": "assets/index42234.css"
+      },
+      "reverseControl": {
+        "marker": "--environment-banner-color (pre-existing)",
+        "hits": 8,
+        "note": "instrument is live, so 0 means absent rather than not-bundled"
+      },
+      "ancestry": "gh compare 477cb529...cb6379d => status=behind, behind_by=4 : the published rc release predates the fix"
+    },
+    "appHalf": {
+      "deployed": true,
+      "markerPresent": {
+        "marker": "tw-py-10 tw-text-[var(--neutrals-500)]",
+        "hits": 3,
+        "file": "index42234.js"
+      },
+      "oldFormAbsent": {
+        "marker": "tw-py-10 tw-text-[var(--neutrals-400)]",
+        "hits": 0
+      },
+      "note": "3 hits = the three dashboard cards changed by PR #154; proven-new A/B"
+    },
+    "recheckedAt": "2026-09-07T12:18Z — no non-PR framework release since 2.6.0-rc.0; npm latest still 2.5.0; build still 42234",
+    "thirdConfirmation": "live console banner: @vc-shell/framework v2.6.0-rc.0 · 2026-09-02T10:20:14Z · 9cf874d09"
+  },
+  "baseline_red": {
+    "capturedLive": true,
+    "axeVersion": "4.10.2",
+    "rule": "color-contrast",
+    "routes": {
+      "#/": 4,
+      "#/products": 18
+    },
+    "everyElementNamedInTheTicketStillFails": true,
+    "observations": [
+      {
+        "element": ".vc-user-info__role",
+        "text": "Administrator",
+        "fg": "#a3a3a3",
+        "bg": "#fafafa",
+        "size": "11px",
+        "ratio": 2.41,
+        "required": 4.5,
+        "note": "byte-identical to the ticket's own table"
+      },
+      {
+        "element": ".vc-environment-banner__label",
+        "text": "Development",
+        "fg": "#ffffff",
+        "bg": "#57ab79",
+        "size": "13px bold",
+        "ratio": 2.79,
+        "required": 4.5
+      },
+      {
+        "element": ".vc-data-table__header-title-text (sorted)",
+        "text": "Created Date",
+        "fg": "#237aa5",
+        "bg": "#eff7fc",
+        "ratio": 4.4,
+        "required": 4.5,
+        "note": "matches the dev's own stated 4.41:1 measurement for --primary-700"
+      },
+      {
+        "element": ".vc-table-cell-date-ago",
+        "fg": "#a3a3a3",
+        "bg": "#ffffff",
+        "ratio": 2.52,
+        "required": 4.5,
+        "occurrences": 13
+      },
+      {
+        "element": ".vc-blade-toolbar-base-button__title",
+        "text": "Delete selected",
+        "fg": "#a3a3a3",
+        "bg": "#fafafa",
+        "ratio": 2.41,
+        "required": 4.5
+      }
+    ],
+    "scope": {
+      "routes": [
+        "#/",
+        "#/products",
+        "#/orders",
+        "#/offers"
+      ],
+      "themes": [
+        "Light",
+        "Dark"
+      ]
+    },
+    "nodesByRoute": {
+      "light": {
+        "#/": 4,
+        "#/products": 18,
+        "#/orders": 17,
+        "#/offers": 19,
+        "total": 58
+      },
+      "dark": {
+        "#/": 1,
+        "#/products": 16,
+        "#/orders": 15,
+        "#/offers": 17,
+        "total": 49
+      }
+    },
+    "nodeCountCaveat": "Counts are row-count dependent (.vc-table-cell-date-ago repeats per table row), which is why they exceed the dev's before-figures of 23 light / 16 dark. The stable unit is the distinct signature.",
+    "distinctSignatures": [
+      {
+        "sig": ".vc-user-info__role",
+        "light": 2.41,
+        "dark": 3.4,
+        "fixedBy": "#356 user-info.vue"
+      },
+      {
+        "sig": ".vc-environment-banner__label",
+        "light": 2.79,
+        "dark": null,
+        "fixedBy": "#356 vc-environment-banner.vue"
+      },
+      {
+        "sig": ".vc-data-table__header-title-text (sorted)",
+        "light": 4.4,
+        "dark": null,
+        "fixedBy": "#356 TableHead.vue"
+      },
+      {
+        "sig": ".vc-table-cell-date-ago",
+        "light": 2.52,
+        "dark": 3.16,
+        "fixedBy": "#356 CellDateAgo.vue"
+      },
+      {
+        "sig": ".vc-blade-toolbar-base-button__title",
+        "light": 2.41,
+        "dark": 3.4,
+        "fixedBy": "#355 (VCST-5861) — exempt ink, NOT a contrast defect"
+      },
+      {
+        "sig": ".dashboard-stat-item__value--success",
+        "light": 4.13,
+        "dark": null,
+        "fixedBy": "neither PR — predicted residual"
+      }
+    ]
+  },
+  "post_fix_green": null,
+  "openQuestion": {
+    "finding": ".dashboard-stat-item__value--success at 4.13:1 (#43875f on #fafafa, 18px) on the products and offers dashboard widgets",
+    "why_not_filed_yet": "Not covered by PR #356 (framework) or PR #154 (which changed empty-state ink, not stat values), so it is expected to survive the deploy - but the dev's comment reports 'after: 0' on #/, and this element is data-dependent (it only renders when the widget has a success-stat value). Re-measure after the framework deploy before filing, to avoid a duplicate or a false finding.",
+    "severity_if_confirmed": "Medium / P2, standalone a11y ticket (never a Sub-task, does not block the parent)"
+  },
+  "limits": [
+    "Green theme not audited — unknown, not clean. Light and Dark both covered on the 2026-09-07 re-run.",
+    "No AT pass was run — contrast is a computed-style measurement.",
+    "The app half (#154) is proven deployed at bundle level only; the empty state never rendered because both widgets held data.",
+    "Nothing in CI protects this once fixed: the dev notes the story-level axe gate has color-contrast disabled as a documented exception, and no config/test-suites.json suite covers vc-shell.",
+    "Incidental, dismissed: three catalog image 404s in console — env data drift, not a code defect."
+  ],
+  "evidence": [
+    "screenshots/VCST-5862-RED-dashboard-contrast.png"
+  ],
+  "next": "Publish a framework release containing PR #356, bump the vendor-portal pin, redeploy vcmp-dev, then re-run Phase B in BOTH Light and Dark.",
+  "status_transitions": [
+    {
+      "hop": "none",
+      "applied": false,
+      "to": "Ready for test (unchanged)",
+      "reason": "BLOCKED transitions nothing but requires a comment naming the blocker"
+    }
+  ],
+  "comment": {
+    "id": "108470",
+    "dialect": "wiki (v2 API)",
+    "inlineImages": 1,
+    "renderedBodyVerified": true
+  },
+  "rerun": {
+    "date": "2026-09-07",
+    "reason": "widened to the dev's own measurement scope after reading the fix comment on this ticket",
+    "devCommentAcknowledged": {
+      "author": "Maksim Zinchuk",
+      "commentId": "108298",
+      "loadBearingLine": "Not released yet — this is on main and on the portal's dev.",
+      "note": "the BLOCKED verdict confirms the dev's own statement; this run quantifies which half and what pins the other"
+    }
+  },
+  "misattribution": {
+    "element": ".vc-blade-toolbar-base-button__title (\"Delete selected\")",
+    "claim": "listed in this ticket as an affected element; it is not a contrast defect",
+    "proof": {
+      "method": "controlled pair on the same page, getComputedStyle + axe",
+      "exemptControl": {
+        "what": "pagination buttons",
+        "ink": "#a3a3a3 on #f5f5f5",
+        "ratio": "~2.3:1 (worse)",
+        "exposesDisabled": "disabled attr",
+        "axeFlagged": false
+      },
+      "flaggedControl": {
+        "what": "Delete selected",
+        "ink": "#a3a3a3",
+        "tabIndex": 0,
+        "exposesDisabled": false,
+        "axeFlagged": true
+      },
+      "conclusion": "axe's WCAG 1.4.3 disabled-control exemption is live; this node appears only because VCST-5861 leaves the state unexposed"
+    },
+    "consequence": "VCST-5861's fix removes this node from VCST-5862 with no colour change; the dev's 'after: 0' needs BOTH #355 and #356, so the two tickets must be re-verified together"
+  },
+  "predictedResidual": {
+    "element": ".dashboard-stat-item__value--success",
+    "measured": "4.13:1 (#43875f on #fafafa, 18px normal, AA needs 4.5:1), Light only",
+    "expectation": "survives the deploy — touched by neither PR — so 'after: 0' would not hold",
+    "caveat": "renders only when a widget carries a success stat, so the dev's clean run may have had different data",
+    "action": "re-measure post-deploy; if real, its own Medium a11y ticket, never a blocker here"
+  }
+}

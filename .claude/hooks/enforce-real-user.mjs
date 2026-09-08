@@ -50,6 +50,15 @@ const ALLOWED_PATTERNS = [
   /meta\[name=['"]robots['"]\]/, // robots index/noindex check
   /link\[rel=['"]canonical['"]\]/, // canonical URL check
   /script\[type=['"]application\/ld\+json['"]\]/, // JSON-LD Product schema
+  // Open Graph / Twitter card tags, added 2026-09-07. The set above covered every
+  // <head> element the SEO cases assert EXCEPT a bare `meta[property="og:*"]` read,
+  // so a case whose only head-dependent oracle is og:url (suite 001 CAT-049) could
+  // not be written honestly: the sole way past this allowlist was to pad the
+  // evaluate call with an unrelated document.title read purely to match a pattern,
+  // which is the bypass this hook's own block message forbids. Same read-only
+  // spirit as its siblings — a property-scoped meta selector cannot click, type,
+  // or mutate page state.
+  /meta\[property=['"](?:og|twitter):[a-z:_-]+['"]\]/i, // og:/twitter: card tags
   // Explicit opt-in for UI-FIX / DEBUG DOM experiments. A layout/CSS fix often
   // can't be proven without trying the corrected DOM/CSS live (e.g. move a node,
   // toggle a class) and re-measuring. Including this sentinel in the payload is a

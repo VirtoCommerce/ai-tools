@@ -18,7 +18,7 @@ Product available in stock; user is not yet registered; browsing store anonymous
 [STATE] cart badge reflects merged item count
 [MATH] cart subtotal matches expected value for qty=2
 [STATE] verify Product_1 present in cart with qty=2
-[STATE] verify cart badge shows correct count","[API] mergeCarts or equivalent mutation response errors[] is empty
+[STATE] verify cart badge shows correct count","[API] mergeCart or equivalent mutation response errors[] is empty
 [CONSOLE] no JS errors during registration and cart merge
 [NETWORK] no 4xx/5xx during merge
 [API] addItem mutation response errors[] is empty",guest items lost after registration; cart empty for new account; qty mismatch after merge,Remove items from cart; delete test account if needed,C389651; VCST-2976,Manual
@@ -43,7 +43,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [MATH] cart subtotal correct for merged quantity = sum of (unit price × quantity) for all included line items (2 decimal places)
 [STATE] verify exactly one line item for Product A
 [STATE] verify qty=3 (sum of 2+1)
-[STATE] verify no duplicate line items","[API] mergeCarts mutation response errors[] is empty
+[STATE] verify no duplicate line items","[API] mergeCart mutation response errors[] is empty
 [CONSOLE] no JS errors on sign-in and cart page
 [NETWORK] no 4xx/5xx during merge
 [API] addItem mutation response errors[] is empty",duplicate line items created for same SKU; qty not summed (shows 1 or 2 instead of 3); two separate entries in cart,Remove items from cart,C398783; VCST-2674,Manual
@@ -63,7 +63,7 @@ password={{EUR_USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest with U
 [MATH] cart totals calculated in single currency = subtotal + shipping + tax − discount (2 decimal places, per BL-CHK-006)
 [STATE] verify all products merged into single currency cart
 [STATE] verify prices display in customer default currency (EUR)
-[STATE] if product unavailable in EUR, verify warning message shown","[API] mergeCarts mutation response errors[] is empty
+[STATE] if product unavailable in EUR, verify warning message shown","[API] mergeCart mutation response errors[] is empty
 [CONSOLE] no JS errors during currency merge
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",mixed currencies in merged cart; USD prices shown instead of EUR; products silently dropped without warning; cart totals in wrong currency,Remove items from cart,C398784; VCST-2961,Manual
@@ -90,7 +90,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [STATE] verify no items lost or duplicated after logout/login cycle","[API] getCart query returns same items after re-login
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
-[API] mergeCarts mutation response errors[] is empty
+[API] mergeCart mutation response errors[] is empty
 [API] addItem mutation response errors[] is empty",merged items lost after logout; cart empty on re-login; items duplicated after re-login; subtotal mismatch,Remove items from cart,C398785; VCST-2977,Manual
 CART-104,Cart Merge - Different Product Types,Cart > Merge,Medium,"BL-CART-008, BL-CART-007","ECL-7.3, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -113,26 +113,23 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [STATE] no missing or mismatched products after merge
 [STATE] verify both simple and configurable products present
 [STATE] verify configurable product retains variant attributes (size, color)
-[STATE] verify no missing or mismatched products","[API] mergeCarts mutation response errors[] is empty
+[STATE] verify no missing or mismatched products","[API] mergeCart mutation response errors[] is empty
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
 [API] addItem mutation response errors[] is empty",configurable product loses variant attributes after merge; simple product missing; product types confused or swapped,Remove items from cart,C398786,Manual
 CART-105,Cart Merge - Smart Merge Failure Handling,Cart > Merge,Medium,BL-CART-008,"ECL-7.3, ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-TOOL-LIMITATION: Network fault injection (interrupting merge mid-request) cannot be executed via MCP browser agent (requires service worker interception or proxy-level throttling). Revert to API-layer negative test: send malformed mergeCarts mutation and verify backend error response. MCP agent: verify storefront graceful error handling on API error response.","url={{FRONT_URL}}
+Normal (non-malformed) sign-in merge flow only. The API-negative half (malformed mergeCart mutation) is split out to CART-118 — a browser lane cannot exercise a deliberately malformed GraphQL payload as part of a UI journey. Split: 2026-09-07 (REG-2026-09-07-1342).","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}} as guest
 [ACT] add products to cart as anonymous user
 [WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] sign in as {{USER_EMAIL}} (normal merge)
-[NAV] navigate to {{FRONT_URL}}/cart
-[API] send malformed mergeCarts mutation via Postman/curl (missing required userId)","[DOM] cart page accessible and functional after login (even if merge produced no-op result) (visible)
+[NAV] navigate to {{FRONT_URL}}/cart","[DOM] cart page accessible and functional after login (even if merge produced no-op result) (visible)
 [STATE] no JS unhandled exception displayed to user
-[API] malformed merge request returns errors[] with descriptive message (not 500 Internal Server Error)
-[CONSOLE] no unhandled JS exceptions during normal sign-in merge flow
-[STATE] verify API returns structured error response (not HTTP 500); errors[] array populated","[CONSOLE] no unhandled JS exceptions
+[CONSOLE] no unhandled JS exceptions during normal sign-in merge flow","[CONSOLE] no unhandled JS exceptions
 [NETWORK] no 500 on merge API response for normal sign-in flow
-[API] addItem mutation response errors[] is empty",page crashes on sign-in; cart inaccessible after login; API returns 500 for malformed merge request with no error detail,none (verify cart state),C396997,Manual
+[API] addItem mutation response errors[] is empty",page crashes on sign-in; cart inaccessible after login,none (verify cart state),C396997 | Split: 2026-09-07 (REG-2026-09-07-1342) — API-negative malformed-mutation assertion moved to CART-118 (browser lane cannot execute it as part of a UI journey),Manual
 CART-106,Cart Merge Selection - Empty Cart + Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Default 'Selected for checkout' = ON in store settings; Cart1 (user) is empty; Cart2 (guest) has items with all selected","url={{FRONT_URL}}
@@ -156,7 +153,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [STATE] verify Proceed to Checkout button active","[API] getCart returns all items with selectedForCheckout=true
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
-[API] mergeCarts mutation response errors[] is empty
+[API] mergeCart mutation response errors[] is empty
 [API] addItem mutation response errors[] is empty",items not selected after merge; Proceed to Checkout disabled; items missing from merged cart,Remove items from cart,C389850,Manual
 CART-107,Cart Merge Selection - Both Selected All (ON),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -280,7 +277,7 @@ password={{USER_PASSWORD}}","[NAV] log in to {{FRONT_URL}}
 [STATE] verify Proceed to Checkout blocked or warns about no selected items","[API] getCart returns items with selectedForCheckout=false
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
-[API] mergeCarts mutation response errors[] is empty
+[API] mergeCart mutation response errors[] is empty
 [API] addItem mutation response errors[] is empty",items auto-selected despite OFF setting; Proceed to Checkout active with no selection,Remove items from cart; restore store setting to ON,C389916,Manual
 CART-112,Cart Merge Selection - Both Selected All (OFF),Cart > Merge > Selection,Medium,BL-CART-008,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -368,7 +365,7 @@ optionB=Green hat","[NAV] navigate to {{FRONT_URL}} as guest (unauthenticated se
 [STATE] cart still shows exactly 2 line items for Configurable Hat
 [STATE] each line retains its distinct configuration (option A on one line; option B on the other)
 [STATE] per-line totals unchanged from pre-merge values
-[STATE] cart subtotal = totalA + totalB","[API] mergeCarts mutation response errors[] is empty
+[STATE] cart subtotal = totalA + totalB","[API] mergeCart mutation response errors[] is empty
 [API] getCart returns items[] of length 2 with distinct configurationItems values per line
 [CONSOLE] no JS errors during sign-in and cart merge
 [NETWORK] no 4xx/5xx on cart fetch or merge mutation
@@ -409,7 +406,7 @@ option=Black hat","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [STATE] cart shows exactly 2 line items for Configurable Hat (configured items never consolidate — VCST-5053)
 [STATE] one line has quantity=1 (from user cart), the other quantity=2 (from guest cart); quantities are NOT summed into a single line
 [STATE] both lines display the same option A (Black hat) configuration
-[STATE] cart subtotal = configured unit price × 3 (sum across both lines)","[API] mergeCarts mutation errors[] is empty
+[STATE] cart subtotal = configured unit price × 3 (sum across both lines)","[API] mergeCart mutation errors[] is empty
 [API] getCart returns items[] of length 2, both IsConfigured with matching configurationItems (quantity 1 and quantity 2 respectively)
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
@@ -448,7 +445,7 @@ optionB=Green hat","[NAV] log in to {{FRONT_URL}} as {{USER_EMAIL}}
 [STATE] cart shows exactly 2 line items, both for Configurable Hat base product
 [STATE] one line displays option A configuration (from user cart); the other displays option B (from guest cart)
 [STATE] both line totals match the pre-merge per-configuration totals
-[STATE] cart subtotal = configured total A + configured total B","[API] mergeCarts mutation errors[] is empty
+[STATE] cart subtotal = configured total A + configured total B","[API] mergeCart mutation errors[] is empty
 [API] getCart returns items[] of length 2 with distinct configurationItems values per line
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx
@@ -474,8 +471,17 @@ low_stock_sku=@td(PROD_LOW_STOCK.sku)","[NAV] log in to {{FRONT_URL}} as {{USER_
 [WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)
 [ACT] sign in with {{USER_EMAIL}} / {{USER_PASSWORD}} (triggers merge)
 [NAV] navigate to {{FRONT_URL}}/cart","[STATE] the merge retains the raw summed quantity (user qty + guest qty) even though it exceeds available stock — the excess is NOT silently accepted without any signal; the line is explicitly flagged with a stock-exceeded validation message {OBSERVED} (live-verified: merge produced qty=6 against stock=5 for @td(PROD_LOW_STOCK.sku)/QA-LOW-001 — it is NOT capped to 5)
-[DOM] the merged line shows the verbatim message ""You can order maximum 5 item(s)"", the '+' control is disabled, and ""In stock 5"" is shown {OBSERVED} (live-verified as real reactive validation, not a static banner — reducing the quantity to 5 made the message disappear immediately)","[API] mergeCarts mutation response errors[] is empty
+[DOM] the merged line shows the verbatim message ""You can order maximum 5 item(s)"", the '+' control is disabled, and ""In stock 5"" is shown {OBSERVED} (live-verified as real reactive validation, not a static banner — reducing the quantity to 5 made the message disappear immediately)","[API] mergeCart mutation response errors[] is empty
 [API] getCart after merge: the line's quantity reflects the raw summed value (may exceed available stock) AND the line carries an explicit stock-validation flag/message when it does
 [CONSOLE] no JS errors
 [NETWORK] no 4xx/5xx during merge
-[API] addItem mutation response errors[] is empty",merged quantity exceeds available stock with NO flag/message shown (silent oversell); checkout proceeds with an oversold quantity and no warning; the stock-exceeded message is a static label that does not react to a quantity change (does not disappear when qty is reduced to the stock limit); merge mutation errors[] non-empty with no user-facing explanation,Remove all items from cart; sign out,Coverage Gap Analysis; VCST-3926,Draft
+[API] addItem mutation response errors[] is empty",merged quantity exceeds available stock with NO flag/message shown (silent oversell); checkout proceeds with an oversold quantity and no warning; the stock-exceeded message is a static label that does not react to a quantity change (does not disappear when qty is reduced to the stock limit); merge mutation errors[] non-empty with no user-facing explanation,Remove all items from cart; sign out,Coverage Gap Analysis; VCST-3926 | Promoted: REG-2026-09-07-1342 (2026-09-07),Automated
+CART-118,Cart Merge - Malformed mergeCart Mutation Returns Structured Error (API),Cart > Merge,Medium,BL-GQL-001,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+TOOL-LIMITATION: Network fault injection (interrupting merge mid-request) cannot be executed via MCP browser agent (requires service worker interception or proxy-level throttling); this is the API-layer negative half split from CART-105. Send a malformed mergeCart mutation directly (missing the required userId argument) and verify the backend's error response shape.","url={{FRONT_URL}}
+backUrl={{BACK_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[API] send a mergeCart GraphQL mutation to {{BACK_URL}}/graphql with the required userId argument omitted
+[WAIT] wait for the mutation response","[API] malformed mergeCart response returns errors[] with a descriptive validation message, never empty {SPEC}
+[STATE] the response is HTTP 200 with a structured GraphQL error body, never a raw HTTP 500 Internal Server Error {SPEC}","[NETWORK] response status is not 500
+[API] errors[] is populated with a descriptive message referencing the missing argument, not empty",HTTP 500 with no structured error body; errors[] empty despite the missing required argument; generic/non-descriptive error message; stack trace or internal detail leaked in errors[0].message,none (no mutation succeeds — nothing to roll back),"C396997 | Split from: CART-105 (2026-09-07, REG-2026-09-07-1342) | Archetype:FALLBACK · Technique:EG | Promoted: REG-2026-09-07-2225 (2026-09-07)",Automated

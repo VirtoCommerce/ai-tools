@@ -19,20 +19,18 @@
 [DOM] Zoom/enlarge control present
 [STATE] Zoom or modal opens on click","[NETWORK] image requests return HTTP 200
 [CONSOLE] no TypeError or JS errors","Thumbnails not clickable; main image not updating; zoom control absent; images return 4xx; console TypeError","none","regression-qa-theme-26.csv","Automated"
-"CAT-012","Product Variations - B2C Style","Catalog > Variations","High","BL-CAT-006",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-[PRE:RESET_CART]
-Product with size and color variations exists in catalog","url={{FRONT_URL}}","[NAV] Navigate to a configurable product page on {{FRONT_URL}}
-[ASSERT] Verify variation selectors (color, size) are visible
-[ACT] Select a color option
-[WAIT] Wait for price/availability to update
-[ACT] Select a size option
-[WAIT] Wait for selection to register
-[ASSERT] Verify price reflects selected combination (price > 0)
-[ACT] Click 'Add to cart'
-[WAIT] Wait for cart confirmation","[DOM] Color and size selectors rendered
-[DOM] Price updates to reflect selected variant (price > 0, matches /^\$[0-9,]+\.[0-9]{2}$/)
-[STATE] Correct SKU variant added to cart (not base product)","[NETWORK] no 4xx/5xx on variant selection or add-to-cart
-[CONSOLE] no TypeError or JS errors","Variation selectors missing; price not updating on selection; wrong variant in cart; add-to-cart fails; console TypeError","Remove added item from cart after test","tests/B2C-Variations","Automated"
+"CAT-012","Product Variations - B2C Style","Catalog > Variations","High",,,"The only variations-parent product on this environment (@td(PROD_CMP_VARIATIONS.name)) renders its variants as a ""PRODUCT VARIATIONS"" list panel on the PDP — each variant is its own standalone purchase line with its own price and quantity stepper, NOT a color/size dropdown selector pair. Rebased 2026-09-07 (REG-2026-09-07-1342): confirmed live that no size+color dropdown-style B2C variation product exists on this environment (the only variations-parent, AGENT-TEST-Compare-Variations-Parent, uses different axis properties and renders the List/Table pattern this case now targets); BLOCKED/TEST_DATA_DEFECT under the prior assumption.","url={{FRONT_URL}}
+varUrl=@td(PROD_CMP_VARIATIONS.url)
+varSku=@td(PROD_CMP_VARIATIONS.sku)
+varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_CMP_VARIATIONS.url)
+[WAIT] the product page for @td(PROD_CMP_VARIATIONS.name) renders
+[ASSERT] Verify the ""PRODUCT VARIATIONS"" list panel is visible with one purchase line per variant
+[ACT] on one variant's line, use its own quantity stepper to add it to cart
+[WAIT] wait for the cart mutation to settle (cart badge updates or items[] reflects the new/updated line — addItem async settle)","[DOM] the ""PRODUCT VARIATIONS"" panel renders one purchase line per variant, each with its own price (visible)
+[MATH] the added cart line's price = the selected variant's own row price (both > 0), not the parent's own list price
+[STATE] the cart line's SKU differs from the parent SKU @td(PROD_CMP_VARIATIONS.sku) — the variant, not the base product, was added","[API] addItem mutation response errors[] is empty
+[NETWORK] no 4xx/5xx on variant selection or add-to-cart
+[CONSOLE] no TypeError or JS errors","""PRODUCT VARIATIONS"" panel missing; only the parent's own Add-to-cart control is present with no way to choose a variant; cart line records the parent SKU instead of the variant; price shown does not match the added line; console TypeError","Remove added item from cart after test","tests/B2C-Variations | Rebased: 2026-09-07 (REG-2026-09-07-1342) — no size×color dropdown-style B2C variation product exists on this environment; re-pointed onto @td(PROD_CMP_VARIATIONS.name)'s actual variant List/Table pattern. No BL-* invariant currently covers a hasVariations-parent's per-line purchase mechanism (BL-CAT-006 was miscited — that invariant governs configurable-product section completion, a different mechanism); flagged as a coverage gap for /qa-review-oracles rather than left mis-cited.","Automated"
 "CAT-013","Product - Related Products","Catalog > Product","Low","BL-CAT-001",,"Product with related items configured exists in catalog","url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}}
 [SCROLL] Scroll down to related products section
 [ASSERT] Verify related products section is visible
@@ -98,21 +96,21 @@ Product with size and color variations exists in catalog","url={{FRONT_URL}}","[
 [NAV] CTA link navigates back to catalog
 [DOM] No broken layout","[NETWORK] GET /compare returns HTTP 200 (not 4xx)
 [CONSOLE] no TypeError or JS errors","Compare page returns 4xx on empty state; no empty state message; CTA link broken; layout broken without products; console TypeError","none",Coverage Gap Analysis | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
-"CAT-038","B2B Virtual Catalog Navigation - Org User Sees Assigned Products","Catalog > Virtual Catalog","High","BL-CAT-002, BL-CAT-005",,"Org user logged in; virtual catalog assigned to org with subset of products; physical catalog has additional products not in virtual catalog","url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}","[NAV] Log in as org user at {{FRONT_URL}} using {{ORG_USER_EMAIL}} / {{ORG_USER_PASSWORD}}
+"CAT-038","B2B Virtual Catalog Navigation - Org User Sees Assigned Products","Catalog > Virtual Catalog","High","BL-CAT-002, BL-CAT-005",,"@td(PROD_ORG_EXCLUDED.name) exists in a physical catalog but is deliberately withheld from the store's virtual catalog (drift-guarded by td:validate:catalog-edge). Rebased 2026-09-07 (REG-2026-09-07-1342): live-confirmed the platform's virtual catalog binds at STORE level and is shared by every identity — org user, personal user, and guest all returned identical /catalog listings — so an org-scoped subset does not exist on this environment; the discriminating case is store-level exclusion (BL-CAT-005), not a per-org catalog.",url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}; excludedSku=@td(PROD_ORG_EXCLUDED.sku); excludedName=@td(PROD_ORG_EXCLUDED.name),"[NAV] Log in as org user at {{FRONT_URL}} using {{ORG_USER_EMAIL}} / {{ORG_USER_PASSWORD}}
 [NAV] Navigate to main catalog page
 [WAIT] Wait for product listing to load
-[ASSERT] Verify only products assigned to the org's virtual catalog are displayed
-[ACT] Search for a product known to exist in the physical catalog but NOT in the virtual catalog (confirm exclusion at runtime by checking xAPI with both storeId and without)
+[ASSERT] Verify products are displayed (count > 0)
+[ACT] Search for @td(PROD_ORG_EXCLUDED.name) (SKU @td(PROD_ORG_EXCLUDED.sku)) — exists in a physical catalog but withheld from the store's virtual catalog
 [WAIT] Wait for search results
 [ASSERT] Verify the excluded product does not appear in results
-[ACT] Search for a product known to exist in the virtual catalog (resolve at runtime via xAPI products query scoped to the org's storeId)
+[ACT] Search for a product known to exist in the store's virtual catalog
 [WAIT] Wait for search results
-[ASSERT] Verify the included product appears in results","[DOM] Product listing shows only products from the virtual catalog assigned to the org
-[STATE] Products outside the virtual catalog are not visible in search or browse
+[ASSERT] Verify the included product appears in results","[DOM] Product listing shows only products linked into the store's virtual catalog
+[STATE] @td(PROD_ORG_EXCLUDED.name) is not visible in search or browse for any identity (org, personal, or guest)
 [DOM] Product cards display prices in the org-specific currency (price > 0)
-[MATH] Product count > 0 (org has at least one product in virtual catalog)","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with correct catalog scope
-[API] Verify storeId and catalogId in GraphQL request match org's virtual catalog
-[CONSOLE] no TypeError or JS errors","Products from physical catalog leaking into virtual catalog view; org user seeing full catalog instead of virtual subset; search returning products outside virtual catalog scope; console TypeError","none","E2E-CAT-007, GAP-CS-01","Draft"
+[MATH] Product count > 0 (the store's virtual catalog has at least one product)","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with correct catalog scope
+[API] Verify storeId and catalogId in GraphQL request match the store's virtual catalog (not an org-scoped one)
+[CONSOLE] no TypeError or JS errors",@td(PROD_ORG_EXCLUDED.name) appears in search or browse results for any identity; products from the physical-only catalog leaking into the virtual catalog view; console TypeError,"none","E2E-CAT-007, GAP-CS-01 | Rebased: 2026-09-07 (REG-2026-09-07-1342) — org-scoped virtual-catalog subset does not exist on this environment (confirmed live: org/personal/guest identities returned identical listings); re-pointed onto the store-level exclusion fixture @td(PROD_ORG_EXCLUDED.name) per BL-CAT-005 | Promoted: REG-2026-09-07-2225 (2026-09-07)",Automated
 "CAT-039","Virtual Catalog Inheritance - Physical Catalog Products Appear in Virtual View","Catalog > Virtual Catalog","High","BL-CAT-002, BL-CAT-005",,"Admin has configured a virtual catalog that inherits products from a physical catalog; org user has access to the virtual catalog","url={{FRONT_URL}}; email={{ORG_USER_EMAIL}}; password={{ORG_USER_PASSWORD}}","[NAV] Log in as org user at {{FRONT_URL}}
 [NAV] Navigate to a category that exists in the virtual catalog (inherited from physical)
 [WAIT] Wait for category page to load
@@ -353,4 +351,4 @@ state from CAT-79 (customer holds a wishlist in the current store containing @td
 [DOM] on the storeA product's PDP, the same button renders its in-wishlist/remove-from-list state {SPEC}
 [STATE] the PDP wishlist marker is scoped to the current store's wishlist only, matching the catalog-grid behavior verified in CAT-79 {SPEC}","[API] the PDP's wishlist-membership lookup is scoped by storeId — the same FindWishlistsByProductsAsync fix exercised by the catalog grid {SPEC}
 [CONSOLE] no uncaught JS errors on PDP load
-[NETWORK] no 4xx/5xx on the wishlist-lookup request",wishlist button shows an in-wishlist state for the storeB-only product's PDP; wishlist button shows the neutral state for the storeA product's PDP; console TypeError on PDP load; test executed on a single-store deployment and reported PASS instead of SKIPPED,none — read-only browse; no state change,VCST-5705,Draft
+[NETWORK] no 4xx/5xx on the wishlist-lookup request",wishlist button shows an in-wishlist state for the storeB-only product's PDP; wishlist button shows the neutral state for the storeA product's PDP; console TypeError on PDP load; test executed on a single-store deployment and reported PASS instead of SKIPPED,none — read-only browse; no state change,VCST-5705 | Promoted: REG-2026-09-07-1342 (2026-09-07),Automated

@@ -858,9 +858,9 @@
     "name": "AGENT-TEST-SR-CART-WEST"
   },
   "LOYALTY_ZERO_USER": {
-    "memberId": "1f370b6f-81e5-49bd-8edf-0e5f26e8e843",
-    "securityAccountId": "46846a43-12c9-44ee-86aa-4a0e413f2657",
-    "email": "AGENT-TEST-loyzero-20260902080959-c664@test-agent.com"
+    "memberId": "be227edb-f9be-43d6-aad4-46a23c2492d1",
+    "securityAccountId": "fae4bae0-1be9-49c6-81ee-5f18c5568283",
+    "email": "AGENT-TEST-loyzero-20260907194948-0a6a@test-agent.com"
   },
   "REV_VAR_MATRIX": {
     "id": "08c33cfc9f664426a52fac8882da2df0",
@@ -927,7 +927,7 @@
     "createdDate": "2026-08-26T15:56:48.9650491Z"
   },
   "MSN_ORDERVALUE": {
-    "id": "c126f0dd-50d4-45e3-804a-8faabd8b6e8b",
+    "id": "91ec8c28-d73a-4df9-8045-5171cd3a504b",
     "goal_currency": "USD",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
     "accrued_value_at_seed": "116.5",
@@ -935,7 +935,7 @@
     "progress_percent_at_seed": "100"
   },
   "MSN_ORDERVALUE_ALTCURRENCY": {
-    "id": "861afd8e-476b-4b9a-921a-acc26b0dcc8b",
+    "id": "309ae4c3-b823-49ca-8add-79776d09cf34",
     "goal_currency": "AUD",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
     "accrued_value_at_seed": "",
@@ -943,38 +943,38 @@
     "progress_percent_at_seed": ""
   },
   "MSN_ORDERCOUNT": {
-    "id": "c61b0ca5-b6db-4c68-9aa6-bdf4e7d20e08",
+    "id": "30f27bf4-fd44-4bf7-a8cd-1ba743fe5593",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_PERSKU_ALL": {
-    "id": "d60c97b0-652c-4a4f-94e9-7fa8b1af9ee0",
+    "id": "a0206d2e-7034-48c0-8b0d-70d61e2abf68",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg",
     "locale_default": "en-US"
   },
   "MSN_PERSKU_ANY": {
-    "id": "30aa72ac-3f49-4fde-9a6c-d5316d621783",
+    "id": "014fc3b4-9cd2-41a0-949a-25bba0badbbd",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_PUBLISHED_PRIVATE": {
-    "id": "8f28b44b-fb18-419c-9ae1-93122ec5bf0c",
+    "id": "147e5e85-d37c-494b-9da2-9ef5295749bd",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_ZEROTARGET": {
-    "id": "05982235-1bf1-4f35-ba85-229d95032c4c",
+    "id": "b8d2928a-e591-45db-a1ee-f666a825cf83",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_ZEROREWARD": {
-    "id": "82404e53-2633-404c-839b-5996fef26469",
+    "id": "77d41bd0-b7fa-4bea-a66f-f776c151f917",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_LOCALIZED": {
-    "id": "dfb6bc11-81b6-40a9-987d-5397e12a4941",
+    "id": "d2587dd9-6a71-4de9-b5de-1afa95443b75",
     "locale_default": "en-US",
     "locale_alternate": "de-DE",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_DRAFT": {
-    "id": "3780a78e-9539-473a-8a4a-0f6595745c63",
+    "id": "2a4c02f1-02f8-4826-9886-efacca6c4768",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_PERSKU_PRODUCT_A": {
@@ -997,23 +997,23 @@
     "store_id": "B2B-store"
   },
   "MSN_EXPIRED": {
-    "id": "4f10444b-69d6-499b-b5d4-0129dba75077",
+    "id": "c5419b1b-7357-4ea1-ad1b-9828ebc66604",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_ENDING_SOON": {
-    "id": "4ecf51a6-02ac-4e4e-9878-f0c73b7fedce",
+    "id": "1e2dcbd9-5cbd-40df-bfdb-4b763ee5e79c",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_PROGRESS_PARTIAL": {
-    "id": "f7ff46cf-1207-43f2-8e6e-fedf34557089",
+    "id": "34c2ed6e-1f20-4f54-8235-866c08d83960",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_PROGRESS_COMPLETED": {
-    "id": "46630cdf-e67e-4a83-a4ef-dae2736c4761",
+    "id": "aa95ccee-4676-4a53-8e05-2918f9fe56a2",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_PROGRESS_ORDER": {
-    "id": "414a0a11-17d0-43c0-8071-59cd0aebb781",
+    "id": "f009ba62-2f6b-4562-a33e-091614f141d4",
     "user_id": "f194c370-b7b0-4b88-8fc5-edc9ca80ee1c",
     "user_email": "mutykovaelena@gmail.com",
     "store_id": "B2B-store",
@@ -1025,7 +1025,7 @@
     "observed_total": "116.5"
   },
   "MSN_GROUP_VIP": {
-    "id": "f754b32d-09eb-43e4-b9bd-0160c6026919",
+    "id": "4f98020c-33bc-4b34-af0b-a8fe5c1906a1",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_GROUP_AUDIENCE": {
@@ -1037,15 +1037,15 @@
     "nonmember_groups": "Wholesale"
   },
   "MSN_GROUP_VIP_PRIVATE": {
-    "id": "9937e85c-dd46-41d2-b5e3-1df10c3c1a26",
+    "id": "a6a61bd0-b8fc-438e-956e-368d026d0d1e",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_OPEN_ENDED": {
-    "id": "ff1752ec-276b-4516-975e-f739e5659691",
+    "id": "6d4abcaf-acc7-47b9-aaaf-0481f01f291a",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-count.svg"
   },
   "MSN_PERSKU_OOS": {
-    "id": "d5bc2463-9a17-43f5-879c-009b49a15f1e",
+    "id": "cc667659-a6ac-4916-8d17-6a64bbb697b7",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "MSN_ZEROSTOCK_PRODUCT": {
@@ -1054,30 +1054,30 @@
     "currency": "USD"
   },
   "MSN_E2E_RUN": {
-    "run_id": "20260902085919-b156",
-    "seeded_at": "2026-09-02T08:59:19.387Z",
+    "run_id": "20260907194952-0c64",
+    "seeded_at": "2026-09-07T19:49:52.201Z",
     "store_id": "B2B-store",
     "catalog_id": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
-    "category_id": "cf70eb40-a6ac-4d37-81ad-04ca44bdb9db"
+    "category_id": "84618559-2a3f-4cee-8673-91a4188b10a9"
   },
   "MSN_E2E_REWARD_USER": {
-    "email": "AGENT-TEST-loyzero-20260902080959-c664@test-agent.com",
-    "user_id": "46846a43-12c9-44ee-86aa-4a0e413f2657",
-    "member_id": "1f370b6f-81e5-49bd-8edf-0e5f26e8e843",
+    "email": "AGENT-TEST-loyzero-20260907194948-0a6a@test-agent.com",
+    "user_id": "fae4bae0-1be9-49c6-81ee-5f18c5568283",
+    "member_id": "be227edb-f9be-43d6-aad4-46a23c2492d1",
     "balance_at_seed": "0"
   },
   "MSN_E2E_ORDERVALUE": {
-    "id": "e22ecaf2-2650-4ead-8657-b6fb13b93132",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-ORDERVALUE",
-    "run_id": "20260902085919-b156",
+    "id": "f92e5d26-3772-4bf1-bc5b-bfe030a3ec68",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-ORDERVALUE",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "USD",
     "progress_status_at_seed": "InProgress",
     "progress_percent_at_seed": "0"
   },
   "MSN_E2E_ORDERCOUNT": {
-    "id": "6abccb61-7427-42ab-8a9a-9d5b650eeb03",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-ORDERCOUNT",
-    "run_id": "20260902085919-b156",
+    "id": "82db384a-1a06-4fd4-aa11-adaf0bbb3453",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-ORDERCOUNT",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "",
     "progress_status_at_seed": "InProgress",
     "progress_percent_at_seed": "0",
@@ -1089,31 +1089,31 @@
     "measured_shipping": "0",
     "measured_total": "18",
     "reading_values": "netMerchandise=15; grossMerchandise=15; orderTotal=18; totalPlusPoints=18",
-    "order1_co_missions": "AGENT-TEST-MSN-E2E-20260902085919-b156-ORDERVALUE-008=508; AGENT-TEST-MSN-LOCALIZED=250; AGENT-TEST-MSN-ZEROREWARD=0; AGENT-TEST-MSN-ZEROTARGET=200; AGENT-TEST-MSN-PUBLISHED-PRIVATE=100",
+    "order1_co_missions": "AGENT-TEST-MSN-E2E-20260907194952-0c64-ORDERVALUE-008=508; AGENT-TEST-MSN-LOCALIZED=250; AGENT-TEST-MSN-ZEROREWARD=0; AGENT-TEST-MSN-ZEROTARGET=200; AGENT-TEST-MSN-PUBLISHED-PRIVATE=100",
     "order1_expected_delta": "1058",
-    "co_completing_missions": "AGENT-TEST-MSN-E2E-20260902085919-b156-ORDERVALUE-006=506; AGENT-TEST-MSN-ORDERCOUNT=300",
+    "co_completing_missions": "AGENT-TEST-MSN-E2E-20260907194952-0c64-ORDERVALUE-006=506; AGENT-TEST-MSN-ORDERCOUNT=300",
     "reward_expected_total": "1307"
   },
   "MSN_E2E_PERSKU": {
-    "id": "975b433a-e2b7-4611-8c4a-03614f6f48bf",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-PERSKU",
-    "run_id": "20260902085919-b156",
+    "id": "f4d6f2c7-40d8-403d-93fb-1ff14eca36a7",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-PERSKU",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "",
     "progress_status_at_seed": "InProgress",
     "progress_percent_at_seed": "0"
   },
   "MSN_E2E_PERSKU_PTS": {
-    "id": "22e578bd-5ac8-4da6-a3a5-a721b4c832b1",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-PERSKU-PTS",
-    "run_id": "20260902085919-b156",
+    "id": "6d779e99-d601-4890-9d79-693b357f260d",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-PERSKU-PTS",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "",
     "progress_status_at_seed": "InProgress",
     "progress_percent_at_seed": "0"
   },
   "MSN_E2E_ORDERVALUE_003": {
-    "id": "be06de88-1794-48d9-97d6-6145dad1a28b",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-ORDERVALUE-003",
-    "run_id": "20260902085919-b156",
+    "id": "96593cfa-d243-4b13-9734-ae8e4ba0388e",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-ORDERVALUE-003",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "USD",
     "goal_target": "49.5",
     "progress_status_at_seed": "InProgress",
@@ -1134,17 +1134,17 @@
     "reward_expected_total": ""
   },
   "MSN_E2E_USER_003": {
-    "email": "AGENT-TEST-msne2e-20260902085948-72f5@test-agent.com",
-    "user_id": "9a03b178-09c0-4a99-bb16-3a5f1091df4e",
-    "member_id": "0e189f58-4fc9-433f-a338-6afb5b1cdfdf",
-    "handle": "AGENT-TEST-msne2e-20260902085948-72f5",
+    "email": "AGENT-TEST-msne2e-20260907195010-392e@test-agent.com",
+    "user_id": "034de73f-a195-4c40-b7db-dc898161f557",
+    "member_id": "2b6c7f80-5e51-46f0-b2af-ec3364355320",
+    "handle": "AGENT-TEST-msne2e-20260907195010-392e",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_ORDERVALUE_005": {
-    "id": "6ff42f1c-2d7b-41d2-9619-b8520e54eb2c",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-ORDERVALUE-005",
-    "run_id": "20260902085919-b156",
+    "id": "da959da8-3262-4e9f-9c9f-a189e083defd",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-ORDERVALUE-005",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "USD",
     "goal_target": "54",
     "progress_status_at_seed": "InProgress",
@@ -1165,17 +1165,17 @@
     "reward_expected_total": ""
   },
   "MSN_E2E_USER_005": {
-    "email": "AGENT-TEST-msne2e-20260902085951-a66f@test-agent.com",
-    "user_id": "67d71955-1482-4bcc-a453-77971b566560",
-    "member_id": "2b1f8e2d-b43d-4487-ac27-a59727526e6b",
-    "handle": "AGENT-TEST-msne2e-20260902085951-a66f",
+    "email": "AGENT-TEST-msne2e-20260907195013-a9fd@test-agent.com",
+    "user_id": "82b2d6b3-0291-4991-80c7-55c5d63ce78e",
+    "member_id": "cf3ca8ed-cd9e-490a-8c38-20cfe35179e0",
+    "handle": "AGENT-TEST-msne2e-20260907195013-a9fd",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_ORDERVALUE_006": {
-    "id": "6026bd94-bfa2-4ee2-8ed5-1e3fa4e016ce",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-ORDERVALUE-006",
-    "run_id": "20260902085919-b156",
+    "id": "6d66697f-26ca-4cb2-a71a-b364e3a15bf6",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-ORDERVALUE-006",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "USD",
     "goal_target": "36",
     "progress_status_at_seed": "InProgress",
@@ -1196,17 +1196,17 @@
     "reward_expected_total": ""
   },
   "MSN_E2E_USER_006": {
-    "email": "AGENT-TEST-msne2e-20260902085954-fbdc@test-agent.com",
-    "user_id": "42739889-ec6e-4d63-92b8-b8a20f192b25",
-    "member_id": "ddc8c796-237f-47f7-abfb-ac26e937f010",
-    "handle": "AGENT-TEST-msne2e-20260902085954-fbdc",
+    "email": "AGENT-TEST-msne2e-20260907195017-71a2@test-agent.com",
+    "user_id": "f249578e-dda9-42a3-92bc-4c4d8e9300cc",
+    "member_id": "c1672460-44ea-479b-85ed-1409d1c21834",
+    "handle": "AGENT-TEST-msne2e-20260907195017-71a2",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_ORDERVALUE_008": {
-    "id": "ef6e5bda-768c-4085-9038-c21c44552800",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-ORDERVALUE-008",
-    "run_id": "20260902085919-b156",
+    "id": "f08ab581-ae2d-448f-becc-d20cc2bf5210",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-ORDERVALUE-008",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "USD",
     "goal_target": "12",
     "progress_status_at_seed": "InProgress",
@@ -1227,22 +1227,22 @@
     "reward_expected_total": "1058"
   },
   "MSN_E2E_USER_008": {
-    "email": "AGENT-TEST-msne2e-20260902085957-d4ae@test-agent.com",
-    "user_id": "fa76164d-645f-4388-bb71-5533517538e4",
-    "member_id": "fec5f758-b96f-4ad1-8c6f-a8641826b481",
-    "handle": "AGENT-TEST-msne2e-20260902085957-d4ae",
+    "email": "AGENT-TEST-msne2e-20260907195020-fcbd@test-agent.com",
+    "user_id": "35efc154-d3c1-4a01-88fb-ff0dbd90a5bc",
+    "member_id": "6aa8d27a-717c-4ddc-b6f2-0e42634dfdd4",
+    "handle": "AGENT-TEST-msne2e-20260907195020-fcbd",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_PRODUCT_UNIT": {
-    "productId": "be3db87e-70f4-4611-80fe-10b5e2ea0bab",
+    "productId": "c76b972e-c6a8-4e9e-9019-37e95a1e58d0",
     "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
     "currency": "USD",
     "slug": "seed-loyalty-missions-e2e/agent-test-msn-e2e-unit",
     "url": "/seed-loyalty-missions-e2e/agent-test-msn-e2e-unit"
   },
   "MSN_E2E_PRODUCT_A": {
-    "productId": "79e2f941-764e-4821-b4e9-61351eb581a5",
+    "productId": "be1e6908-4fdf-4581-b853-276d8af7f9e9",
     "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
     "currency": "USD",
     "slug": "seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-a",
@@ -1250,23 +1250,23 @@
     "currency_secondary": "EUR"
   },
   "MSN_E2E_PRODUCT_B": {
-    "productId": "0f78d4c4-b283-4d01-8dab-783882c0a679",
+    "productId": "6be915d0-c72e-4c14-9426-4c41210656d8",
     "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
     "currency": "USD",
     "slug": "seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-b",
     "url": "/seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-b"
   },
   "MSN_E2E_PRODUCT_PTS": {
-    "productId": "9d5f6ce6-aaad-4ad8-ad13-5cb8f0e913f4",
+    "productId": "1babc449-fd9a-4000-b0b7-d6ac2ccbaf5d",
     "catalogId": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
     "currency": "PTS",
     "slug": "seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-pts",
     "url": "/seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-pts"
   },
   "MSN_E2E_TGT_CONTROL": {
-    "id": "c9447e24-8883-46cb-8fda-6d52484f58a0",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-TGT-CONTROL",
-    "run_id": "20260902085919-b156",
+    "id": "924574e8-6ae0-4428-8590-90f54246e3dd",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-TGT-CONTROL",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "USD",
     "goal_target": "7200",
     "progress_status_at_seed": "InProgress",
@@ -1274,9 +1274,9 @@
     "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=visible"
   },
   "MSN_E2E_TGT_GROUP": {
-    "id": "66fcc371-ea3d-46d4-b28d-2722c5c989a7",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-TGT-GROUP",
-    "run_id": "20260902085919-b156",
+    "id": "725a0b09-b23b-4158-8a1a-c3f205d2fa26",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-TGT-GROUP",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "USD",
     "goal_target": "7200",
     "progress_status_at_seed": "InProgress",
@@ -1284,9 +1284,9 @@
     "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=absent"
   },
   "MSN_E2E_TGT_PRIVATE": {
-    "id": "aff080c1-3f04-4d38-9b94-573475494cab",
-    "name": "AGENT-TEST-MSN-E2E-20260902085919-b156-TGT-PRIVATE",
-    "run_id": "20260902085919-b156",
+    "id": "8640e632-ba5c-44ca-82aa-1c6cf3583e2c",
+    "name": "AGENT-TEST-MSN-E2E-20260907194952-0c64-TGT-PRIVATE",
+    "run_id": "20260907194952-0c64",
     "goal_currency": "USD",
     "goal_target": "7200",
     "progress_status_at_seed": "InProgress",
@@ -1294,46 +1294,46 @@
     "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=visible"
   },
   "MSN_E2E_USER_001": {
-    "email": "AGENT-TEST-msne2e-20260902085943-401f@test-agent.com",
-    "user_id": "5361fd17-96c6-497e-a50d-70eeb161de5d",
-    "member_id": "dd0b3dc0-df19-448f-a366-d400d21ad717",
-    "handle": "AGENT-TEST-msne2e-20260902085943-401f",
+    "email": "AGENT-TEST-msne2e-20260907195004-e2ed@test-agent.com",
+    "user_id": "3d916b35-7f0c-4bfb-8f39-12f7a83a83e8",
+    "member_id": "5ff31223-e8bd-41f7-b35b-6df034f3e1cf",
+    "handle": "AGENT-TEST-msne2e-20260907195004-e2ed",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_USER_TGTMEMBER": {
-    "email": "AGENT-TEST-msne2e-20260902090000-eb72@test-agent.com",
-    "user_id": "b76cba25-6bb6-447d-baac-89b0249d1400",
-    "member_id": "81865ce0-45e9-4466-a0fb-caaaa99f1219",
-    "handle": "AGENT-TEST-msne2e-20260902090000-eb72",
+    "email": "AGENT-TEST-msne2e-20260907195022-aef2@test-agent.com",
+    "user_id": "2e1df030-9e8a-4b82-8de4-48b623db992c",
+    "member_id": "726726c6-f09b-462c-9734-1fd69000ddfa",
+    "handle": "AGENT-TEST-msne2e-20260907195022-aef2",
     "balance_at_seed": "0",
     "groups_at_seed": "VIP"
   },
   "MSN_E2E_USER_TGTOUTSIDER": {
-    "email": "AGENT-TEST-msne2e-20260902090004-4aca@test-agent.com",
-    "user_id": "54577f88-04cd-4dbe-9532-1d146ef91615",
-    "member_id": "9c548a58-3b15-43f1-b2ff-cc02e0fdfb59",
-    "handle": "AGENT-TEST-msne2e-20260902090004-4aca",
+    "email": "AGENT-TEST-msne2e-20260907195026-6946@test-agent.com",
+    "user_id": "2ae6a92e-66e2-41d9-acf7-97d6184ad026",
+    "member_id": "3a96bf6a-5041-45f7-98b2-29f4808dc597",
+    "handle": "AGENT-TEST-msne2e-20260907195026-6946",
     "balance_at_seed": "0",
     "groups_at_seed": ""
   },
   "MSN_E2E_USER_PTSSPEND": {
-    "email": "AGENT-TEST-msne2e-20260902085945-bd16@test-agent.com",
-    "user_id": "efff5794-170e-434b-b6c5-8ab77d2d9310",
-    "member_id": "30bd7976-4039-4947-8331-8c3651dcf76e",
-    "handle": "AGENT-TEST-msne2e-20260902085945-bd16",
+    "email": "AGENT-TEST-msne2e-20260907195007-c535@test-agent.com",
+    "user_id": "cfa77505-e92f-4384-a5a2-21c023c5159f",
+    "member_id": "957c1339-ce68-424f-9ec0-e34a3587e4d7",
+    "handle": "AGENT-TEST-msne2e-20260907195007-c535",
     "balance_at_seed": "31350",
     "groups_at_seed": "",
     "pts_line_cost": "1",
     "funding_program": "AGENT-TEST PP Single-SKU Laptop (pri 80, factor 500 × 60)",
-    "funding_order": "CO260902-00004",
+    "funding_order": "CO260907-00009",
     "funding_points_per_unit": "30000",
     "pts_progress_status_at_seed": "InProgress",
     "pts_is_started_at_seed": "false",
     "pts_current_quantity_at_seed": "0"
   },
   "MSN_POINTS_ORDER": {
-    "id": "4761ea6a-d462-4584-be59-808bc8aa6a4f",
+    "id": "3c20b2c4-2a21-4c46-a6ac-c7f29102bc74",
     "user_id": "f194c370-b7b0-4b88-8fc5-edc9ca80ee1c",
     "store_id": "B2B-store",
     "currency": "PTS",
@@ -1353,7 +1353,7 @@
     "currency": "PTS"
   },
   "MSN_ORDERVALUE_NET": {
-    "id": "d374557c-e4e2-449e-8ea3-2498f6203925",
+    "id": "e7a99c19-f6a1-42ff-b269-ad27a2b687c4",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
     "goal_currency": "USD",
     "accrued_value_at_seed": "116.5",
@@ -1361,7 +1361,7 @@
     "progress_percent_at_seed": "100"
   },
   "MSN_ORDERVALUE_POINTS": {
-    "id": "46ed9af0-64ae-47c4-ae76-75c83b30b55e",
+    "id": "ea87e94f-ffc6-495d-bb8f-4b5e0f775b6a",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-order-value.svg",
     "goal_currency": "USD",
     "accrued_value_at_seed": "116.5",
@@ -1369,7 +1369,7 @@
     "progress_percent_at_seed": "31.7872"
   },
   "MSN_PERSKU_PTS": {
-    "id": "3e486de8-8e72-46ab-974a-76ee7a5d70ba",
+    "id": "2cd353cc-2d5f-43d8-a8a3-bf7f03a6249d",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "ORDER_REP_PLACED": {

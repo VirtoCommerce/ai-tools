@@ -1,0 +1,100 @@
+{
+  "ticket": "VCST-5861",
+  "flow": "verify-fix",
+  "verdict": "BLOCKED",
+  "blocker": "fix-not-deployed",
+  "date": "2026-09-07",
+  "environment": {
+    "name": "vcmp-dev",
+    "url": "https://vcmp-dev.govirto.com/apps/vendor-portal/",
+    "product": "vc-shell / Marketplace Vendor Portal",
+    "theme": "Light"
+  },
+  "build": {
+    "appVersion": "2.1.2-rc.0",
+    "assetBuildId": "42234",
+    "lastModified": "2026-09-07T11:14:10Z",
+    "frameworkVersion": "2.6.0-rc.0"
+  },
+  "fix": {
+    "repo": "VirtoCommerce/vc-shell",
+    "pr": 355,
+    "mergeCommit": "8f5c54f4349683a82fe48557f5da0461844756f2",
+    "mergedAt": "2026-09-04T12:51:46Z",
+    "layer": "framework"
+  },
+  "deployGate": {
+    "deployed": false,
+    "method": "commit-ancestry (decisive) + npm dist-tag read + exact-pin read",
+    "evidence": [
+      "Served framework version constant in vc-shell-framework42234.js and vc-shell-vendors42234.js is 2.6.0-rc.0",
+      "npm @vc-shell/framework rc = 2.6.0-rc.0, published 2026-09-02T10:21:31Z, gitHead cb6379d ('release: v2.6.0-rc.0')",
+      "gh compare 8f5c54f4...cb6379d => status=behind, ahead_by=0, behind_by=3 : the release commit does NOT contain the fix",
+      "vendor-portal@dev package.json pins \"@vc-shell/framework\": \"2.6.0-rc.0\" EXACTLY (not a caret range), so no app rebuild can pick the fix up until the pin is bumped"
+    ],
+    "recheckedAt": "2026-09-07T12:18Z — unchanged; no framework release containing #355"
+  },
+  "baseline_red": {
+    "capturedLive": true,
+    "note": "The un-deployed framework means vcmp-dev IS currently the pre-fix build - the ideal Phase A window.",
+    "controls": [
+      "instrument validated: the login page renders button \"Sign in\" [disabled], so the ARIA snapshot does surface exposed disabled state"
+    ],
+    "observations": [
+      {
+        "control": "Delete selected (Products list toolbar)",
+        "ariaSnapshot": "button \"Delete selected\" - no [disabled], no [cursor=pointer]",
+        "cssState": "carries .vc-blade-toolbar-base-button--disabled (confirmed via axe target path)"
+      },
+      {
+        "control": "Save as draft (product detail blade, no unsaved changes)",
+        "ariaSnapshot": "button \"Save as draft\" - no [disabled], no [cursor=pointer]",
+        "siblingsForContrast": "AI Assistant / Delete / Save and publish all carry [cursor=pointer]"
+      }
+    ]
+  },
+  "post_fix_green": null,
+  "limits": [
+    "No AT pass was run - read from the rendered accessibility tree, not screen-reader output."
+  ],
+  "evidence": [
+    "screenshots/VCST-5861-RED-toolbar-deleteselected.png",
+    "screenshots/VCST-5861-RED-product-blade-save-as-draft.png"
+  ],
+  "next": "Publish a framework release containing PR #355, bump the vendor-portal pin, redeploy vcmp-dev, then re-run Phase B.",
+  "status_transitions": [
+    {
+      "hop": "none",
+      "applied": false,
+      "to": "Ready for test (unchanged)",
+      "reason": "BLOCKED transitions nothing but requires a comment naming the blocker"
+    }
+  ],
+  "comment": {
+    "id": "108469",
+    "dialect": "wiki (v2 API)",
+    "inlineImages": 2,
+    "renderedBodyVerified": true
+  },
+  "rerun": {
+    "date": "2026-09-07",
+    "scope": {
+      "routes": [
+        "#/",
+        "#/products",
+        "#/orders",
+        "#/offers"
+      ],
+      "themes": [
+        "Light",
+        "Dark"
+      ]
+    },
+    "result": "toolbar button unexposed in BOTH themes; verdict unchanged"
+  },
+  "couplingToVCST5862": {
+    "finding": "VCST-5862 lists this control's title as a colour-contrast failure; that attribution is wrong",
+    "proof": "pagination buttons carry the same #a3a3a3 ink at a worse ~2.3:1 and are NOT flagged, because they expose [disabled]; WCAG 1.4.3 exempts disabled controls",
+    "consequence": "fixing THIS ticket removes that node from VCST-5862 with no colour change; re-verify the two together"
+  }
+}

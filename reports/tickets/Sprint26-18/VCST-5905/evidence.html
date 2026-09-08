@@ -1,0 +1,370 @@
+<title>SalesRep TypeLoad Verification</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground: #F7F8F6;
+    --surface: #FFFFFF;
+    --ink: #101418;
+    --slate: #5C6672;
+    --rule: #DCDFDA;
+    --red: #B4232A;
+    --red-soft: #FBEDED;
+    --green: #1E6E4B;
+    --green-soft: #EBF3EE;
+    --neutral-soft: #EEF0EC;
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0E1216;
+      --surface: #161B21;
+      --ink: #E6E9E5;
+      --slate: #98A2AE;
+      --rule: #2A323B;
+      --red: #F0888C;
+      --red-soft: #2A1618;
+      --green: #6FC79A;
+      --green-soft: #12241B;
+      --neutral-soft: #1D242B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0E1216;
+    --surface: #161B21;
+    --ink: #E6E9E5;
+    --slate: #98A2AE;
+    --rule: #2A323B;
+    --red: #F0888C;
+    --red-soft: #2A1618;
+    --green: #6FC79A;
+    --green-soft: #12241B;
+    --neutral-soft: #1D242B;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 40px 24px 72px;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.11em; text-transform: uppercase; color: var(--slate);
+  }
+  h1 {
+    font-size: clamp(26px, 4vw, 36px); font-weight: 600; line-height: 1.15;
+    letter-spacing: -0.017em; margin: 10px 0 0; text-wrap: balance;
+  }
+  h2 {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.075em;
+    text-transform: uppercase; color: var(--slate);
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--rule);
+  }
+  p { margin: 0 0 12px; max-width: 66ch; }
+  p:last-child { margin-bottom: 0; }
+  code, .mono { font-family: var(--mono); font-size: 0.9em; }
+  a { color: inherit; text-decoration-color: var(--slate); text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+  .verdict { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-top: 18px; }
+  .badge {
+    font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.09em;
+    text-transform: uppercase; padding: 5px 11px; border-radius: 3px;
+    background: var(--green-soft); color: var(--green); border: 1px solid var(--green);
+  }
+  .verdict .caveat { font-size: 14px; color: var(--slate); }
+
+  .strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+    gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+    border-radius: 4px; overflow: hidden; margin: 0;
+  }
+  .strip div { background: var(--surface); padding: 11px 14px; }
+  .strip dt {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--slate); margin-bottom: 4px;
+  }
+  .strip dd {
+    font-family: var(--mono); font-size: 13px; margin: 0;
+    font-variant-numeric: tabular-nums; word-break: break-word;
+  }
+
+  .tl { display: flex; flex-direction: column; }
+  .tl-row { display: grid; grid-template-columns: 132px 1fr; }
+  .tl-time {
+    font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums;
+    color: var(--slate); padding: 16px 16px 16px 0; text-align: right; white-space: nowrap;
+  }
+  .tl-body { border-left: 2px solid var(--rule); padding: 16px 0 16px 22px; position: relative; }
+  .tl-row:last-child .tl-body { border-left-color: transparent; }
+  .tl-body::before {
+    content: ""; position: absolute; left: -6px; top: 22px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--slate); border: 2px solid var(--ground);
+  }
+  .tl-row.is-red .tl-body { border-left-color: var(--red); }
+  .tl-row.is-red .tl-body::before { background: var(--red); }
+  .tl-row.is-green .tl-body::before { background: var(--green); }
+  .tl-label {
+    font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.09em;
+    text-transform: uppercase; margin-bottom: 6px; color: var(--slate);
+  }
+  .is-red .tl-label { color: var(--red); }
+  .is-green .tl-label { color: var(--green); }
+  .tl-what { font-size: 14px; }
+
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  .panel { border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); overflow: hidden; }
+  .panel-hd {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+    padding: 9px 13px; border-bottom: 1px solid var(--rule);
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .panel.red .panel-hd { background: var(--red-soft); color: var(--red); }
+  .panel.green .panel-hd { background: var(--green-soft); color: var(--green); }
+  .panel.plain .panel-hd { background: var(--neutral-soft); color: var(--slate); }
+  .panel-hd .ver { font-weight: 400; letter-spacing: 0.04em; text-transform: none; opacity: 0.85; }
+  pre {
+    margin: 0; padding: 13px; font-family: var(--mono); font-size: 12px; line-height: 1.6;
+    overflow-x: auto; white-space: pre; color: var(--ink);
+  }
+
+  .scroller { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--slate); background: var(--neutral-soft); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--slate); width: 1%; }
+  td.ev { font-family: var(--mono); font-size: 12px; color: var(--slate); }
+  td.inv { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+  .v { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; white-space: nowrap; }
+  .v.pass { color: var(--green); }
+  .v.gap { color: var(--slate); }
+
+  .note {
+    border: 1px solid var(--rule); border-left: 3px solid var(--slate);
+    border-radius: 0 4px 4px 0; background: var(--surface); padding: 15px 18px;
+  }
+  .note h3 { font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+  footer {
+    border-top: 1px solid var(--rule); padding-top: 18px;
+    font-family: var(--mono); font-size: 11.5px; line-height: 1.85; color: var(--slate);
+  }
+  footer b { color: var(--ink); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">VCST-5905 &middot; Fix verification &middot; vcst-qa</div>
+    <h1><code>salesRepCustomerOrders</code> resolves again</h1>
+    <div class="verdict">
+      <span class="badge">Verified</span>
+      <span class="caveat">STR 3/3 &middot; 11/11 adjacent &middot; 6/6 invariants &middot; on an unmerged PR prerelease</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>Build under test</h2>
+    <dl class="strip">
+      <div><dt>Platform</dt><dd>3.1064.0</dd></div>
+      <div><dt>SalesRep</dt><dd>3.1008.0-pr-19-5e0f</dd></div>
+      <div><dt>XOrder</dt><dd>3.1011.0</dd></div>
+      <div><dt>Xapi</dt><dd>3.1020.0</dd></div>
+      <div><dt>Theme</dt><dd>2.57.0-alpha.2490</dd></div>
+      <div><dt>Confirmed by</dt><dd>/api/platform/modules</dd></div>
+    </dl>
+  </section>
+
+  <section>
+    <h2>Red &rarr; green</h2>
+    <p>The baseline is live telemetry rather than a recollection: App Insights <code>vcst-qa</code>,
+      operation <code>POST graphql/SalesRepCustomerOrders</code>. The exception window closes before the
+      deploy and never reopens.</p>
+    <div class="tl">
+      <div class="tl-row is-red">
+        <div class="tl-time">13:58:17Z<br>&rarr; 14:19:05Z</div>
+        <div class="tl-body">
+          <div class="tl-label">Red &mdash; SalesRep 3.1007.0</div>
+          <div class="tl-what"><strong>5 occurrences.</strong> <code>exceptions</code>:
+            <code>System.TypeLoadException</code> at
+            <code>MediatR.Wrappers.RequestHandlerWrapperImpl&#96;2.Handle</code>.
+            <code>requests</code>: 5 &times; <code>resultCode 500</code>, <code>success=False</code>.</div>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-time">15:38:36Z</div>
+        <div class="tl-body">
+          <div class="tl-label">Deploy</div>
+          <div class="tl-what"><code>vc-deploy-dev@vcst-qa</code> <code>6f7ed60a</code> pins
+            <code>VirtoCommerce.SalesRep_3.1008.0-pr-19-5e0f.zip</code>.</div>
+        </div>
+      </div>
+      <div class="tl-row is-green">
+        <div class="tl-time">15:45:30Z</div>
+        <div class="tl-body">
+          <div class="tl-label">Green &mdash; first success</div>
+          <div class="tl-what"><code>requests</code>: <code>resultCode 200</code>,
+            <code>success=True</code> &mdash; seven minutes after the deploy commit.</div>
+        </div>
+      </div>
+      <div class="tl-row is-green">
+        <div class="tl-time">~18:10Z</div>
+        <div class="tl-body">
+          <div class="tl-label">Green &mdash; this verification</div>
+          <div class="tl-what">The ticket's query, byte-identical, <strong>3 consecutive runs</strong>
+            &rarr; <code>totalCount 96</code> each time. <strong>Zero</strong>
+            <code>IXOrderMapper</code> exceptions across the 12&nbsp;h window to 18:17Z.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The same request, both builds</h2>
+    <div class="panel plain" style="margin-bottom:16px">
+      <div class="panel-hd"><span>Request &mdash; unchanged between phases</span><span class="ver">POST /graphql/sales-rep</span></div>
+<pre>{
+  salesRepCustomerOrders(storeId: "B2B-store", cultureName: "en-US", first: 2) {
+    totalCount
+    items { number }
+  }
+}</pre>
+    </div>
+    <div class="pair">
+      <div class="panel red">
+        <div class="panel-hd"><span>Response</span><span class="ver">SalesRep 3.1007.0</span></div>
+<pre>{
+  "errors": [{
+    "message": "Error trying to resolve field
+                'salesRepCustomerOrders'.",
+    "path": ["salesRepCustomerOrders"],
+    "extensions": { "code": "TYPE_LOAD" }
+  }],
+  "data": { "salesRepCustomerOrders": null }
+}</pre>
+      </div>
+      <div class="panel green">
+        <div class="panel-hd"><span>Response</span><span class="ver">SalesRep 3.1008.0-pr-19</span></div>
+<pre>{
+  "data": {
+    "salesRepCustomerOrders": {
+      "totalCount": 96,
+      "items": [
+        { "number": "CO260907-00004" },
+        { "number": "CO260907-00003" }
+      ]
+    }
+  }
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Server-side exception, pre-fix</h2>
+    <div class="panel red">
+      <div class="panel-hd"><span>Innermost message</span><span class="ver">App Insights &middot; exceptions</span></div>
+<pre>System.TypeLoadException: Could not load type
+  'VirtoCommerce.XOrder.Data.Services.IXOrderMapper'
+from assembly 'VirtoCommerce.XOrder.Data, Version=3.1011.0.0,
+  Culture=neutral, PublicKeyToken=null'
+
+  SalesRepCustomerOrdersQueryBuilder.cs:37   (GetFieldType lambda)
+-> Xapi.Core RequestBuilder.cs:91            (GetResponseAsync)
+-> MediatR 12.0.0  RequestHandlerWrapperImpl.Handle
+-> DependencyInjection.CallSiteFactory.CreateConstructorCallSite
+-> System.Signature.Init -> System.TypeLoadException</pre>
+    </div>
+    <p style="margin-top:12px">The throw sat inside DI <em>constructor call-site creation</em>, which is
+      why no argument set and no permission state could avoid it. PR&nbsp;#19 retargets
+      <code>SalesRepMapper</code> to <code>IXOrderMapper</code> in
+      <code>VirtoCommerce.XOrder.Core.Services</code> and passes a <code>FacetMappingContext</code> to
+      <code>ToFacetResult</code>, matching the moved interface.</p>
+  </section>
+
+  <section>
+    <h2>Verification checklist</h2>
+    <div class="scroller">
+      <table>
+        <thead><tr><th></th><th>Check</th><th>Verdict</th><th>Evidence</th></tr></thead>
+        <tbody>
+          <tr><td class="n">1</td><td>Original STR, 3 consecutive runs</td><td class="v pass">PASS</td><td class="ev">3/3 &middot; totalCount 96 &middot; no errors[]</td></tr>
+          <tr><td class="n">2</td><td>Fix resolves the reported issue</td><td class="v pass">PASS</td><td class="ev">payload non-null &middot; TYPE_LOAD absent</td></tr>
+          <tr><td class="n">3</td><td>Root cause, not symptom</td><td class="v pass">PASS</td><td class="ev">DI constructs &middot; exception ceased in telemetry</td></tr>
+          <tr><td class="n">4</td><td><code>salesRepCustomers</code> / <code>salesRepOrders</code></td><td class="v pass">PASS</td><td class="ev">5 served orgs &middot; 24 rep-placed orders</td></tr>
+          <tr><td class="n">5</td><td>Rest of the scoped schema (11 fields)</td><td class="v pass">PASS</td><td class="ev">rules &middot; statistics &middot; counts &middot; top sellers</td></tr>
+          <tr><td class="n">6</td><td>No new server-side errors</td><td class="v pass">PASS</td><td class="ev">0 IXOrderMapper exceptions post-fix</td></tr>
+          <tr><td class="n">7</td><td>Storefront reflects corrected behaviour</td><td class="v gap">NOT CAPTURED</td><td class="ev">browser lanes held &mdash; see below</td></tr>
+          <tr><td class="n">8</td><td>API returns expected response</td><td class="v pass">PASS</td><td class="ev">200 + typed payload, both schemas</td></tr>
+          <tr><td class="n">9</td><td>Boundaries: paging, facets, multi-word filter</td><td class="v pass">PASS</td><td class="ev">after:"2" &middot; facet sum &middot; status:"Payment required"</td></tr>
+          <tr><td class="n">10</td><td><code>BL-SR-002</code> membership scope [P0-security]</td><td class="v pass">PASS</td><td class="ev">96 of 8&thinsp;248 &middot; 0 rows outside 5 served orgs</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Invariants &mdash; measured, not asserted</h2>
+    <p>The fix rewrote the mapper the scoped query depends on, and a mapping change is precisely what
+      could silently widen scope or break facet arithmetic. Each row below is a measurement.</p>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>Invariant</th><th>Verdict</th><th>Measurement</th></tr></thead>
+        <tbody>
+          <tr><td class="inv">BL-SR-002</td><td class="v pass">PASS</td><td class="ev">96 rep-visible orders of 8&thinsp;248 store-wide; 0 of 96 rows outside the rep's 5 served orgs</td></tr>
+          <tr><td class="inv">BL-SR-009</td><td class="v pass">PASS</td><td class="ev">every facet term round-trips at the same count &mdash; New 73/73 &middot; Cancelled 10/10 &middot; Processing 10/10 &middot; Payment required 2/2 &middot; Completed 1/1; unknown value &rarr; totalCount 0, no error</td></tr>
+          <tr><td class="inv">BL-SR-010</td><td class="v pass">PASS</td><td class="ev">createdDate:desc head CO260907-00004 &middot; :asc head CO260706-00003</td></tr>
+          <tr><td class="inv">BL-SR-013</td><td class="v pass">PASS</td><td class="ev">New / Cancelled / Processing / Payment required / Completed &mdash; no raw enum key</td></tr>
+          <tr><td class="inv">facet &harr; total</td><td class="v pass">PASS</td><td class="ev">73 + 10 + 10 + 2 + 1 = 96 = unfaceted totalCount</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Evidence gap &mdash; stated, not hidden</h2>
+    <div class="note">
+      <h3>Layer 1 (storefront) is NOT CAPTURED</h3>
+      <p>Regression run <code>REG-2026-09-07-1342</code> is <strong>active</strong> &mdash;
+        <code>npm run regression:reap</code> reports it progressed 0&nbsp;min ago &mdash; so all three
+        Playwright lanes are held, and taking one would corrupt an in-flight run. Chrome DevTools was not
+        substituted: that lane has no <code>--secrets</code>, and the Sales Rep hub is role-gated, so
+        neither a minted account nor an unknown persistent profile reaches the surface under test.</p>
+      <p>This does not move the verdict. The owning layer is L3, and L3 and L4 both pass. That same
+        active run executes suites <strong>091 / 093 / 097</strong>, which reference this field 42 times
+        &mdash; its triage supplies the storefront confirmation without a separate browser pass.</p>
+      <p><strong>No screenshot is attached, deliberately.</strong> The defect and its fix are API-layer.
+        The request/response pair and the exception timeline above are the primary evidence; there is no
+        UI state to photograph beyond a grid that was empty and is now populated.</p>
+    </div>
+  </section>
+
+  <footer>
+    <b>Fix</b> vc-module-sales-rep#19 &mdash; <b>OPEN</b>, unmerged; all CI green (ci, auto-tests
+    &times;3 DBs, swagger-validation, SonarCloud, CLA). Merge and release remain the owning team's.<br>
+    <b>Deploy</b> vc-deploy-dev@vcst-qa 6f7ed60a &middot; 2026-09-07T15:38:36Z &middot; live version
+    confirmed via /api/platform/modules, not inferred from the merge.<br>
+    <b>Fixture</b> agent-test-sr-primary@example.com (SR_REP_PRIMARY), 5 served orgs, store B2B-store.<br>
+    <b>Unblocked</b> the two pre-existing open bugs on this surface are now verifiable; neither was
+    re-tested here.<br>
+    <b>Transparency</b> five adjacent queries and one invariant first came back red on this run's own
+    query authoring &mdash; wrong sub-field names, and an unquoted multi-word filter value. Each was
+    corrected against live introspection and re-run; none was a product finding.<br>
+    <b>Artifacts</b> reports/tickets/Sprint26-18/VCST-5905/ &mdash; verification-report.md &middot;
+    verification-summary.json &middot; evidence.html
+  </footer>
+
+</div>
