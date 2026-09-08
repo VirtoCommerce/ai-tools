@@ -8,7 +8,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## `playwright-firefox` click timeouts — root cause and config fix (confirmation pending) — 2026-09-08
+## The `playwright-firefox` lane is open to click-driven work again — 2026-09-08
+
+Follows the root cause in the entry below. The ban that stood since 2026-06 — *"never schedule a
+click-driven suite on firefox"* — is lifted, and the lane is a full third browser slot.
+
+**One switch, not a scattered edit.** `defaults.firefoxClickOk: true` in `config/test-suites.json` is the
+only thing that decides it. `browserDenyListFor` in `ci/lib/suite-manifest.ts` is the single consumer, and
+`regression:plan`, `ci/run-regression.ts` and `regression:select` all read it instead of re-deriving the
+rule. **Rollback is that one line set to `false`** — no code change, the deny-list returns for every
+click-driven suite, and `scripts/unit/run-plan.test.ts` pins both directions so neither answer can be
+hard-coded again. `clickDriven` stays derived per suite: it is the input to the decision, not the decision.
+
+**PREREQUISITE.** The MCP server must be restarted after `config/mcp-playwright-firefox.config.json` gained
+`widget.windows.window_occlusion_tracking.enabled=false`; the config is read at server start and an
+un-restarted server behaves exactly as before the fix.
+
+Agent-facing instructions updated in step: the firefox box in `.claude/rules/agents.md`,
+`qa-testing-expert` back on `playwright-firefox`, and the exploratory / charter / visual / triage lane
+rules in `qa-exploratory`, `qa-test-plan`, `qa-sbtm`, `qa-test` (SKILL, modes, visual-axis,
+exploratory-lane), `qa-triage-results` and `ROUTING.md` — none of which now excludes the lane.
+
+**What is proven and what is not:** the probe proves the browser (covered rAF 121 vs 0, 6/6 clicks); no
+regression suite has run on the lane since the fix. The first click-driven suite scheduled onto firefox is
+the real confirmation — if clicks time out at "visible, enabled and stable", check the MCP restart first,
+then flip the flag.
+
+---
+
+## `playwright-firefox` click timeouts — root cause found and fixed in config — 2026-09-08
 
 The lane's `browser_click` timing out on visible, non-moving elements while `browser_type` worked is
 explained by two shipped facts: Playwright's *stable* wait needs **5** identical `requestAnimationFrame`
@@ -16,9 +44,17 @@ ticks on Windows + Firefox (1 everywhere else), and Windows Firefox (≥ 102) st
 covered by other windows — which three headed 1920×1080 browsers on one desktop guarantee. `fill()` has
 no stable wait, so typing kept working. `config/mcp-playwright-firefox.config.json` now sets
 `widget.windows.window_occlusion_tracking.enabled=false` (Playwright already disables Firefox's
-background *timer* throttling, not occlusion). `scripts/maintenance/firefox-click-probe.mjs` A/B-proves
-it on a Windows desktop with `trial: true` clicks (read-only). The "never schedule a click-driven suite
-on firefox" rule stays until that probe exits 0 on a machine that showed the bug.
+background *timer* throttling, not occlusion). `scripts/maintenance/firefox-click-probe.mjs` A/B-tests
+it on a Windows desktop with `trial: true` clicks (read-only). **Confirmed by probe run 4** (3 attempts per phase, rAF sampled
+before each): **15 of 15 failing attempts had a dead rAF, 0 passing ones did**. `firefox-default` timed out
+3/3 covered *and* 3/3 uncovered — the stall is **sticky**, the driver does not restart when the window is
+uncovered, which is why one moment of occlusion poisoned a whole firefox session and the failure read as
+"firefox cannot click here". With the pref, the same covered window keeps ticking (rAF 121 vs 0) and clicks
+6/6. Headless also clears it; a CSS keepalive animation does not. Runs 1–3 were misleading for reasons now
+recorded in the knowledge file (an off-viewport target, a cover on the wrong monitor of a dual-head desk,
+and a single covered attempt that happened to land on a live frame). **The lane rule does not lift yet** —
+the probe proves the browser, not the pipeline; one click-driven suite must run green on the firefox lane
+with the other lanes busy first.
 
 ---
 

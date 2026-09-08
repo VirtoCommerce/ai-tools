@@ -18,10 +18,14 @@
 //     because `estimatedMinutes` is hand-maintained and provably wrong for the 14 already
 //     deterministic suites (they carry LLM-era numbers ~1.11 min/case against a measured
 //     0.10). Order the pool first; fix the estimates later, from recorded history.
-//  3. A slot that cannot run a suite QUEUES it, never downgrades it. `playwright-firefox`
-//     cannot click on this storefront or the Admin SPA (confirmed 6x independently; the
-//     root cause is in the `@playwright/mcp` layer), so a firefox placement on a
-//     click-driven suite costs a whole wasted attempt. An idle lane is strictly cheaper.
+//  3. A slot that cannot run a suite QUEUES it, never downgrades it. The scheduler itself is
+//     policy-free: it honours whatever `browserDenyList` the plan hands it. WHICH suites carry
+//     one is decided by `browserDenyListFor` in `suite-manifest.ts` off the manifest's
+//     `defaults.firefoxClickOk`. That flag is TRUE since 2026-09-08 (the firefox click timeouts
+//     were a covered window stopping requestAnimationFrame, fixed by an occlusion pref in the
+//     MCP config), so today no suite is denied a lane — but the queue-never-downgrade rule stands
+//     for `preferredBrowser` and for the rollback, where an idle lane is strictly cheaper than a
+//     wasted attempt.
 
 import { minutesOf, type SuiteCapsInput } from "./suite-caps.ts";
 

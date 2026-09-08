@@ -190,7 +190,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 - **Browser**: navigate, click, type, hover, scroll, select, keys, evaluate JS
 - **Viewport**: mobile (375px), tablet (768px), desktop (1920px)
-- **Browsers**: `playwright-chrome` / `playwright-edge` (whichever Chromium slot is free — **queue** for it rather than take firefox); `playwright-firefox` only for read-only, navigation-light passes — it **cannot click** on this storefront or the Admin SPA (`.claude/rules/agents.md` §Parallel Execution)
+- **Browsers**: `playwright-firefox` (primary — click-capable again since 2026-09-08, provided the MCP server was restarted after the occlusion pref landed in `config/mcp-playwright-firefox.config.json`; `.claude/rules/agents.md` §Parallel Execution), `playwright-chrome`, `playwright-edge`
 - **Storefront** (`FRONT_URL`) + **Admin SPA** (`BACK_URL`)
 - **NOT available**: WebKit on Windows — use Edge as fallback
 
@@ -198,8 +198,8 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 | Server | Use |
 |--------|-----|
-| `playwright-chrome` / `playwright-edge` (a free Chromium slot, queued) | Browser automation, E2E testing — anything that clicks |
-| `playwright-firefox` | Read-only / navigation-light passes only — `browser_click` times out here (confirmed 6×) |
+| `playwright-firefox` (primary) | Browser automation, E2E testing — clicking included |
+| `playwright-chrome` / `playwright-edge` | Cross-browser validation |
 | Chrome DevTools MCP | Deep debugging, performance traces, HAR export |
 | Postman MCP | API testing, GraphQL verification |
 | `DesignSync` (built-in) | Claude Design spec source for the `vs. DESIGN` axis |
@@ -283,7 +283,7 @@ Store reports in `reports/regression/` or `reports/bugs/`. Use **compact format*
 
 | Failure | Action |
 |---------|--------|
-| Browser MCP fails mid-test | Switch to the other Chromium lane (chrome ↔ edge); firefox is not a fallback for click-driven work; note in report |
+| Browser MCP fails mid-test | Switch to a fallback browser per `defaults.fallbackChain` (chrome → edge → firefox); note in report. **Clicks timing out at "visible, enabled and stable" on firefox = the MCP server was not restarted after the occlusion-pref config change** (`knowledge/automation/browser-quirks.md` §Firefox) |
 | Environment unreachable | Retry 3×, then mark remaining tests BLOCKED; escalate to qa-lead |
 | Test data missing/stale | Use `/qa-seed-data` to regenerate; if blocked, skip with BLOCKED status |
 | Design source unauthorized (`/design-consent` unavailable — the default in web sessions and CI) | `designAxisSkipped(reason)`: report the design axis as **SKIPPED with the reason** and finish the rest of the run. Never report it as PASS and never omit it — "we compared and it matched" must stay distinguishable from "we could not compare" |

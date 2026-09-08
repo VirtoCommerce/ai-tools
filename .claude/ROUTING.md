@@ -65,7 +65,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-test` — Test a ticket, feature or PR. Step `1a` routes on **two axes**: the FLOW by ticket type × status (fix-ready Bug → `/qa-verify-fix` inline; hotfix-status Bug → `/qa-hotfix-check`; Sub-task → inherit parent; else `feature-test`), then a **FAST** (checklist-only) or **FULL** (Test Model + authoring + verifiers + promotion) path. The command is the orchestration shell; the `/qa-test` **skill** holds the methodology
 - `/qa-regression` — Run suites in parallel. `sprint` resolves the most recent sprint plan → `suitesActivated[]`; `--cases critical` narrows to a priority tier within each suite
 - `/qa-triage-results` — Classify a completed run's FAIL/BLOCKED/SKIPPED into real bug vs test defect vs flaky/env; live-verify, route test fixes, draft bugs. Never files a ticket, never triggers `/qa-fix`
-- `/qa-exploratory` — Scenario-discovery session. `sprint` runs the plan's §5.3 charters (≤5, in series). Lane is chrome/edge — never firefox
+- `/qa-exploratory` — Scenario-discovery session. `sprint` runs the plan's §5.3 charters (≤5, in series). Lane: any free browser slot (all 3 click since 2026-09-08)
 - `/qa-bug` — Reproduce, document, optionally file
 - `/qa-fix` — Autonomous fix of an already-filed bug: G0 triage → G1 single-repo route → reproduce-as-test → minimal fix → review → PR → **STOP for human review** (never auto-merges). Interactive twin of `ci/run-fix-cycle.ts`
 - `/qa-verify-fix` — Reproduce the original bug, confirm the fix, regression checks, transition the ticket (stops at TESTED)

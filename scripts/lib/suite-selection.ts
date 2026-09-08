@@ -116,6 +116,13 @@ export interface SelectionInput {
   readonly rotationCount?: number;
   /** Trim until the predicted makespan fits. `null` = no trimming. */
   readonly targetMinutes?: number | null;
+  /**
+   * Manifest `defaults.firefoxClickOk`. `true` (today) = the firefox lane takes click-driven suites
+   * like any other, so no suite carries a deny-list and the makespan estimate sees three real browser
+   * slots. Omitted/false restores `clickDriven -> deny firefox`. Single source of truth for WHY:
+   * `browserDenyListFor` in `ci/lib/suite-manifest.ts`; the caller reads the flag from the manifest.
+   */
+  readonly firefoxClickOk?: boolean;
   readonly concurrency: LaneConcurrency;
 }
 
@@ -260,21 +267,27 @@ function suiteMatchesTokens(s: SelectableSuite, tokens: readonly string[]): bool
   return tokens.some((t) => own.has(t));
 }
 
-function toPlannable(s: SelectableSuite): PlannableSuite {
+function toPlannable(s: SelectableSuite, firefoxClickOk = false): PlannableSuite {
   return {
     id: s.id,
     description: s.name,
     lane: s.lane ?? (s.runner ? "deterministic" : "browser"),
     testCount: s.testCount ?? 0,
     estimatedMinutes: minutesOf(s),
-    ...(s.clickDriven ? { browserDenyList: ["playwright-firefox"] as const } : {}),
+    ...(s.clickDriven && !firefoxClickOk ? { browserDenyList: ["playwright-firefox"] as const } : {}),
     ...(s.preferredBrowser ? { preferredBrowser: s.preferredBrowser } : {}),
   };
 }
 
-function makespanOf(suites: readonly SelectableSuite[], concurrency: LaneConcurrency): number {
+function makespanOf(
+  suites: readonly SelectableSuite[],
+  concurrency: LaneConcurrency,
+  firefoxClickOk = false,
+): number {
   if (suites.length === 0) return 0;
-  return buildRunPlan(suites.map(toPlannable), concurrency).makespanMinutes;
+  // `.map(toPlannable)` would pass the ARRAY INDEX as the second argument, so every suite after the
+  // first would be planned as if firefox were allowed. Pass it explicitly.
+  return buildRunPlan(suites.map((s) => toPlannable(s, firefoxClickOk)), concurrency).makespanMinutes;
 }
 
 /**
@@ -420,7 +433,7 @@ export function selectSuites(input: SelectionInput): SelectionResult {
           return va - vb || a.id.localeCompare(b.id);
         });
 
-    while (makespanOf(chosen, concurrency) > target) {
+    while (makespanOf(chosen, concurrency, input.firefoxClickOk) > target) {
       const candidates = trimmable();
       if (candidates.length === 0) break; // only the floor is left — report the overrun, do not cheat it
       const drop = candidates[0];
@@ -447,8 +460,8 @@ export function selectSuites(input: SelectionInput): SelectionResult {
     selectorVersion: SELECTOR_VERSION,
     selected,
     excluded: excluded.sort((a, b) => a.id.localeCompare(b.id)),
-    predictedMakespanMinutes: makespanOf(chosen, concurrency),
-    fullMakespanMinutes: makespanOf(suites, concurrency),
+    predictedMakespanMinutes: makespanOf(chosen, concurrency, input.firefoxClickOk),
+    fullMakespanMinutes: makespanOf(suites, concurrency, input.firefoxClickOk),
     unmappedPaths: [...new Set(unmappedPaths)].sort(),
     widened,
     unreliableEstimateMinutes: chosen.filter(estimateIsUnreliable).reduce((n, s) => n + minutesOf(s), 0),

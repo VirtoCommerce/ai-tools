@@ -180,7 +180,7 @@ chosen**: checklist track → visual lane → regression. The ticket verdict is 
 lane feeds it (5c) while regression feeds the release gate (5e).
 
 Never schedule the visual lane on `playwright-firefox`: this pass is click- and hover-driven, and
-`@playwright/mcp` + firefox cannot click this storefront or the Admin SPA.
+any of the three lanes will do — firefox clicks here again since 2026-09-08 (`.claude/rules/agents.md`).
 
 ---
 

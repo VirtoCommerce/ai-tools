@@ -42,7 +42,7 @@ anyone authors a case against them.**
 ```
 Step 3
   3a  test-data-engineer  ──────────────────────┐   (Node + Platform-API, ZERO browser lanes)
-  3x  /qa-exploratory ticket ───────────────────┤   (1 chrome/edge lane — never firefox, hard-boxed)
+  3x  /qa-exploratory ticket ───────────────────┤   (1 browser lane, any of the 3 — hard-boxed)
   B   testing checklist   ──────────────────────┘   (pure authoring off 1d's ACs, no I/O)
                                                  │
                                                  ▼
@@ -198,7 +198,7 @@ Do NOT file bugs — hand them back; the caller's 5a/5d owns triage, severity an
 **Everything not in that payload is `/qa-exploratory`'s own and is not restated here** — the environment
 and build pre-flight, the 24 h duplicate check, the subtract/supply oracle load, the technique choice, the
 `Fate` and `Oracle ref` columns, the report path and shape, the escalate-on-Critical rule, and the lane
-rule (chrome/edge, **never firefox** — a firefox placement costs the whole box, not a degraded session).
+rule (any free browser lane, firefox included since 2026-09-08 — `.claude/rules/agents.md` §Parallel Execution).
 
 ---
 

@@ -32,7 +32,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
 import { classifyLane } from "../../ci/lib/lane-classifier.js";
-import { loadManifest } from "../../ci/lib/suite-manifest.js";
+import { firefoxClickOk, loadManifest } from "../../ci/lib/suite-manifest.js";
 import { resolveSuiteSource } from "../test-cases/suite-source-map.js";
 import {
   formatSelection,
@@ -196,6 +196,9 @@ function main(): number {
     rotationCount: parsed.rotationCount,
     targetMinutes: parsed.target,
     concurrency: CONCURRENCY,
+    // Read from the manifest, never assumed: `defaults.firefoxClickOk` decides whether a click-driven
+    // suite may take the firefox slot, and therefore whether the makespan sees 3 browser slots or 2.
+    firefoxClickOk: firefoxClickOk(manifest),
   });
 
   if (parsed.json) {

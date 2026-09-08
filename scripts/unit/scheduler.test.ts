@@ -125,14 +125,17 @@ const firefox: PoolSlot = { id: "2", server: "playwright-firefox" };
 const chrome: PoolSlot = { id: "1", server: "playwright-chrome" };
 const computeSlot: PoolSlot = { id: "fastpath-1" };
 
-test("a click-driven suite is refused by firefox and accepted by chrome", () => {
+// The scheduler is policy-free: it honours the deny-list it is GIVEN. Whether a click-driven suite
+// carries one is `defaults.firefoxClickOk`'s call (`browserDenyListFor`), pinned in run-plan.test.ts.
+// This test keeps the primitive honest, which is what makes the rollback path work.
+test("a suite with a deny-list is refused by that server and accepted by another", () => {
   const suite: SchedulableSuite = {
     id: "028",
     lane: "browser",
     estimatedMinutes: 10,
     browserDenyList: ["playwright-firefox"],
   };
-  assert.equal(slotAccepts(suite, firefox), false, "firefox cannot click on this storefront");
+  assert.equal(slotAccepts(suite, firefox), false, "a denied server must be refused");
   assert.equal(slotAccepts(suite, chrome), true);
 });
 

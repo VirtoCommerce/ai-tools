@@ -264,8 +264,8 @@ Write the section as:
 ```markdown
 ### 5.3 Exploratory Charters (discovery — what the suites cannot assert)
 
-> N charters × 30 min. Lane: chrome/edge only — firefox cannot click this storefront
-> (`.claude/rules/agents.md`). Run isolated from the regression pool (3 lanes total).
+> N charters × 30 min. Lane: any free browser slot (firefox included since 2026-09-08,
+> `.claude/rules/agents.md`). Run isolated from the regression pool (3 lanes total).
 
 | ID | Domain | Signals | Mission (discover X that suites Y don't cover) | Candidate scenarios | Technique | Owner |
 |----|--------|---------|-----------------------------------------------|---------------------|-----------|-------|
@@ -366,7 +366,7 @@ Next: review the plan, then either:
 - **Charters are DERIVED, never invented.** Section 5.3 is a filter over Sections 3 + 5.2 per `.claude/skills/qa-sbtm/sprint-charter-selection.md` — never a domain absent from §3, never a suite absent from §5.1. Same discipline as the no-fabricated-suite-IDs rule above, and for the same reason: an agent asked to name plausible things names plausible things.
 - **High risk is not the charter qualifier — oracle fuzziness is.** A domain can score 20 in §3 and still be a pure D1 (one assertable value or contract). Route it to §6 as a test case: a precise oracle makes a case cheaper *and* permanent, whereas a charter buys a one-off verdict.
 - **Cap Section 5.3 at 5 charters** and always write the "Not chartered (and why)" line. A charter nobody runs makes the plan look covered; a silently dropped Critical domain is indistinguishable from one correctly ruled out.
-- **Never schedule a charter on `playwright-firefox`.** Exploration is click-driven by definition and `@playwright/mcp` + firefox cannot click this storefront or the Admin SPA (`.claude/rules/agents.md`, confirmed 6×). chrome or edge only.
+- **A charter may run on any of the three lanes**, firefox included since 2026-09-08 (`.claude/rules/agents.md`, confirmed 6×). chrome or edge only.
 - **Split Section 5.1 by layer.** Section 5.1 (Suites Activated) is written as two sub-tables — `5.1.1 Frontend Suites` (`regression/suites/Frontend/`) and `5.1.2 Backend Suites` (`regression/suites/Backend/`) — classifying each suite by the layer directory its CSV lives under in `config/test-suites.json`, not by JIRA component. Watch the loyalty split (083/083b storefront → Frontend; 075/075b/075c → Backend) and any admin/GraphQL suites (050*, 0XX admin) → Backend. Preserve suite order within each sub-table and keep the module/sprint-trigger/priority columns unchanged.
 - **Honor the BL knowledge file** — when describing test approach for a ticket, reference applicable `BL-*` IDs from `business-logic.md` (read; do not edit). If a ticket implies a new invariant, note it as a candidate for the Phase 4c BL audit in a follow-up `/qa-test-lifecycle` run (or a standalone `/qa-review-bl`), not in this plan.
 - **Document status defaults to Draft.** Promote to "Approved" only after user review (manual edit).

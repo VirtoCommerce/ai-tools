@@ -37,7 +37,8 @@
       "playwright-edge",
       "playwright-firefox"
     ],
-    "_comment_fallbackChain": "Chromium-family FIRST (chrome -> edge), firefox LAST. playwright-firefox cannot reliably click on this storefront or the AngularJS Admin SPA: browser_click hangs on Playwright's 'visible, enabled and stable' actionability gate and times out on fully-visible, non-moving elements (verified NOT a layout/CLS bug). Confirmed independently 5x: 2026-06-01 (SBTM-orders), 2026-06-24 (REG-2026-06-24-2108, whole Admin SPA), 2026-07-25, 2026-07-27 x2, and again 2026-08-05 (REG-2026-08-05-1942 attempt 1, suite 002). Firefox was previously SECOND here, so any suite whose first attempt failed fell straight onto the one lane that cannot click - burning a full retry before reaching edge. Root cause is in the @playwright/mcp layer, not Firefox/Playwright itself: raw playwright-core + firefox clicks the same reproducer fine headed AND headless, with and without the MCP's recordHar/viewport/locale context options (probed 2026-08-05). Firefox stays in the pool for read-only/navigation-light passes; see .claude/rules/agents.md and the feedback_firefox_cart_dropdown_quirk memory.",
+    "firefoxClickOk": true,
+    "_comment_fallbackChain": "Chromium-family FIRST (chrome -> edge), firefox third. `firefoxClickOk: true` means the firefox lane takes click-driven suites like any other slot — set it to false to restore the deny-list (one-line rollback, no code change; `browserDenyListFor` in ci/lib/suite-manifest.ts is the only consumer). HISTORY: firefox could not click here (browser_click resolved the element then timed out on Playwright's 'visible, enabled and stable' gate), confirmed 6x 2026-06-01 -> 2026-08-05, and sat SECOND in this chain until 2026-08-05 so a failed first attempt fell straight onto it. ROOT CAUSE 2026-09-08: a covered firefox window stops requestAnimationFrame (Windows occlusion tracking) and Playwright's stable check needs 5 CONSECUTIVE rAF ticks on Windows+Firefox (1 elsewhere), so it never completes; the stall is sticky, the driver does not restart when uncovered. FIXED by widget.windows.window_occlusion_tracking.enabled=false in config/mcp-playwright-firefox.config.json (covered rAF 121 vs 0, 6/6 clicks). Evidence and the rollback signal: .claude/knowledge/automation/browser-quirks.md section Firefox.",
     "maxRetries": 2,
     "retryDelayMs": 30000,
     "rateLimitDelayMs": 60000,
@@ -59,7 +60,7 @@
       "browserName": "firefox",
       "channel": null,
       "status": "available",
-      "constraint": "READ-ONLY / NAVIGATION-LIGHT PASSES ONLY — do NOT schedule click-driven suites here (cart, checkout, merge, PDP interaction, sign-in, any Admin SPA suite). browser_click times out on the actionability 'stable' gate; browser_type and navigation work fine. If both Chromium slots are busy, QUEUE the suite for the next free chrome/edge slot rather than placing it on firefox — a firefox placement costs a full wasted attempt, not a degraded one."
+      "constraint": "Full third slot for click-driven work since 2026-09-08, PROVIDED the MCP server was restarted after config/mcp-playwright-firefox.config.json gained widget.windows.window_occlusion_tracking.enabled=false — without that pref a covered firefox window stops requestAnimationFrame and every browser_click times out on the 'stable' actionability gate (browser_type and navigation keep working). If clicks start timing out on this lane again: check the MCP config first, then set defaults.firefoxClickOk=false to re-deny click-driven suites. Detail: .claude/knowledge/automation/browser-quirks.md section Firefox."
     },
     {
       "slot": 3,

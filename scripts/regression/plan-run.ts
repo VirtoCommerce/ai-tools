@@ -33,7 +33,7 @@
 import { existsSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
-import { loadManifest, resolveSelection, selectionNames, type ManifestSuite } from "../../ci/lib/suite-manifest.ts";
+import { browserDenyListFor, loadManifest, resolveSelection, selectionNames, type ManifestSuite } from "../../ci/lib/suite-manifest.ts";
 import { classifyLane } from "../../ci/lib/lane-classifier.ts";
 import { buildRunPlan, formatRunPlan, type PlannableSuite } from "../../ci/lib/run-plan.ts";
 import { orderLpt } from "../../ci/lib/scheduler.ts";
@@ -68,18 +68,6 @@ function parseArgs(argv: string[]): {
       deterministic: numFlag("deterministic", DEFAULT_CONCURRENCY.deterministic),
     },
   };
-}
-
-/**
- * Browser servers a suite must not be placed on.
- *
- * `clickDriven` is derived into the manifest by `npm run suites:sync`. An idle lane is
- * strictly cheaper than a firefox attempt on a clicking suite: the click resolves the element
- * and then times out on Playwright's actionability gate, so the whole attempt is wasted.
- * Confirmed six times independently; the root cause is in the `@playwright/mcp` layer.
- */
-function browserDenyListFor(suite: ManifestSuite): string[] {
-  return suite.clickDriven ? ["playwright-firefox"] : [];
 }
 
 function main(): void {
@@ -127,7 +115,7 @@ function main(): void {
     testCount: s.testCount,
     estimatedMinutes: s.estimatedMinutes,
     preferredBrowser: s.preferredBrowser,
-    browserDenyList: browserDenyListFor(s),
+    browserDenyList: browserDenyListFor(s, manifest),
   }));
 
   const plan = buildRunPlan(plannable, concurrency);

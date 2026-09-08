@@ -79,8 +79,8 @@ There is **one** orchestrator: `regression-orchestrator`, dispatched via the Tas
 > A second `--autonomous` mode (Agent Teams, `results/{RUN_ID}/`) was removed 2026-08-26. It was a
 > parallel stack whose output no tooling read: no live dashboard, no `/qa-triage-results`, no
 > `history.json` flakiness feed, no `reap-stalled-run` backstop, no `compute-metrics` gate. It had
-> also drifted — its fallback chain still put firefox second (the order fixed on 2026-08-05 because
-> firefox cannot click here), and it assigned firefox as the *preferred* browser for Smoke and
+> also drifted — its fallback chain still put firefox second (the order fixed on 2026-08-05, when
+> firefox could not click here), and it assigned firefox as the *preferred* browser for Smoke and
 > Payment. Its two genuinely useful pieces — the graduated rate-limit guard and the 30/60s backoff
 > ladder — were folded into `regression-orchestrator.md` Step 5. Its auto-JIRA filing was dropped
 > deliberately: `/qa-triage-results` and `/qa-monitoring` both stop short of filing, and a
@@ -302,20 +302,17 @@ treats `server_name` as advisory), so never key anything on the browser name.
 | 3 | playwright-edge | chromium (`msedge` channel) |
 
 **The fallback chain is `chrome → edge → firefox`** — read it from `config/test-suites.json`
-`defaults.fallbackChain`, never from a copy. It is in that order deliberately: firefox sits **last**
-because it sat second until 2026-08-05, so any suite whose first attempt failed fell straight onto
-the one lane that cannot click, burning a whole retry.
+`defaults.fallbackChain`, never from a copy. Firefox sits third for continuity with the historical
+order; since 2026-09-08 it is a full click-capable slot, not a degraded one.
 
-> **⚠ Slot 2 (firefox) is READ-ONLY / NAVIGATION-LIGHT ONLY.** `browser_click` times out on
-> Playwright's actionability "stable" gate on this storefront and across the Admin SPA, on
-> fully-visible non-moving elements (confirmed independently 6×; the root cause is in the
-> `@playwright/mcp` layer, not Firefox). `browser_type` and navigation work fine — it is clicking
-> specifically that fails. So **never schedule a click-driven suite on firefox**: cart, checkout,
-> merge, PDP interaction, sign-in, or **any** Admin SPA suite. If both Chromium slots are busy,
-> **QUEUE** for the next free chrome/edge slot — a firefox placement costs a *full wasted attempt*,
-> not a degraded one. This is encoded as data, not judgement: the manifest carries the slot's
-> `constraint`, `clickDriven` is derived per suite at `suites:sync` time, and `regression:plan`
-> marks such a suite `NOT ON <server>` so it queues instead of degrading.
+> **Slot 2 (firefox) takes click-driven suites again since 2026-09-08.** It could not until then —
+> `browser_click` timed out on Playwright's actionability *"stable"* gate on fully-visible, non-moving
+> elements, confirmed 6× — because a covered firefox window stops `requestAnimationFrame` and that gate
+> needs 5 consecutive ticks on Windows. The occlusion pref in `config/mcp-playwright-firefox.config.json`
+> fixes it, **provided the MCP server was restarted after that config landed**. This stays encoded as
+> data, not judgement: `defaults.firefoxClickOk` decides, `clickDriven` is still derived per suite at
+> `suites:sync` time, and `regression:plan` reads both — so the rollback is flipping the flag to
+> `false`, not editing a scheduler. Evidence: `knowledge/automation/browser-quirks.md` §Firefox.
 
 **Per-slot test user credentials** — each slot has dedicated storefront accounts (personal + B2B) so
 parallel agents never collide on login state. Resolve at dispatch via `@td(AGENT_POOL_SLOT_N.*)` —

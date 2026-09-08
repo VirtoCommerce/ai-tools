@@ -83,9 +83,10 @@ outputs, instead of becoming a third parallel run with no history, no fingerprin
   score-20 domains that were already covered from several directions. Zero coverage beats partial
   coverage as a claim on 30 minutes.
 - **30 min each** (5 setup + 20 explore + 5 document), 45 max. 5 charters ≈ 2.5 h against ~34 suites.
-- **Lane: `playwright-chrome` or `playwright-edge` — never `playwright-firefox`.** Exploration is
-  click-driven by definition, and `@playwright/mcp` + firefox cannot click on this storefront or the
-  Admin SPA (confirmed 6×, `.claude/rules/agents.md`). A firefox placement costs the whole session.
+- **Lane: any free browser slot** — `playwright-chrome`, `playwright-edge` or `playwright-firefox`.
+  Exploration is click-driven by definition and firefox handles that again since 2026-09-08
+  (`.claude/rules/agents.md` §Parallel Execution). Clicks timing out at *"visible, enabled and stable"*
+  mean the MCP server was not restarted after the occlusion-pref config change, not a bad charter.
 - **Run isolated from regression.** The pool is 3 concurrent browser agents total; a charter run
   competing for a lane slows the suites it is supposed to complement.
 

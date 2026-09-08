@@ -63,8 +63,10 @@ interface Suite {
   agent: string;
   tags: string[];
   /**
-   * DERIVED (never hand-authored): the suite performs clicks, so `playwright-firefox`
-   * cannot run it. Reconciled from the CSV by `regenerate()` below.
+   * DERIVED (never hand-authored): the suite performs clicks. Reconciled from the CSV by
+   * `regenerate()` below. It no longer implies a lane ban on its own — `defaults.firefoxClickOk`
+   * decides that (`browserDenyListFor` in `ci/lib/suite-manifest.ts`) and has been true since
+   * 2026-09-08. The field stays because it is the input to that decision and to the rollback.
    */
   clickDriven?: boolean;
   /**

@@ -72,10 +72,14 @@ each part was got wrong at least once on the record:
   is runner-native and a GraphQL-only grep misses it). Step 3 then splits a mixed suite's cases
   with `suites:lanes`, so `050d`'s 46 runner-native rows no longer ride a browser slot on account
   of its other 3.
-- The firefox rule, which lived as prose in three files. `playwright-firefox` **cannot click** on
-  this storefront or the Admin SPA. The plan marks each suite `NOT ON playwright-firefox` from the
-  manifest's derived `clickDriven` field. Note `[ACT]` alone does not mean clicking — suite `049`'s
-  37 `[ACT]` lines are all REST calls, and it IS firefox-safe.
+- The firefox rule, which lived as prose in three files. It is now ONE data switch:
+  `defaults.firefoxClickOk` in the manifest, read through `browserDenyListFor`
+  (`ci/lib/suite-manifest.ts`). **It is `true` since 2026-09-08** — the click timeouts were a covered
+  window stopping `requestAnimationFrame`, fixed by the occlusion pref in the firefox MCP config, so
+  every suite may take the firefox slot and the browser lane is genuinely three wide. Flip it to
+  `false` to bring the `NOT ON playwright-firefox` marking back for click-driven suites. `clickDriven`
+  is still derived per suite and still correct — note `[ACT]` alone does not mean clicking, suite
+  `049`'s 37 `[ACT]` lines are all REST calls.
 - Dispatch order, which was arbitrary.
 
 Record each suite's lane in `test-run-status.json` as `lane: "browser" | "fastpath" | "deterministic"`.
@@ -293,8 +297,11 @@ least likely to succeed 30 seconds later.
 | 3 (retry 2) | 60s | next in `defaults.fallbackChain` **that the suite is allowed on** |
 
 A retry NEVER lands on a server the plan marked `NOT ON` for that suite. The fallback chain is
-`playwright-chrome → playwright-edge → playwright-firefox` — chromium-family first, firefox LAST,
-because firefox cannot click here and a placement there burns the retry rather than spending it.
+`playwright-chrome → playwright-edge → playwright-firefox`. Firefox sits third for continuity, not
+because it is degraded: since 2026-09-08 it takes click-driven suites like any other slot
+(`defaults.firefoxClickOk`). If clicks start timing out there at *"visible, enabled and stable"*, the
+MCP server was not restarted after the occlusion-pref config change — see
+`knowledge/automation/browser-quirks.md` §Firefox before assuming a suite defect.
 
 **Rate-limit guard.** Rate limits are a property of the whole run, not of one suite, so treat them
 globally rather than retrying into the wall:

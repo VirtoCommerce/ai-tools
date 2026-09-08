@@ -104,10 +104,9 @@ then run the browser stages.
 **Four hazards that make the naive "triage everything live" version worse than serial — each is why
 a stage sits where it does above:**
 
-1. **Lane contention.** Max 3 concurrent browser agents and firefox cannot click this storefront or
-   the Admin SPA (`.claude/rules/agents.md`), so a full run already owns both usable lanes. A
-   live-verifying agent either steals a lane from the run it is accelerating or lands on firefox and
-   fails spuriously. Anything needing a browser therefore waits.
+1. **Lane contention.** Max 3 concurrent browser agents (all three click-capable since 2026-09-08,
+   `.claude/rules/agents.md`), so a full run already owns every lane. A live-verifying agent would
+   steal a lane from the run it is accelerating. Anything needing a browser therefore waits.
 2. **Retries have not settled.** The orchestrator retries a failed suite once via the fallback chain,
    so a FAIL at T can be a PASS at T+20m. Every live verdict is **provisional** until the suite is
    `done`; the reconcile step drops failures that later passed. Skipping it drafts bugs for flakes.

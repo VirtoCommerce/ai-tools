@@ -30,7 +30,7 @@ import { formatPreflightProblems, preflightManifest, type PreflightSuite } from 
 import { runDeterministicSuite } from "./lib/deterministic-lane.ts";
 import { classifyLane, type LaneClassifiable } from "./lib/lane-classifier.ts";
 import { buildRunPlan, formatRunPlan } from "./lib/run-plan.ts";
-import { loadManifest, resolveSelection, selectionNames } from "./lib/suite-manifest.ts";
+import { browserDenyListFor, loadManifest, resolveSelection, selectionNames } from "./lib/suite-manifest.ts";
 
 // --- Configuration from environment variables ---
 //
@@ -912,17 +912,6 @@ function appendToHistory(results: SuiteResult[]): void {
   writeFileSync(runLogPath, JSON.stringify(runLog, null, 2), "utf-8");
 }
 
-/** Browser servers a suite must not be scheduled on. */
-function browserDenyListFor(config: SuiteConfig): string[] {
-  // playwright-firefox cannot click on this storefront or the AngularJS Admin SPA:
-  // browser_click resolves the element then times out on Playwright's actionability gate.
-  // Confirmed 6x independently; root cause is in the @playwright/mcp layer. A firefox
-  // placement on a click-driven suite costs a whole wasted attempt, so the scheduler queues
-  // instead of downgrading. CI is single-Chromium today, so this is forward-looking — but it
-  // belongs in data, not in three separate prose files.
-  return config.clickDriven ? ["playwright-firefox"] : [];
-}
-
 /** Slots for a lane. Browser slots carry a server name; the other lanes just need capacity. */
 function slotsFor(lane: LaneKind, count: number): PoolSlot[] {
   const slots: PoolSlot[] = [];
@@ -992,7 +981,7 @@ async function main() {
     testCount: config.testCount,
     estimatedMinutes: config.estimatedMinutes,
     preferredBrowser: config.preferredBrowser,
-    browserDenyList: browserDenyListFor(config),
+    browserDenyList: browserDenyListFor(config, manifest),
     config,
   }));
 

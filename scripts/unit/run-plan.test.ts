@@ -13,14 +13,7 @@
 // Run: `npx tsx --test scripts/unit/run-plan.test.ts` / `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  applyMultiEnvFilters,
-  expandSelection,
-  loadManifest,
-  resolveSelection,
-  selectionNames,
-  type ManifestSuite,
-} from "../../ci/lib/suite-manifest.ts";
+import { browserDenyListFor, firefoxClickOk, applyMultiEnvFilters, expandSelection, loadManifest, resolveSelection, selectionNames, type ManifestSuite } from "../../ci/lib/suite-manifest.ts";
 import { classifyLane } from "../../ci/lib/lane-classifier.ts";
 import { buildRunPlan, formatRunPlan, type PlannableSuite } from "../../ci/lib/run-plan.ts";
 import { orderLpt } from "../../ci/lib/scheduler.ts";
@@ -40,7 +33,7 @@ function plannableFor(selection: string): PlannableSuite[] {
       testCount: s.testCount,
       estimatedMinutes: s.estimatedMinutes,
       preferredBrowser: s.preferredBrowser,
-      browserDenyList: s.clickDriven ? ["playwright-firefox"] : [],
+      browserDenyList: browserDenyListFor(s, manifest),
     }));
 }
 
@@ -163,16 +156,25 @@ test("dispatch order is longest-first, so the tail starts early", () => {
   assert.equal(ordered[0].id, longest.id);
 });
 
-test("every click-driven suite carries the firefox deny-list into the plan", () => {
+// The plan's firefox placement follows `defaults.firefoxClickOk`, not a hard-coded rule. Before
+// 2026-09-08 every click-driven suite was denied the lane; the occlusion pref in
+// config/mcp-playwright-firefox.config.json fixed the cause, so the switch is on and the deny-list is
+// empty. This test asserts the PLAN AGREES WITH THE SWITCH either way, which is what makes the
+// rollback (flip the flag, change no code) safe.
+test("the plan's firefox deny-list follows defaults.firefoxClickOk", () => {
   const plan = buildRunPlan(plannableFor("full"), CONCURRENCY);
-  const clicking = manifest.suites.filter((s) => s.clickDriven).map((s) => s.id);
+  const clicking = new Set(manifest.suites.filter((s) => s.clickDriven).map((s) => s.id));
+  const allowed = firefoxClickOk(manifest);
   let checked = 0;
   for (const s of plan.suites) {
-    if (!clicking.includes(s.id)) continue;
+    if (!clicking.has(s.id)) continue;
     checked++;
-    assert.ok(
+    assert.equal(
       s.browserDenyList.includes("playwright-firefox"),
-      `${s.id} clicks but the plan would allow it on firefox`,
+      !allowed,
+      allowed
+        ? `${s.id} clicks, the switch is ON, so the plan must NOT deny it firefox`
+        : `${s.id} clicks, the switch is OFF, so the plan must deny it firefox`,
     );
   }
   assert.ok(checked > 20, `expected many click-driven suites in full, checked ${checked}`);
@@ -242,4 +244,36 @@ test("an empty suite list plans cleanly instead of throwing", () => {
   assert.equal(plan.makespanMinutes, 0);
   assert.deepEqual(plan.capAnomalies, []);
   assert.doesNotThrow(() => formatRunPlan(plan));
+});
+
+// ---- the firefox lane switch ---------------------------------------------------------
+//
+// `defaults.firefoxClickOk` is the ONE place that decides whether a click-driven suite may take the
+// firefox slot (root cause + fix: `.claude/knowledge/automation/browser-quirks.md` §Firefox). It is a
+// data switch precisely so a regression can be rolled back without a code change, so both directions
+// are pinned here — a future edit that hard-codes either answer fails.
+
+test("browserDenyListFor honours defaults.firefoxClickOk in BOTH directions", () => {
+  const clicking = { clickDriven: true };
+  const notClicking = { clickDriven: false };
+  const allowed = { ...manifest, defaults: { ...manifest.defaults, firefoxClickOk: true } };
+  const denied = { ...manifest, defaults: { ...manifest.defaults, firefoxClickOk: false } };
+
+  assert.deepEqual(browserDenyListFor(clicking, allowed), [], "flag on: firefox is a full slot");
+  assert.deepEqual(
+    browserDenyListFor(clicking, denied),
+    ["playwright-firefox"],
+    "flag off: the pre-2026-09-08 deny-list comes back — this is the rollback path",
+  );
+  assert.deepEqual(browserDenyListFor(notClicking, denied), [], "a non-clicking suite is never denied");
+});
+
+test("the manifest ships the switch ON, and no suite is denied a lane while it is", () => {
+  assert.equal(
+    firefoxClickOk(manifest),
+    true,
+    "defaults.firefoxClickOk must stay true while the occlusion pref ships in config/mcp-playwright-firefox.config.json",
+  );
+  const denied = manifest.suites.filter((s) => browserDenyListFor(s, manifest).length > 0);
+  assert.deepEqual(denied.map((s) => s.id), [], "with the switch on, the plan must place suites on all three slots");
 });

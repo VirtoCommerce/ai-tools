@@ -79,6 +79,41 @@ export function loadManifest(path = MANIFEST_PATH): Manifest {
 
 // --- Selection expansion -----------------------------------------------------------
 
+/**
+ * Browser servers a suite must NOT be placed on — the ONE place that answers it.
+ *
+ * HISTORY. `playwright-firefox` could not click on this storefront or the Admin SPA: `browser_click`
+ * resolved the element and then timed out on Playwright's *"visible, enabled and stable"* gate.
+ * Confirmed 6× (2026-06-01 → 2026-08-05), so every click-driven suite carried
+ * `browserDenyList: ["playwright-firefox"]` and the lane was effectively two slots, not three.
+ *
+ * ROOT CAUSE (2026-09-08, measured — `.claude/knowledge/automation/browser-quirks.md` §Firefox):
+ * a fully covered firefox window stops `requestAnimationFrame` (Windows occlusion tracking), and
+ * Playwright's stable check needs **5 consecutive rAF ticks** on Windows + Firefox (1 elsewhere), so
+ * it can never complete. 15 of 15 failing attempts had a dead rAF; 0 passing ones did. The stall is
+ * sticky — the driver does not restart when the window is uncovered — which is why one moment of
+ * occlusion poisoned a whole session and made this look like "firefox cannot click".
+ *
+ * FIX: `config/mcp-playwright-firefox.config.json` sets
+ * `widget.windows.window_occlusion_tracking.enabled=false`. Covered rAF 121 vs 0, 6/6 clicks.
+ *
+ * THE SWITCH: `defaults.firefoxClickOk` in the manifest. `true` (today) means the fix is deployed and
+ * firefox is a full third slot. Set it to `false` to restore the deny-list — a ONE-LINE rollback with
+ * no code change, which is the point: if a real run regresses, flip the data, not the scheduler.
+ * Every consumer reads this function; none re-derives the rule.
+ */
+export function firefoxClickOk(manifest: Manifest): boolean {
+  return (manifest.defaults as { firefoxClickOk?: boolean }).firefoxClickOk === true;
+}
+
+export function browserDenyListFor(
+  suite: { clickDriven?: boolean },
+  manifest: Manifest,
+): string[] {
+  if (firefoxClickOk(manifest)) return [];
+  return suite.clickDriven ? ["playwright-firefox"] : [];
+}
+
 export function matchesWhere(suite: ManifestSuite, where: WhereFilter): boolean {
   if (where.domain && suite.domain !== where.domain) return false;
   if (where.layer && suite.layer !== where.layer) return false;

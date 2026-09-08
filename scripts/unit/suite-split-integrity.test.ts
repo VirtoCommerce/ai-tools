@@ -26,7 +26,7 @@ import { join } from "node:path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { findCrossFileCaseRefs } from "../test-cases/sync-test-suites.ts";
 import { COLUMNS } from "../test-cases/append-test-cases-to-suite.ts";
-import { loadManifest, resolveSelection, type ManifestSuite } from "../../ci/lib/suite-manifest.ts";
+import { browserDenyListFor, loadManifest, resolveSelection, type ManifestSuite } from "../../ci/lib/suite-manifest.ts";
 import { buildRunPlan } from "../../ci/lib/run-plan.ts";
 import { classifyLane } from "../../ci/lib/lane-classifier.ts";
 
@@ -157,7 +157,7 @@ test("the split delivers the wall-clock it exists for", () => {
       testCount: s.testCount,
       estimatedMinutes: s.estimatedMinutes,
       preferredBrowser: s.preferredBrowser,
-      browserDenyList: s.clickDriven ? ["playwright-firefox"] : [],
+      browserDenyList: browserDenyListFor(s, manifest),
     }));
   const plan = buildRunPlan(plannable, { browser: 3, fastpath: 4, deterministic: 2 });
   assert.ok(

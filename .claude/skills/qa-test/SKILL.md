@@ -199,7 +199,7 @@ known cost, and three were measured:
 | Admin SPA, APIs, modules, GraphQL, backend | `qa-backend-expert` | `playwright-edge` |
 | Storybook components, accessibility, design system, the `vs. DESIGN` spec diff | `ui-ux-expert` | Chrome DevTools MCP |
 | Cross-browser, debugging | `qa-testing-expert` | `playwright-firefox` |
-| **Step-3x discovery (FULL)** — **invoke `/qa-exploratory ticket <ticket-key>`**, do not hand-roll a session | that command's own | `playwright-chrome` / `playwright-edge` — **never firefox** |
+| **Step-3x discovery (FULL)** — **invoke `/qa-exploratory ticket <ticket-key>`**, do not hand-roll a session | that command's own | any free browser lane (all 3 click since 2026-09-08) |
 
 The last row is a **Step-3 phase, not a Step-4 lane** — it has closed before execution dispatches, so it
 never counts against the max-3 cap that governs the rows above it.
@@ -226,7 +226,7 @@ lane when `visual_surface: true`** — the one documented exception, reasoned in
   critical-revenue flow **is** click-driven by definition, so the two rules pointed in opposite
   directions. **Resolution: the extra P0 pass runs on a free chrome/edge lane** — that file's hard rule
   outranks its own per-agent default table, exactly as `/qa-exploratory` already overrides it. If no
-  chromium lane is free, **QUEUE**; never fall back to firefox.
+  browser lane is free, **QUEUE** — all three take click-driven work since 2026-09-08.
 
 `visual_surface` is derived at `1b` item 2c, recorded with its sources, and replaces the undefined
 *"UI/component"* trigger this table used to carry — a phrase no gate ever checked was applied. The lane's
