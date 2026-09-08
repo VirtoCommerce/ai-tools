@@ -79,7 +79,7 @@ Then branch on the resolved FLOW:
 ### Flow = `verify-fix` — run `/qa-verify-fix` inline
 
 `/qa-test` **runs the `/qa-verify-fix` pipeline inline** in this same session — **execute its Steps 0–7 as
-written** ([`qa-verify-fix.md`](../../commands/qa-verify-fix.md)); do not duplicate or paraphrase them here. The
+written** ([`qa-verify-fix.md`](../../../plugins/vc-fix/commands/qa-verify-fix.md)); do not duplicate or paraphrase them here. The
 feature-test authoring / AC-reconcile / promotion machinery is **not** run: a fix-ready Bug needs its fix
 verified, not new cases authored. The run ends at the verify-fix verdict.
 

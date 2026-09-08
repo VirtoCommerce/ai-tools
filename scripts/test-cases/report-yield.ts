@@ -104,7 +104,7 @@ function main(): void {
     `\n  DENOMINATOR WARNING: only ${idx.attributed} of ${idx.total} reports name a case, and those are` +
       `\n  disproportionately the ones found BY a regression run — the population most likely to have` +
       `\n  a case at all. Treat per-case numbers as a baseline to measure drift against, not a verdict.` +
-      `\n  The bias shrinks as the **Found by:** convention (see .claude/commands/qa-bug.md) fills in.\n`,
+      `\n  The bias shrinks as the **Found by:** convention (see plugins/vc-fix/commands/qa-bug.md) fills in.\n`,
   );
 }
 

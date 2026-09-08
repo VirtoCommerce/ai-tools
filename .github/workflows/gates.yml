@@ -55,6 +55,8 @@ jobs:
         run: npm run bl:lint && npm run ecl:lint
       - name: suites:executability:check — determinism ratchet
         run: npm run suites:executability:check
+      - name: scope:validate — critical-ui-scope ↔ suite manifest
+        run: npm run scope:validate
 
   external:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

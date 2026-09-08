@@ -89,13 +89,15 @@ Each agent MUST use its own separate browser session. Agents sharing a browser w
 > firefox clicks the same reproducer fine headed *and* headless, with and without the MCP's
 > `recordHar`/viewport/locale context options (probed 2026-08-05); a browser-revision re-install was
 > tried and did **not** fix it. Detail: `feedback_firefox_cart_dropdown_quirk` memory.
+>
+> **Root cause found 2026-09-08, fix in config, live confirmation pending:** Windows Firefox treats a window covered by the other two browser windows as hidden and stops `requestAnimationFrame`; Playwright's Windows-Firefox *stable* wait needs 5 rAF ticks, so every click times out while `fill` (no stable wait) keeps working. `config/mcp-playwright-firefox.config.json` now sets `widget.windows.window_occlusion_tracking.enabled=false`. **This rule stays until `node scripts/maintenance/firefox-click-probe.mjs` exits 0 on a machine that showed the bug** — mechanism, evidence and the flip procedure: `knowledge/automation/browser-quirks.md` §Firefox.
 
 ### QA Team Browsers
 | Agent | Playwright MCP Server | Alternative |
 |-------|----------------------|-------------|
 | **qa-frontend-expert** | `playwright-chrome` | |
 | **qa-backend-expert** | `playwright-edge` | or `Chrome DevTools MCP` for Admin SPA |
-| **qa-testing-expert** | `playwright-firefox` | |
+| **qa-testing-expert** | the next free Chromium slot — `playwright-chrome` or `playwright-edge` — **queued** behind the owner of that slot; never firefox for interactive work (the box above: firefox cannot click here, confirmed 6×) | `playwright-firefox` **only** for a read-only, navigation-light pass; no fixed third click-capable lane exists — 3 slots, 2 of them Chromium |
 | **ui-ux-expert** | `Chrome DevTools MCP` | (no webkit on Windows) |
 | **test-management-specialist** | `playwright-chrome` (sequential, not parallel with frontend) | |
 | **test-data-engineer** | none — authors AND runs seeders live (Node + Platform-API); delegates only browser-based storefront/suite verification to qa-backend/frontend-expert | |

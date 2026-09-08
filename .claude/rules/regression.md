@@ -176,10 +176,8 @@ Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, e
 
 **Note:** The CI `run-regression.ts` dynamically loads suite definitions from `config/test-suites.json` at startup. Selection groups are also defined in the manifest's `selections` block.
 
-**Scheduled Pipeline (GitHub Actions - `.github/workflows/regression.yml`):**
-- **Daily smoke**: Mon-Fri at 6:00 AM UTC — runs suite 042 ($5 budget)
-- **Weekly full regression**: Sunday at 2:00 AM UTC — runs all 119 `full` suites ($80 budget — the derived budget is $144; see ci/lib/suite-caps.ts)
-- **Manual trigger**: Any selection, any environment, any budget via `workflow_dispatch`
+**Pipeline triggers (GitHub Actions - `.github/workflows/regression.yml`):**
+- **Manual only, today.** Every run is a `workflow_dispatch` (any selection, environment, budget). The two `cron:` lines — daily smoke Mon-Fri 06:00 UTC on suite 042 ($5), weekly full Sunday 02:00 UTC ($80; the derived budget is $144, see `ci/lib/suite-caps.ts`) — are **commented out** in the workflow, as are the schedules in `suite-audit.yml`, `monitor.yml`, `auto-fix.yml` and `full-cycle.yml`. No headless run has ever completed unattended (audit 2026-09-07 §4b, D9). Re-enabling a schedule means uncommenting its `cron:` line, nothing else; until then do not describe these runs as happening.
 
 **Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.
 

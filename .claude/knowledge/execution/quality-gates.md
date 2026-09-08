@@ -3,7 +3,7 @@
 **This file is the only place the auto-fix gate ladder lives.** Both entry points reference it by
 gate ID — they must never restate or diverge from these criteria:
 
-- **Interactive:** `/qa-fix VCST-XXXX` (`commands/qa-fix.md`) + the `developers/` agent team
+- **Interactive:** `/qa-fix VCST-XXXX` (`plugins/vc-fix/commands/qa-fix.md`) + the `developers/` agent team
   (`fullstack-backend`, `backend-reviewer`).
 - **Headless CI:** `ci/run-fix-cycle.ts` + `.github/workflows/auto-fix.yml` + `ci/agents/fix-triage-agent.md`
   / `fix-backend-agent.md` / `fix-frontend-agent.md`.

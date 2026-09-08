@@ -9,7 +9,7 @@ This repo hosts two things:
 1. **[`vc-fix`](plugins/vc-fix/)** — a self-contained Claude Code plugin (bug lifecycle: setup,
    filing, autonomous fixing, verification, monitoring). **This is the flagship, marketplace-installable
    offering** — see Quick Start below.
-2. **The full `vc-qa` agent crew** (regression, BA analysis, 110 suites, 17 agents) — the source
+2. **The full `vc-qa` agent crew** (regression, BA analysis, the regression suites, the agent crew) — the source
    `vc-fix` was extracted from. It now lives project-scoped under `.claude/` (auto-discovered on any
    clone, no plugin manifest) but is **not marketplace-installable**: not listed in the marketplace,
    not currently packaged as a plugin. Kept for direct-clone use and as the
@@ -61,7 +61,7 @@ inventory, self-containment rationale, gate ladder reference).
 ## Full `vc-qa` Agent Crew (dormant — direct clone only)
 
 > Everything below this point documents the **full `vc-qa` agent crew** — regression orchestration,
-> BA analysis, Storybook/a11y, 110 CSV suites, 18 agents. It is **not** the `vc-fix` plugin above:
+> BA analysis, Storybook/a11y, the CSV suites and the agent crew. It is **not** the `vc-fix` plugin above:
 > it is **not marketplace-installable**, and only usable by cloning this repo directly. If you just
 > want the bug-lifecycle plugin, stop here and use Quick Start above instead.
 
@@ -159,9 +159,9 @@ Five pipelines, each with an interactive + headless-CI twin:
 
 Full reference: each command and skill file's own frontmatter (`description` + `argument-hint`), which the harness renders as the `/` menu.
 
-- **27 slash commands** — `/qa-bundle-check`, `/code-review-full`, `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-monitoring`, `/qa-triage-results`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-sitemap`, `/qa-local-env`, `/qa-onboarding`, `/ba-analyze`, …
-- **36 skills** in [`skills/`](.claude/skills) (1 VC knowledge, 12 testing, 14 QA methodology, 6 development) + 3 root-level (`project-init`, `run-vc-mcp-testing-module`, `vc-self-check`).
-- **17 agents** in [`agents/`](.claude/agents) across three teams (QA 9, BA 4, Developers 4). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
+- **Slash commands** (`ls .claude/commands` for the current set; the bug-lifecycle ones — `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/qa-env-check`, `/project-init`, `/vc-self-check` — come from the `vc-fix` plugin, see `.claude/ROUTING.md`) — `/qa-bundle-check`, `/code-review-full`, `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-triage-results`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-sitemap`, `/qa-local-env`, `/qa-onboarding`, `/ba-analyze`, …
+- **Skills** in [`skills/`](.claude/skills) — one `skills/<name>/SKILL.md` each, category as a `[Tag]` in the description; see [skills/README.md](.claude/skills/README.md) for how the counts are derived.
+- **Agents** in [`agents/`](.claude/agents) across three teams (QA, BA, Developers) — roster in [`.claude/rules/agents.md`](.claude/rules/agents.md). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
 
 Use an agent by name: `Use the qa-backend-expert to test the Platform API`.
 
@@ -192,18 +192,18 @@ vc-mcp-testing-module/
 ├── plugins/vc-fix/       # THE marketplace-listed plugin — self-contained bug-lifecycle slice (own
 │                         #   agents/skills/commands + own copies of knowledge/.claude/scripts/config.js)
 ├── .claude/              # PROJECT-SCOPED vc-qa surface (auto-discovered — no plugin manifest)
-│   ├── agents/           #   17 agents, flat *.md (QA 9, BA 4, Developers 4) — no subfolders
-│   ├── skills/           #   36 skills, each skills/<name>/SKILL.md (33 categorized + project-init + run-vc-mcp-testing-module + vc-self-check)
-│   ├── commands/         #   28 slash commands, flat *.md
+│   ├── agents/           #   agents, flat *.md (QA / BA / Developers) — no subfolders
+│   ├── skills/           #   skills, each skills/<name>/SKILL.md ([Category] tag in the description)
+│   ├── commands/         #   slash commands, flat *.md (the / menu is the inventory)
 │   ├── hooks/            #   hooks.json (2 hooks) + enforce-real-user.mjs
-│   ├── knowledge/        #   28 shared reference files (api/ oracles/ execution/ domain/ …) + agents/ team instructions
+│   ├── knowledge/        #   shared reference files (api/ oracles/ execution/ domain/ …) + agents/ team instructions
 │   ├── rules/            #   reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)
 │   ├── architecture/     #   TIER.md classification
 │   └── ROUTING.md        #   "New here?" entry point
 ├── config/               # vc-qa: Playwright browser configs + test-suites.json manifest
 ├── ci/                   # vc-qa: CI / full-cycle / auto-fix / monitoring pipelines (tracked)
 ├── vc/                   # vc-qa: VC internal per-env data (+ shared/docs/prompts/ templates) — customers ignore
-├── regression/suites/    # vc-qa: 110 CSV suites (~3,480 cases) under Frontend/ + Backend/ (44 module dirs)
+├── regression/suites/    # vc-qa: CSV suites under Frontend/ + Backend/, module-aligned dirs (`npm run suites:lint` prints the totals)
 ├── tests/                # vc-qa: Test cases by sprint/JIRA ticket
 ├── test-data/            # vc-qa: Alias registry + CSV fixtures
 ├── reports/              # vc-qa: Bug + regression reports

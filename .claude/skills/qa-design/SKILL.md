@@ -191,7 +191,7 @@ Audits produce 0–N findings. Decision tree for what to file:
 
 | Pattern | What to file |
 |---------|--------------|
-| One component, one violation | Individual bug via [/qa-bug](../../commands/qa-bug.md) tagged with the violated `BL-UI-NNN` |
+| One component, one violation | Individual bug via [/qa-bug](../../../plugins/vc-fix/commands/qa-bug.md) tagged with the violated `BL-UI-NNN` |
 | One component, multiple violations | ONE bug per component listing all violations — don't fragment |
 | Multiple components share the same violation (5+ components with off-token color, etc.) | ONE rollup bug describing the systemic drift. Title: `Design System Drift — [violation type] across [N] components`. Priority bumped to P1 |
 | Token resolution itself is broken | P1 bug — the design system layer is broken, not the components |

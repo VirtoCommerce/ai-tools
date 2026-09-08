@@ -119,9 +119,9 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | File | Tier | Notes |
 |------|------|-------|
 | `qa-status.md` | **A** | Read-only dashboard. Generic. |
-| `qa-env-check.md` | **A** | Env validation. Generic — driven by `.env` schema. |
-| `qa-bug.md` | **A** | Bug reproduction + JIRA. Generic. |
-| `qa-verify-fix.md` | **A** | Fix verification workflow. Generic. |
+| `qa-env-check.md` | **A** | Env validation. Generic — driven by `.env` schema. **Ships in `plugins/vc-fix/commands/` only** — the stale `.claude/` copy was removed 2026-09-08 (audit D1). |
+| `qa-bug.md` | **A** | Bug reproduction + tracker filing (Jira / Azure Boards). Generic. **`plugins/vc-fix/commands/` only** (2026-09-08, D1). |
+| `qa-verify-fix.md` | **A** | Fix verification workflow. Generic. **`plugins/vc-fix/commands/` only** (2026-09-08, D1). |
 | `qa-exploratory.md` | **B** | SBTM session entry. Examples are storefront domains. |
 | `qa-test.md` | **B** | Generic test entry for JIRA/feature/PR. |
 | `qa-test-lifecycle.md` | **B** | Unified pipeline — generic stages. |

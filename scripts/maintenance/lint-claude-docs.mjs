@@ -34,7 +34,7 @@ import { fileURLToPath } from 'node:url';
 export const BUDGET = { alwaysLoadedChars: 80_000, longestLineChars: 2_500, skillBodyWarnChars: 19_000 };
 
 // Ratchet baseline — measured 2026-09-08 right after PR 2. Lower a number when you fix findings; never raise one.
-export const BASELINE = { 'DOC-002': 4, 'DOC-003': 45, 'DOC-004': 22 };
+export const BASELINE = { 'DOC-002': 4, 'DOC-003': 43, 'DOC-004': 18 };
 
 export const GENERIC_SCRIPTS = new Set(['build', 'dev', 'lint', 'test', 'start', 'typecheck', 'storybook', 'preview', 'format', 'install', 'serve', 'watch']);
 export const PLACEHOLDER_RE = /XX|YYYY|NNN|<[^>]*>|\*|\{|Sprint-current|\.\.\.|…/;

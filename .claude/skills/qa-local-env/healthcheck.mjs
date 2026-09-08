@@ -9,7 +9,7 @@
 //      the admin bearer token — used to confirm a task-specific field resolves
 //      (e.g. VCST-5173: cart → items → configurationItems → configurationSection).
 //
-// Endpoints/creds follow the repo convention (see commands/qa-env-check.md):
+// Endpoints/creds follow the repo convention (see plugins/vc-fix/commands/qa-env-check.md):
 //   platform health = <back>/health   (NOT /api/platform/healthcheck — that 404s)
 //   token           = POST <back>/connect/token  grant_type=password client_id=internal-frontend
 //   xAPI            = POST <back>/graphql

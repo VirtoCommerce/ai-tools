@@ -3,7 +3,10 @@
     "browserName": "firefox",
     "isolated": true,
     "launchOptions": {
-      "headless": false
+      "headless": false,
+      "firefoxUserPrefs": {
+        "widget.windows.window_occlusion_tracking.enabled": false
+      }
     },
     "contextOptions": {
       "viewport": {

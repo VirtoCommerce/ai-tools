@@ -1,13 +1,15 @@
 # skills/ — Skill Directory
 
-> **41 skills**, each a `skills/<name>/SKILL.md` with YAML frontmatter and optional supporting
-> reference files. Discovery is **one level, flat — there are no category subfolders**; the four
-> categories below (VC Knowledge · Testing · QA Methodology · Development) are `[Category]` **tags in
-> each skill's `description`**, not directories. Breakdown: **1 VC Knowledge + 12 Testing +
-> 18 QA Methodology + 6 Development + 3 root-level** (uncategorized: `project-init`,
-> `run-vc-mcp-testing-module`, `vc-self-check`; `qa-local-env` is grouped under Testing but carries no
-> tag of its own). Note both `[QA Method]` and `[QA Methodology]` spellings exist in the wild — they are
-> the same category.
+> One skill per `skills/<name>/SKILL.md` with YAML frontmatter and optional supporting reference
+> files. Discovery is **one level, flat — there are no category subfolders**; the four categories
+> below (VC Knowledge · Testing · QA Methodology · Development) are `[Category]` **tags in each skill's
+> `description`**, not directories. Counts are derived, never transcribed (`CLAUDE.md` §Where the rules
+> live): `ls .claude/skills | wc -l` for the total,
+> `grep -ohE '^description: "?\[[A-Za-z ]+\]' .claude/skills/*/SKILL.md | sort | uniq -c` for the
+> per-category split. Skills without a tag are the root-level ones (`project-init`,
+> `run-vc-mcp-testing-module`, `vc-self-check`) plus `qa-local-env`, which is grouped under Testing but
+> carries no tag of its own. Both `[QA Method]` and `[QA Methodology]` spellings exist in the wild — they
+> are the same category.
 
 ## Directory Layout (flat)
 

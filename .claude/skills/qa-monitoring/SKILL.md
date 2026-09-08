@@ -8,7 +8,7 @@ argument-hint: "[frontend|backend|both] [--since=MIN] [--dry-run]"
 # /qa-monitoring — Online Bug Monitoring (methodology)
 
 Methodology + reference for the `/qa-monitoring` command and its headless twin
-`ci/run-monitor.ts`. The command file (`commands/qa-monitoring.md`) is the
+`ci/run-monitor.ts`. The command file (`plugins/vc-fix/commands/qa-monitoring.md`, shipped by the vc-fix plugin) is the
 terminal entry; this skill holds the data flow, the KQL probe library, the triage
 taxonomy, and the dedup model. **Detect-and-report only**: the flow stops at a
 report + Teams alert and a human decides whether to `/qa-bug` or `/qa-fix`.
@@ -80,7 +80,7 @@ NEEDS_REVIEW over REAL_BUG — a log line alone is not a defect.
 · `MODEL` · `DRY_RUN` (triage only — no repro/drafts).
 
 ## Cross-references
-- Command: `commands/qa-monitoring.md` · Twin: `ci/run-monitor.ts`
-- Bug handoff contract (`## Fix Routing`): `commands/qa-bug.md` Step 4 → `/qa-fix`
+- Command: `plugins/vc-fix/commands/qa-monitoring.md` · Twin: `ci/run-monitor.ts`
+- Bug handoff contract (`## Fix Routing`): `plugins/vc-fix/commands/qa-bug.md` Step 4 → `/qa-fix`
 - Reports policy + the `reports/monitoring/` category: `.claude/rules/reports.md`
 - Bug lifecycle after a confirmed draft: `/qa-bug` → `/qa-fix` → `/qa-verify-fix`

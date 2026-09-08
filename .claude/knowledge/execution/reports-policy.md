@@ -44,7 +44,7 @@ Four rules, each of which was a live fork:
 
 **Per-ticket folders may hold more than one file** (e.g. a storybook/a11y/bundle-size audit alongside `/qa-verify-fix`'s own report) because each covers a distinct check run against the same ticket — that is not the same failure as splitting one report across files. Each individual file still obeys its own cap below; don't open a new file for a check that fits inside an existing one in the same folder.
 
-**Two structured per-ticket artifacts are allowed alongside the narrative report, and are NOT counted against its line cap** — both are written by `/qa-verify-fix` (`.claude/commands/qa-verify-fix.md`), which is their contract; this rule exists so the policy and that command agree:
+**Two structured per-ticket artifacts are allowed alongside the narrative report, and are NOT counted against its line cap** — both are written by `/qa-verify-fix` (`plugins/vc-fix/commands/qa-verify-fix.md`), which is their contract; this rule exists so the policy and that command agree:
 
 | Artifact | What it is | Rules |
 |---|---|---|

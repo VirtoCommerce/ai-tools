@@ -126,8 +126,14 @@ jobs:
           FRONT_URL: ${{ secrets.FRONT_URL }}
           BACK_URL: ${{ secrets.BACK_URL }}
         run: |
-          # Run phases 1+2 only (regression skipped — it needs Docker)
-          npx tsx ci/run-full-cycle.ts || true
+          # Run phases 1+2 only (regression skipped — it needs Docker).
+          # Keep the exit code: `|| true` here meant even a manual run could never report red
+          # (audit 2026-09-07 D9). The suite extraction below still runs on failure; the step
+          # then exits with the pipeline's own status.
+          set +e
+          npx tsx ci/run-full-cycle.ts
+          CYCLE_RC=$?
+          set -e
 
           # Extract affected suites from sync output
           REPORT_DIR=$(ls -td reports/full-cycle/CYCLE-* 2>/dev/null | head -1)
@@ -138,6 +144,7 @@ jobs:
           else
             echo "affected_suites=" >> $GITHUB_OUTPUT
           fi
+          exit $CYCLE_RC
           echo "verdict=DONE" >> $GITHUB_OUTPUT
 
       - name: Commit test case updates

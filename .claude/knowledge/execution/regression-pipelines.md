@@ -24,7 +24,7 @@
 
 Beyond the testing modes above, there is an **online monitoring** pipeline that watches Azure Application Insights for live errors instead of executing test cases. Like the others it has an interactive + headless **twin** pair:
 
-- **Interactive:** `/qa-monitoring [frontend|backend|both] [--since=MIN] [--dry-run]` (`commands/qa-monitoring.md`)
+- **Interactive:** `/qa-monitoring [frontend|backend|both] [--since=MIN] [--dry-run]` (`plugins/vc-fix/commands/qa-monitoring.md`)
 - **Headless:** `ci/run-monitor.ts` (`npm run ci:monitor` / `ci:monitor:dry`) + `.github/workflows/monitor.yml`
 
 It queries both layers' App Insights resources (env-resolved `APPINSIGHTS_*`, never hardcoded), **deduplicates** errors via a fingerprint store (`reports/monitoring/.seen-fingerprints.json`, carried across CI runs by `actions/cache`), **triages** new/spiking signatures (`ci/agents/monitor-triage-agent.md`), **reproduces** HIGH-confidence bugs live via the QA experts, drafts bug reports with a `## Fix Routing` block, and reports to `reports/monitoring/MONITOR-*/` + Teams (`NOTIFY_MODE=monitor`). **Detect-and-report only** — it never files a tracker ticket and never auto-fixes; a human picks up the confirmed drafts via `/qa-bug` → `/qa-fix`. KQL probes live in `ci/monitoring/queries/`. Full methodology: the `/qa-monitoring` skill.

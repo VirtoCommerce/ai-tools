@@ -212,7 +212,7 @@ Shared knowledge files in `knowledge/` (28 files) — full annotated list in `.c
 
 ## Customizing Agents
 
-All 17 agents are flat `.md` files at the plugin root `agents/` (plugin agent discovery is non-recursive — no team subfolders): 11 QA + 4 BA + 4 Developers. The three per-team `shared-instructions.md` files and this README live under `knowledge/agents/` (a plain reference dir, not scanned as components). Shared knowledge files are in `knowledge/` (28 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
+All agents are flat `.md` files under `.claude/agents/` (agent discovery is non-recursive — no team subfolders); the roster and the QA / BA / Developers split are the tables above, and `ls .claude/agents` is the count. The three per-team `shared-instructions.md` files and this README live under `knowledge/agents/` (a plain reference dir, not scanned as components). Shared knowledge files are in `knowledge/` (28 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior.
 
 ---
 
