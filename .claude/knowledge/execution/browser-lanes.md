@@ -111,11 +111,21 @@ lane**. Leaving it unstated is what produced the VCST-5733 loss: the agent infer
 agent left to guess its own auth path burns a turn discovering the lane cannot do it. Never tell an agent
 to type a plaintext password, and never work around a permission denial on a credential.
 
-**A subagent does not inherit `DesignSync`.** Same run, same lane: the `vs. DESIGN` axis was briefed at
-`ui-ux-expert` after the orchestrator had verified `DesignSync` in its own session. Subagents do not get
-it, so that axis is **unrunnable inside a subagent** and must report `SKIPPED` — `unresolved` is then
-*unknown*, never zero. Either the orchestrator reads the spec itself and passes the declared
-expectations into the brief **as data**, or the axis runs in the main session.
+**A subagent CAN read `DesignSync` — but only after `ToolSearch select:DesignSync`.** The tool is
+**deferred**: its name arrives in a system-reminder carrying no parameter schema, so an agent that
+consults its own tool list finds nothing callable and concludes the tool is unavailable. That is what
+produced the original finding recorded here — the `vs. DESIGN` axis was briefed at `ui-ux-expert` after
+the orchestrator had verified `DesignSync` in its own session, the subagent reported it missing, and this
+file wrote it up as non-inheritance. **Re-probed 2026-09-08** against project `518d0b90-…`: a dispatched
+subagent that calls `ToolSearch` with `select:DesignSync` first receives the schema, and both
+`get_project` and `get_file` return real content — no permission prompt, no auth error. The
+`/design-consent` grant IS inherited; the schema is what is not.
+
+So the axis is **runnable inside a subagent, on one condition**: the brief must tell it to load the
+schema via `ToolSearch select:DesignSync` before its first `DesignSync` call, or it will re-derive the
+same wrong conclusion and report a false `SKIPPED`. Having the orchestrator read the spec and pass the
+declared expectations into the brief **as data** remains the safer default — it keeps `unresolved`
+countable and the extraction reviewable — but it is now a choice, not a constraint.
 
 ## Storybook Visual Regression
 

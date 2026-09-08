@@ -159,7 +159,7 @@ the implementation matches the design — a spec match never rescues an invarian
 *conflicts* with a BL-UI invariant or WCAG criterion is `AMBIGUOUS` → escalate to
 `qa-lead-orchestrator`, don't silently obey it.
 
-**Availability.** `DesignSync` needs `/design-login`, which requires an interactive terminal — so this
+**Availability.** `DesignSync` needs `/design-consent`, which requires an interactive terminal — so this
 axis **cannot run in Claude Code on the web or in CI**. There, call `designAxisSkipped(reason)` and
 continue the rest of the audit. `unresolved > 0` downgrades an otherwise-clean axis to WARN, and the
 count belongs in the report: partial coverage stated as full coverage is the failure mode.

@@ -102,7 +102,7 @@ Quick decision tree for the project-scoped `vc-qa` surface under `.claude/` — 
 ### Specialized Testing (Skills — domain expertise)
 - `/qa-storybook` — Visual regression, responsive breakpoints, state variations
 - `/qa-accessibility` — WCAG 2.2 AA audits (POUR + the 2.2 additions, axe-core, Lighthouse, keyboard walk)
-- `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project via `DesignSync`; reports `SKIPPED`, never PASS, where `/design-login` is unavailable)
+- `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project via `DesignSync`; reports `SKIPPED`, never PASS, where `/design-consent` is unavailable)
 - `/qa-api` — REST + GraphQL xAPI: reference lookup, execution, case generation
 - `/qa-perf-measure`, `/qa-monitoring`, `/qa-triage-results`, `/qa-deploy-pr`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-bundle-check`, `/qa-local-env` — the skills backing the same-named commands above
 

@@ -118,7 +118,7 @@ what makes the axis safe to switch on:
 | A **`BL-A11Y-*` invariant FAIL** on a **functional / feature / E2E** ticket | **never blocks** — filed as its **own standalone ticket** (§7a) | `visual.a11y_findings[]` |
 | A **`vs. DESIGN` `DRIFT` / `MISSING` / `UNSPEC` / `KNOWN_DIVERGENCE`** | **advisory** — reported, never filed by this rule, **never** fails 5c | `visual.advisory[]` |
 | **`AMBIGUOUS`** — the spec contradicts an invariant or a WCAG criterion | escalate to the human in the 5e report; **never** resolve it by obeying the spec | `visual.advisory[]` + named in the report |
-| **`SKIPPED` / `INCONCLUSIVE`** (no `/design-login`; axe blocked by CSP) | an absent measurement | `visual.axes.*.skipped_reason` — **never** reported as clean |
+| **`SKIPPED` / `INCONCLUSIVE`** (no `/design-consent`; axe blocked by CSP) | an absent measurement | `visual.axes.*.skipped_reason` — **never** reported as clean |
 
 Precedence is `BL-UI / BL-A11Y invariant > design spec > UX heuristic`: **a spec match never rescues an
 invariant FAIL.** The reason drift only advises is that most drift rows are cosmetic px deltas where the

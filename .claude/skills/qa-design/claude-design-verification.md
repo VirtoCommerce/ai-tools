@@ -95,9 +95,25 @@ whose `@dsCard group` matches the component under audit), not the whole project.
 
 ### Availability — and why a skip is never a pass
 
-`DesignSync` needs design-system authorization via `/design-login`, which **requires an
-interactive terminal**. It is therefore unavailable in Claude Code on the web and in CI; the
-call fails with an authorization error naming that cause.
+**Pre-flight — grant access BEFORE the run, in the MAIN session.** `DesignSync` reads only projects
+the current session has been authorized for, and that grant is taken by a slash command:
+
+1. **Sign in** to the Claude Design account that owns the project — the one the ticket's Prototype
+   link points at (share access is enough; see the `list_projects` caveat above).
+2. Run **`/design-consent`**. It answers *"Design agent access granted for your Claude Design
+   projects."*
+3. Undo when the run is over: **`/design revoke`**.
+
+**Take the consent in the MAIN session — a subagent cannot run a slash command.** The grant itself is
+then inherited: a dispatched agent *can* call `DesignSync`, but only after loading the deferred schema
+with **`ToolSearch select:DesignSync`** — without that step it sees no callable tool and reports a false
+`SKIPPED`. So either brief that `ToolSearch` step explicitly, or have the orchestrator extract the spec
+and pass the expectations down **as data** (the safer default: `unresolved` stays countable and the
+extraction reviewable). Verified 2026-09-08 —
+[`browser-lanes.md`](../../knowledge/execution/browser-lanes.md) §*A subagent CAN read `DesignSync`*.
+
+`/design-consent` **requires an interactive terminal**. The axis is therefore unavailable in Claude
+Code on the web and in CI; the call fails with an authorization error naming that cause.
 
 When the source cannot be reached, emit `designAxisSkipped(reason)` and carry on with the rest
 of the audit. **Never** report the design axis as PASS, and never omit it silently:

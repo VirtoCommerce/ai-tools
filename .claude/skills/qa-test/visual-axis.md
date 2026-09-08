@@ -94,13 +94,19 @@ below.
 
 **Two things the brief MUST also carry, each of which cost a real run when it did not.**
 
-1. **The `vs. DESIGN` expectations as DATA — a subagent cannot read the spec itself.**
-   `.claude/knowledge/execution/browser-lanes.md` §*A subagent does not inherit `DesignSync`*: the tool is unavailable
-   inside a dispatched agent, so **the axis is structurally unrunnable there** and can only ever return
-   `SKIPPED`. Dispatching it and reading that `SKIPPED` as normal is how an axis reports clean forever
-   while never running once. So either the **orchestrator reads the design project itself and passes the
-   declared tokens / control geometry / icon mapping into the brief as data**, or the axis runs in the
-   main session. `unresolved` is then *unknown*, never zero.
+1. **The `vs. DESIGN` expectations, and how the dispatched agent gets at them.** Two prerequisites, both
+   on the orchestrator: it must have signed in to the owning Claude Design account and run
+   **`/design-consent`** in its own session — at the top of Step 4, never after the dispatch, since a
+   subagent cannot run a slash command
+   (`.claude/skills/qa-design/claude-design-verification.md` §Availability). The grant is then inherited,
+   but `DesignSync` is a **deferred** tool: an agent that does not first call
+   **`ToolSearch select:DesignSync`** sees no callable tool and returns a **false `SKIPPED`** — which,
+   read as normal, is how an axis reports clean forever while never running once
+   (`.claude/knowledge/execution/browser-lanes.md` §*A subagent CAN read `DesignSync`*). So the brief
+   picks one and says so: **name the `ToolSearch` step** and let the agent read the project, or have the
+   **orchestrator read it and pass the declared tokens / control geometry / icon mapping in as data** —
+   the default, because `unresolved` stays countable. Relayed by hand, `unresolved` is *unknown*, never
+   zero.
 2. **No credential variable NAMES on this lane — and the brief must NAME the auth path.** `--secrets` is a
    `@playwright/mcp` flag; Chrome DevTools MCP has no equivalent, so typing `TEST_USER_PASSWORD` submits
    that literal string and the sign-in is refused. Measured: VCST-5733's visual axis was briefed exactly
@@ -146,7 +152,7 @@ severity: [`triage.md`](triage.md) §7a.
 Two arrays rather than one severity field, because that is what makes the blocking rule auditable from the
 artifact instead of only from this prose.
 
-**`SKIPPED` is the common case, not an error.** `DesignSync` needs `/design-login`, which requires an
+**`SKIPPED` is the common case, not an error.** `DesignSync` needs `/design-consent`, which requires an
 interactive terminal — so the `vs. DESIGN` axis is unavailable in Claude Code on the web and in CI. It
 records `SKIPPED` + the reason there and the other two axes carry on. Same discipline as `tokens:check`
 exiting `2` on an unreachable source rather than passing. A non-zero `unresolved` count from the extractor

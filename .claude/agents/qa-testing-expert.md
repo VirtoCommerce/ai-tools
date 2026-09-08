@@ -182,7 +182,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 | Console | `browser_console_messages` | JS errors, Vue/Angular warnings |
 | Network | `browser_network_requests` | API failures, timing |
 | Performance | Chrome DevTools `performance_*` | Core Web Vitals |
-| **Claude Design spec** | `DesignSync` → `verify-design-spec.ts` | Declared tokens, control geometry, icon name→glyph mapping. Needs `/design-login` — unavailable in web sessions and CI, where the axis reports `SKIPPED` |
+| **Claude Design spec** | `DesignSync` → `verify-design-spec.ts` | Declared tokens, control geometry, icon name→glyph mapping. Needs `/design-consent` — unavailable in web sessions and CI, where the axis reports `SKIPPED` |
 | Figma | Figma MCP | **Fallback only** — manual screenshot reference |
 | API | Postman MCP | Direct API testing |
 
@@ -286,7 +286,7 @@ Store reports in `reports/regression/` or `reports/bugs/`. Use **compact format*
 | Browser MCP fails mid-test | Switch to fallback browser (firefox → chrome → edge); note in report |
 | Environment unreachable | Retry 3×, then mark remaining tests BLOCKED; escalate to qa-lead |
 | Test data missing/stale | Use `/qa-seed-data` to regenerate; if blocked, skip with BLOCKED status |
-| Design source unauthorized (`/design-login` unavailable — the default in web sessions and CI) | `designAxisSkipped(reason)`: report the design axis as **SKIPPED with the reason** and finish the rest of the run. Never report it as PASS and never omit it — "we compared and it matched" must stay distinguishable from "we could not compare" |
+| Design source unauthorized (`/design-consent` unavailable — the default in web sessions and CI) | `designAxisSkipped(reason)`: report the design axis as **SKIPPED with the reason** and finish the rest of the run. Never report it as PASS and never omit it — "we compared and it matched" must stay distinguishable from "we could not compare" |
 | Console flooded with errors | Capture first 10 unique errors; correlate with test failures; file single bug if systemic |
 
 ### Scope Boundaries

@@ -104,12 +104,14 @@ Otherwise, discover the Storybook URL using **convention first, GitHub fallback*
 
 Runs on every component/page/flow audit. `--design` only changes step 1.
 
+**0. Pre-flight, in THIS session before anything below:** be signed in to the Claude Design account that owns the project, then run **`/design-consent`** (undo: `/design revoke`). `DesignSync` returns an authorization error until you do, and a subagent can neither run the command nor inherit the grant — [claude-design-verification.md](../skills/qa-design/claude-design-verification.md) §Availability.
+
 1. Resolve the project id: `--design <uuid>` if given, else **from the ticket** — read its **Prototype** link (`claude.ai/design/p/<uuid>?file=…`), and note the `file=` param, which names the artboard the ticket itself considers authoritative. Then `get_project` to confirm `PROJECT_TYPE_DESIGN_SYSTEM`. **Do not search `list_projects` for it** — that method returns only projects the caller can *write* to, so a share-access design system is invisible to discovery and a name search resolves to the wrong project or none. **Do not fall back to a global default**: there is none (see the `--design` note above), and a stale one is worse than a `SKIPPED`. A ticket carrying no design link, and no `--design`, ⇒ report `SKIPPED` with that as the reason. A **Figma** link is not a substitute — Figma is a manual fallback only, so an unread Figma node is an `unresolved` entry, never a pass. Read the artboard scope table in [claude-design-verification.md](../skills/qa-design/claude-design-verification.md) §1 to pick which artboards to fetch.
 2. `DesignSync get_project { projectId }` → **confirm `type: PROJECT_TYPE_DESIGN_SYSTEM`**. That type is immutable at creation, so a regular project is not a design system and never will be — stop and say so rather than reading it anyway.
 3. `DesignSync list_files { projectId }` → build the artboard scope from this structural listing. Prefer the artboard whose `@dsCard group` matches the target; if the user named an artboard explicitly, use exactly that one.
 4. `DesignSync get_file { projectId, path }` for **only** the in-scope artboards (256 KiB cap each). `get_file` pulls content into context — do not sweep the project.
 
-**If the source cannot be resolved** — most commonly because `DesignSync` needs `/design-login`, which requires an interactive terminal and so is unavailable in Claude Code on the web and in CI — do **not** abort the run. Record the reason, pass it to the agent as `designSkipReason`, and let Phase C report `SKIPPED` while every other phase proceeds normally.
+**If the source cannot be resolved** — most commonly because `DesignSync` needs `/design-consent`, which requires an interactive terminal and so is unavailable in Claude Code on the web and in CI — do **not** abort the run. Record the reason, pass it to the agent as `designSkipReason`, and let Phase C report `SKIPPED` while every other phase proceeds normally.
 
 Ambiguity (two projects match the name) → ask which one; never guess.
 
