@@ -8,6 +8,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `bl:extract` — hand agents the invariants they need, not a 386 KB path — 2026-09-08
+
+First slice of the audit's **runtime** token work (§6 items 7–11), which targets per-dispatch reads
+rather than the always-loaded tier that PRs 1–3 re-tiered.
+
+~41 briefs across the agent corpus point at `.claude/knowledge/oracles/business-logic.md` by path, and
+every agent that follows one reads all 216 invariants (~96K tokens) to use the three or four in its
+domain — once per dispatch, in each agent's own context.
+
+`npm run bl:extract -- --domain cart` slices the oracle **verbatim** (`--id`, `--severity`, `--json`,
+`--list`, `--stats` too). Measured: 15 of 216 invariants, 7.5% of the file, ~7.2K tokens against ~96K.
+The output is the oracle's own markdown by line range, never a re-rendering, so `BL-*` ids keep their
+citation contract with the suites and no second, drifting copy is created.
+
+Three properties worth knowing:
+
+- **It reuses the gate's parser.** `ENTRY_RE` / `DOMAIN_RE` are imported from `lint-bl.ts`, and
+  `scripts/unit/extract-bl.test.ts` compares id sets between the two over the real oracle — an extract
+  cannot silently drop an invariant `bl:lint` can see.
+- **An extract declares itself a subset**, listing its ids. `knowledge/agents/qa/shared-instructions.md`
+  §Business Logic Reference now says: if the brief already carries the invariants, do not re-read the
+  oracle — and "not in my extract" is never evidence that no rule applies.
+- **A filter matching nothing exits 2** rather than emitting an empty brief, because an agent handed
+  zero invariants reports "no rule applies", which is a false clean.
+
+Still to come in this slice: the §3b authoring-pack generalisation to every fan-out, per-lane
+`/qa-regression` dispatch, and `--release-sweep` on 5r/C2.
+
+---
+
 ## The `playwright-firefox` lane is open to click-driven work again — 2026-09-08
 
 Follows the root cause in the entry below. The ban that stood since 2026-06 — *"never schedule a

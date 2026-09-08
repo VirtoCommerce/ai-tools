@@ -56,12 +56,14 @@ const REQUIRED_FIELDS = ["Rule", "Verify", "Violation signal", "Agents"] as cons
 // (BL-B2B-006), and a heading may carry MORE than one bracket tag (e.g.
 // `[P1-ux]` `[GOLDEN RULE]`) — so capture the whole title+tags tail and extract
 // the severity from any bracket token below (BLL-002 flags a genuinely absent one).
-const ENTRY_RE = /^###\s+(BL-[A-Z0-9]+-\d+[A-Z]?)\s*:\s*(.*)$/;
-const DOMAIN_RE = /^##\s+Domain\s+\S+\s*:.*$/;
+// Exported so `extract-bl.ts` slices the SAME entries this gate parses — one definition of "what a
+// BL entry is", per the GOLDEN RULE. Both are non-global, so `.test()` carries no `lastIndex` state.
+export const ENTRY_RE = /^###\s+(BL-[A-Z0-9]+-\d+[A-Z]?)\s*:\s*(.*)$/;
+export const DOMAIN_RE = /^##\s+Domain\s+\S+\s*:.*$/;
 const BL_TOKEN_RE = /\bBL-[A-Z0-9]+-\d+[A-Z]?\b/g;
 const BRACKET_TAG_RE = /`\[([^\]]+)\]`/g;
 
-interface Invariant {
+export interface Invariant {
   id: string;
   domainPrefix: string; // e.g. "BL-CART"
   seq: number;

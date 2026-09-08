@@ -158,6 +158,8 @@
     "tc:yield": "npx tsx scripts/test-cases/report-yield.ts",
     "bl:lint": "npx tsx scripts/knowledge/lint-bl.ts",
     "bl:audit:collect": "npx tsx scripts/knowledge/lint-bl.ts --json",
+    "bl:extract": "npx tsx scripts/knowledge/extract-bl.ts",
+    "bl:extract:list": "npx tsx scripts/knowledge/extract-bl.ts --list",
     "ecl:lint": "npx tsx scripts/knowledge/lint-ecl.ts",
     "ecl:audit:collect": "npx tsx scripts/knowledge/lint-ecl.ts --json",
     "oracles:rank": "npx tsx scripts/knowledge/rank-oracles.ts",

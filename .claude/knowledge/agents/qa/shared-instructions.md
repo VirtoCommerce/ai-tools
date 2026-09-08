@@ -27,9 +27,20 @@ Your prompt is structured as four synergistic layers — business logic (invaria
 
 ## Business Logic Reference
 
-> **Reference:** `knowledge/oracles/business-logic.md` — testable business invariants across 17 domains, 108 rules.
+> **Reference:** `knowledge/oracles/business-logic.md` — testable business invariants, grouped into `## Domain N: … (BL-X)` sections (`npm run bl:extract:list` prints the domains and their sizes; counts are derived, never transcribed).
 
-When a test result is ambiguous, check business-logic.md before classifying. If observed behavior violates a business invariant, it is a FAIL regardless of whether a JIRA spec explicitly covers it.
+When a test result is ambiguous, check the invariants before classifying. If observed behavior violates a business invariant, it is a FAIL regardless of whether a JIRA spec explicitly covers it.
+
+**IF YOUR BRIEF ALREADY CONTAINS THE INVARIANTS, DO NOT RE-READ THE ORACLE.** A dispatching orchestrator
+can paste the relevant domain in as text with `npm run bl:extract -- --domain <d>`; an extract is the
+oracle's own markdown, sliced verbatim, and carries a header saying so. Re-opening the 386 KB file to
+re-read what you were handed costs ~96K tokens of your context and adds nothing — the extract IS the
+source, character for character. Two conditions, both real:
+
+- **The extract is a SUBSET.** It states which ids it contains. If the work turns out to touch a domain
+  it does not cover, ask for that domain (or read the oracle) rather than concluding no rule applies —
+  "not in my extract" is never evidence that no invariant exists.
+- **No extract in the brief ⇒ read the file**, scoped to the domains your task touches.
 
 ## Judge — Pass/Fail Classification
 
@@ -120,7 +131,7 @@ Reference files — read on-demand before each testing area, not all upfront:
 
 | Area | File |
 |------|------|
-| Business Logic Invariants | `knowledge/oracles/business-logic.md` |
+| Business Logic Invariants | `knowledge/oracles/business-logic.md` — **or the extract already in your brief** (`bl:extract`, see §Business Logic Reference) |
 | Platform Patterns | `knowledge/api/platform-patterns.md` |
 | Performance Thresholds | `knowledge/execution/performance-thresholds.md` |
 | Browser Quirks | `knowledge/automation/browser-quirks.md` |

@@ -133,7 +133,7 @@ const featureGatedVars = {
 const missingCore = coreRequiredVars.filter(v => !process.env[v]);
 if (missingCore.length > 0) {
     console.error('[config] Missing CORE environment variables (required for any run):', missingCore.join(', '));
-    console.error('[config] Run /project-init to generate .env.${TEST_ENV} + .env.local, or edit them by hand (npm run env:check to verify).');
+    console.error(`[config] Run /project-init to generate .env.${TEST_ENV} + .env.local, or edit them by hand (npm run env:check to verify).`);
     process.exit(1);
 }
 
