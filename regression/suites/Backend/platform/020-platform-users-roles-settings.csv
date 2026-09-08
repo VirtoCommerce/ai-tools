@@ -621,3 +621,74 @@ PLAT-093,"Account Lockout Threshold Boundary — 4th Failed Attempt Allowed, 5th
 [WAIT] Wait for response","[STATUS] GET .../locked after exactly 4 failed attempts returns {locked: false} — the account is NOT locked one attempt below threshold
 [STATE] The 4 wrong-password attempts each return 400/401 (invalid_grant), never 200
 [STATE] A CORRECT-password attempt made while only 4 failures are on record (below the 5-attempt threshold) succeeds with HTTP 200 and a non-empty access_token — proving the boundary is exactly at 5, not 4",[API] GET .../locked confirms locked=false at the 4-attempt boundary; [NETWORK] No 5xx on any attempt,Account already shows locked=true after only 4 failed attempts (threshold enforced one attempt too early); the correct-password attempt after 4 failures is rejected,[TEARDOWN] Unlock account via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock if any lock occurred; delete AGENT-TEST- user if created,smoke-baseline,Draft
+PLAT-094,Password reset deep link stays on the reset page for an anonymous user,Platform > Password Reset,Critical,,ECL-4.2,"Disposable platform user exists (AGENT-TEST- prefix); a fresh reset link for it is at hand. Reset link is taken from Admin SPA > Notifications > sent-notification journal (renders even when SMTP delivery fails), not from a mailbox",operator={{ADMIN}}/{{ADMIN_PASSWORD}}; target=AGENT-TEST platform user; link=#!/resetpassword/{userId}/{token},"[NAV] Navigate to {{FRONT_URL}}/catalog in one tab
+[ACT] Open a second tab on a heavy page ({{FRONT_URL}}/catalog) and, WITHOUT waiting for it to finish loading, open the reset link in a NEW tab — the redirect only wins while the Admin SPA bootstrap is competing for CPU
+[WAIT] Watch the address bar for 10 seconds without interacting with the page
+[ACT] Repeat the whole step 3 times, each time reloading the heavy page first and using a freshly requested link","[NAV] Address bar stays on #!/resetpassword/{userId}/{token} for the full 10 seconds — it must NOT change to #!/login
+[DOM] Reset form is visible with 'New password' and 'Repeat password' fields
+[STATE] All 3 repetitions behave identically","[CONSOLE] A 401 on api/platform/settings/... may appear and is expected for an anonymous visitor — it must not trigger navigation
+[NETWORK] api/platform/security/users/{userId}/validatepasswordresettoken returns 200",Address bar flips to #!/login on its own after ~0.5-1s; reset form flashes and disappears; page ends on the login form,Delete the disposable user via Admin SPA > Security > Users,VCST-5900; VP-9245; GH vc-platform#3086; fixed in Platform 3.1066.0-pr-3111; verified live on vcptcore-qa 2026-09-08,Draft
+PLAT-095,"Password reset with an invalid or expired token shows an error card, not a redirect",Platform > Password Reset,High,,ECL-4.2,No authentication. Any syntactically valid userId with a garbage token.,link=#!/resetpassword/00000000-0000-0000-0000-000000000000/INVALIDTOKEN,"[NAV] Navigate to {{FRONT_URL}}/catalog in one tab
+[ACT] Open a second tab on a heavy page ({{FRONT_URL}}/catalog) and, WITHOUT waiting for it to finish loading, open the reset link in a NEW tab — the redirect only wins while the Admin SPA bootstrap is competing for CPU
+[WAIT] Watch the address bar for 10 seconds","[NAV] Address bar stays on #!/resetpassword/... — no redirect to #!/login
+[DOM] Error card shows 'Reset password token is invalid or expired' plus the hint 'This password reset link is no longer valid. Request a new one to continue.'
+[DOM] Buttons 'Back to sign in' and 'Request a new link' are both present
+[DOM] No password input fields are rendered",[NETWORK] validatepasswordresettoken responds; a non-2xx here is still expected to render the error card rather than navigate away,Page redirects to login; page renders blank with no card; password fields shown for an invalid token,,VCST-5900; verified live on vcptcore-qa 2026-09-08,Draft
+PLAT-096,Password reset completes with a valid token and the new password works,Platform > Password Reset,Critical,,ECL-4.2,"Disposable platform user with Admin-UI access exists, created with {{DEFAULT_TEST_PASSWORD}}. Reset link is taken from Admin SPA > Notifications > sent-notification journal (renders even when SMTP delivery fails), not from a mailbox",target=AGENT-TEST platform user; old={{DEFAULT_TEST_PASSWORD}}; new={{TEST_USER_PASSWORD}},"[NAV] Open the reset link for the disposable user
+[ASSERT] Reset button is disabled while the fields are empty
+[ACT] Enter {{TEST_USER_PASSWORD}} into 'New password'
+[ACT] Enter the same value into 'Repeat password'
+[ACT] Click Reset
+[WAIT] Wait for the result card
+[ACT] Click Sign in
+[ACT] Log in as the disposable user with {{TEST_USER_PASSWORD}}","[DOM] Success card shows 'Your password has been reset' with a single 'Sign in' button
+[NAV] 'Sign in' navigates to #!/login
+[STATE] Login with the NEW password succeeds
+[STATE] Login with the OLD password is rejected",[NETWORK] The reset request returns 200; no 4xx/5xx on submit,Reset click does nothing; success card never appears; new password rejected at login; old password still works,Delete the disposable user via Admin SPA > Security > Users,"VCST-5900; the dialog was rewritten in the same change, so the submit path is new code; verified live on vcptcore-qa 2026-09-08",Draft
+PLAT-097,Reset button stays disabled until both password fields are filled,Platform > Password Reset,Medium,,ECL-4.2,A valid reset link is open on the reset form.,new={{TEST_USER_PASSWORD}},"[ASSERT] Reset button is disabled with both fields empty
+[ACT] Fill only 'New password'
+[ASSERT] Reset button is still disabled
+[ACT] Fill 'Repeat password' with the same value
+[ASSERT] Reset button becomes enabled","[DOM] Reset button carries the disabled state until both fields hold a value
+[DOM] Enabling happens without a page reload",[CONSOLE] No errors while typing,Reset enabled on empty fields; button never enables with both fields filled,,VCST-5900; disabled/enabled transition observed live on vcptcore-qa 2026-09-08,Draft
+PLAT-098,Password reset token is single-use — a consumed link is rejected,Platform > Password Reset,Medium,,ECL-4.2,"PLAT-096 has just completed successfully, so its link is consumed.",link=the exact link used in PLAT-096,"[NAV] Open the same reset link a second time
+[WAIT] Wait for the card to render","[DOM] Error card shows 'Reset password token is invalid or expired'
+[NAV] Address bar stays on #!/resetpassword/... — no redirect to login
+[STATE] The password set in PLAT-096 remains valid — the second visit changes nothing",[NETWORK] validatepasswordresettoken rejects the consumed token,"Reset form is shown again for a consumed token, allowing a second password change from one link",,VCST-5900; verified live on vcptcore-qa 2026-09-08,Draft
+PLAT-099,'Request a new link' opens the forgot-password page and stays there,Platform > Password Reset,Medium,,ECL-4.2,The invalid-token error card from PLAT-095 is on screen.,,"[ACT] Click 'Request a new link'
+[WAIT] Watch the address bar for 10 seconds","[NAV] Address bar becomes #!/forgotpassword and STAYS there — this state is anonymous-allowed too, so it must not be redirected to login
+[DOM] 'Forgot your password?' form is visible with a 'Login or email' field
+[DOM] Submit is disabled while the field is empty",[CONSOLE] No navigation-triggering errors,Page bounces from #!/forgotpassword to #!/login; form does not render,,VCST-5900; verified live on vcptcore-qa 2026-09-08,Draft
+PLAT-100,'Back to sign in' leaves the reset page deliberately,Platform > Password Reset,Low,,ECL-4.2,Either the reset form or the invalid-token card is on screen.,,"[ACT] Click 'Back to sign in'
+[WAIT] Wait for navigation","[NAV] Address bar becomes #!/login and the login form renders
+[STATE] This navigation is user-initiated and is the expected behaviour — do not report it as the VCST-5900 defect, which is an UNPROMPTED redirect",,Button does nothing; navigates somewhere other than the login page,,"VCST-5900; authored from the shipped dialog, button not exercised during the 2026-09-08 verification",Draft
+PLAT-101,Mismatched passwords are not accepted on the reset form,Platform > Password Reset,Medium,,ECL-4.2,A valid reset link is open on the reset form.,new={{TEST_USER_PASSWORD}}; repeat={{DEFAULT_TEST_PASSWORD}} (deliberately different),"[ACT] Enter {{TEST_USER_PASSWORD}} into 'New password'
+[ACT] Enter {{DEFAULT_TEST_PASSWORD}} into 'Repeat password'
+[ACT] Attempt to submit","[DOM] The mismatch is surfaced to the user (validation message or a blocked Reset button)
+[STATE] The password is NOT changed — the old password still authenticates
+[NAV] Page stays on the reset page",[NETWORK] No successful reset request is sent for mismatched input,"Reset succeeds with mismatched values; no feedback and no state change, leaving the user unsure what happened",,"VCST-5900; authored from the shipped dialog, not exercised during the 2026-09-08 verification",Draft
+PLAT-102,Forgot password request confirms with a sent-email card,Platform > Password Reset,High,,ECL-4.2,No authentication. A disposable platform user (AGENT-TEST- prefix) exists.,login=the disposable user login or email,"[NAV] Navigate to {{BACK_URL}}/#!/forgotpassword
+[ASSERT] Submit is disabled while 'Login or email' is empty
+[ACT] Enter the disposable user login
+[ASSERT] Submit becomes enabled
+[ACT] Click Submit
+[WAIT] Wait for the result card","[DOM] Green confirmation card reads 'Email with instructions has been sent to you'
+[DOM] A single 'Back to sign in' button replaces the form; the input and Submit are gone
+[NAV] Page stays on #!/forgotpassword
+[STATE] A password-reset notification for that user appears in Admin SPA > Notifications journal",[NETWORK] The forgotpassword request returns 2xx; no 4xx/5xx,Submit does nothing; form stays with no feedback; a raw error is shown instead of the confirmation card,Delete the disposable user via Admin SPA > Security > Users,VCST-5900; state from the developer screenshots; confirmation card verified live on vcptcore-qa 2026-09-08,Draft
+PLAT-103,Forgot password does not reveal whether an account exists,Platform > Password Reset,High,,ECL-4.2,No authentication. Use a login that certainly does not exist.,login=agent-test-nonexistent-<random>,"[NAV] Navigate to {{BACK_URL}}/#!/forgotpassword
+[ACT] Enter a login that does not exist
+[ACT] Click Submit
+[WAIT] Wait for the result card","[DOM] The SAME green card 'Email with instructions has been sent to you' is shown as for a real account — the response must not distinguish the two
+[DOM] No 'user not found' wording anywhere on the page
+[NAV] Page stays on #!/forgotpassword",[NETWORK] Response status and body are indistinguishable from the existing-user case — an attacker must not be able to enumerate accounts from either the UI or the response,Card says the account was not found; different status code or visibly different response for a missing user; page redirects,,VCST-5900; verified live on vcptcore-qa 2026-09-08 — a nonexistent login returned the identical confirmation,Draft
+PLAT-104,Repeat forgot-password request is throttled with a countdown,Platform > Password Reset,Medium,,ECL-4.2,"MUST use an EXISTING account. Verified 2026-09-08: with a nonexistent login two consecutive submits both returned the success card and NO countdown appeared, so a run against a fake login passes this case without ever exercising the throttle.",login=an existing platform user login (e.g. the disposable AGENT-TEST- user),"[NAV] Navigate to {{BACK_URL}}/#!/forgotpassword
+[ACT] Submit a reset request for the existing user
+[ACT] Click 'Back to sign in', return to #!/forgotpassword and enter the SAME login again
+[ASSERT] Read the throttle notice and the state of Submit
+[WAIT] Wait for the countdown to run out
+[ACT] Submit again","[DOM] An amber notice reads 'You can try again in MM:SS' with the entered login still in the field
+[DOM] Submit is disabled while the countdown is running
+[STATE] The countdown decreases toward 00:00
+[STATE] After it expires, a new request is accepted again
+[NAV] Page stays on #!/forgotpassword throughout",[NETWORK] No new forgotpassword request is sent while the countdown is active,Unlimited resends with no notice (mail-bombing a real user); countdown never expires so the user is locked out of resetting; Submit stays enabled and fires requests behind the notice,Delete the disposable user via Admin SPA > Security > Users,"VCST-5900; state from the developer screenshots (countdown shown for login ""admin""); throttle itself NOT exercised during the 2026-09-08 verification — needs an existing account",Draft
