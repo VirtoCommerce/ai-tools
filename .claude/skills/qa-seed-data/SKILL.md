@@ -124,7 +124,7 @@ Reuse existing `VC QA Environment` or create one per [`../qa-postman/variables-a
 
 **For `full`:** the folders above seed synthetic `AGENT-TEST-*` entities. To seed the entire `test-data/` directory instead, follow `test-data-generation.md` §Full Profile — Seed All `test-data/` Fixtures — its seed-order table maps every CSV-backed source to its entity + endpoint, flags reference-only sources, and requires idempotent look-up-then-create so pinned `@td()` IDs survive. CMS pages (UI-only) and order/quote-state fixtures (admin-transition) are seeded outside Postman by `qa-frontend-expert`/`qa-backend-expert`.
 
-**Teardown collection:** same single-call approach, reverse dependency order (see `test-data-generation.md` §Teardown Collection).
+**Teardown collection:** same single-call approach, reverse dependency order (see `test-data-generation.md` §Teardown — Reverse Deletion Order).
 
 ### Step 5 — Execute (out-of-band)
 The Postman MCP cannot execute collections. Pick a runner — see [`qa-postman/execution.md`](../qa-postman/execution.md) for full details. Quickest path:

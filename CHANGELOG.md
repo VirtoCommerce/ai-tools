@@ -8,6 +8,71 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The doc gate was measuring the wrong thing — all three ratchets now at zero — 2026-09-08
+
+`npm run context:check` ratchets three rules over `CLAUDE.md` + `.claude/**`. **All three were
+comparing a citation against the wrong thing**, so each carried a mix of phantom findings and real ones
+— and the phantoms are what pinned the baselines (`DOC-002: 4`, `DOC-003: 43`, `DOC-004: 18`), which in
+turn hid the real ones. A ratchet that cannot reach zero is worse than no ratchet: it reports noise on
+every run and gates nothing.
+
+**DOC-003 checked the label, from the wrong place.** It took the backticked text of a citation and
+tested it against the repo root. That is not what a reader follows, and the gap ran both ways:
+
+- `[`templates/test-model.md`](../templates/test-model.md)` in `.claude/commands/` resolves to
+  `.claude/templates/test-model.md` and is fine — reported as dangling for as long as the rule existed.
+- Three genuinely broken relative links **passed**, because their labels happened to resolve from the
+  root: `../../.claude/rules/reports.md` from inside `.claude/skills/` (→ `.claude/.claude/…`), and two
+  links one `../` short from `.claude/knowledge/*/`.
+
+The rule now resolves a citation the way a reader does — link target over label, and from the repo root
+**or** relative to the citing file, which is what DOC-004 has always done. The two rules had disagreed
+about what a cited path means, and DOC-003 was the one manufacturing findings.
+
+**`reports/` citations are ephemeral by policy, and are no longer ratcheted.** 30 of the 43 named a past
+report artifact. `.claude/rules/reports.md` §9 makes run folders gitignored and pruned, and the reports
+tree was pruned at HEAD — so a run id in a citation is *provenance the reader recognises*, not a path
+they open. Those are now **DOC-003E**, reported for information and excluded from the ratchet, so
+pruning a report folder can never fail the gate.
+
+**Prose that says an artifact does not exist is no longer read as a defect.** TIER.md's "Tier D — What's
+Missing" table and its migration checklist name artifacts that must be created; three files say in as
+many words that *"`npm run model:lint` is not implemented — do not cite it as a gate"*. All were
+findings. A `<!-- doclint:may-not-exist -->` marker (line-scoped, or section-scoped on its own line)
+lets the linter read what the prose already says. It suppresses existence checks only.
+
+**Ten real defects fixed** on the way, each one previously invisible: three broken relative links; a
+README naming `docs/ba-output/` as the BA output directory while both BA agents refuse to write there
+(the real home is `reports/ba/`); TIER.md citing `test-data/orgs/` (it is `organizations/`) and
+`docs/prompts/` (it is `vc/shared/docs/prompts/`); and a headless twin cited as a repo path in the same
+sentence that calls it unbuilt. `business-logic.md` is byte-parity mirrored into `plugins/vc-fix/`, and
+no relative link works on both surfaces, so its broken link became a plain path citation — correct from
+the root of either.
+
+**DOC-004 matched the first 25 characters of a run-on citation.** A `§Heading` reference is written
+inside a sentence, so the text after `§` continues into prose the author never meant as part of the
+heading: `§Effort routing records that the…` names `## Effort routing, and why the FAST/FULL line sits
+where it does`. Nine of the eighteen findings were the corpus's own correct citations.
+
+The rule now matches the citation's leading **words** against a heading, longest first, **stopping at
+two**. That floor is the whole design: truncating further would let `§Atlassian / Admin SSO` pass on the
+word "Atlassian" alone against the heading "Atlassian / JIRA setup" — hiding a citation that really had
+gone stale when that section was renamed. Punctuation does not count as a word for the same reason, the
+match must land on a word boundary (so `§Assertion STRENGTH` cannot pass on the heading "Assertions"),
+and a compound `§A + §B` must satisfy **both** halves.
+
+**The other nine were genuinely stale and are repointed** — a renamed section (`§ONE AUTHOR PER SUITE` →
+`§WORKING IN A SHARED TREE`), a citation naming the wrong file (`§Release note` is in `reporting.md`, not
+`close-out.md`), a heading that never existed (`§Test Case Review Approval` → `§Decision Framework`), two
+`§Assertion STRENGTH` → `§Assertions`, `§Teardown Collection` → `§Teardown — Reverse Deletion Order`,
+`§Atlassian / Admin SSO` → `§Atlassian / JIRA setup`, and two citations pointing at bolded rules that are
+not headings at all, now quoted as the rules they are.
+
+All three baselines are `0`. Fifteen unit tests pin the three matchers and the three zeros, each failing
+with the offending file and line.
+
+---
+
 ## `ecl:extract`, and the dispatch pack that governs both oracles — 2026-09-08
 
 Second slice of the audit's runtime token work (§6 items 7–8), completing the extract half and writing

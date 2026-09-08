@@ -61,7 +61,7 @@ asking once. **Sending still needs an explicit "Send".**
   `feedback.mode: off` ⇒ no draft, no offer, no send.
 - **Never diagnose its own invocation.** The collector never flags `vc-self-check`
   spans; also drop any such span here before analysing (belt and braces).
-- **Report discipline.** Obey [`.claude/rules/reports.md`](../../.claude/rules/reports.md):
+- **Report discipline.** Obey [`.claude/rules/reports.md`](../../rules/reports.md):
   DIAG target 15–40 lines, hard cap ~100 (like a monitoring summary). Reference the
   telemetry file by path — never inline the jsonl.
 - **English only**; never print a secret (the collector already redacts, but do not

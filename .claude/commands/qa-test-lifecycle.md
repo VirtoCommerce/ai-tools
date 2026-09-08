@@ -581,7 +581,7 @@ Cases 6i marked *blocked* stay blocked; a case 6i marked *eligible* that fails r
 back to blocked** with the reason. Report both sets.
 
 **2 — Human approval (the promotion gate).** Promotion out of `Draft` is **never automatic**
-(`.claude/agents/qa-lead-orchestrator.md` §Test Case Review Approval — only `qa-lead-orchestrator` or the
+(`.claude/agents/qa-lead-orchestrator.md` §Decision Framework — only `qa-lead-orchestrator` or the
 user may promote; `test-management-specialist` never self-promotes). Present the eligible set — case ID,
 title, target suite, `Draft → Reviewed` — and **wait for approval**. Rejected or unapproved cases stay
 `Draft` in the ticket folder.

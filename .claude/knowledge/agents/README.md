@@ -117,7 +117,7 @@ Full argument reference: each command and skill file's own frontmatter (`descrip
          │                │        ├── ba-story-writer (sequential)
     ┌────┼────┐      spawns 3      └── ba-doc-writer (last)
     │    │    │      sub-agents
-  front back test   per batch        Output → docs/ba-output/
+  front back test   per batch        Output → reports/ba/
   expert expert expert
     │    │    │
   chrome edge firefox
@@ -193,7 +193,7 @@ Runs all 4 agents in pipeline: analyzer+api in parallel, then story-writer, then
 /ba-analyze module Catalog   # Focus on one VC module
 ```
 
-**Output directory:** `docs/ba-output/`
+**Output directory:** `reports/ba/` (the agents refuse a `ba-output` directory under `docs/`)
 
 ---
 

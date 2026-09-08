@@ -102,7 +102,7 @@ below.
    but `DesignSync` is a **deferred** tool: an agent that does not first call
    **`ToolSearch select:DesignSync`** sees no callable tool and returns a **false `SKIPPED`** — which,
    read as normal, is how an axis reports clean forever while never running once
-   (`.claude/knowledge/execution/browser-lanes.md` §*A subagent CAN read `DesignSync`*). So the brief
+   (`.claude/knowledge/execution/browser-lanes.md` — *"A subagent CAN read `DesignSync`, but only after `ToolSearch select:DesignSync`"*). So the brief
    picks one and says so: **name the `ToolSearch` step** and let the agent read the project, or have the
    **orchestrator read it and pass the declared tokens / control geometry / icon mapping in as data** —
    the default, because `unresolved` stays countable. Relayed by hand, `unresolved` is *unknown*, never

@@ -334,7 +334,7 @@ When unsure how a style should read, open the exemplar before drafting.
 
 A **release note** answers a different question from the four skeletons above: not *how do I use this*
 but *what shipped, and what can I now do that I could not before*. It is produced per tested ticket at
-`/qa-test` 5f (as a pointer — see `.claude/skills/qa-test/close-out.md` §Release note), and aggregated
+`/qa-test` 5f (as a pointer — see `.claude/skills/qa-test/reporting.md` §Release note), and aggregated
 per release or sprint.
 
 **This is the one deliberate inversion of §1's "audience ≠ document".** A feature legitimately produces up
@@ -445,7 +445,7 @@ carrying a real customer record.
 
 ### 9.5 The truth guardrail
 
-Non-negotiable, and owned in full by `.claude/agents/ba-doc-writer.md` §Release truth guardrail — read it
+Non-negotiable, and owned in full by `.claude/agents/ba-doc-writer.md` — its mandatory **Release truth guardrail**, read it
 there rather than reconstructing it here. The short form: versions come only from `build.deployed`;
 `breaking` only from the ledger's own `⚠ BREAKING` row or a cited contract change in the diff; a
 component that is `NOT_DEPLOYED` or untested gets no line; a fragment exists only for a

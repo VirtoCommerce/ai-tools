@@ -498,4 +498,4 @@ Return a JSON array of story objects:
 ## File Saving Instructions
 - **Output path**: `reports/ba/{feature-or-jira-id}-stories.md` (canonical project location matches the `/ba-analyze stories` orchestrator and existing files like `VP-9034-delete-confirmation-stories.md`).
 - One file per feature/epic. The `/ba-analyze stories` orchestrator handles index generation across runs.
-- Do NOT write to `docs/ba-output/` — that path is not used by this project.
+- Do NOT write BA output anywhere under `docs/` — a `ba-output` directory there is not used by this project. Deliverables go to `reports/ba/`.

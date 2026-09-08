@@ -88,7 +88,7 @@ reasons it cannot be a terminal dump:
    model in `reports/ba/test-models/`** (`1b` item 2-map lists it and the `1c` brief carries the path). A prior model for
    this surface is **amended, never forked** — the same rule as a same-day round 2, for the same reason.
 3. A file is **lintable in principle** — Part 0, the five fault-model parts and the resolved sweeps could
-   be checked rather than asserted. **`npm run model:lint` is not implemented**, so today this third reason
+   be checked rather than asserted. **`npm run model:lint` is not implemented**, so today this third reason <!-- doclint:may-not-exist -->
    is an intention, not a gate: do not cite it as though a script were enforcing it. The live deterministic
    gates are `tc:scaffold` over the authoring plan (1e-plan) and the appender at Step 3.
 

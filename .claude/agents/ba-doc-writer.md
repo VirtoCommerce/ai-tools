@@ -528,4 +528,4 @@ Save each document to `reports/ba/[filename]` (canonical project location matche
   go in `release-notes/`: it is a guide, not a what-shipped record. **If a guide for that surface already
   exists, amend it and record the path in `ticket_doc.amended[]`** rather than opening a second file.
 - The orchestrator (`/ba-analyze`) generates an index file across runs; do NOT create your own `README.md` in `reports/ba/`.
-- Do NOT write to `docs/ba-output/` — that path is not used by this project.
+- Do NOT write BA output anywhere under `docs/` — a `ba-output` directory there is not used by this project. Deliverables go to `reports/ba/`.

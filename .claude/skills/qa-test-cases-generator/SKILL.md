@@ -261,7 +261,7 @@ ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test
 - [ ] **Preconditions** — Human-readable state requirements, use `{{VAR}}` for env values. Express as **state**, never as "after running <ID>" (ISTQB independence rule). If setup duplicates another case's first ≥70% of steps, use `Preconditions: state from <ID> (state summary)` instead of restating the flow (avoid-repetition rule).
 - [ ] **Test_Data** — Only `key={{VAR}}` bindings, comma-separated
 - [ ] **Steps** — Every step tagged: `[NAV]`, `[ACT]`, `[WAIT]`, `[SCROLL]`, `[KEY]`. One action per line. WAIT after every state-changing ACT
-- [ ] **Assertions** — Tagged: `[DOM]`, `[STATE]`, `[MATH]`, `[FORMAT]`, `[NAV]`. Explicit predicates, no vague language. **≥1 assertion of class `INV`/`REL`/`DER`/`SHAPE`** — a case whose assertions are all `PRES` (visible / shown / present / renders) is rejected by `T-006`. For a Storefront layout/geometry case prefer the measurable tags (`[SHIFT]` `[TOUCH]` `[SPACING]` `[ALIGN]` `[OVERFLOW]` `[CLS]`) over prose inside `[DOM]`. See `test-case-template.md` §Assertion STRENGTH + §Measurable UI vocabulary
+- [ ] **Assertions** — Tagged: `[DOM]`, `[STATE]`, `[MATH]`, `[FORMAT]`, `[NAV]`. Explicit predicates, no vague language. **≥1 assertion of class `INV`/`REL`/`DER`/`SHAPE`** — a case whose assertions are all `PRES` (visible / shown / present / renders) is rejected by `T-006`. For a Storefront layout/geometry case prefer the measurable tags (`[SHIFT]` `[TOUCH]` `[SPACING]` `[ALIGN]` `[OVERFLOW]` `[CLS]`) over prose inside `[DOM]`. See `test-case-template.md` §Assertions + §Measurable UI vocabulary
 - [ ] **Cross_Layer_Checks** — Tagged: `[API]`, `[CONSOLE]`, `[NETWORK]`, `[ADMIN]`, `[EMAIL]`. Every mutation MUST check `errors[]` is empty
 - [ ] **Failure_Signals** — At least 2: one timeout signal + one API/console signal
 - [ ] **Cleanup** — State restoration or `none`
@@ -461,7 +461,7 @@ Generated test cases route to the correct executing agent by layer:
 - **Format is non-negotiable** — every case MUST use all 15 columns from `test-case-template.md`
 - **No vague assertions** — "page loads correctly" is not an assertion.
 - **No presence-only cases.** Every case needs ≥1 assertion of class `INV`/`REL`/`DER`/`SHAPE`
-  (`test-case-template.md` §Assertion STRENGTH). `[DOM] product title visible` is class `PRES` — legal
+  (`test-case-template.md` §Assertions). `[DOM] product title visible` is class `PRES` — legal
   as a *guard*, never as the case's only check: it passes when the title renders the wrong product.
   The strong forms are `[REL] PDP title == listing title for the same SKU`,
   `[DOM] title equals @td(PROD_CFG_BIKE.name)`, or `[SHIFT] topDelta == 0` for a layout case.

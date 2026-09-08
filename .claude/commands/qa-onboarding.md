@@ -58,7 +58,7 @@ If any UP/DOWN status is DOWN, stop. Common causes:
 - Wrong URL → re-run install
 - VPN / IP allowlist → check customer's network constraints
 - Cert error → confirm `curl -k` flag (Windows + self-signed certs)
-- Admin SSO blocking auth → see `docs/onboarding.md` § Atlassian / Admin SSO
+- Admin SSO blocking auth → see `docs/onboarding.md` §Atlassian / JIRA setup
 
 ### Step 3 — Confirm MCP servers
 

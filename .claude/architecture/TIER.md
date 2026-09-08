@@ -175,15 +175,18 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `regression/suites/Frontend/` | **C** | 40 storefront suites. |
 | `regression/suites/Backend/` | **C** | 38 admin/platform suites. |
 | `test-data/aliases.json` | **B** schema / **C** content | Registry shape = B. Entries are storefront. |
-| `test-data/orgs/`, `products/`, `addresses/`, etc. | **C** | All storefront-domain. |
+| `test-data/organizations/`, `products/`, `addresses/`, etc. | **C** | All storefront-domain. |
 | `reports/tickets/SprintXX-XX/` | **C** | Per-ticket evidence — project-local. |
 | `reports/` | **C** | Per-project output. |
-| `docs/prompts/` | **B**/**C** | `story-testing.md` = B, `How to test Builder.io.md` = C. |
+| `vc/shared/docs/prompts/` | **B**/**C** | `story-testing.md` = B, `How to test Builder.io.md` = C. |
 | `vc/shared/docs/Sprint plans/` | **C** | VC sprint plans (cross-env, Layer 2). |
 
 ---
 
 ## Tier D — What's Missing (for plugin distribution)
+
+<!-- doclint:may-not-exist — every path in this section names an artifact that DOES NOT EXIST; that
+     is the section's whole point, so the existence checks must not read them as dangling. -->
 
 These don't exist yet and must be created to ship the plugin to VC customers:
 
@@ -214,7 +217,7 @@ Phase 1 deliverables — track here as work lands:
 - [x] Tier classification document (this file)
 - [ ] Frontmatter `tier: A|B|C` added to each agent/skill/command file
 - [ ] `CLAUDE.md` updated with pointer to this file
-- [ ] `npm run audit:tiers` validator script
+- [ ] `npm run audit:tiers` validator script <!-- doclint:may-not-exist -->
 - [ ] Tier A files frozen as v1.0 (no breaking changes during migration)
 
 Phases 2–4: See `~/.claude/plans/functional-singing-cosmos.md`.
