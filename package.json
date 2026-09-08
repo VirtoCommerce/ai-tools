@@ -161,6 +161,8 @@
     "bl:extract": "npx tsx scripts/knowledge/extract-bl.ts",
     "bl:extract:list": "npx tsx scripts/knowledge/extract-bl.ts --list",
     "ecl:lint": "npx tsx scripts/knowledge/lint-ecl.ts",
+    "ecl:extract": "npx tsx scripts/knowledge/extract-ecl.ts",
+    "ecl:extract:list": "npx tsx scripts/knowledge/extract-ecl.ts --list",
     "ecl:audit:collect": "npx tsx scripts/knowledge/lint-ecl.ts --json",
     "oracles:rank": "npx tsx scripts/knowledge/rank-oracles.ts",
     "oracles:rank:json": "npx tsx scripts/knowledge/rank-oracles.ts --json",

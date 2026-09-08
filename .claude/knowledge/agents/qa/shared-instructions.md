@@ -31,16 +31,23 @@ Your prompt is structured as four synergistic layers — business logic (invaria
 
 When a test result is ambiguous, check the invariants before classifying. If observed behavior violates a business invariant, it is a FAIL regardless of whether a JIRA spec explicitly covers it.
 
-**IF YOUR BRIEF ALREADY CONTAINS THE INVARIANTS, DO NOT RE-READ THE ORACLE.** A dispatching orchestrator
-can paste the relevant domain in as text with `npm run bl:extract -- --domain <d>`; an extract is the
-oracle's own markdown, sliced verbatim, and carries a header saying so. Re-opening the 386 KB file to
-re-read what you were handed costs ~96K tokens of your context and adds nothing — the extract IS the
-source, character for character. Two conditions, both real:
+**IF YOUR BRIEF ALREADY CONTAINS THE RULES, DO NOT RE-READ THE ORACLE.** A dispatching orchestrator can
+paste the relevant scope in as text — `npm run bl:extract -- --domain <d>` for invariants,
+`npm run ecl:extract -- --domain <d>` (or `--chapter <n>`) for edge-case patterns. An extract is the
+oracle's own markdown, sliced verbatim, and carries a header saying so. Re-opening the source file to
+re-read what you were handed costs most of your context and adds nothing — the extract IS the source,
+character for character. The same applies to every other item a brief supplies as text rather than as a
+path (matrix rows, the journey case, schema fragments): that is the **dispatch pack**, and what may and
+may not travel in one is [`skills/qa-test/dispatch-pack.md`](../../skills/qa-test/dispatch-pack.md).
+Three conditions, all real:
 
-- **The extract is a SUBSET.** It states which ids it contains. If the work turns out to touch a domain
-  it does not cover, ask for that domain (or read the oracle) rather than concluding no rule applies —
-  "not in my extract" is never evidence that no invariant exists.
+- **An extract is a SUBSET.** It states which ids it contains. If the work turns out to touch a domain
+  or chapter it does not cover, ask for that scope (or read the oracle) rather than concluding no rule
+  applies — "not in my extract" is never evidence that no invariant or edge case exists.
 - **No extract in the brief ⇒ read the file**, scoped to the domains your task touches.
+- **A packed fragment that carries a rev is only as current as that rev.** A schema or selector fragment
+  stamped `UNKNOWN` grounds nothing; treat what you take from it as a hypothesis, exactly as you would
+  from an unrefreshed snapshot.
 
 ## Judge — Pass/Fail Classification
 
@@ -132,6 +139,7 @@ Reference files — read on-demand before each testing area, not all upfront:
 | Area | File |
 |------|------|
 | Business Logic Invariants | `knowledge/oracles/business-logic.md` — **or the extract already in your brief** (`bl:extract`, see §Business Logic Reference) |
+| Edge-case patterns | `knowledge/oracles/e-commerce-edge-cases-library.md` — **or the extract already in your brief** (`ecl:extract`, same rule) |
 | Platform Patterns | `knowledge/api/platform-patterns.md` |
 | Performance Thresholds | `knowledge/execution/performance-thresholds.md` |
 | Browser Quirks | `knowledge/automation/browser-quirks.md` |

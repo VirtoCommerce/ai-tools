@@ -335,6 +335,14 @@ name it took from the file as unverified — correct, but it costs the run its G
 guesses ([`skills/qa-test/contract-refresh.md`](../skills/qa-test/contract-refresh.md) §4). When 2d recorded
 `UNKNOWN`, say so in the brief: contract claims from that snapshot are hypotheses, not grounding.
 
+**Text or path is a decision, not a habit — and `1c` sits on both sides of it.** The `BL-*`/`ECL-*` rules
+for the scope travel as TEXT (`npm run bl:extract -- --domain <d>` · `npm run ecl:extract -- --domain <d>`
+emit the oracles verbatim), as do `1d`'s. **Prior art travels as PATHS on purpose:** the agent has to
+triangulate each claim against the ledger and a live check before it can carry `CONFIRMED`/`DRIFT`/
+`MISSING`, and a digest would pre-answer the question this step exists to ask. The rule that decides
+which is which, for every fan-out in the pipeline:
+[`skills/qa-test/dispatch-pack.md`](../skills/qa-test/dispatch-pack.md).
+
 On internal error, gather context inline (from the `1a` fields + the diff + `.claude/knowledge/`) rather than
 retrying the delegation. The `1e` model carries the same fields either way.
 

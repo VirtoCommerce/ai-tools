@@ -8,6 +8,50 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `ecl:extract`, and the dispatch pack that governs both oracles — 2026-09-08
+
+Second slice of the audit's runtime token work (§6 items 7–8), completing the extract half and writing
+down the rule that decides when to use it.
+
+**`npm run ecl:extract`** is the sibling of `bl:extract` for
+`.claude/knowledge/oracles/e-commerce-edge-cases-library.md`: `--chapter <n>`, `--id ECL-1.3,…`,
+`--domain <word>`, plus `--json`, `--list` and `--stats`. The slice unit is the `### N.M` section — the
+thing `Edge_Case_Refs` cites and `ecl:lint` proves exists — and its pattern table travels whole, because
+a row lifted out of it loses the Frequency/Impact/Status columns that decide whether the pattern is worth
+a case at all. Like its sibling it slices **verbatim** by character offset (CRLF-safe on a Windows
+checkout), reuses the gate's parser (`SECTION_RE` / `CHAPTER_RE` / `APPENDIX_RE` / `FENCE_RE` are now
+exported from `lint-ecl.ts`), declares itself a SUBSET, and exits 2 on a filter that matches nothing.
+
+Two library-specific traps are handled because the gate handles them: headings inside a fenced block are
+**illustration** (Appendix A's template was once counted as a real pattern of §13.3), and collection stops
+at **Appendix D**, whose rows cite sections rather than defining them. `scripts/unit/extract-ecl.test.ts`
+compares id sets with `ecl:lint` over the real library, so an extract cannot silently drop a section.
+
+**Why extract BOTH oracles or neither.** `/qa-test` Step 4's prompt template asks for *"the `BL-*` rule
+text + `ECL-*` patterns"* in one breath. Shipping one as extracted text and the other as a path leaves the
+larger dispatch paying most of what it paid before and makes the pack's own rule ambiguous — an agent
+handed one extract and one path cannot tell whether "the brief already carries it" was meant to apply to
+the other.
+
+**One design difference from `bl:extract`, caught before it shipped.** `--domain` here unions chapter and
+section titles instead of preferring the chapter. Copying BL's prefix-first precedence would have made
+`--domain payment` return chapter 1's eight sections and silently drop `ECL-14.6 Payment Processor
+Differences (VC-specific)` — the section carrying this product's actual processor behaviour. Chapter 14 is
+grouped by **origin**, not subject, so its sections belong to the other chapters' subjects by topic; a
+brief that confidently omits one is a false clean manufactured by the tool.
+
+**The dispatch pack** ([`.claude/skills/qa-test/dispatch-pack.md`](.claude/skills/qa-test/dispatch-pack.md))
+generalises Step 3b's authoring pack to every fan-out, and — the part that matters more — writes down its
+boundary: *text if the dispatcher already holds it and it is identical for every recipient; path if the
+recipient must derive, date or triangulate it itself.* So `1c`'s prior art stays paths (the agent has to
+triangulate it before it can carry `CONFIRMED`/`DRIFT`/`MISSING`), and the verifier is only half packable
+— rule text yes, the doer's evidence never, or an independent check becomes a ratification of the doer's
+own reading. Cited from `authoring.md` §3b, `SKILL.md` §Agent dispatch and §The verifier,
+`commands/qa-test.md` §1c, `ROUTING.md`, and the QA `shared-instructions.md` clause that tells the
+receiving agent not to re-read what it was handed.
+
+---
+
 ## `bl:extract` — hand agents the invariants they need, not a 386 KB path — 2026-09-08
 
 First slice of the audit's **runtime** token work (§6 items 7–11), which targets per-dispatch reads

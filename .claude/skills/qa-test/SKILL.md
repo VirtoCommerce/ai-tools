@@ -105,7 +105,11 @@ verifier independent rather than ceremonial:
 
 - It **re-derives evidence from source** — re-runs the deterministic core (`suites:review`, `td:validate`,
   `compute-metrics.ts --gate feature`), re-opens the evidence artifacts, and delegates any live re-check to
-  a specialist on a **different browser lane** than the doer used.
+  a specialist on a **different browser lane** than the doer used. **So the verifier is the one dispatch
+  that is only half packable:** rule text may be handed to it (an extract is the oracle, verbatim, not a
+  reading of it), but the doer's artifacts, script output and observations never may — supplying those
+  turns an independent check into a ratification of the doer's own cut
+  ([`dispatch-pack.md`](dispatch-pack.md) §Stays a path — or stays out).
 - It never APPROVEs on the doer's summary, and biases **when-in-doubt-REJECT**.
 - It is **never** the inline orchestrator running the pipeline and **never the step's own doer** —
   dispatching it is a scoped single-gate check, not handing off the orchestration.
@@ -237,7 +241,10 @@ Each ticket-agent prompt must carry: the ticket ID; **Artifact A — FULL path o
 row IDs; **omitted on FAST, which authors none**, and the Scope line then reads *"run ONLY the checklist
 above"*);
 **Artifact B** checklist; **test data** (the `@td()`/`{{VAR}}` the cases use, confirmed seeded — never
-hardcode IDs, `.claude/rules/test-data.md`); the **`BL-*`** rule text + **`ECL-*`** patterns from Step 2;
+hardcode IDs, `.claude/rules/test-data.md`); the **`BL-*`** rule text + **`ECL-*`** patterns from Step 2
+(**cut them, do not re-summarise them**: `npm run bl:extract -- --domain <d>` and
+`npm run ecl:extract -- --domain <d>` emit the oracles' own markdown verbatim — what may travel as text
+and what must stay a path is [`dispatch-pack.md`](dispatch-pack.md));
 the browser server; env URLs; the screenshot path; and the evidence-capture policy. **Artifact C is NOT in
 the agent prompt** — it goes to `/qa-regression` (`feedback_long_runner_sessions_unreliable`).
 

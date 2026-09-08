@@ -63,21 +63,21 @@ type Severity = "Blocker" | "Critical" | "High" | "Medium" | "Informational";
 const SEVERITY_ORDER: Severity[] = ["Informational", "Medium", "High", "Critical", "Blocker"];
 
 /** `### 13.3 Loyalty & Points Edge Cases` → chapter 13, section 3. */
-const SECTION_RE = /^###\s+(\d+)\.(\d+)\s+(.*?)\s*$/;
+export const SECTION_RE = /^###\s+(\d+)\.(\d+)\s+(.*?)\s*$/;
 /** `## 13. Business Logic & Workflow Edge Cases` */
-const CHAPTER_RE = /^##\s+(\d+)\.\s+(.*?)\s*$/;
+export const CHAPTER_RE = /^##\s+(\d+)\.\s+(.*?)\s*$/;
 /** A citation token as it appears in a CSV cell or Appendix D row. */
 const ECL_TOKEN_RE = /\bECL-(\d+)\.(\d+)\b/g;
 /** Non-global twin: a /g regex carries `lastIndex` across `exec` calls, so a shared one
  *  silently skips matches when used for a single lookup inside a loop. */
 const ECL_TOKEN_RE_ONCE = /\bECL-(\d+)\.(\d+)\b/;
 /** Appendix D starts here; rows below are cross-reference claims, not definitions. */
-const APPENDIX_RE = /^##\s+Appendix\s+D\b/i;
+export const APPENDIX_RE = /^##\s+Appendix\s+D\b/i;
 /** A fenced code block. Its contents are ILLUSTRATION, never definitions — Appendix A's
  *  template carries a header row, a separator and a placeholder data row, and because
  *  Appendix A sits between §13.3 and chapter 14 that row was counted as a real pattern
  *  of §13.3 (4 rows read for its 3, and a phantom `[OBSERVED]` in its status share). */
-const FENCE_RE = /^\s*```/;
+export const FENCE_RE = /^\s*```/;
 /** The library's own "no invariant declared" marker, opening a BL cell in Appendix D. */
 const NOT_DECLARED = "—";
 
