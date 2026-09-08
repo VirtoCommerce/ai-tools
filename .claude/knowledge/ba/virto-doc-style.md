@@ -433,7 +433,7 @@ Whatever is embedded here is permanent and world-readable.
    `password: "{{DEFAULT_TEST_PASSWORD}}"` in its query text, and `graphql-runner.ts` stores the
    **resolved** query plus `variables` verbatim, so the evidence JSON holds the plaintext value. Redact
    before writing, never after.
-3. **Client containment (`.claude/rules/quality-gates.md` §2a).** Scrub every client host, path,
+3. **Client containment (`.claude/knowledge/execution/quality-gates.md` §2a).** Scrub every client host, path,
    identifier and datum. A real response body carries customer emails, order numbers and addresses; on a
    client deployment that is client customer data, and a committed release note is exactly the
    one-way door §2a exists to keep shut. If the payload cannot be shown without client data, **describe
@@ -612,6 +612,6 @@ surface the text came from.
 
 **Redact and contain before posting.** A tracker comment is an external write and a durable one. Secrets
 (`Authorization`, token, `password`, PAN) are redacted regardless of destination, and on a client project
-every client host, path, identifier and datum is scrubbed (`.claude/rules/quality-gates.md` §2a). If a
+every client host, path, identifier and datum is scrubbed (`.claude/knowledge/execution/quality-gates.md` §2a). If a
 request/response cannot be shown without a secret or client data, **describe the changed field and embed
 nothing** — a prose field delta is a valid developer section; a leak is an incident.

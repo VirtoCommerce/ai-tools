@@ -115,4 +115,4 @@ bump dependents). The live dependency/impact graph is read from the Platform API
   verification checklist + "DO NOT MERGE until human review" (see the CI fix agents' PR-body template).
   Backend PRs add the **"needs deploy verification"** note — the live symptom is re-confirmed post-merge
   via the regression pipeline + `/qa-verify-fix`. **Never** auto-merge.
-- **Gates:** see `.claude/rules/quality-gates.md` (G0–G7). **Never** `merge_pull_request` / `gh pr merge`.
+- **Gates:** see `.claude/knowledge/execution/quality-gates.md` (G0–G7). **Never** `merge_pull_request` / `gh pr merge`.

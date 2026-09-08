@@ -20,7 +20,7 @@ a judgment call a gate does not settle, or when you are about to change how a st
 | Steps 1a–1b — the fetch, the routing branch, the two pre-flight waves | [`skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) |
 | The five derived axes as ONE mechanism (2b–2f) | [`skills/qa-test/axes.md`](../skills/qa-test/axes.md) |
 | Ticket status — who moves it, when, on whose authority | [`knowledge/execution/ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) |
-| What already exists on this surface (prior BA analysis, models, domain knowledge) | [`knowledge/domain/functionality-map.md`](../knowledge/domain/functionality-map.md) |
+| What already exists on this surface (prior BA analysis, models, domain knowledge) | `reports/ba/` + `reports/ba/test-models/` + `.claude/knowledge/domain/` |
 | Steps 2–3 — oracles, the four artifacts, scaffold + fan-out, the C1/C2 regression split | [`skills/qa-test/authoring.md`](../skills/qa-test/authoring.md) |
 | Step 3x — the discovery lane (exploratory, concurrent with 3a, before authoring) | [`skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) |
 | Step 5 — reconcile, verdict, release regression, filing | [`skills/qa-test/close-out.md`](../skills/qa-test/close-out.md) |
@@ -118,7 +118,7 @@ Stated once, completely. **Everything after this section is the FULL path.**
 1a  route + fetch (comments + attachments, always)   → name the parent Epic in one line, no sibling
                                                        analysis; then the opening status hop
 1b  pre-flight, sprint, duplicate check              → 2b layer + 2f data_surface always; the
-                                                       functionality-map read is mandatory;
+                                                       prior-art read (2-map) is mandatory;
                                                        2c/2d/2e derive but do not RUN unless
                                                        their flag is passed
 2   load the affected domains' BL-* AND ECL-* rule TEXT (the agent prompt contract requires both);
@@ -150,7 +150,7 @@ authoring batch, and FAST has neither ([`exploratory-lane.md`](../skills/qa-test
 
 **Still run on FAST, and load-bearing:** the `BL-*` **and `ECL-*`** rule text (the correctness oracle the
 checklist asserts against — dropping it makes a FAST verdict ungrounded rather than merely cheap) · the
-ticket comments and attachments · **the `functionality-map.md` read** (a local file read, and the cheapest
+ticket comments and attachments · **the `2-map` prior-art read** (a local file read, and the cheapest
 way to not re-derive a surface three people have already analysed) · **`2b` `layer`**, which dispatches
 nothing and which 5f/5h need · **`2f` `data_surface`**, which can only ever *remove* a dispatch · `5b`
 (it produces the verdict) · the committed `testing-checklist.md`, which is the run's **only** durable
@@ -274,10 +274,7 @@ AC↔implementation check a third leg · **released ≠ deployed** — a capabil
 probe does not carry is `NOT_DEPLOYED` → BLOCKED-on-deploy, never a FAIL and never a filed bug, and the
 ledger carries no behaviour so it can never ground an assertion as `{DOC}`.
 
-**2-map — read what already exists on this surface. MANDATORY, both paths.** Read the ticket's domain
-section of [`knowledge/domain/functionality-map.md`](../knowledge/domain/functionality-map.md) (generated;
-`npm run map:refresh` if `npm run map:check` reports drift). It answers **two** questions and the second is
-the one that lets you design a test.
+**2-map — read what already exists on this surface. MANDATORY, both paths.** Read the prior art directly — `reports/ba/<domain folder>/` (prior BA analysis), `reports/ba/test-models/` (prior test models), `.claude/knowledge/domain/<domain>.md` (domain knowledge), and the tickets already tested here (`reports/tickets/**/summary.json`). (The generated the prior-art sources (`2-map`) index that used to front these was removed 2026-09-08 — read the sources, dated by their filenames or `git log`.) Two questions, and the second is the one that lets you design a test.
 
 **The bibliography** — carry four things forward: the **prior BA analysis** for this domain, the **prior
 test model** for this surface, the **domain knowledge** docs, and the **tickets already tested** here.

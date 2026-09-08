@@ -75,19 +75,17 @@ reasons it cannot be a terminal dump:
 2. The parameter model for a surface (cart, checkout, org roles) does not change per ticket, so as a file
    it is **reused**; as terminal output it dies with the session.
 
-   **Part 0 is also what fills the map's `Test object` block for the next ticket.**
-   `.claude/knowledge/domain/functionality-map.md` derives four of the five things a tester needs about
-   an object — operations, the data it is tested against, variants, constraints — and **cannot** derive
-   the fifth: what the surface is FOR. That comes from a Part 0 value chain and nowhere else, so a domain
-   with no model reads `UNDECLARED` (measured: 1 of 13). Writing this model is what changes that, which
-   is the same incentive shape as the `Audited:` stamp being the rotation state.
+   **Part 0 is the only place a surface's PURPOSE and reverse edges are declared.** Operations, data,
+   variants and constraints can be derived from the schema doc, the suites and the oracles; what the
+   surface is FOR cannot — it comes from a Part 0 value chain and nowhere else, so a domain with no model
+   has an undeclared purpose. Writing this model is what changes that, which is the same incentive shape
+   as the `Audited:` stamp being the rotation state.
 
    **Reason 2 had no reader until 2026-09-03, and it shows.** Nothing in the pipeline ever opened an
    existing model, so "reused" was an aspiration: `reports/ba/test-models/` already carries
    `VCST-5346-2026-08-28.md` **and** `VCST-5346-2026-09-02.md` — one ticket, one surface, two fault
    models, which is the fork the section below forbids arriving by a different door. **Find the prior
-   model through [`.claude/knowledge/domain/functionality-map.md`](../../knowledge/domain/functionality-map.md)**
-   (`1b` item 2-map reads your domain's section and the `1c` brief carries the path). A prior model for
+   model in `reports/ba/test-models/`** (`1b` item 2-map lists it and the `1c` brief carries the path). A prior model for
    this surface is **amended, never forked** — the same rule as a same-day round 2, for the same reason.
 3. A file is **lintable in principle** — Part 0, the five fault-model parts and the resolved sweeps could
    be checked rather than asserted. **`npm run model:lint` is not implemented**, so today this third reason

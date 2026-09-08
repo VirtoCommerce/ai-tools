@@ -467,7 +467,7 @@ domain <name>`. Invoke **`/qa-review-bl`** on the surfaced candidates, delegatin
 - **CONTRADICTORY / UNGROUNDED / STALE-RETIRE**, plus any candidate that fails the applicable-axes bar → drafted to `reports/ba/bl-proposals-<date>.md`, each with its evidence + a **re-audit trigger** (the concrete condition that would let it promote later — docs published, module on a stable release, the contradicting fix deployed, or the blocking fixture authored). Retiring is never auto-applied.
 - The run's `reports/knowledge/BL-AUDIT-<date>.md` is the audit trail; its outcome feeds the Phase 6 **G6** gate.
 
-This is gated by an **evidence bar, not human approval** — the **applicable-axes** rule above (docs + live + source when all three exist; the verifiable subset, minimum two and all agreeing, when an axis is structurally waived). See the `/qa-review-bl` skill + `.claude/rules/quality-gates.md`.
+This is gated by an **evidence bar, not human approval** — the **applicable-axes** rule above (docs + live + source when all three exist; the verifiable subset, minimum two and all agreeing, when an axis is structurally waived). See the `/qa-review-bl` skill + `.claude/knowledge/execution/quality-gates.md`.
 
 ---
 
@@ -625,7 +625,7 @@ clobber an existing `Synced:` / `Audited:` / `Corrected:` stamp.
 > **6P promotes to `Reviewed`, and that is a different claim from `Automated` — do not reach for
 > `tc:promote` here.** `Reviewed` says a human/`qa-lead` approved the case; `Automated` says a runner
 > executed it green, which only a completed run can evidence. `npm run tc:promote`
-> (`.claude/rules/regression.md` §Post-Run Promotion) derives `Draft → Automated` from a run's own
+> (`.claude/knowledge/execution/regression-promotion.md` §Post-Run Promotion) derives `Draft → Automated` from a run's own
 > `suite-*-results.json` and writes nothing else — so it is the tool for a case already in a suite that
 > a regression run has since proven, **after** 6P, not instead of it.
 

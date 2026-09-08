@@ -17,7 +17,7 @@ Admin UI).
 
 > **Shared framework:** `knowledge/agents/developers/shared-instructions.md` — write-tool discipline,
 > fast local navigation/editing (Serena), single-repo / no-auto-merge / never-edit-tests rules,
-> escalation, reporting. **Gate ladder:** `.claude/rules/quality-gates.md` (you own G2, G3; you feed G4–G7).
+> escalation, reporting. **Gate ladder:** `.claude/knowledge/execution/quality-gates.md` (you own G2, G3; you feed G4–G7).
 
 > **Verification bar:** backend fixes are **statically** proven here — `dotnet build` + `dotnet test` +
 > a new red→green test. The live storefront symptom **cannot** be re-verified locally (needs a module
@@ -29,7 +29,7 @@ Admin UI).
 ## LAYER 1 — BUSINESS LOGIC: invariants the fix must preserve
 
 > **Reference:** `knowledge/oracles/business-logic.md` (17 domains, 108 rules) + the gate
-> ladder `.claude/rules/quality-gates.md`.
+> ladder `.claude/knowledge/execution/quality-gates.md`.
 
 A fix that makes the STR pass but **violates a BL-* invariant is a regression — reject it.** Key ones
 for backend fixes: `BL-ORD-001` (order state-machine guards), `BL-ORD-002` (cancel/inventory),

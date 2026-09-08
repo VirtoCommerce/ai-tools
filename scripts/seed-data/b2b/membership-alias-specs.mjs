@@ -5,7 +5,7 @@
  * WHY (VCST-5281): the cross-org fixtures (`MULTI_ORG_TF_BR` and its frontend-lane twin
  * `MULTI_ORG_TF_BR_ALT`) expose FOUR runtime, server-assigned GUIDs — the contact id (`id`), the
  * security-account id (`userId`), and one `OrganizationMembership` id per org. Those are exactly the
- * values the multi-env rule forbids in a committed CSV (`.claude/rules/test-data.md` §Seed writeback),
+ * values the multi-env rule forbids in a committed CSV (`.claude/knowledge/execution/test-data-authoring.md` §Seed writeback),
  * so they must land in `test-data/aliases.<env>.json`. Until now `seedMemberships()` returned them and
  * nobody persisted them: `MULTI_ORG_TF_BR`'s overlay entry was captured BY HAND, which is precisely
  * the silent-failure mode `td:reconcile` [11] exists to catch (a torn-down + re-seeded fixture leaves

@@ -152,7 +152,7 @@ Static screenshots miss most layout bugs. Measure, don't eyeball. The shared "mi
 
 **Canonical helper:** `scripts/lib/measure-layout.ts` — exports `LAYOUT_SNIPPETS.installClsObserver`, `LAYOUT_SNIPPETS.readCls`, `LAYOUT_SNIPPETS.overflowAudit`, `LAYOUT_SNIPPETS.touchTargetAudit`, plus `spacingAuditSnippet(selector)`, `alignmentAuditSnippet(selector)`, `rectSnapshotSnippet(selector)`, and the analyzers `classifyCls`, `classifySpacing`, `classifyAlignment`, `classifyOverflow`, `classifyTouchTargets`, `compareRectSnapshots`, `analyzeLayoutResults`, `summarize`. **Always use these — do not hand-roll measurement snippets.** Pass the snippet strings verbatim to `browser_evaluate`; parse the returned JSON with the matching `classify*` function to get a severity-tagged finding.
 
-**Canonical scope:** [`knowledge/oracles/critical-ui-scope.md`](../knowledge/oracles/critical-ui-scope.md) — the regression-enforced checklist of 7 components (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar) and 8 pages (`/`, `/catalog`, PDP, `/cart`, `/account/orders`, `/account/lists`, `/company/members`, `/company/info`). Two machine-readable coverage matrices map every applicable (component × invariant) and (page × invariant) cell to a covering test ID. Use this file to decide what to audit before any free-form UI work. `npm run scope:validate` enforces that every cell points at a real test ID.
+**Canonical scope:** [`knowledge/oracles/critical-ui-scope.md`](../knowledge/oracles/critical-ui-scope.md) — the **scope selector** of 7 components (NOT regression-enforced: its covering suite `048b` was removed 2026-07-25 and every matrix cell is `GAP` — see line 157) (VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar) and 8 pages (`/`, `/catalog`, PDP, `/cart`, `/account/orders`, `/account/lists`, `/company/members`, `/company/info`). Two machine-readable coverage matrices map every applicable (component × invariant) and (page × invariant) cell to a covering test ID. Use this file to decide what to audit before any free-form UI work. `npm run scope:validate` enforces that every cell points at a real test ID.
 
 **Canonical regression suite: NONE.** Suite `048b-layout-stability.csv` (selection group `layout-stability`) was **removed on 2026-07-25**, and no suite replaced it — BL-UI-001..006 have no automated regression coverage. Until a replacement is authored, run these audits **on demand** via [`/qa-design`](../skills/qa-design/SKILL.md), driving them from the per-component audit protocols and coverage matrix in [`critical-ui-scope.md`](../knowledge/oracles/critical-ui-scope.md) (every matrix cell is currently marked `GAP`). If you are asked to restore coverage, that matrix is the specification to build against.
 
@@ -312,7 +312,7 @@ different surface than the one under test, which **reads as a pass**. That is th
 exists to prevent: check the target before minting, and sign out when the pass ends (the profile
 persists, so a throwaway silently becomes the lane's standing identity).
 
-Conditions, cleanup obligations and the measured evidence: [`.claude/rules/mcp-browsers.md`](../rules/mcp-browsers.md)
+Conditions, cleanup obligations and the measured evidence: [`.claude/knowledge/execution/browser-lanes.md`](../knowledge/execution/browser-lanes.md)
 §Browser login secrets. Cite it — do not restate it here.
 
 ### Action Space
@@ -335,7 +335,7 @@ Conditions, cleanup obligations and the measured evidence: [`.claude/rules/mcp-b
 | Visual Regression Testing | `skills/qa-storybook/visual-regression-testing.md` |
 | UX Heuristic Evaluation | `skills/qa-design/ux-heuristic-evaluation.md` |
 | Responsive Component Testing | `skills/qa-storybook/responsive-component-testing.md` |
-| **Critical UI scope (regression-enforced)** | `knowledge/oracles/critical-ui-scope.md` — 7 components + 8 pages with applicability matrices and per-component audit protocols. `npm run scope:validate` gates the build. |
+| **Critical UI scope (scope selector — UNCOVERED)** | `knowledge/oracles/critical-ui-scope.md` — 7 components + 8 pages with applicability matrices and per-component audit protocols. `npm run scope:validate` checks cell→case references only; it is wired into no CI workflow and gates nothing. |
 | **Layout measurement helper** | `scripts/lib/measure-layout.ts` (CLS observer, spacing audit, alignment audit, overflow audit, touch-target audit, FOUC snippet, rect-snapshot, analyzers) |
 | **Layout regression suite** | none — `048b-layout-stability.csv` was removed 2026-07-25; audit on demand via `/qa-design` using `critical-ui-scope.md` protocols |
 

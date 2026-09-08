@@ -25,7 +25,7 @@ code vs native VirtoCommerce platform) and the right tracker. Key files:
 | `scripts/lib/project-profile.mjs` | `PROFILE_DEFAULTS` + `loadProjectProfile` (backfills defaults) |
 | `ci/lib/repo-router.ts` | `repoOwnership` / `contributionPlan` / `assertUpstreamAllowed` |
 | `ci/lib/vcs/index.ts` | `getVcs` / `getUpstreamVcs` (containment guard) |
-| `.claude/rules/quality-gates.md` | §2a client-code containment (hard security invariant) |
+| `.claude/knowledge/execution/quality-gates.md` | §2a client-code containment (hard security invariant) |
 
 ## Already done (pushed to `feat/project-init`, range `468fa0e..ac2a64f`, ~11 commits)
 - Colored readiness table (FORCE_COLOR + adaptive width ≤100 cols, "To resolve" block).

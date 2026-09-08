@@ -318,7 +318,7 @@ verdict (plus the team-level release criteria) into the global **GO / NO-GO**:
 | The story run | Step 5a triage + Step 5b AC/DoD vs implementation (incl. the quantified estimate) + Step 5c verdict — every AC condition carries PASS evidence, all reconciled SATISFIED-live, DoD items MET/N-A, all `BL-*` verified, no **in-scope** P0/P1 bug, no correlated App-Insights REAL_BUG | PASS / PASS WITH NOTES / FAIL / BLOCKED | [`commands/qa-test.md`](../.claude/commands/qa-test.md) §5a–5c |
 | **Feature release (team go/no-go)** | **Feature Release Gate** — consumes the story verdict + open-bug ledger + change-scoped regression + NFRs + smoke. Owned by `qa-lead-orchestrator`. *"Can we release this feature?"* | **GO / CONDITIONAL GO / NO-GO** | [`skills/qa-metrics/quality-gates.md`](../.claude/skills/qa-metrics/quality-gates.md) **§1a** |
 | Release (folds many features) | Smoke / Sprint Release / Full Release / Hotfix gates | PASS·FAIL / APPROVED·CONDITIONS·BLOCKED | [`skills/qa-metrics/quality-gates.md`](../.claude/skills/qa-metrics/quality-gates.md) |
-| Bug auto-fix (if the story spawns a fix) | G0–G7 auto-fix ladder | open PR | [`.claude/rules/quality-gates.md`](../.claude/rules/quality-gates.md) |
+| Bug auto-fix (if the story spawns a fix) | G0–G7 auto-fix ladder | open PR | [`.claude/knowledge/execution/quality-gates.md`](../.claude/knowledge/execution/quality-gates.md) |
 
 **The feature go/no-go in one line:** a `/qa-test` **PASS**/**PASS WITH NOTES** feeds a **GO** only if
 0 open P0, **0 open undeferred P1/High**, change-scoped regression ≥80%, NFRs clean, and smoke PASS all

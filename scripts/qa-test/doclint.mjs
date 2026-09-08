@@ -20,6 +20,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = process.cwd();
 const COMMAND = '.claude/commands/qa-test.md';
@@ -78,6 +79,19 @@ for (const f of files) {
 }
 
 /* ---------- DOC-003: cited repo paths ---------- */
+// `scripts/.graphql-schema.cache.json`, `.mcp.json`, `reports/monitoring/.seen-fingerprints.json`… are
+// gitignored runtime artifacts a fresh checkout never has. Citing them by path is correct documentation,
+// so they are excluded structurally (git's own answer), never by a hand list. Same rule as
+// scripts/maintenance/lint-claude-docs.mjs. Without this the gate was red on every clean checkout.
+const ignoreCache = new Map();
+function isGitIgnored(p) {
+  if (!ignoreCache.has(p)) {
+    let ignored = false;
+    try { execFileSync('git', ['check-ignore', '-q', p], { cwd: ROOT, stdio: 'ignore' }); ignored = true; } catch { /* exit 1 = not ignored */ }
+    ignoreCache.set(p, ignored);
+  }
+  return ignoreCache.get(p);
+}
 const PATH_RE = /`((?:\.claude|scripts|ci|config|docs|regression|reports|test-data)\/[A-Za-z0-9._/\-*]+)`/g;
 for (const f of files) {
   read(f).split(/\r?\n/).forEach((l, i) => {
@@ -86,6 +100,7 @@ for (const f of files) {
       if (p.includes('*') || p.includes('<')) continue;          // globs and placeholders
       if (/\/$/.test(p)) continue;                                // bare directories
       if (p.startsWith('reports/')) continue;                     // run outputs; may not exist yet
+      if (isGitIgnored(p)) continue;                              // a runtime artifact cited by its (documented) path is not a dangling reference
       if (!fs.existsSync(path.join(ROOT, p))) {
         add('DOC-003', f, i + 1, `cited path does not exist: ${p}`);
       }

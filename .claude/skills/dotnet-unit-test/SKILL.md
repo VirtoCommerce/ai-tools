@@ -7,7 +7,7 @@ description: "[Development] Reproduce a Virto Commerce backend bug as a failing 
 
 Encode a confirmed bug (STR + root cause) as a **new** xUnit test that fails on current code, so the
 fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladder
-(`.claude/rules/quality-gates.md`).
+(`.claude/knowledge/execution/quality-gates.md`).
 
 ## When to use
 - A backend bug in a `vc-module-*` / `vc-platform` repo has been routed and the source is checked out
@@ -72,5 +72,5 @@ fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladde
 ## References
 - `xunit-patterns.md` — verified test stack + xUnit/Moq recipes for VC services/handlers/resolvers
 - `knowledge/architecture/vc-module-architecture.md` — repo layout, build/test profiles
-- `.claude/rules/quality-gates.md` — G2 (red), G3 (green + existing tests untouched)
+- `.claude/knowledge/execution/quality-gates.md` — G2 (red), G3 (green + existing tests untouched)
 - Build/test commands: `REPO_PROFILES` in `ci/lib/repo-router.ts`

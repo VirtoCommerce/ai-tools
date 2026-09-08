@@ -6,7 +6,7 @@ description: "[Development] Implement a minimal, idiomatic .NET 10 / C# fix in a
 # /dotnet-fix — Implement a minimal C# fix in a VC module
 
 Turn the red reproduction test (`/dotnet-unit-test`) green with the **smallest correct change**, then
-pass the build/test gate. This is **Gate 3** of `.claude/rules/quality-gates.md`.
+pass the build/test gate. This is **Gate 3** of `.claude/knowledge/execution/quality-gates.md`.
 
 ## Preconditions
 - Source checked out in `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX`.
@@ -52,5 +52,5 @@ pass the build/test gate. This is **Gate 3** of `.claude/rules/quality-gates.md`
 ## References
 - `fix-patterns.md` — common VC fix shapes (null-guard, mapping, cascade, RBAC, async)
 - `dotnet10-best-practices.md` — modern C# idioms + build hygiene within a minimal diff
-- `.claude/rules/quality-gates.md` — G3 (green), G4 (review), G5 (build/CI), G7 (no auto-merge)
+- `.claude/knowledge/execution/quality-gates.md` — G3 (green), G4 (review), G5 (build/CI), G7 (no auto-merge)
 - `knowledge/oracles/vc-bug-catalog.md` — don't re-introduce a historical failure pattern

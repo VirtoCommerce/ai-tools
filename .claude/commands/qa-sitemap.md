@@ -28,7 +28,7 @@ The crawler is **env-driven and portable to any VC deployment** — the queries 
 - **A configured client env:** `TEST_ENV=<name> npm run sitemap:refresh` (uses their `.env.<name>` — `FRONT_URL`/`BACK_URL`/`STORE_ID`) → baseline `sitemap-snapshot.<name>.json`.
 - **Ad-hoc, no env file:** `node scripts/maintenance/refresh-sitemap.mjs --front <url> --back <url> --store <id> --label <name>`.
 
-Per-env snapshots mean a client run **never clobbers the vcst baseline** or reports a false whole-catalog "changed". Two conditions for a client run: (1) `STORE_ID` is required (no default — it is per-deployment); (2) only run against a client env with **their authorization** — read-only, but it is their data (client-containment, `.claude/rules/quality-gates.md` §2a). Admin creds are optional (platform version degrades to null without them).
+Per-env snapshots mean a client run **never clobbers the vcst baseline** or reports a false whole-catalog "changed". Two conditions for a client run: (1) `STORE_ID` is required (no default — it is per-deployment); (2) only run against a client env with **their authorization** — read-only, but it is their data (client-containment, `.claude/knowledge/execution/quality-gates.md` §2a). Admin creds are optional (platform version degrades to null without them).
 
 > **Write-up for a non-vcst env:** `sitemap.md` (and its plugin mirror) is the **vcst** storefront doc. For a client env, write a **client-scoped** doc (e.g. `sitemap.<name>.md`) from that env's snapshot — do **not** overwrite the vcst `sitemap.md`, and do **not** sync a client doc into the plugin mirror (Step 4 is vcst-only).
 

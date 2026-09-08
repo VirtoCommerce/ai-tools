@@ -14,7 +14,7 @@ file restates them. Read them:**
 | Behavior-rewrite evidence bar (docs + live + source) | [`qa-review-tests/triangulation-criteria.md`](../qa-review-tests/triangulation-criteria.md) |
 | Test-data design + provisioning | `/qa-generate-data` → `/qa-seed-data` (`test-data-engineer`) |
 | Write-scope ceiling + revert-on-regression | [`qa-test-lifecycle.md`](../../commands/qa-test-lifecycle.md) §Phase 4b |
-| Scaffolder, ID allocator, the KEEP gate | [`.claude/rules/regression.md`](../../rules/regression.md) §Pre-Authoring Scaffold |
+| Scaffolder, ID allocator, the KEEP gate | [`.claude/knowledge/execution/regression-scaffold.md`](../../knowledge/execution/regression-scaffold.md) §Pre-Authoring Scaffold |
 
 ---
 

@@ -7,7 +7,7 @@ description: "[Development] Reproduce a Virto Commerce vc-frontend storefront bu
 
 Encode a confirmed storefront bug (STR + root cause) as a **new** vitest test that fails on current
 code, so the fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladder
-(`.claude/rules/quality-gates.md`).
+(`.claude/knowledge/execution/quality-gates.md`).
 
 ## When to use
 - A storefront bug in `vc-frontend` has been routed and the source is checked out in
@@ -69,5 +69,5 @@ code, so the fix has an objective red→green proof. This is **Gate 2** of the a
 - `vitest-patterns.md` — mount/composable recipes + stubbing i18n/router/Pinia/`$cfg`/GraphQL for VC storefront
 - `knowledge/architecture/vc-frontend-architecture.md` — repo layout, seams, build/test profile
 - `knowledge/automation/storefront-selectors.md` — `data-test-id` map to find the component
-- `.claude/rules/quality-gates.md` — G2 (red), G3 (green + existing tests untouched)
+- `.claude/knowledge/execution/quality-gates.md` — G2 (red), G3 (green + existing tests untouched)
 - Build/test commands: `REPO_PROFILES.frontend` in `ci/lib/repo-router.ts`

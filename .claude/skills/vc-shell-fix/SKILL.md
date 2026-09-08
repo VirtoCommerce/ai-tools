@@ -64,7 +64,7 @@ names from this skill (they drift; the page-builder shell's own `.claude` docs a
    **Path 2**, below — the ephemeral harness.
 3. A bug needing live wiring (real router/store/backend API responses) that **neither** path can
    faithfully reproduce → this is **not** a tooling gap to solve here. It's the ordinary Gate-6 "needs
-   deploy verification" path every module fix already uses (`.claude/rules/quality-gates.md` G6,
+   deploy verification" path every module fix already uses (`.claude/knowledge/execution/quality-gates.md` G6,
    `qa-backend-expert` post-deploy regression) — say so in the PR body, don't invent a new harness.
    **This includes cross-frame bugs:** the Angular designer ↔ Vue shell communicate across an **iframe**
    via `postMessage` + `BroadcastChannel('vc-module-content-channel')`, which neither Path 1 (Node) nor
@@ -127,7 +127,7 @@ names from this skill (they drift; the page-builder shell's own `.claude` docs a
 - **Idiomatic minimal diff — match the sub-app's conventions**, don't restyle or "modernize":
   `<script setup lang="ts">`, `readonly` refs where nothing mutates them, vee-validate for **all** form
   validation (no custom validators), and i18n via `useI18n()` + `locales/` keys (**no hardcoded strings**).
-- Same gate ladder + no-auto-merge as every other developer path — `.claude/rules/quality-gates.md`.
+- Same gate ladder + no-auto-merge as every other developer path — `.claude/knowledge/execution/quality-gates.md`.
 - If the correct fix is unclear or risky → `FIX_STATUS: FAILED`, don't push speculative changes.
 
 ## References
@@ -137,4 +137,4 @@ names from this skill (they drift; the page-builder shell's own `.claude` docs a
 - `skills/vue-unit-test/vitest-patterns.md` — mount/composable recipes (shared technique with vc-frontend)
 - `skills/vue-fix/vue3-best-practices.md` — Vue 3/TS idioms within a minimal diff
 - `knowledge/architecture/vc-module-architecture.md` §2a — embedded frontend sub-apps in a module repo
-- `.claude/rules/quality-gates.md` — G1 (routing), G2 (red), G3 (green), G4 (scratch-harness leakage check)
+- `.claude/knowledge/execution/quality-gates.md` — G1 (routing), G2 (red), G3 (green), G4 (scratch-harness leakage check)

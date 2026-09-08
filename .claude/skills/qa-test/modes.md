@@ -66,7 +66,7 @@ Per round, once the 5c verdict is in:
    - **Deploy the prerelease (confirm):** `/qa-deploy-pr <ticket-key>` deploys the fix PR's **prerelease**
      build to the test env — **ask before deploying** (it opens its own gated deploy PR). No merge happens:
      the loop always re-tests an **unmerged prerelease**, so the never-auto-merge triple guard
-     (`.claude/rules/quality-gates.md` §2) is never touched.
+     (`.claude/knowledge/execution/quality-gates.md` §2) is never touched.
    - **Probe the build, then re-read the board (`5k.0`):** record this round's own probed
      `GET {{BACK_URL}}/api/platform/modules` value, then fetch the ticket's sub-tasks and linked bugs and
      verify each fix-ready one **before** re-running anything (§Round entry). The order is not cosmetic:

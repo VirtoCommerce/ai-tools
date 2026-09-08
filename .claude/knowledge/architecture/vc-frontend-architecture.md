@@ -133,7 +133,7 @@ cause in a NuGet dependency".
   verification checklist + "DO NOT MERGE until human review". Add a **"needs visual / E2E verification"**
   note when the bug has a visual aspect — re-confirmed via `/qa-regression frontend` + `/qa-verify-fix`.
   **Never** auto-merge.
-- **Gates:** see `.claude/rules/quality-gates.md` (G0–G7). **Never** `merge_pull_request` / `gh pr merge`.
+- **Gates:** see `.claude/knowledge/execution/quality-gates.md` (G0–G7). **Never** `merge_pull_request` / `gh pr merge`.
 
 ## Cross-references
 - `storefront-selectors.md` — stable `data-test-id` / `.vc-*` selector map for finding components

@@ -11,7 +11,7 @@ in **lock-step with the collector's inline consts** (Tier 1 uses them); the pros
 the diagnostician's judgment guide (Tier 2).
 
 > **Reference, don't restate.** Gate IDs (`G0`–`G7`) are defined once in
-> [`../../.claude/rules/quality-gates.md`](../../.claude/rules/quality-gates.md); report
+> [`../../.claude/knowledge/execution/quality-gates.md`](../../.claude/knowledge/execution/quality-gates.md); report
 > size caps live once in [`../../.claude/rules/reports.md`](../../.claude/rules/reports.md).
 > This file cites them by ID/name and never re-defines them.
 
@@ -398,7 +398,7 @@ the diagnostician still confirms the root cause and names the fix:
 
 ## 6. References
 
-- Gate ladder G0–G7 + no-auto-merge + client-code containment: [`../../.claude/rules/quality-gates.md`](../../.claude/rules/quality-gates.md)
+- Gate ladder G0–G7 + no-auto-merge + client-code containment: [`../../.claude/knowledge/execution/quality-gates.md`](../../.claude/knowledge/execution/quality-gates.md)
 - Report categories + size caps + bloat patterns: [`../../.claude/rules/reports.md`](../../.claude/rules/reports.md)
 - Signal source + record schema: [`../../hooks/session-telemetry.mjs`](../../hooks/session-telemetry.mjs)
 - **Upstream contribution schema (default-deny, closed vocabulary):** [`upstream-schema.md`](./upstream-schema.md) + ADR [`adr-upstream-default-deny.md`](./adr-upstream-default-deny.md). The `deliver` step builds its outbound artifact ONLY from the structured jsonl reduced to this closed schema — the LLM DIAG free text (`signal`/`rootcause`/`fix`) never leaves the machine.

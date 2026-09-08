@@ -45,7 +45,7 @@ cheap:
 **Two things this criterion deliberately does NOT do:**
 
 - **It does not count SKIPPED.** An explicit `Manual` / `Deprecated` lane is materialised as
-  SKIPPED with its reason (`.claude/rules/regression.md` §Per-Case Lane Routing) — an *intentional*
+  SKIPPED with its reason (`.claude/knowledge/execution/regression-lanes.md` §Per-Case Lane Routing) — an *intentional*
   non-execution, not a blocker. Gating on it would leave the gate permanently unevaluable on
   account of the corpus's 838 Manual + 35 Deprecated cases, for reasons that are by design.
 - **It does not replace the pass rate with a planned-basis one.** `passed / planned` would make a

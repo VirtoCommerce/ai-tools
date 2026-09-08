@@ -87,7 +87,7 @@ Either way the harness is throwaway — only its evidence (output / screenshots)
 - **Layout/CSS fixes use only platform classes** (`admin-spa-ui-conventions.md`) — never inline
   `position:absolute|fixed`, fixed-px sizing, or `ng-style` height hacks — and are **proven before the PR**
   with the visual render harness (`visual-render-harness.md`), not deferred to post-deploy.
-- Same gate ladder and **no-auto-merge** as the C# path — `.claude/rules/quality-gates.md`.
+- Same gate ladder and **no-auto-merge** as the C# path — `.claude/knowledge/execution/quality-gates.md`.
 
 ## References
 - `admin-spa-ui-conventions.md` — canonical platform UI class catalog (blades, search, filters, dropdowns,

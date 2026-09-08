@@ -7,7 +7,7 @@
  * WHY THIS EXISTS — these are the highest-value, NON-feature-gated states from
  * test-data/README.md §Order State / Quote Fixtures. They were DEFERRED (blocking ~54 suite-014/015
  * cases) because the admin status strings needed confirming and there was no seeder. The exact
- * platform status strings still want a live check on first run (G6 in .claude/rules/quality-gates.md);
+ * platform status strings still want a live check on first run (G6 in .claude/knowledge/execution/quality-gates.md);
  * because they live HERE and nowhere else, correcting one is a one-line edit that the seeder + the
  * validator + the fixtures + the tests all follow.
  *

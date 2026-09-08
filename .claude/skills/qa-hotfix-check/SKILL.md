@@ -86,7 +86,7 @@ not block the other.
 ## Step 2 — deliver (gated write, confirm before `--apply`)
 
 Only for `planned` envs, and only after you've shown the user the per-env plan and they confirm. The
-triple-guarded no-auto-merge culture applies ([`.claude/rules/quality-gates.md`](../../rules/quality-gates.md)).
+triple-guarded no-auto-merge culture applies ([`.claude/knowledge/execution/quality-gates.md`](../../knowledge/execution/quality-gates.md)).
 
 ```bash
 # module hotfix

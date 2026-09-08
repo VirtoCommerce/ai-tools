@@ -143,7 +143,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 |------|------|-------|
 | `agents.md` | **A** | Agent system reference. Some examples storefront. |
 | `regression.md` | **B** | Regression architecture — the four-mode framework is generic. |
-| `skills-commands.md` | **A** | Skills/commands reference. |
+| ~~`skills-commands.md`~~ | — | **Deleted 2026-09-08.** Was a hand-written copy of the menu the harness already renders from command/skill frontmatter; it had drifted (e.g. `/qa-status`). |
 | `mcp-browsers.md` | **A** | MCP server + browser config — generic infrastructure. |
 | `reports.md` | **A** | **THE single source of truth for report categories + size caps. Org-wide standard.** |
 | `test-data.md` | **A** | `@td()` resolver + no-hardcode policy — generic discipline. |

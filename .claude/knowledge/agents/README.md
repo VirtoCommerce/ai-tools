@@ -48,7 +48,7 @@ The **only write-capable team** (clone / branch / commit / push / open PR via lo
 team stays read-only on GitHub. Driven by `/qa-fix` (interactive twin of `ci/run-fix-cycle.ts`); reuses
 `ci/config/fix-repos.json` + `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts`. **One developer +
 one reviewer per repo kind**, picked by the routed repo's `kind`. Gate ladder:
-`.claude/rules/quality-gates.md`. **Never auto-merges.** No browser.
+`.claude/knowledge/execution/quality-gates.md`. **Never auto-merges.** No browser.
 
 | Agent | Model | Color | Purpose |
 |-------|-------|-------|---------|
@@ -61,7 +61,7 @@ one reviewer per repo kind**, picked by the routed repo's `kind`. Gate ladder:
 
 ## Slash Commands (28)
 
-Full argument reference: [`.claude/rules/skills-commands.md`](../../rules/skills-commands.md).
+Full argument reference: each command and skill file's own frontmatter (`description` + `argument-hint`), which the harness renders as the `/` menu.
 
 ### QA & Setup Commands
 
@@ -218,7 +218,7 @@ All 17 agents are flat `.md` files at the plugin root `agents/` (plugin agent di
 
 ## Documentation Sources (all agents)
 
-For any Virto Commerce platform / module / API / storefront / deployment / B2B question, **all agents must query VirtoOZ MCP first** via the `/vc-docs` skill. VirtoOZ exposes 12 topic-scoped retrieval tools — pick the narrowest one (e.g. `PlatformDeveloperGuide` for backend API questions, `StorefrontDeveloperGuide` for vc-frontend, `B2BExperts` for B2B-specific guidance, `*SourceCode` tools for code-level questions). Context7 (`/virtocommerce/vc-docs`) is the fallback when VirtoOZ returns thin results or for non-VC libraries. Full tool list and routing rules in `skills/vc-docs/SKILL.md` and `.claude/rules/mcp-browsers.md`.
+For any Virto Commerce platform / module / API / storefront / deployment / B2B question, **all agents must query VirtoOZ MCP first** via the `/vc-docs` skill. VirtoOZ exposes 12 topic-scoped retrieval tools — pick the narrowest one (e.g. `PlatformDeveloperGuide` for backend API questions, `StorefrontDeveloperGuide` for vc-frontend, `B2BExperts` for B2B-specific guidance, `*SourceCode` tools for code-level questions). Context7 (`/virtocommerce/vc-docs`) is the fallback when VirtoOZ returns thin results or for non-VC libraries. Full tool list and routing rules in `skills/vc-docs/SKILL.md` and `.claude/knowledge/execution/browser-lanes.md`.
 
 ## Requirements
 

@@ -79,7 +79,7 @@ export const UI_PARSER_VERSION = "1.0.0";
  * role/name-first on the grounds that the sign-in and sign-up form controls "render no test id" —
  * that was WRONG, and the error came from this repo's own selector generator reading only the
  * `data-test-id` attribute and not the UI-kit `test-id-input` prop that those forms actually use.
- * All of them carry a test id. See `.claude/rules/regression.md` §Storefront Selectors.
+ * All of them carry a test id. See `.claude/knowledge/execution/regression-selectors.md` §Storefront Selectors.
  *
  * What survives the correction is narrower and still worth encoding: prefer `testid=` where one
  * exists, then `name=` (locale-independent), and reach for `label=`/`text=` last, because a label

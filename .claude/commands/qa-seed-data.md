@@ -53,7 +53,7 @@ Seeded entity data, CSVs, and `@td()` alias references live in `test-data/`. See
 - `users/agent-user-pool.csv` — 3 dedicated users for parallel agent browser slots
 - `payment/test-cards.csv` — processor-specific test cards
 
-After seeding, runtime platform IDs resolve via `@td()`: on `vcst` from `aliases.json` + the CSVs; on other envs the seeders write them to `aliases.{env}.json` (see `.claude/rules/test-data.md` §Seed writeback).
+After seeding, runtime platform IDs resolve via `@td()`: on `vcst` from `aliases.json` + the CSVs; on other envs the seeders write them to `aliases.{env}.json` (see `.claude/knowledge/execution/test-data-authoring.md` §Seed writeback).
 
 ## Safety
 

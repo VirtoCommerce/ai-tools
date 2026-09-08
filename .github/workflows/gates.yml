@@ -1,0 +1,83 @@
+# Drift gates for the repo's OWN instruction corpus and test-data contracts.
+#
+# WHY THIS EXISTS (agentic-system audit, 2026-09-07/08). The repo declares eleven `*:check` / `*:lint`
+# drift gates and, until this file, wired EIGHT of them into no workflow at all — so `map:check` was red
+# on a clean checkout, `td:validate` was red on one wildcard token, and nobody saw either. A guard nobody
+# runs is a comment (unit-tests.yml says the same about `npm test`).
+#
+# Two jobs, split by what they need:
+#   offline  — reads only the checkout. Runs on every PR and push to main. A red here blocks the PR.
+#   external — needs the network (vc-frontend clone, live GraphQL introspection, the storefront, the
+#              release corpus). Runs weekly + on demand and never blocks a PR: a source being unreachable
+#              is exit 2 on every one of these by convention, and that is a fact about the network, not
+#              about the change under review. Its red is a notification, not a gate.
+name: Drift gates
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 5 * * 1'   # Mondays 05:00 UTC — the external set only
+  workflow_dispatch:
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+      # The always-loaded instruction budget (CLAUDE.md + .claude/rules/) and the doc-integrity ratchet.
+      # This is the gate that stops the 2026-09 re-tiering from growing back.
+      - name: context:check — always-loaded budget + doc ratchet
+        run: npm run context:check
+      - name: qa-test:doclint — /qa-test command↔skill integrity
+        run: npm run qa-test:doclint
+      - name: suites:lint — manifest ↔ CSV sync, global case IDs, XREF-001
+        run: npm run suites:lint
+      - name: td:validate — every @td() resolves, no hardcoded GUIDs
+        run: npm run td:validate
+      - name: bl:lint / ecl:lint — oracle citation integrity
+        run: npm run bl:lint && npm run ecl:lint
+      - name: suites:executability:check — determinism ratchet
+        run: npm run suites:executability:check
+
+  external:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+      # Each step reports independently; a failure here is a "go look", never a merge block.
+      - name: tokens:check — design tokens vs vc-frontend
+        run: npm run tokens:check
+        continue-on-error: true
+      - name: selectors:check — data-test-id surface vs vc-frontend
+        run: npm run selectors:check
+        continue-on-error: true
+      - name: schema:check — GraphQL introspection reachable
+        run: npm run schema:check
+        continue-on-error: true
+      - name: releases:check — release ledger vs upstream
+        run: npm run releases:check
+        continue-on-error: true

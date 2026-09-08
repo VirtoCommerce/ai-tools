@@ -169,7 +169,7 @@ when the fix changes flow.
 - Iterate **dev ↔ qa-backend-expert ≤ 2 times** locally (fix → re-render → re-screenshot) **before** opening
   the PR, and squash — so the public PR shows one clean structural commit, not the 5-commit thrash of PR #101.
 - This satisfies the layout/CSS branch of **G2 (red)** and **G3/G4 (green, pre-PR)** in
-  `.claude/rules/quality-gates.md`. Post-deploy **G6** remains the final real-user confirmation, but is no
+  `.claude/knowledge/execution/quality-gates.md`. Post-deploy **G6** remains the final real-user confirmation, but is no
   longer the first time anyone sees the layout.
 
 ---

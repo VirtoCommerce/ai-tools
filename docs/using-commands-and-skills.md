@@ -13,7 +13,7 @@ this is the doc it pointed you at. For **which** tool to reach for, see the deci
 - **Skill** — a packaged **methodology or knowledge reference** Claude pulls in. Some skills also run
   work (`/qa-seed-data`, `/qa-review-tests`); some just inform a task you're already doing
   (`/qa-checklist`, `/vc-docs`). Mechanically, *a skill is a slash command with supporting reference
-  files* (see [`.claude/rules/skills-commands.md`](../.claude/rules/skills-commands.md)) — so you
+  files* (their frontmatter is the reference — the harness renders it as the `/` menu) — so you
   invoke it the same way you invoke a command.
 - **Agent** — a **specialist Claude delegates to** for multi-step work (e.g. `qa-frontend-expert`,
   `regression-orchestrator`). You rarely call these directly; commands dispatch them for you. You
@@ -85,7 +85,7 @@ Don't guess — use the **"I want to…" decision tree** in
 [`.claude/ROUTING.md`](../.claude/ROUTING.md). It maps every intent
 ("run smoke tests", "verify a bug fix", "get a test checklist for a domain") to the exact
 command/skill and tells you whether it's a Command, Skill, or Agent. The full catalogs live in
-[`.claude/rules/skills-commands.md`](../.claude/rules/skills-commands.md) and
+each file's frontmatter and
 [`skills/README.md`](../.claude/skills/README.md).
 
 ---

@@ -22,7 +22,7 @@
  *   CONFIRMED → refresh the `Audited:` stamp only
  *   DRIFT     → rewrite ONLY the drifted assertion + stamp
  *   MISSING / CONTRADICTORY / UNGROUNDED / RETIRE → PR body proposal, never a CSV write
- * Never auto-merges (mirrors the G7 hard stop in .claude/rules/quality-gates.md §2).
+ * Never auto-merges (mirrors the G7 hard stop in .claude/knowledge/execution/quality-gates.md §2).
  *
  * Env:
  *   AUDIT_SUITE        explicit suite id (else the queue picks the most overdue)

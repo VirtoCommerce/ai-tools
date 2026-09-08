@@ -374,4 +374,4 @@ that proved VCST-5276 either way.
 - `/angular-admin` `css-layout-patterns.md` — before/after fix recipes anchored on real blades.
 - `/angular-admin` `visual-render-harness.md` — the pre-PR browser proof.
 - `vc-module-architecture.md` §2 — Admin UI ships inside the module repo (single-repo fix).
-- `.claude/rules/quality-gates.md` — G2/G3/G4/G6 treatment of Admin SPA layout/CSS fixes.
+- `.claude/knowledge/execution/quality-gates.md` — G2/G3/G4/G6 treatment of Admin SPA layout/CSS fixes.

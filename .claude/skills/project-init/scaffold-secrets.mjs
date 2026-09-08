@@ -107,7 +107,7 @@ const CATALOG = {
     //
     // Exception path (org policy forbids classic PATs, or least-privilege is required):
     // `gh auth login` for the upstream + a fine-grained token for the client's own org.
-    // Documented in .claude/rules/quality-gates.md §1a — not in the operator's env file.
+    // Documented in .claude/knowledge/execution/quality-gates.md §1a — not in the operator's env file.
     what: "GitHub Personal Access Token — classic, NOT fine-grained.",
     why: "Lets /qa-fix open PRs on your own repos and contribute fixes/issues to the VirtoCommerce upstream.",
     // `where:` = the click path, ending in the scope to tick — the same shape as ADO_PAT's

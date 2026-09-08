@@ -23,7 +23,7 @@ gate ladder — never diverge from it.
 ## Shared infra (reuse — do not reinvent)
 | Concern | Source of truth |
 |---------|-----------------|
-| Gate ladder G0–G7 | `.claude/rules/quality-gates.md` |
+| Gate ladder G0–G7 | `.claude/knowledge/execution/quality-gates.md` |
 | Module→repo routing, `isAllowedRepo`, `checkoutForFix`, build/test `REPO_PROFILES` | `ci/lib/repo-router.ts` |
 | Live module dependency graph (Platform API) | `ci/lib/module-registry.ts` |
 | Repo allowlist + routing hints | `ci/config/fix-repos.json` |

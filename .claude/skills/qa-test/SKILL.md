@@ -186,7 +186,7 @@ known cost, and three were measured:
 | `suites:sync` ‖ `suites:lint` | lint reads what sync wrote |
 | Artifact A ‖ 3a, or Artifact A ‖ 3x | cases are authored against fixtures that already resolve **and against the model 3x amended**. Authoring beside the discovery lane produces cases written from the guesses the lane exists to replace — the lane's value is entirely in the order ([`exploratory-lane.md`](exploratory-lane.md) §2) |
 | `3x` ‖ Step 4's execution agents | the lane closes before Artifact A, which closes before Step 4, so the max-3 cap holds **by construction** and needs no arbitration. Overlap them and it does not |
-| Two suites ‖ on one disposable fixture set | **measured**: `075d` lost 5 of 34 cases to fixtures suite `083d` had already consumed on the same accounts. Serialise with a re-seed between, or give each its own accounts (`.claude/rules/test-data.md` §The scope of "isolated") |
+| Two suites ‖ on one disposable fixture set | **measured**: `075d` lost 5 of 34 cases to fixtures suite `083d` had already consumed on the same accounts. Serialise with a re-seed between, or give each its own accounts (`.claude/knowledge/execution/test-data-authoring.md` §The scope of "isolated") |
 | More than 3 browser agents, or two agents on one session | the lane cap is hard, and a shared session means agents fighting over navigation and cookies |
 | A verifier ‖ its own doer | the verifier re-derives evidence *after* the doer's write; concurrent, it verifies a half-finished step. The three gates are sequential by design |
 | `--iterate` rounds | test → fix → deploy → re-test is inherently serial |

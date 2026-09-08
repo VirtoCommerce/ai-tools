@@ -16,7 +16,7 @@ Each axis's own *behaviour* stays in its own file, which this one does not dupli
 
 The four axes were added one at a time, each by the same template: a derived token in `1b`, a gate, a
 `summary.json` block, a skill file, a paragraph in `CLAUDE.md`, a row in
-`.claude/rules/skills-commands.md`. **Six documentation sites per axis, four axes, and nothing ever
+the (since-deleted) `rules/skills-commands.md`. **Six documentation sites per axis, four axes, and nothing ever
 generalised** — so ~176 lines across the surface restated one derivation contract, with
 *"derived, never asked, never defaulted"* appearing seven times, *"unresolved is treated as true"* six, and
 *"null means the source was not consulted, which is a gap, not a zero"* three.

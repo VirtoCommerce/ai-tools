@@ -9,7 +9,7 @@ disable-model-invocation: true
 Pick up a bug **already filed by `/qa-bug`** and drive it through the auto-fix lifecycle to an open PR,
 then **STOP for human review**. This is the **interactive twin** of the headless `ci/run-fix-cycle.ts`
 (the same relationship `/qa-regression` has with `ci/run-regression.ts`). It **reuses** that pipeline's
-infra and the shared gate ladder in `.claude/rules/quality-gates.md`.
+infra and the shared gate ladder in `.claude/knowledge/execution/quality-gates.md`.
 
 **Designed to generalize.** The pipeline is repo-kind- and project-agnostic: it routes to **one**
 allowed product repo of any kind and delegates the fix to the developer agent that matches that kind.
@@ -261,7 +261,7 @@ available for CI-on-PR; the routine is the lighter scheduled trigger.
 
 ## Rules
 - Single repo of any allowed kind; a STOP at any gate leaves the ticket filed for human handoff (see
-  `.claude/rules/quality-gates.md`).
+  `.claude/knowledge/execution/quality-gates.md`).
 - Code review (Gate 4) delegates the mechanical bug/cleanup pass to the built-in **`/code-review`**
   skill; `backend-reviewer` adds only the VC-specific gate checklist on top.
 - Reuse `ci/config/fix-repos.json` + `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts` — do not

@@ -358,4 +358,4 @@ mcp__Chrome_DevTools__list_console_messages
 - [charter-library.md](charter-library.md) — "Cache & State Drift" and "Performance & Resource Stress" charters explicitly use these probes
 - [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../knowledge/oracles/vc-bug-catalog.md) — VC-specific historical bugs, many of which were found via these probes
 - [../../../agents/knowledge/oracles/business-logic.md](../../knowledge/oracles/business-logic.md) — BL-UI-001..006 layout-stability invariants relevant to zoom/print/dark-mode probes
-- [../../../rules/mcp-browsers.md](../../rules/mcp-browsers.md) — Chrome DevTools MCP + Playwright MCP setup
+- [../../../knowledge/execution/browser-lanes.md](../../knowledge/execution/browser-lanes.md) — Chrome DevTools MCP + Playwright MCP setup

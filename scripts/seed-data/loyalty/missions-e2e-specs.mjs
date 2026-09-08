@@ -1606,7 +1606,7 @@ export function discountBand(spec = MISSION_BY_ALIAS.MSN_E2E_ORDERVALUE, product
  * only served one of them:
  *
  *   browser lane   — a Playwright case types the env-var NAME so `--secrets` substitutes and REDACTS
- *                    the value (`.claude/rules/mcp-browsers.md`). It needs the bare name, which is
+ *                    the value (`.claude/knowledge/execution/browser-lanes.md`). It needs the bare name, which is
  *                    what `password_var` carries.
  *   runner lane    — `[AUTH role=<alias>]` calls graphql-auth.ts `resolveRole()`, which for an
  *                    `_inline` alias with no `email_env`/`password_env` resolves `@td(<alias>.email)`

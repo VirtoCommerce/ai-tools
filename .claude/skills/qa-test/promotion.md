@@ -24,7 +24,7 @@ grounded and promotable only now that Step 4 executed them live via the automate
    `td:validate`, every assertion grounded, executed with evidence.
 4. **Ask to promote, then flip in place — via the deterministic promoter, never by hand-editing the cell.**
    `npm run tc:promote -- <RUN_ID> --suite <ID> --stamp <ticket-key>` prints the per-case decision, then
-   `tc:promote:apply` writes it (`.claude/rules/regression.md` §Post-Run Promotion; core
+   `tc:promote:apply` writes it (`.claude/knowledge/execution/regression-promotion.md` §Post-Run Promotion; core
    `scripts/test-cases/promote-cases.ts`). It re-derives the same G10 as step 3 by linting each row **at its
    target status**, refuses a flaky or non-PASS case with a `PR-*` reason code, and edits only the changed
    fields — the hand path renormalised quoting and could promote on a PASS nobody could re-derive. It writes

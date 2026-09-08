@@ -2,6 +2,7 @@
 description: "Reproduce a bug, capture evidence, write a structured report, and optionally create a JIRA ticket."
 argument-hint: "bug description | <ticket-key> | screenshot path"
 
+disable-model-invocation: true
 ---
 
 > **MANDATORY — screenshots go INLINE in the comment.** A UI claim posted without its image embedded is not delivered: Markdown `![](path)` and prose file paths both post `200 OK` and render nothing. Attach, then reference `!file.png|width=700!` via the **v2** comment API, then VERIFY from `?expand=renderedBody` (one `<img …/attachment/content/N>` per image, zero surviving `!….png!`, zero `<span class="error">`). Mechanism + the ADF dead ends: `knowledge/execution/tracker-ops.md` §5c. Policy + the verification gate: `.claude/rules/reports.md` §5.0. A non-visual claim says so explicitly rather than silently shipping no image.
@@ -267,7 +268,7 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 > **Scope boundary — report every bug, route honestly.** `/qa-bug` files **all** confirmed defects and
 > determines routing for each; it does **not** decide auto-fix eligibility or filter bugs out. Whether a
 > bug is auto-fixable (by-design / config-gated / breaking / multi-repo, etc.) is decided downstream by
-> `/qa-fix` **Gate 0** (`.claude/rules/quality-gates.md`). If routing genuinely spans multiple repos, just
+> `/qa-fix` **Gate 0** (`.claude/knowledge/execution/quality-gates.md`). If routing genuinely spans multiple repos, just
 > say so in **Routing confidence: LOW** + a one-line note — still file the bug.
 
 ---

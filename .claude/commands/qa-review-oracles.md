@@ -2,6 +2,7 @@
 description: "Audit a shared QA oracle against docs + live + source code, auto-apply confirmed changes, and reconcile test-case citations. Two axes: bl (business-logic.md invariants) and ecl (e-commerce-edge-cases-library.md sections). Gated by a 3-source evidence bar (not human approval); unconfirmed items route to the proposals file."
 argument-hint: "[bl|ecl|all] <scope> [--dry-run]"
 
+disable-model-invocation: true
 ---
 
 # /qa-review-oracles — Oracle Triangulation Review & Auto-Apply

@@ -174,7 +174,7 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 | Decision | Lives at |
 |---|---|
 | Which **flow** a tracker item takes (type × status) | `.claude/knowledge/execution/ticket-routing.md` |
-| The bug auto-fix **gate ladder** G0–G7, no-auto-merge, client-code containment | `.claude/rules/quality-gates.md` |
+| The bug auto-fix **gate ladder** G0–G7, no-auto-merge, client-code containment | `.claude/knowledge/execution/quality-gates.md` |
 | Which **repo / tracker / host** a fix delivers to | `ci/lib/repo-router.ts` + `ci/config/fix-repos.json` (+ `project-profile.json`) |
 | Tracker/host-agnostic ops (resolve / comment / transition / PR) | `.claude/knowledge/execution/tracker-ops.md` |
 | Which **suites** a change needs | `npm run regression:select` (`scripts/lib/suite-selection.ts`) |
@@ -182,7 +182,7 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 | Report categories, size caps, what stays terminal-only | `.claude/rules/reports.md` |
 | Testing modes, suite manifest, selection groups | `.claude/rules/regression.md` |
 | Agents, browser assignments, delegation rules | `.claude/rules/agents.md` |
-| Full command + skill argument reference | `.claude/rules/skills-commands.md` |
+| Full command + skill argument reference | the frontmatter of each `commands/*.md` and `skills/*/SKILL.md` (rendered as the `/` menu) |
 | Test-data resolution + the no-hardcode GOLDEN RULE | `.claude/rules/test-data.md` |
 
 ## Cross-References
@@ -194,7 +194,7 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 | `/qa-regression` | `/qa-triage-results`, `/qa-metrics` | Run → triage the failures → results feed the quality gates |
 | `/qa-regression` | `/qa-coverage-gap` | Gap analysis validates suite completeness before a run |
 | `/qa-bug` | `/qa-investigate`, `/qa-defect` | Bug command uses the investigation flow + defect templates |
-| `/qa-fix` | `/qa-bug` (upstream), `/qa-verify-fix` (downstream) | `/qa-bug` files the ticket → `/qa-fix` triages, fixes, opens a PR (STOP for human review) → after merge `/qa-verify-fix` closes the loop. Gate ladder: `.claude/rules/quality-gates.md` |
+| `/qa-fix` | `/qa-bug` (upstream), `/qa-verify-fix` (downstream) | `/qa-bug` files the ticket → `/qa-fix` triages, fixes, opens a PR (STOP for human review) → after merge `/qa-verify-fix` closes the loop. Gate ladder: `.claude/knowledge/execution/quality-gates.md` |
 | `/qa-fix` | `/qa-deploy-pr` | A PR's prerelease has to be deployed before `/qa-test PR #N` or `/qa-verify-fix` can see the change |
 | `/qa-fix` | `/qa-bundle-check` → `/qa-hotfix` → `/qa-hotfix-check` | After a fix ships to master: find the bundles that lack it → cherry-pick + release → deliver onto the deployed envs |
 | `/qa-monitoring` | `/qa-bug`, `/qa-fix` | Monitoring drafts confirmed bugs → a human picks them up (monitoring never files a ticket or auto-fixes) |
@@ -208,3 +208,20 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 | `/qa-seed-data` | `/qa-generate-data`, `/qa-test`, `/qa-regression` | Design combinations → seed → run |
 | `/qa-review-oracles` | `/qa-review-tests --fix`, `/qa-checklist`, `/qa-exploratory` | The oracle skill never edits a CSV — citation remaps go to `/qa-review-tests`; exploratory feeds it `[THEORETICAL]`→`[OBSERVED]` proposals |
 | `/qa-sitemap` | `/qa-test-plan` | Refreshes `.claude/knowledge/domain/sitemap.md`; wired into `/qa-test-plan` Step 0 at per-sprint cadence |
+
+## Knowledge bases — inventory and read-before-you-write rules
+
+> Moved verbatim from `.claude/rules/agents.md` on 2026-09-08 (PR 2 of the agentic-system audit): these rules bind only when a task touches the named file, so they load on demand.
+
+**Shared knowledge bases** — `ls .claude/knowledge/` for the current inventory; each file opens with its own scope. Grouped by directory: `api/` (api-auth, graphiql-interaction, graphql-schema, graphql-test-cases-runner, order-creation-matrix, platform-patterns) · `architecture/` (vc-frontend-architecture, vc-module-architecture) · `automation/` (browser-quirks, storefront-config-flags, storefront-selectors) · `ba/` (virto-doc-style) · `diagnostics/` (skill-expectations) · `domain/` (catalog, functionality-map, products, release-ledger, sitemap, store-settings, white-labeling) · `execution/` (debugging-signals, live-discovery, module-suite-map, performance-thresholds, test-data-authoring, test-execution-preflight, test-runner-tags, ticket-routing, tracker-ops) · `oracles/` (business-logic, critical-ui-scope, e-commerce-edge-cases-library, vc-bug-catalog).
+
+**Non-obvious read-before-you-write rules** (these do NOT follow from the filenames):
+- `api/graphql-schema.md` — MUST be consulted before writing or reviewing any GraphQL query/mutation (field names drift; verify against live introspection). **Refreshing it is the CALLER's step, never the reading agent's judgment** — `/qa-test` `1b` item 2d and `/qa-test-lifecycle` Pre-Flight 4 run `npm run schema:refresh` and pass the rev into the brief; an agent handed no rev must treat the snapshot as UNKNOWN age rather than deciding whether it "looks stale", which the file gives it no basis to do. **`schema:refresh` writes this doc ONLY** — the runner's `scripts/.graphql-schema.cache.json` is refreshed by `npm run graphql:fixtures:validate:refresh`, and because `loadSchemaCache` has no age check, the plain `graphql:fixtures:validate` passes clean against an arbitrarily old (and possibly other-env) cache. Single source of truth: `.claude/skills/qa-test/contract-refresh.md`.
+- `api/graphql-test-cases-runner.md` — the **canonical authoring contract** for runner-native GraphQL test cases (`scripts/graphql/graphql-runner.ts`): full tag grammar, predicate shapes, `@td()` resolver, capture chaining. Every agent that writes/reviews/migrates GraphQL cases MUST read it first; gold-standard reference suite: `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
+- `execution/live-discovery.md` — read before authoring any test naming a product / address / cart / coupon entity that may drift between seeds.
+- **Prior art per domain** — read the sources directly before analysing or designing against a surface: `reports/ba/<domain folder>/` (prior BA analysis), `reports/ba/test-models/` (prior test models — amend, never fork), `.claude/knowledge/domain/<domain>.md`, and `reports/tickets/**/summary.json` (tickets already tested). Prior art is a **hypothesis** to triangulate against the release ledger + live, never a baseline; it carries no behaviour and can never ground a `{DOC}` claim. (The generated `functionality-map.md` index that fronted these was removed 2026-09-08.)
+- `domain/release-ledger.md` — MUST be consulted before **designing a test for**, or **triaging a failure in**, a component the ledger records a release for since the env's deployed version. It is the only source in the repo that answers "what shipped recently": VirtoOZ's release corpus stops at Platform 3.917.1 while production is past 3.1050, so the docs MCP cannot see roughly nine months of releases. Generated — `npm run releases:refresh`; never hand-edit. **Three rules travel with it, and skipping any one of them produces a confidently wrong verdict:** (1) it says what is **released upstream**, never what is **deployed on the env under test** — a capability it records that the live `/api/platform/modules` probe does not carry is `NOT_DEPLOYED`, never a `FAIL` and never a bug; (2) it is an editorial monthly digest that **declares itself non-exhaustive**, so presence is evidence but absence is not — a miss never licenses "nothing changed"; (3) it carries **no behaviour** (no ACs, field lists, or expected-value literals), so it can raise a *hypothesis* about a failure but can never settle a verdict, and it can never ground an assertion as `{DOC}`.
+- `oracles/critical-ui-scope.md` — **currently UNCOVERED** (its only covering suite `048b` was removed 2026-07-25, so every applicable cell is `GAP`); it is the scope definition + `/qa-design` audit reference, not a regression gate.
+- `oracles/vc-bug-catalog.md` — the "Familiar Problems" oracle (HICCUPPS-F) for exploratory sessions + Bad Neighborhood Tours.
+- Note: `test-case-template.md` (enriched CSV column spec) lives in `skills/qa-test-cases-generator/`, NOT in `knowledge/`.
+

@@ -117,11 +117,11 @@ API audit, Agile stories, audience-targeted docs (Customer / Admin / Developer /
 
 ### Developers Team (4) — only write-capable team, driven by `/qa-fix`; never auto-merges
 `fullstack-backend`, `backend-reviewer`, `fullstack-frontend`, `frontend-reviewer` (all opus) — one
-developer + one reviewer per repo kind. Gate ladder: [.claude/rules/quality-gates.md](.claude/rules/quality-gates.md).
+developer + one reviewer per repo kind. Gate ladder: [.claude/knowledge/execution/quality-gates.md](.claude/knowledge/execution/quality-gates.md).
 
 ## Commands & Skills
 
-- **31 slash commands** — [commands/](.claude/commands), reference in [.claude/rules/skills-commands.md](.claude/rules/skills-commands.md).
+- **31 slash commands** — [commands/](.claude/commands), reference: each file's frontmatter (the `/` menu).
 - **40 skills** — one level each under [skills/](.claude/skills) (`skills/<name>/SKILL.md`); see [skills/README.md](.claude/skills/README.md).
 
 ## MCP Servers
@@ -129,7 +129,7 @@ developer + one reviewer per repo kind. Gate ladder: [.claude/rules/quality-gate
 Project-level (`.mcp.json`, gitignored — create locally): `playwright-chrome`, `playwright-firefox`,
 `playwright-edge`, `postman`, `github`, `context7`.
 User/IDE-level: Chrome DevTools, Azure, Atlassian, Figma, Microsoft Learn, **VirtoOZ** (primary VC docs).
-Full reference: [.claude/rules/mcp-browsers.md](.claude/rules/mcp-browsers.md).
+Full reference: [.claude/knowledge/execution/browser-lanes.md](.claude/knowledge/execution/browser-lanes.md).
 
 ## Commands (npm)
 

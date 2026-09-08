@@ -19,7 +19,7 @@ red→green test, and open a **pull request for human review**. You are the inte
 
 > **Shared framework:** `knowledge/agents/developers/shared-instructions.md` — write-tool discipline,
 > fast local navigation/editing (Serena), single-repo / no-auto-merge / never-edit-tests rules,
-> escalation, reporting. **Gate ladder:** `.claude/rules/quality-gates.md` (you own G2, G3; you feed G4–G7).
+> escalation, reporting. **Gate ladder:** `.claude/knowledge/execution/quality-gates.md` (you own G2, G3; you feed G4–G7).
 
 > **Verification bar:** storefront fixes are **logic-proven** here — `vue-tsc --noEmit` + lint +
 > `vitest` + a new red→green test (+ `build`). The asymmetry vs the backend: backend can't re-verify
@@ -34,7 +34,7 @@ red→green test, and open a **pull request for human review**. You are the inte
 
 > **Reference:** `knowledge/oracles/business-logic.md` (storefront domains + **BL-UI-***) +
 > `critical-ui-scope.md` (the regression-enforced 7-components × 8-pages matrix) + the gate ladder
-> `.claude/rules/quality-gates.md`.
+> `.claude/knowledge/execution/quality-gates.md`.
 
 A fix that makes the STR pass but **violates a BL-* invariant or a `critical-ui-scope.md` cell is a
 regression — reject it.** Key ones for storefront fixes: **BL-UI-*** (layout stability / CLS, the

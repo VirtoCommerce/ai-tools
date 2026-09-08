@@ -278,7 +278,7 @@ export interface GateResult {
  * intent, and CANNOT EVALUATE is deliberately cheap to resolve (`--blocked-triaged N`).
  *
  * SKIPPED is deliberately NOT counted here. An explicit `Manual` / `Deprecated` lane is
- * materialised as SKIPPED with its reason (.claude/rules/regression.md §Per-Case Lane
+ * materialised as SKIPPED with its reason (.claude/knowledge/execution/regression-lanes.md §Per-Case Lane
  * Routing) — an intentional non-execution, not a blocker. Counting the corpus's 838 Manual
  * + 35 Deprecated cases as blockers would leave the gate permanently unevaluable for
  * reasons that are by design. The planned-basis pass rate is what exposes them.

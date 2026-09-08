@@ -33,5 +33,5 @@ terminal entry; the skill holds the methodology, the env wiring, and the deliver
   (`vcst`→`vcst-qa`, else the branch matching the env). Never hardcode `vcst-qa`.
 
 Deterministic core: `scripts/deploy/deploy-pr-artifact.ts` (`npm run deploy:pr` /
-`deploy:pr:apply`). Gate context: `.claude/rules/quality-gates.md` (G6 E2E verification) +
+`deploy:pr:apply`). Gate context: `.claude/knowledge/execution/quality-gates.md` (G6 E2E verification) +
 `.claude/templates/agent-dispatch.md` (Build Verification).

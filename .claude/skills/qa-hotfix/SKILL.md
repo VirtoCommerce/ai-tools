@@ -148,7 +148,7 @@ before you proceed.
 
 For `READY` bundles, and for `✗ no support/X.Y` bundles after their branch is created (step 0).
 Work in `.fix-workspace/` (gitignored). **Triple-guarded no-auto-merge culture applies**
-(`.claude/rules/quality-gates.md`): every write needs explicit human confirmation — sequentially,
+(`.claude/knowledge/execution/quality-gates.md`): every write needs explicit human confirmation — sequentially,
 one confirmation per write; in parallel, a single **batch** confirmation covering all lanes before
 any push (see *Parallel vs sequential* below). Either way, nothing is pushed unconfirmed.
 

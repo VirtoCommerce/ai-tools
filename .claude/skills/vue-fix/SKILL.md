@@ -6,7 +6,7 @@ description: "[Development] Implement a minimal, idiomatic Vue 3 / TypeScript fi
 # /vue-fix — Implement a minimal Vue 3 / TS fix in vc-frontend
 
 Turn the red reproduction test (`/vue-unit-test`) green with the **smallest correct change**, then pass
-the typecheck + lint + test (+ build) gate. This is **Gate 3** of `.claude/rules/quality-gates.md`.
+the typecheck + lint + test (+ build) gate. This is **Gate 3** of `.claude/knowledge/execution/quality-gates.md`.
 
 ## Preconditions
 - Source checked out in `.fix-workspace/vc-frontend/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`).
@@ -62,5 +62,5 @@ the typecheck + lint + test (+ build) gate. This is **Gate 3** of `.claude/rules
 ## References
 - `vue-fix-patterns.md` — common VC storefront fix shapes (reactivity, watch, prop, v-model, i18n, $cfg, GraphQL field, store)
 - `vue3-best-practices.md` — modern Vue 3 / TS idioms + build hygiene within a minimal diff
-- `.claude/rules/quality-gates.md` — G3 (green), G4 (review), G5 (CI + SonarCloud), G7 (no auto-merge)
+- `.claude/knowledge/execution/quality-gates.md` — G3 (green), G4 (review), G5 (CI + SonarCloud), G7 (no auto-merge)
 - `knowledge/oracles/vc-bug-catalog.md` — don't re-introduce a historical VC-UI-* failure pattern

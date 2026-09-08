@@ -95,7 +95,7 @@ below.
 **Two things the brief MUST also carry, each of which cost a real run when it did not.**
 
 1. **The `vs. DESIGN` expectations as DATA — a subagent cannot read the spec itself.**
-   `.claude/rules/mcp-browsers.md` §*A subagent does not inherit `DesignSync`*: the tool is unavailable
+   `.claude/knowledge/execution/browser-lanes.md` §*A subagent does not inherit `DesignSync`*: the tool is unavailable
    inside a dispatched agent, so **the axis is structurally unrunnable there** and can only ever return
    `SKIPPED`. Dispatching it and reading that `SKIPPED` as normal is how an axis reports clean forever
    while never running once. So either the **orchestrator reads the design project itself and passes the
@@ -113,7 +113,7 @@ below.
    role-gated target is not a fallback but a wrong answer: the surface renders its **empty state**, which
    **reads as a pass**. Whichever is chosen, the brief never carries a credential, a variable name, or a
    workaround for a permission denial
-   (`.claude/rules/mcp-browsers.md` §*Chrome DevTools MCP has no `--secrets`* — conditions and cleanup
+   (`.claude/knowledge/execution/browser-lanes.md` §*Chrome DevTools MCP has no `--secrets`* — conditions and cleanup
    obligations live there).
 
 ---

@@ -423,7 +423,7 @@ Once the profile exists, the fix pipeline uses it automatically:
 - **Tracker** — comments + status transitions go to Jira or Azure Boards per
   `tracker.kind`.
 
-Client-code containment (`.claude/rules/quality-gates.md` §2a) is enforced regardless:
+Client-code containment (`.claude/knowledge/execution/quality-gates.md` §2a) is enforced regardless:
 client code never leaves the client project. Gate ladder is unchanged. Never auto-merges.
 
 ## Re-running
