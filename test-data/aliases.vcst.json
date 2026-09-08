@@ -721,8 +721,8 @@
     "productId": "f4f27033-d688-4d22-ade7-5106f4748add"
   },
   "LOYALTY_NOBAL_USER": {
-    "memberId": "31399071-7589-42a8-9013-75f805dfd48b",
-    "securityAccountId": "5a216728-c49f-4c4b-b611-227757f071c1"
+    "memberId": "83bcb310-9856-47a0-8e68-c4e34a143dce",
+    "securityAccountId": "e383066c-56dc-4ff2-8e92-3c5a3a1329bd"
   },
   "MULTI_ORG_TF_BR": {
     "id": "85d1aeea-ee57-4041-9c18-c16431fe23ec",
@@ -763,8 +763,8 @@
     "variation_white_id": "2cf1b2ae-68e0-40c2-ae87-f95d55268caa"
   },
   "LOYALTY_WHOLESALE_USER": {
-    "memberId": "47db2112-34a7-4fc1-9783-95523284ae10",
-    "securityAccountId": "3aaada1a-6c1b-417e-8cb3-d074258016a3"
+    "memberId": "0554b16e-1989-46ee-9944-b639289e7c95",
+    "securityAccountId": "fa360b8f-aab2-43eb-828e-9edb9c451d15"
   },
   "CATALOG_LINK_RESTRICTED": {
     "_inline": true,

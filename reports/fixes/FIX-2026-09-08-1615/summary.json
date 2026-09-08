@@ -1,0 +1,89 @@
+{
+  "run_id": "FIX-2026-09-08-1615",
+  "date": "2026-09-08",
+  "ticket": "VCST-5916",
+  "ticket_type": "Bug",
+  "ticket_status_at_start": "To do",
+  "ticket_status_at_end": "To do",
+  "transitioned": false,
+  "local_bug_report": "reports/bugs/open/medium/BUG-points-history-operation-blank-for-mission-grants-VCST-5916.md",
+  "outcome": "RESUMED",
+  "bail_gate": "Gate 0",
+  "bail_reason": "ambiguous — two mutually-foreclosing fixes (cosmetic label vs invariant-closing mission attribution); label text is an unmade product decision; cosmetic variant needs 2 repos and does not satisfy BL-LOY-015 [P0-revenue]",
+  "route": {
+    "repo": "VirtoCommerce/vc-module-loyalty",
+    "repoKind": "module",
+    "allowlisted": true,
+    "developer_agent_would_be": "fullstack-backend",
+    "sub_app_override": null,
+    "rca_anchor": "src/VirtoCommerce.Loyalty.ExperienceApi/Extensions/DataLoaderContextAccessorExtensions.cs :: LoadLoyaltyObject()",
+    "routing_confidence": "HIGH",
+    "gate_1b_provenance": "N/A (projectType=platform, repos.client empty)"
+  },
+  "gates": {
+    "phase_0_preflight": "PASS",
+    "gate_0_triage": "BAIL then UNBLOCKED by operator decision",
+    "gate_1_route": "RESOLVED (recorded, not acted on)",
+    "gate_2_reproduce": "NOT_RUN",
+    "gate_3_fix": "NOT_RUN",
+    "gate_4_review": "NOT_RUN",
+    "gate_5_ci": "NOT_RUN",
+    "gate_6_e2e": "NOT_RUN",
+    "gate_7_stop": "NOT_RUN"
+  },
+  "side_effects": {
+    "cloned": false,
+    "branch_created": false,
+    "pushed": false,
+    "pr_opened": false,
+    "tracker_comment_posted": true,
+    "tracker_transitioned": false
+  },
+  "deployed_versions": {
+    "VirtoCommerce.Loyalty": "3.1006.0",
+    "VirtoCommerce.Xapi": "3.1020.0",
+    "storefront_theme": "2.57.0"
+  },
+  "related_invariant": "BL-LOY-015 [P0-revenue] — re-audited 2026-09-08 (BL-AUDIT-2026-09-08), status VIOLATED for the storefront/xAPI caller",
+  "confidence": "high (route + diagnosis); blocked on a product decision, not on difficulty)",
+  "bail_resolved": {
+    "decided_at": "2026-09-08",
+    "decision": "variant (a) — indicate the points came from a mission, do not name which",
+    "decided_by": "operator",
+    "recorded_on_ticket": "VCST-5916 comment",
+    "followup_ticket": "VCST-5917 (variant (b) — per-mission attribution; keeps BL-LOY-015 tracked)",
+    "link": "VCST-5916 Relates VCST-5917"
+  },
+  "pinned_contract": {
+    "resolver_type_value": "Mission",
+    "frontend_i18n_key": "loyalty.points-history.mission",
+    "english_string": "Mission reward"
+  },
+  "prs_planned": [
+    {
+      "repo": "VirtoCommerce/vc-module-loyalty",
+      "kind": "module",
+      "agent": "fullstack-backend",
+      "branch": "claude/qa-autofix/VCST-5916",
+      "base": "dev",
+      "workspace": ".fix-workspace/vc-module-loyalty-VCST-5916",
+      "status": "gates 2-3 in progress"
+    },
+    {
+      "repo": "VirtoCommerce/vc-frontend",
+      "kind": "frontend",
+      "agent": "fullstack-frontend",
+      "branch": "claude/qa-autofix/VCST-5916",
+      "base": "dev",
+      "workspace": ".fix-workspace/vc-frontend-VCST-5916",
+      "status": "gates 2-3 in progress"
+    }
+  ],
+  "write_credential_preflight": {
+    "host": "github",
+    "mode": "direct",
+    "identity": "Lenajava1",
+    "vc-module-loyalty_push": true,
+    "vc-frontend_push": true
+  }
+}

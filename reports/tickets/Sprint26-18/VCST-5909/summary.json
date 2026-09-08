@@ -1,0 +1,274 @@
+{
+  "ticket": "VCST-5909",
+  "ticket_type": "Bug",
+  "flow": "verify-fix",
+  "path": "fast",
+  "layer": "storefront",
+  "verdict": "PASS",
+  "date": "2026-09-08",
+  "timing": {
+    "started_at": "2026-09-08T11:00:00Z",
+    "finished_at": "2026-09-08T11:52:00Z",
+    "steps": {
+      "step1": 0,
+      "step2": 0,
+      "step3": 0,
+      "step4": 0,
+      "step5": 0
+    },
+    "agent_dispatches": 2,
+    "regression_predicted_minutes": null,
+    "regression_actual_minutes": null
+  },
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "not-probed (theme-only change)",
+    "theme": "2.57.0-pr-2471-6ed5-6ed5dc1b",
+    "relevant_modules": {},
+    "deployed": {
+      "platform": "UNKNOWN",
+      "relevant_modules": {
+        "vc-theme-b2b-vue": "2.57.0-pr-2471-6ed5-6ed5dc1b"
+      }
+    },
+    "releasedThrough": {
+      "ledger_generated": null,
+      "components": {},
+      "behind": [],
+      "breaking": []
+    }
+  },
+  "release": {
+    "layers": [],
+    "layer_source": [],
+    "layers_conflict": false,
+    "audience": [],
+    "component_versions": {},
+    "platform_version": null,
+    "breaking": false,
+    "breaking_source": null,
+    "user_visible": null,
+    "fragment": null,
+    "refusal": "null",
+    "aggregated_into": null
+  },
+  "documentation": {
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": [],
+    "comment_posted": false,
+    "refusal": "null"
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "confirmed": false,
+      "actor": "qa-lead"
+    },
+    {
+      "hop": "closing",
+      "at": "5f",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test",
+      "confirmed": true,
+      "actor": "qa-lead"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert"
+  ],
+  "epic": {
+    "parent": null,
+    "siblings": [],
+    "roll_up": null
+  },
+  "ac_analysis": {
+    "story_acs": 0,
+    "weak_acs": 0,
+    "gap_acs_added": 0,
+    "impl_coverage": null,
+    "conditions_total": 0,
+    "conditions_with_evidence": 0,
+    "ac_dod_estimate": null
+  },
+  "total_cases": 10,
+  "passed": 10,
+  "failed": 0,
+  "blocked": 0,
+  "iterations": {
+    "enabled": false,
+    "rounds": 0,
+    "max_rounds": 0,
+    "outcome": null,
+    "per_round": []
+  },
+  "new_cases_authored": 0,
+  "promotion": {
+    "automated": 0,
+    "reviewed": 0,
+    "blocked": 0,
+    "reverted": 0
+  },
+  "regression": {
+    "c1": {
+      "suites": [],
+      "ids": [],
+      "run_id": null,
+      "pass_rate": null,
+      "skipped_reason": "verify-fix authors no cases, and Step-2a left no RE-BASE ids - all 6 hits on 083c-loyalty-missions-storefront.csv dispositioned CONFIRMED. Adjacent-surface regression was run inline by the verifying agent instead."
+    },
+    "c2": {
+      "suites": [],
+      "run_id": null,
+      "pass_rate": null,
+      "predicted_minutes": null,
+      "actual_minutes": null,
+      "scope_exclusions": [],
+      "amended_verdict": null,
+      "skipped_reason": "Not run. verify-fix carries its own fixed regression shape (domain-adjacent checks by the verifying agent); the change-scoped Critical sweep answers a release question this flow does not ask. This run therefore makes NO release recommendation - the gate is not-assessed, never a pass."
+    }
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_ids": [],
+    "confirmed_bugs": 0,
+    "test_fixes_applied": 0,
+    "dismissed": 0,
+    "report_path": null
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "AGENT-TEST Missions PerSku Target A/B fixture products carry no images; broken placeholders render in the SKU modal and cart lines. Test-data gap, not a product defect - routes to test-data-engineer.",
+      "report": null
+    }
+  ],
+  "discovery": {
+    "ran": false,
+    "skipped_reason": "FULL-path lane only; this run is verify-fix.",
+    "lane": null,
+    "minutes": 0,
+    "charter_sources": [],
+    "hypotheses_grounded": 0,
+    "hypotheses_remaining": 0,
+    "model_amendments": 0,
+    "scenarios_new": 0,
+    "oracle_proposals": 0,
+    "bugs_surfaced": 0,
+    "report": null
+  },
+  "visual": {
+    "surface": "false",
+    "surface_source": [],
+    "ran": false,
+    "skipped_reason": null,
+    "targets": [],
+    "axes": {
+      "a11y": {
+        "ran": false,
+        "verdict": null,
+        "findings": 0,
+        "skipped_reason": null
+      },
+      "design_system": {
+        "ran": false,
+        "verdict": null,
+        "findings": 0,
+        "skipped_reason": null
+      },
+      "design_spec": {
+        "ran": false,
+        "verdict": null,
+        "confirmed": 0,
+        "drift": 0,
+        "missing": 0,
+        "unspec": 0,
+        "known_divergence": 0,
+        "unresolved": 0,
+        "skipped_reason": null
+      }
+    },
+    "a11y_findings": [],
+    "invariant_failures": [],
+    "advisory": [],
+    "report": null
+  },
+  "contract": {
+    "surface": "false",
+    "surface_source": [
+      "no .graphql / *ExperienceApi* / GraphType file in the PR #2471 diff"
+    ],
+    "schema": null,
+    "fixtures": null
+  },
+  "coverage_triage": {
+    "surface": "true",
+    "surface_source": [
+      "1a domains: loyalty / missions storefront",
+      "derived layer: storefront",
+      "target suite: regression/suites/Frontend/loyalty/083c-loyalty-missions-storefront.csv (77 rows)"
+    ],
+    "scope": "domain=loyalty",
+    "counts": {
+      "hits": 6,
+      "neverAudited": null
+    },
+    "dispositions": {
+      "CONFIRMED": 6,
+      "REPAIR": 0,
+      "RE-BASE": 0,
+      "SUPERSEDED": 0
+    },
+    "repaired": [],
+    "rebased_into_c1": [],
+    "superseded_proposals": [],
+    "unscannable": [],
+    "unmatched_observables": [
+      "toast auto-dismiss",
+      "SKU modal at 375px",
+      "long-window success date band"
+    ]
+  },
+  "test_data": {
+    "surface": false,
+    "surface_source": [
+      "STR data is the already-seeded AGENT-TEST-MSN-* mission set",
+      "td:validate: green (all guards incl. DV-013 / DV-021 / DV-022 / DV-023)",
+      "no chain link under test needs a divergence the fixtures lack"
+    ],
+    "dispatched": false,
+    "fixtures_covering": [
+      "LOYALTY_VIP_USER",
+      "AGENT-TEST-MSN-PERSKU-ALL",
+      "AGENT-TEST-MSN-ORDERVALUE",
+      "AGENT-TEST-MSN-ENDING-SOON"
+    ],
+    "divergence_resolved": false,
+    "td_validate": "green",
+    "seed_run": null
+  },
+  "business_rules_verified": [
+    "BL-UI-004",
+    "BL-CHK-006"
+  ],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
+    "correlated_failures": []
+  },
+  "screenshots": "reports/tickets/Sprint26-18/VCST-5909/screenshots/"
+}

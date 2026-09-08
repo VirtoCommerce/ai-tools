@@ -68,14 +68,35 @@
     field is one edit away from a future author. **Assert on `currentBalance` unless the case is specifically
     testing pay-with-points affordability.**
 
-    **There is no per-mission attribution on the points ledger at all.** `LoyaltyOperationLogObject` exposes only
-    `type` / `orderId` / `orderNumber` (verified by live introspection, 2026-08-28), and `LoyaltyMissionTransaction`
+    **There is no per-mission attribution on the points ledger GRAPHQL SURFACE.** `LoyaltyOperationLogObject` exposes only
+    `type` / `orderId` / `orderNumber` (verified by live introspection, 2026-08-28 and again 2026-09-08), and `LoyaltyMissionTransaction`
     — which *does* carry `MissionId`, `ObjectId`, `UserId` with a composite index, and is how the accrual dedup
     works — is **not exposed through GraphQL in any form**. One order settles every mission applicable to its
     user (measured: four missions at `+250 / +200 / +100 / +0` on one order), so **a balance total, a history
     length, or any other aggregate is not an oracle for one mission's contribution**. The maximum attribution
     the API permits is amount + `orderId` on the ledger entry — pin both, and never assert positionally on
     `items.0` when several rows can land from one event.
+
+    **The two loyalty ledger types, spelled out — the nesting is the trap.** `type` / `orderId` / `orderNumber` live on
+    the **nested** `object`, NOT on the log row, so selecting them at the top level fails validation outright with
+    `Cannot query field 'type' on type 'LoyaltyOperationLog'` (reproduced 2026-09-08). Live introspection:
+
+    ```
+    LoyaltyOperationLog        { id  operationType  amount  createdDate  object: LoyaltyOperationLogObject }
+    LoyaltyOperationLogObject  { type  orderId  orderNumber }
+    ```
+
+    So the correct selection is `items { id operationType amount createdDate object { type orderId orderNumber } }`.
+
+    **`object` is `null` for every mission-granted row, and that is a product defect, not a bad query.** Measured
+    2026-09-08 on the VIP fixture: 69 of 167 entries return `object: null`, all of them `Earned`. A Platform REST read
+    of those same entries (`POST /api/loyalty-program-operation-log/search`, admin token) returns
+    `objectType: "LoyaltyMissionProgress"` + an `objectId`, so the attribution exists in storage and is dropped by the
+    xAPI resolver (`LoadLoyaltyObject()`'s `objectType switch` has no arm for it). **Authoring consequences:** do not
+    treat a null `object` on a mission row as a broken query or a context-argument omission — it is the current
+    contract, tracked as a read-side defect and as **BL-LOY-015**; assert `object is null` for a mission grant and
+    `object.orderNumber` only for an order-driven row; and if a case needs real per-mission attribution, it cannot get
+    it from GraphQL at all — the admin REST path is the only source today.
 
     **Consequences for authoring:** never conclude a field is empty, missing, or broken until the call carries
     its full context; a differential result between two callers is a context difference until proven otherwise;

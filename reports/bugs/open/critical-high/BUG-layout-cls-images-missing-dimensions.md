@@ -50,3 +50,20 @@ So the image hypothesis was either always secondary or has since been fixed; eit
 
 ## Regression Coverage
 Guarded by suite **048c** (`layout-stability`): `LAYOUT-CLS-001`, `LAYOUT-CLS-002`, `LAYOUT-IMG-001`, `LAYOUT-IMG-002`. Deterministic — CLS reproduced to 4 decimal places across runs.
+
+---
+
+## EXTENDED 2026-09-08 — the same footer-drag signature also hits `/account/missions`
+
+Found by `/qa-test VCST-5910` (verify-fix flow), theme `2.57.0-pr-2471-6ed5-6ed5dc1b`. `PerformanceObserver('layout-shift')` installed pre-paint via `initScript`, measured at two viewports:
+
+| Viewport | CLS | Shifts | Largest contributors |
+|---|---|---|---|
+| 375 px | **0.5624** | 2 | `footer#footer` moves **577 px**; an `svg` moves 289 px |
+| 1280 px | **0.2046** | 3 | `svg` 523 px, `ul.mega-menu__nav`, `section.vc-widget`, `div#menu-item-155.account-navigation-item` |
+
+**Same class as this report, third page.** The signature matches what the 2026-07-25 correction already established for home and catalog — a late-landing block displacing the page and dragging `footer#footer` down with it — so this is an extension of scope, not a new bug. Running total: home 0.502, catalog 0.198, **`/account/missions` 0.5624 at 375 px**. Mobile is the worse case here and sits **5.6× the 0.1 FAIL threshold** and above the 0.25 "poor" mark.
+
+**Attribution checked, and it is NOT the missions feature.** No shift source is a mission-card or mission-modal element; the cause is the page shell reserving no space for the async mission list. PR #2471 (the missions fix under test that day) is styles-only inside the mission components and neither causes nor fixes this.
+
+Still **unfiled** in the tracker — no ticket key on this report. Given three confirmed pages and a 0.56 mobile measurement, it is worth filing on its own.
