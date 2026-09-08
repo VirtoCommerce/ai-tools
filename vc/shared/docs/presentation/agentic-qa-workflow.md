@@ -413,7 +413,7 @@ agents)   progress) BL-*)    reject)
 | ~~`/qa-sync-tests`~~ | **Removed** — file deleted, no redirect. Use `/qa-test-lifecycle` |
 | `/qa-seed-data [profile]` | Seed test data via Postman MCP / teardown AGENT-TEST-* entities |
 | `/ba-analyze [scope]` | Business analysis coordination |
-| `/ba-stories [feature]` | Generate BDD user stories |
+| ~~`/ba-stories [feature]`~~ | **Removed 2026-09-08** — use `/ba-analyze stories [feature\|VCST-XXXX]` |
 
 **Skills (methodology libraries, 3 categories):**
 

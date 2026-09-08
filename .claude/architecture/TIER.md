@@ -81,7 +81,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 
 | File | Tier | Notes |
 |------|------|-------|
-| `qa-process/` | **A** | ISTQB 7-phase lifecycle. |
+| ~~`qa-process/`~~ | — | **Removed 2026-09-08** — a 30 KB ISTQB essay with zero consumers. |
 | `qa-test-design/` | **A** | EP, BVA, decision tables, state, pairwise. |
 | `qa-risk/` | **A** | 5×5 risk matrix. |
 | `qa-defect/` | **A** | Defect lifecycle + JIRA workflow. |
@@ -126,14 +126,14 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `qa-test.md` | **B** | Generic test entry for JIRA/feature/PR. |
 | `qa-test-lifecycle.md` | **B** | Unified pipeline — generic stages. |
 | `qa-regression.md` | **B** | Generic regression runner — argument hints are storefront groups. |
-| `qa-coverage-generation.md` | **B** | Generic pipeline; domains are storefront. |
+| ~~`qa-coverage-generation.md`~~ | — | **Removed 2026-09-08** — zero recorded runs; `/qa-coverage-gap` (skill) is the one coverage pipeline. |
 | `qa-test-plan.md` | **B** | Sprint test plan — generic shape, storefront sprint plans. |
 | ~~`qa-sync-tests.md`~~ | **B** | **Removed** — file deleted, no redirect. Merged into qa-test-lifecycle. |
 | `qa-smoke.md` | **C** | Hardcoded 12 P0 tests for storefront/admin. **Becomes template.** |
 | `qa-design.md` | **C** | Storefront component/page audit. |
 | `qa-seed-data.md` | **C** | Storefront seed presets. |
 | `ba-analyze.md` | **B** | Generic BA analysis entry. |
-| `ba-stories.md` | **B** | Generic user-story authoring. |
+| ~~`ba-stories.md`~~ | — | **Merged into `/ba-analyze stories [--review]` 2026-09-08.** |
 
 ---
 

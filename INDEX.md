@@ -4,7 +4,7 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**. Tests are 
 natural language prompts via MCP servers (Playwright, Chrome DevTools, Atlassian, …) — LLM-powered
 browser automation with AI agents, **not** traditional `.spec.js` files.
 
-> **Authoritative counts** (verified 2026-08-26): 17 agents · 40 skills · 31 commands ·
+> **Authoritative counts** (verified 2026-09-08): 17 agents · 40 skills · 27 commands ·
 > 32 knowledge files · 126 regression suites (4,155 cases). Single sources of truth:
 > [`config/test-suites.json`](config/test-suites.json) for suites, [`.claude/rules/`](.claude/rules/) for everything else.
 
@@ -39,8 +39,8 @@ vc-mcp-testing-module/
 │   ├── agents/                     # 17 agents — qa/ (9) + ba/ (4) + developers/ (4), each w/ shared-instructions.md
 │   │   └── knowledge/              # 32 shared reference files (business-logic, graphql-schema, sitemap, …)
 │   ├── skills/                     # 40 skills (1 vc-knowledge, 12 testing, 18 qa-methodology, 6 development, 3 root-level)
-│   ├── commands/                   # 31 slash commands
-│   └── rules/                      # agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports
+│   ├── commands/                   # 27 slash commands
+│   └── rules/                      # agents, regression, test-data, reports — the always-loaded tier; the rest moved to knowledge/execution/ (2026-09-08)
 │
 ├── config/                         # MCP browser configs + test-suites.json manifest
 │   ├── mcp-playwright-{chrome,firefox,edge}.config.json
@@ -116,12 +116,12 @@ Three teams; full reference in [.claude/rules/agents.md](.claude/rules/agents.md
 API audit, Agile stories, audience-targeted docs (Customer / Admin / Developer / Sales).
 
 ### Developers Team (4) — only write-capable team, driven by `/qa-fix`; never auto-merges
-`fullstack-backend`, `backend-reviewer`, `fullstack-frontend`, `frontend-reviewer` (all opus) — one
+`fullstack-backend`, `backend-reviewer`, `fullstack-frontend`, `frontend-reviewer` (developers opus, Gate-4 reviewers sonnet since 2026-09-08) — one
 developer + one reviewer per repo kind. Gate ladder: [.claude/knowledge/execution/quality-gates.md](.claude/knowledge/execution/quality-gates.md).
 
 ## Commands & Skills
 
-- **31 slash commands** — [commands/](.claude/commands), reference: each file's frontmatter (the `/` menu).
+- **27 slash commands** — [commands/](.claude/commands), reference: each file's frontmatter (the `/` menu).
 - **40 skills** — one level each under [skills/](.claude/skills) (`skills/<name>/SKILL.md`); see [skills/README.md](.claude/skills/README.md).
 
 ## MCP Servers

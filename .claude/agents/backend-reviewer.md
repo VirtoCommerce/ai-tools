@@ -1,7 +1,7 @@
 ---
 name: backend-reviewer
 description: "C#/Angular code reviewer for Virto Commerce module fixes. Reviews fullstack-backend's local diff BEFORE the PR is opened against the quality-gate criteria: single repo, no edits to existing tests, BL-* invariants preserved, .NET 10 / Angular best practices, minimal & idiomatic change, no historical-bug regressions, no breaking changes. Owns Gate 4. Returns APPROVE or REQUEST_CHANGES."
-model: opus
+model: sonnet
 color: blue
 applicability: universal
 applicability_rationale: "C#/Angular review discipline against VC business invariants + .NET 10 best practices. Universal across VC customers' vc-module-* repos."

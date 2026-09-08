@@ -53,9 +53,9 @@ one reviewer per repo kind**, picked by the routed repo's `kind`. Gate ladder:
 | Agent | Model | Color | Purpose |
 |-------|-------|-------|---------|
 | **fullstack-backend** | opus | green | Fixes a single `vc-module-*` / `vc-platform` repo — .NET 10 / C# + the module's Admin SPA (Angular). Reproduce-as-test → minimal fix → PR. Interactive twin of `ci/agents/fix-backend-agent.md`. Skills: `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`. |
-| **backend-reviewer** | opus | blue | Reviews the C#/Angular local diff before the PR (Gate 4): single-repo, no test edits, no breaking changes, BL-* preserved, minimal & idiomatic. |
+| **backend-reviewer** | sonnet | blue | Reviews the C#/Angular local diff before the PR (Gate 4): single-repo, no test edits, no breaking changes, BL-* preserved, minimal & idiomatic. |
 | **fullstack-frontend** | opus | cyan | Fixes the `vc-frontend` storefront — Vue 3 / TS / Vite + the in-repo UI kit + Storybook — **and** a `vc-module-*` repo's declared embedded Vue 3 frontend sub-app (e.g. `vc-module-pagebuilder`'s page-builder shell, scoped to the sub-app path). Reproduce-as-vitest-test (or the sub-app's own `tsx --test`/ephemeral harness) → minimal fix → PR. Interactive twin of `ci/agents/fix-frontend-agent.md`. Skills: `/vue-unit-test`, `/vue-fix`, `/vc-shell-fix` (`/storybook-test` optional). |
-| **frontend-reviewer** | opus | blue | Reviews the Vue/TS local diff before the PR (Gate 4): single-repo, no test/story edits, no breaking prop/event/slot or GraphQL contract, BL-UI preserved, minimal & idiomatic. |
+| **frontend-reviewer** | sonnet | blue | Reviews the Vue/TS local diff before the PR (Gate 4): single-repo, no test/story edits, no breaking prop/event/slot or GraphQL contract, BL-UI preserved, minimal & idiomatic. |
 
 ---
 
@@ -72,7 +72,8 @@ Full argument reference: each command and skill file's own frontmatter (`descrip
 | `/qa-test VCST-XXXX` | Test a JIRA ticket, feature, or PR | varies |
 | `/qa-regression [scope]` | Run regression suites (smoke/critical/sprint/full) | varies |
 | `/qa-triage-results [RUN_ID]` | Triage a completed run's FAILs: classify real-bug vs test-defect vs flaky, live-verify, route fixes (never files a ticket) | varies |
-| `/qa-coverage-generation [scope]` | Orchestrated parallel coverage generation with CI support | varies |
+| `/qa-coverage-gap [scope]` | Coverage gap analysis + generation (single-agent) | varies |
+| `/code-review-full` | Full multi-dimension code review of the working diff | varies |
 | `/qa-test-lifecycle` | Unified pipeline: sync stale cases + analyze gaps + generate + review + verify (PR, module, diff, suite, domain) | varies |
 | `/qa-test-plan [sprint]` | Build a sprint test plan from JIRA + merged PRs in the sprint window | varies |
 | `/qa-verify-fix VCST-XXXX` | Verify a bug fix with regression checks | varies |
@@ -90,7 +91,6 @@ Full argument reference: each command and skill file's own frontmatter (`descrip
 | `/qa-sitemap` | Refresh `knowledge/domain/sitemap.md` from the live storefront (diff-gated xAPI crawler) | varies |
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers, test infra | < 30 sec |
 | `/qa-onboarding [env]` | Customer onboarding flow: install → first green smoke run + first bug filed | varies |
-| `/code-review-full` | Full multi-dimension code review of the working diff | varies |
 | `/vc-self-check [session]` | Self-diagnose the plugin from this session's telemetry → local `DIAG-*.md` (never modifies the install, never sends) | varies |
 | ~~`/qa-sync-tests`~~ | _(**removed** — file deleted, no redirect. Use `/qa-test-lifecycle PR #NNN \| module <name> \| diff`)_ | — |
 
@@ -99,7 +99,7 @@ Full argument reference: each command and skill file's own frontmatter (`descrip
 | Command | Purpose | Speed |
 |---------|---------|-------|
 | `/ba-analyze [scope]` | Full business analysis (flows/api/docs/stories) | varies |
-| `/ba-stories [feature]` | Generate Agile user stories with BDD criteria | ~5 min |
+| `/ba-analyze stories [feature \| --review VCST-XXXX]` | Generate Agile user stories with BDD criteria, or review an existing story's ACs | ~5 min |
 
 ---
 

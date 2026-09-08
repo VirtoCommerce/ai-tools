@@ -159,7 +159,7 @@ Five pipelines, each with an interactive + headless-CI twin:
 
 Full reference: each command and skill file's own frontmatter (`description` + `argument-hint`), which the harness renders as the `/` menu.
 
-- **28 slash commands** — `/project-init`, `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-bundle-check`, `/qa-monitoring`, `/qa-triage-results`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-sitemap`, `/qa-local-env`, `/qa-onboarding`, `/code-review-full`, `/vc-self-check`, `/ba-analyze`, `/ba-stories`, …
+- **27 slash commands** — `/qa-bundle-check`, `/code-review-full`, `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-monitoring`, `/qa-triage-results`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-sitemap`, `/qa-local-env`, `/qa-onboarding`, `/ba-analyze`, …
 - **36 skills** in [`skills/`](.claude/skills) (1 VC knowledge, 12 testing, 14 QA methodology, 6 development) + 3 root-level (`project-init`, `run-vc-mcp-testing-module`, `vc-self-check`).
 - **17 agents** in [`agents/`](.claude/agents) across three teams (QA 9, BA 4, Developers 4). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
 

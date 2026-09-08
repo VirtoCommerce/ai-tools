@@ -28,7 +28,6 @@ skills/
 ├── qa-review-tests/                 # [Testing]  11-dimension test-case quality review
 ├── qa-local-env/                    # [Testing]  Local VC stack via start-local (fresh DB per run)
 │
-├── qa-process/                      # [QA Methodology]  ISTQB 7-phase lifecycle
 ├── qa-investigate/                  # [QA Methodology]  Bug investigation (5 phases)
 ├── qa-evidence/                     # [QA Methodology]  Evidence capture & report formatting
 ├── qa-defect/                       # [QA Methodology]  Defect management lifecycle
@@ -98,7 +97,6 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/qa-process` | ISTQB 7-phase lifecycle: Plan, Analyze, Design, Implement, Execute, Report, Close | test-process-lifecycle.md |
 
 ### Reactive (post-bug)
 
@@ -175,12 +173,12 @@ Outside the four QA categories.
 
 | Agent | Skills Referenced |
 |-------|-----------------|
-| qa-lead-orchestrator | qa-risk, qa-metrics, qa-process, qa-defect, qa-evidence, qa-investigate, qa-checklist |
+| qa-lead-orchestrator | qa-risk, qa-metrics, qa-defect, qa-evidence, qa-investigate, qa-checklist |
 | qa-frontend-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan |
 | qa-backend-expert | qa-api, qa-postman, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
 | qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan, qa-api, qa-postman |
 | ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate, qa-defect |
-| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-process, qa-sbtm, qa-metrics, qa-review-tests, qa-coverage-gap |
+| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-sbtm, qa-metrics, qa-review-tests, qa-coverage-gap |
 | test-data-engineer | qa-generate-data, qa-seed-data |
 | fullstack-backend | dotnet-unit-test, dotnet-fix, angular-admin |
 | fullstack-frontend | vue-unit-test, vue-fix, vc-shell-fix |

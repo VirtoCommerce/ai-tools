@@ -1,6 +1,6 @@
 ---
 description: "Run business analysis: system architecture, user flows, API audit, documentation, per-ticket documentation published to the tracker, and layer-routed release notes. Coordinates 4 BA specialist agents."
-argument-hint: "[full|flows|api|docs|docs ticket <TICKET> [--publish]|docs release <TICKET|--sprint S|--version V>|stories|module <name>]"
+argument-hint: "[full|flows|api|docs|docs ticket <TICKET> [--publish]|docs release <TICKET|--sprint S|--version V>|stories [<flow>|<TICKET>|--review <TICKET>]|module <name>]"
 
 ---
 
@@ -86,7 +86,8 @@ Use the Task tool to run specialist agents. Agent types match the `agents/` defi
 Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 3 runs after 1 completes. Agent 4 runs last.
 
 **Conditional execution:**
-- If scope is `stories` or `stories <flow>`: run **ba-system-analyzer** then **ba-story-writer** only
+- If scope is `stories`, `stories <flow>` or `stories <TICKET>`: run **ba-system-analyzer** then **ba-story-writer** only. A ticket key (`VCST-XXXX`) is the story SOURCE, not a review target: fetch it via Atlassian MCP (`getJiraIssue`) and pass its summary / description / existing ACs to both agents; at the end **offer** (never auto-create) sub-tasks from the generated stories — this is the former `/ba-stories VCST-XXXX` write path.
+- If scope is `stories --review <TICKET>`: **review mode** — `ba-story-writer` **Mode B** only (see §Stories review mode below); analyze only, no JIRA/GitHub writes, no replacement story
 - If scope is `flows`: run **ba-system-analyzer** (with UI analysis) + **ba-story-writer** (skip api specialist)
 - If scope is `api`: run **ba-api-specialist** only (with GitHub search + Swagger UI)
 - If scope is `ui`: run **ba-system-analyzer** with UI analysis only (skip code/GitHub analysis)
@@ -301,3 +302,15 @@ Full drafts: [`reports/ba/bl-proposals-{date}.md`](./bl-proposals-{date}.md)
 - Browser assignments: `ba-system-analyzer` → `playwright-firefox` (fallback: `playwright-edge`), `ba-api-specialist` → `playwright-edge` (fallback: `playwright-firefox`)
 - Always query Context7 in Step 0 before launching sub-agents
 - **BA business logic proposals are advisory only** — Step 4.5 drafts `reports/ba/bl-proposals-{date}.md`. **Never** write to `knowledge/oracles/business-logic.md` without explicit per-proposal user approval. The user must read each draft, approve (or edit) it individually, and direct promotion; Claude MUST NOT promote on its own, in bulk, or based on inferred approval. Every proposed entry must cite a source (Context7 quote, GitHub file:line, VC docs section, or UI screenshot). Drop unsourced entries rather than guess.
+
+## Stories review mode (`stories --review <TICKET>`)
+
+> Absorbed from the former `/ba-stories --review` on 2026-09-08 — `/ba-stories` write mode was already this command's `stories` scope.
+
+Backlog-grooming / pre-test entry to `ba-story-writer` **Mode B**. Use it to harden a story's ACs before development or before `/qa-test` (which calls the same review inline at its Step 1d).
+
+1. Fetch the ticket via Atlassian MCP (`getJiraIssue`) — summary, description, ACs, components, linked PR. If Atlassian MCP is unavailable, ask the user to paste the story + ACs.
+2. Identify the affected domain(s) → pass as `domains` so the BA loads the right `BL-*`/`ECL-*` sets.
+3. If a PR is linked, fetch its changed files (`get_pull_request_files`) and pass as `implementation: { pr_diff }` so the review compares each AC against what was built. (No PR → review ACs + gaps only; AC↔impl coverage is marked "no diff available".)
+4. Dispatch `ba-story-writer` in review mode (`existing_story`, `jira_ref`, `domains`, `implementation`) — **analyze only, no JIRA/GitHub writes, no replacement story.**
+5. Save the review to `reports/ba/{VCST-XXXX}-ac-review.md` and output the scorecard, weak sides, gap-ACs, and AC↔implementation findings to the user. Offer (don't auto-apply) to raise the gap-ACs / clarifications with the story author.

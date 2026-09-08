@@ -11,9 +11,9 @@
 | `/qa-bug` | `description \| VCST-XXXX \| screenshot` | No | `/qa-bug Cart shows $0 total` |
 | `/qa-exploratory` | `[checkout\|catalog\|B2B\|mobile\|new]` | No | `/qa-exploratory checkout` |
 | `/qa-env-check` | `[vars\|endpoints\|mcp]` | Yes | `/qa-env-check mcp` |
-| `/qa-coverage-generation` | `[p0\|p1\|full\|domain <name>\|ci-dry-run]` | No | `/qa-coverage-generation p0` |
-| `/ba-analyze` | `[full\|flows\|api\|docs\|stories\|module <name>]` | No | `/ba-analyze flows` |
-| `/ba-stories` | `feature name \| VCST-XXXX` | No | `/ba-stories checkout redesign` |
+| `/qa-coverage-gap` | `analyze\|generate\|validate\|full\|domain <name>\|suite <ID>` | No | `/qa-coverage-gap full` |
+| `/ba-analyze` | `[full\|flows\|api\|docs\|stories [<flow>\|VCST-XXXX\|--review VCST-XXXX]\|module <name>]` | No | `/ba-analyze flows` |
+| ~~`/ba-stories`~~ | — | — | **Removed 2026-09-08** — `/ba-analyze stories <feature\|VCST-XXXX>` (write) or `/ba-analyze stories --review VCST-XXXX` |
 
 ---
 
@@ -42,7 +42,7 @@
 
 | Skill | Purpose |
 |-------|---------|
-| `/qa-process` | ISTQB 7-phase lifecycle with entry/exit criteria |
+| ~~`/qa-process`~~ | **Removed 2026-09-08** — zero consumers; the phases are the `/qa-*` commands themselves |
 | `/qa-investigate` | 5-phase bug investigation and root cause analysis |
 | `/qa-evidence` | Evidence capture policy, output paths, sign-off templates |
 | `/qa-defect` | Defect lifecycle, JIRA bug workflow (16 statuses), triage |

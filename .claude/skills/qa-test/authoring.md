@@ -308,7 +308,7 @@ agents write at once.
 Fan out when the plan names **≥2 target suites**; below that the dispatch overhead exceeds the saving. Cap
 at 3–4 concurrent (no browser is involved, so the 3-lane rule does not bind — context and rate limits do).
 
-Do **not** copy `/qa-coverage-generation`'s domain batching: a manifest domain is not a file, which is why
+Do **not** copy the (since-removed) `/qa-coverage-generation`'s domain batching: a manifest domain is not a file, which is why
 that command needs a Step-5 "suite-write conflicts → merge IDs sequentially" repair pass. Partition on the
 surface and the conflict cannot occur.
 

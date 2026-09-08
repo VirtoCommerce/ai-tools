@@ -1,7 +1,8 @@
 ---
 name: qa-coverage-gap
-description: "[Testing] Autonomous test coverage gap analysis and generation — identifies missing test cases, generates enriched CSV test cases, validates P0 cases via browser, and reports improvements. Single-agent counterpart to /qa-coverage-generation."
+description: "[Testing] Autonomous test coverage gap analysis and generation — identifies missing test cases, generates enriched CSV test cases, validates P0 cases via browser, and reports improvements."
 argument-hint: "analyze | generate | validate | full | domain <name> | suite <ID>"
+disable-model-invocation: true
 
 ---
 
@@ -9,7 +10,7 @@ argument-hint: "analyze | generate | validate | full | domain <name> | suite <ID
 
 Autonomously improves test coverage by identifying gaps between application features and existing test suites, generating new test cases in the enriched agent-native format, validating P0 cases, and reporting improvements. Operates in a 4-cycle iterative pipeline.
 
-For sprint- or release-level multi-domain runs with parallel sub-agents, use the orchestrated counterpart `/qa-coverage-generation`.
+For sprint- or release-level multi-domain runs, run this skill once per domain (the orchestrated `/qa-coverage-generation` twin was removed 2026-09-08 with zero recorded runs).
 
 ## Usage
 
@@ -59,7 +60,7 @@ For sprint- or release-level multi-domain runs with parallel sub-agents, use the
    - Revenue impact (40%) · User frequency (25%) · Failure severity (20%) · Existing coverage (15%)
    - 8.0–10.0 → P0 · 5.0–7.9 → P1 · 2.0–4.9 → P2 · <2.0 → P3 (excluded from generation)
 8. **Output:**
-   - `reports/coverage/{RUN_ID}/gap-inventory.json` (one typed record per gap; see schema in `/qa-coverage-generation` Step 1)
+   - `reports/coverage/{RUN_ID}/gap-inventory.json` (one typed record per gap; schema in `coverage-gap-methodology.md` §`gap-inventory.json`)
    - `reports/coverage/{RUN_ID}/gap-analysis.md` (digest)
 
 Definition of Done: every gap has `manifestDomain`, `applicableLayers[]`, `targetSuites[]` resolved against the manifest, `priorityScore`, `priority`, and `gapCategory`.
@@ -150,7 +151,6 @@ Never hardcode suite IDs in this skill — query the manifest. The manifest curr
 | Upstream | `/qa-risk` | 5×5 matrix as tie-breaker for priority scores within ±0.5 |
 | Upstream | `knowledge/domain/sitemap.md` | Page inventory |
 | Upstream | `knowledge/api/graphql-schema.md` | Schema verification before authoring GraphQL cases |
-| Sibling | `/qa-coverage-generation` | Orchestrated multi-agent counterpart (uses this skill via `domain` mode) |
 | Downstream | `/qa-test-cases-generator` | Receives `--layer` invocations to author cases |
 | Downstream | `/qa-review-tests` | Reviews generated cases on 11 dimensions before merge |
 | Downstream | `/qa-test` | Generated cases can be executed by qa-testing-expert |
@@ -160,7 +160,7 @@ Never hardcode suite IDs in this skill — query the manifest. The manifest curr
 ## Rules
 
 **Architecture:**
-- Single-agent execution by design — for parallel sprint/release-level runs, defer to `/qa-coverage-generation`.
+- Single-agent execution by design — for sprint/release-level scope, run once per domain.
 - Resolve target suites by querying `config/test-suites.json` — never hardcode suite IDs in this skill.
 
 **Format & data:**

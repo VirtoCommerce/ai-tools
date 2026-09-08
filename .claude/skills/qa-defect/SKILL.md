@@ -46,7 +46,6 @@ Manages the full defect lifecycle from detection through triage, classification,
 | Upstream | `/qa-risk` | Severity/Priority classification (independent dimensions) |
 | Upstream | `/qa-bug` (command) | Bug filing creates the JIRA ticket this skill manages |
 | Downstream | `/qa-metrics` | Defect counts, escape rates, reopen rates feed quality gates |
-| Downstream | `/qa-process` | Defect data feeds into Report phase and Close phase retrospectives |
 
 ## Rules
 

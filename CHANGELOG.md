@@ -8,6 +8,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Component consolidation — commands 31 → 27, skills 41 → 40 — 2026-09-08
+
+**BREAKING:** **Tier A:** `skills/qa-process/` (`test-process-lifecycle.md`, the ISTQB 7-phase lifecycle) is
+removed and its row leaves the Tier A Lock in `docs/versioning.md`. It had zero inbound consumers in the
+repo. **No version is bumped** because the `vc-qa` surface no longer ships as a plugin (no `plugin.json`, no
+marketplace entry — `CLAUDE.md` §Project Overview); a re-packaged distribution starts at the major after
+this removal. Migration for anyone who cited the phases in their own docs: planning → `/qa-test-plan`,
+design → `/qa-test-design`, execution → `/qa-test` / `/qa-regression`, defect lifecycle → `/qa-defect`,
+evidence and close-out → `/qa-evidence`.
+
+The other removals keep their behaviour under a surviving name:
+
+| Removed | Use instead |
+|---|---|
+| `/ba-stories <feature\|VCST-XXXX>` · `/ba-stories --review VCST-XXXX` | `/ba-analyze stories <feature\|VCST-XXXX>` · `/ba-analyze stories --review VCST-XXXX` |
+| `/qa-coverage-generation` (orchestrated twin, zero recorded runs) | `/qa-coverage-gap`; its `gap-inventory.json` schema now lives in `skills/qa-coverage-gap/coverage-gap-methodology.md` §`gap-inventory.json` |
+| `.claude/commands/{project-init,vc-self-check}.md` (thin shells) | the same-named skills, same slash names; `project-init` and `qa-coverage-gap` carry `disable-model-invocation: true` like the shells did |
+| `skills/project-init/REDESIGN.md` | orphan, no replacement |
+
+Also in this change: `ui-ux-expert`, `backend-reviewer` and `frontend-reviewer` run on `sonnet` (the
+`ui-ux-expert` roster row already said so and the frontmatter had drifted; the two Gate-4 reviewers are a
+judgment call, recorded in `docs/agentic-system-component-audit-2026-09-07.md`, reversible by one
+frontmatter line each). `/code-review-full` and `/qa-bundle-check` were considered and kept.
+
+---
+
 ## `/qa-test` — the `--iterate` round-2 contract, and layer-routed release notes — 2026-09-02
 
 Two gaps of the same shape: a flow specified by what it **re-runs** and silent on what it

@@ -35,14 +35,14 @@ Quick decision tree for the project-scoped `vc-qa` surface under `.claude/` — 
 | **Spin up a local VC stack** | `/qa-local-env [VCST-XXXX] [postgres\|mysql\|sqlserver]` | Command |
 | **Full test-case lifecycle (sync → … → promote)** | `/qa-test-lifecycle suite <ID> \| domain <name> \| PR #NNN \| module <name> \| diff [--promote-only]` | Command |
 | **Build a sprint test plan** | `/qa-test-plan SprintXX-YY \| current \| last` | Command |
-| **Generate coverage at scale** | `/qa-coverage-generation [p0\|p1\|full\|domain <name>\|sprint\|ci-dry-run]` | Command |
+| **Generate coverage at scale** | `/qa-coverage-gap [analyze \| generate \| validate \| full \| domain <name> \| suite <ID>]` — run per domain | Skill |
 | **Seed / teardown test data** | `/qa-seed-data [bootstrap\|minimal\|catalog\|b2b\|pricing\|inventory\|loyalty\|promotions\|bopis\|configurable\|users\|full\|teardown]` | Command |
 | **Audit an oracle (BL / ECL) against docs+live+source** | `/qa-review-oracles [bl\|ecl\|all] <scope> [--dry-run]` (alias `/qa-review-bl`) | Command |
 | **Refresh the storefront sitemap knowledge file** | `/qa-sitemap [--check] [--no-browser]` | Command |
-| **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` | Command |
+| **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
 | **Run business analysis** | `/ba-analyze [full\|flows\|api\|docs\|stories\|ui\|module <name>]` | Command |
-| **Generate user stories** | `/ba-stories feature name \| VCST-XXXX` | Command |
+| **Generate or review user stories** | `/ba-analyze stories <feature> \| stories --review VCST-XXXX` | Command |
 | **Get a test checklist for a domain** | `/qa-checklist domain \| feature \| new <domain> \| admin <module>` | Skill |
 | **Generate test cases** | `/qa-test-cases-generator VCST-XXXX \| domain \| suite ID \| migrate <suite>` | Skill |
 | **Design the test-data combinations a feature needs** | `/qa-generate-data <feature \| flow \| VCST-XXXX>` | Skill |
@@ -75,7 +75,7 @@ Quick decision tree for the project-scoped `vc-qa` surface under `.claude/` — 
 ### Plan & Manage Test Cases (Commands + Skills)
 - `/qa-test-lifecycle` — Unified pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve → **promote** (Phase 6P is the promoter for handoff / re-promotion / non-`/qa-test` sources)
 - `/qa-test-plan` — Sprint plan from tracker Done + merged vc-frontend PRs; risk-scores domains, maps to suites, derives §5.2 gaps and §5.3 exploratory charters
-- `/qa-coverage-generation` — Orchestrated parallel coverage generation across domain batches
+- `/qa-coverage-gap` — coverage gap analysis + generation (single-agent; the orchestrated `/qa-coverage-generation` twin was removed 2026-09-08 with zero recorded runs)
 - `/qa-plan` — Test plans from the E2E scenario catalog
 - `/qa-checklist` — Oracle-grounded test-writing checklists (storefront + backend/admin + GraphQL domains)
 - `/qa-test-design` — Derivation techniques. **`FLOW` runs FIRST** on any state-changing feature (model the value chain; the parameter-space techniques EP/BVA/DT/ST/PW/CT/EG only refine a link FLOW has already named)
@@ -92,7 +92,6 @@ Quick decision tree for the project-scoped `vc-qa` surface under `.claude/` — 
 - `/qa-postman` — Postman MCP collections: create, configure, verify, export (Newman/Postman CLI executes, not MCP)
 
 ### QA Methodology (Skills — process frameworks)
-- `/qa-process` — ISTQB 7-phase lifecycle
 - `/qa-investigate` — Bug investigation + evidence-to-claim root-cause worksheet
 - `/qa-defect` — Defect lifecycle, Bug workflow
 - `/qa-evidence` — Evidence capture & report formatting, output paths
@@ -104,6 +103,7 @@ Quick decision tree for the project-scoped `vc-qa` surface under `.claude/` — 
 - `/qa-accessibility` — WCAG 2.2 AA audits (POUR + the 2.2 additions, axe-core, Lighthouse, keyboard walk)
 - `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project via `DesignSync`; reports `SKIPPED`, never PASS, where `/design-consent` is unavailable)
 - `/qa-api` — REST + GraphQL xAPI: reference lookup, execution, case generation
+- `/code-review-full` — 9 parallel review agents over a diff **of this repo** — not a QA flow against the VC platform
 - `/qa-perf-measure`, `/qa-monitoring`, `/qa-triage-results`, `/qa-deploy-pr`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-bundle-check`, `/qa-local-env` — the skills backing the same-named commands above
 
 ### Development (Skills — used by the `developers/` team in `/qa-fix`)
@@ -118,7 +118,6 @@ Quick decision tree for the project-scoped `vc-qa` surface under `.claude/` — 
 - `/project-init` — Onboard onto a deployment: tracker + code host + auth per axis, derive client-vs-platform, write `project-profile.json` / `.env.<env>` / `.mcp.json`, verify access
 - `/vc-self-check` — Read this session's telemetry + transcript against `.claude/knowledge/diagnostics/skill-expectations.md`; per-finding verdict + severity; `deliver` contributes a consent-gated GitHub Issue upstream
 - `/run-vc-mcp-testing-module` — Build / launch / smoke-test this repo's own tooling
-- `/code-review-full` — 9 parallel review agents over a diff **of this repo** — not a QA flow against the VC platform
 
 ### VC Knowledge (Skill — auto-invocable)
 - `/vc-docs` — Documentation lookup. **Primary: VirtoOZ MCP** (12 topic-scoped tools); Context7 `/virtocommerce/vc-docs` is the fallback
@@ -204,7 +203,7 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 | `/qa-test-lifecycle` | `/qa-coverage-gap`, `/qa-review-tests` | Unified pipeline: sync + gap analysis + quality review + promotion (Phase 6P) |
 | `/qa-test-plan` | `/qa-regression`, `/qa-risk`, `/qa-exploratory` | Plan maps risk-scored domains to suites (§5.1/§5.2) and derives the exploratory charters (§5.3) |
 | `/qa-verify-fix` | `/qa-investigate`, `/qa-checklist` | Verification uses the investigation flow + the Bug Fix Verification checklist |
-| `/qa-coverage-generation` | `/qa-coverage-gap`, `/qa-test-cases-generator` | Coverage generation uses gap analysis + the case generator |
+| `/qa-coverage-gap` | `/qa-test-cases-generator` | Coverage generation uses gap analysis + the case generator |
 | `/qa-seed-data` | `/qa-generate-data`, `/qa-test`, `/qa-regression` | Design combinations → seed → run |
 | `/qa-review-oracles` | `/qa-review-tests --fix`, `/qa-checklist`, `/qa-exploratory` | The oracle skill never edits a CSV — citation remaps go to `/qa-review-tests`; exploratory feeds it `[THEORETICAL]`→`[OBSERVED]` proposals |
 | `/qa-sitemap` | `/qa-test-plan` | Refreshes `.claude/knowledge/domain/sitemap.md`; wired into `/qa-test-plan` Step 0 at per-sprint cadence |

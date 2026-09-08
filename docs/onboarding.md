@@ -269,7 +269,6 @@ After your first green `/qa-smoke`:
 - Try a focused regression: `/qa-regression critical`
 - Run a design audit: `/qa-design <your storefront page>`
 - Explore the agent set: `knowledge/agents/README.md`
-- Read the methodology: `skills/qa-process/test-process-lifecycle.md`
 
 **Week 1:**
 - Identify vcst-specific suites that don't apply to your deployment; add them to your local suite-skip list.
