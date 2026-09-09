@@ -115,4 +115,4 @@ Each row names THE file that is normative for its topic. Read it before acting o
 | Tier classification for cross-product reuse | `.claude/architecture/TIER.md` |
 | Command / skill arguments | each file's frontmatter (the `/` menu) |
 | Virto Commerce docs | VirtoOZ MCP via `/vc-docs` (Context7 `/virtocommerce/vc-docs` fallback) |
-| Why any of the above is shaped the way it is | `docs/decisions/qa-test-evolution.md`, `docs/decisions/self-diagnostics-design.md`, `docs/decisions/regression-history.md` |
+| Why any of the above is shaped the way it is | `docs/decisions/qa-test-evolution.md`, `docs/decisions/self-diagnostics-design.md`, `docs/decisions/regression-history.md`, `docs/decisions/mirror-parity.md` |

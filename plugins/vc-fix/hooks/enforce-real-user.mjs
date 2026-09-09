@@ -59,12 +59,13 @@ const ALLOWED_PATTERNS = [
   // spirit as its siblings — a property-scoped meta selector cannot click, type,
   // or mutate page state.
   //
-  // MIRROR NOTE: this file and `.claude/hooks/enforce-real-user.mjs` are BOTH
-  // registered (`plugins/vc-fix/hooks/hooks.json` and `.claude/settings.json`) and
-  // hooks are AND-gated, so the STALE copy denies whatever the fresh one allows.
-  // Patching only `.claude/` left this copy 6 weeks behind and silently blocked the
-  // very case the allowlist entry was added for — measured on suite 001 CAT-049 in
-  // run REG-2026-09-07-2225. Any change here must land in both files, same commit.
+  // MIRROR NOTE: this file ships TWICE — `.claude/hooks/` and `plugins/vc-fix/hooks/`
+  // — and BOTH copies are registered (`.claude/settings.json` and
+  // `plugins/vc-fix/hooks/hooks.json`). Hooks are AND-gated, so the STALE copy denies
+  // whatever the fresh one allows. Patching one side left the other 6 weeks behind and
+  // silently blocked the very case the allowlist entry was added for — measured on
+  // suite 001 CAT-049 in run REG-2026-09-07-2225. Any change here must land in both
+  // files, in the same commit; `npm run mirror:check` holds them byte-identical.
   /meta\[property=['"](?:og|twitter):[a-z:_-]+['"]\]/i, // og:/twitter: card tags
   // Explicit opt-in for UI-FIX / DEBUG DOM experiments. A layout/CSS fix often
   // can't be proven without trying the corrected DOM/CSS live (e.g. move a node,

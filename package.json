@@ -87,6 +87,7 @@
     "schema:refresh": "node scripts/graphql/refresh-graphql-schema.mjs",
     "schema:check": "node scripts/graphql/refresh-graphql-schema.mjs --check",
     "context:check": "node scripts/maintenance/lint-claude-docs.mjs",
+    "mirror:check": "node scripts/maintenance/mirror-check.mjs",
     "context:report": "node scripts/maintenance/lint-claude-docs.mjs --json",
     "sitemap:refresh": "node scripts/maintenance/refresh-sitemap.mjs",
     "sitemap:check": "node scripts/maintenance/refresh-sitemap.mjs --check",
