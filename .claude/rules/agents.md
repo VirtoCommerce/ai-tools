@@ -1,6 +1,6 @@
 # Agents Reference
 
-17 agents as flat `.claude/agents/*.md` files, across three teams (QA, BA, Developers). Agent discovery is non-recursive, so agents are NOT nested in team subfolders; the per-team `shared-instructions.md` and the agents README live under `knowledge/agents/` (a plain reference dir, not scanned as components). See `knowledge/agents/README.md` for full documentation. QA agents use a **four-layer prompt architecture** — business logic (invariants), domain knowledge (judgment), skill set (technique), and design decisions (constraints).
+Agents are flat `.claude/agents/*.md` files (`ls` them for the roster), across three teams (QA, BA, Developers). Agent discovery is non-recursive, so agents are NOT nested in team subfolders; the per-team `shared-instructions.md` and the agents README live under `knowledge/agents/` (a plain reference dir, not scanned as components). See `knowledge/agents/README.md` for full documentation. QA agents use a **four-layer prompt architecture** — business logic (invariants), domain knowledge (judgment), skill set (technique), and design decisions (constraints).
 
 Knowledge-base inventory and the read-before-you-write rules (`graphql-schema.md`, `release-ledger.md`, …): [`.claude/ROUTING.md`](../ROUTING.md) §Knowledge bases.
 
@@ -16,7 +16,7 @@ Project `.mcp.json` (gitignored, per machine): `playwright-chrome` / `playwright
 - After any MCP config change, remind the user that a server restart is required before the new config takes effect.
 - Browser configs set viewport to 1920x1080, HAR capture enabled, video on failure, isolated contexts.
 
-## QA Team (9 agents + shared-instructions)
+## QA Team (+ shared-instructions)
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
@@ -30,7 +30,7 @@ Project `.mcp.json` (gitignored, per machine): `playwright-chrome` / `playwright
 | **regression-orchestrator** | sonnet | Parallel regression + smoke mode, retries, browser fallback, consolidated reports |
 | **test-runner-agent** | sonnet | Parameterized template for standard suite execution (used by regression-orchestrator) |
 
-## BA Team (4 agents + shared-instructions)
+## BA Team (+ shared-instructions)
 
 Team framework: `knowledge/agents/ba/shared-instructions.md` (VirtoOZ-first sourcing, the four documentation audiences, no-hardcode, external-write discipline, output policy).
 
@@ -47,7 +47,7 @@ Team framework: `knowledge/agents/ba/shared-instructions.md` (VirtoOZ-first sour
 - `ba-story-writer` consumes other agents' output (no browser/GitHub); `ba-doc-writer` uses a browser **only** to capture real screenshots for Customer/Admin docs
 - **Documentation audiences:** `ba-doc-writer` writes for four audiences — Customer (StorefrontUserGuide style), Admin (PlatformUserGuide style), Developer (PlatformDeveloperGuide style), and **Sales** (virtocommerce.com benefit-led marketing). Invoked via `/ba-analyze docs [audience]`. Virto's customers/partners are B2B enterprise organizations — see `reference_virto_customer_base` memory.
 
-## Developers Team (4 agents + shared-instructions)
+## Developers Team (+ shared-instructions)
 
 The **only write-capable team** — clone / branch / commit / push / open PR on external VirtoCommerce
 product repos via local `git`/`gh`. QA agents stay read-only on GitHub; write scope is isolated here.

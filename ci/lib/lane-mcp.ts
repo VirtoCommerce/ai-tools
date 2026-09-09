@@ -9,8 +9,10 @@
 // suite — which is worse than having none, because it is not obviously wrong.
 //
 // This module keeps the committed file as the TEMPLATE and materializes one config per lane
-// under `test-results/lane-{n}/` (already gitignored, already volume-mounted by
-// .github/workflows/regression.yml). It is the gate on raising parallelism: until each lane
+// under `test-results/lane-{n}/` (already gitignored, and the path `.github/workflows/full-cycle.yml`
+// mounts into the regression container; the regression workflow that also mounted it was removed
+// 2026-09-08, and ci/README.md's bare `docker run` mounts only ./reports).
+// It is the gate on raising parallelism: until each lane
 // owns its output paths, MAX_PARALLEL=3 is the honest ceiling.
 //
 // The pure rewrite (`laneConfigFor`) is separated from the write so

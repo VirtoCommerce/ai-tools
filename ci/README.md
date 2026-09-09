@@ -5,9 +5,9 @@ Automated regression and test lifecycle management for Virto Commerce via GitHub
 ## Architecture
 
 ```
-GitHub Actions
+GitHub Actions / CLI / Docker
   │
-  ├── regression.yml ──── ci/run-regression.ts ──── Execute test suites
+  ├── npm run ci:regression ─ ci/run-regression.ts ─ Execute test suites
   │                             ├── Reads suite CSVs from regression/suites/
   │                             ├── Reads agent defs from ci/agents/
   │                             ├── Calls Agent SDK query() with Playwright MCP
@@ -69,19 +69,19 @@ docker run --rm \
 ### Run via GitHub Actions
 
 1. Go to **Actions** tab
-2. Select **Regression Tests** or **Full Test Cycle**
+2. Select **Full Test Cycle** (there is no Regression workflow — removed 2026-09-08; see below)
 3. Click **Run workflow** and configure inputs
 
 ## Pipelines
 
-### Regression Only (`regression.yml`)
+### Regression Only (`npm run ci:regression`)
 
 Executes test suites against the live environment.
 
-**Triggers:**
-- Manual (`workflow_dispatch`)
-- Daily smoke: Mon-Fri 6:00 AM UTC (suite 042, $5 budget)
-- Weekly full: Sunday 2:00 AM UTC (all 110 suites, $80 budget)
+**Invoked by:** the CLI alias, the Docker image above, or `full-cycle.yml` Phase 3 (Regression). There is **no
+regression GitHub Actions workflow** — `regression.yml` was removed 2026-09-08 after one run in its
+lifetime (2026-02-11, scheduled, failed in 72 s). Nothing scheduled or manual triggers a regression
+run today; a run is something a person or an agent starts.
 
 ### Full Cycle (`full-cycle.yml`)
 

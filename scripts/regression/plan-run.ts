@@ -18,8 +18,10 @@
  *      notes show 32 case IDs that do not exist anywhere in the corpus.
  *   2. Dispatch order. Fixed batches of 3 with a barrier between them: each batch costs its
  *      slowest suite and a freed slot idles until the whole batch drains.
- *   3. The firefox rule. `playwright-firefox` cannot click on this storefront or the Admin SPA,
- *      and the rule lived as prose in three separate files, re-derived per decision.
+ *   3. The firefox rule. It lived as prose in three separate files, re-derived per decision; it is
+ *      now one manifest switch (`defaults.firefoxClickOk`, read via `browserDenyListFor`). Since
+ *      2026-09-08 that switch is ON and the lane takes click-driven work again — see
+ *      `.claude/knowledge/automation/browser-quirks.md` §Firefox for the root cause and the rollback.
  *
  * Usage:
  *   npm run regression:plan                      # smoke

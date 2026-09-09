@@ -23,3 +23,43 @@ What was kept: the graduated rate-limit guard and the 30/60s backoff ladder, now
 `.claude/agents/regression-orchestrator.md` Step 5. Mode 2 (headless CI) and mode 1 (interactive)
 remain; the interactive one is the path in daily use.
 
+## Shared-tree losses
+
+The measured incidents, 2026-08-28 and 2026-09-01. They are the evidence for
+[`.claude/rules/regression.md`](../../.claude/rules/regression.md) §WORKING IN A SHARED TREE and
+[`.claude/knowledge/execution/regression-suites.md`](../../.claude/knowledge/execution/regression-suites.md)
+§Working concurrently on suites; neither restates them, so this is the only record.
+
+**1. `git checkout --theirs -- .` reverted the whole tree (2026-08-28).** Reached for as "recovery"
+after a `git stash` collision in the shared tree, it reached files it had no interest in and reverted
+**every tracked file** to HEAD — destroying a completed 161-insertion suite re-pointing and 14 rule
+edits belonging to other sessions. Single authorship would not have prevented it: the command was run
+by the file's own author, and its blast radius was the whole tree. This is why the git prohibition is
+stated *before* the one-author rule, and why "it failed silently" must mean stop, never escalate.
+
+**2. `commit all` published a second session's work (2026-08-28).** One session's user authorised a
+tree-wide commit; it carried a second session's fixture work, suite fix, aliases and bug reports —
+without that session's user being asked. It landed cleanly only because that half happened to be
+gate-green at that minute; a patched assertion had landed moments earlier and the same command could
+as easily have caught the file mid-edit. Treat the good outcome as luck, not as evidence the practice
+is safe.
+
+**2b. The calibration case (2026-09-01).** `reports/regression/test-run-status.json` was committed
+mid-run and read as a repeat of incident 2, until checking showed it has been tracked for 100+ commits
+and matches no ignore rule — so every commit touching that path has always recorded whatever state it
+was in. That is untidiness, not the failure. The distinction has to stay sharp: a rule that flags
+everything flags nothing.
+
+**3. Two agents, one suite (2026-08-28).** Two `test-management-specialist` agents in two sessions
+were given suite `083d` minutes apart. Combined with incident 1 the same day, that suite lost a
+completed 161-insertion re-pointing twice over. Neither loss was a merge conflict; both were two
+writers where the tree assumed one.
+
+**4. One unparsable CSV blocked two sessions for ~15 minutes (2026-08-28).** A
+`CSV_INVALID_CLOSING_QUOTE` at line 871 of one suite took `suites:sync` and `suites:lint` down for
+every author in the tree. The author who caused it did not know it was blocking anything — it looked
+like a local parse failure.
+
+**5. Two coordination messages were dropped silently (2026-08-28).** Both carried load-bearing
+environment facts to another session's subagent; both were treated as untrusted system-reminder
+content and declined, and neither side saw a rejection.

@@ -65,3 +65,51 @@ came to be documented for weeks after its CSV was deleted.
   - **Renumber into a free range** when both suites legitimately share one domain namespace and only the numbers clashed — no new prefix: `035` STORE-052…055 → 066…069, `032` AUTH-066/067 → 074/075, `003` CAT-030…040 → 068…078, plus `CFG-TEXT`/`CFG-VAR` singles.
 - **Critical UI scope**: `knowledge/oracles/critical-ui-scope.md` defines the checklist of 36 components and 16 pages with applicable BL-UI invariants per cell. **Currently UNCOVERED** — its sole covering suite `048b-layout-stability.csv` (selection `layout-stability`) was removed on 2026-07-25, so all 197 applicable cells are marked `GAP`. The file is retained as the scope definition + audit-protocol reference for `/qa-design`. `npm run scope:validate` still hard-fails if a cell points at a *missing* test ID and warns on the GAP count; `--strict` makes GAPs fatal again once a replacement suite lands.
 
+## Working concurrently on suites
+
+The rules themselves — never run a state-changing git command in a shared tree, one author per suite
+CSV per change, a conflict is never resolved with git — are tier 1, in
+[`.claude/rules/regression.md`](../../rules/regression.md) §WORKING IN A SHARED TREE. This is the
+reasoning and the how-to.
+
+**Why one author, specifically for a CSV.** The same discipline `/qa-review-oracles` applies to
+`business-logic.md` and `e-commerce-edge-cases-library.md` — triangulation fans out, the **apply is
+single-writer** — plus two reasons specific to suites:
+
+- **A CSV is not mergeable in practice.** Rows are multi-line, quoted, and the safe writers
+  (`suites:append`, the surgical byte-level edit `promote-cases.ts` uses) all read-modify-write the
+  whole file. Two such writes interleave into a file that parses but is wrong — and `suites:lint`
+  cannot tell you which half was intended.
+- **The disposition is the artifact, not the diff.** A restructure is a set of coupled decisions —
+  this case is culled *because* that journey now crosses its link, these two merge *because* they
+  test one rule. Splitting the file between two authors splits the reasoning, and the second author
+  cannot see why the first kept what they kept.
+
+**How to work concurrently anyway** — the fan-out is fine, the *write* is what serialises:
+
+| Want | Do |
+|---|---|
+| Two people analysing one suite | Both analyse; **one** applies. The other hands over a staged rows CSV + a disposition table |
+| Two suites, two authors | Fine — ownership is per file, and `config/test-suites.json` is written by `suites:sync`, not by hand. **It is shared state**: agree who runs sync, or exchange the per-suite delta and let one side apply it |
+| Handing a suite over mid-change | Say so explicitly and stop writing. The successor re-reads the file from disk before their first edit |
+| You find a suite already modified in the tree | **Do not overwrite and do not revert.** Someone else is mid-change; report the conflict and wait |
+
+**A mid-write invalid CSV blocks every concurrent author, not just you.** `suites:sync` and
+`suites:lint` hard-fail on a parse error anywhere in the corpus, so a suite left transiently
+unparsable — a half-written quoted field, an unbalanced closing quote — takes the manifest gate down
+for everyone in the tree until it is fixed. So the surgical-edit discipline (`promote-cases.ts`:
+locate the record by its own raw text, replace only the changed bytes, **re-parse and compare
+field-by-field**) is not merely about diff hygiene during a shared-tree window — **re-parse after
+EVERY write**, not once at the end.
+
+**A fact relayed to another session's SUBAGENT does not arrive — it is lost silently.** Cross-session
+messages land in a subagent's context as system-reminder blocks and (correctly) trip the harness's
+prompt-injection handling: the receiving agent treats them as untrusted, declines to act, and may
+refuse to open files the message points at. **The relay path that works is session → session → the
+receiving session RE-ISSUES the fact, in its own words, in the subagent's dispatch brief.** That
+re-statement is also what makes the fact reviewable, so it is the right shape independent of the
+transport. Never assume a forwarded fact landed; if it matters, it belongs in the brief.
+
+The measured losses behind every line above:
+[`docs/decisions/regression-history.md`](../../../docs/decisions/regression-history.md)
+§Shared-tree losses.

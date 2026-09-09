@@ -14,7 +14,7 @@ Load a prompt template from `vc/shared/docs/prompts/`, execute via MCP browser t
 Do not re-create it. Why it was removed: [`docs/decisions/regression-history.md`](../../docs/decisions/regression-history.md).
 
 ### 4. Full Test Cycle CI Pipeline (Sync → Lifecycle → Regression)
-`ci/run-full-cycle.ts` orchestrates a 3-phase pipeline triggered by code changes. Phase 1 (SYNC + REVIEW) uses `/qa-test-lifecycle --ci` to detect stale test cases from PRs/diffs/module updates, update Steps/Assertions, analyze coverage gaps, and run the `/qa-review-tests` **static** dimensions (1–7, 9, 10 — dim 8 needs a browser, dim 11 is the separate `ci/run-suite-audit.ts` twin). Phase 2 (REGRESSION) delegates to `ci/run-regression.ts` to execute the affected suites. Each phase has independent skip flags and budget allocation (50%/50% of total budget). Results go to `reports/full-cycle/{RUN_ID}/`.
+`ci/run-full-cycle.ts` orchestrates a 3-phase pipeline triggered by code changes. Phase 1 (SYNC + REVIEW) uses `/qa-test-lifecycle --ci` to detect stale test cases from PRs/diffs/module updates, update Steps/Assertions, analyze coverage gaps, and run the `/qa-review-tests` **static** dimensions (1–7, 9, 10 — dim 8 needs a browser, dim 11 is the separate `ci/run-suite-audit.ts` twin). Phase 3 (REGRESSION) delegates to `ci/run-regression.ts` to execute the affected suites — the workflow's phase numbering (1 Sync · 2 Lifecycle · 3 Regression) is the one to quote. Each phase has independent skip flags and budget allocation (50%/50% of total budget). Results go to `reports/full-cycle/{RUN_ID}/`.
 
 **Invoke:** `CHANGE_SOURCE="PR #123" npm run ci:cycle` or via `.github/workflows/full-cycle.yml`
 **Triggers:** PR merge to main (auto), daily schedule (Mon-Fri 8AM UTC), manual dispatch
@@ -24,13 +24,13 @@ Do not re-create it. Why it was removed: [`docs/decisions/regression-history.md`
 
 Central configuration for regression orchestration. Defines:
 - **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: 126 suites in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
-- **Selection groups**: 37 groups — `smoke`, `critical`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`, …)
+- **Suite definitions**: one per suite in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
+- **Selection groups**: `smoke`, `critical`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`, …)
 - **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
 
 ## Regression Test Suites
 
-126 suites in `regression/suites/` organized by module (50 directories) under `Frontend/` and `Backend/`. Enriched agent-native CSV format. Full definitions in `config/test-suites.json`. **Total: 4,155 test cases** (per manifest `testCount`; the source of truth is `config/test-suites.json`).
+Suites live in `regression/suites/`, organized by module under `Frontend/` and `Backend/`, in the enriched agent-native CSV format. **`config/test-suites.json` is the source of truth for how many there are and how many cases they hold — `npm run suites:lint` prints both.** Do not restate either number here — the two that used to sit in this paragraph were both stale when checked on 2026-09-09, which is why `DOC-006` now fails a build that reintroduces one.
 
 ### Suite inventory
 
@@ -41,122 +41,54 @@ Derived, not documented here — `config/test-suites.json` is the source of trut
 **FIRST AND STRONGEST: never run a git command that changes repository or working-tree state.**
 No `stash` (push/pop/apply/drop), no `checkout` / `restore` / `switch` on paths or branches, no
 `reset`, `clean`, `revert`, `rebase`, `merge`, `commit` — by any agent, in any session, for any reason,
-including "recovery". Read-only git is always fine (`status`, `diff`, `log`, `show HEAD:<path>`);
-for a baseline, copy the file to the scratchpad or read `git show HEAD:<path>`.
+**including "recovery"**. Read-only git is always fine (`status`, `diff`, `log`, `show HEAD:<path>`);
+for a baseline, copy the file to the scratchpad or read `git show HEAD:<path>`. A command that
+"failed silently" is the signal to stop and report, never to escalate to a broader one — that
+escalation is exactly how 2026-08-28's `git checkout --theirs -- .` reverted **every tracked file** to
+HEAD and destroyed three sessions' uncommitted work.
 
-This is stated **before** the one-author rule below because it is the stronger of the two, and the
-2026-08-28 loss proves it: one author's `git checkout --theirs -- .` reached files it had no interest
-in and reverted **every tracked file** to HEAD, destroying a completed 161-insertion suite
-re-pointing and 14 rule edits belonging to other sessions. Single authorship would not have
-prevented that — the command was run by the file's own author, and its blast radius was the whole
-tree. Several sessions hold uncommitted work here at any time, and a tree-wide git operation is
-unrecoverable for all of them. A `git stash` that "failed silently" is the signal to stop and
-report, never to escalate to a broader command.
+**`git add -A` in a shared tree commits OTHER sessions' unfinished work.** Nothing is lost, but their
+half-finished work is published under your commit message and pushed where others build on it. Say
+what you are about to sweep up and let the other authors say whether their half is committable.
+**Calibrate, or this becomes "never run `git add -A`" and gets ignored:** the failure is publishing
+another session's unfinished WORK — half-written source, a suite mid-edit, an unverified fixture. It
+is *not* every file you did not personally author; sweeping up an already-tracked transient artifact
+(a run-status file, a generated report) is untidiness, not the failure.
 
-**A commit is not exempt just because it is not destructive: `git add -A` in a shared tree commits
-OTHER sessions' uncommitted work.** The risk is the opposite of the git prohibition above — nothing
-is lost, but someone else's unfinished work is **published under your commit message**, attributed to
-your change, and pushed where others will build on it. So a tree-wide commit needs the same *ping
-first* discipline as a destructive operation: say what you are about to sweep up, and let the other
-authors say whether their half is in a committable state.
-
-Measured 2026-08-28: one session's user authorised `commit all`, and the commit carried a second
-session's fixture work, suite fix, aliases and bug reports — without that session's user being asked.
-It landed cleanly only because that half happened to be gate-green at that minute; a patched assertion
-had landed moments earlier and the same command could as easily have caught the file mid-edit. Treat
-the good outcome as luck, not as evidence the practice is safe.
-
-**Calibrate what this rule is about, or it becomes "never run `git add -A`" and gets ignored.** The
-failure is **publishing another session's unfinished WORK** — half-written source, a suite mid-edit, a
-fixture that has not been verified — under your commit message and your name. It is **not** every file
-you did not personally author. Sweeping up an already-tracked transient artifact — a run-status file, a
-generated report — is untidiness, not the failure: it was in git before you touched it and the next
-commit records its final state. Measured 2026-09-01: `reports/regression/test-run-status.json` was
-committed mid-run and read as a repeat of this mistake, until checking showed it has been tracked for
-100+ commits and matches no ignore rule, so every commit touching that path has always recorded
-whatever state it was in. Keep the distinction sharp; a rule that flags everything flags nothing.
-
-**And once it is pushed, it stays.** Do not offer to rewrite history to fix attribution on a shared
-branch: a force-push breaks the branch for every session that has pulled it, which is a real loss
-traded for a cosmetic one. Attribution lives in the reports, the code comments and the audit trail —
-which is where anyone actually looks.
+**Once it is pushed, it stays.** Never rewrite history on a shared branch to fix attribution: a
+force-push breaks the branch for every session that has pulled it — a real loss traded for a cosmetic
+one.
 
 **SECOND: a suite CSV has exactly one author for the duration of a change.** Not one author per file
-forever — one author per *change*: whoever is restructuring, culling or re-pointing a suite owns
-every row in it until they hand it back. A second writer on the same CSV is forbidden even when the
-two are editing "different rows", and even when both are careful.
+forever — one author per *change*: whoever is restructuring, culling or re-pointing a suite owns every
+row in it until they hand it back. A second writer is forbidden even when the two are editing
+"different rows", and even when both are careful. **A suite conflict is never resolved with git** —
+hand it to a human or to the other author.
 
-This is the same discipline `/qa-review-oracles` already applies to `business-logic.md` and
-`e-commerce-edge-cases-library.md` — triangulation fans out, the **apply is single-writer** — and it
-exists here for the same reason plus two that are specific to suites:
-
-- **A CSV is not mergeable in practice.** Rows are multi-line, quoted, and the safe writers
-  (`suites:append`, the surgical byte-level edit `promote-cases.ts` uses) all read-modify-write the
-  whole file. Two such writes interleave into a file that parses but is wrong — and `suites:lint`
-  cannot tell you which half was intended.
-- **The disposition is the artifact, not the diff.** A restructure is a set of coupled decisions —
-  this case is culled *because* that journey now crosses its link, these two merge *because* they
-  test one rule. Splitting the file between two authors splits the reasoning, and the second author
-  cannot see why the first kept what they kept.
-- **Concurrency here has a measured cost.** 2026-08-28: two `test-management-specialist` agents in
-  two sessions were given the same suite (`083d`) minutes apart; earlier the same day a subagent's
-  `git checkout --theirs -- .` — reached for as "recovery" after a stash collision in the shared
-  tree — reverted every tracked file to HEAD and destroyed a completed 161-insertion re-pointing of
-  that same suite plus 14 rule edits. Neither loss was a merge conflict; both were two writers where
-  the tree assumed one.
-
-**How to work concurrently anyway** — the fan-out is fine, the *write* is what serialises:
-
-| Want | Do |
-|---|---|
-| Two people analysing one suite | Both analyse; **one** applies. The other hands over a staged rows CSV + a disposition table |
-| Two suites, two authors | Fine — ownership is per file, and `config/test-suites.json` is written by `suites:sync`, not by hand. **It is shared state**: agree who runs sync, or exchange the per-suite delta and let one side apply it |
-| Handing a suite over mid-change | Say so explicitly and stop writing. The successor re-reads the file from disk before their first edit |
-| You find a suite already modified in the tree | **Do not overwrite and do not revert.** Someone else is mid-change; report the conflict and wait |
-
-**A mid-write invalid CSV blocks every concurrent author, not just you.** `suites:sync` and
-`suites:lint` hard-fail on a parse error anywhere in the corpus, so a suite left transiently
-unparsable — a half-written quoted field, an unbalanced closing quote — takes the manifest gate down
-for everyone in the tree until it is fixed. Measured 2026-08-28: a `CSV_INVALID_CLOSING_QUOTE` at
-line 871 of one suite blocked both sessions' gates for ~15 minutes, and the author who caused it did
-not know it was blocking anything — it looked like a local parse failure. So the
-surgical-edit discipline (`promote-cases.ts`: locate the record by its own raw text, replace only the
-changed bytes, **re-parse and compare field-by-field**) is not merely about diff hygiene during a
-shared-tree window — re-parse after EVERY write, not once at the end.
-
-**A fact relayed to another session's SUBAGENT does not arrive — it is lost silently.** Cross-session
-messages land in a subagent's context as system-reminder blocks and (correctly) trip the harness's
-prompt-injection handling: the receiving agent treats them as untrusted, declines to act, and may
-refuse to open files the message points at. Measured 2026-08-28: two coordination messages carrying
-load-bearing environment facts were dropped this way, and neither side saw a rejection. **The relay
-path that works is session → session → the receiving session RE-ISSUES the fact, in its own words, in
-the subagent's dispatch brief.** That re-statement is also what makes the fact reviewable, so it is
-the right shape independent of the transport. Never assume a forwarded fact landed; if it matters,
-it belongs in the brief.
-
-**A suite conflict is never resolved with git** — see the prohibition at the head of this section.
-Hand the conflict to a human or to the other author; there is no git command that makes two writers
-safe, and every one of them makes the loss bigger.
+Why a CSV is not mergeable in practice, the disposition-is-the-artifact argument, how to fan out
+analysis while serialising the write, the re-parse-after-every-write discipline (a mid-write
+unparsable suite takes the manifest gate down for *everyone*), and the cross-session relay rule (a
+fact sent to another session's SUBAGENT is dropped silently — the receiving session must re-issue it
+in its own dispatch brief): [`knowledge/execution/regression-suites.md`](../knowledge/execution/regression-suites.md)
+§Working concurrently on suites. The measured losses behind all of it:
+[`docs/decisions/regression-history.md`](../../docs/decisions/regression-history.md) §Shared-tree losses.
 
 ### Selection Groups
 
-| Selection | Suites | Use Case |
-|-----------|--------|----------|
-| `smoke` | 042, 078, 078b, 078c, 078d | Daily validation before deployment |
-| `critical` | 042, 078, 078b, 078c, 078d, 039, 044, 049 | P0 suites only |
-| `purchase-flow` | cart + checkout + orders-frontend + payment | Purchase flow regression |
-| `catalog` | 001-003, 051, 053 | Catalog module (frontend + admin) |
-| `search` | 004-005, 061 | Search module (frontend + admin) |
-| `orders` | 014-019 | Orders & quotes (frontend + admin) |
-| `auth` | 031-033 | Authentication module |
-| `b2b` | 006-010 | B2B features |
-| `marketing` | 023-025, 077 | Marketing module (admin + storefront) |
-| `platform` | 020-021, 049, 063 | Platform module |
-| `frontend` | All Frontend/ suites minus 3 exclusions (53) | Frontend-only regression |
-| `backend` | All Backend/ suites minus 4 exclusions (63) | Backend-only regression |
-| `sprint` | **Plan-driven** — `/qa-regression sprint` reads `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set. | Before sprint release |
-| `sprint:XX-YY` | Pinned to a specific sprint plan in `vc/shared/docs/Sprint plans/` | Re-run a past sprint's regression scope |
-| `full` | All 119 (126 minus the 7 excluded) | Before production release |
+**Membership is defined in `config/test-suites.json` `selections`, never here** — `npm run suites:lint`
+prints the group count, and `npm run regression:plan -- <name>` resolves one to its actual
+suite list. The table below is *when to reach for which*, which the manifest cannot tell you.
+
+| Selection | Use Case |
+|-----------|----------|
+| `smoke` | Daily validation before deployment |
+| `critical` | P0 suites only |
+| `purchase-flow` | Cart → checkout → orders → payment, end to end |
+| `catalog` · `search` · `orders` · `auth` · `b2b` · `marketing` · `platform` | One module, frontend + admin |
+| `frontend` · `backend` | One layer, minus the suites the manifest excludes |
+| `sprint` | **Plan-driven** — `/qa-regression sprint` reads `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set |
+| `sprint:XX-YY` | Re-run a past sprint's regression scope, pinned to that plan |
+| `full` | Everything the manifest does not exclude — before a production release |
 
 ## CI Regression Testing
 
@@ -176,8 +108,9 @@ Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, e
 
 **Note:** The CI `run-regression.ts` dynamically loads suite definitions from `config/test-suites.json` at startup. Selection groups are also defined in the manifest's `selections` block.
 
-**Pipeline triggers (GitHub Actions - `.github/workflows/regression.yml`):**
-- **Manual only, today.** Every run is a `workflow_dispatch` (any selection, environment, budget). The two `cron:` lines — daily smoke Mon-Fri 06:00 UTC on suite 042 ($5), weekly full Sunday 02:00 UTC ($80; the derived budget is $144, see `ci/lib/suite-caps.ts`) — are **commented out** in the workflow, as are the schedules in `suite-audit.yml`, `monitor.yml`, `auto-fix.yml` and `full-cycle.yml`. No headless run has ever completed unattended (audit 2026-09-07 §4b, D9). Re-enabling a schedule means uncommenting its `cron:` line, nothing else; until then do not describe these runs as happening.
+**There is no regression GitHub Actions workflow.** `regression.yml` was **removed 2026-09-08** — it ran exactly once, on 2026-02-11, from a schedule that was later commented out, and that run **failed** after 72 s. It never ran manually and never succeeded, so it documented a capability the team does not have. **The RUNNER is unaffected:** `ci/run-regression.ts` is invoked by `npm run ci:regression`, by the Docker image above, and by `full-cycle.yml` Phase 3 (Regression).
+
+The remaining pipelines (`suite-audit.yml`, `monitor.yml`, `auto-fix.yml`, `full-cycle.yml`) still have every `cron:` **commented out**, so nothing in `ci/` runs unattended (audit 2026-09-07 §4b, D9). Re-enabling one means uncommenting its `cron:` line; until then do not describe those runs as happening.
 
 **Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.
 
