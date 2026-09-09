@@ -373,7 +373,7 @@ export function findCrossFileCaseRefs(root?: string): CrossFileRef[] {
  */
 const AUTOMATION_STATUS_BASELINE: Record<string, number> = {
   "Draft (SERIAL — isolate; restore ALL after)": 1,
-  Generated: 9,
+  Generated: 3,
   None: 63,
   "Not Automated": 86,
   Quarantined: 11,
@@ -381,7 +381,7 @@ const AUTOMATION_STATUS_BASELINE: Record<string, number> = {
   "needs-review": 4,
   ready: 3,
   runner: 28,
-  synced: 45,
+  synced: 42,
   validated: 26,
   verified: 11,
 };
@@ -461,7 +461,6 @@ const XREF_BASELINE: Record<string, number> = {
   "regression/suites/Backend/whitelabeling/067-whitelabeling-admin.csv": 10,
   "regression/suites/Frontend/b2b/011b-b2b-company-e2e.csv": 1,
   "regression/suites/Frontend/cart/028-cart-core.csv": 1,
-  "regression/suites/Frontend/configurable-products/072-configurable-products-ui.csv": 1,
   "regression/suites/Frontend/cross-cutting/043-google-analytics.csv": 1,
   "regression/suites/Frontend/customer-reviews/088-customer-reviews-storefront.csv": 1,
   "regression/suites/Frontend/loyalty/083-loyalty-catalog.csv": 3,

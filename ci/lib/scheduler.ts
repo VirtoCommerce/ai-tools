@@ -221,10 +221,31 @@ export async function runLanePool<T>(opts: {
     // Dispatch into every slot we can fill right now.
     let dispatchedAny = false;
     while (!stopped && freeSlots.length > 0 && queue.length > 0) {
-      const slot = freeSlots[0];
-      const index = queue.findIndex((s) => slotAccepts(s, slot));
-      if (index === -1) break; // this slot can take nothing currently queued
+      // Pair the LONGEST queued suite that ANY free slot can take with the first slot that can take
+      // it. Queue-outer / slot-inner is what preserves LPT: picking per-slot instead would dispatch
+      // whatever the first slot happened to accept, which is a different (worse) order.
+      //
+      // This used to consider `freeSlots[0]` ALONE and `break` when that one slot could take nothing
+      // queued — so one incompatible slot at the head stopped dispatch even with other slots idle,
+      // and with nothing in flight the whole remaining queue was then deferred as "no configured slot
+      // accepts this suite". Measured: `039` and `041` (Payment — CyberSource, both
+      // `preferredBrowser: playwright-chrome`) as a two-suite queue against the standard
+      // firefox/chrome/edge pool ran NOTHING and reported both un-runnable, with the chrome slot free
+      // the entire time. Any targeted payment run hit it, and on a full run it lurked at the tail.
+      let index = -1;
+      let slotIndex = -1;
+      pair: for (let q = 0; q < queue.length; q++) {
+        for (let s = 0; s < freeSlots.length; s++) {
+          if (slotAccepts(queue[q], freeSlots[s])) {
+            index = q;
+            slotIndex = s;
+            break pair;
+          }
+        }
+      }
+      if (index === -1) break; // no free slot can take anything currently queued
 
+      const slot = freeSlots[slotIndex];
       const suite = queue[index];
       const decision = canDispatch?.(suite) ?? { ok: true };
       if (!decision.ok) {
@@ -239,7 +260,7 @@ export async function runLanePool<T>(opts: {
       }
 
       queue.splice(index, 1);
-      freeSlots.shift();
+      freeSlots.splice(slotIndex, 1);
       dispatchedAny = true;
       onDispatch?.(suite, slot);
 

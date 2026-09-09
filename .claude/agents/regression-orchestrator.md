@@ -1,6 +1,6 @@
 ---
 name: regression-orchestrator
-description: "Parallel Regression Orchestrator — Reads test-suites.json manifest, spawns isolated sub-agents per suite with dedicated browser contexts, manages retry logic and browser fallback chain, tracks progress in test-run-status.json, and consolidates results into a final regression report."
+description: "Parallel Regression Orchestrator — Reads test-suites.json manifest, spawns isolated sub-agents per bounded batch of suites with dedicated browser contexts, manages retry logic and browser fallback chain, tracks progress in test-run-status.json, and consolidates results into a final regression report."
 model: sonnet
 color: orange
 applicability: universal
@@ -205,9 +205,33 @@ The three lanes do **not** share slots.
    282 KB (~78k tokens) against a 200k window, and a single `browser_snapshot` costs 10-30k, so an
    inlined suite starves the very evidence the run exists to collect.
 
+**Batch the short tail before you dispatch (bounded, never unbounded).**
+
+`npm run regression:plan -- <selection>` prints, per lane, what batching costs and saves on THIS
+selection — `110 dispatches → 74 (36 fewer), makespan +0.1%` on `full`'s browser lane. Group the
+lane's queue with the same rule the plan prices (`ci/lib/suite-batching.ts`, `batchSuites`): fill a
+session up to **60 cases**, never past it; a suite bigger than that goes alone and is never split;
+and only suites with the SAME affinity (`REQUIRES` / `NOT ON`) share a session, because the batch is
+dispatched to one slot.
+
+Each dispatch then carries a `{{SUITE_BATCH}}` of one or more suites. **A batch of one is the normal
+case** — nothing changes for a long suite.
+
+Why bounded and not one agent per lane, which is what the 2026-09-07 audit's §6 item 9 proposed:
+that is ~1,230 cases in a single session on `full`, and the corpus measures artefactual BLOCKED at
+19.9% overall, **28.6% on 81+ cases**. Session length is the driver, so the unbounded version buys
+tokens by degrading the verdict. Bounded at 60 the saving is real (36 fewer dispatches, each paying
+the always-loaded preamble plus `SETUP_TURNS` of env check / sign-in / first navigate) and no session
+is longer than the longest suite already is.
+
+**A suite whose results file is missing after its batch returns is re-dispatched ALONE.** The runner
+writes each suite's file as that suite finishes, so a mid-batch death loses only the in-flight suite —
+re-dispatching the whole batch would re-run work that already has results, and dropping the suite
+would silently lose coverage.
+
 **Then dispatch by keeping every slot busy:**
 
-1. Fill all free slots from the head of the lane's dispatch order (longest suite first).
+1. Fill all free slots from the head of the lane's dispatch order (longest batch first).
 2. **The moment ONE suite finishes, immediately dispatch the next suite that the freed slot can
    accept.** Do not wait for the others.
 3. If the freed slot cannot accept the head of the queue (a `NOT ON`/`REQUIRES` constraint), take
@@ -231,11 +255,13 @@ Run the three lanes concurrently — a fastpath suite must never wait on a brows
 **Per sub-agent:**
 - **subagent_type**: the `agent` field from the manifest (`qa-testing-expert`, `qa-frontend-expert`,
   `qa-backend-expert`).
-- **prompt**: fill the `agents/test-runner-agent.md` template with `{{RUN_ID}}`, `{{SUITE_ID}}`,
-  `{{SUITE_NAME}}`, `{{SUITE_CSV_PATH}}` (the resolved path from above), `{{BROWSER_SERVER}}`,
-  `{{LANE_ID}}` (the slot index — this is what selects the credential slot, see below),
-  `{{ENVIRONMENT_URL}}`, `{{BACKEND_URL}}`, `{{OUTPUT_FILE}}`. Keep the prompt lean — no extra
-  prose, no knowledge pre-loading, no inline CSV.
+- **prompt**: fill the `agents/test-runner-agent.md` template with `{{RUN_ID}}`,
+  `{{SUITE_BATCH}}` (one row per suite: `SUITE_ID | SUITE_NAME | SUITE_CSV_PATH | OUTPUT_FILE`, using
+  the resolved paths from above), `{{BROWSER_SERVER}}`, `{{LANE_ID}}` (the slot index — this is what
+  selects the credential slot, see below), `{{ENVIRONMENT_URL}}`, `{{BACKEND_URL}}`. Keep the prompt
+  lean — no extra prose, no knowledge pre-loading, no inline CSV. **Every suite in a batch shares one
+  `{{LANE_ID}}`**, which is correct: they run sequentially on one slot, so they cannot contend for
+  the account.
 - **`{{OUTPUT_FILE}}` is a FRAGMENT for any suite with a machine part**:
   `reports/regression/{RUN_ID}/suite-{ID}-results.browser.json`. Only a suite that is 100%
   browser writes `suite-{ID}-results.json` directly. Two writers on one results file is a race,

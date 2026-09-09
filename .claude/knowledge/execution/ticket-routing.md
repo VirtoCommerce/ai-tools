@@ -85,7 +85,7 @@ that hides the consequence of its own decision is half a routing file:
 
 | Path | When | What runs |
 |---|---|---|
-| **FAST** | Bug fix / copy-tweak / config / Technical task, or a **`Review task` contribution whose PR diff is one-file and single-surface** (§5a); **P2–P3**, single-layer, single-domain, obvious surface. | **A checklist.** `1a`+`1b` → Artifact B checklist (written to the ticket folder) → one execution agent → `5a`–`5f`, then `5h` documentation. The change-scoped Critical sweep (**C2**) runs at **`5r`, after the verdict** — it answers a release question, not a ticket one. **No** `1c`/`1d` agents, **no** Test Model, **no** archetype/UIP/`VC-*` sweeps, **no** case authoring, **no** `5g` promotion, **no** independent verifier. Three of the five derived axes (visual · contract · coverage) are **opt-in** here (`--visual` / `--contract` / `--coverage` / `--axes`) and run in full on FULL — with one per-type exception, a `Review task`, whose `coverage` defaults **ON** (§5a); `layer` and `data_surface` derive and apply on both paths, neither being able to add an agent. |
+| **FAST** | Bug fix / copy-tweak / config / Technical task, or a **`Review task` contribution whose PR diff is one-file and single-surface** (§5a); **P2–P3**, single-layer, single-domain, obvious surface. | **A checklist.** `1a`+`1b` → Artifact B checklist (written to the ticket folder) → one execution agent → `5a`–`5f`, then `5h` documentation. The change-scoped Critical sweep (**C2**) is **OPT-IN on FAST** (`--release-regression`) and runs at **`5r`, after the verdict** when asked for — it answers a release question, not a ticket one, and it is the one thing on this path that dispatches a whole suite selection (see §5a, which argues it for `Review task` and generalises to every FAST type). **No** `1c`/`1d` agents, **no** Test Model, **no** archetype/UIP/`VC-*` sweeps, **no** case authoring, **no** `5g` promotion, **no** independent verifier. Three of the five derived axes (visual · contract · coverage) are **opt-in** here (`--visual` / `--contract` / `--coverage` / `--axes`) and run in full on FULL — with one per-type exception, a `Review task`, whose `coverage` defaults **ON** (§5a); `layer` and `data_surface` derive and apply on both paths, neither being able to add an agent. |
 | **FULL** | New feature / Story / Epic; **P0–P1**; cross-layer; ≥2 domains; critical-revenue flow; unclear surface. | The whole pipeline: `1c` ‖ `1d` → **Test Model (required)** → case authoring → three hard-STOP verifier gates → `5g` promotion. |
 
 **When in doubt → FULL.**
@@ -136,6 +136,18 @@ contribution that genuinely needs a durable new case is itself a reason to route
 
 **So the shape for this type is: checklist + Step 2a, with C2 OPT-IN.**
 
+> **This section argues C2's opt-in for `Review task`; since 2026-09-09 the opt-in is the rule for
+> the WHOLE FAST path** (the FAST row of §4 above). Every clause below is type-independent — the
+> verdict comes from 5c, C2 can only amend it, and the sweep answers a release question the ticket
+> did not ask — and the one clause that was type-specific (a contribution's diff is small) was never
+> the load-bearing one. What made the generalisation overdue is FAST's own stated promise, *"FAST is
+> one execution agent"*: C2 dispatches a whole suite selection, measured by the 2026-09-07 audit at
+> ~24 runner dispatches / ~3.08M tokens — 93% of a FAST run's total, for a track whose findings 5a's
+> provenance rules classify as PRE-EXISTING or OUT-OF-SCOPE, neither of which fails the ticket. It
+> remains ON by default on FULL, exactly as `visual`/`contract`/`coverage` do. This is item 10 of
+> `docs/agentic-system-audit-2026-09-07.md` §6 (`--release-sweep` there; the flag already existed
+> here under its own name, so the name did not change).
+
 | Runs by default | Opt-in | Not on FAST at all |
 |---|---|---|
 | Artifact B checklist · **Step 2a** (`coverage`) · C1 when Step 2a leaves `RE-BASE` ids | **C2**, the change-scoped Critical sweep (`--release-regression`) · `visual` · `contract` | Artifact A authoring · `1c`/`1d` · the Test Model · `5g` promotion · the independent verifier |
@@ -152,7 +164,7 @@ recommendation** — 5e reports the ticket verdict and records the gate as `not-
 because an omitted regression track reads exactly like a passing one (the §1 rule of
 [`skills/qa-test/SKILL.md`](../../skills/qa-test/SKILL.md): silence is never an answer).
 
-**Turn C2 back on when the contribution's blast radius exceeds its diff** — a change in **shared
+**Turn C2 back on when the change's blast radius exceeds its diff** — a change in **shared
 infrastructure** (an Apollo link, a composable, a UI-kit primitive) that already-shipped callers also
 use, or a diff landing in a domain whose oracle carries P0 invariants the change could disturb. Both
 tests are about the *reach* of the change, never the size of the diff: 20 lines inside a shared link

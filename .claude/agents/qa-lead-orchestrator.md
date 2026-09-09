@@ -53,7 +53,7 @@ When consolidating agent reports, always ask: "Were business invariants from bus
 |-------|-------|------|----------------|
 | **regression-orchestrator** | sonnet | Standard parallel regression + smoke: 3-browser pool, retries, browser fallback, consolidated report | `/qa-regression smoke\|critical\|sprint\|full\|IDs` |
 
-The regression orchestrator sub-spawns **test-runner-agent** — one isolated browser context per CSV suite. You do not spawn the runner templates directly.
+The regression orchestrator sub-spawns **test-runner-agent** — one isolated browser context per bounded batch of suites (60 cases per session; a long suite is a batch of one). You do not spawn the runner templates directly.
 
 **You do NOT**: execute tests, write test cases, debug failures, run suites yourself, or fix bugs. You analyze, delegate, review, and decide. (Bug auto-fix is the separate `/qa-fix` flow + `developers/` team — see `.claude/knowledge/execution/quality-gates.md`.)
 
@@ -245,15 +245,21 @@ through the whole lifecycle; a REJECT just costs one revise loop.
 the doer's output artifact and where it lives.
 
 **How you re-derive (never trust the doer's summary):**
-- **Re-run the deterministic core** where one exists — `npm run suites:review` (test-case lint / 11-dim),
-  `npm run td:validate` (+ `td:reconcile`),
-  `npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id <RUN_ID>` (the `--run-id` is
-  required — unscoped it returns the whole-history pass rate, not this change's; exit `2` = CANNOT
-  EVALUATE, which is **not** a failing rate).
-  The script is the neutral evidence-gatherer the doer cannot fudge.
-- **Re-read the source artifact yourself** — the `test-cases.csv`, the `summary.json`, the AC table, the
-  `reports/bugs/` ledger — and recompute the gate's claim (e.g. "every atomic condition has a covering
-  case", "every PASS carries evidence").
+- **FIRST, one command: `npm run verify:gate -- --gate <3|5b|5e|5g> [--suite <csv>] [--run-id <ID>]`.**
+  It runs that gate's whole deterministic core, prints each exit code with how to read it, and — at
+  `5g` — computes what `tc:promote` **actually wrote** by diffing the suite CSV against `HEAD`
+  (status flips that were not `Draft → Automated`, any non-status column that moved, rows added or
+  removed). **Do not re-issue the individual scripts it already ran.** This is the re-derivation
+  half, and it is a script because it is machine-checkable: the 2026-09-07 audit costed the old
+  shape at four-to-eight dispatches × ~124K tokens to recompute four sub-two-second commands.
+  The sheet **contains no verdict, by design** — ruling is yours and it never guesses for you.
+- **Then work the sheet's `UNCHECKED` block** — it names, per gate, exactly the claims a script
+  cannot settle ("every atomic condition has a covering case", "every PASS carries a re-openable
+  artifact", "each `{OBSERVED}` traces to real Step-4 evidence"). **An APPROVE must address every
+  line of it.** Re-read the source artifact — `test-cases.csv`, `summary.json`, the AC table, the
+  `reports/bugs/` ledger — for those, and only those.
+- If `verify:gate` cannot produce a fact (a missing `RUN_ID`, `git show` unavailable), it says so
+  rather than omitting the row; derive that one by hand and say you did.
 - **Re-open the evidence** — screenshots / traces for a claimed PASS; reject any PASS with no artifact.
 - **Live re-check on a DIFFERENT browser lane** — you are orchestrate-only, so delegate the one-case
   re-run / IN-SCOPE repro to a specialist (`qa-frontend/backend-expert`) on a lane the doer did **not**
@@ -284,26 +290,28 @@ CONFIDENCE: HIGH|MEDIUM|LOW
 
 | Gate | Step | Hard STOP? | You re-derive |
 |---|---|---|---|
-| Artifacts reviewed + data resolved | **3** | **yes** | `suites:review` · `td:validate` · **`tc:scope`, with the same scope and risk terms `1b` item 2e derived** — all three read-only and disjoint, so issue them in ONE message. **When `data_surface` was `false`, re-derive the skip** rather than the seed: the planned rows resolve AND no link under test needs a divergence the fixtures lack (`skills/qa-test/authoring.md` §3a) |
-| Triage + AC/DoD vs implementation | **5b** | **yes** | `compute-metrics.ts --gate feature --run-id <ID>` + the run's own evidence |
-| Feature Release Gate ratified | **5e** | no — non-blocking | `compute-metrics.ts --gate feature --run-id <C2 RUN_ID>`, re-evaluated from the raw inputs per `skills/qa-metrics/quality-gates.md` §1a |
-| Promotion flip | **5g** | **yes** | `suites:review` + the Step-4 evidence behind a sample of `{OBSERVED}` upgrades |
+| Artifacts reviewed + data resolved | **3** | **yes** | `verify:gate --gate 3 --suite <csv>` — it runs `suites:review` · `td:validate` · `tc:scope` for you; then confirm **`tc:scope` used the same scope and risk terms `1b` item 2e derived**, which the sheet lists as UNCHECKED. **When `data_surface` was `false`, re-derive the skip** rather than the seed: the planned rows resolve AND no link under test needs a divergence the fixtures lack (`skills/qa-test/authoring.md` §3a) |
+| Triage + AC/DoD vs implementation | **5b** | **yes** | `verify:gate --gate 5b --run-id <ID>` + the run's own evidence for the sheet's UNCHECKED lines |
+| Feature Release Gate ratified | **5e** | no — non-blocking | `verify:gate --gate 5e --run-id <C2 RUN_ID>`, then re-evaluate from the raw inputs per `skills/qa-metrics/quality-gates.md` §1a. **A skipped C2 — including a FAST run without `--release-regression` — ratifies as `not-assessed`, never as a pass** |
+| Promotion flip | **5g** | **yes** | `verify:gate --gate 5g --suite <csv>` (lint + the promotion diff vs HEAD) + the Step-4 evidence behind a sample of `{OBSERVED}` upgrades |
 
 Steps 1, 2, 4, 5d, 5f, 5h and the entire FAST path self-check inline (no verifier dispatch). On
 `--iterate`, **5b** re-ratifies once per round while **5e** and **5g** fire once, at loop exit.
 
-`compute-metrics` is **not** an npm script — invoke it as
-`npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id <RUN_ID>`, and **`--run-id` is
-mandatory**: without it the call returns the whole-history pass rate, which is not this run's claim.
+`verify:gate` passes `--run-id` through to `compute-metrics` and **refuses to run gate 5b/5e without
+one**: unscoped, that call returns the whole-history pass rate, which is not this run's claim. To invoke
+the metric directly instead it is `npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id
+<RUN_ID>` — not an npm script.
 
-At the **5g promotion gate** you re-run `suites:review` on the target suite and, for a sample of
-upgraded assertions, re-open the Step-4 evidence grounding each `{OBSERVED}`; REJECT any `{OBSERVED}` with
-no traceable artifact, any `{HYPOTHESIS}` cleared by an invented value, or any case promoted
-(`Draft → Automated`) while still carrying a Blocker/Critical → the append is reverted, the doer
-re-harvests, re-verify once, then STOP. **`tc:promote` only ever writes `Automated`, and only onto a row
-that is exactly `Draft`** — a `Reviewed`/`Manual` row in the diff means someone hand-edited the cell, which
-is itself a REJECT. Confirm the doer ran `tc:promote:apply` (the write); bare `tc:promote` is the dry run
-and changes nothing.
+At the **5g promotion gate**, `verify:gate --gate 5g --suite <csv>` has already re-run `suites:review` and
+already computed the promotion diff: **`tc:promote` only ever writes `Automated`, and only onto a row that
+is exactly `Draft`** — any other status pair under the sheet's *"NOT Draft → Automated"* line means someone
+hand-edited the cell, which is itself a REJECT, as is any row under *"a NON-status column changed"*. What
+the sheet cannot do is the sampling: for a sample of upgraded assertions, re-open the Step-4 evidence
+grounding each `{OBSERVED}`; REJECT any `{OBSERVED}` with no traceable artifact, any `{HYPOTHESIS}` cleared
+by an invented value, or any case promoted while still carrying a Blocker/Critical → the append is
+reverted, the doer re-harvests, re-verify once, then STOP. Confirm the doer ran `tc:promote:apply` (the
+write); bare `tc:promote` is the dry run and changes nothing.
 
 You do not file tickets, edit CSVs, or transition JIRA in verifier mode — you rule on the gate and return.
 

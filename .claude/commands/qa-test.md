@@ -45,7 +45,7 @@ a judgment call a gate does not settle, or when you are about to change how a st
 /qa-test <ticket-key> --coverage         # + tc:scope over the existing corpus
 /qa-test <ticket-key> --axes             # all three
 /qa-test <ticket-key> --release-regression   # + C2, the change-scoped Critical sweep
-                                         #   (only meaningful on a Review task, where C2 is off by default)
+                                         #   (C2 is OFF by default on the whole FAST path)
 ```
 
 **Argument normalization — there is no argv parser, so state what you resolved.** This command is a prompt,
@@ -59,8 +59,8 @@ line before Step 1, rather than acting on a guess.
 | `--max-rounds N` with no `--iterate` | **`--iterate --max-rounds N`** | a round cap is meaningless without the loop |
 | `--axes` | `--visual --contract --coverage` | all three; `layer` derives on both paths regardless |
 | any axis flag on a FULL run | **no-op, say so in one line** | FULL already derives and runs all four |
-| `--release-regression` on a `Review task` | **runs C2 at `5r`** | that type has C2 off by default (`ticket-routing.md` §5a) |
-| `--release-regression` on any other type | **no-op, say so in one line** | C2 already runs there |
+| `--release-regression` on a **FAST** run | **runs C2 at `5r`** | C2 is off by default on FAST (`ticket-routing.md` §4 FAST row, argued at §5a) |
+| `--release-regression` on a **FULL** run | **no-op, say so in one line** | FULL derives and runs C2 already |
 | a second bare token that is not a ticket key, `PR #N`, or a flag | **STOP and ask** | never silently fold it into the target or a flag value |
 
 `--iterate` and `--epic` **compose** (the loop tries to fix a failing child story before the chain
@@ -77,13 +77,13 @@ renumbered. That leaves the reading order non-obvious in three places, stated he
 sub-items.
 
 ```
-FAST   1a → 1b → 2 → [2a] → 3 → 4 → 5a → 5b → 5c → 5r → 5d → 5e → 5f → 5h
+FAST   1a → 1b → 2 → [2a] → 3 → 4 → 5a → 5b → 5c → [5r] → 5d → 5e → 5f → 5h
 FULL   1a → 1b → 1c ‖ 1d ‖ 2-load → 1e → 1e-plan → 2-topup → 2a
                 → 3a ‖ 3x ‖ B → A → C1/C2 scope → 4
                 → 5a → 5b → 5c → 5r → 5d → 5e → 5f → 5h → 5g
 ```
 
-`[2a]` on FAST only under `--coverage`. On `--iterate`, `5k.0` (round entry) + 5a–5d + 5r repeat per round; 5e, 5f, 5h and 5g
+`[2a]` on FAST only under `--coverage`; `[5r]` on FAST only under `--release-regression`. On `--iterate`, `5k.0` (round entry) + 5a–5d + 5r repeat per round; 5e, 5f, 5h and 5g
 fire once, at loop exit ([`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k).
 
 ---
@@ -126,8 +126,8 @@ Stated once, completely. **Everything after this section is the FULL path.**
 3   Artifact B checklist (conditions from 1a's ACs) + C1/C2 scope + 3a ONLY when 2f said so
 4   ONE execution agent runs the checklist; then C1 — the exact-set run of any Step-2a RE-BASE ids
     (skipped entirely, and said so, when there are none)
-5a  triage · 5b reconcile AC/DoD · 5c verdict → then launch C2 (5r) and run 5d + draft 5e while it
-    executes · 5e report · 5f status · 5h docs
+5a  triage · 5b reconcile AC/DoD · 5c verdict → then launch C2 (5r — FULL always, FAST only under
+    `--release-regression`) and run 5d + draft 5e while it executes · 5e report · 5f status · 5h docs
 ```
 
 **FAST is one execution agent.** That is the promise, and it is now kept: **three** of the five derived
@@ -135,6 +135,15 @@ axes are **opt-in** here — `--visual` · `--contract` · `--coverage` · `--ax
 `layer` (2b) and `data_surface` (2f) derive and apply on both paths, because neither can add an agent:
 2b dispatches nothing, and 2f can only ever *remove* a dispatch. **The opt-in three still *derive*** (each
 token and its sources are recorded, so a `false` is auditable); without their flag, none of the three *runs*.
+
+**`5r`/C2 is the fourth opt-in, and it was the largest breach of that promise** (2026-09-09). It is not an
+axis — it is a whole suite selection, ~24 runner dispatches, which the 2026-09-07 audit measured at 93% of
+a FAST run's tokens. It never produced the verdict either: 5c derives that, and an IN-SCOPE C2 finding can
+only *amend* it. So on FAST it now runs **only under `--release-regression`**, and on FULL it derives and
+runs as before. A skipped C2 is **stated, never implied** — `summary.json.regression` carries the reason and
+5e.1 records the gate as `not-assessed (C2 skipped)`, never as a pass ([`close-out.md`](../skills/qa-test/close-out.md) §5r).
+Reach beats diff size when deciding to turn it on: 20 lines inside a shared Apollo link is a wider blast
+radius than 300 inside one page component ([`ticket-routing.md`](../knowledge/execution/ticket-routing.md) §5a).
 
 **This restores a promise that had inverted** — the axes had regrown the *"both paths, always"* rule the
 FAST/FULL split was created to end. Why, what it cost, and the run counts behind reversing it:

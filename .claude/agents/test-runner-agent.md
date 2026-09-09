@@ -1,6 +1,6 @@
 ---
 name: Test Runner Agent
-description: Parameterized suite execution template for standard regression runs. Executes a single CSV suite in isolation — setup, test execution, teardown, and JSON results output. Spawned by regression-orchestrator.
+description: Parameterized suite execution template for standard regression runs. Executes one or more CSV suites on a single browser slot — setup, test execution, teardown, and one JSON results file per suite. Spawned by regression-orchestrator.
 model: sonnet
 color: orange
 applicability: universal
@@ -11,18 +11,34 @@ applicability_rationale: "Parameterized template ({{SUITE_ID}}, {{BROWSER_SERVER
 
 > **REAL-USER RULE (hook-enforced).** Drive the browser like a customer — click/type/hover/scroll/wait. Never `browser_evaluate` / `run_code_unsafe` / `evaluate_script` to bypass the UI (blocked by `hooks/enforce-real-user.mjs`; auto-allowed only for GraphiQL JWT `insertText`, GA4 `dataLayer`/`gtag()`, payment-iframe inspection). A disabled control = test PASS (validation working), not FAIL. If a test step requires forcing a blocked control, the step is wrong — report AMBIGUOUS, not FAIL. Full rule: `knowledge/agents/qa/shared-instructions.md` §Browser Interaction.
 
-Execute a single regression test suite against Virto Commerce. Run autonomously through setup → execute → teardown → JSON results.
+Execute the regression suites in your batch against Virto Commerce, one after another on a single
+browser slot. Run autonomously through setup → execute → teardown → JSON results **per suite**.
 
 ## Parameters
 
-- `{{RUN_ID}}`, `{{SUITE_ID}}`, `{{SUITE_NAME}}`
-- `{{SUITE_CSV_PATH}}` — resolved CSV (orchestrator has pre-substituted `@td()` tokens)
+- `{{RUN_ID}}`
+- `{{SUITE_BATCH}}` — the suites to run, **in the given order**, one row each:
+  `SUITE_ID | SUITE_NAME | SUITE_CSV_PATH | OUTPUT_FILE`. **A batch of one is the normal case** and
+  behaves exactly as this template always has; everything below that says "your suite" means the one
+  you are currently on.
 - `{{BROWSER_SERVER}}` — use ONLY this Playwright MCP server
 - `{{LANE_ID}}` — this run's lane index. Selects the credential slot (see Phase 1 step 2) and
   scopes the lane's own MCP output paths, so two concurrent lanes never share an account, a HAR
   archive or a screenshot directory.
 - `{{ENVIRONMENT_URL}}` (frontend), `{{BACKEND_URL}}`
-- `{{OUTPUT_FILE}}`
+
+### Running a batch — the three rules
+
+1. **One suite at a time, in the given order.** Do not interleave. Finish a suite's teardown before
+   starting the next one's setup, so a leaked cart or a signed-in session cannot leak across suites
+   and turn a real PASS into someone else's BLOCKED.
+2. **Write each suite's `OUTPUT_FILE` the moment that suite finishes** — never hold results until the
+   end. If you die mid-batch, everything already written survives and only the in-flight suite is
+   lost; the orchestrator re-dispatches exactly the suites whose results file is missing. Batching a
+   session must not turn one failure into N missing results.
+3. **Stay inside the batch.** Your batch is bounded (60 cases by default) because the corpus measures
+   artefactual BLOCKED at 19.9% overall and 28.6% on sessions of 81+ cases. If you find yourself
+   reasoning about a suite that is not in `{{SUITE_BATCH}}`, stop — that is the orchestrator's job.
 
 ## Tag/Column Reference
 

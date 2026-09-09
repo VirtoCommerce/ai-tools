@@ -70,7 +70,7 @@ test("orderLpt does not mutate its input", () => {
 test("full: continuous refill + LPT beats the fixed-batch barrier by a wide margin", () => {
   const suites = fullSelection();
   const total = suites.reduce((sum, s) => sum + s.estimatedMinutes, 0);
-  assert.equal(suites.length, 125, "manifest drift: full's suite count changed");
+  assert.equal(suites.length, 128, "manifest drift: full's suite count changed");
   assert.equal(total, 2960, "manifest drift: full's total estimate changed");
 
   const pool = simulateMakespan(orderLpt(suites), 3).makespanMinutes;
@@ -123,6 +123,7 @@ test("simulateMakespan handles empty and single-slot inputs", () => {
 
 const firefox: PoolSlot = { id: "2", server: "playwright-firefox" };
 const chrome: PoolSlot = { id: "1", server: "playwright-chrome" };
+const edge: PoolSlot = { id: "3", server: "playwright-edge" };
 const computeSlot: PoolSlot = { id: "fastpath-1" };
 
 // The scheduler is policy-free: it honours the deny-list it is GIVEN. Whether a click-driven suite
@@ -277,6 +278,68 @@ test("a suite that only ONE slot can take still runs, and others are not starved
     },
   });
   assert.deepEqual(ran.sort(), ["anywhere", "chrome-only"], "both must run");
+});
+
+// THE CASE THE TEST ABOVE MISSES, and it was a live P0 bug until 2026-09-09.
+//
+// "a suite that only ONE slot can take still runs" passes for the wrong reason: its queue also holds
+// an `anywhere` suite, so the head slot always has something to dispatch and the pool keeps turning.
+// When EVERY queued suite is incompatible with the head free slot, the old code — which considered
+// `freeSlots[0]` alone and `break`ed when that one slot could take nothing — stopped dispatching, and
+// with nothing in flight deferred the whole queue as "no configured slot accepts this suite".
+//
+// That is not hypothetical: `039` and `041` are Payment — CyberSource, both
+// `preferredBrowser: playwright-chrome` in the manifest, and CLAUDE.md lists Checkout/Payment among
+// the flows that must pass before deployment. Running just those two — an ordinary targeted payment
+// regression — dispatched NOTHING while the chrome slot sat free.
+test("a queue of ONLY preferred-browser suites still runs when the head slot cannot take them", async () => {
+  const ran: Array<{ id: string; server?: string }> = [];
+  const outcomes = await runLanePool<void>({
+    suites: [
+      { id: "039", lane: "browser", estimatedMinutes: 60, preferredBrowser: "playwright-chrome" },
+      { id: "041", lane: "browser", estimatedMinutes: 40, preferredBrowser: "playwright-chrome" },
+    ],
+    slots: [firefox, chrome, edge],
+    run: async (suite, slot) => {
+      await tick(1);
+      ran.push({ id: suite.id, server: slot.server });
+    },
+  });
+  assert.deepEqual(ran.map((r) => r.id), ["039", "041"], "both payment suites must run, longest first");
+  assert.ok(ran.every((r) => r.server === "playwright-chrome"), "and on the server they require");
+  assert.deepEqual(outcomes.filter((o) => o.deferredReason), [], "nothing may be deferred");
+});
+
+test("the same holds for a deny-list — the firefoxClickOk rollback path", async () => {
+  const ran: string[] = [];
+  await runLanePool<void>({
+    suites: [
+      { id: "a", lane: "browser", estimatedMinutes: 20, browserDenyList: ["playwright-firefox"] },
+      { id: "b", lane: "browser", estimatedMinutes: 10, browserDenyList: ["playwright-firefox"] },
+    ],
+    slots: [firefox, chrome],
+    run: async (suite) => {
+      await tick(1);
+      ran.push(suite.id);
+    },
+  });
+  assert.deepEqual(ran, ["a", "b"], "a denied lane at the head must not strand the queue");
+});
+
+test("affinity does not break LPT — the longest DISPATCHABLE suite goes first", async () => {
+  const ran: string[] = [];
+  await runLanePool<void>({
+    suites: [
+      { id: "long-chrome", lane: "browser", estimatedMinutes: 99, preferredBrowser: "playwright-chrome" },
+      { id: "short-any", lane: "browser", estimatedMinutes: 5 },
+    ],
+    slots: [chrome],
+    run: async (suite) => {
+      await tick(1);
+      ran.push(suite.id);
+    },
+  });
+  assert.deepEqual(ran, ["long-chrome", "short-any"], "one slot, longest first");
 });
 
 test("stopAll defers every remaining suite instead of failing them", async () => {

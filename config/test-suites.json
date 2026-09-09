@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-09-08",
-    "totalSuites": 135,
+    "generated": "2026-09-09",
+    "totalSuites": 138,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -383,20 +383,42 @@
     },
     {
       "id": "014",
-      "name": "Orders Frontend",
+      "name": "Orders Frontend — History, Detail, Status & Reorder",
       "file": "regression/suites/Frontend/orders/014-orders-frontend.csv",
       "domain": "purchase-flow",
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 98,
-      "estimatedMinutes": 65,
+      "testCount": 51,
+      "estimatedMinutes": 34,
       "agent": "qa-frontend-expert",
       "tags": [
         "orders",
         "frontend",
         "history",
         "detail",
+        "sprint"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal",
+      "clickDriven": true
+    },
+    {
+      "id": "014b",
+      "name": "Orders Frontend — Returns, Documents & Date Filtering",
+      "file": "regression/suites/Frontend/orders/014b-orders-frontend-returns-filtering.csv",
+      "domain": "purchase-flow",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 47,
+      "estimatedMinutes": 31,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "orders",
+        "frontend",
+        "returns",
+        "filtering",
         "sprint"
       ],
       "envRiskGate": "staging",
@@ -1976,20 +1998,46 @@
     },
     {
       "id": "060",
-      "name": "Page Builder — Design & Content",
+      "name": "Page Builder — Designer, Content & Storefront",
       "file": "regression/suites/Backend/page-builder/060-page-builder-design-content.csv",
       "domain": "content-cms",
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 116,
-      "estimatedMinutes": 60,
+      "testCount": 58,
+      "estimatedMinutes": 30,
       "agent": "qa-backend-expert",
       "tags": [
         "cms",
         "design",
         "content",
         "builder",
+        "sprint"
+      ],
+      "requiresModules": [
+        "cms"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "060b",
+      "name": "Page Builder — Field Types, Asset Library & Operations",
+      "file": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 58,
+      "estimatedMinutes": 30,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "cms",
+        "design",
+        "content",
+        "builder",
+        "assets",
         "sprint"
       ],
       "requiresModules": [
@@ -2280,14 +2328,14 @@
     },
     {
       "id": "072",
-      "name": "Configurable Products UI",
+      "name": "Configurable Products UI — Sections, Cart & Checkout",
       "file": "regression/suites/Frontend/configurable-products/072-configurable-products-ui.csv",
       "domain": "catalog-search",
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 113,
-      "estimatedMinutes": 54,
+      "testCount": 57,
+      "estimatedMinutes": 27,
       "agent": "qa-frontend-expert",
       "tags": [
         "configurable-products",
@@ -2356,6 +2404,28 @@
         "file-upload",
         "text-input",
         "validation",
+        "sprint"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "072e",
+      "name": "Configurable Products UI — Conditional Sections & Field Behaviour",
+      "file": "regression/suites/Frontend/configurable-products/072e-configurable-products-conditional-sections.csv",
+      "domain": "catalog-search",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 56,
+      "estimatedMinutes": 27,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "configurable-products",
+        "storefront",
+        "pdp",
+        "widget",
+        "conditional-sections",
         "sprint"
       ],
       "customerApplicability": "reference",
@@ -3316,6 +3386,7 @@
     "orders": {
       "include": [
         "014",
+        "014b",
         "015",
         "017",
         "018",

@@ -5,7 +5,7 @@ three siblings are the detail. **5a before 5b before 5c is load-bearing:** the v
 terms of a finding's *provenance* ([`triage.md`](triage.md)) and the reconciled AC/DoD state (5b below),
 so neither can be skipped or reordered ahead of it.
 
-FAST runs 5a → 5b → 5c → **5r** → 5d → 5e → 5f → **5h**, and stops there. Only `5g` is FULL-only, because it promotes cases a FAST run never authored. `5b` still runs on FAST — the
+FAST runs 5a → 5b → 5c → **[5r]** → 5d → 5e → 5f → **5h**, and stops there (`5r` only under `--release-regression` — §5r). Only `5g` is FULL-only, because it promotes cases a FAST run never authored. `5b` still runs on FAST — the
 AC/DoD reconciliation is what produces the verdict, and dropping it would leave `5c` deciding on nothing.
 
 **On an `--iterate` run these phases do not all fire once.** Per round: **5a–5d + 5r**, plus a round-delta
@@ -135,7 +135,15 @@ the surface the story shipped, so it fails the ticket by the rules already here 
 
 ---
 
-## 5r. Release regression (C2) — launched at the verdict, consumed at the gate
+## 5r. Release regression (C2) — FULL always, FAST on request; launched at the verdict, consumed at the gate
+
+**On FAST, C2 does not run unless `--release-regression` was passed.** It is the one step on that path
+that dispatches a whole suite selection — ~24 runner dispatches, 93% of a FAST run's tokens by the
+2026-09-07 audit's measurement — and it has never produced a verdict: 5c derives that, and an IN-SCOPE
+C2 finding can only *amend* it (below). Turn it on when the change's **reach** exceeds its diff — shared
+infrastructure already-shipped callers use, or a domain whose oracle carries P0 invariants
+([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5a). On FULL it derives and runs as
+it always has. Everything below applies to a C2 that IS running.
 
 **Launch C2 the instant 5c is recorded, then do 5d and draft 5e while it runs.** Its scope was already
 computed at Step 3 ([`authoring.md`](authoring.md) §Artifact C), so this is a dispatch, not a derivation:
@@ -168,10 +176,12 @@ verdict overwhelmingly discards. Now that time overlaps filing and report drafti
 - **The amendment uses 5c's table, not a new one.** 5r introduces no criteria; it introduces findings, which
   5a classifies and 5c's existing rows judge. Same discipline as *"no new judgment is introduced"* there.
 - **Severity is still graded once**, at 5a, and never re-graded to move a finding across 5d's floor.
-- **A skipped C2 is stated.** No suite selection, an unhealthy env, an operator who declined the run — each
-  is recorded in `summary.json.regression` with its reason, and 5e.1 then ratifies the gate **without** a
-  change-scoped pass rate and says so. An absent regression block reads as a clean sweep, which is §2's
-  rule applied to the phase that now runs last.
+- **A skipped C2 is stated.** No suite selection, an unhealthy env, an operator who declined the run, **or
+  a FAST run without `--release-regression`** — each is recorded in `summary.json.regression` with its
+  reason, and 5e.1 then ratifies the gate **without** a change-scoped pass rate, as
+  `not-assessed (C2 skipped)` and **never as a pass**. An absent regression block reads as a clean sweep,
+  which is §2's rule applied to the phase that now runs last. The default-off case is the one most likely
+  to be silently omitted precisely because nothing went wrong, so it is written like the failures are.
 
 **`--iterate`:** C2 runs per round, after that round's 5c, for the reason the round cap makes sharp — the
 loop decides whether there IS another round from the verdict, so paying for a suite sweep before that

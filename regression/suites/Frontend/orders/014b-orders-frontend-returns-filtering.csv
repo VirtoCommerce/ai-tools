@@ -1,0 +1,781 @@
+﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+"ORD-037","Return - Reason Selection Required","Orders > Returns","High","PROPOSED-BL-RTN-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; completed/delivered order exists; return feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[ACT] click on a delivered order
+[WAIT] Wait for the resulting view to settle
+[ACT] click 'Return' or 'Request Return'
+[WAIT] wait for return form
+[ASSERT] verify return reason dropdown or selection present
+[ASSERT] verify predefined reason options available (e.g. Defective and Wrong Item and Changed Mind)
+[ACT] attempt to submit return without selecting a reason
+[WAIT] Wait for the resulting view to settle
+[ASSERT] verify validation error prevents submission
+[ACT] select a reason from dropdown
+[ACT] submit return request
+[WAIT] Wait for the resulting view to settle","[DOM] reason selection control present and required
+[DOM] predefined reason options available in dropdown
+[STATE] submission blocked without reason selection — validation error shown
+[STATE] submission succeeds after selecting a valid reason
+[DOM] selected reason visible in confirmation","[API] return mutation payload includes reason field; [CONSOLE] no errors on reason validation; [NETWORK] 2xx on return submission with reason","reason selection absent from return form; return accepted without any reason; dropdown has no predefined options; validation does not fire on empty reason","none","ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis)","Draft"
+"ORD-038","Return - Status Tracking Display","Orders > Returns","High","PROPOSED-BL-RTN-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+{{ORDER_WITH_RETURN}} env var set (completed order with an RMA/return request already acknowledged by admin); buyer logged in as {{USER_EMAIL}}; RETURNS_FEATURE_ENABLED=true","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};order_with_return_id={{ORDER_WITH_RETURN}}","[NAV] Navigate to /account/orders
+[ACT] locate order {{ORDER_WITH_RETURN}} and click to open detail
+[WAIT] wait for detail page
+[ASSERT] verify return status section or badge visible on order detail
+[ASSERT] verify return status shows current state (e.g. 'Return Requested' or 'Return Approved' or 'Return Received')
+[ASSERT] verify return reference number or RMA ID displayed
+[ASSERT] verify return items listed with quantities being returned
+[NAV] navigate to returns section (if separate /account/returns page exists)","[DOM] return status visible on order detail page
+[STATE] return status reflects current state accurately
+[DOM] RMA ID or return reference number displayed
+[DOM] returned items listed with correct quantities
+[DOM] return status badge visually distinct from order status
+[STATE] return appears in returns list if such page exists","[API] GET order detail includes return/RMA status data; [CONSOLE] no errors rendering return status section; [NETWORK] 2xx on order detail with return data","return status absent from order detail; RMA ID missing; returned items not listed; return status shows stale/incorrect state","none","ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis)","Draft"
+"ORD-039","Return - Partial Return Quantity Selection","Orders > Returns","Medium","PROPOSED-BL-RTN-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; delivered order has line item with quantity >= 3; return feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[ACT] click on delivered order with item qty >= 3
+[WAIT] Wait for the resulting view to settle
+[ACT] click 'Return'
+[WAIT] wait for return form
+[ASSERT] verify quantity field per line item allows entering a value less than ordered qty
+[ACT] set return quantity to 1 (out of 3 ordered)
+[ACT] select return reason
+[ACT] submit return
+[WAIT] wait for confirmation","[DOM] quantity field editable per line item in return form
+[STATE] return quantity accepts partial value less than ordered qty
+[STATE] submitted return shows qty = 1 for the item
+[STATE] full order qty not used when partial specified
+[DOM] return confirmation reflects partial quantity
+[STATE] remaining quantity (2) not included in return","[API] return mutation payload includes qty=1 for the item; [CONSOLE] no errors on partial quantity; [NETWORK] 2xx on partial return submission","quantity field does not allow partial return (forced to full qty); return created with full quantity despite entering partial; quantity field rejects values less than ordered qty","none","ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis)","Draft"
+"ORD-040","Return - Window Expiry Enforcement","Orders > Returns","Medium","PROPOSED-BL-RTN-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+{{ORDER_PAST_RETURN_WINDOW}} env var set (completed order delivered 30+ days ago, past configured return window); buyer logged in as {{USER_EMAIL}}; RETURNS_FEATURE_ENABLED=true; return window policy configured for the store","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};past_return_order_id={{ORDER_PAST_RETURN_WINDOW}}","[NAV] Navigate to /account/orders
+[ACT] locate order {{ORDER_PAST_RETURN_WINDOW}} and click to open detail
+[WAIT] wait for detail page
+[ASSERT] verify 'Return' button is either absent or disabled
+[ASSERT] verify message indicates return window has expired (e.g. 'Return period has ended')
+[ASSERT] verify no way to initiate return request for expired order
+[ACT] if button visible but disabled then attempt to click
+[WAIT] Wait for the resulting view to settle","[DOM] 'Return' button absent or disabled on expired-window order
+[DOM] expiry message or tooltip visible explaining return window has passed
+[STATE] no return request can be initiated for expired order
+[DOM] recent deliverable orders still show active 'Return' button for comparison
+[STATE] click has no effect or shows explanation","[API] order detail returns returnEligible=false or return window metadata; [CONSOLE] no errors on expired order detail; [NETWORK] no return creation request sent for expired order","'Return' button active on expired-window order allowing submission; no message about return window expiry; return request accepted for order past return window","none","ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis)","Draft"
+"ORD-041","Invoice PDF - Content Contains Correct Order Data","Orders > Documents","Medium","BL-ORD-005","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; completed order exists with known order number and items and totals; invoice PDF download available","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[ACT] click on a completed order
+[WAIT] Wait for the resulting view to settle
+[KEY] note order number and item names and quantities and grand total
+[ACT] click 'Download Invoice'
+[WAIT] wait for PDF to download","[NETWORK] PDF response Content-Type = application/pdf and Content-Length > 0
+[MANUAL] order number present in PDF content
+[MANUAL] line items listed in PDF with product names and quantities
+[MATH] grand total in PDF = order grand total on storefront
+[MANUAL] PDF includes date and company information
+[STATE] PDF file downloads successfully (non-zero file size)
+[STATE] PDF is openable (not corrupted)","[NETWORK] PDF download response Content-Type = application/pdf; [NETWORK] Content-Length > 0; [CONSOLE] no JS errors on download initiation","PDF file corrupted or 0 bytes; order number missing from PDF; line items absent from PDF; grand total in PDF does not match order total","none","Coverage Gap Analysis — GAP-F28","Draft"
+"ORD-042","Invoice PDF - Multiple Document Types Available","Orders > Documents","Medium","BL-ORD-005","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; completed order exists; store configured with multiple document types (invoice and packing slip)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[ACT] click on a completed order
+[WAIT] wait for detail page
+[ASSERT] verify document download section shows multiple options (e.g. 'Invoice' and 'Packing Slip')
+[ACT] download Invoice PDF
+[ASSERT] verify invoice downloads successfully
+[ACT] download Packing Slip PDF","[DOM] multiple document type options visible on order detail
+[DOM] each document type has its own download button or link
+[STATE] both downloads complete successfully with non-zero file size
+[FORMAT] invoice includes pricing data
+[FORMAT] packing slip focuses on items and shipping info
+[STATE] the two documents have different content (invoice includes prices and packing slip may not)","[NETWORK] each download returns 2xx with Content-Type application/pdf; [CONSOLE] no errors on multiple downloads; [NETWORK] both files have Content-Length > 0","only one document type available when multiple configured; second download fails; both documents contain identical content; document type selector absent","none","Coverage Gap Analysis — GAP-F28","Draft"
+"ORD-043","Invoice PDF - Download Without Page Navigation","Orders > Documents","Medium","BL-ORD-005","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; completed order with invoice available","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[ACT] click on a completed order
+[WAIT] wait for detail page
+[ACT] click 'Download Invoice'
+[WAIT] Wait for the invoice response (download or informational message) to settle","[STATE] page URL unchanged after download click (no navigation)
+[DOM] order detail page content intact after download
+[DOM] no blank page or redirect during download
+[STATE] download initiated via content-disposition attachment header
+[STATE] download starts without navigating away from order detail page
+[STATE] order detail page remains fully visible and functional after download
+[STATE] no full-page redirect occurs
+[STATE] download progress or completion indicator shown (browser download bar)","[NETWORK] download request uses Content-Disposition: attachment; [CONSOLE] no errors during download; [NETWORK] response status 2xx on download endpoint","clicking download navigates away from order detail; page goes blank during download; download opens PDF in same tab instead of downloading; page content lost after download","none","Coverage Gap Analysis — GAP-F28","Draft"
+"ORD-044","Order Cancellation - Cancel with Reason Selection","Orders > Cancellation","High","BL-ORD-002","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Fresh New order owned by {{USER_EMAIL}} available; STORE_CONFIG_BUYER_CANCEL=true; buyer logged in as {{USER_EMAIL}}","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[ACT] click on a 'New' order
+[WAIT] Wait for the resulting view to settle
+[COND: buyer-cancel enabled] [ACT] click 'Cancel Order'
+[WAIT] wait for cancel dialog
+[ASSERT] verify cancellation reason dropdown with predefined options present
+[ASSERT] verify at least 3 reason options available
+[ACT] attempt submit without selecting reason
+[WAIT] Wait for the resulting view to settle
+[ASSERT] verify validation prevents submission
+[ACT] select reason 'Changed my mind'
+[ACT] submit cancellation
+[WAIT] wait for confirmation","[COND: buyer-cancel enabled] reason dropdown with multiple predefined options
+[STATE] submission blocked without reason
+[STATE] cancellation succeeds with selected reason
+[DOM] reason displayed on cancelled order detail
+[DOM] at least 3 reason options in dropdown
+[STATE] status changes to reflect cancelled state","[API] cancelOrder mutation includes reason field; [CONSOLE] no errors on cancellation; [NETWORK] 2xx on cancel request","reason dropdown absent; cancellation accepted without reason; fewer than 3 reason options; selected reason not persisted or displayed after cancellation","none","Coverage Gap Analysis — GAP-F30","Draft"
+"ORD-045","Order Cancellation - Blocked for Partially Shipped Orders","Orders > Cancellation","High","BL-ORD-002, BL-ORD-003","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+{{PARTIALLY_SHIPPED_ORDER}} env var set (order with 2+ shipments where at least one is shipped and at least one is pending); buyer logged in as {{USER_EMAIL}}","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};partial_order_id={{PARTIALLY_SHIPPED_ORDER}}","[NAV] Navigate to /account/orders
+[ACT] locate order {{PARTIALLY_SHIPPED_ORDER}} and click to open detail
+[WAIT] wait for detail page","[DOM] 'Cancel Order' button absent or disabled on partially shipped order
+[DOM] explanation message visible about partial shipment
+[STATE] order status correctly shows partially shipped label
+[DOM] shipped and pending items distinguished in order detail
+[DOM] no workaround allows cancellation
+[STATE] message explains order cannot be cancelled because it has been partially shipped","[API] order detail returns status indicating partial shipment and cancellation not available; [CONSOLE] no errors on partially shipped order detail; [NETWORK] 2xx on order detail load","'Cancel Order' button active on partially shipped order; no explanation about why cancellation blocked; status shows incorrect value; shipped and pending items not distinguished","none","Coverage Gap Analysis — GAP-F30; PARKED — asserts a storefront ""partially shipped"" status label, but that value is absent from $cfg.orders_statuses (verified 2026-07-25 vs vc-frontend@dev), and the PARTIALLY_SHIPPED_ORDER fixture is still deferred pending a product call on the mixed-shipment aggregate status string. Left at Draft deliberately — do NOT promote or run until both are settled.","Draft"
+"ORD-046","Order Cancellation - Triggers Refund Notification","Orders > Cancellation","Medium","BL-ORD-002, BL-ORD-004","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Fresh New order owned by {{USER_EMAIL}} with payment already authorized or captured; STORE_CONFIG_BUYER_CANCEL=true; buyer logged in as {{USER_EMAIL}}","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[ACT] click on a 'New' order with captured payment
+[WAIT] Wait for the resulting view to settle
+[COND: buyer-cancel enabled] [ACT] click 'Cancel Order'
+[ACT] select reason and confirm
+[WAIT] wait for cancellation confirmation","[DOM] cancellation confirmation includes refund information
+[DOM] refund amount matches order total or captured amount
+[STATE] order status = cancelled label
+[DOM] refund processing message or timeline displayed
+[DOM] payment section shows refund pending or voided state
+[STATE] refund notification or message displayed (e.g. 'A refund will be processed')
+[STATE] no immediate charge visible (refund pending state)","[API] cancelOrder response includes refund information; [CONSOLE] no errors during cancellation with refund; [NETWORK] 2xx on cancel and refund endpoints","no refund information shown after cancellation; refund amount incorrect; no indication that payment will be refunded; cancellation succeeds but payment remains in captured state with no refund reference","none","Coverage Gap Analysis — GAP-F30","Draft"
+"ORD-047","Order Cancellation - Too Late to Cancel (Processing State)","Orders > Cancellation","Medium","BL-ORD-002","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+@td(PROCESSING_ORDER.number) env var set (New order promoted to Processing by admin); buyer logged in as {{USER_EMAIL}}; STORE_CONFIG_BUYER_CANCEL=true","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};processing_order=@td(PROCESSING_ORDER.number)","[NAV] Navigate to /account/orders
+[ACT] locate order @td(PROCESSING_ORDER.number) and click to open detail
+[WAIT] wait for detail page","[DOM] 'Cancel Order' button absent or disabled on Processing order
+[DOM] message explaining cancellation not available at this stage
+[DOM] support contact information or link provided
+[STATE] order status = 'Processing' label
+[DOM] no hidden workaround to force cancellation
+[STATE] message indicates order is being processed and cannot be cancelled","[API] order detail returns cancellable=false for Processing status; [CONSOLE] no errors on Processing order detail; [NETWORK] 2xx on order detail load","cancel button active on Processing order; no explanation about why cancellation blocked; no support contact info provided; order allows cancellation despite being in Processing","none","Coverage Gap Analysis — GAP-F30","Draft"
+"ORD-048","Order Confirmation - Print Functionality (via Show Order)","Orders > Confirmation","Medium","BL-ORD-005","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Buyer just placed a new order; order confirmation page ({{FRONT_URL}}/checkout/completed) is intentionally minimal — Print lives on the order-detail page reached via 'Show order'; browser supports print dialog","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Complete checkout and arrive at order confirmation page ({{FRONT_URL}}/checkout/completed)
+[ASSERT] verify order number and confirmation message shown
+[ACT] click 'Show order' to navigate to the order-detail page
+[WAIT] wait for order detail page to load
+[ASSERT] verify 'Print' button or print icon visible on order detail page
+[ACT] click 'Print' button
+[WAIT] Wait for the resulting view to settle","[DOM] print button or icon present on order detail page (not on /checkout/completed)
+[STATE] clicking print triggers browser print dialog (window.print)
+[DOM] order detail page intact after print dialog dismissed
+[STATE] no page navigation on print action
+[DOM] print-optimized CSS renders clean layout in print preview
+[STATE] print preview shows order details (order number and items and totals)","[CONSOLE] no JS errors on print action; [NETWORK] no additional requests triggered by print action; [API] no duplicate order creation on print","print button absent from order detail page; clicking print navigates away from page; print dialog not invoked; order detail page lost after print action","none","Coverage Gap Analysis — GAP-F31","Draft"
+"ORD-049","Order Confirmation - Continue Shopping Link","Orders > Confirmation","Medium","BL-ORD-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Buyer just placed order; on order confirmation page","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Complete checkout and arrive at confirmation page
+[ASSERT] verify 'Continue Shopping' link or button visible
+[ACT] click 'Continue Shopping'
+[WAIT] wait for navigation","[DOM] 'Continue Shopping' link/button present on confirmation page
+[NAV] clicking navigates to home or catalog page
+[STATE] cart badge shows 0 items after order
+[STATE] cart page shows empty state
+[DOM] link text is clear and not ambiguous
+[STATE] no order-related data persists in cart","[CONSOLE] no JS errors on navigation from confirmation; [NETWORK] 2xx on home/catalog page load; [API] cart query returns empty items after order placement","'Continue Shopping' link absent; link navigates to wrong page; cart still contains ordered items; cart badge shows stale count","none","Coverage Gap Analysis — GAP-F31","Draft"
+"ORD-050","Order Confirmation - Order Number Format and Email Reference","Orders > Confirmation","High","BL-ORD-005, BL-CHK-006","ECL-11.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Buyer just placed order; on order confirmation page; email notification expected","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Complete checkout and arrive at confirmation page
+[ASSERT] verify order number displayed in consistent format (e.g. prefix + number)
+[ASSERT] verify order number matches the format used in /account/orders
+[ASSERT] verify confirmation page mentions email notification (e.g. 'A confirmation email has been sent to {{USER_EMAIL}}')
+[NAV] navigate to /account/orders","[DOM] order number displayed prominently on confirmation page
+[FORMAT] order number format consistent with /account/orders format
+[DOM] email notification message present referencing buyer email
+[STATE] order number in /account/orders matches confirmation
+[DOM] order number is not a temporary/placeholder ID
+[STATE] newly placed order appears with same order number","[API] GET orders list returns order with matching order number; [CONSOLE] no errors on confirmation page; [NETWORK] 2xx on orders list after placement","order number absent from confirmation; order number format differs between confirmation and orders list; no email notification message; order not found in /account/orders after placement","none","Coverage Gap Analysis — GAP-F31","Draft"
+"ORD-051","Order Confirmation - All Order Totals Breakdown Displayed (via Show Order)","Orders > Confirmation","High","BL-CHK-006, BL-PRICE-002","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Buyer just placed order with multiple items and shipping and applicable tax; order confirmation page ({{FRONT_URL}}/checkout/completed) is intentionally minimal — totals breakdown is verified on the order-detail page reached via 'Show order'","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Complete checkout and arrive at confirmation page ({{FRONT_URL}}/checkout/completed)
+[ASSERT] verify order number and confirmation message displayed
+[ACT] click 'Show order' to navigate to the order-detail page
+[WAIT] wait for order detail page to load
+[MATH] verify grand total = subtotal + shipping + tax - discount","[DOM] order number and confirmation message visible on /checkout/completed
+[MATH] grand total = subtotal + shipping + tax - discount (verified on order-detail page)
+[FORMAT] all monetary amounts display 2 decimal places (order-detail page)
+[FORMAT] currency symbol present on all amounts
+[DOM] subtotal and shipping and tax and grand total all visible on order-detail page
+[DOM] discount line present when coupon applied
+[DOM] no hidden or missing total components
+[STATE] subtotal displayed
+[STATE] shipping cost displayed
+[STATE] tax amount displayed","[API] order detail response totals match order-detail page amounts; [CONSOLE] no errors on confirmation or order-detail page; [NETWORK] 2xx on confirmation and order-detail page load","confirmation page missing order number or confirmation message; 'Show order' link absent; subtotal missing from order-detail page; shipping cost absent; tax not displayed; grand total does not equal sum of components; amounts missing decimal places or currency symbol","none","Coverage Gap Analysis — GAP-F31","Draft"
+"ORD-052","Order List - Status Filter Combined With Sort Preserved","Orders > Filtering","Critical","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders in at least 2 statuses; date column sortable","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] note unfiltered total count and current default sort direction
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible with order-status checkbox group
+[ACT] check the checkbox for a non-default status (e.g. 'Completed' or 'New')
+[ASSERT] verify 'Apply' button is enabled
+[ACT] click 'Apply'
+[WAIT] popover closes and filtered results render
+[KEY] note filtered count and that all visible rows match selected status
+[ACT] change sort to date ascending (click date column header or sort selector)
+[WAIT] re-sorted list rendered
+[ASSERT] verify status filter chip/indicator still shows the selected status as active
+[ASSERT] verify visible rows still only match the selected status (filter did NOT reset on sort change)
+[ASSERT] verify dates are in ascending order (sort applied)
+[ASSERT] verify row count = previously noted filtered count (no rows lost or added)
+[ACT] toggle sort to date descending
+[WAIT] re-sorted list rendered","[STATE] status filter remains active across sort changes (filter chip visible, all rows match status)
+[STATE] sort direction switches correctly on each toggle
+[MATH] row count after filter+sort = row count after filter only
+[STATE] no orders matching other statuses leak into results when sort is changed
+[DOM] active filter indicator and active sort indicator both visible simultaneously
+[STATE] filter still applied AND descending order honored
+[STATE] row count unchanged","[API] orders query payload includes BOTH status filter param AND sort param on each sort change; [CONSOLE] no JS errors during combined filter+sort interaction; [NETWORK] 2xx on each filtered+sorted request","Changing sort clears the status filter (rows of other statuses reappear); sort change resets filter chip to default; row count changes after sort toggle indicating filter dropped; only filter OR sort applied at a time","Clear filter and reset sort to default before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — GAP-OHF-002; Validated","Reviewed"
+"ORD-053","Order List - Status Filter Persists Across Order Detail Navigation and Back","Orders > Filtering","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders in multiple statuses","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible
+[ACT] check the checkbox for any specific status (live-discover first status whose count > 0)
+[ACT] click 'Apply'
+[WAIT] popover closes and filtered list rendered
+[KEY] note filtered row count and the order number of the first visible row
+[ACT] click the first visible order row to open its detail
+[WAIT] order detail page rendered
+[ASSERT] verify navigated to /account/orders/<order-number> or equivalent detail route
+[ACT] use browser back navigation (navigate_back)
+[WAIT] orders list reloaded","[STATE] status filter persists across navigation to order detail and back
+[STATE] filter indicator remains visible after back navigation
+[MATH] post-back filtered row count = pre-navigation filtered row count
+[STATE] list order (first row identity) preserved after back navigation
+[DOM] no flash of unfiltered full list during back navigation
+[STATE] filter chip/indicator still shows the previously selected status as active
+[STATE] visible row count matches the previously noted filtered count
+[STATE] the same first order row is still the first visible row (sort/filter state preserved, not reset to default)","[API] orders list query on back navigation re-applies the same status filter param; [CONSOLE] no JS errors during back navigation; [NETWORK] 2xx on orders list reload","Filter reset to default after back navigation (full unfiltered list returned); flash of unfiltered list visible during transition; first row identity changes indicating sort or filter dropped; URL retains filter param but UI does not honor it","Clear filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — GAP-OHF-001","Draft"
+"ORD-054","Order List - Date Range Filter Rejects Start Date After End Date","Orders > Filtering","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders; date range filter control present on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible with 'Created date' section
+[ASSERT] 'Created date' combobox shows 'Custom date'
+[ACT] type today's date (MM/DD/YYYY) into aria-label='Start date' input
+[ACT] type a date 30 days BEFORE today into aria-label='End date' input (deliberately inverted range)
+[ACT] click 'Apply'
+[WAIT] short wait for UI response (validation message OR auto-swap behavior OR Apply button stays disabled)
+[COND: validation path] verify start date picker visually flags the invalid state (red border / aria-invalid)
+[COND: auto-swap path] verify the swapped dates are reflected in the picker inputs","[DOM] one of: validation error message visible OR dates auto-swapped in picker inputs (both are acceptable defensive behaviors)
+[STATE] filter is not applied with literally-inverted range
+[STATE] no orders displayed for a logically empty/inverted range
+[DOM] no blank page or JS error toast
+[STATE] EITHER (a) inline validation error shown indicating start must be before end and filter NOT applied, OR (b) UI auto-swaps the dates so start < end and applies filter normally
+[STATE] NO crash, blank page, or unhandled JS error occurs
+[STATE] NO orders displayed with dates outside the (corrected or original) date window","[API] no orders request sent with literally inverted range (start > end) - runner inspects /graphql or /api network calls; [CONSOLE] no unhandled TypeError or Promise rejection from date validation; [NETWORK] no 4xx/5xx on date filter interaction","Inverted range silently accepted with no validation and no auto-swap (e.g. backend called with start > end returning empty result with no user feedback); JS error/crash on inverted range; date picker permits invalid state with no indication","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — GAP-OHF-003","Draft"
+"ORD-055","Order List - Date Range Filter With Same Start and End Date (Single-Day Boundary)","Orders > Filtering","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least one order placed on a known specific date","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered with default sort (newest first)
+[KEY] note the order date of the most recent visible order (call it D)
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible with 'Created date' section
+[ACT] type D (MM/DD/YYYY) into aria-label='Start date'
+[ACT] type D (MM/DD/YYYY) into aria-label='End date' (single-day inclusive boundary)
+[ACT] click 'Apply'
+[WAIT] popover closes and filtered results rendered
+[ASSERT] verify at least one order is displayed (the noted most-recent order with date = D)
+[ASSERT] verify every visible row has a displayed order date equal to D (no rows from D-1 or D+1)
+[ASSERT] verify filter chip/indicator shows the active date range as 'D to D' or equivalent single-day label
+[ACT] change end date to D+1 (next day, expanding the window)
+[WAIT] re-filtered list rendered","[STATE] single-day inclusive range returns orders dated exactly D (both start and end boundaries inclusive)
+[MATH] count(orders with date=D) is non-zero given the preconditions
+[STATE] widening end to D+1 produces a row count >= the D-only count (monotonic non-decreasing)
+[FORMAT] date label in filter indicator readable (e.g. 'May 26, 2026 - May 26, 2026' or 'May 26, 2026')
+[DOM] no empty-state shown for the valid single-day range
+[STATE] row count is >= the single-day count (window widened, not narrowed)","[API] orders query date params include start=D AND end=D (inclusive boundary applied); [CONSOLE] no JS errors on single-day filter; [NETWORK] 2xx on filtered request","Single-day range returns empty results despite a known matching order (exclusive boundary bug); date picker rejects same start/end as invalid (defensive validation too strict); widening to D+1 returns FEWER rows than D-only (broken range logic)","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — GAP-OHF-004","Draft"
+"ORD-056","Order List - Status Filter Combined With Search Query (Intersection)","Orders > Filtering","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders in multiple statuses and the first visible order's order-number prefix matches at least one OTHER order to ensure search yields >1 result before status filter narrows it","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] note total unfiltered count and the first 3-5 chars of the first visible order number (call it PREFIX)
+[ACT] type PREFIX into the 'Search by number, name or other data' input
+[KEY] press Enter
+[WAIT] search results rendered
+[KEY] note search-only count (call it S) - should be >= 1
+[ASSERT] verify all visible rows contain PREFIX in their order number
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible
+[ACT] check the checkbox for a status known to be present in the searched results (live-discover one status visible in the search-only result)
+[ACT] click 'Apply'
+[WAIT] popover closes and combined filter+search results rendered
+[KEY] note combined count (call it C)
+[ASSERT] verify C <= S (combination narrows, never widens)
+[ASSERT] verify every visible row matches BOTH the search PREFIX AND the selected status (intersection, not union)
+[ACT] clear status filter only
+[WAIT] back to search-only results","[MATH] combined count C <= search-only count S
+[MATH] C <= status-only count too (combined is intersection)
+[STATE] every visible row in combined view matches BOTH conditions (search-text AND status)
+[STATE] clearing one of the two restores results to the other dimension alone (search clears but status stays, or vice versa)
+[DOM] both filter chip AND search query indicator visible simultaneously when both applied
+[STATE] count returns to S (filter cleared, search retained)","[API] orders query payload includes BOTH search-text param AND status filter param when combined; [CONSOLE] no JS errors during combined search+filter interaction; [NETWORK] 2xx on each request","Combined view shows union instead of intersection (more rows than search-only, indicating OR semantics); applying filter clears search query (or vice versa); combined count exceeds either individual count","Clear both search and filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — GAP-OHF-005; vc-frontend orders search input maxlength=64","Draft"
+"ORD-057","Order List - Status Filter Persists Across Pagination","Orders > Filtering","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has enough orders in a single status to span at least 2 pages (typically 20+ orders matching the chosen status given default page size)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible
+[ACT] check the checkbox for a status with >1 page worth of matching orders (live-discover the status with highest count)
+[ACT] click 'Apply'
+[WAIT] popover closes and filtered page 1 rendered
+[ASSERT] verify pagination controls visible (indicates >1 page of filtered results)
+[KEY] note page 1 row count and first/last order numbers visible
+[ACT] click 'Next' or page 2 button
+[WAIT] page 2 rendered
+[ASSERT] verify filter chip/indicator still shows the selected status as active
+[ASSERT] verify every visible row on page 2 matches the selected status (filter NOT dropped on page change)
+[ASSERT] verify page 2 orders differ from page 1 (no overlap)
+[ACT] click 'Previous' or page 1 button
+[WAIT] page 1 reloaded","[STATE] status filter persists across page 1 -> page 2 -> page 1 navigation
+[STATE] every page in the filtered paginated view shows only matching status
+[STATE] page 2 content distinct from page 1 (no duplicates)
+[STATE] returning to page 1 restores the original page 1 view
+[DOM] pagination control reflects current page across filter+pagination interactions
+[STATE] filter still active on page 1
+[STATE] same orders/order count as initial page 1 view","[API] orders query payload includes status filter param on EVERY pagination request (page 1, page 2, back to page 1); [CONSOLE] no JS errors during paginated filter navigation; [NETWORK] 2xx on each page request","Filter dropped when moving to page 2 (rows of other statuses appear); page 2 shows duplicate of page 1; back navigation to page 1 loses filter; pagination control disappears or freezes mid-flow","Clear filter and return to page 1 before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — GAP-OHF-006","Draft"
+"ORD-058","Order List - Filter State Restoration on Browser Refresh","Orders > Filtering","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders in multiple statuses","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible
+[ACT] check the checkbox for any non-default status
+[ACT] click 'Apply'
+[WAIT] popover closes and filtered results rendered
+[KEY] note filtered count, the active filter status label, and the FULL URL bar (capture any query params)
+[ACT] reload the page (browser refresh / F5)
+[WAIT] page fully reloaded
+[COND: URL contained filter params before refresh] verify URL params are unchanged after refresh AND verify filter is restored visually (chip/indicator + matching row count)
+[COND: URL did NOT contain filter params] verify filter state is RESET to default after refresh (full unfiltered list shown) - this is the explicit observation for whether storefront persists filter in URL vs ephemeral component state","[STATE] post-refresh behavior matches pre-refresh URL contents (URL-driven persistence model): either both URL+UI restored OR both reset
+[DOM] no broken state where URL has filter params but UI does not honor them (or vice versa)
+[NAV] URL after refresh is identical to URL before refresh (browser refresh is a no-op on URL)
+[DOM] no JS error or blank page on refresh
+[STATE] document which behavior was observed (URL-persisted OR ephemeral) in the test evidence - both outcomes are valid product decisions but must be consistent","[API] if URL params present pre-refresh then orders query on refresh re-applies them; if URL params absent then unfiltered query fires; [CONSOLE] no JS errors during refresh; [NETWORK] 2xx on post-refresh orders query","URL contains filter param but UI ignores it after refresh (broken deep-link); URL has no params but UI tries to restore filter from stale local state causing mismatch; refresh causes blank page or JS crash; URL params change unexpectedly on refresh","Clear filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — GAP-OHF-007","Draft"
+"ORD-059","Order List - Search by Partial / Prefix Order Number","Orders > Filtering","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least one order","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover the order number of the first visible order (call it FULL)
+[KEY] derive PREFIX = first 4-5 characters of FULL
+[ACT] type PREFIX into the 'Search by number, name or other data' input
+[KEY] press Enter (or click the 'Search orders' button) to apply the search
+[WAIT] search results rendered
+[ASSERT] verify at least one row is returned (the order with order number FULL must appear)
+[ASSERT] verify every returned row's order number contains PREFIX (substring match - leading prefix or contained substring per storefront's search semantics)
+[ASSERT] verify the original FULL order is among the results
+[ACT] clear the 'Search by number, name or other data' input via its clear (X) control
+[WAIT] full list restored","[DOM] FULL order number visible in filtered results (the known order is among matches, not just 'at least one' row)
+[STATE] every returned row's order number contains the entered substring
+[DOM] no empty state for a valid prefix that matches at least one existing order
+[STATE] clearing search restores full unfiltered list
+[STATE] list returns to unfiltered baseline","[API] orders search query payload uses the partial string as a search/like parameter (not as an exact match filter); [CONSOLE] no JS errors during partial search; [NETWORK] 2xx on search request","Partial prefix search returns empty results despite a known matching order (exact-match-only bug); search treats prefix as a regex causing JS error; clearing search does not restore full list","Clear search before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — GAP-OHF-008; vc-frontend orders search input maxlength=64","Draft"
+"ORD-060","Order List - B2B Org-Scoped Filtering Respects Organization Context","Orders > Filtering > B2B","High","BL-AUTH-005","ECL-3.2","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_USER]
+B2B buyer logged in as {{ORG_USER_EMAIL}} (has role granting company-wide orders visibility); the org has at least one other member who has placed orders AND the signed-in user has placed at least one personal order so the org-scope view contains orders from multiple members","url={{FRONT_URL}};user={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ASSERT] verify scope toggle/selector is visible IF the storefront exposes a 'My Orders' vs 'Company Orders' (or equivalent org-scope) switch - otherwise the default view IS the org-scoped one per role
+[KEY] note the row count and at least one order belonging to another org member (identify by buyer/contact column if present, otherwise live-discover via the order detail page)
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible
+[ACT] check the checkbox for any present status
+[ACT] click 'Apply'
+[WAIT] popover closes and filtered results rendered
+[ASSERT] verify the filtered results include orders placed by OTHER org members (not just orders placed by the signed-in user) - confirms filter operates within org scope, not silently narrowed to current-user-only
+[ASSERT] verify no orders belonging to organizations OTHER than the current org appear in the results
+[ACT] clear filter
+[WAIT] full org-scoped list restored","[STATE] org-scope view includes orders from multiple org members when current user has company-wide role
+[STATE] applied filter operates over the full org-scope set (not silently re-scoped to current-user-only)
+[STATE] no orders from other organizations leak into the view
+[DOM] (if scope toggle present) toggle label correctly reflects current scope
+[STATE] clearing filter restores full org-scoped list, not a re-scoped current-user-only list","[API] orders query payload includes the org-scope parameter (e.g. organizationId or scope=org) on both unfiltered and filtered requests; [CONSOLE] no JS errors during org-scoped filtering; [NETWORK] 2xx on org-scoped query; [API] no orders from other orgs returned (verify in API response)","Filter silently re-scopes to current-user-only orders ignoring org-scope; orders from other organizations appear in results (cross-org leak - security/privacy bug); scope toggle present but non-functional; clearing filter changes the scope unexpectedly","Clear filter; sign out of B2B user before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — GAP-OHF-009","Draft"
+"ORD-061","Order List - Active Filter Chip Removal Affects Only That Filter","Orders > Filtering","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders in multiple statuses with date diversity to permit a multi-filter scenario","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible
+[ACT] check the checkbox for any non-default status (Filter A)
+[ACT] select the 'Last month' preset from the 'Created date' combobox (Filter B — using a preset avoids the typed-input flow)
+[ACT] click 'Apply'
+[WAIT] popover closes and combined-filtered list rendered
+[KEY] note combined count and verify exactly 2 active filter chips visible (one for status, one for date range)
+[ACT] locate the X / remove control on the STATUS filter chip and click it (remove only Filter A)
+[WAIT] list re-rendered with only Filter B active
+[ASSERT] verify exactly 1 active filter chip visible (date range remains)
+[ASSERT] verify visible orders match the date-range filter but include orders of ALL statuses (status filter has been removed, not just hidden)
+[ASSERT] verify row count >= the previous combined count (relaxing one filter widens or equals results)
+[ACT] click X on the date-range filter chip
+[WAIT] list re-rendered fully unfiltered","[STATE] removing one chip removes exactly that one filter - other active filters persist
+[STATE] chip removal is incremental, not a 'clear all' shortcut
+[MATH] row count after removing 1 of 2 filters >= row count with both filters applied
+[MATH] row count after removing both filters = total unfiltered count
+[DOM] chip count after each removal matches the number of remaining active filters","[API] orders query payload after removing Filter A retains Filter B param only; [API] payload after removing Filter B contains no filter params; [CONSOLE] no JS errors during chip removal; [NETWORK] 2xx on each post-removal request","Removing one chip clears ALL filters (acts as 'clear all' shortcut - wrong granularity); removing a chip leaves the filter active under the hood; chip X button non-functional or invisible; row count decreases when relaxing a filter (broken logic)","Clear all filters before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — GAP-OHF-010","Draft"
+"ORD-062","Date Picker — Custom Range End Boundary Dropped from GraphQL Filter (P0 Bug Probe)","Orders > Date Filter","Critical","BL-ORD-001","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 2 orders whose creation dates are more than 30 days apart (so a narrow Custom range can exclude at least one later order); Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover the order dates of the first (newest) and last (oldest) visible orders — call them D_LATEST and D_OLDEST
+[KEY] compute D_MID = a date roughly in the middle of that range but at least 14 days before D_LATEST (so at least one order is expected to be excluded)
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible with 'Created date' section
+[ASSERT] verify 'Created date' combobox shows 'Custom date' as current value (default)
+[ACT] fill aria-label='Start date' input with D_OLDEST formatted as MM/DD/YYYY
+[ACT] fill aria-label='End date' input with D_MID formatted as MM/DD/YYYY
+[WAIT] both inputs populated
+[ASSERT] verify 'Apply' button is enabled
+[ACT] click 'Apply'
+[WAIT] filtered results rendered","[STATE] filtered list contains no orders created after D_MID
+[STATE] filtered list contains at least one order created within [D_OLDEST, D_MID]
+[MATH] count of visible orders < unfiltered count (the range excluded at least one later order)
+[STATE] filter chip or label shows an active date range
+[DOM] no empty-state message (the range is not empty — D_OLDEST is within the range)","[NETWORK] POST /graphql GetOrders — intercept the request body; [API] request variable 'filter' contains BOTH createddate lower bound (e.g. createddate:[\""...T...Z\"" TO \""...T...Z\""]) AND upper bound — assert both bounds present in the filter string (not just lower bound with open TO); [CONSOLE] no JS errors during filter apply; [NETWORK] 2xx on GetOrders request","Filter chip shows date range but returned orders include dates after D_MID (End bound dropped from GraphQL filter); GQL filter string contains 'TO]' with no upper bound instead of 'TO \""...\""'; orders from D_LATEST visible in filtered results; NETWORK inspection shows only lower bound in createddate Lucene clause","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-01; Generated — verified PASS on 2026-05-26 manual repro (Path A typed + Path B calendar both produced closed-range GQL filter)","Manual"
+"ORD-063","Date Picker — 'Last Day' Preset Sends Both Bounds in GraphQL Filter","Orders > Date Filter","Critical","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible with 'Created date' combobox
+[ACT] select 'Last day' from the 'Created date' combobox (aria-label='Created date')
+[WAIT] Custom date inputs disappear (only the combobox remains with value 'Last day')
+[ASSERT] verify 'Apply' button is enabled
+[ACT] click 'Apply'
+[WAIT] filtered results rendered","[STATE] Custom date input fields are hidden when 'Last day' preset is active (combobox-only UI)
+[DOM] active filter chip or label references 'Last day' or equivalent label
+[STATE] visible orders have creation dates within the last 24 hours (or an empty list if no recent orders — empty is acceptable, not a failure)","[NETWORK] POST /graphql GetOrders — intercept the request body; [API] request variable 'filter' contains BOTH a lower bound AND an upper bound in the createddate range clause (e.g. createddate:[\""...T...Z\"" TO \""...T...Z\""]) — assert NEITHER bound is missing; [API] lower bound timestamp is approximately now-24h; [API] upper bound timestamp is approximately now; [CONSOLE] no JS errors on preset apply; [NETWORK] 2xx on GetOrders request","GetOrders request body contains open-ended TO] (no upper bound) for a preset that should have a fixed 24h window; filter chip absent after Apply; JS error on preset switch; 500 or errors[] non-empty in GetOrders response","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-02","Draft"
+"ORD-064","Date Picker — 'Last Week' Preset Sends Both Bounds in GraphQL Filter","Orders > Date Filter","Critical","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible with 'Created date' combobox
+[ACT] select 'Last week' from the 'Created date' combobox
+[WAIT] Custom date inputs disappear
+[ASSERT] verify 'Apply' button is enabled
+[ACT] click 'Apply'
+[WAIT] filtered results rendered","[STATE] Custom date inputs hidden when 'Last week' active
+[DOM] active filter indicator references 'Last week' or the 7-day date range
+[STATE] visible orders have creation dates within the last 7 days (empty list acceptable if no orders in that window)","[NETWORK] POST /graphql GetOrders — inspect request body; [API] filter variable contains createddate:[\""...T...Z\"" TO \""...T...Z\""] with both lower (~now-7d) and upper (~now) bounds explicitly set; [API] neither bound is missing or open-ended; [CONSOLE] no JS errors; [NETWORK] 2xx on GetOrders","Open-ended TO] for 'Last week' (upper bound dropped); filter chip absent after Apply; preset switch JS error; GetOrders errors[] non-empty","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-03","Draft"
+"ORD-065","Date Picker — 'Last Month' Preset Sends Both Bounds in GraphQL Filter","Orders > Date Filter","Critical","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible with 'Created date' combobox
+[ACT] select 'Last month' from the 'Created date' combobox
+[WAIT] Custom date inputs disappear
+[ASSERT] verify 'Apply' button is enabled
+[ACT] click 'Apply'
+[WAIT] filtered results rendered","[STATE] Custom date inputs hidden when 'Last month' active
+[DOM] active filter indicator references 'Last month' or the ~30-day date range
+[STATE] visible orders dated within the last calendar month (empty acceptable if none exist)","[NETWORK] POST /graphql GetOrders — inspect request body; [API] filter variable contains createddate:[\""...T...Z\"" TO \""...T...Z\""] — both lower (~now-30d) and upper (~now) bounds present and non-empty; [CONSOLE] no JS errors; [NETWORK] 2xx on GetOrders","Open-ended TO] for 'Last month'; no filter chip after Apply; preset switch JS error; GetOrders errors[] non-empty","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-04","Draft"
+"ORD-066","Date Picker — 'Last Year' Preset Sends Both Bounds in GraphQL Filter","Orders > Date Filter","Critical","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible with 'Created date' combobox
+[ACT] select 'Last year' from the 'Created date' combobox
+[WAIT] Custom date inputs disappear
+[ASSERT] verify 'Apply' button is enabled
+[ACT] click 'Apply'
+[WAIT] filtered results rendered","[STATE] Custom date inputs hidden when 'Last year' active
+[DOM] active filter indicator references 'Last year' or the ~365-day date range
+[STATE] visible orders dated within the last calendar year (empty acceptable if none exist)","[NETWORK] POST /graphql GetOrders — inspect request body; [API] filter variable contains createddate:[\""...T...Z\"" TO \""...T...Z\""] — both lower (~now-365d) and upper (~now) bounds present; [CONSOLE] no JS errors; [NETWORK] 2xx on GetOrders","Open-ended TO] for 'Last year'; no filter chip after Apply; GetOrders errors[] non-empty","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-05","Draft"
+"ORD-067","Date Picker — Start-Only Entry Produces 'From X Onward' Open-Ended Filter","Orders > Date Filter","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 2 orders with different creation dates; Filters popover available","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover order date of the OLDEST visible order — call it D_OLDEST
+[KEY] live-discover order date of a MIDDLE-dated order (not the newest) — call it D_MID
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ASSERT] verify preset = 'Custom date' (default)
+[ACT] fill aria-label='Start date' with D_MID as MM/DD/YYYY
+[ASSERT] verify aria-label='End date' remains empty
+[ASSERT] verify 'Apply' button enabled (dirty-state gate triggers on Start-only entry)
+[ACT] click 'Apply'
+[WAIT] filtered results rendered","[STATE] orders on or after D_MID are returned
+[STATE] orders before D_MID are NOT returned
+[STATE] the total visible count is less than the unfiltered count (some older orders are excluded)
+[DOM] active filter indicator shows a start date with no end date, or 'from D_MID' style label","[NETWORK] POST /graphql GetOrders — inspect request body; [API] filter variable contains a createddate lower bound (e.g. createddate:[\""...T...Z\"" TO]) with no upper bound — this open-ended behavior is acceptable for Start-only entry; [CONSOLE] no JS errors on Start-only apply; [NETWORK] 2xx on GetOrders","Apply button disabled despite Start filled (over-strict validation); filter ignored (full unfiltered list returned); orders before D_MID appear in results; JS error on Start-only apply","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-06","Draft"
+"ORD-068","Date Picker — End-Only Entry Produces 'Up To X' Open-Ended Filter","Orders > Date Filter","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 2 orders with different creation dates (oldest date is at least 14 days before newest); Filters popover available","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover order date of the NEWEST visible order — call it D_LATEST
+[KEY] live-discover order date of a MIDDLE-dated order (not the oldest) — call it D_MID
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ASSERT] verify preset = 'Custom date' (default)
+[ACT] leave aria-label='Start date' empty
+[ACT] fill aria-label='End date' with D_MID as MM/DD/YYYY
+[ASSERT] verify 'Apply' button enabled
+[ACT] click 'Apply'
+[WAIT] filtered results rendered","[STATE] orders on or before D_MID are returned
+[STATE] orders after D_MID are NOT returned (D_LATEST order should be absent from results)
+[MATH] count of visible orders < unfiltered count
+[DOM] active filter indicator shows an end date with no start date, or 'up to D_MID' label","[NETWORK] POST /graphql GetOrders — inspect request body; [API] filter variable reflects End-only semantics (lower bound absent or wildcard, upper bound = D_MID); [CONSOLE] no JS errors on End-only apply; [NETWORK] 2xx on GetOrders","Apply button disabled when only End is filled (over-strict validation requiring both); full unfiltered list returned despite End-only entry; orders after D_MID remain visible; JS error on End-only apply","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-07","Draft"
+"ORD-069","Date Picker — Applied Custom Range Persists in Panel on Reopen (End Value Retained)","Orders > Date Filter","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ACT] fill aria-label='Start date' with 01/01/2026
+[ACT] fill aria-label='End date' with 12/31/2026
+[ASSERT] verify both inputs show the entered values
+[ACT] click 'Apply'
+[WAIT] filtered results rendered and popover closed
+[ACT] click 'Filters' button to reopen
+[WAIT] popover visible with 'Created date' section","[DOM] aria-label='Start date' input value = 01/01/2026 on reopen
+[DOM] aria-label='End date' input value = 12/31/2026 on reopen (the key assertion — A2 anomaly causes this to be blank)
+[STATE] preset combobox still shows 'Custom date'
+[STATE] Apply and Reset buttons reflect the persisted-but-currently-applied state (neither disabled from a fresh dirty-state perspective)","[CONSOLE] no JS errors on panel reopen; [NETWORK] no new GetOrders request triggered by reopening the panel (reopen is UI-only); [API] the applied filter from before reopen is still in effect (current orders list reflects the 2026 range)","End date input blank on reopen despite having been typed and Applied (A2 anomaly — confirms End is dropped at apply-time); Start date blank on reopen; preset reverts to non-Custom on reopen; opening panel triggers an unexpected GetOrders refetch with wrong filter","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-08; Generated — verified PASS on 2026-05-26 manual repro (End value retained on panel reopen; A2 refuted alongside A1)","Manual"
+"ORD-070","Date Picker — Page Refresh Resets Custom Date Filter (No URL Persistence)","Orders > Date Filter","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 2 orders; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] note the total unfiltered order count (call it N_ALL)
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ACT] select 'Last week' from the 'Created date' combobox (use a preset to avoid triggering A1 bug and get a clean filtered state)
+[ACT] click 'Apply'
+[WAIT] filtered results rendered
+[KEY] note filtered count (call it N_FILTERED)
+[KEY] note the current URL — confirm no date-related query params are present in the URL bar
+[ACT] reload the page (browser refresh / F5)
+[WAIT] page fully reloaded","[NAV] URL after reload contains no date filter query parameters
+[STATE] order list shows full unfiltered count N_ALL after refresh
+[DOM] no active filter chip or date-filter indicator visible
+[STATE] preset combobox shows 'Custom date' (default) when Filters popover reopened after refresh
+[STATE] the URL is identical to the pre-filter URL (no query params added during filter application)","[NETWORK] POST /graphql GetOrders after refresh — request body contains no createddate filter param; [CONSOLE] no JS errors on page reload; [NETWORK] 2xx on post-refresh GetOrders","URL shows date filter params after Apply (if present, the refresh case becomes a persistence case, not a reset case — document and escalate); filter chip still visible after refresh; N_ALL count different before and after refresh (unrelated pagination bug); JS error on page reload","none","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-09","Draft"
+"ORD-071","Date Picker — Invalid Character Masking in Date Inputs","Orders > Date Filter","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ASSERT] verify preset = 'Custom date'
+[ACT] click aria-label='Start date' input to focus it
+[WAIT] Wait for the resulting view to settle
+[ACT] type the string 'abc/xx/yyyy' into the Start date input
+[WAIT] short pause for input masking
+[ASSERT] verify the Start date input value does NOT contain the letters 'abc' or 'x' (non-digit/non-slash chars filtered out — input should be empty or contain only the slash separators)
+[ACT] clear the Start date input
+[ACT] type '02/30/2026' into the Start date input
+[WAIT] short pause
+[ASSERT] verify the Start date input accepted the value '02/30/2026' (the masking allows the typing — calendar-validity enforcement is separate from input masking)
+[ACT] click 'Apply'
+[WAIT] short wait","[DOM] aria-label='Start date' input value after 'abc/xx/yyyy' entry contains no letters (input masking strips non-digit/non-slash chars)
+[DOM] aria-label='Start date' input after '02/30/2026' entry shows '02/30/2026' or an empty/corrected value (impossible-date handling is acceptable either way — document observed behavior)
+[STATE] Apply button behavior on impossible date documented (enabled or disabled)
+[STATE] no JS crash or uncaught exception from either invalid input","[CONSOLE] no JS TypeError or unhandled exception on invalid character entry; [CONSOLE] no errors on impossible-date entry; [NETWORK] no unexpected GetOrders request triggered by invalid-character entry alone (Apply was not clicked for the 'abc' probe)","Input accepts letters without filtering (masking broken); JS crash on typing 'abc'; input crashes or goes blank on impossible date 02/30/2026; page freezes after invalid entry","Clear date filter (if Apply was reached) before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-10","Draft"
+"ORD-072","Date Picker — Future Date Accepted Without Rejection","Orders > Date Filter","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] note unfiltered order count N_ALL
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ASSERT] verify preset = 'Custom date'
+[ACT] fill aria-label='Start date' with 01/01/2026
+[ACT] fill aria-label='End date' with 12/31/2030
+[ASSERT] verify 'Apply' button is enabled (future end date is accepted without client-side rejection)
+[ASSERT] verify no validation error message citing the future date
+[ACT] click 'Apply'
+[WAIT] filtered results rendered","[DOM] no inline validation error citing 'future date not allowed' or equivalent
+[STATE] Apply button enabled with a future End date (no over-strict future-date blocking)
+[STATE] result list shows the same orders as the unfiltered baseline (wide range includes all historical orders + no future orders exist)
+[MATH] visible count = N_ALL (a range of 01/01/2026 to 12/31/2030 should encompass all existing orders)","[NETWORK] POST /graphql GetOrders — request body contains the future end date in the createddate range; [API] GetOrders returns HTTP 200 with no errors[] on a future-date filter; [CONSOLE] no validation or JS errors triggered by the future-date entry; [NETWORK] 2xx on GetOrders","Validation rejects the future end date with an error (overly strict client-side gate); Apply button disabled despite valid format; GetOrders returns errors[] or HTTP 4xx for future-date filter","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-11","Draft"
+"ORD-073","Date Picker — Reset Clears Inputs and Closes Popover (Current Behavior Documentation)","Orders > Date Filter","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ASSERT] verify preset = 'Custom date'
+[ACT] fill aria-label='Start date' with 01/01/2026
+[ACT] fill aria-label='End date' with 12/31/2026
+[ASSERT] verify 'Reset' button is enabled (dirty state)
+[ACT] click 'Reset'
+[WAIT] short pause for UI response
+[COND: popover still open] verify aria-label='Start date' and aria-label='End date' inputs are both empty
+[COND: popover closed — anomaly A4 current behavior] verify popover is closed and upon reopening both inputs are empty and no active date filter chip exists","[STATE] both date inputs are empty after Reset (cleared, not just visually blank)
+[STATE] no active date filter chip or indicator visible after Reset
+[MATH] order count after Reset = unfiltered baseline count
+[COND: popover remains open] DOM shows empty inputs in the still-visible popover
+[COND: popover closes — A4] DOM shows closed popover
+[DOM] document which branch was observed in test evidence (both are recorded behaviors — A4 is a known UX anomaly where Reset closes the panel)","[CONSOLE] no JS errors on Reset click; [NETWORK] GetOrders request after Reset contains no createddate filter param; [NETWORK] 2xx on GetOrders after Reset","Reset clears inputs but filter remains applied (filter not actually removed); Reset causes JS error; Reset navigates away from /account/orders; inputs not cleared after Reset","none","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-12","Draft"
+"ORD-074","Date Picker — Calendar UI Opens, Month Navigation Works, Date Selection Populates Input","Orders > Date Filter","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ASSERT] verify preset = 'Custom date' and both calendar-icon buttons present
+[ACT] click the first aria-label='Open calendar' button (adjacent to Start date input)
+[WAIT] calendar popup visible (dual-month grid with reka-ui structure)
+[ASSERT] verify calendar popup shows two month grids side by side
+[ASSERT] verify a 'Previous month' navigation button is present (aria-label='Previous month')
+[ASSERT] verify a 'Next month' navigation button is present (aria-label='Next month')
+[ACT] click 'Previous month' button once
+[WAIT] calendar updates to show previous month
+[ASSERT] verify calendar grids updated to show the previous month
+[ACT] click a day cell (role='gridcell' > role='button') in the left month grid to select the Start date
+[WAIT] Start date input populated
+[ASSERT] verify aria-label='Start date' input value is populated with the selected date in MM/DD/YYYY format
+[ACT] click a day cell in the right month grid (a later date) to select the End date
+[WAIT] End date input populated","[DOM] calendar popup opens on 'Open calendar' click
+[DOM] dual-month grid layout with two month tables visible
+[DOM] 'Previous month' and 'Next month' navigation buttons present
+[DOM] calendar responds to month navigation (month label updates)
+[FORMAT] Start date input populated in MM/DD/YYYY format after click selection
+[FORMAT] End date input populated in MM/DD/YYYY format
+[STATE] Start date <= End date (sensible sequential selection)","[CONSOLE] no JS errors during calendar open, navigation, or date selection; [NETWORK] no premature GetOrders request on calendar interaction (filter is not applied until 'Apply' clicked); [NETWORK] 2xx on eventual Apply; [API] mutation response errors[] is empty","Calendar fails to open on 'Open calendar' click; dual-month layout broken (only one grid or none); month navigation does not update the displayed month; selected date not populated into the text input; JS error during calendar interaction","Close calendar popup if still open; clear date inputs before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-13","Draft"
+"ORD-075","Date Picker — Outside-Click Dismisses Panel and Discards Un-Applied Entries","Orders > Date Filter","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ASSERT] verify no active date filter currently (fresh state)
+[ACT] fill aria-label='Start date' with 01/01/2026
+[ACT] fill aria-label='End date' with 06/30/2026
+[ASSERT] verify both inputs populated (not yet Applied)
+[ACT] click outside the Filters popover (e.g. click the orders table heading or the page background — any element outside the popover boundary)
+[WAIT] popover closes
+[ASSERT] verify Filters popover is no longer visible
+[ASSERT] verify no active date filter chip is visible (the un-applied entries were discarded)
+[ACT] click 'Filters' button to reopen
+[WAIT] popover visible","[DOM] Filters popover closes on outside-click
+[STATE] no active date filter chip after outside-click dismiss
+[DOM] Start date and End date inputs are empty on reopen (un-applied entries discarded)
+[MATH] order count = original unfiltered count (no filter was applied)
+[STATE] aria-label='Start date' is empty (the discarded Start entry is not retained)
+[STATE] aria-label='End date' is empty (the discarded End entry is not retained)","[CONSOLE] no JS errors on outside-click dismiss; [NETWORK] no GetOrders request triggered by outside-click (filter never applied); [NETWORK] 2xx on any subsequent order list requests","Outside-click does not close the popover; un-applied Start or End values are retained and visible on reopen; outside-click triggers Apply (filter applied unintentionally); JS error on outside-click","none","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-14","Draft"
+"ORD-076","Date Picker — Both 'Open Calendar' Buttons Have Distinct Accessible Names","Orders > Date Filter","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible with both calendar-icon buttons present","[DOM] exactly 2 calendar-icon buttons present in the 'Created date' section of the Filters popover
+[DOM] each button has a unique aria-label or accessible name that identifies it as controlling Start vs End date
+[DOM] neither button's accessible name is a duplicate of the other
+[DOM] neither button has an empty or null accessible name
+[STATE] the two buttons do NOT share identical accessible names — each should have a unique label (e.g. 'Open Start date calendar' and 'Open End date calendar', or similar disambiguation)
+[STATE] both buttons have non-empty, non-duplicate accessible names that convey which date field they control","[CONSOLE] no a11y-related JS errors; [NETWORK] no requests triggered by this accessibility check (no Apply)","Both buttons share the identical aria-label='Open calendar' with no disambiguation (A6 anomaly — this is the current observed state, expected to FAIL until fixed); one or both buttons have no accessible name at all; buttons not discoverable via aria-label query","none","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-15","Draft"
+"ORD-077","Date Picker — Touch Target Height for Date Inputs is at Least 44px on Mobile Viewport","Orders > Date Filter","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; browser viewport resized to 375×812 (mobile); Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders (with viewport set to 375×812 or narrower — ensure mobile breakpoint active)
+[WAIT] orders list rendered at mobile viewport
+[ACT] click 'Filters' button
+[WAIT] popover visible with date inputs","[DOM] aria-label='Start date' bounding rect height >= 44px at 375px viewport
+[DOM] aria-label='End date' bounding rect height >= 44px at 375px viewport
+[DOM] both inputs fully visible and not overlapping other controls at 375px
+[STATE] both inputs remain interactive (focusable and typeable) at mobile viewport
+[STATE] inspect the bounding rect height of aria-label='Start date' input — height must be >= 44px (WCAG 2.5.5 and Apple HIG minimum touch target)
+[STATE] both inputs remain visible and are not obscured by the virtual keyboard placeholder at this viewport width","[CONSOLE] no layout-related JS errors at 375px; [NETWORK] no failed resource requests at mobile viewport","Input height is 36px (current measured value from exploration — A5 anomaly, expected to FAIL); inputs obscured or overlapping at 375px; inputs not focusable at mobile viewport; popover not scrollable to reach date inputs at mobile viewport","Resize viewport back to 1920×1080 before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-16","Draft"
+"ORD-078","Date Picker — Keyboard Navigation in Calendar Grid (Arrow + Enter Selects, Escape Closes)","Orders > Date Filter","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders; keyboard navigation enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ACT] click the first aria-label='Open calendar' button
+[WAIT] calendar popup visible
+[ASSERT] verify calendar grid cells have role='gridcell' with role='button' children (keyboard navigable)
+[KEY] press ArrowRight to move focus to next day cell
+[WAIT] short pause
+[ASSERT] verify focus moves to the adjacent day cell (role='button' with different aria-label date)
+[KEY] press ArrowDown to move focus one row (7 days) forward
+[WAIT] short pause
+[ASSERT] verify focus moves to the day cell 7 days later
+[KEY] press Enter to select the focused day cell
+[WAIT] Start date input populated
+[ASSERT] verify aria-label='Start date' input value populated with the selected date in MM/DD/YYYY format
+[KEY] press Escape
+[WAIT] calendar popup closes","[DOM] calendar grid cells have role='gridcell' with role='button' children supporting keyboard navigation
+[STATE] ArrowRight moves focus to the next day cell
+[STATE] ArrowDown moves focus 7 days forward (one week)
+[STATE] Enter on a focused cell selects the date and populates the Start date input
+[FORMAT] Start date input populates in MM/DD/YYYY format
+[DOM] calendar popup closes on Escape without applying filter","[CONSOLE] no JS errors during keyboard navigation in calendar grid; [NETWORK] no premature GetOrders request from keyboard navigation (filter not yet Applied)","ArrowRight does not move focus inside calendar grid (keyboard navigation broken); Enter does not select the date; Escape does not close the calendar; Start date input not populated after Enter selection; JS error during keyboard navigation","Close calendar if still open; clear date inputs before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-17","Draft"
+"ORD-079","Date Picker — Switching from Preset to Custom Shows Empty Inputs","Orders > Date Filter","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; Filters popover available on /account/orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ASSERT] verify preset combobox (aria-label='Created date') shows 'Custom date' as default
+[ACT] select 'Last week' from the preset combobox
+[WAIT] custom date inputs disappear
+[ASSERT] verify aria-label='Start date' and aria-label='End date' inputs are NOT visible (hidden when a non-Custom preset is active)
+[ACT] select 'Custom date' from the preset combobox (switch back to Custom)
+[WAIT] custom date inputs reappear","[DOM] custom date inputs disappear when a non-Custom preset is selected
+[DOM] custom date inputs reappear when 'Custom date' is selected again
+[STATE] switching presets does not cause a JS crash or layout break
+[STATE] Apply button state is consistent with whether inputs are prefilled or blank after switching back to Custom
+[DOM] document prefilled vs blank outcome in test evidence (both are valid, one may be preferred UX)
+[STATE] aria-label='Start date' input is visible
+[STATE] aria-label='End date' input is visible
+[STATE] document whether the inputs are prefilled with the equivalent date range of the 'Last week' preset (e.g. last 7 days pre-populated) or blank — note both outcomes are acceptable products of B10","[CONSOLE] no JS errors during preset-to-Custom switch; [NETWORK] no premature GetOrders request on preset combobox change (filter not yet Applied); [NETWORK] 2xx on any eventual Apply","Custom inputs do not reappear when switching back to 'Custom date'; JS error or page freeze on preset switch; Apply button state inconsistent with input content; layout breaks during preset toggle","Clear date filter before next test","Coverage Gap Analysis — COV-2026-05-26-1430 — DP-18","Draft"
+"ORD-080","VCST-4892 — Date Picker: Escape Key MUST Close Calendar Popup (FAIL-DETECT — Bug Still Open)","Orders > Date Filter > Keyboard","High","BL-ORD-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; /account/orders page loaded; Filters popover available; PR #2291 build deployed","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click Filters button
+[WAIT] date filter popover visible
+[ACT] click the aria-label='Open calendar' button next to Start date input
+[WAIT] calendar popup opens — calendar grid cells visible
+[ASSERT] calendar popup is visible before pressing Escape
+[KEY] press Escape
+[WAIT] 300ms","[STATE] calendar popup is CLOSED after pressing Escape (dialog or floating element removed from DOM or display:none)
+[DOM] calendar grid cells no longer visible after Escape
+[STATE] focus returns to the calendar-open trigger button or to the date input","[CONSOLE] no JS errors during Escape key handling
+[NETWORK] no premature GetOrders network request triggered by Escape (filter not applied)","Calendar popup still visible after Escape press (BUG-VCST-4892-1 — WCAG 2.1.2 keyboard trap; confirmed STILL OPEN in retest 2026-05-28); JS error on Escape keydown; focus lost entirely (not returned to trigger)","Close calendar if still open; clear date inputs","VCST-4892","Draft"
+"ORD-081","VCST-4892 — Date Picker: Applied Date Range Filter Persists After Back Navigation (FAIL-DETECT — Bug Still Open)","Orders > Date Filter > Navigation","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; /account/orders page loaded; account has orders on multiple dates","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click Filters button
+[WAIT] date filter popover visible
+[ACT] click the Open calendar button next to Start date input
+[WAIT] calendar popup opens
+[ACT] click a day cell to set Start date (e.g. first day of previous month)
+[WAIT] Start date input populates
+[ACT] click the Open calendar button next to End date input
+[WAIT] calendar popup opens
+[ACT] click a day cell to set End date (e.g. last day of previous month)
+[WAIT] End date input populates
+[ACT] click Apply button inside the Filters popover
+[WAIT] filtered orders list rendered (fewer rows or same rows for in-range dates)
+[ASSERT] verify Start date and End date inputs show the selected dates
+[NAV] navigate to {{FRONT_URL}}/account/dashboard or {{FRONT_URL}} (any other page)
+[WAIT] navigation completes
+[KEY] press browser Back (use browser_navigate_back tool or Alt+ArrowLeft)
+[WAIT] /account/orders page reloads","[STATE] Start date input retains the previously set date value after back-navigation
+[STATE] End date input retains the previously set date value after back-navigation
+[STATE] orders list shows filtered results matching the applied date range (not the full unfiltered list)
+[NAV] URL contains date range params (e.g. startDate= and endDate= query params) after back navigation","[CONSOLE] no JS errors during back navigation
+[NETWORK] GetOrders request after back-nav includes date range params in query (not a clean unfiltered request)","Start date and End date inputs empty after back-navigation (BUG-VCST-4892-3 — filter state not persisted; confirmed STILL OPEN retest 2026-05-28); orders list shows unfiltered full list after back-nav; URL contains no date params after back-nav","Clear date filter after test","VCST-4892","Draft"
+"ORD-082","VCST-4892 — Date Picker: Reversed Range Shows Inline Validation and Blocks Apply","Orders > Date Filter > Validation","High","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; /account/orders page loaded","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click Filters button
+[WAIT] date filter popover visible
+[ACT] click the Open calendar button next to Start date input
+[WAIT] calendar popup opens
+[ACT] click a day cell that is LATER than the intended end date (to set Start date to a future date)
+[WAIT] Start date input populates with the later date
+[ACT] click the Open calendar button next to End date input
+[WAIT] calendar popup opens
+[ACT] click a day cell that is EARLIER than the currently set Start date (reversed range)
+[WAIT] End date input populates with the earlier date","[DOM] inline error message containing 'Invalid date range' (or equivalent text) is visible inside the date filter area
+[DOM] Apply button is disabled (disabled attribute present or pointer-events: none) — cannot submit the reversed range
+[STATE] no GraphQL GetOrders request fired while range is invalid (network stays idle)","[CONSOLE] no JS errors during reversed range input
+[NETWORK] no GetOrders request sent while Apply is disabled (reversed range must not produce a network call)","Apply button NOT disabled when Start > End (pre-fix regression of BUG-VCST-4892-2); no inline error message shown for reversed range; malformed GraphQL filter sent despite invalid range (prior regression)","Clear date filter after test; verify Apply re-enables after correcting range to valid Start < End","VCST-4892","Draft"
+"ORD-083","VCST-4892 — Date Picker: Same-Day Range (Start = End) Accepted and Filters Correctly","Orders > Date Filter > BVA","Medium","BL-ORD-001","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least one order; /account/orders loaded","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered; note a date on which at least one order exists (e.g. order creation date from the list)
+[ACT] click Filters button
+[WAIT] date filter popover visible
+[ACT] click the Open calendar button next to Start date input
+[WAIT] calendar popup opens
+[ACT] click the day cell matching the known order date (same day for Start)
+[WAIT] Start date input populates
+[ACT] click the Open calendar button next to End date input
+[WAIT] calendar popup opens
+[ACT] click the SAME day cell (same date for End — Start = End boundary)
+[WAIT] End date input populates with the same date
+[ASSERT] verify Apply button is ENABLED (same-day range is valid)
+[ACT] click Apply button
+[WAIT] filtered orders list rendered","[STATE] Apply button enabled when Start date equals End date (same-day range is valid — boundary value)
+[DOM] no invalid-range error message shown for Start = End
+[STATE] orders list shows only orders from the specified single day (inclusive boundary)
+[STATE] orders from other dates are absent from the filtered list","[CONSOLE] no JS errors on same-day filter application
+[NETWORK] GetOrders request fires with both date params set to the same date value","Apply button disabled for Start = End (boundary incorrectly rejected); error message shown for same-day range; filtered list shows orders from other dates (inclusive boundary not honored)","Clear date filter after test","VCST-4892","Draft"
