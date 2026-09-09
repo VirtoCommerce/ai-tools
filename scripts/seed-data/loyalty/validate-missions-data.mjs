@@ -21,6 +21,7 @@
  *   [6] the gate alias names the real setting + records the base switch it must NOT touch
  *   [7] no committed file anywhere carries a seeded mission GUID
  *   [8] (informational) which envs' overlays currently carry ids
+ *  [8s] no env OVERLAY shadows an AUTHORED business key  (the exact inverse of [4])
  *   [9] the VCST-5346 progress axis: the provisioning order's registry entry matches the order the
  *       seeder places, the account it is placed for is a declared user-roles.mjs role, and all THREE
  *       storefront states (danger badge / partial / completed-PerSku) are still reachable
@@ -32,7 +33,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   MISSIONS, PERSKU_PRODUCTS, ZERO_STOCK_PRODUCT, TARGET_PRODUCTS,
-  STORE_SETTING, RUNTIME_FIELDS_BY_KIND, NAME_PREFIX,
+  STORE_SETTING, RUNTIME_FIELDS_BY_KIND, NAME_PREFIX, overlayShadowProblems,
   BANNERS, bannerKeyFor, bannerSourceRel,
   missionName, validateSpecShape,
   PROGRESS_ORDER, PROGRESS_ORDER_ALIAS, PROGRESS_USER_ROLE, progressOrderNumber,
@@ -43,7 +44,7 @@ import {
   TARGETING, TARGET_GROUP, GROUP_AUDIENCE, MISSION_BY_ALIAS,
   targetedGroups, isGroupTargeted, groupMatches,
 } from './missions-specs.mjs';
-import { USER_ROLES } from '../../lib/user-roles.mjs';
+import { USER_ROLES, resolveRole, roleByKey } from '../../lib/user-roles.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const GUID_RE = /\b[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}\b/i;
@@ -377,6 +378,14 @@ for (const f of readdirSync(join(ROOT, 'test-data'))) {
   if (seeded.length) notes.push(`${env}: ${seeded.length}/${MISSIONS.length} mission id(s) present`);
   else if (env !== 'localhost') warn(`no mission ids in aliases.${env}.json — @td(MSN_*.id) resolves to "" there until \`TEST_ENV=${env} npm run seed:loyalty-missions\` runs`);
 
+  /* [8s] THE INVERSE OF [4] ───────────────────────────────────────────────────
+   * [4] proves no runtime value sits in the committed base. This proves no AUTHORED business key sits
+   * in an env overlay, where it would silently WIN over the base. Runs whether or not the env is
+   * seeded: a shadow is wrong either way, and an unseeded overlay is exactly where residue from a
+   * previous generation of the seeder survives. Rationale + the measured incident: overlayShadowProblems.
+   */
+  for (const p of overlayShadowProblems(RUNTIME_BY_ALIAS, o, aliases)) fail(`[8s] ${env}: ${p}`);
+
   /* [8f] FALSIFIABILITY, CHECKED AGAINST WHAT ACTUALLY LANDED ────────────────
    *
    * Every other check in this file proves the COMMITTED spec is coherent. None of them can prove the
@@ -436,6 +445,29 @@ for (const [state, ok] of Object.entries(covers)) {
 const soonWindow = WINDOWS.endingSoon;
 if (soonWindow) {
   notes.push(`danger badge: endingSoon ends in ${soonWindow.endOffsetDays}d, so daysRemaining ranges [0, ${soonWindow.endOffsetDays}] — always < the ${DANGER_THRESHOLD_DAYS}d threshold`);
+}
+/* Mission progress is PER USER, and this guard is STATIC — every percentage below is DERIVED from the
+ * spec plus the provisioning order, never observed. Naming the owner is not decoration: on 2026-09-08
+ * two browser lanes read 0% on every mission, and this guard's `✓ clean` plus its unlabelled
+ * "InProgress 75%" lines were taken as a contradiction and reported as a provisioning failure. The
+ * fixtures were correct. The lanes had signed in as @td(USER_DEFAULT) — users/test-users.csv USER-001,
+ * `qa-user-01@virtocommerce.com` — while PROGRESS_USER_ROLE resolves the `USER` role to `USER_EMAIL`,
+ * a DIFFERENT account with no progress rows of its own. A percentage quoted without the account it
+ * belongs to is not a fact about the fixture. */
+{
+  // This guard runs WITHOUT the layered env loader (it is static by design), so the owner is named by
+  // its env VAR — which is the env-independent, always-true half of the statement — and by the
+  // resolved email only when a caller happens to have the env in scope.
+  const def = (() => { try { return roleByKey(PROGRESS_USER_ROLE); } catch { return null; } })();
+  const resolved = def ? resolveRole(def) : null;
+  const who = def
+    ? `${def.emailVars.join('|')} in .env.<ENV>${resolved?.email ? ` (= ${resolved.email} here)` : ''}`
+    : 'an UNDECLARED role';
+  notes.push(
+    `progress below is DECLARED (spec x ${progressOrderNumber()}), not observed, and is PER USER — it exists ONLY for `
+    + `PROGRESS_USER_ROLE "${PROGRESS_USER_ROLE}", i.e. ${who}. Every other account reads 0% / not-started, `
+    + '@td(USER_DEFAULT) (users/test-users.csv USER-001) included — that is correct, not a provisioning failure.',
+  );
 }
 for (const { m, p } of derived) {
   notes.push(`${m.aliasName}: ${p ? `${p.status} ${p.percentage}% (${p.currentValue}/${p.targetValue}${p.rows.length ? `, ${p.rowsMet} row(s) met / ${p.rowsUnmet} unmet` : ''})` : 'UNPREDICTABLE'} from ${progressOrderNumber()}`);

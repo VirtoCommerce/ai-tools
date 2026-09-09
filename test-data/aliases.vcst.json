@@ -979,15 +979,11 @@
   },
   "MSN_PERSKU_PRODUCT_A": {
     "productId": "7bd305cb-55ef-440a-8488-1aa9b777c70a",
-    "sku": "201482",
-    "name": "PEPSI COLA REGULAR CRATE 28X0.20L",
     "catalogId": "6032bd3c-77dc-4035-a94f-6f60ee5abb4e",
     "currency": "USD"
   },
   "MSN_PERSKU_PRODUCT_B": {
     "productId": "e908c979-d79e-4cea-ad8b-57907b1c4f37",
-    "sku": "55557702",
-    "name": "Xerox WorkCentre 3335DNI Mono Laser Multifunction Printer/Copier/Scanner/Fax Machine",
     "catalogId": "6032bd3c-77dc-4035-a94f-6f60ee5abb4e",
     "currency": "USD"
   },

@@ -131,6 +131,62 @@ export const RUNTIME_FIELDS_BY_KIND = {
   ],
 };
 
+/**
+ * The EXACT INVERSE of validate-missions-data's check [4], and the gap that let a drifted fixture
+ * pass every guard this repo has for ~two sprints.
+ *
+ * [4] asks "is a RUNTIME field empty in the committed base?". Nothing asked the other question: "is a
+ * NON-runtime field — an AUTHORED business key — present in an env OVERLAY?". It has to be asked
+ * separately because the two failures are not symmetric:
+ *
+ *   - a runtime value committed to the base is at least VISIBLE in review, and `td:validate` DV-021
+ *     catches the GUID-shaped half of it;
+ *   - an authored key shadowed in an overlay is invisible to every existing guard. The overlay WINS
+ *     over the base field-by-field, so `@td(ALIAS.sku)` silently resolves to the shadow. It still
+ *     RESOLVES, so `npm run td:validate` stays green (it proves refs resolve, not that they resolve to
+ *     the right entity), and this file never read the overlays' non-id fields at all.
+ *
+ * And it cannot be repaired by re-seeding: `writeEnvAliasOverride` merges per alias
+ * (`{ ...cur[alias], ...fields }`), and a seeder that has stopped writing a key can therefore never
+ * remove the value a previous generation of itself wrote. The shadow is permanent until deleted.
+ *
+ * MEASURED, 2026-09-08 (vcst): `MSN_PERSKU_PRODUCT_A/B` carried `sku`/`name` from the generation of
+ * the seeder that DISCOVERED its PerSku targets (`201482` PEPSI / `55557702` Xerox). The targets are
+ * CREATED now, so `sku`/`name` moved to the committed base as authored business keys
+ * (`createdProduct` above deliberately omits them) — but the old overlay values stayed and kept
+ * winning. `@td(MSN_PERSKU_PRODUCT_A.sku)` resolved to `201482` while the mission's own
+ * LoyaltyMissionGoalItem pointed at `AGENT-TEST-MSN-TARGET-A`, so 14 cases in suite 083c addressed
+ * featured-SKU modal rows by a SKU the modal does not render.
+ *
+ * Side-effect-free so the validator and `scripts/unit/` share one implementation.
+ *
+ * @param {Record<string,string[]>} runtimeByAlias  alias → its RUNTIME field names
+ * @param {Record<string,any>} overlay              a parsed aliases.<env>.json
+ * @param {Record<string,any>} [base]               parsed aliases.json, to quote what the shadow hides
+ * @returns {string[]} one problem per shadowed field
+ */
+export function overlayShadowProblems(runtimeByAlias, overlay, base = {}) {
+  const out = [];
+  for (const [name, runtime] of Object.entries(runtimeByAlias || {})) {
+    const entry = overlay?.[name];
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    for (const key of Object.keys(entry)) {
+      // `fields` is the @td() exposure map and `_*` are documentation — neither is a data value, and
+      // both legitimately appear in a hand-edited overlay.
+      if (key === 'fields' || key.startsWith('_')) continue;
+      if (runtime.includes(key)) continue;
+      const shadowed = base?.[name] && key in base[name] ? JSON.stringify(base[name][key]) : '(absent from the base)';
+      out.push(
+        `${name}.${key} = ${JSON.stringify(entry[key])} is in the OVERLAY but is not a runtime field of ${name}. `
+        + `The overlay wins, so @td(${name}.${key}) resolves to it and NOT to the authored base value ${shadowed}. `
+        + 'Re-seeding cannot fix this — writeEnvAliasOverride merges per alias and never deletes — so remove the key from '
+        + 'the overlay, or add it to RUNTIME_FIELDS_BY_KIND if it really is per-env.',
+      );
+    }
+  }
+  return out;
+}
+
 /** The store-settings fixture. The seeder flips ONLY `missionsSetting`; `baseSetting` is read and reported. */
 export const STORE_SETTING = {
   aliasName: 'MSN_STORE_SETTINGS',
