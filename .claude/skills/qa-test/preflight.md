@@ -5,10 +5,10 @@ gate and cites this file for the detail. Read it when you are running `1a`/`1b`,
 pipeline establishes before it dispatches anything.
 
 **Everything downstream depends on this step and nothing here is optional.** `1a` decides which pipeline
-runs at all; `1b` establishes what build it runs against and derives the five axes. A wrong answer here is
+runs at all; `1b` establishes what build it runs against and derives the six axes. A wrong answer here is
 not corrected later — it is inherited by every step that follows.
 
-The **derivation contract for the five axes** (2b–2f) is [`axes.md`](axes.md); this file covers the fetch,
+The **derivation contract for the six axes** (2b–2g) is [`axes.md`](axes.md); this file covers the fetch,
 the classification, the routing branch, the **opening status hop** that closes `1a`, and the wave
 structure.
 

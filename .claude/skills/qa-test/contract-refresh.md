@@ -185,6 +185,5 @@ It is also the cheapest of the three freshness gates the repo runs for this same
   triangulation + value bar. This axis refreshes *contracts* (what the API exposes), never *invariants*
   (what it must do).
 - **Committing the refreshed snapshot.** `graphql-schema.md` is git-tracked and the refresh rewrites it,
-  so it will appear in the working tree. `/qa-test` does **not** commit it — the shared-tree rule
-  (`.claude/rules/regression.md` §WORKING IN A SHARED TREE) applies, and a tree-wide commit from a test
-  run is exactly what that section forbids. Report the change; let a human commit it.
+  so it will appear in the working tree. `/qa-test` does **not** commit it. Report the change; let a
+  human commit it.

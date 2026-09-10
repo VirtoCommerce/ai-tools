@@ -43,7 +43,7 @@ getCollection({ collectionId: "<owner-uid>", model: "full" })
 
 ## 3. Executing a Collection (out-of-band)
 
-The Postman MCP server has no execution tool. Pick one of these runners:
+The default endpoint has no execution tool, and `runCollection` is uncallable everywhere ([mcp-tools.md](mcp-tools.md) §1a). **Newman is the default choice** — §3.3 is the only MCP-native route and it is the wrong one for most evidence runs. Pick a runner:
 
 ### 3.1 Newman (recommended for CI)
 
@@ -64,7 +64,9 @@ postman login --with-api-key <POSTMAN_API_KEY>
 postman collection run <collectionId> --environment <environmentId>
 ```
 
-### 3.3 Postman Monitor (scheduled — full toolset only)
+### 3.3 Postman Monitor — the only MCP-native route, and rarely the right one
+
+Requires the **full** endpoint: `.mcp.json` `postman.url` → `https://mcp.postman.com/mcp` (the default is `/minimal`; `/full` is not an endpoint and 404s), then **restart the MCP server** — tools bind at session start.
 
 ```
 createMonitor({
@@ -74,7 +76,14 @@ createMonitor({
   name: "Hourly smoke"
 })
 ```
-Then `runMonitor({ monitorId })` for a one-off trigger.
+Then `runMonitor({ monitorId })` for a one-off trigger; `getMonitorRunResults` / `listMonitorExecutions` to read outcomes.
+
+**Two costs, both of which rule it out for a one-off evidence run:**
+
+1. **A Monitor runs in Postman's cloud against a saved cloud environment, so every secret it needs must be stored there.** A team-workspace environment is synced and visible to the whole team, and `type: "secret"` only *masks* the value in the UI — it does not stop it being stored or shared. This is why the VC evidence environments ship with empty password fields and inject at run time via `--env-var` ([variables-and-environments.md](variables-and-environments.md)). A Monitor cannot use that pattern, and a Postman Vault entry is local-only so it cannot either. Using one means putting a live platform **admin** password in the cloud.
+2. **A Monitor is a persistent scheduled artifact,** not a one-off invocation — it keeps firing until deleted. Any collection that mutates shared fixture state (locking a membership, seeding, teardown) will then mutate it at unpredictable times and poison whatever suite owns that fixture.
+
+Reach for it for a genuinely recurring, read-only, non-fixture-mutating watch. For reproducing a defect, use Newman.
 
 ### 3.4 Postman desktop/web Runner
 

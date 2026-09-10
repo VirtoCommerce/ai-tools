@@ -198,7 +198,7 @@ problem: the safe writers all read-modify-write the whole file, and a restructur
 culled *because* that journey crosses its link) does not survive being split between two authors.
 `config/test-suites.json` is shared state for the same reason — `suites:sync` rewrites every suite's
 counts, so agree who runs it rather than both running it. Full rule, with the measured cost:
-`.claude/rules/regression.md` §WORKING IN A SHARED TREE.
+`.claude/rules/regression.md` §Suite inventory.
 
 ### Judge
 

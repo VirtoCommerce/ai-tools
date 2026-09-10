@@ -1,0 +1,406 @@
+{
+  "ticket": "VCST-5317",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "layer": "cross-layer",
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "b2b",
+    "path": ".claude/knowledge/domain/b2b-organizations.md",
+    "rev": 1,
+    "generated": "2026-09-09",
+    "age_days": 0,
+    "all_layer_chain": true,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "recommended": false,
+    "sources": [
+      ".claude/knowledge/domain/b2b-organizations.md frontmatter (domain_slug: b2b, stale_after_days: 60)",
+      "npm run domain:check -> 1 map: b2b@rev1, fresh and well-formed"
+    ],
+    "unmapped_surfaces": [
+      "D8 names the stale-pin mechanism but not this ticket's concrete manifestation (every switcher row disabled including [selected], zero empty-state copy) - map-amendment proposal, routed at 5h, not applied",
+      "mobile-navigation.md is NOT a registered domain map (no domain_slug) so it is ungated by domain:check - registration proposal, routed at 5h"
+    ]
+  },
+  "verdict": "FAIL",
+  "date": "2026-09-09",
+  "timing": {
+    "started_at": null,
+    "finished_at": null,
+    "steps": {
+      "step1": 0,
+      "step2": 0,
+      "step3": 0,
+      "step4": 0,
+      "step5": 0
+    },
+    "agent_dispatches": 11,
+    "regression_predicted_minutes": null,
+    "regression_actual_minutes": null
+  },
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1064.0",
+    "theme": "vc-theme-b2b-vue-2.58.0-pr-2469-83d6-83d6e5d5",
+    "relevant_modules": {
+      "VirtoCommerce.ProfileExperienceApiModule": "3.1018.0-pr-145-4fe6",
+      "VirtoCommerce.Customer": "3.1024.0-pr-316-1ac3",
+      "VirtoCommerce.Xapi": "3.1020.0"
+    },
+    "deployed": {
+      "platform": "3.1064.0",
+      "relevant_modules": {
+        "VirtoCommerce.ProfileExperienceApiModule": "3.1018.0-pr-145-4fe6",
+        "VirtoCommerce.Customer": "3.1024.0-pr-316-1ac3",
+        "VirtoCommerce.Xapi": "3.1020.0"
+      }
+    },
+    "releasedThrough": {
+      "ledger_generated": "2026-09-01",
+      "components": {
+        "VirtoCommerce.Customer": "3.1021.0",
+        "VirtoCommerce.ProfileExperienceApiModule": "3.1008.0"
+      },
+      "behind": [],
+      "breaking": [
+        "Customer 3.1021.0 - BREAKING: Invites and status for multi-organization customers (ledger). Deployed 3.1024.0-pr-316 is AHEAD of ledger_through, so the ledger's silence past that point is unknown, not absent.",
+        "vc-module-profile-experience-api PR #145 declares its own BREAKING change: contact.organizations / organizationsIds no longer exclude locked memberships."
+      ]
+    }
+  },
+  "release": null,
+  "documentation": {
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": [],
+    "comment_posted": false,
+    "refusal": "verdict-fail - 5h documentation is not published for a FAIL. Two doc needs are recorded for when it passes: (1) StorefrontUserGuide 'Switch between your companies' says 'Only companies you currently have access to appear here', which the SHOW-AND-FLAG build makes false and which contradicts its own preceding sentence (D16, fetched first-hand 2026-09-09); (2) the org-membership LOCK axis has no user documentation at all (D17)."
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "action": "skipped",
+      "from": "Testing",
+      "to": null,
+      "reason": "already in the in-testing status (Testing, set 2026-09-09T15:04:25+03:00 by an earlier run). The opening hop is a no-op; recorded so 'never moved' and 'moved, note lost' stay distinguishable."
+    },
+    {
+      "at": "5f",
+      "action": "transitioned",
+      "from": "Testing",
+      "to": "Reopen",
+      "transition_id": "7",
+      "transition_name": "Need fixes",
+      "reason": "verdict FAIL -> REOPEN per ticket-status-transitions.md section 4. Transition resolved LIVE, never hardcoded. QA-Complete comment posted first (comment id 108924, 3 inline images render-verified), transition second, as the rule requires. Never past TESTED."
+    }
+  ],
+  "agents_dispatched": [
+    "1c ba-system-analyzer (playwright-firefox)",
+    "1d ba-story-writer (no browser)",
+    "3a test-data-engineer (no browser, backend lane)",
+    "3x qa-testing-expert (playwright-chrome, frontend lane)",
+    "Step-3 verifier qa-lead-orchestrator (fresh, APPROVE)",
+    "Step 4 qa-backend-expert (playwright-edge)",
+    "Step 4 qa-frontend-expert (playwright-chrome)",
+    "Step 4 ui-ux-expert (Chrome DevTools) - BLOCKED on auth",
+    "C1 qa-testing-expert (playwright-edge)",
+    "5b verifier qa-lead-orchestrator (fresh, APPROVE)",
+    "background orchestrator (general-purpose) - FAILED on spend limit, work reassigned"
+  ],
+  "epic": {
+    "parent": null,
+    "siblings": [],
+    "roll_up": null
+  },
+  "ac_analysis": {
+    "story_acs": 6,
+    "weak_acs": 5,
+    "gap_acs_added": 14,
+    "impl_coverage": {
+      "SATISFIED": 2,
+      "DRIFT": 2,
+      "NOT_FOUND": 2,
+      "CONTRADICTS": 2,
+      "note": "AC-1 is internally self-contradictory: its first half says the locked org is displayed with a Locked label, its trailing clause says the listed count equals the unlocked-only count. AC-2 names the top-level organizations query while the switcher reads me.contact.organizations. AC-6 defers the choice and the build ships a third outcome."
+    },
+    "conditions_total": 20,
+    "conditions_with_evidence": 18,
+    "ac_dod_estimate": "5 of 20 atomic conditions FAIL (C8, C12, C15, C18, C19); 2 NOT REACHED (C11 DataLoader batching, C14 role x lock independence); C16 dropped by operator decision (a11y); C2 DRIFT (icon+tooltip, not a literal Locked label); C3 CONTRADICTED by the as-built, by design not defect. No DoD section declared on the ticket."
+  },
+  "total_cases": 30,
+  "passed": 24,
+  "failed": 3,
+  "blocked": 3,
+  "iterations": {
+    "enabled": false,
+    "rounds": 0,
+    "max_rounds": 0,
+    "outcome": null,
+    "per_round": []
+  },
+  "new_cases_authored": 4,
+  "promotion": {
+    "automated": 0,
+    "reviewed": 0,
+    "blocked": 4,
+    "reverted": 0,
+    "$note": "5g: no row promoted. B2C-ORG-066 asserts the correct mobile-parity expectation and fails on this build by design (test-model rule 3) - it stays Draft until VCST-5931 is fixed. PRF-GQL-093 fails on VCST-5932 for the same reason. B2C-ORG-067 and PRF-GQL-092 pass but are held with them pending the 8 test-defect repairs in the same suites."
+  },
+  "regression": {
+    "c1": {
+      "ran": true,
+      "ids": [
+        "B2C-ORG-041",
+        "B2C-ORG-047"
+      ],
+      "lane": "playwright-edge",
+      "result": "B2C-ORG-041 6 of 7 assertions PASS (assertion 7 is a test defect - it demands pointer/keyboard parity that native disabled precludes). B2C-ORG-047 enumeration PASSES (assertions 1,2,3,5 - the top-level hamburger panel) and its conclusion FAILS (assertion 4 - a mobile switcher does exist one level deeper); assertion 6 NOT REACHED (no touch-target geometry measured)."
+    },
+    "c2": {
+      "ran": false,
+      "skipped_reason": "Deliberate, operator-informed. C2 answers a RELEASE question consumed by the Feature Release Gate, and an IN-SCOPE C2 finding can only AMEND a verdict, never produce one. The verdict is already FAIL on in-scope findings, so C2 could not change it, while costing ~24 runner dispatches on a session that had already hit the spend limit once. Recorded as not-assessed, NEVER as a pass.",
+      "gate": "not-assessed (C2 skipped)"
+    }
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_ids": [],
+    "confirmed_bugs": 0,
+    "test_fixes_applied": 0,
+    "dismissed": 0,
+    "report_path": null
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-5931",
+      "shape": "Subtask of VCST-5317",
+      "severity": "Critical",
+      "provenance": "IN-SCOPE",
+      "title": "Mobile org switcher: locked organization renders as a normal tappable row and tapping it signs the user out",
+      "report": "reports/bugs/open/critical-high/BUG-mobile-org-switcher-locked-row-unguarded-signs-user-out-VCST-5317.md",
+      "evidence": "3 screenshots embedded inline and render-verified (3 img tags, 0 surviving literal wiki markup, 0 error spans)",
+      "parent_comment": "VCST-5317 comment 108924"
+    },
+    {
+      "key": "VCST-5933",
+      "shape": "standalone Bug + Relates link to VCST-5317 (verified: issuetype Bug 10176, subtask false, no parent)",
+      "severity": "Medium-High",
+      "provenance": "PRE-EXISTING in vc-module-x-order",
+      "title": "organizationOrders authorizes on raw membership, so a locked-out member can still read the organization's full order history",
+      "report": "reports/bugs/open/medium/BUG-organizationorders-serves-locked-org-order-history-VCST-5317.md",
+      "evidence": "runner capture PRF-GQL-093-evidence.json attached; no UI claim, so no screenshots by design (reports.md 5.0)",
+      "routing": "vc-module-x-order, repoKind module, confidence HIGH. RCA anchor CanAccessOrderAuthorizationHandler -> IsCustomerOrganization -> Contact.Organizations.Contains (membership-only, never lock-aware).",
+      "supersedes": "VCST-5932, cancelled. Filed first as a Subtask of VCST-5317 on an IN-SCOPE reading; source investigation revised the provenance to PRE-EXISTING, which files standalone + related. Jira cannot convert a Subtask to a standard type over REST, so the replacement was created fresh and the Subtask cancelled with a pointer. The defect never changed - only its classification."
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "title": "Stale desktop org switcher - a tab that opened the switcher before the lock keeps the locked org enabled; clicking it signs the user out of all tabs",
+      "severity": "High",
+      "provenance": "IN-SCOPE",
+      "reason": "NOT FILED BY EXPLICIT OPERATOR DECISION at 5d. Above the severity floor and in-scope; it contributes to the FAIL verdict regardless. Local report retained.",
+      "report": "reports/bugs/open/critical-high/BUG-stale-org-switcher-locked-row-stays-enabled-and-signs-out-all-tabs-VCST-5317.md"
+    },
+    {
+      "title": "Browser Back out of the all-locked /403 restores a working org-scoped account page",
+      "severity": "Medium-High",
+      "provenance": "PRE-EXISTING mechanism, newly reachable via the lock axis",
+      "reason": "Not filed by operator decision. Related to but NOT a duplicate of the open P0 (that one is 'cannot recover'; this is 'recovers to a page you should not be on').",
+      "report": "reports/bugs/open/medium/BUG-back-out-of-403-restores-working-org-scoped-account-page.md"
+    },
+    {
+      "title": "Top utility bar overlaps itself at 1280px signed in (BL-UI-002)",
+      "severity": "Medium",
+      "provenance": "OUT-OF-SCOPE",
+      "reason": "Not filed by operator decision. Reproduced on two independent lanes; did NOT reproduce anonymously, so the signed-in leg is the decisive one.",
+      "report": "reports/bugs/open/medium/BUG-top-utility-bar-overlaps-itself-at-1280-signed-in.md"
+    },
+    {
+      "title": "V7 all-locked dead end - /403 with every switcher row disabled including [selected], no empty state",
+      "severity": "High",
+      "provenance": "PRE-EXISTING",
+      "reason": "LINK ONLY by design, not a new filing. Same defect class as the open P0 BUG-multiorg-no-self-recovery-when-pinned-org-blocked-VCST-5281, reached by a new trigger (the lock axis rather than status). The 5b verifier confirmed from that bug's own history that its V2-shape premise was verified fixed 2026-08-05 but the V7 shape never was."
+    },
+    {
+      "title": "Duplicate-alias GraphQL document fails opaquely (extensions.code = ARGUMENT, no message, inside HTTP 200)",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING, out-of-scope",
+      "reason": "Below the 5d severity floor (Critical/High/Medium only). Reproduces on the pre-#145 contact path, so platform-wide."
+    },
+    {
+      "title": "POST /api/customer/organization-memberships returns HTTP 500 for an already-existing (userId, orgId) pair; should be 409/400",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING, out-of-scope",
+      "reason": "Below the 5d severity floor. Business message is correct; only the status code is wrong."
+    },
+    {
+      "title": "Raw i18n keys rendered: Back_in_stock.navigation.route_name (account sidebar) and Push_messages.menu_item_name (Marketing sidebar, not reproducible on retry)",
+      "severity": "Low",
+      "provenance": "OUT-OF-SCOPE",
+      "reason": "Below the 5d severity floor. Raw keys, not a default-language fallback."
+    },
+    {
+      "title": "a11y set - F-A1 focus-ring contrast 1.4.11, F-A2 tab order / listbox arrow keys 2.1.1, F-A3 aria-disabled absent 4.1.2, unlabelled mobile back button 4.1.2",
+      "severity": "mixed (High to Low)",
+      "provenance": "mostly PRE-EXISTING and site-wide",
+      "reason": "NOT FILED BY EXPLICIT OPERATOR DECISION - a11y dropped for this run. Recorded rather than omitted. Per feedback_a11y_never_blocks_feature_stories these would route to their own tickets at their real severity and never as Sub-tasks of this story; none of them blocks this verdict. F-A1 was independently reproduced OFF this feature entirely (public header, ~1.49:1), confirming the site-wide/pre-existing attribution."
+    }
+  ],
+  "discovery": {
+    "ran": true,
+    "skipped_reason": null,
+    "lane": "playwright-chrome",
+    "minutes": 30,
+    "charter_sources": [
+      "test-model scenarios 14/18/19",
+      "the clause-11 L7 gap",
+      "the two RE-BASE rows"
+    ],
+    "hypotheses_grounded": 4,
+    "hypotheses_remaining": 1,
+    "model_amendments": 3,
+    "scenarios_new": 6,
+    "oracle_proposals": 2,
+    "bugs_surfaced": 2,
+    "report": "reports/exploratory/SBTM-VCST-5317-R2-2026-09-09.md"
+  },
+  "visual": {
+    "surface": true,
+    "surface_source": [
+      "vc-frontend PR #2469 diff: top-header-organizations.vue gains :disabled, VcIcon lock-closed, :title",
+      "top-header.vue template guard",
+      "15 locale files gain shared.layout.header.top_header.organization_locked_tooltip"
+    ],
+    "ran": "partial",
+    "skipped_reason": "Chrome DevTools lane BLOCKED on auth: the persistent profile was signed out and that lane has no --secrets. The agent correctly refused to type a plaintext credential into a tool call and refused to mint a throwaway account (which would audit the empty state of a role-gated surface and read as a false pass). The popover-scoped axes were re-dispatched to playwright-edge as part of C1; the remaining DevTools-only items stand as Round-1 findings, unretracted and not re-confirmed this round.",
+    "targets": [
+      "Account-menu popover listbox Organizations",
+      "top utility bar at 1280 and 1920"
+    ],
+    "axes": {
+      "a11y": "findings recorded, NOT FILED by operator decision",
+      "design_system": "not re-measured this round",
+      "vs_design": "SKIPPED - the ticket carries no Prototype link and DESIGN_SYSTEM_PROJECT_ID was removed 2026-09-03. A skip is not a pass."
+    },
+    "a11y_findings": 4,
+    "invariant_failures": [
+      "BL-UI-002 - top utility bar overlaps itself at 1280 signed in; clean at 1920"
+    ],
+    "advisory": [
+      "Coffee preset SKIPPED, not PASS - the storefront resolves its preset from store config and the live value was Red (#e52121). Switching needs an Admin write, out of scope for a read-only run."
+    ],
+    "report": "reports/tickets/Sprint26-18/VCST-5317/design-report.md"
+  },
+  "contract": {
+    "surface": true,
+    "surface_source": [
+      "PR #145 adds Organization.isLockedForCurrentUser (new GraphQL field)",
+      "PR #145 declares contact.organizations / organizationsIds breaking",
+      "PR #2469 adds isLockedForCurrentUser to the organizationFields fragment and regenerates types.ts"
+    ],
+    "schema": {
+      "refreshed": true,
+      "refreshed_at": "2026-09-09",
+      "queries": 108,
+      "mutations": 140,
+      "types": 54,
+      "new_field_present_live": "Organization.isLockedForCurrentUser confirmed in the live introspected schema"
+    },
+    "fixtures": {
+      "validated": 75,
+      "failed": 0,
+      "drift": 0
+    }
+  },
+  "coverage_triage": {
+    "surface": true,
+    "surface_source": [
+      "PR #145's declared breaking change to behaviour existing rows already assert",
+      "domain map 6b: 23 of 65 cases in suite 006 are on the switcher lock axis, all Draft"
+    ],
+    "scope": [
+      "006",
+      "008",
+      "011b",
+      "031",
+      "032",
+      "033",
+      "050d"
+    ],
+    "counts": {
+      "rows_scanned": 261,
+      "at_risk": 144,
+      "will_run": 141,
+      "filtered_out": 0,
+      "not_executing": 3
+    },
+    "dispositions": {
+      "CONFIRMED": [
+        "B2C-ORG-001",
+        "B2C-ORG-010",
+        "B2C-ORG-040",
+        "AUTH-076",
+        "AUTH-043",
+        "PRF-GQL-078",
+        "the B2C-MBR-* and COMP-E2E-* org-lock block"
+      ],
+      "REPAIR": [],
+      "RE-BASE": [
+        "B2C-ORG-041",
+        "B2C-ORG-047"
+      ],
+      "SUPERSEDED": []
+    },
+    "repaired": [],
+    "rebased_into_c1": [
+      "B2C-ORG-041",
+      "B2C-ORG-047"
+    ],
+    "superseded_proposals": [],
+    "unscannable": [
+      "063 and 074 - legacy 11-column header, not the canonical 15-column enriched format. Triage by hand; not evidence of no risk."
+    ],
+    "unmatched_observables": [
+      "organization switcher lists organizations",
+      "locked organization membership",
+      "isLockedForCurrentUser flag",
+      "contact organizations excludes locked"
+    ],
+    "$note": "Three of Round 1's five RE-BASE calls were REVERSED on re-derivation. B2C-ORG-040's state is global contact status, so the lock branch never fires. AUTH-076's state is status-blocked and #145 changed only the lock filter. AUTH-043's scenario is one blocked org plus one Approved, where the escape hatch still works; F1 is the all-locked V7 state, which 043 never claimed to cover."
+  },
+  "test_data": {
+    "surface": true,
+    "surface_source": [
+      "The lock state must be actively driven; the resting state is V1 (unlocked)",
+      "domain map G3: no locked membership among readable fixtures at rest"
+    ],
+    "dispatched": true,
+    "fixtures_covering": [
+      "MULTI_ORG_TF_BR (backend lane)",
+      "MULTI_ORG_TF_BR_ALT (frontend lane)"
+    ],
+    "divergence_resolved": true,
+    "td_validate": "green (DV-021, DV-022, DV-023); td:validate:membership-lock green - 2 lanes x 7 states, 0 hard problems, 0 warnings",
+    "seed_run": "V1 -> V2/V4/V4B/V5/V7 -> V1. Final: VERIFY OK, both lanes at the resting state, zero residue, IMPERSONATE_TARGET_BLOCKED (V6) intact throughout - suite 082's dependency preserved."
+  },
+  "business_rules_verified": [
+    "BL-AUTH-012 - PASS. Org-scoped lock leaves the global account unlocked (/locked = false at V2 and V7). CORRECTION: its session half is refuted - an active-org lock does NOT evict live sessions (12 POST /graphql all 200 across two tabs). The lock gates new token issuance only. The model's L1 and the seeder's own banner both predicted otherwise.",
+    "BL-AUTH-013 - PASS. Org-scoped refusal carries error: invalid_grant plus a cause-specific code, never a global lockout code; exactly one errors[] entry.",
+    "BL-AUTH-015 - PASS. Resolution is not read-only; the write-back was observed moving CurrentOrganizationId.",
+    "BL-AUTH-016 - PASS with a CORRECTION. Fallback-first, lock-beats-status and single-error all hold. But clause 2's refusal branch is UNREACHABLE on a password grant: with zero accessible orgs the grant returns 200 with no org claim, not 400. BL-AUTH-015 wins. It IS reachable on a non-password grant.",
+    "BL-B2B-001 - PASS, all three legs. Cart, ship-to addresses and lists all reset on switch and restore on switch-back; pricing undecidable on this fixture and recorded as such.",
+    "BL-B2B-013 - PASS. Lock and status are independently assertable; the locked org appears under both statuses:[Locked] and statuses:[Approved].",
+    "BL-UI-002 - FAIL. Top utility bar overlaps itself at 1280 signed in."
+  ],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": null,
+    "signals": 0,
+    "correlated_failures": 0,
+    "$note": "Not checked: APPINSIGHTS_API_KEY_BACKEND and APPINSIGHTS_API_KEY_STOREFRONT are both EMPTY in this environment (npm run env:check). Recorded as a gap, not as a clean result."
+  },
+  "screenshots": "reports/tickets/Sprint26-18/VCST-5317/screenshots/"
+}

@@ -19,7 +19,7 @@ about to change how a step works.
 | File | Covers | Read it when |
 |---|---|---|
 | [`preflight.md`](preflight.md) | Steps **1a–1b** — the fetch, the classify/route branch, the two I/O waves | Running or changing pre-flight |
-| [`test-model.md`](test-model.md) | Step 1e — the fault model: why Part 0 comes first, the eight rules the scenario table must satisfy, the ten-clause gate, worked references | Building or reviewing a Test Model |
+| [`test-model.md`](test-model.md) | Step 1e — the fault model: why Part 0 comes first, the eight rules the scenario table must satisfy, the twelve-clause gate, worked references | Building or reviewing a Test Model |
 | [`authoring.md`](authoring.md) | Steps 2–3 — oracle loading, Artifacts A/B/C1/C2, the scaffold + KEEP gate, the per-surface fan-out (3b), review/auto-fix | Authoring cases, or changing how they are authored |
 | [`close-out.md`](close-out.md) | Step 5 **spine** — AC/DoD reconciliation, the verdict table, the release regression (5r), the severity floor on filing | Deciding what the run concluded |
 | [`triage.md`](triage.md) | **5a** — correlate, validate evidence, classify, provenance, severity, dedup | Turning raw results into findings |
@@ -93,7 +93,9 @@ Two consequences of the FAST cut are deliberate and worth stating rather than di
 - **The checklist is therefore the run's only durable record** of what was checked — which is why it is
   written to the ticket folder (Artifact B) instead of scrolling past in the terminal.
 
-*When in doubt, take FULL* — a real regression is worse missed than a fast run saved.
+The tie-break for an unresolvable token is **`ticket-routing.md` §5's, and only there** — this file argues
+where the line sits, that one states which side of it an unestablished token falls on. Four copies of that
+one sentence is how it got inverted for a day without anything noticing.
 
 ## The verifier, in one place
 
@@ -186,7 +188,7 @@ known cost, and three were measured:
 | Never | Because |
 |---|---|
 | `2d` concurrently with `1c` / `1d` / `1e` / the 3b pack | they READ what it writes; a refresh that races its readers is a refresh that did nothing |
-| Two writers on one suite CSV — the Step-3b append stays **serial**, `suites:sync` runs **once** | `suites:lint`/`sync` hard-fail on a parse error anywhere in the corpus, so N parallel writers multiply a tree-wide outage by N and block every other author in the tree (`.claude/rules/regression.md` §WORKING IN A SHARED TREE — measured: one mid-write invalid CSV blocked two sessions' gates for ~15 min) |
+| Two writers on one suite CSV — the Step-3b append stays **serial**, `suites:sync` runs **once** | `suites:lint`/`sync` hard-fail on a parse error anywhere in the corpus, so N parallel writers multiply a tree-wide outage by N and block every other author in the tree (`.claude/rules/regression.md` §Suite inventory — measured: one mid-write invalid CSV blocked two sessions' gates for ~15 min) |
 | `suites:sync` ‖ `suites:lint` | lint reads what sync wrote |
 | Artifact A ‖ 3a, or Artifact A ‖ 3x | cases are authored against fixtures that already resolve **and against the model 3x amended**. Authoring beside the discovery lane produces cases written from the guesses the lane exists to replace — the lane's value is entirely in the order ([`exploratory-lane.md`](exploratory-lane.md) §2) |
 | `3x` ‖ Step 4's execution agents | the lane closes before Artifact A, which closes before Step 4, so the max-3 cap holds **by construction** and needs no arbitration. Overlap them and it does not |

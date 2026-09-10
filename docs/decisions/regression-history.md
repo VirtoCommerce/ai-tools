@@ -25,17 +25,18 @@ remain; the interactive one is the path in daily use.
 
 ## Shared-tree losses
 
-The measured incidents, 2026-08-28 and 2026-09-01. They are the evidence for
-[`.claude/rules/regression.md`](../../.claude/rules/regression.md) §WORKING IN A SHARED TREE and
-[`.claude/knowledge/execution/regression-suites.md`](../../.claude/knowledge/execution/regression-suites.md)
-§Working concurrently on suites; neither restates them, so this is the only record.
+The measured incidents, 2026-08-28 and 2026-09-01. They were the evidence for the shared-tree **git
+prohibition**, which was **RETIRED 2026-09-10** by operator decision and no longer exists in any tier;
+the surviving rule is one-author-per-suite-CSV
+([`.claude/knowledge/execution/regression-suites.md`](../../.claude/knowledge/execution/regression-suites.md)
+§Working concurrently on suites). This is the only record of the incidents themselves.
 
 **1. `git checkout --theirs -- .` reverted the whole tree (2026-08-28).** Reached for as "recovery"
 after a `git stash` collision in the shared tree, it reached files it had no interest in and reverted
 **every tracked file** to HEAD — destroying a completed 161-insertion suite re-pointing and 14 rule
 edits belonging to other sessions. Single authorship would not have prevented it: the command was run
-by the file's own author, and its blast radius was the whole tree. This is why the git prohibition is
-stated *before* the one-author rule, and why "it failed silently" must mean stop, never escalate.
+by the file's own author, and its blast radius was the whole tree — which is why the git prohibition
+was stated *before* the one-author rule for as long as it existed.
 
 **2. `commit all` published a second session's work (2026-08-28).** One session's user authorised a
 tree-wide commit; it carried a second session's fixture work, suite fix, aliases and bug reports —

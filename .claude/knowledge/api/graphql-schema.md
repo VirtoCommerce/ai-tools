@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-09-04)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-09-09)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -68,35 +68,14 @@
     field is one edit away from a future author. **Assert on `currentBalance` unless the case is specifically
     testing pay-with-points affordability.**
 
-    **There is no per-mission attribution on the points ledger GRAPHQL SURFACE.** `LoyaltyOperationLogObject` exposes only
-    `type` / `orderId` / `orderNumber` (verified by live introspection, 2026-08-28 and again 2026-09-08), and `LoyaltyMissionTransaction`
+    **There is no per-mission attribution on the points ledger at all.** `LoyaltyOperationLogObject` exposes only
+    `type` / `orderId` / `orderNumber` (verified by live introspection, 2026-08-28), and `LoyaltyMissionTransaction`
     — which *does* carry `MissionId`, `ObjectId`, `UserId` with a composite index, and is how the accrual dedup
     works — is **not exposed through GraphQL in any form**. One order settles every mission applicable to its
     user (measured: four missions at `+250 / +200 / +100 / +0` on one order), so **a balance total, a history
     length, or any other aggregate is not an oracle for one mission's contribution**. The maximum attribution
     the API permits is amount + `orderId` on the ledger entry — pin both, and never assert positionally on
     `items.0` when several rows can land from one event.
-
-    **The two loyalty ledger types, spelled out — the nesting is the trap.** `type` / `orderId` / `orderNumber` live on
-    the **nested** `object`, NOT on the log row, so selecting them at the top level fails validation outright with
-    `Cannot query field 'type' on type 'LoyaltyOperationLog'` (reproduced 2026-09-08). Live introspection:
-
-    ```
-    LoyaltyOperationLog        { id  operationType  amount  createdDate  object: LoyaltyOperationLogObject }
-    LoyaltyOperationLogObject  { type  orderId  orderNumber }
-    ```
-
-    So the correct selection is `items { id operationType amount createdDate object { type orderId orderNumber } }`.
-
-    **`object` is `null` for every mission-granted row, and that is a product defect, not a bad query.** Measured
-    2026-09-08 on the VIP fixture: 69 of 167 entries return `object: null`, all of them `Earned`. A Platform REST read
-    of those same entries (`POST /api/loyalty-program-operation-log/search`, admin token) returns
-    `objectType: "LoyaltyMissionProgress"` + an `objectId`, so the attribution exists in storage and is dropped by the
-    xAPI resolver (`LoadLoyaltyObject()`'s `objectType switch` has no arm for it). **Authoring consequences:** do not
-    treat a null `object` on a mission row as a broken query or a context-argument omission — it is the current
-    contract, tracked as a read-side defect and as **BL-LOY-015**; assert `object is null` for a mission grant and
-    `object.orderNumber` only for an order-driven row; and if a case needs real per-mission attribution, it cannot get
-    it from GraphQL at all — the admin REST path is the only source today.
 
     **Consequences for authoring:** never conclude a field is empty, missing, or broken until the call carries
     its full context; a differential result between two callers is a context difference until proven otherwise;
@@ -554,7 +533,7 @@ Fields: `key`, `value`
 
 ### Organization
 
-Fields: `id`, `outerId`, `memberType`, `name`, `status`, `phones`, `emails`, `groups`, `seoObjectType`, `seoInfo(storeId: String!, cultureName: String!)`, `defaultBillingAddress`, `defaultShippingAddress`, `addresses(after: String, first: Int, sort: String)`, `dynamicProperties`, `description`, `businessCategory`, `ownerId`, `parentId`, `myStatusInOrganization`, `contactRoles(storeId: String, cultureName: String)`, `assignableRoles(storeId: String, cultureName: String)`, `contacts(after: String, first: Int, searchPhrase: String, sort: String, roleIds: [String], statuses: [String], storeId: String, cultureName: String)`
+Fields: `id`, `outerId`, `memberType`, `name`, `status`, `phones`, `emails`, `groups`, `seoObjectType`, `seoInfo(storeId: String!, cultureName: String!)`, `defaultBillingAddress`, `defaultShippingAddress`, `addresses(after: String, first: Int, sort: String)`, `dynamicProperties`, `description`, `businessCategory`, `ownerId`, `parentId`, `myStatusInOrganization`, `isLockedForCurrentUser`, `contactRoles(storeId: String, cultureName: String)`, `assignableRoles(storeId: String, cultureName: String)`, `contacts(after: String, first: Int, searchPhrase: String, sort: String, roleIds: [String], statuses: [String], storeId: String, cultureName: String)`
 
 ### ContactType
 

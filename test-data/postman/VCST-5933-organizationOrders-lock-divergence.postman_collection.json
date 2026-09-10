@@ -1,0 +1,768 @@
+{
+  "info": {
+    "_postman_id": "70309ed2-0daa-4827-bc90-21556374ac50",
+    "name": "VCST-5933 — organizationOrders authorizes on raw membership (self-contained)",
+    "description": "Self-contained reproducible evidence for VCST-5933. Locks and unlocks the membership over the REST API, so no seeder script is needed.\n\nLAST RUN 2026-09-09 via newman: 13/13 requests, 23 assertions, 1 failed — request 8, which is the evidence. Teardown verified back to V1.\n\nTHE DEFECT: organizationOrders(organizationId:) authorizes through CanAccessOrderAuthorizationHandler -> IsCustomerOrganization -> Contact.Organizations.Contains(organizationId) — raw membership, never lock-aware. organization(id:) re-evaluates the lock. The two reads disagree for a member who is LOCKED OUT.\n\nTHE ORDER IS NOT ARBITRARY — two measured facts force it:\n 1. Platform REST needs a CONTEXT-FREE ADMIN token. A storefront-scoped token gets 401 invalid_token, so lock/unlock cannot reuse the buyer's (requests 1-4 and 12-13 use the admin token).\n 2. A V2 lock KILLS a token minted BEFORE it. So the buyer authenticates at request 5, AFTER the lock.\n\nWHY EVERY CONTROL IS HERE — no single request carries the finding:\n · request 8 (THE DEFECT) is meaningless without 7: same principal, same org, refused\n · 9 proves the refusal is LOCK-specific, not a blanket customer-principal denial\n · 10 proves the query really reads the named org (measured 66 vs 14)\n · 11 proves it is not simply ungated — a NON-MEMBER org IS refused\n · 5 proves the buyer token is scoped to the UNLOCKED org, so nothing request 8 returns about the locked org can be explained by the token's scope\n\nREAD-BACK IS MANDATORY: POST .../{id}/lock on an unknown membership id returns 200 with a null body, NOT 404. Request 4 verifies the state instead of trusting request 3's status; request 13 does the same for the unlock.\n\nDO NOT RUN WITH --bail. Requests 12-13 unlock the fixture; --bail would stop at request 8 and leave it LOCKED, poisoning suites 006 and 050d.\n\nGRAPHQL BODIES USE mode:\"graphql\", never raw (qa-postman SKILL.md Rules).\n\nRUN: newman run <collection> -e <env> --env-var \"adminUser=$ADMIN\" --env-var \"adminPassword=$ADMIN_PASSWORD_VCST\" --env-var \"b2bUserPassword=$DEFAULT_TEST_PASSWORD\"",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. SETUP — admin auth (context-free, no storeId)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 — admin token issued', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('adminToken', pm.response.json().access_token);"
+            ]
+          }
+        }
+      ],
+      "id": "ebd865a4-91a7-4ea0-b0b4-613062b266be",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "password"
+            },
+            {
+              "key": "scope",
+              "value": "offline_access"
+            },
+            {
+              "key": "username",
+              "value": "{{adminUser}}"
+            },
+            {
+              "key": "password",
+              "value": "{{adminPassword}}"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/connect/token",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "connect",
+            "token"
+          ]
+        },
+        "description": "Context-free admin grant — no storeId, no organization_id. Only this token may call /api/customer/**; a storefront-scoped token returns 401 invalid_token."
+      },
+      "response": []
+    },
+    {
+      "name": "2. SETUP — find the membership id (discovered, not hardcoded)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 — membership search succeeded', () => pm.response.to.have.status(200));",
+              "const r = pm.response.json().results || [];",
+              "pm.test('exactly one membership for (user, locked org)', () => pm.expect(r.length, 'results').to.equal(1));",
+              "pm.collectionVariables.set('membershipId', r[0].id);",
+              "console.log('membership id:', r[0].id, '| isCurrentlyLocked before:', r[0].isCurrentlyLocked);"
+            ]
+          }
+        }
+      ],
+      "id": "523834bb-0ada-4854-9105-4fc89849bcfb",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"userId\":\"{{b2bUserId}}\",\"organizationIds\":[\"{{lockedOrgId}}\"]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/customer/organization-memberships/search",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "organization-memberships",
+            "search"
+          ]
+        },
+        "description": "Discovered, not hardcoded: membership ids are platform-assigned and change on every re-seed. The search REQUIRES a scoping filter (UserId/OrganizationId) or returns BadRequest. Genuine REST JSON, so mode:raw is correct here."
+      },
+      "response": []
+    },
+    {
+      "name": "3. SETUP — LOCK the membership (V2: permanent, non-active org)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// A 200 proves nothing: lock on an UNKNOWN id also returns 200 with a null body, not 404.",
+              "// Request 4 is the actual verification.",
+              "pm.test('lock call accepted (status only — not proof)', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+            ]
+          }
+        }
+      ],
+      "id": "588a8e6f-1528-483a-844c-059bed61ddbf",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/customer/organization-memberships/{{membershipId}}/lock",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "organization-memberships",
+            "{{membershipId}}",
+            "lock"
+          ]
+        },
+        "description": "Empty body = permanent lock (no lockoutEnd), the V2 state. An atomic timed lock would pass lockoutEnd here."
+      },
+      "response": []
+    },
+    {
+      "name": "4. SETUP — READ BACK and prove it is locked",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "const m = pm.response.json();",
+              "pm.test('READ-BACK: membership is now currently locked', () => {",
+              "  pm.expect(m.isLocked, 'isLocked').to.equal(true);",
+              "  pm.expect(m.isCurrentlyLocked, 'isCurrentlyLocked').to.equal(true);",
+              "});",
+              "console.log('locked:', m.isLocked, '| currentlyLocked:', m.isCurrentlyLocked, '| lockoutEnd:', m.lockoutEnd);"
+            ]
+          }
+        }
+      ],
+      "id": "bc3b29bf-05ba-4e6c-b1ba-c74c7745b14c",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/customer/organization-memberships/{{membershipId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "organization-memberships",
+            "{{membershipId}}"
+          ]
+        },
+        "description": "The real precondition gate. Without it a silently-failed lock leaves every downstream request returning 200 and the run passes while proving nothing."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Buyer auth — AFTER the lock, and with NO organization_id",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 — buyer token issued', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.environment.set('authToken', j.access_token);",
+              "const payload = JSON.parse(Buffer.from(j.access_token.split('.')[1], 'base64').toString('utf8'));",
+              "pm.collectionVariables.set('tokenOrgClaim', payload.organization_id || '(none)');",
+              "console.log('organization_id claim on the buyer token:', payload.organization_id || '(none)');",
+              "// The grant sends NO organization_id, but BL-AUTH-015 step 5 still resolves 'the first",
+              "// ACCESSIBLE organization' — so the claim is the UNLOCKED org, not absent. Measured 2026-09-09.",
+              "// That is a STRONGER control than an absent claim: the token is scoped to the UNLOCKED org, so",
+              "// anything request 8 returns about the LOCKED org cannot be explained by the token's scope, and",
+              "// cannot be the BL-AUTH-016 fallback either — a fallback would have had to be ASKED for the",
+              "// locked org, and this grant never names one.",
+              "pm.test('the buyer token is NOT scoped to the locked org — so nothing below can be explained by its scope', () => {",
+              "  pm.expect(payload.organization_id, 'organization_id claim').to.not.equal(pm.environment.get('lockedOrgId'));",
+              "});",
+              "pm.test('the token resolved to the unlocked org (BL-AUTH-015 step 5: first accessible org)', () => {",
+              "  pm.expect(payload.organization_id, 'organization_id claim').to.equal(pm.environment.get('unlockedOrgId'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "id": "e70c50f8-846b-4d1d-811c-031a8a7be20a",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "password"
+            },
+            {
+              "key": "scope",
+              "value": "offline_access"
+            },
+            {
+              "key": "storeId",
+              "value": "{{storeId}}"
+            },
+            {
+              "key": "username",
+              "value": "{{b2bUserEmail}}"
+            },
+            {
+              "key": "password",
+              "value": "{{b2bUserPassword}}"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/connect/token",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "connect",
+            "token"
+          ]
+        },
+        "description": "MUST come after the lock — a V2 lock revokes tokens minted before it. storeId is camelCase-only; omitting it returns 400 user_cannot_login_in_store on valid credentials, masking the org error."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Buyer view — the flag is true, and set up the non-member control",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200, no GraphQL errors', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().errors, 'errors[]').to.be.undefined; });",
+              "const d = pm.response.json().data.me.contact;",
+              "const locked = d.organizations.items.find(o => o.id === pm.environment.get('lockedOrgId'));",
+              "const unlocked = d.organizations.items.find(o => o.id === pm.environment.get('unlockedOrgId'));",
+              "pm.test('the buyer sees the locked org flagged, and the control org not flagged', () => {",
+              "  pm.expect(locked, 'locked org present').to.not.be.undefined;",
+              "  pm.expect(locked.isLockedForCurrentUser, 'isLockedForCurrentUser on the locked org').to.equal(true);",
+              "  pm.expect(unlocked.isLockedForCurrentUser, 'isLockedForCurrentUser on the control org').to.equal(false);",
+              "});",
+              "const nm = pm.environment.get('nonMemberOrgId');",
+              "if (!nm) { console.log('nonMemberOrgId unset — request 11 will SKIP, stated not silently passed.'); pm.collectionVariables.set('nonMemberUsable', 'false'); }",
+              "else { pm.test('nonMemberOrgId is genuinely NOT a membership of this caller', () => pm.expect(d.organizationsIds || [], 'organizationsIds').to.not.include(nm)); pm.collectionVariables.set('nonMemberUsable', 'true'); }"
+            ]
+          }
+        }
+      ],
+      "id": "80b4ee1b-279a-49c3-8038-a9cc431f0969",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "graphql",
+          "graphql": {
+            "query": "query { me { contact { organizationsIds organizations(first: 50) { totalCount items { id name isLockedForCurrentUser } } } } }",
+            "variables": ""
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graphql"
+          ]
+        },
+        "description": "Confirms the lock is visible to the buyer's own principal, and re-verifies the non-member control rather than trusting the environment note."
+      },
+      "response": []
+    },
+    {
+      "name": "7. CONTROL A — organization(id: locked) is REFUSED",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 (GraphQL reports errors inside a 200)', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('organization(id: locked) is Forbidden and returns no data', () => {",
+              "  pm.expect(j.errors, 'errors[]').to.be.an('array').that.is.not.empty;",
+              "  pm.expect(j.errors[0].extensions.code).to.equal('Forbidden');",
+              "  pm.expect(j.data.organization, 'data.organization').to.be.null;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "id": "605cdcc4-a0d2-4d11-b4f0-19db46e41736",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "graphql",
+          "graphql": {
+            "query": "query($id: String!) { organization(id: $id) { id name } }",
+            "variables": "{\n  \"id\": \"{{lockedOrgId}}\"\n}"
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graphql"
+          ]
+        },
+        "description": "The reference behaviour: this read DOES re-evaluate the lock."
+      },
+      "response": []
+    },
+    {
+      "name": "8. THE DEFECT — organizationOrders(locked) must agree with request 7",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "const refused = !!(j.errors && j.errors.length);",
+              "const tc = refused ? null : j.data.organizationOrders.totalCount;",
+              "pm.collectionVariables.set('lockedOrgTotalCount', String(tc));",
+              "console.log('organizationOrders(locked) ->', refused ? ('REFUSED: ' + j.errors[0].extensions.code) : ('SERVED ' + tc + ' orders'));",
+              "console.log('  ...while the buyer token is scoped to', pm.collectionVariables.get('tokenOrgClaim'), '(the UNLOCKED org)');",
+              "// ASSERTS THE CORRECT EXPECTATION, NOT THE MEASURED BEHAVIOUR.",
+              "// Two org-scoped reads of the SAME org id by the SAME principal must agree on accessibility.",
+              "// FAILS while VCST-5933 is open — that failure IS the evidence. Goes green on the fix.",
+              "// Deliberately does NOT assert that order history must be hidden: which read is wrong is a",
+              "// product decision QA does not make here.",
+              "pm.test('VCST-5933: organizationOrders must agree with organization(id:) for the same locked org', () => {",
+              "  pm.expect(refused, 'organizationOrders refused the locked org, as organization(id:) did').to.equal(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "id": "d377820e-c347-4166-92cd-02ac2a7ce9e0",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "graphql",
+          "graphql": {
+            "query": "query($orgId: String!) { organizationOrders(organizationId: $orgId, first: 5) { totalCount items { id number status } } }",
+            "variables": "{\n  \"orgId\": \"{{lockedOrgId}}\"\n}"
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graphql"
+          ]
+        },
+        "description": "Measured 2026-09-09: 200 with totalCount 66 — the LOCKED org's full order history, returned to a buyer holding a token scoped to the UNLOCKED org. So the query ignores both the lock and the token's org scope."
+      },
+      "response": []
+    },
+    {
+      "name": "9. CONTROL B — organization(id: unlocked) is SERVED",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const j = pm.response.json();",
+              "pm.test('organization(id: unlocked) returns data — so request 7 was not a blanket denial', () => {",
+              "  pm.expect(j.errors, 'errors[]').to.be.undefined;",
+              "  pm.expect(j.data.organization, 'data.organization').to.not.be.null;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "id": "1ff40fe0-c1e5-44e6-a60c-7a7414c5507d",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "graphql",
+          "graphql": {
+            "query": "query($id: String!) { organization(id: $id) { id name } }",
+            "variables": "{\n  \"id\": \"{{unlockedOrgId}}\"\n}"
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graphql"
+          ]
+        },
+        "description": "Without this, request 7's Forbidden could just mean a storefront customer principal may never read organization(id:)."
+      },
+      "response": []
+    },
+    {
+      "name": "10. CONTROL C — organizationOrders(unlocked) returns a DIFFERENT count",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const j = pm.response.json();",
+              "pm.test('organizationOrders(unlocked) is served', () => pm.expect(j.errors, 'errors[]').to.be.undefined);",
+              "const u = j.data.organizationOrders.totalCount;",
+              "const l = pm.collectionVariables.get('lockedOrgTotalCount');",
+              "console.log('locked totalCount =', l, '| unlocked totalCount =', u);",
+              "if (l !== 'null') { pm.test('the two orgs return DIFFERENT counts — request 8 really read the named org', () => pm.expect(String(u), 'unlocked vs locked').to.not.equal(l)); }",
+              "else { console.log('request 8 was refused, so no count to discriminate against — expected once fixed.'); }"
+            ]
+          }
+        }
+      ],
+      "id": "0ac09b35-acd5-43dd-995e-6956523600dc",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "graphql",
+          "graphql": {
+            "query": "query($orgId: String!) { organizationOrders(organizationId: $orgId, first: 5) { totalCount items { id number status } } }",
+            "variables": "{\n  \"orgId\": \"{{unlockedOrgId}}\"\n}"
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graphql"
+          ]
+        },
+        "description": "Measured 2026-09-09: totalCount 14, against 66 for the locked org. Different counts prove the organizationId argument is honoured."
+      },
+      "response": []
+    },
+    {
+      "name": "11. CONTROL D — organizationOrders(NON-MEMBER org) IS refused",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.collectionVariables.get('nonMemberUsable') !== 'true') { console.log('SKIPPED — nonMemberOrgId unset or unusable. Stated, not silently passed.'); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const j = pm.response.json();",
+              "// The finding depends on this: the query is not simply ungated. It gates on MEMBERSHIP",
+              "// (Contact.Organizations.Contains), not on ACCESSIBILITY (membership AND not-locked).",
+              "pm.test('a NON-MEMBER org IS refused — so organizationOrders gates on membership, not nothing', () => {",
+              "  pm.expect(j.errors, 'errors[]').to.be.an('array').that.is.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "id": "4d66a901-91be-42db-9f9d-59bab434ba72",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "graphql",
+          "graphql": {
+            "query": "query($orgId: String!) { organizationOrders(organizationId: $orgId, first: 5) { totalCount } }",
+            "variables": "{\n  \"orgId\": \"{{nonMemberOrgId}}\"\n}"
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graphql"
+          ]
+        },
+        "description": "Pins the defect precisely. Without it the report could only say organizationOrders is unauthorized, which is false and would send the fix in the wrong direction."
+      },
+      "response": []
+    },
+    {
+      "name": "12. CLEANUP — UNLOCK the membership",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('unlock call accepted (status only — request 13 is the proof)', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+            ]
+          }
+        }
+      ],
+      "id": "d4ee525f-5e23-40a6-8fc8-a42c1081f063",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/customer/organization-memberships/{{membershipId}}/unlock",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "organization-memberships",
+            "{{membershipId}}",
+            "unlock"
+          ]
+        },
+        "description": "Runs even when request 8 fails — Newman does not stop on a failed assertion unless --bail is passed. Do NOT pass --bail, or the fixture is left LOCKED."
+      },
+      "response": []
+    },
+    {
+      "name": "13. CLEANUP — READ BACK and prove the fixture is at rest (V1)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "const m = pm.response.json();",
+              "pm.test('TEARDOWN VERIFIED: membership is back to unlocked (V1)', () => {",
+              "  pm.expect(m.isLocked, 'isLocked').to.equal(false);",
+              "  pm.expect(m.isCurrentlyLocked, 'isCurrentlyLocked').to.equal(false);",
+              "});",
+              "console.log('final state — isLocked:', m.isLocked, '| isCurrentlyLocked:', m.isCurrentlyLocked);"
+            ]
+          }
+        }
+      ],
+      "id": "fa4045d9-1c52-4b42-981e-8616b13cac91",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/customer/organization-memberships/{{membershipId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "customer",
+            "organization-memberships",
+            "{{membershipId}}"
+          ]
+        },
+        "description": "A teardown that is not verified is not a teardown. Leaving this fixture locked would poison suite 006, 050d and anything else authenticating as this account."
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "membershipId",
+      "value": ""
+    },
+    {
+      "key": "lockedOrgTotalCount",
+      "value": ""
+    },
+    {
+      "key": "nonMemberUsable",
+      "value": ""
+    },
+    {
+      "key": "tokenOrgClaim",
+      "value": ""
+    }
+  ]
+}

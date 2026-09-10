@@ -10,6 +10,15 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-real-user.mjs\""
           }
         ]
+      },
+      {
+        "matcher": "mcp__playwright-(chrome|firefox|edge|webkit)__(browser_type|browser_fill_form)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-secret-token.mjs\""
+          }
+        ]
       }
     ],
     "PostToolUse": [

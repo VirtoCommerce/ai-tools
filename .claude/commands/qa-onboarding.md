@@ -219,7 +219,7 @@ For users whose install is broken. Run:
 When VC runs the pilot WITH a customer, append:
 - After each step, ask: "did anything need explanation? note it in `reports/pilot-feedback/`"
 - After Step 7, run `/qa-onboarding troubleshoot` even on a successful install — the troubleshoot output is the baseline for future customers
-- File a pilot-feedback report at `reports/pilot-feedback/customer-${name}-${date}.md` capturing every manual touchpoint (see `docs/pilot-runbook.md` for the template)
+- File a pilot-feedback report at `reports/pilot-feedback/customer-${name}-${date}.md` capturing every manual touchpoint — one entry per touchpoint: what the operator had to be told, and what would have made it self-evident
 
 ---
 

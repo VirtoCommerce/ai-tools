@@ -100,7 +100,7 @@ Currently piloting with selected VC customers. Each pilot is:
 - ≤ 45 minutes install per environment
 - **Success metric** (updated, honest version): customer's QA lead runs the universal suites green on ≥ 2 envs (skipping vcst-specifics as expected) AND authors at least one suite for one of their own custom features, in the standard Enriched CSV format with `@td()` resolver.
 
-Interested? Reply to the partner-engineering thread or contact your VC account manager. Pre-pilot qualification per [`docs/pilot-runbook.md`](pilot-runbook.md) § 1.
+Interested? Reply to the partner-engineering thread or contact your VC account manager.
 
 ## Stability promise
 
@@ -112,7 +112,6 @@ Tier A artifacts (methodology, test-case CSV format, evidence policy, defect wor
 - **Test authoring (customer-written suites):** [`docs/test-authoring.md`](test-authoring.md)
 - Versioning + Tier A freeze: [`docs/versioning.md`](versioning.md)
 - Distribution model: [`docs/distribution.md`](distribution.md)
-- Support runbook: [`docs/support-runbook.md`](support-runbook.md)
-- Pilot runbook (VC-internal): [`docs/pilot-runbook.md`](pilot-runbook.md)
+- Release + versioning process: [`docs/release-process.md`](release-process.md)
 - Source: https://github.com/VirtoCommerce/vc-mcp-testing-module
 - Current version: see [`CHANGELOG.md`](../CHANGELOG.md)

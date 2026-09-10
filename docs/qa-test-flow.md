@@ -22,12 +22,14 @@ is a **`feature-test`** and runs the pipeline below.
   and every independent verifier. Two consequences are deliberate: a FAST run adds no regression
   coverage (use `/qa-test-lifecycle` for that), and the checklist is therefore the run's **only** durable
   record — which is why it is a committed file rather than terminal output.
-- **FULL — the whole pipeline.** A new feature / Story / Epic, anything P0–P1, cross-layer, ≥2 domains, a
+- **FULL — the whole pipeline.** A new feature / Epic, a **Story** (unless it is narrow on all six
+  `ticket-routing.md` §5b tokens *and* its surface purpose is already declared), anything P0–P1, cross-layer, ≥2 domains, a
   critical-revenue flow, or an unclear surface runs `1c ‖ 1d` concurrently, **the Test Model (required —
   it is what makes the ticket's context understandable and its documentation adequate)**, full authoring,
   the three hard-STOP independent verifiers, and `5g` promotion.
 
-**When in doubt → FULL.**
+**The tie-break for an unresolvable token** lives in `.claude/knowledge/execution/ticket-routing.md` §5 and
+is deliberately not repeated here.
 
 **Regression is case-scoped and time-boxed.** Step 4 runs
 `/qa-regression <ids> --cases critical --also-ids <new Draft cases>` against a suite list bounded by

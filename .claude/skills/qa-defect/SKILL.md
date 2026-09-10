@@ -45,6 +45,7 @@ Manages the full defect lifecycle from detection through triage, classification,
 | Upstream | `/qa-evidence` | Evidence capture standards used in report validation |
 | Upstream | `/qa-risk` | Severity/Priority classification (independent dimensions) |
 | Upstream | `/qa-bug` (command) | Bug filing creates the JIRA ticket this skill manages |
+| Optional | `/qa-postman bug-evidence` | For an API/GraphQL defect whose finding is a **disagreement**, or needs ≥2 controls to be non-vacuous: a reproduction collection attached to the ticket, red while the defect is open and green on the fix — so `verify` re-runs it instead of re-deriving the repro. Skip it for every other defect class, which is most of them ([bug-evidence.md](../qa-postman/bug-evidence.md) §1) |
 | Downstream | `/qa-metrics` | Defect counts, escape rates, reopen rates feed quality gates |
 
 ## Rules

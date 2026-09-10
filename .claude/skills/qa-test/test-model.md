@@ -11,10 +11,19 @@ Step 3 authors cases from. It answers *"how can this feature be wrong, and what 
 **not** *"is every acceptance criterion represented?"* Coverage is necessary but it is not the goal, and a
 model that only traces ACs produces a suite that confirms the feature instead of attacking it.
 
-**Required for every Story, Epic and substantial feature; not built on the FAST path at all.** The model is
-what makes the ticket's context understandable and its documentation adequate — a job a P2 config tweak
-does not have. A FAST run states in one line that no model was built and proceeds to the Artifact B
-checklist.
+**Required for every Epic and substantial feature, and for every Story except one narrow case; not built on
+the FAST path at all.** The model is what makes the ticket's context understandable and its documentation
+adequate — a job a P2 config tweak does not have. A FAST run states in one line that no model was built
+and proceeds to the Artifact B checklist.
+
+**The one narrow case, and the guard on it.** A Story narrow on all six of
+[`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5b's tokens routes FAST and therefore
+builds no model — **unless this surface's purpose is `UNDECLARED`, which sends it back to FULL whatever
+the six say.** That guard exists because of reason 2 below: Part 0 is the only place a surface's purpose
+and reverse edges are ever declared, and a Story is the only thing that writes one. A narrow story on an
+undeclared surface is exactly the run that would have declared it, so letting that one take FAST defers
+the declaration indefinitely while looking like a saving. Where Part 0 already exists, the story is
+refining a known mechanism and FAST is honest.
 
 ## Part 0 comes first, and the chain is drawn
 
@@ -85,8 +94,20 @@ reasons it cannot be a terminal dump:
    existing model, so "reused" was an aspiration: `reports/ba/test-models/` already carries
    `VCST-5346-2026-08-28.md` **and** `VCST-5346-2026-09-02.md` — one ticket, one surface, two fault
    models, which is the fork the section below forbids arriving by a different door. **Find the prior
-   model in `reports/ba/test-models/`** (`1b` item 2-map lists it and the `1c` brief carries the path). A prior model for
-   this surface is **amended, never forked** — the same rule as a same-day round 2, for the same reason.
+   model in `reports/ba/test-models/`** (`1b` item 2-map lists it and the `1c` brief carries the path), then
+   apply whichever of the **two** rules fits. They are not one rule, and the ticket-keyed filename is what
+   makes conflating them easy:
+
+   - **The same ticket, a later `--iterate` round** → **amend that file in place**, never a second dated
+     sibling (§One ticket, one model file).
+   - **A different ticket on the same surface** → its own **new** `<TICKET>-<date>.md`, which names the
+     predecessor in its `Prior model:` header and **carries Part 0 forward**: chain, diagrams, variants and
+     reverse edges copied across, and any correction recorded as **drift against the predecessor** rather
+     than silently re-derived. Parts 1–5 are this ticket's own fault model. Another ticket's run never
+     edits a predecessor — a model is the record of the reasoning of the run that wrote it, and the
+     80–160-line band is per model — and never re-derives Part 0 from scratch, which is what produces two
+     independent models of one surface. So *"amended, never forked"* governs the **round**; *"carried
+     forward, never re-derived"* governs the **next ticket**.
 3. A file is **lintable in principle** — Part 0, the five fault-model parts and the resolved sweeps could
    be checked rather than asserted. **`npm run model:lint` is not implemented**, so today this third reason <!-- doclint:may-not-exist -->
    is an intention, not a gate: do not cite it as though a script were enforcing it. The live deterministic
@@ -96,8 +117,8 @@ reasons it cannot be a terminal dump:
 
 `<date>` is **round 1’s** date (the run’s `date` field), and a later round **amends that same file**.
 A same-day round 2 would otherwise collide on the exact path, and a `-r2` sibling is worse than a
-collision: reason 2 above is that the next ticket on this surface *reuses* the model, and two files for
-one fault model means the reuse picks one at random.
+collision: reason 2 above is that the next ticket on this surface carries this model's Part 0 forward, and
+two files for one fault model means that carry-forward picks one at random.
 
 An amendment is a `## Round N` section of 5–15 lines (the 80–160-line band is per model, not per round)
 and may do exactly three things:
@@ -109,8 +130,8 @@ and may do exactly three things:
    obligation, and skipping it is how a fix ships untested.
 
 It may **not** rewrite Part 0. The value chain does not change because a bug was fixed; if it would,
-the fix changed the mechanism, and that is a new ticket rather than a round. The 10-clause gate re-fires
-**only on the amendment’s new rows** — inline, no verifier, exactly like the original
+the fix changed the mechanism, and that is a new ticket rather than a round. The `1e` gate (§The gate)
+re-fires **only on the amendment’s new rows** — inline, no verifier, exactly like the original
 `Model complete | 1e | inline` gate. Round bookkeeping lives in
 `summary.json.iterations.per_round[].artifacts.model_amendment`; the loop contract is
 [`modes.md`](modes.md) §5k §Artifact refresh between rounds.
@@ -162,9 +183,13 @@ names a way this feature can be *wrong*, and the case authored from it is the th
    can attack the reduction ("do status and lock actually not interact?"), which is where real coverage
    arguments live. Name the dropped factor and what subsumes it — not just the arithmetic.
 
-## The gate — nine clauses, every one contradictable
+## The gate — twelve clauses, every one contradictable
 
-"Scenarios enumerated" was the old bar and it cannot be wrong. These can:
+"Scenarios enumerated" was the old bar and it cannot be wrong. These can. **This list is the normative
+one** — the command's `1e` gate line is its compact checklist, so a clause added or reworded here is
+changed there in the same edit, and nothing else states the count. **`11b` is a clause NAME, not a
+numbering accident** — the command, the template and `domain-map.md` all cite it as `11b`, and it is
+nested under 11 because the two read the same token.
 
 1. Ticket **flow + type + path** set (flow = `feature-test` — a `verify-fix` / `hotfix-verify` route never
    reaches 1e); ACs decomposed to **atomic conditions**; **BL/ECL/domains** and **risk areas** present.
@@ -175,26 +200,51 @@ names a way this feature can be *wrong*, and the case authored from it is the th
 3. `Mechanism coverage matrix` published with **no blank cells** — each variant × link cell holds a scenario
    # or `GAP` / `WAIVED + reason` — and `Reverse edges` resolved per forward effect (covered by #, or
    `ABSENT IN PRODUCT`, which is reported as a finding).
-4. The scenario table's **first row is the `Technique:FLOW` journey**, traversing the whole chain on the
+4. The matrix's **AXES are derived from the mechanism, not from the scenario table** — columns from the
+   chain links, rows from the variants, scenarios mapped in only afterwards. **Clause 3 does not imply this
+   and cannot detect its absence**: a matrix populated by reading your own scenario list fills completely by
+   construction, so a mechanism with no scenario has no row to be uncovered in (§The matrix is only a
+   check). Re-derive after any rewrite of the scenario table.
+5. The scenario table's **first row is the `Technique:FLOW` journey**, traversing the whole chain on the
    customer's own surface. Absent for a state-changing feature ⇒ the model is not done.
-5. `Condition space` states the factors, their value classes, the constraints, and **raw cell count N**.
-6. `Reduction` states `N → M` **and names the factors it dropped and what subsumes them**. An unstated
+6. `Condition space` states the factors, their value classes, the constraints, and **raw cell count N**.
+7. `Reduction` states `N → M` **and names the factors it dropped and what subsumes them**. An unstated
    reduction is the finding — a scenario count nobody can attack is not a coverage argument.
-7. **Every** scenario row carries all five: cell · defect hypothesis · archetype · technique · oracle. No
+8. **Every** scenario row carries all five: cell · defect hypothesis · archetype · technique · oracle. No
    blanks, no "TBD", no hypothesis that merely restates the step ("check that X works").
-8. Every oracle is `{BL-…}`/`{SPEC}`/`{DOC}` — or, if `{OBSERVED}`/`{HYPOTHESIS}`, the row says what would
+9. Every oracle is `{BL-…}`/`{SPEC}`/`{DOC}` — or, if `{OBSERVED}`/`{HYPOTHESIS}`, the row says what would
    make it a real oracle. An expected value read off the live system is not an oracle. **A `{DOC}` oracle
    citing a GraphQL field, arg or response shape must rest on the snapshot `1b` item 2d refreshed *this
    run*** — a field name from an unrefreshed `graphql-schema.md` is an expected value of unknown age, and
    when 2d recorded `UNKNOWN` those oracles are `{HYPOTHESIS}`
    ([`contract-refresh.md`](contract-refresh.md) §3). Fixture drift 2d reported on an op the ticket's own
    diff touches belongs in the model as a chain link and a candidate reverse edge, not as a footnote.
-9. The `Archetype sweep`, `UIP sweep` and `Probes carried in` rows are **PRESENT** — not yet resolved.
-   Step 2 is what loads the `VC-*` catalog and the `UIP-*` probe set, so resolving them here would mean
-   answering from inputs nobody has read (the template marks all four *"filled in Step 2"*). This clause
-   guarantees the rows exist so Step 2's gate cannot skip a sweep silently; **that** gate is where every
-   archetype and probe must be covered by a row or **WAIVED with a reason**. Silence is not a waiver — it
-   is just checked one step later than this list used to claim.
+10. The `Archetype sweep`, `UIP sweep` and `Probes carried in` rows are **PRESENT** — not yet resolved.
+    Step 2 is what loads the `VC-*` catalog and the `UIP-*` probe set, so resolving them here would mean
+    answering from inputs nobody has read (the template marks all four *"filled in Step 2"*). This clause
+    guarantees the rows exist so Step 2's gate cannot skip a sweep silently; **that** gate is where every
+    archetype and probe must be covered by a row or **WAIVED with a reason**. Silence is not a waiver — it
+    is just checked one step later than this list used to claim.
+11. `Chain position` states this ticket's chain as a **SLICE** of the domain chain — the links it TOUCHES
+    **and**, explicitly, the links it does **not**.
+    **11b.** Every matrix **VARIANT** resolves to a surface the domain map enumerates, or is reported as
+    a surface the map is MISSING.
+
+**Clauses 11 and 11b are the two that clauses 1–10 cannot see, because every one of clauses 1–10 passes on
+a narrow chain** — a correctly-derived matrix with no blank cells never asks *is this chain a slice of a
+larger mechanism?* (clause 11), and nothing else stops a case asserting that a component which does exist
+does not (clause 11b). The measured runs behind both, and why naming the links you did not cover is
+contradictable while "the matrix is complete" is not:
+[`docs/decisions/qa-test-evolution.md`](../../../docs/decisions/qa-test-evolution.md) ·
+[`knowledge/domain/domain-map.md`](../../knowledge/domain/domain-map.md).
+
+**Both read the `domain_map` token (2g); neither re-derives it** ([`axes.md`](axes.md)).
+`PRESENT`/`STALE` ⇒ both bind against the map's inventory, and on `STALE` a variant resolving only to a
+stale surface is recorded as such rather than treated as confirmed. `ABSENT`/`unresolved` ⇒ both are
+satisfied by recording `Domain map: ABSENT — chain position unverified`; absence is **written down, not
+blocked**. `1e` is also where 2g's provisional all-layer answer is CONFIRMED — Part 0 now exists, so set
+`domain_map.all_layer_confirmed_at: "1e-confirmed"` and correct `all_layer_chain` if the chain disagrees
+with the `1b` guess.
 
 A missing atomic condition or `ba-system-analyzer` risk area is added before moving on. No fresh-`qa-lead`
 dispatch here — this is the doer's own completeness check.

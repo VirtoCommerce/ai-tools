@@ -1,6 +1,17 @@
+# The two mirrored trees must check out with the SAME line endings, or `mirror:check` fails on
+# pairs whose CONTENT is identical. Root cause (measured 2026-09-09): git stores LF for all 427
+# text blobs in both trees, but with core.autocrlf=true a Windows checkout writes CRLF. Agents
+# then rewrite .claude/ files with LF while plugins/vc-fix/ keeps the CRLF it was checked out
+# with — so the trees drift on endings alone, with no commit and no content change. 29 pairs had
+# diverged this way. Pinning both trees to LF makes the checkout match what git already stores.
+.claude/** text eol=lf
+plugins/vc-fix/** text eol=lf
+
 # Regression suite CSVs must stay CRLF end-to-end: the GraphQL runner's csv-parse
 # (relax_column_count: false) fails on mixed line endings inside multi-line quoted cells
 # (2026-06-10 incident: LF rows appended to CRLF 050b4 broke the whole suite's parse).
+# Listed AFTER the eol=lf rules above so that a CSV inside either tree still gets CRLF —
+# in .gitattributes the LAST matching pattern wins.
 regression/suites/**/*.csv text eol=crlf
 tests/**/*.csv text eol=crlf
 test-data/**/*.csv text eol=crlf

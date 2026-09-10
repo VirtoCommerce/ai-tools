@@ -2,7 +2,7 @@
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
   "lastValidated": "2026-08-27",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 74,
+  "totalFixtures": 75,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -10,6 +10,21 @@
       "role": "ORG_USER",
       "requiredVars": [],
       "usedBy": ["GQL-031", "GQL-032"]
+    },
+    "meContactOrganizations": {
+      "path": "queries/meContactOrganizations.graphql",
+      "category": "profile",
+      "role": "ORG_USER",
+      "requiredVars": [],
+      "gqlVars": {},
+      "runnerNote": "The org-switcher read path (VCST-5317). Authenticate as the lane's own multi-org fixture — [AUTH role=MULTI_ORG_TF_BR] for the backend/GraphQL lane, MULTI_ORG_TF_BR_ALT for the frontend lane; the lane split is mandatory because an OrganizationMembership row carries the per-org isLocked this run mutates. Lock state is applied by `npm run seed:membership-lock -- --lane <lane> --state <V…>`, which is REST-only: the xAPI lockOrganizationContact/unlockOrganizationContact mutations return Forbidden for an org-maintainer token.",
+      "semantics": "me-rooted on purpose: the TOP-LEVEL organizations(...) query is Forbidden for a storefront customer principal and has no `statuses` arg. `isLockedForCurrentUser` is Organization-scoped, zero-arg and caller-relative (PR #145) — it is NOT ContactType.isLockedInOrganization. The predicate behind it is `IsLocked && (!LockoutEnd.HasValue || LockoutEnd.Value > DateTime.UtcNow)` (vc-module-customer OrganizationMembership.cs:22, strict `>`), so a membership with IsLocked=true and a PAST LockoutEnd must report false. `statuses` is deliberately omitted so this observes the UNFILTERED list the L4 visibility gate reads; the statuses-filtered variant belongs on PRF-GQL-078, which already exercises it.",
+      "usedBy": ["VCST-5317"],
+      "knownIssues": [
+        "totalCount is the UNFILTERED membership count and therefore lock-state-dependent post-#145 — a fixed-number assertion here is asserting the fixture's lock state, not the contract",
+        "the top-level read path caches locked-org ids for 60s (OrganizationMembershipSearchService.cs:162, TimeSpan.FromMinutes(1), a hardcoded literal with no setting key), while the isLockedForCurrentUser resolver uses SearchAllNoCloneAsync — so the two can transiently disagree after a lock write",
+        "PR #145 and vc-frontend PR #2469 are both UNMERGED; if either is reverted from the env this fixture's isLockedForCurrentUser selection stops validating"
+      ]
     },
     "contact": {
       "path": "queries/contact.graphql",

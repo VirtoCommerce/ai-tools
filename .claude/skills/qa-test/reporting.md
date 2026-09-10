@@ -106,6 +106,8 @@ Write `reports/tickets/{SPRINT}/<ticket-key>/summary.json` per
 AC-analysis + `ac_dod_estimate` block, counts, the **`regression`** block (**both `c1` and `c2`** — two
 runs, two `run_id`s; the release gate is defined on `c2`'s) and `regression_triage`, `bugs_filed`
 with relationship + severity, `bugs_not_filed`, the `promotion` block for 5g, the **`timing`** block,
+**`path`** plus **`path_route`** (how the EFFORT axis landed there — for a Story that is `1a`-provisional
+then `1b`-confirmed, `ticket-routing.md` §5b),
 **`layer`** (derived at `1b` item 2b) plus the **`release`** block resolved at 5e.0, and the four derived-axis
 blocks — **`visual`** (2c), **`contract`** (2d), **`coverage_triage`** (2e + Step 2a) and **`discovery`**
 (Step 3x). In each of those, `null` means the axis **never ran**, which is not the same fact as an empty

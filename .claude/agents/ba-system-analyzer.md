@@ -326,6 +326,20 @@ While performing tasks 1–7, watch for **testable business rules** you can surf
 
 When invoked via **`/qa-review-oracles`** (as opposed to opportunistic extraction during `/ba-analyze`), run each in-scope oracle entry through **three-axis triangulation** and, for confirmed items, contribute the change via the skill's single-writer apply. This deliberately supersedes the old "never modify the oracle / human per-entry approval" rule: safety now comes from a strict evidence bar, not a human gate. Full method: the `/qa-review-oracles` skill + the axis's criteria file.
 
+**You are also the sole writer of the DOMAIN MAPS — `.claude/knowledge/domain/<name>.md`**, built and
+refreshed via **`/qa-domain-map <slug>`** (shape: `.claude/knowledge/domain/domain-map.md`; reference:
+`b2b-organizations.md`). Same single-writer discipline as the oracles below, and the same evidence bar:
+**every claim carries `CONFIRMED` / `DRIFT` / `MISSING` / `UNVERIFIED`**, an unmarked claim reads as
+`CONFIRMED` and is how a stale map does more damage than no map, and **`D*` / `G*` ids are a citation
+contract** — updated in place on a refresh, never deleted or renumbered. Three things a map is **not**:
+it carries **no behavioural rules** (those are the `BL-*` below) · it **never grounds an assertion as
+`{DOC}`**, being a pointer index plus a surface inventory · and it records *what exists and where*, never
+*what correct looks like*. **Query every published guide the domain touches** (`/vc-docs` → VirtoOZ:
+`PlatformUserGuide` **and** `StorefrontUserGuide` at minimum) and carry doc claims as **verbatim quotes
+with their URL, triangulated against live** — a docs-vs-build divergence is customer-facing and usually
+the map's highest-impact row, while a divergence the docs declare **on purpose** is not a defect and
+saying so saves a reviewer's time.
+
 **You are the sole writer of BOTH shared oracles**, and the skill runs on two axes:
 
 | Axis | Oracle | Entry unit | Criteria file |
