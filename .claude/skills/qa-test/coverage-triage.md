@@ -34,7 +34,7 @@ the Test Model names as a regression surface in its own words — selects 31 sui
 sales-rep, and likewise reports `unmappedPaths: []`. A gap that announces itself is a gap you fix;
 this one reports success.
 
-**2. The change-scoped sweep (now C2) applies `--cases critical`**, which drops the High rows where most label and
+**2. A change-scoped release sweep applies `--cases critical`**, which drops the High rows where most label and
 route assertions live: 091 carries 24 High, 093 carries 29.
 
 **3. A row that never executes is never triaged**, so 5a cannot reach it however good it is.
@@ -105,7 +105,7 @@ and every hit takes exactly one value.
 | Disposition | The row is | Action | Timing |
 |---|---|---|---|
 | **`CONFIRMED`** | still correct under the change | nothing | — |
-| **`REPAIR`** | **mechanically** stale — a renamed selector, a moved route, a removed arg, a dead `@td()` alias — so it cannot execute at all | `/qa-review-tests file <suite> --fix`, under Phase 4b's write-scope ceiling + revert-on-regression | **before** the run |
+| **`REPAIR`** | **mechanically** stale — a renamed selector, a moved route, a removed arg, a dead `@td()` alias — so it cannot execute at all | `/qa-review-tests file <suite> --fix`, under Phase 4b's write-scope ceiling + revert-on-regression, **then carry the row into C1's `--ids`** | fixed **before** the run, **executed BY it** |
 | **`RE-BASE`** | asserting an **expected value** the change contradicts | keep the assertion as it stands; carry the case into **C1's `--ids`** | resolved **by** the run, at 5a |
 | **`SUPERSEDED`** | asserting a surface the change removes | a proposal, recorded — never an edit | human |
 
@@ -138,8 +138,11 @@ written before the change, executed against the change.
 
 ### 3b. Two hard rules
 
-**A `FILTERED_OUT` row disposed `RE-BASE` MUST be carried in C1's `--ids`** — or its disposition is
-`CONFIRMED`/`SUPERSEDED` with a stated reason. A `RE-BASE` that never executes is precisely the
+**A `FILTERED_OUT` row disposed `REPAIR` or `RE-BASE` MUST be carried in C1's `--ids`** — or its
+disposition is `CONFIRMED`/`SUPERSEDED` with a stated reason. **`REPAIR` was added to this rule on
+2026-09-10**: the fix is applied before the run, so until the run executes it nothing has verified that
+the case can now reach its own assertion — a repaired-but-unrun row is the same invisible class as an
+undisposed `RE-BASE`, arrived at from the other direction. C1 is *every case this run wrote or changed*. A `RE-BASE` that never executes is precisely the
 invisible class this axis exists to find; leaving one undisposed re-creates the gap inside the
 mechanism built to close it. This is the same rule Artifact C already follows for its Scope
 Exclusions, one layer down.

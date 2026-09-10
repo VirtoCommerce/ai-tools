@@ -85,6 +85,24 @@ test("no gate spec contains a verdict word — the sheet is evidence, never a ru
   }
 });
 
-test("the four /qa-test verifier dispatches all have a gate", () => {
-  assert.deepEqual(Object.keys(GATES).sort(), ["3", "5b", "5e", "5g"]);
+test("every gate a verifier can be dispatched to has a spec", () => {
+  // 3-exec releases the EXECUTION agents and is INLINE (no fresh-verifier dispatch); 3 releases C1
+  // and is the hard STOP. 5g is no longer a /qa-test step (promotion moved to /qa-test-lifecycle 6P,
+  // 2026-09-10) but the gate is still reachable from there, so its spec stays.
+  assert.deepEqual(Object.keys(GATES).sort(), ["3", "3-exec", "5b", "5e", "5g"]);
+});
+
+test("3-exec is runnable without a suite — Artifact A does not exist yet when it fires", () => {
+  // The regression this guards: gate 3 threw on a missing --suite, which is why a checklist-only
+  // gate was not runnable at all before 2026-09-10. 3-exec must never grow that requirement.
+  const spec = GATES["3-exec"];
+  assert.ok(/inline/i.test(spec.title), "3-exec is inline, and its title must say so");
+  assert.ok(
+    spec.unchecked.some((u) => /PENDING-A/.test(u)),
+    "3-exec must name PENDING-A — the disposition gate 3 is then obliged to close",
+  );
+  assert.ok(
+    GATES["3"].unchecked.some((u) => /PENDING-A/.test(u)),
+    "gate 3 must close every PENDING-A that 3-exec allowed through",
+  );
 });

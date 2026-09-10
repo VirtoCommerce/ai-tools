@@ -20,11 +20,10 @@ about to change how a step works.
 |---|---|---|
 | [`preflight.md`](preflight.md) | Steps **1a–1b** — the fetch, the classify/route branch, the two I/O waves | Running or changing pre-flight |
 | [`test-model.md`](test-model.md) | Step 1e — the fault model: why Part 0 comes first, the eight rules the scenario table must satisfy, the twelve-clause gate, worked references | Building or reviewing a Test Model |
-| [`authoring.md`](authoring.md) | Steps 2–3 — oracle loading, Artifacts A/B/C1/C2, the scaffold + KEEP gate, the per-surface fan-out (3b), review/auto-fix | Authoring cases, or changing how they are authored |
-| [`close-out.md`](close-out.md) | Step 5 **spine** — AC/DoD reconciliation, the verdict table, the release regression (5r), the severity floor on filing | Deciding what the run concluded |
+| [`authoring.md`](authoring.md) | Steps 2–3 — oracle loading, Artifacts A/B/C1, the scaffold + KEEP gate, the per-surface fan-out (3b), review/auto-fix | Authoring cases, or changing how they are authored |
+| [`close-out.md`](close-out.md) | Step 5 **spine** — AC/DoD reconciliation, the verdict table, the severity floor on filing | Deciding what the run concluded |
 | [`triage.md`](triage.md) | **5a** — correlate, validate evidence, classify, provenance, severity, dedup | Turning raw results into findings |
 | [`reporting.md`](reporting.md) | **5e · 5f · 5h** — the release gate, the tracker comment, `summary.json`, the checklist, the transition, the docs | Delivering the run |
-| [`promotion.md`](promotion.md) | **5g** — the `Draft → Automated` flip | A FULL run that authored cases |
 | [`axes.md`](axes.md) | The four pre-flight axes as ONE mechanism — the contract they share, and the fail-CLOSED/fail-OPEN split the old "same discipline" phrasing hid | Adding an axis, or deciding whether one runs on FAST |
 | [`visual-axis.md`](visual-axis.md) | The visual axis — the `visual_surface` derivation, surface → axes → executor, the invariant-blocks/spec-advises verdict rule, the browser budget | A UI-visible ticket, or changing how design/a11y is scheduled |
 | [`contract-refresh.md`](contract-refresh.md) | The contract-refresh axis — the `contract_surface` derivation at `1b` 2d, the two-artifacts/two-commands split, `UNKNOWN` never falling back, drift as a `1e` input | A ticket touching GraphQL/xAPI, or changing when the schema + fixtures are refreshed |
@@ -67,7 +66,7 @@ result:
 ## Effort routing, and why the FAST/FULL line sits where it does
 
 FAST used to drop only the two `1` agents and the verifiers while keeping the Test Model, both sweeps, the
-whole Step-2 oracle load, case authoring and all seven phases of Step 5 — everything expensive was marked
+whole Step-2 oracle load, case authoring and every phase of Step 5 — everything expensive was marked
 *"both paths, always."* Four of five recorded runs took FAST, so that is the path most of the cost sat on.
 The split made FAST a checklist and nothing else.
 
@@ -100,9 +99,10 @@ one sentence is how it got inverted for a day without anything noticing.
 ## The verifier, in one place
 
 The FULL path dispatches a **fresh `qa-lead-orchestrator` in §Verifier Mode**
-([`.claude/agents/qa-lead-orchestrator.md`](../../agents/qa-lead-orchestrator.md)) **four times: Step 3,
-Step 5b, Step 5e and Step 5g — three of which are hard STOPs.** 5e's Feature-Release-Gate ratification is
-the non-blocking one: it re-derives the recommendation, it does not hold the close-out. What makes the
+([`.claude/agents/qa-lead-orchestrator.md`](../../agents/qa-lead-orchestrator.md)) **three times: Step 3,
+Step 5b and Step 5e — two of which are hard STOPs.** 5e's Feature-Release-Gate ratification is
+the non-blocking one: it re-derives the recommendation, it does not hold the close-out. (There was a
+fourth, at `5g`, until promotion left the pipeline on 2026-09-10.) What makes the
 verifier independent rather than ceremonial:
 
 - It **re-derives evidence from source** — re-runs the deterministic core (`suites:review`, `td:validate`,
@@ -120,6 +120,41 @@ verifier independent rather than ceremonial:
 
 Every other step — 1, 2, 4, 5d, 5f, 5h — and the entire FAST path self-check inline. Diagram + role/hand-off detail:
 `docs/qa-test-flow.md`.
+
+## Ordering — what may move, and the three things that may not
+
+Restructured 2026-09-10 to cut time-to-first-test. The command carries the order; this is why it is that
+order. Full record, including what the first design got wrong:
+[`docs/decisions/qa-test-evolution.md`](../../../docs/decisions/qa-test-evolution.md) §Cutting
+time-to-first-test.
+
+**The graph, not the step numbers, decides what can move.** The checklist execution consumes exactly two
+things — Artifact B and seeded data. It consumed **neither Artifact A nor the Step-3 verifier**, and yet
+waited behind both. Removing that wait is most of the restructure; it is a re-reading, not an invention.
+
+**Three things stay ahead of the checklist, and none of them is negotiable for speed:**
+
+| Ahead of `B` | Because |
+|---|---|
+| **`1e` the Test Model** | a checklist written against an unnamed value chain produces per-screen field checks that are individually well-formed and collectively unable to notice the feature is broken — §1 above, and the Loyalty Missions numbers behind it |
+| **`3x` discovery** | its fifth routed output is *conditions the ACs never named*. A checklist written before it is written from the ACs and a guess; written after, every item has been **seen** or deliberately left a hypothesis. It also means the checklist does not need re-running when the model corrects itself |
+| **`3a` seeded data** | a checklist cannot execute against fixtures that do not resolve. `3a` is browserless, so it runs *beside* `3x` for free — serialising it behind discovery would add the whole box and buy nothing |
+
+**`3x` is itself a live read of the product**, so *"nothing touches the feature until Step 4"* was never
+quite true of this pipeline and is now plainly false: the browser is on it at `1r`, and on it in depth
+from `3x`.
+
+**What moved: `A`, and only in the sense of what waits for it.** Authoring is the largest pre-execution
+cost — alloc, the journey case, matrix assignment, per-layer packs, a 3–4-way fan-out, serial appends,
+review. It still starts when `3x` closes and still waits for both `3a` and `3x` (§Concurrency, the
+never-parallelise table). **What changed is that nothing waits for it to FINISH except `4c`** — which is
+why the join back to it is an explicit step, not an assumption ([`qa-test.md`](../../commands/qa-test.md)
+Step 4).
+
+**An early checklist was tried first and rejected.** A thin checklist off `1d`'s ACs, executed before the
+model existed, with a second pass for the model's delta: faster, and it needed a naming guard, a second
+execution pass and per-item pass attribution — machinery whose only job was compensating for the model not
+being ready. Ordering discovery first deletes all of it and yields one checklist, one pass.
 
 ## Concurrency — the unit to save is a ROUND-TRIP, not a second
 
@@ -144,12 +179,13 @@ ceiling for this kind of win. Two things actually cost:
    script optimisation in the table above, combined.
 2. **Agent dispatches and regression runs**, which are minutes to tens of minutes each. The two largest
    structural wins in the pipeline are both about *what a long-running job overlaps*, not about making it
-   faster: **3x runs inside 3a's wall-clock** (one browser lane against a browserless seeder), and **C2
-   runs inside 5d + drafting 5e** instead of on the critical path to a verdict that discards its result by
-   its own provenance rules ([`close-out.md`](close-out.md) §5r).
+   faster: **3x runs inside 3a's wall-clock** (one browser lane against a browserless seeder), and the release-scoped
+   Critical sweep is **no longer inside this pipeline at all** — it was on the critical path to a verdict
+   that discarded its result by its own provenance rules, so `5r`/C2 was removed (2026-09-10) rather than
+   re-scheduled; cutting a release runs [`/qa-regression`](../../commands/qa-regression.md) deliberately.
 
    The pipeline already parallelises the dispatches where it can — `1c ‖ 1d ‖ the 2-load oracle read` in
-   one message, Step 3's `3a ‖ 3x ‖ B` wave, Step 3b one batch per execution surface, and Step 4's
+   one message, the `3x ‖ 3a` pair (one lane against a browserless seeder), Step 3b one batch per execution surface, and Step 4's
    execution agents inside the max-3 browser cap. That work is done; do not re-derive it.
 
 **So the rule is: independent operations go out in ONE message; dependent ones state what they consume.**
@@ -172,7 +208,7 @@ Two more waves follow the same test, and both were serial for no reason anyone h
 
 | Wave | Contains | Consumes |
 |---|---|---|
-| **Step 1c/1d + 2-load** — one message | `1c` ‖ `1d` ‖ **the domain-keyed oracle text** (`BL-*` / `ECL-*` / `E2E-*` / `VC-*` / the UI + a11y set) | only `1a`'s domains + `1b`'s tokens — **nothing `1c` returns**, which is why waiting a full dispatch wave to open a markdown file was pure latency. Only `2-topup` (the VirtoOZ gap fill) is genuinely downstream |
+| **Step 1c/1d + 2-load** — one message | `1c` ‖ `1d` ‖ **`1r` reachability** (FULL, ~5 min) ‖ **`1c-map`** (only when 2g says `ABSENT` + all-layer, FULL) ‖ **the domain-keyed oracle text** (`BL-*` / `ECL-*` / `E2E-*` / `VC-*` / the UI + a11y set) | only `1a`'s domains + `1b`'s tokens — **nothing `1c` returns**, which is why waiting a full dispatch wave to open a markdown file was pure latency. `1c-map` is domain-scoped where `1c` is ticket-scoped: they share prior art and consume nothing of each other's, so the map costs the run a lane, not a wave. Only `2-topup` (the VirtoOZ gap fill) is genuinely downstream |
 | **Step 3** — one message | `3a` test-data ‖ **`3x` discovery** ‖ `B` checklist | `1e` + Step 2. `3a` is browserless, `3x` takes exactly one lane, `B` is pure authoring — mutually independent. **Artifact A alone waits on all three** |
 
 Items 3 → 4 stay ordered inside Wave A as the command states. They are both local globs costing
@@ -191,9 +227,10 @@ known cost, and three were measured:
 | Two writers on one suite CSV — the Step-3b append stays **serial**, `suites:sync` runs **once** | `suites:lint`/`sync` hard-fail on a parse error anywhere in the corpus, so N parallel writers multiply a tree-wide outage by N and block every other author in the tree (`.claude/rules/regression.md` §Suite inventory — measured: one mid-write invalid CSV blocked two sessions' gates for ~15 min) |
 | `suites:sync` ‖ `suites:lint` | lint reads what sync wrote |
 | Artifact A ‖ 3a, or Artifact A ‖ 3x | cases are authored against fixtures that already resolve **and against the model 3x amended**. Authoring beside the discovery lane produces cases written from the guesses the lane exists to replace — the lane's value is entirely in the order ([`exploratory-lane.md`](exploratory-lane.md) §2) |
-| `3x` ‖ Step 4's execution agents | the lane closes before Artifact A, which closes before Step 4, so the max-3 cap holds **by construction** and needs no arbitration. Overlap them and it does not |
+| `3x` ‖ Step 4's execution agents | **Artifact B is written from what `3x` returns** (2026-09-10) and `3-exec` gates on `B`, so execution cannot start while the lane is open — the cap still holds by construction on FULL. What changed is that `3x` now **outranks** execution in the priority order ([`qa-test.md`](../../commands/qa-test.md) Step 4): it is upstream of both `B` and `A`, so starving it stalls the whole run rather than one track |
 | Two suites ‖ on one disposable fixture set | **measured**: `075d` lost 5 of 34 cases to fixtures suite `083d` had already consumed on the same accounts. Serialise with a re-seed between, or give each its own accounts (`.claude/knowledge/execution/test-data-authoring.md` §The scope of "isolated") |
 | More than 3 browser agents, or two agents on one session | the lane cap is hard, and a shared session means agents fighting over navigation and cookies |
+| `1c-map` ‖ `1c` **on the same lane** | both are `ba-system-analyzer` and `.claude/rules/agents.md` puts that agent on `playwright-firefox` — so the concurrency is fine and the *default lane* is not. Two instances of one agent definition inherit one lane unless told otherwise, which is a shared session by accident — pin `1c-map` to a different free lane **in its brief** |
 | A verifier ‖ its own doer | the verifier re-derives evidence *after* the doer's write; concurrent, it verifies a half-finished step. The three gates are sequential by design |
 | `--iterate` rounds | test → fix → deploy → re-test is inherently serial |
 
@@ -222,9 +259,11 @@ lane when `visual_surface: true`** — the one documented exception, reasoned in
 - **The cap is 3 and it binds.** `both → both` (2) + `ui-ux-expert` (3) + `qa-testing-expert` (4) exceeded
   `.claude/rules/agents.md`'s *"max 3 concurrent browser agents total (QA + BA combined)"*. A P0
   cross-layer UI ticket hits exactly that combination, so it was not a corner case. **Resolution: the
-  P0 extra pass is SEQUENCED, never a fourth concurrent lane** — run `checklist → visual → C1` and state
-  the order chosen, which is what Step 4 already instructs. Counting the lanes before dispatching is part
-  of the step, not an afterthought.
+  P0 extra pass is SEQUENCED, never a fourth concurrent lane** — and since 2026-09-10 the sequence is a
+  stated priority order rather than a fixed list: **`3x` > execution (`4a`) > visual (`4v`) > `1r` >
+  C1 (`4c`)** ([`qa-test.md`](../../commands/qa-test.md) Step 4). `3x` leads not because it matters more
+  than the verdict but because it is upstream of the checklist the verdict rests on. State the order
+  chosen. Counting the lanes before dispatching is part of the step, not an afterthought.
 - **A P0 / critical-revenue ticket must NOT go to `qa-testing-expert` on its default lane.** That default
   is `playwright-firefox`, and `.claude/rules/agents.md` states the harder rule: *"never schedule a
   click-driven suite on firefox — cart, checkout, merge, PDP interaction, sign-in, or **any** Admin SPA
@@ -239,16 +278,19 @@ lane when `visual_surface: true`** — the one documented exception, reasoned in
 targets, the three axes it runs, the verdict vocabulary and the browser-budget ordering all live in
 [`visual-axis.md`](visual-axis.md); **do not restate them here.**
 
-Each ticket-agent prompt must carry: the ticket ID; **Artifact A — FULL path only** (target suite path +
-row IDs; **omitted on FAST, which authors none**, and the Scope line then reads *"run ONLY the checklist
-above"*);
-**Artifact B** checklist; **test data** (the `@td()`/`{{VAR}}` the cases use, confirmed seeded — never
+Each ticket-agent prompt must carry: the ticket ID; **Artifact B** checklist; **test data** (the `@td()`/`{{VAR}}` the cases use, confirmed seeded — never
 hardcode IDs, `.claude/rules/test-data.md`); the **`BL-*`** rule text + **`ECL-*`** patterns from Step 2
 (**cut them, do not re-summarise them**: `npm run bl:extract -- --domain <d>` and
 `npm run ecl:extract -- --domain <d>` emit the oracles' own markdown verbatim — what may travel as text
 and what must stay a path is [`dispatch-pack.md`](dispatch-pack.md));
 the browser server; env URLs; the screenshot path; and the evidence-capture policy. **Artifact C is NOT in
 the agent prompt** — it goes to `/qa-regression` (`feedback_long_runner_sessions_unreliable`).
+
+**Artifact A is NOT in the agent prompt either, since 2026-09-10.** It used to be, and `4c`'s C1 run
+executed the same rows — so every authored case ran twice, and only C1 emits the `RUN_ID` promotion needs,
+so the agent's copy grounded nothing ([`regression-promotion.md`](../../knowledge/execution/regression-promotion.md)). **Track `4a` is the checklist's
+home; `4c` is the cases'.** Removing the rows is also what lets `4a` dispatch before authoring has
+finished — an agent briefed with rows that do not exist yet cannot start early.
 
 ```
 Test <ticket-key> on the [backend/frontend].
@@ -257,11 +299,10 @@ Context: [what changed]
 Environment: {FRONT_URL} / {BACK_URL}   Browser: {BROWSER_SERVER}
 Screenshot output: reports/tickets/{SPRINT}/<ticket-key>/screenshots/
 
-Test cases (Artifact A): <target-suite.csv> — rows [IDs]      # FULL only — omit this line on FAST
 Testing checklist (Artifact B): [from Step 3]
 Test data: [the @td()/{{VAR}} the cases use — confirmed seeded; resolve at runtime, never hardcode]
 
-Scope: run ONLY the cases + checklist above. Do NOT run regression suites in this session.
+Scope: run ONLY the checklist above. Do NOT run regression suites in this session.
 
 Business Rules (must verify): BL-CART-001: [text]; BL-PAY-003: [text]
 Edge cases to cover: ECL-1.1: [pattern]

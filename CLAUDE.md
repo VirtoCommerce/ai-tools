@@ -100,7 +100,7 @@ Each row names THE file that is normative for its topic. Read it before acting o
 |---|---|
 | Ticket → flow routing (type × status → `feature-test` / `/qa-verify-fix` / `/qa-hotfix-check`) | `.claude/knowledge/execution/ticket-routing.md` |
 | Ticket status transitions — `qa-lead-orchestrator` is the only actor, two hops per run | `.claude/knowledge/execution/ticket-status-transitions.md` |
-| `/qa-test` — the pipeline contract (steps, gates, FAST vs FULL) | `.claude/commands/qa-test.md` (shell) + `.claude/skills/qa-test/` (methodology: `test-model.md`, `authoring.md`, `close-out.md`, `modes.md`, `axes.md`, `visual-axis.md`, `contract-refresh.md`, `coverage-triage.md`, `exploratory-lane.md`, `triage.md`, `promotion.md`) |
+| `/qa-test` — the pipeline contract (steps, gates, FAST vs FULL) | `.claude/commands/qa-test.md` (shell) + `.claude/skills/qa-test/` (methodology: `test-model.md`, `authoring.md`, `close-out.md`, `modes.md`, `axes.md`, `visual-axis.md`, `contract-refresh.md`, `coverage-triage.md`, `exploratory-lane.md`, `triage.md`) |
 | The six derived pre-flight axes (`layer`, `visual_surface`, `contract_surface`, `coverage_surface`, `data_surface`, `domain_map`) | `.claude/skills/qa-test/axes.md` |
 | **What a domain IS** — actors, value chain, surface inventory per layer, where the layers DISAGREE, coverage shape | `.claude/knowledge/domain/<domain>.md` (shape: `domain-map.md`; build/refresh `/qa-domain-map <slug>`; freshness `npm run domain:check`) |
 | Prior art per ticket (read the sources directly) | `reports/ba/<domain>/` · `reports/ba/test-models/` · `reports/tickets/**/summary.json` |

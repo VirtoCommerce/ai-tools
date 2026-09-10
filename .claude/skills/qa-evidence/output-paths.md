@@ -6,7 +6,7 @@
 |---------------|------|----------|
 | **Test documentation** (plans, cases, testrail CSVs — NOT execution reports, see below) | `reports/tickets/SprintXX-XX/VCST-XXXX/` | `test-plan.md` (`/qa-plan`), `test-cases.csv` (`/qa-test-cases-generator`), `testrail-import.csv` |
 | **Test screenshots** (evidence captured during test execution) | `reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
-| **`/qa-test` run summary** (AC analysis, checklist, execution + change-scoped regression results) | **Terminal only** — folded into one chat report, never written as separate files (`.claude/rules/reports.md` §1) | n/a — only `summary.json` (duplicate-run marker) + `screenshots/` persist to `reports/tickets/SprintXX-XX/VCST-XXXX/`; new cases persist to `regression/suites/` |
+| **`/qa-test` run summary** (AC analysis, checklist, execution + the C1 ticket-regression result) | **Terminal only** — folded into one chat report, never written as separate files (`.claude/rules/reports.md` §1) | n/a — only `summary.json` (duplicate-run marker) + `screenshots/` persist to `reports/tickets/SprintXX-XX/VCST-XXXX/`; new cases persist to `regression/suites/` |
 | **Bug reports — open** (active bugs) | `reports/bugs/open/{critical-high\|medium\|low}/` — foldered by the severity the report DECLARES (`.claude/rules/reports.md` §1a); a `QUESTION-*.md` stays at `open/` root | `open/critical-high/BUG-Checkout-Payment-Overlap-iOS.md` |
 | **Bug reports — fixed** (verified fixes, kept for regression reference) | `reports/bugs/fixed/` | `BUG-Cart-Total-Reset-VCST-4700.md` |
 | **Bug reports — closed** (won't fix, false positive, cannot reproduce) | `reports/bugs/closed/` | `BUG-GA4-add-payment-info.md` |

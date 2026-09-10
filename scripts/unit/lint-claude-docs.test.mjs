@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint } from '../maintenance/lint-claude-docs.mjs';
+import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored } from '../maintenance/lint-claude-docs.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -122,6 +122,20 @@ test('pathResolves accepts root-relative AND citing-file-relative, which is how 
   // The exact defect this found: from .claude/knowledge/execution/, ../../ is .claude/, not the root.
   assert.ok(!pathResolves('.claude/knowledge/execution/test-data-authoring.md', '../../scripts/lib/seed-common.mjs', exists));
   assert.ok(pathResolves('.claude/knowledge/execution/test-data-authoring.md', '../../../scripts/lib/seed-common.mjs', exists));
+});
+
+test('isGitIgnored: an EMPTY check-ignore pattern is not a match — the gate must be able to fail on Windows', () => {
+  // Measured 2026-09-10 on git 2.55.0.windows.5: in THIS repo `git check-ignore -q '<anything>/'`
+  // exited 0, attributed to a BLANK .gitignore line, while a fresh repo exited 1. The DOC-003 caller
+  // probes `cited + '/'` for every unresolved citation, so that turned EVERY dangling path into
+  // "ignored": `lint()` reported 0 findings corpus-wide on Windows while CI on Linux reported 31, and
+  // a PR shipped a citation to a file that had just been deleted. A gate that cannot fail on half the
+  // team's machines is worse than no gate, because it is trusted.
+  assert.equal(isGitIgnored('zzz-no-such-directory/', ROOT), false, 'a nonexistent directory is not ignored');
+  assert.equal(isGitIgnored('.claude/skills/qa-test/zzz-deleted.md/', ROOT), false, 'nor is a deleted file probed as a dir');
+  // ...and a real rule still matches, in both the bare and the trailing-slash form.
+  assert.equal(isGitIgnored('node_modules', ROOT), true);
+  assert.equal(isGitIgnored('results/', ROOT), true);
 });
 
 test('a reports/ citation is ephemeral; a durable path is not', () => {

@@ -23,6 +23,7 @@
 //      (`.claude/skills/qa-test/SKILL.md` §1).
 //
 // Usage:
+//   npx tsx scripts/regression/verify-gate.ts --gate 3-exec              # no --suite: nothing is authored yet
 //   npx tsx scripts/regression/verify-gate.ts --gate 3   --suite <suite.csv>
 //   npx tsx scripts/regression/verify-gate.ts --gate 5b  --run-id <RUN_ID>
 //   npx tsx scripts/regression/verify-gate.ts --gate 5e  --run-id <C2_RUN_ID>
@@ -36,7 +37,7 @@ import { spawnSync } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { parse as parseCsv } from "csv-parse/sync";
 
-export type GateId = "3" | "5b" | "5e" | "5g";
+export type GateId = "3-exec" | "3" | "5b" | "5e" | "5g";
 
 export interface CommandFact {
   label: string;
@@ -117,10 +118,25 @@ interface GateSpec {
 }
 
 export const GATES: Record<GateId, GateSpec> = {
-  "3": {
-    title: "Step 3 — artifacts reviewed + data resolved (hard STOP)",
+  "3-exec": {
+    // Releases the EXECUTION agents, not the corpus write. It runs BEFORE Artifact A exists, which is
+    // the whole point: the checklist and the seeded data are all an execution agent consumes, so
+    // holding them behind case authoring put the run's longest browser job behind a dependency it
+    // never reads. Deliberately INLINE (no fresh-verifier dispatch) and deliberately suite-less.
+    title: "Step 3-exec — checklist + data ready, execution may dispatch (inline)",
     unchecked: [
-      "every atomic condition in the ticket has a covering case (needs the AC list, not the CSV)",
+      "every atomic condition in the ticket maps to a checklist item, an existing case, or an explicit PENDING-A (needs the AC list; there is no CSV yet)",
+      "each checklist item actually exercises the condition its wording claims",
+      "when data_surface was false, that the SKIP was right: no link under test needs a divergence the fixtures lack",
+      "that every fixture the checklist names is seeded and resolvable RIGHT NOW, not merely declared",
+    ],
+  },
+  "3": {
+    // The corpus-write half: releases C1. Checklist coverage moved to 3-exec above; what stays here
+    // is everything that needs the authored rows to exist.
+    title: "Step 3 — authored cases reviewed, PENDING-A closed (hard STOP)",
+    unchecked: [
+      "every PENDING-A condition recorded at 3-exec now resolves to a real authored row",
       "each case's Steps actually exercise the condition its title claims",
       "when data_surface was false, that the SKIP was right: no link under test needs a divergence the fixtures lack",
       "whether tc:scope's scope and risk terms match the ones 1b item 2e derived",
@@ -143,7 +159,7 @@ export const GATES: Record<GateId, GateSpec> = {
     ],
   },
   "5g": {
-    title: "Step 5g — promotion flip Draft -> Automated (hard STOP)",
+    title: "Promotion flip Draft -> Automated (hard STOP) — /qa-test-lifecycle 6P",
     unchecked: [
       "for a sample of upgraded assertions, that each {OBSERVED} traces to real Step-4 evidence",
       "that no {HYPOTHESIS} was cleared by an invented value",
@@ -169,7 +185,15 @@ function run(label: string, command: string, args: string[], reading: string): C
 
 function factsFor(gate: GateId, opts: { suite?: string; runId?: string }): CommandFact[] {
   const facts: CommandFact[] = [];
-  if (gate === "3") {
+  if (gate === "3-exec") {
+    // No --suite by design: Artifact A is still being authored in the background when this runs.
+    facts.push(
+      run("td:validate (@td() / {{VAR}} drift)", "npx", ["tsx", "scripts/test-data/validate-td-refs.ts"],
+        "non-zero = an unresolvable reference; the checklist cannot execute against data that does not resolve"),
+      run("tc:scope (existing-coverage triage)", "npx", ["tsx", "scripts/test-cases/scope-existing-coverage.ts"],
+        "non-zero = the scan itself failed; hits are DATA, not a failure"),
+    );
+  } else if (gate === "3") {
     if (!opts.suite) throw new Error("--gate 3 needs --suite <suite.csv>");
     facts.push(
       run("suites:review (11-dim static lint)", "npx", ["tsx", "scripts/test-cases/lint-test-cases.ts", opts.suite],
@@ -223,7 +247,7 @@ function main(): void {
   };
   const gate = at("--gate") as GateId | undefined;
   if (!gate || !(gate in GATES)) {
-    console.error("usage: npx tsx scripts/regression/verify-gate.ts --gate <3|5b|5e|5g> [--suite <csv>] [--run-id <ID>]");
+    console.error("usage: npx tsx scripts/regression/verify-gate.ts --gate <3-exec|3|5b|5e|5g> [--suite <csv>] [--run-id <ID>]");
     process.exit(1);
   }
   const suite = at("--suite");

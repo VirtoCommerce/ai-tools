@@ -1,0 +1,302 @@
+{
+  "ticket": "VCST-5916",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-09-10",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1064.0",
+    "theme": "vc-theme-b2b-vue-2.58.0-pr-2473-1e10-1e104dfa.zip",
+    "relevant_modules": {
+      "VirtoCommerce.Loyalty": "3.1007.0-pr-16-cfa5",
+      "VirtoCommerce.Xapi": "3.1020.0"
+    },
+    "pr_build": "vc-module-loyalty#16 (cfa5617) + vc-frontend#2473 (1e104df)",
+    "deploy_pin": {
+      "repo_pr": "VirtoCommerce/vc-deploy-dev#6500",
+      "branch": "vcst-qa",
+      "merged_at": "2026-09-10T10:12:16Z",
+      "temporary": true,
+      "revert_required": true,
+      "displaced": "vc-frontend#2473 pin replaced an existing vc-frontend#2469 theme pin"
+    },
+    "deployed_commit_note": "PR #2473 head has since moved to 87a7e7a (a 'Merge branch dev' commit). Deployed build is the prior commit 1e104df. Compared 1e104df...87a7e7a: 25 files, none under client-app/modules/loyalty, so the deployed build carries the complete fix."
+  },
+  "agent_used": "qa-frontend-expert + qa-backend-expert (parallel; backend lane browserless)",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug",
+  "baseline_provenance": "Pre-fix figures cited from the 2026-09-08 /qa-bug report (reports/bugs/.../BUG-points-history-operation-blank-for-mission-grants-VCST-5916.md) plus the Jira description; the 3.1006.0 artifact is no longer on the environment so RED was not re-measured. Independently corroborated by the {OBSERVED} assertions recorded in suite 075d on 2026-08-28.",
+  "checklist_total": 10,
+  "checklist_passed": 9,
+  "checklist_failed": 0,
+  "checklist_na": 1,
+  "checklist_na_detail": "Registration-row rendering: an unfiltered sweep of the environment operation-log (1409 rows, all users) is exactly {CustomerOrder: 806, LoyaltyMissionProgress: 603} — zero ApplicationUser rows exist on vcst-qa, so the arm has no data to exercise. Corroborated statically: that switch arm is byte-identical in cfa5617.",
+  "ledger_measurements": {
+    "totalCount_before": 167,
+    "totalCount_after": 167,
+    "object_null_before": 69,
+    "object_null_after": 0,
+    "mission_typed_after": 69,
+    "customer_order_after": 98,
+    "customer_order_complete_after": "98/98 carry both orderId and orderNumber",
+    "cross_layer_join": "clean 1:1 over all 167 rows, no off-diagonal cell (REST CustomerOrder -> xAPI CustomerOrder 98; REST LoyaltyMissionProgress -> xAPI Mission 69)",
+    "schema_surface": "LoyaltyOperationLogObject still exposes exactly [type, orderId, orderNumber] — no field added"
+  },
+  "corroborating_accounts": [
+    "LOYALTY_VIP_USER — 167 entries, 69 mission rows, all labelled 'Mission reward'",
+    "USER_DEFAULT (qa-user-01) — 13 entries, 9 mission rows, all labelled 'Mission reward'; positive control CO260907-00005 renders in the same column"
+  ],
+  "localization_verified": {
+    "en": "Mission reward",
+    "de": "Aufgabenbelohnung",
+    "note": "Verified live in German; no English literal and no raw i18n key in the Operation column. This was the highest-risk item — an unlocalized literal was the exact defect variant (a) was shaped to avoid."
+  },
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "business_rules_still_violated": [
+    "BL-LOY-015 — per-entity attribution of a settlement. Deliberately NOT closed by this ticket: variant (a) indicates only that points came from a mission, never which one. Tracked as VCST-5917. Nine grants on qa-user-01 (500/500/100/250/500/503/505/506/508) remain mutually indistinguishable in the payload."
+  ],
+  "related_cases": {
+    "scope_rationale": "11 of the loyalty corpus touch the points-history table. Full 'loyalty' selection group would have been 7 suites / 178 cases / ~1h15m / $10.76 — out of proportion to a single-label fix.",
+    "wave_1_run": [
+      {
+        "case": "MSN-020",
+        "suite": "075d",
+        "status": "Automated",
+        "verdict": "PASS",
+        "detail": "6/6 — zero-reward mission completes and writes no points-history entry (count 0 = 0 after CO260910-00006)"
+      },
+      {
+        "case": "MSN-024",
+        "suite": "075d",
+        "status": "Automated",
+        "verdict": "PASS",
+        "detail": "4/4 — guest order CO260910-00002, empty errors[], 0 cart validation errors"
+      },
+      {
+        "case": "MSN-027",
+        "suite": "075d",
+        "status": "Automated",
+        "verdict": "FAIL_EXPECTED",
+        "detail": "Stale assertion only: items[?amount=501].object is null, now {type:Mission, orderId:null}. Full chain green — place -> currentValue 1/InProgress -> currentValue 2/Completed -> balance 5203 -> amount=501 Earned. Accrual untouched by the fix.",
+        "route": "/qa-review-tests --fix"
+      },
+      {
+        "case": "MSN-033",
+        "suite": "075d",
+        "status": "Draft",
+        "verdict": "FAIL_EXPECTED_PLUS_TEST_DEFECT",
+        "detail": "Same stale object-is-null line, plus an independent fixture defect: currentBalance expected 1058 vs actual 3892. The 3892 decomposes exactly to nine mission grants (3872) + the product-earn row (20), so accrual is internally consistent; the seeder measured reward_expected_total at shipping=0 while the case's own steps pick FixedRate $150 (order value 204), clearing six more targets. Its own mission granted exactly once.",
+        "route": "/qa-review-tests --fix"
+      },
+      {
+        "case": "MSN-021",
+        "suite": "075d",
+        "status": "Automated",
+        "verdict": "FAIL_TEST_DEFECT",
+        "detail": "NOT a dedup regression and NOT VCST-5916. amount=500 count 13 vs expected 9 because five Published missions now carry reward=500 (MSN-ORDERVALUE, -ALT, -POINTS, -NET, E2E-...-ORDERVALUE, confirmed via /api/loyalty-missions/search), so one order legitimately writes 5 rows at that amount. Dedup verified holding: two re-reads 20s apart both 13, rows at distinct sub-second timestamps interleaved with 503/505/506/508.",
+        "route": "/qa-review-tests --fix"
+      },
+      {
+        "case": "MSNF-009",
+        "suite": "083c",
+        "status": "Automated",
+        "verdict": "PASS",
+        "detail": "Balance banner 4,108 points; GetLoyaltyBalance currentBalance 4108.0000; Points-history control navigates. No regression."
+      },
+      {
+        "case": "MSNF-080",
+        "suite": "083c",
+        "status": "Draft",
+        "verdict": "BLOCKED_PRECONDITION_UNMET",
+        "detail": "Not FAIL-EXPECTED. MSN_E2E_USER_003 renders zero rows ({totalCount:0, items:[]}), balance 0 = its own balance_at_seed of 0, all 12 mission cards at 0%. Fixture intact but never accrued; both the empty-list clause and the failed positive control route to BLOCKED. An empty list cannot show whether a row would name its mission."
+      }
+    ],
+    "excluded": {
+      "MSN-019": "Deprecated — not executed",
+      "MSN-E2E-007": "Deprecated — not executed",
+      "MSNA-022": "Draft, admin blade surface — adjacent, not the points-history table",
+      "LOY-038": "Draft, ProductPoints earn lifecycle — adjacent, not the points-history table"
+    },
+    "wave_2_run": {
+      "reseeded": true,
+      "run_handle": "20260910105616-3436",
+      "reseed_note": "missions-e2e re-minted before dispatch (11 missions pre-completion, 25 aliases rewritten) because MSN-E2E-001 and 075d MSN-027 both consume MSN_E2E_ORDERCOUNT and progress has no reset path.",
+      "cases": [
+        {
+          "case": "MSN-E2E-001",
+          "suite": "083d",
+          "status": "Automated",
+          "verdict": "PASS",
+          "detail": "7/7. Fresh mission 0% -> 50% (no Completed chip) -> 100% + Completed across real orders CO260910-00008 / CO260910-00009; the attributable 501 Earned row landed after order 2."
+        },
+        {
+          "case": "MSN-E2E-004",
+          "suite": "083d",
+          "status": "Draft",
+          "verdict": "PASS",
+          "detail": "6/6. Zero-balance account earned 500 then spent PTS444 in a real Mixed Cart order. Deciding assertion BAL_2 = BAL_1 + EARN_2 - RDM_2 closed exactly: 3932 + 1306 - 444 = 4794; RDM_2 = PTS_LINE_TOTAL = 444; RDM_2_COUNT = 1. Orders CO260910-00010 / CO260910-00011."
+        }
+      ],
+      "vcst_5916_confirmation_on_fresh_accrual": "All 24 mission-granted rows across four orders on two brand-new accounts render the localized label 'Mission reward' — zero blank Operation cells. This exercises the fix on NEWLY-WRITTEN ledger rows, not the historical rows the main verification and Wave 1 read. Order-derived rows still render their order number for both Earned (ProductPoints) and Redeemed types.",
+      "bl_loy_015_evidence_strengthened": "Non-distinguishability is worse than 'amounts differ'. The order-1 read on MSN-E2E-001 shows nine rows all reading 'Mission reward' / 'Earned' / '9/10/2026', and THREE carry the identical amount 500 — so they are mutually indistinguishable even by amount. Attribution by amount is impossible in the general case, not merely awkward. Material for VCST-5917."
+    },
+    "tally": "9 cases run: 5 PASS, 2 FAIL-EXPECTED (stale assertions, accrual chain green), 1 FAIL test-defect, 1 BLOCKED precondition. 0 product regressions."
+  },
+  "follow_ups": [
+    {
+      "id": "FU-1",
+      "priority": "action-required",
+      "title": "Revert the temporary vc-deploy-dev pin",
+      "detail": "Both PRs remain open; their prerelease artifacts were pinned onto vcst-qa via vc-deploy-dev#6500 solely for this verification. Reverting also restores the displaced vc-frontend#2469 theme pin."
+    },
+    {
+      "id": "FU-2",
+      "priority": "test-defect",
+      "title": "075d stale object-is-null assertions",
+      "detail": "075d-loyalty-missions.csv line ~776 MSN-027 (Automated) and line ~991 MSN-033 (Draft) assert the pre-fix shape and now fail every run. MSN-019 (line ~393) is Deprecated and needs nothing. Intended trip-wire firing. Flip to object.type = Mission.",
+      "route": "/qa-review-tests --fix"
+    },
+    {
+      "id": "FU-3",
+      "priority": "test-defect",
+      "title": "075d MSN-021 expected count and MSN-033 reward_expected_total are stale",
+      "detail": "MSN-021 expects 9 rows at amount=500 but five Published missions share that reward. MSN-033's reward_expected_total was measured at shipping=0 against steps that select FixedRate $150. Both are fixture/expectation drift, not product defects.",
+      "route": "/qa-review-tests --fix"
+    },
+    {
+      "id": "FU-4",
+      "priority": "fixture-gap",
+      "title": "MSNF-080 is unrunnable on its named fixture, yet the drift guard reports clean",
+      "detail": "MSN_E2E_USER_003 has balance 0 and zero ledger rows, so the case is undecidable. td:validate:missions-e2e passes because it checks seed-time pre-completion, not that any accrual occurred — a zero-balance, zero-row account satisfies the guard while leaving the case vacuous. The guard's vacuity check should also require at least one points-history row where a case asserts on row content."
+    },
+    {
+      "id": "FU-5",
+      "priority": "separate-ticket",
+      "title": "Module-contributed nav labels leak raw i18n keys in non-default locales",
+      "detail": "In German the account sidebar renders Loyalty.navigation.route_name, Quotes.navigation.route_name, Shared.account.navigation.links.missions_challenges, Push_messages.menu_item_name and Back_in_stock.navigation.route_name as raw keys. NOT caused by #2473: the loyalty de.json at the deployed commit is byte-identical to the PR base apart from the added mission line, and loyalty.navigation.route_name ('Punkteverlauf') exists in both. The same file resolves correctly for the page body, so this is a module-locale merge/ordering issue predating the fix."
+    },
+    {
+      "id": "FU-6",
+      "priority": "incidental",
+      "title": "Duplicate 'English' entry in the language switcher",
+      "detail": "Two indistinguishable English entries (en-GB / en-US), and every flag icon in the open dropdown shows the current locale rather than the target. Store language configuration, unrelated to this ticket."
+    },
+    {
+      "id": "FU-7",
+      "priority": "housekeeping",
+      "title": "075d Preconditions note on MSN_E2E_USER_001/008 auth is stale",
+      "detail": "The note claims [AUTH] blocks at token acquisition; both accounts authenticated fine via graphql-auth.ts expanding the aliases' {{DEFAULT_TEST_PASSWORD}}."
+    },
+    {
+      "id": "FU-8",
+      "priority": "test-defect",
+      "title": "083d MSN-E2E-001 shipping step contradicts its own fixture",
+      "detail": "The step says 'select an available Fixed Rate delivery method', but the only Fixed Rate options on vcst-qa are Ground $150 / Air $250, while co-granting mission MSN_E2E_ORDERVALUE_008 records order_shipping_max: 10 and the seeder measured measured_shipping: 0 / measured_total: 18 — i.e. it measured over BOPIS Pickup. Consequence: the seeder's recorded co-grant deltas are not reproducible via the step as written (order 1 delta 3887 actual vs order1_expected_delta 1058; order 2 1316 vs reward_expected_total 1307). Verdicts still stand because an OrderCountGoal is shipping-blind. Two further staleness items in the same case: [PRE:SIGNIN_AS:LOYALTY_VIP_USER] is stale (ran on MSN_E2E_USER_001), and the step hardcodes 'quantity 1' against the fixture's order_units: 3.",
+      "route": "/qa-review-tests --fix"
+    },
+    {
+      "id": "FU-9",
+      "priority": "oracle-corroboration",
+      "title": "OrderValueGoal reading includes tax and shipping — corroborates BL-LOY-016",
+      "detail": "On an order with only $15 merchandise but a $198 total, the missions targeting $36, $49.50, $50 and $54 ALL completed, so the effective reading is orderTotal rather than net/gross merchandise. This is not a new invariant — it independently confirms BL-LOY-016 ('A mission goal measures the ORDER TOTAL — shipping and tax included, net of discount', P0-revenue) from a second, unrelated run. It also bears directly on MSN-E2E-003 and MSN-E2E-005, whose separation margins assume a merchandise-scoped reading, and it is the mechanism behind the delta blow-up in FU-8."
+    },
+    {
+      "id": "FU-10",
+      "priority": "watch-item",
+      "title": "One non-reproducing silent cart empty",
+      "detail": "Once, immediately after confirming the shipping-address dialog, a 3-unit cart silently emptied (GA4 view_cart reported items_count=0) with no console error and no 4xx/5xx; address selection had failed to apply twice just before. Did not recur on retry. Recorded, not filed — a single non-reproducing observation is not a bug report, but the silent-failure shape is worth watching."
+    },
+    {
+      "id": "FU-11",
+      "priority": "fixture-state",
+      "title": "083d fixture state consumed — re-seed before re-running",
+      "detail": "MSN_E2E_ORDERCOUNT is now Completed for both accounts and MSN_E2E_ORDERVALUE for the reward account; balances 5203 / 4794. Progress is monotonic with no reset path, so re-running MSN-E2E-001 or MSN-E2E-004 on these accounts is BLOCKED:PRECONDITION_UNMET until re-seed. The four orders (CO260910-00008..00011) were left in place."
+    },
+    {
+      "id": "FU-12",
+      "priority": "test-design",
+      "title": "MSN-021's expected-count is the wrong SHAPE of assertion, not just a stale number",
+      "detail": "Amount-based identification degrades as runs accumulate: the freshly seeded ORDERCOUNT mission again carries reward 501, and prior AGENT-TEST- missions are not torn down until a sweep, so several Published missions share any given reward amount. Wave 2 then showed three rows sharing the identical amount 500. Re-pointing MSN-021 to a new literal count will drift again; it needs an assertion that does not identify a grant by its amount."
+    },
+    {
+      "id": "FU-13",
+      "priority": "candidate-product-defect",
+      "title": "A zero-target OrderCount mission never completes",
+      "detail": "AGENT-TEST-MSN-ZEROTARGET (reward 200) reads currentValue 1 / targetValue 0 / percentage 0 and never completes — the exact 200-point shortfall that broke MSN-033's absolute balance oracle (settled 1894 vs expected 2074). Needs a product decision: is a 0 target degenerate by design, or is this a completion-check defect? Not filed."
+    },
+    {
+      "id": "FU-14",
+      "priority": "candidate-product-defect",
+      "title": "Missing pickupLocationId surfaces as a raw DB_UPDATE/SQL error and poisons the cart",
+      "detail": "addOrUpdateCartShipment with BuyOnlinePickupInStore and no pickupLocationId returns HTTP 200 with data:null and extensions.code DB_UPDATE (codes DB_UPDATE, SQL) rather than a validation error. The cart is then poisoned: the next addOrUpdateCartPayment fails identically, and createOrderFromCart afterwards returns ZERO errors while producing an order with shipments:[] and inPayments:[]. Isolated across four controlled trials on one account/cart/address. Not filed."
+    },
+    {
+      "id": "FU-15",
+      "priority": "seeder",
+      "title": "reward_expected_total omits the base accrual and drifts every seed",
+      "detail": "It excludes the +20 base CustomerOrder accrual the same order always writes, so no absolute equality against it can hold even on a fresh account. It also re-measures upward as prior AGENT-TEST- generations survive: 1058 -> 1566 -> 2074 inside one day. Either include the base accrual and document the metric, or stop publishing it as an equality oracle."
+    },
+    {
+      "id": "FU-16",
+      "priority": "test-defect",
+      "title": "Stale AUTH-BLOCKS note in 4 further 075d rows",
+      "detail": "The 'AUTH role BLOCKS at token acquisition' boilerplate appears in 5 rows. MSN-027 and MSN-033 were corrected under this repair; 4 remain, outside the scope set for this pass."
+    },
+    {
+      "id": "FU-17",
+      "priority": "fixture-hygiene",
+      "title": "Seeder teardown cannot clear same-day generations",
+      "detail": "seed:missions-e2e:teardown spares anything younger than 6h, so re-seeding inside that window adds a generation instead of replacing one. Two re-seeds today left three missions at reward 501 and three at 508, which is what made every amount-based per-mission assertion ambiguous. Clear the AGENT-TEST-MSN-E2E-* set once the window opens, before the next 075d or 083d run."
+    }
+  ],
+  "tracker_transition": {
+    "role": "testing",
+    "state": "Testing",
+    "pending": {
+      "role": "tested",
+      "state": "TESTED",
+      "awaiting": "operator confirmation"
+    }
+  },
+  "evidence": "reports/tickets/Sprint26-18/VCST-5916/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-18/VCST-5916/",
+  "verdict_note": "VERIFIED_WITH_NOTES stands. Across the main verification plus both related-case waves: no product regression was found at any layer. Every failure encountered was a stale assertion or a fixture/expectation defect in the suites, each routed to /qa-review-tests --fix.",
+  "test_repairs": {
+    "suite": "regression/suites/Backend/loyalty/075d-loyalty-missions.csv",
+    "applied": "2026-09-10 (28 insertions / 20 deletions)",
+    "gated": "suites:review --fail-on=High exit 0 (19 pre-existing BL-001 Mediums only) + graphql:lint-labels clean + validate-td-refs clean + 34 rows all at 15 cols + 0 bare LF",
+    "cases": {
+      "MSN-021": {
+        "repairs": [
+          "amount-slice dedup retired for entry-id identity",
+          "settlement WAIT re-pointed from items.0.object.orderId (null on mission rows) to ledger-length growth",
+          "ledger equality replaced with >= monotonicity after measuring a 27-row, 2.35s co-grant burst"
+        ],
+        "rerun": "PASS 7/7 — WAIT converged on poll #2 (~6s of a 60s budget); SETTLED_ENTRY_ID a real GUID with nullCaptures empty; both identity assertions returned 1"
+      },
+      "MSN-027": {
+        "repairs": [
+          "object is null -> object.type = Mission",
+          "stale AUTH-BLOCKS note removed"
+        ],
+        "rerun": "PASS 11/11 — full chain intact, balance 0 -> 11249"
+      },
+      "MSN-033": {
+        "repairs": [
+          "object is null -> object.type = Mission",
+          "amount=508 hardcode -> @td(reward)",
+          "delivery FixedRate -> BuyOnlinePickupInStore + pickupLocationId (pattern reused from 050k PCK-GQL-094)",
+          "amount-slice dedup retired for entry-id identity",
+          "settlement WAIT strengthened past the base CustomerOrder accrual",
+          "absolute reward_expected_total equality replaced with a lower bound"
+        ],
+        "rerun": "NOT VALIDATED — account 008 consumed (balance 1894; its mission and both 508 siblings Completed). Needs a clean re-seed, blocked until the seeder 6h teardown window opens, because re-seeding inside that window only adds another generation."
+      }
+    },
+    "runner_grammar_finding": "[DATA] >= with an ARITHMETIC right-hand side is unsupported. classifyDataPredicate tries >= first as cross-path (both sides must be data. paths), then as PATH >= <single number>; an expression such as {{VAR}} + @td(...) matches neither and falls through to the =-split branch, which splits inside the >= itself and yields a junk operand -> T-005 prose-operand. Express such a bound as a single @td() value, or as cross-path. The same limitation applies inside a [WAIT] predicate, where it degrades silently into a fixed sleep rather than failing.",
+    "process_note": "Three near-misses were caught by the edit guard rather than by review: a file-wide SHIP_CODE replace that would have corrupted three unrelated cases; two comma insertions into UNQUOTED CSV fields that split rows to 18 and 27 columns; and one stripped CR leaving a bare LF. Row-scoped edits with an occurrence-count assertion, plus a re-gate after every write, are what made these recoverable."
+  }
+}

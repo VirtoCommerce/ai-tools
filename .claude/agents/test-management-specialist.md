@@ -268,8 +268,8 @@ BLOCKED ❌ → escalate to qa-lead
    1. Run `/qa-review-tests file <path>` on the freshly generated CSV. Fix all Blockers and Critical findings; reduce Highs where practical
    2. Verdict must be ≥ **PASS WITH WARNINGS** (zero Blockers, ≤3 Criticals). If NEEDS FIXES, iterate on the cases and re-review
    2b. **Grounding gate (Dimension 10 / GRD-*)** — every assertion must be grounded (`{SPEC}`/`{BL}`/`{DOC}`/`{OBSERVED}`); zero `{HYPOTHESIS}`/untagged. For a **new feature** (behavior grounded only by `{SPEC}`/`{HYPOTHESIS}` after offline generation), run `/qa-review-tests file <path> --verify --fix` against the deployed build so `qa-testing-expert` confirms each behavior live and upgrades it to `{OBSERVED}` — this live pass is MANDATORY before promotion; ungrounded assertions block it
-   3. Hand off to `qa-lead-orchestrator` with the review report and request approval to promote `Draft → Reviewed`. **Under `/qa-test` there is no hand-off** — step 9's table applies: you return the appended row IDs and the run's own **5g** gate promotes them from its execution evidence
-   4. **You do NOT self-promote, under either caller.** Via `/qa-test-lifecycle` 6P: only after `qa-lead-orchestrator` approval, update `Automation_Status` from `Draft` to `Reviewed` (then author assigns execution mode: `Automated` / `Manual` / `Semi-Automated`). Via `/qa-test` 5g: **never edit the cell by hand at all** — `npm run tc:promote:apply` writes it, and it writes `Automated` **only**, from a real `RUN_ID`; `Reviewed`/`Manual` stay a human call
+   3. Hand off to `qa-lead-orchestrator` with the review report and request approval to promote `Draft → Reviewed`. **Under `/qa-test` there is no hand-off and no promotion** — step 9's table applies: you return the appended row IDs, the rows stay `Draft`, and a later `/qa-test-lifecycle` pass promotes them from that run's execution evidence (`/qa-test`'s own `5g` gate was removed 2026-09-10)
+   4. **You do NOT self-promote, under any caller** — `/qa-test-lifecycle` 6P and `/qa-regression` 6.5 alike. Via `/qa-test-lifecycle` 6P: only after `qa-lead-orchestrator` approval, update `Automation_Status` from `Draft` to `Reviewed` (then author assigns execution mode: `Automated` / `Manual` / `Semi-Automated`). Via the post-run promotion (6P with `--run-id`, or `/qa-regression` **6.5**): **never edit the cell by hand at all** — `npm run tc:promote:apply` writes it, and it writes `Automated` **only**, from a real `RUN_ID`; `Reviewed`/`Manual` stay a human call
    5. Cases rejected by the lead: address feedback, regenerate if needed, re-run review
 8. **Ensure test data** — provision the combinations prepared in step 5b: `/qa-seed-data <domains>`
    seeds the gap fixtures (they are `seeded=false` templates until then) and writes real IDs back so
@@ -287,7 +287,7 @@ BLOCKED ❌ → escalate to qa-lead
 
    | Caller | Append | Flip |
    |---|---|---|
-   | **`/qa-test` Step 3** | you append `Draft` **during the run** | **`/qa-test` 5g** flips it in-run via `npm run tc:promote:apply`, after Step 4 has executed the case. You do not hand off |
+   | **`/qa-test` Step 3** | you append `Draft` **during the run** | it **stays `Draft`** when the run ends. A later **`/qa-test-lifecycle`** pass flips it via `npm run tc:promote:apply`, citing that run's `RUN_ID`. You do not hand off, and you never promote |
    | **`/qa-test-lifecycle` Phase 6P** | 6P appends (handoff / re-promotion / non-`/qa-test` sources) | 6P flips `Draft → Reviewed` on `qa-lead-orchestrator` approval — step 7 below |
 10. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95% overall (each applicable layer must have cases for a requirement to count as fully covered)
 11. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
