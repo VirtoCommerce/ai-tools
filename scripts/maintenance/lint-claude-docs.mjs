@@ -206,8 +206,22 @@ export function classifyScript(name, scripts) {
 }
 
 export function isGitIgnored(p, root = '.') {
-  try { execFileSync('git', ['check-ignore', '-q', p], { cwd: root, stdio: 'ignore' }); return true; }
-  catch (e) { return false; }   // status 1 = not ignored; git absent = treat as not ignored (finding stands)
+  // `-v` rather than `-q`, because exit 0 alone is not proof of a real rule. Some git builds match a
+  // BLANK .gitignore line against any directory-shaped path and report it as a match with an EMPTY
+  // pattern: measured on git 2.55.0.windows.5, where `check-ignore -q 'anything/'` exits 0 in this repo
+  // (attributed to .gitignore:159, a blank line) but exits 1 in a fresh one. The caller probes
+  // `cited + '/'` for every unresolved citation, so that turned EVERY dangling path into 'ignored' --
+  // DOC-003 reported 0 findings corpus-wide on Windows while CI on Linux reported 31. A gate that
+  // cannot fail on half the team machines is worse than no gate, because it is trusted.
+  // Output format is `<source>:<line>:<pattern>` then a TAB then `<pathname>`. An empty pattern field
+  // is not a rule, so it is not a match.
+  try {
+    const out = execFileSync('git', ['check-ignore', '-v', '--', p], { cwd: root, encoding: 'utf8' });
+    return out.split(/\r?\n/).some((l) => {
+      const m = /:\d+:([^\t]*)\t/.exec(l);
+      return !!m && m[1].trim() !== '';
+    });
+  } catch (e) { return false; }  // status 1 = not ignored; git absent = treat as not ignored (finding stands)
 }
 
 export function ratchet(counts, baseline) {

@@ -5,8 +5,8 @@
 ## Post-Run Promotion — `Draft → Automated`, derived from the run
 
 A run produces the only evidence that can justify calling a case `Automated`, and until
-2026-08-26 nothing consumed it. The promotion rule was written down three times (`/qa-test`
-5g, `/qa-test-lifecycle` 6P, `test-case-template.md` §Automation_Status) and performed by
+2026-08-26 nothing consumed it. The promotion rule was written down three times (`/qa-test` `5g` — removed
+2026-09-10 — `/qa-test-lifecycle` 6P, plus `test-case-template.md` §Automation_Status) and performed by
 hand: an agent re-read a report, decided which cases "ran green", and edited the
 `Automation_Status` cell. `suites:lint` S-006 only ever checked the **vocabulary** — that
 `Automated` is a legal word, never that it is a justified one — so a promotion could not be
@@ -71,6 +71,68 @@ Five decisions are worth stating, because each one was a live fork:
 
 **It is a tool, not an automatic step.** Promotion out of `Draft` stays a human /
 `qa-lead-orchestrator` decision — the promoter makes that decision *checkable* and its write
-*safe*, which is the half that was missing. `/qa-test` 5g and `/qa-test-lifecycle` 6P remain
-the flows that decide; they now call this instead of hand-editing the cell.
+*safe*, which is the half that was missing. **Two flows decide, and both call this instead of
+hand-editing the cell:**
+
+| Caller | When | Reaches |
+|---|---|---|
+| `/qa-regression` **Step 6.5** | after every **directly invoked** run, against the `RUN_ID` it just produced — dry by default, applied on `--promote`, skipped on `--no-promote` (what a `/qa-test`-delegated run passes) | `Automated`, for cases already grounded. It does no assertion harvest: a `{HYPOTHESIS}` row holds at `PR-007` and is routed to 6P |
+| `/qa-test-lifecycle` **Phase 6P** | handoff, re-promotion, legacy sources, and the `Draft` cases a `/qa-test` run left behind | `Reviewed` always; `Automated` too when given `--run-id`. The full path — harvest, G10 re-derivation, `verify:gate --gate 5g` ratification (§The full procedure) |
+
+## The full procedure — `/qa-test-lifecycle` 6P against a completed `RUN_ID`
+
+> **Moved here from the `/qa-test` skill directory on 2026-09-10, and that file was deleted.**
+> It lived under `.claude/skills/qa-test/` describing a step `/qa-test` no longer has, so the location made the
+> procedure look like a `/qa-test` step it had stopped being. Promotion has one home: this file.
+> `/qa-regression` Step 6.5 runs **step 4 alone**, against the run it just produced; steps 1–3 are the
+> assertion work only 6P does, and a case that needs them holds at `PR-007` there and is routed here.
+
+**Promote per `RUN_ID`, `--ids`-scoped to the cases that run actually executed.** `tc:promote` reads
+`Draft` and writes `Automated` and can **never re-promote**, so a premature flip is irreversible and would
+ground `{OBSERVED}` in a build that was wrong. For a `/qa-test --iterate` run, that means the FINAL round's
+evidence: only the last round describes the code a human is being asked to ship.
+
+The cases are in the suite as `Draft`, grounded and promotable only once a run has executed them live via
+the automated runner.
+
+1. **Harvest:** `/qa-review-tests file <target-suite.csv> --verify --fix` — every assertion this run observed
+   live is rewritten `{HYPOTHESIS}` / unconfirmed-`{SPEC}` → `{OBSERVED}`; a **refuted** behaviour surfaces
+   as ENV-008, never `{OBSERVED}`.
+2. **Resolve each remaining `{HYPOTHESIS}`** with the observed value; one that stayed genuinely unknown is
+   reworded as a question and keeps its case at `Draft` — never invent a value.
+3. **Re-derive eligibility** (the same G10 the promoter uses): 0 GRD-001 Blocker/High, 0 ENV-008, green
+   `td:validate`, every assertion grounded, executed with evidence.
+4. **Ask to promote, then flip in place — via the deterministic promoter, never by hand-editing the cell.**
+   `npm run tc:promote -- <RUN_ID> --suite <ID> --stamp <ticket-key>` prints the per-case decision, then
+   `tc:promote:apply` writes it (§Post-Run Promotion above; core `scripts/test-cases/promote-cases.ts`). It
+   re-derives the same G10 as step 3 by linting each row **at its target status**, refuses a flaky or
+   non-PASS case with a `PR-*` reason code, and edits only the changed fields — the hand path renormalised
+   quoting and could promote on a PASS nobody could re-derive. It writes `Automated` only; a case verified
+   via the **manual checklist** (no automated-runner verdict) is still `Reviewed`/`Manual` by hand.
+   **Revert (remove) a non-promotable row** so the durable suite doesn't carry an ungrounded case that would
+   keep running — **except** a case that failed on a real IN-SCOPE bug, which stays `Draft` with a
+   documented reason (valid coverage flagging the open defect). The `Promoted: <ticket-key> (YYYY-MM-DD)`
+   `References` stamp is applied by the promoter (appended; never clobbering a `Synced:`/`Audited:` stamp).
+   Then `npm run suites:sync && npm run suites:lint`; re-run
+   `suites:review -- <target-suite.csv> --fail-on=High` (an append that introduced a new Blocker/Critical is
+   reverted).
+5. **Record the split** in `summary.json.promotion` (`automated`/`reviewed`/`blocked`/`reverted`).
+
+**Gate (1 round):** every `Automated`/`Reviewed` upgrade traces to a real artifact from this run;
+every surviving `{HYPOTHESIS}` is resolved or reworded; `suites:lint` green. A fresh `qa-lead` verifier
+**re-runs `suites:review`** on the target suite and, for a sample of upgraded assertions, **re-opens the
+run evidence** grounding each `{OBSERVED}`. REJECT any `{OBSERVED}` with no traceable artifact, any
+`{HYPOTHESIS}` cleared by an invented value, any case promoted while still carrying a Blocker/Critical →
+revert the append → fix → re-verify once → STOP. **`/qa-regression` 6.5 needs none of this** — it rewrites
+no assertion, so there is nothing for a verifier to re-derive that `tc:promote` did not already derive
+deterministically.
+
+**Reverting an append is a row-level edit.** Remove the appended rows with the same surgical discipline
+the promoter writes with (locate each record by its own raw text, delete only those bytes, re-parse and
+field-compare the survivors), then `suites:sync`. For a baseline to diff against, read
+`git show HEAD:<path>` into the scratchpad.
+
+An ungrounded `{OBSERVED}` is worse than a `Draft` case: it puts a fabricated expectation into permanent
+coverage. **The author never self-certifies this** — only `qa-lead-orchestrator` or the user promotes.
+
 

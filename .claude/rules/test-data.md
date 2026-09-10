@@ -20,6 +20,18 @@ The GOLDEN RULE governs *where a value comes from*. This one governs *which valu
 
 The other three clauses — state the fixture's own limits, constrain `live-discover` on every dimension the feature is sensitive to, seed through the mechanism where the mechanism is under test — and the worked example of a 2 042-line fixture set that was immaculate by every existing guard and still answered nothing: [`knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md) §SECOND RULE — designing from the chain.
 
+## THIRD RULE — evidence OUTPUT belongs to the evidence policy, never to a test case
+
+The GOLDEN RULE governs *where a value comes from*; the SECOND governs *which values exist*. This one governs **where an observation is written**, and it is the same failure wearing different clothes.
+
+**A test case says WHAT to observe. It never says WHERE the evidence lands.** The screenshot directory, the HAR path, the run folder — all of it is supplied by the RUN, through the agent prompt contract (`Screenshot output: reports/tickets/{SPRINT}/<ticket-key>/screenshots/`) and [`skills/qa-evidence/evidence-capture-policy.md`](../skills/qa-evidence/evidence-capture-policy.md). **No path, no filename, no directory in a case — not in Steps, not in Assertions, not as a comment.** About 3,800 of the corpus's cases already name none; the handful that do are the deviation.
+
+**Why a path in a case is a hardcode with a delay fuse.** It bakes the SPRINT and the TICKET into a row that outlives both. Measured 2026-09-10: nine rows in `006-b2b-organization.csv` carried `[ACT] capture … to reports/tickets/Sprint26-18/VCST-5317/screenshots/<file>.png`. Re-run in a later sprint, every one writes into a **closed ticket's** folder — which `reports:prune` deletes (`.claude/rules/reports.md` §9), so the target need not even exist. **The case still PASSES.** The evidence simply detaches from the run that produced it, which is the one thing evidence has to do — so this fails silently, in the direction that costs a reviewer rather than an author.
+
+**And it spreads by copying, which is why it needs a rule rather than a review.** Three of those nine were authored an hour after the other two, by an author correctly told to follow neighbouring house style. A transcribed constant is correct exactly once and then propagates through imitation — the GOLDEN RULE's own mechanism, reached without anyone deciding anything.
+
+Enforced by `npm run td:validate` (`DV-024`): any suite row containing a literal `reports/tickets/…` **output** path fails. Provenance CITATIONS of prior run artifacts are a separate, tolerated class, tracked as informational by `npm run context:check` (`DOC-003E`) — do not confuse the two.
+
 ## Resolving a variable: through `process.env`, never off a layer or the curated export
 
 A role's identity and its secret routinely live in **different layers** — the loader is `.env.defaults` → `.env.${TEST_ENV}` → `.env.local`, so grepping `.env.${TEST_ENV}` can find nothing and still look conclusive, because it is the file named after the environment. The second half of the trap is worse: `config.js` exports a **curated** `env` object, and a key it does not carry comes back `undefined` — indistinguishable from a variable that is genuinely unset, which is the conclusion it will be mistaken for. Measured 2026-08-28: a working fixture account was reported as having empty credentials on exactly this basis, and the suite that authenticates as that role was very nearly filed as broken.

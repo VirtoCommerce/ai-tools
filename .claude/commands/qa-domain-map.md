@@ -1,15 +1,22 @@
 ---
 description: "Build or refresh a DOMAIN MAP — the feature-scoped, persistent answer to \"what is this thing and where are its surfaces\". Consolidates the per-ticket BA deliverables plus a live enumeration into .claude/knowledge/domain/<name>.md: actors, value chain, surface inventory per layer (back office / storefront / API), where the layers DISAGREE, the shape of existing QA coverage, and the open gaps. Built once per domain and cited thereafter, instead of re-derived per ticket. Read-only against the environment."
 argument-hint: "<domain-slug> [--refresh] [--layers back-office,storefront,api] [--exclude <area>]"
-disable-model-invocation: true
 ---
 
 # /qa-domain-map — build or refresh a domain map
 
-**Operator-invoked, deliberately.** `/qa-test` **recommends** this command; it never runs it. The map is
-a *nice to have* that pays for itself across tickets, not a gate — so the decision to spend an agent
-pass belongs to a human. (Contrast `/qa-exploratory`, which is model-invocable because it is a step
-inside another pipeline.)
+**Model-invocable since 2026-09-10** — `disable-model-invocation` was removed, so this command runs both
+ways: an operator types it, **and** a **FULL** `/qa-test` run whose domain has no map invokes it at item
+`1c-map`, inside the wave already carrying `1c ‖ 1d` (§Auto-build from `/qa-test`). That is what turned
+the map from a *nice to have* nobody found time for — **1 of 13 domains mapped after two months of
+recommending it** — into an artifact the pipeline fills in as it goes.
+
+**What still belongs to a human is `--refresh`, and Step 0 is what enforces it.** A build creates a file
+that contradicts nothing. A refresh rewrites claims other tickets already cite, carries the `D*`/`G*` ids
+forward and must contradict its own previous rev out loud — so a fresh map with no `--refresh` **STOPs**,
+and **no pipeline ever passes that flag**. Staleness is a suspicion; rewriting on a timer is a decision.
+An incremental write-back of what a run actually verified is neither, and has its own step
+([`skills/qa-test/reporting.md`](../skills/qa-test/reporting.md) §5h-map).
 
 **Shape:** [`.claude/knowledge/domain/domain-map.md`](../knowledge/domain/domain-map.md) — it lives beside the maps it shapes, not in `templates/`.
 **Reference implementation:** [`.claude/knowledge/domain/b2b-organizations.md`](../knowledge/domain/b2b-organizations.md).
@@ -112,6 +119,34 @@ here.**
 | A suspected **product defect** | **do not file.** The map pass is read-only and its evidence is an enumeration, not a repro. Hand it to `/qa-bug` or the next `/qa-test` run |
 | A **cross-product convention divergence** | a human decision, stated as one; a map records it and never resolves it |
 
+## Auto-build from `/qa-test`
+
+A FULL run reaching item `1c-map` with `domain_map.state ∈ {ABSENT, unresolved}` and an all-layer chain
+**invokes this command** — the whole procedure, not a lighter paraphrase of it: Step 0's resolve, Step 1's
+pre-flight, Step 2's brief, Step 3's write, Step 4's 8-clause gate + `context:check` + `domain:check`.
+(Model-invocation is what makes that an invocation rather than a re-implementation, and a
+re-implementation is the thing to avoid: a hand-rolled lighter brief produces a map that is *not* citable
+in the same shape as its siblings.) Four deltas, and only four:
+
+| | Direct invocation | Auto-build inside `/qa-test` |
+|---|---|---|
+| **Scope** | build **or** refresh | **build only.** `STALE` is left alone and reported; a refresh is an operator's call |
+| **Pre-flight** | Step 1 as written | reuses what `1b` already fetched — deployed versions, the `2-release` ledger Δ, the schema refresh date — and fetches only the rest |
+| **Lane** | any free lane | **a lane `1c`'s analyzer is not on** (it holds `playwright-firefox`); named in the brief, never left to the agent |
+| **On failure** | STOP and say why | **degrade**: `build_outcome: FAILED` + the reason, `state` stays `ABSENT`, the `/qa-test` run continues unchanged. Nothing here is ever a blocker or a product finding |
+
+**Step 5's routing still applies** — a `DRIFT`, a selection-group defect, a zero-coverage area or a
+suspected product defect found during an auto-build is routed exactly as it would be from a direct run,
+into the host run's `5h`. **It is still filed from nowhere else.**
+
+**When the map already EXISTS, the host run does not come back here.** It writes back what it verified at
+[`skills/qa-test/reporting.md`](../skills/qa-test/reporting.md) §5h-map — a bounded append from evidence
+the run already produced, costing no dispatch: new §2 surfaces, a `D*` verdict upgraded live, a `G*`
+closed, a §4 count corrected. **An amendment sets `amended:` and never touches `generated` or `rev`**, so
+staleness keeps measuring the last full *enumeration* and a trickle of true facts can never silence
+`domain:check`. A refresh, when one is eventually run, **folds the `§7 — Amendments` log in and does not
+drop it**: those rows are observations this map does not otherwise hold.
+
 ## What persists
 
 | Artifact | Path |
@@ -130,5 +165,7 @@ and the previous `rev`. Then diff — **what moved is the interesting output**, 
 module under enumeration usually explains it.
 
 **Staleness is a warning, never a build failure.** `npm run domain:check` flags a map past
-`stale_after_days`; a **missing** map fails nothing, because 12 of 13 domains have none and a hard gate
-would stop every ticket in the repo. That asymmetry is deliberate — see the decision record.
+`stale_after_days`; a **missing** map fails nothing, because most domains still have none (`npm run
+domain:check` prints how many exist — do not transcribe the number) and a hard gate would stop every
+ticket in the repo. That asymmetry is deliberate — see the decision record. **`/qa-test`'s FULL auto-build
+is how the missing ones get filled** — by a run that was already paying for the wave, not by a gate.

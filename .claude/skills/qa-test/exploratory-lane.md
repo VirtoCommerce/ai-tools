@@ -19,7 +19,7 @@ That ordering has a specific, measurable cost, and the repo already recorded it 
 - **The model's hypotheses are never tested before they become cases.** `1e`'s gate accepts an oracle that
   *"says what would make it one"* — i.e. `{HYPOTHESIS}` — and the provenance gate then forbids a
   `{HYPOTHESIS}` surviving promotion (`GRD-001` escalates it to Blocker in a promoted case). So a
-  hypothesis-grounded row is authored, executed, and *then* found ungroundable at 5g. The cheapest moment
+  hypothesis-grounded row is authored, executed, and *then* found ungroundable when someone tries to promote it. The cheapest moment
   to ground it is before it is written, and that costs one live look.
 - **A `GAP` cell is a cell nobody has looked at.** The mechanism coverage matrix forces `GAP` / `WAIVED` to
   be written down rather than left blank — but writing `GAP` is where it currently ends. On Loyalty
@@ -54,12 +54,16 @@ Three properties make this placement the only one that works:
 - **3a takes no browser.** `test-data-engineer` is explicitly browserless (`.claude/rules/agents.md`:
   *"none — authors AND runs seeders live (Node + Platform-API, no browser)"*). So the lane is genuinely
   free concurrency against the max-3 cap, not a lane stolen from execution.
-- **Before Artifact A is the whole point.** Its outputs are *inputs to authoring*. Run it after Step 3 and
-  it can only produce a second opinion about cases already committed to the corpus; run it after Step 4
-  and it is `/qa-exploratory`, which already exists.
-- **It cannot overlap Step 4.** Step 4 may use all three lanes (checklist agents + visual lane +
-  regression). 3x closes before Artifact A, which closes before Step 4, so the cap holds by construction
-  and needs no arbitration rule.
+- **Before Artifact A AND before the checklist — that is the whole point.** Its outputs are *inputs* to
+  both: to authoring (outputs 1–3) and to Artifact B (output 5). Run it after Step 3 and it can only
+  produce a second opinion about cases already committed to the corpus; run it after Step 4 and it is
+  `/qa-exploratory`, which already exists. **Since 2026-09-10 the checklist waits for it**, which is what
+  turned the lane from an authoring input into the run's first real read of the product.
+- **It closes before Step 4, and before the checklist that releases Step 4.** `B` is written from what this
+  lane returns and `3-exec` gates on `B`, so execution cannot start while the lane is open — the max-3 cap
+  therefore still holds by construction on the FULL path, as it always did. **`3x` nonetheless outranks
+  execution in the lane-priority order** ([`qa-test.md`](../../commands/qa-test.md) Step 4), because it is
+  upstream of both `B` and `A`: starving it stalls the whole run rather than one track.
 
 **FULL only.** Three of its four outputs (model amendments, hypothesis grounding, scenario rows) have **no
 consumer on FAST**, which writes no model and authors no cases. The fourth — net-new scenarios — is real on
@@ -72,9 +76,10 @@ FAST routes*) has no analogue here. State the skip; do not leave it implied.
 
 ## 3. The charter is DERIVED from the model — five named sources, zero invention
 
-This is what separates the lane from a generic exploratory session, and it is the reason it fits a 25-minute
-box: the mission is not "go look at checkout", it is a list of specific unknowns the pipeline has already
-written down and cannot resolve by reading.
+This is what separates the lane from a generic exploratory session, and it is the reason a bounded box is
+enough at all: the mission is not "go look at checkout", it is a list of specific unknowns the pipeline has
+already written down and cannot resolve by reading. **The box is sized to how many surfaces that list
+spans** (§5), not to how interesting the feature is.
 
 | # | Source | What it contributes to the mission | Where it came from |
 |---|---|---|---|
@@ -101,7 +106,7 @@ refusal to name a suite id it did not read.
 
 ---
 
-## 4. Four outputs, each with a named consumer
+## 4. Five outputs, each with a named consumer
 
 A lane whose findings reach no consumer buys a one-off observation and nothing else — the exact failure
 `/qa-exploratory`'s `Fate` column exists to prevent. So every output is routed:
@@ -109,9 +114,10 @@ A lane whose findings reach no consumer buys a one-off observation and nothing e
 | # | Output | Consumer | Rule |
 |---|---|---|---|
 | 1 | **Model amendments** — a chain link that does not exist, one nobody enumerated, a variant, a reverse edge that turns out to be real | `1e`'s file | **Amend, never fork.** Keep `<TICKET>-<date>.md` at its original date (a same-day second file collides and splits one fault model in two — the `--iterate` rule). A `GAP` cell becomes a scenario # or a `WAIVED + reason` that now has evidence behind it |
-| 2 | **`{HYPOTHESIS}` → `{OBSERVED}` grounding** — the value actually read, per row | Artifact A's assertions | The single biggest quality win. A row grounded here is authored with an assertion that can be **graded**; one left ungrounded is authored knowing it is a hypothesis, and 5g will hold it. Either is fine; silently forgetting which is not |
+| 2 | **`{HYPOTHESIS}` → `{OBSERVED}` grounding** — the value actually read, per row | Artifact A's assertions | The single biggest quality win. A row grounded here is authored with an assertion that can be **graded**; one left ungrounded is authored knowing it is a hypothesis, and promotion will hold it at `Draft`. Either is fine; silently forgetting which is not |
 | 3 | **Net-new scenarios**, each with a `Fate` | the model's matrix, then Artifact A | `PROMOTE` means **authored in THIS run** — a new scenario row and a case in the batch — not deferred to a later sprint. That is the difference from `/qa-exploratory`, where `PROMOTE` schedules future work. `DECLINE` carries one line of why |
 | 4 | **Oracle Feedback** — `[THEORETICAL]`→`[OBSERVED]`, a candidate pattern, a contradicted invariant | `/qa-review-oracles` | **Proposals, never edits.** `ba-system-analyzer` is the sole writer of both oracles and IDs are a citation contract |
+| 5 | **Checklist conditions the ACs never named** — a state the feature can reach that no AC describes, a control that exists and is unmentioned, a precondition the ticket assumes and the product does not hold | **Artifact B**, written after this lane returns | **This is why the lane moved ahead of the checklist (2026-09-10).** Before it, `3x`'s findings reached Artifact A only, and the checklist — the artifact that actually owns the verdict — was written from the ACs and a guess. Each condition returns with what was OBSERVED, so `B` carries an item that can be graded rather than a heading to go and look at. A lane that returns none says so: *"the ACs covered the reachable surface"* is a finding, not a blank |
 
 **Bugs found in the lane are ordinary findings and the lane files none of them.** They enter 5a's triage
 with the run's other findings, take a provenance (usually PRE-EXISTING, since the lane explores adjacent
@@ -124,9 +130,26 @@ same rule as Step 2a (*a scan is a claim about a test case, never about the prod
 
 ## 5. The box, and what happens when it runs out
 
-**25 minutes, hard: ~5 setup · ~15 explore · ~5 write-up.** The box is what makes the lane compatible with
-"speed up the pipeline" rather than in tension with it: it runs entirely inside 3a's own wall-clock in the
-common case, so its marginal cost to the critical path is `max(0, 3x − 3a)`.
+**The box is SIZED TO SCOPE, floor 30 min, ceiling 60 — and it is stated in the charter, never left to
+the lane's judgment mid-session.** It was a flat 25 until 2026-09-10; that was tuned for a lane running
+beside \`3a\` on the way to authoring, and it is too short now that the CHECKLIST is written from what this
+lane brings back. Split it ~20% setup · ~65% explore · ~15% write-up.
+
+| Scope | Box | Because |
+|---|---|---|
+| single-layer, single-domain, an obvious surface | **30 min** | the floor. Below it the lane is setup plus a glance, and its charter items go unreached |
+| cross-layer, or ≥2 domains, or an all-layer chain | **45 min** | each extra layer is its own surface to reach, sign into and read |
+| a new feature / Epic, or a domain whose §1 purpose is `UNDECLARED` | **60 min** | the ceiling. Nothing earns more: past an hour the lane has stopped resolving named unknowns and started browsing |
+
+**The floor and the ceiling are doing different jobs.** The floor stops the lane being cheap and useless —
+an under-boxed session reaches two of five charter sources and reports three as unknown, which costs a
+browser lane to learn nothing. The ceiling stops it becoming \`/qa-exploratory\`, which already exists and
+is the right tool when a feature genuinely needs an open-ended session.
+
+**Its cost to the critical path is now real, and that is a deliberate purchase.** \`3a\` is browserless and
+runs beside it for free, but \`B\` and \`A\` both wait on this lane — so a 60-minute box is an hour before
+the checklist executes. What it buys: a checklist whose items were **seen**, not inferred from ACs, and
+which therefore does not need re-running when the model corrects itself.
 
 - **Overrun ⇒ take what returned.** Artifact A proceeds on the amendments received. A lane that has not
   returned when 3a is green and B is written does not hold the gate.
@@ -163,7 +186,7 @@ downstream of the charter — pre-flight, technique selection, the session, the 
 unchanged and not restated here.
 
 ```
-/qa-exploratory ticket <ticket-key>     # Step 3x. Charter from the Test Model; 25-min box; chrome/edge
+/qa-exploratory ticket <ticket-key>     # Step 3x. Charter from the Test Model; 30-60 min box; chrome/edge
 ```
 
 **Auto-invocation is not a risk here and the guard is not the frontmatter flag.** `/qa-exploratory` is
@@ -175,7 +198,8 @@ The charter payload `/qa-test` hands it — which `ticket` mode consumes in plac
 authoring in `/qa-exploratory` §Exploration Charter:
 
 ```
-Charter (ticket mode) — <ticket-key>. Box: 25 min HARD. Derived from the Test Model; do NOT widen it.
+Charter (ticket mode) — <ticket-key>. Box: <30|45|60> min HARD — sized to scope by §5 and stated here.
+Derived from the Test Model; do NOT widen it.
 
 Mission — five sources, each covered or reported NOT REACHED + reason:
   1. Unresolved chain links (mechanism matrix GAP/WAIVED): [cells]
@@ -210,7 +234,7 @@ rule (any free browser lane, firefox included since 2026-09-08 — `.claude/rule
   frontmatter flag, is what stops the command running unprompted.
 - Each of the five charter sources is **covered or `NOT REACHED + reason`**.
 - Every `{HYPOTHESIS}` row is either grounded to `{OBSERVED}` (with the value) or **restated as still a
-  hypothesis**, so Artifact A authors it knowingly and 5g's hold is not a surprise.
+  hypothesis**, so Artifact A authors it knowingly and the later promotion hold is not a surprise.
 - Every net-new scenario carries an `Oracle ref` **and** a `Fate`; every `PROMOTE` appears in the model's
   matrix and in a Step-3b batch.
 - The model amendments are **applied to the existing file** before Artifact A is authored.

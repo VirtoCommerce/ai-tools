@@ -1,6 +1,6 @@
 # Step 5a — triage: correlate → validate evidence → classify → provenance → severity → dedup
 
-Split out of [`close-out.md`](close-out.md) — that file is the close-out **spine** (5b · 5c · 5r · 5d) and
+Split out of [`close-out.md`](close-out.md) — that file is the close-out **spine** (5b · 5c · 5d) and
 cites this one. Read this when you are turning a run's raw results into a list of findings each of which
 has a class, a provenance and a severity.
 
@@ -11,7 +11,7 @@ finding's provenance (5a) and the reconciled AC/DoD state (5b).
 
 Everything the run can surface a finding from is triaged **before** anything is filed: the **C1** run's own
 FAILs, checklist-track agent-reported bugs, the **Step-3x discovery lane's** findings (it files none itself),
-and correlated App-Insights signals. **C2 is not triaged here** — it has not run yet; 5r triages it against
+and correlated App-Insights signals. **There is no release-scoped sweep to triage** — `5r`/C2 was removed 2026-09-10; a separate `/qa-regression` run is triaged by its own `/qa-triage-results` against
 this same taxonomy after the verdict is recorded.
 
 ### 0. Triage the C1 run through `/qa-triage-results`, not from scratch

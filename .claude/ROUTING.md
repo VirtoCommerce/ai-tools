@@ -76,7 +76,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-local-env` — Local VC stack (start-local + Docker) pinned to the deployed manifest; fresh DB every run
 
 ### Plan & Manage Test Cases (Commands + Skills)
-- `/qa-test-lifecycle` — Unified pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve → **promote** (Phase 6P is the promoter for handoff / re-promotion / non-`/qa-test` sources)
+- `/qa-test-lifecycle` — Unified pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve → **promote** (Phase 6P is the **full** promoter — handoff / re-promotion / non-`/qa-test` sources / the `Draft` cases a `/qa-test` run left; `--run-id` reaches `Automated`. A direct `/qa-regression` flips already-grounded cases at its Step 6.5)
 - `/qa-test-plan` — Sprint plan from tracker Done + merged vc-frontend PRs; risk-scores domains, maps to suites, derives §5.2 gaps and §5.3 exploratory charters
 - `/qa-coverage-gap` — coverage gap analysis + generation (single-agent; the orchestrated `/qa-coverage-generation` twin was removed 2026-09-08 with zero recorded runs)
 - `/qa-plan` — Test plans from the E2E scenario catalog

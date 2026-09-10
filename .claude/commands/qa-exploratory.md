@@ -67,9 +67,12 @@ Step 0a: the charter is **received, not authored**.
 2. **No Test Model, or no unresolved cell in any of the five?** → **STOP** and report the lane skipped with
    that reason. Never improvise a mission, exactly as Step 0a never improvises a charter set the plan does
    not contain. A `/qa-test` FAST run reaches here with no model by construction and is the normal skip.
-3. **Box: 25 minutes hard** (~5 setup · ~15 explore · ~5 write-up), not the 30 of the standard session —
-   it is running inside another pipeline's critical path, and on overrun `/qa-test` proceeds on what
-   returned. **Spend the box in charter order**: the five sources first, the open half with whatever
+3. **Box: SIZED TO SCOPE — 30 min floor, 60 min ceiling**, split ~20% setup · ~65% explore · ~15% write-up.
+   The caller states the number in the charter; the lane never re-sizes it mid-session. (It was a flat 25
+   until 2026-09-10, when `/qa-test` moved this lane ahead of its checklist — the session now feeds the
+   artifact that owns the verdict, and 25 minutes was tuned for a lane that only fed authoring.) Sizing
+   table: [`skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §5. On overrun
+   `/qa-test` proceeds on what returned. **Spend the box in charter order**: the five sources first, the open half with whatever
    remains. Getting that backwards produces a pleasant session and no answers to the questions asked.
 4. **Return the three extra fields the caller needs**, beyond the ordinary §Output tables: model
    amendments (with evidence), the **`{OBSERVED}` value per `{HYPOTHESIS}` row** (or *not reached + reason*),
@@ -268,7 +271,7 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 - **Lane: any free browser slot — `playwright-chrome`, `playwright-edge` or `playwright-firefox`.** An exploratory session is click-driven by definition, and firefox handles that again since 2026-09-08; if clicks time out at *"visible, enabled and stable"* the MCP server was not restarted after the occlusion-pref config change, and the old symptom was firefox resolving the element then timing out on Playwright's actionability gate for this storefront and the Admin SPA (`.claude/rules/agents.md`, confirmed 6×). A firefox placement costs the entire 30-minute session, not a degraded one — if both chromium lanes are busy, QUEUE. **This deliberately overrides `qa-testing-expert`'s default `playwright-firefox` assignment in `.claude/rules/agents.md`** — that file's own hard rule ("never schedule a click-driven suite on firefox") outranks its per-agent default table, and an exploratory session is click-driven by construction. Dispatch `qa-testing-expert` (or `qa-frontend`/`qa-backend-expert` per the charter's `owner`) onto the charter's `lane`.
 - **Capture-back is mandatory**: every net-new scenario carries a `Fate` (PROMOTE to a `Draft` case, or DECLINE with a reason). A session whose findings reach no runner buys a one-off verdict and no regression protection
 - In `sprint` mode the charter comes from the plan's §5.3 (`exploratoryCharters[]`) — run it as written, in series, ≤5; never widen the mission or add a domain the plan did not chart
-- In `ticket` mode the charter comes from `/qa-test`'s Test Model (Step 0b) — five derived sources, a **25-minute** box rather than 30 (it runs inside another pipeline's critical path), the mission items spent **first** and the open half with what remains. **File nothing**: bugs go back to the caller, whose 5a triages and 5d applies the severity floor. **STOP if there is no model or no unresolved cell** — never improvise a mission, exactly as `sprint` mode never improvises a charter set
+- In `ticket` mode the charter comes from `/qa-test`'s Test Model (Step 0b) — five derived sources, a **scope-sized 30-60 minute** box the caller states, the mission items spent **first** and the open half with what remains. **File nothing**: bugs go back to the caller, whose 5a triages and 5d applies the severity floor. **STOP if there is no model or no unresolved cell** — never improvise a mission, exactly as `sprint` mode never improvises a charter set
 - **This command is model-invocable, deliberately** — it is a step in `/qa-test` (3x), and a pipeline step nothing may call is a step that never runs, which is how discovery came to sit at one session in the life of the repo. It is safe to be: read-only against the product, files no tracker item, transitions nothing, edits no oracle, and its only write is its own category-8 report. The guard against an unprompted run is that every mode **STOPs without a charter it was given**, not a frontmatter flag
 - Monitor console and network throughout
 - Capture screenshots for every bug found

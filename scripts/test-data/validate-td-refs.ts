@@ -363,6 +363,56 @@ if (driftHits.length === 0) {
   );
 }
 
+// --- DV-024: evidence OUTPUT paths must never appear in a test case (THIRD RULE) ---
+// A case says WHAT to observe; WHERE the evidence lands is supplied by the RUN, through the
+// agent prompt contract and skills/qa-evidence/evidence-capture-policy.md. A literal
+// `reports/tickets/<Sprint>/<TICKET>/...` in a row hardcodes the sprint AND the ticket into a
+// case that outlives both: re-run a sprint later and it writes into a CLOSED ticket folder,
+// which `reports:prune` deletes — and the case still PASSES, so the evidence silently detaches
+// from the run that produced it. Measured 2026-09-10: 28 occurrences across 10 suites, spread
+// by authors copying neighbouring house style. Rule: .claude/rules/test-data.md THIRD RULE.
+// Escape hatch: put `DV-024-OK` anywhere in the row to record a reviewed exception.
+const EVIDENCE_PATH_RE = /reports\/tickets\/[^\s,"|)]+/;
+const evidenceHits: { file: string; id: string; hit: string }[] = [];
+{
+  const walk = (dir: string): string[] =>
+    readdirSync(dir).flatMap((e) => {
+      const p = join(dir, e);
+      return statSync(p).isDirectory() ? walk(p) : p.endsWith(".csv") ? [p] : [];
+    });
+  for (const file of walk(SUITES_DIR)) {
+    const content = readFileSync(file, "utf8");
+    if (!EVIDENCE_PATH_RE.test(content)) continue;
+    let rows: string[][];
+    try {
+      rows = parseCsv(content, { columns: false, relax_column_count: true }) as string[][];
+    } catch { continue; } // structure errors are S-007's job, not ours
+    const header = rows[0] ?? [];
+    for (const row of rows.slice(1)) {
+      const blob = row.join("  ");
+      if (/DV-024-OK/.test(blob)) continue;
+      const m = blob.match(EVIDENCE_PATH_RE);
+      if (m) evidenceHits.push({ file: relative(ROOT, file), id: row[header.indexOf("ID")] ?? row[0], hit: m[0] });
+    }
+  }
+}
+console.log("\n--- Evidence-Output-Path Guard (DV-024) ---\n");
+if (evidenceHits.length === 0) {
+  console.log("  No test case names an evidence output path. ✓");
+} else {
+  const tag = WARN_ONLY ? "WARN" : "FAIL";
+  console.log(`  ${evidenceHits.length} case(s) hardcode a reports/tickets path [${tag}]:`);
+  for (const h of evidenceHits) console.log(`    ${h.id}  (${h.file})  -> ${h.hit}`);
+  console.log(
+    "\n  A case says WHAT to observe, never WHERE the evidence lands. The run supplies the\n" +
+    "  output directory via the agent prompt contract; a path here bakes in the sprint and the\n" +
+    "  ticket, so a later re-run writes into a closed (and pruned) folder while still passing.\n" +
+    "  Remove the path. Reviewed exception: add DV-024-OK to the row." +
+    (WARN_ONLY ? "\n  (--warn-only: not failing the build. Drop the flag to enforce.)" : "")
+  );
+}
+
 const idFatal =
-  (idHits.length > 0 || aliasGuidHits.length > 0 || shapeHits.length > 0 || driftHits.length > 0) && !WARN_ONLY;
+  (idHits.length > 0 || aliasGuidHits.length > 0 || shapeHits.length > 0 || driftHits.length > 0 ||
+    evidenceHits.length > 0) && !WARN_ONLY;
 process.exit(totalFailed > 0 || idFatal ? 1 : 0);

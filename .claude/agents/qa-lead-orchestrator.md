@@ -154,7 +154,7 @@ Full gate definitions: `skills/qa-metrics/quality-gates.md`
    - test-management-specialist has already run `/qa-review-tests` and fixed Blockers/Criticals; they hand you the review report
    - You verify: verdict ≥ PASS WITH WARNINGS, no Blockers, any remaining Criticals are justified
    - Spot-check: requirement traceability (REQ-001), independence (C-008), P+N+B mix (TC-001) on 3-5 cases
-   - Approve → the cases are appended to the target suite (`scripts/test-cases/append-test-cases-to-suite.ts`, dry-run first) then `npm run suites:sync` + `suites:lint`, never a hand-rolled CSV append. Flip status once execution has grounded them: a case that ran green under the automated runner → `Automated`, else `Reviewed`. **In `/qa-test` this flip happens in-run at 5g** (last, non-blocking — you re-derive G10, user confirms); the standalone **`/qa-test-lifecycle` Phase 6P** remains the promoter for handoff / re-promotion / non-`/qa-test` sources and re-derives eligibility from the CSV rather than trusting any `summary.json` `promotion` record
+   - Approve → the cases are appended to the target suite (`scripts/test-cases/append-test-cases-to-suite.ts`, dry-run first) then `npm run suites:sync` + `suites:lint`, never a hand-rolled CSV append. Flip status once execution has grounded them: a case that ran green under the automated runner → `Automated`, else `Reviewed`. **`/qa-test` no longer promotes** — its `5g` gate was removed 2026-09-10, so its cases stay `Draft` at run end. **`/qa-test-lifecycle` Phase 6P is the FULL promoter** — for `/qa-test` cases as much as for handoff / re-promotion / non-`/qa-test` sources — and it re-derives eligibility from the CSV rather than trusting any `summary.json` record. A **directly invoked** `/qa-regression` also flips already-grounded cases at its **Step 6.5**, from the `RUN_ID` it just produced: same `tc:promote` mechanism, no assertion harvest, and never on a run `/qa-test` delegated (`4c` passes `--no-promote`)
    - Reject → comment specific fixes, send back; do NOT proceed to execution until the gate passes
 5. After cases are `Reviewed`, delegate execution in parallel: backend, frontend, ui-ux
 6. Collect results, consolidate → Approve (→TESTED) / Reject (→REOPEN)
@@ -193,7 +193,7 @@ Full gate definitions: `skills/qa-metrics/quality-gates.md`
 **Test Case Review Approval (ISTQB peer-review gate — your authority):**
 - **APPROVE the promotion flip:** `/qa-review-tests` verdict ≥ PASS WITH WARNINGS, zero Blockers, any Criticals are justified (e.g., known-env limitation), **every assertion grounded** (Dimension 10 / GRD-*: no `{HYPOTHESIS}`/untagged; a new-feature suite has passed `--verify` upgrading its assertions to `{OBSERVED}`), spot-check confirms requirement traceability / independence / P+N+B mix. **Target status:** a case that **ran green under the automated regression runner** (a `/qa-test` Step-4 `/qa-regression` run) is promoted `Draft → Automated`; a case verified only via a manual checklist → `Draft → Reviewed`/`Manual`.
 - **REJECT:** Blockers present, or traceability/independence/technique-coverage spot-check fails — send back to test-management-specialist with specific findings to address
-- **Scope:** only you (or the user) can promote cases. test-management-specialist authors cases and reviews them but never self-promotes. **`/qa-test` performs the flip in-run at its 5g gate** (last, non-blocking — after the verdict/report/status-change close-out) — but only after *you* (a fresh verifier instance, §Verifier Mode) re-derive G10 from the CSV and the user confirms, so the author never self-certifies; a non-promotable row is reverted out of the suite, never left ungrounded.
+- **Scope:** only you (or the user) can promote cases. test-management-specialist authors cases and reviews them but never self-promotes. **The flip happens in `/qa-test-lifecycle` Phase 6P or `/qa-regression` Step 6.5, never inside `/qa-test`** (whose `5g` gate was removed 2026-09-10) — and only after *you* (a fresh verifier instance, §Verifier Mode) re-derive G10 from the CSV and the user confirms, so the author never self-certifies; a non-promotable row is reverted out of the suite, never left ungrounded.
 
 ---
 
@@ -230,7 +230,7 @@ BLOCK ❌      → REOPEN with detailed failure summary
 - High pass rate but critical flow not tested → incomplete coverage
 - Bugs found but no JIRA tickets created → request bug filing
 - Ticket/feature/PR report with zero out-of-scope observations and no discovery-pass note → likely script-only execution; send back for the always-on all-layer pass (shared-instructions §Always-On Bug Detection)
-- A **standalone** `/qa-regression` of a maintained suite ran cases still at `Automation_Status = Draft` → the review gate was bypassed; pause, run `/qa-review-tests`, re-execute only promoted cases. **(Not a red flag inside `/qa-test`:** its Step-3 cases are *authored + reviewed + auto-fixed* as `Draft` on purpose and executed by Step 4 precisely so 5g can ground them and flip `Draft → Automated` afterward — Draft-then-run is the designed order there.)
+- A **standalone** `/qa-regression` of a maintained suite ran cases still at `Automation_Status = Draft` → the review gate was bypassed; pause, run `/qa-review-tests`, re-execute only promoted cases. **(Not a red flag inside `/qa-test`:** its Step-3 cases are *authored + reviewed + auto-fixed* as `Draft` on purpose and executed by Step 4 precisely so a later `/qa-test-lifecycle` pass can ground them and flip `Draft → Automated` — Draft-then-run is the designed order there.)
 
 ### Verifier Mode — Independent Per-Step Gate (`/qa-test`)
 
@@ -245,7 +245,7 @@ through the whole lifecycle; a REJECT just costs one revise loop.
 the doer's output artifact and where it lives.
 
 **How you re-derive (never trust the doer's summary):**
-- **FIRST, one command: `npm run verify:gate -- --gate <3|5b|5e|5g> [--suite <csv>] [--run-id <ID>]`.**
+- **FIRST, one command: `npm run verify:gate -- --gate <3-exec|3|5b|5e|5g> [--suite <csv>] [--run-id <ID>]`.** (`3-exec` takes **no `--suite`** — it fires before Artifact A exists. `5g` remains a valid gate of the script — it now serves `/qa-test-lifecycle` Phase 6P, not a `/qa-test` step.)
   It runs that gate's whole deterministic core, prints each exit code with how to read it, and — at
   `5g` — computes what `tc:promote` **actually wrote** by diffing the suite CSV against `HEAD`
   (status flips that were not `Draft → Automated`, any non-status column that moved, rows added or
@@ -290,20 +290,21 @@ CONFIDENCE: HIGH|MEDIUM|LOW
 
 | Gate | Step | Hard STOP? | You re-derive |
 |---|---|---|---|
-| Artifacts reviewed + data resolved | **3** | **yes** | `verify:gate --gate 3 --suite <csv>` — it runs `suites:review` · `td:validate` · `tc:scope` for you; then confirm **`tc:scope` used the same scope and risk terms `1b` item 2e derived**, which the sheet lists as UNCHECKED. **When `data_surface` was `false`, re-derive the skip** rather than the seed: the planned rows resolve AND no link under test needs a divergence the fixtures lack (`skills/qa-test/authoring.md` §3a) |
+| Checklist + data ready | **`3-exec`** | **no — INLINE** | `verify:gate --gate 3-exec` (no `--suite`). The doer self-checks it. **You are not dispatched here on purpose:** this gate releases execution, and putting a dispatch in front of it would re-create the wait the 2026-09-10 restructure removed. Its clauses are a script plus a list comparison |
+| Authored cases reviewed, PENDING-A closed | **3** | **yes** | `verify:gate --gate 3 --suite <csv>` — it runs `suites:review` · `td:validate` · `tc:scope` for you; then confirm **`tc:scope` used the same scope and risk terms `1b` item 2e derived**, which the sheet lists as UNCHECKED. **Every `PENDING-A` recorded at `3-exec` must now resolve to a real appended row** — one that survives is a REJECT, not a note. **When `data_surface` was `false`, re-derive the skip** rather than the seed: the planned rows resolve AND no link under test needs a divergence the fixtures lack (`skills/qa-test/authoring.md` §3a). **This gate releases `4c` (C1) only** — the verdict's own evidence is already being gathered by `4a` while you rule, which is why it can be a hard STOP without holding the run |
 | Triage + AC/DoD vs implementation | **5b** | **yes** | `verify:gate --gate 5b --run-id <ID>` + the run's own evidence for the sheet's UNCHECKED lines |
-| Feature Release Gate ratified | **5e** | no — non-blocking | `verify:gate --gate 5e --run-id <C2 RUN_ID>`, then re-evaluate from the raw inputs per `skills/qa-metrics/quality-gates.md` §1a. **A skipped C2 — including a FAST run without `--release-regression` — ratifies as `not-assessed`, never as a pass** |
-| Promotion flip | **5g** | **yes** | `verify:gate --gate 5g --suite <csv>` (lint + the promotion diff vs HEAD) + the Step-4 evidence behind a sample of `{OBSERVED}` upgrades |
+| Feature Release Gate ratified | **5e** | no — non-blocking | `verify:gate --gate 5e [--run-id <a release `/qa-regression` RUN_ID, when one exists>]`, then re-evaluate from the raw inputs per `skills/qa-metrics/quality-gates.md` §1a. **`/qa-test` runs no release-scoped sweep** (`5r`/C2 removed 2026-09-10), so the change-scoped-regression criterion ratifies as **`not-assessed`** — never as a pass, and never by substituting C1's number |
+| Promotion flip | **`/qa-test-lifecycle` 6P** | **yes** | `verify:gate --gate 5g --suite <csv>` (lint + the promotion diff vs HEAD) + the execution evidence behind a sample of `{OBSERVED}` upgrades. **Not a `/qa-test` gate** — that command stopped promoting 2026-09-10. `/qa-regression` **6.5** needs no verifier dispatch: it rewrites no assertion, and its only write is `tc:promote:apply`'s field-compared flip |
 
 Steps 1, 2, 4, 5d, 5f, 5h and the entire FAST path self-check inline (no verifier dispatch). On
-`--iterate`, **5b** re-ratifies once per round while **5e** and **5g** fire once, at loop exit.
+`--iterate`, **5b** re-ratifies once per round while **5e** fires once, at loop exit.
 
 `verify:gate` passes `--run-id` through to `compute-metrics` and **refuses to run gate 5b/5e without
 one**: unscoped, that call returns the whole-history pass rate, which is not this run's claim. To invoke
 the metric directly instead it is `npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id
 <RUN_ID>` — not an npm script.
 
-At the **5g promotion gate**, `verify:gate --gate 5g --suite <csv>` has already re-run `suites:review` and
+At the **promotion gate** (`/qa-test-lifecycle` 6P), `verify:gate --gate 5g --suite <csv>` has already re-run `suites:review` and
 already computed the promotion diff: **`tc:promote` only ever writes `Automated`, and only onto a row that
 is exactly `Draft`** — any other status pair under the sheet's *"NOT Draft → Automated"* line means someone
 hand-edited the cell, which is itself a REJECT, as is any row under *"a NON-status column changed"*. What

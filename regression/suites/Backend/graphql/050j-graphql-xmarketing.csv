@@ -1,12 +1,12 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
 MKT-GQL-001,"promotionCoupons — Happy Path Query","GraphQL > Marketing > promotionCoupons",Critical,BL-GQL-001; BL-GQL-002; BL-PRICE-001,ECL-2.1,"Runner-native. ORG_USER authenticated. Store {{STORE_ID}} has at least one active+public promotion with a coupon code. Asserts the public xMarketing query returns a connection-style response with non-null couponCode on every item (filter contract).","—","[AUTH role=ORG_USER]
 [GQL-OP list_coupons]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
-      totalCount
-      items { id systemName name label description couponCode endDate }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
+ totalCount
+ items { id systemName name label description couponCode endDate }
+ }
+ }
 [GQL-EXEC list_coupons]
 [GQL-CAPTURE list_coupons.data.promotionCoupons.totalCount → COUPON_TOTAL]
 [GQL-CAPTURE list_coupons.data.promotionCoupons.items.0.couponCode → SAMPLE_COUPON]","[ERRORS label=list_coupons] errors[] empty
@@ -17,69 +17,69 @@ MKT-GQL-001,"promotionCoupons — Happy Path Query","GraphQL > Marketing > promo
 [DATA label=list_coupons] data.promotionCoupons.items.0.couponCode is non-null","[EVIDENCE] All returned items have couponCode != null — promotions without coupons must be excluded by the resolver (BL-PRICE-001) — verify by scanning items[] in evidence JSON
 [EVIDENCE] endDate is ISO-8601 string when present; null acceptable for open-ended promotions","errors[] non-empty on happy path; couponCode null on any returned item (filter regression); totalCount = 0 in a store known to have couponed promotions",none — read-only query,xAPI; graphql-schema.md — Query.promotionCoupons; VCST-4590,Automated
 MKT-GQL-002,"promotionCoupons — Schema Introspection Contract","GraphQL > Marketing > promotionCoupons > Schema",High,BL-GQL-001,,"Runner-native. Public introspection — runner's client-side validator already enforces this contract; this test asserts the schema discoverability of promotionCoupons via __type so a regression that drops the field surfaces in errors[].","—","[GQL-OP introspect_query]
-  query {
-    __type(name: ""Query"") {
-      fields(includeDeprecated: false) {
-        name
-        args { name type { name kind ofType { name kind } } }
-      }
-    }
-  }
+ query {
+ __type(name: ""Query"") {
+ fields(includeDeprecated: false) {
+ name
+ args { name type { name kind ofType { name kind } } }
+ }
+ }
+ }
 [GQL-EXEC introspect_query]","[ERRORS label=introspect_query] errors[] empty
 [DATA label=introspect_query] data.__type is non-null
 [DATA label=introspect_query] data.__type.fields is non-null","[EVIDENCE] Scan data.__type.fields[] for name=""promotionCoupons"" — must be present (BL-GQL-001) — verify in evidence JSON
 [EVIDENCE] Inspect promotionCoupons args[]: storeId is NON_NULL String; userId, currencyCode, cultureName, first, after, keyword, sort are nullable — verify in evidence JSON","promotionCoupons field absent from Query type; storeId arg is nullable instead of NON_NULL String!; introspection returns 5xx",none — read-only,xAPI; graphql-schema.md — __schema introspection contract,Automated
-MKT-GQL-003,"promotionCoupons — Anonymous Caller Is Hard-Gated (Unauthorized)","GraphQL > Marketing > promotionCoupons > Auth",Critical,BL-GQL-004; BL-AUTH-005,ECL-10.2,"Runner-native — NO [AUTH] block, query runs without Bearer token. Live verification (2026-04-27, B2B-store) confirmed promotionCoupons is HARD-GATED: anonymous request returns errors[].extensions.code=""Unauthorized"" + data.promotionCoupons=null + HTTP 200 (GraphQL error envelope, not 401). Mirrors the orders() gate pattern in 050g GQL-016. Asserts the resolver does NOT silently return data and does NOT leak internal details.","—","[GQL-OP anon_query]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 5) {
-      totalCount
-      items { id couponCode systemName }
-    }
-  }
+MKT-GQL-003,"promotionCoupons — Anonymous Caller Is Hard-Gated (Unauthorized)","GraphQL > Marketing > promotionCoupons > Auth",Critical,BL-GQL-004; BL-AUTH-005,ECL-10.2,"Runner-native — NO [AUTH] block, query runs without Bearer token. Live verification (2026-04-27, B2B-store) confirmed promotionCoupons is HARD-GATED: anonymous request returns errors[].extensions.code=""Unauthorized"" + data.promotionCoupons=null + HTTP 200 (GraphQL error envelope, not 401). Mirrors the orders gate pattern in 050g GQL-016. Asserts the resolver does NOT silently return data and does NOT leak internal details.","—","[GQL-OP anon_query]
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 5) {
+ totalCount
+ items { id couponCode systemName }
+ }
+ }
 [GQL-EXEC anon_query]","[ERRORS label=anon_query] errors[] non-empty — anonymous request rejected with Unauthorized extension code (BL-GQL-004)
 [DATA label=anon_query] data.promotionCoupons is null
 [DATA label=anon_query] errors[0].extensions.code = Unauthorized
 [DATA label=anon_query] errors[0].message matches /^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i","[EVIDENCE] errors[0].path includes ""promotionCoupons"" — error scoped to the gated resolver (runner has no `path includes` predicate; verify in evidence JSON)","errors[] empty on anonymous call (silent gate bypass — security failure); data.promotionCoupons returns real coupon items without auth (cross-tenant leak); error message exposes server internals; HTTP 5xx",none — read-only,xAPI; graphql-schema.md — Query.promotionCoupons; 050g XCC-GQL-016 noauth_orders pattern; VCST-4590,Automated
 MKT-GQL-004,"promotionCoupons — Wrong Store Returns Forbidden","GraphQL > Marketing > promotionCoupons > Negative",High,BL-GQL-004; BL-PRICE-001; BL-AUTH-005,ECL-10.2,"Runner-native. ORG_USER authenticated against {{STORE_ID}} — the test queries a non-existent store id (""STORE_DOES_NOT_EXIST""). Live verification (2026-04-27, B2B-store) confirmed the resolver returns errors[].extensions.code=""Forbidden"" + data.promotionCoupons=null (HTTP 200). The test guards against a regression where the resolver silently returns Store A data or leaks Store B coupon codes in the error message.","—","[AUTH role=ORG_USER]
 [GQL-OP wrong_store]
-  query {
-    promotionCoupons(storeId: ""STORE_DOES_NOT_EXIST"" first: 5) {
-      totalCount
-      items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""STORE_DOES_NOT_EXIST"" first: 5) {
+ totalCount
+ items { id couponCode }
+ }
+ }
 [GQL-EXEC wrong_store]","[ERRORS label=wrong_store] errors[] non-empty — wrong-store request rejected with Forbidden extension code (BL-GQL-004)
 [DATA label=wrong_store] data.promotionCoupons is null
 [DATA label=wrong_store] errors[0].extensions.code = Forbidden
 [DATA label=wrong_store] errors[0].message matches /^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i","[EVIDENCE] errors[0].path includes ""promotionCoupons"" — error scoped to the gated resolver (runner has no `path includes` predicate; verify in evidence JSON)
 [EVIDENCE] No promotion id, systemName, name, label, description, or couponCode appears in any error message (cross-store leak guard) — manual JSON review","Real promotion data returned for a non-existent / unauthorized store (silent gate bypass); errors[] contains item ids or coupon codes from another store; HTTP 5xx",none — read-only,xAPI; graphql-schema.md — Query.promotionCoupons; VCST-4590,Automated
 MKT-GQL-005,"promotionCoupons — Missing Required storeId Argument (Schema Validation)","GraphQL > Marketing > promotionCoupons > Negative",High,BL-GQL-001,ECL-10.2,"Runner-native. Server schema introspection cached; runner validates client-side before send so omitting the required NON_NULL storeId surfaces a DV-008/DV-010 schema-validation error in errors[] with data=null — mirrors the structured GraphQL-error contract.","—","[GQL-OP missing_storeid]
-  query {
-    promotionCoupons(first: 10) {
-      totalCount items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(first: 10) {
+ totalCount items { id couponCode }
+ }
+ }
 [GQL-EXEC missing_storeid]","[ERRORS label=missing_storeid] errors[] non-empty — promotionCoupons requires storeId argument (DV-008/DV-010) (BL-GQL-001)
 [DATA label=missing_storeid] data is null
 [DATA label=missing_storeid] errors[0].message matches /storeId/
 [DATA label=missing_storeid] errors[0].message matches /^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i",,"errors[] empty when required arg is missing (silent acceptance); data returned despite missing required arg; error exposes server internals",none — lint-only case,xAPI; graphql-schema.md — error contract & DV-* codes; VCST-4590,Automated
 MKT-GQL-006,"promotionCoupons — Pagination Correctness (first/after)","GraphQL > Marketing > promotionCoupons > Pagination",High,BL-GQL-002,,"Runner-native. ORG_USER authenticated. Store {{STORE_ID}} has 3+ active+public couponed promotions. Two queries paginate via first:2 + after:""0"" then after:""2"" — these are numeric offset strings, not cursor values. The promotionCoupons resolver currently accepts numeric offsets in the after arg; cursor-based pagination via pageInfo.endCursor is tracked as gap GAP-001 (see TLC-2026-04-27-1700). Test asserts no overlap and consistent totalCount.","—","[AUTH role=ORG_USER]
 [GQL-OP page1]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 2 after: ""0"") {
-      totalCount items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 2 after: ""0"") {
+ totalCount items { id couponCode }
+ }
+ }
 [GQL-EXEC page1]
 [GQL-CAPTURE page1.data.promotionCoupons.totalCount → P1_TOTAL]
 [GQL-CAPTURE page1.data.promotionCoupons.items.0.id → P1_ITEM0_ID]
 [GQL-CAPTURE page1.data.promotionCoupons.items.1.id → P1_ITEM1_ID]
 [GQL-OP page2]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 2 after: ""2"") {
-      totalCount items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 2 after: ""2"") {
+ totalCount items { id couponCode }
+ }
+ }
 [GQL-EXEC page2]
 [GQL-CAPTURE page2.data.promotionCoupons.totalCount → P2_TOTAL]
 [GQL-CAPTURE page2.data.promotionCoupons.items.0.id → P2_ITEM0_ID]","[ERRORS label=page1] errors[] empty
@@ -89,32 +89,32 @@ MKT-GQL-006,"promotionCoupons — Pagination Correctness (first/after)","GraphQL
 [EVIDENCE] {{P2_ITEM0_ID}} != {{P1_ITEM0_ID}} AND {{P2_ITEM0_ID}} != {{P1_ITEM1_ID}} — no duplicate item between pages","totalCount fluctuates between sequential page queries; same item id appears on both pages (pagination broken); errors[] non-empty on either page",none — read-only,xAPI; graphql-schema.md — Query.promotionCoupons; VCST-4590,Automated
 MKT-GQL-007,"promotionCoupons — Filter Excludes Inactive and Private Promotions","GraphQL > Marketing > promotionCoupons > Filter",Critical,BL-PRICE-001; BL-GQL-002,,"Runner-native. ORG_USER authenticated. Environment must contain (a) at least one inactive promotion (isActive=false), (b) at least one private promotion (isPublic=false), and (c) at least one active+public+couponed promotion in {{STORE_ID}}. The query asks for first:100 and the test asserts the resolver only returns the qualifying subset.","—","[AUTH role=ORG_USER]
 [GQL-OP filter_query]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 100) {
-      totalCount
-      items { id systemName couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 100) {
+ totalCount
+ items { id systemName couponCode }
+ }
+ }
 [GQL-EXEC filter_query]","[ERRORS label=filter_query] errors[] empty
 [DATA label=filter_query] data.promotionCoupons.items is non-null
 [COUNT label=filter_query] data.promotionCoupons.totalCount >= 1","[EVIDENCE] Every items[].couponCode is non-null — no promotion-without-coupon leak (BL-PRICE-001)
 [EVIDENCE] Cross-check Admin Marketing → Promotions filter (Active=true AND Public=true AND coupon-count>=1) for {{STORE_ID}} — count must equal data.promotionCoupons.totalCount (runner-manual evidence)","Inactive (isActive=false) or private (isPublic=false) promotion appears in items[] (filter regression); totalCount inflated by non-qualifying promotions",none — read-only,xAPI; graphql-schema.md — Query.promotionCoupons; VCST-4590,Semi-Automated
 MKT-GQL-008,"promotionCoupons — Localization (cultureName en-US vs Default)","GraphQL > Marketing > promotionCoupons > Localization",Medium,BL-GQL-002,,"Runner-native. ORG_USER authenticated. Promotion exists with en-US translations for name/label/description. Two paired queries (with and without cultureName) verify the resolver returns localized strings only when cultureName is provided and that systemName is locale-independent.","—","[AUTH role=ORG_USER]
 [GQL-OP with_culture]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5) {
-      items { id systemName name label description }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 5) {
+ items { id systemName name label description }
+ }
+ }
 [GQL-EXEC with_culture]
 [GQL-CAPTURE with_culture.data.promotionCoupons.items.0.systemName → ITEM_SYSNAME]
 [GQL-CAPTURE with_culture.data.promotionCoupons.items.0.name → ITEM_NAME_ENUS]
 [GQL-OP without_culture]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 5) {
-      items { id systemName name label description }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 5) {
+ items { id systemName name label description }
+ }
+ }
 [GQL-EXEC without_culture]
 [GQL-CAPTURE without_culture.data.promotionCoupons.items.0.systemName → ITEM_SYSNAME_NO_CULTURE]
 [GQL-CAPTURE without_culture.data.promotionCoupons.items.0.name → ITEM_NAME_NO_CULTURE]","[ERRORS label=with_culture] errors[] empty
@@ -125,22 +125,22 @@ MKT-GQL-008,"promotionCoupons — Localization (cultureName en-US vs Default)","
 [EVIDENCE] {{ITEM_NAME_NO_CULTURE}} is either null or a non-empty default-locale string — resolver MUST NOT crash or return a mismatched translation; if a value is returned it must differ from the en-US localized value when distinct translations exist (verify in evidence JSON)","systemName differs between cultureName modes; localized name/label/description identical regardless of cultureName (translation lookup broken); empty string instead of null for missing locale",none — read-only,xAPI; graphql-schema.md — Query.promotionCoupons; VCST-4590,Automated
 MKT-GQL-009,"promotionCoupons — Cross-Layer: Admin Deactivate Removes Promotion From Response","GraphQL > Marketing > Cross-Layer",Critical,BL-PRICE-001; BL-GQL-002,,"Semi-automated. ORG_USER authenticated. Phase 1 captures baseline totalCount + ids via runner. Phase 2 (manual) — operator toggles a target promotion to inactive in Admin (Marketing → Promotions blade). Phase 3 re-queries via runner and asserts the deactivated id is gone and totalCount decremented by 1.","—","[AUTH role=ORG_USER]
 [GQL-OP baseline]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 100) {
-      totalCount items { id systemName couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 100) {
+ totalCount items { id systemName couponCode }
+ }
+ }
 [GQL-EXEC baseline]
 [GQL-CAPTURE baseline.data.promotionCoupons.totalCount → BASELINE_TOTAL]
 [GQL-CAPTURE baseline.data.promotionCoupons.items.0.id → DEACTIVATED_ID]
 [GQL-CAPTURE baseline.data.promotionCoupons.items.0.systemName → DEACTIVATED_NAME]
 [SETUP] MANUAL OPERATOR STEP REQUIRED before runner continues: Admin → Marketing → Promotions → search by name ""{{DEACTIVATED_NAME}}"" (or filter to promotion whose id = {{DEACTIVATED_ID}}) → open detail blade → toggle Active=false → Save. If running unattended, this case is expected to FAIL the after_deactivate assertion (totalCount unchanged) — that failure is the signal that operator intervention is required, not a regression.
 [GQL-OP after_deactivate]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 100) {
-      totalCount items { id systemName couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 100) {
+ totalCount items { id systemName couponCode }
+ }
+ }
 [GQL-EXEC after_deactivate]
 [GQL-CAPTURE after_deactivate.data.promotionCoupons.totalCount → POST_TOTAL]","[ERRORS label=baseline] errors[] empty
 [ERRORS label=after_deactivate] errors[] empty
@@ -150,40 +150,40 @@ MKT-GQL-009,"promotionCoupons — Cross-Layer: Admin Deactivate Removes Promotio
 [EVIDENCE] after_deactivate.data.promotionCoupons.items[] does NOT contain {{DEACTIVATED_ID}} — runner-MVP has no array-not-contains predicate; verify by scanning items[] in evidence JSON","Deactivated promotion still appears in items[] (cache staleness or filter regression); totalCount unchanged after Admin toggle (caught by [DATA] strict-less-than assertion); errors[] non-empty on re-query","Operator: re-activate {{DEACTIVATED_ID}} in Admin Marketing → Promotions to restore environment state",xAPI; graphql-schema.md — Query.promotionCoupons; VCST-4590,Semi-Automated
 MKT-GQL-010,"promotionCoupons — E2E: Apply Returned CouponCode in Cart","GraphQL > Marketing > E2E",Critical,BL-PRICE-001; BL-CART-003; BL-GQL-001,ECL-10.2,"Runner-native. ORG_USER authenticated. Phase 1 reads a real coupon code from promotionCoupons. Phase 2 builds a cart (clear → addItem) and applies the captured code via addCoupon mutation. Asserts isAppliedSuccessfully=true and discountTotal > 0.","—","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
-  query { me { id contact { organizationId } } }
+ query { me { id contact { organizationId } } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP setup_coupons]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 1) {
-      items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 1) {
+ items { id couponCode }
+ }
+ }
 [GQL-EXEC setup_coupons]
 [GQL-CAPTURE setup_coupons.data.promotionCoupons.items.0.couponCode → COUPON_CODE]
 [GQL-OP setup_prod]
-  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
+ query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { items { id } } }
 [GQL-EXEC setup_prod]
 [GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+ mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id discountTotal { amount } } }
+ mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id discountTotal { amount } } }
 [GQL-EXEC add_item]
 [GQL-OP apply_coupon]
-  mutation {
-    addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""{{COUPON_CODE}}"" }) {
-      id
-      coupons { code isAppliedSuccessfully }
-      discountTotal { amount }
-      total { amount }
-      subTotal { amount }
-    }
-  }
+ mutation {
+ addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""{{COUPON_CODE}}"" }) {
+ id
+ coupons { code isAppliedSuccessfully }
+ discountTotal { amount }
+ total { amount }
+ subTotal { amount }
+ }
+ }
 [GQL-EXEC apply_coupon]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+ mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=setup_coupons] errors[] empty
 [ERRORS label=apply_coupon] errors[] empty — coupon applied without server error
 [DATA label=apply_coupon] data.addCoupon.coupons is non-null
@@ -193,18 +193,18 @@ MKT-GQL-010,"promotionCoupons — E2E: Apply Returned CouponCode in Cart","Graph
 [EVIDENCE] data.addCoupon.total.amount = data.addCoupon.subTotal.amount - data.addCoupon.discountTotal.amount (± shipping/tax) — math consistency","errors[] non-empty on addCoupon (mutation rejected); isAppliedSuccessfully=false despite the code coming directly from promotionCoupons (contract mismatch); discountTotal=0 after apply","none — inline cleanup_clear",xAPI; graphql-schema.md — Query.promotionCoupons Mutation.addCoupon; VCST-4590,Automated
 MKT-GQL-011,"promotionCoupons — Error Schema: No Internal Data Leak","GraphQL > Marketing > Security",Critical,BL-GQL-001; BL-AUTH-005,ECL-10.2,"Runner-native. ORG_USER authenticated. Two probes: (a) unknown field on items[] (DV-009 client validation), (b) very large `first` value to surface any timeout / capping behavior. Asserts errors[] is structured and contains no stack traces, file paths, or SQL fragments.","—","[AUTH role=ORG_USER]
 [GQL-OP unknown_field]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 5) {
-      items { id INVALID_FIELD }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 5) {
+ items { id INVALID_FIELD }
+ }
+ }
 [GQL-EXEC unknown_field]
 [GQL-OP large_first]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10000) {
-      totalCount items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10000) {
+ totalCount items { id couponCode }
+ }
+ }
 [GQL-EXEC large_first]","[ERRORS label=unknown_field] errors[] non-empty — unknown field INVALID_FIELD on PromotionCouponType (DV-009) (BL-GQL-001)
 [DATA label=unknown_field] data is null
 [DATA label=unknown_field] errors[0].message matches /INVALID_FIELD/
@@ -214,27 +214,27 @@ MKT-GQL-011,"promotionCoupons — Error Schema: No Internal Data Leak","GraphQL 
 [PERF label=large_first] elapsed_ms < 2000",,"errors[] empty on obviously invalid query (silent failure); error message includes server stack trace or internal path; large_first query times out or returns 5xx",none — read-only,xAPI; graphql-schema.md — error contract & DV-* codes; VCST-4590,Automated
 MKT-GQL-012,"promotionCoupons — Performance: Response Time Stability","GraphQL > Marketing > Performance",Medium,BL-GQL-002,,"Runner-native. ORG_USER authenticated. Three identical queries — runner captures elapsed_ms per execution in evidence JSON. Asserts no errors and stable totalCount across runs; performance thresholds noted as [PERF] tags for CI-side evaluation.","—","[AUTH role=ORG_USER]
 [GQL-OP perf_run1]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
-      totalCount items { id systemName couponCode endDate }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
+ totalCount items { id systemName couponCode endDate }
+ }
+ }
 [GQL-EXEC perf_run1]
 [GQL-CAPTURE perf_run1.data.promotionCoupons.totalCount → RUN1_TOTAL]
 [GQL-OP perf_run2]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
-      totalCount items { id systemName couponCode endDate }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
+ totalCount items { id systemName couponCode endDate }
+ }
+ }
 [GQL-EXEC perf_run2]
 [GQL-CAPTURE perf_run2.data.promotionCoupons.totalCount → RUN2_TOTAL]
 [GQL-OP perf_run3]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
-      totalCount items { id systemName couponCode endDate }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
+ totalCount items { id systemName couponCode endDate }
+ }
+ }
 [GQL-EXEC perf_run3]
 [GQL-CAPTURE perf_run3.data.promotionCoupons.totalCount → RUN3_TOTAL]","[ERRORS label=perf_run1] errors[] empty
 [ERRORS label=perf_run2] errors[] empty
@@ -245,39 +245,39 @@ MKT-GQL-012,"promotionCoupons — Performance: Response Time Stability","GraphQL
 [EVIDENCE] No single execution should exceed 2000ms — second-tier ceiling (the < 500ms threshold above is the primary verdict)","totalCount fluctuates between identical executions; any single run exceeds 2000ms; errors[] non-empty on any run",none — read-only,xAPI; graphql-schema.md — Query.promotionCoupons; performance-thresholds.md; VCST-4590,Automated
 MKT-GQL-013,"promotionCoupons — Response-Time Consistency Across Repeated Calls","GraphQL > Marketing > Performance",High,BL-GQL-002,,"Runner-native. ORG_USER authenticated. The runner repeats the same query 5x (with first:10) and captures elapsed_ms each time. These are sequential top-level queries — not a DataLoader batching test (DataLoader operates within a single request's field resolution). The test detects response-time consistency across repeated calls: flat times indicate stable server-side performance (no cold-start penalty or progressive degradation). Renamed scope: response-time consistency, not DataLoader N+1 detection.","—","[AUTH role=ORG_USER]
 [GQL-OP n1_run1]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10) {
-      items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10) {
+ items { id couponCode }
+ }
+ }
 [GQL-EXEC n1_run1]
 [GQL-OP n1_run2]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10) {
-      items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10) {
+ items { id couponCode }
+ }
+ }
 [GQL-EXEC n1_run2]
 [GQL-OP n1_run3]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10) {
-      items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10) {
+ items { id couponCode }
+ }
+ }
 [GQL-EXEC n1_run3]
 [GQL-OP n1_run4]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10) {
-      items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10) {
+ items { id couponCode }
+ }
+ }
 [GQL-EXEC n1_run4]
 [GQL-OP n1_run5]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10) {
-      items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 10) {
+ items { id couponCode }
+ }
+ }
 [GQL-EXEC n1_run5]","[ERRORS label=n1_run1] errors[] empty
 [ERRORS label=n1_run2] errors[] empty
 [ERRORS label=n1_run3] errors[] empty
@@ -292,26 +292,26 @@ MKT-GQL-013,"promotionCoupons — Response-Time Consistency Across Repeated Call
 [EVIDENCE] N+1 detection (runner-v2): elapsed_ms across the 5 runs should be roughly flat — review evidence for proportional growth (not asserted in MVP)","Any couponCode null on any run (DataLoader miss); response time grows proportionally with repetition (N+1 regression); errors[] non-empty on any run",none — read-only,xAPI; graphql-schema.md — Query.promotionCoupons; performance-thresholds.md; VCST-4590,Automated
 "MKT-GQL-014","xMarketing — addCoupon Happy Path: Valid Code Applies Coupon and Reduces Total","GraphQL > xMarketing > Mutations > addCoupon","Critical","BL-CART-003; BL-PRICE-001","ECL-2.1","Runner-native. ORG_USER authenticated. Captures USER_ID via me query, clears cart, adds a buyable product (via @td(BUYABLE_NO_MIN_QTY.id) — guarantees addItem(qty:1) succeeds without PRODUCT_MIN_MAX_QTY rejection), then applies @td(COUPON_10PCT.code). Companion to MKT-GQL-010 but uses a specific @td alias rather than a captured code, so this test fails loudly if the COUPON_10PCT seed alias goes stale.","COUPON_CODE=@td(COUPON_10PCT.code); PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
-  query { me { id } }
+ query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+ mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id itemsCount } }
+ mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id itemsCount } }
 [GQL-EXEC add_item]
 [GQL-OP addCouponHappy]
-  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""{{COUPON_CODE}}"" }) {
-    id
-    coupons { code isAppliedSuccessfully }
-    discountTotal { amount }
-    total { amount }
-    subTotal { amount }
-  } }
+ mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""{{COUPON_CODE}}"" }) {
+ id
+ coupons { code isAppliedSuccessfully }
+ discountTotal { amount }
+ total { amount }
+ subTotal { amount }
+ } }
 [GQL-EXEC addCouponHappy]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+ mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=add_item] errors[] empty
 [ERRORS label=addCouponHappy] errors[] empty
 [DATA label=addCouponHappy] data.addCoupon.coupons is non-null
@@ -320,62 +320,62 @@ MKT-GQL-013,"promotionCoupons — Response-Time Consistency Across Repeated Call
 [DATA label=addCouponHappy] data.addCoupon.discountTotal.amount > 0","[EVIDENCE] coupons[?code={{COUPON_CODE}}].code matches the alias value exactly (case-preserved). Cart total can be > subTotal in stores where shipping/tax are added (verified live 2026-05-15: subTotal=100 + shipping/tax → total=107.99, with $10.01 coupon discount). Compare total against pre-coupon snapshot rather than subTotal.","errors[] non-empty for valid coupon code; coupons[] absent from mutation response; isAppliedSuccessfully = false for valid code; discountTotal = 0 despite valid coupon; total >= subTotal after coupon (discount not applied)","none — inline cleanup_clear","VCST-4896; BL-CART-003","Automated"
 "MKT-GQL-015","xMarketing — addCoupon Negative: Invalid Code Returns isAppliedSuccessfully=false","GraphQL > xMarketing > Mutations > addCoupon > Negative","Critical","BL-CART-003","ECL-10.2","Runner-native. ORG_USER authenticated. Sets up a cart with a buyable product, then applies a deliberately-invalid coupon code (sentinel). xAPI returns HTTP 200 with the cart in data.addCoupon and the invalid code appearing in coupons[] marked isAppliedSuccessfully=false + discountTotal=0 — not a top-level GraphQL error. This is the documented xAPI contract for invalid coupons (live-verified 2026-04-27). The test guards against silent acceptance (isAppliedSuccessfully=true on a sentinel) and against discount/total mutation on invalid input.","INVALID_CODE=agent-test-invalid-coupon-zzz-2026; PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
-  query { me { id } }
+ query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+ mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id itemsCount } }
+ mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id itemsCount } }
 [GQL-EXEC add_item]
 [GQL-OP addCouponInvalid]
-  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""{{INVALID_CODE}}"" }) {
-    id
-    coupons { code isAppliedSuccessfully }
-    discountTotal { amount }
-    total { amount }
-    subTotal { amount }
-  } }
+ mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""{{INVALID_CODE}}"" }) {
+ id
+ coupons { code isAppliedSuccessfully }
+ discountTotal { amount }
+ total { amount }
+ subTotal { amount }
+ } }
 [GQL-EXEC addCouponInvalid]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+ mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=addCouponInvalid] errors[] empty
 [DATA label=addCouponInvalid] data.addCoupon is non-null
 [DATA label=addCouponInvalid] data.addCoupon.coupons[?code={{INVALID_CODE}}].isAppliedSuccessfully = false
 [DATA label=addCouponInvalid] data.addCoupon.discountTotal.amount < 1","[EVIDENCE] xAPI contract: invalid coupon codes ARE recorded in coupons[] with isAppliedSuccessfully=false rather than rejected via top-level errors[]. A future contract change to top-level errors[] should update this assertion. discountTotal asserted < 1 (rather than = 0) to tolerate near-zero floating-point noise observed in some store configs (e.g. 0.01 from auto-applied store-wide promo).","invalid coupon silently marked isAppliedSuccessfully=true (P0 — coupon stuffing); discountTotal > 0 for invalid coupon; HTTP 500 instead of structured response; total reduced after invalid code","none — inline cleanup_clear","VCST-4896; BL-CART-003","Automated"
 "MKT-GQL-016","xMarketing — removeCoupon: Applied Coupon Removed, Discount Cleared, Total Restored","GraphQL > xMarketing > Mutations > removeCoupon","Critical","BL-CART-003; BL-PRICE-001","ECL-2.1","Runner-native. ORG_USER authenticated. Sets up cart with a buyable product, applies @td(COUPON_10PCT.code), captures the discounted total, then calls removeCoupon. Verifies the coupon is gone from coupons[], discountTotal returns to 0, and total restores to subTotal (modulo shipping/tax that may apply in some configs).","COUPON_CODE=@td(COUPON_10PCT.code); PRODUCT_ID=@td(BUYABLE_NO_MIN_QTY.id)","[AUTH role=ORG_USER]
 [GQL-OP setup_me]
-  query { me { id } }
+ query { me { id } }
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP pre_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+ mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC pre_clear]
 [GQL-OP add_item]
-  mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id itemsCount } }
+ mutation { addItem(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" productId: ""{{PRODUCT_ID}}"" quantity: 1 }) { id itemsCount } }
 [GQL-EXEC add_item]
 [GQL-OP addCouponForRemove]
-  mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""{{COUPON_CODE}}"" }) {
-    id
-    coupons { code isAppliedSuccessfully }
-    discountTotal { amount }
-    total { amount }
-    subTotal { amount }
-  } }
+ mutation { addCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""{{COUPON_CODE}}"" }) {
+ id
+ coupons { code isAppliedSuccessfully }
+ discountTotal { amount }
+ total { amount }
+ subTotal { amount }
+ } }
 [GQL-EXEC addCouponForRemove]
 [GQL-CAPTURE addCouponForRemove.data.addCoupon.total.amount → DISCOUNTED_TOTAL]
 [GQL-OP removeCouponOp]
-  mutation { removeCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""{{COUPON_CODE}}"" }) {
-    id
-    coupons { code }
-    discountTotal { amount }
-    total { amount }
-    subTotal { amount }
-  } }
+ mutation { removeCoupon(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" couponCode: ""{{COUPON_CODE}}"" }) {
+ id
+ coupons { code }
+ discountTotal { amount }
+ total { amount }
+ subTotal { amount }
+ } }
 [GQL-EXEC removeCouponOp]
 [GQL-OP cleanup_clear]
-  mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
+ mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" }) { id } }
 [GQL-EXEC cleanup_clear]","[ERRORS label=addCouponForRemove] errors[] empty
 [DATA label=addCouponForRemove] data.addCoupon.discountTotal.amount > 0
 [ERRORS label=removeCouponOp] errors[] empty
@@ -383,11 +383,11 @@ MKT-GQL-013,"promotionCoupons — Response-Time Consistency Across Repeated Call
 [DATA label=removeCouponOp] data.removeCoupon.discountTotal.amount < 1
 [DATA label=removeCouponOp] data.removeCoupon.total.amount > {{DISCOUNTED_TOTAL}}","[EVIDENCE] After removeCoupon, total restored toward subTotal (modulo shipping/tax in store-specific configs). discountTotal asserted < 1 (rather than = 0) to tolerate near-zero floating-point noise.","errors[] non-empty for valid removal request; coupon still present in coupons[] after removal; discountTotal still > 0 after removal; total unchanged after removal (mutation had no effect); HTTP 500","none — inline cleanup_clear","VCST-4896; BL-CART-003","Automated"
 "MKT-GQL-017","promotionCoupons — Absent xMarketing Module Returns Null Without Hard GraphQL Error","GraphQL > Marketing > promotionCoupons > Resilience","High","BL-CROSS-003; BL-CROSS-011","ECL-10.2","Runner-native. @needs-env-without-xmarketing: this case requires an environment where the VirtoCommerce.MarketingExperienceApi module is NOT installed (x-marketing absent). On vcst-qa the module IS installed — this test will FAIL with errors[] containing FIELDS_ON_CORRECT_TYPE on that env (expected per VCST-5106 bug pre-fix). After the fix (PR vc-frontend #2305), the frontend must not call promotionCoupons when the field is absent from schema; this GraphQL layer case asserts the xAPI contract: when promotionCoupons is absent from the schema, any client query against it returns a structured schema error (not a 5xx), and data.promotionCoupons is null. Run this case on an env without x-marketing (e.g., virtostart or a stripped-down instance). Mark SKIP on envs where x-marketing is installed.","—","[GQL-OP probe_absent]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 1) {
-      totalCount items { id couponCode }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 1) {
+ totalCount items { id couponCode }
+ }
+ }
 [GQL-EXEC probe_absent]","[ERRORS label=probe_absent] errors[] non-empty — field absent from schema returns structured FIELDS_ON_CORRECT_TYPE error, not a 5xx (BL-CROSS-003)
 [DATA label=probe_absent] data.promotionCoupons is null
 [DATA label=probe_absent] errors[0].message matches /promotionCoupons/
@@ -396,32 +396,32 @@ MKT-GQL-013,"promotionCoupons — Response-Time Consistency Across Repeated Call
 [EVIDENCE] HTTP status of the /graphql response is still 200 — GraphQL error envelope, not a 5xx (BL-CROSS-011)","5xx HTTP response when xMarketing module absent (hard crash — BL-CROSS-011 violation); errors[] empty despite field being absent from schema (silent schema bypass); error message exposes server internals (stack trace, SQL)","none — read-only","VCST-5106; BL-CROSS-003; BL-CROSS-011","Draft"
 "MKT-GQL-018","promotionCoupons — sort=endDate:asc Returns Non-Decreasing endDate Order (VCST-5022 Regression Guard)","GraphQL > Marketing > promotionCoupons > Sort","Critical","BL-GQL-002; BL-PRICE-001","ECL-2.1","Runner-native. ORG_USER authenticated. Store {{STORE_ID}} has at least 2 active+public couponed promotions with DIFFERENT non-null endDate values. The fix (PR VirtoCommerce/vc-module-marketing-experience-api#16, artifact 3.1002.0-pr-16-3e3b) wires request.Sort to PromotionSearchCriteria.Sort — this case is the primary regression guard. Strategy: query with endDate:asc, capture items.0 and items.1 endDate values, then query with endDate:desc and capture their items.0 endDate — assert asc items.0.endDate <= asc items.1.endDate (relative ordering proof that does not depend on absolute endDate values). Null endDate tolerance: the verification report confirms nulls sort first on asc; if both captured values are null the [VAR] inequality degrades gracefully to null=null (trivially true). A guard COUNT >= 2 ensures the store has sufficient data. Pre-fix, every sort returned insertion order; post-fix the asc and desc first items differ.","—","[AUTH role=ORG_USER]
 [GQL-OP guard_count]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 50) {
-      totalCount
-      items { id couponCode endDate }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 50) {
+ totalCount
+ items { id couponCode endDate }
+ }
+ }
 [GQL-EXEC guard_count]
 [GQL-CAPTURE guard_count.data.promotionCoupons.totalCount → TOTAL_COUNT]
 [GQL-OP sort_asc]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""endDate:asc"" first: 50) {
-      totalCount
-      items { id systemName couponCode endDate }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""endDate:asc"" first: 50) {
+ totalCount
+ items { id systemName couponCode endDate }
+ }
+ }
 [GQL-EXEC sort_asc]
 [GQL-CAPTURE sort_asc.data.promotionCoupons.items.0.endDate → ASC_ITEM0_ENDDATE]
 [GQL-CAPTURE sort_asc.data.promotionCoupons.items.1.endDate → ASC_ITEM1_ENDDATE]
 [GQL-CAPTURE sort_asc.data.promotionCoupons.items.0.couponCode → ASC_FIRST_CODE]
 [GQL-OP sort_desc]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""endDate:desc"" first: 50) {
-      totalCount
-      items { id systemName couponCode endDate }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""endDate:desc"" first: 50) {
+ totalCount
+ items { id systemName couponCode endDate }
+ }
+ }
 [GQL-EXEC sort_desc]
 [GQL-CAPTURE sort_desc.data.promotionCoupons.items.0.couponCode → DESC_FIRST_CODE]
 [GQL-CAPTURE sort_desc.data.promotionCoupons.items.0.endDate → DESC_ITEM0_ENDDATE]","[ERRORS label=guard_count] errors[] empty
@@ -433,25 +433,25 @@ MKT-GQL-013,"promotionCoupons — Response-Time Consistency Across Repeated Call
 [DATA label=sort_desc] data.promotionCoupons is non-null
 [DATA label=sort_asc] data.promotionCoupons.items.0.id is non-null","[EVIDENCE] ASC vs DESC inversion check (VCST-5022 primary signal): {{ASC_FIRST_CODE}} should differ from {{DESC_FIRST_CODE}} when store has promotions with different endDates. Pre-fix these were always identical (insertion order returned for every sort variant). Verify in evidence JSON — any match between ASC_FIRST_CODE and DESC_FIRST_CODE is a regression signal requiring manual investigation.
 [EVIDENCE] Relative ordering within asc result: {{ASC_ITEM0_ENDDATE}} <= {{ASC_ITEM1_ENDDATE}} expected (nulls sort first per EF default). Null-null case (both null) is trivially satisfied and does not constitute a regression by itself — check the verification report for non-null endDate positions (LOVE coupon at 2026-06-17 is earliest non-null per report).
-[EVIDENCE] Verification report (reports/tickets/VCST-5022/verification-report.md): endDate:asc produced super, CAT20, MUESLI, code, WINE, ONE, winegift, SUPER, LOVE ... with nulls first then ascending dates. endDate:desc produced reverse. Both differed from no-sort insertion order. All 5 sort variants (no-sort, endDate:asc, endDate:desc, name:asc, couponCode:asc) produced distinct outputs — pre-fix all were identical.","errors[] non-empty on endDate:asc query (sort arg rejected with error — regression); totalCount drops to 0 with sort applied (resolver crash masked as empty result); ASC_FIRST_CODE = DESC_FIRST_CODE on a store with mixed endDate values (pre-fix insertion-order regression); data.promotionCoupons null with sort arg (resolver returns null instead of connection)","none — read-only","VCST-5022; VirtoCommerce/vc-module-marketing-experience-api#16; BL-GQL-002; BL-PRICE-001; Synced: VCST-5022 PR#16 (2026-06-04)","Automated"
+[EVIDENCE] Verification report: endDate:asc produced super, CAT20, MUESLI, code, WINE, ONE, winegift, SUPER, LOVE ... with nulls first then ascending dates. endDate:desc produced reverse. Both differed from no-sort insertion order. All 5 sort variants (no-sort, endDate:asc, endDate:desc, name:asc, couponCode:asc) produced distinct outputs — pre-fix all were identical.","errors[] non-empty on endDate:asc query (sort arg rejected with error — regression); totalCount drops to 0 with sort applied (resolver crash masked as empty result); ASC_FIRST_CODE = DESC_FIRST_CODE on a store with mixed endDate values (pre-fix insertion-order regression); data.promotionCoupons null with sort arg (resolver returns null instead of connection)","none — read-only","VCST-5022; VirtoCommerce/vc-module-marketing-experience-api#16; BL-GQL-002; BL-PRICE-001; Synced: VCST-5022 PR#16 (2026-06-04)","Automated"
 "MKT-GQL-019","promotionCoupons — sort=name:asc Produces Different Order Than No-Sort (Sort Is Applied)","GraphQL > Marketing > promotionCoupons > Sort","High","BL-GQL-002","ECL-2.1","Runner-native. ORG_USER authenticated. Store {{STORE_ID}} has at least 2 active+public couponed promotions with different promotion names. name:asc is a Promotion entity property supported by PromotionSearchCriteria.Sort (confirmed via live verification: name:asc reordered vs insertion — E2ECOUPON, ONE, code, AIR, LOVE... per report). Design: two queries (no-sort and name:asc) capture their first-item couponCode; assert these differ to prove sort takes effect. Does NOT assert the exact alphabetical order (which is env-data-dependent); asserts only that the sort parameter changes the result. This is complementary to MKT-GQL-018 which covers endDate.","—","[AUTH role=ORG_USER]
 [GQL-OP no_sort]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
-      totalCount
-      items { id systemName name couponCode endDate }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" first: 20) {
+ totalCount
+ items { id systemName name couponCode endDate }
+ }
+ }
 [GQL-EXEC no_sort]
 [GQL-CAPTURE no_sort.data.promotionCoupons.items.0.couponCode → NOSORT_FIRST_CODE]
 [GQL-CAPTURE no_sort.data.promotionCoupons.totalCount → NOSORT_TOTAL]
 [GQL-OP name_asc]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""name:asc"" first: 20) {
-      totalCount
-      items { id systemName name couponCode endDate }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""name:asc"" first: 20) {
+ totalCount
+ items { id systemName name couponCode endDate }
+ }
+ }
 [GQL-EXEC name_asc]
 [GQL-CAPTURE name_asc.data.promotionCoupons.items.0.couponCode → NAMEASC_FIRST_CODE]
 [GQL-CAPTURE name_asc.data.promotionCoupons.items.0.name → NAMEASC_FIRST_NAME]","[ERRORS label=no_sort] errors[] empty
@@ -463,12 +463,12 @@ MKT-GQL-013,"promotionCoupons — Response-Time Consistency Across Repeated Call
 [EVIDENCE] {{NOSORT_TOTAL}} should equal name_asc totalCount — sort does not change which promotions qualify, only their order. A totalCount discrepancy indicates a resolver bug.","errors[] non-empty on name:asc query (sort string rejected with error — not the deferred-validation contract which only silences INVALID fields); totalCount differs between no-sort and name:asc (filter broken); NAMEASC_FIRST_CODE = NOSORT_FIRST_CODE on a store known to have varied promotion names (sort ignored regression)","none — read-only","VCST-5022; VirtoCommerce/vc-module-marketing-experience-api#16; BL-GQL-002; Synced: VCST-5022 PR#16 (2026-06-04)","Automated"
 "MKT-GQL-020","promotionCoupons — sort=doesnotexist:asc Succeeds Silently (Deferred-Validation Contract)","GraphQL > Marketing > promotionCoupons > Sort > Negative","Medium","BL-GQL-002","ECL-10.2","Runner-native. ORG_USER authenticated. PR #16 explicitly deferred errors[] on invalid sort fields — the resolver passes any sort string to PromotionSearchCriteria.Sort which is consumed by IPromotionSearchService; the service silently ignores fields it does not recognise (falls back to default order). This case documents the CURRENT deferred-validation contract: invalid sort → errors[] empty, query still succeeds, data is non-null. Do NOT change this assertion to errors[] non-empty without a separate ticket and PR. Live-verified on vcst-qa 2026-06-04: doesnotexist:asc returned HTTP 200, errors[] empty, totalCount=19 (same as no-sort), insertion order (per verification report item 4).","—","[AUTH role=ORG_USER]
 [GQL-OP invalid_sort]
-  query {
-    promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""doesnotexist:asc"" first: 20) {
-      totalCount
-      items { id systemName couponCode endDate }
-    }
-  }
+ query {
+ promotionCoupons(storeId: ""{{STORE_ID}}"" sort: ""doesnotexist:asc"" first: 20) {
+ totalCount
+ items { id systemName couponCode endDate }
+ }
+ }
 [GQL-EXEC invalid_sort]","[ERRORS label=invalid_sort] errors[] empty — invalid sort field silently ignored per deferred-validation contract (PR #16 explicit deferral; BL-GQL-002)
 [DATA label=invalid_sort] data.promotionCoupons is non-null
 [COUNT label=invalid_sort] data.promotionCoupons.totalCount >= 1","[EVIDENCE] Deferred contract note: errors[] EMPTY is correct here. A future ticket to add sort-field validation must FIRST update this assertion to errors[] non-empty before shipping, or this case will become a false-PASS regression guard. Reference: VCST-5022 PR body 'NOT in scope: producing GraphQL errors[] for invalid sort fields'.

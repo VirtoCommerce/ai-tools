@@ -98,7 +98,7 @@ Each of these is read by the step that needs it and by nothing else. Anchors (`�
 | Need | Read |
 |---|---|
 | Per-case lane routing (`suites:lanes` / `suites:machine` / `suites:merge`), the case filter (`suites:filter`), executability + the `EX-*` codes | [`knowledge/execution/regression-lanes.md`](../knowledge/execution/regression-lanes.md) |
-| Post-run promotion `Draft → Automated` (`tc:promote`, the `PR-*` hold codes) | [`knowledge/execution/regression-promotion.md`](../knowledge/execution/regression-promotion.md) |
+| Post-run promotion `Draft → Automated` (`tc:promote`, the `PR-*` hold codes) — called by `/qa-regression` **6.5** and `/qa-test-lifecycle` **6P**, never automatic | [`knowledge/execution/regression-promotion.md`](../knowledge/execution/regression-promotion.md) |
 | Pre-authoring scaffold (`tc:alloc`, `tc:scaffold --check`, the KEEP gate) | [`knowledge/execution/regression-scaffold.md`](../knowledge/execution/regression-scaffold.md) |
 | Change-scoped selection (`regression:select`), existing-coverage triage (`tc:scope`), post-run triage (`/qa-triage-results`) | [`knowledge/execution/regression-selection.md`](../knowledge/execution/regression-selection.md) |
 | Storefront selectors — generated surface, `selectors:sync` / `selectors:check` | [`knowledge/execution/regression-selectors.md`](../knowledge/execution/regression-selectors.md) |

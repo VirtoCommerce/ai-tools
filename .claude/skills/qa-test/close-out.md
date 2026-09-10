@@ -5,15 +5,14 @@ three siblings are the detail. **5a before 5b before 5c is load-bearing:** the v
 terms of a finding's *provenance* ([`triage.md`](triage.md)) and the reconciled AC/DoD state (5b below),
 so neither can be skipped or reordered ahead of it.
 
-FAST runs 5a → 5b → 5c → **[5r]** → 5d → 5e → 5f → **5h**, and stops there (`5r` only under `--release-regression` — §5r). Only `5g` is FULL-only, because it promotes cases a FAST run never authored. `5b` still runs on FAST — the
+FAST runs 5a → 5b → 5c → 5d → 5e → 5f → **5h**, and stops there. Only `5h-map` is FULL-only — it writes back what `1c` reported, and `1c` is a step FAST does not run. (**`5r` and `5g` were removed 2026-09-10** — the change-scoped Critical sweep is now a deliberate `/qa-regression` run, and `Draft → Automated` promotion belongs to `/qa-test-lifecycle`.) `5b` still runs on FAST — the
 AC/DoD reconciliation is what produces the verdict, and dropping it would leave `5c` deciding on nothing.
 
-**On an `--iterate` run these phases do not all fire once.** Per round: **5a–5d + 5r**, plus a round-delta
-comment, `summary.json`, and an appended checklist section. **Once, at loop exit:** 5e in full → 5f → 5h →
-5g. So a `--iterate` run posts ONE QA-Complete comment and makes ONE transition, whatever the round count.
+**On an `--iterate` run these phases do not all fire once.** Per round: **5a–5d**, plus a round-delta
+comment, `summary.json`, and an appended checklist section. **Once, at loop exit:** 5e in full → 5f → 5h → 5h-map. So a `--iterate` run posts ONE QA-Complete comment and makes ONE transition, whatever the round count.
 The per-round assignment table — and the reason for each row — is owned by [`modes.md`](modes.md) §5k and is
 not restated here. **The phases whose cadence the loop changes** carry a one-line `--iterate` clause
-pointing at it — 5a, 5r, 5d, 5e.1, 5e.2, 5e.3, 5e.4, 5f, 5g and 5h. 5b, 5c and 5e.5 run once per round with
+pointing at it — 5a, 5d, 5e.1, 5e.2, 5e.3, 5e.4, 5f and 5h. 5b, 5c and 5e.5 run once per round with
 no change, so they carry none. Without the flag, read this file
 straight through.
 
@@ -21,16 +20,15 @@ straight through.
 
 ## The close-out, in four files
 
-This file is the **spine**: the phase order above, plus the three phases that produce the verdict itself
-(5b · 5c · 5r) and the one that acts on it (5d). The rest is one file per job, so a reader opens what the
+This file is the **spine**: the phase order above, plus the two phases that produce the verdict itself
+(5b · 5c) and the one that acts on it (5d). The rest is one file per job, so a reader opens what the
 step they are in actually needs rather than 680 lines of everything:
 
 | File | Owns | Read it when |
 |---|---|---|
 | [`triage.md`](triage.md) | **5a** — correlate, validate evidence, classify, provenance, severity, dedup | turning raw results into findings |
-| **this file** | **5b · 5c · 5r · 5d** — reconcile, verdict, the release regression, filing | deciding what the run concluded |
-| [`reporting.md`](reporting.md) | **5e · 5f · 5h** — release gate, comment, `summary.json`, checklist, transition, docs | delivering it |
-| [`promotion.md`](promotion.md) | **5g** — the `Draft → Automated` flip | a FULL run that authored cases |
+| **this file** | **5b · 5c · 5d** — reconcile, verdict, filing | deciding what the run concluded |
+| [`reporting.md`](reporting.md) | **5e · 5f · 5h · 5h-map** — release gate, comment, `summary.json`, checklist, transition, docs, the domain-map write-back | delivering it |
 
 ---
 
@@ -66,9 +64,12 @@ of one** — either would silently degrade the AC-coverage percentage the Featur
   against what actually happened this run: "tests pass" → **C1's** pass rate; "accessibility checked" → a
   `ui-ux-expert` finding if one was dispatched. Mark each **MET / NOT-MET / N-A**.
 
-  **"No regressions" cannot be resolved here — C2 has not run yet.** It is the one DoD item this phase
-  cannot close, because 5r launches the change-scoped sweep only once 5c records the verdict. Mark it
-  **PENDING-5r** and resolve it there; an IN-SCOPE C2 finding then amends the verdict through 5c's existing
+  **"No regressions" is resolved from C1 and nothing else.** `/qa-test` runs no release-scoped sweep
+  (`5r` removed 2026-09-10), so this DoD item is closed against the **ticket** regression C1 executed at
+  Step 4 — and where the reviewer meant a release-wide sweep, it is marked **`not-assessed`** with that
+  said out loud, never as a pass. Marking it satisfied on evidence nobody gathered is the failure this
+  clause exists to prevent; the sweep is a deliberate `/qa-regression` run, and an IN-SCOPE finding from
+  one amends the verdict through 5c's existing
   table. Marking it MET at 5b would be asserting a result no run has produced.
 - **Quantified estimate — compute, don't eyeball.** **AC-coverage %** =
   `conditions_with_evidence / conditions_total`; **DoD-completion %** = `dod_met / dod_total` (when a DoD
@@ -106,12 +107,11 @@ STOP. FAST: inline self-check, same computations.
 The verdict follows directly from 5a's triage output + 5b's reconciliation and percentages — **no new
 judgment is introduced here.**
 
-**5c RECORDS the verdict; 5e PUBLISHES it.** Those were the same moment while the change-scoped sweep ran
-at Step 4; they are two moments now that it runs at 5r, and the gap is what makes the split safe. A verdict
-that has been recorded and not yet posted to the tracker can be **amended once** by an IN-SCOPE C2 finding
-without anything being retracted — no comment to correct, no transition to reverse, no reader who saw the
-old answer. Publishing here instead would trade a 40-minute latency win for a retraction risk, which is a
-bad trade; deferring the publish costs nothing, because 5e was always the publisher.
+**5c RECORDS the verdict; 5e PUBLISHES it, and they stay two moments.** The gap was opened so an
+IN-SCOPE finding arriving after 5c could amend a verdict nobody had read yet — no comment to correct, no
+transition to reverse. `5r` was its first consumer and is gone, but the gap costs nothing and still pays:
+**5d files bugs between them**, and any late finding — a filing that reveals a duplicate, a `5d` bug whose
+reproduction contradicts a PASS row — amends a recorded verdict instead of retracting a published one.
 
 Note that filing and failing are separate decisions: a `Medium` files (5d) without failing the ticket.
 
@@ -134,58 +134,6 @@ the surface the story shipped, so it fails the ticket by the rules already here 
   spec drift is still a PASS.
 
 ---
-
-## 5r. Release regression (C2) — FULL always, FAST on request; launched at the verdict, consumed at the gate
-
-**On FAST, C2 does not run unless `--release-regression` was passed.** It is the one step on that path
-that dispatches a whole suite selection — ~24 runner dispatches, 93% of a FAST run's tokens by the
-2026-09-07 audit's measurement — and it has never produced a verdict: 5c derives that, and an IN-SCOPE
-C2 finding can only *amend* it (below). Turn it on when the change's **reach** exceeds its diff — shared
-infrastructure already-shipped callers use, or a domain whose oracle carries P0 invariants
-([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5a). On FULL it derives and runs as
-it always has. Everything below applies to a C2 that IS running.
-
-**Launch C2 the instant 5c is recorded, then do 5d and draft 5e while it runs.** Its scope was already
-computed at Step 3 ([`authoring.md`](authoring.md) §Artifact C), so this is a dispatch, not a derivation:
-
-```
-/qa-regression <the Step-3 C2 suite ids> --cases critical
-```
-
-**Why it sits here and not at Step 4.** C2 answers *"did this change break anything else"* — a release
-question, consumed by the Feature Release Gate at 5e.1 and by nothing before it. Every criterion in 5c's
-table is a claim about **this ticket**: atomic conditions, reconciled ACs, DoD items, `BL-*`, and IN-SCOPE
-bugs. A Critical case failing in a neighbouring suite is, by 5a item 4's own provenance rules, PRE-EXISTING
-or OUT-OF-SCOPE — and the verdict table already says in as many words that neither fails this ticket. So
-the pipeline was spending ~40 minutes, on the critical path to a verdict, to compute an input that the
-verdict overwhelmingly discards. Now that time overlaps filing and report drafting instead.
-
-**On return: triage, then one of exactly two outcomes.**
-
-```
-/qa-triage-results <C2 RUN_ID> --fix
-```
-
-| Outcome | Then |
-|---|---|
-| No IN-SCOPE finding (the common case) | The 5c verdict **stands**. C2's pass rate feeds 5e.1's ≥80% floor and its Scope Exclusions feed the report. Nothing about the ticket changes |
-| An IN-SCOPE finding | **Amend the verdict once** — PASS → PASS WITH NOTES or FAIL by 5c's existing table, no new criteria — file it through 5d under the **same** severity floor, and 5e reports the amended verdict. One amendment round, then STOP: a second C2 to check the amendment is the loop `--iterate` exists for |
-
-**Three rules keep this from becoming a second verdict step.**
-
-- **The amendment uses 5c's table, not a new one.** 5r introduces no criteria; it introduces findings, which
-  5a classifies and 5c's existing rows judge. Same discipline as *"no new judgment is introduced"* there.
-- **Severity is still graded once**, at 5a, and never re-graded to move a finding across 5d's floor.
-- **A skipped C2 is stated.** No suite selection, an unhealthy env, an operator who declined the run, **or
-  a FAST run without `--release-regression`** — each is recorded in `summary.json.regression` with its
-  reason, and 5e.1 then ratifies the gate **without** a change-scoped pass rate, as
-  `not-assessed (C2 skipped)` and **never as a pass**. An absent regression block reads as a clean sweep,
-  which is §2's rule applied to the phase that now runs last. The default-off case is the one most likely
-  to be silently omitted precisely because nothing went wrong, so it is written like the failures are.
-
-**`--iterate`:** C2 runs per round, after that round's 5c, for the reason the round cap makes sharp — the
-loop decides whether there IS another round from the verdict, so paying for a suite sweep before that
-decision buys an answer to a question already settled ([`modes.md`](modes.md) §The two tracks of round N+1).
 
 ---
 

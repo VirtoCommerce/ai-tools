@@ -1,0 +1,44 @@
+{
+  "ticket": "VCST-5940",
+  "verdict": "VERIFIED",
+  "date": "2026-09-10",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1064.0",
+    "theme": "n/a (admin-only surface)",
+    "relevant_modules": {
+      "VirtoCommerce.Notifications": "3.1014.0-pr-203-fc68"
+    },
+    "pr_build": "3.1014.0-pr-203-fc68 (PR #203, commit fc686c7) — confirmed live; served template carries ng-attr-srcdoc"
+  },
+  "agent_used": "qa-backend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live on 3.1013.0, captured this session)",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested"
+  },
+  "evidence": "reports/tickets/Sprint26-18/VCST-5940/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-18/VCST-5940/",
+  "process_note": "The fix reached a deployed QA pin without ever being checked in a browser. The Gate 2 unit proof asserted assignment timing, which the change did alter, but that is not the property governing the symptom. The Gate 4 review inverted the ng-if evidence.",
+  "open_actions": [
+    "PR #203 still OPEN — verification is against a temporary prerelease pin, not a released build",
+    "Revert the vcst-qa pin after merge + release",
+    "Existing PR approval predates this change (given on the disproven commits) — should be re-given",
+    "Sibling preview blades bind srcdoc the same way, unverified in both directions — separate ticket",
+    "Empty deploy PR vc-deploy-dev#6505 needs closing (token lacks permission)"
+  ],
+  "proof_medium": "rendered-DOM (Edge 152, live Admin SPA on the deployed artifact)",
+  "proof_provenance": "built-diff",
+  "browser_matrix": "RED reproduces on Edge 152 / Chrome 152; defect ABSENT on chromium 153 — re-verify only on a 152-class engine",
+  "superseded_attempt": "The first fix ($timeout deferral, commits 7489b6c/4ab6a25) was verified FIX_INCOMPLETE 0/3 and reverted. Root cause was the parse-time srcdoc attribute, not assignment timing.",
+  "next": "Human merges PR #203; after release, revert the vcst-qa pin and re-confirm on a 152-class browser."
+}
