@@ -101,12 +101,13 @@ Each row names THE file that is normative for its topic. Read it before acting o
 | Ticket → flow routing (type × status → `feature-test` / `/qa-verify-fix` / `/qa-hotfix-check`) | `.claude/knowledge/execution/ticket-routing.md` |
 | Ticket status transitions — `qa-lead-orchestrator` is the only actor, two hops per run | `.claude/knowledge/execution/ticket-status-transitions.md` |
 | `/qa-test` — the pipeline contract (steps, gates, FAST vs FULL) | `.claude/commands/qa-test.md` (shell) + `.claude/skills/qa-test/` (methodology: `test-model.md`, `authoring.md`, `close-out.md`, `modes.md`, `axes.md`, `visual-axis.md`, `contract-refresh.md`, `coverage-triage.md`, `exploratory-lane.md`, `triage.md`, `promotion.md`) |
-| The five derived pre-flight axes (`layer`, `visual_surface`, `contract_surface`, `coverage_surface`, `data_surface`) | `.claude/skills/qa-test/axes.md` |
-| Prior art per domain (read the sources directly; the generated index was removed 2026-09-08) | `reports/ba/<domain>/` · `reports/ba/test-models/` · `.claude/knowledge/domain/<domain>.md` · `reports/tickets/**/summary.json` |
+| The six derived pre-flight axes (`layer`, `visual_surface`, `contract_surface`, `coverage_surface`, `data_surface`, `domain_map`) | `.claude/skills/qa-test/axes.md` |
+| **What a domain IS** — actors, value chain, surface inventory per layer, where the layers DISAGREE, coverage shape | `.claude/knowledge/domain/<domain>.md` (shape: `domain-map.md`; build/refresh `/qa-domain-map <slug>`; freshness `npm run domain:check`) |
+| Prior art per ticket (read the sources directly) | `reports/ba/<domain>/` · `reports/ba/test-models/` · `reports/tickets/**/summary.json` |
 | Bug auto-fix gate ladder G0–G7, ownership routing, no-auto-merge, client-code containment | `.claude/knowledge/execution/quality-gates.md` |
 | Test data — `@td()` / `{{VAR}}`, GOLDEN RULE, SECOND RULE | `.claude/rules/test-data.md`; seeder authoring `.claude/knowledge/execution/test-data-authoring.md` |
 | Report policy — categories, caps, severity folders, inline screenshots | `.claude/rules/reports.md` (stub) → `.claude/knowledge/execution/reports-policy.md` |
-| Regression — modes, manifest, shared-tree git prohibition, selection groups | `.claude/rules/regression.md`; lanes / promotion / scaffold / selection / selectors / pipelines / suites under `.claude/knowledge/execution/regression-*.md` |
+| Regression — modes, manifest, suite-authoring, selection groups | `.claude/rules/regression.md`; lanes / promotion / scaffold / selection / selectors / pipelines / suites under `.claude/knowledge/execution/regression-*.md` |
 | Agents — roster, browser lanes, delegation | `.claude/rules/agents.md`; knowledge-base read-before-write rules `.claude/ROUTING.md` |
 | MCP servers, `--secrets`, Chrome DevTools auth options | `.claude/knowledge/execution/browser-lanes.md` |
 | Oracles — BL invariants, ECL edge cases, bug catalog; their audit + value gate | `.claude/knowledge/oracles/`, `.claude/skills/qa-review-oracles/` (`npm run oracles:rank`, `bl:lint`, `ecl:lint`) |

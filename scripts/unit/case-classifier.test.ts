@@ -315,10 +315,36 @@ test("050d agrees with the human judgement recorded in REG-2026-08-24-1806", () 
   // That run's notes put 050d on the browser lane by hand, with the reason: 46 of its 49
   // cases are runner-native and 3 are not. The classifier must reach the same split — this
   // is the one place the corpus records a person doing this job correctly.
+  //
+  // PINNED TO THE THREE IDS, NOT TO THE TOTALS (2026-09-09). The original form asserted
+  // `machine === 46 && non-machine === 3`, which pins the SUITE'S SIZE, not the classifier's
+  // judgement — so it broke the moment 050d legitimately grew (VCST-5317 appended 9 cases,
+  // machine 46 -> 47), while the classifier had not drifted at all: the human's three are
+  // still exactly these three. Pinning the ids makes the guard growth-immune AND strictly
+  // stronger — a classifier that reclassified one of these now fails by NAME rather than by
+  // an off-by-one anybody would be tempted to bump. Adding a case must never turn this red;
+  // reclassifying one of these three must always turn it red.
+  const RECORDED_NON_MACHINE = ["PRF-GQL-039", "PRF-GQL-040", "PRF-GQL-057"];
   const suite = manifest.suites.find((s) => s.id === "050d")!;
   const r = classifyRealSuite(suite.file);
-  assert.equal(r.machine.length, 46, "050d's machine count no longer matches the recorded human split");
-  assert.equal(r.browser.length + r.manual.length, 3);
+  const idOf = (c: unknown) => String((c as { id?: string }).id ?? c);
+  const nonMachine = new Set([...r.browser, ...r.manual].map(idOf));
+
+  for (const id of RECORDED_NON_MACHINE) {
+    assert.ok(
+      nonMachine.has(id),
+      `${id} was non-machine in REG-2026-08-24-1806 and the classifier now calls it machine — that is classifier drift, not suite growth`
+    );
+  }
+  assert.equal(
+    r.machine.length + r.browser.length + r.manual.length,
+    r.verdicts.length,
+    "every case must land in exactly one lane"
+  );
+  assert.ok(
+    r.machine.length >= 46,
+    `050d's machine count fell below the recorded 46 (now ${r.machine.length}) — cases became non-runner-native`
+  );
 });
 
 test("087 has no browser cases at all — a whole suite can leave the browser pool", () => {

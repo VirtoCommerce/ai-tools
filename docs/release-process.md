@@ -29,7 +29,7 @@ How to cut a release of the `vc-qa` plugin. Companion to [`versioning.md`](versi
 | **Approval reviewer** | At least one non-owner reviewer signs off on the release PR. Catches changelog-vs-diff drift. |
 | **Pilot liaison** (post-Phase 2) | When a release ships during an active pilot, the liaison communicates the change to the pilot customer with a 1-line summary + the changelog link. |
 
-**Currently:** Release owner is the maintainer working on `main`. Approval reviewer is open — will be named when [`docs/support-runbook.md`](support-runbook.md) Tier 1 owner is decided.
+**Currently:** Release owner is the maintainer working on `main`. Approval reviewer is open — to be named.
 
 ## What Triggers a Release
 
@@ -114,7 +114,7 @@ PR description template:
 See `CHANGELOG.md` [vX.Y.Z] section.
 
 ### Migration notes (only for major releases)
-N/A | See `docs/migrations/vN.md`
+N/A | or a migration note written with the release itself (there is no standing migrations/ directory)
 ```
 
 Get one non-owner approval. Merge.

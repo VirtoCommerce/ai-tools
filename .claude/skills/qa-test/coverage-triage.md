@@ -243,10 +243,8 @@ blockers hid: in scope, invalidated by the rename, and not in any run the ticket
   citation resolves) vs Dimension 6 (it is the *right* citation).
 - **It does not retire anything.** `SUPERSEDED` is a proposal. TRI-006 keeps deprecation human, and
   `tc:demote` may only reach `Manual` — a rule a change-scoped triage has no standing to relax.
-- **It never reverts with git.** A `REPAIR` that regresses `suites:review` is undone by re-editing the
-  row or by reading the baseline from `git show HEAD:<path>` into the scratchpad. Several sessions
-  hold uncommitted work in this tree, and a tree-wide `git checkout`/`restore` is unrecoverable for
-  all of them (`.claude/rules/regression.md` §WORKING IN A SHARED TREE).
+- **Undoing a `REPAIR` is a row-level edit.** A `REPAIR` that regresses `suites:review` is undone by
+  re-editing the row, or by reading the baseline from `git show HEAD:<path>` into the scratchpad.
 - **It does not widen the oracle-amendment path.** The `1e` model already routes an invariant that
   needs amending to `/qa-review-oracles`; this axis only finds the **cases** citing it, which is the
   half nothing was doing.

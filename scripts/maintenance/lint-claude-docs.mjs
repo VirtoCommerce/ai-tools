@@ -259,11 +259,20 @@ function headingMatchOne(headings, cited) {
   return null;
 }
 
+// A nested git worktree (`.claude/worktrees/<name>/`, created by EnterWorktree) is a full second
+// checkout of this repo at another revision. Its docs are NOT this tree's docs: linting them reports
+// findings nobody can act on here — they belong to that branch — and one abandoned worktree can put
+// every ratchet over baseline and hold the gate red for everyone. Skip them structurally.
+const SKIP_DIRS = new Set(['worktrees', 'node_modules']);
+
 function walkMd(dir) {
   const out = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) out.push(...walkMd(p)); else if (e.name.endsWith('.md')) out.push(posix(p));
+    if (e.isDirectory()) {
+      if (SKIP_DIRS.has(e.name)) continue;
+      out.push(...walkMd(p));
+    } else if (e.name.endsWith('.md')) out.push(posix(p));
   }
   return out;
 }

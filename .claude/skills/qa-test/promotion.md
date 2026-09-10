@@ -45,13 +45,10 @@ Step-4 evidence** grounding each `{OBSERVED}`. REJECT any `{OBSERVED}` with no t
 `{HYPOTHESIS}` cleared by an invented value, any case promoted while still carrying a Blocker/Critical →
 revert the append → fix → re-verify once → STOP.
 
-**Reverting an append is a row-level edit, NEVER a `git checkout`.** Remove the appended rows with the
-same surgical discipline the promoter writes with (locate each record by its own raw text, delete only
-those bytes, re-parse and field-compare the survivors), then `suites:sync`. A `git checkout`/`restore`
-on the CSV or the manifest is forbidden by `.claude/rules/regression.md` §WORKING IN A SHARED TREE —
-several sessions hold uncommitted work in this tree, the manifest in particular is shared state written
-by `suites:sync`, and the 2026-08-28 loss was exactly this reflex reaching past its intended target.
-For a baseline to diff against, read `git show HEAD:<path>` into the scratchpad.
+**Reverting an append is a row-level edit.** Remove the appended rows with the same surgical discipline
+the promoter writes with (locate each record by its own raw text, delete only those bytes, re-parse and
+field-compare the survivors), then `suites:sync`. For a baseline to diff against, read
+`git show HEAD:<path>` into the scratchpad.
 
 An ungrounded `{OBSERVED}` is worse than a `Draft` case: it puts a fabricated expectation into permanent
 coverage. **The author never self-certifies this** — only `qa-lead-orchestrator` or the user promotes.

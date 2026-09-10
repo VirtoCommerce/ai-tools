@@ -59,8 +59,10 @@ Postman exposes two ID forms — picking the wrong one for a tool returns 404 or
 
 `getCollections` returns both: `id` (bare UUID) and `uid` (owner-qualified). When in doubt, log the response of `getCollections` and pick the matching shape for your next call.
 
-### Mistake 9: Calling `runCollection`
-There is no `runCollection` tool in either the `minimal` or `full` Postman MCP toolset. If you need execution, see [execution.md](execution.md) — use Newman, Postman CLI, or `createMonitor` (full toolset only).
+### Mistake 9: Calling `runCollection` — then blaming your arguments when it fails
+`runCollection` **is** listed in the Postman MCP's `enabledTools` catalog, for both `minimal` and `full`. No endpoint registers it, so the call fails no matter how it is shaped. The trap is the second half: because the catalog lists it, the natural read of a failure is "I passed the wrong parameters," and the next twenty minutes go into fixing a call that can never succeed.
+
+**Check `serverInfo.currentServerTools` from `getEnabledTools`** — that is what is registered; `enabledTools` is only what is advertised ([mcp-tools.md](mcp-tools.md) §1a). For execution see [execution.md](execution.md): Newman by default, or `createMonitor` + `runMonitor` on the full endpoint with the caveats in §3.3.
 
 ### Mistake 10: Empty Collection Name
 ```

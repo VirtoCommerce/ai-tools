@@ -18,7 +18,7 @@ a judgment call a gate does not settle, or when you are about to change how a st
 |---|---|
 | Step 1e — the fault model, its eight rules, its gate | [`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md) · shape: [`templates/test-model.md`](../templates/test-model.md) |
 | Steps 1a–1b — the fetch, the routing branch, the two pre-flight waves | [`skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) |
-| The five derived axes as ONE mechanism (2b–2f) | [`skills/qa-test/axes.md`](../skills/qa-test/axes.md) |
+| The six derived axes as ONE mechanism (2b–2g) | [`skills/qa-test/axes.md`](../skills/qa-test/axes.md) |
 | Ticket status — who moves it, when, on whose authority | [`knowledge/execution/ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) |
 | What already exists on this surface (prior BA analysis, models, domain knowledge) | `reports/ba/` + `reports/ba/test-models/` + `.claude/knowledge/domain/` |
 | Steps 2–3 — oracles, the four artifacts, scaffold + fan-out, the C1/C2 regression split | [`skills/qa-test/authoring.md`](../skills/qa-test/authoring.md) |
@@ -96,13 +96,17 @@ fire once, at loop exit ([`skills/qa-test/modes.md`](../skills/qa-test/modes.md)
 never restate it here.** `1a` resolves them and its own table carries the per-flow branch.
 
 1. **FLOW** — which pipeline runs at all: `verify-fix` · `hotfix-verify` · `feature-test`.
-2. **EFFORT** — FAST or FULL, **only** within `feature-test`. FULL for a new feature / Story / Epic, P0–P1,
+2. **EFFORT** — FAST or FULL, **only** within `feature-test`. FULL for a new feature / Epic, P0–P1,
    cross-layer, ≥2 domains, a critical-revenue flow, or an unclear surface; FAST for a bug fix / copy-tweak /
    config / Technical task — or a `Review task` contribution whose PR diff is one-file and
    single-surface (`ticket-routing.md` §5a, which also defaults its `coverage` axis ON) — that is
-   P2–P3, single-layer, single-domain, obvious surface. **When in doubt, take
-   FULL** — a real regression is worse missed than a fast run saved
-   ([`SKILL.md`](../skills/qa-test/SKILL.md) §Effort routing).
+   P2–P3, single-layer, single-domain, obvious surface. **A `Story` is FULL by default and downgrades to
+   FAST only when it is narrow on all six §5b tokens** — and never on a surface whose purpose `2-map`
+   reports `UNDECLARED`, because a Story is the only step that ever declares one. For a Story that
+   downgrade is **provisional at `1a` and confirmed at the end of `1b`** (two tokens resolve there;
+   `1b` is identical on both paths, so nothing has been skipped yet) and it moves one way only,
+   FAST→FULL — record both in `summary.json.path_route`. **The tie-break when a token will not resolve is
+   `ticket-routing.md` §5's, stated only there — read it rather than assuming which way it points.**
 
 A `not-fixed` Bug takes `feature-test` **FAST** to reproduce and characterize the defect live with fresh
 evidence — there is no fix to *verify* yet; state that the next step is `/qa-fix <ticket-key>`.
@@ -132,8 +136,9 @@ Stated once, completely. **Everything after this section is the FULL path.**
 
 **FAST is one execution agent.** That is the promise, and it is now kept: **three** of the five derived
 axes are **opt-in** here — `--visual` · `--contract` · `--coverage` · `--axes` — and off by default.
-`layer` (2b) and `data_surface` (2f) derive and apply on both paths, because neither can add an agent:
-2b dispatches nothing, and 2f can only ever *remove* a dispatch. **The opt-in three still *derive*** (each
+`layer` (2b), `data_surface` (2f) and `domain_map` (2g) derive and apply on both paths, because none can
+add an agent: 2b dispatches nothing, 2f can only ever *remove* a dispatch, and **2g dispatches nothing
+ever — it recommends a command the operator may decline.** **The opt-in three still *derive*** (each
 token and its sources are recorded, so a `false` is auditable); without their flag, none of the three *runs*.
 
 **`5r`/C2 is the fourth opt-in, and it was the largest breach of that promise** (2026-09-09). It is not an
@@ -192,7 +197,7 @@ A step passes its gate or **STOPS**. Three are hard-STOP gates verified by a **f
 
 | Gate | Where | Verified by |
 |---|---|---|
-| Model complete | 1e (10 clauses) | inline (doer's own check) |
+| Model complete | 1e (12 clauses) | inline (doer's own check) |
 | Existing coverage disposed | Step 2a | inline — re-derived at Step 3's gate (`tc:scope`, same args) |
 | Discovery folded in | Step 3x (FULL) | inline — never blocks; unreached charter items are named |
 | **Artifacts reviewed + data resolved** | Step 3 | **fresh `qa-lead` verifier — hard STOP** |
@@ -274,7 +279,7 @@ before this record existed, a skipped transition left no trace in any artifact, 
 | Wave | Issue in ONE message |
 |---|---|
 | **A** | 1 env health (`/qa-env-check endpoints`) · 2 build & version — `declared` from `vc-deploy-dev`, then the `GET {{BACK_URL}}/api/platform/modules` probe for **`deployed`**, which is ground truth (a failed probe records `UNKNOWN`, **never** falls back to `declared`) · 2-release the release-ledger Δ · **2-map** the functionality map (below) · 2b's local reads · 3 sprint resolve → 4 duplicate check (glob `reports/tickets/*/*/summary.json` across **all** sprints, 2 h window) |
-| *(no I/O)* | derive the five axes — see below |
+| *(no I/O)* | derive the **six** axes — see below. **2g `domain_map` derives FIRST**, because `2-map` in wave A consumes it to decide what to read |
 | **B** | 2d's two refreshers **and** 2e's `tc:scope` scan (scope + risk terms only) **and** 2f's `td:validate` resolution check, concurrently |
 
 **Three consequences of 2-release, which is why it is a step and not a header field:** a **⚠ BREAKING**
@@ -283,7 +288,30 @@ AC↔implementation check a third leg · **released ≠ deployed** — a capabil
 probe does not carry is `NOT_DEPLOYED` → BLOCKED-on-deploy, never a FAIL and never a filed bug, and the
 ledger carries no behaviour so it can never ground an assertion as `{DOC}`.
 
-**2-map — read what already exists on this surface. MANDATORY, both paths.** Read the prior art directly — `reports/ba/<domain folder>/` (prior BA analysis), `reports/ba/test-models/` (prior test models), `.claude/knowledge/domain/<domain>.md` (domain knowledge), and the tickets already tested here (`reports/tickets/**/summary.json`). (The generated the prior-art sources (`2-map`) index that used to front these was removed 2026-09-08 — read the sources, dated by their filenames or `git log`.) Two questions, and the second is the one that lets you design a test.
+**2-map — read what already exists on this surface. MANDATORY, both paths.** Two reads, in this order,
+and the order is the point: **the DOMAIN MAP first, then the per-ticket prior art.**
+
+**Read order is decided by the `domain_map` token (2g), not by prose.** The axis is derived before this
+item runs and its four states each say what to do — `PRESENT` read it first · `STALE` read it and treat
+every claim as a hypothesis · `ABSENT` skip to the prior art · `unresolved` recommend. **Contract, fail
+direction and the two-moment all-layer rule: [`axes.md`](../skills/qa-test/axes.md) §2g — cite it, do not
+restate it here.** Record the block; **`null` means the axis never ran, which is a gap, not `ABSENT`.**
+
+**1. The domain map** — `.claude/knowledge/domain/<name>.md` whose `domain_slug` matches this ticket's
+domain (shape: `domain-map.md`). The feature-scoped, persistent answer to *what exists and where*: actors,
+value chain, **surface inventory per layer**, where the layers **disagree**, and the shape of existing
+coverage. It supplies `1e` clause 11's chain position and clause 11b's surface list, and its `D*`
+disagreement rows are **ready-made defect hypotheses** — already grounded, already numbered. Like the
+release ledger it is a **pointer index that can never ground an assertion as `{DOC}`**.
+**On `ABSENT` + an all-layer chain, `2g` sets `recommended: true`** → say `/qa-domain-map <slug>` in one
+line and **proceed**; `1e` then records `Domain map: ABSENT — chain position unverified`. **Nothing here
+blocks** — 12 of 13 domains have no map.
+
+**2. The per-ticket prior art**, read directly — `reports/ba/<domain folder>/` (prior BA analysis),
+`reports/ba/test-models/` (prior test models), and the tickets already tested here
+(`reports/tickets/**/summary.json`). (The generated index that used to front these sources was removed 2026-09-08 — read the sources directly, 
+dated by their filenames or `git log`.) 
+Two questions, and the second is the one that lets you design a test.
 
 **The bibliography** — carry four things forward: the **prior BA analysis** for this domain, the **prior
 test model** for this surface, the **domain knowledge** docs, and the **tickets already tested** here.
@@ -311,9 +339,12 @@ current behaviour, confirmed against the `2-release` ledger Δ **since that docu
 check before anything is built on it (the map's own §1 carries the axis table and the
 `CONFIRMED`/`DRIFT`/`MISSING`/`UNVERIFIED` verdicts). Reading a stale deliverable and repeating it is
 worse than reading none, because it arrives with a written deliverable's authority. Three consumers: the `1c` brief (so
-`ba-system-analyzer` starts from the prior analysis instead of re-deriving it), `1e` (**amend the existing
-surface model, never fork it** — VCST-5346 already has two), and `5h` (an existing guide for this surface
-is amended, never forked).
+`ba-system-analyzer` starts from the prior analysis instead of re-deriving it), `1e` (**a later round of the
+SAME ticket amends that model in place; another ticket on this surface writes its own file and carries the
+predecessor's Part 0 forward, citing it** — what is forbidden either way is a second independently-derived
+model of one surface, and VCST-5346 already has two:
+[`test-model.md`](../skills/qa-test/test-model.md) §Why it is a durable file), and `5h` (an existing guide
+for this surface is amended, never forked).
 
 **PR testing:** confirm the PR's artifact version is deployed; if not → offer `/qa-deploy-pr <ticket-key>`
 (**ask first**) or warn and ask whether to wait.
@@ -333,6 +364,7 @@ returns:
 - **Existing functionality (current state)** — **first, and mandatory.** What the scope ALREADY DOES before this ticket, one line per capability, grounded in source/live/docs; plus the prior art it read by path (or the literal `none`), the prior model to amend, what prior analysis already settled, and what is new in this pass. A gap analysis with no baseline is a wish list, and *"is this new behaviour or existing behaviour?"* is the question 5a needs at triage time to assign provenance. **A prior report is a HYPOTHESIS, never the baseline** — it is dated and the product moved after it, so each claim it relies on is triangulated against the **release documentation** (the `2-release` ledger Δ since that document's date — which raises a staleness suspicion and, carrying no behaviour, can never settle one) and a **live check**, then carries `CONFIRMED` / `DRIFT` / `MISSING` / `UNVERIFIED`. A `DRIFT` is a finding about the *document*, not a product bug.
 - **The test object** — purpose (the value chain) · **operations** (what can be done to it) · **properties** (what can be observed or varied) · **variants** (what changes its behaviour without changing its code) · **constraints** (`BL-*`/`ECL-*`, with what a violation costs) · **reverse edges**. Seeded from `2-map`'s `Test object` block and completed live. This is `1e`'s condition-space raw material: a model built without it enumerates screens, which is the Loyalty Missions shape. A map `UNDECLARED` is established here or reported as unestablished — **never** guessed.
 - **Affected surface** — module(s)/repo(s), storefront vs Admin SPA vs API/GraphQL layer, concrete code sites (grounded, not guessed).
+- **Surfaces the DOMAIN MAP does not list — mandatory when a map exists, and this is how each run REPAYS the map instead of only consuming it.** For every surface you touched, say whether `.claude/knowledge/domain/<name>.md` enumerates it. A surface you reached that the map lacks is a **map amendment proposal** (route it at 5h; never edit the map from here — `ba-system-analyzer` is its sole writer). Two corollaries: a `D*` disagreement row you confirmed or refuted **live** is a verdict upgrade, and a `G*` gap this run closed says so with what closed it. Without this field the map decays the moment the product moves, and the next run re-derives from a stale inventory — the failure the map exists to end.
 - **Related flows & integration boundaries** — adjacent features / cross-domain seams (cart ↔ checkout, org ↔ membership, …).
 - **Known pain points / historical failures** — cross-referenced to `vc-bug-catalog.md` (`VC-*`) + prior bugs.
 - **Docs grounding** — VirtoOZ/VC-doc references for how the feature is *supposed* to behave.
@@ -384,18 +416,38 @@ Distil `1c` + `1d` + `1a` into the **fault model** Step 3 authors cases from, wr
 Mermaid; the condition space is built per link on top of it.
 
 **Shape:** [`.claude/templates/test-model.md`](../templates/test-model.md). **Methodology, the eight rules
-the scenario table must satisfy, the ten-clause gate and the worked references:**
+the scenario table must satisfy, the twelve-clause gate and the worked references:**
 [`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md). Read the latter before writing the model —
 the gate below is only its checklist.
 
-**Gate (inline, 10 clauses — every one contradictable):** flow/type/path set + atomic conditions + BL/ECL/
+**Gate (inline, 12 clauses — every one contradictable):** flow/type/path set + atomic conditions + BL/ECL/
 domains/risk areas · `Value chain` complete **with the `flowchart` in the file** · `Mechanism coverage
 matrix` with **no blank cells** + `Reverse edges` resolved · **the matrix's AXES are derived from the
 mechanism, not from the scenario table** (see below) · first scenario row is the `Technique:FLOW`
 journey · `Condition space` states factors, classes, constraints and raw N · `Reduction` states `N → M` **and
 names what it dropped** · every row carries all five (cell · defect hypothesis · archetype · technique ·
 oracle) · every oracle is `{BL}`/`{SPEC}`/`{DOC}` or says what would make it one · the `Archetype sweep`,
-`UIP sweep` and `Probes carried in` rows are **PRESENT** in the model.
+`UIP sweep` and `Probes carried in` rows are **PRESENT** in the model · **11 `Chain position` states this
+ticket's chain as a SLICE of the domain chain — the links it touches AND the links it does not** ·
+**11b every matrix VARIANT resolves to a surface the domain map enumerates.**
+
+**Clauses 11 and 11b read the `domain_map` token (2g); they never re-derive it.** `PRESENT`/`STALE` ⇒ both
+bind against the map's inventory, and on `STALE` a variant resolving only to a stale surface is recorded as
+such rather than treated as confirmed. `ABSENT`/`unresolved` ⇒ both are satisfied by recording
+`Domain map: ABSENT — chain position unverified`; absence is **written down, not blocked**.
+**`1e` is also where 2g's provisional all-layer answer is CONFIRMED** — Part 0 now exists, so set
+`domain_map.all_layer_confirmed_at: "1e-confirmed"` and correct `all_layer_chain` if the chain disagrees
+with the `1b` guess. That correction is the axis working, not a defect. With a map, they are the two clauses that catch the failure the
+other ten cannot see: **every one of clauses 1–10 passes on a narrow chain.** Measured on VCST-5317 — a
+FULL run with three verifier gates, a 17-scenario model and 34 authored cases, whose matrix axes were
+correctly derived and whose cells were all filled, and which never asked *is this chain a slice of a
+larger mechanism?* Its chain had 8 links about one predicate on one control; the feature spans 35 suites
+and 585 cases across three layers. **Clause 11 makes the omission a positive statement someone can
+contradict** — naming the links you did *not* cover is contradictable; "the matrix is complete" is not.
+**Clause 11b is the one that stops a false-premise case:** that run authored a Critical case asserting a
+component *does not exist* (the mobile org switcher, reachable at `Corporate → My organizations`), because
+no clause required a variant to resolve to an enumerated surface. A map listing two switcher components
+makes `V9 mobile` impossible to author as one row asserting absence.
 
 **Clause 4 is new, and "no blank cells" does not imply it.** A matrix populated by reading your own
 scenario list fills completely by construction, so a mechanism with no scenario has no row to be uncovered
@@ -665,4 +717,4 @@ and promotion deferred to the exit round
   first ([`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k).
 - App Insights correlation (5a) reuses `/qa-monitoring`'s query + dedup + triage machinery scoped to the
   window (no separate live-repro); resolve resources from `APPINSIGHTS_*`, skip gracefully when
-  unconfigured; a correlated error gets no separate `BUG-AI-*` draft (5d's `/qa-bug` owns it).
+  unconfigured; a correlated error gets no separate `BUG-AI-*` draft (5d's `/vc-fix:qa-bug` owns it). 

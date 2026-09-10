@@ -53,7 +53,7 @@ Layered loader order (later overrides earlier):
 3. `.env.local` — gitignored secrets. Per-env via `USER_PASSWORD_${TEST_ENV.upper()}` suffix promotion.
 4. `.env` — legacy fallback for backwards-compat.
 
-Three buckets per `docs/configuration.md`:
+Three buckets — this table is the definition; there is no separate configuration doc:
 
 | Bucket | Source | Examples |
 |--------|--------|----------|

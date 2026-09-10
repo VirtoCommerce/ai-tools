@@ -55,15 +55,53 @@ Every axis obeys all five. Where an axis differs, it is §3, and it says so expl
 **`layer` and `data_surface` fail CLOSED. The other three fail OPEN.** This is the single most consequential rule in the
 block, and it was the one the shared *"same discipline"* phrasing concealed.
 
-| | `layer` (2b) | `visual_surface` (2c) | `contract_surface` (2d) | `coverage_surface` (2e) | `data_surface` (2f) |
-|---|---|---|---|---|---|
-| **Unresolved ⇒** | **`null` + `UNRESOLVED`** | `true` | `true` | `true` | **`false`** |
-| Shape | 6 values + `cross-layer` | boolean | boolean | boolean | boolean |
-| Dispatches an agent? | no | **yes** (`ui-ux-expert`) | no | no | **yes** (`test-data-engineer`) |
-| Costs I/O in `1b`? | no | no | **yes** (~8.6 s) | yes (~1 s, wave B) | yes (~1 s, wave B) |
-| Has a conflict rule? | **yes** (`layers_conflict`) | no | no | no | no |
-| **Adds** a step, or **gates** one? | gates 5f/5h | adds the visual lane | adds two refreshers | adds Step 2a | **gates Step 3a** |
-| Consumed by | 5f / 5h routing | Step 4's visual lane | `1c`/`1d`/`1e`/3b pack | Step 2a's dispositions | Step 3a's dispatch |
+| | `layer` (2b) | `visual_surface` (2c) | `contract_surface` (2d) | `coverage_surface` (2e) | `data_surface` (2f) | `domain_map` (2g) |
+|---|---|---|---|---|---|---|
+| **Unresolved ⇒** | **`null` + `UNRESOLVED`** | `true` | `true` | `true` | **`false`** | **`unresolved` + recommend** |
+| Shape | 6 values + `cross-layer` | boolean | boolean | boolean | boolean | **4 states** (`PRESENT`/`STALE`/`ABSENT`/`unresolved`) |
+| Dispatches an agent? | no | **yes** (`ui-ux-expert`) | no | no | **yes** (`test-data-engineer`) | **no — ever** |
+| Costs I/O in `1b`? | no | no | **yes** (~8.6 s) | yes (~1 s, wave B) | yes (~1 s, wave B) | **no** (one local frontmatter read) |
+| Has a conflict rule? | **yes** (`layers_conflict`) | no | no | no | no | no |
+| **Adds** a step, or **gates** one? | gates 5f/5h | adds the visual lane | adds two refreshers | adds Step 2a | **gates Step 3a** | **neither — it RECOMMENDS** |
+| Consumed by | 5f / 5h routing | Step 4's visual lane | `1c`/`1d`/`1e`/3b pack | Step 2a's dispositions | Step 3a's dispatch | `2-map`'s read order · `1e` clauses 11/11b · `1c`'s unmapped-surface report |
+
+### 2g `domain_map` — the axis that is not a lane trigger, and says so
+
+**It breaks contract rule 5, and that is deliberate rather than an oversight.** Rules 1–4 hold exactly:
+derived never asked, `sources[]` always populated, `ABSENT` recorded rather than omitted, a skip stated.
+But rule 5 says *the token is a LANE trigger* — and this one triggers **no lane at all**. It resolves
+whether a **reference artifact** exists (`.claude/knowledge/domain/<name>.md`, `domain_slug` matching the
+ticket's domain) and, when it does not, **recommends `/qa-domain-map <slug>` in one line and proceeds.**
+Calling that a lane would be a lie; it adds no agent, no script and no step.
+
+**Which is exactly why it runs on BOTH paths, like `2b`.** The FAST promise is *one execution agent*
+([`SKILL.md`](SKILL.md) §Effort routing), and 2g adds **zero** — one local frontmatter read. It cannot
+regrow the *"both paths, always"* problem §4 exists to prevent, because there is nothing to grow.
+
+**Four states, not a boolean, because absence and staleness are different facts with opposite consequences.**
+
+| State | Means | Consequence |
+|---|---|---|
+| `PRESENT` | a map matches the slug and is inside `stale_after_days` | `2-map` reads it first; `1e` clauses 11/11b bind against its inventory |
+| `STALE` | matches, but past `stale_after_days` | **read it, and treat every claim as a hypothesis** — a stale map is the *more* dangerous artifact, because it is read as current and arrives with a written deliverable's authority. Recommend `--refresh` |
+| `ABSENT` | no map for this slug | recommend **only if** the chain is all-layer; `1e` records `Domain map: ABSENT — chain position unverified` |
+| `unresolved` | slug did not resolve, or the directory was unreadable | **recommend** — see the fail direction below |
+
+**Fail direction: fail-OPEN on the recommendation, fail-NEVER on blocking.** A false positive costs one
+declined suggestion. A false negative repeats the failure the axis exists to catch. But **no state of this
+axis ever blocks a run** — 12 of 13 domains have no map, and a hard gate would stop every ticket in the
+repo. `npm run domain:check` encodes the same asymmetry: **stale fails, missing passes.**
+
+**Two-moment axis, like `coverage_surface`.** At `1b` 2g the all-layer question is answered
+**provisionally** — from `1a`'s domains plus whether the domain has a back-office surface at all — because
+the ticket's value chain does not exist until `1e`. It is **confirmed at `1e`** against Part 0. And it
+reads the **CHAIN, not the diff**: VCST-5317's diff was storefront + xAPI with no admin-spa file, so a
+diff-based read stays silent, while its chain's first link is *an admin locks the membership* — an
+Admin-layer action, and exactly where the mechanism it tested blind actually lives.
+
+**It is the only axis a run REPAYS.** `1c` must report surfaces it touched that the map does not list, and
+those land in `domain_map.unmapped_surfaces[]` — the loop that keeps the inventory alive instead of
+letting it decay the moment the product moves.
 
 **Why `layer` alone fails closed.** Every other axis answers *should we also do X?*, where a wrong `true`
 costs one agent or one script and a wrong `false` leaves a gap nobody sees — so doubt widens. `layer`
@@ -162,7 +200,7 @@ measured them.
 
 One block per axis in `summary.json`, and the field names are **nested, matching the schema**:
 `visual.surface_source[]`, `contract.surface_source[]`, `coverage_triage.surface`, `release.layer_source[]`,
-`test_data.surface` + `test_data.surface_source[]`.
+`test_data.surface` + `test_data.surface_source[]`, `domain_map.state` + `domain_map.sources[]`.
 A flat `visual_surface_source[]` spelling is drift — `npm run qa-test:doclint` (DOC-005) catches it.
 
 In every block, **`null` means the axis never ran**; an empty array means it ran and found nothing. The

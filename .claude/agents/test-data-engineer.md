@@ -165,26 +165,6 @@ under per-domain subfolders of `scripts/seed-data/`.
 
 ### Safety invariants
 
-**NEVER run a git command that changes repository or working-tree state.** Forbidden outright:
-`git stash` (push/pop/apply/drop), `git checkout` / `git restore` / `git switch` on paths or branches,
-`git reset`, `git clean`, `git revert`, `git rebase`, `git merge`, `git commit`. Read-only inspection is
-fine (`git status`, `git diff`, `git log`, `git show`).
-
-This is not a style rule. **The working tree is shared** — other sessions and other agents hold
-uncommitted work in it at the same time you do (`feedback_parallel_sessions_share_working_tree`), and a
-tree-wide git operation destroys all of it with no undo. Measured, 2026-08-28: a `git stash push -- <paths>`
-that failed silently, followed by a `git stash pop` that picked up **another session's** pre-existing
-stash, followed by `git checkout --theirs -- .` as "recovery", reverted **every tracked file** to HEAD.
-That erased 14 rule/skill/agent edits from the parent session and a parallel session's suite fix that had
-re-pointed a journey suite off a permanently-consumed fixture — work that had to be replayed by hand, and
-in one case could not be recovered at all.
-
-**If you need a clean baseline, do not create one by moving other people's work.** Copy the file you are
-about to change into the scratchpad and diff against that, or read the committed version with
-`git show HEAD:<path>` — both are read-only and neither touches the tree. A `git stash` that "failed
-silently" is itself the signal to stop and report, never to escalate to a broader command.
-
-
 - `assertSafeTarget()` blocks `ENV_RISK=production`; seed only dev/test/staging/customer envs.
 - Runtime GUIDs → `aliases.<env>.json`; business keys → committed CSV/JSON. **Never** commit a runtime
   GUID (a suite run against another env would then resolve the wrong entity).

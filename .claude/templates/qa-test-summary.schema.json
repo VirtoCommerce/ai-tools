@@ -4,7 +4,28 @@
   "ticket_type": "Bug|Story|Task|Technical task|Review task|Sub-task|Epic|Tweak",
   "flow": "feature-test|verify-fix|hotfix-verify",
   "path": "fast|full",
+  "path_route": {
+    "$comment": "HOW the EFFORT axis landed on `path`, which for one ticket type is a two-phase answer. Same shape and same reason as domain_map.all_layer_confirmed_at below: a Story's downgrade to FAST needs six narrowness tokens (ticket-routing.md §5b) and two of them (`layer`, the surface read) only resolve at 1b, after 1a has had to name a path. So 1a records a PROVISIONAL route and 1b confirms it — safe because 1b is identical on both paths and the fork is immediately after it. Movement is one-way, fast->full. Every other type decides at 1a and records decided_at=1a with provisional=null. narrow_story_tokens is null for every non-Story; per token: true (holds) | false (contradicted) | null (unestablished -> escalate, §5 doubt rule). escalated_reason is the one that moved it, and `purpose_undeclared` is the guard that outranks all six.",
+    "decided_at": "1a|1b-confirmed",
+    "provisional": "fast|full|null",
+    "narrow_story_tokens": null,
+    "escalated_reason": "priority|layer|domains|chain_shape|surface|reach|purpose_undeclared|null"
+  },
   "layer": "storefront|admin-spa|api|module|platform|cross-layer|null",
+  "domain_map": {
+    "$comment": "The sixth pre-flight axis, derived at 1b item 2g, both paths (it dispatches nothing — one local frontmatter read). Resolves whether a DOMAIN MAP exists for this ticket's domain: .claude/knowledge/domain/<name>.md whose `domain_slug` matches. It triggers no lane — when a map is missing AND the chain is all-layer it RECOMMENDS /qa-domain-map <slug> and proceeds. Nothing here ever blocks a run: 12 of 13 domains have no map. Four states because absence and staleness are different facts — a STALE map is the more dangerous one, read as current and carrying a written deliverable's authority. Contract + fail direction: skills/qa-test/axes.md §2g. `null` means the axis never ran (a gap), not that no map exists — that is ABSENT.",
+    "state": "PRESENT|STALE|ABSENT|unresolved|null",
+    "slug": "<bl:extract domain slug, e.g. b2b>",
+    "path": ".claude/knowledge/domain/<name>.md|null",
+    "rev": null,
+    "generated": "YYYY-MM-DD|null",
+    "age_days": null,
+    "all_layer_chain": null,
+    "all_layer_confirmed_at": "1b-provisional|1e-confirmed|null",
+    "recommended": false,
+    "sources": [],
+    "unmapped_surfaces": []
+  },
   "verdict": "PASS|PASS_WITH_NOTES|FAIL|BLOCKED",
   "date": "YYYY-MM-DD",
   "timing": {

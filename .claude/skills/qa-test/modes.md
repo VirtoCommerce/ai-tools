@@ -100,7 +100,7 @@ promotion. This table is the rest of the contract.
 
 | Step | Runs | Because |
 |---|---|---|
-| `1e` Test Model | **ONCE** (round 1), **amended** per round | The model is a fault model of the FEATURE. A fix changes which hypotheses are live, not what the feature can be wrong about — so append a `## Round N` amendment to the **same** file (§Artifact refresh between rounds), never re-derive, and never a second dated file. |
+| `1e` Test Model | **ONCE** (round 1), **amended** per round — **FULL only; a FAST loop has no model and no amendment (§Artifact refresh)** | The model is a fault model of the FEATURE. A fix changes which hypotheses are live, not what the feature can be wrong about — so append a `## Round N` amendment to the **same** file (§Artifact refresh between rounds), never re-derive, and never a second dated file. |
 | Step `3x` discovery lane | **ONCE** (round 1) | Its charter is derived from the fault model's own unknowns, and the model is amended rather than re-derived between rounds — so a round-2 session would explore a surface whose unknowns have not moved, on a build that only differs by the fix. The round's own re-test is what interrogates the fix ([`exploratory-lane.md`](exploratory-lane.md) §9). |
 | Step 4's in-testing hop | **ONCE** (round 1) | The ticket does not leave in-testing inside the loop — 5f is at exit — so every later round already satisfies the precondition. If round 1 skipped the hop (no such transition, tracker unconfigured), the **exit** round does it before 5f, exactly as [`reporting.md`](reporting.md) §5f already says. |
 | **`5k.0` round entry** | **PER ROUND (≥2)** — a baseline read only on round 1 | The board is the source of truth for what this run filed and for what has since been fixed, and it **moves between rounds without the loop being told**: a human merges and deploys a sub-task fix, a developer links a new bug. Verification is a full inline `/qa-verify-fix` per fix-ready bug, which is also the only way a bug with **no covering case** — every bug a FAST round files — can be verified at all (§Round entry). Its own hops are recorded in `status_transitions[]` against the BUG key, never the ticket. |
@@ -305,7 +305,17 @@ mark one **CLEARED-by-fix** with the round it went green, and **add rows for mec
 introduces** (a fix is a change, and it earns the same fault-model treatment the original change got; this
 is the loop's one genuinely new coverage obligation). It may **not** rewrite Part 0: the value chain does
 not change because a bug was fixed, and if it would, the fix changed the mechanism and that is a new ticket,
-not a round. The 10-clause gate re-fires **only on the amendment's new rows**, inline, no verifier.
+not a round. The `1e` gate re-fires **only on the amendment's new rows**, inline, no verifier
+([`test-model.md`](test-model.md) §The gate — it owns the clause list, this file never restates it).
+
+**On FAST there is no model, so the amendment has nowhere to land — and the third clause is the one that
+matters.** Marking a hypothesis CONFIRMED or CLEARED is bookkeeping a FAST run does on its checklist
+anyway, but *"add rows for mechanisms the FIX's diff introduces"* is a real coverage obligation, and a path
+with no model would drop it silently. So on FAST the fix's own new mechanisms are added as **new items in
+the append-only `5e.4` checklist** (the run's only durable record), named as such rather than folded into
+the re-run of the previously-failed items, and `iterations.per_round[].artifacts.model_amendment` records
+`"n/a — FAST"` rather than going absent. The obligation is discharged on the artifact FAST has, never
+waived by silence.
 
 **Authored cases (Artifact A) — never re-author, sometimes add.** Do **not** re-run Step 3 for round-1
 rows: re-running `tc:scaffold` with round 1's `--id-block` makes the appender reject every row on ID

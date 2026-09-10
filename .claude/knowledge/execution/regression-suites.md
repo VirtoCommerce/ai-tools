@@ -113,9 +113,8 @@ came to be documented for weeks after its CSV was deleted.
 
 ## Working concurrently on suites
 
-The rules themselves — never run a state-changing git command in a shared tree, one author per suite
-CSV per change, a conflict is never resolved with git — are tier 1, in
-[`.claude/rules/regression.md`](../../rules/regression.md) §WORKING IN A SHARED TREE. This is the
+The rule itself — one author per suite CSV per change, and a conflict is never resolved with git — is
+tier 1, in [`.claude/rules/regression.md`](../../rules/regression.md) §Suite inventory. This is the
 reasoning and the how-to.
 
 **Why one author, specifically for a CSV.** The same discipline `/qa-review-oracles` applies to

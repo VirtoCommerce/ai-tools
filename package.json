@@ -40,6 +40,9 @@
     "seed:company-users:teardown": "node scripts/seed-data/b2b/seed-company-users.mjs --teardown",
     "seed:b2b": "node scripts/seed-data/b2b/seed-company-users.mjs b2b",
     "seed:b2b:memberships": "node scripts/seed-data/b2b/seed-company-users.mjs cross-org",
+    "seed:membership-lock": "node scripts/seed-data/b2b/set-membership-lock.mjs",
+    "seed:membership-lock:teardown": "node scripts/seed-data/b2b/set-membership-lock.mjs --teardown --all-lanes",
+    "seed:membership-lock:verify": "node scripts/seed-data/b2b/set-membership-lock.mjs --verify --all-lanes",
     "seed:b2b:addresses": "node scripts/seed-data/b2b/seed-b2b-addresses.mjs",
     "seed:b2b:addresses:teardown": "node scripts/seed-data/b2b/seed-b2b-addresses.mjs --teardown",
     "seed:b2b:teardown": "node scripts/seed-data/b2b/seed-company-users.mjs --teardown",
@@ -100,6 +103,7 @@
     "td:reconcile": "node scripts/seed-data/reconcile-test-data.mjs",
     "td:reconcile:store": "node scripts/seed-data/store/check-store-defaults.mjs",
     "td:validate:b2b": "node scripts/seed-data/b2b/validate-b2b-data.mjs",
+    "td:validate:membership-lock": "node scripts/seed-data/b2b/validate-membership-lock-data.mjs",
     "td:validate:credentials": "node scripts/seed-data/validate-credentials.mjs",
     "td:validate:cfg": "node scripts/seed-data/products/validate-configurable-data.mjs",
     "td:validate:standard": "node scripts/seed-data/products/validate-standard-data.mjs",
@@ -231,7 +235,8 @@
     "td:validate:missions-e2e": "node scripts/seed-data/loyalty/validate-missions-e2e-data.mjs",
     "summary:validate": "node scripts/qa-test/validate-summary.mjs",
     "summary:validate:baseline": "node scripts/qa-test/validate-summary.mjs --update-baseline",
-    "qa-test:doclint": "node scripts/qa-test/doclint.mjs"
+    "qa-test:doclint": "node scripts/qa-test/doclint.mjs",
+    "domain:check": "node scripts/maintenance/check-domain-maps.mjs"
   },
   "repository": {
     "type": "git",

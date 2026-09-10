@@ -1,10 +1,10 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-09-04T14:15:02.562Z
+**Validated at:** 2026-09-09T15:02:17.768Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 74 fixtures — 74 passed, 0 failed
+**Total:** 75 fixtures — 75 passed, 0 failed
 
-## ✅ Passed Fixtures (74)
+## ✅ Passed Fixtures (75)
 
 | Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
 |------|------|------|----------|---------------|----------------|--------------|
@@ -43,6 +43,7 @@
 | initializeApplication | query | PUBLIC | store | (none — pass one of `domain` or `storeId` via gql-vars to resolve the store) | 2026-08-27 | 1 noted |
 | loyaltyMissionProgress | query | ORG_USER | loyalty | STORE_ID (String) | 2026-08-27 | 2 noted |
 | me | query | ORG_USER | profile | (none) | 2026-08-27 | 1 noted |
+| meContactOrganizations | query | ORG_USER | profile | (none) | 2026-09-09 | 5 noted |
 | moveFromSavedForLater | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), CART_ID (String) | 2026-08-27 | 1 noted |
 | moveToSavedForLater | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), CART_ID (String) | 2026-08-27 | 1 noted |
 | order-detail | query | ORG_USER | orders | ORDER_NUMBER (String) | 2026-08-27 | 1 noted |
@@ -191,6 +192,13 @@
 
 **me**:
 - (none)
+
+**meContactOrganizations**:
+- Deliberately `me`-rooted. The TOP-LEVEL `organizations(...)` query returns Forbidden for a storefront customer principal (ProfileAuthorizationHandler has no `switch (context.Resource)` case for an IResolveFieldContext, so it falls through to context.Fail()), and it carries no `statuses` argument. Only ContactType.organizations does.
+- `isLockedForCurrentUser` lives on Organization and is zero-arg + caller-relative (added by vc-module-profile-experience-api PR #145, UNMERGED — deployed on vcst-qa as ProfileExperienceApiModule 3.1018.0-pr-145-4fe6). Do NOT confuse it with ContactType.isLockedInOrganization, which is a different field on a different type answering a different question.
+- contact.organization spreads the SAME organizationFields fragment in the real client, which is why the active-org selection below mirrors the item selection — that shared-fragment blast radius is the point of PRF-GQL scenario 9.
+- The switcher itself sends statuses: ["Approved"] (useUserOrganizations.ts:50). This fixture omits `statuses` so it observes the UNFILTERED list, which is what the L4 visibility gate reads (GetMe's unfiltered totalCount). PRF-GQL-078 already covers the statuses-filtered variant — extend that case, do not duplicate it here.
+- totalCount is the UNFILTERED membership count, so it grows when a locked membership is surfaced (post-#145). Any case asserting a fixed number here is asserting a lock-state-dependent value.
 
 **moveFromSavedForLater**:
 - configurationItems on configurable line items are restored end-to-end (PR #118 / VCST-4205)

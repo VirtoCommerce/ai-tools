@@ -1,0 +1,39 @@
+# name: meContactOrganizations
+# category: profile
+# role: ORG_USER
+# purpose: The org-switcher read path — me.contact.organizations with the per-caller lock flag (VCST-5317 / PR #145)
+# required-vars: (none)
+# optional-vars: (none)
+# last-validated: 2026-09-09
+# known-issues:
+#   - Deliberately `me`-rooted. The TOP-LEVEL `organizations(...)` query returns Forbidden for a storefront customer principal (ProfileAuthorizationHandler has no `switch (context.Resource)` case for an IResolveFieldContext, so it falls through to context.Fail()), and it carries no `statuses` argument. Only ContactType.organizations does.
+#   - `isLockedForCurrentUser` lives on Organization and is zero-arg + caller-relative (added by vc-module-profile-experience-api PR #145, UNMERGED — deployed on vcst-qa as ProfileExperienceApiModule 3.1018.0-pr-145-4fe6). Do NOT confuse it with ContactType.isLockedInOrganization, which is a different field on a different type answering a different question.
+#   - contact.organization spreads the SAME organizationFields fragment in the real client, which is why the active-org selection below mirrors the item selection — that shared-fragment blast radius is the point of PRF-GQL scenario 9.
+#   - The switcher itself sends statuses: ["Approved"] (useUserOrganizations.ts:50). This fixture omits `statuses` so it observes the UNFILTERED list, which is what the L4 visibility gate reads (GetMe's unfiltered totalCount). PRF-GQL-078 already covers the statuses-filtered variant — extend that case, do not duplicate it here.
+#   - totalCount is the UNFILTERED membership count, so it grows when a locked membership is surfaced (post-#145). Any case asserting a fixed number here is asserting a lock-state-dependent value.
+
+query {
+  me {
+    id
+    userName
+    contact {
+      id
+      organizationsIds
+      organization {
+        id
+        name
+        isLockedForCurrentUser
+      }
+      organizations(first: 20) {
+        totalCount
+        items {
+          id
+          name
+          status
+          myStatusInOrganization
+          isLockedForCurrentUser
+        }
+      }
+    }
+  }
+}

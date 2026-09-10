@@ -141,7 +141,11 @@ export const FORKS = {
   "skills/qa-checklist/checklist-creation-guide.md": "plugin-scope",
   "skills/qa-checklist/domain-checklists.md": "plugin-scope",
   "skills/qa-checklist/graphql-checklist.md": "plugin-scope",
-  "skills/qa-defect/SKILL.md": "plugin-frontmatter",
+  // Was `plugin-frontmatter` until 2026-09-09, when the root copy gained an Integration row for
+  // `/qa-postman bug-evidence`. vc-fix ships no qa-postman sibling, so that row's link is
+  // unfollowable for a client — which is `plugin-scope` by definition, and it now outweighs the
+  // frontmatter difference that originally justified the entry.
+  "skills/qa-defect/SKILL.md": "plugin-scope",
   "skills/qa-defect/defect-lifecycle-workflow.md": "undecided",
   "skills/qa-defect/defect-report-templates.md": "tracker-agnostic",
   "skills/qa-evidence/SKILL.md": "plugin-frontmatter",

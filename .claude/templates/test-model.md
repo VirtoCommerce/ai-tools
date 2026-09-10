@@ -4,7 +4,7 @@ Fill-in shape for the durable Test Model written to `reports/ba/test-models/<TIC
 (`.claude/rules/reports.md` category 3; 80–160 lines, cap 220).
 
 **The methodology — why Part 0 is derived first, the eight rules the scenario table must satisfy, the
-ten-clause gate, and the worked references — lives in
+twelve-clause gate, and the worked references — lives in
 [`.claude/skills/qa-test/test-model.md`](../skills/qa-test/test-model.md). Read that before filling this
 in.** This file is the shape only, so it can be copied without carrying the argument with it.
 
@@ -12,7 +12,18 @@ in.** This file is the shape only, so it can be copied without carrying the argu
 TEST MODEL — <ticket-key>
 Ticket:      <ticket-key> | Type: Bug/Story/Task/Technical task/Sub-task/Epic | Status role: fix-ready/not-fixed/testable | Flow: feature-test | Priority: P0/P1/P2 | Path: FULL | Changed: Backend / Frontend / Both
 Context:     [FULL: ba-system-analyzer | FAST/inline]
-Affected surface: [module(s)/repo(s), layer(s), code sites]
+Prior model: [reports/ba/test-models/<PREDECESSOR>-<date>.md — the newest model for THIS surface, whose
+             Part 0 is carried forward below (chain, diagrams, variants, reverse edges), with any
+             correction recorded as drift against it | none — first model for this surface]
+Domain map:  [.claude/knowledge/domain/<name>.md @ rev N (generated YYYY-MM-DD) | ABSENT]
+             ABSENT is a valid value and blocks nothing — but then Chain position below reads
+             "unverified", so the omission is recorded rather than invisible (gate clauses 11/11b).
+Chain position: [this ticket's chain as a SLICE of the domain chain — the links it TOUCHES and,
+             explicitly, the links it DOES NOT. "L1, L4-L6 of L1-L9; does not touch L2-L3, L7-L9."
+             Naming what you did not cover is contradictable; "the matrix is complete" is not.
+             | "unverified — no domain map"]
+Affected surface: [module(s)/repo(s), layer(s), code sites — every one must resolve to a surface the
+             domain map enumerates, or be reported as a surface the map is MISSING (clause 11b)]
 Ticket signals: [load-bearing facts from COMMENTS + ATTACHMENTS — real repro, PO/dev clarifications, "fixed in build X"/reopen notes, prior QA findings; screenshot expected-vs-actual, design mockup ref, log/HAR repro]   (from 1a)
 Epic context: [parent Epic + goal; this story's position in the E2E flow; Done siblings = integration seams to cover; In-progress siblings = dependencies/blockers]   (from 1a; "none" if no parent)
 Domains:     [Cart, Payment, ...]
@@ -26,8 +37,7 @@ Chain diagrams: [Mermaid, in the file. `flowchart` ALWAYS (the journey: primary 
                  + `sequenceDiagram` when the chain crosses layers or any part is async (job/queue/webhook/settlement);
                  + `stateDiagram-v2` when the entity has a lifecycle, or an effect is expected to REVERSE (cancel/refund/expire/revoke)]
 Variants:     [the kinds of the thing — goal types / processors / product kinds / role kinds. Different code paths through the SAME link, so they are matrix ROWS, not input partitions. DERIVE THEM FROM THE LAYER THAT BRANCHES on the thing under test — and where several layers branch differently, take the UNION, not whichever layer you read first]
-Mechanism coverage matrix: [columns = chain links, rows = variants — BOTH derived from Part 0, never by reading your own scenario table back. A matrix filled from the scenario list fills completely by construction, so a mechanism with no scenario has no row to be uncovered in. Map scenarios in AFTER the axes exist; re-derive after any rewrite of the table, since renumbering drops rows silently]
-Mechanism coverage matrix: [variants × chain links; every cell holds a scenario # or `GAP` / `WAIVED + reason`. No blank cells — a blank is a hole nobody can see, a GAP is a decision someone can argue with]
+Mechanism coverage matrix: [variants × chain links. AXES: columns = chain links, rows = variants — BOTH derived from Part 0, never by reading your own scenario table back (a matrix filled from the scenario list fills completely by construction, so a mechanism with no scenario has no row to be uncovered in); map scenarios in AFTER the axes exist, and re-derive after any rewrite of the table, since renumbering drops rows silently. CELLS: every one holds a scenario # or `GAP` / `WAIVED + reason` — no blank cells, because a blank is a hole nobody can see and a GAP is a decision someone can argue with]
 Reverse edges: [per forward effect that moves money/points/stock/entitlement: what moves it back → covered by # | ABSENT IN PRODUCT (a finding to report, never a blank)]
 Fixture lifecycle: [any state that is TERMINAL once reached (a completed mission, a consumed coupon, a shipped order) — a case that must observe an ADVANCE needs a per-run fixture, not a shared one, or it passes once and never again]
 --- Parts 1–5 — FAULT MODEL (built per link, on top of Part 0) ---

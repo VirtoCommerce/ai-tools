@@ -2,13 +2,32 @@
 
 Reference for the tool surface exposed by the Postman MCP server. Read this first — every other reference file assumes you know what's available.
 
-> **The Postman MCP authors and manages collections; it does NOT execute them.** There is no `runCollection` tool. Execution is done out-of-band via Newman, the Postman CLI, Postman Monitors (`createMonitor` — full toolset only), or the Postman desktop/web Runner. See [execution.md](execution.md).
+> **The Postman MCP authors and manages collections; it does not run them from the default endpoint.** `runCollection` is **not callable** — see §1a for why the tool catalog appears to advertise it. Execution is out-of-band via Newman, the Postman CLI or the desktop/web Runner, or MCP-native via a **Postman Monitor** on the full endpoint (`createMonitor` + `runMonitor`), which carries its own costs. See [execution.md](execution.md).
 
 ---
 
 ## 1. Tool Inventory
 
-The Postman MCP runs in `minimal` mode (40 tools) by default. Call `getEnabledTools` first if a tool seems unavailable — it shows what's exposed in the current session and what's available in the `full` set (116 tools).
+The Postman MCP runs in `minimal` mode by default. Call `getEnabledTools` if a tool seems unavailable. **Tool counts are not transcribed here** — they change with the deployed server, and a stale number sends you looking for a tool that was never there (GOLDEN RULE, [`test-data.md`](../../rules/test-data.md)). Read them off `getEnabledTools` instead.
+
+### 1a. `currentServerTools` is the authority — `enabledTools` is a catalog, not a promise
+
+`getEnabledTools` returns two different things, and conflating them wastes a session:
+
+| Field | What it is |
+|---|---|
+| `serverInfo.currentServerTools` | What this endpoint **actually registered**. Callable. |
+| `enabledTools.minimal` / `.full` | The catalog the server *advertises* for each mode. **May list tools no endpoint serves.** |
+
+`runCollection` is the standing example: it appears in **both** catalog lists and is registered by **neither** endpoint. Measured 2026-09-09 by JSON-RPC `tools/list` straight at the endpoint:
+
+| Endpoint | Registered tools | `runCollection` | Monitor family |
+|---|---|---|---|
+| `https://mcp.postman.com/minimal` (this project's `.mcp.json`) | 41 | absent | none |
+| `https://mcp.postman.com/mcp` (full) | 156 | **absent** | `createMonitor`, `runMonitor`, `getMonitorRunResults`, `listMonitorExecutions`, … |
+| `https://mcp.postman.com/full` | — | HTTP 404 — not an endpoint | — |
+
+So the practical conclusion ("you cannot call `runCollection`") is right, but not because the tool is absent from the product's catalog — it is in the catalog. **When a tool is listed but a call fails, check `currentServerTools` before assuming the call was malformed.**
 
 ### Tools available in the `minimal` set (default)
 

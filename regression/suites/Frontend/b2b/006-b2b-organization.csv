@@ -470,3 +470,967 @@ Reviewer finding A on vc-frontend#2399 (useUserOrganizations.ts:50 — getOrgani
 [CONSOLE] no uncaught JS errors when the switcher renders its empty list
 [NETWORK] no 4xx/5xx on the GetOrganizations query itself (this is a silent filtering behavior, not an error)","Switcher list still shows both orgs after the global status change (fix already applied — reconfirm live before treating as a failure of this case); switcher control disappears entirely instead of rendering empty (a different, also-broken variant); login itself is rejected (would indicate a different regression than the one under test — see suite 031 AUTH-073 for the registration-time root cause of this same global-status defect)","[SAVE] Restore $MEMBER_ID's global contact.Status via REST PUT {{BACK_URL}}/api/members: {""id"": ""$MEMBER_ID"", ""memberType"": ""Contact"", ""status"": ""Approved""} (or delete the fixture entirely in the next step)
 [SAVE] Delete the AGENT-TEST fixtures created in Steps via REST: DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$TF_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/customer/organization-memberships?ids=$BR_MEMBERSHIP_ID; DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-org040-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$MEMBER_ID","VCST-5281; PR review finding A on vc-frontend#2399 (useUserOrganizations.ts statuses filter); testing-checklist.md conditions #40/#41","Draft"
+B2C-ORG-041,"Org Switcher — Locked Membership Renders Disabled With A Padlock, And Exposes No Tooltip Or Accessible Locked Name (known divergence F2)",B2C Features > Organization > Switcher Lock Axis,Critical,"BL-B2B-005, BL-AUTH-013",ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every step opens the account menu first. Desktop only — mobile parity is B2C-ORG-047.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id)","[SETUP] apply the permanent-lock variant: `npm run seed:membership-lock -- --lane frontend --state V2` (IsLocked=true, LockoutEnd null, on the NON-active organization)
+[SETUP] confirm what actually landed: `npm run seed:membership-lock -- --lane frontend --verify` — record the read-back isLocked / isCurrentlyLocked for the locked leg; a /lock call on an unknown membership id returns 200 with a null body, so never trust the status alone
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the account page renders and the top header is present
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[SNAP] before = listbox 'Organizations'
+[ACT] hover the option whose organization id is @td(MULTI_ORG_TF_BR_ALT.org_techflow_id)
+[WAIT] hover settles (~1s), then capture the accessibility tree for that option and a screenshot of the popover
+[KEY] press Tab repeatedly until focus reaches listbox 'Organizations'
+[KEY] press ArrowDown to walk every option in the listbox (keyboard path only — never force the disabled control, VC-EXEC-003: the disabled state IS the validation working)","[COUNT] listbox 'Organizations' renders exactly one option per membership — 2 options on this 2-org account {OBSERVED}
+[DOM] the option for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) carries the disabled state in the accessibility tree {OBSERVED}
+[DOM] that same disabled option renders a 'lock-closed' icon {OBSERVED}
+[REL] the option for @td(MULTI_ORG_TF_BR_ALT.org_buildright_id) is NOT disabled and renders no 'lock-closed' icon — the lock treatment is scoped to the locked membership and does not leak to the rest of the list {OBSERVED}
+[COUNT] exactly 1 of the 2 options is disabled {OBSERVED}
+[DOM] the disabled locked option exposes NO tooltip node and no locked indicator in its accessible name — the a11y tree carries only the organization name. This is the KNOWN divergence F2 (WCAG 4.1.2 / 1.1.1) recorded live 2026-09-09 and filed as a separate a11y ticket per the a11y-never-blocks-feature-stories rule, so PR #2469's title binding is UNPROVEN on the disabled element. A tooltip or a locked accessible name appearing here means the binding started working: record it and update this line — do not read it as a failure, and do not read its absence as a pass of the tooltip requirement {OBSERVED}
+[REL] the keyboard walk reaches the same option set as the pointer path and the disabled option is the same one on both paths {OBSERVED}","[API] the GetMe / GetOrganizations responses carry errors[] empty — the locked row is rendered from data, never from an error path
+[CONSOLE] no TypeError and no uncaught exception while the Account-menu popover opens and renders
+[NETWORK] no 4xx/5xx on /graphql","the locked option renders enabled (cursor=pointer, no disabled state) — PR #2469 reverted or not deployed on this build; the locked option is absent from the list entirely (the pre-#145 HIDE behaviour is back); BOTH options render disabled (the lock treatment leaked to the whole list); a raw i18n key renders in place of an organization name or a label; the 'lock-closed' icon is missing while the option is disabled; 4xx/5xx on /graphql; console TypeError on opening the account menu","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
+Then `npm run seed:membership-lock:verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:RENDER · Technique:EP,Draft
+B2C-ORG-042,Org Switcher — Locked Org Paged Out By An Active Search Phrase Slips Past The Click Guard (>N-org fixture required),B2C Features > Organization > Switcher Lock Axis,Critical,"BL-AUTH-016, BL-B2B-005",ECL-14.3,"BLOCKED BY A MISSING FIXTURE — report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING`, never PASS, and never satisfy this by substitution.
+What this case needs and the environment does not have: an account with MORE THAN N organizations — N being the threshold above which the switcher renders its search input (data-test-id=""organizations-search"") — AND a currently-locked membership on one of those organizations. Measured live 2026-09-09 the search input is threshold-gated and does NOT render on a 2-org account, and BOTH reserved lane fixtures (MULTI_ORG_TF_BR_ALT frontend / MULTI_ORG_TF_BR backend) are 2-org. MULTI_ORG_USER (11 orgs) sits outside the reserved lane split and carries no membership this run may lock. Re-pointing this case at a 2-org account makes the guard's paged-out branch unreachable, so a green result would certify nothing.
+The hypothesis this row keeps in the corpus: top-header-organizations.vue resolves the clicked row against organizations.value while the click originates from displayedOrganizations (which prepends the current organization), so a target paged out by an active search phrase resolves undefined and the guard returns without blocking.
+Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every step opens the account menu first. Desktop only — mobile parity is B2C-ORG-047.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id)","[SETUP] STOP AND REPORT BLOCKED unless a >N-organization account with one locked membership exists — see Preconditions. Do not substitute a 2-org lane fixture and do not improvise a fixture.
+[SETUP] (once such a fixture exists) lock exactly ONE membership on that account via `POST {{BACK_URL}}/api/customer/organization-memberships/{membershipId}/lock` with body {""lockoutEnd"": null}, then read it back with `GET {{BACK_URL}}/api/customer/organization-memberships/{membershipId}` and confirm isCurrentlyLocked=true — the reserved lane setter is bound to the 2-org accounts and must not be used here
+[PRE:SIGNIN_AS:<the >N-organization account's alias, once one is reserved>]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[WAIT] the search input (data-test-id=""organizations-search"") is present — if it is absent the account is below the threshold: stop and report BLOCKED
+[ACT] type into the search input a phrase that matches the locked organization but pages it out of the raw organizations list
+[WAIT] the filtered list settles
+[ACT] click the locked organization's row in the FILTERED list — a real user click on a row the component itself rendered as clickable. Never pass a force flag. Never click through a disabled attribute (VC-EXEC-003)
+[WAIT] the click settles; capture every /connect/token and every POST /graphql issued after it","[STATE] the active organization after the click is the same organization that was active before it {SPEC} (PR #2469 top-header-organizations.vue click guard)
+[COUNT] zero /connect/token requests carrying organization_id = the locked organization's id were issued by the click {SPEC} (PR #2469 click guard)
+[NAV] the browser did not navigate to /403 and did not land on a token-error page {SPEC} (PR #2469 click guard)
+[REL] the end state reached with a search phrase active equals the end state reached with no search phrase active on the same locked row — the guard must not depend on whether the list is filtered {SPEC} (PR #2469 click guard)","[API] no organization-scoped token grant appears in the network log after the click
+[CONSOLE] no TypeError and no uncaught exception on the filtered click
+[NETWORK] no 4xx/5xx on /graphql and no 400 on /connect/token","a /connect/token request naming the locked organization appears in the network log after the click — the guard was bypassed, which is the P0 this row exists for; redirect to /403 or to a token-error page; the active organization changes; the search input does not render at all (the fixture is below the threshold — that is BLOCKED, not FAIL)","Unlock whatever membership Steps locked (`POST {{BACK_URL}}/api/customer/organization-memberships/{membershipId}/unlock`) and read it back to confirm isLocked=false. This case does NOT drive the reserved lane setter, so `npm run seed:membership-lock:verify` must still exit 0 afterwards — if it does not, a lane fixture was touched and must be restored with `npm run seed:membership-lock:teardown`.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).
+If the case reported BLOCKED before Steps mutated anything, there is nothing to restore.",VCST-5317 · Archetype:BOUNDARY · Technique:EG,Draft
+B2C-ORG-043,"Org Switcher — Visibility Gate Reads The Unfiltered Membership Count, Not The Selectable Count",B2C Features > Organization > Switcher Lock Axis,High,BL-B2B-005,ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every step opens the account menu first. Desktop only — mobile parity is B2C-ORG-047.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the account page renders
+[ACT] capture the GetMe response issued by this page load
+[ACT] read me.contact.organizations.totalCount out of that captured response
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] enumerate every option in listbox 'Organizations'
+[ACT] record the disabled state of each enumerated option","[DOM] the Account-menu popover renders listbox 'Organizations' while one of the two memberships is locked — the switcher control is present, not withheld {OBSERVED}
+[REL] the number of options in the listbox equals me.contact.organizations.totalCount from the GetMe response captured in the same page load (the UNFILTERED membership count), and NOT the count of selectable options {SPEC} (useUser.ts:382 reads the unfiltered totalCount; PR #145 stopped reducing it for a locked membership)
+[COUNT] the listbox renders 2 options while exactly 1 of them is selectable {OBSERVED}
+[REL] the two predicates disagree by exactly the locked count: options rendered minus options selectable equals the number of items carrying isLockedForCurrentUser true in the same response {OBSERVED}","[API] the GetMe response reports me.contact.organizations.totalCount = 2 while exactly one item carries isLockedForCurrentUser true
+[CONSOLE] no TypeError and no uncaught exception while the popover renders
+[NETWORK] no 4xx/5xx on /graphql","listbox 'Organizations' is absent while a membership is locked — the gate switched to the filtered count, which is the STALE-READ regression this case guards and would strand the user in the one organization they can still reach; the option count equals the selectable count (1) instead of totalCount (2); totalCount itself drops to 1 (PR #145 reverted, the lock filter is back)","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
+Then `npm run seed:membership-lock:verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:PARITY · Technique:BVA,Draft
+B2C-ORG-044,Org Switcher — One Active Plus One Locked Membership Flips isMultiOrganization And Reveals A Switcher,B2C Features > Organization > Switcher Lock Axis,High,BL-B2B-005,ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every step opens the account menu first. Desktop only — mobile parity is B2C-ORG-047.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name.
+HONEST LIMIT, stated rather than left for a green result to imply: the isMultiOrganization false->true FLIP is NOT observable on this fixture. The gate reads the unfiltered totalCount, which is 2 both before and after the lock, so nothing flips on a 2-org account. This case asserts the END STATE — exactly one selectable organization out of two, with the switcher still rendered — which is itself the boundary. Observing the flip would need an account whose unfiltered count was 1 before the lock; no such fixture exists and one must not be improvised here.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id)","[SETUP] `npm run seed:membership-lock:teardown` — start from the resting state V1 so the baseline is the unlocked list
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the BASELINE option count in listbox 'Organizations'
+[ACT] record which BASELINE options are disabled
+[ACT] record which BASELINE option carries [selected]
+[ACT] close the Account-menu popover
+[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (lock the non-active organization, leaving exactly one selectable)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[NAV] {{FRONT_URL}}/account/dashboard (fresh page load in the same session)
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] capture the same three values again","[REL] the listbox option count is identical before and after the lock (2 -> 2) — the visibility gate does not move with the lock {OBSERVED}
+[COUNT] after the lock exactly 1 of the 2 options is selectable (not disabled) {OBSERVED}
+[DOM] listbox 'Organizations' is still present for a user with exactly one selectable organization {SPEC} (useUser.ts:382 greater-than-one gate on the unfiltered count; PR #2469 does not touch that line)
+[REL] the single selectable option is the option that also carries [selected] — the user is never left with zero reachable organizations at this boundary {OBSERVED}
+[REL] the baseline capture and the post-lock capture differ in exactly one respect: one option gained the disabled state and the lock icon. Option count, [selected] target and ordering are unchanged {OBSERVED}","[API] the GetMe / GetOrganizations responses carry errors[] empty — the locked row is rendered from data, never from an error path
+[CONSOLE] no TypeError and no uncaught exception while the Account-menu popover opens and renders
+[NETWORK] no 4xx/5xx on /graphql","the switcher disappears once only one organization is selectable (the gate started reading the selectable count); the option count changes across the lock; [selected] moves to a different organization without any user action; both options end up disabled (this is the V7 shape, not V8 — re-check which state the seeder actually applied)","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
+Then `npm run seed:membership-lock:verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:BOUNDARY · Technique:BVA,Draft
+B2C-ORG-045,Org Switcher — All Memberships Locked Redirects To /403 With Every Row Disabled Including [selected],B2C Features > Organization > Switcher Lock Axis,Critical,"BL-AUTH-015, BL-B2B-001",ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every step opens the account menu first. Desktop only — mobile parity is B2C-ORG-047.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name.
+Reached through V7 (every membership locked, multi-org account), NOT through V5: locking the ACTIVE organization terminates all sessions and re-authentication then rehomes the user onto the unlocked sibling, so a user is never actually sitting in a locked active organization. V5 collapses into V2 and owns no distinct state.
+V7 lands IsCurrentlyLocked=true on every leg, which terminates the account's sessions — so the sign-in step MUST come after the lock, never before.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V7` (EVERY membership on the lane account locked permanently)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — confirm both legs read back isCurrentlyLocked=true before continuing; if only one is locked this is V2, not V7, and the case is invalid
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the navigation settles — a redirect is expected
+[ACT] record the landing URL
+[ACT] record every console message produced by the navigation
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] enumerate every option in listbox 'Organizations'
+[ACT] record the disabled state of each option
+[ACT] record which option carries [selected]
+[ACT] record whether the element data-test-id=""organizations-empty-list"" is present in the popover
+[ACT] record whether any empty-state or contact-an-administrator copy is present anywhere on the page","[NAV] loading /account/dashboard lands the browser on /403 {OBSERVED}
+[DOM] the Account-menu popover still renders listbox 'Organizations' on /403 — the switcher is rendered, not withheld {OBSERVED}
+[COUNT] every option in the listbox is disabled — 2 of 2 — including the option that also carries [selected] {OBSERVED}
+[DOM] no empty-state and no contact-an-administrator message is present: the element data-test-id=""organizations-empty-list"" is absent, and the component's only empty state remains its search no-results branch {OBSERVED}
+[REL] the [selected] option is disabled exactly like the others, so the recovery escape hatch that AUTH-043 (suite 033) relies on does not exist in this state — the user has no in-product way out {OBSERVED}
+[COUNT] zero selectable options exist anywhere on the page {OBSERVED}","[API] the account-page query returns HTTP 200 with a non-empty errors[] carrying 'Access denied.' — the denial arrives inside the GraphQL envelope, not as an HTTP error
+[CONSOLE] exactly one ApolloError 'Access denied.' is logged on the /403 redirect; this console error is EXPECTED in this state and is not an incidental failure. No other uncaught exception is permitted
+[NETWORK] no 4xx/5xx on /graphql","/account/dashboard renders normally (the dead-end did not reproduce — re-run --verify and confirm V7 actually applied before treating this as a failure); an empty state or a contact-an-administrator message appears (product decided AC-6 — that is a change to record, and this case's fourth assertion must be updated); the [selected] option is NOT disabled (the escape hatch was restored — a fix, record it); a redirect to /sign-in instead of /403 (the session was evicted, which is a different behaviour than the one measured 2026-09-09); more than one distinct console error class on the redirect","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
+Then `npm run seed:membership-lock:verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:LIFECYCLE · Technique:EG · open P0 BUG-multiorg-no-self-recovery-when-pinned-org-blocked (VCST-5281) — same dead-end class reached through the LOCK axis · cross-ref AUTH-043 (033),Draft
+B2C-ORG-046,Org Switcher — Locking A Sibling Organization Does Not Evict The Live Storefront Session,B2C Features > Organization > Switcher Lock Axis,High,BL-AUTH-012,ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every step opens the account menu first. Desktop only — mobile parity is B2C-ORG-047.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name.
+The lock must land DURING the live session, out of band, without touching the browser — that is the whole point of the case. So the session is established at the resting state V1 and the lock is applied afterwards.
+The organization locked here is the NON-active sibling. RevokeTokenOrganizationMembershipChangedEventHandler calls TerminateAllUserSessions(userId) globally on any IsCurrentlyLocked post-state, so the handler's name predicts eviction; measured live 2026-09-09 the caller's own storefront session survived a sibling lock intact. This case guards that negative, which BL-AUTH-012 does not cover and no other case draws.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id)","[SETUP] `npm run seed:membership-lock:teardown` — establish the resting state V1 so the lock lands mid-session
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the account page renders
+[ACT] start recording every POST /graphql response status from this point to the end of the case
+[ACT] start recording every navigation from this point to the end of the case
+[SETUP] out of band, WITHOUT touching the browser session: `npm run seed:membership-lock -- --lane frontend --state V2` (locks the non-active sibling membership)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[ACT] click 'Orders' in the account sidebar — a client-side navigation, not a page reload
+[WAIT] the orders page renders its own content
+[ACT] click 'Addresses' in the account sidebar
+[WAIT] the addresses page renders its own content
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] enumerate every option in listbox 'Organizations'
+[ACT] record the disabled state of each option","[COUNT] zero non-200 POST /graphql responses between the lock and the end of the case {OBSERVED}
+[NAV] the browser was never redirected to /sign-in and no 401 wall was rendered {OBSERVED}
+[STATE] the session is still authenticated as @td(MULTI_ORG_TF_BR_ALT.email) and the active organization is unchanged, with no re-authentication anywhere in the case {OBSERVED}
+[DOM] the sibling organization's option re-renders disabled on the next account-menu open, with no re-login {OBSERVED}
+[REL] each page reached by client-side navigation after the lock renders the same content it renders in a session where no lock landed — the sibling lock is invisible to the caller's own session {OBSERVED}","[API] every POST /graphql after the lock returns HTTP 200 with errors[] empty
+[CONSOLE] no TypeError, no uncaught exception and no auth-failure log after the lock
+[NETWORK] no 401/403 and no 4xx/5xx on /graphql after the lock","any 401 or 403 on POST /graphql after the lock; a redirect to /sign-in (eviction happened — that CONTRADICTS the 2026-09-09 measurement and is the finding this case exists to catch); the sibling row still renders enabled on the next account-menu open (the read path did not refresh); the cart, the active organization or the addresses list resets","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
+Then `npm run seed:membership-lock:verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:LIFECYCLE · Technique:ST,Draft
+B2C-ORG-047,Org Switcher — Mobile Hamburger Panel Exposes No Organization Switcher At All,B2C Features > Organization > Switcher Lock Axis,Medium,"BL-B2B-005, BL-UI-006",ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every step opens the account menu first. Desktop only — mobile parity is B2C-ORG-047.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name.
+Mobile is the surface under test here, so the desktop-only note above is the thing being checked rather than an exclusion. multi-organisation-menu.vue is absent from PR #2469's changed files, so the mobile surface received neither lock handling nor switcher wiring.
+Measured live 2026-09-09 at 375px: the hamburger panel renders the current organization as NON-INTERACTIVE text plus an account block (name / Logout / Purchasing), with no Organizations listbox and no option rows. That refutes the earlier hypothesis of tappable unguarded rows reaching the token layer — the defect is a missing capability, not a missing guard.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2`
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the DESKTOP baseline option set of listbox 'Organizations'
+[ACT] record which DESKTOP baseline option is disabled
+[VIEWPORT] 375
+[REFLOW]
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the mobile layout settles and the hamburger button is visible
+[ACT] tap the top-header mobile navigation toggle — the 'hamburger' control that is the only header button rendered at 375px
+[WAIT] the mobile navigation panel is open
+[WAIT] the mobile navigation panel is open
+[ACT] enumerate every interactive control in the mobile navigation panel with its role
+[ACT] enumerate every heading in the panel
+[ACT] enumerate every text node in the panel
+[ACT] record for each enumerated node whether it is focusable
+[KEY] press Tab repeatedly through the whole mobile navigation panel
+[ACT] record whether focus ever lands on the current-organization text node
+[PROBE:TOUCH] the mobile navigation panel","[COUNT] at 375px the hamburger panel renders zero listbox 'Organizations' nodes and zero per-organization option rows {OBSERVED}
+[DOM] the current organization is rendered as non-interactive text: no option role and no button role is present on that node, it is not focusable, and Tab never places focus on it {OBSERVED}
+[DOM] the panel's account block contains the account name, 'Logout' and 'Purchasing' {OBSERVED}
+[REL] the set of organizations reachable at 375px is EMPTY while the same session at 1280x900 exposes 2 options — the switcher is desktop-only, so the locked-row treatment is unreachable on mobile by construction {OBSERVED}
+[COUNT] zero /connect/token requests naming any organization id are issued from the mobile panel — nothing on this surface reaches the token layer {OBSERVED}
+[TOUCH] belowAA == 0 across the mobile panel's interactive controls {BL} (BL-UI-006)","[API] no organization-scoped token grant is issued while the mobile panel is open
+[CONSOLE] no TypeError and no uncaught exception at 375px or on the viewport change
+[NETWORK] no 4xx/5xx on /graphql","an Organizations listbox or tappable organization rows DO appear at 375px — a switcher shipped to mobile, so re-scope this case and immediately check whether those rows are lock-guarded; the current-organization text becomes focusable or clickable; a /connect/token request naming an organization id is issued from the panel; the panel fails to open or renders empty at 375px","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
+Then `npm run seed:membership-lock:verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).
+Restore the viewport to 1280x900 so the next case does not inherit the mobile layout.",VCST-5317 · Archetype:FALLBACK · Technique:EP,Draft
+B2C-ORG-048,Org Switcher — Unlocking A Membership Re-Enables Its Row Without A Re-Login,B2C Features > Organization > Switcher Lock Axis,High,"BL-AUTH-012, BL-B2B-005",ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every step opens the account menu first. Desktop only — mobile parity is B2C-ORG-047.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name.
+The unlock is the reverse edge under test. Per the post-state handler an unlock leaves IsCurrentlyLocked=false and therefore does NOT terminate sessions, so the same session must survive the unlock — if it does not, that itself is the finding.
+Timing is load-bearing: the locked-organization id set is cached with AbsoluteExpirationRelativeToNow = 1 minute, so an observation taken sooner than that can legitimately read the pre-unlock generation and would make this case flaky by construction.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2`
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ASSERT] the option for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) is disabled — this is the precondition of the reverse edge; if it is not disabled, stop, because the lock never applied and the rest of the case is vacuous
+[ACT] close the Account-menu popover
+[SETUP] out of band, in the SAME browser session: `npm run seed:membership-lock -- --lane frontend --state V1` (an explicit unlock write; /unlock clears both isLocked and lockoutEnd)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — must exit 0
+[WAIT] 65 seconds — past the 1-minute locked-id cache window, so the next read cannot be the pre-unlock generation
+[NAV] {{FRONT_URL}}/account/dashboard — a fresh page load in the SAME session: no sign-out, no re-login, no session clear
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] enumerate every option in listbox 'Organizations' again
+[ACT] record the disabled state of each option again","[DOM] the previously locked option is no longer disabled and renders no 'lock-closed' icon {OBSERVED}
+[COUNT] zero of the 2 options are disabled after the unlock {OBSERVED}
+[STATE] the session was never signed out and never re-authenticated between the two observations {BL} (BL-AUTH-012 — an unlock leaves IsCurrentlyLocked false, so the post-state session-termination handler does not fire)
+[REL] the listbox after the unlock is identical to the resting-state V1 listbox: same option count, same ordering, none disabled, none carrying a lock icon {OBSERVED}
+[REL] the same session's listbox before and after the unlock differs in exactly one respect — the disabled state and lock icon on one option are gone {OBSERVED}","[API] the GetOrganizations response after the unlock carries isLockedForCurrentUser false on every item, with errors[] empty
+[CONSOLE] no TypeError and no auth-failure log across the unlock
+[NETWORK] no 401/403 and no 4xx/5xx on /graphql after the unlock","the row is still disabled after the unlock and the full cache window — the STALE-READ this case guards; if it reproduces, capture how long it stays stale and whether a sign-out/sign-in clears it, because that distinguishes a cache-invalidation bug from a resolver bug; the session is signed out by the unlock (the handler fired on a non-locked post-state); a 401 on /graphql after the unlock; the row disappears from the list instead of re-enabling","The case ends at the resting state V1 by construction. Still run `npm run seed:membership-lock:teardown` followed by `npm run seed:membership-lock:verify` (idempotent) so a mid-case abort cannot leave a lock behind.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:STALE · Technique:ST,Draft
+B2C-ORG-049,"Org Switcher — Expired LockoutEnd Restores The Row With No Write, After The Cache Window",B2C Features > Organization > Switcher Lock Axis,High,BL-AUTH-012,ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every step opens the account menu first. Desktop only — mobile parity is B2C-ORG-047.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name.
+V4 seeds IsLocked=true with LockoutEnd ALREADY in the past, in a single /lock call — no wall-clock wait is needed to reach the expired state. The divergence is what makes the case decidable: a surface reading raw IsLocked shows the organization locked, one reading IsCurrentlyLocked shows it usable, so the two readings predict opposite renders.
+Never assert on the REST organization-membership search with onlyLocked after a passive expiry: that cache is region-token-only with no time bound and was measured still reporting the row locked at t+162s. The user-visible xAPI flag is the oracle here.
+V4 leaves IsCurrentlyLocked=false, so it does NOT terminate sessions.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V4` (IsLocked=true, LockoutEnd in the past — one call, no waiting)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — record the read-back and confirm the two fields DIVERGE (isLocked=true AND isCurrentlyLocked=false). If they agree, the state did not apply and the case is vacuous: stop
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[SNAP] sample_1 = listbox 'Organizations'
+[ACT] record for sample_1: the option count, which options are disabled, which carry a 'lock-closed' icon
+[ACT] close the Account-menu popover
+[WAIT] 65 seconds — so the second sample falls in a different 1-minute cache generation from the first
+[NAV] {{FRONT_URL}}/account/dashboard (second fresh page load)
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the same three values for sample_2","[DOM] the option for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) is ENABLED and renders no 'lock-closed' icon, with no unlock write ever issued {BL} (BL-AUTH-012; the predicate is IsLocked && (!LockoutEnd.HasValue || LockoutEnd > UtcNow), so an expired LockoutEnd is not currently locked)
+[COUNT] zero of the 2 options are disabled {OBSERVED}
+[REL] sample_1 and sample_2 agree on all three recorded values — the render matches the server's isCurrentlyLocked on both sides of the 1-minute cache window {OBSERVED}
+[REL] the listbox at an expired LockoutEnd is indistinguishable from the resting-state V1 listbox, and distinguishable from the V2 listbox (which disables exactly one option) — that divergence between the two readings of the lock fields is what makes this decidable {OBSERVED}","[API] the GetOrganizations response reports isLockedForCurrentUser false for the membership whose raw isLocked is true, with errors[] empty
+[CONSOLE] no TypeError and no uncaught exception across either sample
+[NETWORK] no 4xx/5xx on /graphql","the row renders disabled at an expired LockoutEnd — the raw-IsLocked read, which is VCST-5374's exact defect class re-appearing on the switcher surface; the two samples disagree (a stale cache generation is user-visible, which is a different and weaker defect than the predicate bug); the row is missing from the list entirely; the seeder's read-back shows isLocked and isCurrentlyLocked agreeing (the fixture never reached V4 — BLOCKED, not FAIL)","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock:teardown` to restore the resting state V1 on every lane leg.
+Then `npm run seed:membership-lock:verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).","VCST-5317 · Archetype:BOUNDARY · Technique:BVA · VCST-5374 (the same IsLocked vs IsCurrentlyLocked confusion, already filed once as a user-visible bug) · regression-guarded contract-side by PRF-GQL-080",Draft
+B2C-ORG-050,Org Switcher — Browser Back Out Of The All-Locked /403 Restores No Working Account Page And No Selectable Row [UIP-BACK],B2C Features > Organization > Switcher Lock Axis,High,"BL-AUTH-015, BL-B2B-005",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+V7 terminates the account's sessions, so sign-in must come AFTER the lock.
+The probe: browser Back out of the dead-end. There is no completed submit or payment on this surface, so the UIP-BACK failure mode here is a resurrected pre-lock render (bfcache) or a Back that appears to restore access it no longer has.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V7` (EVERY membership locked)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — both legs must read back isCurrentlyLocked=true, or this is V2 and the row is invalid
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the navigation settles and the browser lands on /403
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the BEFORE option set of listbox 'Organizations'
+[ACT] record the disabled state of each BEFORE option
+[ACT] record which BEFORE option carries [selected]
+[ACT] close the Account-menu popover
+[KEY] browser Back (Alt+ArrowLeft)
+[WAIT] the navigation settles; record the landing URL
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the AFTER option set of listbox 'Organizations'
+[ACT] record the disabled state of each AFTER option
+[ACT] record which AFTER option carries [selected]","[NAV] after Back the browser is not sitting on a working /account/** page — it either stays on /403 or re-redirects to /403 {OBSERVED}
+[REL] the Account-menu listbox state after Back is identical to the state before Back: same option count, every option disabled, including the one carrying [selected] {OBSERVED}
+[DOM] no pre-lock render of the account dashboard is present after Back — stale organization-scoped content from the back/forward cache is absent {OBSERVED}
+[COUNT] zero selectable options exist at any point in the Back navigation {OBSERVED}","[API] the account-page query returns HTTP 200 with a non-empty errors[] carrying 'Access denied.' — the denial arrives inside the GraphQL envelope
+[CONSOLE] the ApolloError 'Access denied.' is EXPECTED in the all-locked state and is not an incidental failure; no other uncaught exception is permitted
+[NETWORK] no 4xx/5xx on /graphql",Back renders a populated account dashboard (a stale pre-lock page restored from bfcache — the user appears to have access they do not); Back lands on a blank page or an error boundary instead of /403; an option becomes selectable after Back; a second distinct console error class appears on the Back navigation,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:REPLAY · Technique:EG · Probe:UIP-BACK,Draft
+B2C-ORG-051,Org Switcher — Deep-Linking An Org-Scoped Account Page Renders With A Locked Sibling And Reaches /403 When Every Membership Is Locked [UIP-DEEP],B2C Features > Organization > Switcher Lock Axis,High,"BL-AUTH-015, BL-B2B-007",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The probe: reach an organization-scoped page by URL rather than by header navigation, so the page never gets the state the header flow would have primed. Two legs, because the interesting difference is between one locked sibling (access remains) and every membership locked (no access at all).
+V7 terminates sessions, so the second leg re-authenticates after the lock.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/orders — a deep link, entered directly, with no header navigation first
+[WAIT] the navigation settles
+[ACT] record the landing URL of the locked-sibling leg
+[ACT] record whether the page rendered its own content on that leg
+[ACT] record every console message on that leg
+[SETUP] `npm run seed:membership-lock -- --lane frontend --state V7` (EVERY membership locked)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — both legs must read back isCurrentlyLocked=true, or this is V2 and the row is invalid
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[NAV] {{FRONT_URL}}/account/orders — the same deep link, now with every membership locked
+[WAIT] the navigation settles
+[ACT] record the landing URL of the all-locked leg
+[ACT] record whether anything rendered on the all-locked leg
+[ACT] record every console message on the all-locked leg","[DOM] with only the sibling membership locked, the deep-linked /account/orders page renders its own content: the orders view is present, and an error boundary is absent {OBSERVED}
+[NAV] with every membership locked, the same deep link lands on /403 {OBSERVED}
+[REL] neither deep link renders empty at HTTP 200: each one either shows its own content or performs a redirect — the page never silently renders nothing {OBSERVED}
+[COUNT] zero uncaught exceptions across both deep links; the ApolloError 'Access denied.' logged on the all-locked leg is a handled GraphQL error, not an uncaught exception {OBSERVED}","[API] the account-page query returns HTTP 200 with a non-empty errors[] carrying 'Access denied.' — the denial arrives inside the GraphQL envelope
+[CONSOLE] the ApolloError 'Access denied.' is EXPECTED in the all-locked state and is not an incidental failure; no other uncaught exception is permitted
+[NETWORK] no 4xx/5xx on /graphql",the deep link renders a blank page or an error boundary on either leg; the all-locked leg renders account content (access without the guard); the locked-sibling leg redirects away (access lost in the organization the user can still use); an uncaught exception in the console on either leg,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:SCOPE · Technique:EG · Probe:UIP-DEEP,Draft
+B2C-ORG-052,Org Switcher — Refreshing With The Account Menu Open Re-Renders The Locked Row Identically And Leaves The Active Org Unchanged [UIP-REFRESH],B2C Features > Organization > Switcher Lock Axis,High,BL-B2B-005,ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The probe: refresh mid-interaction. The switcher performs no submit, so the failure mode here is a half-restored popover, a lost active-organization pin, or a duplicated organization-scoped token request on re-hydration.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[SNAP] before = listbox 'Organizations'
+[ACT] record the option set of listbox 'Organizations'
+[ACT] record the disabled state of each option
+[ACT] record which option carries [selected]
+[ACT] record the active organization shown in the header
+[KEY] F5 (reload with the popover open)
+[WAIT] the page re-renders and the top header is present
+[ACT] record every /connect/token request issued by the reload
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the same four values again","[REL] the option set, the disabled set, the [selected] option and the active organization are identical before and after the refresh {OBSERVED}
+[COUNT] the reload issues zero /connect/token requests naming an organization id — a refresh is not an organization switch {OBSERVED}
+[DOM] after the reload the Account-menu popover is hidden and re-opens cleanly: a partially-rendered popover is absent from the page {OBSERVED}
+[SHIFT] before vs after topDelta == 0 for the listbox once it has re-rendered {BL} (BL-UI-003)","[API] the GetMe / GetOrganizations responses carry errors[] empty
+[CONSOLE] no TypeError and no uncaught exception on the surface under test
+[NETWORK] no 4xx/5xx on /graphql",the active organization changes across the refresh; a /connect/token request naming an organization is issued by the reload; the locked row renders enabled after the reload (the flag was lost on re-hydration); the popover survives the reload in a half-rendered state; a console TypeError on re-hydration,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:REPLAY · Technique:EG · Probe:UIP-REFRESH,Draft
+B2C-ORG-053,Org Switcher — A Lock Landing Between Two Open Tabs Leaves Both Tabs Authenticated As The Same User With No Silent 401 [UIP-TABS],B2C Features > Organization > Switcher Lock Axis,High,BL-AUTH-012,ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The probe: two tabs on the same account with the lock landing between them. This is the UIP-TABS cell the test model folded into the session-termination check — the handler terminates sessions on an IsCurrentlyLocked post-state globally, so if eviction happened at all it would have to hit both tabs, not only the one that triggers the next read.
+Both tabs must belong to the SAME browser context (a shared session); two isolated contexts would test something else.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock:teardown` — start at the resting state so the lock lands between the two tabs
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] tab A: {{FRONT_URL}}/account/dashboard
+[WAIT] tab A renders
+[ACT] open a second tab in the SAME browser context (a shared session — two isolated contexts would test something else)
+[NAV] tab B: {{FRONT_URL}}/account/orders
+[WAIT] tab B renders
+[SETUP] out of band, without touching either tab: `npm run seed:membership-lock -- --lane frontend --state V2`
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[ACT] in tab B: click 'Addresses' in the account sidebar (a client-side navigation)
+[WAIT] tab B renders the addresses page
+[ACT] in tab B: record the signed-in account name
+[ACT] in tab B: record every POST /graphql response status
+[ACT] in tab A: click 'Orders' in the account sidebar
+[WAIT] tab A renders the orders page
+[ACT] in tab A: record the signed-in account name
+[ACT] in tab A: record every POST /graphql response status
+[ACT] in tab A: click the account button in the top header (data-test-id=""account-button"")
+[WAIT] tab A's Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] in tab A: record the option set
+[ACT] in tab A: record the disabled state of each option
+[ACT] in tab B: click the account button in the top header (data-test-id=""account-button"")
+[WAIT] tab B's Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] in tab B: record the option set
+[ACT] in tab B: record the disabled state of each option","[REL] tab A and tab B report the same signed-in account and the same active organization after the lock — neither tab acts as a different user {OBSERVED}
+[COUNT] zero non-200 POST /graphql responses in either tab after the lock {OBSERVED}
+[REL] both tabs render the locked organization's option as disabled on their next account-menu open, with no re-login in either tab {OBSERVED}
+[NAV] neither tab was redirected to /sign-in {OBSERVED}","[API] every POST /graphql in both tabs returns HTTP 200 with errors[] empty after the lock
+[CONSOLE] no TypeError, no uncaught exception and no auth-failure log in either tab
+[NETWORK] no 401/403 in either tab after the lock","one tab 401s while the other keeps working (a per-tab eviction — the worst shape, because the user sees inconsistent state); either tab redirects to /sign-in; the two tabs disagree on the active organization or on which option is disabled; a tab renders half its content after the lock","MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).
+Close the second tab so the next case starts with a single tab.",VCST-5317 · Archetype:RACE · Technique:EG · Probe:UIP-TABS,Draft
+B2C-ORG-054,Org Switcher — The Locked-Org Cache Window Elapsing Mid-Session Neither Signs The User Out Nor Changes The Locked Row [UIP-EXPIRE],B2C Features > Organization > Switcher Lock Axis,High,BL-AUTH-012,ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The probe: something time-bound expiring mid-session. On this surface that is the locked-organization id cache (AbsoluteExpirationRelativeToNow = 1 minute on the top-level membership read), not the access token. The failure mode is an unhandled 401 or a silently changed row when the cache generation rolls over while the session is still open.
+The lock here is PERMANENT (V2), so the correct post-window answer is 'still disabled' — a row that re-enables itself is the defect.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record sample_1's option set of listbox 'Organizations'
+[ACT] record sample_1's disabled state for each option
+[ACT] record sample_1's signed-in account name
+[ACT] close the Account-menu popover
+[WAIT] 130 seconds without interacting with the page — long enough for the 1-minute cache generation to roll over at least twice while the session stays open
+[NAV] {{FRONT_URL}}/account/dashboard (fresh page load, same session, no re-login)
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record sample_2: the same three values","[REL] sample_1 and sample_2 are identical — the permanent lock still disables exactly the same option after the cache window rolls over {OBSERVED}
+[STATE] the session is still authenticated as the same account with no re-authentication anywhere in the case {OBSERVED}
+[COUNT] zero 401 or 403 responses on /graphql across the wait and the reload {OBSERVED}
+[DOM] an auth wall, a sign-in redirect and a blank render are all absent when the cache generation rolls over {OBSERVED}","[API] the GetMe / GetOrganizations responses carry errors[] empty
+[CONSOLE] no TypeError and no uncaught exception on the surface under test
+[NETWORK] no 4xx/5xx on /graphql",the locked row re-enables itself after the cache window with the lock still in place (the cache rollover reads the wrong generation); a 401 on /graphql after the wait; a redirect to /sign-in; the page renders blank on the post-wait load; the two samples disagree on the signed-in account,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:FALLBACK · Technique:EG · Probe:UIP-EXPIRE,Draft
+B2C-ORG-055,Org Switcher — A Failing Organization-List Query Degrades Only The Switcher And Leaves The Rest Of The Header Intact [UIP-NET],B2C Features > Organization > Switcher Lock Axis,High,BL-B2B-005,ECL-10.2,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The probe: the switcher's own dependency fails. The organization-list query is intercepted at the network layer and made to fail (HTTP 500, or a GraphQL 200 carrying a non-empty errors[]); nothing on the server is changed.
+This row asserts the derived gap-AC-5 expectation — a degraded switcher with an otherwise intact header — because the ticket states no behaviour for a failed org-list read.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the HEALTHY baseline inventory of every control in the top header
+[ACT] record the HEALTHY baseline option set of listbox 'Organizations'
+[ACT] close the Account-menu popover
+[ACT] install a network interception that fails ONLY the organization-list GraphQL operation (GetOrganizations), responding 500 — or 200 with a non-empty errors[] plus null data. Every other /graphql operation must pass through untouched
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page renders
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover settles into whatever state it reaches
+[ACT] record every control still present in the top header
+[ACT] record the state of the switcher area in the popover
+[ACT] record every console message
+[ACT] remove the network interception installed above
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page renders with the organization-list query succeeding again","[REL] every top-header control present in the healthy baseline (account button, cart, search) is still present after the organization-list query fails {SPEC} (derived gap-AC-5: a failed org-list read degrades the switcher, not the header)
+[DOM] the switcher degrades to a non-crashing state — absent, empty, or an explicit error — and does NOT render a partially-populated list of stale options {SPEC} (derived gap-AC-5)
+[COUNT] zero uncaught exceptions in the console; the query failure is handled, not thrown {SPEC} (derived gap-AC-5)
+[REL] with the interception removed the surface returns to the healthy baseline exactly — same header controls, same option set, same disabled option {OBSERVED}","[API] only the intercepted organization-list operation fails; every other /graphql operation on the page still returns HTTP 200 with errors[] empty
+[CONSOLE] the handled query failure may be logged, but no uncaught exception and no whole-page error boundary appears
+[NETWORK] no request other than the intercepted operation is affected",the whole page or the whole header disappears when the org-list query fails (an unscoped crash); an infinite spinner in the popover; a partially-populated option list rendered from stale data; an uncaught exception in the console; the surface does not recover after the interception is removed,"Remove every network interception installed by Steps and confirm the surface is healthy again before finishing.
+MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:FALLBACK · Technique:EG · Probe:UIP-NET · derived gap-AC-5,Draft
+B2C-ORG-056,"Org Switcher — No Free-Text Input Renders Below The Search Threshold, So No Paste Or Autofill Path Into The Locked-Row Filter Exists [UIP-INPUT]",B2C Features > Organization > Switcher Lock Axis,High,BL-B2B-005,ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The probe: input that arrives without an onChange event (paste, autofill, password manager). The switcher's only text input is its threshold-gated search box, which measured live 2026-09-09 does NOT render on a 2-org account. So this row asserts the NEGATIVE inventory — there is no input surface at this membership count — rather than pretending to exercise one.
+The paste-into-search variant needs the >N-organization locked fixture that B2C-ORG-042 is blocked on; do not conflate the two, and do not substitute an account outside the reserved lane split to reach it.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] enumerate every node inside listbox 'Organizations' with its role
+[ACT] enumerate every node inside the Account-menu popover with its role
+[ACT] record every textbox, searchbox, combobox or button found by those two enumerations
+[ACT] record whether the element data-test-id=""organizations-search"" is present
+[ACT] prime the clipboard with the locked organization's name
+[KEY] with the Account-menu popover focused, press Ctrl+V
+[KEY] with the popover still focused, type the same text on the keyboard
+[WAIT] the popover settles
+[ACT] record the option set of listbox 'Organizations' again
+[ACT] record the disabled state of each option again","[COUNT] listbox 'Organizations' contains zero textbox, searchbox and combobox nodes on this 2-org account, and data-test-id=""organizations-search"" is absent {OBSERVED}
+[REL] every one of the account's memberships is rendered as an option with no filtering step in between, so the rendered option set cannot diverge from the membership set through input {OBSERVED}
+[REL] the option set and the disabled set after the paste and the typing attempt are identical to the set recorded before them — input reaches nothing on this surface {OBSERVED}
+[DOM] the popover's text content is unchanged by the paste and the typing, and no editable input node is present {OBSERVED}","[API] the GetMe / GetOrganizations responses carry errors[] empty
+[CONSOLE] no TypeError and no uncaught exception on the surface under test
+[NETWORK] no 4xx/5xx on /graphql",a search or text input DOES render on a 2-org account (the threshold changed — re-scope this row and unblock B2C-ORG-042's hypothesis on this fixture); pasting alters the option set; typing navigates or activates an option; the locked option's disabled state changes on input,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:SILENT · Technique:EG · Probe:UIP-INPUT · cross-ref B2C-ORG-042 (blocked >N-org search variant),Draft
+B2C-ORG-057,Org Switcher — Every Organization Option Stays Present And Reachable At 200% And 400% Zoom With No Horizontal Overflow [UIP-VIEW],B2C Features > Organization > Switcher Lock Axis,High,"BL-UI-004, BL-UI-006",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The probe: zoom and viewport pressure. The dark-preset half of UIP-VIEW is covered separately by B2C-ORG-064, so this row is the zoom and overflow half.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the 100%-zoom baseline option set of listbox 'Organizations'
+[ACT] record which 100%-zoom option is disabled
+[ACT] record which 100%-zoom option carries [selected]
+[ACT] set browser zoom to 200%
+[REFLOW]
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[PROBE:OVERFLOW]
+[PROBE:TOUCH] the Account-menu popover
+[ACT] record the option set at 200% zoom
+[ACT] record which option is disabled at 200% zoom
+[KEY] press ArrowDown through listbox 'Organizations' at 200% zoom
+[ACT] record whether every option was reachable by that ArrowDown walk
+[ACT] set browser zoom to 400%
+[REFLOW]
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[PROBE:OVERFLOW]
+[ACT] record the option set at 400% zoom
+[KEY] press ArrowDown through listbox 'Organizations' at 400% zoom
+[ACT] record whether every option was reachable by that ArrowDown walk
+[ACT] restore browser zoom to 100%","[REL] the option set at 200% zoom contains every option present at 100%, and the disabled option is the same one {OBSERVED}
+[REL] the option set at 400% zoom contains every option present at 100% {OBSERVED}
+[OVERFLOW] horizontal == false at 200% and at 400% {BL} (BL-UI-004)
+[TOUCH] belowAA == 0 across the popover's interactive controls {BL} (BL-UI-006)
+[REL] every option reachable by ArrowDown at 100% is still reachable by ArrowDown at 400% — zoom clips nothing out of the keyboard path {OBSERVED}","[API] the GetMe / GetOrganizations responses carry errors[] empty
+[CONSOLE] no TypeError and no uncaught exception on the surface under test
+[NETWORK] no 4xx/5xx on /graphql",an option is clipped out of view or off the popover at 200% or 400%; the page scrolls horizontally at either zoom level; the popover renders off-screen; an option present at 100% is missing at 400%; the disabled option changes with zoom,"Restore browser zoom to 100% before finishing, so the next case does not inherit it.
+MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:RENDER · Technique:EG · Probe:UIP-VIEW · dark-preset half is B2C-ORG-064,Draft
+B2C-ORG-058,Org Switcher — Opening The Account Menu On A Throttled Network Does Not Shift The Locked Row Into Place [STATE-STRESS: Loading],B2C Features > Organization > Switcher Lock Axis,High,"BL-UI-001, BL-UI-003",ECL-10.2,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The state under audit is the loading/skeleton state of the switcher, reached by throttling the network so the organization-list query is still in flight when the popover opens. A default-state-only audit reports this surface clean, which is exactly why the state is swept separately.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[THROTTLE] slow3g
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the top header is present (the organization-list query is expected to still be in flight)
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open (listbox 'Organizations' may still be loading)
+[SNAP] before = the Account-menu popover, captured while the organization list is still loading
+[ACT] record whether any skeleton or placeholder rows are rendered
+[ACT] record how many skeleton or placeholder rows are rendered
+[WAIT] listbox 'Organizations' has settled with its real options
+[REFLOW]
+[SNAP] after = the Account-menu popover
+[PROBE:CLS]
+[THROTTLE] none","[CLS] value <= 0.1 across the popover open and the list settling {BL} (BL-UI-001)
+[SHIFT] before vs after topDelta == 0 — the settled option list does not push the popover's own chrome down {BL} (BL-UI-003)
+[REL] if placeholder rows are rendered while loading, their count equals the settled option count (skeleton-count parity); if no placeholder is rendered, record that as the observed alternative and assert the popover shows no partially-populated list instead {BL} (BL-UI-001)
+[DOM] in the settled list exactly one option is disabled and it is the locked one — the loading path reaches the same end state as the unthrottled path {OBSERVED}","[API] the GetMe / GetOrganizations responses carry errors[] empty
+[CONSOLE] no TypeError and no uncaught exception on the surface under test
+[NETWORK] no 4xx/5xx on /graphql",the popover's contents jump once the list arrives (CLS above the threshold); a skeleton row count that does not match the settled option count; the locked option renders enabled first and only becomes disabled after a second render; a spinner that never resolves under throttling,"Remove network throttling (`[THROTTLE] none`) before finishing.
+MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:RENDER · Technique:EP · State-Stress:Loading,Draft
+B2C-ORG-059,"Org Switcher — The All-Locked State Renders Every Membership As A Disabled Option, Never An Empty State [STATE-STRESS: Empty]",B2C Features > Organization > Switcher Lock Axis,High,BL-B2B-005,ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The state under audit is the switcher's empty state. Locking cannot reach it: the list is built from the unfiltered membership set, so every organization is still returned and rendered. The component's only empty state is its search no-results branch, which is unreachable below the search threshold (see B2C-ORG-056). This row asserts that negative so a future empty-state implementation shows up as a change rather than a silence.
+V7 terminates sessions, so sign-in comes after the lock.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V7` (EVERY membership locked)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — both legs must read back isCurrentlyLocked=true, or this is V2 and the row is invalid
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the navigation settles (a /403 redirect is expected)
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] enumerate every option in listbox 'Organizations'
+[ACT] record the disabled state of each option
+[ACT] record whether the element data-test-id=""organizations-empty-list"" is present
+[ACT] record whether any empty-state or contact-an-administrator copy is present anywhere in the popover
+[ACT] capture a screenshot of the popover in this state","[DOM] data-test-id=""organizations-empty-list"" is absent while every membership is locked {OBSERVED}
+[COUNT] the listbox renders 2 options and all 2 are disabled — the option count equals the membership count, not zero {OBSERVED}
+[DOM] empty-state copy and any contact-an-administrator message are both absent from the popover {OBSERVED}
+[REL] the option count in the all-locked state equals the option count in the resting state V1 — locking changes each option's disabled state and nothing about the size of the list {OBSERVED}","[API] the account-page query returns HTTP 200 with a non-empty errors[] carrying 'Access denied.' — the denial arrives inside the GraphQL envelope
+[CONSOLE] the ApolloError 'Access denied.' is EXPECTED in the all-locked state and is not an incidental failure; no other uncaught exception is permitted
+[NETWORK] no 4xx/5xx on /graphql","an empty state or contact-an-administrator message appears (product implemented AC-6 — record it as a change and update this row); the option count drops to zero (the lock filter came back, i.e. PR #145 reverted); the popover renders nothing at all; an untranslated i18n key renders as empty-state copy","MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:RENDER · Technique:EP · State-Stress:Empty · cross-ref B2C-ORG-056,Draft
+B2C-ORG-060,Org Switcher — The Disabled Locked Row's Padlock Is Not Occluded And Its Geometry Matches A Selectable Row [STATE-STRESS: Error/disabled],B2C Features > Organization > Switcher Lock Axis,High,"BL-UI-004, BL-UI-005, BL-A11Y-003",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The state under audit is the disabled/error affordance itself: the locked row. The detailed WCAG audit of this affordance belongs to the visual lane (ui-ux-expert) and never blocks this story; this row holds the measurable geometry and the non-colour status indicator.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[PROBE:OVERFLOW]
+[PROBE:ALIGN] the options of listbox 'Organizations'
+[PROBE:SPACING] the Account-menu popover
+[ACT] capture the bounding box of the locked option's 'lock-closed' icon
+[ACT] capture the bounding box of the locked option's organization-name text
+[ACT] capture the bounding box of the enabled option for comparison
+[ACT] capture a screenshot of the popover","[OVERFLOW] horizontal == false with the popover open {BL} (BL-UI-004)
+[ALIGN] heightDrift <= 1 across the listbox options {BL} (BL-UI-005)
+[DOM] the 'lock-closed' icon's bounding box does not intersect the organization-name text's bounding box — the non-colour status indicator is not occluded by the label {BL} (BL-A11Y-003)
+[REL] the disabled option's box geometry matches the enabled option's box geometry apart from the icon — applying the lock treatment does not reflow the row {OBSERVED}
+[REL] the locked state is conveyed by more than colour: the disabled option carries the 'lock-closed' icon in addition to any colour change, and the enabled option carries no such icon {BL} (BL-A11Y-003)","[API] the GetOrganizations response carries isLockedForCurrentUser true on exactly the option rendered disabled, with errors[] empty
+[CONSOLE] no TypeError and no uncaught exception while the popover renders
+[NETWORK] no 4xx/5xx on /graphql
+[EVIDENCE] the full WCAG 2.2 AA audit of this affordance is delegated to the visual lane (ui-ux-expert) and is never a blocker for this story",the padlock overlaps or is covered by the organization name; the disabled row is taller or shorter than the enabled row (the lock treatment reflows the list); the locked state is conveyed by colour alone with no icon; horizontal overflow with the popover open,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:RENDER · Technique:EP · State-Stress:Error/disabled,Draft
+B2C-ORG-061,Org Switcher — A Long Organization Name In The Locked Row Neither Clips Its Accessible Name Nor Misaligns The Listbox [STATE-STRESS: Overflow],B2C Features > Organization > Switcher Lock Axis,High,"BL-UI-002, BL-UI-004, BL-UI-005",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The state under audit is overflow. Both organizations on this fixture carry long AGENT-TEST names, so the overflow state is reached by the fixture itself and needs no extra data — a visual truncation is acceptable, a truncated accessible name is not.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[PROBE:OVERFLOW]
+[PROBE:ALIGN] the options of listbox 'Organizations'
+[PROBE:SPACING] the Account-menu popover
+[ACT] capture each option's rendered text
+[ACT] capture each option's accessible name from the accessibility tree
+[ACT] capture the organization names returned by the GetOrganizations response for the same page load","[OVERFLOW] horizontal == false with the popover open and both long names rendered {BL} (BL-UI-004)
+[ALIGN] heightDrift <= 1 across the listbox options {BL} (BL-UI-005)
+[SPACING] offGrid == 0 for the popover {BL} (BL-UI-002)
+[REL] each option's accessible name equals the organization name returned by GetOrganizations for the same organization id — any truncation is visual only and never reaches the accessibility tree {OBSERVED}
+[REL] the locked option and the enabled option are laid out identically despite both names being long — the lock icon does not squeeze the label into a different wrap {OBSERVED}","[API] the GetMe / GetOrganizations responses carry errors[] empty
+[CONSOLE] no TypeError and no uncaught exception on the surface under test
+[NETWORK] no 4xx/5xx on /graphql",the popover scrolls horizontally; an option's accessible name is truncated with an ellipsis while the response carries the full name; the locked option wraps to a different height than the enabled option; the padlock is pushed out of the row by a long name,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:RENDER · Technique:EP · State-Stress:Overflow,Draft
+B2C-ORG-062,Org Switcher — The Switcher Exposes No Form And Therefore No Validation State In Any Lock State [STATE-STRESS: Form-validation],B2C Features > Organization > Switcher Lock Axis,High,BL-B2B-005,ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+This state is NOT enterable on this surface: the switcher submits no form, and the only input it can render is its threshold-gated search box, which does not render on a 2-org account (B2C-ORG-056) and whose locked-row interaction is blocked on the missing >N-organization fixture (B2C-ORG-042). The row is therefore written as a NEGATIVE node-inventory assertion rather than waived, so a validation surface appearing here later shows up as a change instead of a silence. Stated plainly because a thin row that looks like coverage is worse than a declared gap.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] enumerate every node in the Account-menu popover with its role
+[ACT] record every textbox, combobox, checkbox or radio found by that enumeration
+[ACT] record every control that would post the popover as a form
+[ACT] record every alert or status node in the popover
+[ACT] record the complete node inventory as the V2 capture
+[ACT] close the Account-menu popover
+[SETUP] `npm run seed:membership-lock:teardown` (return to the resting state V1)
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the complete node inventory again as the V1 capture","[COUNT] zero form controls (textbox, combobox, checkbox, radio, submit-shaped button) exist inside listbox 'Organizations' on this 2-org account {OBSERVED}
+[COUNT] zero validation-message and zero alert/status nodes are rendered in the Account-menu popover in either lock state {OBSERVED}
+[REL] the V1 and V2 node inventories are identical apart from the disabled state and the 'lock-closed' icon on one option — a lock introduces no form, no message and no alert {OBSERVED}
+[DOM] no form-posting control is present on this surface: selecting an option performs an organization switch directly, and an intermediate form step is absent {OBSERVED}","[API] the GetMe / GetOrganizations responses carry errors[] empty
+[CONSOLE] no TypeError and no uncaught exception on the surface under test
+[NETWORK] no 4xx/5xx on /graphql","any input, combobox or submit-shaped control appears inside the switcher on a 2-org account (a form surface shipped — re-scope this row and add real validation cases); a validation or alert node appears in the popover in either lock state; the V1 and V2 inventories differ in anything beyond the disabled state and the lock icon","The row ends at the resting state V1 by construction. Still run `npm run seed:membership-lock:teardown` then `npm run seed:membership-lock:verify` (idempotent) so a mid-row abort cannot leave a lock behind.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:RENDER · Technique:EP · State-Stress:Form-validation · cross-ref B2C-ORG-042 and B2C-ORG-056 (why this state is not enterable here),Draft
+B2C-ORG-063,"Org Switcher — Signed Out, No Organization Switcher Exists And An Org-Scoped Deep Link Redirects To Sign-In Rather Than A Modal [STATE-STRESS: Anonymous]",B2C Features > Organization > Switcher Lock Axis,High,"BL-AUTH-015, BL-B2B-007",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The state under audit is an organization-scoped action attempted while anonymous. The lock is left applied so that, if any organization surface did leak to an anonymous caller, the locked row would be part of what leaked.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record that the account button (data-test-id=""account-button"") is present in the signed-in baseline
+[ACT] record that listbox 'Organizations' renders 2 options in the signed-in baseline
+[ACT] sign out via the storefront account-menu popup (click the user name in the top header -> Logout)
+[WAIT] the signed-out storefront renders
+[NAV] {{FRONT_URL}}/
+[ACT] enumerate every control in the anonymous top header
+[ACT] record whether an account button is present
+[ACT] record whether any listbox 'Organizations' is present
+[NAV] {{FRONT_URL}}/account/dashboard — an organization-scoped deep link while anonymous
+[WAIT] the navigation settles; record the landing URL and whether any modal or dialog was inserted
+[ACT] record every /connect/token request issued while anonymous","[DOM] signed out, the top header renders no account button and no listbox 'Organizations' {OBSERVED}
+[NAV] a deep link to /account/dashboard while signed out lands on /sign-in {DOC} (/sign-in is the storefront's only sign-in route; there is no sign-out page)
+[COUNT] zero /connect/token requests naming an organization id are issued while anonymous {OBSERVED}
+[DOM] a modal and an auth-required dialog are both absent — nothing is inserted in place of the redirect {OBSERVED}
+[REL] the anonymous header exposes strictly fewer controls than the signed-in header, and none of the organization-scoped ones {OBSERVED}","[API] no organization-scoped query is issued while anonymous, and any /graphql call made anonymously returns HTTP 200 with either data for a public field or a handled errors[] entry
+[CONSOLE] no TypeError and no uncaught exception on the anonymous navigation
+[NETWORK] no 4xx/5xx on /graphql while anonymous",an Organizations listbox or any organization name renders while anonymous (an organization surface leaked to an unauthenticated caller); the deep link renders account content instead of redirecting; a modal is inserted instead of the redirect; a /connect/token request naming an organization is issued while anonymous; the redirect lands on a route other than /sign-in,"MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).
+The case ends signed out, which is the required state for the next case in a different user context.",VCST-5317 · Archetype:RENDER · Technique:EP · State-Stress:Anonymous,Draft
+B2C-ORG-064,Org Switcher — The Locked Row Stays Distinguishable From A Selectable Row In A Dark Preset On Both Accessibility-Gated Themes [STATE-STRESS: Dark theme],B2C Features > Organization > Switcher Lock Axis,High,"BL-A11Y-003, BL-A11Y-001",ECL-14.3,"Frontend lane ONLY — this row mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS: suite 082 depends on it staying locked. Never unlock it, never reference it as a mutable fixture.
+Resting state before the row starts: `npm run seed:membership-lock:verify` exits 0.
+The switcher lives inside the Account-menu popover as listbox 'Organizations' (one option per organization), not as a top-header control, so every step opens the account menu first. Desktop only. BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId.
+The state under audit is the dark preset. Per the accessibility-gated-themes rule the pass/fail assertions apply to the Coffee and Red themes only; any other preset is captured as visual evidence and never as a verdict. The full WCAG contrast audit is the visual lane's (ui-ux-expert) and never blocks this story — this row holds the relational checks that need no contrast tooling.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify`
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] on the Coffee theme in its LIGHT preset: record the option set of listbox 'Organizations'
+[ACT] record which option is disabled in that preset
+[ACT] record whether the disabled option carries the 'lock-closed' icon in that preset
+[ACT] capture a screenshot of the popover in that preset
+[KEY] press Tab, then ArrowDown, to move focus through listbox 'Organizations'
+[ACT] record whether a visible focus indicator is present on each focused option
+[ACT] switch to the dark preset
+[REFLOW]
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] in the dark preset: record the option set of listbox 'Organizations'
+[ACT] in the dark preset: record which option is disabled
+[ACT] in the dark preset: record whether the disabled option carries the 'lock-closed' icon
+[ACT] in the dark preset: record whether a visible focus indicator is present on the focused option
+[ACT] capture a screenshot of the popover in the dark preset
+[ACT] switch the theme to Red
+[REFLOW]
+[ACT] repeat the light-preset capture on Red: the same four values plus a screenshot
+[ACT] repeat the dark-preset capture on Red: the same four values plus a screenshot
+[ACT] restore the theme the environment started on
+[ACT] restore the preset the environment started on","[REL] on both Coffee and Red, the visual distinction between the disabled locked option and the enabled option that exists in the light preset is still present in the dark preset — the disabled option remains visibly de-emphasised AND still carries the 'lock-closed' icon {OBSERVED}
+[DOM] the 'lock-closed' icon renders in the dark preset on both gated themes — it is not a light-preset-only asset {OBSERVED}
+[REL] the option set and the disabled set are identical across every theme and preset captured — theming changes appearance only, never which option is selectable {OBSERVED}
+[REL] a visible focus indicator is present on the focused option in the dark preset wherever one is present in the light preset {BL} (BL-A11Y-001)
+[REL] the locked state is never conveyed by colour alone in any preset: the icon is present in all of them {BL} (BL-A11Y-003)","[API] the GetOrganizations response is identical across presets — the theme has no effect on which option is flagged, so a difference here would be a data problem, not a theming one
+[CONSOLE] no TypeError and no uncaught exception on any preset or theme switch
+[NETWORK] no 4xx/5xx on /graphql
+[EVIDENCE] the measured WCAG 2.2 AA contrast audit of the disabled row and the padlock is delegated to the visual lane (ui-ux-expert), on the Coffee and Red themes; an a11y finding there is filed as its own ticket and never blocks this story",the 'lock-closed' icon disappears in the dark preset; the disabled and enabled options become visually indistinguishable in the dark preset; the focus indicator vanishes in the dark preset; the option set or the disabled set changes with the theme; a preset switch throws a console error,"Restore the theme and preset the environment started on before finishing.
+MANDATORY teardown symmetry: `npm run seed:membership-lock:teardown`, then `npm run seed:membership-lock:verify` — it must exit 0 or lock residue was left and the suite is no longer re-runnable.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:RENDER · Technique:EP · State-Stress:Dark theme · zoom half of UIP-VIEW is B2C-ORG-057,Draft
+B2C-ORG-065,"Org Switcher — [JOURNEY] Multi-Org Buyer Switches Organization And The Org-Scoped Context Resets, Then Restores On Switching Back",B2C Features > Organization > Switcher Lock Axis > [JOURNEY],High,"BL-B2B-001, BL-B2B-005",ECL-14.3,"Frontend lane ONLY — this journey signs in as @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must never be used here.
+This journey applies NO lock. It requires the lock axis to be at its resting state V1 (nothing locked) for its whole duration: `npm run seed:membership-lock:verify` must exit 0 before it starts, or the ""neither option is flagged"" baseline is false and every later lock case is being read against a baseline that was never established.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is OFF LIMITS and is unrelated to this account.
+This is the suite's VALUE-CHAIN baseline: the one row that crosses the whole chain — membership → list → visibility gate → row render → click → token grant → org-scoped context — on the surface a customer actually uses. Every lock case in this suite is read against it, so if this row fails the lock rows are uninterpretable rather than merely red.
+The switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations', so every screen that touches it opens the account menu first. Desktop only.
+HONEST LIMIT — the PRICING quarter of BL-B2B-001 is NOT decidable on this fixture. Neither TechFlow nor BuildRight is known to carry an organization price list, so the same product can legitimately show an identical price under both organizations and a price-equality assertion would be vacuous either way. The journey therefore RECORDS the price pair as evidence and asserts hard only on the cart, the saved addresses and the lists. Do not add a price assertion here without first seeding a per-organization price list; a green price line on this fixture would mean nothing.
+The cart contents this journey creates are user-created state, not a fixture — Cleanup empties them.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, org_a=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), org_b=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), store_id=@td(MULTI_ORG_TF_BR_ALT.store_id)","[SETUP] `npm run seed:membership-lock:verify` — must exit 0. A non-zero exit means a leaked lock from another case: stop, because the baseline this row establishes would be false
+--- SCREEN: sign-in ---
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the account page renders and the top header is present
+[ASSERT] the session is authenticated as @td(MULTI_ORG_TF_BR_ALT.email)
+--- SCREEN: account-menu popover (baseline) ---
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] record the baseline option set of listbox 'Organizations'
+[ACT] record which option carries [selected] — this is organization A, the active one
+[ASSERT] both organizations are listed, no option is disabled, and no option renders a 'lock-closed' icon — the unlocked baseline every lock case in this suite is read against
+[ACT] close the Account-menu popover
+--- SCREEN: catalog + cart (build organization A's context) ---
+[NAV] {{FRONT_URL}}/
+[WAIT] the storefront home page renders
+[ACT] open the first product listing the catalog navigation offers
+[WAIT] the listing renders with at least one product
+[ACT] open the first buyable product on that listing (discovered at run time — never a pinned SKU)
+[WAIT] the product page renders with an enabled 'Add to Cart' control
+[ACT] record the product's displayed identity under organization A
+[ACT] record the product's displayed price under organization A
+[ACT] click 'Add to Cart'
+[WAIT] the cart badge increments
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page renders with at least one line item
+[ACT] record organization A's cart line count
+[ACT] record the identity of each line in organization A's cart
+[ASSERT] the cart under organization A contains the product just added
+--- SCREEN: account addresses + lists (record organization A's scoped data) ---
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the account page renders
+[ACT] click 'Addresses' in the account sidebar
+[WAIT] the addresses page renders
+[ACT] record organization A's saved-address set
+[ACT] click 'Lists' in the account sidebar
+[WAIT] the lists page renders
+[ACT] record organization A's list set
+[ASSERT] organization A's address set and list set are captured — without them the reset cannot be told from an empty account
+--- SCREEN: switch to organization B ---
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] click the option for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) — organization B, an enabled option
+[WAIT] the organization switch settles and the header reflects organization B as active
+[ACT] record every /connect/token request the switch issued
+[ACT] record every POST /graphql request the switch issued
+[ASSERT] the active organization is now organization B and the session was not signed out
+--- SCREEN: organization B's context (the reset) ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page renders
+[ACT] record organization B's cart line count
+[ACT] record the identity of each line in organization B's cart
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the account page renders
+[ACT] click 'Addresses' in the account sidebar
+[WAIT] the addresses page renders
+[ACT] record organization B's saved-address set
+[ACT] click 'Lists' in the account sidebar
+[WAIT] the lists page renders
+[ACT] record organization B's list set
+[ACT] re-open the same product page discovered above
+[WAIT] the product page renders
+[ACT] record the product's displayed price under organization B
+[ASSERT] organization B's cart, addresses and lists have been captured for comparison against organization A's
+--- SCREEN: switch back to organization A (the restore) ---
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ACT] click the option for @td(MULTI_ORG_TF_BR_ALT.org_buildright_id) — organization A
+[WAIT] the organization switch settles and the header reflects organization A as active
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page renders
+[ACT] record organization A's cart line count again
+[ACT] record the identity of each line in organization A's cart again","[COUNT] listbox 'Organizations' renders one option per membership — 2 options — and zero of them are disabled at the unlocked baseline {OBSERVED}
+[DOM] no option renders a 'lock-closed' icon at the unlocked baseline {OBSERVED}
+[STATE] clicking an enabled organization option switches the active organization and the session stays authenticated throughout — no sign-out and no re-authentication anywhere in the journey {BL} (BL-B2B-005)
+[REL] organization B's cart is NOT organization A's cart: the line identities recorded under B do not include the product added under A {BL} (BL-B2B-001 — no data from the previous org may leak into the new org's context)
+[REL] organization B's saved-address set is not organization A's saved-address set — A's addresses are absent under B {BL} (BL-B2B-001)
+[REL] organization B's list set is not organization A's list set — A's lists are absent under B {BL} (BL-B2B-001)
+[REL] after switching back, organization A's cart line count and line identities are identical to the values recorded before the switch — the original context is restored, not rebuilt empty {BL} (BL-B2B-001 — ""switch back → Org A's cart restored"")
+[COUNT] the switch issued at least one /connect/token request naming the target organization id, and the resulting context is that organization {BL} (BL-B2B-005)
+[REL] the option set and its ordering are identical on every account-menu open across the whole journey — switching organization changes which option is [selected], never which options exist {OBSERVED}","[API] the organization-scoped queries re-issued after each switch carry the NEW organization context, and their responses carry errors[] empty
+[API] the price pair recorded for the same product under organization A and organization B is captured as EVIDENCE only — see the honest limit in Preconditions; this fixture cannot decide the pricing quarter of BL-B2B-001, so an equal pair is not a finding
+[CONSOLE] no TypeError and no uncaught exception across any screen of the journey
+[NETWORK] no 4xx/5xx on /graphql and no 400 on /connect/token at any point in the journey","MID-JOURNEY: the cart badge drops to 0 immediately after sign-in (the session did not carry its organization context); the account menu opens with an empty listbox 'Organizations' on any of the four opens; an option is disabled or padlocked at the unlocked baseline (a leaked lock from another case — stop and run the teardown, this is a fixture problem not a product one); the switch click issues no /connect/token request at all (the click guard is swallowing an ENABLED option); the header still shows the old organization after the switch settles; a 400 on /connect/token during either switch; organization A's cart lines still visible under organization B (the P0 BL-B2B-001 leak); the cart comes back EMPTY after switching back to A (reset instead of restore — the other half of the same invariant); a redirect to /sign-in mid-journey","Empty the cart under EVERY organization the journey touched — the cart lines are user-created state this row created, and a leftover line changes the starting point of every cart-sensitive case that runs next. Do this even if the journey aborted midway: switch to each organization in turn and remove any line item this journey added.
+Leave the active organization as organization A (@td(MULTI_ORG_TF_BR_ALT.org_buildright_id)), the organization that was active when the journey started.
+This row applies no lock, so there is nothing to unlock — but run `npm run seed:membership-lock:verify` and confirm it exits 0, so a lock leaked by a neighbouring case is caught here rather than silently poisoning the next baseline.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:SCOPE · Technique:FLOW · BL-B2B-001 value-chain baseline for the switcher (membership -> list -> gate -> render -> click -> token -> org-scoped context),Draft
+B2C-ORG-066,Org Switcher — Mobile Locked Organization Row Is Flagged And Guarded Exactly As The Desktop Row Is In The Same Session,B2C Features > Organization > Switcher Lock Axis,Critical,"BL-AUTH-013, BL-AUTH-016",ECL-7.4,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+Lock setup is REST-only: `npm run seed:membership-lock -- --lane frontend --state <V1|V2|V7>`, read back with `--verify`. The xAPI lock mutations return Forbidden, so never drive the lock through GraphQL. A POST to the lock endpoint with an unknown membership id returns 200 OK with a null body rather than 404, so the read-back is the only trustworthy confirmation that the intended state landed.
+On DESKTOP the switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every desktop step opens the account menu first.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name, and why every step binds an organization by its lane-scoped @td() id rather than by name.
+The MOBILE switcher is a DIFFERENT component from the desktop one — `mobile-menu/menus/multi-organisation-menu.vue`, reached hamburger -> 'Corporate' -> 'My organizations' (menu.json id contact-organizations), gated on isMultiOrganization. It reads the same organizationFields fragment that now carries isLockedForCurrentUser, but it is ABSENT from PR #2469's changed files: no :disabled binding, no lock icon, no guard in its selection handler.
+B2C-ORG-047 enumerated the TOP-LEVEL hamburger panel only and found no organization switcher there. This row goes one level deeper, into 'Corporate' -> 'My organizations', which is where the mobile organization list actually lives. The two rows are not in conflict: the difference is nesting depth, not build. If 'My organizations' is absent at 375x812, re-scope both rows together rather than reading either as a product change.
+VIEWPORT HONESTY: the mobile leg is only valid at a genuine 375x812. A Chrome window that clamps at a ~500px minimum invalidates it. Record the achieved innerWidth/innerHeight and report BLOCKED:PRECONDITION_UNMET:VIEWPORT_CLAMPED — never pass a 500px read off as 375, and never report it as a FAIL either.
+Record the storefront build string printed in the page footer on every page; the 2026-09-09 measurement below was taken on the PR #2469 preview build (footer string beginning `2.58.0-pr-2469`). A different build makes the measurement non-comparable, not wrong.
+THIS ROW ASSERTS THE CORRECT EXPECTATION, NOT THE MEASURED BEHAVIOUR. Measured live 2026-09-09 (3x M1) at a genuine 375x812: the locked row renders as an ENABLED, full-contrast, tappable radio with NO padlock; tapping it POSTs /connect/token naming the locked organization; the SERVER is right (HTTP 400, exactly one errors[] entry, code user_is_locked_in_organization, with a user-facing message) and the CLIENT discards that response and signs the user out of everything. So this row is EXPECTED TO FAIL on this build — that failure IS the finding. Do not invert these assertions to match the build: an inverted assertion certifies the defect and flips red on the fix.
+The lock treatment is a property of the membership, not of the viewport, so the desktop control read first in the SAME signed-in session at the SAME lock state is the paired control this row measures the mobile row against. Do not sign out, do not re-authenticate, do not change lock state between the two legs — a fresh session between them would make the pair uncomparable.
+The cart-preservation half of the sign-out blast radius belongs to B2C-ORG-067, which owns that assertion. This row reads no cart.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (IsLocked=true, LockoutEnd null, on the NON-active organization @td(MULTI_ORG_TF_BR_ALT.org_techflow_id))
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — record the read-back isLocked / isCurrentlyLocked for each leg; a lock POST against an unknown membership id returns 200 with a null body, so never trust the POST status alone
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+--- SCREEN: desktop account-menu popover (the paired control) ---
+[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the account page renders with the top header present
+[ACT] record the storefront build string printed in the page footer
+[ACT] record the achieved viewport as reported by the browser: innerWidth, innerHeight
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open with listbox 'Organizations' rendered
+[ACT] record the disabled state of every option in listbox 'Organizations', keyed by organization id
+[ACT] record which options render a 'lock-closed' icon
+[ACT] capture the popover to reports/tickets/Sprint26-18/VCST-5317/screenshots/R2-ORG-066-desktop-1920-locked-row.png
+[ASSERT] GATE — the option for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) is disabled with a 'lock-closed' icon. If the desktop control is NOT flagged, PR #2469 is reverted or not deployed on this build: the mobile leg is then uninterpretable, so report BLOCKED:PRECONDITION_UNMET:DESKTOP_BASELINE_ABSENT rather than reading the mobile row against nothing
+[ACT] close the Account-menu popover
+--- SCREEN: mobile organization list (the surface under test) ---
+[VIEWPORT] 375x812
+[REFLOW]
+[ACT] record the achieved viewport as reported by the browser after the resize: innerWidth, innerHeight
+[ASSERT] GATE — the achieved viewport is exactly 375 x 812. A window that clamps to a wider minimum (commonly ~500px) invalidates this leg: report BLOCKED:PRECONDITION_UNMET:VIEWPORT_CLAMPED quoting the achieved width, never a pass at 375, never a FAIL
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the mobile layout settles with the hamburger control visible
+[ACT] tap the top-header mobile navigation toggle — the 'hamburger' control that is the only header button rendered at this width
+[WAIT] the mobile navigation panel is open
+[ACT] tap 'Corporate' in the mobile navigation panel
+[WAIT] the Corporate submenu is open
+[ACT] tap 'My organizations' in the Corporate submenu
+[WAIT] the mobile organization list renders one row per membership
+[ACT] record the rendered state of the row for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id): its role, its disabled state, whether it is focusable, its contrast against the sibling row
+[ACT] record whether that row renders a lock indicator of any kind
+[ACT] record the same three properties for the row for @td(MULTI_ORG_TF_BR_ALT.org_buildright_id)
+[ACT] capture the mobile organization list to reports/tickets/Sprint26-18/VCST-5317/screenshots/R2-ORG-066-mobile-375-locked-row.png
+--- SCREEN: activating the locked mobile row ---
+[ACT] start recording every /connect/token request from this point to the end of the case
+[ACT] start recording every navigation from this point to the end of the case
+[ACT] tap the row for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) using a real touch interaction only — never force a disabled control (VC-EXEC-003), because a tap that does nothing IS the pass, not an obstacle to route around
+[WAIT] the interaction settles (~5s), including any navigation or session change it triggers
+[ACT] record the landing URL
+[ACT] record whether the session is still authenticated as @td(MULTI_ORG_TF_BR_ALT.email)
+[ACT] record the active organization after the interaction
+[ACT] record every /connect/token request the interaction issued, with its HTTP status, with its response body, with the organization id it named
+[ACT] record every message rendered to the user by the interaction
+[ACT] capture the post-interaction state to reports/tickets/Sprint26-18/VCST-5317/screenshots/R2-ORG-066-mobile-375-after-activation.png","[STATE] the mobile leg was read at an achieved viewport of width == 375, height == 812 — a clamped read is reported BLOCKED:PRECONDITION_UNMET:VIEWPORT_CLAMPED, never counted as a 375px observation {OBSERVED}
+[DOM] at 1920x1080 the account-menu option for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) is disabled with a 'lock-closed' icon — the paired control the mobile row is measured against, read in the same session at the same lock state {OBSERVED}
+[DOM] at 375x812 the 'My organizations' row for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) carries the disabled state in the accessibility tree, exactly as its desktop pair does — the lock treatment is a property of the membership, not of the viewport {BL} (BL-AUTH-013 — the org switcher must surface the org-scoped refusal on the surface the customer is actually using)
+[DOM] that same mobile row renders a lock indicator — a 'lock-closed' glyph or the mobile component's equivalent — so the row is legible as blocked before it is touched {BL} (BL-AUTH-013)
+[REL] the mobile row for @td(MULTI_ORG_TF_BR_ALT.org_buildright_id) is NOT disabled with no lock indicator: the treatment is scoped to the locked membership, matching the scoping observed on desktop {OBSERVED}
+[STATE] after the tap the session is still authenticated as @td(MULTI_ORG_TF_BR_ALT.email): no sign-out, no token clear, no redirect to /sign-in, no landing on the anonymous home page {BL} (BL-AUTH-013 — an org-scoped refusal is not a global lockout, so it must never be resolved by ending the session)
+[STATE] the active organization after the tap equals @td(MULTI_ORG_TF_BR_ALT.org_buildright_id) — unchanged: the guard blocked the switch rather than performing it {BL} (BL-AUTH-016 — an explicit switch gets no fallback, so a blocked target must produce no context change at all)
+[COUNT] the tap issues zero /connect/token requests naming @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) — a guarded row never reaches the token layer {BL} (BL-AUTH-016)
+[STATUS] server-contract guard, evaluated only when the client issues that request anyway: the response is HTTP 400 carrying exactly one entry in errors[], whose code is 'user_is_locked_in_organization', accompanied by a user-facing message — count entries in errors[], never the response's count field, which is the parameter count. This half of the contract is currently right and a regression in it is an independent second failure {BL} (BL-AUTH-013 + BL-AUTH-016 — one error, the lock code, org-specific copy)
+[REL] whatever the tap surfaces to the user is org-specific copy about this organization being blocked, never the generic global-lockout message the sign-in form shows for user_is_locked_out {BL} (BL-AUTH-013)","[API] the GetMe / organization-list queries backing both surfaces return HTTP 200 with errors[] empty — the locked row's state is rendered from isLockedForCurrentUser on the organizationFields fragment, never from an error path
+[CONSOLE] no TypeError and no uncaught exception on the viewport change, on opening 'Corporate' -> 'My organizations', or on the tap
+[NETWORK] no 4xx/5xx on /graphql. The /connect/token 400 described in the Assertions is expected ONLY in the unguarded state and is scored there, not counted as an incidental network failure here","the mobile row renders enabled and full-contrast and tappable with no lock indicator — the mobile component never received PR #2469's lock treatment: this is the primary defect this row exists to catch; the tap ends the session (token cleared, landing on /sign-in or the anonymous home page) — the client discarded the server's 400 instead of surfacing it; the tap switches the active organization to the locked organization — the client guard is missing AND the server accepted it, a strictly worse failure; the /connect/token response carries more than one errors[] entry; the /connect/token response carries a global-lockout code (user_is_locked_out / user_is_temporary_locked_out) in place of user_is_locked_in_organization; the generic global-lockout copy is shown in place of org-specific copy; 'Corporate' -> 'My organizations' is absent at 375x812 — the mobile surface moved: re-scope this row together with B2C-ORG-047 rather than reading it as a product change; the desktop leg at 1920x1080 shows the locked option enabled — PR #2469 reverted or not deployed: report BLOCKED:PRECONDITION_UNMET:DESKTOP_BASELINE_ABSENT; the achieved viewport clamps above 375 — report BLOCKED:PRECONDITION_UNMET:VIEWPORT_CLAMPED; both mobile rows render disabled — the lock treatment leaked to the whole list","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock -- --lane frontend --teardown` to restore the resting state V1 on every lane leg.
+Then `npm run seed:membership-lock -- --lane frontend --verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
+This row adds nothing to the cart, but the forced sign-out it probes can leave a cart behind: if any line item exists under either organization at the end of the run, empty it — a cart is user-created state, not a fixture.
+Restore the viewport to 1280x900 so the next case does not inherit the mobile layout.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout) if the session survived.",VCST-5317 · Archetype:PARITY · Technique:EP,Draft
+B2C-ORG-067,Org Switcher — A Forced Sign-Out From The Switcher Does Not Cost The Buyer Their Cart,B2C Features > Organization > Switcher Lock Axis,Medium,BL-B2B-001,ECL-14.3,"Frontend lane ONLY. This case mutates the OrganizationMembership rows of @td(MULTI_ORG_TF_BR_ALT.email); the backend/GraphQL lane account @td(MULTI_ORG_TF_BR.email) must NEVER be used here — a membership row is keyed on (userId, organizationId) and carries the isLocked this case writes, so two lanes on one account eat each other's state and both report confident wrong results.
+IMPERSONATE_TARGET_BLOCKED (USR-021) is the only other currently-locked membership on the environment and is OFF LIMITS: suite 082's impersonation-blocked-target condition depends on it. Never unlock it, never reference it as a mutable fixture.
+The lock axis must be at its resting state before the case starts: `npm run seed:membership-lock:verify` exits 0.
+Lock setup is REST-only: `npm run seed:membership-lock -- --lane frontend --state <V1|V2|V7>`, read back with `--verify`. The xAPI lock mutations return Forbidden, so never drive the lock through GraphQL. A POST to the lock endpoint with an unknown membership id returns 200 OK with a null body rather than 404, so the read-back is the only trustworthy confirmation that the intended state landed.
+On DESKTOP the switcher is NOT a top-header control: it lives inside the Account-menu popover as listbox 'Organizations' with one option per organization, so every desktop step opens the account menu first.
+Measured live 2026-09-09: BuildRight is the ACTIVE organization on this account and TechFlow is the non-active one, which is why the seeder targets 'non-active' relative to the live contact.organizationId rather than by organization name, and why every step binds an organization by its lane-scoped @td() id rather than by name.
+The MOBILE switcher is a DIFFERENT component from the desktop one — `mobile-menu/menus/multi-organisation-menu.vue`, reached hamburger -> 'Corporate' -> 'My organizations' (menu.json id contact-organizations), gated on isMultiOrganization. It reads the same organizationFields fragment that now carries isLockedForCurrentUser, but it is ABSENT from PR #2469's changed files: no :disabled binding, no lock icon, no guard in its selection handler.
+B2C-ORG-047 enumerated the TOP-LEVEL hamburger panel only and found no organization switcher there. This row goes one level deeper, into 'Corporate' -> 'My organizations', which is where the mobile organization list actually lives. The two rows are not in conflict: the difference is nesting depth, not build. If 'My organizations' is absent at 375x812, re-scope both rows together rather than reading either as a product change.
+VIEWPORT HONESTY: the mobile leg is only valid at a genuine 375x812. A Chrome window that clamps at a ~500px minimum invalidates it. Record the achieved innerWidth/innerHeight and report BLOCKED:PRECONDITION_UNMET:VIEWPORT_CLAMPED — never pass a 500px read off as 375, and never report it as a FAIL either.
+Record the storefront build string printed in the page footer on every page; the 2026-09-09 measurement below was taken on the PR #2469 preview build (footer string beginning `2.58.0-pr-2469`). A different build makes the measurement non-comparable, not wrong.
+WHAT THIS ROW ASSERTS: the cart, and only the cart. It drives the switcher's failure path to reach an unexpected end-of-session, then asserts that re-authenticating into the SAME organization returns the buyer to the SAME basket. Whether the failure path should end the session at all is B2C-ORG-066's assertion; deliberately not re-asserted here, so this row stays a valid blast-radius bound in both worlds.
+BRANCH-TOLERANT BY DESIGN: on a build where the mobile row is properly guarded the tap is a no-op, the session never ends, and the recovery screen is skipped — the cart comparison still runs and still has to hold. On the current build the tap ends the session and the recovery screen re-authenticates. Either branch is a valid execution of this row; only a changed cart is a failure.
+The cart this row builds is user-created state, not a fixture: it is created from the live catalog at run time (never a pinned SKU, never a transcribed price) and Cleanup empties it.
+The pre-state must be read under the ACTIVE organization @td(MULTI_ORG_TF_BR_ALT.org_buildright_id), and the post-state must be read under that same organization. A post-state read under a different organization compares two different carts and proves nothing — report BLOCKED rather than FAIL if recovery lands elsewhere.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` — the switcher's failure path needs a blocked target, which is the NON-active organization @td(MULTI_ORG_TF_BR_ALT.org_techflow_id)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — confirm the ACTIVE organization leg reads back unlocked; a lock on the active leg would block re-authentication itself, which is a different case
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[PRE:RESET_CART]
+--- SCREEN: build the cart pre-state under the active organization ---
+[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/
+[WAIT] the storefront home page renders
+[ACT] record the active organization shown in the header
+[ACT] open the first product listing the catalog navigation offers
+[WAIT] the listing renders with at least one product
+[ACT] open the first buyable product on that listing, discovered at run time — never a pinned SKU
+[WAIT] the product page renders with an enabled 'Add to Cart' control
+[ACT] click 'Add to Cart'
+[WAIT] the cart badge increments
+[ACT] open a second buyable product discovered the same way, so the comparison spans more than one line
+[WAIT] the second product page renders with an enabled 'Add to Cart' control
+[ACT] click 'Add to Cart'
+[WAIT] the cart badge increments a second time
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page renders with its line items
+[ACT] record the pre-state line count
+[ACT] record the pre-state identity of each line, with its quantity
+[ACT] record the pre-state subtotal exactly as the page renders it — read the value, never transcribe an expected price
+[ACT] capture the pre-state cart to reports/tickets/Sprint26-18/VCST-5317/screenshots/R2-ORG-067-cart-pre-signout.png
+--- SCREEN: drive the switcher's failure path ---
+[VIEWPORT] 375x812
+[REFLOW]
+[ACT] record the achieved viewport as reported by the browser: innerWidth, innerHeight
+[ASSERT] GATE — the achieved viewport is exactly 375 x 812. A window clamped to a wider minimum invalidates this leg: report BLOCKED:PRECONDITION_UNMET:VIEWPORT_CLAMPED quoting the achieved width
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the mobile layout settles with the hamburger control visible
+[ACT] tap the top-header mobile navigation toggle — the 'hamburger' control that is the only header button rendered at this width
+[WAIT] the mobile navigation panel is open
+[ACT] tap 'Corporate' in the mobile navigation panel
+[WAIT] the Corporate submenu is open
+[ACT] tap 'My organizations' in the Corporate submenu
+[WAIT] the mobile organization list renders one row per membership
+[ACT] tap the row for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) using a real touch interaction only — never force a disabled control (VC-EXEC-003), so a properly guarded row simply does not respond, which is a legitimate branch of this row
+[WAIT] the interaction settles (~5s), including any navigation or session change it triggers
+[ACT] record whether the session survived the interaction
+[ACT] record the landing URL
+--- SCREEN: recovery into the same organization ---
+[ACT] re-authenticate as @td(MULTI_ORG_TF_BR_ALT.email) with {{DEFAULT_TEST_PASSWORD}} when the previous step ended the session — skip this whole screen when the session survived
+[WAIT] the account page renders for the re-authenticated session
+[ACT] record the active organization after recovery
+[VIEWPORT] 1280x900
+[REFLOW]
+--- SCREEN: read the cart post-state ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page renders
+[ACT] record the post-state line count
+[ACT] record the post-state identity of each line, with its quantity
+[ACT] record the post-state subtotal exactly as the page renders it
+[ACT] capture the post-state cart to reports/tickets/Sprint26-18/VCST-5317/screenshots/R2-ORG-067-cart-post-signout.png","[STATE] the organization active when the post-state is read equals @td(MULTI_ORG_TF_BR_ALT.org_buildright_id) — the same organization the pre-state was built under, so the two reads are org-for-org comparable; a mismatch invalidates the comparison and is reported BLOCKED rather than FAIL {BL} (BL-B2B-001 — the cart is org-scoped, so a cross-org comparison decides nothing)
+[REL] the post-state line count is identical to the recorded pre-state line count {BL} (BL-B2B-001)
+[REL] every pre-state line identity is present in the post-state cart at the same quantity, with no line added, none removed, none re-ordered out of the set {BL} (BL-B2B-001 — ""switch back -> Org A's cart restored"")
+[REL] the post-state subtotal is identical to the recorded pre-state subtotal, compared against the value read from the pre-state page — never against a transcribed price {BL} (BL-B2B-001)
+[STATE] no line belonging to any other organization's context appears in the recovered cart: the recovered cart is exactly the pre-state cart, neither emptied nor topped up {BL} (BL-B2B-001 — no data from another org may leak into this org's context)
+[REL] the assertion above holds on whichever branch the failure path takes — a guarded row that never ends the session, or a session that ends and is recovered — because the cart is server-side state keyed on the organization, not on the session {BL} (BL-B2B-001)","[API] the cart query issued after recovery returns HTTP 200 with errors[] empty, under the recovered organization's context
+[CONSOLE] no TypeError and no uncaught exception on the interaction, on the recovery, or on the cart re-read
+[NETWORK] no 4xx/5xx on /graphql at any point. A 400 on /connect/token during the failure path is expected in the unguarded state and is scored by B2C-ORG-066, not counted as an incidental failure here","the recovered cart is EMPTY — the forced sign-out cost the buyer their basket: the finding this row exists to catch; the recovered line count differs from the pre-state line count; a pre-state line comes back at a different quantity; the post-state subtotal differs from the pre-state subtotal while the line set is identical — the cart was re-priced under a re-minted token; recovery lands in a different organization than the one the cart was built under — the comparison is invalid: report BLOCKED, not FAIL; the cart badge shows a count the /cart page does not render; re-authentication is refused for the ACTIVE organization — the lock landed on the wrong membership: re-run --verify before treating this as a product failure; the cart page renders an error state in place of its line items after recovery","Empty the cart this row created, under the organization it was created in — those line items are user-created state, and a leftover line changes the starting point of every cart-sensitive case that runs next. Do this even if the row aborted midway, re-authenticating first if the session ended.
+MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock -- --lane frontend --teardown` to restore the resting state V1 on every lane leg.
+Then `npm run seed:membership-lock -- --lane frontend --verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
+Leave the active organization as @td(MULTI_ORG_TF_BR_ALT.org_buildright_id), the organization that was active when the row started.
+Restore the viewport to 1280x900 so the next case does not inherit the mobile layout.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:LIFECYCLE · Technique:ST,Draft
