@@ -236,3 +236,23 @@ SRCHA-047,Aggregation Properties - Configure Range Facet for Numeric Property,Ag
 - Bucket product counts are non-zero for ranges containing products
 - Clicking a range bucket filters products to those within the specified range
 - Property names with underscores (e.g. Volume_ml) are preserved correctly in the UI and filter URL",VP-9035,Not Automated
+SRCHA-048,Facet Sorting offers explicit Priority ascending and descending and persists the choice,Aggregation Properties,Functional,High,5m,"A store exists with at least one dictionary-type property configured as a facet (aggregation property);
+the property has dictionary values carrying distinct Priority numbers;
+admin logged into ${BACK_URL} with store-configuration rights","1. Navigate to ${BACK_URL} > Stores > select the store > Search configuration > Facets
+2. Open the facet detail blade of a dictionary-type property
+3. Expand the Sorting dropdown and record every option offered
+4. Select 'Priority ascending' and confirm the blade with OK
+5. Save the store and wait for the save to complete
+6. Reload the page and reopen the same facet detail blade
+7. Read the Sorting field value
+8. Repeat steps 4-7 selecting 'Priority descending'
+9. Call GET ${BACK_URL}/api/catalog/aggregationproperties/{storeId}/properties and read the termValuesSortingType of that facet
+10. Open the facet blade of a store whose facet is still persisted as the legacy bare Priority value, and read the Sorting field WITHOUT saving","- The Sorting dropdown offers both 'Priority ascending' and 'Priority descending' as selectable options
+- A bare ambiguous 'Priority' option is NOT offered in the dropdown
+- The option list is exactly: Name ascending, Name descending, Numeric ascending, Numeric descending, Priority ascending, Priority descending, Score
+- After save and reload the Sorting field still shows the direction that was selected (the choice round-trips)
+- The API returns termValuesSortingType 'PriorityAscending' or 'PriorityDescending' matching the selection
+- The store save returns HTTP 2xx; no 4xx or 5xx response
+- A store still holding the legacy bare 'Priority' opens with the Sorting field displaying 'Priority ascending' - not blank and not a bare 'Priority'
+- That legacy value is NOT rewritten unless the blade is saved (re-read the API to confirm it still says Priority)
+- No Angular exception appears in the browser console while opening or saving the blade",VCST-5851; vc-module-catalog PR #906. Storefront-side ordering is covered by SRCH-FSORT-001..006 in suite 005.,Not Automated

@@ -160,7 +160,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 41,
+      "testCount": 47,
       "estimatedMinutes": 23,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2055,7 +2055,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 47,
+      "testCount": 48,
       "estimatedMinutes": 33,
       "agent": "qa-backend-expert",
       "tags": [
