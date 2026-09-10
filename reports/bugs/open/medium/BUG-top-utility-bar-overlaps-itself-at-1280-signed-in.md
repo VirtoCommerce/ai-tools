@@ -4,8 +4,8 @@
 
 **Severity:** Medium · **Priority:** Medium · **Found:** 2026-09-09
 **Provenance:** **OUT-OF-SCOPE / pre-existing** — unrelated to the VCST-5317 PRs. Found incidentally during that run's Step 4.
-**Env:** vcst-qa — `FRONT_URL=https://vcst-qa-storefront.govirto.com`, storefront `Ver. 2.58.0-pr-2469-83d6-83d6e5d5`
-**Oracle:** `BL-UI-002` (content stays within its container; no overlap)
+**Env:** vcst-qa — `FRONT_URL=https://vcst-qa-storefront.govirto.com`. First seen on storefront `Ver. 2.58.0-pr-2469-83d6-83d6e5d5`; **re-confirmed 2026-09-10 on `Ver. 2.58.0-pr-2469-afce-afce27e1`**, so it survives the `878e765a` delta and is not caused by it.
+**Oracle:** `BL-UI-004` — **content boundary**. (Round 2 cited `BL-UI-002` *spacing grid*; that is wrong — the measured overlap is 3 x **18px**, and 18px is an on-grid step (`extend.spacing 4.5`), so the spacing scale is not violated. Corrected 2026-09-10 and independently reached by the 5b verifier.)
 
 ## Summary
 
@@ -26,7 +26,7 @@ At **1280×1024 signed in**, the top utility bar's `Ship to: Select address` wra
 
 It **did not reproduce anonymously** at 1280 — `scrollWidth 1265 ≤ innerWidth 1280`, clean single-line render. The authenticated bar is what overflows it, because it adds the `Dashboard` link plus a long organization/user chip (`AGENT-TEST-Org-BuildRight-20260310 / AGENT-TEST-MultiOrgAlt FE`). An anonymous check would wrongly clear this.
 
-Reproduced independently on two lanes: `playwright-chrome` (Step 4 frontend) and `playwright-edge` (C1).
+Reproduced independently across two rounds and three lane-runs: `playwright-chrome` (Round 2 Step 4), `playwright-edge` (Round 2 C1), and `playwright-edge` again (Round 3 visual lane, 2026-09-10 — measured `Select address` overlapping `Call us:` by **3 x 18px**). The Round-3 anonymous control at 1280 and 1920 was clean, and 1920 signed-in was clean, so the signed-in-at-1280 combination is the discriminator.
 
 ## Layer Validation
 

@@ -35,9 +35,19 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
 2. **No existing-test/story edits** — `git diff` touches NO pre-existing `*.spec.ts` / `*.test.ts` /
    `*.stories.ts` (vc-frontend) or `tests/*.test.ts` (a module sub-app) method or file except to ADD new
    ones. Any edit/delete of an existing test or story → REQUEST_CHANGES.
-3. **Red→green real** — a NEW vitest test (vc-frontend) or `tsx --test` test (a module sub-app via
-   `/vc-shell-fix` Path 1) encodes the STR/RCA (or trivial-skip is justified for a no-logic
-   template/typo fix). The assertion matches the bug, not a tautology.
+3. **Red→green real, and about the SYMPTOM** — a NEW vitest test (vc-frontend) or `tsx --test` test
+   (a module sub-app via `/vc-shell-fix` Path 1) encodes the STR/RCA, and what it OBSERVES is what the
+   ticket's *Actual result* describes (`quality-gates.md` G2 MEDIUM RULE). Check `PROOF_MEDIUM`,
+   `PROOF_PROVENANCE` and `PROOF_LINKAGE`: a rendered-DOM symptom proven in a non-rendered medium, or a
+   green produced by an analogue rather than the built diff, → REQUEST_CHANGES.
+   **jsdom carve-out:** jsdom satisfies content / binding / element-presence symptoms; it has no layout
+   engine and no iframe navigation, so it can NEVER satisfy geometry, paint, CLS or cross-frame
+   rendering — those need a real browser or an honest `FIX_STATUS: FAILED`.
+   Trivial-skip only for a one-line typo/guard **with no rendered-DOM symptom**, or a change with no
+   observable behaviour at all.
+3a. **Unexecuted arguments are inert — including yours.** You may not overturn the ticket's or the dev's
+   hypothesis with an argument you did not run; run it, or write it as `UNVERIFIED:` and leave the
+   contested hypothesis standing. See `quality-gates.md` G4 for the differential read.
 4. **Scratch-harness leakage (module sub-app only)** — if `/vc-shell-fix` Path 2 (ephemeral
    vitest+`@vue/test-utils`+jsdom harness) was used, `git diff`/`git status` in the sub-app directory
    must show **zero** `package.json`/lockfile/devDependency/scratch-config changes. Any leak →

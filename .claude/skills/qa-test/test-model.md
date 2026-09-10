@@ -240,7 +240,9 @@ contradictable while "the matrix is complete" is not:
 
 **Both read the `domain_map` token (2g); neither re-derives it** ([`axes.md`](axes.md)).
 `PRESENT`/`STALE` ⇒ both bind against the map's inventory, and on `STALE` a variant resolving only to a
-stale surface is recorded as such rather than treated as confirmed. `ABSENT`/`unresolved` ⇒ both are
+stale surface is recorded as such rather than treated as confirmed. **A map built in this run by `1c-map`
+is `PRESENT` here** — it passed the same gate before it was written — and carries `built_in_run: true`.
+`ABSENT`/`unresolved` ⇒ both are
 satisfied by recording `Domain map: ABSENT — chain position unverified`; absence is **written down, not
 blocked**. `1e` is also where 2g's provisional all-layer answer is CONFIRMED — Part 0 now exists, so set
 `domain_map.all_layer_confirmed_at: "1e-confirmed"` and correct `all_layer_chain` if the chain disagrees

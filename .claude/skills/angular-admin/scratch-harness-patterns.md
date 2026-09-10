@@ -91,7 +91,13 @@ GREEN — VCST-XXXX repro passes
 | save not persisting / wrong payload | controller `save()` path — stub the `$resource` service, assert the params it receives |
 | wrong computed value / count / badge | the controller/factory function that computes it |
 | API service wrong endpoint/field | the `resources/*.js` factory — stub `$resource` itself and capture its args |
-| template binding / label / disabled attr | **not harnessable** — trivial-skip with manual verification steps in the PR body |
+| template binding / interpolation / anything about what the blade RENDERS | **not observable here** — a Node process has no DOM. Route to the render harness (`visual-render-harness.md`). Never trivial-skip |
 
-Prefer logic over DOM. If the bug truly lives in a `.tpl.html` binding, the harness can still verify
-the controller exposes the right state; the binding itself is the trivial-skip part.
+**A green here proves the property it asserts and nothing else.** If the ticket's *Actual result*
+describes the screen — rendered text or markup that is wrong, literal, missing or stale; an element
+absent or not updating — this harness cannot observe it, so a green says nothing about it. "The
+controller exposes the right state" is a **proxy**: the state can be right and the render still wrong.
+VCST-5940 — the controller held the correct HTML, the `srcdoc` attribute measured correct live, and the
+iframe still showed the literal placeholder; a Node harness asserting assignment timing went
+red→green and the bug reproduced 3/3 on the shipped artifact. Use this harness for controller-side
+logic; prove a rendered observation in the render harness, with the real controller file loaded.

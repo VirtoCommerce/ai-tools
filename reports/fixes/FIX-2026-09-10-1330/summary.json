@@ -1,0 +1,63 @@
+{
+  "run_id": "FIX-2026-09-10-1330",
+  "skill": "qa-fix",
+  "ticket": "VCST-5940",
+  "ticket_url": "https://virtocommerce.atlassian.net/browse/VCST-5940",
+  "ticket_terminal_state": "In review",
+  "assignee": "Oleg Zhuk",
+  "repo": "VirtoCommerce/vc-module-notification",
+  "repo_kind": "module",
+  "developer_agent": "fullstack-backend",
+  "reviewer_agent": "backend-reviewer",
+  "branch": "claude/qa-autofix/VCST-5940",
+  "base": "dev",
+  "commit": "7489b6c9740397d2178ca87eb7e70b977a288914",
+  "pr_url": "https://github.com/VirtoCommerce/vc-module-notification/pull/203",
+  "pr_state": "OPEN",
+  "pr_merged": false,
+  "pr_review_decision": "APPROVED",
+  "pr_reviewer": "OlegoO",
+  "merge_state_status": "CLEAN",
+  "diff": { "files": 1, "additions": 11, "deletions": 4 },
+  "gates": {
+    "G0_eligibility": "PASS",
+    "G1_single_repo": "PASS",
+    "G2_reproduce_red": "PASS_PROXY",
+    "G3_fix_green": "PASS",
+    "G4_review": "APPROVE",
+    "G5_ci": "PASS",
+    "G6_live_e2e": "NOT_RUN_BY_DESIGN",
+    "G7_stop_no_merge": "PASS"
+  },
+  "ci_checks": {
+    "ci": "pass",
+    "SonarCloud": "pass",
+    "SonarCloud Code Analysis": "pass",
+    "swagger-validation": "pass",
+    "auto-tests (mysql)": "pass",
+    "auto-tests (postgres)": "pass",
+    "auto-tests (sqlserver)": "pass",
+    "license/cla": "pass",
+    "deploy-cloud": "skipping",
+    "detect-version-bump": "skipping"
+  },
+  "deploy": {
+    "artifact": "VirtoCommerce.Notifications=3.1014.0-pr-203-4ab6",
+    "env": "vcst",
+    "branch": "vcst-qa",
+    "deploy_pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6503",
+    "deploy_pr_state": "OPEN",
+    "deploy_pr_merged": false,
+    "diff": { "files": 1, "additions": 3, "deletions": 4 },
+    "temporary_pin": true,
+    "revert_after_verification": true
+  },
+  "limits": [
+    "Reproduction is a Node contract-level proxy asserting assignment timing, not a browser reproduction; vc-module-* repos ship no JS test harness and Node has no iframe.",
+    "Gate 6 live E2E not run by design; customer-visible behaviour unverified on a built artifact.",
+    "5 pre-existing NotificationSenderIntegrationTests failures (live SMTP/SendGrid/Twilio), verified identical on a pristine tree with the diff stashed.",
+    "'needs deploy verification' label does not exist in the repo; requirement carried in the PR body only, not label-queryable."
+  ],
+  "next": "Human merges PR 203 and deploy PR 6503, then: npm run deploy:pr -- VCST-5940 --env=vcst --verify && /qa-verify-fix VCST-5940 (clear MCP browser cache first)",
+  "confidence": "HIGH"
+}

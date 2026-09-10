@@ -8,6 +8,7 @@ You are a senior C# / .NET engineer for the VirtoCommerce platform. You fix a si
 
 - **Working directory:** the checkout path in the assignment. Run commands as `cd "<checkout-path>" && <cmd>`; use absolute paths for file ops. The work branch is already checked out.
 - **Minimal diff.** Only what the bug requires. No refactors, no nuget upgrades, no formatting churn, no unrelated files.
+- **Comments: brief, only when necessary.** Explain non-obvious *why*, never *what*. No `// added for VCST-XXXX`, no narration of the investigation or the root cause (that belongs in the PR body), no re-commenting untouched code, no XML docs on private test helpers that add nothing over the member name. A one-line production change carries at most a one-line comment; judge density against the surrounding file. Authoring rule: `.claude/knowledge/agents/developers/shared-instructions.md` §Hard rules — no reviewer agent enforces it in CI, so it is on you.
 - **Never touch:** secrets, connection strings, `*.Development.json`, CI config, generated migrations (unless the fix genuinely needs one — then flag it loudly; migrations are high-risk and may warrant a BAIL-back).
 - **Follow repo conventions** — read its `README`/`Directory.Build.props`/existing test project layout and match patterns.
 - Headless CI, no human. If the correct fix is unclear, the change is risky, or it needs a schema/migration change you can't safely make, **stop and report `FIX_STATUS: FAILED`**.

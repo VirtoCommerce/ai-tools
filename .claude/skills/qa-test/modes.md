@@ -54,7 +54,7 @@ command's §Usage.
 
 Per round, once the 5c verdict is in:
 
-1. **PASS / PASS WITH NOTES** → exit the loop → the **exit round's close-out** (5e in full → 5f → 5h → 5g,
+1. **PASS / PASS WITH NOTES** → exit the loop → the **exit round's close-out** (5e in full → 5f → 5h → 5h-map,
    §The exit round) → GO/NO-GO recommendation → **STOP for the human to merge + release** (never
    automated). Done.
 2. **BLOCKED** → **STOP.** A fix cannot clear an env/data/dependency blocker. The exit round's close-out
@@ -73,10 +73,8 @@ Per round, once the 5c verdict is in:
      the transition gate at round entry is evaluated against the probed build.
    - **Re-test (round N+1):** re-run **only the previously-FAILED cases (C1 / RED→GREEN)** at Step 4
      against the redeployed env, then Steps 5a–5c again (the full verdict gate; on FULL the independent
-     verifier re-ratifies, 1 round) — and **then** the round's **C2**, re-scoped to the fix's diff, at 5r
-     (§The two tracks of round N+1). The order matters to the loop specifically: the round verdict is what
-     decides whether there IS another round, so paying for a suite sweep before that decision buys an
-     answer to a question already settled.
+     verifier re-ratifies, 1 round). **The loop runs no suite sweep** — `5r`/C2 was removed 2026-09-10 —
+     so a round is exactly: redeploy → re-run what failed → re-derive the verdict.
 4. **Cap reached** — still FAIL after `--max-rounds` rounds → **STOP** with a per-round summary (what each
    round fixed, what still fails — read off `summary.json.iterations.per_round[]`, never narrated from
    memory) and hand to a human. **STOP at the cap is a success, not a failure.**
@@ -106,7 +104,6 @@ promotion. This table is the rest of the contract.
 | **`5k.0` round entry** | **PER ROUND (≥2)** — a baseline read only on round 1 | The board is the source of truth for what this run filed and for what has since been fixed, and it **moves between rounds without the loop being told**: a human merges and deploys a sub-task fix, a developer links a new bug. Verification is a full inline `/qa-verify-fix` per fix-ready bug, which is also the only way a bug with **no covering case** — every bug a FAST round files — can be verified at all (§Round entry). Its own hops are recorded in `status_transitions[]` against the BUG key, never the ticket. |
 | `5a` · `5b` · `5c` | **PER ROUND** | Already in the enumeration: the verdict gate is what decides whether there is another round. On FULL the 5b verifier re-ratifies **once per round** (one REJECT→fix→re-verify round each). |
 | `5d` file bugs | **PER ROUND**, new findings only | `/qa-fix` needs a filed ticket, so a round that files nothing cannot fix anything and the loop dead-ends at its own precondition. A finding this run already filed is **CARRIED**, not re-filed (§Three carve-outs). |
-| `5r` release regression (C2) | **PER ROUND**, after that round's 5c — **on FAST only when `--release-regression` was passed**; a loop that skips it skips it every round, and `iterations.per_round[].regression.c2` records the skip rather than going absent | The round's fix changes what a sweep would find, so a single sweep at exit would describe only the last build — and the loop's own decision (is there another round?) comes from 5c, which is why C2 sits after it rather than before. Re-scoped to the FIX's diff each round (§The two tracks of round N+1). Its RUN_ID lands in `iterations.per_round[].regression.c2`; only the FINAL round's feeds 5e.1. The FAST opt-in rule is §5r of the close-out phase file. |
 | `5e.1` Feature Release Gate | **AT LOOP EXIT** | There is one release, so there is one recommendation. A FAIL round is an automatic NO-GO the loop has *already acted on* by starting another round; ratifying per round emits N−1 recommendations about builds that no longer exist. |
 | `5e.2` tracker comment | **PER ROUND** — a **round delta** in rounds 1…N−1, the **full template once**, at exit | The full template every round buries the ticket under near-identical comments. Nothing at all leaves a prerelease deployed to the shared test env with no trace on the ticket. The delta is the minimum that keeps a human able to see the env moved, and why. |
 | `5e.3` persist `summary.json` | **PER ROUND** (rewritten in place; the round appended to `iterations.per_round[]`) | The loop can STOP at any round — G0 BAIL, BLOCKED, the cap, a dropped session — and a history persisted only on a clean exit is missing exactly when it is needed. It is also the only artifact that can support the cap-reached hand-off's per-round claims. |
@@ -114,7 +111,6 @@ promotion. This table is the rest of the contract.
 | Evidence screenshots | **PER ROUND**, round-stamped | Round N+1 re-runs the same case IDs into the same folder, so an unstamped `{TC-ID}-FAIL-{description}.png` lets the round-2 PASS **overwrite the round-1 FAIL** — and the checklist row that cites it then points at a green image. Every round stamps `-r{N}`, round 1 included (`.claude/rules/reports.md` §7). |
 | `5f` tracker transition | **AT LOOP EXIT** | REOPEN is the human-handoff signal, and a loop about to start another round is not handing off. A per-round REOPEN would also flap the ticket out of in-testing — the precondition both closing transitions need — and fire N−1 false handoff notifications. **Bug-level hops follow the same rule, with one exception:** a bug verified green on a **merged and deployed** fix hops to `TESTED` at round entry — that is monotonic, no later round can un-merge it — while a bug still failing keeps its in-testing state and takes its `REOPEN` at exit (§Which hop a verified bug takes). |
 | `5h` documentation | **AT LOOP EXIT, ONCE** | The loop only ever re-tests an **unmerged prerelease**. Documenting a build that the next round replaces publishes instructions for something nobody can use yet, and a per-round comment buries the ticket under near-identical guides. One documentation comment per run, whatever the round count — same reasoning as `5f`. |
-| `5g` promotion | **AT LOOP EXIT, ONCE** | `tc:promote` reads `Draft` and writes `Automated`, **never a re-promotion** (`scripts/test-cases/promote-cases.ts`), so a round-1 promotion is irreversible and grounds `{OBSERVED}` in the build that was WRONG. Only the last round's evidence describes the code a human is being asked to ship. |
 
 #### Round entry (`5k.0`) — re-read the board before re-running anything
 
@@ -150,7 +146,7 @@ build probe, because the transition gate below is evaluated against the probed b
    `reports/tickets/<Sprint>/<BUG-KEY>/`, so the round's per-bug evidence is a file rather than a claim.
 4. **Then — and only then — re-run the round's failed scope**: C1 / the failed checklist items (item 3 of
    the enumeration above). A bug just verified VERIFIED does **not** drop its cases from C1: verify-fix
-   proves the STR, and C1 is what produces the canonical `RUN_ID` that 5g's promotion refuses to work
+   proves the STR, and C1 is what produces the canonical `RUN_ID` a later promotion refuses to work
    without (PR-013).
 
 **Round 1 reads the same set and verifies nothing.** It has no prior round's filings and no redeploy, so
@@ -197,7 +193,7 @@ with the failure list, which is the moment the loop actually hands off. Every su
 
 **The exit round behaves exactly like a close-out without the flag.** Whatever ends the loop — PASS, the
 cap, a G0 BAIL, BLOCKED — the final round runs 5e in full (gate ratification · the full comment ·
-`summary.json` · the checklist), then 5f, then 5h, then 5g. **A `--iterate` run posts ONE QA-Complete comment and
+`summary.json` · the checklist), then 5f, then 5h, then 5h-map. **A `--iterate` run posts ONE QA-Complete comment and
 makes ONE transition on the ticket under test**, the same as a run without it, whatever the round count.
 
 **5f at exit also closes out the bugs the loop left open.** Every bug round entry moved into in-testing and
@@ -232,26 +228,21 @@ on; that is the whole point.
 5k still only ever fixes what 5d filed — and the round-delta comment carries the same mandatory
 `Not filed` accounting in one line, `None` when there are none.
 
-#### The two tracks of round N+1, in this order
+#### Round N+1 is ONE track: C1 / RED→GREEN
 
-**These ARE C1 and C2** ([`authoring.md`](authoring.md) §Artifact C) — the loop reached this split first,
-for the same reason Step 4 and 5r now apply it to round 1: the ticket verdict is the priority, the two runs
-answer different questions, and both draw on the max-3-browser cap.
+**Exactly the previously-FAILED case IDs, as its own `/qa-regression <suites> --ids <IDs> --no-promote` run.**
+`--no-promote` for the same reason `4c` passes it: a delegated run must not promote from inside the
+pipeline that authored the cases ([`qa-regression.md`](../../commands/qa-regression.md) §Step 6.5). Its pass
+rate answers **one** question — did the fix turn red green. **FAST:** the failed **checklist items**, run
+by the one execution agent; no `RUN_ID`, no `--ids`.
 
-1. **C1 / RED→GREEN** — exactly the previously-FAILED case IDs, as its own
-   `/qa-regression <suites> --ids <IDs>` run. Its pass rate answers **one** question — did the fix turn red
-   green — and keeping it out of the C2 run is what stops the release gate's ≥80% floor from blending two
-   questions into one number. **FAST:** the failed **checklist items**, run by the one execution agent; no
-   `RUN_ID`, no `--ids`.
-2. **C2, re-scoped to the FIX's diff, and run AFTER the round's verdict** (5r, same as round 1) —
-   `npm run regression:select -- --repo <name> --diff <fix-PR range> --target 40 --json`, then
-   `--cases critical --also-ids <this run's new Draft ids>`. Round 1's selection was computed from the
-   *ticket's* diff and cannot know what the fix touched. Running it after the round verdict is what lets the
-   loop decide whether there IS another round without first paying for a suite sweep — the round cap is the
-   expensive resource here, and spending a C2 to learn a round failed is spending it on a question already
-   answered.
+**There is no second track.** The loop used to also run a fix-diff-rescoped C2 after each round's verdict;
+`5r`/C2 was removed 2026-09-10, here as everywhere else. The argument that put it after the verdict is
+exactly the argument for not running it at all inside a loop: the round cap is the expensive resource, and
+the loop's own decision — is there another round? — comes from 5c, which never depended on a sweep. A
+release-scoped sweep on the FINAL build is a deliberate `/qa-regression` run once the loop has exited.
 
-**Both are real `/qa-regression` runs, never ad-hoc agent executions**, precisely so each produces a
+**C1 is a real `/qa-regression` run, never an ad-hoc agent execution**, precisely so it produces a
 canonical `RUN_ID`: `tc:promote` refuses a run that is not `completed` (PR-013) and the loop must never
 reach for `--allow-incomplete`.
 
@@ -259,25 +250,6 @@ reach for `--allow-incomplete`.
 the round records its own probed `GET {{BACK_URL}}/api/platform/modules` value in
 `per_round[].build.deployed`. The loop's entire claim is that the code changed between rounds; unprobed,
 that claim is unfalsifiable and a "still failing" round may be a deploy that never landed.
-
-#### 5g at loop exit: promote per run, per case
-
-A case's promotable evidence lives in the run that **executed** it: a case re-run in the final round is
-green in the RED→GREEN run; a case untouched since round 1 is green only in round 1's Artifact-C run. So
-run the promoter once per `RUN_ID`, each scoped to exactly the ids whose evidence that run carries:
-
-```bash
-npm run tc:promote -- <final RED-GREEN RUN_ID> --ids <re-run ids>            --stamp <ticket-key>
-npm run tc:promote -- <final Artifact-C RUN_ID> --ids <ids only it executed> --stamp <ticket-key>
-npm run tc:promote -- <round-1 RUN_ID>          --ids <ids no later run ran> --stamp <ticket-key>
-```
-
-Without `--ids` each invocation considers every `Draft` row in the suite and holds most of them with
-PR-002 (absent from the run) — true, but it buries the handful of real decisions and makes "not executed
-here" indistinguishable from "refused". `--suite` cannot express this: the same suite holds both sets.
-Expect a **PR-014 warning** on any invocation keyed to an earlier run once the loop has authored a case
-mid-loop (the CSV is then newer than that run) — **name it in the report and do not pass
-`--strict-mtime`**, which would refuse the whole suite.
 
 #### The round-delta comment (rounds 1…N−1)
 
@@ -327,9 +299,9 @@ defect this run filed *and then watched go green* is that ground at full strengt
 normal path with a **fresh `tc:alloc` block**. But **prefer amending first** — grep the target suite for
 the defect's observable; if an existing case covers the mechanism and asserted the wrong thing, the correct
 move is `/qa-review-tests file <suite> --fix` on that row, not a new row. And author it **before** the round
-that will execute it: a case authored after the final round is `Draft` with no evidence anywhere (PR-002 at
-5g, held forever) — if that happens, record it in `promotion.blocked` with exactly that reason rather than
-leaving it silently unpromoted.
+that will execute it: a case authored after the final round is `Draft` with no evidence anywhere, so
+whoever later runs `/qa-test-lifecycle` holds it at PR-002 forever — if that happens, say so in the run's
+hand-off rather than leaving it silently unpromotable.
 
 **Evidence — round-stamped, never overwritten.** Screenshots go to the ticket folder as
 `{TC-ID}-FAIL-r{N}-{description}.png` on every round including the first, because the round-2 re-run

@@ -1,6 +1,6 @@
 # Points History — "Operation" column is blank for every loyalty-mission reward row
 
-## Status: READY_TO_SUBMIT
+## Status: FIXED
 
 **Tracker:** [VCST-5916](https://virtocommerce.atlassian.net/browse/VCST-5916) — filed 2026-09-08, screenshot attached + embedded inline (verified via `renderedFields`)
 
@@ -148,3 +148,21 @@ predicts, so the anchors hold — re-anchor line numbers when citing against the
 - **Component / module:** `VirtoCommerce.Loyalty.ExperienceApi` — loyalty points-history `object` resolver
 - **RCA anchor:** `src/VirtoCommerce.Loyalty.ExperienceApi/Extensions/DataLoaderContextAccessorExtensions.cs` → `LoadLoyaltyObject()` `objectType switch` — add a `LoyaltyMissionProgress` arm (search symbol: `LoadLoyaltyObject`). Secondary, follow-on repo: `VirtoCommerce/vc-frontend` → `client-app/modules/loyalty/pages/points-history.vue` → `getOperation()`
 - **Routing confidence:** HIGH for the owning layer and repo (Layer 4 PASS / Layer 3 FAIL is measured, and the missing `switch` arm is exact). Note for Gate 0: a *complete* customer-visible fix spans two repos — the resolver fix alone turns the blank cell into the raw string `LoyaltyMissionProgress`. Treat the `vc-frontend` label as a separate single-repo follow-up, not as a cross-repo fix.
+
+## Resolution
+
+**Fixed in:** `VirtoCommerce.Loyalty 3.1007.0-pr-16-cfa5` (vc-module-loyalty PR #16, `cfa5617`) + storefront theme `2.58.0-pr-2473-1e10-1e104dfa` (vc-frontend PR #2473, `1e104df`). Platform `3.1064.0`, `VirtoCommerce.Xapi 3.1020.0`.
+
+**Tracker:** VCST-5916 — verified 2026-09-10, verdict **VERIFIED_WITH_NOTES**.
+
+**What shipped (variant (a)):** `LoadLoyaltyObject()` gained a `nameof(LoyaltyMissionProgress)` arm returning `Type = "Mission"`; the storefront added `MISSION_OBJECT_TYPE`, a `loyalty.points-history.mission` key across 13 locales, and a matching `getOperation()` branch. The Operation cell now reads **"Mission reward"** (de: `Aufgabenbelohnung`) instead of rendering empty.
+
+**Verification method:** live, both layers, on the confirmed-deployed build. xAPI full-ledger sweep: `object == null` went **69 → 0** of 167 rows, `object.type == "Mission"` **0 → 69**, `CustomerOrder` unchanged at 98 (98/98 carrying both `orderId` and `orderNumber`). Cross-layer REST/xAPI join over all 167 rows is a clean 1:1 with no off-diagonal cell. Storefront STR passed 3/3 consecutive runs on desktop 1920 and mobile 375, German locale confirmed, 0 console errors and 0 4xx/5xx. Corroborated on a second independent account (`qa-user-01`, 9 mission rows).
+
+**Baseline provenance:** the RED figures above are cited from this report and the Jira description (2026-09-08); the 3.1006.0 artifact is no longer on the environment, so RED was not re-measured. Independently corroborated by suite 075d's `{OBSERVED}` assertions recorded 2026-08-28.
+
+**Still open — deliberately not closed here:** **BL-LOY-015** (per-entity attribution). Variant (a) indicates only *that* points came from a mission, never which one, so mission grants remain mutually indistinguishable in the payload. Tracked as **VCST-5917**; suite `083c` MSNF-080 asserts the mission name and is expected to keep failing.
+
+**Related-case run (2026-09-10):** MSN-020, MSN-024, MSNF-009 PASS. MSN-027 and MSN-033 fail only on their stale `object is null` assertions — the accrual chain is green — and MSN-021's count drift plus MSN-033's `reward_expected_total` are fixture defects, not product defects; all routed to `/qa-review-tests --fix`. MSNF-080 is BLOCKED:PRECONDITION_UNMET (its fixture account never accrued). No product regression found.
+
+**Evidence:** `reports/tickets/Sprint26-18/VCST-5916/` — `evidence.html` (self-contained RED→GREEN page), `verification-report-frontend.md`, `verification-report-backend.md`, `payloads/` (9 captures, Authorization redacted), `screenshots/`, `related-cases/`, `verification-summary.json`.

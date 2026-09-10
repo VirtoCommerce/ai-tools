@@ -29,8 +29,9 @@ domain_slug: <slug>          # MUST match `bl:extract --domain <slug>` so lookup
 applicability: universal     # or `reference` when it is theme/CMS/deployment-specific
 rationale: |
   What this domain IS, why the map was built, and what it is for.
-generated: YYYY-MM-DD
-rev: 1
+generated: YYYY-MM-DD          # last full ENUMERATION. Staleness is measured against THIS and nothing else
+rev: 1                        # which enumeration. Bumped by /qa-domain-map, never by an amendment
+amended: YYYY-MM-DD            # last incremental write-back (/qa-test 5h-map). Omit until one happens
 stale_after_days: 60
 expires_after_days: 120
 sources:
@@ -162,6 +163,19 @@ has to be written down or the next reader trusts the stale doc's authority.
 | <id> — <the claim in one line> | **DRIFT** — <what is actually true> |
 
 Close with which entries from the prior art's own open-question list this map **resolves**.
+
+## §7 — Amendments
+
+Written by `/qa-test` `5h-map`, one row per write-back, **append-only**. A map that only a refresh could
+change decays between refreshes; this is where the tickets that walked its surfaces pay it back.
+
+| Date | By | What moved |
+|---|---|---|
+| YYYY-MM-DD | VCST-XXXX | §2 +2 surfaces (`CONFIRMED`) · `D3` source-only → `CONFIRMED` · `G1` `CLOSED` |
+
+**An amendment sets `amended:` and NEVER `generated` or `rev`** — staleness measures the last full
+enumeration, and a trickle of true facts must not be able to silence `domain:check`. A **refresh folds
+these rows in and never drops them**: each is an observation the enumeration itself does not hold.
 ````
 
 ---
@@ -179,12 +193,17 @@ Self-checked by the author; `/qa-domain-map` re-derives it before writing.
 7. **Every claim in the file carries a verdict.** An unmarked claim reads as `CONFIRMED` and is the way a stale map does more damage than no map.
 8. **Every published guide the domain touches was queried, and every doc claim carried into the map is a VERBATIM quote with its URL, triangulated against a live observation.** A paraphrase cannot be checked; a quote the pass did not fetch itself is not evidence.
 9. No invented routes, fields or ids. No behavioural rule stated as if it were an oracle.
+10. **An amendment (`/qa-test` `5h-map`) obeys 1–9 on the rows it touches, plus three of its own:** every
+    appended claim is `CONFIRMED` from a **live** observation in that run (never `{HYPOTHESIS}`, never an
+    inference); **no row is deleted and no id renumbered** — a `D*` verdict moves in place, a `G*` is
+    marked `CLOSED` in place; and `amended:` moves while `generated:` and `rev:` do not.
 
 ## What consumes this
 
 | Consumer | Uses it for |
 |---|---|
-| `/qa-test` `1b` `2-map` | read **first**, before per-ticket prior art; absent + all-layer scope ⇒ **recommend** `/qa-domain-map`, never block |
+| `/qa-test` `1b` `2-map` | read **first**, before per-ticket prior art; absent + all-layer scope ⇒ a **FULL** run BUILDS it at `1c-map` and a FAST run recommends `/qa-domain-map` — never block, either way |
+| `/qa-test` `5h-map` | **writes back what the run verified** — new §2 surfaces, a `D*` upgraded live, a `G*` `CLOSED`, a §4 count corrected — into §7, after the verdict. Costs no dispatch; touches `amended:` only |
 | `/qa-test` `1e` clause 11 | the ticket's chain stated as a **slice** of the domain chain — which links it touches *and which it does not*. Absent map ⇒ record `Domain map: ABSENT — chain position unverified` |
 | `/qa-test` `1c` | briefed with the map path; **must report any surface it touched that the map does not list** — that is how each run repays the map instead of only consuming it |
 | `/qa-test-plan`, `/qa-regression` | §4's selection-group and executability findings |

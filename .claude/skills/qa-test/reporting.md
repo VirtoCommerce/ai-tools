@@ -1,16 +1,20 @@
-# Steps 5e · 5f · 5h — report, transition, publish
+# Steps 5e · 5f · 5h · 5h-map — report, transition, publish, write back
 
 > **MANDATORY — screenshots go INLINE in the comment.** A UI claim posted without its image embedded is not delivered: Markdown `![](path)` and prose file paths both post `200 OK` and render nothing. Attach, then reference `!file.png|width=700!` via the **v2** comment API, then VERIFY from `?expand=renderedBody` (one `<img …/attachment/content/N>` per image, zero surviving `!….png!`, zero `<span class="error">`). Mechanism + the ADF dead ends: `knowledge/execution/tracker-ops.md` §5c. Policy + the verification gate: `.claude/rules/reports.md` §5.0. A non-visual claim says so explicitly rather than silently shipping no image.
 
 
-Split out of [`close-out.md`](close-out.md), which keeps the close-out spine (5b · 5c · 5r · 5d) and cites
+Split out of [`close-out.md`](close-out.md), which keeps the close-out spine (5b · 5c · 5d) and cites
 this file. Read it when the verdict exists and the run has to be **delivered**: the Feature Release Gate,
 the tracker comment, `summary.json`, the checklist, the chat report, the status transition, and the
 per-ticket documentation.
 
 **The order is fixed and each step depends on the one before it:** 5e reports (and is what *publishes* the
-verdict 5c recorded), 5f transitions **after** the report, 5h documents **after** the transition. Promotion
-(5g) runs last of all and is in [`promotion.md`](promotion.md).
+verdict 5c recorded), 5f transitions **after** the report, 5h documents **after** the transition, and
+`5h-map` writes back to the domain map last of all (FULL only, non-blocking). **Promotion is not here** —
+`/qa-test` stopped promoting on 2026-09-10; the procedure lives in
+[`regression-promotion.md`](../../knowledge/execution/regression-promotion.md), run by
+[`/qa-test-lifecycle`](../../commands/qa-test-lifecycle.md) 6P and, for cases already grounded, by a
+direct [`/qa-regression`](../../commands/qa-regression.md) run's Step 6.5.
 
 ## 5e. Report
 
@@ -44,8 +48,15 @@ The 5c verdict is the primary input to the **Feature Release Gate**
 decide release.**
 
 A PASS/PASS-WITH-NOTES run **feeds a GO** only if the team-level criteria also hold: 0 open P0, **0 open
-undeferred P1/High**, change-scoped regression ≥80% — **C2's pass rate, produced at 5r** and recorded as `regression.pass_rate`; when C2 was skipped, ratify without it and say so rather than substituting C1's number, which answers a different question, NFRs clean,
-smoke PASS. A FAIL/BLOCKED is an automatic NO-GO.
+undeferred P1/High**, change-scoped regression ≥80%, NFRs clean, smoke PASS.
+
+**The change-scoped regression criterion ratifies as `not-assessed` on every `/qa-test` run, and that is
+now the normal state.** `/qa-test` runs no release-scoped sweep — `5r`/C2 was removed 2026-09-10 — so
+there is no pass rate for it to produce. **Never substitute C1's number:** C1 is the ticket's exact set and
+answers a different question, and blending them is precisely how a gate reads GREEN on evidence nobody
+gathered. Where a release-scoped [`/qa-regression`](../../commands/qa-regression.md) run DOES exist for
+this build, cite its `RUN_ID` and pass rate and ratify on that; otherwise record `not-assessed` and say in
+one line that the sweep was not run. A missing criterion is stated, never implied to have passed. A FAIL/BLOCKED is an automatic NO-GO.
 
 Two things about the bug ledger and the run, because both changed on 2026-09-02:
 
@@ -103,9 +114,8 @@ prerelease deployed to the shared test env with no trace. The delta carries the 
 
 Write `reports/tickets/{SPRINT}/<ticket-key>/summary.json` per
 [`.claude/templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json): `path`, the
-AC-analysis + `ac_dod_estimate` block, counts, the **`regression`** block (**both `c1` and `c2`** — two
-runs, two `run_id`s; the release gate is defined on `c2`'s) and `regression_triage`, `bugs_filed`
-with relationship + severity, `bugs_not_filed`, the `promotion` block for 5g, the **`timing`** block,
+AC-analysis + `ac_dod_estimate` block, counts, the **`regression`** block (`c1` only — `c2` was removed with `5r`) and `regression_triage`, `bugs_filed`
+with relationship + severity, `bugs_not_filed`, the **`timing`** block,
 **`path`** plus **`path_route`** (how the EFFORT axis landed there — for a Story that is `1a`-provisional
 then `1b`-confirmed, `ticket-routing.md` §5b),
 **`layer`** (derived at `1b` item 2b) plus the **`release`** block resolved at 5e.0, and the four derived-axis
@@ -137,6 +147,22 @@ Record `started_at`/`finished_at`, per-step minutes, `agent_dispatches`, and the
 **predicted vs actual** minutes. That last pair is what will let `npm run regression:recalibrate` eventually
 be trusted: an order-of-magnitude gap is the ×18–×88 `estimatedMinutes` defect surfacing, and it belongs in
 the report rather than being inferred months later.
+
+**`steps.stepN` is where this instruction has actually been failing, so it gets its own rule.** The field
+was `0` in **every** `summary.json` that carried the block, for the whole of its existence — which is why
+the 2026-09-10 Step-3/4 restructure had to be designed against an unmeasured latency claim
+([`docs/decisions/qa-test-evolution.md`](../../../docs/decisions/qa-test-evolution.md) §Cutting
+time-to-first-test). **Write each step's minutes as that step CLOSES, not at 5e.3 from memory** — by then
+the timestamps are gone. A step that genuinely took under a minute records a real fraction; `0` is a
+placeholder, and a placeholder here is the same failure as a blank matrix cell.
+
+**Three fields measure the restructure itself, and one of them is the whole point:**
+
+| Field | From → to | Reads as |
+|---|---|---|
+| **`time_to_first_test_minutes`** | `started_at` → the **`4a` dispatch** | **THE number.** If it does not fall, the restructure did not work and the record must say so |
+| `first_evidence_minutes` | `started_at` → the first execution agent **returning** | when a human could first have acted on something real |
+| `reachability_minutes` | the `1r` pass | `null` on a FULL run means `1r` did not run — a gap, not a zero |
 
 ### 4. Update the checklist in place
 
@@ -217,7 +243,8 @@ not auto-triggers). This close-out is the `feature-test` flow's; `verify-fix` al
 VERIFIED/REOPEN verdict, and `hotfix-verify` handed off before 1b.
 
 - **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate. Done — **5h publishes the
-  documentation to the ticket** (§5h) and 5g still runs (non-blocking) if new cases were authored.
+  documentation to the ticket** (§5h) and `5h-map` writes back to the domain map (non-blocking). New cases
+  stay `Draft` — promotion is [`/qa-test-lifecycle`](../../commands/qa-test-lifecycle.md)'s pass, not this one.
   **Then point at the release note** — see §Release note below.
 - **FAIL → REOPEN** → `/qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge +
   deploy → `/qa-verify-fix <ticket-key>`. A too-complex/multi-repo bug (G0 BAIL) is handed to a human,
@@ -328,3 +355,73 @@ build that is about to be replaced publishes instructions for something nobody c
 per-round comment buries the ticket. One documentation comment per run, whatever the round count.
 
 ---
+
+## 5h-map. Amend the domain map with what this run ESTABLISHED — FULL, when a map exists
+
+`1c-map` fills the map in when it is missing. This is the other half of the same loop: when a map already
+exists, the run **writes back what it verified**, so the inventory tracks the product instead of decaying
+from the day it was built. It costs **zero dispatches** — every fact it writes is already in the run's
+artifacts, produced by `ba-system-analyzer` at `1c` and by the execution agents at Step 4.
+
+**Runs after 5f**, and that ordering is a guard, not a convenience: `1e` clause 11b binds the matrix
+against the map's inventory, so a run that widened the map first would be checking its own output. The
+verdict is recorded before anything is written back.
+
+**Independent of 5h's refusals.** `not-user-visible`, `not-deployed` and `layer-unresolved` decide whether
+the *ticket* earned a how-to guide. A surface this run rendered is a fact either way, and a `FAIL` or
+`BLOCKED` verdict changes nothing here — the map records what EXISTS, never what is correct.
+
+### What may be amended — a closed list. Everything else stays a proposal.
+
+| Evidence the run produced | The amendment | Why it is safe to write |
+|---|---|---|
+| A surface `1c` reached that §2 does not enumerate (`domain_map.unmapped_surfaces[]`) | **append** a §2 row — `CONFIRMED`, with the ticket id and date | a new fact contradicting nothing already written |
+| A `D*` row this run confirmed or refuted **LIVE** | **verdict upgrade in place** — `source-only` → `CONFIRMED`, or `CONFIRMED` → `DRIFT` **with what is actually true** | the id and the row's text survive; only the verdict moves, and the id is a citation contract |
+| A `G*` gap this run closed | mark **`CLOSED` in place, with what closed it** | the shape already mandates exactly this |
+| A §4 count this run proved wrong | **correct it out loud**, naming the new basis | the shape already mandates exactly this |
+| A **new** cross-layer disagreement, observed live on both sides | append a **new `D*`** — `CONFIRMED` only | §3 is the map's highest-value section, and a live observation is the evidence bar it asks for |
+
+**Never from a run:** §1 purpose or the value chain (a re-derivation, not an observation) · any claim
+whose provenance is `{HYPOTHESIS}` or inference · a **deletion** of any row · a **renumber** of any id ·
+anything observed on a different domain's surface. Each of those is a `5h` proposal, exactly as before.
+
+**One evidence bar, and it is the run's own:** an amendment carries `CONFIRMED` and the observation
+behind it. A claim the run could not verify live does not get written more weakly — it does not get
+written. An unmarked or optimistic claim in a map is the specific way a map does more damage than no map
+(shape gate clause 7).
+
+### Three timestamps, and an amendment moves exactly one
+
+| Field | Means | An amendment |
+|---|---|---|
+| `generated` | the date of the last full **enumeration** — what `domain:check` measures staleness against | **NEVER touched** |
+| `rev` | which enumeration this is; bumped only by `/qa-domain-map` | **NEVER touched** |
+| `amended` | the date of the last incremental write-back | **set to today** |
+
+**This is the clause that keeps the freshness gate honest.** If an amendment bumped `generated`, a domain
+touched by a ticket every few weeks would never go stale — and `domain:check`, the one gate that catches a
+map describing a build that has moved, would be permanently silenced by a trickle of small true facts.
+Amending is not re-enumerating: it adds what one ticket walked past, and says nothing about the surfaces
+nobody looked at.
+
+### Write it safely
+
+- **Append a `§7 — Amendments` row** for every write: date · ticket · what moved (`§2 +2 surfaces`,
+  `D3 source-only → CONFIRMED`, `G1 CLOSED`). A reader who cited `D3` can then see it was upgraded by a
+  ticket rather than by an enumeration pass.
+- **Re-read the file immediately before writing**, and allocate any new `D*`/`G*` id from *that* read —
+  never from the copy `2-map` read at `1b`. Two `/qa-test` runs on one domain will otherwise both allocate
+  `D7`. This is the suite-CSV discipline applied to a smaller file: **one author for the duration of a
+  change**, and a conflict is handed to a human, never resolved with git
+  ([`.claude/rules/regression.md`](../../rules/regression.md) §Suite inventory).
+- Then run the shape's own gate clauses on the rows you touched, plus `npm run domain:check` and
+  `npm run context:check`.
+- **Nothing here blocks.** A failed amendment records `domain_map.amend_outcome: FAILED` with the reason
+  and leaves the map untouched; the run's verdict was final at 5c.
+
+### Record it
+
+`domain_map.amended_in_run` · `amend_outcome` (`AMENDED` / `NOTHING_TO_AMEND` / `FAILED` / `not-attempted`)
+· `amendments[]` (the same rows written to §7). **`NOTHING_TO_AMEND` is a real outcome and is recorded** —
+a run that touched only mapped surfaces and confirmed nothing new says so, which is different from a run
+where this step never ran.

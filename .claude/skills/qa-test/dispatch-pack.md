@@ -66,10 +66,10 @@ ever a paraphrase: a summarised invariant is a second, drifting copy of a single
 | Fan-out | Pack contents | Note |
 |---|---|---|
 | Step 3b — one batch per execution surface | the full table above, per layer | The worked case; [`authoring.md`](authoring.md) §3b item 4 |
-| Step 4 — execution agents (up to 3 lanes) | `BL-*` + `ECL-*` text, Artifact A rows, Artifact B, `@td()` tokens | The prompt template already asks for the rule *text* ([`SKILL.md`](SKILL.md) §Agent dispatch); extract it rather than hand-cutting |
+| Step 4 — execution agents (up to 3 lanes) | `BL-*` + `ECL-*` text, **Artifact B**, `@td()` tokens | The prompt template already asks for the rule *text* ([`SKILL.md`](SKILL.md) §Agent dispatch); extract it rather than hand-cutting. **Artifact A rows came OUT of this pack on 2026-09-10** — `4c`'s C1 run executed the same rows and is the only thing that emits a `RUN_ID`, so the agent's copy was a second execution that grounded nothing |
 | `1c ‖ 1d` | scope's `BL-*` / `ECL-*` text + the contract rev | Prior art stays paths — see above |
-| C1 / C2 regression runners | selection + `BL-*` text for the triage vocabulary | Artifact C is not an agent prompt ([`authoring.md`](authoring.md) §Artifact C) |
-| The verifier (Step 3, 5b, 5e, 5g) | rule text only | Evidence is re-derived, never supplied |
+| The C1 regression runner | selection + `BL-*` text for the triage vocabulary | Artifact C is not an agent prompt ([`authoring.md`](authoring.md) §Artifact C) |
+| The verifier (Step 3, 5b, 5e) | rule text only | Evidence is re-derived, never supplied |
 
 ## Cost, and when it is not worth it
 

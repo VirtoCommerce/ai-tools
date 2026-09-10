@@ -71,7 +71,7 @@ Resolve via the 16-status map in `skills/qa-defect/defect-lifecycle-workflow.md`
 | **Epic** | any | **feature-test** (FULL) | Full cycle; a bare Epic key → suggest `--epic` (serial child-story run). |
 | **Task** | any | **feature-test** | **FULL** if cross-layer or P0/P1, else **FAST**. |
 | **Technical task** | any | **feature-test** (FAST) | Refactor/config — low behavioral risk; **FULL** only if it crosses layers or is P0/P1 (fail-safe). |
-| **Review task** | any | **feature-test** | A **contribution** — a fix or improvement arriving as a PR, the ticket auto-created as a wrapper (description = PR link + title; no ACs, no STR, auto-set `Medium`). Its fields carry no signal, so **effort derives from the PR diff, never the ticket fields**: **FAST** for a one-file, single-surface diff; **FULL** if it crosses layers, spans ≥2 domains, is net-new, or its **REACH exceeds its diff** (shared infrastructure that already-shipped callers also use). **Domain membership alone does NOT escalate** — on this storefront nearly every change touches a critical-revenue domain, so that test would swallow the FAST default sitting beside it (§5a). **Step 2a runs by default; C2 is opt-in** — §5a. |
+| **Review task** | any | **feature-test** | A **contribution** — a fix or improvement arriving as a PR, the ticket auto-created as a wrapper (description = PR link + title; no ACs, no STR, auto-set `Medium`). Its fields carry no signal, so **effort derives from the PR diff, never the ticket fields**: **FAST** for a one-file, single-surface diff; **FULL** if it crosses layers, spans ≥2 domains, is net-new, or its **REACH exceeds its diff** (shared infrastructure that already-shipped callers also use). **Domain membership alone does NOT escalate** — on this storefront nearly every change touches a critical-revenue domain, so that test would swallow the FAST default sitting beside it (§5a). **Step 2a runs by default; there is no cross-suite sweep on either path** — §5a. |
 | **Sub-task** | any | **inherit parent** | Resolve the parent work item and re-enter this matrix as the **parent's** type × status. |
 | *inferred tweak/config* (PR / feature, no ticket type) | — | **feature-test** (FAST) | One-file, single-surface change. |
 
@@ -85,8 +85,8 @@ that hides the consequence of its own decision is half a routing file:
 
 | Path | When | What runs |
 |---|---|---|
-| **FAST** | Bug fix / copy-tweak / config / Technical task, a **`Review task` contribution whose PR diff is one-file and single-surface** (§5a), or a **`Story` narrow on all six tokens** (§5b); **P2–P3**, single-layer, single-domain, obvious surface. | **A checklist.** `1a`+`1b` → Artifact B checklist (written to the ticket folder) → one execution agent → `5a`–`5f`, then `5h` documentation. The change-scoped Critical sweep (**C2**) is **OPT-IN on FAST** (`--release-regression`) and runs at **`5r`, after the verdict** when asked for — it answers a release question, not a ticket one, and it is the one thing on this path that dispatches a whole suite selection (see §5a, which argues it for `Review task` and generalises to every FAST type). **No** `1c`/`1d` agents, **no** Test Model, **no** archetype/UIP/`VC-*` sweeps, **no** case authoring, **no** `5g` promotion, **no** independent verifier. Three of the six derived axes (visual · contract · coverage) are **opt-in** here (`--visual` / `--contract` / `--coverage` / `--axes`) and run in full on FULL — with one per-type exception, a `Review task`, whose `coverage` defaults **ON** (§5a); `layer`, `data_surface` and `domain_map` derive and apply on both paths, none being able to add an agent. |
-| **FULL** | New feature / **Story** (the default — downgraded only per §5b) / Epic; **P0–P1**; cross-layer; ≥2 domains; critical-revenue flow; unclear surface. | The whole pipeline: `1c` ‖ `1d` → **Test Model (required)** → case authoring → three hard-STOP verifier gates → `5g` promotion. |
+| **FAST** | Bug fix / copy-tweak / config / Technical task, a **`Review task` contribution whose PR diff is one-file and single-surface** (§5a), or a **`Story` narrow on all six tokens** (§5b); **P2–P3**, single-layer, single-domain, obvious surface. | **A checklist.** `1a`+`1b` → Artifact B checklist (written to the ticket folder) → the inline `3-exec` gate → one execution agent → `5a`–`5f`, then `5h` documentation. **No `1r` reachability pass** — FAST reaches execution in minutes, so a separate probe would cost more than the wait it removes. **No** change-scoped Critical sweep — `5r`/C2 was removed from the pipeline entirely on 2026-09-10, on both paths; cutting a release means running `/qa-regression` deliberately (§5a argues why, for `Review task` first and then for every type). **No** `1c`/`1d` agents, **no** Test Model, **no** archetype/UIP/`VC-*` sweeps, **no** case authoring, **no** independent verifier. Three of the six derived axes (visual · contract · coverage) are **opt-in** here (`--visual` / `--contract` / `--coverage` / `--axes`) and run in full on FULL — with one per-type exception, a `Review task`, whose `coverage` defaults **ON** (§5a); `layer`, `data_surface` and `domain_map` derive and apply on both paths, none being able to add an agent. |
+| **FULL** | New feature / **Story** (the default — downgraded only per §5b) / Epic; **P0–P1**; cross-layer; ≥2 domains; critical-revenue flow; unclear surface. | The whole pipeline: `1r` ‖ `1c` ‖ `1d` → **Test Model (required)** → `3x` discovery ‖ `3a` seeding → the checklist, written from what discovery returned → **`3-exec` releases execution while case authoring continues in the background** → two hard-STOP verifier gates (`3-cases`, `5b`). Cases are left at `Draft`; promotion is a later `/qa-test-lifecycle` pass. |
 
 **When in doubt → FULL.** A real regression is worse missed than a fast run saved; FAST’s own conditions
 (P2–P3 **and** single-layer **and** single-domain **and** obvious surface — **and** all six §5b tokens for
@@ -135,7 +135,7 @@ honest effort signal is the PR diff, which is why the §4 row reads that instead
 
 **What these runs need is a checklist, a scoped regression, and — often — an UPDATE to existing test
 cases.** The first is what FAST already is (Artifact B); the second is C1 for any `RE-BASE` ids — the
-cross-suite half, C2, is **opt-in** for this type, see below. The third is **Step 2a**, whose `REPAIR` / `RE-BASE` dispositions are precisely *"an existing row
+cross-suite half, C2, no longer exists at all, see below. The third is **Step 2a**, whose `REPAIR` / `RE-BASE` dispositions are precisely *"an existing row
 is now wrong"* — and on FAST that step sits behind the opt-in `--coverage` axis. For a contribution that
 gate is backwards: a fix or improvement changes behaviour existing rows already assert, so *which rows
 does this make wrong* is the ticket's subject rather than a speculative extra. **So `coverage_surface`
@@ -143,45 +143,49 @@ derives and Step 2a RUNS by default for this type**, on FAST as on FULL
 ([`skills/qa-test/axes.md`](../../skills/qa-test/axes.md) §4).
 
 `visual` and `contract` stay opt-in here exactly as on any other FAST run. And Step 2a **authors
-nothing** — it repairs and re-bases rows that already exist; new-case authoring (Artifact A) and `5g`
+nothing** — it repairs and re-bases rows that already exist; new-case authoring (Artifact A) and the
 promotion stay FULL-only, so a Review task that stays FAST adds **no new** regression coverage. A
 contribution that genuinely needs a durable new case is itself a reason to route FULL (§5).
 
-**So the shape for this type is: checklist + Step 2a, with C2 OPT-IN.**
+**So the shape for this type is: checklist + Step 2a, and no cross-suite sweep at all.**
 
-> **This section argues C2's opt-in for `Review task`; since 2026-09-09 the opt-in is the rule for
-> the WHOLE FAST path** (the FAST row of §4 above). Every clause below is type-independent — the
-> verdict comes from 5c, C2 can only amend it, and the sweep answers a release question the ticket
-> did not ask — and the one clause that was type-specific (a contribution's diff is small) was never
-> the load-bearing one. What made the generalisation overdue is FAST's own stated promise, *"FAST is
-> one execution agent"*: C2 dispatches a whole suite selection, measured by the 2026-09-07 audit at
-> ~24 runner dispatches / ~3.08M tokens — 93% of a FAST run's total, for a track whose findings 5a's
-> provenance rules classify as PRE-EXISTING or OUT-OF-SCOPE, neither of which fails the ticket. It
-> remains ON by default on FULL, exactly as `visual`/`contract`/`coverage` do. This is item 10 of
-> `docs/agentic-system-audit-2026-09-07.md` §6 (`--release-sweep` there; the flag already existed
-> here under its own name, so the name did not change).
+> **This section argued C2's opt-in for `Review task`. The opt-in became the FAST-wide rule on
+> 2026-09-09, and on 2026-09-10 the sweep was REMOVED from `/qa-test` on both paths** (§4 above, and
+> `docs/decisions/qa-test-evolution.md` §Removing 5r and 5g). Every clause below turned out to be
+> type-independent — the verdict comes from 5c, C2 could only amend it, and the sweep answers a release
+> question the ticket did not ask — and the one type-specific clause (a contribution's diff is small) was
+> never the load-bearing one. What settled it is FAST's own stated promise, *"FAST is one execution
+> agent"*: C2 dispatched a whole suite selection, measured by the 2026-09-07 audit at ~24 runner
+> dispatches / ~3.08M tokens — 93% of a FAST run's total, for a track whose findings 5a's provenance rules
+> classify as PRE-EXISTING or OUT-OF-SCOPE, neither of which fails the ticket. **Two narrowings did not fix
+> that; the third was deletion.** The argument is kept here because it is the reasoning a future proposal
+> to re-add a cross-suite sweep to this pipeline has to answer. This began as item 10 of
+> `docs/agentic-system-audit-2026-09-07.md` §6 (`--release-sweep` there).
 
 | Runs by default | Opt-in | Not on FAST at all |
 |---|---|---|
-| Artifact B checklist · **Step 2a** (`coverage`) · C1 when Step 2a leaves `RE-BASE` ids | **C2**, the change-scoped Critical sweep (`--release-regression`) · `visual` · `contract` | Artifact A authoring · `1c`/`1d` · the Test Model · `5g` promotion · the independent verifier |
+| Artifact B checklist · **Step 2a** (`coverage`) · C1 when Step 2a leaves `RE-BASE` ids | `visual` · `contract` | Artifact A authoring · `1c`/`1d` · the Test Model · the independent verifier · **the change-scoped Critical sweep, which no longer exists on either path** |
 
-**Why C2 comes off the default.** C2 answers *did this change break anything else* — a **release**
-question, consumed by the Feature Release Gate at 5e — and it never produced the verdict: 5c derives
-that from the checklist plus the AC/DoD reconciliation, and an IN-SCOPE C2 finding can only *amend* it
-(§5r of [`commands/qa-test.md`](../../commands/qa-test.md)). For a contribution the sweep routinely
-spends a ~40-minute Critical pass over a whole domain answering a question the ticket did not ask.
+**Why the cross-suite sweep is gone entirely.** It answered *did this change break anything else* — a
+**release** question, consumed by the Feature Release Gate at 5e — and it never produced the verdict: 5c
+derives that from the checklist plus the AC/DoD reconciliation, and an IN-SCOPE finding from a sweep could
+only *amend* it (§Execution order of [`commands/qa-test.md`](../../commands/qa-test.md)). For a
+contribution it routinely spent a ~40-minute Critical pass over a whole domain answering a question the
+ticket did not ask.
 
-**Two consequences, stated rather than discovered.** The run then carries **no release
-recommendation** — 5e reports the ticket verdict and records the gate as `not-assessed (C2 skipped)`,
-**never as a pass**. And the skip is written into `summary.json.regression` **and** the checklist,
-because an omitted regression track reads exactly like a passing one (the §1 rule of
-[`skills/qa-test/SKILL.md`](../../skills/qa-test/SKILL.md): silence is never an answer).
+**Two consequences, stated rather than discovered.** A `/qa-test` run carries **no release
+recommendation** — 5e reports the ticket verdict and records the gate as `not-assessed`, **never as a
+pass, and never by substituting C1's number**, which answers a different question. And that is written
+into `summary.json.regression` **and** the checklist, because an omitted regression track reads exactly
+like a passing one (the §1 rule of [`skills/qa-test/SKILL.md`](../../skills/qa-test/SKILL.md): silence is
+never an answer).
 
-**Turn C2 back on when the change's blast radius exceeds its diff** — a change in **shared
-infrastructure** (an Apollo link, a composable, a UI-kit primitive) that already-shipped callers also
-use, or a diff landing in a domain whose oracle carries P0 invariants the change could disturb. Both
-tests are about the *reach* of the change, never the size of the diff: 20 lines inside a shared link
-is a wider blast radius than 300 lines inside one page component.
+**When the change's blast radius exceeds its diff, run the sweep deliberately** —
+[`/qa-regression`](../../commands/qa-regression.md) with `regression:select … --target 40` then
+`--cases critical`. That is the case for it: a change in **shared infrastructure** (an Apollo link, a
+composable, a UI-kit primitive) that already-shipped callers also use, or a diff landing in a domain whose
+oracle carries P0 invariants the change could disturb. Reach, not diff size, is the test.
+
 
 ### 5b. `Story` — the six tokens that downgrade one, and the surface that refuses the downgrade
 

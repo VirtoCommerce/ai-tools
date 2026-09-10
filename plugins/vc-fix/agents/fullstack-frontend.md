@@ -248,6 +248,9 @@ If the fix is unclear / risky / cross-repo → `FIX_STATUS: FAILED`, don't push 
 FIX_STATUS: SUCCESS      # SUCCESS only if pushed AND typecheck+lint+test(+build) passed
 PR_TITLE: fix(<KEY>): <imperative summary of the bug>      # e.g. fix(VCST-5210): clamp cart quantity to valid range
 PR_URL: <PR url>         # when SUCCESS
+PROOF_MEDIUM: rendered-DOM | jsdom | vitest | node-harness | trivial-skip   # WHERE the red was observed
+PROOF_PROVENANCE: built-diff | analogue: <what produced the green instead>  # WHAT produced the green
+PROOF_LINKAGE: the weakest change that greens this test is: <describe it>   # no null option — construct one
 CONFIDENCE: HIGH|MEDIUM|LOW
 ROOT_CAUSE: <one sentence>
 ```
