@@ -680,3 +680,29 @@ regression guard: before the fix this was a SILENT no-op - the facet came back i
 [DOM] The ""<facet_property>"" panel is NOT ordered result-count-descending - a low-count value carrying a priority is present ahead of a high-count value carrying none
 [DOM] Values with no dictionary item on any linked catalog form an alphabetical tail in the ""<facet_property>"" panel","[NETWORK] term_facets order matches the DOM
 [CONSOLE] no JS errors",Facet returns raw index order by document count (the pre-fix silent no-op); only one linked catalog's priorities are honoured; priorities set on the virtual catalog's own property unexpectedly take effect,none,"VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Archetype:SILENT. Technique:EP. Verified by paired controls: adding a priority on a LINKED catalog moved the value immediately; setting one on the virtual catalog's own property did not.",Draft
+SRCH-FSORT-006,Splitting Priority into two directions leaves Name / Numeric / Score sorting unchanged,Search Filters > Facet Sort Order,High,BL-CAT-002,ECL-3.1,"[PRE:CLEAR_SESSION]
+- Same store/property/dictionary setup as SRCH-FSORT-001 (dictionary values with distinct priorities)
+- The property's dictionary priorities must NOT coincide with its alphabetical order, otherwise this case cannot tell the modes apart","facet_property: the dictionary-type facet property under test
+priority_map: the Priority number of each dictionary value
+Example seen on vcptcore-qa: Color -> Blue=1, White=11, Beige=13; Name ascending gives Beige, Blue, White while Priority ascending gives Blue, White, Beige - the two orders differ, which is what makes the check meaningful","[NAV] {{ADMIN_URL}} > Stores > <store> > Search configuration > Facets > <property>
+[ACT] Set Sorting to 'Name ascending'
+[ACT] Confirm the blade with OK
+[WAIT] blade closed
+[ACT] Save the store
+[WAIT] save completed
+[NAV] {{FRONT_URL}} page carrying the facet
+[ACT] Expand the ""<facet_property>"" facet panel
+[WAIT] facet value list rendered
+[ASSERT] Record the rendered order
+[ACT] Repeat the set-confirm-save cycle for 'Name descending'
+[WAIT] save completed
+[ACT] Repeat it for 'Numeric ascending'
+[WAIT] save completed
+[ACT] Repeat it for 'Score'
+[WAIT] save completed
+[ASSERT] Record the rendered order for each mode","[DOM] 'Name ascending' orders the ""<facet_property>"" panel alphabetically by label, ascending - NOT by priority
+[DOM] 'Name descending' orders the ""<facet_property>"" panel alphabetically by label, descending
+[DOM] 'Numeric ascending' orders numeric values numerically; non-numeric values fall back to name order and are present after them
+[DOM] 'Score' leaves the ""<facet_property>"" panel in the search engine's own relevance order, applying no re-sort
+[MATH] order(Name ascending) != order(Priority ascending) whenever priority_map disagrees with alphabetical order - proving the mode is actually applied and not silently falling through to a single shared branch","[NETWORK] POST /graphql (products) term_facets order matches the DOM for every mode
+[CONSOLE] no JS errors while switching modes",A non-priority mode renders priority order (the direction split leaked into the shared sorting branch); a mode is silently ignored and the facet keeps its previous order; switching modes has no effect until a reindex; save returns 4xx/5xx,Restore the facet's Sorting to its original value,"VCST-5851; vc-module-catalog PR #906. Regression guard for the TryApplySimpleSorting switch, where the two new priority constants were added alongside the existing cases. Grounded {OBSERVED} vcptcore-qa 2026-09-10: Name ascending -> Beige, Blue, White. Archetype:PARITY. Technique:EP.",Draft
