@@ -53,13 +53,13 @@ const chunk = (type, data) => {
 };
 
 /** Solid-colour 8-bit truecolour PNG. */
-function png([r, g, b]) {
+function png([r, g, b], w = W, h = H) {
   const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4);
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4);
   ihdr[8] = 8; ihdr[9] = 2;                       // bit depth 8, colour type 2 (RGB)
-  const row = Buffer.alloc(1 + W * 3);            // leading filter byte per scanline
-  for (let x = 0; x < W; x++) { row[1 + x * 3] = r; row[2 + x * 3] = g; row[3 + x * 3] = b; }
-  const raw = Buffer.concat(Array.from({ length: H }, () => row));
+  const row = Buffer.alloc(1 + w * 3);            // leading filter byte per scanline
+  for (let x = 0; x < w; x++) { row[1 + x * 3] = r; row[2 + x * 3] = g; row[3 + x * 3] = b; }
+  const raw = Buffer.concat(Array.from({ length: h }, () => row));
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
     chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0)),
@@ -125,15 +125,25 @@ function jpeg([r, g, b]) {
   ]);
 }
 
-const RED = [220, 20, 20], BLUE = [20, 60, 220];
+const RED = [220, 20, 20], BLUE = [20, 60, 220], GREEN = [20, 180, 60];
 
 const files = [
   ['v1/AGENT-TEST-overwrite-5725.png',  png(RED)],
-  ['v1/AGENT-TEST-batch-a-5725.png',    png(RED)],
+  // Deliberately a different SIZE (not just a different colour) from the two
+  // overwrite fixtures: the batch case asserts that a cancelled batch wrote
+  // neither member, and the grid's size badge is the cheapest evidence for
+  // which bytes are stored. At 390 B for every fixture the badge cannot tell
+  // them apart and the assertion has to fall back to the filename.
+  ['v1/AGENT-TEST-batch-a-5725.png',    png(GREEN, 240, 160)],
   ['v1/AGENT-TEST-overwrite-5725.jpg',  jpeg(RED)],
   ['v2/AGENT-TEST-overwrite-5725.png',  png(BLUE)],
   ['v2/AGENT-TEST-OVERWRITE-5725.png',  png(BLUE)],
   ['v1/AGENT-TEST-unsupported-5725.txt', Buffer.from('not an image — fixture for the upload type guard\n')],
+  // A deliberately long name, for the narrow-viewport case. The name has to be
+  // long enough that the dialog's message paragraph has to wrap; the filename
+  // INPUT ellipsizes rather than wraps (single-line input), so the wrap
+  // assertion belongs to the message, not the field.
+  ['v1/AGENT-TEST-overwrite-5725-a-deliberately-long-asset-file-name-for-narrow-viewport-wrapping.png', png(RED)],
 ];
 
 for (const [rel, buf] of files) {
