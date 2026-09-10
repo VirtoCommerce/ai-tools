@@ -426,6 +426,8 @@ The most valuable section. 11 of these 15 were found in this pass and appear in 
 > fetched once per SPA session); and a locked org's **member roster and addresses stay readable** through
 > `me.contact.organizations.items` while `organization(id:)` is `Forbidden`. Re-read this row after
 > those PRs merge or are reverted.
+>
+> **AMENDED 2026-09-10 (VCST-5317 Round 3, live-CONFIRMED).** Two of the three findings above are **CLOSED** by `vc-frontend` commit `878e765a` (still on the same unmerged PR #2469, deployed as `2.58.0-pr-2469-afce-afce27e1`). The **mobile** switcher now renders a locked org `disabled` with a lock icon and the lock reason as its accessible name, and a tap is refused before any `/connect/token` fires — measured at a genuine 375x812 on three independent lanes. The **stale-flag** defeat is closed too: both switchers refetch on every menu open, verified by a second distinct `GetOrganizations` request after a lock applied mid-session with no reload, and independently in a second tab. **The third finding still STANDS** — a locked org-s order history remains readable via `organizationOrders(organizationId:)` while `organization(id:)` is `Forbidden` (`totalCount 79`, re-measured 2026-09-10); that is VCST-5933, explicitly scoped out of #2469. **The row-s instruction is unchanged: re-read it after those PRs merge or are reverted** — nothing here is shipped.
 
 ---
 
@@ -469,7 +471,7 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
 | **Admin-vs-storefront status/label parity** | **2** | D1/D2/D11 all sit in this hole |
 | **Org hierarchy** | **5** | 2 Draft, 3 blank-status; **no storefront-side case at all**; nothing covers D14 |
 | **`/company/info`** | **3** | one Automated E2E, one XSS-only, one widget-compat. **No field-level view/edit/validation** — and it is the company-addresses surface |
-| **Mobile switcher** | **3** | against **60** desktop cases — a **20:1 skew on one control**, and one of the 3 asserts the panel exposes *no* switcher (**it does** — see D7 note) |
+| **Mobile switcher** | **5** | against **60** desktop cases — still a heavy skew on one control. **Amended 2026-09-10:** the row asserting the panel exposes *no* switcher (`B2C-ORG-047`) was executed in `REG-2026-09-10-1453` and **FAILED on that premise**, confirming it as a test defect rather than a product statement; two new rows were added (`B2C-ORG-068` refetch-on-open incl. the two-tab probe, `B2C-ORG-070` mobile degraded org-list) |
 | **`Login on behalf` on the roster** | **~0** | `082` covers impersonation as a flow; nothing covers the roster entry point on a **pending-invite** row |
 | **Purchase requests** | **0** | *deliberate* — live 404, module is virtostart-only |
 | **Order approval** | **0 live** | 5 cases, all `Deprecated` against `BL-B2B-004` — deliberate; do not re-author |

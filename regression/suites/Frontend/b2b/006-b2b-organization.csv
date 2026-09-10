@@ -1308,7 +1308,6 @@ The cart-preservation half of the sign-out blast radius belongs to B2C-ORG-067, 
 [WAIT] the Account-menu popover is open with listbox 'Organizations' rendered
 [ACT] record the disabled state of every option in listbox 'Organizations', keyed by organization id
 [ACT] record which options render a 'lock-closed' icon
-[ACT] capture the popover to reports/tickets/Sprint26-18/VCST-5317/screenshots/R2-ORG-066-desktop-1920-locked-row.png
 [ASSERT] GATE — the option for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) is disabled with a 'lock-closed' icon. If the desktop control is NOT flagged, PR #2469 is reverted or not deployed on this build: the mobile leg is then uninterpretable, so report BLOCKED:PRECONDITION_UNMET:DESKTOP_BASELINE_ABSENT rather than reading the mobile row against nothing
 [ACT] close the Account-menu popover
 --- SCREEN: mobile organization list (the surface under test) ---
@@ -1327,7 +1326,6 @@ The cart-preservation half of the sign-out blast radius belongs to B2C-ORG-067, 
 [ACT] record the rendered state of the row for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id): its role, its disabled state, whether it is focusable, its contrast against the sibling row
 [ACT] record whether that row renders a lock indicator of any kind
 [ACT] record the same three properties for the row for @td(MULTI_ORG_TF_BR_ALT.org_buildright_id)
-[ACT] capture the mobile organization list to reports/tickets/Sprint26-18/VCST-5317/screenshots/R2-ORG-066-mobile-375-locked-row.png
 --- SCREEN: activating the locked mobile row ---
 [ACT] start recording every /connect/token request from this point to the end of the case
 [ACT] start recording every navigation from this point to the end of the case
@@ -1338,7 +1336,7 @@ The cart-preservation half of the sign-out blast radius belongs to B2C-ORG-067, 
 [ACT] record the active organization after the interaction
 [ACT] record every /connect/token request the interaction issued, with its HTTP status, with its response body, with the organization id it named
 [ACT] record every message rendered to the user by the interaction
-[ACT] capture the post-interaction state to reports/tickets/Sprint26-18/VCST-5317/screenshots/R2-ORG-066-mobile-375-after-activation.png","[STATE] the mobile leg was read at an achieved viewport of width == 375, height == 812 — a clamped read is reported BLOCKED:PRECONDITION_UNMET:VIEWPORT_CLAMPED, never counted as a 375px observation {OBSERVED}
+","[STATE] the mobile leg was read at an achieved viewport of width == 375, height == 812 — a clamped read is reported BLOCKED:PRECONDITION_UNMET:VIEWPORT_CLAMPED, never counted as a 375px observation {OBSERVED}
 [DOM] at 1920x1080 the account-menu option for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) is disabled with a 'lock-closed' icon — the paired control the mobile row is measured against, read in the same session at the same lock state {OBSERVED}
 [DOM] at 375x812 the 'My organizations' row for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) carries the disabled state in the accessibility tree, exactly as its desktop pair does — the lock treatment is a property of the membership, not of the viewport {BL} (BL-AUTH-013 — the org switcher must surface the org-scoped refusal on the surface the customer is actually using)
 [DOM] that same mobile row renders a lock indicator — a 'lock-closed' glyph or the mobile component's equivalent — so the row is legible as blocked before it is touched {BL} (BL-AUTH-013)
@@ -1391,7 +1389,6 @@ The pre-state must be read under the ACTIVE organization @td(MULTI_ORG_TF_BR_ALT
 [ACT] record the pre-state line count
 [ACT] record the pre-state identity of each line, with its quantity
 [ACT] record the pre-state subtotal exactly as the page renders it — read the value, never transcribe an expected price
-[ACT] capture the pre-state cart to reports/tickets/Sprint26-18/VCST-5317/screenshots/R2-ORG-067-cart-pre-signout.png
 --- SCREEN: drive the switcher's failure path ---
 [VIEWPORT] 375x812
 [REFLOW]
@@ -1421,7 +1418,7 @@ The pre-state must be read under the ACTIVE organization @td(MULTI_ORG_TF_BR_ALT
 [ACT] record the post-state line count
 [ACT] record the post-state identity of each line, with its quantity
 [ACT] record the post-state subtotal exactly as the page renders it
-[ACT] capture the post-state cart to reports/tickets/Sprint26-18/VCST-5317/screenshots/R2-ORG-067-cart-post-signout.png","[STATE] the organization active when the post-state is read equals @td(MULTI_ORG_TF_BR_ALT.org_buildright_id) — the same organization the pre-state was built under, so the two reads are org-for-org comparable; a mismatch invalidates the comparison and is reported BLOCKED rather than FAIL {BL} (BL-B2B-001 — the cart is org-scoped, so a cross-org comparison decides nothing)
+","[STATE] the organization active when the post-state is read equals @td(MULTI_ORG_TF_BR_ALT.org_buildright_id) — the same organization the pre-state was built under, so the two reads are org-for-org comparable; a mismatch invalidates the comparison and is reported BLOCKED rather than FAIL {BL} (BL-B2B-001 — the cart is org-scoped, so a cross-org comparison decides nothing)
 [REL] the post-state line count is identical to the recorded pre-state line count {BL} (BL-B2B-001)
 [REL] every pre-state line identity is present in the post-state cart at the same quantity, with no line added, none removed, none re-ordered out of the set {BL} (BL-B2B-001 — ""switch back -> Org A's cart restored"")
 [REL] the post-state subtotal is identical to the recorded pre-state subtotal, compared against the value read from the pre-state page — never against a transcribed price {BL} (BL-B2B-001)
@@ -1434,3 +1431,140 @@ Then `npm run seed:membership-lock -- --lane frontend --verify` — it must exit
 Leave the active organization as @td(MULTI_ORG_TF_BR_ALT.org_buildright_id), the organization that was active when the row started.
 Restore the viewport to 1280x900 so the next case does not inherit the mobile layout.
 Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:LIFECYCLE · Technique:ST,Draft
+B2C-ORG-068,"Org Switcher — A Lock Landing After Page Load Disables The Row On The Very Next Menu Open, Without A Reload",B2C Features > Organization > Switcher Lock Axis,Critical,"BL-AUTH-012, BL-B2B-013",ECL-14.3,"Frontend lane ONLY: @td(MULTI_ORG_TF_BR_ALT.email). Never use @td(MULTI_ORG_TF_BR.email) — a membership row is keyed on (userId, organizationId), so two lanes on one account overwrite each other. IMPERSONATE_TARGET_BLOCKED is off limits (suite 082 depends on it staying locked).
+Lock setup is REST-only (`npm run seed:membership-lock -- --lane frontend --state <V1|V2>`) and must be read back with `--verify` — a lock POST against an unknown membership id returns 200 with a null body. The lane must start at its resting state (`seed:membership-lock:verify` exits 0). BuildRight is the ACTIVE org, TechFlow the non-active one; bind every org by its lane-scoped @td() id, never by name.
+Desktop only: the switcher is inside the Account-menu popover, listbox 'Organizations'. The mobile leg of the same fix is B2C-ORG-066 and is not repeated here.
+Assert on the SECOND organization-list request, not only the rendered state: the sequence opens the popover once while unlocked, closes it, locks the fixture with the page still loaded, then reopens — so a fresh disabled row can only have come from a genuine refetch. Screens 2 and 4 repeat that in a second tab of the same session.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), active_org=@td(MULTI_ORG_TF_BR_ALT.org_buildright_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — confirm resting state V1 before starting
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+--- SCREEN: tab A — baseline (both orgs unlocked) ---
+[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the account page renders with the top header present
+[ACT] click the account button in the top header (data-test-id=""""account-button"""")
+[WAIT] the Account-menu popover is open with listbox 'Organizations' rendered
+[ACT] record the disabled state of every option, keyed by organization id
+[ASSERT] GATE — neither option is disabled at this baseline; if either is, the fixture did not start at V1: report BLOCKED:PRECONDITION_UNMET:FIXTURE_NOT_V1 and re-run --verify before treating anything below as a finding
+[ACT] record the GetOrganizations request this open fires — tab A, request #1
+[ACT] close the Account-menu popover
+--- SCREEN: tab B — same signed-in session, its own baseline ---
+[ACT] open a second browser tab in the SAME signed-in session — new tab, shared cookies/session, never a fresh unauthenticated context
+[NAV] {{FRONT_URL}}/account/dashboard (tab B)
+[WAIT] the account page renders in tab B
+[ACT] click the account button in tab B's top header (data-test-id=""""account-button"""")
+[WAIT] tab B's Account-menu popover is open
+[ACT] record the disabled state of every option in tab B — baseline
+[ACT] record the GetOrganizations request tab B's baseline open fires — tab B, request #1
+[ASSERT] GATE — neither option is disabled in tab B's baseline either
+[ACT] close tab B's Account-menu popover
+[ACT] leave tab B loaded — do not reload either tab from this point on
+--- SCREEN: the lock lands externally, with both tabs still loaded ---
+[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on @td(MULTI_ORG_TF_BR_ALT.org_techflow_id), the non-active organization)
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — record the read-back isLocked / isCurrentlyLocked; a lock POST against an unknown membership id returns 200 with a null body, so never trust the POST status alone
+[WAIT] ~5s settle after the write is confirmed (no reload of either tab)
+--- SCREEN: tab A — the very next menu open, no reload ---
+[ACT] switch to tab A
+[ACT] click the account button in tab A's top header (data-test-id=""""account-button"""", same tab, no navigation, no reload)
+[WAIT] the Account-menu popover reopens
+[ACT] record the GetOrganizations request this open fires — tab A, request #2
+[ACT] record that request's HTTP status, whether it fired at all
+[ACT] record the isLockedForCurrentUser value that request's response carries for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id)
+[ACT] record the disabled state of every option immediately after this open
+--- SCREEN: tab B — the very next menu open, no reload ---
+[ACT] switch to tab B
+[ACT] click the account button in tab B's top header (data-test-id=""""account-button"""", same tab, no navigation, no reload)
+[WAIT] tab B's Account-menu popover reopens
+[ACT] record the GetOrganizations request this open fires — tab B, request #2
+[ACT] record the disabled state of every option in tab B after this reopen
+--- SCREEN: the click guard still holds on the freshly-disabled row ---
+[ACT] in tab A, attempt to click the option for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) using a real click only — never force a disabled control (VC-EXEC-003), a refused click IS the pass, not an obstacle to route around
+[WAIT] the interaction settles
+[ACT] record the active organization in tab A after the attempt
+[ACT] record whether the session in either tab is still authenticated","[COUNT] tab A fires exactly TWO GetOrganizations requests across the whole sequence — one at the baseline open, one at the reopen after the lock — never zero and never one at the reopen {OBSERVED}
+[COUNT] tab B independently fires exactly TWO GetOrganizations requests across its own baseline-then-reopen sequence, with no reload of either tab at any point {OBSERVED} — this is what makes the two-tab / UIP-TABS shape explicit: the remount that re-fetches is a property of the component, not of whichever tab triggered the lock
+[DOM] tab A's reopened popover shows @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) disabled with a 'lock-closed' icon, read from the SECOND request's response, not carried over from the baseline render {BL} (BL-B2B-013 — the effective lock state must be reflected as of the fetch that landed, never a stale earlier one)
+[DOM] tab B's reopened popover shows the same option disabled, independently of tab A {BL} (BL-B2B-013)
+[REL] in both tabs the option for @td(MULTI_ORG_TF_BR_ALT.org_buildright_id) remains enabled throughout — the disabled treatment is scoped to the locked membership {OBSERVED}
+[STATE] the click attempt on the disabled option in tab A does not change the active organization; it stays @td(MULTI_ORG_TF_BR_ALT.org_buildright_id) {BL} (BL-AUTH-016 — an explicit switch gets no fallback, so a blocked target must produce no context change at all)
+[STATE] no sign-out occurs in either tab across the whole sequence: both remain authenticated as @td(MULTI_ORG_TF_BR_ALT.email) {BL} (BL-AUTH-012 — an org-scoped lock must not be resolved by ending the session; this guards BL-AUTH-012's session half, per checklist B4)","[API] both tabs' GetOrganizations responses carry errors[] empty
+[CONSOLE] no TypeError or JS error on either tab across the sequence
+[NETWORK] no 4xx/5xx on /graphql in either tab","tab A's or tab B's reopen fires ZERO or a cached-only GetOrganizations request (no genuine second network round trip) while still rendering disabled — the render is coincidentally correct but the mechanism guarding it is gone, which is exactly the regression this row exists to catch, the reopened row in either tab renders ENABLED after the lock is confirmed server-side — the buyer can click it and reach /connect/token, ending in a forced sign-out, tab B's popover never issues its own post-lock request, instead reusing tab A's result (a shared-cache coupling this row's independent per-tab recording would expose), clicking the disabled option is not refused and a switch occurs, the session in either tab is signed out or redirected to /sign-in without the buyer clicking anything, console TypeError on either popover open, 4xx/5xx on GetOrganizations","MANDATORY (teardown symmetry — every case that locks must unlock, or the next case reads a poisoned fixture): run `npm run seed:membership-lock -- --lane frontend --teardown` to restore the resting state V1 on every lane leg.
+Then `npm run seed:membership-lock -- --lane frontend --verify` — it must exit 0; a non-zero exit means lock residue was left behind and the suite is no longer re-runnable.
+Close tab B.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout) in tab A if the session survived.",VCST-5317 · Archetype:STALE · Technique:EG · cross-ref B2C-ORG-066 (mobile leg of this same fix) · checklist A2.a-A2.e,Draft
+B2C-ORG-069,Org Switcher — Reopening The Menu While A Previous Organization Refetch Is Still In Flight Does Not Repaint A Stale List,B2C Features > Organization > Switcher Lock Axis,Low,BL-B2B-013,ECL-10.2,"Frontend lane ONLY: @td(MULTI_ORG_TF_BR_ALT.email). Never use @td(MULTI_ORG_TF_BR.email) — a membership row is keyed on (userId, organizationId), so two lanes on one account overwrite each other. IMPERSONATE_TARGET_BLOCKED is off limits (suite 082 depends on it staying locked).
+Lock setup is REST-only (`npm run seed:membership-lock -- --lane frontend --state <V1|V2>`) and must be read back with `--verify` — a lock POST against an unknown membership id returns 200 with a null body. The lane must start at its resting state (`seed:membership-lock:verify` exits 0).
+Desktop only: the switcher is inside the Account-menu popover, listbox Organizations.
+Observational row: it records the order in which the organization-list requests complete on a rapid close/reopen. It does not force the race. A PASS means no out-of-order repaint was observed at normal latency, not that the race cannot occur.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}, locked_org=@td(MULTI_ORG_TF_BR_ALT.org_techflow_id)","[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — confirm resting state V1 before starting
+[SETUP] `npm run seed:membership-lock -- --lane frontend --state V2` (permanent lock on @td(MULTI_ORG_TF_BR_ALT.org_techflow_id))
+[SETUP] `npm run seed:membership-lock -- --lane frontend --verify` — read back isLocked / isCurrentlyLocked before continuing
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the account page renders with the top header present
+[ACT] start recording every /graphql request from this point to the end of the case (browser_network_requests)
+[ACT] click the account button in the top header (data-test-id=""""account-button"""")
+[WAIT] the Account-menu popover opens — request #1 fires
+[ACT] dismiss the Account-menu popover immediately via a real pointer interaction, no artificial delay
+[ACT] reopen the Account-menu popover immediately via a real pointer interaction — request #2 fires
+[WAIT] the popover settles once every in-flight request has resolved
+[ACT] record every GetOrganizations request captured in the network log for this sequence — its send order, its completion order
+[ACT] record each captured response's isLockedForCurrentUser value for @td(MULTI_ORG_TF_BR_ALT.org_techflow_id)
+[ACT] record the FINAL rendered disabled state of that same option
+","[COUNT] the network log shows a request fired by the reopen that is distinct from the one fired by the first open — if only one GetOrganizations request is visible, ordering cannot be judged: report BLOCKED:PRECONDITION_UNMET:NO_THROTTLING_ON_AUTHENTICATED_LANE (B-09) rather than PASS or FAIL {OBSERVED}
+[REL] the requests' completion order matches their send order — the reopen's response does not resolve before, and is not overwritten by a late-arriving response from, the first open's request {OBSERVED} (mechanism: 878e765a's `void search()` discards the promise and gates nothing on response order, so nothing observed guarantees this — a PASS here means no out-of-order repaint was observed AT NORMAL LATENCY on this run, never that the race cannot occur)
+[DOM] the FINAL rendered disabled state of @td(MULTI_ORG_TF_BR_ALT.org_techflow_id) matches the LAST-completed response's isLockedForCurrentUser value {OBSERVED}
+[REL] the option for @td(MULTI_ORG_TF_BR_ALT.org_buildright_id) remains enabled throughout {OBSERVED}","[API] both GetOrganizations responses carry errors[] empty
+[CONSOLE] no TypeError or JS error
+[NETWORK] no 4xx/5xx on /graphql","the final rendered state does not match the last-completed response isLockedForCurrentUser value — an out-of-order repaint, the reopen fires no request distinguishable from the first, so completion order cannot be judged: report BLOCKED:PRECONDITION_UNMET:ORDERING_INDETERMINATE rather than a PASS, console TypeError, 4xx/5xx on /graphql","MANDATORY (teardown symmetry): run `npm run seed:membership-lock -- --lane frontend --teardown` to restore the resting state V1, then `npm run seed:membership-lock -- --lane frontend --verify` — it must exit 0.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).",VCST-5317 · Archetype:BOUNDARY · Technique:EG · checklist A3.a,Draft
+B2C-ORG-070,"Org Switcher — On Mobile, A Failing Organization-List Query Degrades Only The Switcher And Leaves Navigation Intact [UIP-NET]",B2C Features > Organization > Switcher Lock Axis,High,BL-B2B-005,ECL-10.2,"Frontend lane ONLY: @td(MULTI_ORG_TF_BR_ALT.email). Never use @td(MULTI_ORG_TF_BR.email) — a membership row is keyed on (userId, organizationId), so two lanes on one account overwrite each other. IMPERSONATE_TARGET_BLOCKED is off limits (suite 082 depends on it staying locked).
+This row does not touch the lock axis. Confirm `seed:membership-lock:verify` exits 0 before starting and leave it alone — do not seed or tear down a lock.
+Mobile only: `multi-organisation-menu.vue`, reached hamburger -> Corporate -> 'My organizations'. The desktop leg is B2C-ORG-055 and is not repeated here.
+Valid only at a genuine 375x812 — record the achieved innerWidth/innerHeight and report BLOCKED:PRECONDITION_UNMET:VIEWPORT_CLAMPED if the window clamps wider.
+The probe: GetOrganizations is failed at the network layer (HTTP 500, or a 200 carrying a non-empty errors[]). Nothing on the server changes.","front_url={{FRONT_URL}}, user=@td(MULTI_ORG_TF_BR_ALT.email), password={{DEFAULT_TEST_PASSWORD}}","[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+--- SCREEN: mobile — healthy baseline ---
+[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the mobile layout settles with the hamburger control visible
+[ACT] record the achieved viewport as reported by the browser: innerWidth, innerHeight
+[ASSERT] GATE — the achieved viewport is exactly 375 x 812; report BLOCKED:PRECONDITION_UNMET:VIEWPORT_CLAMPED quoting the achieved width otherwise, never a pass at 375, never a FAIL
+[ACT] tap the top-header mobile navigation toggle — the hamburger control
+[WAIT] the mobile navigation panel is open
+[ACT] tap 'Corporate' in the mobile navigation panel
+[WAIT] the Corporate submenu is open
+[ACT] tap 'My organizations' in the Corporate submenu
+[WAIT] the mobile organization list renders one row per membership — HEALTHY baseline
+[ACT] record the HEALTHY baseline option set of the organization list
+[ACT] record every other reachable item in the mobile navigation as part of the HEALTHY baseline — Corporate submenu items, other top-level entries
+[ACT] close the mobile navigation back to the page
+--- SCREEN: mobile — the dependency fails ---
+[ACT] install a network interception that fails ONLY the organization-list GraphQL operation, GetOrganizations, responding 500 — or 200 with a non-empty errors[] plus null data — leaving every other /graphql operation on the page unaffected
+[NAV] {{FRONT_URL}}/account/dashboard (fresh load, same session, so the interception applies to this page's own fetch)
+[WAIT] the mobile layout settles
+[ACT] tap the top-header mobile navigation toggle — the hamburger control
+[WAIT] the mobile navigation panel is open
+[ACT] tap 'Corporate' in the mobile navigation panel
+[WAIT] the Corporate submenu is open
+[ACT] tap 'My organizations' in the Corporate submenu
+[WAIT] the panel settles into whatever state it reaches — ~5s
+[ACT] record what the panel renders instead of the organization list
+[ACT] record whether the hamburger, the Corporate submenu, its other entries remain reachable, interactive
+[ACT] record every console message raised during this leg
+--- SCREEN: recovery ---
+[ACT] remove the network interception installed above
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the page renders with the organization-list query succeeding again
+[ACT] tap the top-header mobile navigation toggle — the hamburger control
+[WAIT] the mobile navigation panel is open
+[ACT] tap 'Corporate' in the mobile navigation panel
+[WAIT] the Corporate submenu is open
+[ACT] tap 'My organizations' in the Corporate submenu
+[WAIT] the mobile organization list renders again
+[ACT] record the RECOVERED option set of the organization list","[REL] the hamburger and every other Corporate-submenu entry present in the HEALTHY baseline is still reachable after the organization-list query fails {SPEC} (derived gap-AC-5: a failed org-list read degrades the switcher, not the rest of mobile navigation)
+[DOM] the 'My organizations' panel degrades to a non-crashing state — absent, empty, or an explicit error — and does NOT render a partially-populated or stale option list {DOC} (ECL-10.2 — degraded-dependency handling)
+[COUNT] zero uncaught exceptions in the console across the failing leg; the query failure is handled, not thrown {OBSERVED}
+[REL] the RECOVERED option set after the interception is removed matches the HEALTHY baseline exactly {OBSERVED}","[API] only the intercepted organization-list operation fails; every other /graphql operation on this page still returns HTTP 200 with errors[] empty
+[CONSOLE] the handled query failure may be logged, but no uncaught exception and no whole-page error boundary appears
+[NETWORK] no request other than the intercepted operation is affected","the whole mobile navigation panel or the hamburger becomes unresponsive when the org-list query fails (an unscoped crash), an infinite spinner in the 'My organizations' panel, a partially-populated or stale option list rendered in place of an explicit degraded state, an uncaught exception in the console, the panel does not recover to the healthy baseline after the interception is removed, the fault leaks into GetMe or another unrelated /graphql operation on the same page","Remove every network interception installed by Steps and confirm the surface is healthy again before finishing.
+Restore the viewport to 1280x900.
+Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).","VCST-5317 · Archetype:FALLBACK · Technique:EG · Probe:UIP-NET · derived gap-AC-5 · cross-ref B2C-ORG-055 (desktop leg of this same probe, not repeated here)",Draft
