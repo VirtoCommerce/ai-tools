@@ -80,7 +80,7 @@ The plugin auto-updates through the Claude Code plugin manager. To bound upgrade
 
 ## Pre-v1.0 Status
 
-**Currently:** developed on `main` and distributed via the `vc-tools` marketplace (catalog `0.9.4`), which lists **two** plugins — `vc-fix` (`0.8.3`, `/plugin install vc-fix@vc-tools`) and `vc-perf` (`0.2.6`, depends on `vc-fix >= 0.7.0`). `vc-qa`'s fuller content lives in this repo under `.claude/` as project-scoped components and isn't marketplace-listed. Nothing is frozen yet. Tier A artifacts are still being finalized — they get the v1.0 freeze stamp once the standardization contract is locked.
+**Currently:** developed on `main` and distributed via the `vc-tools` marketplace (catalog `0.9.4`), which lists **two** plugins — `vc-fix` (`0.9.0`, `/plugin install vc-fix@vc-tools`) and `vc-perf` (`0.2.7`, depends on `vc-fix >= 0.7.0`). `vc-qa`'s fuller content lives in this repo under `.claude/` as project-scoped components and isn't marketplace-listed. Nothing is frozen yet. Tier A artifacts are still being finalized — they get the v1.0 freeze stamp once the standardization contract is locked.
 
 Until then: any consumer of this repo should expect frequent changes and pin to a specific commit, not a branch tip.
 

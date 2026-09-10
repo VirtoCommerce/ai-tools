@@ -59,9 +59,17 @@ Measured hypotheses, the instrumented trace, the real root cause (`ng-attr-srcdo
 commits `about:srcdoc` from the parse-time attribute) and the two traps this cost:
 [`docs/decisions/autofix-proof-medium.md`](docs/decisions/autofix-proof-medium.md).
 
-**Verified:** `npm run context:check` green (always-loaded 55,325 / 80,000; DOC-002/3/4/6 all at
+**Verified:** `npm run context:check` green (always-loaded 52,935 / 80,000; DOC-002/3/4/6 all at
 baseline `0`); `npm run mirror:check` OK with all eight `.claude/` ↔ `plugins/vc-fix/` pairs in this
 change re-synced; `npx tsc --noEmit -p ci/tsconfig.json` clean.
+
+**Version:** `vc-fix` **0.8.7 → 0.9.0** — a minor bump, because G2 gains a rule the ladder did not
+have rather than fixing a broken one. The `vc-fix--v0.9.0` tag is cut at release
+(`docs/release-process.md` §Step 5a), not here; `vc-perf`'s `vc-fix >=0.7.0` range resolves against it.
+The catalog stays `0.9.4` — the listing itself did not change, and the three numbers are not meant to
+match. The version prose in `CLAUDE.md`, `docs/release-process.md` and `docs/versioning.md` had drifted
+(`0.8.6` / `0.8.3`, and `vc-perf` `0.2.6`) and is now re-synced to the manifests, which are the source
+of truth.
 
 ---
 
