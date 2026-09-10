@@ -1,30 +1,58 @@
 {
-  "runId": "REG-2026-09-08-0931",
+  "runId": "REG-2026-09-10-1453",
   "status": "completed",
-  "startedAt": "2026-09-08T07:32:13Z",
-  "finishedAt": "2026-09-08T07:39:59Z",
-  "selection": "001 --ids CAT-049 — round 3 re-verification after the marketplace-cache hook patch",
+  "startedAt": "2026-09-10T14:53:00Z",
+  "finishedAt": "2026-09-10T13:17:12.096Z",
+  "selection": "006,050d --ids (exact-set, VCST-5317 / qa-test Step 4c C1)",
   "env": "vcst",
-  "sprint": "Sprint26-17",
-  "note": "Round 3, CAT-049 only. Round 2 (REG-2026-09-07-2255) BLOCKED it: the hook that executes is C:/Users/mutyk/.claude/plugins/cache/vc-tools/vc-fix/0.8.7/hooks/enforce-real-user.mjs, not either repo copy, and it lacked the og:/twitter: allowlist entry. That cache copy has now been patched locally (backup .bak-pre-og-20260908-0930) and verified ALLOW by direct invocation. CAT-040/CAT-041 results stay in REG-2026-09-07-2255 and are not re-run.",
+  "ticket": "VCST-5317",
+  "noPromote": true,
+  "note": "C1 ticket-regression run for VCST-5317. Exact 9-case scope: 006 (7 cases, MULTI_ORG_TF_BR_ALT) + 050d (2 cases, MULTI_ORG_TF_BR). No promotion, no tracker filing.",
   "suites": [
     {
-      "id": "001",
-      "name": "Catalog Navigation",
-      "file": "regression/suites/Frontend/catalog/001-catalog-navigation.csv",
+      "id": "006",
+      "name": "B2B Organization",
+      "file": "regression/suites/Frontend/b2b/006-b2b-organization.csv",
       "status": "done",
       "browser": "playwright-chrome",
       "agent": "qa-frontend-expert",
-      "testCount": 1,
+      "lane": "browser",
+      "testCount": 7,
       "layer": "Frontend",
-      "pass": 0,
+      "scopedIds": [
+        "B2C-ORG-041",
+        "B2C-ORG-047",
+        "B2C-ORG-066",
+        "B2C-ORG-067",
+        "B2C-ORG-068",
+        "B2C-ORG-069",
+        "B2C-ORG-070"
+      ],
+      "pass": 4,
+      "fail": 2,
+      "blocked": 1,
+      "skipped": 0,
+      "attempts": 1
+    },
+    {
+      "id": "050d",
+      "name": "GraphQL xProfile",
+      "file": "regression/suites/Backend/graphql/050d-graphql-xprofile.csv",
+      "status": "done",
+      "browser": "playwright-edge",
+      "agent": "qa-backend-expert",
+      "lane": "browser",
+      "testCount": 2,
+      "layer": "Backend",
+      "scopedIds": [
+        "PRF-GQL-092",
+        "PRF-GQL-093"
+      ],
+      "pass": 1,
       "fail": 1,
       "blocked": 0,
       "skipped": 0,
-      "attempts": 1,
-      "scopedIds": [
-        "CAT-049"
-      ]
+      "attempts": 1
     }
   ]
 }

@@ -3,6 +3,20 @@
   "ticket_type": "Story",
   "flow": "feature-test",
   "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": null,
+    "narrow_story_tokens": {
+      "priority": true,
+      "layer": false,
+      "domains": false,
+      "chain_shape": true,
+      "surface": true,
+      "reach": false
+    },
+    "escalated_reason": "layer",
+    "$note": "Three of the six narrowness tokens are contradicted, so the Story never had a provisional FAST route to confirm: layer is cross-layer (storefront + xAPI), domains are b2b + auth-security, and reach spans two repos. Recorded at 1a and unchanged at 1b."
+  },
   "layer": "cross-layer",
   "domain_map": {
     "state": "PRESENT",
@@ -10,21 +24,22 @@
     "path": ".claude/knowledge/domain/b2b-organizations.md",
     "rev": 1,
     "generated": "2026-09-09",
-    "age_days": 0,
+    "age_days": 1,
     "all_layer_chain": true,
     "all_layer_confirmed_at": "1e-confirmed",
     "recommended": false,
+    "built_in_run": false,
     "sources": [
-      ".claude/knowledge/domain/b2b-organizations.md frontmatter (domain_slug: b2b, stale_after_days: 60)",
-      "npm run domain:check -> 1 map: b2b@rev1, fresh and well-formed"
+      "b2b-organizations.md frontmatter (domain_slug: b2b, stale_after_days: 60)",
+      "npm run domain:check -> 2 maps: b2b@rev1, sr@rev2, every map fresh and well-formed"
     ],
     "unmapped_surfaces": [
-      "D8 names the stale-pin mechanism but not this ticket's concrete manifestation (every switcher row disabled including [selected], zero empty-state copy) - map-amendment proposal, routed at 5h, not applied",
-      "mobile-navigation.md is NOT a registered domain map (no domain_slug) so it is ungated by domain:check - registration proposal, routed at 5h"
+      "mobile-navigation.md is still NOT a registered domain map (no domain_slug), so it remains ungated by domain:check - registration proposal, carried forward unresolved from Round 2",
+      "1c found no NEW unmapped surface this round: the delta lives entirely in two files the map and the model already enumerate (D7 named the mobile mechanism on 2026-09-09)"
     ]
   },
-  "verdict": "FAIL",
-  "date": "2026-09-09",
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-09-10",
   "timing": {
     "started_at": null,
     "finished_at": null,
@@ -35,14 +50,17 @@
       "step4": 0,
       "step5": 0
     },
-    "agent_dispatches": 11,
+    "agent_dispatches": 13,
+    "time_to_first_test_minutes": null,
+    "reachability_minutes": 5,
     "regression_predicted_minutes": null,
-    "regression_actual_minutes": null
+    "regression_actual_minutes": 19,
+    "$note": "Wall-clock per step was not instrumented this run and is recorded null rather than estimated. C1 is measured: suite 006 12:57:02Z-13:16:06Z (~19 min, 7 cases sequential on one lane), suite 050d 12:57:24Z-13:00:54Z (~3.5 min), run concurrently on different accounts and lanes. 13 dispatches excludes the two runner children 4c spawned."
   },
   "environment": "https://vcst-qa-storefront.govirto.com",
   "build": {
     "platform": "3.1064.0",
-    "theme": "vc-theme-b2b-vue-2.58.0-pr-2469-83d6-83d6e5d5",
+    "theme": "vc-theme-b2b-vue-2.58.0-pr-2469-afce-afce27e1",
     "relevant_modules": {
       "VirtoCommerce.ProfileExperienceApiModule": "3.1018.0-pr-145-4fe6",
       "VirtoCommerce.Customer": "3.1024.0-pr-316-1ac3",
@@ -50,14 +68,26 @@
     },
     "deployed": {
       "platform": "3.1064.0",
-      "relevant_modules": {
-        "VirtoCommerce.ProfileExperienceApiModule": "3.1018.0-pr-145-4fe6",
-        "VirtoCommerce.Customer": "3.1024.0-pr-316-1ac3",
-        "VirtoCommerce.Xapi": "3.1020.0"
-      }
+      "theme": "Ver. 2.58.0-pr-2469-afce-afce27e1",
+      "$probe": "Platform read from the login-page HTML (Version ='3.1064.0'); the storefront theme read from the page footer at BOTH 1920 and 375 by 1r and independently re-read by 1c and 4a. The authenticated /api/platform/modules probe was not re-run this round: the backend manifest in vc-deploy-dev@vcst-qa is byte-identical to Round 2's, which WAS probed authenticated."
+    },
+    "delta": {
+      "commit": "878e765a",
+      "parent": "83d6e5d5",
+      "$note": "The ENTIRE feature delta is one commit, a direct child of the head Round 2 tested. afce27e1 is a dev merge carrying three unrelated commits (VCST-5159 plugin discovery, VCST-5891 icon sizing, VCST-5916 points-history label). The developer's comment cited 878e765, which is accurate and head-relevant.",
+      "files": [
+        "multi-organisation-menu.vue (+27/-4) - :disabled, lock-closed VcIcon, organization_locked_tooltip title, onMounted refetch, and a selectOrganization() guard that resets contactOrganizationId and returns BEFORE trySwitch()",
+        "top-header-organizations.vue (+7/-1) - ONLY the onMounted refetch"
+      ],
+      "untouched_but_load_bearing": [
+        "useUserOrganizations.ts - no TTL and no invalidation were added; the fix works by adding a CALLER of an existing refetch",
+        "useUser.ts:382 - the isMultiOrganization visibility gate, so D6 is unaffected",
+        "organizationFields.graphql, types.ts, top-header.vue, the 13 locale files"
+      ]
     },
     "releasedThrough": {
       "ledger_generated": "2026-09-01",
+      "ledger_through": "3.1054.0",
       "components": {
         "VirtoCommerce.Customer": "3.1021.0",
         "VirtoCommerce.ProfileExperienceApiModule": "3.1008.0"
@@ -65,7 +95,7 @@
       "behind": [],
       "breaking": [
         "Customer 3.1021.0 - BREAKING: Invites and status for multi-organization customers (ledger). Deployed 3.1024.0-pr-316 is AHEAD of ledger_through, so the ledger's silence past that point is unknown, not absent.",
-        "vc-module-profile-experience-api PR #145 declares its own BREAKING change: contact.organizations / organizationsIds no longer exclude locked memberships."
+        "vc-module-profile-experience-api PR #145 declares its own BREAKING change: contact.organizations / organizationsIds no longer exclude locked memberships. UNCHANGED this round (#145 head 4fe664e8, untouched since 2026-09-07)."
       ]
     }
   },
@@ -76,38 +106,55 @@
     "files": [],
     "amended": [],
     "comment_posted": false,
-    "refusal": "verdict-fail - 5h documentation is not published for a FAIL. Two doc needs are recorded for when it passes: (1) StorefrontUserGuide 'Switch between your companies' says 'Only companies you currently have access to appear here', which the SHOW-AND-FLAG build makes false and which contradicts its own preceding sentence (D16, fetched first-hand 2026-09-09); (2) the org-membership LOCK axis has no user documentation at all (D17)."
+    "refusal": "not-deployed — SCOPED, not skipped. The verdict is PASS WITH NOTES, so 5h is not refused on verdict grounds; it is held because NOTHING IS SHIPPED. Both PRs are open and unmerged and #2469 carries 0 approvals (3 review events, 1 dismissed), so the behaviour a customer guide would describe can still change. Worse, the one thing the guide most needs to say is the thing product has not decided: line 1 of the ticket (-Hide or provide clear error message-) has been open three months, AC-1 and AC-6 contradict each other on it, and the build settled it silently as show-and-flag. Publishing a guide for the as-built would ratify that product decision by documentation, which is exactly what this run declined to do at every other step.",
+    "doc_debt_recorded": [
+      "D16 — StorefrontUserGuide -Switch between your companies- states -Only companies you currently have access to appear here.- Re-fetched first-hand from VirtoOZ 2026-09-10, verbatim unchanged. The show-and-flag build makes it FALSE, it contradicts its own preceding sentence, and it is now contradicted on TWO surfaces rather than one since mobile received the same treatment. Customer audience.",
+      "D17 — the org-membership LOCK axis has NO admin documentation at all. PlatformUserGuide -Manage Organization Membership Status- documents the status axis (Inherit/Approved/Invited/Rejected/Deleted) completely and never mentions IsLocked / LockoutEnd or a lock control. The control this entire ticket is about is undocumented for the people who operate it. Admin audience."
+    ],
+    "unblocks_on": "Either PR merging, or product settling hide-vs-show-and-flag — whichever comes first. At that point both audiences are writable in one pass and D16 must be amended, never forked."
   },
   "status_transitions": [
     {
       "at": "1a",
-      "action": "skipped",
-      "from": "Testing",
-      "to": null,
-      "reason": "already in the in-testing status (Testing, set 2026-09-09T15:04:25+03:00 by an earlier run). The opening hop is a no-op; recorded so 'never moved' and 'moved, note lost' stay distinguishable."
+      "action": "transitioned",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition_id": "4",
+      "transition_name": "On QA",
+      "reason": "Opening hop on the feature-test route, made without confirmation as the direct consequence of invoking the command. Transition resolved LIVE from getTransitionsForJiraIssue, never hardcoded."
     },
     {
       "at": "5f",
       "action": "transitioned",
       "from": "Testing",
-      "to": "Reopen",
-      "transition_id": "7",
-      "transition_name": "Need fixes",
-      "reason": "verdict FAIL -> REOPEN per ticket-status-transitions.md section 4. Transition resolved LIVE, never hardcoded. QA-Complete comment posted first (comment id 108924, 3 inline images render-verified), transition second, as the rule requires. Never past TESTED."
+      "to": "Tested",
+      "transition_id": "8",
+      "transition_name": "Finish test",
+      "reason": "verdict PASS WITH NOTES -> TESTED per ticket-status-transitions.md. Transition resolved LIVE from getTransitionsForJiraIssue, never hardcoded. QA-Complete comment posted FIRST (comment id 109133, 4 attachments render-verified from renderedBody: 4 img tags, 0 surviving literal wiki markup, 0 error spans), transition second, as the rule requires. TESTED is the terminal state this command may reach - never Done, never Cancelled."
+    },
+    {
+      "at": "5f",
+      "action": "skipped",
+      "ticket": "VCST-5931",
+      "from": "To do",
+      "to": null,
+      "reason": "VERIFIED FIXED on three independent lanes but deliberately NOT transitioned: PR #2469 is open and unmerged with 0 approvals, so the fix is verified in a PR build only and 5k.0-s merged-and-in-the-probed-build precondition is unmet. Recorded so -never moved- and -moved, note lost- stay distinguishable."
     }
   ],
   "agents_dispatched": [
     "1c ba-system-analyzer (playwright-firefox)",
     "1d ba-story-writer (no browser)",
-    "3a test-data-engineer (no browser, backend lane)",
-    "3x qa-testing-expert (playwright-chrome, frontend lane)",
-    "Step-3 verifier qa-lead-orchestrator (fresh, APPROVE)",
-    "Step 4 qa-backend-expert (playwright-edge)",
-    "Step 4 qa-frontend-expert (playwright-chrome)",
-    "Step 4 ui-ux-expert (Chrome DevTools) - BLOCKED on auth",
-    "C1 qa-testing-expert (playwright-edge)",
-    "5b verifier qa-lead-orchestrator (fresh, APPROVE)",
-    "background orchestrator (general-purpose) - FAILED on spend limit, work reassigned"
+    "1r qa-frontend-expert (playwright-chrome) - REACHABLE",
+    "3x qa-testing-expert running /qa-exploratory (playwright-chrome)",
+    "3a test-data-engineer (no browser)",
+    "A test-management-specialist (no browser) + one resume to re-point B2C-ORG-069",
+    "3-cases verifier qa-lead-orchestrator (fresh, APPROVE)",
+    "4a qa-frontend-expert (playwright-chrome)",
+    "4a qa-backend-expert (playwright-edge)",
+    "4v ui-ux-expert (Chrome DevTools) - BLOCKED on auth, all axes SKIPPED",
+    "4v-retry ui-ux-expert (playwright-edge) - re-dispatched off the blocked lane, recovered every axis except throttling",
+    "4c regression-orchestrator (spawned 2 runner children)",
+    "5b verifier qa-lead-orchestrator (fresh, APPROVE)"
   ],
   "epic": {
     "parent": null,
@@ -123,190 +170,204 @@
       "DRIFT": 2,
       "NOT_FOUND": 2,
       "CONTRADICTS": 2,
-      "note": "AC-1 is internally self-contradictory: its first half says the locked org is displayed with a Locked label, its trailing clause says the listed count equals the unlocked-only count. AC-2 names the top-level organizations query while the switcher reads me.contact.organizations. AC-6 defers the choice and the build ships a third outcome."
+      "note": "1d's static calls were re-derived at 5b against Round-3 evidence and NONE was overturned. AC-1 is internally self-contradictory (its first half says the locked org IS displayed with a Locked label, its trailing clause says the listed count equals the unlocked-only count); AC-2 names the top-level organizations query while the switcher reads me.contact.organizations; AC-6 defers the choice and the build ships a third outcome it never names."
     },
-    "conditions_total": 20,
-    "conditions_with_evidence": 18,
-    "ac_dod_estimate": "5 of 20 atomic conditions FAIL (C8, C12, C15, C18, C19); 2 NOT REACHED (C11 DataLoader batching, C14 role x lock independence); C16 dropped by operator decision (a11y); C2 DRIFT (icon+tooltip, not a literal Locked label); C3 CONTRADICTED by the as-built, by design not defect. No DoD section declared on the ticket."
+    "conditions_total": 25,
+    "conditions_with_evidence": 23,
+    "ac_satisfaction_strict_pct": 33,
+    "ac_satisfaction_substance_pct": 67,
+    "dod_pre_qa_met": "1 of 5 (20%)",
+    "ac_dod_estimate": "AC satisfaction computed at 5b, not carried: STRICT 2/6 = 33% (AC-3, AC-5 literally true as written); counting SATISFIED-in-substance and DRIFT as met, 4/6 = 67% (adds AC-2 and AC-1's display half). The shortfall is the TICKET's self-contradiction, not the build's behaviour. DoD: no section is declared, so 5b graded the project default and confirmed 1 of 5 pre-QA items met - ACs not fully reconciled (pre-existing), NO new regressions from the delta (met), NO unit tests for the new guard/refetch logic (0 test files among 20 changed), NO peer approval (3 review events, 0 APPROVED, 1 DISMISSED), NEITHER PR merged. Two conditions carry no evidence: A3.a (no lane can both authenticate and throttle) and A3.b (declared GAP, no lockable >10-org fixture).",
+    "$gap": "The per-condition C1-C25 table is never persisted (ac-analysis.md is terminal-only by .claude/rules/reports.md §1), so 5b could not recompute a per-condition percentage and said so rather than inventing one. Logged as B-31."
   },
-  "total_cases": 30,
-  "passed": 24,
-  "failed": 3,
-  "blocked": 3,
+  "total_cases": 25,
+  "passed": 21,
+  "failed": 0,
+  "blocked": 2,
   "iterations": {
-    "enabled": false,
-    "rounds": 0,
-    "max_rounds": 0,
-    "outcome": null,
-    "per_round": []
+    "enabled": true,
+    "rounds": 1,
+    "max_rounds": 2,
+    "outcome": "exited at round 1 - no in-scope failure remained to fix, so a second round would have had nothing to re-test. Stated rather than silently skipped.",
+    "per_round": [
+      {
+        "round": 1,
+        "build": "2.58.0-pr-2469-afce-afce27e1",
+        "verdict": "PASS WITH NOTES",
+        "fix_ready_bugs_verified": "VCST-5931 verified fixed on three independent lanes but NOT transitioned: PR #2469 is unmerged, so it is verified in a PR build only and 5k.0's merged-and-in-the-probed-build precondition is unmet."
+      }
+    ]
   },
-  "new_cases_authored": 4,
+  "new_cases_authored": 3,
   "promotion": {
     "automated": 0,
     "reviewed": 0,
-    "blocked": 4,
+    "blocked": 0,
     "reverted": 0,
-    "$note": "5g: no row promoted. B2C-ORG-066 asserts the correct mobile-parity expectation and fails on this build by design (test-model rule 3) - it stays Draft until VCST-5931 is fixed. PRF-GQL-093 fails on VCST-5932 for the same reason. B2C-ORG-067 and PRF-GQL-092 pass but are held with them pending the 8 test-defect repairs in the same suites."
+    "$note": "Not applicable: 5g left the pipeline on 2026-09-10. All three new rows stay Draft, and C1 ran with --no-promote. The Draft -> Automated flip belongs to /qa-test-lifecycle 6P or a later direct /qa-regression Step 6.5."
   },
   "regression": {
     "c1": {
       "ran": true,
+      "run_id": "REG-2026-09-10-1453",
       "ids": [
         "B2C-ORG-041",
-        "B2C-ORG-047"
+        "B2C-ORG-047",
+        "B2C-ORG-066",
+        "B2C-ORG-067",
+        "B2C-ORG-068",
+        "B2C-ORG-069",
+        "B2C-ORG-070",
+        "PRF-GQL-092",
+        "PRF-GQL-093"
       ],
-      "lane": "playwright-edge",
-      "result": "B2C-ORG-041 6 of 7 assertions PASS (assertion 7 is a test defect - it demands pointer/keyboard parity that native disabled precludes). B2C-ORG-047 enumeration PASSES (assertions 1,2,3,5 - the top-level hamburger panel) and its conclusion FAILS (assertion 4 - a mobile switcher does exist one level deeper); assertion 6 NOT REACHED (no touch-target geometry measured)."
+      "lanes": [
+        "playwright-chrome (006)",
+        "playwright-edge (050d)"
+      ],
+      "executed": 9,
+      "passed": 5,
+      "failed": 3,
+      "blocked": 1,
+      "no_promote": true,
+      "result": "Every red was named in the brief in advance and none was unexpected. PASS: B2C-ORG-066 (the Critical RED case for VCST-5931, authored expecting a fail, now guarded - tap refused, zero /connect/token, session and org unchanged), B2C-ORG-068 (exactly 2 genuine GetOrganizations round-trips per tab, both tabs re-render disabled after an external lock with no reload and no cross-tab cache coupling), B2C-ORG-067 (cart identity preserved across a forced re-auth: same 2 lines, same qty, subtotal $246.00), B2C-ORG-069 (observational - completion order equalled send order, race neither reproduced nor ruled out), PRF-GQL-092 (31/31). FAIL, expected: B2C-ORG-041 (assertion 7 demands pointer/keyboard parity that native disabled precludes; assertions 1-6 PASS), B2C-ORG-047 (premise refuted - the mobile panel DOES expose both org rows; assertions 2,3,5,6 PASS), PRF-GQL-093 (VCST-5933's own red). BLOCKED, anticipated: B2C-ORG-070 (no permitted tool on an authenticated lane can fail one named GraphQL op).",
+      "scope_extension": "B2C-ORG-066, 067, PRF-GQL-092 and 093 are Round 2's Draft cases, never executed on any build. They sit BEYOND the strict 'this run wrote or changed it' rule and were added as a deliberate, stated extension: 066 is the RED case for the defect this round exists to re-test, and running it converts 4a's manual PASS into a RUN_ID-grounded one.",
+      "fixture_state_after": "npm run seed:membership-lock:verify --all-lanes -> VERIFY OK, exit 0. Both lanes healed to resting state V1, IMPERSONATE_TARGET_BLOCKED (V6) intact. No residue for the next consumer.",
+      "evidence_gap": "B2C-ORG-041 and B2C-ORG-047 have screenshots on disk but no network trace; 5b verified this directly and judged it appropriate for rows explicitly classified as known test-defects with extensive prose rationale. PRF-GQL-093's trace exists (2735 bytes)."
     },
     "c2": {
       "ran": false,
-      "skipped_reason": "Deliberate, operator-informed. C2 answers a RELEASE question consumed by the Feature Release Gate, and an IN-SCOPE C2 finding can only AMEND a verdict, never produce one. The verdict is already FAIL on in-scope findings, so C2 could not change it, while costing ~24 runner dispatches on a session that had already hit the spend limit once. Recorded as not-assessed, NEVER as a pass.",
-      "gate": "not-assessed (C2 skipped)"
+      "skipped_reason": "5r/C2 was REMOVED from the pipeline on 2026-09-10, together with --release-regression. It is not a skip this run chose; the label is retired. A release sweep is now a deliberate /qa-regression run.",
+      "gate": "n/a - capability moved out of this command"
     }
   },
   "regression_triage": {
     "invoked": false,
-    "run_ids": [],
+    "run_ids": [
+      "REG-2026-09-10-1453"
+    ],
     "confirmed_bugs": 0,
     "test_fixes_applied": 0,
     "dismissed": 0,
-    "report_path": null
+    "report_path": null,
+    "$note": "/qa-triage-results was not invoked: all 3 FAILs and the 1 BLOCKED were predicted by name in the run brief and classified before execution (2 RE-BASE test-defects, 1 open-bug RED, 1 anticipated tooling block). There was no unexplained red for triage to resolve. The two test-defects route to /qa-review-tests --fix, recorded below."
   },
   "bugs_filed": [
     {
-      "key": "VCST-5931",
-      "shape": "Subtask of VCST-5317",
-      "severity": "Critical",
-      "provenance": "IN-SCOPE",
-      "title": "Mobile org switcher: locked organization renders as a normal tappable row and tapping it signs the user out",
-      "report": "reports/bugs/open/critical-high/BUG-mobile-org-switcher-locked-row-unguarded-signs-user-out-VCST-5317.md",
-      "evidence": "3 screenshots embedded inline and render-verified (3 img tags, 0 surviving literal wiki markup, 0 error spans)",
-      "parent_comment": "VCST-5317 comment 108924"
-    },
-    {
-      "key": "VCST-5933",
-      "shape": "standalone Bug + Relates link to VCST-5317 (verified: issuetype Bug 10176, subtask false, no parent)",
-      "severity": "Medium-High",
-      "provenance": "PRE-EXISTING in vc-module-x-order",
-      "title": "organizationOrders authorizes on raw membership, so a locked-out member can still read the organization's full order history",
-      "report": "reports/bugs/open/medium/BUG-organizationorders-serves-locked-org-order-history-VCST-5317.md",
-      "evidence": "runner capture PRF-GQL-093-evidence.json attached; no UI claim, so no screenshots by design (reports.md 5.0)",
-      "routing": "vc-module-x-order, repoKind module, confidence HIGH. RCA anchor CanAccessOrderAuthorizationHandler -> IsCustomerOrganization -> Contact.Organizations.Contains (membership-only, never lock-aware).",
-      "supersedes": "VCST-5932, cancelled. Filed first as a Subtask of VCST-5317 on an IN-SCOPE reading; source investigation revised the provenance to PRE-EXISTING, which files standalone + related. Jira cannot convert a Subtask to a standard type over REST, so the replacement was created fresh and the Subtask cancelled with a pointer. The defect never changed - only its classification."
+      "key": "VCST-5945",
+      "shape": "standalone Bug + Relates link to VCST-5317",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "title": "Top utility bar overlaps itself at 1280px when signed in (BL-UI-004)",
+      "report": "reports/bugs/open/medium/BUG-top-utility-bar-overlaps-itself-at-1280-signed-in.md",
+      "evidence": "utility-bar-1280-signedin.png + utility-bar-1920-signedin.png (Round 3, playwright-edge) and C1-utility-bar-1280x1024-signedin.png (Round 2). Measured overlap 3 x 18px.",
+      "why_filed_despite_pre_existing": "The provenance rule routes a PRE-EXISTING finding to 'link only', but there was no existing tracker item to link to - only a local report Round 2 chose not to file. It is above the severity floor, reproduced across two rounds and three lane-runs, and sits on the viewport the regression suite mandates, so leaving it with no tracker home would have lost it a second time.",
+      "caveat_stated_in_ticket": "The reproductions used QA fixture organizations with long names. Whether a production-length organization name also overflows was NOT isolated, and the ticket says so prominently - it may be fixture-amplified rather than a general defect, and that should be established before the fix is sized.",
+      "oracle_correction": "Cited BL-UI-004 (content boundary), correcting Round 2's BL-UI-002 (spacing grid). The measured overlap is 3 x 18px and 18px is an on-grid step (extend.spacing 4.5), so the spacing scale is not violated. Reached independently by the 5b verifier."
     }
   ],
   "bugs_not_filed": [
     {
-      "title": "Stale desktop org switcher - a tab that opened the switcher before the lock keeps the locked org enabled; clicking it signs the user out of all tabs",
+      "title": "Mobile locked row exposes its lock REASON only as the accessible name - a sighted non-screen-reader user gets an icon with no touch equivalent of hover, so no path to the reason at all",
+      "severity": "Low",
+      "provenance": "IN-SCOPE (new behaviour introduced by 878e765a)",
+      "reason": "Below the 5d severity floor (Critical/High/Medium only). The row IS legible as blocked - it is disabled and carries a padlock - so only the explanatory text is unreachable. Recorded rather than omitted; it is the one advisory this round raised against the new code itself.",
+      "report": null
+    },
+    {
+      "title": "F-A1 focus-ring contrast ~1.63:1 (WCAG 1.4.11)",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING and site-wide",
+      "reason": "Confirmed still standing and now also reproduced ON the org-switcher listbox, not just the public header - which strengthens the site-wide attribution rather than making it this ticket's. Per feedback_a11y_never_blocks_feature_stories it routes to its own ticket at its real severity and never as a Sub-task of this story; it does not block this verdict. Not filed this round to avoid opening a site-wide a11y backlog from inside a feature story's close-out.",
+      "report": "reports/tickets/Sprint26-18/VCST-5317/design-report.md"
+    },
+    {
+      "title": "F-A2 nested-title shadowing - the locked option's outer title (lock reason) is shadowed by a nested title on the radio label (org name); native disabled also removes the row from tab order",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING",
+      "reason": "Below the floor. Partially superseded: Round 2 claimed the disabled option exposed no accessible description at all; Round 3 confirmed it DOES carry the title tooltip, so only the accessible-name half of F-A2 still stands.",
+      "report": "reports/tickets/Sprint26-18/VCST-5317/design-report.md"
+    },
+    {
+      "title": "V7 all-locked dead end - /403 with every switcher row disabled including [selected], no empty state, no unlock path",
       "severity": "High",
-      "provenance": "IN-SCOPE",
-      "reason": "NOT FILED BY EXPLICIT OPERATOR DECISION at 5d. Above the severity floor and in-scope; it contributes to the FAIL verdict regardless. Local report retained.",
+      "provenance": "PRE-EXISTING",
+      "reason": "LINK ONLY by design, not a new filing. Same defect class as the open P0 BUG-multiorg-no-self-recovery-when-pinned-org-blocked-VCST-5281, reached by the lock trigger rather than status. 3x re-drove V7 on this build and got the identical dead end.",
       "report": "reports/bugs/open/critical-high/BUG-stale-org-switcher-locked-row-stays-enabled-and-signs-out-all-tabs-VCST-5317.md"
     },
     {
-      "title": "Browser Back out of the all-locked /403 restores a working org-scoped account page",
+      "title": "organizationOrders serves a locked organization's full order history (totalCount 79) while organization(id:) refuses the same id for the same principal",
       "severity": "Medium-High",
-      "provenance": "PRE-EXISTING mechanism, newly reachable via the lock axis",
-      "reason": "Not filed by operator decision. Related to but NOT a duplicate of the open P0 (that one is 'cannot recover'; this is 'recovers to a page you should not be on').",
-      "report": "reports/bugs/open/medium/BUG-back-out-of-403-restores-working-org-scoped-account-page.md"
-    },
-    {
-      "title": "Top utility bar overlaps itself at 1280px signed in (BL-UI-002)",
-      "severity": "Medium",
-      "provenance": "OUT-OF-SCOPE",
-      "reason": "Not filed by operator decision. Reproduced on two independent lanes; did NOT reproduce anonymously, so the signed-in leg is the decisive one.",
-      "report": "reports/bugs/open/medium/BUG-top-utility-bar-overlaps-itself-at-1280-signed-in.md"
-    },
-    {
-      "title": "V7 all-locked dead end - /403 with every switcher row disabled including [selected], no empty state",
-      "severity": "High",
-      "provenance": "PRE-EXISTING",
-      "reason": "LINK ONLY by design, not a new filing. Same defect class as the open P0 BUG-multiorg-no-self-recovery-when-pinned-org-blocked-VCST-5281, reached by a new trigger (the lock axis rather than status). The 5b verifier confirmed from that bug's own history that its V2-shape premise was verified fixed 2026-08-05 but the V7 shape never was."
-    },
-    {
-      "title": "Duplicate-alias GraphQL document fails opaquely (extensions.code = ARGUMENT, no message, inside HTTP 200)",
-      "severity": "Low",
-      "provenance": "PRE-EXISTING, out-of-scope",
-      "reason": "Below the 5d severity floor (Critical/High/Medium only). Reproduces on the pre-#145 contact path, so platform-wide."
-    },
-    {
-      "title": "POST /api/customer/organization-memberships returns HTTP 500 for an already-existing (userId, orgId) pair; should be 409/400",
-      "severity": "Low",
-      "provenance": "PRE-EXISTING, out-of-scope",
-      "reason": "Below the 5d severity floor. Business message is correct; only the status code is wrong."
-    },
-    {
-      "title": "Raw i18n keys rendered: Back_in_stock.navigation.route_name (account sidebar) and Push_messages.menu_item_name (Marketing sidebar, not reproducible on retry)",
-      "severity": "Low",
-      "provenance": "OUT-OF-SCOPE",
-      "reason": "Below the 5d severity floor. Raw keys, not a default-language fallback."
-    },
-    {
-      "title": "a11y set - F-A1 focus-ring contrast 1.4.11, F-A2 tab order / listbox arrow keys 2.1.1, F-A3 aria-disabled absent 4.1.2, unlabelled mobile back button 4.1.2",
-      "severity": "mixed (High to Low)",
-      "provenance": "mostly PRE-EXISTING and site-wide",
-      "reason": "NOT FILED BY EXPLICIT OPERATOR DECISION - a11y dropped for this run. Recorded rather than omitted. Per feedback_a11y_never_blocks_feature_stories these would route to their own tickets at their real severity and never as Sub-tasks of this story; none of them blocks this verdict. F-A1 was independently reproduced OFF this feature entirely (public header, ~1.49:1), confirming the site-wide/pre-existing attribution."
+      "provenance": "PRE-EXISTING, explicitly scoped out of PR #2469 by the developer",
+      "reason": "ALREADY FILED as VCST-5933 (Bug, To do). Re-confirmed reproducing on this build with the BL-AUTH-016 fallback ruled out by construction (the token carried no organization_id). Corroborating evidence only - deliberately not re-filed.",
+      "report": "reports/bugs/open/medium/BUG-organizationorders-serves-locked-org-order-history-VCST-5317.md"
     }
   ],
   "discovery": {
     "ran": true,
     "skipped_reason": null,
     "lane": "playwright-chrome",
-    "minutes": 30,
+    "minutes": 45,
     "charter_sources": [
-      "test-model scenarios 14/18/19",
-      "the clause-11 L7 gap",
-      "the two RE-BASE rows"
+      "scenario 20 {HYPOTHESIS} - onMounted-once vs every-open",
+      "scenario 22 {HYPOTHESIS} - the unguarded void search() race",
+      "the unresolved V9/L6 matrix cell (scenario 21)",
+      "1d's DRIFT/CONTRADICTS ACs (AC-1, AC-2, AC-6)",
+      "the two RE-BASE rows (B2C-ORG-041, B2C-ORG-047)"
     ],
-    "hypotheses_grounded": 4,
+    "hypotheses_grounded": 2,
     "hypotheses_remaining": 1,
-    "model_amendments": 3,
-    "scenarios_new": 6,
+    "model_amendments": 2,
+    "scenarios_new": 1,
     "oracle_proposals": 2,
-    "bugs_surfaced": 2,
-    "report": "reports/exploratory/SBTM-VCST-5317-R2-2026-09-09.md"
+    "bugs_surfaced": 0,
+    "report": "reports/exploratory/SBTM-VCST-5317-R3-2026-09-10.md",
+    "$outcome": "Both P0 hypotheses SETTLED, both in the developer's favour. Scenario 20 REFUTED as a defect: the popover component is destroyed and remounted on every open, so onMounted does re-fire - measured with the page already loaded, the popover already opened once, the lock applied via REST, and the popover reopened with no reload. The mechanism is remount, not a watcher, so the PR's wording stays imprecise while the net effect matches it. The mobile fix was CONFIRMED FIXED at a genuine 375x812."
   },
   "visual": {
     "surface": true,
     "surface_source": [
-      "vc-frontend PR #2469 diff: top-header-organizations.vue gains :disabled, VcIcon lock-closed, :title",
-      "top-header.vue template guard",
-      "15 locale files gain shared.layout.header.top_header.organization_locked_tooltip"
+      "878e765a adds :disabled, a lock-closed VcIcon and an organization_locked_tooltip title to multi-organisation-menu.vue",
+      "the same commit adds onMounted refetch to top-header-organizations.vue",
+      "13 locale files already carried the tooltip string; mobile now reaches it"
     ],
-    "ran": "partial",
-    "skipped_reason": "Chrome DevTools lane BLOCKED on auth: the persistent profile was signed out and that lane has no --secrets. The agent correctly refused to type a plaintext credential into a tool call and refused to mint a throwaway account (which would audit the empty state of a role-gated surface and read as a false pass). The popover-scoped axes were re-dispatched to playwright-edge as part of C1; the remaining DevTools-only items stand as Round-1 findings, unretracted and not re-confirmed this round.",
+    "ran": true,
+    "dispatches": 2,
+    "skipped_reason": null,
+    "lane": "playwright-edge (re-dispatch); the first dispatch on Chrome DevTools MCP returned all-SKIPPED",
     "targets": [
-      "Account-menu popover listbox Organizations",
-      "top utility bar at 1280 and 1920"
+      "Account-menu popover listbox Organizations at 1920x1080",
+      "mobile Corporate > My organizations at a genuine 375x812 (no clamp on this lane)"
     ],
     "axes": {
-      "a11y": "findings recorded, NOT FILED by operator decision",
-      "design_system": "not re-measured this round",
+      "a11y": "RAN - the cross-surface description channel confirmed (desktop native title, mobile inline AX text); both programmatically determinable, neither colour-only. Findings recorded, none filed (below floor or pre-existing).",
+      "design_system": "PASS - spacing/alignment/touch-target on the popover all on-grid, uniform 256x48 rows. Icon parity: the rendered glyph is Lucide lock, semantically correct for lock-closed.",
       "vs_design": "SKIPPED - the ticket carries no Prototype link and DESIGN_SYSTEM_PROJECT_ID was removed 2026-09-03. A skip is not a pass."
     },
-    "a11y_findings": 4,
+    "a11y_findings": 3,
     "invariant_failures": [
-      "BL-UI-002 - top utility bar overlaps itself at 1280 signed in; clean at 1920"
+      "BL-UI-004 - top utility bar overlaps itself at 1280 SIGNED IN (3 x 18px); clean at 1920 signed in and clean anonymously at both widths. PRE-EXISTING, filed as VCST-5945, does not block this verdict."
     ],
     "advisory": [
-      "Coffee preset SKIPPED, not PASS - the storefront resolves its preset from store config and the live value was Red (#e52121). Switching needs an Admin write, out of scope for a read-only run."
+      "Icon contrast ~2.52:1 is EXEMPT, not a violation - the control is natively disabled, not a CSS-only phantom node.",
+      "Coffee preset SKIPPED, not PASS - the storefront resolves its preset from store config and the live value is Red (#e52121). Switching needs an Admin write, out of scope for a read-only lane."
     ],
+    "first_dispatch_failure": "The Chrome DevTools MCP lane returned all-SKIPPED for the SECOND consecutive round: its pinned persistent profile is signed out (that lane has no --secrets) and it clamps the viewport to innerWidth 500, so neither the authenticated surface nor the 375px surface is reachable on it. The agent correctly refused to type a credential and refused to mint a throwaway account against a role-gated surface. Logged as B-26 and resolved for this run by re-dispatching to playwright-edge.",
     "report": "reports/tickets/Sprint26-18/VCST-5317/design-report.md"
   },
   "contract": {
     "surface": true,
     "surface_source": [
-      "PR #145 adds Organization.isLockedForCurrentUser (new GraphQL field)",
-      "PR #145 declares contact.organizations / organizationsIds breaking",
-      "PR #2469 adds isLockedForCurrentUser to the organizationFields fragment and regenerates types.ts"
+      "PR #145 adds Organization.isLockedForCurrentUser and declares contact.organizations / organizationsIds breaking - UNCHANGED this round",
+      "the storefront fragment and generated types were changed in the ORIGINAL PR but not by 878e765a"
     ],
     "schema": {
       "refreshed": true,
-      "refreshed_at": "2026-09-09",
+      "refreshed_at": "2026-09-10",
       "queries": 108,
       "mutations": 140,
       "types": 54,
-      "new_field_present_live": "Organization.isLockedForCurrentUser confirmed in the live introspected schema"
+      "new_field_present_live": "Organization.isLockedForCurrentUser confirmed present in the live introspected schema"
     },
     "fixtures": {
       "validated": 75,
@@ -317,34 +378,45 @@
   "coverage_triage": {
     "surface": true,
     "surface_source": [
-      "PR #145's declared breaking change to behaviour existing rows already assert",
-      "domain map 6b: 23 of 65 cases in suite 006 are on the switcher lock axis, all Draft"
+      "878e765a changes the RENDER and CLICK-GUARD behaviour of both switcher components, which is what the 006 lock-axis block asserts",
+      "PR #145's declared breaking change to behaviour existing rows already assert (carried from Round 2; #145 unchanged)"
     ],
     "scope": [
       "006",
+      "007",
       "008",
+      "009",
+      "010",
       "011b",
-      "031",
-      "032",
-      "033",
-      "050d"
+      "013",
+      "015",
+      "042",
+      "050d",
+      "050m",
+      "050m2",
+      "074",
+      "089",
+      "090",
+      "091",
+      "092b",
+      "093",
+      "097"
     ],
     "counts": {
-      "rows_scanned": 261,
-      "at_risk": 144,
-      "will_run": 141,
+      "rows_scanned": 787,
+      "at_risk": 131,
+      "will_run": 103,
       "filtered_out": 0,
-      "not_executing": 3
+      "not_executing": 28,
+      "never_audited": 131
     },
     "dispositions": {
       "CONFIRMED": [
-        "B2C-ORG-001",
-        "B2C-ORG-010",
-        "B2C-ORG-040",
-        "AUTH-076",
-        "AUTH-043",
-        "PRF-GQL-078",
-        "the B2C-MBR-* and COMP-E2E-* org-lock block"
+        "all 21 suite-050d contract rows - the backend is byte-identical to the build Round 2 dispositioned",
+        "suites 007/008/009/010/013/015/089/090/091/092b/093/097/050m/050m2 - hit on BL-AUTH-012/015/016 or BL-B2B-001 citations only; none asserts the switcher's render or click guard",
+        "suite 011b COMP-E2E-001/003/004/005/007/008/012/018/019/023/025",
+        "suite 042 SMK-005 and SMK-020",
+        "suite 006 lock-axis rows other than 041 and 047"
       ],
       "REPAIR": [],
       "RE-BASE": [
@@ -360,20 +432,16 @@
     ],
     "superseded_proposals": [],
     "unscannable": [
-      "063 and 074 - legacy 11-column header, not the canonical 15-column enriched format. Triage by hand; not evidence of no risk."
+      "074 - legacy 11-column header, refused not scanned. Hand-triaged NOT-AT-RISK: Backend/contracts, nothing on the switcher render or click-guard path, and the backend is unchanged in this delta. A judgment, NOT evidence of no risk."
     ],
-    "unmatched_observables": [
-      "organization switcher lists organizations",
-      "locked organization membership",
-      "isLockedForCurrentUser flag",
-      "contact organizations excludes locked"
-    ],
-    "$note": "Three of Round 1's five RE-BASE calls were REVERSED on re-derivation. B2C-ORG-040's state is global contact status, so the lock branch never fires. AUTH-076's state is status-blocked and #145 changed only the lock filter. AUTH-043's scenario is one blocked org plus one Approved, where the escape hatch still works; F1 is the all-locked V7 state, which 043 never claimed to cover."
+    "unmatched_observables": [],
+    "$filtered_out_note": "ZERO FILTERED_OUT across both scans. That is the invisible class this step exists to find, and it is empty - stated, not omitted.",
+    "$resolution": "Both RE-BASE rows executed in C1 and both FAILED as predicted, confirming them as test-case defects rather than product defects. B2C-ORG-047's premise ('the mobile hamburger panel exposes no organization switcher at all') is refuted outright. B2C-ORG-041's assertion 7 demands pointer/keyboard parity that a native disabled attribute precludes. Neither was rewritten during the run - PR #2469 is unmerged, so rewriting an expected value would make the change its own oracle. Both route to /qa-review-tests --fix."
   },
   "test_data": {
     "surface": true,
     "surface_source": [
-      "The lock state must be actively driven; the resting state is V1 (unlocked)",
+      "the lock state must be actively driven; the resting state is V1 (unlocked)",
       "domain map G3: no locked membership among readable fixtures at rest"
     ],
     "dispatched": true,
@@ -382,17 +450,20 @@
       "MULTI_ORG_TF_BR_ALT (frontend lane)"
     ],
     "divergence_resolved": true,
-    "td_validate": "green (DV-021, DV-022, DV-023); td:validate:membership-lock green - 2 lanes x 7 states, 0 hard problems, 0 warnings",
-    "seed_run": "V1 -> V2/V4/V4B/V5/V7 -> V1. Final: VERIFY OK, both lanes at the resting state, zero residue, IMPERSONATE_TARGET_BLOCKED (V6) intact throughout - suite 082's dependency preserved."
+    "td_validate": "green throughout (DV-013/021/022/023, and the new DV-024). Corpus-wide 7243/7243 references resolved; suite 006 197/197 after the append.",
+    "seed_run": "Pre-flight VERIFY OK (both lanes at V1, V6 intact). Backend lane seeded to V2 and read back (settle 144ms); frontend lane seeded to V2 after 3x released it and read back. Final state after C1: VERIFY OK exit 0, both lanes healed to V1, V6 intact, zero residue.",
+    "fixture_gap": "Scenario 21 needs a locked membership on a >10-org account so the switcher's search box renders (SEARCH_THRESHOLD = 10; both lane fixtures are 2-org). 3a assessed MULTI_ORG_USER live and returned a reasoned NO-GO: 6 dependent suite files with no lane isolation, a lock terminates all its sessions globally, CUST-091 (Critical) depends on its zero-membership shape, and DV-022 already codifies the refusal. Recorded as a DECLARED GAP with the blocker named; no case authored, because a permanently-BLOCKED row would be vacuous.",
+    "incidental_finding": "MULTI_ORG_USER has DRIFTED - it now carries one OrganizationMembership row (org 'Valvo branch in Vienna', created 2026-08-26) and 12 contact.organizations, where it is documented as zero membership rows / 11 orgs. CUST-091 (Critical) asserts the zero-membership shape as its load-bearing premise. Out of scope for this ticket; logged as B-29."
   },
   "business_rules_verified": [
-    "BL-AUTH-012 - PASS. Org-scoped lock leaves the global account unlocked (/locked = false at V2 and V7). CORRECTION: its session half is refuted - an active-org lock does NOT evict live sessions (12 POST /graphql all 200 across two tabs). The lock gates new token issuance only. The model's L1 and the seeder's own banner both predicted otherwise.",
-    "BL-AUTH-013 - PASS. Org-scoped refusal carries error: invalid_grant plus a cause-specific code, never a global lockout code; exactly one errors[] entry.",
-    "BL-AUTH-015 - PASS. Resolution is not read-only; the write-back was observed moving CurrentOrganizationId.",
-    "BL-AUTH-016 - PASS with a CORRECTION. Fallback-first, lock-beats-status and single-error all hold. But clause 2's refusal branch is UNREACHABLE on a password grant: with zero accessible orgs the grant returns 200 with no org claim, not 400. BL-AUTH-015 wins. It IS reachable on a non-password grant.",
-    "BL-B2B-001 - PASS, all three legs. Cart, ship-to addresses and lists all reset on switch and restore on switch-back; pricing undecidable on this fixture and recorded as such.",
-    "BL-B2B-013 - PASS. Lock and status are independently assertable; the locked org appears under both statuses:[Locked] and statuses:[Approved].",
-    "BL-UI-002 - FAIL. Top utility bar overlaps itself at 1280 signed in."
+    "BL-AUTH-012 - PASS. A sibling-org lock did NOT evict the live session: all GraphQL calls stayed 200, no /sign-in redirect, no new /connect/token, and the row simply re-rendered [disabled] on the next open with no re-login. The lock gates new token issuance only. This is a NEGATIVE result guarding the invariant's session half, which no pre-existing case draws.",
+    "BL-AUTH-013 - PASS. A non-password grant naming the locked org returns HTTP 400, invalid_grant, exactly ONE errors[] entry, code user_is_locked_in_organization. And on the client side the mobile guard now surfaces the refusal by preventing it: the tap is refused before any token call fires.",
+    "BL-AUTH-015 - PASS. Not re-exercised as a write this round; the fallback behaviour it governs was confirmed via BL-AUTH-016 below.",
+    "BL-AUTH-016 - PASS, and strengthened. A multi-org password grant naming the locked org returns HTTP 200 with no error, and the returned JWT's organization_id claim DECODES to BuildRight - the accessible org, not the locked one requested. Decoding the claim rather than inferring from the 200 is what makes this evidence rather than an assumption. AC-4's premise is correctly CONTRADICTED.",
+    "BL-B2B-001 - PASS, and exercised end-to-end for the FIRST time. Items in the cart under BuildRight ($15.00) -> switch to TechFlow -> cart correctly empty with no leak -> switch back -> $15.00 fully restored. This was the Test Model's stated load-bearing omission (domain link L7), guarded until now by a single never-executed Draft row.",
+    "BL-B2B-013 - PASS. Lock and status remain independently assertable; locking a membership does not reduce totalCount, and the locked org is returned like any other carrying isLockedForCurrentUser true.",
+    "BL-UI-004 - FAIL. Top utility bar overlaps itself at 1280 signed in. PRE-EXISTING, survives the delta, filed as VCST-5945, does not block this verdict.",
+    "BL-A11Y-* - findings recorded, none blocking. Per feedback_a11y_never_blocks_feature_stories an a11y finding routes to its own ticket at its real severity and never as a Sub-task of a feature story."
   ],
   "appinsights": {
     "checked": false,
@@ -400,7 +471,7 @@
     "window_minutes": null,
     "signals": 0,
     "correlated_failures": 0,
-    "$note": "Not checked: APPINSIGHTS_API_KEY_BACKEND and APPINSIGHTS_API_KEY_STOREFRONT are both EMPTY in this environment (npm run env:check). Recorded as a gap, not as a clean result."
+    "$note": "Not checked: APPINSIGHTS_API_KEY_BACKEND and APPINSIGHTS_API_KEY_STOREFRONT are both EMPTY in this environment, re-confirmed live by the 5b verifier via npm run env:check. Recorded as a GAP, never as a clean result."
   },
   "screenshots": "reports/tickets/Sprint26-18/VCST-5317/screenshots/"
 }
