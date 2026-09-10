@@ -243,7 +243,9 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
 
 - Clone the one routed repo into `.fix-workspace/` on branch `claude/qa-autofix/VCST-XXXX` (reuse
   `checkoutForFix`; base = detected default branch). Use the repo's own test command (`repoProfile`).
-- Add a NEW failing test encoding the STR/RCA → confirm **RED**. Trivial-skip allowed for one-line
+- Add a NEW failing test encoding the STR/RCA → confirm **RED**, **in the medium the symptom is observed
+  in** — a rendered-DOM symptom needs a rendered-DOM red (`quality-gates.md` G2 MEDIUM RULE). The
+  hand-off carries `PROOF_MEDIUM`, `PROOF_PROVENANCE` and `PROOF_LINKAGE`. Trivial-skip allowed for one-line
   guards/typos (note in PR body).
 
 ## Phase 3 — Implement fix (Gate 3)
@@ -348,6 +350,12 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
     without a redeploy; frontend pixels/CLS need a running app). So when the bug has a **runtime/visual
     aspect**, the developer notes it and the PR is **labelled "needs deploy verification"**; that's the
     whole Gate-6 action inside `/qa-fix`.
+  - **This does NOT license shipping a rendered-DOM bug on a non-rendered proof.** "Static-only" is about
+    the *deployed artifact*, not about the *medium of proof*: G2's medium rule still requires a
+    rendered-DOM red→green **pre-PR**, produced by the built diff, and a module Admin SPA renders locally
+    with no deployment at all (`/angular-admin` `visual-render-harness.md`). If the symptom genuinely
+    cannot be rendered pre-PR, that is `FIX_STATUS: FAILED` — hand off, no PR (LOW confidence never
+    opens one). Never a green from the wrong medium.
   Do not claim broad regression coverage that wasn't run. (`module-suite-map.md` is a reference for which
   module owns the area, not a runnable selector; `/qa-regression` is full `vc-qa` only, not shipped here.)
 
@@ -362,7 +370,10 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   it when the PR opened; if for any reason it isn't there yet, set it now via `ado.mjs transition`
   (obey `transitionPolicy` — `auto` ⇒ no ask). Add/confirm a comment: "PR open for review; Gate 6 result;
   awaiting human review + merge".
-- Write `reports/fixes/FIX-*/fix-report.md` + `summary.json` (ticket, repo, kind, branch, PR URL, gate
+- Write `reports/fixes/FIX-*/fix-report.md` + `summary.json` — including `proof_medium`,
+  `proof_provenance`, `proof_linkage` and `g2_proxy: true|false`, so a later audit and
+  `/qa-verify-fix` can read what the proof actually was (VCST-5940 was diagnosable only because
+  `PASS_PROXY` survived in the artifact) — (ticket, repo, kind, branch, PR URL, gate
   results, confidence). Print the PR link. **End.** Never merge, never auto-advance past On Review.
   Post-merge/deploy verification (and the move toward Ready for QA / Tested on QA) is the separate
   `/qa-verify-fix VCST-XXXX`.

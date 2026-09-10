@@ -29,8 +29,18 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
    orchestrator's concern, not a review criterion.
 2. **No existing-test edits** — `git diff` touches NO pre-existing test method/file except to ADD new
    ones. Any edit/delete of an existing `*Tests*` / `*.spec.*` → REQUEST_CHANGES.
-3. **Red→green real** — a NEW test encodes the STR/RCA (or trivial-skip is justified). The assertion
-   matches the bug, not a tautology.
+3. **Red→green real, and about the SYMPTOM** — a NEW test encodes the STR/RCA (or a narrow trivial-skip
+   is justified), and what it OBSERVES is what the ticket's *Actual result* describes. Check the dev's
+   three declarations: `PROOF_MEDIUM` (where the red was observed), `PROOF_PROVENANCE` (`built-diff`
+   or an analogue) and `PROOF_LINKAGE` (the weakest change that greens the test). A rendered-DOM
+   symptom proven in a non-rendered medium, or a green produced by an analogue rather than the built
+   diff, is `G2: FAIL` → REQUEST_CHANGES; it is not a confidence downgrade.
+   **jsdom carve-out:** jsdom satisfies content / binding / element-presence symptoms, never geometry,
+   paint, CLS or cross-frame rendering.
+3a. **Unexecuted arguments are inert — including yours.** You may not overturn the ticket's or the dev's
+   hypothesis with an argument you did not run; run it, or write it as `UNVERIFIED:` and leave the
+   contested hypothesis standing. Apply the **differential read** and the sibling-inference rule in
+   `quality-gates.md` G4. `CONFIDENCE: HIGH` only if the discriminating observation was made THIS run.
 4. **Minimal & idiomatic** — no refactors, no formatting churn, no dep bumps, no unrelated files;
    .NET 10 / Angular idioms match the repo (`dotnet10-best-practices.md`, `angular-patterns.md`).
 4a. **Comment discipline** — comments explain non-obvious *why*, never *what*. REQUEST_CHANGES on: a

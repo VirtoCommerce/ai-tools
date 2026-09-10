@@ -33,11 +33,25 @@ Either way the harness is throwaway — only its evidence (output / screenshots)
   the routed module's `Web/Scripts/`. (A storefront/`vc-frontend` Vue bug is out of `/qa-fix` backend
   scope — that's the CI frontend agent's lane.)
 
-## Two fix paths
-- **Logic bug** (save/payload, computed value, wrong endpoint, binding condition) → the **Node scratch
-  harness** path (Steps 1–5 below): red→green proof in `scratch-harness-patterns.md`.
-- **Layout / CSS / visual bug** (overlap, misalignment, wrong width, clipping, spacing, control in the
-  wrong place) → the **Layout/CSS path** below. A bug with both uses both harnesses.
+## Two fix paths — routed by WHERE THE SYMPTOM IS OBSERVED, not by which file you edit
+
+Read the ticket's **Actual result** sentence and ask one question: *is what it describes visible only in
+a rendered DOM?*
+
+- **YES — a rendered-DOM symptom** (text or markup wrong / literal / missing / stale, an element absent
+  or not updating, overlap, misalignment, wrong width, clipping, spacing, a control in the wrong place)
+  → the **browser path** below. A Node process cannot observe a DOM, so it can never be the proof for
+  one of these however clean its red→green looks. This holds even when the DIFF is pure JS.
+- **NO — a non-rendered symptom** (wrong saved payload, wrong computed value, wrong endpoint or field,
+  wrong request) → the **Node scratch harness** path (Steps 1–5 below): `scratch-harness-patterns.md`.
+- A bug with both uses both harnesses. **If you cannot decide, it is the browser path.**
+
+> **This routing IS the gate, and it has been got wrong.** VCST-5940 (a preview iframe rendering a
+> literal template placeholder) was routed to the Node path because the fix touched a controller. The
+> harness proved the controller's assignment timing red→green, review approved at HIGH confidence, CI
+> was fully green — and the bug reproduced 3/3 on the deployed artifact. "No JS test harness in the
+> repo" is **not** a reason to skip the browser: the render harness needs no repo test infrastructure
+> at all (templates and `platform.css` are runtime-loaded static assets).
 
 ### Layout/CSS path
 1. **Read `admin-spa-ui-conventions.md`** (in this skill) — the platform's canonical class vocabulary +
@@ -71,9 +85,11 @@ Either way the harness is throwaway — only its evidence (output / screenshots)
 3. **Fix (green):** smallest correct change to the blade/service/template; idiomatic AngularJS,
    matching the file's existing conventions (controllerAs vs `$scope`, `$q`, DI-array style).
    `node repro.cjs` now exits 0. Capture both outputs for the PR body.
-4. **Non-visual template-only changes** (binding typo, label, missing attribute) with no assertable logic
-   AND no layout impact: use the trivial-skip clause — justify in the PR body. (Anything that changes
-   *appearance* goes the Layout/CSS path above and must be proven with the render harness, not skipped.)
+4. **Trivial-skip is now narrow:** a change with **no rendered-DOM symptom** and no assertable logic
+   (a one-line null-guard, a typo, an off-by-one) — justify in the PR body. A binding, label, attribute
+   or interpolation whose defect is *visible on screen* is a rendered-DOM symptom: it goes the browser
+   path above and is proven with the render harness. Never skipped, and never substituted with a
+   controller-state assertion.
 5. **Gate:** `dotnet build -c Debug -p:NuGetAudit=false` still green (Scripts are content files — the
    C# build embeds them; make sure nothing broke). Hand the diff to `backend-reviewer` (Gate 4) with
    the scratch-harness evidence in the summary.

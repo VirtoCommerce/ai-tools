@@ -239,6 +239,7 @@ type TicketOutcome =
   | "bailed_by_design"
   | "fix_failed"
   | "low_confidence"
+  | "g2_proxy"
   | "error";
 
 interface TicketResult {
@@ -503,16 +504,35 @@ If you cannot produce a confident fix, set FIX_STATUS: FAILED and explain why �
   const prTitle = marker(fix.result, "PR_TITLE") || `fix(${key}): ${ticket?.summary || key}`;
   const rootCause = marker(fix.result, "ROOT_CAUSE") || "";
 
-  if (fixStatus !== "SUCCESS" || confidence === "LOW") {
+  // G2 MEDIUM RULE (quality-gates.md; docs/decisions/autofix-proof-medium.md).
+  // A rendered-DOM symptom proven in a non-rendered medium, or a green produced by an analogue
+  // rather than the built diff, is a FAIL of G2 — not a confidence downgrade. Without this check
+  // the only executable gate is `confidence === "LOW"`, which is how VCST-5940 shipped a broken
+  // fix at HIGH confidence past a green CI.
+  const proofMedium = (marker(fix.result, "PROOF_MEDIUM") || "").toLowerCase();
+  const proofProvenance = (marker(fix.result, "PROOF_PROVENANCE") || "").toLowerCase();
+  // jsdom covers content/binding/presence, never geometry/paint/CLS/cross-frame.
+  const renderedMedia = ["rendered-dom", "browser", "jsdom"];
+  const symptomIsRendered = /rendered-dom/.test(
+    (marker(fix.result, "SYMPTOM_MEDIUM") || proofMedium || "").toLowerCase(),
+  );
+  const mediumOk = !symptomIsRendered || renderedMedia.some((m) => proofMedium.includes(m));
+  const provenanceOk = proofProvenance === "" || proofProvenance.startsWith("built-diff");
+  const g2Proxy = !mediumOk || !provenanceOk;
+
+  if (fixStatus !== "SUCCESS" || confidence === "LOW" || g2Proxy) {
+    const g2Note = g2Proxy
+      ? ` G2 PASS_PROXY: proof medium="${proofMedium || "unset"}", provenance="${proofProvenance || "unset"}" — a rendered-DOM symptom needs a rendered-DOM red produced by the built diff.`
+      : "";
     await tracker.comment(
       key,
-      `[auto-fix] Could not produce a confident fix (status=${fixStatus}, confidence=${confidence}). ${rootCause} Left for a human. (run ${RUN_ID})`,
+      `[auto-fix] Could not produce a confident fix (status=${fixStatus}, confidence=${confidence}).${g2Note} ${rootCause} Left for a human. (run ${RUN_ID})`,
     );
     return {
       key,
-      outcome: fixStatus !== "SUCCESS" ? "fix_failed" : "low_confidence",
+      outcome: fixStatus !== "SUCCESS" ? "fix_failed" : g2Proxy ? "g2_proxy" : "low_confidence",
       repo: routeRepo,
-      reason: rootCause,
+      reason: g2Proxy ? `G2 proxy proof — ${rootCause}` : rootCause,
       costUsd: spent,
     };
   }
