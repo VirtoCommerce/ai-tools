@@ -601,3 +601,82 @@ Storefront accessible; catalog page exposes >=2 distinct facet groups (e.g. Bran
 [MATH] count_after_reset == count_initial (full reset matches baseline)
 [DOM] Chip bar reflects the active filter set accurately at each step","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 at each step
 [CONSOLE] no TypeError or JS errors","Removing a chip clears ALL filters (chip removal behaves like Reset — bug); Reset filters does not return to initial count (residual filter or URL state); chip bar still shows removed chips; result count after reset != initial; console TypeError","none","Buyer-journey extension 2026-05-22; tests two narrowing-then-restoring paths buyers naturally use","Manual"
+SRCH-FSORT-001,Facet Sorting 'Priority ascending' orders dictionary values lowest-priority-first,Search Filters > Facet Sort Order,High,BL-CAT-002,ECL-3.1,"[PRE:CLEAR_SESSION]
+- A store whose catalog is PHYSICAL (not virtual)
+- A dictionary-type property used as a facet, with at least 3 dictionary values carrying DISTINCT, non-zero Priority values
+- That facet's Sorting set to 'Priority ascending' in Stores > <store> > Search configuration > Facets
+- Products indexed so every one of those values appears in the facet","facet_property: the dictionary-type facet property under test
+priority_map: the Priority number of each dictionary value, read from Catalog > <catalog> > Properties > <property> > dictionary editor
+Example seen on vcptcore-qa: Color -> Blue=1, White=11, Beige=13 rendered as Blue, White, Beige","[NAV] {{FRONT_URL}} search or category page carrying the facet under test
+[ACT] Expand the ""<facet_property>"" facet panel
+[WAIT] facet value list rendered
+[ASSERT] Record the rendered value order top-to-bottom
+[ASSERT] Compare against priority_map sorted ASCENDING (lowest Priority first)","[DOM] The ""<facet_property>"" facet panel lists its values in ascending Priority order == priority_map sorted lowest-number-first
+[DOM] The value with the LOWEST Priority is present as the first entry of the ""<facet_property>"" panel and the highest as the last (the pre-fix defect rendered this reversed)
+[DOM] The ""<facet_property>"" panel order is neither alphabetical by label nor descending by result count
+[MATH] For every adjacent pair (a,b) in the rendered list where both carry a priority: priority(a) <= priority(b)","[NETWORK] POST /graphql (products) term_facets returns the terms in the same order the DOM renders (no client-side re-sort)
+[CONSOLE] no JS errors while loading facets",Highest-priority value rendered last (reversed - the original bug); alphabetical order; count-descending order; DOM order differs from the GraphQL term_facets order,none,"VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Admin hint on the Priority field reads 'The lowest value will be used first'. Archetype:PARITY. Technique:EP.",Draft
+SRCH-FSORT-002,Facet Sorting 'Priority descending' reverses the priority order,Search Filters > Facet Sort Order,High,BL-CAT-002,ECL-3.1,"[PRE:CLEAR_SESSION]
+- Same store/property/dictionary setup as SRCH-FSORT-001
+- That facet's Sorting set to 'Priority descending'","facet_property: same dictionary-type facet as SRCH-FSORT-001
+priority_map: as read from the dictionary editor
+Example seen on vcptcore-qa: Color -> Beige(13), White(11), Blue(1)","[NAV] {{FRONT_URL}} search or category page carrying the facet under test
+[ACT] Expand the ""<facet_property>"" facet panel
+[WAIT] facet value list rendered
+[ASSERT] Record the rendered value order top-to-bottom
+[ASSERT] Compare against priority_map sorted DESCENDING (highest Priority first)","[DOM] The ""<facet_property>"" facet panel lists its values in descending Priority order == priority_map sorted highest-number-first
+[DOM] The value with the HIGHEST Priority is present as the first entry of the ""<facet_property>"" panel; among values that all carry a priority the order is the exact reverse of SRCH-FSORT-001
+[MATH] For every adjacent pair (a,b) where both carry a priority: priority(a) >= priority(b)","[NETWORK] POST /graphql (products) term_facets order matches the DOM
+[CONSOLE] no JS errors",Descending renders the same order as ascending (direction ignored); values without a priority jump to the front; DOM order differs from term_facets order,Restore the facet's Sorting to its original value,"VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Archetype:PARITY. Technique:EP.",Draft
+SRCH-FSORT-003,Legacy 'Priority' store config keeps working and means ascending (upgrade path),Search Filters > Facet Sort Order,High,BL-CAT-002,ECL-3.1,"[PRE:CLEAR_SESSION]
+- A store whose facet was configured BEFORE the ascending/descending split, so its persisted termValuesSortingType is the bare string 'Priority'
+- Verify that persisted value via the aggregationproperties API BEFORE opening the blade: opening and saving the blade rewrites it to 'PriorityAscending' and destroys the specimen
+- The property is dictionary-type with distinct priorities","persisted_value: termValuesSortingType == ""Priority"" (legacy)
+priority_map: read from the dictionary editor
+NOTE: only meaningful on a store still holding the legacy value - do not save the blade first","[API] GET /api/catalog/aggregationproperties/{storeId}/properties -> confirm the facet's termValuesSortingType is the bare ""Priority""
+[NAV] {{FRONT_URL}} page carrying that facet
+[ACT] Expand the ""<facet_property>"" facet panel
+[WAIT] facet value list rendered
+[ASSERT] Record the rendered order
+[NAV] {{ADMIN_URL}} > Stores > <store> > Search configuration > Facets > <property>
+[ASSERT] Read the ""Sorting"" field WITHOUT saving","[DOM] The ""<facet_property>"" facet panel lists its values in ascending Priority order (lowest first) - identical to SRCH-FSORT-001
+[DOM] The admin blade ""Sorting"" field displays 'Priority ascending' - it is not blank and does not read a bare 'Priority'
+[API] GET /api/catalog/aggregationproperties/{storeId}/properties still returns termValuesSortingType == ""Priority"" after the storefront check (the legacy value was honoured without being rewritten)","[NETWORK] GET aggregationproperties returns HTTP 200 with the legacy value intact before the blade is opened
+[CONSOLE] no Angular exceptions opening the blade",Sorting field renders BLANK on a legacy store (dropdown cannot match the persisted value); legacy store renders descending; legacy value fails to deserialize; blade offers a bare 'Priority' option,Do NOT save the blade - saving migrates the persisted value to 'PriorityAscending' and destroys the legacy specimen,"VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Migration-on-open lives in aggregation-properties-details.js initializeBlade. Archetype:FALLBACK. Technique:EP.",Draft
+SRCH-FSORT-004,Facet values with no dictionary item sort LAST in both priority directions,Search Filters > Facet Sort Order,High,BL-CAT-002,ECL-3.1,"[PRE:CLEAR_SESSION]
+- A facet whose indexed values are a MIX: some resolve to a dictionary item carrying a priority, some have no dictionary item at all
+- The facet's Sorting set to 'Priority ascending', then to 'Priority descending'
+Example seen on vcptcore-qa: B2B-store Color = 6 dictionary colours + 7 raw hex values (#1A22FF ...) with no dictionary item","dictionary_values: facet values that DO resolve to a dictionary item
+orphan_values: facet values with NO dictionary item
+regression guard: before the fix a missing dictionary item was treated as priority 0, which pushed orphans to the FRONT in descending","[NAV] {{FRONT_URL}} page carrying the mixed facet, Sorting = 'Priority ascending'
+[ACT] Expand the ""<facet_property>"" facet panel
+[WAIT] facet value list rendered
+[ASSERT] Record the full rendered value order
+[ACT] Switch the facet's Sorting to 'Priority descending' in the Admin SPA
+[ACT] Save the store
+[WAIT] save completed
+[ACT] Reload the storefront page
+[ACT] Expand the ""<facet_property>"" facet panel
+[WAIT] facet value list rendered
+[ASSERT] Record the full rendered value order again","[DOM] ASCENDING: in the ""<facet_property>"" panel every orphan_value is present AFTER every dictionary_value
+[DOM] DESCENDING: in the ""<facet_property>"" panel every orphan_value is STILL present after every dictionary_value - they must not flip to the front
+[DOM] Within the orphan block of the ""<facet_property>"" panel the values keep case-insensitive alphabetical order, in both directions
+[DOM] Ties in Priority break by value name ascending in BOTH directions, so the descending head of the ""<facet_property>"" panel is not always a pure reversal","[NETWORK] term_facets order matches the DOM in both directions
+[CONSOLE] no JS errors",Orphan values render first in descending (the old priority-0 fallback); orphans interleaved among dictionary values; orphan block order changes between reloads,Restore the facet's Sorting to its original value,"VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Orphans sort last via OrderBy(hasPriority ? 0 : 1) then priority then name. Archetype:FALLBACK. Technique:BVA.",Draft
+SRCH-FSORT-005,Virtual catalog: dictionary priorities from LINKED catalogs take effect on facets,Search Filters > Facet Sort Order,High,BL-CAT-002,ECL-3.1,"[PRE:CLEAR_SESSION]
+- A store whose catalog is VIRTUAL, with at least two linked source catalogs
+- Two or more linked catalogs each declare a property with the SAME name (e.g. 'Brand'/'BRAND'), each carrying its own dictionary items and priorities
+- That facet's Sorting set to a priority direction
+NOTE: priorities set on the VIRTUAL catalog's own same-named property do NOT participate - only linked source catalogs do","linked_priority_map: union of the dictionary priorities declared on the same-named property of EVERY linked catalog
+Example seen on vcptcore-qa: B2B-store/B2B-mixed Brand -> Apple=1 (Mall of America), Lakeshorts=1 (Hats, caps and shirts) -> rendered Apple then Lakeshorts, tie broken by name
+regression guard: before the fix this was a SILENT no-op - the facet came back in raw index order by document count","[NAV] {{FRONT_URL}} search page of the virtual-catalog store
+[ACT] Expand the ""<facet_property>"" facet panel
+[WAIT] facet value list rendered
+[ASSERT] Record the rendered order and each value's result count
+[ASSERT] Compare the head of the list against linked_priority_map
+[ASSERT] Confirm the list is not ordered by result count","[DOM] In the ""<facet_property>"" facet panel, values carrying a priority on ANY linked catalog are present FIRST, ordered by that priority
+[DOM] Priorities from DIFFERENT linked catalogs are merged into one ordering: a value prioritised on catalog ""A"" and one prioritised on catalog ""B"" are both present ahead of every unprioritised value
+[DOM] Equal priorities break by value name case-insensitively in the ""<facet_property>"" panel
+[DOM] The ""<facet_property>"" panel is NOT ordered result-count-descending - a low-count value carrying a priority is present ahead of a high-count value carrying none
+[DOM] Values with no dictionary item on any linked catalog form an alphabetical tail in the ""<facet_property>"" panel","[NETWORK] term_facets order matches the DOM
+[CONSOLE] no JS errors",Facet returns raw index order by document count (the pre-fix silent no-op); only one linked catalog's priorities are honoured; priorities set on the virtual catalog's own property unexpectedly take effect,none,"VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Archetype:SILENT. Technique:EP. Verified by paired controls: adding a priority on a LINKED catalog moved the value immediately; setting one on the virtual catalog's own property did not.",Draft
