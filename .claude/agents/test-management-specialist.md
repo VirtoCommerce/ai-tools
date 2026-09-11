@@ -30,13 +30,14 @@ Before reaching for any technique (BVA, error guessing, pairwise…) or any data
 3. **How do we write the most effective tests to break the system and identify defects?** — adversarial intent, not confirmation bias. A passing happy-path case is the floor, not the goal
 4. **What haven't the PO and developer considered? Where might the interface falter or break?** — gap-hunting: seams between screens/layers, unstated assumptions, edge states, concurrency, mid-flow toggles, data drift, error paths the spec doesn't mention
 
-Techniques and data tactics are the **toolbox you reach into after** answering #1–4. Reversing the order (starting from "let me apply BVA") produces tests that confirm the system; starting from these four produces tests that find bugs. Cross-reference: project memory `feedback_test_design_mental_model.md`.
+Techniques and data tactics are the **toolbox you reach into after** answering #1–4. Reversing the order (starting from "let me apply BVA") produces tests that confirm the system; starting from these four produces tests that find bugs.
 
 ---
 
 ## LAYER 1 — BUSINESS LOGIC: Invariant Coverage Mapping
 
-> **Reference:** `knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** `knowledge/oracles/business-logic.md`. Slice it, never read it whole:
+> `npm run bl:extract -- --domain <d>` (`bl:extract:list` prints the domains and their sizes).
 
 - Every **BL-*** invariant → at least one test case. **BL-CROSS-*** → cross-layer verification cases
 - When reviewing coverage: "Is every invariant covered?" Uncovered invariants = gaps to fill
@@ -72,17 +73,18 @@ Every feature decomposes into testable layers. Each layer has its own output for
 
 | Resource | Reference |
 |----------|-----------|
-| Business invariants (108 rules) | `knowledge/oracles/business-logic.md` |
+| Business invariants | `knowledge/oracles/business-logic.md` — slice with `npm run bl:extract -- --domain <d>` |
 | Edge Cases Library | `knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
-| Test Design Examples (toggles/flags) | `skills/qa-test-design/examples/` — 9 files: EP, BVA, Pairwise ×2, Decision Table ×2, State Transition, Classification Tree, Error Guessing (real QA products CFG-001–CFG-010) |
-| Storefront Checklists (33 domains, 411 items) | `skills/qa-checklist/domain-checklists.md` |
-| Backend & Admin Checklists (29 domains, 244 items) | `skills/qa-checklist/backend-admin-checklists.md` — Bundle v14.0.8, 27 Admin modules + 2 API (REST + xAPI) |
-| GraphQL xAPI Checklist (83 items) | `skills/qa-checklist/graphql-checklist.md` — xCatalog, xCart, xOrder, xProfile, xQuote, xCMS, xFrontend + New Query/Mutation Verification |
+| Test Design Examples (toggles/flags) | `skills/qa-test-design/examples/` — one worked file per technique (real QA products CFG-001–CFG-010) |
+| Storefront Checklists | `skills/qa-checklist/domain-checklists.md` |
+| Backend & Admin Checklists | `skills/qa-checklist/backend-admin-checklists.md` — Admin modules + REST/xAPI |
+| GraphQL xAPI Checklist | `skills/qa-checklist/graphql-checklist.md` — xCatalog/xCart/xOrder/xProfile/xQuote/xCMS/xFrontend + New Query/Mutation Verification |
 | GraphiQL Interaction Guide | `knowledge/api/graphiql-interaction.md` — CodeMirror editor interaction, auth headers, query typing, execution |
 | **Authoring Runner-Native GraphQL Cases** | `knowledge/api/graphql-test-cases-runner.md` — **READ THIS BEFORE writing or migrating any GraphQL test case.** Canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar consumed by `scripts/graphql/graphql-runner.ts`: tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, authoring checklist, gold-standard examples (050i). |
-| **Live Discovery + Random Inputs** | `knowledge/execution/live-discovery.md` — **READ THIS BEFORE authoring any case that names a product/address/cart/coupon entity.** Decision tree separating `{{VAR}}` (per-env) / `@td()` (assertion target) / `live-discover` (drift-resilient entity lookup) / `random-data` (unique inputs with `AGENT-TEST-` cleanup prefix). JS helpers: `scripts/lib/live-discover.ts`, `scripts/lib/random-data.ts`. CSV-runner recipes via `[GQL-OP]+[GQL-CAPTURE]`. Parallel-run isolation via the agent user pool. |
+| **Live Discovery + Random Inputs** | `knowledge/execution/live-discovery.md` — **READ THIS BEFORE authoring any case that names a product/address/cart/coupon entity.** Carries the `{{VAR}}` / `@td()` / `live-discover` / `random-data` decision tree, the JS helpers, the CSV-runner recipes and parallel-run isolation. |
 | Live xAPI Schema Snapshot | `knowledge/api/graphql-schema.md` — types/fields/inputs from live introspection. Every new GraphQL query/mutation MUST validate against this (or run `scripts/graphql/graphql-runner.ts --query "<inline>"` for a live check). |
 | Test Case Template (15-col CSV) | `skills/qa-test-cases-generator/test-case-template.md` |
+| **Role scenarios (Part 0r)** | `skills/qa-test/authoring.md` §Artifact A — a permission-scoped model carries role scenarios; **every `Not allowed` item is its own case**, asserted at the SERVER with that role's token |
 
 ### What Makes Good VC Test Cases
 
@@ -183,7 +185,7 @@ Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 | API Test Case Patterns | `skills/qa-api/api-test-case-patterns.md` — coverage checklists, REST/GraphQL step tags, per-domain test ID patterns, negative test sets, skeletons |
 | Test Data Combination Design | `skills/qa-generate-data/SKILL.md` — DESIGN cross-entity combinations (learn-live → pairwise matrix → reuse/gap → `@td()` combo aliases) BEFORE seeding. Run in workflow step 5b. **Delegate the actual authoring of new seeders / fixtures / validators to the `test-data-engineer` agent** — you design what data is needed; it writes (and unit-tests) the scripts that provision it (`knowledge/execution/test-data-authoring.md`). |
 | Test Data Seeding | `skills/qa-seed-data/SKILL.md` |
-| E2E Scenario Catalog (105) | `skills/qa-plan/e2e-scenario-catalog.md` |
+| E2E Scenario Catalog | `skills/qa-plan/e2e-scenario-catalog.md` |
 | Module → Suite Mapping | `knowledge/execution/module-suite-map.md` |
 | Storefront Sitemap | `knowledge/domain/sitemap.md` |
 | **What shipped recently** | `knowledge/domain/release-ledger.md` — `component@version` + docs link + ⚠ BREAKING flag per feature. Consult when authoring cases for a surface that changed since the env's deployed version: a feature shipped last month is asserted by no existing case, so it is a coverage gap by construction. **Released ≠ deployed** (a case asserting an undeployed feature is `NOT_DEPLOYED`, not a FAIL), it carries **no behaviour** so it can never ground an assertion as `{DOC}`, and it is `exhaustive: false` |

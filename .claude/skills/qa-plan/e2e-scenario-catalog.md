@@ -2,7 +2,7 @@
 
 > Reference file for test-management-specialist agent. Read when creating test cases for any feature domain.
 
-This catalog provides **105 end-to-end test scenarios** across **18 business domains** of the Virto Commerce platform. Use these as the foundation when creating test cases for any feature.
+This catalog provides end-to-end test scenarios across the platform's business domains. **Counts are derived, not transcribed** — `grep -oE '\bE2E-[A-Z]+(-[A-Z]+)?-[0-9]{3}\b' <this file> | sort -u | wc -l`. It said **105** until 2026-09-11 while its own per-domain column summed to 101 and the body held 101 ids. Use these as the foundation when creating test cases for any feature.
 
 **How to use this catalog:**
 1. Identify which domain(s) a feature touches
@@ -33,7 +33,7 @@ This catalog provides **105 end-to-end test scenarios** across **18 business dom
 | 16 | Localization & Multi-Currency | E2E-L10N | 4 | P2 | 10 |
 | 17 | Analytics & Tracking | E2E-GA | 4 | P2 | 07 |
 | 18 | Security & Compliance | E2E-SEC | 4 | P0 | 08 |
-| | **TOTAL** | | **105** | | |
+| | **TOTAL** | | *(derived — see above)* | | |
 
 ---
 

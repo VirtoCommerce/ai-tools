@@ -197,7 +197,7 @@ oracle carries P0 invariants the change could disturb. Reach, not diff size, is 
 
 A story is the unit of **new behaviour**, which is why FULL is its default and why this section is a
 downgrade test rather than an escalation test. But *"Story"* is a planning label, not a size: a story that
-retitles one control on one page pays for two `1` agents, a twelve-clause Test Model, case authoring and
+retitles one control on one page pays for two `1` agents, a full gated Test Model, case authoring and
 four verifier dispatches, and nothing in the type tells you which kind you have. So effort derives from
 the **scope**, exactly as §5a already derives a `Review task`'s from its diff rather than its fields.
 

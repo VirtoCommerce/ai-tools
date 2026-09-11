@@ -1,10 +1,12 @@
 # Test Model template — `/qa-test` Step 1e
 
 Fill-in shape for the durable Test Model written to `reports/ba/test-models/<TICKET>-<date>.md`
-(`.claude/rules/reports.md` category 3; 80–160 lines, cap 220).
+(`.claude/rules/reports.md` category 3). **The line cap is the `reports-policy.md` §2 row — read it
+there, never from here:** the number was transcribed into this file once as 220 and was stale from the
+day §2 raised it.
 
-**The methodology — why Part 0 is derived first, the eight rules the scenario table must satisfy, the
-twelve-clause gate, and the worked references — lives in
+**The methodology — why Part 0 is derived first, the eight rules the scenario table must satisfy, when
+Part 0r role scenarios are required, the gate, and the worked references — lives in
 [`.claude/skills/qa-test/test-model.md`](../skills/qa-test/test-model.md). Read that before filling this
 in.** This file is the shape only, so it can be copied without carrying the argument with it.
 
@@ -40,6 +42,16 @@ Variants:     [the kinds of the thing — goal types / processors / product kind
 Mechanism coverage matrix: [variants × chain links. AXES: columns = chain links, rows = variants — BOTH derived from Part 0, never by reading your own scenario table back (a matrix filled from the scenario list fills completely by construction, so a mechanism with no scenario has no row to be uncovered in); map scenarios in AFTER the axes exist, and re-derive after any rewrite of the table, since renumbering drops rows silently. CELLS: every one holds a scenario # or `GAP` / `WAIVED + reason` — no blank cells, because a blank is a hole nobody can see and a GAP is a decision someone can argue with]
 Reverse edges: [per forward effect that moves money/points/stock/entitlement: what moves it back → covered by # | ABSENT IN PRODUCT (a finding to report, never a blank)]
 Fixture lifecycle: [any state that is TERMINAL once reached (a completed mission, a consumed coupon, a shipped order) — a case that must observe an ADVANCE needs a per-run fixture, not a shared one, or it passes once and never again]
+--- Part 0r — ROLE SCENARIOS (REQUIRED when the matrix carries >1 ROLE variant; omit entirely otherwise) ---
+Roles in scope: [role → @td(ALIAS.field) fixture alias | FIXTURE-GAP: <what is missing, routed to 3a>. An actor
+              whose domain-map verdict is UNVERIFIED yields {HYPOTHESIS} expectations — inherit it, never launder it]
+BSC-<n> — <scenario name, in the customer's words>
+  Role: <role>  ·  Situation: <one line — the real circumstance that puts this role here>
+  | # | Action | Sees | Can do | Expected |
+  Outcome:     [the business result, one line]
+  Not allowed: [the refusals this scenario proves — each becomes its own case in Step 3, asserted at the
+                SERVER with this role's own token, not merely as an absent button]
+              (repeat per scenario; actions only — no selectors, no steps, no evidence paths)
 --- Parts 1–5 — FAULT MODEL (built per link, on top of Part 0) ---
 Condition space: [factor → value classes, one line per factor; + constraints (infeasible combos); raw cells = N]
 Reduction:       [technique + WHAT was collapsed and WHY — name the dropped factor and what subsumes it; N → M]

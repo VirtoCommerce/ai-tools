@@ -1,6 +1,6 @@
 ---
 name: qa-plan
-description: "[Testing] Test plans from E2E scenario catalog (105 scenarios, 18 domains). Maps to regression suites."
+description: "[Testing] Test plans from the E2E scenario catalog. Maps scenarios to regression suites."
 argument-hint: "feature name | domain | VCST-XXXX"
 disable-model-invocation: true
 ---
@@ -19,7 +19,7 @@ Create test plans and detailed test cases using the comprehensive E2E scenario c
 
 ## Supporting Files
 
-- **e2e-scenario-catalog.md** — 105 end-to-end test scenarios across 18 business domains (Authentication, Catalog, Search, Cart, Checkout, Payment, BOPIS, B2B, Orders, Inventory, Marketing, CMS, Notifications, Settings, Import/Export, SEO, Analytics, Security). Each scenario has prefix, priority, and related suite mappings.
+- **e2e-scenario-catalog.md** — end-to-end scenarios grouped by business domain; each carries a prefix, a priority and its related suite mappings. **Read the catalog for the domain list and the counts** — do not restate either here.
 
 ## Execution
 
@@ -53,21 +53,18 @@ Create test plans and detailed test cases using the comprehensive E2E scenario c
    - Estimated execution time
    - Related regression suites for traceability
 
-## 18 Business Domains (from catalog)
+## Business domains
 
-| # | Domain | Prefix | Scenarios |
-|---|--------|--------|-----------|
-| 1 | Authentication & Registration | E2E-AUTH | 8 |
-| 2 | Catalog & Product Discovery | E2E-CAT | 8 |
-| 3 | Search | E2E-SEARCH | 5 |
-| 4 | Cart | E2E-CART | 7 |
-| 5 | Checkout | E2E-CHECKOUT | 6 |
-| 6 | Payment | E2E-PAY | 6 |
-| 7 | BOPIS | E2E-BOPIS | 5 |
-| 8 | B2B Features | E2E-B2B | 7 |
-| 9 | Orders & History | E2E-ORDER | 6 |
-| 10 | Inventory | E2E-INV | 5 |
-| 11-18 | Marketing, CMS, Notifications, Settings, Import/Export, SEO, Analytics, Security | Various | 42 |
+**Read the catalog's own summary table — this file deliberately no longer restates it.**
+[`e2e-scenario-catalog.md`](e2e-scenario-catalog.md) §Summary is the single source for the domain list,
+the `E2E-*` prefixes, the per-domain counts and the related suites.
+
+A restated copy lived here until 2026-09-11 and had drifted on **five** points against the file it claimed
+to summarise: it wrote the checkout prefix as `E2E-CHECKOUT` (the catalog uses `E2E-CHK`), collapsed the
+catalog's four separate B2B domains into one `E2E-B2B`, wrote orders as `E2E-ORDER` (catalog: `E2E-ORD`),
+gave Cart and Checkout the wrong counts, and listed an **Inventory / `E2E-INV`** domain the catalog has
+never contained. An author citing a prefix from that table produced a reference that resolves to nothing —
+which is exactly the drift `.claude/rules/test-data.md` §GOLDEN RULE exists to prevent.
 
 ## Rules
 - Always check the catalog first — don't reinvent scenarios that already exist

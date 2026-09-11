@@ -156,8 +156,19 @@ the chain's question, and equal values on both sides of a distinction under test
 
 ## Artifact A — test cases, authored into the durable suites (FULL only)
 
-Derive cases from the Test Model's scenarios + chain diagrams + `1d` AC conditions (story + gap-ACs) +
-`E2E-*` scenarios + `BL-*` / `ECL-*` + domain checklists.
+Derive cases from the Test Model's scenarios + chain diagrams + **Part 0r role scenarios, when the model
+carries them** + `1d` AC conditions (story + gap-ACs) + `E2E-*` scenarios + `BL-*` / `ECL-*` + domain
+checklists.
+
+**Part 0r — author a case from EVERY `Not allowed` item, not just from the action rows.** The action rows
+give the role's journey; the `Not allowed` items give the refusals, and the refusals are the half that
+discriminates — a permission bug passes every positive-path case by construction. Each refusal case
+asserts **at the server, with that role's own token**, that the call is refused AND that nothing
+persisted; a missing button is a separate, weaker assertion, not a substitute. Stamp them
+`Archetype:SCOPE` (or `SILENT` where the risk is a `200` that quietly no-ops). Target the layer's e2e
+suite — `concern: e2e` in `config/test-suites.json`. A role the model marked `FIXTURE-GAP` authors no
+case here: it went to `3a` as fixture demand, and authoring against an `@td()` that does not resolve is
+the defect `td:validate` exists to catch.
 
 **Author from the model AS AMENDED by Step 3x, not from the model as `1e` left it.** The discovery lane
 runs concurrently with 3a and closes before this artifact for exactly this reason
@@ -214,8 +225,10 @@ Naming every target suite up front is also what makes the Step-3b fan-out safe, 
 
 Each authored case stamps its scenario row's archetype and technique into the free-text `References`
 column: `Archetype:<TOKEN> · Technique:<TOKEN>` (+ `Probe:VC-*-NNN` when the row came from a
-`vc-bug-catalog` Detection probe). The appender **rejects a row without them**. No new CSV column: these
-join the `Synced:` / `Audited:` / `Promoted:` stamps `References` already carries.
+`vc-bug-catalog` Detection probe; + `Role:<role-id>` when it came from a Part 0r role scenario, so a later
+reader can tell whose refusal the case defends). The appender **rejects a row without the two mandatory
+stamps**; `Probe:` and `Role:` are provenance, optional and unvalidated. No new CSV column: these join the
+`Synced:` / `Audited:` / `Promoted:` stamps `References` already carries.
 
 ### Scaffold before authoring — never hand-type the boilerplate
 
@@ -321,7 +334,7 @@ introduce:
 | 1 | `npm run tc:alloc` and hand each batch **only its own** `--id-block` | `--check-global-ids` reads the corpus at APPEND time, so two batches both pass and then both write. A cross-suite duplicate ID silently overwrites the other suite's per-case results and failure evidence at run time. `tc:scaffold` refuses to spill past its block. |
 | 2 | Author the **`[JOURNEY]` / `Technique:FLOW` case itself**, before fan-out, and put it in every batch brief as the baseline they refine | It traverses the whole chain by definition. Per-layer batches each writing their own produce N partial journeys and no owner of the chain — the failure the 71-case storefront suite that placed zero orders represents. |
 | 3 | Resolve **every blank cell** of the 1e variants × links matrix and assign each cell to exactly one batch | Cell ownership is what makes duplication structurally impossible. With it there is no cross-batch dedup pass to run; without it two batches both claim a cell, or both skip it. |
-| 4 | Compile a per-layer **authoring pack** into the brief — the extracted `BL-*`/`ECL-*` rule text (`npm run bl:extract -- --domain <d>` · `npm run ecl:extract -- --domain <d>`), the batch's matrix rows, the journey case, the layer's selectors/schema fragments. **Cut the schema fragments from the snapshot `1b` item 2d refreshed, and stamp the pack with its rev.** This is the worked case of a pattern every fan-out now shares — what may be packed, what must stay a path, and why: [`dispatch-pack.md`](dispatch-pack.md) | Step 2 already loaded the oracles once. Four agents re-reading `business-logic.md` + ECL + `critical-ui-scope` + `vc-bug-catalog` + `graphql-schema.md` is 4× the dominant token cost for zero extra information — that alone can make the fan-out cost more than it saves. The pack is also the fan-out's single point of contract failure: cut from an unrefreshed snapshot it distributes one stale contract to every batch at once, and the resulting cases fail at Step 4 as what look like product defects ([`contract-refresh.md`](contract-refresh.md) §4). A GraphQL batch reads `test-data/graphql/index.json` before authoring a new fixture — 74 ops already exist. |
+| 4 | Compile a per-layer **authoring pack** into the brief — the extracted `BL-*`/`ECL-*` rule text (`npm run bl:extract -- --domain <d>` · `npm run ecl:extract -- --domain <d>`), the batch's matrix rows, the journey case, **the Part 0r role scenarios whose refusals this batch owns (rows, not a path — they are small, per-batch, and an agent handed only a path re-reads the whole model)**, the layer's selectors/schema fragments. **Cut the schema fragments from the snapshot `1b` item 2d refreshed, and stamp the pack with its rev.** This is the worked case of a pattern every fan-out now shares — what may be packed, what must stay a path, and why: [`dispatch-pack.md`](dispatch-pack.md) | Step 2 already loaded the oracles once. Four agents re-reading `business-logic.md` + ECL + `critical-ui-scope` + `vc-bug-catalog` + `graphql-schema.md` is 4× the dominant token cost for zero extra information — that alone can make the fan-out cost more than it saves. The pack is also the fan-out's single point of contract failure: cut from an unrefreshed snapshot it distributes one stale contract to every batch at once, and the resulting cases fail at Step 4 as what look like product defects ([`contract-refresh.md`](contract-refresh.md) §4). A GraphQL batch reads `test-data/graphql/index.json` before authoring a new fixture — 74 ops already exist. |
 
 **Batch contract** (each batch is one `test-management-specialist`):
 

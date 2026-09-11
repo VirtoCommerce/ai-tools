@@ -5,7 +5,7 @@
   ".claude/agents/qa-lead-orchestrator.md": 30322,
   ".claude/agents/qa-testing-expert.md": 20124,
   ".claude/agents/regression-orchestrator.md": 29118,
-  ".claude/agents/test-management-specialist.md": 27368,
+  ".claude/agents/test-management-specialist.md": 27269,
   ".claude/agents/test-runner-agent.md": 19573,
   ".claude/agents/ui-ux-expert.md": 40436,
   ".claude/commands/ba-analyze.md": 21803,
@@ -14,7 +14,7 @@
   ".claude/commands/qa-regression.md": 40455,
   ".claude/commands/qa-test-lifecycle.md": 66986,
   ".claude/commands/qa-test-plan.md": 23488,
-  ".claude/commands/qa-test.md": 60760,
+  ".claude/commands/qa-test.md": 60500,
   ".claude/skills/project-init/SKILL.md": 27249,
   ".claude/skills/qa-design/SKILL.md": 30203,
   ".claude/skills/qa-hotfix-check/SKILL.md": 22708,
@@ -24,6 +24,6 @@
   ".claude/skills/qa-review-tests/SKILL.md": 42436,
   ".claude/skills/qa-seed-data/SKILL.md": 32815,
   ".claude/skills/qa-test-cases-generator/SKILL.md": 41970,
-  ".claude/skills/qa-test/SKILL.md": 27360,
+  ".claude/skills/qa-test/SKILL.md": 27349,
   ".claude/skills/vc-self-check/SKILL.md": 27413
 }

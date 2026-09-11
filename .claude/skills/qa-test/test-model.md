@@ -183,11 +183,91 @@ names a way this feature can be *wrong*, and the case authored from it is the th
    can attack the reduction ("do status and lock actually not interact?"), which is where real coverage
    arguments live. Name the dropped factor and what subsumes it — not just the arithmetic.
 
-## The gate — twelve clauses, every one contradictable
+## Part 0r — role scenarios, when the feature is scoped by permissions
+
+**Roles are already a Part 0 concept.** The template's `Variants` line names *"role kinds"* as a matrix
+ROW type, and clause 11b binds every variant to a surface the domain map enumerates. A role scenario is
+therefore not a new axis — it is the **row-traversal of the matrix that already exists**: one role, walked
+across the chain links. This section makes those rows concrete instead of leaving `role kinds` as a label
+nobody expands.
+
+**Why it earns a section of its own.** `SCOPE` — cross-org / permission-scope leak — is the widest
+bug-to-coverage gap the corpus has, and it is the one shape ordinary case design cannot reach: it *passes
+every positive-path test by construction*. Asserting "org A's user sees org A's order" tests nothing; only
+the refusal discriminates. The b2b map reaches the same conclusion from the other direction — its `D9` row
+calls the three divergent role-assignment surfaces the largest untested privilege surface on the product.
+Re-derive both figures rather than quoting them:
+[`reports/ba/test-model-effectiveness-2026-08-27.md`](../../../reports/ba/test-model-effectiveness-2026-08-27.md) §1 and §7.
+
+**The trigger is derived, not asked: the section is REQUIRED when the `Mechanism coverage matrix` carries
+more than one ROLE variant.** That falls straight out of Part 0, which is already derived, so it costs no
+new pre-flight axis and no new step — and it is contradictable, which "this feature feels permission-ish"
+is not. One role variant ⇒ the section is absent and clause 12 passes silently.
+
+**Where the content comes from.** Roles: the domain map's `### Actors` table (`Actor | Can do | Verdict`).
+Permission strings: [`test-data/b2b/roles.csv`](../../../test-data/b2b/roles.csv). Fixture identities:
+[`scripts/lib/user-roles.mjs`](../../../scripts/lib/user-roles.mjs). An actor whose map verdict is
+`UNVERIFIED` yields a scenario whose expectations are `{HYPOTHESIS}` — inherit the verdict, never launder it.
+
+### The four rules
+
+1. **Every scenario carries a `Not allowed` line.** A scenario listing only what the role *can* do is a
+   happy path in costume. The refusals are the discriminating half, and they are where the `SCOPE` cases
+   come from.
+2. **A refusal is asserted at the server, not only in the UI.** A hidden button is not a refusing API.
+   Assert the mutation or endpoint with **that role's own token**, and assert that nothing persisted — a
+   `200` that quietly no-ops is the `SILENT` archetype wearing a `SCOPE` coat.
+3. **Every role named resolves to a real fixture alias, or is marked `FIXTURE-GAP`.** Demand routes to
+   `3a` (`/qa-generate-data` → `test-data-engineer`); a role is never invented into existence by an
+   `@td()` that does not resolve. Expect this to fire: the b2b map's `G1` records that there is no
+   org-employee fixture at all (`ORG_USER_EMAIL` is a second maintainer). That is the section working.
+4. **No scenario for a capability the product does not have.** Pre-purchase approval is the standing
+   example — `BL-B2B-004` states there is no native order-approval flow, and five buyer→approver cases are
+   already `Deprecated` with *"do not re-author"*. Record `ABSENT — re-scope trigger` instead. This is
+   clause 11b applied to a journey rather than a surface.
+
+### Which stamps a role case may honestly carry
+
+Both vocabularies are closed and the appender validates against them, so a role case cannot invent a token.
+
+- **Archetype: `SCOPE`.** Its definition covers this — *"Cross-org / tenancy / **permission-scope leak**"* —
+  but note its **probe question is written cross-tenant** (*"does org A's user reach org B's object"*), so
+  it reads as if org-vs-org were the only shape. A maintainer-vs-employee refusal **inside one org** is the
+  permission-scope half of the same token. Use `SILENT` instead where the risk is a `200` that quietly
+  no-ops rather than a refusal that leaks.
+- **Technique: `FLOW` for the journey row, `DT` for the refusals.** There is no role/RBAC token in
+  [`qa-test-design/test-design-techniques.md`](../qa-test-design/test-design-techniques.md) §0 and this
+  does not add one — a role scenario is a journey per actor (`FLOW`), and its `Not allowed` set is a
+  decision table over actor × operation (`DT`, whose own §4 names permission checks). Reach for `PW` only
+  when the matrix is genuinely `role × org × owner × operation` and too large to enumerate (§6).
+
+### The shape
+
+Five columns, because the last three are exactly what differs per role — `Sees` and `Can do` are the
+role's surface, `Expected` is the assertion. `Outcome` is the business result in one line; `Not allowed`
+is the refusal set rule 1 requires. The fill-in block is in
+[`templates/test-model.md`](../../templates/test-model.md).
+
+Keep each scenario to its actions — this section describes *what a role does and is refused*, not how to
+drive a browser. Steps, selectors and evidence paths belong to the authored case, never here
+([`.claude/rules/test-data.md`](../../rules/test-data.md) §THIRD RULE).
+
+### What Step 3 does with it
+
+`test-management-specialist` authors the e2e suite cases from this section alongside the `Test scenarios`
+table. **Each `Not allowed` item becomes its own case** — that is the coverage this section exists to buy,
+and it is the row most likely to be deferred as "negative testing we can add later". Target suite is the
+layer's e2e suite (`concern: e2e` in `config/test-suites.json`). Handoff contract:
+[`authoring.md`](authoring.md) §Artifact A.
+
+## The gate — thirteen clauses, every one contradictable
 
 "Scenarios enumerated" was the old bar and it cannot be wrong. These can. **This list is the normative
 one** — the command's `1e` gate line is its compact checklist, so a clause added or reworded here is
-changed there in the same edit, and nothing else states the count. **`11b` is a clause NAME, not a
+changed there in the same edit. The count is stated in exactly two places, this heading and that
+checklist (plus the command's gate-table row); **every other file cites the gate without a number**,
+deliberately — three of them once carried `twelve-clause` and all three were stale the moment a
+clause was added (`.claude/rules/test-data.md` §GOLDEN RULE). **`11b` is a clause NAME, not a
 numbering accident** — the command, the template and `domain-map.md` all cite it as `11b`, and it is
 nested under 11 because the two read the same token.
 
@@ -229,6 +309,12 @@ nested under 11 because the two read the same token.
     **and**, explicitly, the links it does **not**.
     **11b.** Every matrix **VARIANT** resolves to a surface the domain map enumerates, or is reported as
     a surface the map is MISSING.
+12. **Role scenarios, when the feature is permission-scoped.** Where the `Mechanism coverage matrix`
+    carries **more than one ROLE variant**, `Part 0r` is present; **every** scenario in it carries a
+    `Not allowed` line; and **every** role it names resolves to a fixture alias or is marked
+    `FIXTURE-GAP`. One role variant ⇒ the section is absent and this clause passes silently — it is
+    conditional by design, so a single-role feature never pays for it (§Part 0r). The count reads
+    **thirteen** because `11b` is a clause, not a sub-point: 1–11 plus `11b` plus this one.
 
 **Clauses 11 and 11b are the two that clauses 1–10 cannot see, because every one of clauses 1–10 passes on
 a narrow chain** — a correctly-derived matrix with no blank cells never asks *is this chain a slice of a
@@ -246,7 +332,7 @@ is `PRESENT` here** — it passed the same gate before it was written — and ca
 satisfied by recording `Domain map: ABSENT — chain position unverified`; absence is **written down, not
 blocked**. `1e` is also where 2g's provisional all-layer answer is CONFIRMED — Part 0 now exists, so set
 `domain_map.all_layer_confirmed_at: "1e-confirmed"` and correct `all_layer_chain` if the chain disagrees
-with the `1b` guess.
+with the `1b` guess. That correction is the axis working, not a defect.
 
 A missing atomic condition or `ba-system-analyzer` risk area is added before moving on. No fresh-`qa-lead`
 dispatch here — this is the doer's own completeness check.
@@ -289,3 +375,8 @@ Step 2 cannot quietly skip a sweep nobody wrote a line for.
 - **A worked Part 0**, with a real chain drawn, its variants × links matrix and its reverse edges:
   `reports/ba/test-models/VCST-5346-2026-08-28.md`.
 - The measured cost of not having drawn one: `/qa-test-design` `test-design-techniques.md` §1a.
+- **A worked Part 0r** — role scenarios for the Organization employee across the membership lifecycle
+  (invited → transacting → blocked), each with its `Not allowed` refusal set:
+  `reports/ba/Organization roles/role-scenarios-org-employee.md`. Read it for the level of detail the
+  section wants — actions and refusals, no selectors or steps — and for how a `FIXTURE-GAP` is recorded
+  rather than worked around.

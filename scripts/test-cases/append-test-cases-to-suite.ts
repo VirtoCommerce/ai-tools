@@ -329,8 +329,10 @@ export function loadDesignVocabulary(): DesignVocabulary {
   const nonDefectArchetypes = tableTokens(nonDefectPart);
   // Section-scoped, like the archetypes above. Scanning the whole file made
   // every table in it a candidate vocabulary source: harmless today (it yields
-  // exactly the seven §0 tokens) but any future table with a backticked
-  // ALL-CAPS first cell would silently widen what the gate accepts.
+  // exactly the §0 tokens) but any future table with a backticked ALL-CAPS
+  // first cell would silently widen what the gate accepts. The count is not
+  // restated here — it was written as "seven" and went stale when FLOW was
+  // added; §0 is the source, and the assertion below is what enforces it.
   const techMd = readVocabFile(TECHNIQUES_MD);
   const techStart = techMd.indexOf("## 0. Technique tokens");
   if (techStart < 0)
