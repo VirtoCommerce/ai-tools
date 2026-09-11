@@ -85,7 +85,15 @@ Examples:
 
 **`[PRE:*]` Execution Tags (imperative — runner performs these actions):**
 
-Place `[PRE:*]` tags at the top of the Preconditions cell, one per line, before any plain-text conditions. The runner processes each tag left-to-right before executing Steps. Full tag vocabulary and decision tree: `knowledge/execution/test-execution-preflight.md`.
+Place `[PRE:*]` tags at the top of the Preconditions cell, one per line, before any plain-text conditions.
+The runner processes each tag in order before executing Steps. Full tag vocabulary and decision tree:
+`knowledge/execution/test-execution-preflight.md`.
+
+**A `[PRE:*]` cluster may ALSO open an actor segment inside the `Steps` cell** — that is how a two-role
+case is written (one role acts, another's view is checked), and 64 cases already do it. Mark each
+segment with `--- SCREEN: <actor — the permissions it holds> ---`, close it with `[PRE:VERIFY_AUTH]`
+before any permission-dependent assertion, and note that a mid-Steps failure is a **FAIL**, not a
+BLOCKED. Worked example: `test-execution-preflight.md` §Example 4.
 
 | Tag | When to Use |
 |-----|-------------|

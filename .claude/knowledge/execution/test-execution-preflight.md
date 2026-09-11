@@ -208,7 +208,14 @@ running the case and filing whatever it produces.
 
 ### CLEAR_SESSION
 
-**Purpose:** fully purge the user's session state — cookies, localStorage, sessionStorage. Use at user-context block boundaries (switching between B2B admin and personal user, for instance).
+**Purpose:** fully purge the user's session state — cookies, localStorage, sessionStorage. Use at
+user-context block boundaries (switching between B2B admin and personal user, for instance).
+
+**A user-context block is an ACTOR SEGMENT: a run of steps executed as one identity.** Usually a run of
+consecutive CASES sharing an actor — but it may also be a segment *inside* one case, which is how a
+two-role journey is written (`test-runner-tags.md` §Precondition Tags). The phrase was used in three
+files and defined in none, and the inter-case reading is what made "two actors in one case" look
+outside the model.
 
 **Steps:**
 1. If signed in → `SIGNOUT` first (leaves a clean auth state on the server).
@@ -354,6 +361,56 @@ On any `BLOCKED`:
 2. `SWITCH_ORG:ORG_TECHFLOW` — click header org-switcher, select "TechFlow" from dropdown, wait for reload, verify org name displayed.
 3. `VERIFY_AUTH:USER_MULTI_ORG` — whoami must still be USER_MULTI_ORG after the org switch (should be — org switch doesn't change user identity).
 4. Proceed to Steps.
+
+### Example 4 — two actors in ONE case (a permission boundary)
+
+The shape a Part 0r role scenario needs: one role acts, the other's view is then checked. The `[PRE:*]`
+cluster moves **into `Steps`**, once per actor segment. Shipped example: `011b` `COMP-E2E-010`
+(`Automated`).
+
+**Preconditions cell:** may be empty — the first segment establishes its own actor.
+
+**Steps cell:**
+```
+--- SCREEN: employee acts (storefront:organization:view + storefront:user:view ONLY) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_VIEWER]
+[NAV] {{FRONT_URL}}/company/members
+[ASSERT] no 'Invite members' button and no Actions column (BL-B2B-005)
+
+--- SCREEN: maintainer verifies (adds storefront:user:invite + xapi:my_organization:edit) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_ADMIN]
+[PRE:VERIFY_AUTH:ACME_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[ASSERT] 'Invite members' button IS present — same surface, different permission set
+```
+
+**Name the PERMISSION each segment holds, not just the role.** A role is a label; the permission is the
+mechanism, and `test-data/b2b/roles.csv` is its source of truth (`permissions` column). Writing the
+permission into the segment divider is what makes the assertion falsifiable: it says *which grant* the
+absent control depends on, so a reviewer can check the claim against the role definition instead of
+trusting the role name.
+
+**And check the permissions actually differ before building a case on them.** `org-employee` and
+`purchasing-agent` carry the **same two** storefront permissions in `roles.csv` — purchasing is governed by
+cart/checkout, not by a storefront RBAC grant. A case asserting a storefront difference between those two
+roles is vacuous by construction: equal values on both sides of the distinction under test are a data
+defect (`.claude/rules/test-data.md` §SECOND RULE).
+
+**Three rules this shape carries:**
+1. **`CLEAR_SESSION` before each switch**, not just `SIGNIN_AS`. `SIGNIN_AS` signs the previous user out,
+   but a stale `Contact.CurrentOrganizationId` or a cached permission set can survive; the purge is what
+   makes the second segment's observation attributable to the permission rather than to leftovers.
+2. **Close each segment with `VERIFY_AUTH`** before asserting anything permission-dependent. Without it a
+   failed switch reads as a permission finding — the expensive misdiagnosis this idiom invites.
+3. **A mid-`Steps` `[PRE:*]` failure is a FAIL, not a BLOCKED** — the case has already run. See
+   `test-runner-tags.md` §Precondition Tags.
+
+**Prefer `SWITCH_ORG` where one account holds different roles per org.** `MULTI_ORG_TF_BR_ALT` is
+org-maintainer in TechFlow and org-employee in BuildRight, so Example 3's switch changes the permission set
+without re-authenticating — no second token (one token spans orgs), which is faster and lets the case
+assert the permission-claim change directly. Use two identities only when the scenario needs two people.
 
 ---
 

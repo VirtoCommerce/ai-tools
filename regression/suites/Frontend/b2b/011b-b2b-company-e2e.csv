@@ -1185,3 +1185,109 @@ Reviewer finding E on vc-frontend#2399: the storefront always builds urlSuffix =
 [STATE] The existing user's ONLY working acceptance path is signing in normally and using the /account/dashboard pending-invites-widget, not the emailed link {SPEC}
 [DOM] confirm-invitation.vue's own route-query reads (userId/email/token/organizationId) are all absent for this link shape — there is no identity for the page to act on {DOC}","[CONSOLE] no unhandled JS TypeError when confirm-invitation.vue loads with no query parameters (a silent no-op is still a defect, but should not crash)
 [NETWORK] no unexpected 5xx from loading /confirm-invitation bare","The bare /confirm-invitation link unexpectedly DOES complete a working invite acceptance (would mean the defect is already fixed elsewhere in the flow — reconfirm live before treating as a failure); the pending-invites-widget also fails to list the BuildRight invite (would mean this existing user has NO working acceptance path at all — escalate to P0)","[SAVE] Ensure the BuildRight invite for @td(TECHFLOW_BUYER.email) is either accepted (via the widget) or revoked via the members grid so no dangling invite state remains","VCST-5281; PR review finding E on vc-frontend#2399 (confirm-invitation.vue route-query params; InviteCustomerService.SendExistingUserInviteNotification — backend portion owned separately)","Automated"
+"COMP-E2E-027","[JOURNEY] Company Members — Employee Sees Read-Only Roster, Maintainer Sees Invite + Actions (same org)","Company E2E > Role Boundary > Members Roster","Critical","BL-B2B-005","","1. ACME_VIEWER and ACME_ADMIN are members of the SAME organization (ORG-001 AcmeCorp) — the boundary must vary role only.
+2. The storefront gates on PERMISSION STRINGS, never on role names: useUser.checkPermissions() does an exact match against the flat me.permissions array.
+3. 'Invite members' is gated on xapi:my_organization:user:invite (members.vue). The per-row Actions menu is gated on canManageMembers = xapi:my_organization:edit OR platform:security:loginOnBehalf (members.vue) — a DIFFERENT gate, so the two controls can diverge.
+4. ACME_ADMIN (org-maintainer) holds all four; ACME_VIEWER (org-employee) holds NONE of them — its seeded storefront:* grants belong to the legacy vc-storefront and are inert in this SPA.
+5. NEITHER actor may be isAdministrator: checkPermissions short-circuits true for an admin, which would make this case pass for the wrong reason.
+6. ENVIRONMENT, not product: no platform module seeds org-maintainer/purchasing-agent/org-employee — they come from deployment seed data, and the two first-party seeds (vc-sample-data PlatformEntries.json vs vc-storefront SecurityConstants.cs) already disagree on what org-employee carries. So the role->permission binding is VERIFIED from me.permissions at run time, never asserted; only the permission->gate binding is a product invariant.","front_url={{FRONT_URL}}, employee_email=@td(ACME_VIEWER.email), employee_password=@td(ACME_VIEWER.password), maintainer_email=@td(ACME_ADMIN.email), maintainer_password=@td(ACME_ADMIN.password), org_name=@td(ORG_ACME.name)","--- SCREEN: employee (org-employee — storefront:organization:view;storefront:user:view) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_VIEWER]
+[PRE:VERIFY_AUTH:ACME_VIEWER]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members roster renders
+[ASSERT] roster lists the org's members
+[ASSERT] no 'Invite members' button anywhere on the page
+[ASSERT] no Actions control on ANY row, including the employee's own row
+
+--- SCREEN: maintainer (org-maintainer — adds storefront:user:invite) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_ADMIN]
+[PRE:VERIFY_AUTH:ACME_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members roster renders
+[ASSERT] 'Invite members' button IS present
+[ASSERT] an Actions control IS present on member rows","[NEG] as ACME_VIEWER: no 'Invite members' button — it requires xapi:my_organization:user:invite, which this role does not hold
+[COUNT] as ACME_VIEWER: per-row Actions controls = 0 — canManageMembers requires xapi:my_organization:edit OR platform:security:loginOnBehalf, and this role holds neither
+[DOM] as ACME_ADMIN on the SAME roster: 'Invite members' present AND an Actions control present
+[STATE] neither actor reports isAdministrator — otherwise every gate short-circuits open and the comparison is void
+[REL] the two segments differ ONLY in the acting role — same org, same route — so the difference is attributable to the permission set","[CONSOLE] no uncaught JS errors in either segment
+[NETWORK] no 4xx/5xx on /company/members for either actor","Employee segment renders an Invite button or an Actions menu (permission leak); maintainer segment lacks them (over-restriction); the second segment silently reuses the first session (VERIFY_AUTH catches this)","[PRE:CLEAR_SESSION]","BL-B2B-005 | https://github.com/VirtoCommerce/vc-mcp-testing-module/pull/289 | Archetype:SCOPE · Technique:FLOW · Role:org-employee | Part 0r role scenario BSC-2 (reports/ba/Organization roles/role-scenarios-org-employee.md) | two-actor idiom: knowledge/execution/test-execution-preflight.md Example 4 | mechanism verified in product source: vc-frontend client-app/core/enums/permissions.enum.ts (the whole vocabulary is 3 xapi:* + platform:security:loginOnBehalf; NO storefront:* namespace exists in the SPA)","Draft"
+"COMP-E2E-028","InviteUser Is DENIED for a Role Without xapi:my_organization:user:invite — and Nothing Persists","Company E2E > Role Boundary > Members Roster","Critical","BL-B2B-005","","1. ACME_VIEWER (org-employee) does NOT hold xapi:my_organization:user:invite.
+2. The SAME permission gates BOTH layers: the UI control (members.vue v-if) and the server (ProfileSchema.cs InviteUserCommand -> CheckAuthAsync(..., MyOrganizationUserInvite)). A hidden button is not a refusing server, so this case exercises the mutation directly.
+3. Constant declared in vc-module-profile-experience-api ModuleConstants.cs ProfilePermissions.
+4. ENVIRONMENT, not product: no platform module seeds org-maintainer/purchasing-agent/org-employee — they come from deployment seed data, and the two first-party seeds (vc-sample-data PlatformEntries.json vs vc-storefront SecurityConstants.cs) already disagree on what org-employee carries. So the role->permission binding is VERIFIED from me.permissions at run time, never asserted; only the permission->gate binding is a product invariant.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, employee_email=@td(ACME_VIEWER.email), employee_password=@td(ACME_VIEWER.password), maintainer_email=@td(ACME_ADMIN.email), maintainer_password=@td(ACME_ADMIN.password)","--- SCREEN: employee acquires a real session ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_VIEWER]
+[PRE:VERIFY_AUTH:ACME_VIEWER]
+[NAV] {{FRONT_URL}}/company/members
+[ACT] capture the roster's member count as BASELINE_COUNT
+[ACT] submit an invite for a new member using the EMPLOYEE's own session token, bypassing the UI control (the control is absent by design)
+[WAIT] the invite request completes and a response is returned
+
+--- SCREEN: the refusal is verified on the roster ---
+[ASSERT] the call is refused — a Forbidden-class error naming the missing invite permission, not a success payload
+[NAV] {{FRONT_URL}}/company/members
+[ASSERT] roster count still equals BASELINE_COUNT — no pending invite was created
+
+--- SCREEN: maintainer confirms nothing landed (org-maintainer) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_ADMIN]
+[PRE:VERIFY_AUTH:ACME_ADMIN]
+[NAV] {{FRONT_URL}}/company/members
+[ASSERT] no invited/pending member appears for the address the employee attempted","[ERRORS] the InviteUser mutation submitted with the employee's own token is refused by CheckAuthAsync — a Forbidden-class error, not a success payload
+[COUNT] roster member count after the attempt equals the pre-attempt baseline
+[STATE] as ACME_ADMIN, no pending invitation exists for the attempted address — the refusal persisted nothing
+[STATE] a 200-shaped response that creates no member is ALSO a failure: the refusal must be explicit, not a silent no-op","[API] the refusal is observed at the server, not inferred from the absent UI control
+[CONSOLE] no uncaught JS errors","Invite succeeds with the employee token; or is 'refused' with a success-shaped 200 while silently creating nothing (SILENT); or the error omits which permission was missing","[PRE:CLEAR_SESSION]","BL-B2B-005 | https://github.com/VirtoCommerce/vc-mcp-testing-module/pull/289 | Archetype:SCOPE · Technique:DT · Role:org-employee | Part 0r 'Not allowed' refusal, asserted at the SERVER with that role's own token | server gate: vc-module-profile-experience-api ProfileSchema.cs InviteUserCommand -> ProfilePermissions.MyOrganizationUserInvite","Draft"
+"COMP-E2E-029","UpdateOrganization Is DENIED for a Role Without xapi:my_organization:edit — Fields Disabled AND Mutation Forbidden","Company E2E > Role Boundary > Company Info","High","BL-B2B-005","","1. ACME_VIEWER does NOT hold xapi:my_organization:edit; ACME_ADMIN does.
+2. Same permission both layers: info.vue disables the name field, the logo widget and every address affordance on !canEditOrganization; ProfileSchema.cs gates UpdateOrganizationCommand on MyOrganizationEdit.
+3. NOTE the page still RENDERS for the employee — the gate disables controls, it does not deny the route.
+4. ENVIRONMENT, not product: no platform module seeds org-maintainer/purchasing-agent/org-employee — they come from deployment seed data, and the two first-party seeds (vc-sample-data PlatformEntries.json vs vc-storefront SecurityConstants.cs) already disagree on what org-employee carries. So the role->permission binding is VERIFIED from me.permissions at run time, never asserted; only the permission->gate binding is a product invariant.","front_url={{FRONT_URL}}, employee_email=@td(ACME_VIEWER.email), employee_password=@td(ACME_VIEWER.password), maintainer_email=@td(ACME_ADMIN.email), maintainer_password=@td(ACME_ADMIN.password), org_name=@td(ORG_ACME.name)","--- SCREEN: employee (has organization:view, lacks organization:edit) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_VIEWER]
+[PRE:VERIFY_AUTH:ACME_VIEWER]
+[NAV] {{FRONT_URL}}/company/info
+[ASSERT] company details are readable (organization:view is held)
+[ASSERT] no editable field and no Save control — or the route redirects away
+[ACT] submit a company-info update using the EMPLOYEE's own session token, bypassing the absent control
+[WAIT] the update request completes and a response is returned
+[ASSERT] the update is refused with a Forbidden-class error
+
+--- SCREEN: maintainer confirms the record is unchanged ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_ADMIN]
+[PRE:VERIFY_AUTH:ACME_ADMIN]
+[NAV] {{FRONT_URL}}/company/info
+[ASSERT] company name and details are unchanged from before the employee's attempt","[DOM] as ACME_VIEWER: /company/info renders, the company-name field is disabled and no address add/edit affordance is offered (xapi:my_organization:edit absent)
+[ERRORS] the UpdateOrganization mutation submitted with the employee's token is refused by CheckAuthAsync
+[STATE] as ACME_ADMIN: the organization record is unchanged from its pre-attempt state
+[DOM] as ACME_ADMIN: the same field is enabled — proving the employee's disabled view is the permission, not a broken page","[API] refusal observed server-side
+[NETWORK] no 4xx/5xx on the read path for either actor","Employee can edit or save; the update is accepted and silently discarded; the page 500s for the employee instead of degrading to read-only","[PRE:CLEAR_SESSION]","BL-B2B-005 | https://github.com/VirtoCommerce/vc-mcp-testing-module/pull/289 | Archetype:SCOPE · Technique:DT · Role:org-employee | map 6a: /company/info has no field-level view/edit/validation coverage | server gate: ProfileSchema.cs UpdateOrganizationCommand -> ProfilePermissions.MyOrganizationEdit","Draft"
+"COMP-E2E-030","Employee and Purchasing Agent Are Indistinguishable to the SPA — Neither Holds Any Permission It Reads","Company E2E > Role Boundary > Members Roster","Medium","BL-B2B-005","","1. The storefront's ENTIRE permission vocabulary is four strings: xapi:my_organization:edit, xapi:my_organization:user:invite, xapi:my_organization:order:view, platform:security:loginOnBehalf.
+2. org-employee and purchasing-agent hold NONE of them. Their seeded storefront:organization:view / storefront:user:view come from the LEGACY vc-storefront's SecurityConstants and are never read by this SPA.
+3. So the two roles are indistinguishable here — not because they share a grant, but because both present an effectively empty permission set to every gate.
+4. This case asserts a deliberate NON-difference so that granting either role a real xapi:* permission fails loudly instead of silently widening access.
+5. ENVIRONMENT, not product: no platform module seeds org-maintainer/purchasing-agent/org-employee — they come from deployment seed data, and the two first-party seeds (vc-sample-data PlatformEntries.json vs vc-storefront SecurityConstants.cs) already disagree on what org-employee carries. So the role->permission binding is VERIFIED from me.permissions at run time, never asserted; only the permission->gate binding is a product invariant.","front_url={{FRONT_URL}}, employee_email=@td(ACME_VIEWER.email), employee_password=@td(ACME_VIEWER.password), agent_email=@td(ACME_BUYER.email), agent_password=@td(ACME_BUYER.password)","--- SCREEN: employee (org-employee — storefront:organization:view;storefront:user:view) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_VIEWER]
+[PRE:VERIFY_AUTH:ACME_VIEWER]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members roster renders
+[ACT] record whether 'Invite members' is present
+[ACT] record whether an 'Actions' control is present on any roster row
+
+--- SCREEN: purchasing agent (purchasing-agent — the SAME two grants) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[PRE:VERIFY_AUTH:ACME_BUYER]
+[NAV] {{FRONT_URL}}/company/members
+[WAIT] members roster renders
+[ACT] record whether 'Invite members' is present
+[ACT] record whether an 'Actions' control is present on any roster row","[REL] the 'Invite members' observation for ACME_VIEWER is IDENTICAL to the one for ACME_BUYER
+[REL] the Actions-control observation for ACME_VIEWER is IDENTICAL to the one for ACME_BUYER
+[NEG] neither actor's roster exposes an 'Invite members' button
+[COUNT] Actions controls = 0 for each actor
+[INV] neither role's me.permissions contains any of the four strings the SPA reads; a divergence in either observation means one role gained a real xapi:* grant","[CONSOLE] no uncaught JS errors for either actor","One role shows a control the other does not — a real xapi:* permission was granted to one of them
+Either role gains 'Invite members' or an Actions control — the storefront RBAC lower bound widened
+Either actor reports isAdministrator, which short-circuits every gate open and voids the comparison","[PRE:CLEAR_SESSION]","BL-B2B-005 | https://github.com/VirtoCommerce/vc-mcp-testing-module/pull/289 | Archetype:PARITY · Technique:EP · Role:purchasing-agent | guards the SECOND-RULE equivalence: equal permissions must produce equal surfaces, so a future divergence is caught rather than assumed intentional | legacy-namespace finding: roles.csv mirrors vc-storefront SecurityConstants (storefront:*), which vc-frontend does not read","Draft"

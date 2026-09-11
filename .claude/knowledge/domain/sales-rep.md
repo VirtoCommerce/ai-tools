@@ -13,6 +13,7 @@ rationale: |
   called that out, and this domain inherits the same discipline: breadth first.
 generated: 2026-09-10
 rev: 2
+amended: 2026-09-11
 stale_after_days: 60
 expires_after_days: 120
 sources:
@@ -542,3 +543,77 @@ The 15 prior-art docs remain the detail; this map supersedes them where they dis
 Settled from prior art's own open-question posture: the b2b map's four Sales-Rep pointer rows (lines 69,
 213, 415, 502) are **resolved** above (§1 Actors, §4, §6 D8/D9, §7); its line 78 main-menu inventory is
 independently re-confirmed (19 items, no separate Document Library entry, §6 D3).
+
+---
+
+## §10 — Amendments
+
+### A1 (2026-09-11) — the role → permission model, established from MODULE SOURCE
+
+Prompted by the same audit that found the b2b role model was being read off a fixture CSV. **Sales Rep is
+the opposite case and the contrast is the point:** here the roles ship *in the module*, so their
+permissions are a product contract rather than deployment data.
+
+**Three roles, all module-created** — `vc-module-sales-rep`
+`src/VirtoCommerce.SalesRep.Core/ModuleConstants.cs` §`Security.Roles`:
+
+| Role (assert the NAME, never the id) | Permissions | Created by |
+|---|---|---|
+| `Sales Representative` | `sales-rep:access` | `SalesRepRoleResolver.EnsureSalesRepRoleAsync()` — **create-if-NO-role-already-grants-access** |
+| `Advanced Sales Representative` | `sales-rep:access` + `sales-rep-documents:read` | `SalesRepRoleSeeder.EnsureDocumentRolesAsync()` |
+| `Sales Rep Documents Manager` | `sales-rep-documents:read` + `sales-rep-documents:write` — **no `sales-rep:access`** | same seeder |
+
+All three permissions are the module's own (`Security.Permissions.AllPermissions`) and are
+`RegisterPermissions`-ed under the group **"Sales Rep"** (`Module.cs`), with localized descriptions in
+`en.VirtoCommerce.SalesRep.json` (`sales-rep:access` → *"Open Sales Rep menu"*). Both seeders run in
+`PostInitialize` — i.e. **every platform start**, not module install. Role ids are `Guid.NewGuid()`.
+
+**A2 — why a LIVE permission set may legitimately differ from source, which resolves D2/D12.** The seeder
+is *create-if-absent and never update*, with **two** independent suppression conditions (verbatim):
+
+> *"Matches by permission set, not name/id: any role already carrying every listed permission counts, so
+> renames don't re-seed. A role with the seeded NAME also suppresses seeding whatever its permissions — it
+> is owned by the administrator (or an earlier seeder version) and is never mutated or collided with."*
+
+So D12's live observation — Env-B's `Sales Rep Documents Manager` carrying `sales-rep:access` +
+`…documents:write` where source seeds `[read, write]` — is **not a contradiction**: a role of that name
+pre-existed and the platform will never correct it. **Consequence for test design:** the seeded mapping is
+assertable as product behaviour *on a clean install*; on a long-lived shared env (stable/regression) role
+CONTENT is an environment precondition to read, not an invariant to assert.
+
+**A3 — `sales-rep:access` is NOT an API authorization check.** In the whole `ExperienceApi` project only
+the three *document* builders authorize on a permission (`DocumentsRead`). `salesRepCustomers`,
+`salesRepOrders`, `salesRepCustomer`, `customerSalesReps`, the statistics and layout families enforce
+**authentication only** (`EnsureAuthenticatedAsync`), and scope is **pure data filtering**:
+`SalesRepOrganizationAccessService.GetGrantingMembershipsAsync()` searches `OrganizationMembership` rows
+whose role carries `sales-rep:access`, `OnlyUnlocked = true`. A rep with no granting membership therefore
+gets an **empty result, not an error**. The assertable invariant is *"a user holding `sales-rep:access` on
+org X sees org X's data"* — **not** *"a user in the role named `Sales Representative` sees it"*; any custom
+role carrying the permission is equivalent.
+
+**A4 — the administrator UI-vs-DATA asymmetry (net-new, high value).** `useUser.checkPermissions()`
+short-circuits `true` for `isAdministrator`, so an admin renders the **entire** hub. But the backend filters
+by membership, not permission — so the admin sees the full UI over **empty data**. Any hub case that uses an
+admin fixture will misread this as a data bug.
+
+**A5 — `SalesRep.Enabled` gates UI ONLY, and is not a security control.** The setting is read nowhere in the
+backend; its only consumer is the storefront (`useSalesRepsConfig.isSalesRepsEnabled()`, and a hard `return`
+in the module's `index.ts` that unregisters every route/link). **Turning it off does not revoke API access —
+`/graphql/sales-rep` still answers a rep's queries.** Worth a negative case, and worth saying out loud to
+anyone treating the toggle as an off switch. **Open discrepancy:** the backend `SettingDescriptor` declares
+`DefaultValue = true`; the storefront's own comment says *"default false"*. One of them is wrong — `UNVERIFIED`.
+
+**A6 — storefront gates, per surface.** The rep hub section and its routes need
+`isSalesRepsEnabled() && checkPermissions("sales-rep:access")` (`isSalesRepUser()` is the single source of
+truth). The **Document library needs BOTH** `sales-rep:access` **AND** `sales-rep-documents:read`
+(`checkPermissions` is a variadic AND) — and `canReadDocuments` is evaluated **once at module init**, not
+reactively, so a permission change needs a re-login. A failed route guard **redirects to Dashboard**, it
+does not 403. The buyer-facing `/company/sales-reps` is **not permission-gated at all** — only
+`SalesRep.Enabled` plus the inherited `requiresOrganization`; its content is scoped purely by the viewer's
+active org. Rep hub routes deliberately clear that inherited `requiresOrganization` (VCST-5494), because a
+rep serves orgs they need not belong to.
+
+**A7 — the docs name the roles but NEVER their permissions.** No VirtoOZ page mentions `sales-rep:access`,
+`sales-rep-documents:read` or `…:write`, and the third role (`Sales Rep Documents Manager`) appears in no
+documentation at all — the guides describe exactly two selectable roles. So a `{DOC}` oracle can ground the
+role NAMES and what they broadly grant, never a permission string; those are `{SPEC}` from module source.

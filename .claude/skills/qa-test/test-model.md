@@ -206,8 +206,61 @@ is not. One role variant ⇒ the section is absent and clause 12 passes silently
 
 **Where the content comes from.** Roles: the domain map's `### Actors` table (`Actor | Can do | Verdict`).
 Permission strings: [`test-data/b2b/roles.csv`](../../../test-data/b2b/roles.csv). Fixture identities:
-[`scripts/lib/user-roles.mjs`](../../../scripts/lib/user-roles.mjs). An actor whose map verdict is
-`UNVERIFIED` yields a scenario whose expectations are `{HYPOTHESIS}` — inherit the verdict, never launder it.
+[`test-data/aliases.json`](../../../test-data/aliases.json) (the `@td()` registry `[PRE:SIGNIN_AS:]`
+resolves against) and [`scripts/lib/user-roles.mjs`](../../../scripts/lib/user-roles.mjs). An actor whose
+map verdict is `UNVERIFIED` yields a scenario whose expectations are `{HYPOTHESIS}` — inherit the verdict,
+never launder it.
+
+**Name the PERMISSION, not only the role — and take it from the PRODUCT, never from a fixture file.** A
+role is a label; the permission string is what the product checks. But
+[`test-data/b2b/roles.csv`](../../../test-data/b2b/roles.csv) is a **seeding contract**, not an oracle:
+`ensureRoles()` *creates* those roles via `PUT /api/platform/security/roles` with exactly those strings, so
+asserting against it tests our own fixture and cannot fail. The domain map says as much — b2b `G15`: *"No
+doc states which permissions `Organization maintainer` / `Purchasing agent` / `Organization employee` carry
+on any env."*
+
+**The product's permission surface, established from source 2026-09-11 — cite this, do not re-derive:**
+
+| Consumer | What it reads |
+|---|---|
+| `vc-frontend` (the Vue SPA) | **Four strings, total** — `xapi:my_organization:edit`, `xapi:my_organization:user:invite`, `xapi:my_organization:order:view` (`client-app/core/enums/permissions.enum.ts`) and `platform:security:loginOnBehalf`. **No `storefront:*` namespace exists in it.** |
+| `vc-storefront` (the LEGACY ASP.NET storefront) | the `storefront:*` namespace — `VirtoCommerce.Storefront.Model/Security/SecurityConstants.cs`. Real, but a different product; inert in the SPA |
+| the server | the SAME xapi string, via `CheckAuthAsync` in `vc-module-profile-experience-api` `ProfileSchema.cs` (`InviteUserCommand` → `MyOrganizationUserInvite`, `UpdateOrganizationCommand` → `MyOrganizationEdit`) |
+
+**And separate the two halves, because only one is a product invariant:**
+
+| Claim | Status |
+|---|---|
+| *"the Invite button requires `xapi:my_organization:user:invite`"* | **PRODUCT** — asserted by `members.vue` and enforced by `CheckAuthAsync`. Safe to assert. |
+| *"`org-employee` lacks that permission"* | **ENVIRONMENT** — no platform module seeds these roles at all. `org-maintainer`/`purchasing-agent`/`org-employee` come from deployment seed data, and the **two first-party seeds already disagree**: `vc-sample-data/Setup/adminOnlySample/PlatformEntries.json` grants `org-employee` only `storefront:organization:view`, while `vc-storefront`'s `SecurityConstants.cs` grants it that **plus** `storefront:user:view`. There is no canonical mapping to assert. |
+
+So a role scenario **asserts the permission→gate binding and VERIFIES the role→permission binding as a
+precondition**, read from `me.permissions` at run time. Writing the second as an assertion tests our own
+seed. (`Customer.MembershipRolesWhitelist` ships the three role *names* as an allow-list of selectable
+strings — `vc-module-customer` `ModuleConstants.cs` — but names are not grants.)
+
+**Invariants that ARE product and are worth a scenario**, all source-verified: effective roles are the
+**union of three sources** — `Organization.Roles` ∪ `OrganizationMembership.Roles` (`MergeRoles`,
+`DistinctBy(RoleId)`) ∪ the account's global roles (`GlobalRolesResolver`) — folded into the token by
+`OrganizationIdClaimProvider` **additively** (`existingPermissions.Add`, so an org switch never drops a
+global grant); permissions ride as repeated **`permission`** claims scoped by **`organization_id`**; they
+are recalculated **only at sign-in**; and a blocking membership status or lockout **zeroes the org-scoped
+terms** while leaving global ones intact.
+
+Three consequences a role scenario must respect:
+
+1. **Two controls on one page can have different gates.** On `/company/members`, *Invite members* needs
+   `…user:invite`, while the per-row Actions menu needs `canManageMembers` = `…my_organization:edit` **OR**
+   `platform:security:loginOnBehalf`. Treating "can manage members" as one boolean mis-predicts any role
+   holding one and not the other.
+2. **`isAdministrator` short-circuits every gate.** `useUser.checkPermissions()` returns true immediately
+   for an admin, before looking at any permission. A role-boundary case must assert neither actor is an
+   administrator, or it can pass for the wrong reason.
+3. **Equal-by-absence is not equal-by-grant.** `org-employee` and `purchasing-agent` are indistinguishable
+   to the SPA — not because they share a permission, but because **neither holds any string it reads**. A
+   scenario expecting a storefront difference between them cannot pass; one asserting the non-difference
+   must say *why*, or it documents a fixture artifact rather than a product rule (SECOND RULE,
+   [`.claude/rules/test-data.md`](../../rules/test-data.md)).
 
 ### The four rules
 
@@ -251,6 +304,13 @@ is the refusal set rule 1 requires. The fill-in block is in
 Keep each scenario to its actions — this section describes *what a role does and is refused*, not how to
 drive a browser. Steps, selectors and evidence paths belong to the authored case, never here
 ([`.claude/rules/test-data.md`](../../rules/test-data.md) §THIRD RULE).
+
+**A two-role scenario is expressible in ONE case today** — a `[PRE:*]` cluster opens an actor segment
+inside `Steps`, and 64 cases already use it. Worked shape, the three rules it carries, and when to prefer
+`[PRE:SWITCH_ORG]` (one account whose role differs per org — no second token, so the permission-claim
+change is directly assertable): [`knowledge/execution/test-execution-preflight.md`](../../knowledge/execution/test-execution-preflight.md)
+§Example 4. Do not split a role boundary into two cases out of a belief that one case cannot hold two
+actors.
 
 ### What Step 3 does with it
 

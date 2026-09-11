@@ -29,7 +29,19 @@ Shared reference for `test-runner-agent.md`. Consulted on demand — do NOT pre-
 
 ## Precondition Tags (`[PRE:*]`)
 
-`[PRE:*]` tags appear in the `Preconditions` column and specify **execution-time state-setup actions** that the runner performs via browser UI before executing the test's `Steps` block. They are imperative (runner acts) not merely declarative (runner verifies). Full protocol: `knowledge/execution/test-execution-preflight.md`.
+`[PRE:*]` tags specify **execution-time state-setup actions** performed via browser UI. They are imperative
+(runner acts) not merely declarative (runner verifies). Full protocol:
+`knowledge/execution/test-execution-preflight.md`.
+
+**They appear in TWO places, and both are sanctioned.** In the `Preconditions` column they establish the
+state a case starts from. **In the `Steps` cell they open a new ACTOR SEGMENT inside one case** — the
+idiom a two-role journey needs, where one role acts and another's view is then checked. Measured
+2026-09-11: **64 cases already place `[PRE:SIGNIN_AS:]` inside `Steps`**, 5 of them twice, and
+`011b` `COMP-E2E-010` ships that shape as `Automated`. The tooling already agrees — `ui-step-parser.ts`
+dispatches `PRE:` from the Steps parser, and `lint-test-cases.ts` PRE-001 scans *"Preconditions AND
+Steps, because both carry the tags in practice"*. This paragraph used to say *"before executing the
+test's `Steps` block"*, which read as a prohibition on the second form and left authors believing a
+two-role storefront case was inexpressible.
 
 | Tag | Action |
 |-----|--------|
@@ -41,12 +53,25 @@ Shared reference for `test-runner-agent.md`. Consulted on demand — do NOT pre-
 | `[PRE:CLEAR_CACHE]` | Cache-busting navigate to force fresh asset load after module hotfix deployments |
 | `[PRE:VERIFY_AUTH:<alias>]` | Assert current session is `<alias>` without changing state; BLOCKED on mismatch |
 
-**Canonical tag order when multiple tags appear on one case:**
+**Canonical tag order WITHIN ONE CLUSTER** (a cluster is a run of `[PRE:*]` lines with no step between
+them — the `Preconditions` cell is one cluster; each actor segment in `Steps` is another):
 `[PRE:CLEAR_SESSION]` → `[PRE:SIGNOUT]` → `[PRE:SIGNIN_AS]` → `[PRE:SWITCH_ORG]` → `[PRE:RESET_CART]` → `[PRE:CLEAR_CACHE]` → `[PRE:VERIFY_AUTH]`
+
+The order is relative *within* a cluster; it says nothing about how many clusters a case may have.
+Mark each Steps-cell cluster with a `--- SCREEN: <actor or surface> ---` divider, the marker the corpus
+already uses and `lint-test-cases.ts` already exempts from the per-line tag rule.
 
 **Idempotency rule:** Detect state before acting. If required state is already met, skip the action and proceed.
 
-**Failure policy:** `[PRE:SIGNIN_AS]`, `[PRE:SIGNOUT]`, `[PRE:SWITCH_ORG]`, `[PRE:CLEAR_SESSION]`, `[PRE:CLEAR_CACHE]`, and `[PRE:VERIFY_AUTH]` failures → mark test **BLOCKED**. `[PRE:RESET_CART]` failure → **log warning only**, do NOT block.
+**Failure policy — and it differs by WHERE the tag sits.** In `Preconditions`: `[PRE:SIGNIN_AS]`,
+`[PRE:SIGNOUT]`, `[PRE:SWITCH_ORG]`, `[PRE:CLEAR_SESSION]`, `[PRE:CLEAR_CACHE]` and `[PRE:VERIFY_AUTH]`
+failures → **BLOCKED**; `[PRE:RESET_CART]` failure → **log warning only**, do NOT block.
+
+**Mid-`Steps`, the same failure is a FAIL, not a BLOCKED.** `BLOCKED` means *the case never started*, so
+it is the right verdict for a precondition. A `[PRE:SIGNIN_AS]` that fails at step 20 of 30 has already
+let the case mutate real state, and reporting that as BLOCKED discards the evidence of everything that
+did run. Report **FAIL**, name the segment that could not be entered, and keep the completed segments'
+evidence.
 
 ## Step Type Tags → Playwright MCP tools
 
