@@ -221,6 +221,31 @@ holes lie.
   (→ a `1e` matrix cell) or a term worded differently in the CSVs than in the diff, and those need
   opposite responses, so the tool must not silently pick one.
 
+### A change with NO domain: `--domain` does not under-run, it runs WIDE and WRONG
+
+**`--domain` is the wrong scope flag for a change that has no domain** — a token-layer, UI-kit or
+design-system change (`ticket-routing.md` §5c's `ui-kit` shape class). Scope matching is exact against the
+manifest's `domain`/`tags`, which is correct when the change belongs somewhere; when it belongs
+*everywhere*, the domains you can name are the ones you happened to think of.
+
+Measured on VCST-5653 (a focus-ring token replacement). Scoped `--domain cross-cutting,branding` with six
+observables and three oracles: **18 suites in scope, 447 rows scanned, 26 at risk.** A corpus-wide sweep on
+the same terms: **62 rows across 13 suites** — adding `b2b`, `bopis`, `configurable-products`,
+`customer-reviews`, `loyalty`, `sales-rep`, `search`, `notifications`. **More suites scanned, fewer hits
+found**: the scoped run was not narrow, it was aimed by the wrong vocabulary.
+
+**The failure is silent and reads as coverage.** Nothing in the output says *the axis you scoped by does not
+apply to this change* — a `26 at risk` line looks exactly like a `62 at risk` line that found less.
+
+So for a domainless change: **pair `tc:scope` with a corpus-wide pass and scope by `--suite` from what that
+returns**, not by `--domain` alone. Record **the literal invocation** in the artifact — a hit count whose
+command line is unrecorded is a claim a verifier cannot reproduce, and `5b` has rejected a run for exactly
+that. Name the zero-contributing suites too; an unlisted suite and an empty one read the same.
+
+Turning this from a discipline into a tool behaviour — a `--surface` / `--all-domains` mode, or a warning
+when the diff is `ui-kit/**` or token paths while `--domain` is set — is `docs/repo-findings-backlog.md`
+B-33, and is not implemented.
+
 ### Worked example — VCST-5733
 
 ```

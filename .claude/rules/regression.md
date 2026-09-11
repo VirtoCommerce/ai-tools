@@ -69,17 +69,9 @@ suite list. The table below is *when to reach for which*, which the manifest can
 
 ## CI Regression Testing
 
-The `ci/` directory provides Docker-based CI regression using the Claude Agent SDK:
-
-```bash
-docker build -t vc-regression -f ci/Dockerfile .
-docker run --rm --shm-size=2gb --env-file .env \
-  -e ANTHROPIC_API_KEY=your-key \
-  -e SUITE_SELECTION=smoke \
-  -e TEST_ENVIRONMENT=qa \
-  -e MAX_BUDGET_USD=5.0 \
-  vc-regression
-```
+The `ci/` directory provides Docker-based CI regression using the Claude Agent SDK — build from
+`ci/Dockerfile` and pass the run's knobs as `-e` env vars (`ci/run-regression.ts` reads them; `--shm-size`
+must be raised for headed browsers).
 
 Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, etc.) or comma-separated IDs (`042,039,049`). CI runs up to 3 suites in parallel (configurable via `MAX_PARALLEL`). Reports go to `reports/regression/ci-YYYY-MM-DD/` (markdown + JSON summary).
 
@@ -107,8 +99,4 @@ Each of these is read by the step that needs it and by nothing else. Anchors (`�
 
 ## Prompt Templates
 
-Key prompt templates in `vc/shared/docs/prompts/`:
-- `How to test Builder.io.md` - Builder.io, Virto Pages & vc-frontend testing
-- `story-testing.md` - Story-level testing prompt
-
-> **Note:** `test-runner-agent.md` is now an agent definition at `agents/test-runner-agent.md`, not a prompt template.
+Interactive prompt templates live in `vc/shared/docs/prompts/` — `ls` it for the roster.

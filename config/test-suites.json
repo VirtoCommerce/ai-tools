@@ -60,7 +60,7 @@
       "browserName": "firefox",
       "channel": null,
       "status": "available",
-      "constraint": "Full third slot for click-driven work since 2026-09-08, PROVIDED the MCP server was restarted after config/mcp-playwright-firefox.config.json gained widget.windows.window_occlusion_tracking.enabled=false — without that pref a covered firefox window stops requestAnimationFrame and every browser_click times out on the 'stable' actionability gate (browser_type and navigation keep working). If clicks start timing out on this lane again: check the MCP config first, then set defaults.firefoxClickOk=false to re-deny click-driven suites. Detail: .claude/knowledge/automation/browser-quirks.md section Firefox."
+      "constraint": "Full third slot for click-driven work since 2026-09-08, PROVIDED the MCP server was restarted after config/mcp-playwright-firefox.config.json gained widget.windows.window_occlusion_tracking.enabled=false — without that pref a covered firefox window stops requestAnimationFrame and every browser_click times out on the 'stable' actionability gate (browser_type and navigation keep working). Re-verified live 2026-09-11 (popover click reached [expanded], navigation click landed, 0 errors). Second prerequisite added 2026-09-11: @playwright/mcp must stay PINNED in .mcp.json — an @latest entry swaps the server binary that reads this config, and each release demands its own browser build. If clicks start timing out on this lane again: check the MCP restart and the pin first, then set defaults.firefoxClickOk=false to re-deny click-driven suites. Detail: .claude/knowledge/automation/browser-quirks.md section Firefox."
     },
     {
       "slot": 3,

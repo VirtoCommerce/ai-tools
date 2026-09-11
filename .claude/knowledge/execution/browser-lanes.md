@@ -5,7 +5,7 @@
 | Server | Purpose | Config File |
 |--------|---------|-------------|
 | **playwright-chrome** | Browser automation with Chromium | `config/mcp-playwright-chrome.config.json` |
-| **playwright-firefox** | Browser automation with Firefox — sets `widget.windows.window_occlusion_tracking.enabled=false` so a covered window keeps ticking rAF (one candidate for the click timeouts, not confirmed — `knowledge/automation/browser-quirks.md` §Firefox) | `config/mcp-playwright-firefox.config.json` |
+| **playwright-firefox** | Browser automation with Firefox — full click-capable lane. Sets `widget.windows.window_occlusion_tracking.enabled=false` so a covered window keeps ticking rAF; that is the CONFIRMED root cause of the 2026-06→08 click timeouts, not a candidate (15/15 probe, `knowledge/automation/browser-quirks.md` §Firefox). Verified live 2026-09-11. Holds only while the MCP server actually loads this config — restart after editing it, and keep `@playwright/mcp` PINNED in `.mcp.json` | `config/mcp-playwright-firefox.config.json` |
 | **playwright-edge** | Browser automation with Edge | `config/mcp-playwright-edge.config.json` |
 | **postman** | API testing - collections, environments, monitors | N/A (uses `--minimal` flag) |
 | **github** | PR review, code search, issue management | N/A (uses `GITHUB_PERSONAL_ACCESS_TOKEN` via `GIT_TOKEN`) |

@@ -27,6 +27,26 @@ applicability_rationale: "Per-browser rendering differences. Cross-VC universal.
 
 ### "playwright-firefox cannot click here" — ROOT CAUSE (2026-09-08, confirmed) and the fix
 
+**STATUS: RESOLVED. The lane is a full click-capable slot — re-verified live 2026-09-11** against the
+vcst-qa storefront: navigate, a popover click (the `Currency` button reached `[expanded]` with all 9
+options rendered — a real DOM state change, not a no-op return) and a navigation click (`Sign in` →
+`/sign-in`), 0 console errors, no timeouts. The 4 days of transcripts before it hold 43 firefox calls
+with **zero** errors, 6 of them clicks. Treat a fresh click timeout on this lane as a **new** defect and
+check the two prerequisites below before reopening anything here.
+
+**Two prerequisites, because the fix lives in a config file the SERVER reads at startup:**
+
+1. **Restart the MCP server after editing `config/mcp-playwright-firefox.config.json`.** Without the
+   restart the pref is not applied and the lane fails exactly as it did before — indistinguishable from
+   a regression.
+2. **Keep `@playwright/mcp` PINNED in `.mcp.json`** (added 2026-09-11). An `@playwright/mcp@latest`
+   entry silently swaps the server binary underneath this config: each release bundles its own
+   `playwright-core`, which demands a specific browser build, so an unattended bump can fail the lane at
+   launch with *"Executable doesn't exist"* and can change actionability behaviour without any config
+   change. The pin must match `package.json`'s devDependency and `PLAYWRIGHT_MCP_PACKAGE` in
+   `ci/lib/lane-mcp.ts`, or interactive runs stop reproducing CI. See `docs/onboarding.md` §Required MCP
+   Servers.
+
 **Symptom (confirmed 6× on the team's Windows machines, 2026-06 → 2026-08):** `browser_click` on the
 `playwright-firefox` MCP lane resolves the element, then times out on Playwright's *"visible, enabled
 and stable"* wait — on fully visible, non-moving elements (CLS 0, fixed rect). `browser_type` and

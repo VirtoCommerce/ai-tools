@@ -21,5 +21,10 @@
     }
   },
   "outputDir": "./test-results/firefox",
-  "screenshot": "only-on-failure"
+  "screenshot": "only-on-failure",
+  "timeouts": {
+    "action": 30000,
+    "navigation": 60000,
+    "expect": 10000
+  }
 }

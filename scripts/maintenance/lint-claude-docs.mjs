@@ -15,6 +15,8 @@
  *   BUDGET-002  any single line in those files              >  BUDGET.longestLineChars           (hard —
  *               a 30,459-char bullet is how CLAUDE.md hid 8K tokens in one "line")
  *   BUDGET-003  a SKILL.md body over ~5k tokens (Anthropic's verified Level-2 guidance)           (informational)
+ *   BUDGET-004  a PROMPT FILE over BUDGET.promptBodyChars — commands, agents and SKILL.md, the set
+ *               loaded WHOLE when invoked or dispatched                          (hard, per-file ratchet)
  *   DOC-002     `npm run <script>` with no such script in package.json                             (ratchet)
  *   DOC-003     a cited repo path that does not exist                                              (ratchet)
  *   DOC-004     a cited `file.md` … §Section with no such heading in that file                    (ratchet)
@@ -33,7 +35,23 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-export const BUDGET = { alwaysLoadedChars: 80_000, longestLineChars: 2_500, skillBodyWarnChars: 19_000 };
+export const BUDGET = { alwaysLoadedChars: 80_000, longestLineChars: 2_500, skillBodyWarnChars: 19_000, promptBodyChars: 19_000 };
+
+/**
+ * BUDGET-004's per-file ratchet. Same shape and same doctrine as `.summary-baseline.json` and
+ * XREF_BASELINE: a file NOT listed must be under budget, and a listed file may only SHRINK.
+ *
+ * Why a per-FILE map rather than a per-code count like BASELINE below: a single number lets a file
+ * somebody shrank silently fund another file's growth, which is the one thing a size ratchet exists
+ * to prevent. Measured 2026-09-11: 27 of 80 prompt files over budget, 352,404 chars of overage.
+ *
+ * Two rules make this a ratchet and not an exemption list, and both FAIL rather than warn:
+ *   - an entry whose file is now UNDER budget must be DELETED ("graduated") — otherwise a file that
+ *     shrank to 5K keeps a 71K licence to grow back.
+ *   - an entry whose file no longer exists must be DELETED — a rename must not leave a licence behind.
+ * Regenerate with `npm run context:check:baseline`; never hand-edit a number upward.
+ */
+export const PROMPT_BASELINE_PATH = 'scripts/maintenance/.prompt-size-baseline.json';
 
 // Ratchet baseline — measured 2026-09-08 right after PR 2. Lower a number when you fix findings; never raise one.
 // All three baselines were non-zero until 2026-09-08, and none of the three numbers meant what it said.
@@ -279,7 +297,7 @@ function headingMatchOne(headings, cited) {
 // every ratchet over baseline and hold the gate red for everyone. Skip them structurally.
 const SKIP_DIRS = new Set(['worktrees', 'node_modules']);
 
-function walkMd(dir) {
+export function walkMd(dir) {
   const out = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
@@ -289,6 +307,56 @@ function walkMd(dir) {
     } else if (e.name.endsWith('.md')) out.push(posix(p));
   }
   return out;
+}
+
+/**
+ * BUDGET-004's scope: the prompt files loaded WHOLE when invoked or dispatched.
+ *
+ * A skill's SUPPORTING files are deliberately NOT here. Progressive disclosure is what they are for,
+ * so a large supporting file is the architecture working rather than failing — whereas a command, an
+ * agent definition and a SKILL.md are each paid in full the moment they are reached. Nor is
+ * `.claude/knowledge/**`: that is reference data read by lookup (business-logic.md alone is 386K
+ * chars), and a body cap on a lookup table would be a category error.
+ */
+export function promptFiles(root = '.') {
+  const dirs = ['.claude/commands', '.claude/agents', '.claude/skills'];
+  const out = [];
+  for (const d of dirs) {
+    const abs = path.join(root, d);
+    if (!fs.existsSync(abs)) continue;
+    for (const p of walkMd(abs)) {
+      if (d === '.claude/skills' && path.basename(p) !== 'SKILL.md') continue;   // supporting files: see above
+      out.push(posix(path.relative(root, p)));
+    }
+  }
+  return out.sort();
+}
+
+/**
+ * Compare every prompt file against the budget and the ratchet baseline.
+ * Returns `{ over, breaches }` — `over` is every file above budget (reported), `breaches` is the
+ * subset that FAILS the build, each with the reason a reader can act on.
+ */
+export function checkPromptBudget(files, baseline, read = (f) => fs.readFileSync(f, 'utf8'), exists = fs.existsSync) {
+  const limit = BUDGET.promptBodyChars;
+  const over = [], breaches = [];
+  for (const file of files) {
+    const chars = read(file).length;
+    const allowed = baseline[file];
+    if (chars > limit) {
+      over.push({ file, chars, allowed: allowed ?? null });
+      if (allowed === undefined) breaches.push({ file, chars, reason: `over budget (${chars.toLocaleString()} > ${limit.toLocaleString()}) and not in the baseline — a new prompt is born under budget` });
+      else if (chars > allowed) breaches.push({ file, chars, reason: `GREW ${chars.toLocaleString()} > its baseline ${allowed.toLocaleString()} — a listed file may only shrink` });
+    } else if (allowed !== undefined) {
+      breaches.push({ file, chars, reason: `GRADUATED to ${chars.toLocaleString()} (under ${limit.toLocaleString()}) — delete its baseline entry, or it keeps a licence to grow back` });
+    }
+  }
+  const known = new Set(files);
+  for (const file of Object.keys(baseline)) {
+    if (known.has(file)) continue;
+    breaches.push({ file, chars: null, reason: exists(file) ? 'stale baseline entry — the file is no longer a prompt file in scope' : 'stale baseline entry — the file no longer exists' });
+  }
+  return { over: over.sort((a, b) => b.chars - a.chars), breaches: breaches.sort((a, b) => a.file.localeCompare(b.file)) };
 }
 
 export function lint(root = '.') {
@@ -360,7 +428,9 @@ export function lint(root = '.') {
     // DOC-003E is reported, never ratcheted: report artifacts are ephemeral BY POLICY, so its count
     // moves with what has been pruned rather than with anything an author did wrong.
     const ratcheted = Object.fromEntries(Object.entries(counts).filter(([k]) => !INFORMATIONAL.has(k)));
-    return { files: files.length, budget, skillsOver, findings, counts, ratchet: ratchet(ratcheted, BASELINE) };
+    const promptBaseline = fs.existsSync(PROMPT_BASELINE_PATH) ? JSON.parse(fs.readFileSync(PROMPT_BASELINE_PATH, 'utf8')) : {};
+    const prompts = checkPromptBudget(promptFiles('.'), promptBaseline);
+    return { files: files.length, budget, skillsOver, prompts, promptBaseline, findings, counts, ratchet: ratchet(ratcheted, BASELINE) };
   } finally { process.chdir(cwd); }
 }
 
@@ -368,16 +438,31 @@ const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPat
 if (isMain) {
   const argv = process.argv.slice(2);
   const asJson = argv.includes('--json'), warnOnly = argv.includes('--warn-only');
+  const updateBaseline = argv.includes('--update-baseline');
   let r;
   try { r = lint('.'); } catch (e) { console.error(`context:check — cannot read a source: ${e.message}`); process.exit(2); }
+  if (updateBaseline) {
+    // Record ONLY what is genuinely over budget. A file under the limit never gets an entry, so the
+    // ratchet tightens by itself as files shrink — re-baselining can never hand out a new licence.
+    const next = Object.fromEntries(r.prompts.over.map((p) => [p.file, p.chars]).sort((a, b) => a[0].localeCompare(b[0])));
+    fs.writeFileSync(PROMPT_BASELINE_PATH, JSON.stringify(next, null, 2) + '\n');
+    const total = Object.values(next).reduce((a, c) => a + c - BUDGET.promptBodyChars, 0);
+    console.log(`context:check — wrote ${PROMPT_BASELINE_PATH}: ${Object.keys(next).length} prompt file(s) over ${BUDGET.promptBodyChars.toLocaleString()}, ${total.toLocaleString()} chars of overage`);
+    process.exit(0);
+  }
   const budgetBreach = [];
   if (r.budget.total > BUDGET.alwaysLoadedChars) budgetBreach.push(`BUDGET-001 always-loaded set is ${r.budget.total.toLocaleString()} chars > ${BUDGET.alwaysLoadedChars.toLocaleString()}`);
   if (r.budget.longestLine > BUDGET.longestLineChars) budgetBreach.push(`BUDGET-002 longest line is ${r.budget.longestLine.toLocaleString()} chars > ${BUDGET.longestLineChars.toLocaleString()}`);
+  for (const b of r.prompts.breaches) budgetBreach.push(`BUDGET-004 ${b.file} — ${b.reason}`);
   if (asJson) { console.log(JSON.stringify({ ...r, budgetBreach, BUDGET, BASELINE }, null, 2)); }
   else {
     console.log(`context:check — always-loaded set ${r.budget.total.toLocaleString()} / ${BUDGET.alwaysLoadedChars.toLocaleString()} chars (~${Math.round(r.budget.total / 3.8).toLocaleString()} tokens per turn and per dispatch); longest line ${r.budget.longestLine.toLocaleString()} / ${BUDGET.longestLineChars.toLocaleString()}`);
     for (const p of r.budget.perFile) console.log(`   ${String(p.chars).padStart(7)}  ${p.file}`);
     if (r.skillsOver.length) console.log(`   [Informational] BUDGET-003 ${r.skillsOver.length} SKILL.md bodies over ~5k tokens: ${r.skillsOver.map((s) => `${path.basename(path.dirname(s.file))} (${(s.chars / 3800).toFixed(1)}k)`).join(', ')}`);
+    {
+      const debt = r.prompts.over.reduce((a, p) => a + p.chars - BUDGET.promptBodyChars, 0);
+      console.log(`   BUDGET-004 prompt bodies over ${BUDGET.promptBodyChars.toLocaleString()}: ${r.prompts.over.length} of ${promptFiles('.').length} (commands + agents + SKILL.md); ${debt.toLocaleString()} chars of overage, ${r.prompts.breaches.length} breach(es)`);
+    }
     for (const b of budgetBreach) console.error(`   ** ${b} **`);
     for (const k of Object.keys(r.counts).sort()) {
       if (INFORMATIONAL.has(k)) { console.log(`   [Informational] ${k}: ${r.counts[k]} — ephemeral report artifacts cited as provenance (pruned by policy, not broken references)`); continue; }

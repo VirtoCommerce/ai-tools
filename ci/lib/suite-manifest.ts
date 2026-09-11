@@ -36,7 +36,11 @@ export interface ManifestSuite {
   runnerCommand?: string;
   /** Suite requires this browser server (cross-origin iframe suites 039/041 need Chromium). */
   preferredBrowser?: string;
-  /** DERIVED by `suites:sync`: the suite performs clicks, so firefox cannot run it. */
+  /**
+   * DERIVED by `suites:sync`: the suite performs UI clicks. Bars it from firefox ONLY while
+   * `defaults.firefoxClickOk` is false — that flag is true since 2026-09-08, so this no longer
+   * denies a lane on its own. See `browserDenyListFor` below.
+   */
   clickDriven?: boolean;
   /**
    * DERIVED by `suites:sync`: how the suite's cases split between the machine lane, a browser

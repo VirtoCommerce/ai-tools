@@ -251,6 +251,36 @@ with the `1b` guess.
 A missing atomic condition or `ba-system-analyzer` risk area is added before moving on. No fresh-`qa-lead`
 dispatch here — this is the doer's own completeness check.
 
+### Why clauses 11, 11b and 4 exist — the three the other nine cannot replace
+
+`commands/qa-test.md` §1e lists the twelve as a checklist and cites this section for the argument.
+Each of these three was added after a measured run in which every OTHER clause passed.
+
+**These two catch what the other ten cannot: every one of clauses 1–10 passes on a narrow chain.** 11
+makes the omission contradictable — naming the links you did *not* cover invites challenge, "the matrix is
+complete" does not. 11b stops a **false-premise case**: a variant that resolves to no enumerated surface.
+The measured run behind both is VCST-5317: a FULL run with three verifier gates, a 17-scenario model and
+34 authored cases, all matrix cells filled, which never asked *is this chain a slice of a larger
+mechanism?* — its chain covered one predicate on one control, of a feature spanning 35 suites and 585
+cases across three layers. It also authored a Critical case asserting a component *does not exist* (the
+mobile org switcher, reachable at `Corporate → My organizations`), because no clause then required a
+variant to resolve to an enumerated surface.
+
+**Clause 4 is new, and "no blank cells" does not imply it.** A matrix populated by reading your own
+scenario list fills completely by construction, so a mechanism with no scenario has no row to be uncovered
+in — the check degrades into a restatement. Derive **columns from the chain links** and **rows from the
+variants**, where variants are partitioned by the layer that BRANCHES on the thing under test (the union,
+when several layers branch differently — not whichever you read first), and only then map scenarios in.
+Re-derive after any rewrite of the scenario table: renumbering silently drops rows. Both failure modes hit
+one model on VCST-5735 and both presented as a full matrix —
+[`skills/qa-test/test-model.md`](test-model.md) §The matrix is only a check.
+
+**The sweeps are present here and RESOLVED at Step 2 — the two are different gates and the ordering is
+not negotiable.** Step 2 is what loads the `VC-*` catalog entries and the `UIP-*` probe set, so a `1e` gate
+demanding them resolved would demand an answer from inputs that have not been read yet (the template marks
+all four rows *"filled in Step 2"* for exactly this reason). What `1e` owns is that the rows **exist**, so
+Step 2 cannot quietly skip a sweep nobody wrote a line for.
+
 ## Worked references
 
 - **Parts 1–5** (condition space → explicit reduction rationale → cells with oracle provenance):

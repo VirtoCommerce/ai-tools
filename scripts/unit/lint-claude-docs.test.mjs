@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored } from '../maintenance/lint-claude-docs.mjs';
+import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored, promptFiles, checkPromptBudget, PROMPT_BASELINE_PATH } from '../maintenance/lint-claude-docs.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -57,9 +57,76 @@ test('THIS checkout: always-loaded set within budget, no line over the cap, no r
   for (const k of Object.keys(BASELINE)) assert.ok(r.counts[k] <= BASELINE[k], k);
 });
 
+// --- BUDGET-004: the prompt-body budget + its per-file ratchet ------------------------------------
+//
+// BUDGET-001/002 cap the always-loaded tier and BUDGET-003 warns about SKILL.md bodies. Neither ever
+// measured `.claude/commands/` or `.claude/agents/`, so a prompt file was budgeted by which DIRECTORY
+// it sat in rather than by what it costs — a 71K-char command was exempt while the same bytes in a
+// SKILL.md were flagged. These pin the rule that closed that, and the two clauses that make it a
+// ratchet rather than an exemption list (graduated entries, stale entries) — without those, the
+// baseline decays into a permanent licence.
+
+test('promptFiles = commands + agents + SKILL.md, and NOT supporting files / knowledge / rules', () => {
+  const files = promptFiles(ROOT);
+  assert.ok(files.length > 0);
+  for (const f of files) {
+    assert.ok(/^\.claude\/(commands|agents|skills)\//.test(f), `out of scope: ${f}`);
+    if (f.startsWith('.claude/skills/')) assert.ok(f.endsWith('/SKILL.md'), `supporting files are progressive disclosure, not a prompt body: ${f}`);
+  }
+  assert.ok(!files.some((f) => f.startsWith('.claude/knowledge/')), 'knowledge is reference data read by lookup, never a prompt body');
+  assert.ok(!files.some((f) => f.startsWith('.claude/rules/')), 'rules are BUDGET-001/002 — measuring them twice would double-count');
+  assert.ok(files.includes('.claude/commands/qa-test.md') && files.some((f) => f.startsWith('.claude/agents/')), 'commands and agents must both be in scope');
+});
+
+test('checkPromptBudget: the four verdicts', () => {
+  const L = BUDGET.promptBodyChars;
+  const src = { under: 'x'.repeat(100), grew: 'x'.repeat(L + 500), shrank: 'x'.repeat(L - 1), fresh: 'x'.repeat(L + 1) };
+  const read = (f) => src[f];
+  const exists = (f) => f in src;
+
+  // in baseline, still over, but SMALLER than its entry -> allowed (it shrank)
+  let r = checkPromptBudget(['grew'], { grew: L + 900 }, read, exists);
+  assert.equal(r.breaches.length, 0, 'a listed file that shrank must pass');
+  assert.equal(r.over.length, 1, 'still over budget, so still reported');
+
+  // in baseline, GREW past its entry -> fail
+  r = checkPromptBudget(['grew'], { grew: L + 100 }, read, exists);
+  assert.equal(r.breaches.length, 1);
+  assert.match(r.breaches[0].reason, /GREW/);
+
+  // NOT in baseline and over budget -> fail (a new prompt is born under budget)
+  r = checkPromptBudget(['fresh'], {}, read, exists);
+  assert.equal(r.breaches.length, 1);
+  assert.match(r.breaches[0].reason, /not in the baseline/);
+
+  // in baseline but now UNDER budget -> fail, the entry must be deleted, or it licenses re-growth
+  r = checkPromptBudget(['shrank'], { shrank: L + 5000 }, read, exists);
+  assert.equal(r.breaches.length, 1);
+  assert.match(r.breaches[0].reason, /GRADUATED/);
+
+  // a baseline entry whose file is gone -> fail, a rename must not leave a licence behind
+  r = checkPromptBudget(['under'], { 'gone.md': 99999 }, read, exists);
+  assert.equal(r.breaches.length, 1);
+  assert.match(r.breaches[0].reason, /stale baseline entry/);
+
+  // the happy path: under budget, unlisted
+  assert.deepEqual(checkPromptBudget(['under'], {}, read, exists), { over: [], breaches: [] });
+});
+
+test('THIS checkout: no BUDGET-004 breach, and every baseline entry is live and in scope', () => {
+  const r = lint(ROOT);
+  assert.deepEqual(r.prompts.breaches, [],
+    `BUDGET-004 breached. A prompt over ${BUDGET.promptBodyChars} must move detail down a tier (CLAUDE.md §Where the rules live) — never re-baseline to fit. Re-baseline ONLY to record a deliberate, already-shrunk file: npm run context:check:baseline`);
+  const inScope = new Set(promptFiles(ROOT));
+  for (const f of Object.keys(r.promptBaseline)) {
+    assert.ok(inScope.has(f), `stale baseline entry (not a prompt file in scope): ${f} in ${PROMPT_BASELINE_PATH}`);
+    assert.ok(r.promptBaseline[f] > BUDGET.promptBodyChars, `${f} is baselined at ${r.promptBaseline[f]}, which is not over budget — the entry should not exist`);
+  }
+});
+
 test('every path the linter emits is posix — no path.sep leaks (the 2026-09-08 windows-latest red leg)', () => {
   const r = lint(ROOT);
-  const all = [...alwaysLoadedFiles(ROOT), ...r.budget.perFile.map((p) => p.file), ...r.skillsOver.map((s) => s.file), ...r.findings.map((x) => x.file)];
+  const all = [...alwaysLoadedFiles(ROOT), ...r.budget.perFile.map((p) => p.file), ...r.skillsOver.map((s) => s.file), ...promptFiles(ROOT), ...r.prompts.over.map((p) => p.file), ...Object.keys(r.promptBaseline), ...r.findings.map((x) => x.file)];
   assert.ok(all.length > 0);
   for (const p of all) assert.ok(!p.includes('\\'), `backslash in emitted path: ${p}`);
   assert.ok(alwaysLoadedFiles(ROOT).slice(1).every((f) => f.startsWith('.claude/rules/')));

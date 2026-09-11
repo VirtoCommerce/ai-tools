@@ -63,6 +63,12 @@ context gathering, the Test Model, authoring and seeding that are 30+ minutes of
 3. **Look up the FLOW** in `ticket-routing.md` §4, then the **EFFORT** (FAST/FULL) in §5 when the flow is
    `feature-test`. Record **flow + type + path** — all three are `summary.json` fields, persisted at 5e.3; the path gates
    Steps 1c/1d, 3 and 5. Fail-safe defaults (§6): unresolvable → `feature-test` FULL; when in doubt → FULL.
+4. **Derive the SHAPE CLASS** — `ticket-routing.md` §5c, `feature-test` branch only. It costs **no I/O**: the
+   signals come off the same diff read items 1 and 3 already did, and `1b` item 2c re-reads the same
+   extensions for `visual_surface`. It is the one classifier that fails **closed** — §5c says why, and the
+   direction is the opposite of every other default on this page. Record `summary.json.shape_class` with its
+   sources, as every axis does; `null` means never derived, which is a gap rather than a `false`. What a
+   `ui-kit` run then owes: [`ui-kit-class.md`](ui-kit-class.md).
 
 Then branch on the resolved FLOW:
 
@@ -156,3 +162,69 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
 
 3. **Resolve current sprint** — use `reports/tickets/Sprint-current` if present, else the latest `SprintXX-XX` folder; create if missing. This is `{SPRINT}` for output paths (`reports/tickets/{SPRINT}/`). Resolve **before** the duplicate check.
 4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` (per `feedback_duplicate_check_across_all_sprints`) for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
+
+---
+
+## 2-map — read what already exists on this surface (MANDATORY, both paths)
+
+Item **2-map** of wave A above. `commands/qa-test.md` names it in the wave table and cites this section
+for the rest. It is the step that decides whether the run starts from what is already known or
+re-derives it, so its two reads happen **in this order** and the order is the point.
+
+and the order is the point: **the DOMAIN MAP first, then the per-ticket prior art.**
+
+**Read order is decided by the `domain_map` token (2g), not by prose.** The axis is derived before this
+item runs and its four states each say what to do — `PRESENT` read it first · `STALE` read it and treat
+every claim as a hypothesis · `ABSENT` skip to the prior art · `unresolved` recommend. **Contract, fail
+direction and the two-moment all-layer rule: [`axes.md`](axes.md) §2g — cite it, do not
+restate it here.** Record the block; **`null` means the axis never ran, which is a gap, not `ABSENT`.**
+
+**1. The domain map** — `.claude/knowledge/domain/<name>.md` whose `domain_slug` matches this ticket's
+domain (shape: `domain-map.md`). The feature-scoped, persistent answer to *what exists and where*: actors,
+value chain, **surface inventory per layer**, where the layers **disagree**, and the shape of existing
+coverage. It supplies `1e` clause 11's chain position and clause 11b's surface list, and its `D*`
+disagreement rows are **ready-made defect hypotheses** — already grounded, already numbered. Like the
+release ledger it is a **pointer index that can never ground an assertion as `{DOC}`**.
+**On `ABSENT` + an all-layer chain, `2g` sets `recommended: true`.** **FULL builds the map in this run**
+(item `1c-map`); **FAST recommends `/qa-domain-map <slug>` in one line and proceeds.** Either way nothing
+blocks — a FAST run, a single-layer chain or a failed build records `Domain map: ABSENT — chain position
+unverified` at `1e`. **`STALE` is never auto-refreshed.**
+
+**2. The per-ticket prior art**, read directly — `reports/ba/<domain folder>/` (prior BA analysis),
+`reports/ba/test-models/` (prior test models), and the tickets already tested here
+(`reports/tickets/**/summary.json`). (The generated index that used to front these sources was removed 2026-09-08 — read the sources directly, 
+dated by their filenames or `git log`.) 
+Two questions, and the second is the one that lets you design a test.
+
+**The bibliography** — carry four things forward: the prior BA analysis, the prior test model, the domain
+knowledge docs, and the tickets already tested here.
+
+**The `Test object` block — what the thing IS.** Purpose (the value chain) · the **operations** you can
+perform on it · the **data** whose properties its assertions read · the **variants** that change its
+behaviour without changing its code · the **constraints** that must hold, with what a violation costs.
+Carry these into `1e`: they are the condition space's raw material, and a `1e` that starts from them is
+modelling a mechanism rather than enumerating screens. **You cannot design an experiment on an object
+whose properties you do not know** — you can only walk its surfaces, which is the measured Loyalty
+Missions failure (127 cases, 71 of them placing zero orders, the mechanism end-to-end at 11%).
+
+**`UNDECLARED` in that block is the run's FIRST finding, not a blank.** Purpose and reverse edges live in
+exactly one place — a Test Model Part 0 — so `UNDECLARED` means nobody has written down what this surface
+is for (measured: **1 of 13 domains** has a declared purpose). On FULL, establishing it is `1e`'s opening
+move and writing the model fills the cell for the next ticket; on FAST, say so in the checklist rather
+than inventing one. Name in one line what you found, and **name it when a domain has
+none** — `sales-rep` carries 11 prior BA deliverables and 2 tested tickets, `auth-security` carries zero,
+and those are different starting positions.
+
+Two limits travel with it. It is a **pointer index, never behaviour** — the same limit
+`release-ledger.md` carries, so it can tell you a prior analysis exists and can never ground an assertion
+as `{DOC}`. And **every entry is DATED because every entry may be stale**: prior art is a hypothesis about
+current behaviour, confirmed against the `2-release` ledger Δ **since that document's date** and a live
+check before anything is built on it (the map's own §1 carries the axis table and the
+`CONFIRMED`/`DRIFT`/`MISSING`/`UNVERIFIED` verdicts). Reading a stale deliverable and repeating it is
+worse than reading none, because it arrives with a written deliverable's authority. Three consumers: the `1c` brief (so
+`ba-system-analyzer` starts from the prior analysis instead of re-deriving it), `1e` (**a later round of the
+SAME ticket amends that model in place; another ticket on this surface writes its own file and carries the
+predecessor's Part 0 forward, citing it** — what is forbidden either way is a second independently-derived
+model of one surface, and VCST-5346 already has two:
+[`test-model.md`](test-model.md) §Why it is a durable file), and `5h` (an existing guide
+for this surface is amended, never forked).

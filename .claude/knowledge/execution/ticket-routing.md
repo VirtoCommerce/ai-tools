@@ -43,6 +43,12 @@ bucket and its fields carry no planning signal — §5a. For a **PR or bare feat
 type — infer it from diff size + surface (a one-file single-surface change is a *tweak*, routed like a
 FAST bug fix; anything net-new/cross-layer is a *feature*).
 
+**A SHAPE CLASS is not a type, and is resolved separately.** This set is the tracker's own vocabulary, so a
+property a tracker does not model cannot be added to it. The one such property this pipeline acts on —
+*the change IS the design system* — is derived from the diff at `1a` and recorded beside the type, never
+instead of it: **§5c**. A ticket carries a type **and** a class; the class changes what the resolved path
+produces, never which path is resolved.
+
 ---
 
 ## 3. Normalize the STATUS to a lifecycle ROLE (never hardcode names)
@@ -233,6 +239,66 @@ builds **no model**, so the story's behaviour gets no durable regression coverag
 route back is `/qa-test-lifecycle` (§5, first consequence). A story that genuinely needs a durable case
 is itself a reason to take FULL.
 
+
+### 5c. `ui-kit` — the SHAPE CLASS that changes the deliverable, not the effort
+
+The two sections above derive an **effort** from a type. This one derives nothing about effort at all: it is
+a **third classifier**, resolved at `1a` alongside the type and recorded beside it, and it answers a
+different question — *is the thing under test a feature on a surface, or the surface itself?*
+
+**It applies only within the `feature-test` flow**, exactly as EFFORT does (§1). A `verify-fix` or
+`hotfix-verify` run authors nothing, so there is nothing here for the class to change.
+
+**Detection — derived, never asked** (the `axes.md` §2 contract). Affirmative signals: a diff under the UI
+kit (`client-app/ui-kit/**`), a design-token partial (`_ui-kit-tokens.scss`, `_colors.scss`, `_dark.scss`,
+`preflight.scss`), a theme-preset JSON (`client-app/assets/presets/*.json`), Storybook config or styles
+(`.storybook/**`, `storybook-styles/**`, `*.stories.*`); a ticket naming a kit primitive, a design token, or
+a WCAG criterion with no single owning page; or **a removed or renamed public custom property**, which puts
+the reach beyond the diff by construction.
+
+**It fails CLOSED — `unresolved` ⇒ NOT `ui-kit`, author as normal.** This inverts §6's usual direction and
+the inversion is the point. Every other classifier here asks *should we also do X?*, so doubt widens the
+run; this one **subtracts** — it removes Artifact A, the `3-cases` gate and `4c`/C1 — so a wrong `true`
+deletes durable coverage from a run that needed it. That is the defect
+[`axes.md`](../../skills/qa-test/axes.md) §3 diagnoses for `data_surface`, read backwards: a classifier that
+*skips authoring* whenever it is unsure is not saving anything, it is guessing. The class needs positive
+signals. Its **lane** half is unaffected: `visual_surface` keeps its own fail-open rule, so a run that
+cannot establish the class still gets the visual pass it would have had anyway.
+
+| Runs by default | Opt-in | Not run at all |
+|---|---|---|
+| Artifact B checklist · **`visual`** · **`coverage`** (Step 2a) · everything else the resolved path already runs — `1c`/`1d`/`1e`, `3x`, Step 4, Step 5, and **`5b` stays a hard STOP** | `contract` | **Artifact A** · the **`3-cases`** gate · **`4c`/C1** — on FULL as on FAST |
+
+**The deliverable is Artifact B and executing it.** Say in one line that the run adds **no durable
+regression coverage** and that `/qa-test-lifecycle` is the route back in; record `C1: skipped — no authored
+cases` and `feature_release_gate: not-assessed` explicitly, never as a blank regression block. With Artifact
+A gone the checklist is the run's **only** durable record, which raises what that artifact must carry —
+[`ui-kit-class.md`](../../skills/qa-test/ui-kit-class.md), the class's methodology, which this file does not
+restate.
+
+**Why `visual` defaults ON: this class is the measured case the axis was waiting for.**
+[`visual-axis.md`](../../skills/qa-test/visual-axis.md) §5 argues that *"the change class most likely to
+break the UI is exactly the class FAST routes"* and then declines to act on it, correctly, for want of
+evidence. Here the evidence exists: the change is the rendered surface, and a functional checklist cannot
+see a contrast failure or a token collision by construction.
+
+**Why `coverage` defaults ON — and the evidence is thinner, so both halves are recorded.** The §5a argument
+transfers: a kit change alters behaviour existing rows already assert, so *which rows does this make wrong?*
+is the ticket's subject rather than a speculative extra. **The one measured run contradicts it on yield** —
+62 rows examined, **62 KEEP, 0 REPAIR, 0 RE-BASE**. `axes.md` §4's *revisit at 5+ runs* rule therefore
+applies to this default in particular: it is a decision, not a finding.
+
+**What that run DID establish is a scoping correction, and it is binding.** For this class **Step 2a may not
+be scoped by `--domain` alone** — a token-layer change has no domain, so that axis selects by the wrong
+vocabulary and the miss reads as coverage. Pair `tc:scope` with a corpus-wide pass and record the literal
+invocation. The rule, and the measurement behind it, are
+[`coverage-triage.md`](../../skills/qa-test/coverage-triage.md)'s — it owns `tc:scope`.
+
+**Scope the run to the change's BLAST RADIUS, not to kit files.** The kit's consumers — payment wrappers,
+checkout controls, sales-rep blocks — are where a kit regression is actually seen; the kit's own files are
+where it is written. **vc-shell / Vendor Portal is excluded**: a separate product with its own hosted
+Storybook, which is precisely why the exclusion must be explicit (`ui-kit-class.md` §11).
+
 ---
 
 ## 6. Fail-safe defaults
@@ -248,4 +314,7 @@ instance of this — *when in doubt → FULL* — is stated once, at §5.
   nothing to prove RED→GREEN against) → fall to `feature-test`, noting the missing repro basis.
 - **`verify-fix` still honours its own deploy gate** (`/qa-verify-fix` Step 3): if the fix isn't live it
   offers `/qa-deploy-pr` — unchanged. A route to `verify-fix` is not a claim the fix is deployed.
+- **Shape class unestablished** → **NOT `ui-kit`**; author cases as normal. The one classifier here that
+  fails *closed*, because it is the one that SUBTRACTS — the reasoning is §5c's, and it is the exception
+  that makes the rest of this list's direction meaningful rather than reflexive.
 - **Uncertain ownership / a status role that maps to nothing** → surface it and ask; never invent a flow.

@@ -37,7 +37,7 @@ ever a paraphrase: a summarised invariant is a second, drifting copy of a single
 ### Stays a path — or stays out
 
 - **`1c`'s prior art.** The brief passes `reports/ba/**` and `knowledge/domain/*` **as paths to READ**,
-  deliberately ([`../../commands/qa-test.md`](../../commands/qa-test.md) §1c). A prior report is a
+  deliberately ([`context-wave.md`](context-wave.md) §1c). A prior report is a
   *hypothesis* the agent must triangulate against the release ledger and a live check before it can
   carry `CONFIRMED` / `DRIFT` / `MISSING`. Hand it over as a digest and the triangulation has nothing
   left to run against — the pack would have pre-answered the question the step exists to ask.

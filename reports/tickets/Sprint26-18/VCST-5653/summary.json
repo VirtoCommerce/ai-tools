@@ -1,0 +1,128 @@
+{
+  "ticket": "VCST-5653",
+  "title": "[UI-Kit] Focus indicators — WCAG 1.4.11 / 2.4.7",
+  "date": "2026-09-10",
+  "sprint": "Sprint26-18",
+  "flow": "feature-test",
+  "ticket_type": "Story",
+  "path": "FULL",
+  "verdict": "PASS WITH NOTES",
+  "verdict_basis": "The ring mechanism is delivered and correct: one token set, one mixin, keyboard-only semantics, and a ring that resolves and recolours on every surface measured. The two findings are a palette decision (VCST-5946) and a pre-existing control defect (VCST-5947), neither an implementation defect in PR #2468. Operator-confirmed disposition.",
+
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "narrow_story_tokens": {
+      "priority": "P2 — holds",
+      "layer": "storefront, single — holds",
+      "domains": "FAILS — ui-kit primitives + payment iframes + checkout address list + sales-rep + catalog + storybook build",
+      "chain_shape": "unestablished — the AC field reads '1. No requirements.'",
+      "surface": "obvious, deployed, reachable — holds",
+      "reach": "FAILS — a shared UI-kit primitive plus four REMOVED public custom properties; reach far exceeds the diff"
+    },
+    "escalated_reason": "Two of six tokens fail outright and the surface purpose is UNDECLARED (no design-system domain map), which refuses the downgrade regardless. Never provisionally FAST.",
+    "uikit_rule_applied": "Artifact A, the 3-cases gate and 4c/C1 skipped per the standing UI-kit rule (commands/qa-test.md §Routing)."
+  },
+
+  "build": {
+    "declared": "vc-theme-b2b-vue-2.58.0-pr-2468-8e45-8e45ee74 (vc-deploy-dev#6468, merged 2026-09-10T14:10+03)",
+    "deployed": "CONFIRMED — storefront footer reports 2.58.0-pr-2468-8e45-8e45ee74; deployed CSS carries 28 --vc-focus-ring* refs, 13 :focus-visible rules, and zero of the four removed tokens",
+    "pr": "VirtoCommerce/vc-frontend#2468 — OPEN, not merged. QA tested a pre-merge branch.",
+    "releasedThrough": "Frontend 2.56.0 per release-ledger (generated 2026-09-01); the build under test is an unreleased prerelease ahead of it. No BREAKING entry for this component."
+  },
+
+  "axes": {
+    "layer": { "value": "storefront", "surface_source": ["PR diff repo identity: all 44 files under client-app/** + storybook-styles/** + package.json", "theme build moved"] },
+    "visual_surface": { "value": true, "surface_source": [".scss/.vue/token files in the diff", "derived layer storefront"] },
+    "contract_surface": { "value": false, "surface_source": ["no .graphql in the diff", "no *ExperienceApi* or *.Web/Controllers path", "no GraphType file", "no AC naming a query/mutation/field", "no graphql/xapi suite tag in scope"] },
+    "coverage_surface": { "value": true, "surface_source": ["ticket domains cross-cutting + branding", "derived layer", "target suite manifest domain/tags"] },
+    "data_surface": { "value": false, "surface_source": ["checklist names no @td() alias and no seeded entity", "env already supplies every surface; 1r signed in and seeded a 1-line cart via the UI", "one divergence the fixtures lack (a non-selectable pickup point) named with an explicit fallback", "no new entity type, store/org/role, pricing or inventory shape"] },
+    "domain_map": { "state": "ABSENT", "recommended": true, "all_layer_chain": false, "built_in_run": false, "build_outcome": null, "note": "No .claude/knowledge/domain file covers the design-system / UI-kit token layer. Single-layer chain, so 2g did not trigger the FULL build. /qa-domain-map design-system recommended.", "unmapped_surfaces": ["UI-kit token layer (_ui-kit-tokens.scss, _focus-ring.scss, theme-config.ts preset keys)", "payment-iframe styling as a cross-cutting surface", "sales-rep layout-block keyboard-sort focus"] }
+  },
+
+  "status_transitions": [
+    { "at": "1a", "from": "Ready for test", "to": "Testing", "transition": "On QA (id 4)", "confirmed": false, "note": "Opening hop — direct consequence of invoking the command, no confirmation required." },
+    { "at": "5f", "from": "Testing", "to": "Tested", "transition": "Finish test (id 8)", "confirmed": true, "note": "Closing hop — operator confirmed PASS WITH NOTES. Never past TESTED." }
+  ],
+
+  "bugs_filed": [
+    { "key": "VCST-5946", "severity": "High", "provenance": "IN-SCOPE — the ticket's own declared gap", "relationship": "standalone Bug + Relates link to VCST-5653", "summary": "Focus ring 2.97:1 on Coffee light header-top / footer-top / mobile menu (all #3d2b24), below WCAG 1.4.11's 3:1 on a gated preset. The follow-up PR #2468 calls 'tracked separately' and which did not exist. Escalated as a palette decision, per the VCST-5346 N3 precedent.", "evidence": "3 screenshots attached and verified rendering inline" },
+    { "key": "VCST-5947", "severity": "High", "provenance": "PRE-EXISTING — improved but not introduced by #2468", "relationship": "standalone Bug + Relates link to VCST-5653", "summary": "VcSlider price-facet histogram columns: outline:2px solid transparent on the focused button, compensating ring bound to a data-sized bar (2x3.5px for a 1-item bucket vs 2x35px for 10). 13 focusable stops. Plus ~2px target width (SC 2.5.8) and the tooltip escaping its card (BL-UI-004).", "evidence": "3 screenshots attached and verified rendering inline" }
+  ],
+
+  "bugs_not_filed": [
+    { "finding": "CyberSource microform renders a white interior in dark mode on a fresh mount", "reason": "Not attributable to #2468 without a pre-PR baseline; the wrappers and iframes are correctly dark, so the white comes from inside the cross-origin document — a per-integration styles-payload gap. Cosmetic, placeholder text legible.", "severity_if_filed": "Medium" },
+    { "finding": "Catalog toolbar Tab order does not match visual order (Sort-by first in DOM)", "reason": "Pre-existing, WCAG 2.4.3, unrelated to focus indicators. Separate ticket.", "severity_if_filed": "Low-Medium" },
+    { "finding": "Escape does not close the Ship-to popover", "reason": "Pre-existing; it is a popover not a modal, so ECL-15.1 does not bite.", "severity_if_filed": "Low" },
+    { "finding": "PDP gallery arrows carry native disabled=true alongside aria-disabled=false", "reason": "Swiper writes the DOM attribute directly, bypassing the component binding. Native disabled wins for AT, so impact is nil.", "severity_if_filed": "Trivial" },
+    { "finding": "Dead image host on one PDP (starmarket-platform.demo.govirto.com)", "reason": "Test-data drift, not a product defect. Worth a seeder cleanup.", "severity_if_filed": "Low" },
+    { "finding": "VcSelect appears to open its listbox on keyboard focus alone", "reason": "INVESTIGATED AND WITHDRAWN. Two lanes disagreed; the deeper check won. The trigger is an input that sets aria-expanded on focus — standard ARIA combobox behaviour. The sibling hypothesis was also disproved: all 21 closed .vc-popover__content nodes have offsetParent === null, so they are not in the tab order.", "severity_if_filed": "not a bug" }
+  ],
+  "below_severity_floor_not_filed": "None",
+
+  "regression": {
+    "C1": "skipped — no authored cases (Artifact A skipped per the UI-kit rule)",
+    "C2_cross_suite_sweep": "does not exist — removed from the pipeline 2026-09-10 on both paths",
+    "feature_release_gate": "not-assessed",
+    "release_recommendation": "none — this run carries no release recommendation by design; cutting a release means running /qa-regression deliberately",
+    "step_2a": { "rows_examined": 62, "suites": 13, "KEEP": 62, "REPAIR": 0, "RE-BASE": 0, "OBSOLETE": 0, "note": "No existing row asserts a ring on mouse click and none names a removed token, so nothing was made wrong; several became newly load-bearing. Domain-scoped tc:scope found only 26 rows / 18 suites — the --domain axis under-selects a token-layer change, so a corpus-wide grep was used instead." },
+    "suites_contributing_zero_cases": ["041", "045", "048", "048c", "057", "005", "006", "009", "036", "070", "072", "083c", "088", "097"]
+  },
+
+  "execution": {
+    "phases": 4,
+    "items_total": 30,
+    "PASS": 24,
+    "FAIL": 4,
+    "BLOCKED": 1,
+    "NOT_APPLICABLE": 1,
+    "refuted_predictions": ["Test Model #21 — the sales-rep layout-block ring does NOT fire on a mouse grab; aria-pressed is written only by useKeyboardSort's Space/Enter branch (verified in source and live)", "Checklist 4.2 — the histogram columns DO expose aria-label and resolve from the a11y tree; the 'empty subtree' was measured with the accordion collapsed", "Checklist 4.5 — the skip-link bar is pointer-events:none until focused, so the predicted mouse-reveal state cannot arise"],
+    "pr_benefit_found": "vc-product-image__carousel-btn:focus-visible{opacity:1; @include focus-ring($inset:true)} exists in the deployed bundle and in the PR head but NOT at tag 2.57.0 — without it those buttons would be focusable at opacity:0, a keyboard stop that renders nothing. This PR closed that latent hazard.",
+    "lanes": { "phase1": "playwright-chrome", "phase2": "playwright-edge", "phase3": "Chrome DevTools MCP", "discovery": "playwright-firefox (keyboard-only — server not restarted at the time)" },
+    "shared_config_change": { "what": "store theme preset red -> Coffee -> red", "authorised_by": "operator", "method": "Admin SPA click-through only; no REST store PUT", "window_minutes": 18, "restored": true, "restore_verified_from": ["Admin White-labeling field reads red", "storefront resolves --color-primary-500: #e52121"] }
+  },
+
+  "derived_oracle": {
+    "what": "88-cell focus-ring contrast matrix — 7 presets x light/dark x 7 region surfaces",
+    "source_of_truth": "client-app/assets/presets/*.json at 8e45ee74; nothing transcribed",
+    "cross_checked_with": ["a standalone WCAG implementation", "the repo's audited COLOR_MATH_JS from scripts/lib/measure-layout.ts", "live measurement on vcst-qa", "the PR author's own declared figure"],
+    "agreement": "all four agree to two decimals",
+    "failing_cells": 7,
+    "failing_gated": ["coffee/light header-top 2.97", "coffee/light footer-top 2.97", "coffee/light mobile-menu 2.97"],
+    "failing_ungated_informational": ["black-gold/light footer-top 1.99", "black-gold/light footer-bottom 2.20", "black-gold/light mobile-menu 2.30", "purple-pink/light footer-top 2.87"],
+    "new_surface_found": "the skip-link bar (--color-primary-50) is tab stop #1 on every page and is in no matrix: coffee light 4.02, coffee dark 4.47, red light 3.30 — all pass, red light by only 0.30"
+  },
+
+  "flow_gaps_logged": 12,
+  "flow_gaps_priority": ["G1 — no focus-ring drift guard; extend tokens:sync + assert 3:1 as a unit test gated by tokens:check", "G8 — RESOLVED mid-run: playwright-firefox MCP server reconnected by the operator"],
+
+  "verifier": {
+    "gate_5b": "REJECT then APPROVE (one permitted round)",
+    "reject_reasons": ["per-item verdicts existed only in chat relays, not in the artifact, so 1.5 and 1.14 read as silent blanks", "the literal tc:scope invocation behind the 26-hit figure was not recorded", "the BLOCKED vocabulary was unreconciled"],
+    "all_discharged": true,
+    "independent_confirmations": ["re-derived all 88 cells with COLOR_MATH_JS and matched to two decimals", "reproduced the recorded tc:scope invocation verbatim (18 suites / 447 rows / 26 at risk)", "confirmed the Swiper >=5-image gate in image-gallery.vue at 8e45ee74", "confirmed the carousel-btn focus rule present in the deployed bundle and absent at 2.57.0", "verified the #21 refutation in useKeyboardSort.ts rather than from a screenshot", "independently searched the tracker and found no ticket for the coffee-light gap"],
+    "residual_soft_spot": "the FIX-1.14 ring-persists screenshot's colour claim rests on the doer's getComputedStyle read; worth a live spot-check in a future pass"
+  },
+
+  "timing": {
+    "reachability_minutes": 5,
+    "discovery_minutes": 45,
+    "coffee_window_minutes": 18
+  },
+
+  "artifacts": {
+    "checklist": "reports/tickets/Sprint26-18/VCST-5653/testing-checklist.md",
+    "test_model": "reports/ba/test-models/VCST-5653-2026-09-10.md",
+    "screenshots": "reports/tickets/Sprint26-18/VCST-5653/screenshots/ (~55 files)",
+    "design_report": "not written — the visual lane ran as checklist Phase 3 rather than as a /qa-design pass, and the vs. DESIGN axis is SKIPPED (no Claude Design project link on this ticket)"
+  },
+
+  "open_items": [
+    "VCST-5947 and VCST-5946 both need triage and an owner",
+    "VCST-5934 (Draft) is the same root cause on the old mechanism; its 'only 3 of 14 combinations measured' caveat is discharged by this run's 88 cells. Re-verify and likely close once #2468 merges. Reported only — no tracker write, per operator instruction.",
+    "Test order CO260910-00020 ($406.80, status 'Payment required') was created to reach the Datatrans redirect and left unpaid — may want cancelling",
+    "The no-indicator radio variant (WCAG 2.4.7) remains unverified: no non-selectable BOPIS pick point exists on this env",
+    "A behavioural prefers-reduced-motion check is still owed (closed here by derivation only)",
+    "The discovery lane's modal / layered-surface charter area is unreached — best target for a follow-up session now that firefox clicks work"
+  ]
+}

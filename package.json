@@ -92,6 +92,7 @@
     "context:check": "node scripts/maintenance/lint-claude-docs.mjs",
     "mirror:check": "node scripts/maintenance/mirror-check.mjs",
     "context:report": "node scripts/maintenance/lint-claude-docs.mjs --json",
+    "context:check:baseline": "node scripts/maintenance/lint-claude-docs.mjs --update-baseline",
     "sitemap:refresh": "node scripts/maintenance/refresh-sitemap.mjs",
     "sitemap:check": "node scripts/maintenance/refresh-sitemap.mjs --check",
     "releases:refresh": "node scripts/maintenance/refresh-release-ledger.mjs",

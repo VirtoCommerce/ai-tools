@@ -188,12 +188,21 @@ Install these via Claude Code's MCP settings (`.mcp.json` or `claude_code/settin
 ```jsonc
 {
   "mcpServers": {
-    "playwright-chrome":  { "command": "npx", "args": ["@playwright/mcp@latest", "--config", "config/mcp-playwright-chrome.config.json"] },
-    "playwright-firefox": { "command": "npx", "args": ["@playwright/mcp@latest", "--config", "config/mcp-playwright-firefox.config.json"] },
-    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@latest", "--config", "config/mcp-playwright-edge.config.json"] }
+    "playwright-chrome":  { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-chrome.config.json"] },
+    "playwright-firefox": { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-firefox.config.json"] },
+    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-edge.config.json"] }
   }
 }
 ```
+
+**Pin the version — never `@playwright/mcp@latest`.** The pin must match `package.json`'s
+`@playwright/mcp` devDependency and `PLAYWRIGHT_MCP_PACKAGE` in `ci/lib/lane-mcp.ts`; `/project-init`'s
+`gen-mcp.mjs` emits it for the same reason. Two things break on drift: each MCP release bundles its own
+`playwright-core`, which demands a specific browser build — one you may not have, so an `@latest` bump
+fails the lane at launch mid-run with *"Executable doesn't exist"* — and bare-screenshot path resolution
+is version-specific, which `/qa-bug`'s `_incoming/` reconcile depends on
+([`.claude/skills/qa-evidence/output-paths.md`](../.claude/skills/qa-evidence/output-paths.md)). An
+unpinned lane also stops reproducing what `ci/run-regression.ts` runs.
 
 Optional (each gates specific skills):
 - **postman** — enables `/qa-postman`, `/qa-api test`

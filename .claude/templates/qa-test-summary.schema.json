@@ -32,6 +32,21 @@
     "sources": [],
     "unmapped_surfaces": []
   },
+  "shape_class": {
+    "$comment": "The THIRD classifier, derived at 1a on the feature-test branch beside `ticket_type` and `path` — never instead of either (ticket-routing.md §5c; methodology skills/qa-test/ui-kit-class.md). It answers whether the thing under test is a feature ON a surface or the surface ITSELF, and it changes only what the resolved path PRODUCES: on `ui-kit` Artifact A, the 3-cases gate and 4c/C1 do not run on either path, and the `visual` + `coverage` axes need no flag. It may never promote or demote FAST/FULL — same rule as an axis. IT IS THE ONE CLASSIFIER THAT FAILS CLOSED: every other asks 'should we also do X?' so doubt widens the run, but this one SUBTRACTS, so an unestablished class is `none` and the run authors cases as normal — a wrong `ui-kit` deletes durable coverage from a run that needed it (the axes.md §3 data_surface defect, read backwards). `null` means the class was never derived, which is a gap, NOT a `none`. surface_source[] is recorded even for `none`, following the axes' own rule that an omitted block reads as a clean one. `skipped[]` names what the class actually removed from THIS run, so the artifact says it rather than only this schema. Supersedes the ad-hoc `uikit_rule_applied` string one pre-schema run wrote; do not reintroduce that spelling.",
+    "value": "ui-kit|none|null",
+    "surface_source": [],
+    "skipped": []
+  },
+  "derived_oracle": {
+    "$comment": "Present when the run computed its expected values FROM A SOURCE OF TRUTH AT A SHA rather than observing them — mandatory for the `ui-kit` shape class (ui-kit-class.md §2), legal for any run. This is .claude/rules/test-data.md §GOLDEN RULE applied to a visual oracle: VCST-5653's entire 7-cell contrast finding was reachable by arithmetic from client-app/assets/presets/*.json before a browser opened, and the live measurement then reproduced the derived 2.97 exactly. `source_of_truth` MUST pin a sha — a derivation off a moving branch dates itself silently. `cross_checked_with` needs at least two INDEPENDENT implementations and `agreement` says to how many decimals they matched: a derived oracle that agrees with nothing is a hypothesis wearing a number. `failing_cells` is the count the derivation predicted; `failing_gated` lists only the WCAG-gated presets (Coffee + Red), since a failure on an ungated preset is informational under vc-bug-catalog.md VC-UI-001 and is never a bug. `null` means no derivation was attempted — on a ui-kit run that is a gap, not a zero.",
+    "what": "<what was computed, and over how many cells>",
+    "source_of_truth": "<path(s) @ <sha> — nothing transcribed>",
+    "cross_checked_with": [],
+    "agreement": "<all N agree to M decimals | DISAGREE — see findings>",
+    "failing_cells": 0,
+    "failing_gated": []
+  },
   "verdict": "PASS|PASS_WITH_NOTES|FAIL|BLOCKED",
   "date": "YYYY-MM-DD",
   "timing": {

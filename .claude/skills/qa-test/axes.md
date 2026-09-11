@@ -194,15 +194,23 @@ dispatch, so making it opt-in would restore the always-on cost it exists to end.
 both paths — on FAST it gates the same `3a`, which that path had always described as *"test data if
 needed"* without ever saying who decides.
 
-**One per-type exception — and it is a TYPE default, not a new always-on axis.** A `Review task`
-([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5a) runs **`coverage` by default on
-FAST**. That type is a *contribution* — a fix or improvement to behaviour that already exists and that
-existing rows already assert — so *"which existing rows does this change make wrong?"* is what the
-ticket is **about**, not a speculative extra; and because its priority is auto-set and it carries no
-ACs, Step 2a is also the only step that reads the change against the corpus at all. `visual` and
-`contract` stay opt-in there exactly as everywhere else. This is the shape the "revisit at 5+ runs"
-rule below asks for — promote an axis where the evidence for it actually is, per type, rather than
-flipping it on for every FAST run.
+**Two narrow exceptions — and both are per-CLASSIFIER defaults, not new always-on axes.** Neither adds an
+axis, neither changes the effort, and neither applies to any other ticket. This is the shape the
+"revisit at 5+ runs" rule below asks for: promote an axis where the evidence for it actually is, against
+one classifier, rather than flipping it on for every FAST run.
+
+1. **A `Review task` runs `coverage` by default on FAST**
+   ([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5a). That type is a *contribution* —
+   a fix or improvement to behaviour that already exists and that existing rows already assert — so *"which
+   existing rows does this change make wrong?"* is what the ticket is **about**, not a speculative extra;
+   and because its priority is auto-set and it carries no ACs, Step 2a is also the only step that reads the
+   change against the corpus at all. `visual` and `contract` stay opt-in there exactly as everywhere else.
+2. **The `ui-kit` shape class runs `visual` AND `coverage` by default, on BOTH paths** (§5c). It is not a
+   type — it is the third classifier, derived from the diff — and it is the case `visual-axis.md` §5 was
+   holding the flag open for: when the change IS the rendered surface, a functional checklist cannot see a
+   contrast failure or a token collision by construction. **The `coverage` half rests on thinner evidence,
+   and §5c records both sides rather than only the argument** — so the revisit rule below applies to that
+   default in particular. `contract` stays opt-in.
 
 This restores a promise the pipeline had quietly inverted. `SKILL.md` §Effort routing records that the
 FAST/FULL split was made precisely because the old design marked everything expensive

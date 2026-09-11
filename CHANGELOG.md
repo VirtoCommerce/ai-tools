@@ -8,6 +8,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `playwright-firefox` verified click-capable, and `@playwright/mcp` is now pinned — 2026-09-11
+
+Re-verified the firefox lane live against vcst-qa: a popover click (`Currency` reached `[expanded]`
+with all 9 options rendered — a real DOM change, not a no-op return) and a navigation click
+(`Sign in` → `/sign-in`), 0 console errors, no timeouts. The preceding 4 days of transcripts hold 43
+firefox calls with **zero** errors, 6 of them clicks. The 2026-09-08 occlusion-pref fix holds.
+
+Also found and closed a version split. `.mcp.json` launched all three Playwright lanes with
+`@playwright/mcp@latest` (resolving to 0.0.80) while `package.json`, `PLAYWRIGHT_MCP_PACKAGE` in
+`ci/lib/lane-mcp.ts` and `/project-init`'s `gen-mcp.mjs` all pin 0.0.77 — so interactive runs were
+not reproducing CI, and the bare-screenshot path contract `/qa-bug`'s `_incoming/` reconcile depends
+on is written against 0.0.77. Nothing had failed only because two firefox builds happened to be
+installed; three accumulated builds (1532/1533/1542) were the tell. Lanes are pinned to 0.0.77, which
+resolves to the repo's own `node_modules` copy with no npx fetch. `docs/onboarding.md` had been
+telling every clone to use `@latest` — fixed, with the reasoning.
+
+**A pinned `@playwright/mcp` is now the SECOND prerequisite for this lane**, alongside the
+server restart: an `@latest` bump swaps the binary that reads
+`config/mcp-playwright-firefox.config.json`, and each release demands its own browser build (a miss
+fails at launch with *"Executable doesn't exist"*). Recorded in `browser-quirks.md` §Firefox,
+`rules/agents.md`, `browser-lanes.md` and `browserPool[1].constraint`. Stale "firefox cannot click"
+assertions were retired from `ROUTING.md`, `suite-manifest.ts` and `sync-test-suites.ts` — the latter
+also carried a root cause that the 2026-09-08 probe disproved (it blamed the `@playwright/mcp` layer,
+not Windows occlusion tracking).
+
 ## The auto-fix ladder now asks *where* the red was observed — 2026-09-10
 
 `/qa-fix` shipped a fix that does not work, at `HIGH` confidence, past a fully green CI and a human

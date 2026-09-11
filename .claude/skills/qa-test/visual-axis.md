@@ -207,6 +207,15 @@ argument alone. In the 28 recorded runs it has produced a `visual` block **once*
 whose third sub-axis is structurally unrunnable in a subagent (§2), so a mandatory lane was partly
 reporting `SKIPPED` by construction. Revisit at 5+ runs.
 
+**One slice of that argument now HAS its case, and was promoted on 2026-09-11: the `ui-kit` shape class**
+([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5c). The argument two paragraphs up is
+*general* — "a `.scss`-only PR is the class most likely to break the UI" — and general is exactly what left
+it a prediction. The shape class is the narrow, derivable subset where it is not a prediction: when the
+change **is** the design system, the rendered surface is the deliverable, so a run without this lane has not
+tested the ticket at all. There the lane defaults ON, on both paths, needing no flag. **Everywhere else the
+flag stands and the revisit rule is unchanged** — promoting one classifier is what that rule asked for;
+promoting the axis outright is the thing it warns against.
+
 **`critical-ui-scope.md` is a scope definition, not a gate.** It is 197/197 `GAP` since its covering suite
 was removed on 2026-07-25. Use it to resolve *which* invariants apply to the component under audit; it
 cannot supply coverage it does not have.

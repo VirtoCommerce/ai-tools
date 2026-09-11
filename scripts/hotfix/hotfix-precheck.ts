@@ -61,12 +61,24 @@ const isProductRepo = (n: string) => n === 'vc-platform' || n === 'vc-frontend' 
 interface SemVer { major: number; minor: number; patch: number; }
 interface PrInfo { repo: string; number: number; title: string; url: string; merged: boolean; mergeCommitSha: string | null; baseRef: string | null; }
 type Verdict = 'ready' | 'already-applied' | 'no-support-branch' | 'not-in-bundle' | 'unparseable' | 'error';
+/** How "the fix is already on this support branch" was established, strongest evidence first:
+ *   sha     — the ORIGINAL fix commit is an ancestor of the branch (only when the branch was
+ *             merged/fast-forwarded; never after a cherry-pick, which rewrites the SHA).
+ *   trailer — a `git cherry-pick -x` trailer on the branch names the original SHA.
+ *   content — the fix's own diff is present in the branch's files (added lines there, removed
+ *             lines gone). The only layer that fires for a plain `git cherry-pick` (no -x),
+ *             which is what /qa-hotfix's write step actually runs. */
+type AppliedVia = 'sha' | 'trailer' | 'content';
+/** One file of the fix commit's own diff, as GitHub reports it. `patch` is absent for a binary
+ * or too-large file — which is exactly when content-level detection has to abstain. */
+type TouchedFile = { path: string; status: string; prev?: string; patch?: string };
 interface BundleResult {
   bundle: string; bundleUrl: string;
   pinned: string | null; line: string | null;
   supportBranch: string; supportBranchExists: boolean;
   highestOnLine: string | null; nextHotfix: string | null;
   verdict: Verdict; note?: string;
+  appliedVia?: AppliedVia; // set iff verdict === 'already-applied' — WHICH check established it
   codeApply?: { checked: number; missing: string[] }; // code-level cherry-pick applicability signal
   baseline?: { props: string | null; manifest: string | null; predictedNext: string | null; mismatch: boolean; collision: boolean }; // version baseline the Release-hotfix workflow increments from
 }
@@ -137,7 +149,7 @@ async function refContains(repo: string, ref: string, sha: string): Promise<bool
   return !!c && c.aheadBy === 0;
 }
 /** Paths the fix commit touches, with status (added/modified/removed/renamed). */
-async function commitTouchedFiles(repo: string, sha: string): Promise<{ path: string; status: string; prev?: string; patch?: string }[]> {
+async function commitTouchedFiles(repo: string, sha: string): Promise<TouchedFile[]> {
   const c = await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/commits/${encodeURIComponent(sha)}`);
   return (c?.files ?? []).map((f: any) => ({ path: f.filename, status: f.status, prev: f.previous_filename, patch: f.patch }));
 }
@@ -253,15 +265,69 @@ async function branchBaseline(repo: string, branch: string): Promise<{ props: st
   return { props, manifest };
 }
 
-/** Is the fix already on the branch — CHERRY-PICK AWARE? The cherry-pick gets a new SHA, so the
- * original commit isn't an ancestor; also accept the `git cherry-pick -x` trailer
- * ("cherry picked from commit <originalSha>") on a recent commit of the branch. */
-async function branchHasFix(repo: string, branch: string, fixSha: string): Promise<boolean> {
-  if (await refContains(repo, branch, fixSha)) return true;
+/** Split a unified-diff patch into the lines it ADDS and the lines it REMOVES — trimmed, and
+ * dropping blank lines (no signal) and lines present on BOTH sides (a moved line, no signal). */
+export function patchLines(patch: string): { added: string[]; removed: string[] } {
+  const added = new Set<string>(), removed = new Set<string>();
+  for (const raw of patch.split('\n')) {
+    if (raw.startsWith('+++') || raw.startsWith('---') || raw.startsWith('@@')) continue;
+    const t = raw.slice(1).trim();
+    if (!t) continue;
+    if (raw.startsWith('+')) added.add(t);
+    else if (raw.startsWith('-')) removed.add(t);
+  }
+  for (const l of [...added]) if (removed.has(l)) { added.delete(l); removed.delete(l); }
+  return { added: [...added], removed: [...removed] };
+}
+
+/** CONTENT-level detection: is the fix's own diff already present in the branch's files?
+ *
+ * This is the layer that makes 'already-applied' reachable at all after a real hotfix. A plain
+ * `git cherry-pick` (what the write step runs) produces a NEW commit SHA and leaves NO -x
+ * trailer, so neither ancestry nor trailer matching can ever fire: the precheck used to keep
+ * reporting "READY → cherry-pick → X.Y.(Z+1)" for a patch it had itself just published,
+ * inviting a duplicate hotfix of a shipped fix (measured on VCST-5940, 2026-09-10).
+ *
+ * Per file the fix touches: every added line must be present on the branch and every removed
+ * line gone; a deleted file must be absent. Returns null (INCONCLUSIVE — never "applied") when
+ * no file yields a signal: a binary/too-large diff that GitHub sends without a `patch`, or a
+ * diff of nothing but blank lines. Duplicated line text can make it answer false for a fix that
+ * IS applied; that direction is safe (it degrades to the old behaviour — re-check by hand), the
+ * opposite is not, which is why every layer here has to be conjunctive.
+ *
+ * It answers "is this change present", not "did WE cherry-pick it" — and true because the
+ * support line never had the bug is the same operational answer: nothing to cherry-pick. */
+async function contentHasFix(repo: string, branch: string, files: TouchedFile[]): Promise<boolean | null> {
+  let sawSignal = false;
+  for (const f of files) {
+    if (f.status === 'removed') {
+      if (await pathExistsOnRef(repo, f.path, branch)) return false;
+      sawSignal = true;
+      continue;
+    }
+    if (!f.patch) return null; // binary or too large — GitHub omits the patch; cannot conclude
+    const { added, removed } = patchLines(f.patch);
+    if (!added.length && !removed.length) continue;
+    const txt = await rawFile(repo, f.path, branch);
+    if (txt == null) return false; // a file the fix needs is not on the branch
+    const lines = new Set(txt.replace(/\r\n/g, '\n').split('\n').map((l) => l.trim()));
+    if (!added.every((l) => lines.has(l))) return false;
+    if (removed.some((l) => lines.has(l))) return false;
+    sawSignal = true;
+  }
+  return sawSignal ? true : null;
+}
+
+/** Is the fix already on the branch? Three layers, strongest and cheapest evidence first: SHA
+ * ancestry (1 compare call) → `-x` trailer (1 commits call) → content equivalence (one file
+ * fetch per touched file). Returns WHICH layer fired, so the report can say so, or null. */
+async function branchHasFix(repo: string, branch: string, fixSha: string, touchedFiles: TouchedFile[] = []): Promise<AppliedVia | null> {
+  if (await refContains(repo, branch, fixSha)) return 'sha';
   const short = fixSha.slice(0, 8);
   const arr = await ghJson(`https://api.github.com/repos/${OWNER}/${repo}/commits?sha=${encodeURIComponent(branch)}&per_page=40`);
   const msgs: string[] = Array.isArray(arr) ? arr.map((c: any) => c?.commit?.message ?? '') : [];
-  return msgs.some((m) => /cherry picked from commit/i.test(m) && (m.includes(fixSha) || m.includes(short)));
+  if (msgs.some((m) => /cherry picked from commit/i.test(m) && (m.includes(fixSha) || m.includes(short)))) return 'trailer';
+  return touchedFiles.length && (await contentHasFix(repo, branch, touchedFiles)) === true ? 'content' : null;
 }
 
 /** Highest patch that exists on the line (>= pinned). */
@@ -482,8 +548,10 @@ async function main() {
       const highest = await highestOnLine(repo, sv);
       base.highestOnLine = highest != null ? tagOf(sv, highest) : null;
       base.nextHotfix = highest != null ? tagOf(sv, highest + 1) : null;
-      // already on the branch? (cherry-pick aware — original SHA differs after cherry-pick)
-      const applied = fixSha ? await branchHasFix(repo, base.supportBranch, fixSha) : false;
+      // already on the branch? SHA ancestry → -x trailer → content equivalence (a plain
+      // cherry-pick rewrites the SHA and leaves no trailer, so content is the layer that fires)
+      const appliedVia = fixSha ? await branchHasFix(repo, base.supportBranch, fixSha, touchedFiles) : null;
+      const applied = appliedVia !== null;
       // code-level applicability: do the files the fix touches still exist on this support branch?
       const codeApply = !applied && touchedFiles.length ? await codeApplyCheck(repo, touchedFiles, base.supportBranch) : undefined;
       // version baseline the workflow will increment from (props/manifest on the branch)
@@ -495,7 +563,11 @@ async function main() {
         mismatch: !!(bl.props && bl.manifest && bl.props !== bl.manifest),
         collision: !!(blSv && highest != null && blSv.patch + 1 <= highest), // incrementPatch would hit an existing tag
       };
-      bundleResults.push({ ...base, verdict: applied ? 'already-applied' : 'ready', codeApply, baseline, note: applied ? 'fix commit already on the support branch' : undefined });
+      const appliedNote =
+        appliedVia === 'sha' ? 'fix commit is an ancestor of the support branch' :
+        appliedVia === 'trailer' ? 'a cherry-pick -x trailer on the support branch names the fix commit' :
+        appliedVia === 'content' ? `the fix's diff is already present in ${base.supportBranch} (cherry-picked under a new SHA, or the line never had the bug)` : undefined;
+      bundleResults.push({ ...base, verdict: applied ? 'already-applied' : 'ready', appliedVia: appliedVia ?? undefined, codeApply, baseline, note: appliedNote });
     } catch (e: any) {
       bundleResults.push({ ...base, verdict: 'error', note: e.message });
     }
@@ -554,7 +626,7 @@ async function main() {
   for (const b of bundleResults) {
     const badge =
       b.verdict === 'ready' ? `✓ READY → cherry-pick → ${b.nextHotfix}` :
-      b.verdict === 'already-applied' ? '◯ already applied' :
+      b.verdict === 'already-applied' ? `◯ already applied (${b.appliedVia ?? 'unknown'} match)` :
       b.verdict === 'no-support-branch' ? `✗ no ${b.supportBranch} (not physically possible)` :
       b.verdict === 'not-in-bundle' ? '— not in bundle' :
       `⚠ ${b.note ?? b.verdict}`;
@@ -633,8 +705,13 @@ async function main() {
   throw new Exit(blocked ? 1 : 0);
 }
 
-main().catch((e) => {
-  if (e instanceof Exit) { process.exitCode = e.code; return; }
-  console.error(`[hotfix-precheck] fatal: ${e.message}`);
-  process.exitCode = 2;
-});
+// Only run as a CLI, so unit tests can import `patchLines` without firing the whole precheck
+// (same guard as sync-test-suites.ts / append-test-cases-to-suite.ts).
+const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isCli) {
+  main().catch((e) => {
+    if (e instanceof Exit) { process.exitCode = e.code; return; }
+    console.error(`[hotfix-precheck] fatal: ${e.message}`);
+    process.exitCode = 2;
+  });
+}

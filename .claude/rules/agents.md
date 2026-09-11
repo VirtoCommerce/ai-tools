@@ -72,24 +72,18 @@ picked by the routed repo's `kind`. Gate ladder + no-auto-merge: `.claude/knowle
 
 Each agent MUST use its own separate browser session. Agents sharing a browser will interfere with each other (navigation, cookies, state).
 
-> **`playwright-firefox` is a full click-capable slot again (2026-09-08) — one prerequisite.** For most of
-> 2026 it was not: `browser_click` resolved the element and then timed out on Playwright's *"visible,
-> enabled and stable"* gate on fully-visible, non-moving elements, confirmed 6× (2026-06-01 → 2026-08-05),
-> while `browser_type` and navigation worked. **Root cause:** a fully covered firefox window stops
-> `requestAnimationFrame` (Windows occlusion tracking) and Playwright's stable check needs **5 consecutive
-> rAF ticks** on Windows + Firefox — 1 everywhere else — so it never completes. Measured: 15 of 15 failing
-> attempts had a dead rAF, 0 passing ones did. The stall is **sticky** (the driver does not restart when
-> the window is uncovered), which is why one covered moment poisoned a whole session.
->
-> **PREREQUISITE — the MCP server must have been restarted after `config/mcp-playwright-firefox.config.json`
+> **`playwright-firefox` is a full click-capable slot (2026-09-08; re-verified live 2026-09-11) — two prerequisites.**
+> **(1) The MCP server must have been restarted after `config/mcp-playwright-firefox.config.json`
 > gained `widget.windows.window_occlusion_tracking.enabled=false`.** The config is read at server start;
-> without the restart this lane still fails exactly as before.
+> without the restart this lane still fails exactly as before. **(2) `@playwright/mcp` must stay PINNED
+> in `.mcp.json`** — an `@latest` entry swaps the server binary that reads that config.
 >
 > **Rollback, if clicks time out on this lane again:** check the MCP restart first, then set
 > `defaults.firefoxClickOk: false` in `config/test-suites.json` — one line, no code change, and every
-> consumer (`regression:plan`, `ci/run-regression.ts`, `regression:select`) re-denies click-driven suites
-> through `browserDenyListFor` in `ci/lib/suite-manifest.ts`. Evidence, the probe and the run tables:
-> `knowledge/automation/browser-quirks.md` §Firefox.
+> consumer re-denies click-driven suites through `browserDenyListFor` in `ci/lib/suite-manifest.ts`.
+> Root cause (dead `requestAnimationFrame` under Windows occlusion tracking vs Playwright's 5-tick stable
+> check), the sticky-stall finding, the probe and the run tables:
+> [`knowledge/automation/browser-quirks.md`](../knowledge/automation/browser-quirks.md) §Firefox.
 
 ### QA Team Browsers
 | Agent | Playwright MCP Server | Alternative |
@@ -114,4 +108,4 @@ Each agent MUST use its own separate browser session. Agents sharing a browser w
 - When delegating to sub-agents/specialist agents, verify the agent has the required tool permissions BEFORE dispatching.
 - If a delegated agent fails with an internal error (e.g., classifyHandoffIfNeeded), immediately fall back to working directly rather than retrying the same broken delegation.
 - For multi-suite regression runs, plan for rate limits: batch in groups of 3 (matching browser pool slots) rather than launching all simultaneously.
-- **Independent operations go out in ONE message; the unit you are saving is a round-trip, not a second.** A numbered list of independent probes/scripts walked one tool call per turn spends a full model turn per item — measured in `/qa-test` `1b`, seven independent probes totalling ~3 s of work were costing seven turns. Every deterministic script in this repo runs in 1–2 s (the one exception is live GraphQL introspection at ~8.5 s), so batching turns beats optimising script wall-clock by a wide margin. **But parallelism here has a measured cost too, so it is a per-case judgment, never a default:** two writers on one suite CSV take the corpus gate down for every author in the tree (`.claude/rules/regression.md` §Suite inventory), two suites on one disposable fixture set silently eat each other's data (`.claude/knowledge/execution/test-data-authoring.md` §The scope of "isolated" — 5 of 34 cases lost), and a verifier run beside its own doer verifies a half-finished step. Reordering something that costs milliseconds to look concurrent is churn. Worked dependency waves + the full never-parallelise table: `.claude/skills/qa-test/SKILL.md` §Concurrency.
+- **Independent operations go out in ONE message; the unit you are saving is a round-trip, not a second.** Deterministic scripts here cost 1–2 s, so batching turns beats optimising script wall-clock by a wide margin. **But parallelism has a measured cost too, so it is a per-case judgment, never a default** — two writers on one suite CSV, two suites on one disposable fixture set, and a verifier beside its own doer each lose work. Reordering something that costs milliseconds to look concurrent is churn. The measured timings, the worked dependency waves and the full never-parallelise table: [`.claude/skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §Concurrency.

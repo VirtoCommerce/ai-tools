@@ -135,7 +135,7 @@ before you proceed.
 | Verdict | Meaning |
 |---|---|
 | `✓ READY → … → X.Y.(Z+1)` | support branch exists, fix not yet on it — proceed to the write steps |
-| `◯ already-applied` | the fix commit is already on `support/X.Y` — nothing to cherry-pick |
+| `◯ already-applied` | the fix is already on `support/X.Y` — nothing to cherry-pick. Established in three layers, and the badge names which one fired (`sha` / `trailer` / `content` match): the original commit is an ancestor of the branch · a `cherry-pick -x` trailer on it names the original SHA · **or the fix’s own diff is already present in the branch’s files**. Content is the layer that fires after a plain `git cherry-pick` — which rewrites the SHA and leaves no trailer — so without it a just-published hotfix keeps reading `READY` and invites a duplicate release of a shipped fix (measured on VCST-5940, 2026-09-10). Content answers *is this change present*, not *did we pick it*: true because the line never had the bug is the same operational answer. A binary or too-large diff leaves it inconclusive, which reads as `READY` — never as applied |
 | `✗ no support/X.Y` | the branch doesn't exist yet — **create it first** (gated write step 0), branching from the line's base tag, then proceed with the hotfix |
 | `— not in bundle` | the repo isn't pinned in that bundle — nothing to hotfix there |
 

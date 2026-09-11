@@ -534,12 +534,18 @@ function actualCaseCount(file: string): number | null {
  * `defaults._comment_fallbackChain`, and `browserPool[1].constraint`) and is therefore
  * re-derived by hand on every scheduling decision.
  *
- * The rule: `playwright-firefox` cannot click on this storefront or the AngularJS Admin SPA —
- * `browser_click` resolves the element and then times out on Playwright's actionability gate,
- * on fully-visible non-moving elements. Confirmed 6x independently; the root cause is in the
- * `@playwright/mcp` layer, not Firefox (raw playwright-core + firefox clicks the same
- * reproducer fine). So a firefox placement on a click-driven suite costs a WHOLE wasted
- * attempt, and the scheduler must queue for a chromium lane rather than downgrade.
+ * HISTORY — the rule this derivation was built for is RETIRED. `playwright-firefox` could not
+ * click on this storefront or the AngularJS Admin SPA: `browser_click` resolved the element and
+ * then timed out on Playwright's actionability gate, on fully-visible non-moving elements
+ * (confirmed 6x, 2026-06 → 2026-08). The root cause was NOT the `@playwright/mcp` layer, as
+ * assumed here originally — it is Windows firefox occlusion tracking killing
+ * `requestAnimationFrame` against Playwright's 5-consecutive-tick stable check, fixed in
+ * `config/mcp-playwright-firefox.config.json` on 2026-09-08 and verified live 2026-09-11
+ * (`.claude/knowledge/automation/browser-quirks.md` §Firefox).
+ *
+ * `clickDriven` is still derived, because `defaults.firefoxClickOk` can be flipped back to false
+ * as a one-line rollback if the lane ever regresses — the derivation is what that switch acts on.
+ * While the flag is true, a click-driven suite is NOT barred from firefox.
  *
  * `[ACT]` ALONE IS NOT THE SIGNAL. The tag is overloaded: in a storefront suite it means
  * click/fill (`test-runner-tags.md` maps it to browser_click/fill/select), but in an API suite

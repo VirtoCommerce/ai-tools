@@ -150,7 +150,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `fullstack-frontend` — `vc-frontend`, **and** a module's declared embedded Vue 3 sub-app: reproduce-as-test → minimal fix → PR
 - `frontend-reviewer` — Gate-4 reviewer of the Vue/TS diff before the PR
 
-Browser lane assignments and the firefox-cannot-click rule: `.claude/rules/agents.md`.
+Browser lane assignments and the firefox click-capability prerequisites (the lane is click-capable since 2026-09-08; the historical "firefox cannot click" rule is retired): `.claude/rules/agents.md`.
 
 ### Knowledge Base (shared agent references in `.claude/knowledge/`)
 - **`api/`** — `api-auth.md`, `graphiql-interaction.md`, `graphql-schema.md`, `graphql-test-cases-runner.md`, `order-creation-matrix.md`, `platform-patterns.md`
