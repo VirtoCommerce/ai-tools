@@ -408,6 +408,42 @@ export function unresolvedPlaceholders(server) {
 // `reports/bugs/screenshots/<bug-slug>/` at its evidence step.
 const EVIDENCE_INCOMING = ["reports", "bugs", "screenshots", "_incoming"];
 /** Rewrite a Playwright server's relative --output-dir to an absolute path under the project. */
+// A deployment may ship its OWN Playwright MCP config per lane
+// (`config/mcp-playwright-<lane>.config.json`) plus a `--secrets` file. Those carry settings the
+// template's CLI flags cannot express — recordHar, recordVideo, locale, launchOptions, and the
+// Firefox `widget.windows.window_occlusion_tracking.enabled=false` workaround that is the only
+// thing making that lane click-capable. Regenerating with the template's inline flags silently
+// dropped all of it, and dropping `--secrets` is worse than a crash: playwright-mcp then types the
+// BARE KEY NAME as a literal, so a login "succeeds" with the wrong string and nothing errors.
+// So: when the project has a config for a lane, hand it to `--config` and drop the inline flags it
+// supersedes; when it has a secrets file, always pass it. Both paths absolute — playwright-mcp
+// resolves relative paths against ITS OWN cwd, which is the bug absolutizeOutputDir already fixes.
+const PW_SUPERSEDED = new Set(["--browser", "--isolated", "--viewport-size", "--output-dir"]);
+/** Point a Playwright lane at the deployment's own --config / --secrets when they exist. Pure-ish (fs reads). */
+export function preferProjectPlaywrightConfig(server, name, root, exists = existsSync) {
+  const args = server?.args;
+  if (!Array.isArray(args) || !/^playwright-/.test(name || "")) return server;
+  const lane = name.slice("playwright-".length);
+  const cfg = join(root, "config", `mcp-playwright-${lane}.config.json`);
+  const secrets = join(root, ".env.playwright.local");
+  const hasCfg = exists(cfg);
+  const hasSecrets = exists(secrets);
+  if (!hasCfg && !hasSecrets) return server;
+  let next = [...args];
+  if (hasCfg) {
+    // Drop the flags the config file supersedes, then append --config.
+    const kept = [];
+    for (let i = 0; i < next.length; i++) {
+      if (PW_SUPERSEDED.has(next[i])) { if (next[i] !== "--isolated") i++; continue; }
+      kept.push(next[i]);
+    }
+    next = kept;
+    if (!next.includes("--config")) next.push("--config", cfg);
+  }
+  if (hasSecrets && !next.includes("--secrets")) next.push("--secrets", secrets);
+  return { ...server, args: next };
+}
+
 export function absolutizeOutputDir(server, root) {
   const args = server?.args;
   if (!Array.isArray(args)) return server;
@@ -474,7 +510,7 @@ function main() {
     // NODE_OPTIONS + prefer-offline (#220), the token INDIRECTIONS, and the absolute evidence dir;
     // for github, fall back to OAuth if no PAT resolved; finally strip the template's `//`
     // doc-comment keys so they don't leak into the runtime .mcp.json.
-    let built = absolutizeOutputDir(injectTokenRefs(ensureNodeOptions(normalizeForOs(def, os)), resolved, { inline: inlineSecrets }), projectRoot);
+    let built = preferProjectPlaywrightConfig(absolutizeOutputDir(injectTokenRefs(ensureNodeOptions(normalizeForOs(def, os)), resolved, { inline: inlineSecrets }), projectRoot), name, projectRoot);
     if (name === "github") built = enableOAuthIfNoPat(built);
     mcpServers[name] = stripComments(built);
   }
