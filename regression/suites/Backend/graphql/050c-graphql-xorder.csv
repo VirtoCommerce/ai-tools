@@ -308,3 +308,48 @@ CART-PAY-GQL-004,"xCart — cart.availablePaymentMethods Exposes AuthorizeNetPay
 [GQL-OP final_clear]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cultureName: ""{{culture}}"" currencyCode: ""{{currency}}"" }) { id } }
 [GQL-EXEC final_clear]","VCST-5162 (AllowCartPayment=true hardcoded on AuthorizeNetPaymentMethod); twin of CART-PAY-GQL-003 (Skyflow); graphql-schema.md CartType.availablePaymentMethods allowCartPayment field; PAY-AN-010 (storefront UI twin)",Draft
+ORD-GQL-014,"xOrder — storefront order surface exposes no withPrices flag, so a withheld price is indistinguishable from a real zero",GraphQL > xOrder,High,"BL-GQL-003, BL-GQL-004",,"Runner-native. An ORG_USER account with at least one placed order carrying known non-zero totals. Introspect CustomerOrderType on the deployed build and compare its field set against the REST CustomerOrder payload for the same order.
+Unlike the ORDA-* rows, this case does NOT require the VCST-3912 build to be deployed — vc-module-experience-api (xOrder) is explicitly untouched by PR #472 (""this module exposes no GraphQL schema... None"" for new/changed GraphQL, per the PR body), so the currently deployed schema IS what ships. This case documents whether the pre-existing parity gap (Test Model S12) has been closed by anything else, not whether this PR closed it.","back_url={{BACK_URL}}, front_url={{FRONT_URL}}, org_user_email={{ORG_USER_EMAIL}}, org_user_password={{ORG_USER_PASSWORD}}","[AUTH role=ORG_USER]
+[GQL-OP list_first]
+  query {
+    orders(first: 1, sort: ""createdDate:desc"") {
+      items { number }
+    }
+  }
+[GQL-EXEC list_first]
+[GQL-CAPTURE list_first.data.orders.items.0.number → ORDER_NUMBER]
+
+[GQL-OP order_detail]
+  query {
+    order(number: ""{{ORDER_NUMBER}}"") {
+      id
+      number
+      total { amount currency { code } }
+      subTotal { amount }
+      shippingTotal { amount }
+      taxTotal { amount }
+      discountTotal { amount }
+    }
+  }
+[GQL-EXEC order_detail]
+
+[GQL-OP introspect_order]
+  query {
+    __type(name: ""CustomerOrderType"") {
+      fields { name }
+    }
+  }
+[GQL-EXEC introspect_order]
+
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP rest_get]
+GET {{BACK_URL}}/api/order/customerOrders/number/{{ORDER_NUMBER}}
+[REST-EXEC rest_get]
+[REST-CAPTURE rest_get.body.total → REST_TOTAL]","[ERRORS label=list_first] errors[] empty {SPEC}
+[DATA label=list_first] data.orders.items.0.number is non-null {SPEC}
+[ERRORS label=order_detail] errors[] empty {SPEC}
+[DATA label=order_detail] data.order.total.amount is non-null {SPEC}
+[DATA label=order_detail] data.order.total.amount = {{REST_TOTAL}} {SPEC} — the GraphQL total for this order must equal the REST CustomerOrder.Total for the same order number, confirming both surfaces read the same underlying value for this caller's own order
+[ERRORS label=introspect_order] errors[] empty {SPEC}
+[DATA label=introspect_order] data.__type.fields[?name=withPrices] is non-null {HYPOTHESIS} verify whether CustomerOrderType exposes a field (withPrices, redactedAspects, or equivalent) letting a caller distinguish a withheld price from a genuine zero, the way OrderOperation.WithPrices/withPrices does on the REST/Admin surface — graphql-schema.md's 2026-09-10 snapshot records no such field, which would make this assertion FAIL and confirm the S12 parity gap the xAPI storefront surface still has relative to the order module's own REST/Admin surfaces
+[ERRORS label=rest_get] HTTP 200 {OBSERVED}","[ADMIN] the REST total captured (REST_TOTAL) matches what the Admin SPA order-totals widget displays for the same order number, confirming three-way parity (GraphQL / REST / Admin UI) for a permitted caller's own data","errors[] non-empty on any op; data.order.total.amount does not equal the REST-captured total for the same order number (GraphQL/REST value drift); introspection shows no withPrices-equivalent field — this is the DOCUMENTED S12 gap, not a regression from this PR (vc-module-experience-api is untouched by VCST-3912), but it means a denied B2B admin viewing orders through the storefront/xAPI surface cannot be distinguished from one with a genuine $0 order; 4xx/5xx on /graphql or the REST call",none,VCST-3912 · Archetype:PARITY · Technique:EG,Draft

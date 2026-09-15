@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-09-11",
-    "totalSuites": 138,
+    "totalSuites": 139,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -454,8 +454,32 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 70,
-      "estimatedMinutes": 40,
+      "testCount": 50,
+      "estimatedMinutes": 23,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "orders",
+        "admin",
+        "management",
+        "crud",
+        "sprint"
+      ],
+      "requiresModules": [
+        "orders"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "017b",
+      "name": "Orders Admin Management — Orders > Order Widgets",
+      "file": "regression/suites/Backend/orders/017b-orders-order-widgets.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 37,
+      "estimatedMinutes": 17,
       "agent": "qa-backend-expert",
       "tags": [
         "orders",
@@ -1456,7 +1480,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 8,
+      "testCount": 9,
       "estimatedMinutes": 5,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1467,7 +1491,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 7,
+        "machine": 8,
         "browser": 1,
         "manual": 0
       }
@@ -3389,6 +3413,7 @@
         "014b",
         "015",
         "017",
+        "017b",
         "018",
         "019"
       ]

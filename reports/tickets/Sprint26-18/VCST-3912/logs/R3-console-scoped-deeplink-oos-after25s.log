@@ -1,0 +1,9 @@
+Total messages: 7 (Errors: 5, Warnings: 0)
+
+[LOG] [Virto] Extension-point inspector loaded. Type vcExt.help() to begin. @ https://vcptcore-qa.govirto.com/dist/app.js?v=YDcafgL_drh-2hIm0JjDFBJhBvBiYXmXiKYayeO44-s:1
+[LOG] WARNING: Tried to load AngularJS more than once. @ https://vcptcore-qa.govirto.com/modules/$(VirtoCommerce.CustomerExportImport)/dist/app.js?v=8DED5FF1B06DB00:1
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcptcore-qa.govirto.com/apps/app_search/logo.svg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcptcore-qa.govirto.com/apps/builderio/logo.svg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcptcore-qa.govirto.com/apps/page-builder-shell/assets/images/logo-only.svg:0
+[ERROR] Failed to load resource: the server responded with a status of 403 () @ https://vcptcore-qa.govirto.com/api/order/customerOrders/e01aca88-f3e8-4377-a804-7dfaeeb7171a:0
+[ERROR] Possibly unhandled rejection: {"data":"","status":403,"config":{"method":"GET","transformRequest":[null],"transformResponse":[null],"jsonpCallbackParam":"callback","url":"api/order/customerOrders/e01aca88-f3e8-4377-a804-7dfaeeb7171a","headers":{"Accept":"application/json, text/plain, */*"}},"statusText":"Forbidden","xhrStatus":"complete","resource":{}} @ https://vcptcore-qa.govirto.com/dist/vendor.js?v=Fdv3no0l8-YmIhV9kG9T25opeeWTWsrlr3AbDgEx9os:1

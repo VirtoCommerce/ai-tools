@@ -1,0 +1,521 @@
+{
+  "ticket": "VCST-3912",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "layer": "cross-layer",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-09-10",
+  "timing": {
+    "started_at": "2026-09-10T08:35:00+03:00",
+    "finished_at": "2026-09-10T11:40:00+03:00",
+    "steps": {
+      "step1": 78,
+      "step2": 12,
+      "step3": 74,
+      "step4": 0,
+      "step5": 21
+    },
+    "agent_dispatches": 4,
+    "regression_predicted_minutes": null,
+    "regression_actual_minutes": null
+  },
+  "environment": "https://vcptcore-qa-storefront.govirto.com",
+  "build": {
+    "platform": "3.1066.0",
+    "theme": null,
+    "relevant_modules": {
+      "VirtoCommerce.Orders": "3.1014.0",
+      "VirtoCommerce.Pricing": "3.1006.0"
+    },
+    "deployed": {
+      "platform": "UNKNOWN",
+      "relevant_modules": {
+        "VirtoCommerce.Orders": "3.1015.0-pr-472-fb82",
+        "VirtoCommerce.Pricing": "3.1006.0",
+        "VirtoCommerce.Catalog": "3.1043.0-pr-906-d339"
+      }
+    },
+    "releasedThrough": {
+      "ledger_generated": "2026-09",
+      "components": {
+        "Order": "3.1001.0"
+      },
+      "behind": [],
+      "breaking": []
+    },
+    "deploy_pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6499 (merged 2026-09-10T09:42:45Z; AzureBlob pin to the PR-472 build)"
+  },
+  "release": {
+    "layers": [
+      "module",
+      "admin-spa"
+    ],
+    "layer_source": [
+      "pr-diff",
+      "module-suite-map"
+    ],
+    "layers_conflict": false,
+    "audience": [],
+    "component_versions": {},
+    "platform_version": null,
+    "breaking": true,
+    "breaking_source": "PR #472 body, section Breaking changes: OrderAuthorizationHandler moves Web->Data and is no longer sealed; ReduceDetails/RestoreDetails become override with an OrderOperation-typed argument; GET by id/number/outerId now 404/403 instead of 200+null; PatcOrder renamed PatchOrder (OpenAPI operationId change); FillAllChildOperations obsoleted",
+    "user_visible": true,
+    "fragment": null,
+    "refusal": "verdict-not-pass",
+    "aggregated_into": null
+  },
+  "documentation": {
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": [],
+    "comment_posted": true,
+    "refusal": null
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Testing",
+      "to": "Testing",
+      "transition": null,
+      "confirmed": false,
+      "actor": "qa-lead",
+      "skipped": true,
+      "skip_reason": "Ticket was already in the in-testing status when the run opened; no transition to make."
+    },
+    {
+      "hop": "closing",
+      "at": "5f",
+      "from": "Testing",
+      "to": "Testing",
+      "transition": null,
+      "confirmed": false,
+      "actor": "qa-lead",
+      "skipped": true,
+      "skip_reason": "FAIL verdict, and BLOCKED/FAIL transitions nothing here. Findings delivered as comment 109131; the ticket stays in Testing for the developer to act on. No transition was requested by the operator."
+    }
+  ],
+  "agents_dispatched": [
+    "ba-system-analyzer (1c context + pre-change baseline)",
+    "ba-story-writer (1d AC review, Mode B)",
+    "test-management-specialist (3b Steps/Assertions authoring)",
+    "qa-lead-orchestrator (Step 3 verifier gate, Verifier Mode)"
+  ],
+  "epic": {
+    "parent": null,
+    "siblings": {
+      "done": [],
+      "in_progress": [
+        "VP-8998"
+      ],
+      "blocked_dependency": []
+    },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 4,
+    "weak_acs": 4,
+    "gap_acs_added": 22,
+    "impl_coverage": {
+      "satisfied": 2,
+      "drift": 2,
+      "contradicts": 0,
+      "not_found": 0
+    },
+    "conditions_total": 23,
+    "conditions_with_evidence": 0,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 0,
+      "dod_total": 0,
+      "dod_pct": null,
+      "dod_met": 0
+    },
+    "notes": "All four story ACs graded non-testable or partial at 1d: AC-1 and AC-2 are structural/vague ('is responsible for Data Protection', 'works as expected'); AC-3 and AC-4 are deliverable-presence checks. AC-4 names IEntityDataProtectionService, which does not exist in the shipped diff — only docs/data-protection-architecture.md defines it, marked Status: Proposal and targeting VirtoCommerce.Platform.Core. The 22 gap-ACs, not the story ACs, are the spine of this run."
+  },
+  "total_cases": 20,
+  "passed": 18,
+  "failed": 0,
+  "blocked": 2,
+  "iterations": {
+    "enabled": true,
+    "rounds": 2,
+    "max_rounds": 2,
+    "outcome": "passed",
+    "per_round": [
+      {
+        "round": 1,
+        "verdict": "FAIL",
+        "build": {
+          "deployed": {
+            "VirtoCommerce.Orders": "3.1015.0-pr-472-dfa3"
+          }
+        },
+        "still_failing": [
+          "R1",
+          "R2",
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "R3"
+        ]
+      },
+      {
+        "round": 2,
+        "verdict": "FAIL",
+        "build": {
+          "deployed": {
+            "VirtoCommerce.Orders": "3.1015.0-pr-472-0fac"
+          }
+        },
+        "red_green": {
+          "green": [
+            "R1",
+            "R2",
+            "P1",
+            "P2"
+          ],
+          "still_red": [
+            "P3 under partial grant",
+            "P4 (dev: Ignore)",
+            "R3 (dev: documentation)"
+          ]
+        },
+        "still_failing": [
+          "N1 line-item Discounts widget masks for admin too",
+          "N2 runaway digest loop on an admin session, trigger not isolated"
+        ]
+      }
+    ]
+  },
+  "new_cases_authored": 22,
+  "promotion": {
+    "automated": [
+      "ORDA-104",
+      "ORDA-105",
+      "ORDA-106",
+      "ORDA-108",
+      "ORDA-109",
+      "ORDA-110",
+      "ORDA-111",
+      "ORDA-112",
+      "ORDA-113",
+      "ORDA-114",
+      "ORDA-115",
+      "ORDA-116",
+      "ORDA-117",
+      "ORDA-118",
+      "ORDA-123",
+      "ORDA-124",
+      "ORDA-125"
+    ],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": [
+      {
+        "case": "ORDA-107",
+        "reason": "retired from the suite - the sort-order disclosure was accepted as Ignore, so the case would have been a permanent red nobody would act on"
+      }
+    ],
+    "retired": [
+      {
+        "case": "ORDA-107",
+        "reason": "Removed - the sort-order disclosure was accepted as Ignore, so the case would be a permanent red rather than coverage."
+      },
+      {
+        "case": "ORDA-119",
+        "reason": "Removed - its passing condition is not satisfiable. Run once end to end (restore job 95363) on a disposable order: the archive carries zeros and the order is absent from storage, so RestorePrices has no stored counterpart to read and no implementation could recover the original amounts. What the run establishes is a configuration rule, not a defect: grant platform:backuprestore:backup together with order:read_prices, the same pairing recommended for order:invoice:download."
+      },
+      {
+        "case": "ORDA-120",
+        "reason": "Removed - the client-timing trio (deep-link, refresh mid-flow, dependency failure) came from an archetype sweep rather than from this feature's fault model. The server strips prices before the response leaves, so the browser never holds a real value that any timing, cache, fault or race could reveal: ORDA-120 passed only on wire-payload evidence that ORDA-113 already asserts at the source, ORDA-121 is the same argument restated, and ORDA-122 cannot fail at all (with the request failing there is no order object, and its cache clause cannot fail for a role the server never sends a real price to). A case that cannot fail against a broken implementation is not coverage."
+      },
+      {
+        "case": "ORDA-121",
+        "reason": "Removed - the client-timing trio (deep-link, refresh mid-flow, dependency failure) came from an archetype sweep rather than from this feature's fault model. The server strips prices before the response leaves, so the browser never holds a real value that any timing, cache, fault or race could reveal: ORDA-120 passed only on wire-payload evidence that ORDA-113 already asserts at the source, ORDA-121 is the same argument restated, and ORDA-122 cannot fail at all (with the request failing there is no order object, and its cache clause cannot fail for a role the server never sends a real price to). A case that cannot fail against a broken implementation is not coverage."
+      },
+      {
+        "case": "ORDA-122",
+        "reason": "Removed - the client-timing trio (deep-link, refresh mid-flow, dependency failure) came from an archetype sweep rather than from this feature's fault model. The server strips prices before the response leaves, so the browser never holds a real value that any timing, cache, fault or race could reveal: ORDA-120 passed only on wire-payload evidence that ORDA-113 already asserts at the source, ORDA-121 is the same argument restated, and ORDA-122 cannot fail at all (with the request failing there is no order object, and its cache clause cannot fail for a role the server never sends a real price to). A case that cannot fail against a broken implementation is not coverage."
+      }
+    ]
+  },
+  "regression": {
+    "c1": {
+      "suites": [
+        "017",
+        "050c"
+      ],
+      "ids": [
+        "ORDA-104..ORDA-125",
+        "ORD-GQL-014"
+      ],
+      "run_id": "REG-2026-09-11-1616",
+      "pass_rate": "17 PASS / 2 FAIL / 3 BLOCKED of 22",
+      "skipped_reason": null
+    },
+    "c2": {
+      "suites": [],
+      "run_id": null,
+      "pass_rate": null,
+      "predicted_minutes": null,
+      "actual_minutes": null,
+      "scope_exclusions": [
+        "every suite — nothing executed this run"
+      ],
+      "amended_verdict": null,
+      "skipped_reason": "not-assessed (C2 skipped) — the change-scoped Critical sweep was not run. Three in-scope Critical/High defects are already confirmed, so the release gate is decided without it."
+    }
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_ids": [],
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": null
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-5952",
+      "severity": "High",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-3912"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Medium",
+      "provenance": "out-of-scope",
+      "summary": "P3 invoice prints Total $0 when order:invoice:download is granted without order:read_prices. ACCEPTED AS Keep as Is by the team: the download permission is the control, and a user without price rights should simply not be granted it; masking inside a PDF is not wanted. The gate itself was verified working (403 and hidden button without the permission). No action.",
+      "report": null
+    }
+  ],
+  "discovery": {
+    "ran": false,
+    "skipped_reason": "Step 3x needs a live surface to explore and the change is deployed nowhere; a discovery session against Orders 3.1014.0 would charter the pre-change build.",
+    "lane": null,
+    "minutes": null,
+    "charter_sources": {
+      "matrix_gaps": [],
+      "reverse_edges": [],
+      "hypothesis_rows": [],
+      "ac_drift": [],
+      "rebase_rows": []
+    },
+    "hypotheses_grounded": 0,
+    "hypotheses_remaining": 4,
+    "model_amendments": 0,
+    "scenarios_new": [],
+    "oracle_proposals": 2,
+    "bugs_surfaced": [],
+    "report": null
+  },
+  "visual": {
+    "surface": "true",
+    "surface_source": [
+      "pr-diff: 10 Admin SPA blade/widget .js and .tpl.html files changed",
+      "derived layer includes admin-spa"
+    ],
+    "ran": true,
+    "skipped_reason": null,
+    "targets": [
+      "list grid",
+      "line items blade",
+      "order-totals widget",
+      "invoice PDF",
+      "shipment blade",
+      "operation-tree widget",
+      "discounts blade (order)",
+      "discounts blade (shipment)"
+    ],
+    "axes": {
+      "a11y": {
+        "ran": false,
+        "verdict": null,
+        "findings": 0,
+        "skipped_reason": "visual lane never dispatched"
+      },
+      "design_system": {
+        "ran": true,
+        "verdict": "FAIL",
+        "findings": 3,
+        "skipped_reason": null
+      },
+      "design_spec": {
+        "ran": false,
+        "verdict": null,
+        "confirmed": 0,
+        "drift": 0,
+        "missing": 0,
+        "unspec": 0,
+        "known_divergence": 0,
+        "unresolved": 0,
+        "skipped_reason": "no design link on the ticket"
+      }
+    },
+    "a11y_findings": [],
+    "invariant_failures": [
+      {
+        "invariant": "BL-AUTH-005",
+        "severity": "Critical",
+        "measured": "Discounts blade renders discountAmount 44.995 / 5175 / 10 to a caller denied order:read_prices, at order and shipment level",
+        "bug": null
+      },
+      {
+        "invariant": "BL-AUTH-005",
+        "severity": "Critical",
+        "measured": "Invoice PDF renders Total: $0 (HTTP 200) instead of a withheld state — ignores the withPrices flag",
+        "bug": null
+      },
+      {
+        "invariant": "BL-AUTH-005",
+        "severity": "High",
+        "measured": "List grid Total column is sortable; row order equals the true descending order of the hidden totals",
+        "bug": null
+      }
+    ],
+    "advisory": [],
+    "report": "testing-checklist.md §Admin SPA pass"
+  },
+  "contract": {
+    "surface": "true",
+    "surface_source": [
+      "pr-diff: src/VirtoCommerce.OrdersModule.Web/Controllers/Api/OrderModuleController.cs modified (+44/-52)",
+      "new wire field withPrices on OrderOperation"
+    ],
+    "schema": {
+      "refreshed": "2026-09-10",
+      "unknown_reason": null,
+      "queries": 110,
+      "mutations": 146
+    },
+    "fixtures": {
+      "refreshed": "2026-09-10",
+      "validated_against_env": "vcptcore",
+      "total": 0,
+      "failed": 0,
+      "drift_in_scope": [],
+      "drift_out_of_scope": []
+    },
+    "finding": "CustomerOrderType in the refreshed xAPI schema carries NO withPrices field and exposes every total (total, subTotal, taxTotal, all shipping/payment totals). The PR body records GraphQL changes as None. So on the storefront surface a withheld price is indistinguishable from a real zero — authored as ORD-GQL-014."
+  },
+  "coverage_triage": {
+    "surface": "true",
+    "surface_source": [
+      "1a domains purchase-flow + platform-config",
+      "derived layer cross-layer",
+      "target suite manifest tags orders, admin, permissions"
+    ],
+    "scope": {
+      "domains": [
+        "purchase-flow",
+        "platform-config"
+      ],
+      "modules": [],
+      "suites_named": [],
+      "observables": [
+        "order price",
+        "order total",
+        "read_prices"
+      ],
+      "oracles": [],
+      "cases_filter": null
+    },
+    "counts": {
+      "suites_scoped": 45,
+      "rows_scanned": 1138,
+      "hits": 27,
+      "will_run": 22,
+      "filtered_out": 0,
+      "not_executing": 5,
+      "never_audited": 25
+    },
+    "dispositions": {
+      "confirmed": 26,
+      "repair": 1,
+      "rebase": 0,
+      "superseded": 0
+    },
+    "repaired": [
+      {
+        "case": "ORDA-057",
+        "suite": "017",
+        "what": "Preconditions named permissions orders:read_prices and orders:update_shipments, which do not exist. The live platform permission catalogue (349 entries) carries order:read_prices and order:update_shipments, singular. A role built from the stale names could never be created, so the row could not execute at all.",
+        "relint": "suites:review re-run; no new finding, CRLF (567) and BOM preserved, 70 rows still parse. NOTE: the row has empty Assertions and zero Failure_Signals, so it cannot fail on a wrong value — vacuous coverage. Strengthening it is /qa-review-tests --fix work, out of this run's scope."
+      }
+    ],
+    "rebased_into_c1": [],
+    "superseded_proposals": [],
+    "unscannable": [
+      {
+        "suite": "056",
+        "reason": "legacy header — 11 columns, not the canonical 15-column enriched format"
+      },
+      {
+        "suite": "063",
+        "reason": "legacy header — 11 columns"
+      },
+      {
+        "suite": "064",
+        "reason": "legacy header — 11 columns. Relevant here: this is the CSV import/export suite and the change alters export/import behaviour."
+      },
+      {
+        "suite": "065",
+        "reason": "legacy header — 11 columns"
+      },
+      {
+        "suite": "073",
+        "reason": "legacy header — 11 columns"
+      },
+      {
+        "suite": "076",
+        "reason": "legacy header — 11 columns"
+      }
+    ],
+    "unmatched_observables": []
+  },
+  "test_data": {
+    "surface": true,
+    "surface_source": [
+      "no @td() alias exists for a role lacking order:read_prices — the alias registry carries RESTRICTED_ADMIN_SALESREP_*, CATALOG_LINK_RESTRICTED and ADMIN_ROLE_TESTER, none of which model this permission",
+      "the value chain needs a divergence the env cannot supply: a denied caller AND a permitted caller reading the same order",
+      "no order fixture combines line items + shipment + payment + capture + refund + a discount"
+    ],
+    "dispatched": false,
+    "fixtures_covering": [],
+    "divergence_resolved": true,
+    "td_validate": "green for the two suites this run touched — 050c [OK] 3/3 resolved; 017 carries no @td() refs. 17 unrelated suites fail on the known vcptcore fixture gap, pre-existing and untouched.",
+    "seed_run": "manual, inline: roles AGENT-TEST-ORDER-NOPRICES (+platform:export/import) and AGENT-TEST-ORDER-SCOPED-ELECTRONICS (order:read with an OrderSelectedStoreScope for Electronics); users agent-test-noprices / agent-test-scoped. Disposable order AGENT-TEST-CO-3912-01 created and deleted. ALL MUST BE DELETED after triage. AGENT-TEST-ORDER-NOPRICES additionally granted platform:backuprestore:access/backup/storage to reach the export path.",
+    "deferred_reason": "Step 3a was deliberately NOT dispatched. Seeding a role and user onto a shared QA environment was not authorised, the fixtures cannot be validated against a feature that is not deployed, and inventing @td() aliases that resolve to nothing would break td:validate for every author in the tree. The cases name their fixtures in Preconditions prose instead — the same convention ORDA-091..095 already use — so a seeder can be written straight off the rows.",
+    "fixtures_required_before_execution": [
+      "Admin role with every Orders permission EXCEPT order:read_prices, plus platform:access, assigned to a dedicated user (permissions live on roles — VC-B2B-002)",
+      "the same role additionally store-scoped to one store only (for ORDA-108)",
+      "a disposable order with >=2 line items, >=1 shipment, >=1 payment with >=1 capture AND >=1 refund, and >=1 order-level discount",
+      "5+ orders in one store with distinct known totals (for the ORDA-107 ordering probe)"
+    ]
+  },
+  "business_rules_verified": [],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
+    "correlated_failures": [],
+    "skipped_reason": "not correlated this run — findings were proven by direct API comparison, not by log inspection"
+  },
+  "screenshots": "reports/tickets/Sprint26-18/VCST-3912/screenshots/ (13 files, each denied-user finding paired with a CONTROL- admin counterpart) + payloads/ (JSON + invoice PDFs)"
+}

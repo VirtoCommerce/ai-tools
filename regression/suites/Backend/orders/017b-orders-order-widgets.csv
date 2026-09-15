@@ -1,0 +1,518 @@
+﻿ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+ORDA-074,Order Changes Widget — Change Log Tracks All Modifications,Orders > Order Widgets,High,,,"Admin logged in to Backend
+Order exists with at least one prior modification",,"1. Navigate to ${BACK_URL}/orders and open an existing order
+2. Make a modification to the order (e.g., update customer comment)
+3. Save the changes
+4. Open the Changes widget on the order details blade
+5. Verify the latest modification appears in the change log
+6. Make a second modification (e.g., update dynamic property)
+7. Save and re-open Changes widget
+8. Verify both changes are tracked with timestamps and user info",,,,,C169806,
+ORDA-075,Order Immutability After Payment — Paid Order Items Cannot Be Edited,Orders > Order Management,High,,,"Admin logged in to Backend
+Order exists with payment status Paid",,"1. Navigate to ${BACK_URL}/orders
+2. Open an order where the payment status is Paid
+3. Attempt to modify the line item quantity in the Line Items widget
+4. Attempt to add a new line item to the order
+5. Attempt to remove an existing line item
+6. Attempt to change the product price
+7. Verify all edit controls for order items are disabled or hidden
+8. Verify Save button is disabled or changes cannot be submitted",,,,,BL-ORDER-001,
+ORDA-076,Order Validation Full Field List — Complete Validation Test,Orders > Validation,High,,,Admin logged in to Backend (API/Swagger),,"1. Open Swagger UI at ${BACK_URL}/docs or use API client
+2. Test order validation for fields: Number, CustomerId, CustomerName, StoreId, Currency, Status, CreatedDate
+3. Submit invalid value for Number field (e.g., empty string or exceeding max length)
+4. Submit invalid value for CustomerId (e.g., null or non-existent ID)
+5. Submit invalid value for CustomerName (e.g., exceeding character limit)
+6. Submit invalid value for StoreId (e.g., non-existent store)
+7. Submit invalid Currency code (e.g., invalid ISO code)
+8. Submit invalid Status value (e.g., non-existent status string)
+9. Submit invalid CreatedDate (e.g., future date or wrong format)",,,,,C301875,
+ORDA-087,Order placement — inventory decremented for each line item in correct FFC,Orders > Order Placement Side Effects,Critical,,,"Admin logged in to Backend
+Track inventory = TRUE
+Products with known stock quantities in specific FFCs
+API access available
+Storefront accessible",,"1. Navigate to ${BACK_URL} > Inventory module
+2. Record current stock quantity for Product_1 in FFC_1 (e.g., qty = 50)
+3. Record current stock quantity for Product_2 in FFC_2 (e.g., qty = 30)
+4. Place order via API or Storefront containing Product_1 (qty=2) and Product_2 (qty=3)
+5. Verify order creation succeeds with status = New
+6. Navigate to Inventory module
+7. Check stock for Product_1 in FFC_1
+8. Check stock for Product_2 in FFC_2
+9. Verify decrements match ordered quantities",,,,,Coverage Gap Analysis BL-CROSS-005,
+ORDA-088,Order placement — order appears in customer order history,Orders > Order Placement Side Effects,Critical,,,"Customer account exists with known order history count
+Storefront and xAPI accessible
+Products available for purchase",,"1. Execute xAPI query to get current order count for customer:
+   query { orders(storeId: ""${STORE_ID}"", cultureName: ""en-US"", userId: ""<customer-id>"") { totalCount } }
+2. Record current totalCount (e.g., N)
+3. Place a new order via Storefront or API as the customer
+4. Record the new order number
+5. Execute the same xAPI orders query again
+6. Verify totalCount = N + 1
+7. Execute detailed order query to find the new order by number
+8. Verify order details match what was placed",,,,,Coverage Gap Analysis BL-CROSS-005,
+ORDA-089,Order placement — cart is cleared after successful order,Orders > Order Placement Side Effects,Critical,,,"Customer account exists
+Cart has items added
+Storefront and xAPI accessible",,"1. Add Product_1 (qty=2) and Product_2 (qty=1) to cart
+2. Execute xAPI cart query to verify cart has 2 line items:
+   query { cart(storeId: ""${STORE_ID}"", cultureName: ""en-US"", currencyCode: ""USD"") { items { quantity productId } itemsCount } }
+3. Verify itemsCount = 2
+4. Complete checkout and place the order
+5. Verify order creation returns success with order number
+6. Execute the same xAPI cart query again
+7. Verify cart is empty (itemsCount = 0, items = [])",,,,,Coverage Gap Analysis BL-CROSS-005,
+ORDA-090,Order placement — order number generated and totals match cart,Orders > Order Placement Side Effects,Critical,,,"Admin logged in to Backend
+Customer account exists
+Cart has items with known prices
+Number template configured in Settings > Orders",,"1. Add products to cart and proceed to checkout
+2. Before placing order, execute xAPI cart query to capture: cart.subTotal, cart.taxTotal, cart.shippingTotal, cart.total
+3. Record cart totals
+4. Place the order
+5. Retrieve the new order via API: GET /api/order/customerOrders/{orderId}
+6. Verify order.number is generated and follows the configured number template
+7. Verify order.status = 'New'
+8. Compare order.subTotal with cart.subTotal
+9. Compare order.taxTotal with cart.taxTotal
+10. Compare order.total with cart.total",,,,,Coverage Gap Analysis BL-CROSS-005,
+ORDA-091,Refund OuterId Persisted from Payment Gateway Response,Orders Admin > Refund > OuterId,High,BL-ORD-004,ECL-12.1,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- An order exists with a completed payment
+- Payment method supports refund flow and returns OuterId in refund response
+- Module version: vc-module-order with fix for VCST-4983 deployed","order_id: a completed paid order
+expected_outer_id: any non-empty string returned by gateway refund call","[BLADE] Navigate to Admin → Orders list
+[BLADE] Open the completed paid order blade
+[BLADE] Open the Payment section; locate the payment record
+[ACT] Initiate a refund for the payment (click Refund or Add Refund)
+[SAVE] Submit the refund form
+[BLADE] After save, re-open the Refund record blade
+[ASSERT] Verify the OuterId field is populated with the gateway-returned transaction ID","[BLADE] Refund blade shows OuterId field with non-empty value matching gateway response
+[STATE] Refund.OuterId is saved in order data (not null/empty after gateway call)","[API] GET /api/order/orders/{id} response shows refund outerId populated
+[CONSOLE] No JS errors in Admin SPA",OuterId field empty/null after refund processed; OuterId not persisted even though gateway returned it,none (refund is already processed),VCST-4983,Reviewed
+ORDA-092,Refund Status Preserved When Modification Fails,Orders Admin > Refund > Status Preservation,High,BL-ORD-004,ECL-12.2,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- An order with a Refund in 'Pending' status exists (gateway accepted initial refund)
+- Payment method mock/gateway configured to reject amount modification","order_id: order with pending refund at $100
+refund_modification: change amount to a value the gateway will reject","[BLADE] Navigate to Admin → Orders → open the order → open Refund blade
+[ASSERT] Verify refund Status = 'Pending'
+[ACT] Edit the refund amount to trigger a gateway rejection
+[SAVE] Save the modified refund
+[BLADE] After save, re-open the Refund blade
+[ASSERT] Verify refund Status is still 'Pending' (not 'Rejected')
+[ASSERT] Verify RejectReasonMessage is populated with the gateway error","[BLADE] Refund status remains 'Pending' after failed modification (not downgraded to 'Rejected')
+[BLADE] RejectReasonMessage/error note shows the rejection reason from gateway
+[STATE] Underlying refund state at gateway is unchanged","[API] GET /api/order/orders/{id} shows refund status = 'Pending'
+[CONSOLE] No JS errors",Status incorrectly changes to 'Rejected'; status changes to another invalid value; error message not shown,none,VCST-4983,Reviewed
+ORDA-093,Cancel Document Button Disabled for Submitted Refund,Orders Admin > Refund > UI Guards,High,BL-ORD-004,ECL-14.10,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- An order with a Refund that has outerId set (submitted to gateway) or status = 'Processed'",order_id: order with a submitted (outerId populated) refund,"[BLADE] Navigate to Admin → Orders → open order → open Refund blade for the submitted refund
+[ASSERT] Verify the refund has outerId populated or status = 'Processed'
+[BLADE] Check the toolbar for the 'Cancel Document' button
+[ASSERT] Verify 'Cancel Document' button is disabled or hidden for this refund
+[ACT] Attempt to interact with the Status dropdown on the refund blade
+[ASSERT] Verify the Status dropdown is read-only/disabled when refund is submitted","[BLADE] 'Cancel Document' button is disabled/hidden for submitted refund (outerId set or status = Processed)
+[BLADE] Status dropdown is read-only/disabled for submitted refund
+[STATE] No local status change possible without gateway call",[CONSOLE] No JS errors in Admin SPA,Cancel Document button is enabled for submitted refund; Status dropdown allows manual edits on submitted refund,none,VCST-4983,Reviewed
+ORDA-094,Order Edit: Line Item Statuses Preserved After Adding Product,Orders Admin > Order Edit > Status Preservation,High,BL-ORD-003,ECL-14.10,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- An order in editable state exists with multiple line items
+- Some line items have custom statuses set (non-default)
+- Module version: vc-module-order-management 3.1001.0+ deployed (fix for VCST-4477)",order_id: order with >=2 line items having custom statuses,"[BLADE] Navigate to Admin → Orders → open order with custom line item statuses
+[ASSERT] Record all current line item statuses before edit
+[ACT] Click 'Edit' or 'Add Product' in the order blade
+[BLADE] Search for and select a new product to add
+[SAVE] Save the order after adding the product
+[BLADE] Re-open the order blade after save
+[ASSERT] Verify all original line items retain their custom statuses
+[ASSERT] Verify the newly added line item has default status","[BLADE] All original line items show same statuses as before the add-product action
+[BLADE] Custom statuses are not reset to default after add-product
+[STATE] Order line item status data is preserved through edit operation","[API] GET /api/order/orders/{id} shows correct statuses for all original line items
+[CONSOLE] No JS errors in Admin SPA",Any original line item status resets to default after add-product; statuses change from custom value to empty/null,none,VCST-4477,Reviewed
+ORDA-095,Order Edit: Multiple Concurrent Custom Statuses Preserved After Adding Product,Orders Admin > Order Edit > Status Preservation,Medium,BL-ORD-003,ECL-14.10,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- An order in editable state exists with >=3 line items each having different distinct custom statuses (non-default)
+- Module version: vc-module-order-management 3.1001.0+ deployed (fix for VCST-4477)",order_id: order with 3+ line items each having different custom statuses,"[BLADE] Navigate to Admin → Orders → open order with >=3 line items each having distinct custom statuses
+[ASSERT] Record and note each line item's custom status before edit
+[ACT] Click 'Add Product' and add a second new product in same edit session
+[SAVE] Save the order
+[BLADE] Re-open order blade
+[ASSERT] Verify each original line item still shows its individual distinct custom status
+[ASSERT] Verify both newly added line items have default status","[BLADE] All >=3 original line items each retain their individual distinct custom status after multi-product add
+[BLADE] No cross-contamination of statuses between line items
+[STATE] Status preservation scales to multiple simultaneous edits","[API] GET /api/order/orders/{id} shows all individual statuses correctly
+[CONSOLE] No JS errors",Any original status overwritten; statuses from different line items swapped; status resets on second add-product,none,VCST-4477,Reviewed
+ORDA-096,Order Product Snapshot — Async Enqueue and Job Succeeds on New Order,Order Product Snapshot (Async),Critical,"BL-ORD-005, BL-CROSS-005",ECL-14.7,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- [PRECHECK] Module installed: GET {{BACK_URL}}api/platform/modules → VirtoCommerce.ProductSnapshot present with state Installed/Active (capture version); if the module is absent, BLOCK this case as an environment gap — do not report as a defect
+- Platform -> Settings -> Product Snapshot -> General: ProductSnapshot.Enabled = ON (verify via GET {{BACK_URL}}api/platform/settings/modules/VirtoCommerce.ProductSnapshot)
+- At least one product with known SKU exists in the catalog (live-discover)
+- Hangfire dashboard accessible at {{BACK_URL}}/hangfire","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=B2B-store","[AUTH] POST {{BACK_URL}}connect/token grant_type=password&username={{AGENT1_EMAIL}}&password={{AGENT1_PASSWORD}}&storeId=B2B-store → capture access_token
+[GQL] POST {{BACK_URL}}graphql — query { me { id } } → capture userId
+[GQL] POST {{BACK_URL}}graphql — products(storeId:""B2B-store"" first:1 filter:""status:enabled"") { items { id name } } → capture productId (live-discover: first available in-stock product)
+[GQL] POST {{BACK_URL}}graphql — addItem(command:{ storeId:""B2B-store"" userId:{userId} productId:{productId} quantity:1 currencyCode:""USD"" cultureName:""en-US"" }) { id } → capture cartId
+[GQL] POST {{BACK_URL}}graphql — availableShippingMethods(storeId:""B2B-store"" userId:{userId}) → capture shipmentMethodCode, shipmentMethodOption, price
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartShipment(command:{ storeId:""B2B-store"" userId:{userId} shipment:{ shipmentMethodCode:{shipmentMethodCode} shipmentMethodOption:{shipmentMethodOption} price:{price} deliveryAddress:{ countryCode:""US"" postalCode:""10001"" line1:""123 Test St"" city:""New York"" regionCode:""NY"" } } }) { id }
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartPayment(command:{ storeId:""B2B-store"" userId:{userId} payment:{ paymentGatewayCode:""DefaultManualPaymentMethod"" } }) { id }
+[GQL] POST {{BACK_URL}}graphql — createOrderFromCart(command:{ cartId:{cartId} }) → capture orderId, orderNumber
+[ASSERT] Verify orderNumber is non-null (order created successfully)
+[NAV] {{BACK_URL}}/hangfire/jobs/enqueued — Hangfire Enqueued Jobs
+[WAIT] Job named 'SaveOrderProductSnapshotsJob.ExecuteAsync' appears in the Enqueued or Succeeded list (allow up to 30s)
+[NAV] {{BACK_URL}}/hangfire/jobs/succeeded — Hangfire Succeeded Jobs
+[WAIT] The same job moves to Succeeded state (allow up to 90s total); expected transitions: Created → Enqueued → Processing → Succeeded (~2–5s processing)
+[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId} → verify HTTP 200 and snapshot DTO is non-null
+[ASSERT] Response contains productId matching the ordered product and at least one catalog field (code or name)","[BLADE] Order is visible in Admin Orders list with status 'New' (navigate to Orders module)
+[BLADE] 'SaveOrderProductSnapshotsJob.ExecuteAsync' (namespace VirtoCommerce.ProductSnapshot.Data.BackgroundJobs) appears in Hangfire within 30s of order creation
+[BLADE] Job transitions: Created → Enqueued → Processing → Succeeded (not Failed or Deleted)
+[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId} returns HTTP 200 with non-null snapshot DTO
+[STATE] Snapshot DTO contains productId matching the ordered product","[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId} returns HTTP 200
+[API] GET /api/order/customerOrders/{orderId} returns order with status=New
+[CONSOLE] No JS errors in Admin SPA
+[NETWORK] No 4xx/5xx on Admin API calls during order creation",Order createOrderFromCart returns errors[]; SaveOrderProductSnapshotsJob not visible in Hangfire within 60s; Job moves to Failed state instead of Succeeded; GET api/product-snapshots/order/{orderId}/product/{productId} returns 404 or empty DTO after job Succeeded,DELETE created order via API: DELETE /api/order/customerOrders with order ID,Created: VCST-5158 (2026-06-14); Verified live: VCST-5158 @ ProductSnapshot 3.1002.0-pr-2 (2026-06-14),Manual
+ORDA-097,Order Product Snapshot — No Job Enqueued When ProductSnapshot.Enabled Is OFF,Order Product Snapshot (Async),High,"BL-ORD-005, BL-CROSS-006",ECL-14.7,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- [PRECHECK] Module installed: GET {{BACK_URL}}api/platform/modules → VirtoCommerce.ProductSnapshot present with state Installed/Active (capture version); if the module is absent, BLOCK this case as an environment gap — do not report as a defect
+- Platform -> Settings -> Product Snapshot -> General: ProductSnapshot.Enabled = OFF (disabled)
+- Verify via GET {{BACK_URL}}api/platform/settings/modules/VirtoCommerce.ProductSnapshot — confirm value = false
+- Hangfire dashboard accessible at {{BACK_URL}}/hangfire","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=B2B-store","[NAV] {{BACK_URL}} — Admin SPA
+[BLADE] Navigate to Settings -> Product Snapshot -> General
+[ASSERT] Confirm ProductSnapshot.Enabled toggle is OFF
+[AUTH] POST {{BACK_URL}}connect/token grant_type=password&username={{AGENT1_EMAIL}}&password={{AGENT1_PASSWORD}}&storeId=B2B-store → capture access_token
+[GQL] POST {{BACK_URL}}graphql — query { me { id } } → capture userId
+[GQL] POST {{BACK_URL}}graphql — products(storeId:""B2B-store"" first:1 filter:""status:enabled"") { items { id } } → capture productId (live-discover)
+[GQL] POST {{BACK_URL}}graphql — addItem(command:{ storeId:""B2B-store"" userId:{userId} productId:{productId} quantity:1 currencyCode:""USD"" cultureName:""en-US"" }) { id } → capture cartId
+[GQL] POST {{BACK_URL}}graphql — availableShippingMethods(storeId:""B2B-store"" userId:{userId}) → capture shipmentMethodCode, shipmentMethodOption, price
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartShipment(command:{ storeId:""B2B-store"" userId:{userId} shipment:{ shipmentMethodCode:{shipmentMethodCode} shipmentMethodOption:{shipmentMethodOption} price:{price} deliveryAddress:{ countryCode:""US"" postalCode:""10001"" line1:""123 Test St"" city:""New York"" regionCode:""NY"" } } }) { id }
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartPayment(command:{ storeId:""B2B-store"" userId:{userId} payment:{ paymentGatewayCode:""DefaultManualPaymentMethod"" } }) { id }
+[GQL] POST {{BACK_URL}}graphql — createOrderFromCart(command:{ cartId:{cartId} }) → capture orderId, orderNumber
+[ASSERT] Order is created (orderNumber non-null)
+[NAV] {{BACK_URL}}/hangfire/jobs/enqueued
+[WAIT] Wait 30s
+[ASSERT] Confirm no 'SaveOrderProductSnapshotsJob.ExecuteAsync' job appears in Enqueued or Succeeded lists","[BLADE] Order created successfully (status = New)
+[BLADE] Hangfire Enqueued queue does NOT contain SaveOrderProductSnapshotsJob for this order after 30s
+[BLADE] Hangfire Succeeded queue does NOT show a new SaveOrderProductSnapshotsJob entry matching the creation time
+[STATE] No snapshot-related job is triggered when ProductSnapshot.Enabled is OFF","[API] GET /api/order/customerOrders/{orderId} returns valid order (HTTP 200)
+[CONSOLE] No JS errors in Admin SPA
+[NETWORK] No 4xx/5xx during order creation",SaveOrderProductSnapshotsJob appears in Hangfire when ProductSnapshot.Enabled is OFF; order creation fails when setting is OFF; unexpected 5xx on order save,Re-enable ProductSnapshot.Enabled = ON via Settings -> Product Snapshot -> General after test; delete test order via API,Created: VCST-5158 (2026-06-14),Manual
+ORDA-098,Order Product Snapshot — Modified Order Entry Triggers New Async Snapshot Job,Order Product Snapshot (Async),High,"BL-ORD-005, BL-CROSS-005",ECL-14.7,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- [PRECHECK] Module installed: GET {{BACK_URL}}api/platform/modules → VirtoCommerce.ProductSnapshot present with state Installed/Active (capture version); if the module is absent, BLOCK this case as an environment gap — do not report as a defect
+- Platform -> Settings -> Product Snapshot -> General: ProductSnapshot.Enabled = ON
+- Hangfire dashboard accessible at {{BACK_URL}}/hangfire
+- At least one product exists in the catalog (live-discover)","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=B2B-store","[AUTH] POST {{BACK_URL}}connect/token grant_type=password&username={{AGENT1_EMAIL}}&password={{AGENT1_PASSWORD}}&storeId=B2B-store → capture access_token
+[GQL] POST {{BACK_URL}}graphql — query { me { id } } → capture userId
+[GQL] POST {{BACK_URL}}graphql — products(storeId:""B2B-store"" first:1 filter:""status:enabled"") { items { id } } → capture productId (live-discover)
+[GQL] POST {{BACK_URL}}graphql — addItem(command:{ storeId:""B2B-store"" userId:{userId} productId:{productId} quantity:1 currencyCode:""USD"" cultureName:""en-US"" }) { id } → capture cartId
+[GQL] POST {{BACK_URL}}graphql — availableShippingMethods(storeId:""B2B-store"" userId:{userId}) → capture shipmentMethodCode, shipmentMethodOption, price
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartShipment(command:{ storeId:""B2B-store"" userId:{userId} shipment:{ shipmentMethodCode:{shipmentMethodCode} shipmentMethodOption:{shipmentMethodOption} price:{price} deliveryAddress:{ countryCode:""US"" postalCode:""10001"" line1:""123 Test St"" city:""New York"" regionCode:""NY"" } } }) { id }
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartPayment(command:{ storeId:""B2B-store"" userId:{userId} payment:{ paymentGatewayCode:""DefaultManualPaymentMethod"" } }) { id }
+[GQL] POST {{BACK_URL}}graphql — createOrderFromCart(command:{ cartId:{cartId} }) → capture orderId, orderNumber
+[NAV] {{BACK_URL}}/hangfire/jobs/succeeded
+[WAIT] First SaveOrderProductSnapshotsJob for this order reaches Succeeded (allow up to 90s) — baseline count = N
+[API] PATCH or PUT {{BACK_URL}}api/order/customerOrders/{orderId} — update order (e.g., change line item quantity or add a note) to trigger OrderChangedEvent
+[NAV] {{BACK_URL}}/hangfire/jobs/enqueued
+[WAIT] A new SaveOrderProductSnapshotsJob.ExecuteAsync appears in Enqueued (allow up to 30s)
+[NAV] {{BACK_URL}}/hangfire/jobs/succeeded
+[WAIT] New job count = N+1 in Succeeded (allow up to 60s)","[BLADE] Order save/update completes with HTTP 200
+[BLADE] A new SaveOrderProductSnapshotsJob.ExecuteAsync is enqueued after the order modification
+[BLADE] Job moves to Succeeded state (count in Succeeded increases by 1 relative to baseline N)
+[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId} returns HTTP 200 with non-null snapshot DTO after second job Succeeded","[API] GET /api/order/customerOrders/{orderId} returns updated order
+[CONSOLE] No JS errors in Admin SPA
+[NETWORK] No 4xx/5xx on order update API call",No new SaveOrderProductSnapshotsJob enqueued after order modification; job enqueued but moves to Failed; order update returns 5xx; GET api/product-snapshots/order/{orderId}/product/{productId} returns 404 after job succeeds,Delete test order via API: DELETE /api/order/customerOrders,Created: VCST-5158 (2026-06-14),Manual
+ORDA-099,Order Product Snapshot — Idempotent Re-save Does Not Create Duplicate Snapshots,Order Product Snapshot (Async),High,"BL-ORD-005, BL-CROSS-010",ECL-14.7,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- [PRECHECK] Module installed: GET {{BACK_URL}}api/platform/modules → VirtoCommerce.ProductSnapshot present with state Installed/Active (capture version); if the module is absent, BLOCK this case as an environment gap — do not report as a defect
+- Platform -> Settings -> Product Snapshot -> General: ProductSnapshot.Enabled = ON
+- An order has been created via xAPI checkout and its first SaveOrderProductSnapshotsJob has already succeeded (orderId known)
+- Hangfire dashboard accessible at {{BACK_URL}}/hangfire","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, orderId=<captured from prior xAPI checkout>, productId=<captured from prior xAPI checkout>","[NAV] {{BACK_URL}}/hangfire/jobs/succeeded
+[ASSERT] Confirm baseline count of SaveOrderProductSnapshotsJob Succeeded entries = N
+[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId} → capture baseline snapshot DTO (non-null, HTTP 200)
+[API] PUT or PATCH {{BACK_URL}}api/order/customerOrders/{orderId} — re-save the order without modifying line items (send existing order payload unchanged) to trigger OrderChangedEvent
+[WAIT] Wait 30s
+[NAV] {{BACK_URL}}/hangfire/jobs/succeeded
+[ASSERT] Verify Succeeded count is at most N+1 (one additional job run, not N+2 or more)
+[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId} — verify snapshot DTO is still non-null and has not been duplicated (same productId, single record)","[BLADE] Order re-save completes without error (HTTP 200)
+[STATE] Snapshot record for the line item is not duplicated — GET api/product-snapshots/order/{orderId}/product/{productId} returns a single, non-null DTO
+[BLADE] Hangfire Succeeded count increases by at most 1 (one job run, not multiple per re-save)","[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId} returns HTTP 200 with single non-null DTO
+[API] GET /api/order/customerOrders/{orderId} returns HTTP 200
+[CONSOLE] No JS errors in Admin SPA
+[NETWORK] No 4xx/5xx on order re-save",Duplicate snapshot records for same productId/orderId after re-save; Hangfire Succeeded count increases by 2+ for a single re-save; order re-save returns error; GET api/product-snapshots returns 404 after re-save,"No cleanup required if using existing order; if order was newly created for this test, delete via API",Created: VCST-5158 (2026-06-14); Verified live: VCST-5158 @ ProductSnapshot 3.1002.0-pr-2 (2026-06-14),Manual
+ORDA-100,Order Product Snapshot — Order Creation Is Not Blocked by Snapshot Job (Non-Blocking),Order Product Snapshot (Async),Critical,"BL-ORD-005, BL-CROSS-005","ECL-14.7, ECL-10.1","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- [PRECHECK] Module installed: GET {{BACK_URL}}api/platform/modules → VirtoCommerce.ProductSnapshot present with state Installed/Active (capture version); if the module is absent, BLOCK this case as an environment gap — do not report as a defect
+- Platform -> Settings -> Product Snapshot -> General: ProductSnapshot.Enabled = ON
+- At least one product exists in the catalog (live-discover)
+- Hangfire dashboard accessible at {{BACK_URL}}/hangfire","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=B2B-store","[AUTH] POST {{BACK_URL}}connect/token grant_type=password&username={{AGENT1_EMAIL}}&password={{AGENT1_PASSWORD}}&storeId=B2B-store → capture access_token; record timestamp T0
+[GQL] POST {{BACK_URL}}graphql — query { me { id } } → capture userId
+[GQL] POST {{BACK_URL}}graphql — products(storeId:""B2B-store"" first:1 filter:""status:enabled"") { items { id } } → capture productId (live-discover)
+[GQL] POST {{BACK_URL}}graphql — addItem(command:{ storeId:""B2B-store"" userId:{userId} productId:{productId} quantity:1 currencyCode:""USD"" cultureName:""en-US"" }) { id } → capture cartId
+[GQL] POST {{BACK_URL}}graphql — availableShippingMethods(storeId:""B2B-store"" userId:{userId}) → capture shipmentMethodCode, shipmentMethodOption, price
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartShipment(command:{ storeId:""B2B-store"" userId:{userId} shipment:{ shipmentMethodCode:{shipmentMethodCode} shipmentMethodOption:{shipmentMethodOption} price:{price} deliveryAddress:{ countryCode:""US"" postalCode:""10001"" line1:""123 Test St"" city:""New York"" regionCode:""NY"" } } }) { id }
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartPayment(command:{ storeId:""B2B-store"" userId:{userId} payment:{ paymentGatewayCode:""DefaultManualPaymentMethod"" } }) { id }
+[GQL] POST {{BACK_URL}}graphql — createOrderFromCart(command:{ cartId:{cartId} }) → capture orderId, orderNumber; record timestamp T1 (elapsed = T1 - T0)
+[ASSERT] orderNumber is non-null and elapsed time from T0 to T1 is under 10s
+[API] GET /api/order/customerOrders/{orderId} immediately (within 5s of T1) — verify HTTP 200 before snapshot job completes
+[NAV] {{BACK_URL}}/hangfire/jobs/enqueued
+[ASSERT] SaveOrderProductSnapshotsJob is visible in Enqueued or Processing state (job not yet Succeeded — order existed before snapshot)","[STATE] createOrderFromCart resolves (orderNumber non-null) without waiting for snapshot job (elapsed < 10s)
+[STATE] Order is immediately retrievable via GET /api/order/customerOrders/{orderId} (HTTP 200) before snapshot job reaches Succeeded state
+[BLADE] Order appears in Admin Orders list immediately after creation (navigate to Orders module)
+[STATE] Order status = 'New' is accessible while SaveOrderProductSnapshotsJob is still Enqueued — order save is decoupled from snapshot completion","[API] GET /api/order/customerOrders/{orderId} returns HTTP 200 within 5s of order creation
+[API] Response body contains order.status = 'New' and correct line items
+[CONSOLE] No JS errors in Admin SPA
+[NETWORK] No timeout (over 10s) or 5xx on the createOrderFromCart mutation",createOrderFromCart hangs over 10s; GET /api/order/customerOrders/{orderId} returns 404 immediately after creation; mutation returns errors[]; order not visible in Admin list until snapshot completes,Delete test order via API: DELETE /api/order/customerOrders,Created: VCST-5158 (2026-06-14); Verified live: VCST-5158 @ ProductSnapshot 3.1002.0-pr-2 (2026-06-14),Manual
+ORDA-101,Order Product Snapshot — Snapshot Content Reflects Ordered Product After Job Succeeds,Order Product Snapshot (Async),High,"BL-ORD-005, BL-CROSS-005",ECL-14.7,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- [PRECHECK] Module installed: GET {{BACK_URL}}api/platform/modules → VirtoCommerce.ProductSnapshot present with state Installed/Active (capture version); if the module is absent, BLOCK this case as an environment gap — do not report as a defect
+- Platform -> Settings -> Product Snapshot -> General: ProductSnapshot.Enabled = ON
+- At least one product exists in the catalog (live-discover)
+- Hangfire dashboard accessible at {{BACK_URL}}/hangfire","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=B2B-store","[AUTH] POST {{BACK_URL}}connect/token grant_type=password&username={{AGENT1_EMAIL}}&password={{AGENT1_PASSWORD}}&storeId=B2B-store → capture access_token
+[GQL] POST {{BACK_URL}}graphql — query { me { id } } → capture userId
+[GQL] POST {{BACK_URL}}graphql — products(storeId:""B2B-store"" first:1 filter:""status:enabled"") { items { id name } } → capture productId (live-discover)
+[GQL] POST {{BACK_URL}}graphql — addItem(command:{ storeId:""B2B-store"" userId:{userId} productId:{productId} quantity:1 currencyCode:""USD"" cultureName:""en-US"" }) { id } → capture cartId
+[GQL] POST {{BACK_URL}}graphql — availableShippingMethods(storeId:""B2B-store"" userId:{userId}) → capture shipmentMethodCode, shipmentMethodOption, price
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartShipment(command:{ storeId:""B2B-store"" userId:{userId} shipment:{ shipmentMethodCode:{shipmentMethodCode} shipmentMethodOption:{shipmentMethodOption} price:{price} deliveryAddress:{ countryCode:""US"" postalCode:""10001"" line1:""123 Test St"" city:""New York"" regionCode:""NY"" } } }) { id }
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartPayment(command:{ storeId:""B2B-store"" userId:{userId} payment:{ paymentGatewayCode:""DefaultManualPaymentMethod"" } }) { id }
+[GQL] POST {{BACK_URL}}graphql — createOrderFromCart(command:{ cartId:{cartId} }) → capture orderId, orderNumber
+[ASSERT] orderNumber is non-null (order created successfully)
+[NAV] {{BACK_URL}}/hangfire/jobs/succeeded
+[WAIT] SaveOrderProductSnapshotsJob.ExecuteAsync (namespace VirtoCommerce.ProductSnapshot.Data.BackgroundJobs) reaches Succeeded state (allow up to 90s); expected transitions: Created → Enqueued → Processing → Succeeded
+[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId} → capture snapshot DTO
+[ASSERT] HTTP 200 and snapshot DTO is non-null
+[ASSERT] Snapshot DTO contains productId matching the captured productId from live-discover
+[ASSERT] Snapshot DTO contains at least one catalog field: code (SKU) or name (assert non-null/non-empty — do not assert exact catalog value)","[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId} returns HTTP 200
+[STATE] Snapshot DTO is non-null and contains productId matching the ordered product
+[STATE] Snapshot DTO includes at minimum code (SKU) or name field (non-empty) — shape assertion, not exact value
+[BLADE] No error toast or warning shown in Admin SPA (navigate to order in Admin)","[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId} returns HTTP 200 with non-null body containing productId
+[CONSOLE] No JS errors in Admin SPA
+[NETWORK] No 4xx/5xx during snapshot retrieval",GET api/product-snapshots/order/{orderId}/product/{productId} returns 404 or empty body after job Succeeded; snapshot DTO missing productId field; snapshot DTO is {}; job Succeeded but snapshot endpoint returns 500,Delete test order via API: DELETE /api/order/customerOrders,Created: VCST-5158 (2026-06-14); Verified live: VCST-5158 @ ProductSnapshot 3.1002.0-pr-2 (2026-06-14),Manual
+ORDA-102,Order Product Snapshot — All Line Items Snapshotted When Order Has Multiple Products,Order Product Snapshot (Async),Medium,"BL-ORD-005, BL-CROSS-005",ECL-14.7,"[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- [PRECHECK] Module installed: GET {{BACK_URL}}api/platform/modules → VirtoCommerce.ProductSnapshot present with state Installed/Active (capture version); if the module is absent, BLOCK this case as an environment gap — do not report as a defect
+- Platform -> Settings -> Product Snapshot -> General: ProductSnapshot.Enabled = ON
+- At least two distinct products exist in the catalog (live-discover)
+- Hangfire dashboard accessible at {{BACK_URL}}/hangfire","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=B2B-store","[AUTH] POST {{BACK_URL}}connect/token grant_type=password&username={{AGENT1_EMAIL}}&password={{AGENT1_PASSWORD}}&storeId=B2B-store → capture access_token
+[GQL] POST {{BACK_URL}}graphql — query { me { id } } → capture userId
+[GQL] POST {{BACK_URL}}graphql — products(storeId:""B2B-store"" first:2 filter:""status:enabled"") { items { id name } } → capture productId1 (items[0].id) and productId2 (items[1].id) — live-discover: must be two distinct products
+[GQL] POST {{BACK_URL}}graphql — addItem(command:{ storeId:""B2B-store"" userId:{userId} productId:{productId1} quantity:1 currencyCode:""USD"" cultureName:""en-US"" }) { id } → capture cartId
+[GQL] POST {{BACK_URL}}graphql — addItem(command:{ storeId:""B2B-store"" userId:{userId} productId:{productId2} quantity:2 currencyCode:""USD"" cultureName:""en-US"" }) { id }
+[GQL] POST {{BACK_URL}}graphql — availableShippingMethods(storeId:""B2B-store"" userId:{userId}) → capture shipmentMethodCode, shipmentMethodOption, price
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartShipment(command:{ storeId:""B2B-store"" userId:{userId} shipment:{ shipmentMethodCode:{shipmentMethodCode} shipmentMethodOption:{shipmentMethodOption} price:{price} deliveryAddress:{ countryCode:""US"" postalCode:""10001"" line1:""123 Test St"" city:""New York"" regionCode:""NY"" } } }) { id }
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartPayment(command:{ storeId:""B2B-store"" userId:{userId} payment:{ paymentGatewayCode:""DefaultManualPaymentMethod"" } }) { id }
+[GQL] POST {{BACK_URL}}graphql — createOrderFromCart(command:{ cartId:{cartId} }) → capture orderId, orderNumber
+[ASSERT] orderNumber is non-null (order created with two line items)
+[NAV] {{BACK_URL}}/hangfire/jobs/succeeded
+[WAIT] SaveOrderProductSnapshotsJob.ExecuteAsync reaches Succeeded state (allow up to 90s); verify only ONE job was enqueued for this orderId (not two)
+[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId1} → verify HTTP 200 and non-null DTO
+[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId2} → verify HTTP 200 and non-null DTO
+[ASSERT] DTO for productId1 contains productId = {productId1}
+[ASSERT] DTO for productId2 contains productId = {productId2} (different from productId1)","[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId1} returns HTTP 200 with non-null DTO
+[API] GET {{BACK_URL}}api/product-snapshots/order/{orderId}/product/{productId2} returns HTTP 200 with non-null DTO
+[STATE] Each snapshot DTO's productId matches its respective ordered product (productId1 ≠ productId2)
+[BLADE] Only ONE SaveOrderProductSnapshotsJob was enqueued and succeeded for this orderId (not one per line item)","[API] Both product-snapshot endpoints return HTTP 200 with non-null body
+[CONSOLE] No JS errors
+[NETWORK] No 4xx/5xx",GET api/product-snapshots returns 404 for one or both products after job Succeeded; snapshot DTO for productId2 contains productId1 (wrong mapping); two separate SaveOrderProductSnapshotsJob enqueued for the same order; only first line item snapshotted,Delete test order via API: DELETE /api/order/customerOrders,Created: VCST-5158 (2026-06-14); Verified live: VCST-5158 @ ProductSnapshot 3.1002.0-pr-2 (2026-06-14),Manual
+ORDA-103,Order Product Snapshot — Snapshot Job Failure Does Not Invalidate or Roll Back the Order,Order Product Snapshot (Async),Medium,"BL-ORD-005, BL-CROSS-011","ECL-14.7, ECL-10.2","[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
+- [PRECHECK] Module installed: GET {{BACK_URL}}api/platform/modules → VirtoCommerce.ProductSnapshot present with state Installed/Active (capture version); if the module is absent, BLOCK this case as an environment gap — do not report as a defect
+- Platform -> Settings -> Product Snapshot -> General: ProductSnapshot.Enabled = ON
+- Hangfire dashboard accessible at {{BACK_URL}}/hangfire
+- At least one product exists in the catalog (live-discover)
+- Note: intentional failure simulation is MANUAL — requires Hangfire job manipulation (e.g., delete job between Enqueued→Processing) or temporary catalog disruption post-order-creation; [AutomaticRetry(Attempts=3)] means the job retries up to 3 times before reaching Failed state","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id=B2B-store","[AUTH] POST {{BACK_URL}}connect/token grant_type=password&username={{AGENT1_EMAIL}}&password={{AGENT1_PASSWORD}}&storeId=B2B-store → capture access_token
+[GQL] POST {{BACK_URL}}graphql — query { me { id } } → capture userId
+[GQL] POST {{BACK_URL}}graphql — products(storeId:""B2B-store"" first:1 filter:""status:enabled"") { items { id } } → capture productId (live-discover)
+[GQL] POST {{BACK_URL}}graphql — addItem(command:{ storeId:""B2B-store"" userId:{userId} productId:{productId} quantity:1 currencyCode:""USD"" cultureName:""en-US"" }) { id } → capture cartId
+[GQL] POST {{BACK_URL}}graphql — availableShippingMethods(storeId:""B2B-store"" userId:{userId}) → capture shipmentMethodCode, shipmentMethodOption, price
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartShipment(command:{ storeId:""B2B-store"" userId:{userId} shipment:{ shipmentMethodCode:{shipmentMethodCode} shipmentMethodOption:{shipmentMethodOption} price:{price} deliveryAddress:{ countryCode:""US"" postalCode:""10001"" line1:""123 Test St"" city:""New York"" regionCode:""NY"" } } }) { id }
+[GQL] POST {{BACK_URL}}graphql — addOrUpdateCartPayment(command:{ storeId:""B2B-store"" userId:{userId} payment:{ paymentGatewayCode:""DefaultManualPaymentMethod"" } }) { id }
+[GQL] POST {{BACK_URL}}graphql — createOrderFromCart(command:{ cartId:{cartId} }) → capture orderId, orderNumber
+[ASSERT] orderNumber is non-null (order created)
+[NAV] {{BACK_URL}}/hangfire/jobs/enqueued
+[WAIT] SaveOrderProductSnapshotsJob appears in Enqueued state
+[MANUAL] To simulate failure: use Hangfire dashboard to delete/fail the job before it reaches Processing, OR observe natural failure if catalog data is unavailable; note job will retry up to 3 times ([AutomaticRetry(Attempts=3)]) before transitioning to Failed
+[NAV] {{BACK_URL}}/hangfire/jobs/failed (confirm job reached Failed after exhausting retries) — OR skip failure simulation and proceed to verification
+[API] GET /api/order/customerOrders/{orderId} — verify HTTP 200, order status = 'New', line items present
+[BLADE] Open order in Admin Orders module — verify order is visible and editable
+[ASSERT] Verify NO rollback or cancellation of the order occurred due to any snapshot job failure","[STATE] Order persists with status = 'New' regardless of snapshot job outcome (Succeeded or Failed after 3 retries)
+[API] GET /api/order/customerOrders/{orderId} returns HTTP 200 with complete order data
+[BLADE] Order remains fully visible and operable in Admin after a snapshot job failure
+[STATE] No order cancellation, status reset, or data corruption results from snapshot job failure","[API] GET /api/order/customerOrders/{orderId} returns HTTP 200 and order.status = 'New'
+[CONSOLE] No JS errors in Admin SPA
+[NETWORK] No 5xx on order retrieval after potential snapshot job failure",Order status changes to Cancelled or Error after snapshot job fails; GET /api/order/customerOrders/{orderId} returns 404 or 500 after job failure; order data is corrupted or partially deleted; Admin shows error state for order,Delete test order via API: DELETE /api/order/customerOrders; if snapshot job was intentionally failed re-enable normal conditions,Created: VCST-5158 (2026-06-14),Manual
+ORDA-104,"[JOURNEY] Order price protection end-to-end — denied admin reads, edits and saves without ever seeing or destroying a price",Orders > Price Data Protection,Critical,"BL-AUTH-005, BL-PLAT-001",ECL-14.10,"A role holding every Orders permission EXCEPT order:read_prices (order:read, order:create, order:update, order:access, order:delete, order:update_shipments, order:capture_payment, order:refund, plus platform:access), assigned to a dedicated admin user. No test-data resolver alias exists yet for this role/user — it must be provisioned live via Admin > Security > Roles before this case can run (permissions live on the ROLE, never the user, per VC-B2B-002).
+A disposable order in {{STORE_ID}} carrying: >=2 line items, >=1 shipment, >=1 payment with >=1 capture and >=1 refund, and >=1 order-level discount — built so Discounts[0].discountAmount would reveal the withheld total if ORDA-118's leak is present (a discriminating fixture, not merely a present one).
+Before the denied walk, sign in as {{ADMIN_EMAIL}} (permitted) and record the order's TRUE Total, each LineItem.Price, the shipment's Price, the payment's Total, the capture's Amount, the refund's Amount, and Discounts[0].discountAmount as the baseline the whole walk must never expose and the post-save check must still match.","back_url={{BACK_URL}}, admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, store_id={{STORE_ID}}","--- ADMIN --- (baseline, permitted admin)
+[NAV] {{ADMIN_URL}}
+[ACT] sign in with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} (holds order:read_prices)
+[NAV] Orders module > open the disposable order from Preconditions
+[ASSERT] record the baseline values listed in Preconditions (order Total, each line item Price, shipment Price, payment Total, capture Amount, refund Amount, Discounts[0].discountAmount)
+[NAV] sign out
+--- ADMIN --- (denied walk)
+[NAV] {{ADMIN_URL}}
+[ACT] sign in as the denied-role admin user from Preconditions
+[NAV] Orders module list grid — locate the disposable order's row
+[ASSERT] surface 1 of 6: list-grid price cell
+[BLADE] open the order detail blade
+[ASSERT] surface 2 of 6: order-totals widget/area
+[BLADE] open the Line Items widget
+[ASSERT] surface 3 of 6: each line item's price/discount fields
+[BLADE] open the Shipment widget for the order's shipment
+[ASSERT] surface 4 of 6: shipment price/total
+[BLADE] open the Payment widget, then its Captures and Refunds sub-sections
+[ASSERT] surface 5 of 6: payment total, capture amount, refund amount
+[BLADE] open the operation-tree widget (order > shipment > payment tree)
+[ASSERT] surface 6 of 6: every node in the tree
+[ACT] type into the 'Comment' field (non-price field)
+[SAVE] click 'Save'; wait for the success toast confirmation
+--- API ---
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/{id} as {{ADMIN_EMAIL}} (the permitted admin) to read the order back after the denied admin's save","[BLADE] no numeric price, total, discount, tax, or fee value is rendered anywhere across all six surfaces (list row, order-totals widget, line items, shipment widget, payment/capture/refund sub-widgets, operation-tree widget) during the denied walk {SPEC} PR body + {BL}
+[BODY] after the denied admin's non-price save, the permitted-admin GET returns Total, every sampled LineItem.Price, the shipment's Price, the payment's Total, the capture's Amount, the refund's Amount, and Discounts[0].discountAmount ALL EQUAL to the baseline recorded before the walk — the price-blind save did not destroy any stored price {SPEC} PR body ""restored on every save... create, update, patch"" + {BL}","[API] GET /api/order/customerOrders/{id} as the permitted admin after the walk shows withPrices=true and every price field matching the pre-walk baseline
+[CONSOLE] no TypeError or JS error in the Admin SPA across any of the six price surfaces
+[NETWORK] no 4xx/5xx on any Admin API call during the walk or the save","Any numeric price/total/discount/tax/fee value visible anywhere in the six-surface walk; the order-totals widget renders blank/NaN in a way inconsistent with a deliberate masked state; the post-save GET shows Total, any LineItem.Price, the shipment Price, the payment Total, the capture Amount, or the refund Amount as 0 or different from the pre-walk baseline (price data destroyed by a non-price save); a blade fails to open within 10s","Delete the disposable order, the test user and the role. Never run against an order another suite asserts on — a restore failure destroys its prices permanently.",VCST-3912 · Archetype:SCOPE · Technique:FLOW | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-105,Search API — denied caller receives every order-level monetary field zeroed and withPrices false,Orders > Price Data Protection,Critical,BL-AUTH-005,,Denied-role admin user (no order:read_prices) with a valid token. A reference order whose real totals are known from a privileged read.,"back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] Confirm the fixture from Preconditions: a denied-role admin user (role holds every Orders permission except order:read_prices) and a reference order whose real totals were captured via a privileged GET as {{ADMIN_EMAIL}}
+[AUTH] POST {{BACK_URL}}connect/token as the denied-role admin user → capture access_token
+[HTTP] POST {{BACK_URL}}api/order/customerOrders/search with body {""ids"":[""<reference order id>""]} using the denied-role token
+[CAPTURE] the returned CustomerOrder object for the reference order
+[HTTP] repeat the same POST using {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} (permitted) for comparison","[BODY] withPrices = false on the order returned to the denied-role caller {SPEC} PR body — OrderOperation.WithPrices
+[BODY] every field the PR body's Breaking Changes section names as newly zeroed reads 0/null for the denied-role caller: Total, SubTotal, SubTotalWithTax, DiscountAmount, DiscountTotal, DiscountTotalWithTax, Fee, FeeTotal, FeeTotalWithTax, FeeWithTax, HandlingTotal, HandlingTotalWithTax, OrderTotals (null), PaymentDiscountTotal, PaymentDiscountTotalWithTax, PaymentSubTotal, PaymentSubTotalWithTax, PaymentTaxTotal, PaymentTotal, PaymentTotalWithTax, ShippingDiscountTotal, ShippingDiscountTotalWithTax, ShippingSubTotal, ShippingSubTotalWithTax, ShippingTaxTotal, ShippingTotal, ShippingTotalWithTax, SubTotalDiscount, SubTotalDiscountWithTax, SubTotalTaxTotal, TaxPercentRate, TaxTotal {SPEC} PR body §Breaking changes, diff CustomerOrder.cs
+[BODY] the SAME order read by {{ADMIN_EMAIL}} (permitted) in the comparison call shows every one of those 30 fields at the TRUE non-zero value captured in Preconditions — the zeroing is permission-driven, not a data gap {SPEC}","[ADMIN] the same reference order opened in the Admin SPA by {{ADMIN_EMAIL}} shows the true totals, confirming the zeroed REST response is redaction, not an empty fixture",Any of the 30 named fields is non-zero for the denied-role caller; withPrices is missing from the payload entirely (contract regression) or reads true for a denied caller; OrderTotals is non-null instead of null for the denied caller,none,VCST-3912 · Archetype:SCOPE · Technique:EP | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-106,Get by id / number / outerId — 404 for absent vs 403 for out-of-scope lets a scoped caller enumerate valid orders,Orders > Price Data Protection,High,BL-AUTH-005,,"A store-scoped admin user. One order inside their store scope, one order outside it, and one id/number/outerId that does not exist. Pre-change baseline: all three routes returned HTTP 200 with a null body.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] Using {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}}, confirm: (a) one order the store-scoped admin user's role covers, (b) one order in a store OUTSIDE that scope, (c) a random non-existent order id/number/outerId (a GUID/number that does not exist)
+[AUTH] POST {{BACK_URL}}connect/token as the store-scoped admin user → capture access_token
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/{non-existent id} using the store-scoped token
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/{out-of-scope order id} using the store-scoped token
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/{in-scope order id} using the store-scoped token
+[HTTP] repeat all three via {{BACK_URL}}api/order/customerOrders/number/{number} and {{BACK_URL}}api/order/customerOrders/outer/{outerId}","[STATUS] GET .../{non-existent id} returns HTTP 404 {SPEC} PR body §Breaking changes at runtime — load-then-authorize
+[STATUS] GET .../{out-of-scope order id} returns HTTP 403 {SPEC} PR body §Breaking changes at runtime
+[STATUS] GET .../{in-scope order id} returns HTTP 200 with the order body {SPEC}
+[STATUS] the /number/{number} and /outer/{outerId} routes return the SAME 404/403/200 split as the /{id} route for the same three orders {SPEC} — all three GET routes now go through GetByIdAsync/GetByNumberAsync/GetByOuterIdAsync then authorize-the-loaded-order per the diff","[ADMIN] the same three orders opened in the Admin SPA (as {{ADMIN_EMAIL}}, unrestricted) show order/order/order — not blank — confirming the fixture itself is valid
+[EVENT] no platform exception/error event logged for the 404 case (a genuine ""not found"" is not a server error)",Any of the three GET routes returns HTTP 200 with a null body instead of 404/403 (pre-change silent-narrowing behaviour regressed back); 404 and 403 are swapped between the missing-order and out-of-scope-order cases; the /number or /outer routes disagree with the /{id} route's status code for the same underlying order (partial rollout of load-then-authorize); a 500 on the non-existent id,none,VCST-3912 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-108,"Store scope — a caller requesting a store outside their scope must receive zero orders, not every store's orders",Orders > Price Data Protection,Critical,"BL-AUTH-005, BL-AUTH-006",,An admin user whose role carries an Orders store scope limited to {{STORE_ID}} only. Orders exist in both {{STORE_ID}} and {{STORE_ID_SECONDARY}}. Also probe a differently-cased spelling of the out-of-scope store id.,"back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, in_scope_store={{STORE_ID}}, out_of_scope_store={{STORE_ID_SECONDARY}}","[SETUP] Confirm a store-scoped admin user whose role's store scope = {{STORE_ID}} only; confirm orders exist in BOTH {{STORE_ID}} and {{STORE_ID_SECONDARY}}
+[AUTH] POST {{BACK_URL}}connect/token as the store-scoped admin user → capture access_token
+[HTTP] POST {{BACK_URL}}api/order/customerOrders/search with body {""storeIds"":[""{{STORE_ID_SECONDARY}}""]} using the store-scoped token
+[CAPTURE] the set of storeId values present in the returned results
+[HTTP] repeat with a differently-cased spelling of {{STORE_ID_SECONDARY}} in storeIds","[BODY] the result set contains ZERO orders, OR contains only orders from stores within the caller's allowed scope ({{STORE_ID}}) — it must NEVER contain an order whose storeId is {{STORE_ID_SECONDARY}} or any store outside the allowed scope {SPEC} diff OrderAuthorizationHandler.cs — AllowedStoreIds.Intersect(criteria.StoreIds) can yield [] + {BL}
+[STATUS] HTTP 200 is acceptable only if the result set satisfies the assertion above — a 200 carrying out-of-scope orders is the defect, not a pass {BL}
+[BODY] the differently-cased out-of-scope request produces the identical (empty/in-scope-only) result — case-insensitive store matching must not create a bypass {SPEC} diff — DistinctIgnoreCase/ContainsIgnoreCase on store matching","[ADMIN] the same search performed by {{ADMIN_EMAIL}} (unrestricted) for {{STORE_ID_SECONDARY}} confirms orders DO exist there — proves the empty/zero result above is scope enforcement, not an empty store","The result set for an explicit out-of-scope store request contains ANY order whose storeId is not in the caller's allowed scope — worst case it contains orders from EVERY store on the platform (AllowedStoreIds.Intersect(requested) == [] read downstream as ""no filter""); the differently-cased store id bypasses the scope check where the exact-case id does not",none,VCST-3912 · Archetype:SCOPE · Technique:BVA | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-109,"Maximal order graph — every nested node (line item, shipment, payment, capture, refund) is zeroed and flagged",Orders > Price Data Protection,High,BL-AUTH-005,ECL-13.1,"Denied-role admin user. An order carrying >=2 line items, >=1 shipment with its own line items, >=1 payment with >=1 capture AND >=1 refund beneath it — the deepest graph the model supports.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] Confirm the disposable maximal-graph order from ORDA-104's fixture (or an equivalent): >=2 line items, >=1 shipment, >=1 payment with >=1 capture and >=1 refund
+[AUTH] POST {{BACK_URL}}connect/token as {{ADMIN_EMAIL}} (permitted) → GET {{BACK_URL}}api/order/customerOrders/{id} → capture the TRUE Amount on every capture and refund, the Price on every line item and the shipment, and the Total on the payment
+[AUTH] POST {{BACK_URL}}connect/token as the denied-role admin user → capture access_token
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/{id} using the denied-role token","[BODY] every LineItem's Price/PlacedPrice/ExtendedPrice/ListTotal/Fee (and WithTax counterparts) = 0 {SPEC} diff LineItem.cs
+[BODY] the Shipment's Price/Total/Fee (and WithTax counterparts) = 0 {SPEC} diff Shipment.cs
+[BODY] the PaymentIn's Price/Total (and WithTax counterparts) = 0 {SPEC} diff PaymentIn.cs
+[BODY] every Capture.Amount under that payment = 0 {SPEC} diff Capture.cs — new ReduceDetails override added by this PR, no redaction path existed before it
+[BODY] every Refund.Amount under that payment = 0 {SPEC} diff Refund.cs — new ReduceDetails override added by this PR
+[BODY] withPrices = false at every node — the order, the shipment, the payment, every line item, every capture, every refund {SPEC} diff OrderOperation.cs — base ReduceDetails sets WithPrices=false on each node","[ADMIN] the same order's operation-tree widget (order > shipment > payment > captures/refunds), viewed as the denied-role admin, shows no numeric value at any tree node","Any Capture.Amount or Refund.Amount is non-zero for the denied caller (the node the pre-PR recursion had no path to at all); a nested node's withPrices is still true while its parent's is false (partial propagation); line item, shipment, or payment price fields non-zero",none,VCST-3912 · Archetype:BOUNDARY · Technique:CT | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-110,Restore on write — a denied caller saving an order they read price-blind must not persist the zeros,Orders > Price Data Protection,Critical,BL-AUTH-005,ECL-14.10,"Denied-role admin user. A DISPOSABLE order (AGENT-TEST- prefixed where the platform allows a custom field) with known real prices, captured via a privileged GET as {{ADMIN_EMAIL}} before this case touches it — this case destroys them if the fix is wrong, so it must never run against a shared fixture. Exercise the update (PUT) and patch (PATCH) write paths against this EXISTING order.
+CREATE is deliberately out of scope for this case: a brand-new order has no stored counterpart to restore from (architecture doc rule #2 — ""a new entity has no stored counterpart and needs no restore""), so restore-on-write does not apply to it by design. The same holds for an entity created by an import: with no stored counterpart there is nothing to restore from and no implementation could recover the withheld values, so that is not a defect either and carries no case.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] a DISPOSABLE order with known real Total and one known LineItem.Price, captured via a privileged GET as {{ADMIN_EMAIL}} before this case touches it
+[AUTH] POST {{BACK_URL}}connect/token as the denied-role admin user → capture access_token
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/{id} using the denied-role token → capture the zeroed order body (Total=0, withPrices=false)
+[HTTP] PUT {{BACK_URL}}api/order/customerOrders with the SAME body just read (prices still zero) but with one non-price field changed (e.g. OperatorComment) — this is the UpdateOrder action
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/{id} as {{ADMIN_EMAIL}} (permitted) to read the stored order back
+[CAPTURE] Total and the same LineItem.Price
+[HTTP] repeat the same GET(denied) -> PATCH(denied, JsonPatchDocument changing only a non-price field) -> GET(permitted) sequence via PATCH {{BACK_URL}}api/order/customerOrders/{id}","[BODY] after the denied caller's PUT, the order re-read as the permitted admin shows Total and the sampled LineItem.Price EQUAL to the values captured before the walk — the price-blind save did not persist the zeros {SPEC} PR body ""Prices are restored on every save... create, update, patch"" + arch doc rule #2 + {BL}
+[BODY] the non-price field the denied caller changed (OperatorComment) IS persisted — restore-on-write must not also revert the caller's legitimate edit {SPEC}
+[BODY] the same two checks hold after the PATCH path {SPEC}
+[STATUS] both the PUT and the PATCH return their normal success status (200/204), not an error — restore is transparent to the caller {SPEC}","[ADMIN] the order reopened in the Admin SPA by {{ADMIN_EMAIL}} shows the original prices AND the denied caller's comment change together
+[DB] a direct privileged GET immediately after each save (no cache lag) confirms persistence, not just an in-memory echo of the request",Total or the sampled LineItem.Price reads back as 0 after either the PUT or the PATCH by the denied caller — the stored price was permanently destroyed by a save that returned success; the non-price edit (OperatorComment) is silently discarded instead of only the price being restored,"Delete the disposable order. If stored prices were destroyed, re-seed rather than repairing in place.",VCST-3912 · Archetype:SILENT · Technique:ST | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-111,Export by a permitted admin in an HTTP session contains the real prices,Orders > Price Data Protection,High,BL-IMPEX-002,,"An admin user that DOES hold order:read_prices, signed in, triggering an order export from the Admin SPA. Orders with known non-zero totals in range.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] confirm an order with known non-zero totals exists in the export range (captured via a privileged GET beforehand)
+[NAV] {{ADMIN_URL}} sign in as {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} (holds order:read_prices)
+[NAV] locate the Orders module's own Export/Import widget (Configuration > Modules > Orders, or the module's settings blade — confirm exact location live)
+[ACT] click 'Export'
+[WAIT] the export job reaches a terminal state
+[ACT] download the resulting export file","[BODY] the exported CustomerOrders JSON contains the SAME non-zero Total (and other price fields) as the privileged GET captured before the export — export by a permitted, in-session admin must still carry real prices {SPEC} PR body ""Export previously... always contained prices regardless of permission"" — this PR gates export by CanReadPrices, which must remain true for a permitted caller + {BL}
+[BODY] withPrices = true (or the field is simply absent/defaulted true) on every exported order for this caller {SPEC}",[ADMIN] the exported order count matches the count returned by a live search with the same filter/date range (BL-IMPEX-002 filter fidelity),Exported order has Total=0 or any zeroed price field despite the triggering admin holding order:read_prices (S8's over-redaction risk — the export path denies the legitimate caller); export file missing entirely; export job fails silently with no error surfaced,none,VCST-3912 · Archetype:PARITY · Technique:EP | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-112,"A backup carries the price rights of the user who started it - admin archive keeps real prices, a price-blind user archive does not",Orders > Price Data Protection,Critical,BL-IMPEX-002,,"An order with a known non-zero total, read privileged first. A user WITHOUT order:read_prices holding platform:backuprestore:access/backup/storage. Export only - this case creates no server-side state and restores nothing.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] capture the sampled order privileged as {{ADMIN_EMAIL}}: GET {{BACK_URL}}api/order/customerOrders/number/{number} -> record total, items[0].price and withPrices
+[AUTH] POST {{BACK_URL}}connect/token as {{ADMIN_EMAIL}} -> capture access_token
+[HTTP] GET {{BACK_URL}}api/platform/export/manifest/new, set VirtoCommerce.Orders isChecked, then POST {{BACK_URL}}api/platform/export with that manifest
+[WAIT] poll POST {{BACK_URL}}api/platform/pushnotifications until the job reports a downloadUrl, then download the archive
+[ASSERT] open VirtoCommerce.Orders.json inside the admin archive and read the sampled order
+[AUTH] POST {{BACK_URL}}connect/token as the price-blind user and repeat the same export end to end
+[ASSERT] open VirtoCommerce.Orders.json inside that second archive and read the SAME order","[BODY] the admin archive carries withPrices true for the sampled order and its total equals the privileged live read - an export runs on a background worker, so this is the check that the worker acts with the rights of the user who STARTED it rather than with no user at all {SPEC}
+[BODY] the price-blind user archive carries withPrices false and total 0 for that same order {SPEC}
+[REL] admin_archive.total == privileged.total and != 0, AND denied_archive.total == 0 - the two archives DIVERGE on one order. Two archives that agree mean the acting identity never reached the protection service, whichever way they agree {SPEC}
+[NEG] the admin archive is not price-free. A background worker with no resolvable user denies prices by design (CanReadPrices returns false for a null principal), and a recurring job resolves to the literal system:<recurringJobId>, which is not a real account - so a price-free ADMIN archive is the visible symptom of a lost identity, not of a permission decision {SPEC} HangfireUserContextMiddleware.OnPerforming in VirtoCommerce.BackgroundJobs","[API] each export job push notification reports creator equal to the user who started it - admin for the first run, the price-blind user for the second
+[DB] the privileged live read of the sampled order is identical before and after both exports - an export must not mutate what it reads","The admin archive reports total 0 / withPrices false for an order that reads non-zero live - the background worker lost the initiating user and every backup ships without prices; or both archives carry identical values, meaning the protection service is not in the export path at all",Delete both downloaded archives from the local scratch directory. The export creates no server-side state; nothing is restored by this case.,VCST-3912 - Archetype:SILENT - Technique:EG | Promoted: REG-2026-09-11-1935 (2026-09-11),Automated
+ORDA-113,"Admin SPA masks from the server's withPrices flag, not from a client-side permission check",Orders > Price Data Protection,Critical,"BL-AUTH-005, BL-UI-004",ECL-14.10,"Three users: one holding order:read_prices, one denied it, and one denied the GLOBAL permission but GRANTED prices by a custom CanReadPrices override (the sample store-type rule from samples/VirtoCommerce.OrdersModule2.Web). The third user's scenario requires that sample's SampleCustomerOrderDataProtectionService (or an equivalent custom override) to be registered as ICustomerOrderDataProtectionService in THIS environment — confirm via GET {{BACK_URL}}api/platform/modules before running; if not installed (the default on most QA environments, since OrdersModule2 is a reference sample, not a shipped module), the third sub-case is BLOCKED-NOT-FAIL and only the entitled/denied pair is executable.
+Walk all six Admin price surfaces the customer analysis names: order list grid, line items, order-totals widget, invoice, shipment, and the operation-tree widget. Force-refresh and confirm the bundle hash changed first — the Admin SPA carries a 4h max-age (VC-DEPLOY-003) and a stale bundle masquerades as a masking failure.","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] GET {{BACK_URL}}api/platform/modules — confirm whether a module registering a custom ICustomerOrderDataProtectionService is installed; if not, run only the entitled/denied pair and record the custom-rule sub-case as BLOCKED-NOT-FAIL
+[NAV] {{ADMIN_URL}}
+[KEY] hard refresh (Ctrl+Shift+R)
+[ASSERT] the bundle JS file hash in the Network tab differs from any previously cached load (VC-DEPLOY-003)
+[NAV] sign in as the entitled admin ({{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}}, holds order:read_prices)
+[NAV] Orders module list grid — note the price cell for the disposable order
+[BLADE] open the order; open Line items, the order-totals area, the Shipment widget, the invoice (via GetInvoicePdf), and the operation-tree widget in turn
+[ACT] sign out
+[ACT] sign in as the denied admin
+[NAV] repeat the same six-surface walk
+[ACT] sign out
+[ACT] sign in as the custom-rule user (only if SETUP confirmed the sample is registered)
+[NAV] repeat the same six-surface walk","[GRID] the list-grid price cell shows a real value for the entitled user, a masked state (blank/dash, never a value indistinguishable from a real 0) for the denied user, and a real value for the custom-rule user if applicable {SPEC} diff customerOrder-list.tpl.html — showPrice:row.entity.withPrices filter
+[BLADE] the order-totals widget, line items, shipment widget, invoice, and operation-tree widget each mirror the SAME masked/unmasked state as the list grid for each user — no surface disagrees with another for the same user {SPEC} diff — all ten blade/template files were switched from authService.checkPermission('order:read_prices') to reading blade.<x>.withPrices in this PR; a missed file is a partial migration
+[BLADE] the custom-rule user is shown real prices despite lacking the global order:read_prices permission — proving the UI reads the server's withPrices flag rather than re-deriving the rule client-side {SPEC} PR body ""read that flag instead of re-deriving the rule from client-side permission checks"" + {BL}","[API] GET /api/order/customerOrders/{id} for each of the three users returns withPrices matching what the SPA rendered (true/false/true) — confirms the SPA is not caching a stale flag from a previous user's session
+[CONSOLE] no TypeError or JS error while switching users or opening any of the six surfaces
+[NETWORK] no 4xx/5xx on any Admin API call across the six-surface walk for any of the three users","Any of the six surfaces shows a real price to the denied user, or masks a price for the entitled or custom-rule user; the custom-rule user is masked despite the override granting them access (a missed blade file still calling authService.checkPermission client-side); a blade does not open within 10s; a stale (pre-deploy) bundle hash makes this run indistinguishable from a real masking failure — reject the run and re-force-refresh if the SETUP hash check did not change",none,VCST-3912 · Archetype:PARITY · Technique:DT · Probe:VC-DEPLOY-003 | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-114,Independent Payment and Shipment endpoints must not return prices to a caller denied them on the parent order,Orders > Price Data Protection,Critical,BL-AUTH-005,,"Denied-role admin user. An order with >=1 payment and >=1 shipment carrying known non-zero amounts. Call the payment and shipment search/get endpoints DIRECTLY, not through the customerOrders routes.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] Discover the standalone Payment and Shipment search/get REST routes via {{BACK_URL}}/swagger/v1/swagger.json (look for operationIds outside OrderModuleController exposing PaymentIn/Shipment search or get-by-id, per the architecture doc's statement that payment and shipment are separate CRUD services over the order aggregate); record the exact paths found
+[AUTH] POST {{BACK_URL}}connect/token as the denied-role admin user → capture access_token
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/{id} using the denied-role token → confirm the payment's Total and the shipment's Price read 0 via the order route (baseline for comparison)
+[HTTP] call the standalone Payment search/get endpoint discovered above, for the SAME payment id, using the SAME denied-role token
+[HTTP] call the standalone Shipment search/get endpoint discovered above, for the SAME shipment id, using the SAME denied-role token","[BODY] the standalone Payment endpoint's Total/Price fields for this payment = 0, matching what the order route returned to this caller {SPEC} — the protection decorator implements only the CustomerOrder-typed interfaces per ICustomerOrderDataProtectionService (diff); if this endpoint is reachable independently it must apply the SAME rule, not the raw unredacted service {DOC} arch doc §Where does the boundary sit + {BL}
+[BODY] the standalone Shipment endpoint's Total/Price fields for this shipment = 0, matching the order route {SPEC}/{DOC}/{BL} — same predicate","[ADMIN] the same payment/shipment reopened by {{ADMIN_EMAIL}} (permitted) via the standalone endpoint shows the TRUE non-zero values, confirming the zero above is redaction working, not an empty fixture","The standalone Payment or Shipment endpoint returns a non-zero Total/Price to the denied-role caller while the SAME data via the order route reads 0 — the aggregate-root decorator does not cover the child services, exactly as the architecture doc states is the module's current condition; no standalone endpoint discoverable via Swagger — record as BLOCKED-NOT-FAIL with what was searched, not a false FAIL",none,VCST-3912 · Archetype:SCOPE · Technique:EG | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-115,"A custom CanReadPrices override with no resolvable principal must deny, not throw a 500",Orders > Price Data Protection,High,BL-AUTH-017,,"The sample module's SampleCustomerOrderDataProtectionService (or an equivalent custom CanReadPrices override) registered for ICustomerOrderDataProtectionService. Reach an order read with no resolvable user — a background job, an export, or an unauthenticated request that still reaches the service.
+NOTE for the executing agent: re-reading the shipped diff for this run, SampleCustomerOrderDataProtectionService.CanReadPrices guards `user != null` BEFORE calling CanReadPricesForStore (the only caller of the unguarded FindPermission), and the BASE CustomerOrderDataProtectionService.CanReadPrices also short-circuits on `user is null` before touching claims. Both reachable paths appear to already guard the null case, which is INCONSISTENT with the ""500 instead of deny"" hypothesis this case was scaffolded to test — treat the assertion below as a genuine open question, not a known repro.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] Confirm the sample's SampleCustomerOrderDataProtectionService (or an equivalent custom CanReadPrices override) is registered as ICustomerOrderDataProtectionService in this environment; if not installed, exercise the BASE service's null-principal path instead (still meaningful — CustomerOrderDataProtectionService.CanReadPrices also short-circuits on user is null per the diff)
+[HTTP] trigger an order read with NO resolvable principal reaching the protection service — the same system-context path used in ORDA-112 (a Hangfire job / no-HttpContext invocation), or an anonymous request if the route allows one to reach the service unauthenticated
+[CAPTURE] the HTTP status code and response body","[STATUS] the request returns a 4xx (401/403) and NEVER HTTP 500 - an unresolvable principal must be a denial, not a server fault {BL} BL-AUTH-017 (a malformed/unauthenticated request yields 4xx, never 500)
+[NEG] the response body carries no stack trace and no unhandled-exception shape {BL}
+[BODY] both guards are in place and are what produce the 4xx: the base CanReadPrices returns false for `user is null` before touching a claim, and the sample override checks `user != null` before calling FindPermission {SPEC} commit dfa3864 - the earlier 500 hypothesis was raised against commit a2d4cfa and does not reproduce on or after dfa3864",[EVENT] no unhandled-exception entry is logged for this request (Application Insights / platform exception log) — a logged NullReferenceException in ClaimsPrincipalExtensions.FindPermission would confirm the mechanism even if the HTTP layer masked it as a generic 500,"HTTP 500 with a NullReferenceException / ""Object reference not set"" stack frame referencing FindPermission or CanReadPricesForStore; a 500 with no diagnostic body identifying the cause (still a defect against BL-AUTH-017, independent of root cause)",none,VCST-3912 · Archetype:FALLBACK · Technique:EG | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-116,Redacting a cache-owned order must not strip prices for the next entitled caller,Orders > Price Data Protection,High,BL-AUTH-005,,"Two users, one denied prices and one entitled. Read the SAME order as the denied user first, then immediately as the entitled user, with no cache eviction in between. Repeat for the nested shipment and payment, not just the order root.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] identify the most reachable proxy for a clone:false / cache-owned read: read the SAME order as the denied user, then immediately (within the platform's normal order response-cache window) as the entitled user, via the standard GET routes
+[AUTH] as the denied-role admin user: GET {{BACK_URL}}api/order/customerOrders/{id}
+[AUTH] immediately after, as {{ADMIN_EMAIL}} (permitted): GET {{BACK_URL}}api/order/customerOrders/{id}
+[CAPTURE] Total and one LineItem.Price from the second (entitled) response
+[HTTP] repeat the same read pair for the order's shipment and payment sub-objects","[BODY] the entitled admin's read, taken immediately after the denied admin's read of the SAME order, shows the TRUE non-zero Total and LineItem.Price — not the zeros the denied caller received {SPEC} PR body ""Also fixes CustomerOrder.Clone()... mutating a clone reached back into the original"" + arch doc rule #1 + {BL}
+[BODY] the same holds for the nested shipment and payment values on the entitled admin's read {SPEC}
+[REL] the entitled admin's Total read AFTER the denied admin's read equals the entitled admin's Total captured BEFORE it — before vs after unchanged, and != 0. Any drift to 0 means the denied read poisoned the shared cache {SPEC} arch doc rule #1","[DB] a direct privileged GET well after any cache TTL confirms the stored order was never actually mutated, independent of timing","The entitled admin's read (taken right after the denied admin's read of the same order) shows 0/zeroed prices instead of the true values — the denied read's redaction leaked into a shared cached instance and poisoned the next entitled caller (pre-fix CustomerOrder.Clone() aliasing ChildrenOperations to the source's shipments/payments); the nested shipment or payment values also revert to zero on the entitled read while the order root shows true values (partial cache poisoning, proving the aliasing was one level down, not at the root)",none,VCST-3912 · Archetype:STALE · Technique:ST | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-117,Granting order:read_prices takes effect on the next request with no sign-out,Orders > Price Data Protection,Medium,"BL-PLAT-001, BL-AUTH-005",,"A denied-role admin user with an active session reading an order with prices masked. Then add order:read_prices to the ROLE (permissions live on roles, never on users) and re-read without signing out. Then remove it again and re-read.","back_url={{BACK_URL}}, admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{ADMIN_URL}} sign in as the denied-role admin user (active session)
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/{id} using this session's token — confirm Total=0, withPrices=false
+[NAV] {{ADMIN_URL}} in a SEPARATE admin session
+[ACT] sign in as {{ADMIN_EMAIL}}
+[ACT] add order:read_prices to the denied user's ROLE (Admin > Security > Roles — permissions live on the role, never the user, per VC-B2B-002)
+[WAIT] the role update save confirmation appears
+[HTTP] WITHOUT signing the first user out, repeat GET {{BACK_URL}}api/order/customerOrders/{id} using the SAME still-active session
+[ACT] remove order:read_prices from the role again
+[SAVE] confirm the role update is saved
+[HTTP] repeat the GET once more with the same still-active session","[BODY] after the role grant, the SAME active session's next GET returns the true non-zero Total and withPrices=true, with no sign-out/sign-in in between {BL}
+[BODY] after the role is revoked again, the SAME active session's next GET returns Total=0 and withPrices=false, again with no sign-out/sign-in {BL}","[ADMIN] the Admin SPA order blade, left open in the first session's browser tab and refreshed (not re-logged-in) after the grant, shows the price without a new sign-in",The active session keeps returning zeroed prices after the grant until the user signs out and back in (stale permission cache); the active session keeps returning real prices after the revoke until re-login (a stale-permission leak in the worse direction),none,VCST-3912 · Archetype:STALE · Technique:ST · Probe:VC-B2B-002 | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-118,"Discounts, tax details and fee details survive redaction and reconstruct the withheld total",Orders > Price Data Protection,Critical,"BL-AUTH-005, BL-ORD-010",,"Denied-role admin user. An order carrying at least one order-level discount, and where possible non-empty taxDetails and feeDetails, on the order AND on a line item AND on a shipment. Read the same order privileged first to know the true totals.
+As a live cross-check while sizing this fixture, note the pattern observed on vcptcore-qa today: order CO260909-00002 has total=44.99 alongside an UNTOUCHED discounts[0].discountAmount=44.995 (""50% off cart subtotal"") — the same order/build combination this case targets on this environment.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] Confirm the disposable order from ORDA-104's fixture carries >=1 order-level discount, and where possible non-empty taxDetails/feeDetails, on the order AND on a line item AND on a shipment
+[AUTH] as {{ADMIN_EMAIL}} (permitted): GET {{BACK_URL}}api/order/customerOrders/{id} → capture the TRUE order.discounts[], order.taxDetails[], order.feeDetails[], one lineItem.discounts[], and one shipment.discounts[]
+[AUTH] as the denied-role admin user: GET {{BACK_URL}}api/order/customerOrders/{id}","[BODY] order.discounts[] on the denied caller's response is EMPTY or null — NOT the same non-empty array the permitted read captured {SPEC} diff CustomerOrderDataProtectionService.cs — RemovePrices calls ReduceDetails(Full & ~WithPrices), which clears only the WithPrices flag, leaving WithDiscounts set, so Discounts is never nulled — the concrete leak + {DOC} arch doc §Open questions #1 + {BL}
+[BODY] order.taxDetails[] and order.feeDetails[] on the denied caller's response are EMPTY/null or otherwise carry no amount — ReduceDetails never references TaxDetails/FeeDetails at all per the diff, so they are untouched by construction {SPEC}/{BL}
+[BODY] the same holds one level down: the sampled lineItem.discounts[] and the sampled shipment.discounts[] are empty/null for the denied caller, not the non-empty arrays the permitted read captured {SPEC}/{BL}
+[MATH] the denied caller cannot reconstruct the withheld order.Total from order.discounts[].discountAmount plus any other surviving field — verify that whatever discount/total data IS present is insufficient to derive the true Total; per the live CO260909-00002 pattern, a bare discounts[0].discountAmount beside Total=0 already fails this check if Discounts is not nulled {DOC}/{BL}","[ADMIN] the order-totals widget and line-items widget, viewed as the denied-role admin in the SPA, show no discount amount either — confirms the leak (if present) is not merely a REST-payload artifact hidden by the UI","order.discounts[], lineItem.discounts[], or shipment.discounts[] is non-empty for the denied caller while Total/other price fields read 0 — the withheld total is reconstructible from the surviving discount amount, exactly as observed live on CO260909-00002 (total=44.99, discounts[0].discountAmount=44.995, ""50% off cart subtotal""); taxDetails[]/feeDetails[] similarly survive with a non-zero amount/rate",none,VCST-3912 · Archetype:SCOPE · Technique:EG | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-123,"Invoice download is gated by order:invoice:download, independently of order:read_prices",Orders > Price Data Protection,High,BL-AUTH-005,,"Three roles over the same minimum base (customer:read, order:access, order:read, platform:module:read, platform:setting:read, store:read): (A) neither order:read_prices nor order:invoice:download; (B) order:invoice:download but NOT order:read_prices; (C) both. An order with a known non-zero total.","back_url={{BACK_URL}}, admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] three roles over the same base (customer:read, order:access, order:read, platform:module:read, platform:setting:read, store:read): A = base only; B = base + order:invoice:download; C = base + order:invoice:download + order:read_prices. One user per role.
+[SETUP] an order with a known non-zero Total, captured via a privileged GET as {{ADMIN_EMAIL}}
+[AUTH] POST {{BACK_URL}}connect/token as user A -> capture access_token
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/invoice/{number} as user A
+[AUTH] repeat for user B, then for user C
+[NAV] {{ADMIN_URL}} -> sign in as user A -> open the order blade -> inspect the toolbar
+[ASSERT] repeat the toolbar inspection as user B and as user C, each in a SEPARATE browser session (switching accounts in one tab triggers VCST-5952)","[STATUS] user A (no order:invoice:download) receives 403 from the invoice endpoint {SPEC} the permission introduced by VCST-3912 gates this endpoint + {BL}
+[BLADE] user A sees NO Invoice button in the order toolbar - hidden, not shown-and-failing {SPEC}
+[STATUS] users B and C both receive 200 with content-type application/pdf {SPEC}
+[BLADE] users B and C both see the Invoice button {SPEC}
+[REL] user C's invoice prints the SAME Total as a privileged GET of that order reports - invoice.Total == api.Total and != 0 {SPEC}
+[BODY] user B's invoice prints 0 amounts - accepted behaviour, the permission pair is the control, not a mask inside the PDF {SPEC} decision recorded on VCST-3912 as Keep as Is","[API] the toolbar button's visibility and the endpoint's status agree for all three roles - a visible button that 403s, or a hidden button over a 200, means the blade and the controller disagree about the permission
+[CONSOLE] no unhandled rejection when user A's session renders the order blade without the button","User A receives 200 and a PDF, or sees an Invoice button; user C receives 403 or loses the button; the button renders for a role the endpoint refuses, or is hidden for a role it allows",Delete the three roles and their users.,VCST-3912 · Archetype:SCOPE · Technique:DT | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-124,Restoring a backup exported without prices must not overwrite the stored prices with zeros,Orders > Price Data Protection,Critical,"BL-IMPEX-001, BL-IMPEX-004",ECL-6.4,"A user holding platform:backuprestore:access/backup/storage but NOT order:read_prices. A DISPOSABLE order with a known non-zero total — this case destroys prices if the guard regresses, so it must never run against a shared fixture. Export as that user (the archive will carry every price 0.0 and withPrices false), then strip the archive to the single disposable order before restoring.","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] a DISPOSABLE order with a known real Total and one known LineItem.Price, captured via a privileged GET as {{ADMIN_EMAIL}} before this case touches it
+[SETUP] a user holding platform:backuprestore:access/backup/storage but NOT order:read_prices
+[AUTH] POST {{BACK_URL}}connect/token as that user -> capture access_token
+[HTTP] GET {{BACK_URL}}api/platform/export/manifest/new, tick VirtoCommerce.Orders, then POST {{BACK_URL}}api/platform/export with that manifest -> wait for the job, download the archive
+[ASSERT] the archive's VirtoCommerce.Orders.json carries the disposable order with total 0.0 and withPrices false - if it does not, the export half regressed and this case cannot test the restore half
+[SETUP] strip the archive to the single disposable order, so the restore can touch nothing else, and re-zip
+[HTTP] POST {{BACK_URL}}api/assets?folderUrl=backups (multipart) to upload the stripped archive -> capture relativeUrl
+[HTTP] POST {{BACK_URL}}api/platform/import as {{ADMIN_EMAIL}} with fileUrl set to that relativeUrl and the full exportManifest object -> wait for the restore job to finish
+[HTTP] GET {{BACK_URL}}api/order/customerOrders/{id} as {{ADMIN_EMAIL}} to read the stored order back","[REL] after the restore, the order's Total and the sampled LineItem.Price EQUAL the values captured before the export - restored.Total == original.Total and != 0 {SPEC} the restore guard reads the flag carried in the payload, not the importing caller's rights
+[BODY] two control orders NOT present in the stripped archive are unchanged, and the total order count is unchanged - the import is a per-entity upsert and must not touch anything the archive does not carry {SPEC}
+[STATUS] the restore job reaches a terminal state with errorCount 0 {SPEC}
+[NEG] no order in the system has had a non-zero price replaced by 0 as a result of this restore {SPEC}","[ADMIN] the disposable order reopened in the Admin SPA after the restore shows its original prices, not a masked or zeroed total
+[DB] the privileged GET is taken after the job reports finished, not while it is running, so the read is of persisted state","The disposable order's Total or LineItem.Price reads back as 0 after the restore - a routine backup restore silently destroyed stored prices while the job reported success; or a control order outside the archive changed, meaning the import is not the per-entity upsert it is documented to be",Delete the disposable order and remove the uploaded archive from Backup storage. Never restore an unstripped price-free archive on a shared environment — it would zero every order it carries.,VCST-3912 · Archetype:SILENT · Technique:ST | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated
+ORDA-125,"A user WITH order:read_prices sees real amounts in the line-item Discounts widget, not a mask",Orders > Price Data Protection,High,"BL-AUTH-005, BL-UI-004",ECL-14.10,"An order carrying a LINE-ITEM level discount, not an order-level one — the two are different widgets and an order-level discount leaves the line-item widget empty with nothing to judge. Open as an administrator AND as a user without order:read_prices, in separate browser sessions (switching accounts in one tab triggers VCST-5952).","admin_url={{ADMIN_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[SETUP] an order carrying a LINE-ITEM level discount with a known amount - NOT an order-level discount. The two are different widgets, and an order-level discount leaves the line-item widget empty with nothing to judge.
+[NAV] {{ADMIN_URL}} -> sign in as {{ADMIN_EMAIL}} (holds order:read_prices)
+[ACT] open the order blade
+[WAIT] the order blade finishes loading and the widget tiles render
+[ACT] open the Line items widget
+[WAIT] the line-items grid renders its rows
+[ACT] click the item row carrying the discount
+[WAIT] the line-item card renders its widget tiles
+[ACT] open the Discounts widget inside the line-item card
+[WAIT] the Discounts grid renders
+[CAPTURE] the Discount amount column, and the Discount field in the line-item form beside it
+[SETUP] open a SEPARATE browser session - an in-tab account switch triggers VCST-5952 and floods the console
+[NAV] sign in as a user whose role lacks order:read_prices
+[ACT] walk the same path: order blade -> Line items -> the discounted item row -> its Discounts widget
+[CAPTURE] the Discount amount column for this second user","[REL] for {{ADMIN_EMAIL}}, the Discounts widget's Discount amount EQUALS the line-item form's Discount field and equals the discountAmount in the payload - all three agree and none is masked {SPEC} + {BL}
+[NEG] for {{ADMIN_EMAIL}}, the Discount amount does NOT render as a mask - an entitled user must not be shown # characters where the payload carries a number {SPEC}
+[SHAPE] for the user without order:read_prices, the Discount amount renders masked, and the mask corresponds to a withheld zero rather than to the real amount - the digit count tells the two apart {SPEC}
+[BODY] the payload for the privileged session carries withPrices true and the real discountAmount, confirming the value reached the client and the question is purely one of rendering {SPEC}","[ADMIN] the order-level Discounts blade is checked in the same run and behaves correctly for both users - the two widgets are separate and regress independently
+[API] the privileged payload is captured alongside the screenshot, so a rendering claim is always tied to what the server actually sent","An administrator sees a masked Discount amount while the form field beside it shows the real number - the widget masks unconditionally instead of reading price visibility from its host blade; or the restricted user sees the real amount, which is the leak in the other direction",none,VCST-3912 · Archetype:PARITY · Technique:DT | Promoted: REG-2026-09-11-1616 (2026-09-11),Automated

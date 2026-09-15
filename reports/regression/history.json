@@ -2315,5 +2315,21 @@
     "pass_rate": 40,
     "duration_minutes": 20.55,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-09-11-1616",
+    "date": "2026-09-11",
+    "suiteId": "017",
+    "suiteName": "Orders Admin Management",
+    "environment": "vcptcore",
+    "browser": "playwright-edge",
+    "total": 22,
+    "passed": 17,
+    "failed": 2,
+    "blocked": 3,
+    "skipped": 0,
+    "pass_rate": 89.47,
+    "duration_minutes": 51.81,
+    "mode": "interactive"
   }
 ]
