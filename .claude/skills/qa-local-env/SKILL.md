@@ -48,7 +48,8 @@ health-checks the result.
    │
 gen-manifest ──► fetch baseline (vcptcore-demo) + merge requirements ──► .local-env/packages.custom.json
    │
-provision   ──► bootstrap → build IF manifest changed (else reuse per-manifest image cache) → down
+provision   ──► bootstrap → down (the installer must not race a live platform) → build IF manifest
+   │            changed (else reuse per-manifest image cache) → down (frees ports)
    │            → wipe data (unless -KeepData + unchanged image) → start
    │            → init-admin (store→Password1!, writes .env.local)                  [PowerShell + Docker]
    │
@@ -180,11 +181,17 @@ running-container count (start phase) → **download size `X / Y`** or **buildki
 pwsh -File skills/qa-local-env/provision.ps1 -Action monitor
 # → visual snapshot: current phase + last log line, image presence, container marks, /health
 ```
-`up` = bootstrap (once) → build **iff manifest changed** (else reuse the per-manifest image cache) →
-`down` (frees ports) → **wipe data volumes** (fresh DB; skipped only with `-KeepData` + unchanged image)
-→ start → init-admin. start-local refuses to start when its ports are busy,
-so provision always brings the stack `down` before starting. A different `-DbProvider` than the env
-was bootstrapped with is detected and auto-re-bootstrapped for the new engine. Endpoints: storefront
+`up` = bootstrap (once) → **`down`** → build **iff manifest changed** (else reuse the per-manifest
+image cache) → `down` (frees ports) → **wipe data volumes** (fresh DB; skipped only with `-KeepData` +
+unchanged image) → start → init-admin. **There are two downs and they solve different problems.** The
+FIRST one keeps the module installer from racing a live platform container — it runs before the build
+(and before a cache retag, which also swaps the live image out from under a running container), and it
+is unconditional because the build itself is conditional; skipping it cost an 11-minute build once
+(§Verified facts). The SECOND frees the ports, because start-local refuses to start when any of its
+ports is busy. `-Action build` on its own takes the same pre-build `down`.
+
+A different `-DbProvider` than the env was bootstrapped with is detected and auto-re-bootstrapped
+for the new engine. Endpoints: storefront
 `http://localhost:80`, platform/Admin/xAPI `http://localhost:8090` (`admin`/`Password1!`).
 
 ### 4. Health-check (+ task field probe)
@@ -279,6 +286,19 @@ To exercise it against real data — after seeding and configuring a product int
 
 ## Verified facts & gotchas (Phase 0, 2026-06-24)
 
+- **A LIVE platform container breaks the build — the stack is brought down BEFORE it (fixed 2026-09-08).**
+  `vc-build install` installs modules through the platform's OWN installer
+  (`VirtoCommerce.Platform.Data.TransactionFileManager`), and the platform container mounts the modules
+  volume at `/opt/virtocommerce/platform/modules`. So a running platform — above all one CRASHLOOPING
+  because Docker restarted it **without its database** — kills the install mid-transaction. Measured on
+  VCST-5733: Docker Desktop had just been launched and auto-restarted the previous run's containers
+  (`vc-platform-web` Up, `vc-db` Exited, restart loop); the install died **11m19s** in on
+  `VirtoCommerce.PageBuilderModule:3.1023.0` with `System.Transactions` `Timeout` → `Rollback` →
+  `IOException: the process cannot access the file 'VirtoCommerce.PageBuilderModule_3.1023.0.zip'`.
+  Nothing about the error names the real cause, and the 11 minutes are lost. `up` (and `build`) now run
+  `Invoke-PreBuildDown` before the build, so this is handled — but if you ever see a mid-install file-lock
+  or transaction error, **look for a running/restarting `virtolocal-*` container first**, and remember
+  that a stale stack can be resurrected by a Docker Desktop restart without anyone asking for it.
 - **Pre-release pins are NOT distinguishable by version** — see the Version caveat above. The CI
   artifact filename carries `-pr-N-sha` but `module.manifest` often keeps the un-bumped base version,
   so `/api/platform/modules` reports the released number. provision auto-runs `--expect-module`
