@@ -124,9 +124,8 @@ test("EVERY manifest suite gets more turns than it has cases", () => {
 
 test("full: derived global budget covers the selection, unlike the old $80 default", () => {
   const suites = selection("full");
-  const minutes = suites.reduce((sum, s) => sum + minutesOf(s), 0);
-  assert.equal(suites.length, 131, "manifest drift: full's suite count changed");
-  assert.equal(minutes, 3078, "manifest drift: full's total estimate changed");
+  // No corpus-size guard: the budget assertions below are the property under test and hold at
+  // any size. Manifest drift is caught by `npm run suites:lint` against _meta.totalSuites.
 
   const budget = globalBudgetFor(suites);
   assert.ok(budget >= 140, `expected >= $140, got $${budget.toFixed(2)}`);
