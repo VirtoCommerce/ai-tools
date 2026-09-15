@@ -1,0 +1,14 @@
+{
+  "name": "vc-kb",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The knowledge base tool. Extracts the derived plane from a running deployment and resolves questions against it.",
+  "bin": { "kb": "bin/kb.mjs" },
+  "scripts": {
+    "kb": "node bin/kb.mjs",
+    "test": "node --test test/*.test.mjs",
+    "test:logger": "node vendor/agent-log/test-log-row.mjs && node vendor/agent-log/test-tool-log.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
