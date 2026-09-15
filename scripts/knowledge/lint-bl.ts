@@ -82,6 +82,40 @@ interface Finding {
   message: string;
 }
 
+/**
+ * BLC-002 burn-down baseline: the dangling BL ids that already existed when the ratchet
+ * was added, with their citing-case counts. A RATCHET, not an exemption — the same shape
+ * and the same reason as `XREF_BASELINE` in sync-test-suites.ts.
+ *
+ * 46 ids across 213 citing cases were in the corpus on 2026-09-14. They accumulated because
+ * nothing could WRITE a `Business_Rule` cell on an existing row until `npm run bl:remap`
+ * existed, and BLC-002 is Medium so no gate ever failed. Hard-failing on day one would mean
+ * everyone runs the lint at a lower gate and the signal dies.
+ *
+ * An id NOT listed here is NEW drift and is reported HIGH. A listed id may never GROW.
+ * An id that stops dangling is reported as a stale entry — delete it. Goal: keep this empty.
+ * Burn down with `npm run bl:remap` (--from/--to to remap onto an existing invariant,
+ * --propose for an ADD candidate awaiting triangulation, --drop for a ref that is wrong).
+ *
+ * REGENERATE FROM THIS LINT'S OWN OUTPUT, never from a second parser. The counts below come
+ * from `npm run bl:lint`'s "cited in Business_Rule of N case(s)". A hand-written parser was
+ * tried first and disagreed — it missed a `"BL-CHK-001; BL-SEC-001"` two-ids-in-one-cell
+ * citation that the canonical `parseSuite` finds, undercounting by 2 ids and 15 cases. The
+ * ratchet caught it on the first run, which is exactly what it is for.
+ */
+export const BLC_002_BASELINE: Record<string, number> = {
+  "BL-API-001": 26, "BL-API-002": 7, "BL-API-003": 16, "BL-API-004": 25, "BL-CART-018": 6,
+  "BL-CFG-001": 2, "BL-CFG-003": 8, "BL-CFG-004": 4, "BL-CFG-007": 4, "BL-CFG-008": 5,
+  "BL-CMS-001": 1, "BL-CMS-002": 1, "BL-CMS-003": 1, "BL-CMS-004": 1, "BL-CMS-005": 1,
+  "BL-CMS-006": 1, "BL-CMS-007": 1, "BL-CMS-008": 1, "BL-CMS-009": 1, "BL-CMS-010": 1,
+  "BL-CMS-011": 1, "BL-CR-002": 3, "BL-CR-003": 2, "BL-CR-004": 3, "BL-CR-005": 2,
+  "BL-CR-006": 1, "BL-CR-007": 2, "BL-CR-011": 1, "BL-CR-014": 1, "BL-CR-015": 1,
+  "BL-CROSS-013": 1, "BL-GA4-001": 10, "BL-GA4-002": 5, "BL-GA4-003": 14, "BL-GA4-004": 4,
+  "BL-PAY-002": 4, "BL-PAY-005": 6, "BL-PAY-006": 1, "BL-SEC-001": 6, "BL-SEC-002": 3,
+  "BL-SEC-003": 8, "BL-SEC-004": 6, "BL-SEC-005": 2, "BL-STORE-002": 1, "BL-STORE-003": 3,
+  "BL-STORE-004": 9,
+};
+
 const find = (rule: string, severity: Severity, id: string, message: string): Finding => ({ rule, severity, id, message });
 
 function truncate(s: string, n = 80): string {
@@ -310,11 +344,41 @@ export function lint(
   // BLC-002 suite references a non-existent BL ID (Medium — matches the canonical
   // Dim-6 BL-002 severity in review-criteria.md; keeps the default High gate green
   // on the large pre-existing suite↔oracle drift while still surfacing every case).
+  //
+  // RATCHET (added 2026-09-14). The Medium above is deliberate, but on its own it let
+  // false traceability accumulate unchecked: nothing in the repo could WRITE a
+  // Business_Rule cell until `npm run bl:remap` existed, and Medium fails no gate, so
+  // 48 dangling ids across 230 citing cases built up unnoticed. BLC_002_BASELINE keeps
+  // the pre-existing drift at Medium (the gate stays green, the signal survives) while
+  // making any NEW dangling citation High — the same shape and the same reason as
+  // XREF_BASELINE in sync-test-suites.ts.
   for (const ref of coverage.referenced) {
     if (!oracleIds.has(ref)) {
       const cases = coverage.byBl.get(ref) ?? [];
-      f.push(find("BLC-002", "Medium", ref, `cited in Business_Rule of ${truncate(cases.join(", "), 60)} but no such invariant exists in the oracle (false traceability)`));
+      const allowed = BLC_002_BASELINE[ref] ?? 0;
+      const isNew = allowed === 0;
+      const grew = !isNew && cases.length > allowed;
+      const sev = isNew || grew ? "High" : "Medium";
+      const why = isNew
+        ? "NEW dangling citation — not in the BLC-002 baseline. Point it at an existing invariant, cite it as PROPOSED-BL-… while its ADD candidate awaits triangulation, or drop it: `npm run bl:remap`"
+        : grew
+          ? `baselined at ${allowed} citing case(s) but now ${cases.length} — a baselined id may never grow`
+          : "false traceability";
+      // The citing list is truncated for readability, so the COUNT is printed explicitly —
+      // without it the BLC_002_BASELINE below cannot be regenerated from this output, and a
+      // second parser written to recover it will disagree (measured: a hand parser missed a
+      // `BL-CHK-001; BL-SEC-001` two-ids-in-one-cell citation the canonical parseSuite finds).
+      f.push(find("BLC-002", sev, ref, `cited in Business_Rule of ${cases.length} case(s): ${truncate(cases.join(", "), 60)} — no such invariant exists in the oracle (${why})`));
     }
+  }
+
+  // A baselined id that is no longer dangling (remapped, proposed away, or the invariant
+  // was finally written) must be DELETED from the baseline — otherwise the ratchet
+  // silently loosens. Same "stale baseline entry" discipline as CSV_LINT_BASELINE.
+  for (const ref of Object.keys(BLC_002_BASELINE)) {
+    const stillDangling = coverage.referenced.has?.(ref) ?? [...coverage.referenced].includes(ref);
+    if (oracleIds.has(ref) || !stillDangling)
+      f.push(find("BLC-002", "Informational", ref, "stale BLC-002 baseline entry — no longer dangling; delete it from BLC_002_BASELINE to shrink the ratchet"));
   }
 
   return f;

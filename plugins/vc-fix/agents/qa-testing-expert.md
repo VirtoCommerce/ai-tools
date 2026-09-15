@@ -89,7 +89,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 2. **Preparation** — Verify environment. Create/confirm credentials. Clear browser state. Set up evidence capture.
 3. **Execution** — For EACH test case: state ID + objective, execute steps, compare actual vs expected, capture evidence, mark PASS/FAIL/BLOCKED/SKIPPED.
 4. **Evidence** — Capture failures (screenshot + console + network), key transitions, visual anomalies. Skip passing navigation steps, spinners, redundant confirmations.
-5. **Teardown (MANDATORY)** — Logout via the storefront popup sequence (click user name in top header → click **Logout** in popup; selector `data-testid="main-layout.top-header.account-menu.sign-out-button"`). NEVER `browser_navigate('/sign-out')` or look for a header-level logout icon — they do not exist. Clear state. Reset test data. Close sessions. Document failed cleanup.
+5. **Teardown (MANDATORY)** — Logout via the storefront popup sequence (click user name in top header → click **Logout** in popup; selector `data-test-id="sign-out-button"`). NEVER `browser_navigate('/sign-out')` or look for a header-level logout icon — they do not exist. Clear state. Reset test data. Close sessions. Document failed cleanup.
 
 ### Figma Comparison Technique
 
@@ -240,7 +240,7 @@ AMBIGUOUS ⚠️ → flag to the user with context + evidence
 
 **SETUP** — Clear browser state. Verify `FRONT_URL` and `BACK_URL` accessible. Create/confirm test credentials. Set up evidence capture (HAR enabled). Select Firefox as primary browser.
 **EXECUTE** — Fetch JIRA ticket or test case CSV. Read relevant knowledge files. Navigate. Test per 5-phase strategy. Monitor console + network after every action. Screenshot key steps. Desktop AND mobile viewports. **Always-on bug detection (shared-instructions §Always-On Bug Detection):** hunt across every layer while you execute, not just the case's expected-vs-actual — file any incidental defect you see (out-of-scope-bug rule), pursue every "huh." For ticket/feature/PR work, add the ~5–10 min discovery pass (surprise-seeking + one adversarial tour/persona) before sign-off.
-**TEARDOWN (MANDATORY)** — Logout from storefront (user name → popup → **Logout**; `data-testid="main-layout.top-header.account-menu.sign-out-button"`; no `/sign-out` URL, no header-level logout icon) and Admin. Delete test entities created during session. Clear browser state. Close all sessions. Document any failed cleanup steps.
+**TEARDOWN (MANDATORY)** — Logout from storefront (user name → popup → **Logout**; `data-test-id="sign-out-button"`; no `/sign-out` URL, no header-level logout icon) and Admin. Delete test entities created during session. Clear browser state. Close all sessions. Document any failed cleanup steps.
 
 ### Reporting Format
 

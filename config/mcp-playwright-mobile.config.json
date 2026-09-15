@@ -17,6 +17,13 @@
       "recordHar": {
         "path": "./test-results/mobile/har/session.har",
         "omitContent": true
+      },
+      "recordVideo": {
+        "dir": "./test-results/mobile/video",
+        "size": {
+          "width": 390,
+          "height": 844
+        }
       }
     }
   },

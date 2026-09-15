@@ -119,7 +119,8 @@ with relationship + severity, `bugs_not_filed`, the **`timing`** block,
 **`path`** plus **`path_route`** (how the EFFORT axis landed there — for a Story that is `1a`-provisional
 then `1b`-confirmed, `ticket-routing.md` §5b),
 **`layer`** (derived at `1b` item 2b) plus the **`release`** block resolved at 5e.0, and the four derived-axis
-blocks — **`visual`** (2c), **`contract`** (2d), **`coverage_triage`** (2e + Step 2a) and **`discovery`**
+blocks — **`visual`** (2c), **`contract`** (2d), **`coverage_triage`** (2e's scan + Artifact A's `2a`
+phase) and **`discovery`**
 (Step 3x). In each of those, `null` means the axis **never ran**, which is not the same fact as an empty
 array. The **`documentation`** block is the one field written later — at **5h**, after the transition —
 because it records an action that has not happened yet at this point.

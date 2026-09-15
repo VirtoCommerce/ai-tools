@@ -1,7 +1,7 @@
 ---
 description: "Autonomous fix for an already-filed bug: triage → confirm root-cause → route to one repo → reproduce by unit test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review. Single repo only. Never auto-merges. Interactive twin of ci/run-fix-cycle.ts."
-argument-hint: "VCST-XXXX"
-disable-model-invocation: true
+argument-hint: "ticket <KEY>"
+
 ---
 
 # /qa-fix — Autonomous Bug Fix (interactive)

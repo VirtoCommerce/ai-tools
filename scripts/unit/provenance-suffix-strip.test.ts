@@ -50,16 +50,28 @@ test("a genuine mismatch still FAILS — the fix must not make everything pass",
   assert.equal(r.passed, false, "a wrong value must still fail after stripping");
 });
 
-// NOTE: an expected value that itself contains parentheses — `= "a (b)"` — does not
-// evaluate today (the top-level operand splitter treats the parens as grouping and
-// yields `lhs=? rhs=?`). That is a PRE-EXISTING evaluator limitation, unrelated to
-// provenance stripping: it fails identically with and without a tag. What this test
-// pins is the part the strip owns — the tag is removed and the expected operand is
-// left clean — without asserting a comparison capability the evaluator lacks.
-test("value containing parentheses: the tag is still stripped cleanly", () => {
+// An expected value that itself contains parentheses — `= "a (b)"` — used NOT to evaluate:
+// the parens made `hasArith` true, which force-routed a pure STRING equality into the
+// arithmetic branch, where neither operand resolves to a number, so it returned
+// `lhs=? rhs=?` and FAILED against a correct value. The note that used to sit here called
+// that a pre-existing limitation unrelated to provenance stripping, which was right — it
+// belonged to the `data.`-only numeric gate, fixed 2026-09-14 (the same gate that made
+// every arithmetic assertion over a REST body always-red; see numeric-expression-paths.test.ts).
+// The branch is now chosen by whether both operands actually RESOLVE to numbers, so this
+// predicate correctly takes the string branch.
+//
+// The test keeps its original job — the tag must not survive into the operand — and now also
+// pins the comparison the old note had to disclaim.
+test("value containing parentheses: the tag is stripped AND the value compares", () => {
   const r = evaluateAssertion(dataAssertion('data.label = "a (b)" {DOC}'), respond({ label: "a (b)" }), {});
-  assert.equal(r.expected, 'data.label = "a (b)"', "the {DOC} tag must not survive into the operand");
+  assert.equal(r.passed, true, "a matching value with parens must PASS, not route into arithmetic");
+  assert.equal(r.expected, "data.label = a (b)", "the {DOC} tag must not survive into the operand");
   assert.ok(!r.expected.includes("{DOC}"));
+});
+
+test("...and a parenthesised value that does NOT match still fails", () => {
+  const r = evaluateAssertion(dataAssertion('data.label = "a (b)" {DOC}'), respond({ label: "a (c)" }), {});
+  assert.equal(r.passed, false, "the string branch must still discriminate");
 });
 
 test("a note containing nested parentheses is fully stripped", () => {

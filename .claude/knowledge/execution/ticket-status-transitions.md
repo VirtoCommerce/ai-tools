@@ -151,6 +151,46 @@ was never only reachability: it tells everyone else on the board that QA started
 states live; if the project genuinely has no testing-like state, record
 `skipped: "no in-testing state in this project"` and move on. **Never invent a state name.**
 
+### 7a. RE-RESOLVE at the closing hop. The list fetched at `1a` is stale by construction.
+
+"Resolved live" is not a property of a run, it is a property of **each hop**: the available transitions
+are a function of the **current** status, so the set fetched at `1a` describes the status the ticket was
+in *before* the opening hop and cannot name the closing ones. Re-fetch at 5f, from the in-testing status,
+and match on `to.name` there.
+
+**Measured 2026-09-11 on VCST-5024 (Jira, VCST), the same ticket, ~30 minutes apart:**
+
+| Fetched from | Transitions offered |
+|---|---|
+| `Ready for test` (at `1a`) | Cancelled · On hold · **On QA → Testing** · go to inprogress → In progress |
+| `Testing` (at 5f) | Cancelled · On hold · **Need fixes → Reopen** · **Finish test → Tested** |
+
+Neither closing transition exists in the first list. A run that reuses `1a`'s set at 5f finds no
+`REOPEN`-role target, and the nearest-looking candidate — *go to inprogress → In progress* — **is the
+wrong state**: it is the developer's working state, not the QA handoff state, and using it loses the
+"QA rejected this" signal the board reads. The correct target was `Reopen`, reachable only from
+`Testing`, and it was invisible until re-fetched.
+
+### 7b. The closing hop is effectively IRREVERSIBLE — which is what makes 5f's "ask first" load-bearing
+
+The §1 diagram's arrow back into in-testing is the `--iterate` loop's, **not** an undo. On the VCST
+workflow there is **no transition from `Reopen` back to the in-testing status** — measured the same day,
+the only transitions out of `Reopen` are `Cancelled`, `On hold`, and *take to development → In progress*.
+Recovering the previous state took **three further hops** (`Reopen → In progress → Ready for test →
+Testing`), each one landing in the changelog of a board other people read, so an unwanted closing hop
+costs four visible state changes rather than none.
+
+Two consequences, and the second is the reason this section exists:
+
+- **Treat the closing hop as one-way and say so when asking.** §2's confirmation is not a courtesy for a
+  reversible action; it is the last point at which the decision can be made cheaply. The asymmetry with
+  the opening hop is real and is why only one of them asks: the opening hop genuinely *is* reversible
+  (`Testing → Reopen → …` aside, a run that stops can leave it with a comment), while the closing hop
+  is not.
+- **A countermand that arrives after the call has gone out cannot be honoured by reverting.** Report the
+  state the board is actually in, name the multi-hop cost, and let the operator choose — do not walk a
+  shared board through three intermediate states to reach a tidier-looking history without being asked.
+
 ## 8. The record — the mechanism, not the paperwork
 
 Every hop **and every skip** appends one entry to **`summary.json.status_transitions[]`**:

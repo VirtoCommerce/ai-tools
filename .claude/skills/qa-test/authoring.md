@@ -186,11 +186,14 @@ knowing it is still a hypothesis — that is a fine outcome; silently not knowin
 - **Bug fix / enhancement with existing coverage** → **map to existing** suite cases (start from the Step-2
   `E2E-*` → suite mappings), then author **only the gaps**. Mapping to existing coverage runs in **two
   directions**, and this bullet is where only one of them was encoded: it asked which rows already cover
-  the surface and never which rows the change makes **wrong**. Step 2a has already answered the second
-  question deterministically — **carry its dispositions in, do not re-derive them.** A **`REPAIR`** row is
-  fixed *before* a single new row is authored (`/qa-review-tests file <suite> --fix`), because its
-  mechanics — a renamed selector, a moved route, a removed arg, a dead `@td()` alias — mean it cannot
-  execute at all. A **`RE-BASE`** row is **not a gap to author**: it is an existing case that goes into
+  the surface and never which rows the change makes **wrong**. **Both questions are this artifact's, and
+  the second one comes FIRST**: phase `2a` disposes the `tc:scope` hits and applies every `REPAIR` before a
+  single new row is authored, so *author only the gaps* means the gaps that survive the triage
+  ([`coverage-triage.md`](coverage-triage.md) §2a-own). One step, one owner, one writer — and the append
+  opens only once the `REPAIR` writes have closed. A **`REPAIR`** is applied with
+  `/qa-review-tests file <suite> --fix`, because its mechanics — a renamed selector, a moved route, a
+  removed arg, a dead `@td()` alias — mean the row cannot execute at all. A **`RE-BASE`** row is **not a
+  gap to author**: it is an existing case that goes into
   **Artifact C1's `--ids`**, so Step 4 executes it and 5a rewrites its expected value against the run's
   own evidence — never rewritten here, where the unmerged change would be its own oracle. A
   **`SUPERSEDED`** row is a proposal only. Single source of truth:
@@ -413,7 +416,7 @@ deliberate [`/qa-regression`](../../commands/qa-regression.md) run by whoever is
 
 | | Question | Selection | Runs |
 |---|---|---|---|
-| **C1** | Do *this ticket's* cases pass? | `/qa-regression <target suite ids> --ids <new Draft ids + every Step-2a `REPAIR` id + every `RE-BASE` id>` — **every case this run wrote or changed** | **`4c`**, scope assembled at A's append ([`qa-test.md`](../../commands/qa-test.md) §C1) |
+| **C1** | Do *this ticket's* cases pass? | `/qa-regression <target suite ids> --ids <new Draft ids + every phase-`2a` `REPAIR` id + every `RE-BASE` id>` — **every case this run wrote or changed** | **`4c`**, scope assembled at A's append ([`qa-test.md`](../../commands/qa-test.md) §C1) |
 
 Three consequences worth stating:
 
@@ -426,7 +429,7 @@ Three consequences worth stating:
   their own. It survives on `/qa-regression` for callers that genuinely want a tier union plus named cases.
 - **A skipped C1 is stated.** A run that authored no cases and disposed no `REPAIR`/`RE-BASE` has an empty
   exact set and no C1 — say so. A run that authored no cases but *did* dispose one has a complete set at
-  `2a`, and C1 dispatches beside `4a` rather than waiting on a gate with nothing to rule on. An omitted regression track reads exactly like a passing one, which is §2's rule
+  its `2a` phase, and C1 dispatches beside `4a` rather than waiting on a gate with nothing to rule on. An omitted regression track reads exactly like a passing one, which is §2's rule
   applied one level up.
 
 **If you DO want the release sweep**, it is [`/qa-regression`](../../commands/qa-regression.md) with

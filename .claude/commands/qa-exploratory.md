@@ -62,7 +62,7 @@ Step 0a: the charter is **received, not authored**.
 1. **Read the charter payload** `/qa-test` passes (its shape:
    [`.claude/skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §6). Its mission
    is five derived sources — unresolved mechanism-matrix `GAP`/`WAIVED` cells · unresolved reverse edges ·
-   `{HYPOTHESIS}` oracles to ground · ACs `1d` flagged DRIFT/NOT-FOUND/CONTRADICTS · Step-2a `RE-BASE` rows.
+   `{HYPOTHESIS}` oracles to ground · ACs `1d` flagged DRIFT/NOT-FOUND/CONTRADICTS · tc:scope at-risk rows.
    **That IS the charter — do not re-derive it, do not widen it.**
 2. **No Test Model, or no unresolved cell in any of the five?** → **STOP** and report the lane skipped with
    that reason. Never improvise a mission, exactly as Step 0a never improvises a charter set the plan does

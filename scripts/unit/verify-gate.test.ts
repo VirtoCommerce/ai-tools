@@ -106,3 +106,22 @@ test("3-exec is runnable without a suite — Artifact A does not exist yet when 
     "gate 3 must close every PENDING-A that 3-exec allowed through",
   );
 });
+
+test("the 2a disposition is gated at 3, never at 3-exec — it is a PHASE of Artifact A", () => {
+  // 2a stopped being a step on 2026-09-11: it is Artifact A's first phase, so ONE
+  // test-management-specialist dispatch disposes the existing corpus and then authors the surviving
+  // gaps, and the run keeps a single writer on regression/suites/**. The old placement also made
+  // 3-exec — the gate that releases the FIRST TEST — wait on a disposition pass nothing between the
+  // two consumes. See .claude/skills/qa-test/coverage-triage.md 2a-own.
+  const dispositional = (u: string) => /disposed|REPAIR|RE-BASE/.test(u);
+  assert.ok(
+    !GATES["3-exec"].unchecked.some(dispositional),
+    "3-exec must not gate the coverage-triage disposition — 2a is a phase of Artifact A, past this gate",
+  );
+  assert.ok(
+    GATES["3"].unchecked.some((u) => /RAN/.test(u) && dispositional(u)),
+    "gate 3 must check that the 2a phase RAN, not only that its hits are disposed: a phase folded " +
+      "into a larger step can be skipped as well as wrong, and an absent disposition block reads " +
+      "exactly like a clean triage",
+  );
+});

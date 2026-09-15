@@ -29,7 +29,7 @@ a judgment call a gate does not settle, or when you are about to change how a st
 | `--epic` · `--iterate` | [`skills/qa-test/modes.md`](../skills/qa-test/modes.md) |
 | Verifier mode · agent routing · the agent prompt contract · what persists · **concurrency (what batches, what must stay serial)** | [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) |
 | `1b` 2d — the GraphQL schema + fixture refresh | [`skills/qa-test/contract-refresh.md`](../skills/qa-test/contract-refresh.md) |
-| Step 2a — triaging the EXISTING corpus against the change | [`skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md) |
+| Artifact A phase `2a` — triaging the EXISTING corpus against the change | [`skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md) |
 | The `ui-kit` shape class — when the change IS the design system | [`skills/qa-test/ui-kit-class.md`](../skills/qa-test/ui-kit-class.md) |
 
 ## Usage
@@ -41,7 +41,7 @@ a judgment call a gate does not settle, or when you are about to change how a st
 /qa-test <ticket-key> --iterate          # Bounded test→fix→re-test loop (default 2 rounds; --max-rounds N)
 /qa-test --epic VCST-100                 # Test a parent Epic's child stories in series
 
-# FAST-path axis opt-ins (no effect on FULL, where all four derive and run):
+# FAST-path axis opt-ins (no effect on FULL, which runs all three):
 /qa-test <ticket-key> --visual           # + the design / a11y lane
 /qa-test <ticket-key> --contract         # + the GraphQL schema + fixture refresh
 /qa-test <ticket-key> --coverage         # + tc:scope over the existing corpus
@@ -70,27 +70,28 @@ continues). **No flag changes the FAST/FULL routing** — effort comes only from
 
 ## Execution order — the labels do not sort, so here they are in order
 
-Labels are a **citation contract** and are never renumbered. `1e-plan`/`2a`/`3x` are steps, not sub-items.
+Labels are a **citation contract** and are never renumbered. `1e-plan`/`3x` are steps, not sub-items;
+**`2a` is a PHASE of Step 3's corpus artifact `A`** (merged 2026-09-11), and its label survives only so the
+existing `§2a` citations still resolve.
 
-**`5r` (C2) and `5g` (promotion) were REMOVED 2026-09-10**, with `--release-regression`. Their labels are
-**retired, never reused**. Neither capability was deleted, only its automatic place here: a release sweep
-is a deliberate [`/qa-regression`](qa-regression.md) run, and promotion belongs to that command's
-**Step 6.5** + [`/qa-test-lifecycle`](qa-test-lifecycle.md) **6P**. Rationale:
-[`decisions`](../../docs/decisions/qa-test-evolution.md) §Removing 5r and 5g.
+**`5r` (C2) and `5g` (promotion) were REMOVED 2026-09-10** with `--release-regression`; their labels are
+**retired, never reused**. Only the automatic placement went — a release sweep is a deliberate
+[`/qa-regression`](qa-regression.md) run, promotion is its **6.5** + [`/qa-test-lifecycle`](qa-test-lifecycle.md)
+**6P** ([`decisions`](../../docs/decisions/qa-test-evolution.md) §Removing 5r and 5g).
 
 ```
-FAST   1a → 1b → 2 → [2a] → 3 → 4 → 5a → 5b → 5c → 5d → 5e → 5f → 5h
+FAST   1a → 1b → 2 → 3 → 4 → 5a → 5b → 5c → 5d → 5e → 5f → 5h
 FULL   1a → 1b → 1r ‖ 1c ‖ 1d ‖ [1c-map] ‖ 2-load
-                → 1e → 1e-plan → 2-topup → 2a
+                → 1e → 1e-plan → 2-topup
                 → 3x  ‖  3a          ← discovery on one lane, seeding browserless beside it
                 → B                  ← the checklist, written AFTER discovery has corrected the model
                 → 3-exec ────────► 4a ‖ 4v                    ◄── FIRST TEST
-                                  ‖ A → append → C1 scope → 3-cases ───► 4c (C1)
+                                  ‖ A = [2a] dispose → author → append → 3-cases ──► 4c (C1)
                        4a returns ─► CHECK A ─► (still authoring? wait) ─► 4c
                 → 5a → 5b → 5c → 5d → 5e → 5f → 5h → [5h-map]
 ```
 
-`[1c-map]` only when 2g resolves `ABSENT`/`unresolved` on an all-layer chain, and `[5h-map]` only when a map exists and the run verified something to write back — both FULL-only, both non-blocking ([`context-wave.md`](../skills/qa-test/context-wave.md) §1c-map · [`reporting.md`](../skills/qa-test/reporting.md) §5h-map). `[2a]` on FAST only under `--coverage`. On `--iterate`, `5k.0` (round entry) + 5a–5d repeat per round; 5e, 5f, 5h and 5h-map
+`[1c-map]` only when 2g resolves `ABSENT`/`unresolved` on an all-layer chain, and `[5h-map]` only when a map exists and the run verified something to write back — both FULL-only, both non-blocking ([`context-wave.md`](../skills/qa-test/context-wave.md) §1c-map · [`reporting.md`](../skills/qa-test/reporting.md) §5h-map). `[2a]` is Artifact **A's first phase** on both paths, FAST only under `--coverage`. On `--iterate`, `5k.0` (round entry) + 5a–5d repeat per round; 5e, 5f, 5h and 5h-map
 fire once, at loop exit ([`skills/qa-test/modes.md`](../skills/qa-test/modes.md) §5k).
 
 **Read the FULL shell as lanes that JOIN at 5a, not as a line.** The `‖` columns run at the same time;
@@ -146,16 +147,17 @@ Stated once, completely. **Everything after this section is the FULL path.**
                                                        their flag is passed
 2   load the affected domains' BL-* AND ECL-* rule TEXT (the agent prompt contract requires both);
     route ONE execution agent. Stop there.
-3   Artifact B checklist (conditions from 1a's ACs) + C1 scope — on FAST the exact set is the
-    2a REPAIR + RE-BASE ids only, complete at 2a — + 3a ONLY when 2f said so
-    → the 3-exec gate (inline) is what releases execution, here as on FULL
+3   Artifact B checklist (conditions from 1a's ACs) + 3a ONLY when 2f said so
+    + under --coverage: DISPATCH test-management-specialist for Artifact A, which on FAST is its
+      2a triage phase ALONE (no authoring). C1's exact set = its REPAIR + RE-BASE ids
+    → the 3-exec gate (inline) releases execution, here as on FULL; 2a does NOT gate it
 4   ONE execution agent runs the checklist; then C1 — the exact-set run of every case 2a REPAIRed
     or RE-BASEd (skipped entirely, and said so, when there are none). No 1r pass: FAST reaches 4 in minutes,
     so a separate reachability probe would cost more than the wait it removes
 5a  triage · 5b reconcile AC/DoD · 5c verdict · 5d file · 5e report · 5f status · 5h docs
 ```
 
-**FAST is one execution agent.** That is the promise, and it is now kept: **three** of the five derived
+**FAST is one execution agent.** That is the promise, and it is now kept: **three** of the six derived
 axes are **opt-in** here — `--visual` · `--contract` · `--coverage` · `--axes` — and off by default.
 `layer` (2b), `data_surface` (2f) and `domain_map` (2g) derive and apply on both paths, because none can
 add an agent **to a FAST run**: 2b dispatches nothing, 2f can only ever *remove* a dispatch, and **2g on
@@ -172,8 +174,8 @@ had to be cut back at all: [`SKILL.md`](../skills/qa-test/SKILL.md) §Effort rou
 [`axes.md`](../skills/qa-test/axes.md) §4.
 
 **Not run on FAST:** `1c`/`1d` agents · `1r` · the `1e` Test Model and `1e-plan` · the archetype/UIP/`VC-*`
-sweeps · Artifact A authoring (so **no new cases and no new regression coverage** — the route back in is
-`/qa-test-lifecycle`) · **the `3x` discovery lane**, FULL-only even under a flag because most of its
+sweeps · Artifact A's **authoring phase** (so **no new cases and no new regression coverage** — the route
+back in is `/qa-test-lifecycle`; its `2a` triage phase still runs under `--coverage`) · **the `3x` discovery lane**, FULL-only even under a flag because most of its
 outputs consume a model and an authoring batch and FAST has neither
 ([`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §2) · every independent verifier dispatch
 (each gate self-checks inline) · the three opt-in axes unless their flag is passed.
@@ -195,9 +197,10 @@ speak for it; an inline `/qa-verify-fix` per fix-ready sub-task is the only way 
 verified or closed. It is not an exception to FAST's one-execution-agent promise for the same reason the
 contract axis is not: the bugs are verified through the flow `1a` already runs inline, not by a new lane.
 
-**Gate (FAST, inline):** the checklist covers every atomic condition; `npm run td:validate` is green; **and
-when `--coverage` ran**, every Step-2a `tc:scope` hit is disposed (`REPAIR` fixed **and re-linted with
-`suites:review`**, **both `REPAIR` and `RE-BASE` in C1's `--ids`**). No `suites:review` otherwise — FAST authors nothing.
+**Gate (FAST, inline):** the checklist covers every atomic condition; `npm run td:validate` is green.
+**`2a` does NOT gate this** — it is Artifact A's first phase, checked at **C1's dispatch**: every
+hit disposed (`REPAIR` fixed **and re-linted with `suites:review`**, **both `REPAIR` and `RE-BASE` in C1's
+`--ids`**). No `suites:review` otherwise — FAST authors nothing.
 
 ---
 
@@ -213,7 +216,7 @@ until `5g` promotion left the pipeline on 2026-09-10.)
 |---|---|---|
 | Reachable at all | 1r (FULL) | inline — **never a PASS/FAIL on the ticket**; `BLOCKED` ends the run early |
 | Model complete | 1e (13 clauses) | inline (doer's own check) |
-| Existing coverage disposed | Step 2a | inline — re-derived at `3-cases` (`tc:scope`, same args) |
+| Existing coverage disposed | Artifact A phase `2a` | in `test-management-specialist`'s return — checked at `3-cases` (`tc:scope` re-derived, same args). FAST: at C1's dispatch |
 | Discovery folded in | Step 3x (FULL) | inline — never blocks; unreached charter items are named |
 | **Checklist + data ready** | **`3-exec`** | **inline** — releases 4a. `npm run verify:gate -- --gate 3-exec` (no `--suite`: nothing is authored yet) |
 | **Authored cases reviewed, PENDING-A closed** | **`3-cases`** | **fresh `qa-lead` verifier — hard STOP.** Releases 4c |
@@ -438,51 +441,6 @@ place they are verified.
 ---
 
 
-## Step 2a — Triage existing coverage
-
-**FULL always; FAST only under `--coverage`.** The **scan** ran in wave B; **this step disposes each hit**,
-which is what needs Step 2's loaded `BL-*`/`ECL-*` text. It runs **before Step 3** — authoring has to know
-which existing rows it is *amending* before it writes a new one. Why the step exists, what `runFate` means,
-and why a `RE-BASE` is resolved BY the run rather than before it:
-[`skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md). **Cite it; do not restate it.**
-
-```bash
-npm run tc:scope -- --domain <d>[,<d>] --observable "<phrase>" [--observable "<phrase>"] \
-  --oracle <ID>[,<ID>] [--json]          # scope + risk terms ONLY — no --cases / --also-ids
-```
-
-Scope needs ≥1 of `--domain`/`--suite`/`--module`; risk terms ≥1 of `--observable` (**one phrase per
-flag**)/`--oracle`. **No `--cases`/`--also-ids`** — they model what will execute and neither input exists
-yet (Artifact A is Step 3; the `RE-BASE` ids are this step's own output). Run-fate is predicted at the
-**Step-3 gate re-run**. Exit `0` = a worklist (empty included) · `1` = bad usage · `2` = a `--suite` could
-not be scanned. A legacy 11-column suite is **refused, never scanned** → `unscannable[]`.
-
-**`runFate` is the column this step exists for:** `WILL_RUN` is self-announcing (a C1 row goes red at Step
-4) · **`FILTERED_OUT`
-is invisible forever unless disposed here — this is the coverage hole** · `NOT_EXECUTING` (explicit
-`Manual`/`Deprecated`) is opted out **by intent**, not a hole.
-
-**Dispose every hit — a closed four-value vocabulary:**
-
-| Disposition | Means | Action |
-|---|---|---|
-| `CONFIRMED` | still correct under the change | nothing |
-| `REPAIR` | the row's **mechanics** are stale — renamed selector, moved route, removed arg, dead `@td()` alias — so it cannot execute at all | **fix BEFORE the run**: `/qa-review-tests file <path-to-suite.csv> --fix`, then re-lint |
-| `RE-BASE` | the row's **expected value** conflicts with the change | **do NOT rewrite.** Keep the old assertion, carry the row into **C1's `--ids`**, let `4c` execute it |
-| `SUPERSEDED` | the change removes the surface the row asserts | **proposal only** — retirement is human (TRI-006) |
-
-**The `REPAIR`/`RE-BASE` split is the load-bearing rule:** the change under test is normally an **unmerged
-PR**, so rewriting an expected value *before* the run makes the change its own oracle and the case can then
-only pass. `REPAIR` is safe because it moves the **mechanics and not the oracle**.
-
-**Gate (inline):** every hit disposed; every `REPAIR` applied **and re-linted**; every `RE-BASE` in C1's
-`--ids` or re-dispositioned **with a reason**; every `unscannable[]` suite and `unmatchedObservables[]` term
-**stated**. **This step files no bug** — a hit is a claim about a test case, never about the product; and
-`neverAudited` is context, not a verdict. Re-verified at Step 3's hard-STOP gate.
-
----
-
-
 ## Step 3 — Write, Review & Provision
 
 **`3x` and `3a` go out together; the checklist is written from what `3x` brings back; `A` is
@@ -508,13 +466,33 @@ Three rules hold this order, and the reasoning for each is in
 |---|---|---|---|
 | **3a** | Test data — **conditional on `data_surface`**, dispatched **beside `3x`** (browserless, so the seed runs inside the discovery box) | when `true`: **the orchestrator dispatches `test-data-engineer`** (`/qa-generate-data` → `/qa-seed-data`), never sub-delegated. When `false`: **no dispatch**, and the run names the fixtures that cover the plan | `true` → seeded env, green `td:validate`. `false` → every planned case resolves against existing `@td()`/`{{VAR}}` data **or is live-discoverable**, **and** no chain link under test needs a divergence those values lack ([`authoring.md`](../skills/qa-test/authoring.md) §3a) |
 | **3x** | Discovery session (FULL only) | **orchestrator invokes `/qa-exploratory ticket <ticket-key>`** — that command owns the session; this pipeline owns only the charter | model amendments + `summary.json.discovery` + `reports/exploratory/SBTM-<ticket-key>-<date>.md` |
-| **A** | Test cases (FULL only) | `test-management-specialist` | `regression/suites/<layer>/<module>/*.csv` as **`Draft`, and they STAY `Draft`** — `/qa-test` no longer promotes (`5g` removed 2026-09-10). The `Draft → Automated` flip happens **outside this run**: [`/qa-test-lifecycle`](qa-test-lifecycle.md) 6P, or a later **direct** [`/qa-regression`](qa-regression.md) at its Step 6.5 |
+| **A** | **The corpus step — ONE step, two phases: `2a` dispose what exists, then author the gaps.** Phase `2a` runs on **both** paths (FULL always; FAST under `--coverage`, which a `Review task` §5a and the `ui-kit` class §5c default ON); authoring is FULL-only, so on FAST this artifact is the triage alone | `test-management-specialist` — **one dispatch, one owner, the run's only writer on `regression/suites/**`** | `2a`'s dispositions + `regression/suites/<layer>/<module>/*.csv` as **`Draft`, and they STAY `Draft`** — `/qa-test` no longer promotes (`5g` removed 2026-09-10). The `Draft → Automated` flip happens **outside this run**: [`/qa-test-lifecycle`](qa-test-lifecycle.md) 6P, or a later **direct** [`/qa-regression`](qa-regression.md) at its Step 6.5 |
 | **B** | Testing checklist (both paths) — written **after `3x` returns**, so it carries what discovery observed and not only what the ACs named. **One checklist, one execution pass** | `test-management-specialist`, or the orchestrator inline for a single-surface tweak | `reports/tickets/{SPRINT}/<ticket-key>/testing-checklist.md` |
 | **C1** | Ticket regression — **the exact set: every case this run wrote or changed** | orchestrator | scope assembled **at A's append** (§C1 — the exact set); one `/qa-regression … --ids` run, executed at `4c` |
 
 **There is no C2.** The change-scoped Critical sweep was removed with `5r` (2026-09-10): it answered a
 *release* question, not this ticket's, at ~24 runner dispatches. Cutting a release means running
 [`/qa-regression`](qa-regression.md) deliberately — this pipeline no longer decides that for you.
+
+#### A phase `2a` — dispose the existing corpus, then author only the gaps
+
+**`2a` is a PHASE of this step, not a step of its own** (merged 2026-09-11). Its label survives as a
+citation contract; the separate `## Step 2a` section does not. The **scan** already ran at `1b` item 2e —
+this phase **disposes each hit and applies every `REPAIR`**, and it runs **before the same agent authors a
+single new row**, which is the whole reason the two are one dispatch: mapping the corpus runs in two
+directions and one owner answers both. Full rules — owner, `runFate`, the domainless-change rule:
+[`skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md). **Cite it; do not restate it.**
+
+**Dispose every hit — a closed four-value vocabulary** (§3): `CONFIRMED` → nothing · **`REPAIR`** mechanics
+stale so the row cannot execute at all → fix (`/qa-review-tests file <csv> --fix`), re-lint, carry into C1 ·
+**`RE-BASE`** expected value conflicts → **do NOT rewrite**; keep the old assertion, carry into C1 for `4c` ·
+`SUPERSEDED` → proposal only, retirement is human (TRI-006). **The split is load-bearing:** the change is
+normally an **unmerged PR**, so rewriting an expected value before the run makes the change its own oracle.
+
+**Gate — in the agent's return, checked at `3-cases`** (FAST: at C1's dispatch): every hit disposed; every
+`REPAIR` applied **and re-linted**; every `RE-BASE` in C1's `--ids` or re-dispositioned **with a reason**;
+every `unscannable[]` suite and `unmatchedObservables[]` term **stated**. **This phase files no bug** — a
+hit is a claim about a test case, never about the product; `neverAudited` is context, not a verdict.
 
 #### C1 — the exact set: every case this run WROTE or CHANGED
 
@@ -524,18 +502,17 @@ step rather than something assembled in passing:
 | Source | Disposition | Available at | Why it must execute |
 |---|---|---|---|
 | **New `Draft` ids** | authored by `A` | **A's append** | a case that never ran is not coverage; it is an untested claim in the corpus |
-| **`REPAIR` ids** | fixed **before** the run — a renamed selector, a moved route, a dead `@td()` alias | **`2a`** | **the fix is unverified until it runs.** A repaired case that never executes is exactly the invisible class `2a` exists to find, re-created one step later |
-| **`RE-BASE` ids** | assertion kept, resolved **by** the run at 5a | **`2a`** | its old assertion, executed against the change, is the run's most strongly grounded check ([`coverage-triage.md`](../skills/qa-test/coverage-triage.md) §3a) |
+| **`REPAIR` ids** | fixed **before** the run — renamed selector, moved route, dead `@td()` alias | **A's `2a` phase** | **the fix is unverified until it runs.** A repaired case that never executes is the invisible class `2a` exists to find, re-created one step later |
+| **`RE-BASE` ids** | assertion kept, resolved **by** the run at 5a | **A's `2a` phase** | its old assertion, executed against the change, is the run's most strongly grounded check ([`coverage-triage.md`](../skills/qa-test/coverage-triage.md) §3a) |
 
 **One rule covers all three: *this run wrote or changed it, so this run runs it.*** (`REPAIR` was added
 2026-09-10 — [`coverage-triage.md`](../skills/qa-test/coverage-triage.md) §3b.) The scope is assembled
 **at A's append**, the first moment all three halves exist, as **one run and one `RUN_ID`** — 5a triages a
 single run and promotion grounds `{OBSERVED}` against a single `RUN_ID`.
 
-**When `A` authors nothing, C1's set is complete at `2a`** — the `REPAIR`/`RE-BASE` ids alone — and
-`3-cases` has no rows to rule on. **Dispatch C1 then, alongside `4a`, rather than waiting for a gate with
-nothing to gate.** State that this is what happened; a C1 that ran early for this reason is not a skipped
-gate. **FAST always takes this path**, since it authors no cases.
+**When `A` authors nothing, C1's set is its `2a` phase alone** — the `REPAIR`/`RE-BASE` ids —
+and `3-cases` has no rows to rule on. **Dispatch C1 then, alongside `4a`.** State that this is what
+happened; a C1 that ran early for this reason is not a skipped gate. **FAST always takes this path.**
 
 **An empty set is a SKIP, stated.** No new cases, no `REPAIR`, no `RE-BASE` ⇒ no C1 — say so with the
 reason. An omitted C1 reads exactly like a passing one.
@@ -549,7 +526,7 @@ reason. An omitted C1 reads exactly like a passing one.
 |---|---|
 | **Coverage** | every atomic condition maps to a checklist item, an **existing** case, or an explicit **`PENDING-A`** |
 | **Data** | `npm run td:validate` green, **and** every fixture the checklist names resolves *right now* — declared is not seeded |
-| **Disposition** | every `2a` `tc:scope` hit is disposed — `REPAIR` fixed **and re-linted**, and **both `REPAIR` and `RE-BASE` carried into C1's `--ids`** (§C1). `2a` precedes this gate on both paths, so "not run yet" is not an available answer — a skipped `2a` is stated as skipped |
+| **Disposition** | **not gated here.** `2a` is a phase of Artifact A, which runs past this gate; its clause lives at `3-cases` (FAST: at C1's dispatch). A `2a` skipped *by mode* is stated as skipped |
 
 **`PENDING-A` is a real disposition, not a waiver.** It means *"this condition's covering case is an
 Artifact-A row that is still being authored."* It is legal here and **mandatory to close at `3-cases`**,
@@ -563,8 +540,10 @@ a dispatch here would re-create the wait the restructure removes.
 
 Everything that needs the authored rows to exist: `suites:review` 11-dim green with **0 Blocker/Critical**
 · each case's Steps actually exercise the condition its title claims · **every `PENDING-A` from `3-exec`
-now resolves to a real row** · `tc:scope`'s scope and risk terms match the ones `1b` item 2e derived · when
-`data_surface` was `false`, the skip re-derived. `npm run verify:gate -- --gate 3 --suite <csv>`.
+now resolves to a real row** · **`2a` has returned and every `tc:scope` hit is disposed** — `REPAIR` fixed
+**and re-linted**, **both `REPAIR` and `RE-BASE` carried into C1's `--ids`** (§C1) · `tc:scope`'s scope and
+risk terms match the ones `1b` item 2e derived · when `data_surface` was `false`, the skip re-derived.
+`npm run verify:gate -- --gate 3 --suite <csv>`.
 
 **It releases `4c` (C1) and nothing else.** The verdict's own evidence is already being gathered by `4a`
 while this gate runs — which is why it can be a hard STOP without holding the run.
@@ -573,7 +552,7 @@ while this gate runs — which is why it can be a hard STOP without holding the 
 
 **Explore the model before authoring against it.** The pipeline derives for four steps and never looks at
 the running feature until Step 4 executes cases that are already written — so the model's `{HYPOTHESIS}`
-oracles, its `GAP` cells, its unresolved reverse edges, `1d`'s DRIFT ACs and Step-2a's `RE-BASE` rows all
+oracles, its `GAP` cells, its unresolved reverse edges, `1d`'s DRIFT ACs and `1b` 2e's at-risk rows all
 reach authoring as guesses. This lane spends **one browser lane for a scope-sized 30-60 minutes, inside time 3a is
 already spending**, to turn them into observations first.
 
@@ -614,7 +593,7 @@ running**.
 |---|---|---|---|
 | **4a** | **Checklist** — the applicable specialist agent(s), **in a single message**, running **Artifact B and nothing else** | `3-exec` | **FAST = one agent.** Prompt contract: [`SKILL.md`](../skills/qa-test/SKILL.md) §Agent dispatch. **Record `timing.time_to_first_test_minutes` at this dispatch** — it is the number this structure exists to move |
 | **4v** | **Visual lane** — `ui-ux-expert` on Chrome DevTools MCP, in the **same message** as 4a | `3-exec` | FULL when `visual_surface: true`; FAST only under `--visual`/`--axes`. **Dispatch the agent, never invoke `/qa-design`.** Axes, targets, the two things the brief must carry, verdicts, the SKIPPED rule: [`visual-axis.md`](../skills/qa-test/visual-axis.md). Writes `design-report.md` + `summary.json.visual` |
-| **4c** | **C1** — `/qa-regression <suite ids> --ids <new Draft ids + every REPAIR id + every RE-BASE id> --no-promote` | `3-cases` — **or `2a` when `A` authored nothing** (§C1) | Its own run; capture `RUN_ID` + wall-clock. **`--no-promote` is mandatory** — it suppresses `/qa-regression` Step 6.5, which would otherwise promote minutes-old cases from inside the run that authored them, re-creating the placement `5g`'s removal fixed. **Skip C1 saying so when the exact set is empty** — an omitted C1 must not read as a passing one |
+| **4c** | **C1** — `/qa-regression <suite ids> --ids <new Draft ids + every REPAIR id + every RE-BASE id> --no-promote` | `3-cases` — **or A's `2a` phase when it authored nothing** (§C1) | Its own run; capture `RUN_ID` + wall-clock. **`--no-promote` is mandatory** — it suppresses `/qa-regression` Step 6.5, which would otherwise promote minutes-old cases from inside the run that authored them, re-creating the placement `5g`'s removal fixed. **Skip C1 saying so when the exact set is empty** — an omitted C1 must not read as a passing one |
 
 **The specialist agent no longer runs the Artifact-A rows.** It ran them *and* `4c` ran them, so every
 authored case executed twice — and only `4c` emits the `RUN_ID` that promotion needs, so the agent's copy
@@ -631,8 +610,8 @@ orchestrator's next act is to establish where authoring stands, and say so:
 |---|---|
 | **complete** | append (serially, one `suites:sync`) → assemble C1's scope → `3-cases` → dispatch `4c` |
 | **still running** | **wait for it** — do not start 5a. Say in one line that the run is holding for authoring, and what is outstanding |
-| **authored nothing** | C1's set was already complete at `2a` (§C1). Dispatch `4c` now; `3-cases` has nothing to rule on |
-| **aborted** (an early BLOCKED) | no append, no `3-cases`, no `4c`. Record what was aborted and carry the reason into 5a |
+| **authored nothing** | C1's set is A's `2a` phase alone (§C1). Dispatch `4c` now; `3-cases` has nothing to rule on |
+| **aborted** (an early BLOCKED) | no append, no `3-cases`, no `4c`. Record what was aborted and carry the reason into 5a. **State how far its `2a` phase got** — an abort mid-triage can leave `REPAIR` edits half-applied with no gate having seen them; re-lint the touched suites (`suites:review`) and either finish or revert those rows (`git show HEAD:<path>`, [`coverage-triage.md`](../skills/qa-test/coverage-triage.md) §5) |
 
 **Wait on the completion signal; do not poll.** The harness reports a background agent's completion, so a
 timed re-check spends turns to learn what arrives on its own. What is forbidden is the third option —

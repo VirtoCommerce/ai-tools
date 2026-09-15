@@ -2,7 +2,7 @@
 
 **This file is the only place the `/qa-test` coverage-triage axis is specified.** The command
 ([`.claude/commands/qa-test.md`](../../commands/qa-test.md)) states what runs at `1b` item 2e and
-Step 2a and the gate each must clear; this file states why, and holds the disposition rules.
+Artifact A's `2a` phase and the gate each must clear; this file states why, and holds the disposition rules.
 
 The pipeline read the existing corpus in exactly one direction. `authoring.md` §Artifact A says *"bug
 fix / enhancement with existing coverage → **map to existing** suite cases … author only the gaps"* —
@@ -97,10 +97,67 @@ cheap path is currently an argument rather than evidence; revisit at 5+ runs.
 
 ---
 
-## 3. Step 2a — the four dispositions
+## 2a-own — the owner, and why `2a` is a PHASE of Artifact A rather than a step
 
-`npm run tc:scope` produces the worklist; classifying each hit is judgment. The vocabulary is closed
-and every hit takes exactly one value.
+**Merged 2026-09-11.** `2a` was a standalone step disposed inline by the orchestrator. It is now the
+**first phase of Artifact A, the corpus step**, and `test-management-specialist` owns the whole thing —
+the disposition of every hit, the `REPAIR` edits it applies, *and* the authoring that follows. **One
+dispatch, one owner, one writer.** The label `2a` survives only as a citation contract; the step does not.
+
+**The pipeline had ONE step that reads the existing corpus and it was split across two owners.** Two
+reasons that was wrong, and the first is a rule the original placement broke outright.
+
+**1. One writer per suite CSV.** [`.claude/rules/regression.md`](../../rules/regression.md) §Suite
+inventory: *a suite CSV has exactly one author for the duration of a change* — one author per CHANGE, not
+per file, and a second writer is forbidden **even when the two are editing different rows**. A `REPAIR`
+writes `regression/suites/<layer>/<module>/*.csv` in place; Artifact A's append writes the same directory
+and routinely the same file. A separate 2a therefore put **two writers on one CSV in the ordinary case**.
+The cost of that is not a merge conflict — it is `suites:lint`/`sync` hard-failing **tree-wide** on a
+mid-write parse error and blocking every other author in the tree (measured: ~15 min across two sessions,
+[`docs/decisions/regression-history.md`](../../../docs/decisions/regression-history.md) §Shared-tree
+losses). One phase inside one step means one writer, in one order, with no interleaving to reason about.
+
+**2. It is ONE corpus read, asked in two directions.** [`authoring.md`](authoring.md) §Artifact A asks
+*which existing rows already cover this surface*; `2a` asks *which rows does this change make **wrong***.
+Splitting them made *"carry 2a's dispositions in, do not re-derive them"* a discipline the dispatch brief
+had to keep enforcing across a handoff. Merged, it is structural: the agent that disposed the rows is the
+agent that then authors only the gaps, and there is no handoff to lose.
+
+### The phase order inside the step, and what each half gates
+
+| Phase | Runs | Output | Checked at |
+|---|---|---|---|
+| **`2a` dispose** | **both paths** — FULL always, FAST under `--coverage` | the four dispositions; `REPAIR` edits applied and re-linted; `REPAIR` + `RE-BASE` ids for C1 | `3-cases` (FAST: C1's dispatch) |
+| **author** | **FULL only** | new `Draft` rows, staged then appended | `3-cases` |
+
+**On FAST the step is the triage alone.** FAST authors nothing, so Artifact A *is* its `2a` phase, and C1's
+exact set is the `REPAIR`/`RE-BASE` ids. This is why the merge does not cost FAST its coverage axis.
+
+**Neither phase gates `3-exec`**, the gate that releases the first test. The whole step runs past it —
+which is the 2026-09-10 re-reading that took Artifact A off the critical path ([`SKILL.md`](SKILL.md)
+§Ordering), now inherited by the triage that used to sit in front of the checklist.
+
+**Two rules the merge creates, and they are the ones to hold:**
+
+1. **Dispose BEFORE authoring a single new row.** The order inside the step is the reason it is one step.
+   Authoring first re-creates the split, one dispatch down.
+2. **A `2a` that did not happen is STATED.** An omitted disposition block reads exactly like a clean triage
+   (§2). `3-cases` (FAST: C1's dispatch) checks that the phase **ran**, not only that its hits are disposed.
+
+**What the merge costs, stated plainly:** the disposition now lands after `3a`/`3x` rather than at wave B.
+Nothing between those points consumes it — its two consumers are A's own append and C1's id list, both
+later still — so the cost is only that the run *learns* of a needed `REPAIR` later, not that anything waits
+longer. The one real casualty is [`exploratory-lane.md`](exploratory-lane.md) charter item 5, which sourced
+its rows from the disposition; it now sources them from **`1b` item 2e's at-risk scan**, which exists before
+`3x` runs. That is the better direction anyway: the lane observes the at-risk rows, and the disposition is
+then made by an agent that has seen them live.
+
+---
+
+## 3. Phase `2a` — the four dispositions
+
+`npm run tc:scope` produces the worklist; classifying each hit is judgment, and it is
+`test-management-specialist`'s (§2a-own). The vocabulary is closed and every hit takes exactly one value.
 
 | Disposition | The row is | Action | Timing |
 |---|---|---|---|
@@ -147,7 +204,7 @@ invisible class this axis exists to find; leaving one undisposed re-creates the 
 mechanism built to close it. This is the same rule Artifact C already follows for its Scope
 Exclusions, one layer down.
 
-**Step 2a files no bug.** A `tc:scope` hit is a claim about a **test case**, never about the product —
+**Phase `2a` files no bug.** A `tc:scope` hit is a claim about a **test case**, never about the product —
 the same rule 2d applies to contract drift and `1d` applies to a static DRIFT verdict. A real defect
 found while triaging goes through the ordinary route: `1e` if it belongs in the fault model, 5a/5d if
 the run confirms it.

@@ -165,7 +165,7 @@ unlike the visual lane this is not even an exception to FAST's one-execution-age
 dispatches no agent at all.
 
 **What that argument was missing is a measurement.** This axis was made mandatory on both paths on the
-strength of the reasoning alone, and it is one of four axes that each did the same thing with its own
+strength of the reasoning alone, and it is one of several axes that each did the same thing with its own
 locally reasonable case; together they turned FAST into 4–6 agent dispatches and 3 external command
 invocations — the precise *"both paths, always"* failure the FAST/FULL split was created to end. Across
 the 28 recorded `/qa-test` runs, `contract` has been populated **once**. Revisit at 5+ runs and promote

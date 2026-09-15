@@ -101,6 +101,35 @@ from *"the evidence was dropped"*.
 
 **Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/`, `reports/tickets/VCST-XXXX/screenshots/`) stay tracked.
 
+### 5.2 Motion evidence — a GIF when the defect IS the transition
+
+**Conditional, not blanket.** A still answers *"what does this screen look like"*. Some defects are
+not in a frame at all — they are in the **change between two frames**, and a reader handed two PNGs
+has to take the author's word that one followed the other in one session.
+
+| Defect shape | Evidence |
+|---|---|
+| One session reads one value then acts on a different one (a balance shown, then refused as zero) | **GIF** + the stills that carry the numbers |
+| A state transition wrong only in sequence — a control enables then re-disables, a toast swallowed, a value reset on navigate-back | **GIF** + the stills |
+| A race or ordering bug, a spinner that never resolves, a flash of wrong content before hydration | **GIF** + the stills |
+| Wrong label, colour, spacing, a misplaced control, a 500 toast, an empty list | **Stills only** |
+| An API-only or non-visual claim | Neither; label it as such (§5.0) |
+
+**A GIF NEVER replaces the stills.** A reader cannot pause it to read a value, zoom it, or quote it
+into a ticket. The GIF proves *the sequence happened*; the stills carry *the values*.
+
+**Budget:** at most **1** GIF per bug, ≤ 8 frames, ≥ 1.5 s per frame, width ≤ 960, ≤ 5 MB — counting
+as one item against the screenshot budget above. A second GIF usually means it is two bugs.
+
+**Mechanism — nothing new.** An animated GIF attaches and embeds exactly like a PNG: same attachment
+upload, same `!filename.gif|width=700!` through the v2 comment API, same three-signal `renderedBody`
+check as §5.0. Measured 2026-09-14 — one `<img src=…/attachment/content/<id>>`, one ADF `media` node
+with a 36-char UUID, zero literal `!….gif!`, and Jira animates it inline.
+
+**Video is an attachment, not an embed.** Attach a `.webm` only when the defect is a timing property
+a few GIF frames cannot carry, and always alongside the GIF or stills that make the claim. Whether
+`!file.webm!` renders inline is **UNMEASURED** — do not write a comment that depends on it.
+
 ## 6. Console & Network Evidence
 
 **Console — capture:** specific error messages tied to the test/bug. **Skip:** full console dumps, benign Vue warnings, favicon 404s, analytics events.

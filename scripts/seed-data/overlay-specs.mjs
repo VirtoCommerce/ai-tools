@@ -36,6 +36,15 @@ export const MEMBER_FIELDS = new Set([
   'memberId',   // loyalty users → their Contact
   'contactId',  // ORG_ASSOC_ONLY_NO_GLOBAL → its Contact (camelCase spelling of the same thing).
                 // Its sibling `userId` is a SECURITY-ACCOUNT id and stays unprobeable (header note 3).
+  // VCST-5024 org-mode loyalty (ORG_LOY_A/B/LOCKED): the outlet Organization the three fixtures share,
+  // and the sibling org used as the cross-org control. Both are member (Organization) GUIDs.
+  // Safe to list unconditionally because `selectProbeTargets` only considers GUID-SHAPED values, and
+  // every other alias carrying an `org_id` holds a CSV business key ("ORG-015"), not a GUID.
+  // It earns its place: the outlet org is created and DELETED by this fixture's own teardown, so a
+  // teardown+re-seed is exactly what would leave @td(ORG_LOY_A.org_id) pointing at a deleted org —
+  // silently, since the assertion would simply never match and the case would read as a product bug.
+  'org_id',
+  'sibling_org_id',
 ]);
 
 /**

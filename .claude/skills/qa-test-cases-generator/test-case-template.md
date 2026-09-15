@@ -360,7 +360,7 @@ Examples:
 - `none` (if test leaves no side effects)
 - `Cancel created order via admin if order was placed`
 
-> **Logout convention (GOLDEN RULE, see BL-AUTH-007):** "Sign out" / "Logout" in Steps or Cleanup always means the storefront account-menu popup sequence — click user name in top header → click **Logout** in popup (selector `data-testid="main-layout.top-header.account-menu.sign-out-button"`). NEVER write Steps like `Navigate to /sign-out` or `Click logout button in header` — no such page or header-level button exists. Runners execute the popup sequence regardless of how loosely the Step is phrased.
+> **Logout convention (GOLDEN RULE, see BL-AUTH-007):** "Sign out" / "Logout" in Steps or Cleanup always means the storefront account-menu popup sequence — click user name in top header → click **Logout** in popup (selector `data-test-id="sign-out-button"`). NEVER write Steps like `Navigate to /sign-out` or `Click logout button in header` — no such page or header-level button exists. Runners execute the popup sequence regardless of how loosely the Step is phrased.
 
 ### References
 **Source of demand** for the test — JIRA ticket IDs, requirement IDs, or user-story links. Space or comma separated.

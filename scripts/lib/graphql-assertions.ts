@@ -353,9 +353,17 @@ function isCleanOperand(s: string): boolean {
   return parts.length > 0 && parts.every((p) => !/\s/.test(p));
 }
 
-/** Mirrors the evaluator's `lhsHasPath`/`rhsHasPath` guards. */
+/**
+ * Mirrors the evaluator’s numeric-branch guard for the STATIC classifier.
+ *
+ * The evaluator resolves both operands and asks whether they are numbers; that is not
+ * available here (no response), so this stays a text sniff — but it must recognise the
+ * same paths, including REST ones such as `body.total`. Kept deliberately permissive:
+ * over-claiming "scoreable" in a LINT classification is far cheaper than the evaluator
+ * over-claiming a numeric comparison, which would change a verdict.
+ */
 function referencesDataPath(s: string): boolean {
-  return /(?:^|[^\w])data\.\w/.test(s.replace(/\[[^\]]*\]/g, ""));
+  return /[A-Za-z_]\w*(?:\.(?:[A-Za-z_]\w*|\d+))+/.test(s.replace(/\[[^\]]*\]/g, ""));
 }
 
 /** `evaluateErrorsPredicate`: HTTP <code>, else any `empty` / `non-empty` token. */
@@ -611,17 +619,18 @@ function evaluateDataPredicate(
   //     correctly under string comparison; this is also how `Array.prototype.sort`
   //     orders strings.
   //
-  // Guarded by BOTH sides containing a `data.` path so we don't pre-empt the
+  // Guarded on BOTH sides RESOLVING to numbers, so we do not pre-empt the
   // single-path-vs-literal branch below (`data.X.amount >= 100`).
   const crossOrderMatch = splitTopLevelOp(predicate, [">=", "<=", ">", "<"]);
   if (crossOrderMatch) {
     const { lhs: lhsRaw, op, rhs: rhsRaw } = crossOrderMatch;
-    const stripBrackets = (s: string) => s.replace(/\[[^\]]*\]/g, "");
-    const lhsHasPath = /(?:^|[^\w])data\.\w/.test(stripBrackets(lhsRaw));
-    const rhsHasPath = /(?:^|[^\w])data\.\w/.test(stripBrackets(rhsRaw));
-    if (lhsHasPath && rhsHasPath) {
-      const lvNum = evaluateNumericExpression(lhsRaw, r);
-      const rvNum = evaluateNumericExpression(rhsRaw, r);
+    // Same resolve-first gate as the equality branch below, for the same reason: the old
+    // `/data\.\w/` sniff was blind to a REST path, so a cross-path REST comparison fell
+    // through to the single-path branch and compared the left value against the literal
+    // string "body.total".
+    const lvNum = evaluateNumericExpression(lhsRaw, r);
+    const rvNum = evaluateNumericExpression(rhsRaw, r);
+    if (typeof lvNum === "number" && typeof rvNum === "number") {
       let passed = false;
       let actualText: string;
       if (typeof lvNum === "number" && typeof rvNum === "number") {
@@ -708,22 +717,35 @@ function evaluateDataPredicate(
     // still hit the simple `=` branch).
     const combined = lhsClean + " " + rhsClean;
     const hasArith = /[*/()]/.test(combined) || /\s[+\-]\s/.test(combined);
-    const lhsHasPath = /(?:^|[^\w])data\.\w/.test(lhsClean);
-    const rhsHasPath = /(?:^|[^\w])data\.\w/.test(rhsClean);
-    // Take the numeric/expression branch when EITHER:
-    //   (a) there's an arithmetic operator + at least one path  (a = b * c)
-    //   (b) both sides are paths (cross-path comparison, no operators: a = b)
-    //   (c) approximate operator (≈/~=) is used (always numeric intent)
-    const hasPath = lhsHasPath || rhsHasPath;
-    const isCrossPath = lhsHasPath && rhsHasPath;
     const isApprox = op === "≈" || op === "~=";
-    const takeArithBranch = (hasArith && hasPath) || isCrossPath || isApprox;
-    if (takeArithBranch) {
-      const lv = evaluateNumericExpression(lhsRaw, r);
-      const rv = evaluateNumericExpression(rhsRaw, r);
+
+    // Resolve BOTH sides, then decide — rather than sniffing the text for `data.`.
+    //
+    // The old gate asked "do both sides LOOK like data.* paths?". It could not see a REST
+    // path: evaluateDataPredicate strips the `<label>.` prefix, so `rest_bal.body.total`
+    // arrives here as `body.total`, the sniff returned false, and the assertion fell
+    // through to the STRING-equality branch — which resolves the left path and compares it
+    // against the literal TEXT of the right-hand expression. That can never match, so every
+    // arithmetic/approx DATA assertion over a REST body was ALWAYS RED whatever the product
+    // did (measured 2026-09-14 on 075f: LOYORG-008 / LOYORG-018 were correct both times and
+    // a human re-derived the sums by hand).
+    //
+    // Resolving first is strictly safer than widening the sniff to any dotted token: a
+    // dotted STRING operand (`body.name = Acme.Corp`) does not resolve to a number, so it
+    // still takes the string branch instead of being dragged into a numeric comparison it
+    // would always lose. This gate can only rescue predicates that are broken today.
+    const lv = evaluateNumericExpression(lhsRaw, r);
+    const rv = evaluateNumericExpression(rhsRaw, r);
+    const bothNumeric =
+      typeof lv === "number" && typeof rv === "number" &&
+      Number.isFinite(lv) && Number.isFinite(rv);
+
+    // `isApprox` still forces the branch when a side does not resolve: `≈` is unambiguous
+    // numeric intent, and failing it loudly beats a silent string compare.
+    if (bothNumeric || isApprox) {
       const TOLERANCE = 0.011; // cents-level rounding wiggle for ≈
       let passed = false;
-      if (typeof lv === "number" && typeof rv === "number" && Number.isFinite(lv) && Number.isFinite(rv)) {
+      if (bothNumeric) {
         passed = op === "=" ? lv === rv : Math.abs(lv - rv) <= TOLERANCE;
       }
       return {
@@ -1019,21 +1041,39 @@ export function getByPath(obj: unknown, path: string): unknown {
 }
 
 /**
- * Evaluate a numeric expression that may contain `data.x.y.z` path references,
- * numeric literals, and the operators + - * / with parentheses. Returns
- * undefined if any path doesn't resolve to a number or the expression contains
- * disallowed characters (defense against test-author typos, not malicious input
- * — these CSVs live in the same repo).
+ * Evaluate a numeric expression that may contain PATH references, numeric
+ * literals, and the operators + - * / with parentheses. Returns undefined if any
+ * path does not resolve to a number, or the expression contains disallowed
+ * characters (defense against test-author typos, not malicious input — these
+ * CSVs live in the same repo).
  */
 function evaluateNumericExpression(
   expr: string,
   r: GraphQLResponse
 ): number | undefined {
-  // Replace each `data.<path-tokens>` reference with its numeric value.
-  // A segment is either `field`, `field[<filter>]`, or `<digits>`. Filter
-  // bodies are matched permissively (anything except `]`) so GUIDs with
-  // hyphens, `*?`, `?key=value` etc. all work.
-  const PATH_RE = /data(?:\.(?:[A-Za-z_]\w*(?:\[[^\]]+\])?|\d+))+/g;
+  // Replace each PATH reference with its numeric value.
+  //
+  // This deliberately matches ANY identifier-rooted dotted path, not just one
+  // beginning `data`. A REST-EXEC assertion is rewritten by evaluateDataPredicate,
+  // which strips the `<label>.` prefix — so `rest_bal.body.total - 5` arrives here as
+  // `body.total - 5`. The old `/data(?:.…)+/` matched nothing in that string, the
+  // literal `body.total` survived into the charset guard below, the guard rejected it,
+  // and the function returned undefined — so EVERY approx/arithmetic DATA assertion on
+  // a REST body was unevaluable and therefore ALWAYS RED, whatever the product did.
+  // Ordering operators (`<`, `>`) never went through here and were unaffected, which is
+  // why the gap stayed invisible: the same suite could compare REST numbers one way and
+  // never the other. Measured 2026-09-14 on 075f (LOYORG-008/018 — the product was
+  // correct both times and a human re-derived the arithmetic by hand).
+  //
+  // Rooting on `[A-Za-z_]` also fixes a latent mis-substitution: against `metadata.x`
+  // the old regex matched the `data.x` SUBSTRING and left a stray `meta` behind.
+  //
+  // A segment is `field`, `field[<filter>]`, a bare `[<filter>]`/`[0]` (REST-CAPTURE
+  // paths such as `body.[0].amount`), or `<digits>`. Filter bodies are matched
+  // permissively (anything but `]`) so GUIDs, `*?` and `?key=value` all work. At least
+  // one dot is required, so a bare word is NOT treated as a path — it survives to the
+  // charset guard and is rejected there, which is the correct answer for a typo.
+  const PATH_RE = /[A-Za-z_]\w*(?:\.(?:[A-Za-z_]\w*(?:\[[^\]]+\])?|\[[^\]]+\]|\d+))+/g;
   const replaced = expr.replace(PATH_RE, (match) => {
     const value = resolveByPath(r, match);
     if (typeof value === "number" && Number.isFinite(value)) return String(value);

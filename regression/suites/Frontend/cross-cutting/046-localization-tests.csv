@@ -1,8 +1,8 @@
-"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"L10N-DE-001","German (de) - UI Translation","Localization > German","Medium","BL-L10N-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+L10N-DE-001,German (de) - UI Translation,Localization > German,Medium,PROPOSED-BL-L10N-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - German language available in storefront language switcher
-- Navigation and footer link TEXT is CMS content (Admin > Content > Link lists), localized per cultureName via culture-specific lists (catalog-menu / all-products-menu / footer-links @ de-DE) — NOT app i18n. Those de lists must be authored for nav/footer to render in German; if absent, that region falls back to the default (English) content — a content-authoring gap, NOT a translation defect.","language=de;url={{FRONT_URL}}","[ACT] Open language switcher in header or footer and select German (de)
+- Navigation and footer link TEXT is CMS content (Admin > Content > Link lists), localized per cultureName via culture-specific lists (catalog-menu / all-products-menu / footer-links @ de-DE) — NOT app i18n. Those de lists must be authored for nav/footer to render in German; if absent, that region falls back to the default (English) content — a content-authoring gap, NOT a translation defect.",language=de;url={{FRONT_URL}},"[ACT] Open language switcher in header or footer and select German (de)
 [WAIT] Wait for page to reload with de locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels are in German
@@ -17,11 +17,11 @@
 [DOM] Form labels and placeholders are in German
 [STATE] No English fallback in app-i18n UI chrome (buttons, form/field labels, headings, account-menu chrome) — EXCLUDING CMS-content-driven nav/footer link-list text, which is localized only when a de-DE menu/footer link list exists in Content (not via app i18n)
 [DOM] No raw translation keys (e.g., translation.button.add) visible","[CONSOLE] No 404 errors for locale resource files (e.g., de.json)
-[NETWORK] Locale file loaded successfully (HTTP 200)","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Mixed-language UI (some elements in English some in German)","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-DE-002","German (de) - BOPIS Modal","Localization > German","Medium","BL-L10N-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] Locale file loaded successfully (HTTP 200)","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Mixed-language UI (some elements in English some in German)",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-DE-002,German (de) - BOPIS Modal,Localization > German,Medium,PROPOSED-BL-L10N-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - German language set via language switcher
-- BOPIS (Buy Online Pickup In Store) feature enabled for the store","language=de;url={{FRONT_URL}};sku={{TEST_SKU}}","[ACT] Open language switcher in header or footer and select German (de)
+- BOPIS (Buy Online Pickup In Store) feature enabled for the store",language=de;url={{FRONT_URL}};sku={{TEST_SKU}},"[ACT] Open language switcher in header or footer and select German (de)
 [WAIT] Wait for page to reload with de locale
 [NAV] Navigate to {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location' on the cart page
@@ -39,8 +39,8 @@
 [DOM] Confirmed pickup location summary on cart page displays in German
 [DOM] No raw translation keys visible in the modal","[API] selectPickupLocation mutation response errors[] is empty
 [CONSOLE] No 404 errors for locale resource file (e.g., de.json)
-[NETWORK] Locale file and BOPIS modal data load successfully (HTTP 200)","English text visible inside BOPIS modal;Translation key (e.g., translation.bopis.select) shown instead of text;Modal partially translated (labels German, buttons English)","Clear pickup location selection; switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-EN-001","English (en) - Baseline","Localization > English","High","BL-L10N-001",,"- English language set (default storefront language)","language=en;url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} homepage with English locale active
+[NETWORK] Locale file and BOPIS modal data load successfully (HTTP 200)","English text visible inside BOPIS modal;Translation key (e.g., translation.bopis.select) shown instead of text;Modal partially translated (labels German, buttons English)",Clear pickup location selection; switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-EN-001,English (en) - Baseline,Localization > English,High,PROPOSED-BL-L10N-001,,- English language set (default storefront language),language=en;url={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}} homepage with English locale active
 [ASSERT] Verify English is the default language on first load
 [NAV] Navigate through homepage, catalog, PDP, and account sections
 [ASSERT] Verify all UI elements display readable English text
@@ -50,10 +50,10 @@
 [STATE] No raw translation keys (e.g., translation.button.add) visible anywhere
 [DOM] No blank or empty text nodes where translated content is expected
 [DOM] All text is readable and grammatically complete","[CONSOLE] No 404 errors for en locale resource file
-[NETWORK] en.json (or equivalent) locale file loads with HTTP 200","Translation key (e.g., translation.button.add) shown instead of text;Blank or empty labels where text is expected;English marked as unavailable in language switcher","No cleanup required — English is the default state","VCST-4499 TC-010","Manual"
-"L10N-ES-001","Spanish (es) - UI Translation","Localization > Spanish","Medium","BL-L10N-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] en.json (or equivalent) locale file loads with HTTP 200","Translation key (e.g., translation.button.add) shown instead of text;Blank or empty labels where text is expected;English marked as unavailable in language switcher",No cleanup required — English is the default state,VCST-4499 TC-010,Manual
+L10N-ES-001,Spanish (es) - UI Translation,Localization > Spanish,Medium,PROPOSED-BL-L10N-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-- Spanish language available in storefront language switcher","language=es;url={{FRONT_URL}}","[ACT] Open language switcher and select Spanish (es)
+- Spanish language available in storefront language switcher",language=es;url={{FRONT_URL}},"[ACT] Open language switcher and select Spanish (es)
 [WAIT] Wait for page to reload with es locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels are in Spanish
@@ -68,8 +68,8 @@
 [STATE] No English fallback text visible
 [DOM] Button text fits within button boundaries — no overflow
 [DOM] No raw translation keys visible","[CONSOLE] No 404 errors for es locale resource file
-[NETWORK] es locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Button label overflowing or clipped","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-FR-001","French (fr) - UI Translation","Localization > French","Medium","BL-L10N-001",,"- French language available in storefront language switcher","language=fr;url={{FRONT_URL}}","[ACT] Open language switcher and select French (fr)
+[NETWORK] es locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Button label overflowing or clipped",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-FR-001,French (fr) - UI Translation,Localization > French,Medium,PROPOSED-BL-L10N-001,,- French language available in storefront language switcher,language=fr;url={{FRONT_URL}},"[ACT] Open language switcher and select French (fr)
 [WAIT] Wait for page to reload with fr locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels are in French
@@ -83,8 +83,8 @@
 [DOM] No text truncated — French tends toward longer strings; all containers accommodate text
 [DOM] No raw translation keys visible
 [DOM] No layout overflow caused by longer French phrases","[CONSOLE] No 404 errors for fr locale resource file
-[NETWORK] fr locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Text truncated or overflowing containers","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-IT-001","Italian (it) - UI Translation","Localization > Italian","Medium","BL-L10N-001",,"- Italian language available in storefront language switcher","language=it;url={{FRONT_URL}}","[ACT] Open language switcher and select Italian (it)
+[NETWORK] fr locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Text truncated or overflowing containers",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-IT-001,Italian (it) - UI Translation,Localization > Italian,Medium,PROPOSED-BL-L10N-001,,- Italian language available in storefront language switcher,language=it;url={{FRONT_URL}},"[ACT] Open language switcher and select Italian (it)
 [WAIT] Wait for page to reload with it locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels are in Italian
@@ -97,8 +97,8 @@
 [STATE] No English fallback text visible
 [DOM] Button, label, and heading text stays within its container bounds — no clipped text, no unexpected ellipsis, no horizontal scrollbar
 [DOM] No raw translation keys visible","[CONSOLE] No 404 errors for it locale resource file
-[NETWORK] it locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Text overflowing container boundaries","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-PT-001","Portuguese (pt) - UI Translation","Localization > Portuguese","Medium","BL-L10N-001",,"- Portuguese language available in storefront language switcher","language=pt;url={{FRONT_URL}}","[ACT] Open language switcher and select Portuguese (pt)
+[NETWORK] it locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Text overflowing container boundaries",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-PT-001,Portuguese (pt) - UI Translation,Localization > Portuguese,Medium,PROPOSED-BL-L10N-001,,- Portuguese language available in storefront language switcher,language=pt;url={{FRONT_URL}},"[ACT] Open language switcher and select Portuguese (pt)
 [WAIT] Wait for page to reload with pt locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels are in Portuguese
@@ -111,8 +111,8 @@
 [STATE] No English fallback text visible
 [DOM] Button, label, and heading text stays within its container bounds — no clipped text, no unexpected ellipsis, no horizontal scrollbar
 [DOM] No raw translation keys visible","[CONSOLE] No 404 errors for pt locale resource file
-[NETWORK] pt locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Text overflowing container boundaries","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-NO-001","Norwegian (no) - UI Translation","Localization > Norwegian","Medium","BL-L10N-001",,"- Norwegian language available in storefront language switcher","language=no;url={{FRONT_URL}}","[ACT] Open language switcher and select Norwegian (no)
+[NETWORK] pt locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Text overflowing container boundaries",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-NO-001,Norwegian (no) - UI Translation,Localization > Norwegian,Medium,PROPOSED-BL-L10N-001,,- Norwegian language available in storefront language switcher,language=no;url={{FRONT_URL}},"[ACT] Open language switcher and select Norwegian (no)
 [WAIT] Wait for page to reload with no locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels are in Norwegian
@@ -125,8 +125,8 @@
 [STATE] No English fallback text visible
 [DOM] Scandinavian characters (æ, ø, å) render as glyphs — no font fallback boxes (□) or missing-glyph tofu
 [DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
-[NETWORK] no locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-SV-001","Swedish (sv) - UI Translation","Localization > Swedish","Medium","BL-L10N-001",,"- Swedish language available in storefront language switcher","language=sv;url={{FRONT_URL}}","[ACT] Open language switcher and select Swedish (sv)
+[NETWORK] no locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-SV-001,Swedish (sv) - UI Translation,Localization > Swedish,Medium,PROPOSED-BL-L10N-001,,- Swedish language available in storefront language switcher,language=sv;url={{FRONT_URL}},"[ACT] Open language switcher and select Swedish (sv)
 [WAIT] Wait for page to reload with sv locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels are in Swedish
@@ -139,8 +139,8 @@
 [STATE] No English fallback text visible
 [DOM] Special characters å, ä, ö render as glyphs — no font fallback boxes (□) or missing-glyph tofu
 [DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
-[NETWORK] sv locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-FI-001","Finnish (fi) - UI Translation","Localization > Finnish","Medium","BL-L10N-001",,"- Finnish language available in storefront language switcher","language=fi;url={{FRONT_URL}}","[ACT] Open language switcher and select Finnish (fi)
+[NETWORK] sv locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-FI-001,Finnish (fi) - UI Translation,Localization > Finnish,Medium,PROPOSED-BL-L10N-001,,- Finnish language available in storefront language switcher,language=fi;url={{FRONT_URL}},"[ACT] Open language switcher and select Finnish (fi)
 [WAIT] Wait for page to reload with fi locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels are in Finnish
@@ -153,8 +153,8 @@
 [STATE] No English fallback text visible
 [DOM] Long Finnish compound words fit within containers — no text-overflow: ellipsis clipping unexpected content
 [DOM] No raw translation keys visible","[CONSOLE] No 404 errors for fi locale resource file
-[NETWORK] fi locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Long compound words clipped or truncated in buttons or navigation","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-PL-001","Polish (pl) - UI Translation","Localization > Polish","Medium","BL-L10N-001",,"- Polish language available in storefront language switcher","language=pl;url={{FRONT_URL}}","[ACT] Open language switcher and select Polish (pl)
+[NETWORK] fi locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Long compound words clipped or truncated in buttons or navigation",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-PL-001,Polish (pl) - UI Translation,Localization > Polish,Medium,PROPOSED-BL-L10N-001,,- Polish language available in storefront language switcher,language=pl;url={{FRONT_URL}},"[ACT] Open language switcher and select Polish (pl)
 [WAIT] Wait for page to reload with pl locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels are in Polish
@@ -167,8 +167,8 @@
 [STATE] No English fallback text visible
 [DOM] Polish diacritic characters (ą, ę, ł, ó, ś, ź, ż) render as glyphs — no font fallback boxes (□) or missing-glyph tofu
 [DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
-[NETWORK] pl locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-RU-001","Russian (ru) - Cyrillic Display","Localization > Russian","Medium","BL-L10N-001, BL-L10N-003","ECL-8.1","- Russian language available in storefront language switcher","language=ru;url={{FRONT_URL}}","[ACT] Open language switcher and select Russian (ru)
+[NETWORK] pl locale file loads successfully","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-RU-001,Russian (ru) - Cyrillic Display,Localization > Russian,Medium,"PROPOSED-BL-L10N-001, PROPOSED-BL-L10N-003",ECL-8.1,- Russian language available in storefront language switcher,language=ru;url={{FRONT_URL}},"[ACT] Open language switcher and select Russian (ru)
 [WAIT] Wait for page to reload with ru locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels are in Russian Cyrillic
@@ -184,8 +184,8 @@
 [DOM] Buttons are sized to accommodate Cyrillic text — no clipping
 [DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
 [NETWORK] ru locale file loads successfully
-[NETWORK] No encoding errors in network responses (check Content-Type: charset=utf-8)","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars;Cyrillic text clipped in fixed-width buttons","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-JA-001","Japanese (ja) - Character Display","Localization > Japanese","Medium","BL-L10N-001, BL-L10N-003","ECL-8.1","- Japanese language available in storefront language switcher","language=ja;url={{FRONT_URL}}","[ACT] Open language switcher and select Japanese (ja)
+[NETWORK] No encoding errors in network responses (check Content-Type: charset=utf-8)","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;font rendering box (□) for non-Latin chars;Cyrillic text clipped in fixed-width buttons",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-JA-001,Japanese (ja) - Character Display,Localization > Japanese,Medium,"PROPOSED-BL-L10N-001, PROPOSED-BL-L10N-003",ECL-8.1,- Japanese language available in storefront language switcher,language=ja;url={{FRONT_URL}},"[ACT] Open language switcher and select Japanese (ja)
 [WAIT] Wait for page to reload with ja locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels display Japanese characters
@@ -199,8 +199,8 @@
 [DOM] Kanji, hiragana, and katakana all display without font fallback boxes (□)
 [DOM] Text wrapping respects Japanese word-break rules — no broken mid-character splits
 [DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
-[NETWORK] ja locale file and any CJK font resources load successfully","English text visible in non-English UI;font rendering box (□) for non-Latin chars;Japanese characters broken across lines mid-character","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-ZH-001","Chinese (zh) - Character Display","Localization > Chinese","Medium","BL-L10N-001, BL-L10N-003","ECL-8.1","- Chinese language available in storefront language switcher","language=zh;url={{FRONT_URL}}","[ACT] Open language switcher and select Chinese (zh)
+[NETWORK] ja locale file and any CJK font resources load successfully",English text visible in non-English UI;font rendering box (□) for non-Latin chars;Japanese characters broken across lines mid-character,Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-ZH-001,Chinese (zh) - Character Display,Localization > Chinese,Medium,"PROPOSED-BL-L10N-001, PROPOSED-BL-L10N-003",ECL-8.1,- Chinese language available in storefront language switcher,language=zh;url={{FRONT_URL}},"[ACT] Open language switcher and select Chinese (zh)
 [WAIT] Wait for page to reload with zh locale
 [NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Verify main navigation labels display Chinese characters
@@ -214,11 +214,11 @@
 [DOM] Chinese characters render as glyphs — no font fallback boxes (□) or encoding artifacts (mojibake, ??? placeholders)
 [DOM] Text fits within containers — proper font rendering at expected character dimensions
 [DOM] No raw translation keys visible","[CONSOLE] No font-face loading errors or tofu (□) character fallbacks
-[NETWORK] zh locale file and any CJK font resources load successfully","English text visible in non-English UI;font rendering box (□) for non-Latin chars;Chinese characters overflowing fixed-width containers","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-FLOW-001","Complete Flow - German","Localization > Flows","High","BL-L10N-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] zh locale file and any CJK font resources load successfully",English text visible in non-English UI;font rendering box (□) for non-Latin chars;Chinese characters overflowing fixed-width containers,Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-FLOW-001,Complete Flow - German,Localization > Flows,High,PROPOSED-BL-L10N-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - German language set via language switcher
-- At least one product available in catalog","language=de;url={{FRONT_URL}}","[ACT] Open language switcher and select German (de)
+- At least one product available in catalog",language=de;url={{FRONT_URL}},"[ACT] Open language switcher and select German (de)
 [WAIT] Wait for page to reload with de locale
 [ACT] Use the search bar to search for a product
 [WAIT] Wait for search results to load
@@ -239,11 +239,11 @@
 [DOM] No layout overflow or clipping from longer German compound words at any step
 [DOM] No raw translation keys visible at any step","[API] search and cart mutations succeed without errors
 [CONSOLE] No JS errors at any step of the flow
-[NETWORK] All locale resource requests return HTTP 200","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Layout broken by long German compound words;Flow blocked by an untranslated broken element","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-FLOW-002","Complete Flow - Japanese","Localization > Flows","High","BL-L10N-001, BL-L10N-003","ECL-8.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] All locale resource requests return HTTP 200","English text visible in non-English UI;Translation key (e.g., translation.button.add) shown instead of text;Layout broken by long German compound words;Flow blocked by an untranslated broken element",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-FLOW-002,Complete Flow - Japanese,Localization > Flows,High,"PROPOSED-BL-L10N-001, PROPOSED-BL-L10N-003",ECL-8.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Japanese language set via language switcher
-- At least one product available in catalog","language=ja;url={{FRONT_URL}}","[ACT] Open language switcher and select Japanese (ja)
+- At least one product available in catalog",language=ja;url={{FRONT_URL}},"[ACT] Open language switcher and select Japanese (ja)
 [WAIT] Wait for page to reload with ja locale
 [ACT] Use the search bar to search for a product
 [WAIT] Wait for search results to load
@@ -265,9 +265,9 @@
 [DOM] Layout integrity maintained across all steps — no overflow from CJK character dimensions
 [DOM] No raw translation keys visible at any step","[API] search and cart mutations succeed without encoding errors
 [CONSOLE] No font-face loading errors or tofu (□) character fallbacks
-[NETWORK] All requests carry correct UTF-8 encoding headers","English text visible in non-English UI;font rendering box (□) for non-Latin chars;Character encoding errors visible in UI text;Layout broken by CJK character widths","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-ERR-001","Error Messages - Translated","Localization > Errors","Medium","BL-L10N-001",,"- Non-English language set (use German as reference)
-- Access to forms that have client-side and server-side validation (registration form at /sign-up)","language=de;url={{FRONT_URL}};existing_email={{USER_EMAIL}}","[ACT] Open language switcher and select German (de)
+[NETWORK] All requests carry correct UTF-8 encoding headers",English text visible in non-English UI;font rendering box (□) for non-Latin chars;Character encoding errors visible in UI text;Layout broken by CJK character widths,Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-ERR-001,Error Messages - Translated,Localization > Errors,Medium,PROPOSED-BL-L10N-001,,"- Non-English language set (use German as reference)
+- Access to forms that have client-side and server-side validation (registration form at /sign-up)",language=de;url={{FRONT_URL}};existing_email={{USER_EMAIL}},"[ACT] Open language switcher and select German (de)
 [WAIT] Wait for page to reload with de locale
 [NAV] Navigate to {{FRONT_URL}}/sign-up
 [ACT] Leave the required email field empty and click the submit/register button
@@ -284,9 +284,9 @@
 [STATE] No English fallback text visible in any validation error
 [DOM] No raw translation keys (e.g., translation.validation.required) visible in any error message","[API] registration request returns a structured error (errors[] or validationErrors[]) for the duplicate-email attempt, not an unhandled 500
 [CONSOLE] No JS errors while validation errors are displayed
-[NETWORK] No 5xx responses during any of the three validation attempts","Validation error text shown in English instead of German;Translation key shown instead of readable error text;Server-side duplicate-email attempt returns 500 instead of a structured validation error","Switch language back to English (en) via language switcher; if registration inadvertently succeeded, remove the created test account","VCST-4499 TC-010","Manual"
-"L10N-DATE-001","Date Formatting - Locale","Localization > Formats","Medium","BL-L10N-002",,"- Storefront has date values visible (e.g. order dates, estimated delivery dates, or account activity dates)
-- Both German and US English locales available","language=de;url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/account/orders with English (en) locale active
+[NETWORK] No 5xx responses during any of the three validation attempts",Validation error text shown in English instead of German;Translation key shown instead of readable error text;Server-side duplicate-email attempt returns 500 instead of a structured validation error,"Switch language back to English (en) via language switcher; if registration inadvertently succeeded, remove the created test account",VCST-4499 TC-010,Manual
+L10N-DATE-001,Date Formatting - Locale,Localization > Formats,Medium,PROPOSED-BL-L10N-002,,"- Storefront has date values visible (e.g. order dates, estimated delivery dates, or account activity dates)
+- Both German and US English locales available",language=de;url={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}}/account/orders with English (en) locale active
 [ASSERT] Note the date format displayed for an order date (expected US English convention, e.g. MM/DD/YYYY)
 [ACT] Open language switcher and select German (de)
 [WAIT] Wait for page to reload with de locale
@@ -296,9 +296,9 @@
 [FORMAT] German (de) locale date format follows the German convention (e.g. DD.MM.YYYY)
 [STATE] Date format changes consistently across all visible date fields after the locale switch — no mixed formats on the same page
 [DOM] No raw ISO date string (e.g., 2026-07-14T00:00:00) exposed directly in the UI in either locale","[CONSOLE] No JS errors related to date formatting (e.g., Intl.DateTimeFormat) during locale switch
-[NETWORK] Order/account data loads successfully in both locales (HTTP 200)","Date format does not change after switching locale (still shows MM/DD/YYYY in German);Raw ISO date string shown instead of a formatted date;Mixed date formats visible on the same page after locale switch","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-NUM-001","Number Formatting - Locale","Localization > Formats","Medium","BL-L10N-002",,"- Storefront displays prices with decimal and thousands separators
-- Both German and English locales available with products that have prices over 1","language=de;url={{FRONT_URL}}","[NAV] Navigate to a product detail page or category listing with English (en) locale active, product price > $1,000
+[NETWORK] Order/account data loads successfully in both locales (HTTP 200)",Date format does not change after switching locale (still shows MM/DD/YYYY in German);Raw ISO date string shown instead of a formatted date;Mixed date formats visible on the same page after locale switch,Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-NUM-001,Number Formatting - Locale,Localization > Formats,Medium,PROPOSED-BL-L10N-002,,"- Storefront displays prices with decimal and thousands separators
+- Both German and English locales available with products that have prices over 1",language=de;url={{FRONT_URL}},"[NAV] Navigate to a product detail page or category listing with English (en) locale active, product price > $1,000
 [ASSERT] Note the displayed price format (expected US English convention: ',' as thousands separator and '.' as decimal separator, e.g. $1,234.56)
 [ACT] Open language switcher and select German (de)
 [WAIT] Wait for page to reload with de locale
@@ -310,9 +310,9 @@
 [FORMAT] German (de) locale formats numbers with '.' as thousands separator and ',' as decimal separator
 [STATE] Number format is consistent across PDP, category listing, and cart/order summary within the same active locale
 [DOM] No raw unformatted number (e.g., 1234.56 with no separators) visible in either locale","[CONSOLE] No JS errors related to number formatting (e.g., Intl.NumberFormat) during locale switch
-[NETWORK] Product/cart data loads successfully in both locales (HTTP 200)","Number separators do not change after switching locale (still comma-decimal in German);Raw unformatted number shown instead of a locale-formatted value;Mixed separator conventions visible on the same page after locale switch","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-TRUNC-001","Text Truncation Check","Localization > Layout","High","BL-L10N-001",,"- All supported languages available (minimum 13 languages)
-- Storefront fully accessible in all supported locales","url={{FRONT_URL}};languages=de|es|fr|it|pt|no|sv|fi|pl|ru|ja|zh","[NAV] Navigate to {{FRONT_URL}} homepage with English (en) locale active as baseline
+[NETWORK] Product/cart data loads successfully in both locales (HTTP 200)",Number separators do not change after switching locale (still comma-decimal in German);Raw unformatted number shown instead of a locale-formatted value;Mixed separator conventions visible on the same page after locale switch,Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-TRUNC-001,Text Truncation Check,Localization > Layout,High,PROPOSED-BL-L10N-001,,"- All supported languages available (minimum 13 languages)
+- Storefront fully accessible in all supported locales",url={{FRONT_URL}};languages=de|es|fr|it|pt|no|sv|fi|pl|ru|ja|zh,"[NAV] Navigate to {{FRONT_URL}} homepage with English (en) locale active as baseline
 [ACT] Open language switcher and select the next locale in the supported list (iterate through de, es, fr, it, pt, no, sv, fi, pl, ru, ja, zh)
 [WAIT] Wait for page to reload with the selected locale
 [NAV] Navigate through homepage, main navigation menu, and a product detail page for this locale
@@ -323,8 +323,8 @@
 [DOM] No text overflows its container or triggers a horizontal scrollbar in any locale
 [STATE] Any intentional text-overflow:ellipsis truncation (e.g., long product titles) still exposes the full text via a title/tooltip attribute
 [DOM] No raw translation keys visible in any locale during this pass","[CONSOLE] No CSS overflow warnings or layout errors during any locale pass
-[NETWORK] All locale files load successfully (HTTP 200) for each of the 12 non-English locales checked","Navigation label, button, or heading text clipped/truncated unexpectedly in any locale;Horizontal scrollbar appears due to text overflow;Long text escapes its container boundary in any locale","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-LAYOUT-001","Layout Integrity - Long Text","Localization > Layout","High","BL-L10N-001",,"- Languages with characteristically long words/text available: Finnish, German, Russian","url={{FRONT_URL}};languages=fi|de|ru","[ACT] Set language to Finnish (fi)
+[NETWORK] All locale files load successfully (HTTP 200) for each of the 12 non-English locales checked","Navigation label, button, or heading text clipped/truncated unexpectedly in any locale;Horizontal scrollbar appears due to text overflow;Long text escapes its container boundary in any locale",Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-LAYOUT-001,Layout Integrity - Long Text,Localization > Layout,High,PROPOSED-BL-L10N-001,,"- Languages with characteristically long words/text available: Finnish, German, Russian",url={{FRONT_URL}};languages=fi|de|ru,"[ACT] Set language to Finnish (fi)
 [WAIT] Wait for page reload
 [NAV] Navigate through homepage, category page, and PDP
 [ASSERT] Verify layouts remain intact — long Finnish compound words do not break containers
@@ -343,8 +343,8 @@
 [DOM] No horizontal scrollbars appear caused by overflowing text in any locale
 [DOM] Cards, modals, and buttons maintain their intended dimensions across all tested locales
 [STATE] No layout shift or reflow errors visible","[CONSOLE] No CSS layout errors or overflow warnings
-[NETWORK] All locale files load successfully","Text overflowing or breaking grid layouts;Horizontal scrollbar appearing due to text overflow;Containers expanding beyond intended dimensions due to long words","Switch language back to English (en) via language switcher","VCST-4499 TC-010","Manual"
-"L10N-CURR-001","Currency Switcher Visible","Localization > Currency","Medium","BL-L10N-004",,"Store configured with multiple currencies enabled","url={{FRONT_URL}};currencies=USD|EUR","[NAV] Navigate to {{FRONT_URL}} homepage
+[NETWORK] All locale files load successfully",Text overflowing or breaking grid layouts;Horizontal scrollbar appearing due to text overflow;Containers expanding beyond intended dimensions due to long words,Switch language back to English (en) via language switcher,VCST-4499 TC-010,Manual
+L10N-CURR-001,Currency Switcher Visible,Localization > Currency,Medium,PROPOSED-BL-L10N-004,,Store configured with multiple currencies enabled,url={{FRONT_URL}};currencies=USD|EUR,"[NAV] Navigate to {{FRONT_URL}} homepage
 [ASSERT] Check the header area for a currency switcher control
 [SCROLL] Scroll to the footer if currency switcher not found in header
 [ASSERT] Verify currency switcher is present in header or footer
@@ -359,10 +359,10 @@
 [STATE] Current active currency is shown as selected in the list
 [DOM] All store-configured currencies listed — minimum USD and EUR present
 [DOM] Currency switcher is reachable via keyboard Tab navigation and operable via Enter/Space","[API] cart price query returns amount in selected currency
-[CONSOLE] No JavaScript errors when opening currency switcher","Currency switcher not visible in header or footer;Switcher opens but shows empty list;Active currency not highlighted in the list;Currency switcher not keyboard accessible","Switch currency back to USD","VCST-4499 TC-010;Coverage Gap Analysis","Manual"
-"L10N-CURR-002","Switch to EUR","Localization > Currency","Medium","BL-L10N-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No JavaScript errors when opening currency switcher",Currency switcher not visible in header or footer;Switcher opens but shows empty list;Active currency not highlighted in the list;Currency switcher not keyboard accessible,Switch currency back to USD,VCST-4499 TC-010;Coverage Gap Analysis,Manual
+L10N-CURR-002,Switch to EUR,Localization > Currency,Medium,PROPOSED-BL-L10N-004,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Store configured with USD and EUR, currently displaying USD","url={{FRONT_URL}};from_currency=USD;to_currency=EUR","[NAV] Navigate to a product category page showing prices in USD
+Store configured with USD and EUR, currently displaying USD",url={{FRONT_URL}};from_currency=USD;to_currency=EUR,"[NAV] Navigate to a product category page showing prices in USD
 [ASSERT] Note a product price displayed in USD (e.g., $100.00) as baseline
 [ACT] Open the currency switcher
 [ACT] Select EUR from the currency list
@@ -379,8 +379,8 @@ Store configured with USD and EUR, currently displaying USD","url={{FRONT_URL}};
 [MATH] Exchange rate applied consistently — all prices on the page reflect the same rate
 [STATE] USD prices no longer visible after switching to EUR","[API] cart price query returns amount in selected currency
 [CONSOLE] No JavaScript errors during currency switch
-[NETWORK] No failed requests when prices are re-fetched in EUR","prices revert to USD after navigation;Currency symbol not updating after switch;EUR symbol not displayed (raw ""EUR"" text shown instead)","Switch currency back to USD","VCST-4499 TC-010;Coverage Gap Analysis","Manual"
-"L10N-CURR-003","Currency Persists Across Navigation","Localization > Currency","Medium","BL-L10N-004",,"Store with multiple currencies, EUR selected","url={{FRONT_URL}};currency=EUR","[ACT] Switch currency to EUR via the currency switcher
+[NETWORK] No failed requests when prices are re-fetched in EUR","prices revert to USD after navigation;Currency symbol not updating after switch;EUR symbol not displayed (raw ""EUR"" text shown instead)",Switch currency back to USD,VCST-4499 TC-010;Coverage Gap Analysis,Manual
+L10N-CURR-003,Currency Persists Across Navigation,Localization > Currency,Medium,PROPOSED-BL-L10N-004,,"Store with multiple currencies, EUR selected",url={{FRONT_URL}};currency=EUR,"[ACT] Switch currency to EUR via the currency switcher
 [WAIT] Wait for prices to update
 [NAV] Navigate to a different product category page
 [ASSERT] Verify prices on the new category page are displayed in EUR
@@ -395,10 +395,10 @@ Store configured with USD and EUR, currently displaying USD","url={{FRONT_URL}};
 [STATE] Currency preference persists after browser page refresh
 [STATE] No reversion to USD on navigation or refresh","[API] cart price query returns amount in selected currency
 [CONSOLE] No JavaScript errors related to currency state persistence
-[NETWORK] Currency preference stored (check cookie or localStorage for currency value)","prices revert to USD after navigation;EUR not persisted after page refresh;Currency selection lost on navigation to a different section","Switch currency back to USD","VCST-4499 TC-010;Coverage Gap Analysis","Manual"
-"L10N-CURR-004","Checkout in Selected Currency","Localization > Currency","Medium","BL-L10N-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] Currency preference stored (check cookie or localStorage for currency value)",prices revert to USD after navigation;EUR not persisted after page refresh;Currency selection lost on navigation to a different section,Switch currency back to USD,VCST-4499 TC-010;Coverage Gap Analysis,Manual
+L10N-CURR-004,Checkout in Selected Currency,Localization > Currency,Medium,PROPOSED-BL-L10N-004,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Store with multiple currencies, EUR selected, product in cart","url={{FRONT_URL}};currency=EUR","[ACT] Switch currency to EUR via the currency switcher
+Store with multiple currencies, EUR selected, product in cart",url={{FRONT_URL}};currency=EUR,"[ACT] Switch currency to EUR via the currency switcher
 [ACT] Add a product to the cart
 [WAIT] Wait for cart confirmation
 [NAV] Navigate to the cart page
@@ -419,8 +419,8 @@ Store with multiple currencies, EUR selected, product in cart","url={{FRONT_URL}
 [STATE] Order History record shows EUR currency code/symbol and correct EUR amount
 [STATE] No currency mismatch between any checkout step and the confirmation","[API] cart price query returns amount in selected currency
 [CONSOLE] No JavaScript errors during checkout in non-default currency
-[NETWORK] Payment request payload contains EUR currency code","prices revert to USD after navigation;Currency mismatch between checkout and order confirmation;Order History showing USD instead of EUR for the placed order","Switch currency back to USD","VCST-4499 TC-010;Coverage Gap Analysis","Manual"
-"L10N-CURR-005","Currency Symbol Display","Localization > Currency","Medium","BL-L10N-004",,"Store configured with USD, EUR, and GBP currencies","url={{FRONT_URL}};currencies=USD|EUR|GBP","[ACT] Set currency to USD via the currency switcher
+[NETWORK] Payment request payload contains EUR currency code",prices revert to USD after navigation;Currency mismatch between checkout and order confirmation;Order History showing USD instead of EUR for the placed order,Switch currency back to USD,VCST-4499 TC-010;Coverage Gap Analysis,Manual
+L10N-CURR-005,Currency Symbol Display,Localization > Currency,Medium,PROPOSED-BL-L10N-004,,"Store configured with USD, EUR, and GBP currencies",url={{FRONT_URL}};currencies=USD|EUR|GBP,"[ACT] Set currency to USD via the currency switcher
 [NAV] Navigate to any product page
 [ASSERT] Note the currency symbol and number format displayed (expected: $1,234.56)
 [ACT] Set currency to EUR via the currency switcher
@@ -437,9 +437,9 @@ Store with multiple currencies, EUR selected, product in cart","url={{FRONT_URL}
 [DOM] No raw currency ISO code (USD/EUR/GBP) displayed instead of the currency symbol
 [FORMAT] Decimal and thousands separators correct per currency locale for each of the three currencies","[API] cart price query returns amount in selected currency
 [CONSOLE] No JavaScript errors related to Intl.NumberFormat during currency formatting
-[NETWORK] Currency symbol data loaded correctly for all three currencies","prices revert to USD after navigation;Raw currency code (e.g., USD) shown instead of symbol;Symbol on wrong side (e.g., 1,234.56$ instead of $1,234.56);Separators incorrect for the selected currency","Switch currency back to USD","VCST-4499 TC-010;Coverage Gap Analysis","Manual"
-"L10N-CAT-001","DE Locale — Category Permalink Direct URL Resolves to Correct Category","Localization > German > Category Permalink","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Storefront accessible at {{FRONT_URL}}; DE locale is available; at least one top-level category is reachable in EN (a category page at {{FRONT_URL}}/<slug> returns HTTP 200); DE locale category URL follows pattern {{FRONT_URL}}/de/<slug>","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
+[NETWORK] Currency symbol data loaded correctly for all three currencies","prices revert to USD after navigation;Raw currency code (e.g., USD) shown instead of symbol;Symbol on wrong side (e.g., 1,234.56$ instead of $1,234.56);Separators incorrect for the selected currency",Switch currency back to USD,VCST-4499 TC-010;Coverage Gap Analysis,Manual
+L10N-CAT-001,DE Locale — Category Permalink Direct URL Resolves to Correct Category,Localization > German > Category Permalink,High,BL-CAT-004,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; DE locale is available; at least one top-level category is reachable in EN (a category page at {{FRONT_URL}}/<slug> returns HTTP 200); DE locale category URL follows pattern {{FRONT_URL}}/de/<slug>",url={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Category listing page loads; at least one category card/link is visible
 [ACT] Click the first top-level category link in the category grid
 [WAIT] Category page loads; URL settles
@@ -454,9 +454,9 @@ Storefront accessible at {{FRONT_URL}}; DE locale is available; at least one top
 [DOM] Category page heading is visible and non-empty, and the page is not a 404 (not a not-found state)
 [DOM] Language indicator shows 'de' or 'Deutsch' as the active locale
 [STATE] Category content corresponds to the same category navigated to in EN — same category name or its translation","[NETWORK] GET {{FRONT_URL}}/de/<SLUG_EN> returns HTTP 200 (not 404 or 301 to error)
-[CONSOLE] no TypeError or JS errors when loading the DE-locale category URL directly","404 on {{FRONT_URL}}/de/<SLUG_EN>; browser redirected away from the direct DE URL; category heading shows a different category than expected; language indicator still shows EN after direct DE URL navigation; console TypeError on page load","Navigate back to EN locale (click language switcher → select English); close any open panels","VCST-5144","Draft"
-"L10N-ROUTE-001","Locale↔Slug Collision — Language Switcher on Deep Route Does Not Eat Slug Characters","Localization > Routing > Locale-Slug Collision","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Storefront accessible at {{FRONT_URL}}; at least two supported locales available in the language switcher (e.g. English and one 2-letter locale); STRUCTURAL GUARD: if no top-level category slug whose first 2 characters match a supported 2-letter locale code can be found at runtime, skip this case with a note in evidence — do not fail","url={{FRONT_URL}};supported_2letter_codes=de|it|no|pl|fi|ru|es|pt|fr|sv|el","[NOTE] --- SETUP: discover a collision-eligible slug ---
+[CONSOLE] no TypeError or JS errors when loading the DE-locale category URL directly",404 on {{FRONT_URL}}/de/<SLUG_EN>; browser redirected away from the direct DE URL; category heading shows a different category than expected; language indicator still shows EN after direct DE URL navigation; console TypeError on page load,Navigate back to EN locale (click language switcher → select English); close any open panels,VCST-5144,Draft
+L10N-ROUTE-001,Locale↔Slug Collision — Language Switcher on Deep Route Does Not Eat Slug Characters,Localization > Routing > Locale-Slug Collision,High,BL-CAT-004,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; at least two supported locales available in the language switcher (e.g. English and one 2-letter locale); STRUCTURAL GUARD: if no top-level category slug whose first 2 characters match a supported 2-letter locale code can be found at runtime, skip this case with a note in evidence — do not fail",url={{FRONT_URL}};supported_2letter_codes=de|it|no|pl|fi|ru|es|pt|fr|sv|el,"[NOTE] --- SETUP: discover a collision-eligible slug ---
 [NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Category listing page loads; at least one category card/link is visible
 [ACT] browser_snapshot → enumerate all top-level category card link hrefs visible in the main content area
@@ -484,9 +484,9 @@ Storefront accessible at {{FRONT_URL}}; at least two supported locales available
 [DOM] Page heading is visible and non-empty after the switch; heading text is not '404' or 'not found' or equivalent
 [DOM] Language indicator shows COLLISION_LOCALE as the active selection after the switch
 [STATE] The category displayed after the switch is the same category as before the switch (same heading, or its translation in COLLISION_LOCALE)","[NETWORK] GET for the post-switch URL returns HTTP 200 (not 404)
-[CONSOLE] No TypeError or routing errors in browser console after the language switch","URL after switch has slug characters eaten (e.g. '/de/stinations' instead of '/de/destinations'); 404 page shown after language switch; language indicator still shows the previous locale after the switch; category heading disappears or shows a different category after the switch; console TypeError on page load","Click the language switcher and select English (en) or en-GB to restore the original locale; navigate to {{FRONT_URL}} homepage","VCST-5144;VCST-5144 residual","Draft"
-"L10N-ROUTE-002","Locale↔Slug Collision — Direct Address-Bar Navigation Does Not Eat Slug Characters When Active Locale Matches Slug Prefix","Localization > Routing > Locale-Slug Collision","High","BL-CAT-004","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Storefront accessible at {{FRONT_URL}}; at least two supported locales available; STRUCTURAL GUARD: if no top-level category slug whose first 2 characters match a supported 2-letter locale code can be found at runtime, skip this case with a note in evidence — do not fail","url={{FRONT_URL}};supported_2letter_codes=de|it|no|pl|fi|ru|es|pt|fr|sv|el","[NOTE] --- SETUP: discover a collision-eligible slug (same recipe as L10N-ROUTE-001) ---
+[CONSOLE] No TypeError or routing errors in browser console after the language switch",URL after switch has slug characters eaten (e.g. '/de/stinations' instead of '/de/destinations'); 404 page shown after language switch; language indicator still shows the previous locale after the switch; category heading disappears or shows a different category after the switch; console TypeError on page load,Click the language switcher and select English (en) or en-GB to restore the original locale; navigate to {{FRONT_URL}} homepage,VCST-5144;VCST-5144 residual,Draft
+L10N-ROUTE-002,Locale↔Slug Collision — Direct Address-Bar Navigation Does Not Eat Slug Characters When Active Locale Matches Slug Prefix,Localization > Routing > Locale-Slug Collision,High,BL-CAT-004,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; at least two supported locales available; STRUCTURAL GUARD: if no top-level category slug whose first 2 characters match a supported 2-letter locale code can be found at runtime, skip this case with a note in evidence — do not fail",url={{FRONT_URL}};supported_2letter_codes=de|it|no|pl|fi|ru|es|pt|fr|sv|el,"[NOTE] --- SETUP: discover a collision-eligible slug (same recipe as L10N-ROUTE-001) ---
 [NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Category listing page loads
 [ACT] browser_snapshot → enumerate all top-level category card link hrefs visible in the main content area
@@ -514,9 +514,9 @@ Storefront accessible at {{FRONT_URL}}; at least two supported locales available
 [DOM] Category heading is non-empty and corresponds to the same category as the control nav
 [DOM] Language indicator shows COLLISION_LOCALE as active","[NETWORK] GET for SUT_URL returns HTTP 200
 [CONSOLE] No TypeError or routing errors in browser console during direct navigation
-[API] GraphQL response errors[] is empty","SUT_URL shows eaten slug chars (e.g. '/de/stinations'); 404 page shown; different category displayed compared to control nav; console TypeError on load","Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage","VCST-5144;VCST-5144 residual","Draft"
-"L10N-ROUTE-003","Cross-Locale Explicit Deep-Link Does Not Stack Prefixes — Incoming /{locale}/ Switches Active Locale Instead of Prepending","Localization > Routing > Cross-Locale Deep Link","High","BL-L10N-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes available (e.g. de and en or en-US); four route types accessible: home, a PDP, a category listing, and search","url={{FRONT_URL}};active_locale=de;incoming_locale=en","[NOTE] --- SETUP: establish a non-default active locale ---
+[API] GraphQL response errors[] is empty",SUT_URL shows eaten slug chars (e.g. '/de/stinations'); 404 page shown; different category displayed compared to control nav; console TypeError on load,Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage,VCST-5144;VCST-5144 residual,Draft
+L10N-ROUTE-003,Cross-Locale Explicit Deep-Link Does Not Stack Prefixes — Incoming /{locale}/ Switches Active Locale Instead of Prepending,Localization > Routing > Cross-Locale Deep Link,High,PROPOSED-BL-L10N-001,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes available (e.g. de and en or en-US); four route types accessible: home, a PDP, a category listing, and search",url={{FRONT_URL}};active_locale=de;incoming_locale=en,"[NOTE] --- SETUP: establish a non-default active locale ---
 [ACT] Open language switcher in the header or footer
 [ACT] Click the language switcher to open the locale list
 [WAIT] Locale list is open
@@ -554,9 +554,9 @@ Storefront accessible at {{FRONT_URL}}; at least two 2-letter locale codes avail
 [DOM] Pages for sub-flows A, B, and C render valid content — not a 404 for any sub-flow
 [DOM] Language indicator shows the incoming locale ('en') as active after each explicit deep-link navigation — confirming locale switch occurred rather than stacking
 [STATE] Active locale changed to the incoming locale on all three sub-flows","[NETWORK] HTTP responses for URL_A, URL_B, URL_C are all HTTP 200
-[CONSOLE] No TypeError or routing errors in browser console during any of the three sub-flow navigations","URL contains double-prefix stacking (e.g. '/de/en/'); 404 page shown on any sub-flow; language indicator still shows 'de' after navigating to an explicit '/en/' URL (no switch occurred); console TypeError on any sub-flow load","Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage to restore default locale","VCST-5144;VCST-5144 residual","Draft"
-"L10N-ROUTE-004","Post-Prefix Boundary Fuzz — Trailing Slash, Percent-Encoded Slash, Fragment, and Double Slash After Locale Prefix Are Handled Gracefully","Localization > Routing > Boundary Chars","Medium","BL-L10N-001","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Storefront accessible at {{FRONT_URL}}; DE locale is available; a valid category slug is resolvable at runtime","url={{FRONT_URL}};test_locale=de","[NOTE] --- SETUP: capture a valid category slug ---
+[CONSOLE] No TypeError or routing errors in browser console during any of the three sub-flow navigations",URL contains double-prefix stacking (e.g. '/de/en/'); 404 page shown on any sub-flow; language indicator still shows 'de' after navigating to an explicit '/en/' URL (no switch occurred); console TypeError on any sub-flow load,Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage to restore default locale,VCST-5144;VCST-5144 residual,Draft
+L10N-ROUTE-004,"Post-Prefix Boundary Fuzz — Trailing Slash, Percent-Encoded Slash, Fragment, and Double Slash After Locale Prefix Are Handled Gracefully",Localization > Routing > Boundary Chars,Medium,PROPOSED-BL-L10N-001,ECL-14.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront accessible at {{FRONT_URL}}; DE locale is available; a valid category slug is resolvable at runtime",url={{FRONT_URL}};test_locale=de,"[NOTE] --- SETUP: capture a valid category slug ---
 [NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Category listing page loads; at least one category card visible
 [ACT] browser_snapshot → capture the href of the first top-level category card link in main content; extract the slug-only portion (path after locale prefix if present, e.g. 'accessories') as VALID_SLUG
@@ -596,4 +596,4 @@ Storefront accessible at {{FRONT_URL}}; DE locale is available; a valid category
 [DOM] Variant 2 (%2F): no 5xx server error; graceful response (browser-level URL rejection or normalisation is acceptable)
 [DOM] Variant 3 (#fragment): correct category renders; fragment does not corrupt the path
 [DOM] Variant 4 (double slash): either renders the category page OR shows the storefront graceful 404 component — not a blank page or JS exception","[NETWORK] No 5xx responses for any of the four variant navigations
-[CONSOLE] No TypeError or unhandled promise rejection in browser console for any variant","Any variant URL shows chars eaten from VALID_SLUG; blank white page (SPA crash) on any variant; HTTP 5xx for any variant; unhandled TypeError logged to console for any variant","Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage","VCST-5144;VCST-5144 residual","Draft"
+[CONSOLE] No TypeError or unhandled promise rejection in browser console for any variant",Any variant URL shows chars eaten from VALID_SLUG; blank white page (SPA crash) on any variant; HTTP 5xx for any variant; unhandled TypeError logged to console for any variant,Open language switcher and select English (en) or en-GB; navigate to {{FRONT_URL}} homepage,VCST-5144;VCST-5144 residual,Draft

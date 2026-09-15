@@ -87,12 +87,14 @@ spans** (§5), not to how interesting the feature is.
 | 2 | Every **reverse edge** not resolved to a scenario # | does the effect actually reverse? `ABSENT IN PRODUCT` is a finding, and only a live look can say so | `1e` |
 | 3 | Every scenario row whose oracle is **`{HYPOTHESIS}`** | the expected value nobody has seen — observe it | `1e` |
 | 4 | Every AC marked **DRIFT / NOT-FOUND / CONTRADICTS** | `1d` already says *"a static-diff finding is a suspicion, verify it live"* — this is where that verification happens | `1d` |
-| 5 | Every Step-2a **`RE-BASE`** row | is the existing assertion stale, or is the change wrong? The disposition deliberately defers that; a live look answers it a step earlier than Step 4 would | `2a` |
+| 5 | Every **at-risk row** `tc:scope` returned | is the existing assertion stale, or is the change wrong? A live look answers it *before* the row is disposed, not after | `1b` 2e |
 
 **Sources 4 and 5 are not new work — they are work the pipeline already deferred and never scheduled.**
-`1d` says to carry every DRIFT into execution *"as a thing to verify live"*, and Step 2a's `RE-BASE` is
-resolved by the run. Both were promises redeemed at Step 4 or later, i.e. after authoring. Redeeming them
-here costs nothing extra and makes the cases better.
+`1d` says to carry every DRIFT into execution *"as a thing to verify live"*, and an at-risk row's `RE-BASE`
+is resolved by the run. Both were promises redeemed at Step 4 or later, i.e. after authoring. Redeeming
+them here costs nothing extra and makes the cases better — and since 2026-09-11 source 5 also feeds the
+**disposition** itself, which now happens inside Artifact A, *after* this lane
+([`coverage-triage.md`](coverage-triage.md) §2a-own).
 
 **Then, and only then, the open half.** The remaining box time runs the ordinary discovery technique from
 [`scenario-discovery.md`](../qa-sbtm/scenario-discovery.md) — surprise-seeking first — with the ECL's
@@ -122,7 +124,7 @@ A lane whose findings reach no consumer buys a one-off observation and nothing e
 **Bugs found in the lane are ordinary findings and the lane files none of them.** They enter 5a's triage
 with the run's other findings, take a provenance (usually PRE-EXISTING, since the lane explores adjacent
 ground), and are filed or held by 5d's existing severity floor. The lane has no filing path of its own —
-same rule as Step 2a (*a scan is a claim about a test case, never about the product*) and 2d.
+same rule as the `2a` phase (*a scan is a claim about a test case, never about the product*) and 2d.
 
 **A Critical finding stops the lane immediately** and escalates, exactly as in `/qa-exploratory`.
 
@@ -206,7 +208,7 @@ Mission — five sources, each covered or reported NOT REACHED + reason:
   2. Unresolved reverse edges: [edges]
   3. {HYPOTHESIS} oracles to ground, with the scenario row each belongs to: [rows]
   4. ACs flagged DRIFT / NOT-FOUND / CONTRADICTS by 1d: [ACs]
-  5. Step-2a RE-BASE rows — is the OLD assertion stale, or is the change wrong: [case ids + assertions]
+  5. tc:scope at-risk rows (1b 2e) — is the OLD assertion stale, or is the change wrong: [case ids + assertions]
 
 Value chain (Test Model Part 0, verbatim): [chain]
 Domains: [1a domains]   Model: reports/ba/test-models/<TICKET>-<date>.md

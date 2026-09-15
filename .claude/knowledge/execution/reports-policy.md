@@ -214,6 +214,76 @@ reason: the RED→GREEN transition is what the loop is for, so the RED must surv
 
 **Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/`, `reports/tickets/VCST-XXXX/screenshots/`) stay tracked.
 
+
+### 5.2 Motion evidence — a GIF when the defect IS the transition
+
+**The rule is conditional, not blanket.** A still frame answers *"what does this screen look like"*. Some
+defects are not in a frame at all — they are in the **change between two frames**, and a reader handed two
+PNGs has to take the author's word that one followed the other in one session. That is the case a GIF
+exists for, and the only case that pays for its cost.
+
+| Defect shape | Evidence |
+|---|---|
+| One session reads one value and then acts on a different one (`Balance: 38,916` on the account page → `available=0` at the cart) | **GIF** + the stills that carry the numbers |
+| A state transition wrong only in sequence — a control enables then re-disables, a toast fires and is swallowed, a value resets on navigate-back | **GIF** + the stills |
+| A race or ordering bug, a spinner that never resolves, a flash of wrong content before hydration | **GIF** + the stills |
+| Wrong label, wrong colour, wrong spacing, a control in the wrong place, a 500 toast, an empty list | **Stills only** — a GIF shows nothing a frame does not already show |
+| An API-only or non-visual claim | Neither; label it as such (§5.0) |
+
+**A GIF NEVER replaces the stills.** A reader cannot pause it to read `required=6, available=0`, cannot
+zoom it, and cannot quote it into a ticket. The GIF proves *the sequence happened*; the stills carry *the
+values*. A bug whose only evidence is a GIF has made its own numbers unquotable.
+
+**Budget (bug report):** at most **1** GIF, ≤ 8 frames, ≥ 1.5 s per frame, width ≤ 960, ≤ 5 MB. It counts
+against the §5.1 screenshot cap as one item. A second GIF on one bug usually means it is two bugs.
+
+**Mechanism — nothing new.** An animated GIF attaches and embeds exactly like a PNG: the same REST
+attachment upload, the same `!filename.gif|width=700!` through the v2 comment API, and the same
+three-signal `renderedBody` check in §5.0. Measured 2026-09-14 on VCST-5024 — one
+`<img src=…/attachment/content/<id>>`, one ADF `media` node with a 36-char UUID, zero literal `!….gif!`,
+and Jira animates it inline. Cite [`tracker-ops.md`](tracker-ops.md) §5c; do not restate the upload.
+
+**Video is an attachment, not an embed.** Attach a `.webm` when the defect is a timing or animation
+property a few GIF frames genuinely cannot carry — and always alongside the GIF or stills that make the
+claim, never as the claim itself. **Whether `!file.webm!` renders as a playable element inline is
+UNMEASURED**: the probe was not run. Do not write a comment that depends on it until someone measures it,
+the way §5c's four ADF variants were measured.
+
+**Where the frames come from.** The three BOUND lanes record the whole context (`recordVideo` in each
+`config/mcp-playwright-*.config.json` → `test-results/<lane>/video/*.webm`, 1280×720). The file is
+**flushed on `browser_close`, not continuously** (verified 2026-09-14), which is why the directory reads
+empty mid-session: an empty `video/` is not evidence that capture is off. `test-results/` is gitignored,
+so a recording that will be cited must be copied into the ticket's `screenshots/` folder first. **A config
+change needs an MCP server restart before it takes effect.**
+
+> **The `mobile` lane is 390×844 portrait**, and its config is symmetric with the other three
+> (`isMobile`/`hasTouch`, `recordVideo`, a correctly `.har`-suffixed `recordHar`). A `playwright-mobile`
+> server was registered on 2026-09-14 — before that the config existed but nothing loaded it, so it
+> recorded nothing. **`.mcp.json` is gitignored, so this is per-machine**: on a checkout without that
+> entry the config is inert again, and the tell is that `test-results/mobile/` never appears.
+> **Its first recording was still unconfirmed at the time of writing** — MCP servers bind at session
+> start, so the lane cannot be exercised until Claude Code restarts.
+
+**A portrait clip needs a portrait canvas.** The defaults assume a landscape frame, so a 390×844 mobile
+still lands in a 960×720 canvas as a 333×720 strip between white bars. Pass
+`--width 390 --max-height 844` for a native-size mobile GIF.
+
+**Building one:** `npm run gif -- --out clip.gif --fit width --delay 2000 a.png b.png`
+([`scripts/lib/make-gif.mjs`](../../../scripts/lib/make-gif.mjs)) turns the run's own stills into
+the GIF. Dependency-free on purpose — PNG inflate from `node:zlib`, the GIF89a writer (median-cut
+palette + LZW) in the script — so it works offline and adds no supply-chain surface for what is a
+reporting convenience. It prints §5.2 budget breaches as warnings and never fails a build, per the
+rule above. Two fit modes, and the choice is an evidence decision rather than a cosmetic one:
+
+| `--fit` | Behaviour | Use when |
+|---|---|---|
+| `contain` (default) | scales the frame to fit, letterboxed on white | the frames already share an aspect; nothing is ever hidden |
+| `width` | scales to the canvas width, crops the overflow from the bottom | a full-page shot whose evidence is above the fold — letterboxing a 1905×2389 page into 960×540 renders it unreadable |
+
+`width` crops **silently**, so it is opt-in and the author owns the check that the cropped frame
+still shows the claim. Better still, pre-crop the stills to the region that carries it: a GIF a
+reader has to squint at fails §5.2 for the same reason a missing one does.
+
 ## 6. Console & Network Evidence
 
 **Console — capture:** specific error messages tied to the test/bug. **Skip:** full console dumps, benign Vue warnings, favicon 404s, analytics events.

@@ -110,7 +110,7 @@ MCO-GQL-004,"Mixed-cart order placement decrements loyalty balance by the PTS or
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP balance_before]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance resultBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance resultBalance } }
 [GQL-EXEC balance_before]
 [GQL-CAPTURE balance_before.data.loyaltyBalance.currentBalance → BAL_BEFORE]
 [GQL-OP cleanup_pre]
@@ -150,11 +150,11 @@ MCO-GQL-004,"Mixed-cart order placement decrements loyalty balance by the PTS or
 [GQL-CAPTURE place_order.data.createOrderFromCart.id → ORDER_ID]
 [GQL-CAPTURE place_order.data.createOrderFromCart.orderTotals[?isDefaultTotalCurrency=false].total.amount → PTS_ORDER_TOTAL]
 [GQL-OP balance_after]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance resultBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance resultBalance } }
 [GQL-EXEC balance_after]
 [GQL-CAPTURE balance_after.data.loyaltyBalance.currentBalance → BAL_AFTER]
 [GQL-OP history_check]
-  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 5 sort: ""createdDate:desc"") { totalCount items { operationType amount createdDate object { orderId type } } } }
+  query { loyaltyPointsHistory(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 5 sort: ""createdDate:desc"") { totalCount items { operationType amount createdDate object { orderId type } } } }
 [GQL-EXEC history_check]
 [WAIT until=history_check timeout=40 interval=4] data.loyaltyPointsHistory.items[?operationType=Earned].amount > 0","[ERRORS label=read_cart_validation] errors[] empty
 [ERRORS label=balance_before] errors[] empty

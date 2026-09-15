@@ -1428,5 +1428,70 @@
   },
   "PROD_CMP_VARIATIONS": {
     "id": "56d839e7-c86c-49a2-a32e-5add2766b742"
+  },
+  "ORG_LOY_A": {
+    "userId": "8e31d1d9-d7c1-4514-93c7-92376aac423a",
+    "contactId": "8fcfbd67-8f16-4ad3-80ed-4a5ac0e3b8e4",
+    "org_id": "12b52a61-6dc0-4aa7-9e62-a5eb57e12d4f",
+    "sibling_org_id": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+    "earn_points_expected": "30000",
+    "balance_at_seed": "0"
+  },
+  "ORG_LOY_B": {
+    "userId": "71297bdc-28cc-4568-94cd-d4e729553f7b",
+    "contactId": "94f5696a-9bfb-4fd4-869b-8892a55e9a0c",
+    "org_id": "12b52a61-6dc0-4aa7-9e62-a5eb57e12d4f",
+    "earn_points_expected": "90000",
+    "balance_at_seed": "0"
+  },
+  "ORG_LOY_LOCKED": {
+    "userId": "762105ea-f1f4-4968-adab-a91735710aea",
+    "contactId": "dbcb0c07-db61-44b4-a4f7-cf2e40b26a3c",
+    "org_id": "12b52a61-6dc0-4aa7-9e62-a5eb57e12d4f",
+    "balance_at_seed": "0",
+    "membershipId": "fe542ef3-b817-4bdd-aba0-0aaede66a0b8"
+  },
+  "LOY_PERSONAL_NOORG": {
+    "userId": "2cdf9bb1-bfef-424c-a68f-b371e37f1bc1",
+    "contactId": "3f846e76-a40e-446c-aa71-662f95b002dd",
+    "balance_at_seed": "38916",
+    "cheapest_pts_sku": "AGENT-TEST-MSN-E2E-PERSKU-PTS",
+    "cheapest_pts_price": "1",
+    "dearest_pts_sku": "md351822",
+    "dearest_pts_price": "552"
+  },
+  "ORG_LOY_MISSION": {
+    "id": "ba383695-d833-40d9-a920-ee565d3283c6",
+    "name": "AGENT-TEST-MSN-ORGLOY-20260914092256-79fa",
+    "run_id": "20260914092256-79fa",
+    "seeded_at": "2026-09-14T09:22:57.588Z"
+  },
+  "ORG_LOY_MISSION_2": {
+    "id": "c2c3dffb-fef2-43aa-9238-df6760965c8b",
+    "name": "AGENT-TEST-MSN-ORGLOY-M2-20260914092256-84e5",
+    "run_id": "20260914092256-84e5",
+    "seeded_at": "2026-09-14T09:22:57.588Z"
+  },
+  "ORG_LOY_MISSION_PARTIAL": {
+    "id": "7d30cc17-df1c-4dc3-ab52-52f1e74dfee7",
+    "name": "AGENT-TEST-MSN-ORGLOY-P2-20260914092257-69ac",
+    "run_id": "20260914092257-69ac",
+    "seeded_at": "2026-09-14T09:22:57.588Z"
+  },
+  "MULTI_ORG_LOY_POOLS": {
+    "user_email": "agent-test-multiorg-alt-20260803@yopmail.com",
+    "user_id": "76c999e3-cb45-49d9-b128-880a553706df",
+    "techflow_org_id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+    "buildright_org_id": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+    "techflow_balance_at_seed": "98916",
+    "buildright_balance_at_seed": "219416",
+    "user_balance_at_seed": "68916",
+    "techflow_earn_qty": "3",
+    "buildright_earn_qty": "7",
+    "user_earn_qty": "2",
+    "earn_points_per_unit": "30000",
+    "earn_sku": "QA-LOY-PRIO-001",
+    "store_mode_at_seed": "Customer",
+    "seeded_at": "2026-09-14T10:22:42.746Z"
   }
 }

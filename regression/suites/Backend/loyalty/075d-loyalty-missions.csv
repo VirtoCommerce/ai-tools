@@ -319,11 +319,11 @@ MSN-019,OrderCountGoal completion grants the configured reward and the balance-l
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP balance_before]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_before]
 [GQL-CAPTURE balance_before.data.loyaltyBalance.currentBalance → BAL_BEFORE]
 [GQL-OP history_before]
-query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 200 operationType: ""Earned"") { items { amount } } }
+query { loyaltyPointsHistory(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 200 operationType: ""Earned"") { items { amount } } }
 [GQL-EXEC history_before]
 [GQL-CAPTURE history_before.data.loyaltyPointsHistory.items[*?amount=@td(MSN_ORDERCOUNT.reward)].length → REWARD_COUNT_BEFORE]
 [GQL-OP find_order1]
@@ -379,11 +379,11 @@ query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 200 operationType: "
 [GQL-CAPTURE place_add_order2.data.createOrderFromCart.number → ORDER_NUMBER_ADD_ORDER2]
 [GQL-CAPTURE place_add_order2.data.createOrderFromCart.id → ORDER_ID_ADD_ORDER2]
 [GQL-OP balance_after]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_after]
 [WAIT until=balance_after timeout=30 interval=3] data.loyaltyBalance.currentBalance >= {{BAL_BEFORE}}
 [GQL-OP history]
-  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 20 sort: ""createdDate:desc"") { items { operationType amount object { type orderId } } } }
+  query { loyaltyPointsHistory(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 20 sort: ""createdDate:desc"") { items { operationType amount object { type orderId } } } }
 [GQL-EXEC history]","[ERRORS label=place_add_order1] errors[] empty {DOC}
 [ERRORS label=place_add_order2] errors[] empty {DOC}
 [ERRORS label=balance_after] errors[] empty {DOC}
@@ -400,11 +400,11 @@ MSN-020,A zero-reward mission completes but grants nothing and writes no points-
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP balance_before]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_before]
 [GQL-CAPTURE balance_before.data.loyaltyBalance.currentBalance → BAL_BEFORE]
 [GQL-OP history_before]
-  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 500) { items { amount } } }
+  query { loyaltyPointsHistory(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 500) { items { amount } } }
 [GQL-EXEC history_before]
 [GQL-CAPTURE history_before.data.loyaltyPointsHistory.items.length → HISTORY_COUNT_BEFORE]
 [GQL-CAPTURE history_before.data.loyaltyPointsHistory.items[*?amount=0].length → ZERO_AMOUNT_COUNT_BEFORE]
@@ -437,10 +437,10 @@ MSN-020,A zero-reward mission completes but grants nothing and writes no points-
 [GQL-EXEC progress]
 [WAIT until=progress timeout=30 interval=3] data.loyaltyMissionProgress.items[?missionId=@td(MSN_ZEROREWARD.id)].status = Completed
 [GQL-OP balance_after]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_after]
 [GQL-OP history_after]
-  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 500) { items { amount } } }
+  query { loyaltyPointsHistory(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 500) { items { amount } } }
 [GQL-EXEC history_after]","[ERRORS label=place_add_zeroreward] errors[] empty {DOC}
 [ERRORS label=progress] errors[] empty {DOC}
 [DATA label=progress] data.loyaltyMissionProgress.items[?missionId=@td(MSN_ZEROREWARD.id)].status = Completed {SPEC}
@@ -456,7 +456,7 @@ MSN-021,Repeated points-history reads after settlement report the SAME entry —
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
 [GQL-EXEC cleanup_pre]
 [GQL-OP history_before]
-  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 500 operationType: ""Earned"") { items { amount } } }
+  query { loyaltyPointsHistory(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 500 operationType: ""Earned"") { items { amount } } }
 [GQL-EXEC history_before]
 [GQL-CAPTURE history_before.data.loyaltyPointsHistory.items.length → HISTORY_COUNT_BEFORE]
 [GQL-OP find_dedup]
@@ -485,14 +485,14 @@ MSN-021,Repeated points-history reads after settlement report the SAME entry —
 [GQL-CAPTURE place_add_dedup.data.createOrderFromCart.number → ORDER_NUMBER_ADD_DEDUP]
 [GQL-CAPTURE place_add_dedup.data.createOrderFromCart.id → ORDER_ID_ADD_DEDUP]
 [GQL-OP history_1]
-  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 500 operationType: ""Earned"" sort: ""createdDate:desc"") { items { id amount } } }
+  query { loyaltyPointsHistory(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 500 operationType: ""Earned"" sort: ""createdDate:desc"") { items { id amount } } }
 [GQL-EXEC history_1]
 [WAIT until=history_1 timeout=60 interval=3] data.loyaltyPointsHistory.items.length > {{HISTORY_COUNT_BEFORE}}
 [GQL-CAPTURE history_1.data.loyaltyPointsHistory.items.length → HISTORY_COUNT_AFTER]
 [GQL-CAPTURE history_1.data.loyaltyPointsHistory.items.0.id → SETTLED_ENTRY_ID]
 [WAIT seconds=15]
 [GQL-OP history_2]
-  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 500 operationType: ""Earned"" sort: ""createdDate:desc"") { items { id amount } } }
+  query { loyaltyPointsHistory(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 500 operationType: ""Earned"" sort: ""createdDate:desc"") { items { id amount } } }
 [GQL-EXEC history_2]","[ERRORS label=place_add_dedup] errors[] empty {DOC}
 [ERRORS label=history_1] errors[] empty {DOC}
 [DATA label=history_1] data.loyaltyPointsHistory.items.length > {{HISTORY_COUNT_BEFORE}} {OBSERVED} — settlement landed: the Earned ledger grew after this order
@@ -698,7 +698,7 @@ MSN-027,"[JOURNEY] OrderCountGoal full chain — order places, accrues, crosses 
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP balance_before]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_before]
 [GQL-CAPTURE balance_before.data.loyaltyBalance.currentBalance → BAL_BEFORE]
 [GQL-OP cleanup_pre]
@@ -758,11 +758,11 @@ MSN-027,"[JOURNEY] OrderCountGoal full chain — order places, accrues, crosses 
 [GQL-EXEC progress_o2]
 [WAIT until=progress_o2 timeout=30 interval=5] data.loyaltyMissionProgress.items[?missionId=@td(MSN_E2E_ORDERCOUNT.id)].status = Completed
 [GQL-OP balance_after]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_after]
 [WAIT until=balance_after timeout=30 interval=5] data.loyaltyBalance.currentBalance > {{BAL_BEFORE}}
 [GQL-OP history]
-  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 50 sort: ""createdDate:desc"") { items { operationType amount object { type orderId } } } }
+  query { loyaltyPointsHistory(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 50 sort: ""createdDate:desc"") { items { operationType amount object { type orderId } } } }
 [GQL-EXEC history]
 [GQL-OP cleanup_post]
   mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" cartName: ""default"" currencyCode: ""USD"" cultureName: ""en-US"" }) { id } }
@@ -895,7 +895,7 @@ MSN-032,"No reverse edge exists anywhere in the chain — cancelling the order b
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP balance_before]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_before]
 [GQL-CAPTURE balance_before.data.loyaltyBalance.currentBalance → BAL_BEFORE]
 [GQL-OP cleanup_pre]
@@ -926,7 +926,7 @@ MSN-032,"No reverse edge exists anywhere in the chain — cancelling the order b
   query { loyaltyMissionProgress(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 50) { items { missionId status currentValue } } }
 [GQL-EXEC progress_before_cancel]
 [GQL-OP balance_settled]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_settled]
 [WAIT until=balance_settled timeout=30 interval=5] data.loyaltyBalance.currentBalance > {{BAL_BEFORE}}
 [GQL-CAPTURE balance_settled.data.loyaltyBalance.currentBalance → BAL_SETTLED]
@@ -941,7 +941,7 @@ GET {{BACK_URL}}/api/order/customerOrders/{{ORDER_ID}}
   query { loyaltyMissionProgress(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 50) { items { missionId status currentValue } } }
 [GQL-EXEC progress_after_cancel]
 [GQL-OP balance_after_cancel]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_after_cancel]","[ERRORS label=place] errors[] empty {DOC}
 [ERRORS label=progress_before_cancel] errors[] empty {DOC}
 [ERRORS label=order_status_after_setup] errors[] empty {DOC}
@@ -955,7 +955,7 @@ MSN-033,One order completing multiple missions in the same settlement batch — 
 [GQL-EXEC setup_me]
 [GQL-CAPTURE setup_me.data.me.id → USER_ID]
 [GQL-OP balance_before]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_before]
 [GQL-CAPTURE balance_before.data.loyaltyBalance.currentBalance → BAL_BEFORE]
 [GQL-OP cleanup_pre]
@@ -985,11 +985,11 @@ MSN-033,One order completing multiple missions in the same settlement batch — 
   mutation { createOrderFromCart(command: { cartId: ""{{CART_ID}}"" }) { id number } }
 [GQL-EXEC place]
 [GQL-OP balance_after]
-  query { loyaltyBalance(userId: ""{{USER_ID}}"") { currentBalance } }
+  query { loyaltyBalance(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"") { currentBalance } }
 [GQL-EXEC balance_after]
 [WAIT until=balance_after timeout=120 interval=5] data.loyaltyBalance.currentBalance >= @td(MSN_E2E_ORDERVALUE_008.reward)
 [GQL-OP history]
-  query { loyaltyPointsHistory(userId: ""{{USER_ID}}"" first: 50 sort: ""createdDate:desc"") { items { id operationType amount object { type orderId } } } }
+  query { loyaltyPointsHistory(storeId: ""{{STORE_ID}}"" userId: ""{{USER_ID}}"" first: 50 sort: ""createdDate:desc"") { items { id operationType amount object { type orderId } } } }
 [GQL-EXEC history]
 [GQL-CAPTURE history.data.loyaltyPointsHistory.items.0.id → SETTLED_ENTRY_ID]","[ERRORS label=place] errors[] empty {DOC}
 [ERRORS label=balance_after] errors[] empty {DOC}

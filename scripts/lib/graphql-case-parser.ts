@@ -1,7 +1,7 @@
 /**
  * Parses the Steps column of a runner-native GraphQL test case into an
  * ordered list of StepBlocks:
- *   [AUTH role=X]
+ *   [AUTH role=X]  ·  [AUTH role=X org=@td(ALIAS.platform_id)]
  *   [GQL-OP label] <multi-line query body>
  *   [GQL-VARS label] <JSON body>
  *   [GQL-EXEC label]
@@ -27,6 +27,23 @@ export type StepBlock =
 export interface AuthStep {
   kind: "AUTH";
   role: string;
+  /**
+   * Optional per-case ORGANIZATION override for the password grant, sent as
+   * `organization_id` on POST /connect/token (graphql-auth.ts).
+   *
+   * Without it a role signs in under whatever org its ALIAS declares — one org
+   * per role, fixed for the life of the alias — so the same user could never be
+   * authenticated under a DIFFERENT org in a later step. That left the whole
+   * org-switch class (does balance / permission / visibility follow the ACTIVE
+   * org?) unauthorable on the backend: there was no way to say "same person,
+   * other org" at all.
+   *
+   * Author it as an `@td()` token resolving to the PLATFORM GUID — never a
+   * literal (`.claude/rules/test-data.md` GOLDEN RULE; a literal GUID also fails
+   * `td:validate` DV-013), and never a CSV business key such as "ORG-002", which
+   * the token endpoint ignores.
+   */
+  org?: string;
   raw: string;
 }
 
@@ -174,11 +191,20 @@ export function parseSteps(cell: string): StepBlock[] {
       continue;
     }
 
-    const authMatch = line.match(/^\[AUTH(?:\s+role=([\w-]+))?\s*\]\s*(.*)$/i);
+    // Order-independent `key=value` arg bag, so `[AUTH role=X org=Y]` and
+    // `[AUTH org=Y role=X]` parse identically and a bare `[AUTH]` still works.
+    // A value may contain neither whitespace nor `]`, which covers both an
+    // `@td(...)` token and an already-substituted GUID.
+    const authMatch = line.match(/^\[AUTH((?:\s+[\w-]+=[^\s\]]+)*)\s*\]\s*(.*)$/i);
+    const authArgs = new Map<string, string>();
     if (authMatch) {
+      for (const m of (authMatch[1] || "").matchAll(/([\w-]+)=([^\s\]]+)/g)) {
+        authArgs.set(m[1].toLowerCase(), m[2]);
+      }
       blocks.push({
         kind: "AUTH",
-        role: authMatch[1] || "",
+        role: authArgs.get("role") || "",
+        org: authArgs.get("org"),
         raw,
       });
       i++;

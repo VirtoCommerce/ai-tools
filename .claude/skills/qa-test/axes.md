@@ -1,7 +1,7 @@
-# The pre-flight axes — one mechanism, five instances
+# The pre-flight axes — one mechanism, six instances
 
 Single source of truth for the derived tokens `1b` resolves: **`layer` (2b) · `visual_surface` (2c) ·
-`contract_surface` (2d) · `coverage_surface` (2e) · `data_surface` (2f)**. The command carries one table; this file carries the
+`contract_surface` (2d) · `coverage_surface` (2e) · `data_surface` (2f) · `domain_map` (2g)**. The command carries one table; this file carries the
 contract they share and the ways they genuinely differ. **Cite it; never restate it.**
 
 Each axis's own *behaviour* stays in its own file, which this one does not duplicate:
@@ -14,9 +14,9 @@ Each axis's own *behaviour* stays in its own file, which this one does not dupli
 
 ## 1. Why this file exists
 
-The four axes were added one at a time, each by the same template: a derived token in `1b`, a gate, a
+The axes were added one at a time, each by the same template: a derived token in `1b`, a gate, a
 `summary.json` block, a skill file, a paragraph in `CLAUDE.md`, a row in
-the (since-deleted) `rules/skills-commands.md`. **Six documentation sites per axis, four axes, and nothing ever
+the (since-deleted) `rules/skills-commands.md`. **Six documentation sites per axis, and nothing ever
 generalised** — so ~176 lines across the surface restated one derivation contract, with
 *"derived, never asked, never defaulted"* appearing seven times, *"unresolved is treated as true"* six, and
 *"null means the source was not consulted, which is a gap, not a zero"* three.
@@ -26,7 +26,7 @@ All four were introduced as *"same block, same discipline"* — and §3 shows th
 most consequential rule in the block**. Three separate files each also claimed their own asymmetry was
 *"the flattest"*.
 
-Adding axis #5 should now be **one table row here and one row in the command**, not six documents.
+Adding the NEXT axis should now be **one table row here and one row in the command**, not six documents.
 
 ---
 
@@ -62,8 +62,8 @@ block, and it was the one the shared *"same discipline"* phrasing concealed.
 | Dispatches an agent? | no | **yes** (`ui-ux-expert`) | no | no | **yes** (`test-data-engineer`) | **FULL only**, and only on `ABSENT` + all-layer (`ba-system-analyzer`, `1c-map`) |
 | Costs I/O in `1b`? | no | no | **yes** (~8.6 s) | yes (~1 s, wave B) | yes (~1 s, wave B) | **no** (one local frontmatter read) |
 | Has a conflict rule? | **yes** (`layers_conflict`) | no | no | no | no | no |
-| **Adds** a step, or **gates** one? | gates 5f/5h | adds the visual lane | adds two refreshers | adds Step 2a | **gates Step 3a** | **adds `1c-map` on FULL; RECOMMENDS on FAST. Gates nothing, ever** |
-| Consumed by | 5f / 5h routing | Step 4's visual lane | `1c`/`1d`/`1e`/3b pack | Step 2a's dispositions | Step 3a's dispatch | `2-map`'s read order · `1c-map`'s trigger · `1e` clauses 11/11b · `1c`'s unmapped-surface report |
+| **Adds** a step, or **gates** one? | gates 5f/5h | adds the visual lane | adds two refreshers | adds Artifact A's `2a` phase | **gates Step 3a** | **adds `1c-map` on FULL; RECOMMENDS on FAST. Gates nothing, ever** |
+| Consumed by | 5f / 5h routing | Step 4's visual lane | `1c`/`1d`/`1e`/3b pack | phase `2a`'s dispositions | Step 3a's dispatch | `2-map`'s read order · `1c-map`'s trigger · `1e` clauses 11/11b · `1c`'s unmapped-surface report |
 
 ### 2g `domain_map` — the axis whose lane is a WRITE, not a read
 
@@ -203,7 +203,7 @@ one classifier, rather than flipping it on for every FAST run.
    ([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5a). That type is a *contribution* —
    a fix or improvement to behaviour that already exists and that existing rows already assert — so *"which
    existing rows does this change make wrong?"* is what the ticket is **about**, not a speculative extra;
-   and because its priority is auto-set and it carries no ACs, Step 2a is also the only step that reads the
+   and because its priority is auto-set and it carries no ACs, phase `2a` is also the only thing reading the
    change against the corpus at all. `visual` and `contract` stay opt-in there exactly as everywhere else.
 2. **The `ui-kit` shape class runs `visual` AND `coverage` by default, on BOTH paths** (§5c). It is not a
    type — it is the third classifier, derived from the diff — and it is the case `visual-axis.md` §5 was

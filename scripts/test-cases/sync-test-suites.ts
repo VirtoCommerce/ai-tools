@@ -372,7 +372,6 @@ export function findCrossFileCaseRefs(root?: string): CrossFileRef[] {
  * about the canonical value, though, so it changes nothing in this baseline.)
  */
 const AUTOMATION_STATUS_BASELINE: Record<string, number> = {
-  "Draft (SERIAL — isolate; restore ALL after)": 1,
   Generated: 3,
   None: 63,
   "Not Automated": 86,

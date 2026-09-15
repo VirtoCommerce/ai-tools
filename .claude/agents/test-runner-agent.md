@@ -165,7 +165,7 @@ For each FAIL record a preliminary entry with `confirmed: false`. A separate `qa
 
 1. **Logout (storefront GOLDEN RULE — no sign-out page exists):**
    - Click the **user name / avatar in the top header** — this opens a popup account menu.
-   - Inside the popup, click the **Logout** button (selector: `data-testid="main-layout.top-header.account-menu.sign-out-button"`).
+   - Inside the popup, click the **Logout** button (selector: `data-test-id="sign-out-button"`).
    - Verify redirect to home or `/sign-in`.
    - **NEVER** do `browser_navigate('/sign-out')`, `/logout`, or hunt for a header-level logout icon — they do not exist.
    - Any test Step that says "sign out", "log out", "Click logout button", or similar MUST be executed via this popup sequence. If a Step literally says "Navigate to /sign-out" or "Click logout in header", flag it but still execute via the popup sequence.

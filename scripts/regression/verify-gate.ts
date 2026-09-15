@@ -123,6 +123,10 @@ export const GATES: Record<GateId, GateSpec> = {
     // the whole point: the checklist and the seeded data are all an execution agent consumes, so
     // holding them behind case authoring put the run's longest browser job behind a dependency it
     // never reads. Deliberately INLINE (no fresh-verifier dispatch) and deliberately suite-less.
+    // The 2a coverage triage is NOT gated here either: since 2026-09-11 it is the FIRST PHASE of
+    // Artifact A (one test-management-specialist dispatch disposes the corpus, then authors the
+    // gaps), so the whole corpus step runs past this gate and is checked at gate 3 (FAST: at C1's
+    // dispatch) - see .claude/skills/qa-test/coverage-triage.md 2a-own.
     title: "Step 3-exec — checklist + data ready, execution may dispatch (inline)",
     unchecked: [
       "every atomic condition in the ticket maps to a checklist item, an existing case, or an explicit PENDING-A (needs the AC list; there is no CSV yet)",
@@ -140,6 +144,7 @@ export const GATES: Record<GateId, GateSpec> = {
       "each case's Steps actually exercise the condition its title claims",
       "when data_surface was false, that the SKIP was right: no link under test needs a divergence the fixtures lack",
       "whether tc:scope's scope and risk terms match the ones 1b item 2e derived",
+      "that Artifact A's 2a phase RAN and every hit is disposed - REPAIR applied and re-linted, and both REPAIR and RE-BASE carried into C1's --ids (an absent disposition block reads exactly like a clean triage)",
     ],
   },
   "5b": {
@@ -190,8 +195,11 @@ function factsFor(gate: GateId, opts: { suite?: string; runId?: string }): Comma
     facts.push(
       run("td:validate (@td() / {{VAR}} drift)", "npx", ["tsx", "scripts/test-data/validate-td-refs.ts"],
         "non-zero = an unresolvable reference; the checklist cannot execute against data that does not resolve"),
+      // Informational, and deliberately NOT in `unchecked`: the 2a disposition is gated at gate 3.
+      // It stays here because FAST never reaches gate 3, so dropping it would leave the FAST path
+      // with no surfacing of the scan at all.
       run("tc:scope (existing-coverage triage)", "npx", ["tsx", "scripts/test-cases/scope-existing-coverage.ts"],
-        "non-zero = the scan itself failed; hits are DATA, not a failure"),
+        "context only, never a gate here: non-zero = the scan itself failed; hits are DATA, not a failure"),
     );
   } else if (gate === "3") {
     if (!opts.suite) throw new Error("--gate 3 needs --suite <suite.csv>");

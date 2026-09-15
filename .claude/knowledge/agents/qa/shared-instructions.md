@@ -144,15 +144,26 @@ Reference files — read on-demand before each testing area, not all upfront:
 | Performance Thresholds | `knowledge/execution/performance-thresholds.md` |
 | Browser Quirks | `knowledge/automation/browser-quirks.md` |
 | Debugging Signals | `knowledge/execution/debugging-signals.md` |
-| Catalog Reference | `knowledge/domain/catalog.md` |
-| Products (types, xAPI fields, configurable sections) | `knowledge/domain/products.md` |
-| Storefront Sitemap (URLs, nav, categories, account pages) | `knowledge/domain/sitemap.md` |
-| Store Settings | `knowledge/domain/store-settings.md` |
-| White Labeling | `knowledge/domain/white-labeling.md` |
+| **Domain maps — what a domain IS** | `knowledge/domain/` — one `<slug>.md` per domain. **`ls` it for the roster; never work from a list written elsewhere** |
 | Test Data Generation | `knowledge/test-data-generation.md` |
 | GraphQL xAPI Schema | `knowledge/api/graphql-schema.md` |
 | **Authoring Runner-Native GraphQL Cases** | `knowledge/api/graphql-test-cases-runner.md` |
 | **Live Test-Data Discovery** | `knowledge/execution/live-discovery.md` |
+
+**Testing a feature? Read its domain map BEFORE anything else you read.** `knowledge/domain/<slug>.md`
+is the feature-scoped, persistent answer to *"what is this thing and where are its surfaces"* — actors,
+value chain, surface inventory per layer (back office / storefront / API), **where the layers DISAGREE**,
+the shape of existing QA coverage, and the open gaps. It is what stops a run inheriting the ticket's
+narrowness: the ticket names one control, the map names the whole surface that control sits in.
+
+- **Find one:** `ls knowledge/domain/` — the directory IS the roster (catalog, products, sitemap, store
+  settings, white labeling and the rest all live there). Do not work from a file list transcribed elsewhere.
+- **No map for your domain?** Say so in your report and proceed from the ticket + live enumeration, then
+  ask the orchestrator to run `/qa-domain-map <slug>`. Do not author one inline mid-run.
+- **Stale map?** `npm run domain:check` reports freshness. A map that contradicts the live environment is
+  a finding, not a licence to guess: the live observation wins for THIS run, the map gets refreshed after.
+- **Shape / how one is built:** `knowledge/domain/domain-map.md` (the fill-in shape, not a map itself);
+  reference implementation `knowledge/domain/b2b-organizations.md`.
 
 **Authoring or reviewing GraphQL test cases? Read `graphql-test-cases-runner.md` first.** It is the canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar used by `scripts/graphql/graphql-runner.ts` (tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, common failure modes, authoring checklist). Do not invent tags, predicate shapes, or path syntax not documented there.
 

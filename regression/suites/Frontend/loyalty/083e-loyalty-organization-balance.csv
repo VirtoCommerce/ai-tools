@@ -1,0 +1,324 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+LOYORG-E2E-001,"[JOURNEY] Two colleagues buy for the same company, the points pool, and either of them can spend it",Loyalty > Organization Balance > Storefront > [JOURNEY],Critical,"BL-LOY-007, BL-LOY-008, BL-LOY-010",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_LOY_A]
+[PRE:RESET_CART]
+Store {{STORE_ID}} is in Organization mode — the store setting Loyalty.LoyaltyBalanceCalculationMode reads ""Organization"". This is NOT the ambient state of the environment (the platform default is ""Customer"", which the rest of the loyalty corpus assumes), so the run sets it before this suite and restores it after; a case that finds the store in Customer mode must report BLOCKED rather than assert. @td(ORG_LOY_A.email) and @td(ORG_LOY_B.email) are two DIFFERENT accounts in the SAME outlet organization @td(ORG_LOY_A.org_name), with different organization roles (maintainer and purchasing agent) so a role-scoped restriction stays separable from an organization-scoped one. Their earn quantities DIVERGE (@td(ORG_LOY_A.earn_qty) against @td(ORG_LOY_B.earn_qty)), so a pooled figure is distinguishable from either member alone and from a double-count of either. A loyalty balance CANNOT be reset on this platform — vc-module-loyalty exposes the operation log read-only, with no balance set/debit API — so every balance figure below is a RELATIVE DELTA against a value read immediately before the action, never an absolute number. A promotion adds a gift line (isGift true, price 0) to every order placed on the seeded earn products, so nothing here counts cart lines or pins an order total. VALUE CHAIN this case crosses end to end: store setting selects the scope, member A orders, Hangfire writes the ledger row under the organization-keyed lock, the running total is keyed on the organization, BOTH members read the one pooled figure, and either of them can spend it at checkout.",front_url={{FRONT_URL}}; store_id={{STORE_ID}}; member_a=@td(ORG_LOY_A.email); member_b=@td(ORG_LOY_B.email); pts_sku=@td(LOY_SKU_PTS_UNIT.sku),"[PRE:RESET_CART]
+--- SCREEN: account points-history (member A, before) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] record the page-level balance value as BAL_0
+--- SCREEN: catalog and checkout (member A earns) ---
+[NAV] {{FRONT_URL}}/
+[WAIT] the storefront home page has rendered
+[ACT] add any in-stock cash-priced catalog product to the cart at quantity @td(ORG_LOY_A.earn_qty)
+[WAIT] the cart badge shows at least 1
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with at least one line item
+[ACT] proceed through the store's checkout flow to the payment step
+[WAIT] the payment step has rendered
+[ACT] select the DefaultManualPaymentMethod, or fill an inline card processor from the matching sandbox env var ({{CYBERSOURCE_CARD}} / {{SKYFLOW_MASTERCARD}} / {{AUTHORIZNET_CARD}}) — never a literal
+[WAIT] the payment selection is accepted
+[ACT] click 'Place Order'
+[WAIT] the order confirmation page has rendered with an order number; record it as ORDER_A
+--- SCREEN: account points-history (member A, after own order) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the page-level balance value has rendered
+[ACT] if the balance still reads BAL_0, reload up to 8 times at ~5s intervals (40s budget) before recording — accrual settles on a background job, so a read that has not moved cannot be told from one that never will without giving it time
+[ACT] record the page-level balance value as BAL_1
+[ACT] if the balance is still BAL_0 after the budget, report BLOCKED (accrual did not settle) rather than asserting further
+--- SCREEN: account points-history (member B, sees A's points) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_LOY_B]
+[PRE:VERIFY_AUTH:ORG_LOY_B]
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the page-level balance value has rendered
+[ACT] record the page-level balance value as BAL_B_SEES
+--- SCREEN: catalog and checkout (member B earns) ---
+[NAV] {{FRONT_URL}}/
+[WAIT] the storefront home page has rendered
+[ACT] add the same catalog product to the cart at quantity @td(ORG_LOY_B.earn_qty)
+[WAIT] the cart badge shows at least 1
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with at least one line item
+[ACT] proceed through the store's checkout flow to the payment step
+[WAIT] the payment step has rendered
+[ACT] select the DefaultManualPaymentMethod, or fill an inline card processor from the matching sandbox env var ({{CYBERSOURCE_CARD}} / {{SKYFLOW_MASTERCARD}} / {{AUTHORIZNET_CARD}}) — never a literal
+[WAIT] the payment selection is accepted
+[ACT] click 'Place Order'
+[WAIT] the order confirmation page has rendered with an order number; record it as ORDER_B
+--- SCREEN: account points-history (member B, after both orders) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the page-level balance value has rendered
+[ACT] if the balance still reads BAL_B_SEES, reload up to 8 times at ~5s intervals (40s budget) before recording
+[ACT] record the page-level balance value as BAL_2
+--- SCREEN: cart and checkout (member B spends the pool) ---
+[NAV] {{FRONT_URL}}/
+[WAIT] the storefront home page has rendered
+[ACT] add the points-priced product '@td(LOY_SKU_PTS_UNIT.sku)' to the cart at quantity 1
+[WAIT] the cart badge shows at least 1
+[ACT] add one cash-priced product to the cart at quantity 1 - BL-LOY-010 rejects a points-only cart, so a cash line is REQUIRED for this order to be placeable at all
+[WAIT] the cart badge shows at least 2
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with both the points-priced line and the cash line, with no blocking inline message
+[WAIT] the cart shows no LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED block - if it does, the cash line did not register, so the case is BLOCKED rather than FAIL
+[ACT] record the cart's points-currency subtotal as PTS_SPENT
+[ACT] proceed through the store's checkout flow to the payment step
+[WAIT] the payment step has rendered
+[ACT] select the DefaultManualPaymentMethod, or fill an inline card processor from the matching sandbox env var ({{CYBERSOURCE_CARD}} / {{SKYFLOW_MASTERCARD}} / {{AUTHORIZNET_CARD}}) — never a literal
+[WAIT] the payment selection is accepted
+[ACT] click 'Place Order'
+[WAIT] the order confirmation page has rendered with an order number; record it as ORDER_SPEND
+--- SCREEN: account points-history (member B, after spending) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the page-level balance value has rendered
+[ACT] if the balance still reads BAL_2, reload up to 8 times at ~5s intervals (40s budget) before recording
+[ACT] record the page-level balance value as BAL_3
+--- SCREEN: account points-history (member A, sees the pool move) ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_LOY_A]
+[PRE:VERIFY_AUTH:ORG_LOY_A]
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the page-level balance value has rendered
+[ACT] record the page-level balance value as BAL_A_FINAL","[REL] BAL_1 is greater than BAL_0 — member A's own order moved the balance they read {SPEC}
+[REL] BAL_B_SEES equals BAL_1 — member B, who has ordered nothing, reads the figure member A's order produced; this single equality IS the pooling claim, and it fails if points are still keyed per user {SPEC}
+[REL] BAL_2 is greater than BAL_B_SEES — member B's own order moved the same one pool {SPEC}
+[STATE] ORDER_SPEND exists — the second member could SPEND what the first member earned, which is the half of the promise a read alone cannot prove {SPEC}
+[DOM] a points-history row attributable to ORDER_SPEND is present, its rendered amount magnitude equals PTS_SPENT, and its operation-type cell denotes a REDEMPTION rather than an earning — the redemption debited the shared pool rather than a private one. Read the rendered operation label verbatim; never match an invented literal. Do NOT assert that BAL_3 fell below BAL_2: BL-LOY-010 forbids a points-only cart, so this order necessarily carries an earning cash line and the NET balance movement may be upward {SPEC}
+[REL] BAL_A_FINAL equals BAL_3 — member A sees member B's spending, so the two members are reading one number in both directions {SPEC}
+[STATE] ORDER_A, ORDER_B and ORDER_SPEND are all present and distinct — the journey placed three real, separate orders {SPEC}","[API] loyaltyBalance(storeId, userId) corroborates each recorded figure; LOYORG-004 asserts the same pooled number from the REST and GraphQL sides
+[ADMIN] all three orders appear in the Admin Orders grid under their respective accounts, and the organization blade's loyalty widget shows the same final pooled balance
+[CONSOLE] no unhandled JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql during either checkout or any points-history load
+[API] the organization's loyalty operation log contains exactly one Redeemed row for ORDER_SPEND whose amount magnitude equals PTS_SPENT - this is the durable form of the redemption assertion, independent of how the storefront renders it","the cart badge drops to 0 after switching accounts mid-journey; BAL_B_SEES equals 0 or equals BAL_0 (points did not pool); the points-priced line is refused at the cart for member B with an insufficient-balance message although BAL_B_SEES was positive; a balance does not settle within the 40s budget (report BLOCKED, do not force an assertion); order confirmation never reached for any of the three orders","Remove any leftover cart lines for both accounts and sign out. The three orders and the points they moved are NOT reversible — no reversal path exists in this module (BL-LOY-019) — so the pooled balance ends higher or lower than it started by design, and every later assertion must read it fresh.",VCST-5024 · Archetype:CONFIG · Technique:FLOW | Promoted: REG-2026-09-14-0928 (2026-09-14),Automated
+LOYORG-E2E-002,Organization mode — a buyer's points history contains colleagues' transactions with nothing naming who caused them,Loyalty > Organization Balance > Storefront,High,BL-LOY-015,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_LOY_B]
+Store {{STORE_ID}} is in Organization mode — the store setting Loyalty.LoyaltyBalanceCalculationMode reads ""Organization"". This is NOT the ambient state of the environment (the platform default is ""Customer"", which the rest of the loyalty corpus assumes), so the run sets it before this suite and restores it after; a case that finds the store in Customer mode must report BLOCKED rather than assert. Member @td(ORG_LOY_A.email) has placed at least one order in Organization mode, so the outlet's pooled ledger holds at least one row member @td(ORG_LOY_B.email) did not cause. That state is what the journey case LOYORG-E2E-001 produces; this case does not create it and must report BLOCKED against an empty ledger. This case READS ONLY.",front_url={{FRONT_URL}}; store_id={{STORE_ID}}; member_a=@td(ORG_LOY_A.email); member_b=@td(ORG_LOY_B.email),"--- SCREEN: account points-history (member B) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with its transactions list and a page-level balance value
+[ACT] record every rendered column heading of the transactions list as COLUMNS
+[ACT] record the number of listed transactions as ROWS_B
+[ACT] record, for the most recent transaction, every field the row exposes
+[ACT] record whether any rendered column, badge, tooltip or expanded detail names WHICH member caused a transaction","[DOM] the transactions list on /account/points-history renders at least one row for member B although member B caused none of them — in Organization mode the ledger a buyer reads is the company's {SPEC}
+[DOM] a rendered row corresponding to an order member A placed is present in the transactions list, identified by its order number or its amount {SPEC}
+[DOM] every rendered row carries a field that identifies the member who caused it — a buyer must be able to tell their own purchases from a colleague's {BL}
+[REL] ROWS_B exceeds the number of transactions member B's own orders can account for — the extra rows are the colleagues' {SPEC}","[API] loyaltyPointsHistory returns the pooled ledger in Organization mode, and LoyaltyOperationLogType exposes no member or organization field, so the rows arrive at the client already indistinguishable — the storefront cannot render an attribution it is never sent. Record which is missing: the field, or only its rendering
+[API] this is BL-LOY-015 escalating: attribution was already absent at user scope, where it did not matter because every row was the reader's own. Pooling is what turns it into a customer-visible defect
+[CONSOLE] no unhandled JS error while the transactions list renders","no column, badge or detail names the causing member; the list renders rows the buyer cannot account for and offers no filter; the page shows only the reader's own rows (the opposite defect — pooling did not reach the read path)",Sign out. This case reads only.,VCST-5024 · Archetype:SCOPE · Technique:EG,Draft
+LOYORG-E2E-003,Organization mode — a buyer in two companies sees the right company's points after switching,Loyalty > Organization Balance > Storefront,High,BL-B2B-001,ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+Store {{STORE_ID}} is in Organization mode — the store setting Loyalty.LoyaltyBalanceCalculationMode reads ""Organization"". This is NOT the ambient state of the environment (the platform default is ""Customer"", which the rest of the loyalty corpus assumes), so the run sets it before this suite and restores it after; a case that finds the store in Customer mode must report BLOCKED rather than assert. @td(MULTI_ORG_TF_BR_ALT.email) is the FRONTEND-lane multi-organization fixture — one account in TWO organizations with distinct per-organization roles (TechFlow maintainer, BuildRight employee). Its backend twin MULTI_ORG_TF_BR must NOT be used here: the two lanes own independent membership rows, and swapping them makes both lanes report confident wrong results. Loyalty scope comes from the organization_id claim, which is minted at sign-in and re-minted on an organization switch. LIMIT: this case is decidable ONLY where the two organizations hold DIFFERENT non-zero pooled balances. On a seeded environment they do - @td(MULTI_ORG_LOY_POOLS.techflow_balance_at_seed) against @td(MULTI_ORG_LOY_POOLS.buildright_balance_at_seed), with the account's own user-scope balance @td(MULTI_ORG_LOY_POOLS.user_balance_at_seed) distinct from both, so a correct scoped read, a leaking single-pool read and a wrong fallback to user scope are THREE DIFFERENT observations. Where those figures are absent or equal, the readings agree trivially and the case decides nothing - record that as inconclusive rather than as a pass; `npm run td:validate:multiorg-balance` reports which environments are seeded. GROUNDED {OBSERVED} 2026-09-14 (REG-2026-09-14-1052): each organization returned its own pool, switching away and back returned the identical figure, and the row-id sets under the two organizations were disjoint. ECL-14.3 records that claims are never live-pushed; the claim-refresh behaviour was observed directly in that run - a freshly minted bearer per page load, the organization_id claim flipping between the two orgs, and the permission array narrowing from maintainer to employee.",front_url={{FRONT_URL}}; store_id={{STORE_ID}}; multi_org_user=@td(MULTI_ORG_TF_BR_ALT.email),"--- SCREEN: account points-history (first organization) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] record the active organization name shown in the account context as ORG_1
+[ACT] record the page-level balance value as BAL_ORG_1
+[ACT] record the number of listed transactions as ROWS_ORG_1
+--- SCREEN: organization switch ---
+[ACT] open the account organization selector
+[WAIT] the selector lists both organizations the account belongs to
+[ACT] select the organization that is NOT ORG_1
+[WAIT] the account context shows the newly selected organization
+--- SCREEN: account points-history (second organization) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] record the active organization name shown in the account context as ORG_2
+[ACT] record the page-level balance value as BAL_ORG_2
+[ACT] record the number of listed transactions as ROWS_ORG_2
+--- SCREEN: account points-history (switch back) ---
+[ACT] open the account organization selector
+[WAIT] the selector lists both organizations
+[ACT] select ORG_1 again
+[WAIT] the account context shows ORG_1
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] record the page-level balance value as BAL_ORG_1_AGAIN","[STATE] ORG_2 is not ORG_1 — the switch actually changed the active organization {OBSERVED}
+[REL] verify whether the figure on the page changes with the active organization: BAL_ORG_2 reflects the organization named by ORG_2 and not the pool shown under ORG_1 {OBSERVED}
+[REL] BAL_ORG_1_AGAIN equals BAL_ORG_1 — switching away and back returns the same figure, so nothing leaked or was cached across the two contexts {OBSERVED}
+[DOM] no row listed under ORG_1 is present in the transactions list under ORG_2 {OBSERVED}","[API] capture the /graphql request for the points-history load in both contexts and confirm the bearer token was RE-MINTED on the switch; a path that does not re-mint, or does not clear the Apollo cache, serves the previous organization's pool from a stale claim
+[API] if both organizations report 0, the comparison is vacuous — say so explicitly rather than recording a pass
+[CONSOLE] no unhandled JS error during either switch
+[NETWORK] no 4xx/5xx on /graphql during either load","the balance is identical across the two organizations while their ledgers differ; the page shows the previous organization's figure until a hard reload (stale Apollo cache); the organization selector changes the context but the loyalty query still carries the old claim; both pools read 0 (inconclusive, not a pass)",Restore the originally active organization (ORG_1) and sign out — the active organization is per-account state a later case would otherwise inherit.,VCST-5024 · Archetype:SCOPE · Technique:ST | Observed: REG-2026-09-14-1052 (2026-09-14),Draft
+LOYORG-E2E-004,Organization mode — the account page presents a shared company balance as if it were the buyer's own,Loyalty > Organization Balance > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_LOY_A]
+Store {{STORE_ID}} is in Organization mode — the store setting Loyalty.LoyaltyBalanceCalculationMode reads ""Organization"". This is NOT the ambient state of the environment (the platform default is ""Customer"", which the rest of the loyalty corpus assumes), so the run sets it before this suite and restores it after; a case that finds the store in Customer mode must report BLOCKED rather than assert. The mode setting is IsPublic false, so the storefront cannot read it and cannot know which scope it is rendering; PR #2475 adds only storeId to the two queries and changes no copy, label or indicator. The published StorefrontUserGuide states that buyers can view THEIR accumulated loyalty points, which is correct in Customer mode and contradicted in Organization mode — that contradiction is nowhere declared intentional on the ticket, which is why it is asserted against {DOC} here rather than waved through as cosmetic.",front_url={{FRONT_URL}}; store_id={{STORE_ID}}; member_a=@td(ORG_LOY_A.email),"--- SCREEN: account points-history ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] record verbatim every heading, label or caption the page renders near the balance value
+[ACT] record verbatim every heading, label or caption the page renders near the transactions list
+[ACT] record whether anything on the page states that the balance belongs to the organization rather than to the signed-in buyer
+--- SCREEN: account missions ---
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the missions page has rendered
+[ACT] record verbatim every heading, label or caption the page renders near mission progress
+[ACT] record verbatim every heading, label or caption the page renders near mission rewards
+[ACT] record whether anything on the page states that progress or rewards are shared with colleagues","[DOM] an element identifying WHOSE balance is shown is present on /account/points-history — in Organization mode a shared company pool must not be presented with wording that attributes it to the signed-in buyer alone {DOC}
+[DOM] an element identifying WHOSE progress and rewards are shown is present on /account/missions {DOC}
+[DOM] at least one element distinguishing the Organization-mode presentation from the Customer-mode one is present {SPEC}
+[DOM] no label claiming exclusivity over a balance colleagues can spend is present on either page {DOC}
+[REL] the possessive wording on /account/points-history and on /account/missions agrees — a buyer must not be told the balance is theirs on one page and the company's on the other {SPEC}","[DOC] the published StorefrontUserGuide points-history page says buyers view THEIR accumulated loyalty points; capture the live copy verbatim so the divergence can be routed to documentation as well as to product
+[API] the storefront literally cannot branch on the mode: the setting is IsPublic false and is not exposed to the client. Whether the fix is a public flag, a server-supplied label, or a documentation change is a product decision — record the evidence, do not pick one
+[CONSOLE] no unhandled JS error on either page",the page renders possessive wording over a pooled balance with nothing marking it as the company's; the missions page presents a mission a colleague can consume as the buyer's own; the two modes render identically with no indicator at all,Sign out. This case reads only.,VCST-5024 · Archetype:RENDER · Technique:EG,Draft
+LOYORG-E2E-005,"Organization mode — flipping the store mode changes which balance the account page shows on the next load, with no stale figure",Loyalty > Organization Balance > Storefront,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_LOY_A]
+Store {{STORE_ID}} is in Organization mode — the store setting Loyalty.LoyaltyBalanceCalculationMode reads ""Organization"". This is NOT the ambient state of the environment (the platform default is ""Customer"", which the rest of the loyalty corpus assumes), so the run sets it before this suite and restores it after; a case that finds the store in Customer mode must report BLOCKED rather than assert. The outlet's pooled balance is non-zero and strictly greater than member A's own Customer-scope balance — that inequality is what makes the scope change visible on the page in a single reload. This case OWNS the store mode for its duration: it reads, an administrator writes Loyalty.LoyaltyBalanceCalculationMode = ""Customer"", it reads again, the administrator restores ""Organization"", and it reads once more. It must not run concurrently with any other loyalty suite on {{STORE_ID}}, and it leaves the store in Organization mode. A loyalty balance CANNOT be reset on this platform — vc-module-loyalty exposes the operation log read-only, with no balance set/debit API — so every balance figure below is a RELATIVE DELTA against a value read immediately before the action, never an absolute number.",front_url={{FRONT_URL}}; store_id={{STORE_ID}}; member_a=@td(ORG_LOY_A.email),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ORG_LOY_A]
+--- SCREEN: account points-history (Organization mode) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] record the page-level balance value as BAL_ORG
+--- SCREEN: back office (an administrator writes the mode) ---
+[ACT] as an administrator, GET {{BACK_URL}}/api/stores/{{STORE_ID}}
+[ACT] in the fetched entity, set the settings[] element named Loyalty.LoyaltyBalanceCalculationMode to ""Customer""
+[ACT] PUT the whole modified entity back to {{BACK_URL}}/api/stores - a whole-entity PUT REPLACES, so never send a partial one
+[WAIT] the store write returns 2xx (this endpoint answers 204, not 200)
+[WAIT] a re-read of {{BACK_URL}}/api/stores/{{STORE_ID}} shows Loyalty.LoyaltyBalanceCalculationMode = ""Customer"" - persisted is NOT effective: the platform settings endpoints (/api/platform/settings, /api/platform/settings/v2/tenant/...) accept the same write but silently no-op, so this read-back is the only proof the mode actually changed. Still the old value ⇒ BLOCKED, not FAIL
+--- SCREEN: account points-history (Customer mode, same session) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] reload the page once to defeat any client-side cache
+[WAIT] the page-level balance value has re-rendered
+[ACT] record the page-level balance value as BAL_CUST
+--- SCREEN: back office (restore) ---
+[ACT] as an administrator, GET {{BACK_URL}}/api/stores/{{STORE_ID}}
+[ACT] in the fetched entity, set the settings[] element named Loyalty.LoyaltyBalanceCalculationMode to ""Organization""
+[ACT] PUT the whole modified entity back to {{BACK_URL}}/api/stores - a whole-entity PUT REPLACES, so never send a partial one
+[WAIT] the store write returns 2xx (this endpoint answers 204, not 200)
+[WAIT] a re-read of {{BACK_URL}}/api/stores/{{STORE_ID}} shows Loyalty.LoyaltyBalanceCalculationMode = ""Organization"" - persisted is NOT effective: the platform settings endpoints (/api/platform/settings, /api/platform/settings/v2/tenant/...) accept the same write but silently no-op, so this read-back is the only proof the mode actually changed. Still the old value ⇒ BLOCKED, not FAIL
+--- SCREEN: account points-history (restored) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] reload the page once
+[WAIT] the page-level balance value has re-rendered
+[ACT] record the page-level balance value as BAL_RESTORED","[DOM] a page-level balance value is present and BAL_ORG is greater than 0 — the case is vacuous against an empty pool, so a zero here is BLOCKED rather than a pass {SPEC}
+[REL] BAL_CUST is less than BAL_ORG — after the merchant changes the setting, the page shows the buyer's own scope rather than the company pool it showed a moment earlier {SPEC}
+[REL] BAL_RESTORED equals BAL_ORG — restoring the setting restores the figure, so the page is reading the live scope and not a figure frozen at first load {SPEC}
+[DOM] a numeric balance is present at every one of the three readings — never an error state, never an endless skeleton {SPEC}","[API] the storefront caches the loyalty query in the Apollo client and the setting is IsPublic false, so nothing on the client knows the scope changed and nothing invalidates the cached figure; the single reload in the steps is what separates ""the server serves the new scope"" from ""the client is showing a stale one"" — record which of the two a wrong figure came from
+[API] LOYORG-019 asks the same question at the API layer, where no client cache exists; a disagreement between the two localises the staleness to the storefront
+[ADMIN] no loyalty regression suite may run on {{STORE_ID}} inside this case's mode window
+[CONSOLE] no unhandled JS error on any of the three loads","BAL_CUST still equals BAL_ORG after a reload (stale scope served to the buyer); BAL_RESTORED does not return to BAL_ORG; the page errors or renders an endless skeleton at any reading; the restore write answers non-200, leaving the store in Customer mode for every following case","An administrator POSTs {""Loyalty.LoyaltyBalanceCalculationMode"": ""Organization""} to the store settings endpoint as an idempotent safety net, returning the store to the state this suite declares even if the case aborted mid-window. Then sign out.",VCST-5024 · Archetype:CONFIG · Technique:ST | Promoted: REG-2026-09-14-0928 (2026-09-14),Automated
+LOYORG-E2E-006,"Organization mode — a buyer with no organization can spend the points shown on their account page, and is not blocked by a zero-available error",Loyalty > Organization Balance > Storefront,Critical,BL-LOY-008,ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOY_PERSONAL_NOORG]
+[PRE:RESET_CART]
+Store {{STORE_ID}} is in Organization mode — the store setting Loyalty.LoyaltyBalanceCalculationMode reads ""Organization"". This is NOT the ambient state of the environment (the platform default is ""Customer"", which the rest of the loyalty corpus assumes), so the run sets it before this suite and restores it after; a case that finds the store in Customer mode must report BLOCKED rather than assert. @td(LOY_PERSONAL_NOORG.email) belongs to NO organization and holds a balance strictly above @td(LOY_PERSONAL_NOORG.cheapest_pts_price) — the seeder guarantees that floor, so a refusal to spend is attributable to the scope split and never to a genuine shortfall. This is the customer-facing half of a question the backend organization-balance suite also asks at the API layer: what a personal shopper experiences on a store the merchant switched to company points. No execution dependency — this case establishes its own state. A loyalty balance CANNOT be reset on this platform — vc-module-loyalty exposes the operation log read-only, with no balance set/debit API — so every balance figure below is a RELATIVE DELTA against a value read immediately before the action, never an absolute number. A promotion adds a gift line (isGift true, price 0) to every order placed on the seeded earn products, so nothing here counts cart lines or pins an order total.",front_url={{FRONT_URL}}; store_id={{STORE_ID}}; no_org_user=@td(LOY_PERSONAL_NOORG.email); pts_sku=@td(LOY_SKU_PTS_UNIT.sku),"--- SCREEN: account points-history ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] record the page-level balance value as BAL_SHOWN
+--- SCREEN: catalog ---
+[NAV] {{FRONT_URL}}/
+[WAIT] the storefront home page has rendered
+[ACT] add the points-priced product '@td(LOY_SKU_PTS_UNIT.sku)' to the cart at quantity 1
+[WAIT] the cart badge shows at least 1
+--- SCREEN: cart ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with the points-priced line
+[ACT] record any inline message the cart renders about the loyalty balance
+[ACT] record the available figure that message names, if it names one
+[ACT] record whether the 'Place Order' control is enabled
+[WAIT] the cart page is idle with no pending request
+--- SCREEN: checkout ---
+[ACT] proceed through the store's checkout flow to the payment step
+[WAIT] the payment step has rendered
+[ACT] select the DefaultManualPaymentMethod, or fill an inline card processor from the matching sandbox env var ({{CYBERSOURCE_CARD}} / {{SKYFLOW_MASTERCARD}} / {{AUTHORIZNET_CARD}}) — never a literal
+[WAIT] the payment selection is accepted
+[ACT] click 'Place Order'
+[WAIT] either an order confirmation page with an order number, or a blocking message on the cart or checkout; record whichever appeared as OUTCOME","[DOM] a page-level balance is present on the account page and BAL_SHOWN is greater than 0 {SPEC}
+[DOM] the cart renders no insufficient-balance message for a buyer whose account page shows a balance covering the line — an organization-scoped store setting must not make a personal shopper's points unspendable {SPEC}
+[DOM] the 'Place Order' control is enabled on the cart {SPEC}
+[STATE] OUTCOME is an order confirmation with an order number, not a blocking message {SPEC}
+[REL] if the cart DOES name an available figure, it equals BAL_SHOWN — the balance the buyer is shown and the balance checkout honours are one number {SPEC}","[API] the hypothesis is that LoyaltyCartValidator branches on the store setting with no null-check on cart.OrganizationId while the read path falls back to the user, so the two surfaces disagree for exactly this actor; capture the cart's validationErrors payload and compare the available parameter against BAL_SHOWN
+[API] LOYORG-001 and LOYORG-002 ask the two halves of this at the API layer; the DISAGREEMENT across the three is the evidence, not any one result
+[CONSOLE] no unhandled JS error on the cart or checkout
+[NETWORK] no 4xx/5xx on /graphql during the cart load or checkout",an inline insufficient-balance message naming available as 0 while BAL_SHOWN is positive; the Place Order control is disabled on a cart the buyer can afford; checkout redirects back to the cart with no message at all; the points-priced line never resolves to a points price,"Remove any leftover cart lines and sign out. If the order was placed it is NOT reversible (BL-LOY-019), so the points it moved stay moved and any later balance figure must be read fresh.",VCST-5024 · Archetype:FALLBACK · Technique:EP,Draft
+LOYORG-E2E-007,[JOURNEY] Switching company mid-session re-homes BOTH earning and spending — the newly active company's pool moves and the other one does not,Loyalty > Organization Balance > Storefront > [JOURNEY],Critical,"BL-LOY-007, BL-LOY-008, BL-LOY-018",ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[PRE:RESET_CART]
+Store {{STORE_ID}} is in Organization mode — the store setting Loyalty.LoyaltyBalanceCalculationMode reads ""Organization"". This is NOT the ambient state of the environment (the platform default is ""Customer"", which the rest of the loyalty corpus assumes), so the run sets it before this suite and restores it after; a case that finds the store in Customer mode must report BLOCKED rather than assert.
+WHAT THIS CASE ADDS THAT NOTHING ELSE COVERS: measured across the whole suite corpus on 2026-09-14, 72 cases earn or redeem loyalty points and 93 cases switch the active organization, and the two sets do not intersect at a single case. LOYORG-E2E-003 switches and READS; the journey cases earn and redeem inside ONE organization. So AC1 (multiple managers can purchase and earn for the same outlet) and AC2 (a manager can redeem points of the outlet) are proven only while the active company never changes — and the active company is exactly what selects the pool.
+WHY THE SEAM IS WHERE THE DEFECT WOULD BE: read from source at vc-module-loyalty PR #17 head, every order-earn branch of LoyaltyProgramHandler does only this — if the store calculates balances per organization, the loyalty context OrganizationId is set to the ORDER OrganizationId — with no contact or member lookup at all. The pool an accrual lands in is therefore the ORDER organization, which the storefront cart inherits from the organization_id claim on the caller token, which is re-minted by the organization switcher. A switch that does not re-mint the claim, or a cart that keeps the pre-switch claim, credits the WRONG company with no error anywhere.
+@td(MULTI_ORG_TF_BR_ALT.email) is the FRONTEND-lane multi-organization fixture — one account in TWO organizations with distinct per-organization roles. Its backend twin MULTI_ORG_TF_BR must NOT be used here: the two lanes own independent membership rows, and swapping them makes both lanes report confident wrong results.
+DECIDABILITY: both companies hold DISTINCT non-zero pooled balances (@td(MULTI_ORG_LOY_POOLS.techflow_balance_at_seed) against @td(MULTI_ORG_LOY_POOLS.buildright_balance_at_seed)), and the account own user-scope balance @td(MULTI_ORG_LOY_POOLS.user_balance_at_seed) is distinct from both, so a correct scoped write, a write into the previously active company, and a fallback to the account own user scope are THREE distinguishable outcomes rather than two. Against a set of pools that all read zero this case decides nothing and must record BLOCKED, not a pass.
+THE EARN QUANTITY IS NOT LOAD-BEARING and is fixed at 1: the discriminator here is WHICH pool moves, never by how much, so no quantity divergence is needed and none is claimed.
+A loyalty balance CANNOT be reset on this platform — vc-module-loyalty exposes the operation log read-only, with no balance set/debit API — so every figure below is a RELATIVE DELTA against a value read immediately before the action, never an absolute number, and this case is not idempotent: it moves a real pool by a real amount every time it runs.
+STATED LIMIT — the cart is EMPTY across the switch. Whether a cart BUILT under one company and CHECKED OUT after switching to another follows the cart original claim or the re-minted one is a second, narrower seam this case deliberately does not enter, because mixing the two would make an unexpected result unattributable. It is reported as a residual gap.",front_url={{FRONT_URL}}; store_id={{STORE_ID}}; multi_org_user=@td(MULTI_ORG_TF_BR_ALT.email); earn_sku=@td(MULTI_ORG_LOY_POOLS.earn_sku); pts_sku=@td(LOY_SKU_PTS_UNIT.sku),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR_ALT]
+[PRE:RESET_CART]
+--- SCREEN: account points-history (company 1, baseline) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] record the active company name shown in the account context as ORG_1
+[ACT] record the page-level balance value as BAL_ORG1_BEFORE
+--- SCREEN: company switch ---
+[ACT] open the account organization selector
+[WAIT] the selector lists both companies the account belongs to
+[ACT] select the company that is NOT ORG_1
+[WAIT] the account context shows a company name different from ORG_1
+[ACT] record the newly active company name as ORG_2
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] record the page-level balance value as BAL_ORG2_BEFORE
+[ACT] record the number of listed transactions as ROWS_ORG2_BEFORE
+--- SCREEN: catalog and checkout (EARN while company 2 is active) ---
+[NAV] {{FRONT_URL}}/
+[WAIT] the storefront home page has rendered
+[ACT] add @td(MULTI_ORG_LOY_POOLS.earn_sku) to the cart at quantity 1
+[WAIT] the cart badge shows at least 1
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with at least one line item
+[ACT] proceed through the store checkout flow to the payment step
+[WAIT] the payment step has rendered
+[ACT] select the DefaultManualPaymentMethod, or fill an inline card processor from the matching sandbox env var ({{CYBERSOURCE_CARD}} / {{SKYFLOW_MASTERCARD}} / {{AUTHORIZNET_CARD}}) — never a literal
+[WAIT] the payment selection is accepted
+[ACT] click 'Place Order'
+[WAIT] the order confirmation page has rendered with an order number
+[ACT] record the order number as ORDER_EARN
+--- SCREEN: account points-history (company 2, after the earn) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the page-level balance value has rendered
+[ACT] if the balance still reads BAL_ORG2_BEFORE, reload up to 8 times at ~5s intervals (40s budget) before recording — accrual settles on a background job, so an early read is not yet evidence
+[ACT] record the page-level balance value as BAL_ORG2_AFTER_EARN
+--- SCREEN: catalog and checkout (REDEEM while company 2 is still active) ---
+[NAV] {{FRONT_URL}}/
+[WAIT] the storefront home page has rendered
+[ACT] add @td(LOY_SKU_PTS_UNIT.sku) to the cart at quantity 1
+[WAIT] the cart badge shows at least 1
+[ACT] add any in-stock cash-priced catalog product to the cart at quantity 1
+[WAIT] the cart badge shows at least 2
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered with both a cash line and a points-priced line
+[ACT] record the points total the cart shows for the points-priced block as PTS_SPENT
+[ACT] proceed through the store checkout flow to the payment step
+[WAIT] the payment step has rendered
+[ACT] click 'Place Order'
+[WAIT] the order confirmation page has rendered with an order number
+[ACT] record the order number as ORDER_SPEND
+--- SCREEN: account points-history (company 2, after the redemption) ---
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the page-level balance value has rendered
+[ACT] record the page-level balance value as BAL_ORG2_AFTER_SPEND
+[ACT] record the number of listed transactions as ROWS_ORG2_AFTER
+--- SCREEN: switch back to company 1 and re-read ---
+[ACT] open the account organization selector
+[WAIT] the selector lists both companies the account belongs to
+[ACT] select ORG_1
+[WAIT] the account context shows ORG_1
+[NAV] {{FRONT_URL}}/account/points-history
+[WAIT] the points-history page has rendered with a page-level balance value
+[ACT] record the page-level balance value as BAL_ORG1_AFTER
+[ACT] record whether any listed transaction is attributable to ORDER_EARN or to ORDER_SPEND as ORG1_HAS_FOREIGN_ROWS","[STATE] ORG_2 is not ORG_1 — the switch actually changed the active company, without which every comparison below is vacuous {SPEC}
+[REL] BAL_ORG2_AFTER_EARN is greater than BAL_ORG2_BEFORE — the order placed while company 2 was active credited company 2 pool. This is AC1 at the seam: earning follows the ACTIVE company, not the one the session started in {SPEC}
+[REL] BAL_ORG1_AFTER equals BAL_ORG1_BEFORE — company 1 pool did not move while company 2 was the active one. This single equality is what separates a correct re-mint from a stale organization_id claim, and it is the assertion this case exists for {SPEC}
+[STATE] ORDER_SPEND exists — the points-priced line was accepted and checked out against the pool of the company active at that moment, which is AC2 at the seam {SPEC}
+[REL] ROWS_ORG2_AFTER is greater than ROWS_ORG2_BEFORE — the earn and the redemption are both recorded in the ledger the ACTIVE company members read {SPEC}
+[STATE] ORG1_HAS_FOREIGN_ROWS is false — no transaction produced under company 2 is listed under company 1, so the two ledgers stayed separate in the read direction as well as the write direction {SPEC}
+[REL] BAL_ORG2_AFTER_SPEND differs from BAL_ORG2_AFTER_EARN — the redemption moved the same pool the earn moved. Do NOT assert that it FELL: BL-LOY-010 forbids a points-only cart, so this order necessarily carries an earning cash line and the NET movement may be upward {SPEC}","[API] capture the /graphql requests for both checkouts and decode the bearer token: its organization_id claim must name ORG_2 on both. A token still carrying ORG_1 is the direct form of the defect, and it localises the fault to the switcher rather than to the loyalty handler
+[API] read the organization-scoped operation log for both companies (GET {{BACK_URL}}/api/loyalty-program-operation-log/balance/organization/{id}) and confirm the Earned and Redeemed rows for ORDER_EARN and ORDER_SPEND carry the ORG_2 OrganizationId — the ledger is the durable form of the claim, independent of what the account page renders
+[API] read the account OWN user-scope balance (GET {{BACK_URL}}/api/loyalty-program-operation-log/balance/user/{userId}) before and after: it must be unchanged. A user-scope movement means the handler fell back to user scope instead of resolving an organization, which is the third distinguishable outcome and is neither a pass nor the stale-claim defect
+[API] if BAL_ORG1_BEFORE equals BAL_ORG2_BEFORE, the pools are not distinguishable on this environment — record BLOCKED and re-seed rather than recording a pass
+[API] a co-settling mission grant would also move a pool — check the organization ledger for a mission-sourced row before attributing any delta to this order
+[CONSOLE] no unhandled JS error during either switch or either checkout
+[NETWORK] no 4xx/5xx on /graphql during any page load in the journey","BAL_ORG1_AFTER is greater than BAL_ORG1_BEFORE while company 2 was the active company throughout — the accrual landed in the previously active company pool (stale organization_id claim)
+MID-JOURNEY — the cart badge drops to 0 immediately after the company switch, or the cart page shows a different set of lines than before the switch
+MID-JOURNEY — the account context header shows ORG_2 but the points-history figure is still BAL_ORG1_BEFORE until a hard reload (stale Apollo cache, so the page and the token disagree about which company is active)
+the points-priced line is refused at the cart with an insufficient-balance message although BAL_ORG2_BEFORE was positive — the validator resolved a different scope than the page rendered (BL-LOY-008)
+neither pool moves while the account own user-scope balance does — the handler fell back to user scope
+no balance settles within the 40s budget (report BLOCKED, do not force an assertion)
+both pools read zero at baseline (inconclusive, never a pass)","Restore ORG_1 as the active company and sign out — the active company is per-account state a later case would otherwise inherit. Remove any leftover cart lines first. The two orders and the points they moved are NOT reversible (BL-LOY-019), so the pools end at new values by design and every later assertion must read them fresh rather than reuse a figure from this run.",VCST-5024 · Archetype:SCOPE · Technique:FLOW · vc-module-loyalty#17 (LoyaltyProgramHandler.ProcessOrderAsync — pool selected by the order organization); BL-LOY-007; BL-LOY-008; BL-LOY-018,Draft

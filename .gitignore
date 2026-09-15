@@ -160,3 +160,8 @@ reports/vc-fix-plugin-diagnosis.md
 # Serena (semantic code navigation): the shared .serena/project.yml + .serena/.gitignore
 # ARE committed so every teammate gets the same project config. The machine-specific parts
 # (cache/, logs/, project.local.yml) are excluded by .serena/.gitignore itself.
+
+# === vc-fix (/project-init) — browser evidence landing zone ===
+# The Playwright MCP servers write raw captures here; /qa-bug moves the ones it keeps
+# into reports/bugs/screenshots/<bug-slug>/. Nothing here is evidence of record.
+reports/bugs/screenshots/_incoming/

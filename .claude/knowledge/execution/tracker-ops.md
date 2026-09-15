@@ -195,6 +195,12 @@ Images live in a Jira comment only if **both** steps happen:
    `h2.` headings, `*bold*`, `_italic_`, `{{mono}}`, `||header||` / `|cell|` tables, `#` numbered and
    `*` bulleted lists, `[text|url]` links, `{panel:title=…}…{panel}` for admonitions.
 
+**An animated GIF travels this same path unchanged** — same attachment endpoint, same
+`!clip.gif|width=700!` through the v2 API — and Jira animates it inline. Measured 2026-09-14 on
+VCST-5024 (attachment `83962`, 5 frames, 960×540): one `<img src=…/attachment/content/…>`, one `media`
+node with a 36-char UUID, zero literal `!….gif!`. `.webm`/`.mp4` are a different question and are
+**unmeasured** — WHEN a bug needs motion evidence at all is `reports-policy.md` §5.2.
+
 **Do not** hand-build an ADF `media` node with the numeric attachment id — Jira rejects it with
 `400 ATTACHMENT_VALIDATION_ERROR`. The `media.attrs.id` must be a media-service **UUID**, which the
 attachment REST API does not expose; the wiki-markup path is what resolves it for you.

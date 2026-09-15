@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-09-10)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-09-11)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -31,7 +31,7 @@
     | Context arg | Queries accepting it | Required | Optional |
     |---|---|---|---|
     | `cultureName` | 61 (56%) | 3 | 58 |
-    | `storeId` | 63 (58%) | 32 | 31 |
+    | `storeId` | 65 (60%) | 34 | 31 |
     | `userId` | 31 (29%) | 2 | 29 |
     | `organizationId` | 14 (13%) | 2 | 12 |
 
@@ -180,8 +180,8 @@ configurationItems(cartId: String, lineItemId: String!, storeId: String!, curren
 recentlyBrowsed(storeId: String!, cultureName: String, currencyCode: String, maxProducts: Int)
 recommendations(storeId: String!, userId: String, cultureName: String, currencyCode: String, previousOutline: String, productId: String, model: String, fallbackProductsFilter: String, maxRecommendations: Int)
 searchHistory(storeId: String!, maxCount: Int!)
-loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, userId: String, operationType: String)
-loyaltyBalance(userId: String, orderId: String)
+loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, storeId: String!, userId: String, operationType: String)
+loyaltyBalance(storeId: String!, userId: String, orderId: String)
 loyaltyMissionProgress(after: String, first: Int, keyword: String, sort: String, storeId: String!, statuses: [String], completedStartDate: DateTime, completedEndDate: DateTime, cultureName: String, currencyCode: String, isStarted: Boolean, userId: String)
 checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
 currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: [String], regionIds: [String], cities: [String], ids: [String])

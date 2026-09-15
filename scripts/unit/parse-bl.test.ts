@@ -4,7 +4,7 @@
 // Run: `npx tsx --test scripts/unit/parse-bl.test.ts` / `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseOracle, lint, extractReferencedBlIds } from "../knowledge/lint-bl.ts";
+import { parseOracle, lint, extractReferencedBlIds, BLC_002_BASELINE } from "../knowledge/lint-bl.ts";
 
 const ORACLE = `---
 applicability: reference
@@ -123,9 +123,12 @@ test("BLC-004 Medium for an uncovered P0/P1 invariant; Informational for P2", ()
   assert.equal(p2!.severity, "Informational");
 });
 
-test("BLC-002 Medium when a suite cites a BL id absent from the oracle", () => {
+test("BLC-002 High for a NEW dangling cite, and a real invariant stays clean", () => {
   // buildCoverage always keeps byBl and referenced consistent: every referenced id
   // has a byBl entry. BL-PRICE-001 is covered (by TC-002); BL-GHOST-001 is a ghost ref.
+  //
+  // BL-GHOST-001 is NOT in BLC_002_BASELINE, so it is new drift and reported High — the
+  // ratchet added 2026-09-14. Medium is now reserved for the baselined backlog (below).
   const coverage = {
     byBl: new Map([["BL-GHOST-001", ["TC-001"]], ["BL-PRICE-001", ["TC-002"]]]),
     referenced: new Set(["BL-GHOST-001", "BL-PRICE-001"]),
@@ -133,10 +136,33 @@ test("BLC-002 Medium when a suite cites a BL id absent from the oracle", () => {
   const findings = lint(parseOracle(ORACLE), coverage);
   const ghost = findings.find((x) => x.rule === "BLC-002" && x.id === "BL-GHOST-001");
   assert.ok(ghost, "expected BLC-002 for the ghost reference");
-  assert.equal(ghost!.severity, "Medium");
+  assert.equal(ghost!.severity, "High", "an id absent from BLC_002_BASELINE is NEW drift");
   // a real, referenced invariant must NOT produce BLC-002 or BLC-004
   assert.ok(!findings.some((x) => x.rule === "BLC-002" && x.id === "BL-PRICE-001"));
   assert.ok(!findings.some((x) => x.rule === "BLC-004" && x.id === "BL-PRICE-001"));
+});
+
+// The ratchet's other two arms. Driven off BLC_002_BASELINE itself rather than a
+// transcribed id, so burning the backlog down to empty skips this test instead of
+// breaking it (the baseline is meant to reach zero).
+test("BLC-002 stays Medium at a baselined count and goes High when it grows", (t) => {
+  const entry = Object.entries(BLC_002_BASELINE)[0];
+  if (!entry) return t.skip("BLC_002_BASELINE is empty — the backlog is burned down");
+  const [id, allowed] = entry;
+
+  const at = Array.from({ length: allowed }, (_, i) => `TC-AT-${i}`);
+  const atBaseline = lint(parseOracle(ORACLE), {
+    byBl: new Map([[id, at]]),
+    referenced: new Set([id]),
+  }).find((x) => x.rule === "BLC-002" && x.id === id);
+  assert.ok(atBaseline, `expected BLC-002 for the baselined ${id}`);
+  assert.equal(atBaseline!.severity, "Medium", "pre-existing drift at its baselined count is Medium");
+
+  const grown = lint(parseOracle(ORACLE), {
+    byBl: new Map([[id, [...at, "TC-GREW"]]]),
+    referenced: new Set([id]),
+  }).find((x) => x.rule === "BLC-002" && x.id === id);
+  assert.equal(grown!.severity, "High", "a baselined id may never grow");
 });
 
 test("extractReferencedBlIds skips PROPOSED- forward-refs but keeps bare cites (BLC-002 false-positive fix)", () => {

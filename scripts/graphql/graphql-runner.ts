@@ -416,7 +416,7 @@ interface OpEvidence {
 }
 
 type CleanupResult =
-  | { kind: "AUTH"; role: string; ok: true }
+  | { kind: "AUTH"; role: string; org?: string; ok: true }
   | { kind: "REST"; method: string; path: string; status: number; ok: boolean }
   | { kind: string; ok: false; error: string };
 
@@ -792,9 +792,16 @@ async function runCase(
           if (!block.role) {
             throw new Error("[AUTH] missing role");
           }
-          cleanupToken = await tokenCache.getToken(block.role);
-          cleanupResults.push({ kind: "AUTH", role: block.role, ok: true });
-          console.log(`  • [AUTH role=${block.role}] token acquired`);
+          cleanupToken = await tokenCache.getToken(block.role, block.org);
+          cleanupResults.push({
+            kind: "AUTH",
+            role: block.role,
+            org: block.org,
+            ok: true,
+          });
+          console.log(
+            `  • [AUTH role=${block.role}${block.org ? ` org=${block.org}` : ""}] token acquired`
+          );
         } else if (block.kind === "REST") {
           const result = await executeRest(block, backUrl, cleanupToken);
           cleanupResults.push({
@@ -896,9 +903,13 @@ async function executeBlock(
       if (!block.role) {
         throw new Error(`[AUTH] missing role — expected [AUTH role=<alias>]`);
       }
-      console.log(`\n• [AUTH role=${block.role}] acquiring token...`);
+      console.log(
+        `\n• [AUTH role=${block.role}${block.org ? ` org=${block.org}` : ""}] acquiring token...`
+      );
       const t0 = Date.now();
-      const token = await ctx.tokenCache.getToken(block.role);
+      // `block.org` overrides the org the role's ALIAS declares, for this grant
+      // only — the one way to express "same user, different active org".
+      const token = await ctx.tokenCache.getToken(block.role, block.org);
       console.log(`  token acquired (${Date.now() - t0}ms)`);
       setToken(token);
       return;

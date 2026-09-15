@@ -53,6 +53,13 @@ const TEARDOWN_STEPS = [
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', args: ['--teardown'] },
   { name: 'cms-pages', script: 'cms/seed-pagebuilder-pages.mjs', args: ['--teardown'] },
+  // VCST-5024 org-mode loyalty. TEARDOWN-ONLY here, and deliberately so: the forward seeder places a
+  // REAL, non-reversible order to fund LOY_PERSONAL_NOORG (a balance cannot be set on this platform),
+  // which is the same reason seed-loyalty-balance.mjs and seed-missions-e2e.mjs are not wired forward
+  // either. The teardown side IS wired, because its per-run MISSION is swept by nothing else —
+  // sweepAgentTestMembers() reaches the outlet org and its contacts, but no other seeder knows about
+  // an AGENT-TEST-MSN-ORGLOY-* mission, so without this line a full teardown would orphan one per run.
+  { name: 'org-loyalty', script: 'loyalty/seed-org-loyalty.mjs', args: ['--teardown'] },
   // Missions before programs: a mission's SKU targets are children of the mission, and the reverse
   // order would leave them orphaned behind a deleted parent.
   { name: 'loyalty-missions', script: 'loyalty/seed-loyalty-missions.mjs', args: ['--teardown'] },

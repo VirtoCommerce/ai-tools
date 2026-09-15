@@ -102,8 +102,12 @@ consume only `1a`'s fetch, so they are independent: **issue them in ONE message*
 `2b`, `2c`, `2e`, `2f` from what came back — pure computation, no tool call. Then **one message** for wave
 B: `2d`'s two refreshers **and `2e`'s `tc:scope` scan **and `2f`'s `td:validate` resolution check**, the
 items gated on a derived token. `2d` is the
-one that costs real time (~8.6 s); `tc:scope` is ~1 s, and holding it until Step 2a buys a round-trip and
-nothing else.
+one that costs real time (~8.6 s); `tc:scope` is ~1 s, and holding it until the disposition buys a
+round-trip and nothing else.
+
+**The SCAN is all that happens here.** Disposing its hits is the `2a` phase of Artifact A at Step 3 — one
+agent, `test-management-specialist`, disposes and then authors ([`coverage-triage.md`](coverage-triage.md)
+§2a-own). Nothing in `1b` waits on that, and this scan's at-risk rows are also charter source 5 for `3x`.
 
 **The wave-B scan carries SCOPE and RISK TERMS only — never `--cases`/`--also-ids`.** Those model what
 will execute, and at wave B neither input exists: Artifact A is authored at Step 3, and the `RE-BASE` ids
@@ -120,7 +124,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
    - **A ⚠ BREAKING change in the component under test forces FULL**, whatever `1a` scored. `ticket-routing.md` says *when in doubt → FULL*; a contract that moved last month is doubt with a date on it, and a FAST run would author no cases and write no Test Model against it.
    - **It feeds `1d`'s AC↔implementation check a third leg.** That check is otherwise static — ACs vs *this* PR's diff — and a breaking change elsewhere in the same component is invisible to that diff while being the likeliest cause of a DRIFT nobody owns.
    - **Released ≠ deployed.** A capability the ledger records that the probe does not carry is `NOT_DEPLOYED` → BLOCKED-on-deploy, never a FAIL and never a filed bug. And the ledger carries **no behaviour**, so it can never ground an assertion as `{DOC}`; that stays `{OBSERVED}`.
-2b–2f. **Derive the five PRE-FLIGHT AXES — one mechanism, five instances.** Pure computation over
+2b–2g. **Derive the SIX PRE-FLIGHT AXES — one mechanism, six instances.** Pure computation over
     what wave A returned; no operator input. Single source of truth for the contract they share and the
     ways they differ: [`skills/qa-test/axes.md`](axes.md). **Cite it; do not restate it.**
 

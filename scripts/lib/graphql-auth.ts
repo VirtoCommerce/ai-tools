@@ -248,6 +248,41 @@ export async function acquireToken(
 }
 
 /**
+ * Resolves an `[AUTH … org=<ref>]` value to the platform organization GUID the
+ * token endpoint expects.
+ *
+ * The authoring form is an `@td()` token (`@td(ORG_TECHFLOW.platform_id)`), which
+ * is what keeps a runtime GUID out of the committed CSV. Anything else is passed
+ * through unchanged — that is deliberately NOT a licence to hardcode: it is the
+ * path for a value the runner already substituted (`{{ORG_ID}}`) before parsing.
+ *
+ * An `@td()` token that does NOT resolve THROWS rather than falling through. The
+ * resolver returns unresolved tokens unchanged, so a silent pass-through would
+ * post the literal string `@td(...)` as `organization_id`; the platform ignores an
+ * unknown org and issues a 200 token under the contact's DEFAULT org instead — the
+ * case then passes while asserting against the wrong organization entirely.
+ */
+function resolveOrgRef(ref: string, testDataDir: string, role: string): string {
+  if (!/^@td\(/.test(ref)) return ref;
+  let resolved = ref;
+  try {
+    resolved = new TestDataResolver(testDataDir).resolve(ref);
+  } catch (e) {
+    throw new Error(
+      `[AUTH role=${role} org=${ref}] org reference could not be resolved: ${(e as Error).message}`
+    );
+  }
+  if (!resolved || resolved === ref) {
+    throw new Error(
+      `[AUTH role=${role} org=${ref}] org reference did not resolve to a platform GUID. ` +
+        `Add the alias field (it must be the platform GUID, not a business key such as "ORG-002") ` +
+        `or seed it — a token minted without it silently falls back to the user's DEFAULT org.`
+    );
+  }
+  return resolved;
+}
+
+/**
  * Per-run in-memory token cache. Returns a cached token if still valid
  * (minus a 30s buffer), otherwise acquires a fresh one.
  */
@@ -259,27 +294,48 @@ export class TokenCache {
     private readonly opts: AuthOptions
   ) {}
 
-  async getToken(role: string): Promise<string> {
-    const entry = this.cache.get(role);
+  /**
+   * `org` is the per-CASE organization override from `[AUTH role=X org=Y]`. It
+   * REPLACES whatever org the role's alias declares, for this grant only, which
+   * is what makes "same user, different active org" expressible at all.
+   *
+   * It is part of the CACHE KEY, not just the request: a token is org-scoped, so
+   * keying on the role alone would hand a step authenticated for org A the token
+   * minted for org B and the case would silently assert against the wrong scope —
+   * the failure mode that is hardest to see, because it still returns 200.
+   */
+  async getToken(role: string, org?: string): Promise<string> {
+    const key = TokenCache.key(role, org);
+    const entry = this.cache.get(key);
     if (entry && entry.expiresAt - TOKEN_REFRESH_BUFFER_MS > Date.now()) {
       return entry.accessToken;
     }
 
     const creds = resolveRole(role, this.testDataDir);
+    if (org) {
+      creds.organizationId = resolveOrgRef(org, this.testDataDir, role);
+    }
     const fresh = await acquireToken(creds, this.opts);
-    this.cache.set(role, fresh);
+    this.cache.set(key, fresh);
     return fresh.accessToken;
   }
 
+  private static key(role: string, org?: string): string {
+    return org ? `${role}@${org}` : role;
+  }
+
   /** Invalidate a cached token (e.g. on 401 response). */
-  invalidate(role: string): void {
-    this.cache.delete(role);
+  invalidate(role: string, org?: string): void {
+    this.cache.delete(TokenCache.key(role, org));
   }
 
   /** Returns metadata for evidence reporting (no raw tokens). */
   summary(): Array<{ role: string; acquiredAt: number; expiresAt: number }> {
-    return Array.from(this.cache.entries()).map(([role, entry]) => ({
-      role,
+    return Array.from(this.cache.entries()).map(([key, entry]) => ({
+      // The key is `role` or `role@org`; report it verbatim so evidence shows
+      // WHICH org scope a token was minted under, never a bare role that two
+      // different-org grants would collapse into one indistinguishable row.
+      role: key,
       acquiredAt: entry.acquiredAt,
       expiresAt: entry.expiresAt,
     }));

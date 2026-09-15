@@ -27,7 +27,7 @@ about to change how a step works.
 | [`axes.md`](axes.md) | The four pre-flight axes as ONE mechanism — the contract they share, and the fail-CLOSED/fail-OPEN split the old "same discipline" phrasing hid | Adding an axis, or deciding whether one runs on FAST |
 | [`visual-axis.md`](visual-axis.md) | The visual axis — the `visual_surface` derivation, surface → axes → executor, the invariant-blocks/spec-advises verdict rule, the browser budget | A UI-visible ticket, or changing how design/a11y is scheduled |
 | [`contract-refresh.md`](contract-refresh.md) | The contract-refresh axis — the `contract_surface` derivation at `1b` 2d, the two-artifacts/two-commands split, `UNKNOWN` never falling back, drift as a `1e` input | A ticket touching GraphQL/xAPI, or changing when the schema + fixtures are refreshed |
-| [`coverage-triage.md`](coverage-triage.md) | The coverage-triage axis — the `coverage_surface` derivation at `1b` 2e, Step 2a's four dispositions, and why a `RE-BASE` is resolved BY the run rather than before it | A change that renames, moves or removes something existing cases already assert |
+| [`coverage-triage.md`](coverage-triage.md) | The coverage-triage axis — the `coverage_surface` derivation at `1b` 2e, the `2a` phase's four dispositions, and why a `RE-BASE` is resolved BY the run rather than before it | A change that renames, moves or removes something existing cases already assert |
 | [`exploratory-lane.md`](exploratory-lane.md) | Step 3x — the discovery lane: why it runs beside 3a and before authoring, the five charter sources, the four routed outputs | A FULL run, or changing when discovery happens |
 | [`modes.md`](modes.md) | `--epic` and `--iterate` (5k) | Running either opt-in mode |
 | [`../../templates/test-model.md`](../../templates/test-model.md) | The Test Model fill-in shape + the authoring-plan JSON shape | Writing the model or a plan |
@@ -140,9 +140,8 @@ waited behind both. Removing that wait is most of the restructure; it is a re-re
 | **`3x` discovery** | its fifth routed output is *conditions the ACs never named*. A checklist written before it is written from the ACs and a guess; written after, every item has been **seen** or deliberately left a hypothesis. It also means the checklist does not need re-running when the model corrects itself |
 | **`3a` seeded data** | a checklist cannot execute against fixtures that do not resolve. `3a` is browserless, so it runs *beside* `3x` for free — serialising it behind discovery would add the whole box and buy nothing |
 
-**`3x` is itself a live read of the product**, so *"nothing touches the feature until Step 4"* was never
-quite true of this pipeline and is now plainly false: the browser is on it at `1r`, and on it in depth
-from `3x`.
+**`3x` is itself a live read of the product** — *"nothing touches the feature until Step 4"* has not been
+true here for some time: the browser is on it at `1r`, and in depth from `3x`.
 
 **What moved: `A`, and only in the sense of what waits for it.** Authoring is the largest pre-execution
 cost — alloc, the journey case, matrix assignment, per-layer packs, a 3–4-way fan-out, serial appends,
@@ -179,14 +178,15 @@ ceiling for this kind of win. Two things actually cost:
    script optimisation in the table above, combined.
 2. **Agent dispatches and regression runs**, which are minutes to tens of minutes each. The two largest
    structural wins in the pipeline are both about *what a long-running job overlaps*, not about making it
-   faster: **3x runs inside 3a's wall-clock** (one browser lane against a browserless seeder), and the release-scoped
-   Critical sweep is **no longer inside this pipeline at all** — it was on the critical path to a verdict
-   that discarded its result by its own provenance rules, so `5r`/C2 was removed (2026-09-10) rather than
-   re-scheduled; cutting a release runs [`/qa-regression`](../../commands/qa-regression.md) deliberately.
+   faster: **3x runs inside 3a's wall-clock** (one browser lane against a browserless seeder), **the corpus
+   step runs past `3-exec`** (its `2a` phase included), and the release-scoped Critical sweep is **no longer in this
+   pipeline at all** — it was on the critical path to a verdict that discarded its result by its own
+   provenance rules, so `5r`/C2 was removed (2026-09-10); cutting a release runs
+   [`/qa-regression`](../../commands/qa-regression.md) deliberately.
 
-   The pipeline already parallelises the dispatches where it can — `1c ‖ 1d ‖ the 2-load oracle read` in
-   one message, the `3x ‖ 3a` pair (one lane against a browserless seeder), Step 3b one batch per execution surface, and Step 4's
-   execution agents inside the max-3 browser cap. That work is done; do not re-derive it.
+   The pipeline already parallelises what it can — `1c ‖ 1d ‖ 2-load` in one message, the `3x ‖ 3a` pair,
+   Step 3b one batch per execution surface, Step 4's agents inside the max-3 cap. That work is done; do
+   not re-derive it.
 
 **So the rule is: independent operations go out in ONE message; dependent ones state what they consume.**
 This is the harness's own guidance applied per step, not a new mechanism.
@@ -199,10 +199,9 @@ This is the harness's own guidance applied per step, not a new mechanism.
 | *(no I/O)* | derive **2b** `layer`, then **2c** `visual_surface` and **2e** `coverage_surface` — pure computation over what Wave A returned | Wave A |
 | **B** — one message | **2d**'s two refreshers, concurrently ([`contract-refresh.md`](contract-refresh.md) §2) · **2e**'s `npm run tc:scope`, **scope + risk terms ONLY** ([`coverage-triage.md`](coverage-triage.md) §4) | `2b`'s token |
 
-**Wave B's scan takes no `--cases` / `--also-ids`.** Those model what will execute, and neither input
-exists yet: Artifact A is authored at Step 3, and the `RE-BASE` ids are the *output* of the disposition
-this scan feeds. Passing them would mark every future Draft row `FILTERED_OUT` — the failure Step 2a
-exists to prevent. The run-fate prediction is made at the **Step-3 gate re-run**, where both exist.
+**Wave B's scan takes no `--cases`/`--also-ids`** — neither exists yet, and passing them would mark every
+future Draft row `FILTERED_OUT`, the failure the `2a` phase exists to prevent (§4). Wave B **scans only** —
+disposing those hits is Artifact A's `2a` phase at Step 3, same agent, before it authors a row (§2a-own).
 
 Two more waves follow the same test, and both were serial for no reason anyone had measured:
 
@@ -224,7 +223,7 @@ known cost, and three were measured:
 | Never | Because |
 |---|---|
 | `2d` concurrently with `1c` / `1d` / `1e` / the 3b pack | they READ what it writes; a refresh that races its readers is a refresh that did nothing |
-| Two writers on one suite CSV — the Step-3b append stays **serial**, `suites:sync` runs **once** | `suites:lint`/`sync` hard-fail on a parse error anywhere in the corpus, so N parallel writers multiply a tree-wide outage by N and block every other author in the tree (`.claude/rules/regression.md` §Suite inventory — measured: one mid-write invalid CSV blocked two sessions' gates for ~15 min) |
+| Two writers on one suite CSV — the Step-3b append stays **serial**, `suites:sync` runs **once**, and the `2a` **`REPAIR` writes close before the same step's append opens** ([`coverage-triage.md`](coverage-triage.md) §2a-own) | `suites:lint`/`sync` hard-fail on a parse error anywhere in the corpus, so N parallel writers multiply a tree-wide outage by N and block every other author ([`regression.md` Suite inventory](../../rules/regression.md#suite-inventory) — measured: one mid-write invalid CSV blocked two sessions' gates ~15 min) |
 | `suites:sync` ‖ `suites:lint` | lint reads what sync wrote |
 | Artifact A ‖ 3a, or Artifact A ‖ 3x | cases are authored against fixtures that already resolve **and against the model 3x amended**. Authoring beside the discovery lane produces cases written from the guesses the lane exists to replace — the lane's value is entirely in the order ([`exploratory-lane.md`](exploratory-lane.md) §2) |
 | `3x` ‖ Step 4's execution agents | **Artifact B is written from what `3x` returns** (2026-09-10) and `3-exec` gates on `B`, so execution cannot start while the lane is open — the cap still holds by construction on FULL. What changed is that `3x` now **outranks** execution in the priority order ([`qa-test.md`](../../commands/qa-test.md) Step 4): it is upstream of both `B` and `A`, so starving it stalls the whole run rather than one track |

@@ -45,7 +45,7 @@ items that were **seen** rather than inferred. `3x` is itself a live read of the
 30-60 minute box. Rationale: `docs/decisions/qa-test-evolution.md` §Cutting time-to-first-test.
 
 **Regression here is ONE run, and it is the ticket's own exact set.** Step 4 runs **C1** —
-`/qa-regression <target suites> --ids <new Draft ids + every Step-2a REPAIR id + every RE-BASE id>` —
+`/qa-regression <target suites> --ids <new Draft ids + every phase-2a REPAIR id + every RE-BASE id>` —
 **every case this run wrote or changed**. `--ids` IS
 the selection; it reads no `Priority` and takes no `--cases`/`--also-ids`.
 

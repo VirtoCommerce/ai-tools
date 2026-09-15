@@ -122,3 +122,39 @@
   so a future inversion is a one-line diff in the file that owns the rule rather than a silent
   disagreement between four. The rule is also now marked as the EFFORT instance of §6's fail-safe
   principle, so the two cannot drift apart either.
+
+## Merging Step 2a into Artifact A (2026-09-11)
+
+`2a` — the coverage triage — was a standalone step, disposed **inline by the orchestrator**, gating
+`3-exec`. It is now the **first phase of Artifact A**, and `test-management-specialist` owns the whole
+corpus step: dispose the existing rows, apply every `REPAIR`, *then* author only the surviving gaps.
+One dispatch, one owner, one writer. The label survives as a citation contract; the step does not.
+
+**Two arguments, and the first is a rule the old shape broke.** A `REPAIR` edits
+`regression/suites/<layer>/<module>/*.csv` in place while Artifact A's append writes the same directory
+and routinely the same file — so an orchestrator-disposed `2a` put **two writers on one suite CSV in the
+ordinary case**, which `.claude/rules/regression.md` §Suite inventory forbids outright (measured cost of
+that class: a mid-write parse error hard-fails `suites:lint`/`sync` tree-wide, ~15 min across two
+sessions — §Shared-tree losses in `regression-history.md`). And the two halves are **one corpus read
+asked in two directions** — *what already covers this surface* vs *what does this change make wrong* —
+so splitting them made "carry the dispositions in, do not re-derive them" a discipline enforced across a
+handoff rather than a structural property.
+
+**An intermediate design was tried and discarded**: keep `2a` a step, but dispatch it to
+`test-management-specialist` in the **background** at wave B's close, joining at `3-cases`. It fixed the
+ownership and the `3-exec` wait, and it kept the triage early — but it still had two dispatches of one
+agent type against one set of files, held together by an ordering rule ("2a's `REPAIR` writes must close
+before A's append opens") that nothing enforced. Merging makes that rule the step's own internal order.
+
+**What the merge costs, and what it forced.** The disposition now lands after `3a`/`3x` rather than at
+wave B. Its two consumers — A's own append and C1's `--ids` — are both later still, so nothing waits
+longer; the run only *learns* of a needed `REPAIR` later. The one real casualty was
+`exploratory-lane.md` charter source 5, which sourced its rows from the disposition and runs **before**
+it. Source 5 now reads `1b` item 2e's **at-risk scan**, which exists before `3x` — a better order, since
+the lane then observes those rows live and the disposition is made by an agent that has seen them.
+
+Gate placement moved with it: `3-exec` no longer carries a disposition clause or a `tc:scope` fact, and
+gate `3` (`3-cases`) checks that the phase **RAN** as well as that its hits are disposed — a phase folded
+into a larger step can be skipped as well as wrong, and an absent disposition block reads exactly like a
+clean triage. Locked by `scripts/unit/verify-gate.test.ts`. Full rules:
+`.claude/skills/qa-test/coverage-triage.md` §2a-own.

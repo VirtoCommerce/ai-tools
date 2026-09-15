@@ -136,8 +136,8 @@ Measured on VCST-5733: `npm run tc:scope -- --domain sales-rep --observable "Rec
 --observable "All orders" --oracle BL-SR-002 --cases critical` → 7 suites in scope, 358 rows scanned,
 **81 at risk: 35 WILL_RUN · 45 FILTERED_OUT · 1 NOT_EXECUTING**, 81 never audited.
 
-Consumed by `/qa-test` `1b` item 2e (the derived `coverage_surface` token) and its **Step 2a**, which runs
-this before authoring on **both paths** and routes each hit to one of four dispositions —
+Consumed by `/qa-test` `1b` item 2e (the derived `coverage_surface` token) and by **Artifact A's `2a`
+phase**, which disposes the hits before the same agent authors, on **both paths** and routes each hit to one of four dispositions —
 `CONFIRMED` / `REPAIR` / `RE-BASE` / `SUPERSEDED`. Single source of truth for those:
 `.claude/skills/qa-test/coverage-triage.md`.
 

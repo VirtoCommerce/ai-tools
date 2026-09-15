@@ -14,7 +14,12 @@ Project `.mcp.json` (gitignored, per machine): `playwright-chrome` / `playwright
 - Default to `chromium` (not `chrome`) for Playwright MCP browser launches. WebKit is NOT supported on Windows — fall back to Edge or Chrome immediately without attempting installation.
 - Always verify MCP server config uses correct browser engine names: `chromium`, `firefox`, `webkit` (not `chrome`, `edge`).
 - After any MCP config change, remind the user that a server restart is required before the new config takes effect.
-- Browser configs set viewport to 1920x1080, HAR capture enabled, video on failure, isolated contexts.
+- Browser configs set viewport to 1920x1080, isolated contexts, HAR capture, and **video capture — which
+  records ALWAYS, not on failure** (`recordVideo` is a browser-context option; `retain-on-failure` is a
+  *test-runner* setting and does not exist here). Videos land in `test-results/<browser>/video/`
+  (gitignored, pruned with the rest of `test-results/`). Added 2026-09-11 — before that the three configs
+  carried **no** video setting at all while this line claimed "video on failure", so a reader who needed a
+  recording found none. **A config change needs an MCP server restart before it takes effect.**
 
 ## QA Team (+ shared-instructions)
 
@@ -24,7 +29,7 @@ Project `.mcp.json` (gitignored, per machine): `playwright-chrome` / `playwright
 | **qa-frontend-expert** | opus | Customer-facing storefront, user journeys, checkout flows, mobile, cross-browser |
 | **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Modules, Admin SPA, background jobs |
 | **qa-testing-expert** | opus | Interactive testing - UI verification, Claude Design spec comparison (Figma is a manual fallback only), debugging |
-| **test-management-specialist** | sonnet | Test planning, test case writing, coverage tracking, TestRail artifacts |
+| **test-management-specialist** | sonnet | Test planning, test case writing, coverage tracking, TestRail artifacts. **Sole owner of `/qa-test`'s corpus step (Artifact A)** — ONE dispatch covering BOTH phases: `2a` triages the existing corpus and applies the `REPAIR` edits, *then* the same agent authors only the surviving gaps. Merged 2026-09-11 so the run keeps a single writer on `regression/suites/**` ([`../skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md) §2a-own) |
 | **test-data-engineer** | opus | Owns test-data end-to-end: designs cross-entity combinations, **authors** the seeders / fixtures / `@td()` aliases / drift-guard validators + their unit tests, **AND RUNS them live** — real seed/teardown against a non-prod env + `td:reconcile` (Node + Platform-API, no browser) (`/qa-generate-data` + `/qa-seed-data`). Write-capable in THIS repo only (`scripts/seed-data/`, `test-data/`); no external repos. Canonical owner — `test-management-specialist` delegates fixture authoring here; `qa-backend/frontend-expert` do only the **browser** confirmation (storefront/Admin-SPA render + suite run) the engineer can't. See `knowledge/execution/test-data-authoring.md`. |
 | **ui-ux-expert** | sonnet | Storybook component testing, WCAG 2.2 AA accessibility, design system, and the **`vs. DESIGN` axis** — diffing declared tokens / control geometry / icon name→glyph parity against a Claude Design project (`DesignSync` → `scripts/lib/verify-design-spec.ts`, methodology `skills/qa-design/claude-design-verification.md`). Runs by default against the project **the ticket's own Prototype link names** (no global default — `DESIGN_SYSTEM_PROJECT_ID` removed 2026-09-03; no design link ⇒ `SKIPPED`); precedence `BL-UI invariant > design spec > UX heuristic`; reports `SKIPPED`, never PASS, where `/design-consent` is unavailable (web sessions, CI), and `KNOWN_DIVERGENCE` — advisory, never filed — for a mismatch the spec itself declares unshipped |
 | **regression-orchestrator** | sonnet | Parallel regression + smoke mode, retries, browser fallback, consolidated reports |

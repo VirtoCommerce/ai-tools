@@ -1,7 +1,9 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
 MSNA-001,Loyalty missions list blade loads with Name + Status columns showing seeded fixtures,Admin > Loyalty Missions > List > Load,High,,ECL-13.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. At least MSN_ORDERVALUE (Published), MSN_ORDERCOUNT (Published) and MSN_DRAFT (Draft) exist on @td(STORE_PRIMARY.id).",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+1. At least MSN_ORDERVALUE (Published), MSN_ORDERCOUNT (Published) and MSN_DRAFT (Draft) exist on @td(STORE_PRIMARY.id).",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] 'Loyalty missions' blade title visible with a count badge
 [BLADE] grid columns 'Name' and 'Status' are visible","[BLADE] blade title reads 'Loyalty missions' {OBSERVED}
 [GRID] a row with Name = @td(MSN_ORDERVALUE.name) shows Status = Published {OBSERVED}
@@ -9,20 +11,26 @@ MSNA-001,Loyalty missions list blade loads with Name + Status columns showing se
 [GRID] exactly 2 columns are rendered — Name and Status {OBSERVED}",[API] MSN-001 (075d) confirms the same fixtures' goal types via REST,"blade fails to load (spinner >5s); grid shows 0 rows; a fixture's Status column reads a value outside {Draft, Published, Archived}",none,VCST-5319; loyalty-mission-list | Promoted: REG-2026-08-27-1846 (2026-08-27),Automated
 MSNA-002,Search keyword filters the missions grid to matching names,Admin > Loyalty Missions > List > Search,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. @td(MSN_ZEROTARGET.name) exists and is unique in the grid.",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+1. @td(MSN_ZEROTARGET.name) exists and is unique in the grid.",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded with its full fixture count
 [ACT] fill 'Search keyword...': @td(MSN_ZEROTARGET.name)
 [WAIT] grid re-renders","[GRID] exactly 1 row visible, Name = @td(MSN_ZEROTARGET.name) {SPEC}
 [GRID] no row for @td(MSN_ORDERVALUE.name) remains visible {SPEC}",[NETWORK] no 4xx/5xx on the search request,grid still shows all 10 fixtures (filter not applied); grid shows 0 rows (filter too strict / index lag),[ACT] clear the search box,VCST-5319; loyalty-mission-list | Promoted: REG-2026-08-27-1846 (2026-08-27),Automated
 MSNA-003,A Published mission with public=false still appears in the Admin missions list (C17 admin-visibility half),Admin > Loyalty Missions > List > Privacy,Critical,PROPOSED-BL-LOY-015,ECL-13.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. @td(MSN_PUBLISHED_PRIVATE.id) is Published, public=false (VCST-5319 C17 fixture).",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+1. @td(MSN_PUBLISHED_PRIVATE.id) is Published, public=false (VCST-5319 C17 fixture).",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] fill 'Search keyword...': @td(MSN_PUBLISHED_PRIVATE.name)
 [WAIT] grid re-renders","[GRID] a row with Name = @td(MSN_PUBLISHED_PRIVATE.name) is visible {OBSERVED}
 [GRID] that row's Status column reads Published {OBSERVED}",[API] MSN-015 (075d) asserts the CUSTOMER-facing query correctly excludes this same mission (currently FAILS — the leak is real); this admin case is the half of C17 that must stay TRUE while that one is fixed,row not found (a fix that hid the leak by ALSO hiding it from Admin search would be over-correcting — the fixture's whole point is that both halves must hold independently); the row's Status reads something other than Published,[ACT] clear the search box,VCST-5319; C17 | Promoted: REG-2026-08-27-1846 (2026-08-27),Automated
 MSNA-004,Add — creating a mission with an OrderValueGoal shows the currency-qualified goal sentence and a required-field layout,Admin > Loyalty Missions > Details > Create > OrderValueGoal,Critical,,ECL-13.3,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:ADMIN_DEFAULT]",back_url={{BACK_URL}}; mission_name=AGENT-TEST-MSNA-OV,"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]",back_url={{BACK_URL}}; mission_name=AGENT-TEST-MSNA-OV,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click 'Add' in the toolbar
 [WAIT] new mission details blade opens
@@ -79,7 +87,9 @@ MSNA-005,Add — creating a mission with an OrderCountGoal shows the count-quali
 [ACT] select the row with Name = {{mission_name}}
 [ACT] click 'Delete' in the toolbar and confirm","VCST-5319; loyalty-mission-details, C3 | Promoted: REG-2026-08-27-1846 (2026-08-27) | Corrected: 2026-08-27 (live re-verify: no toast exists — real signal is blade re-title + Save/Reset disable; added missing Store + condition steps)",Draft
 MSNA-006,"Add — the goal-type menu offers a third, SKU-based option ('Purchase target quantity of SKUs')",Admin > Loyalty Missions > Details > Create > PerSkuGoal selection,High,,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:ADMIN_DEFAULT]",back_url={{BACK_URL}}; mission_name=AGENT-TEST-MSNA-SKU,"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]",back_url={{BACK_URL}}; mission_name=AGENT-TEST-MSNA-SKU,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click 'Add'
 [WAIT] new mission details blade opens
@@ -96,8 +106,10 @@ MSNA-007,Save stays disabled with no goal added — the Mission goal section sta
 [WAIT] with Name filled and no goal added, the Mission goal section shows its inline requirement text","[DOM] the 'Mission goal' section reads 'Your mission must have exactly one goal: order value, order count or SKU-based' before any goal is added {OBSERVED}
 [STATE] 'Save' is disabled while no goal has been added {OBSERVED}
 [GRID] {{mission_name}} does NOT appear in the missions list (nothing was saved) {SPEC}","[API] the server validator ('Mission must have exactly one goal' — missions-specs.mjs, HTTP 400) is the documented backing rule this inline message and the disabled Save both protect",'Save' is clickable with no goal added (the disable itself is broken — do not force-click a disabled control to test this: re-open the blade and re-check the disabled state instead); the inline requirement text is missing or blank,[ACT] close the details blade without saving,"VCST-5319; loyalty-mission-details | Promoted: REG-2026-08-27-1846 (2026-08-27) | Corrected: 2026-08-27 (live re-verify: Save is disabled, not clickable-then-rejected — re-authored to assert the disabled state, matching MSNA-008's pattern)",Draft
-MSNA-008,"Save stays disabled with an empty Name — but only Name gives the user no visible reason why (UX inconsistency)",Admin > Loyalty Missions > Details > Validation,High,,,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:ADMIN_DEFAULT]",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+MSNA-008,Save stays disabled with an empty Name — but only Name gives the user no visible reason why (UX inconsistency),Admin > Loyalty Missions > Details > Validation,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click 'Add'
 [WAIT] new mission details blade opens, Name field empty
@@ -115,21 +127,27 @@ MSNA-008,"Save stays disabled with an empty Name — but only Name gives the use
 [DOM] the condition row's own template states its requirement (e.g. 'If any of the following criteria'); the goal row states its requirement ('Reach ___ orders per mission period'); the reward row states its requirement ('Get ___ fixed points'); the Name field states none of its own (no asterisk, no inline hint, no placeholder naming it required) {OBSERVED}","[API] server validator 'Mission name is required' (missions-specs.mjs, HTTP 400) backs the block — the finding here is presentation-only: WHY Save is disabled is legible for condition/goal/reward and illegible for Name.","'Save' is clickable with Name empty (the disable itself is broken, not just under-explained — do not force-click a disabled control to test this: re-open the blade and re-check the disabled state instead)",[ACT] close the details blade without saving,VCST-5319; loyalty-mission-details | Promoted: REG-2026-08-27-1846 (2026-08-27),Automated
 MSNA-009,OrderValueGoal's currency is displayed next to the amount and matches the store's currency,Admin > Loyalty Missions > Details > OrderValueGoal currency,Medium,PROPOSED-BL-LOY-016,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. @td(MSN_ORDERVALUE.id) is Published (read-only), goal value 250 in the store-default currency.",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+1. @td(MSN_ORDERVALUE.id) is Published (read-only), goal value 250 in the store-default currency.",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click the row with Name = @td(MSN_ORDERVALUE.name)
 [WAIT] details blade opens (read-only, Published)","[FORM] the goal row reads 'Reach order total of 250.00 <currency> per mission period' where <currency> = @td(STORE_PRIMARY.currency) {OBSERVED}
 [DOM] the currency label is visible immediately after the amount, not on a separate unlabeled field {OBSERVED}",[API] MSN-004/MSN-005 (075d) confirm the underlying currencyCode contract from the REST layer,no currency label rendered next to the amount (a currency-agnostic-looking UI would contradict the C19 save-time-required contract); the amount reads 250.00 with no unit at all,none,"VCST-5319; loyalty-mission-details, C19 | Promoted: REG-2026-08-27-1846 (2026-08-27)",Automated
 MSNA-010,Start date / End date pickers are present and editable on a Draft mission,Admin > Loyalty Missions > Details > Date window,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. @td(MSN_DRAFT.id) is Draft (editable).",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+1. @td(MSN_DRAFT.id) is Draft (editable).",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click the row with Name = @td(MSN_DRAFT.name)
 [WAIT] details blade opens (Draft, editable)","[DOM] a 'Start date' field and an 'End date' field are both visible with populated values {OBSERVED}
 [DOM] neither read-only banner ('Only draft missions can be edited...') is shown for this Draft mission {OBSERVED}",none,the read-only banner appears for a Draft mission (status gate inverted); the Start date / End date fields are missing or blank,none,VCST-5319; loyalty-mission-details | Promoted: REG-2026-08-27-1846 (2026-08-27),Automated
 MSNA-011,The reward amount field accepts 0 (zero-reward mission),Admin > Loyalty Missions > Details > Reward,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. @td(MSN_ZEROREWARD.id) is Published, reward=0.",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+1. @td(MSN_ZEROREWARD.id) is Published, reward=0.",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click the row with Name = @td(MSN_ZEROREWARD.name)
 [WAIT] details blade opens (read-only, Published)","[FORM] the reward row reads 'Get 0.00 fixed points' {OBSERVED}
@@ -173,7 +191,9 @@ MSNA-013,Publish transitions a Draft mission to Published; the Publish action is
 [ACT] click 'Archive' then 'Delete' in the toolbar and confirm",VCST-5319; loyalty-mission-details | Promoted: REG-2026-08-27-1846 (2026-08-27) | Corrected: 2026-08-27 (live re-verify: added missing Store + condition steps; corrected the two 'success notification visible' waits — no toast exists on this blade),Draft
 MSNA-014,No Public/Private control exists anywhere in the mission details blade,Admin > Loyalty Missions > Details > Public flag (gap),Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. @td(MSN_PUBLISHED_PRIVATE.id) is Published, public=false (set only via the API/seeder — no Admin control was found for it).",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+1. @td(MSN_PUBLISHED_PRIVATE.id) is Published, public=false (set only via the API/seeder — no Admin control was found for it).",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click the row with Name = @td(MSN_PUBLISHED_PRIVATE.name)
 [WAIT] details blade opens
@@ -192,7 +212,9 @@ MSNA-015,"Localized names/descriptions show the store's default extra languages 
 [DOM] after expanding, an input row is visible for every additional language configured on @td(STORE_PRIMARY.id) {SPEC}",[API] MSN-012 (075d) confirms the localized values themselves via loyaltyMissionProgress,expanding shows fewer languages than the store actually declares; a locale's input is empty despite MSN_LOCALIZED carrying a translation for it,none,VCST-5319; C11,Draft
 MSNA-016,A PerSku goal row displays its ALL/ANY mode inline ('Purchase all/any of the target SKUs'),Admin > Loyalty Missions > Goal-item editor > PerSku mode,High,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. @td(MSN_PERSKU_ALL.id) (all=true) and @td(MSN_PERSKU_ANY.id) (all=false) are both Published.",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+1. @td(MSN_PERSKU_ALL.id) (all=true) and @td(MSN_PERSKU_ANY.id) (all=false) are both Published.",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click the row with Name = @td(MSN_PERSKU_ALL.name)
 [WAIT] details blade opens (read-only, Published)","[FORM] the goal row text includes 'Purchase all of the target SKUs' {OBSERVED}
@@ -209,7 +231,9 @@ MSNA-017,SKU target sub-editor supports adding/removing individual SKUs with a p
 [DOM] each row shows a per-target quantity value distinct from the other row's {OBSERVED}","[API] the authoritative shape is confirmed via REST: LoyaltyMissionGoalItem {missionId, productId, quantity} at /api/loyalty-mission-goal-items, joined by missionId (missions-specs.mjs) — MSN-014 (075d) reads it back via loyaltyMissionProgress.items[]",the inline 'select' link is not present on the goal row (regression); the sub-blade opens with fewer/more than 2 rows; a row's SKU or quantity doesn't match the fixture,none,"VCST-5319; loyalty-mission-goal-item-list | Corrected: 2026-08-27 (live re-verify: grounded {HYPOTHESIS} to {OBSERVED} — entry point is the inline 'select' link, opening a 'Goal SKUs' sub-blade; stays Draft, grounding alone does not justify promotion)",Draft
 MSNA-018,Mission banner blade shows an upload dropzone with the accepted format hint and a Preview area,Admin > Loyalty Missions > Banner > Layout,High,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. @td(MSN_LOCALIZED.id) carries a bannerUrl (the only VCST-5319 fixture that does).",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
+1. @td(MSN_LOCALIZED.id) carries a bannerUrl (the only VCST-5319 fixture that does).",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
 [ACT] click the row with Name = @td(MSN_LOCALIZED.name)
 [WAIT] details blade opens
@@ -229,7 +253,9 @@ MSNA-019,Banner Preview reflects the seeded bannerUrl for a mission that already
 [DOM] the dropzone and its placeholder text ('Drag and drop file here...') remain visible alongside the Preview image — the two regions coexist and are not mutually exclusive (consistent with MSNA-018) {OBSERVED}",[API] MSN-012 (075d) confirms bannerUrl = @td(MSN_LOCALIZED.banner_url) via GraphQL,Preview shows the empty dropzone despite a non-null bannerUrl on the fixture (round-trip broken between the stored path and the rendered preview); Preview shows a broken-image icon instead of the real banner; the dropzone region disappears entirely once a Preview image is set (would contradict MSNA-018's coexistence design),none,"VCST-5319; loyalty-mission-banner, C11 | Promoted: REG-2026-08-27-1846 (2026-08-27) | Corrected: 2026-08-27 (live re-verify: dropzone is NOT hidden when a Preview exists — both regions coexist, contradicting the prior clause 2; MSNA-018 already matched reality, left unchanged)",Draft
 MSNA-020,"Stores > B2B-store > Settings > Loyalty > Missions exposes the 'Loyalty missions' toggle, and saving it persists",Admin > Loyalty Missions > Store settings > Missions toggle,Critical,,ECL-13.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. @td(STORE_PRIMARY.id) has @td(MSN_STORE_SETTINGS.setting_name) currently true. This case toggles it and restores it within the same run.",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/store
+1. @td(STORE_PRIMARY.id) has @td(MSN_STORE_SETTINGS.setting_name) currently true. This case toggles it and restores it within the same run.",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/store
 [WAIT] Stores grid loaded
 [ACT] click the row for @td(STORE_PRIMARY.name)
 [WAIT] store details blade opens
@@ -240,7 +266,9 @@ MSNA-020,"Stores > B2B-store > Settings > Loyalty > Missions exposes the 'Loyalt
 [FORM] a toggle labeled 'Loyalty missions' is visible and currently ON {OBSERVED}",[API] MSN-010/MSN-018 (075d) toggle the same setting via REST PUT /api/stores and confirm the read/accrual gate,no 'Missions' category exists under 'Loyalty' (settings tree reorganized); the toggle label differs from 'Loyalty missions' (update MSN-010/018's REST setting_name assumption too if the underlying setting name also changed),"none — this case only reads state, does not flip it","VCST-5319; C1, C2 | Promoted: REG-2026-08-27-1846 (2026-08-27)",Automated
 MSNA-021,"Store settings > Loyalty > General shows the base 'Loyalty' toggle and 'Loyalty mode' select, independent of the Missions category",Admin > Loyalty Missions > Store settings > Base loyalty independence,High,,ECL-13.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
-1. Source-confirmed (vc-module-loyalty, LoyaltyMissionLogicService / LoyaltyPointsCalculator): Loyalty.Enable and Loyalty.Missions.Enable are read at disjoint call sites — this case confirms the two live in SEPARATE settings groups in the Admin category tree, which is the UI-level evidence for that independence.",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/#!/workspace/store
+1. Source-confirmed (vc-module-loyalty, LoyaltyMissionLogicService / LoyaltyPointsCalculator): Loyalty.Enable and Loyalty.Missions.Enable are read at disjoint call sites — this case confirms the two live in SEPARATE settings groups in the Admin category tree, which is the UI-level evidence for that independence.",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN_DEFAULT]
+[NAV] {{BACK_URL}}/#!/workspace/store
 [WAIT] Stores grid loaded
 [ACT] click the row for @td(STORE_PRIMARY.name)
 [WAIT] store details blade opens

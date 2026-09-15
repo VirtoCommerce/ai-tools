@@ -422,12 +422,12 @@ See `graphql-test-cases-runner.md` and `graphql-schema.md` for authoring contrac
 ### Account Menu Dropdown
 Triggered by the "OrgName / UserName" button in the top-right header. Opens a dropdown panel with:
 
-1. **User section:** User name (avatar + full name, links to `/account/dashboard`) + **Logout** button — selector `data-testid="main-layout.top-header.account-menu.sign-out-button"`
+1. **User section:** User name (avatar + full name, links to `/account/dashboard`) + **Logout** button — selector `data-test-id="sign-out-button"`
 2. **Organizations section:** "Organizations" label + Search box + scrollable list of organizations with radio buttons (click to switch active organization)
 
 > The Account menu does NOT contain account page navigation links. Account pages are accessed via the sidebar on the Dashboard page, or via the **Dashboard** link in the top header.
 
-> **GOLDEN RULE — storefront logout:** There is **no `/sign-out` page**, **no `/logout` page**, and **no standalone logout icon in the header**. The only correct logout sequence is: (1) click the user name / avatar in the top header to open this popup, (2) click the **Logout** button inside it. Agents and test-case authors MUST use this sequence.
+> **GOLDEN RULE — storefront logout:** There is **no `/sign-out` page**, **no `/logout` page**, and **no standalone logout icon in the header**. The only correct logout sequence is: (1) click the user name / avatar in the top header to open this popup, (2) click the **Logout** button inside it. Agents and test-case authors MUST use this sequence. **The attribute is `data-test-id`, never `data-testid`** (the no-dash spelling has ZERO occurrences in the storefront source, so a locator written against it can never match) — trigger `account-menu` (the header variant is `account-button`), button `sign-out-button`; the source of truth for every id is the generated `scripts/lib/storefront-selectors.generated.ts` (`npm run selectors:sync` / `selectors:check`), never a literal transcribed here.
 
 ### Main Nav Icon Bar (authenticated)
 Icons in the middle navigation row (right side):

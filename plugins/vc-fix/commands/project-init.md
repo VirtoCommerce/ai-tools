@@ -1,7 +1,7 @@
 ---
 description: "Initialize / onboard this QA plugin for a deployment — install deps, ask only env name + bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + an auth preference, then DERIVE the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + filled env + a live module/repo scan. Writes project-profile.json + .env + .mcp.json, verifies access. Makes /qa-fix route bugs to the right repo + tracker. Backed by the /project-init skill."
 argument-hint: "(no args — interactive) | --add-env (add another environment to an onboarded project) | --check (reconcile an existing profile + verify)"
-disable-model-invocation: true
+
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer

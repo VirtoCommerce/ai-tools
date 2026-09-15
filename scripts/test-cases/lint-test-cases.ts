@@ -548,6 +548,35 @@ export function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Fi
     }
   }
 
+  // --- PRE-002: a `[PRE:*]` in PRECONDITIONS is declarative; on an AUTOMATED case that is a
+  // claim of isolation the machine lane never establishes. ---------------------------------
+  // `parsePreconditions()` in lib/ui-step-parser.ts parses these correctly, but a corpus-wide
+  // search finds its only callers are its own unit tests — `classifyCase` reads `Steps` and
+  // `Assertions` and deliberately NOT `Preconditions` (that file's own header says so). So the
+  // tag is honoured when a HUMAN or an AGENT reads the cell and acts on it, and is inert when a
+  // runner executes the case. Same shape as the `[AUTH role=]`-in-Preconditions trap on a
+  // different primitive. A tag in `Steps` is fine — step tags ARE executed — so the rule fires
+  // only on the Preconditions column. Measured 2026-09-11 while authoring 075f/083e.
+  {
+    const preOnly = [...(row.Preconditions ?? "").matchAll(/\[PRE:([A-Za-z_]+)/g)].map((m) => m[1].toUpperCase());
+    const inSteps = new Set([...(row.Steps ?? "").matchAll(/\[PRE:([A-Za-z_]+)/g)].map((m) => m[1].toUpperCase()));
+    const unexecuted = preOnly.filter((p) => !inSteps.has(p));
+    const machineLane = row.Automation_Status === "Automated" || row.Automation_Status === "Semi-Automated";
+    if (machineLane && unexecuted.length) {
+      push(
+        "PRE-002",
+        "Medium",
+        `Automation_Status "${row.Automation_Status}" but ${unexecuted.length} preflight primitive(s) ` +
+          `[${[...new Set(unexecuted)].join(", ")}] sit only in Preconditions, which no runner executes — ` +
+          `the case claims an isolation the machine lane does not establish. Move them into Steps (step tags ` +
+          `ARE executed), or drop the Automated status until a runner consumes them. NOTE: [PRE:RESET_CART] ` +
+          `cannot cover competing carts in any column — it empties the RENDERED cart, so a second cart on the ` +
+          `same (customerId, storeId, currency) stays invisible; that needs \`npm run carts:check\` as a suite ` +
+          `preflight (scripts/seed-data/carts/check-competing-carts.mjs).`,
+      );
+    }
+  }
+
   // --- Dimension 2: Determinism ---
   if (isRunnerGraphql(row)) {
     // DV-019: delegate GraphQL step-structure to the shared parser.
