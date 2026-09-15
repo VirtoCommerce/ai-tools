@@ -448,6 +448,34 @@ function Clear-DataVolumes {
   Write-Pass "$n data volume(s) wiped → fresh DB on next start"
 }
 
+# Bring the stack DOWN before the platform build. This is NOT the same down as the one inside the
+# start step (that one frees the PORTS immediately before start-VC-solution, and is still needed on
+# its own for a standalone -Action start) — by the time that one runs, the build has already happened.
+#
+# WHY the build cannot run against live containers: `vc-build install` drives module installation
+# through the platform's OWN installer (VirtoCommerce.Platform.Data.TransactionFileManager), and the
+# platform container mounts the modules volume at /opt/virtocommerce/platform/modules. A platform
+# container that is up — especially one CRASHLOOPING because Docker restarted it without its
+# database — kills the install mid-transaction.
+#
+# Measured 2026-09-08 (VCST-5733): Docker Desktop had just been started and auto-restarted the
+# previous run's containers; vc-platform-web came up without vc-db and entered a restart loop. The
+# install died 11m19s in on 'VirtoCommerce.PageBuilderModule:3.1023.0' with a transaction Timeout →
+# Rollback → IOException ("the process cannot access the file ... because it is being used by another
+# process"), build-VC-solution.ps1 exited 1, and the whole 11 minutes were lost. Running -Action stop
+# by hand and re-running -Action up unchanged was the remedy; this makes that automatic.
+#
+# Unconditional on purpose: the build is SKIPPED when the manifest is unchanged, so gating this on
+# "will we build?" would reintroduce the race on the retag path, which also swaps the live image out
+# from under a running container. Stopping an already-stopped stack is a no-op, and Stop-Stack is
+# -AllowFail so a never-bootstrapped tree just skips.
+function Invoke-PreBuildDown {
+  $env:COMPOSE_PROJECT_NAME = $ProjectName
+  Stop-FrontendOnly
+  Stop-Stack
+  Write-Pass "Stack down — the build will not contend with a running platform"
+}
+
 # start-VC-solution.ps1's trailing "Checking installed modules" step authenticates with the seed
 # password 'store' and can exit 1 even when the platform is fully up. Gate on real /health instead.
 function Wait-PlatformReady([int]$TimeoutSec = 180) {
@@ -942,6 +970,7 @@ switch ($Action) {
       Begin-Step "Frontend image (build / reuse cache)"; Build-FrontendImageOnly (Get-FrontendTheme); End-Step
     } else {
       Begin-Step "Bootstrap start-local"; Initialize-Bootstrap; End-Step
+      Begin-Step "Stack down (before build — installer must not race a live platform)"; Invoke-PreBuildDown; End-Step
       Begin-Step "Platform image (build / reuse cache)"; Invoke-BuildIfChanged; End-Step
     }
   }
@@ -982,12 +1011,14 @@ switch ($Action) {
       Show-SummaryFrontend
     } elseif ($Mode -eq "backend") {
       Begin-Step "Bootstrap start-local"; Initialize-Bootstrap; End-Step
+      Begin-Step "Stack down (before build — installer must not race a live platform)"; Invoke-PreBuildDown; End-Step
       Begin-Step "Platform image (build / reuse cache)"; Invoke-BuildIfChanged; End-Step
       Begin-Step "Start backend (fresh DB · no frontend · seed via npm run seed:*)"; Invoke-StartBackendOnly; End-Step
       Begin-Step "Admin & module health"; Invoke-PostStart; End-Step
       Show-Summary
     } else {
       Begin-Step "Bootstrap start-local"; Initialize-Bootstrap; End-Step
+      Begin-Step "Stack down (before build — installer must not race a live platform)"; Invoke-PreBuildDown; End-Step
       Begin-Step "Platform image (build / reuse cache)"; Invoke-BuildIfChanged; End-Step
       Begin-Step "Start stack (fresh DB · seed via npm run seed:*)"; Invoke-StartStack; End-Step
       Begin-Step "Admin & module health"; Invoke-PostStart; End-Step
