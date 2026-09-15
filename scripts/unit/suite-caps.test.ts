@@ -126,7 +126,7 @@ test("full: derived global budget covers the selection, unlike the old $80 defau
   const suites = selection("full");
   const minutes = suites.reduce((sum, s) => sum + minutesOf(s), 0);
   assert.equal(suites.length, 131, "manifest drift: full's suite count changed");
-  assert.equal(minutes, 3075, "manifest drift: full's total estimate changed");
+  assert.equal(minutes, 3078, "manifest drift: full's total estimate changed");
 
   const budget = globalBudgetFor(suites);
   assert.ok(budget >= 140, `expected >= $140, got $${budget.toFixed(2)}`);
