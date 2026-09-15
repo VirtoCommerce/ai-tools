@@ -1,0 +1,42 @@
+{
+  "_generated": "AUTO-GENERATED — DO NOT EDIT BY HAND. Regenerate: npm run presets:sync · Drift-guard: npm run presets:check",
+  "_what": "Theme preset names the vc-frontend storefront can resolve. A WhiteLabeling.ThemePresetNames value outside this list is not necessarily wrong (a deployment may run a different build, or ship extra presets under /assets/presets/) — it is a name to CHECK, never a failure.",
+  "source": "https://github.com/VirtoCommerce/vc-frontend",
+  "ref": "dev",
+  "normalizer": "name.toLowerCase().replaceAll(\" \", \"-\")",
+  "normalizerSource": "client-app/core/utilities/common/index.ts",
+  "presets": [
+    "black-gold",
+    "coffee",
+    "default",
+    "mercury",
+    "purple-pink",
+    "red",
+    "watermelon"
+  ],
+  "darkPresets": [
+    "black-gold",
+    "coffee",
+    "default",
+    "mercury",
+    "purple-pink",
+    "red",
+    "watermelon"
+  ],
+  "presetFiles": [
+    "black-gold.dark.json",
+    "black-gold.json",
+    "coffee.dark.json",
+    "coffee.json",
+    "default.dark.json",
+    "default.json",
+    "mercury.dark.json",
+    "mercury.json",
+    "purple-pink.dark.json",
+    "purple-pink.json",
+    "red.dark.json",
+    "red.json",
+    "watermelon.dark.json",
+    "watermelon.json"
+  ]
+}

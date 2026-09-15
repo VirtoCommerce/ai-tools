@@ -79,6 +79,9 @@ jobs:
       - name: selectors:check — data-test-id surface vs vc-frontend
         run: npm run selectors:check
         continue-on-error: true
+      - name: presets:check — theme preset names vs vc-frontend
+        run: npm run presets:check
+        continue-on-error: true
       - name: schema:check — GraphQL introspection reachable
         run: npm run schema:check
         continue-on-error: true

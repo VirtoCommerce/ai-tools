@@ -3661,7 +3661,7 @@
       "active": "is_active",
       "priority": "priority"
     },
-    "notes": "Baseline ProductPoints program (VIP eligibility). Pre-existing; seeded=true. Used by suites 075/083 + VCST-5101."
+    "notes": "Baseline ProductPoints program (VIP eligibility). Has NO rows in loyalty/program-factors.csv, so it grants no points on its own. Used by suites 075/083 + VCST-5101. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-001)."
   },
   "LOY_PP_ALL": {
     "file": "loyalty/programs",
@@ -3675,7 +3675,7 @@
       "active": "is_active",
       "priority": "priority"
     },
-    "notes": "VCST-5135 happy path: ALL customers earn on ONE product (factor LT-001=500). Proves a product factor actually grants points. Factors in program-factors.csv. seeded=false — provision via /qa-seed-data."
+    "notes": "VCST-5135 happy path: ALL-customers program, single-SKU earn — proves a product factor actually grants points. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-010)."
   },
   "LOY_PP_MULTI": {
     "file": "loyalty/programs",
@@ -3689,7 +3689,7 @@
       "active": "is_active",
       "priority": "priority"
     },
-    "notes": "VCST-5135 multi-SKU summation: 3 factors with DIFFERENT values (LT-001=500 / WH-001=50 / QA-TIER-001=25). seeded=false — provision via /qa-seed-data."
+    "notes": "VCST-5135 multi-SKU summation: dedicated SKUs carrying DIFFERENT factor values. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-011)."
   },
   "LOY_PP_VIP": {
     "file": "loyalty/programs",
@@ -3703,7 +3703,7 @@
       "active": "is_active",
       "priority": "priority"
     },
-    "notes": "VCST-5135 eligibility WITH real earning: only VIP group earns on WH-001 (factor=100); non-VIP earns nothing. seeded=false — provision via /qa-seed-data."
+    "notes": "VCST-5135 eligibility WITH real earning: only the VIP group is a candidate; a non-VIP user earns the default instead. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-012)."
   },
   "LOY_PP_WHOLESALE": {
     "file": "loyalty/programs",
@@ -3717,7 +3717,7 @@
       "active": "is_active",
       "priority": "priority"
     },
-    "notes": "VCST-5135 group-differentiated rate: Wholesaler group earns LT-001=250 (vs all/VIP rates on same SKU). seeded=false — provision via /qa-seed-data."
+    "notes": "VCST-5135 group-scoped winner: Wholesaler-only eligibility. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-013)."
   },
   "LOY_PP_FUTURE": {
     "file": "loyalty/programs",
@@ -3733,7 +3733,7 @@
       "start_offset_days": "start_offset_days",
       "end_offset_days": "end_offset_days"
     },
-    "notes": "VCST-5135 lifecycle: start date +7d (future window). Active + factor (WH-001=75) present but must NOT accrue until window opens. seeded=false — provision via /qa-seed-data."
+    "notes": "VCST-5135 lifecycle gate: start date +7d (future window). Active with a factor present, but never a valid candidate until the window opens. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-014)."
   },
   "LOY_PP_EXPIRED": {
     "file": "loyalty/programs",
@@ -3749,7 +3749,7 @@
       "start_offset_days": "start_offset_days",
       "end_offset_days": "end_offset_days"
     },
-    "notes": "VCST-5135 lifecycle: end date -7d (expired window). Factor (WH-001=75) present but must NOT accrue. seeded=false — provision via /qa-seed-data."
+    "notes": "VCST-5135 lifecycle gate: end date -7d (expired window). Factor present but never a valid candidate. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-015)."
   },
   "LOY_PP_INACTIVE": {
     "file": "loyalty/programs",
@@ -3763,7 +3763,7 @@
       "active": "is_active",
       "priority": "priority"
     },
-    "notes": "VCST-5135 negative: isActive=false WITH a real factor (LT-001=500). Active flag gates earning even when factors exist. seeded=false — provision via /qa-seed-data."
+    "notes": "VCST-5135 inactive gate: isActive=false WITH a real factor present — the active flag gates earning even at top priority. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-016)."
   },
   "LOY_PP_PRIORITY": {
     "file": "loyalty/programs",
@@ -3777,7 +3777,7 @@
       "active": "is_active",
       "priority": "priority"
     },
-    "notes": "VCST-5135 stacking: priority=100 program on LT-001 (factor=999); pair with LOY_PP_ALL (priority 10, LT-001=500) to test which wins / stacking. seeded=false — provision via /qa-seed-data."
+    "notes": "VCST-5135 priority resolution: competitor program sharing a SKU with LOY_PP_ALL — single winner, no stacking (the higher-priority eligible program's factor applies). Priorities live in loyalty/programs.csv. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-017)."
   },
   "LOY_PP_ZERO": {
     "file": "loyalty/programs",
@@ -3791,7 +3791,7 @@
       "active": "is_active",
       "priority": "priority"
     },
-    "notes": "VCST-5135 boundary (BVA): a factor explicitly set to 0 points (QA-OOS-001=0). seeded=false — provision via /qa-seed-data."
+    "notes": "VCST-5135 boundary (BVA): a factor explicitly set to 0 — when this program wins its SKU earns 0, distinct from the default factor 1. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-018)."
   },
   "LOY_PP_LOCALIZED": {
     "file": "loyalty/programs",
@@ -3806,7 +3806,7 @@
       "priority": "priority",
       "localized_name_es": "localized_name_es"
     },
-    "notes": "VCST-5135 localization: es-ES localized name + dedicated SKU QA-LOY-LOCALE-001 (factor 10). seeded=true (provisioned 2026-06-24)."
+    "notes": "VCST-5135 localization: es-ES localized name on a dedicated SKU. SKU(s) + factor value(s): loyalty/program-factors.csv (program_id=LOY-019)."
   },
   "LOY_SKU_PRIORITY": {
     "_inline": true,

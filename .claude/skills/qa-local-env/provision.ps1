@@ -513,6 +513,29 @@ function Wait-PortsFree([int]$TimeoutSec = 45, [int[]]$Ports) {
 
 # Patch start-local's module-check probe so it authenticates with $env:VC_MODULECHECK_PASSWORD
 # (avoids the admin lockout on a preserved DB). Idempotent; no-ops if upstream changes the file.
+# True when this run REUSES the existing DB (-KeepData honoured; any rebuild/cache-retag forces a wipe).
+function Test-WarmStart { return ($KeepData -and -not $script:ImageChanged) }
+
+# Which password start-local's post-start "Checking installed modules" probe must authenticate with.
+# On a FRESH DB the account still carries start-local's seed password ("store"). On a WARM DB
+# (-KeepData) init-admin rotated it to the target on an earlier run, so probing with the seed burns
+# failed-login attempts against a LIVE account and locks it out BEFORE init-admin gets to run.
+# Measured 2026-09-15: after a -KeepData restart init-admin reported "neither target nor seed password
+# authenticates" — the account was locked, not misconfigured, and the platform logs no lockout line,
+# so it reads as a credentials bug. (The skill's older note that preserved-DB lockouts are gone
+# "because there are no preserved DBs anymore" overlooked -KeepData, which preserves one.)
+# Prefer the value init-admin actually persisted, so a deployment with a non-default target still works.
+function Get-ModuleCheckPassword {
+  if (-not (Test-WarmStart)) { return "store" }
+  $envLocal = Join-Path $RepoRoot ".env.local"
+  if (Test-Path $envLocal) {
+    $m = Select-String -Path $envLocal -Pattern '^\s*ADMIN_PASSWORD_LOCALHOST\s*=\s*(.+?)\s*$' -ErrorAction SilentlyContinue |
+         Select-Object -First 1
+    if ($m) { return $m.Matches[0].Groups[1].Value.Trim().Trim('"').Trim("'") }
+  }
+  return "Password1!"   # documented local convention; matches init-admin.mjs's --new default
+}
+
 function Set-ModuleCheckPassword {
   $script = Join-Path $WorkDir "$SolutionName/scripts/check-installed-modules.ps1"
   if (-not (Test-Path $script)) { return }
@@ -557,11 +580,60 @@ function Initialize-Admin {
   else { Write-Pass "admin / Password1! ready; ADMIN_PASSWORD_LOCALHOST written to .env.local" }
 }
 
+# Docker Desktop can default a compose network to IPv6-ONLY (Docker 29:
+# com.docker.network.enable_ipv4=false). start-local declares a bare `virto:` network and so inherits
+# that. The only subnet is then a ULA (fd00::/8) with no NAT66 upstream, which means the containers
+# get a working DNS resolver but NO routable egress: every outbound call dies as
+# SocketException(101) "Network is unreachable". Measured 2026-09-15 — it 500s BOTH
+# /api/platform/modules and /api/platform/sampledata/discover (so the setup wizard cannot list sample
+# data, and this script's own --expect-module / --module-errors checks go dark), and it is why the
+# host port proxy reached the frontend over IPv6 (see Repair-FrontendIpv6). Pin IPv4 on so the
+# network is dual-stack. Idempotent; the caller runs it BEFORE Stop-Stack so `down` drops the old
+# network and `up` recreates it with the option applied (a live network never changes options).
+function Repair-ComposeIpv4 {
+  $compose = Join-Path $WorkDir "$SolutionName/docker-compose.yml"
+  if (-not (Test-Path $compose)) { return }
+  $text = Get-Content -Raw -Path $compose
+  if ($text -match 'com\.docker\.network\.enable_ipv4') { Write-Note "compose network already pins IPv4"; return }
+  # Expand a BARE `virto:` entry only — the negative lookahead skips an entry that already has
+  # sub-keys, so we never emit a duplicate `driver:` into a hand-edited file.
+  $patched = [regex]::Replace($text,
+    '(?m)^(networks:[ \t]*\r?\n)([ \t]+)(\S+:)[ \t]*(\r?\n)(?![ \t]{3,}\S)',
+    "`$1`$2`$3`$4`$2  driver: bridge`$4`$2  driver_opts:`$4`$2    com.docker.network.enable_ipv4: `"true`"`$4")
+  if ($patched -eq $text) { Write-Warn "could not pin IPv4 on the compose network — container egress may fail (modules/sampledata 500)"; return }
+  Set-Content -Path $compose -Value $patched -NoNewline
+  Write-Pass "compose network pinned to IPv4 (container egress)"
+}
+
+# The stock vc-frontend image's nginx declares only `listen 80;` — IPv4 only. The compose network
+# is IPv6-enabled, so Docker's port proxy forwards to the container's IPv6 address, nginx refuses
+# it, and the HOST sees "empty reply from server" on http://localhost while that same nginx answers
+# 200 on the container's own loopback. (Verified 2026-09-15: `netstat -tln` in the container showed
+# tcp 0.0.0.0:80 with no tcp6 row; a probe container reached it as [fd87:2640:8d7:1::7]:80 →
+# Connection refused.) The platform container is unaffected — Kestrel binds dual-stack.
+# Adds the IPv6 listener + reloads. No-op when already patched, or when there is no frontend
+# container (-Mode backend). -Mode frontend needs none of this: its config is generated with both.
+function Repair-FrontendIpv6([string]$Container = "$ProjectName-vc-frontend-1") {
+  docker inspect $Container *> $null
+  if ($LASTEXITCODE -ne 0) { return }                      # no frontend container in this mode
+  $sedExpr = 's/^\(\s*\)listen\s\+80;/\1listen       80;\n\1listen       [::]:80;/'
+  $cmd = "grep -q 'listen \[::\]:80' /etc/nginx/conf.d/default.conf && exit 3; " +
+         "sed -i '$sedExpr' /etc/nginx/conf.d/default.conf && nginx -t 2>/dev/null && nginx -s reload"
+  docker exec $Container sh -c $cmd *> $null
+  switch ($LASTEXITCODE) {
+    3       { Write-Note "frontend nginx already listens on IPv6" }
+    0       { Write-Pass "frontend nginx: added 'listen [::]:80' + reloaded (IPv6 publish fix)" }
+    default { Write-Warn ("frontend nginx IPv6 listener could not be added (exit $LASTEXITCODE) — " +
+                          "http://localhost may return an empty reply even though the container is Up") }
+  }
+}
+
 # Bring the stack up. Wipes data volumes (fresh DB) UNLESS -KeepData AND the live image is unchanged.
 function Invoke-StartStack {
   $env:COMPOSE_PROJECT_NAME = $ProjectName
+  Repair-ComposeIpv4                           # before the down: a live network never changes options
   Stop-Stack                                   # free ports + drop old containers
-  if ($KeepData -and -not $script:ImageChanged) {
+  if (Test-WarmStart) {
     Write-Warn "KeepData: reusing existing DB + search index + cache (warm start — NOT deterministic)"
   }
   else {
@@ -569,10 +641,13 @@ function Invoke-StartStack {
     Clear-DataVolumes                          # from-scratch DB + search index + cache
   }
   Wait-PortsFree                               # OS can lag freeing a just-removed container's port
-  Set-ModuleCheckPassword                      # tell start-local's module-check probe the seed password
-  $env:VC_MODULECHECK_PASSWORD = "store"
+  Set-ModuleCheckPassword                      # let the probe honour VC_MODULECHECK_PASSWORD
+  # Seed password on a fresh DB, the ALREADY-ROTATED target on a warm one — probing a warm DB with
+  # the seed locks the admin account out before init-admin runs. See Get-ModuleCheckPassword.
+  $env:VC_MODULECHECK_PASSWORD = Get-ModuleCheckPassword
   Invoke-Lifecycle "start-VC-solution.ps1" @{ solutionFolder = $SolutionName; skipSampleData = $true } -AllowFail $true -Phase "start"
   Wait-PlatformReady                           # gate on real /health (seed-password probe can exit 1)
+  Repair-FrontendIpv6                          # stock image nginx is IPv4-only — see the function header
 }
 
 # Post-start: rotate admin pwd, verify pins, surface module-load errors.
@@ -585,7 +660,7 @@ function Invoke-PostStart {
 # Final report banner: overall verdict, links, per-container marks, DB mode, next step.
 function Show-Summary {
   $db = Get-BootstrappedDbProvider; if (-not $db) { $db = $DbProvider }
-  $dbMode = if ($KeepData -and -not $script:ImageChanged) { "warm (kept)" } else { "fresh" }
+  $dbMode = if (Test-WarmStart) { "warm (kept)" } else { "fresh" }
   $up = 0
   $healthOk = $false
   try { $r = Invoke-WebRequest -Uri "http://localhost:8090/health" -UseBasicParsing -TimeoutSec 4; $healthOk = ($r.StatusCode -eq 200) } catch {}
@@ -810,6 +885,7 @@ $sslLine    }
 # Backend bound to: $BackendUrl  (proxy_pass $proxyTarget, Host $hostHeader)
 server {
     listen       80;
+    listen       [::]:80;
     server_name  localhost;
     root /usr/share/nginx/html;
     index index.html;
@@ -866,7 +942,7 @@ function Get-ComposeFiles {
 function Invoke-StartBackendOnly {
   $env:COMPOSE_PROJECT_NAME = $ProjectName
   Stop-Stack
-  if ($KeepData -and -not $script:ImageChanged) {
+  if (Test-WarmStart) {
     Write-Warn "KeepData: reusing existing DB + search index + cache (warm start — NOT deterministic)"
   } else {
     if ($KeepData) { Write-Warn "KeepData ignored — image changed; wiping volumes for schema/module-DLL safety" }

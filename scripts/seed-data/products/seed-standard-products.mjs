@@ -189,8 +189,12 @@ async function ensureCatalog() {
 // like WH-001/LT-001. Only captureDiscoveredFixtures() calls this catalog-blind on purpose
 // (STD-* fixtures live in their own imported catalogs).
 async function findProductByCode(code, catalogId) {
+  // take was 5. `/listentries` keyword search is a PREFIX match, so a product whose siblings share
+  // its code as a prefix comes back with all of them and the exact row can sit past the page — the
+  // caller then creates a duplicate and the insert dies on 23505 / IX_Code_CatalogId. Same defect,
+  // same day, as seed-configurable.mjs findProductByCode (localhost 2026-09-15).
   const r = await api('POST', '/api/catalog/listentries', {
-    keyword: code, ...(catalogId ? { catalogId } : {}), take: 5,
+    keyword: code, ...(catalogId ? { catalogId } : {}), take: 200,
   }, { expectStatus: [200, 201, 400, 404] });
   const found = (r?.listEntries || r?.results || []).find(p =>
     (p.code === code) && p.type === 'product'

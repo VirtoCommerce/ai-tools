@@ -176,23 +176,50 @@ async function ensureCategory(catalogId, name, code) {
   log(`✓ category: ${name} (${cat?.id})`);
   return cat;
 }
-async function findProductByCode(code) {
-  const r = await api('POST', '/api/catalog/listentries', { keyword: code, take: 5 }, { expectStatus: [200, 201, 400, 404] });
-  const f = (r?.listEntries || r?.results || []).find(p => p.code === code && p.type === 'product');
-  return f ? { id: f.id, code, name: f.name } : null;
+/**
+ * Find a product by its EXACT code.
+ *
+ * `/listentries` keyword search is a PREFIX/fuzzy match, not an exact one, so a parent whose child
+ * options share its code as a prefix comes back alongside all of them: searching
+ * "AGENT-TEST-CFG-022" returns 10 rows — nine `-OPT-*` children and the parent — and the platform
+ * orders the parent LAST. The old `take: 5` therefore returned a page made entirely of children,
+ * the exact-code predicate matched nothing, and the caller "helpfully" created a second product with
+ * a code that already existed → `23505 duplicate key ... IX_Code_CatalogId`.
+ *
+ * Measured on localhost 2026-09-15: this hit EVERY configurable spec that has child options
+ * (CFG-013/020/021/022/023/027/028) and no spec without them — and no amount of reindexing fixed it,
+ * because the row was in the index the whole time. So page through the whole result set and stop at
+ * the exact code; `skip` + `totalCount` are both honoured by this endpoint (verified live).
+ */
+async function findProductByCode(code, catalogId = null) {
+  const PAGE = 100;
+  const MAX_PAGES = 20;
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const body = { keyword: code, take: PAGE, skip: page * PAGE };
+    // `catalogId` — NOT `catalog`. Verified live 2026-09-15: a bogus `catalogId` filters to 0
+    // results while a bogus `catalog` still returns all 10, i.e. `catalog` is silently ignored.
+    if (catalogId) body.catalogId = catalogId;
+    const r = await api('POST', '/api/catalog/listentries', body, { expectStatus: [200, 201, 400, 404] });
+    const entries = r?.listEntries || r?.results || [];
+    const f = entries.find(p => p.code === code && p.type === 'product');
+    if (f) return { id: f.id, code, name: f.name };
+    const total = Number(r?.totalCount ?? 0);
+    if (!entries.length || (page + 1) * PAGE >= total) break;
+  }
+  return null;
 }
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 async function ensureProduct(catalogId, categoryId, body) {
-  let p = await findProductByCode(body.code);
+  let p = await findProductByCode(body.code, catalogId);
   if (p) { verbose(`↻ product: ${body.name} (${p.id})`); return p; }
   try {
     p = await api('POST', '/api/catalog/products', { catalogId, categoryId, ...body });
     verbose(`✓ product: ${body.name} (${p?.id})`);
     return p;
   } catch (e) {
-    // The product exists in the DB but the search index lagged, so findProductByCode
-    // missed it and we tried to re-insert (unique IX_Code_CatalogId). Poll the index
-    // until it catches up and reuse the existing row rather than failing the spec.
+    // A code collision means the row already exists in this catalog. With the paging fix in
+    // findProductByCode the common cause (a truncated result page) is gone, so reaching here means a
+    // genuine index/DB lag on a row created moments ago. Reindex + poll, and reuse rather than fail.
     if (/duplicate key|IX_Code_CatalogId/i.test(e.message)) {
       // The row exists in the DB but the CatalogProduct search index lagged (findProductByCode is
       // index-based). Poll won't resolve on its own without a reindex, so TRIGGER one, then poll —
