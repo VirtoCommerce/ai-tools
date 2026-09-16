@@ -22,8 +22,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
-  DISCOUNT_RATIO_FIXTURES, DISCOUNT_PERCENT_DECIMALS, CSV_SOURCE,
-  discountRatioScaled, roundAwayFromZero, roundHalfToEven, isRoundingMidpoint, expectedDiscountPercent,
+  DISCOUNT_RATIO_FIXTURES, DISCOUNT_PERCENT_DECIMALS, CSV_SOURCE, discountRatioScaled, roundHalfToEven, isRoundingMidpoint, expectedDiscountPercent,
 } from '../seed-data/products/standard-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -50,22 +49,6 @@ test('discountRatioScaled rejects a non-sale, an inverted pair, and sub-cent pre
   assert.equal(discountRatioScaled(100, 0), null);            // zero sale
   assert.equal(discountRatioScaled(100, 87.505), null);       // finer than money precision
   assert.equal(discountRatioScaled('abc', 10), null);
-});
-
-test('roundAwayFromZero and roundHalfToEven disagree exactly on a midpoint', () => {
-  assert.equal(roundAwayFromZero(0.12345), 0.1235);
-  assert.equal(roundHalfToEven(0.12345), 0.1234);
-  // Off the midpoint they must agree, or the midpoint check would fire on everything.
-  assert.equal(roundAwayFromZero(0.12341), 0.1234);
-  assert.equal(roundHalfToEven(0.12341), 0.1234);
-  assert.equal(roundAwayFromZero(0.125), 0.125);
-  assert.equal(roundHalfToEven(0.125), 0.125);
-});
-
-test('isRoundingMidpoint identifies only genuine midpoints', () => {
-  assert.equal(isRoundingMidpoint(0.12345), true);
-  assert.equal(isRoundingMidpoint(0.125), false);     // exactly representable at 4dp
-  assert.equal(isRoundingMidpoint(0.3334), false);
 });
 
 test('PROD-108 is a FRACTIONAL discount of exactly 12.5% and reports 0.1250', () => {

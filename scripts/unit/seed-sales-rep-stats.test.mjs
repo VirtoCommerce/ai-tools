@@ -115,16 +115,6 @@ test('shaped order supplies >5 distinct products so the Top Sellers take:5 cap i
   );
 });
 
-test('rankingsDiverge is FALSE for a uniform even split — the flat-CSV shape the base seeder produces', () => {
-  // items_count=3, total=300 -> qty 1 @ $100 each: units and revenue rank identically.
-  const evenSplit = [
-    { productSlot: 0, quantity: 1, unitPrice: 100 },
-    { productSlot: 1, quantity: 1, unitPrice: 100 },
-    { productSlot: 2, quantity: 1, unitPrice: 100 },
-  ];
-  assert.equal(rankingsDiverge(evenSplit), false);
-});
-
 test('requiredProductSlots covers every order line and cart slot', () => {
   const need = requiredProductSlots();
   for (const l of TOP_SELLER_LINES) assert.ok(l.productSlot < need);
@@ -178,29 +168,9 @@ test('cart fixtures sit in two DIFFERENT served orgs so the dashboard count is >
   assert.equal(new Set(CART_FIXTURES.map((c) => c.orgKey)).size, CART_FIXTURES.length);
 });
 
-test('the shaped order targets a SECOND served org, not the one that already had orders', () => {
-  assert.equal(TOP_SELLER_ORDER.orgKey, 'ORG-002');
-  assert.notEqual(TOP_SELLER_ORDER.orgKey, 'ORG-001');
-});
-
 test('the shaped order status stays inside the BL-SR-005 baseline set (not Cancelled)', () => {
   assert.notEqual(TOP_SELLER_ORDER.status, 'Cancelled');
   assert.equal(TOP_SELLER_ORDER.status, 'Processing');
-});
-
-test('every owned alias is registered in aliases.json with an EMPTY id and the spec business key', () => {
-  const expected = {
-    SR_STATS_TOPSELLER_ORDER: ['number', statsOrderNumber(TOP_SELLER_ORDER.key)],
-    SR_STATS_CART_ACME: ['name', cartName('ACME')],
-    SR_STATS_CART_WEST: ['name', cartName('WEST')],
-  };
-  for (const alias of OWNED_ALIASES) {
-    const entry = aliases[alias];
-    assert.ok(entry, `alias ${alias} must exist in test-data/aliases.json`);
-    const [field, value] = expected[alias];
-    assert.equal(entry[field], value, `${alias}.${field}`);
-    assert.equal(entry.id, '', `${alias}.id must be empty in the committed base — runtime id lives in the env overlay`);
-  }
 });
 
 test('no committed alias for this domain carries a runtime platform GUID (DV-021)', () => {

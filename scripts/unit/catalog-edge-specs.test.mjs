@@ -13,15 +13,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  SEED_PREFIX, RUNTIME_FIELDS, EXCLUDED_CATALOG, EMPTY_CATEGORY, EXCLUDED_PRODUCT, SEO_PRODUCT,
-  ALL_FIXTURES, buildSeoInfo, buildCategoryBody, buildProductBody,
-  validateSeoShape, validateFixtureShape,
+  SEED_PREFIX, RUNTIME_FIELDS, EXCLUDED_CATALOG, EMPTY_CATEGORY, EXCLUDED_PRODUCT, SEO_PRODUCT, ALL_FIXTURES, buildSeoInfo, buildCategoryBody, buildProductBody, validateSeoShape,
 } from '../seed-data/catalog/catalog-edge-specs.mjs';
-
-test('the committed spec is clean as authored', () => {
-  assert.deepEqual(validateFixtureShape(), []);
-  assert.deepEqual(validateSeoShape(), []);
-});
 
 test('every fixture carries the AGENT-TEST prefix so teardown sweeps exactly it', () => {
   for (const f of ALL_FIXTURES) assert.ok(f.name.startsWith(SEED_PREFIX), `${f.aliasName}: ${f.name}`);
@@ -38,14 +31,6 @@ test('no runtime id is baked into the committed spec', () => {
 
 /* ── CAT-043: the empty category ─────────────────────────────────────────────── */
 
-test('VACUITY: a category that is allowed to hold products cannot exercise the empty state', () => {
-  const problems = validateFixtureShape.call(null);
-  assert.deepEqual(problems, []);          // baseline
-  // Simulate the drift by asserting the rule the guard applies, since keepEmpty is the only knob.
-  assert.equal(EMPTY_CATEGORY.keepEmpty, true,
-    'keepEmpty is the fixture\'s ONLY property — a populated category renders a normal listing and CAT-043 passes without ever reaching the empty-state branch');
-});
-
 test('the empty category URL is store-relative (an SPA soft-404 answers HTTP 200)', () => {
   assert.ok(EMPTY_CATEGORY.url.startsWith('/'));
   assert.ok(!/^[a-z]+:\/\//i.test(EMPTY_CATEGORY.url));
@@ -54,12 +39,6 @@ test('the empty category URL is store-relative (an SPA soft-404 answers HTTP 200
 });
 
 /* ── CAT-038: the org-excluded product ───────────────────────────────────────── */
-
-test('VACUITY: the excluded product must stay UNLINKED from the store catalog', () => {
-  // Linking it in is the single edit that silently destroys the case: the product becomes visible to
-  // the org user, and CAT-038's discriminating half then asserts something false.
-  assert.equal(EXCLUDED_PRODUCT.linkedIntoStoreCatalog, false);
-});
 
 test('the excluded product is a REAL product — priced and stocked, not a stub', () => {
   // A zero-price or zero-stock product could be invisible for the WRONG reason, so the case would

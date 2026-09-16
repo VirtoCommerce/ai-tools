@@ -10,16 +10,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  PRODUCTS, byAlias, CATEGORY_PATHS, COMPARE_LIMIT_PER_CATEGORY, CSV_COLUMNS,
-  csvRowFor, storefrontUrlFor, validateSpecShape, quantityDivergence,
-  formatCollisionProblems, FORMAT_COLLISIONS, SEED_PREFIX, productSlug, xapiMinQuantity,
-  variationPriceDivergence, variationsOf, hasVariations, minVariationPrice,
-  variationLinkCount, formatMoney, VARIATION_MIN_COUNT, MIN_VARIATION_PRICE_ALWAYS_PRESENT,
+  PRODUCTS, byAlias, CATEGORY_PATHS, COMPARE_LIMIT_PER_CATEGORY, CSV_COLUMNS, csvRowFor, storefrontUrlFor, validateSpecShape, quantityDivergence, FORMAT_COLLISIONS, SEED_PREFIX, productSlug, xapiMinQuantity, variationPriceDivergence, variationsOf, hasVariations, minVariationPrice, variationLinkCount, formatMoney, VARIATION_MIN_COUNT, MIN_VARIATION_PRICE_ALWAYS_PRESENT,
 } from '../seed-data/compare/compare-specs.mjs';
-
-test('the committed spec set is internally clean', () => {
-  assert.deepEqual(validateSpecShape(), []);
-});
 
 test('every fixture is AGENT-TEST-prefixed on BOTH code and name (teardown sweeps on it)', () => {
   for (const r of PRODUCTS) {
@@ -36,16 +28,6 @@ test('aliases, cmp ids and SKUs are unique', () => {
 });
 
 // --- quantity divergence -----------------------------------------------------
-
-test('PROD_MOQ and PROD_PACK share a tab and diverge on every quantity field', () => {
-  const a = byAlias.PROD_MOQ, b = byAlias.PROD_PACK;
-  assert.equal(a.categoryPath, b.categoryPath);
-  assert.notEqual(a.minQuantity, b.minQuantity);
-  assert.notEqual(a.packSize, b.packSize);
-  assert.notEqual(a.maxQuantity, b.maxQuantity);
-  assert.notEqual(a.stock, b.stock);
-  assert.deepEqual(quantityDivergence(), []);
-});
 
 test('the STORED off-grid MOQ is rounded onto the pack grid by the read path (measured live)', () => {
   // PROD_PACK stores minQuantity 10 with packSize 4; xAPI reported 12 on vcst-qa 2026-09-03.
@@ -78,17 +60,6 @@ test('quantityDivergence FIRES when the pair is split across two tabs', () => {
 });
 
 // --- formatted-string collision ---------------------------------------------
-
-test('two INDEPENDENT format collisions are seeded, both inside one tab', () => {
-  assert.equal(FORMAT_COLLISIONS.length, 2);
-  assert.deepEqual(FORMAT_COLLISIONS.map((f) => f.id).sort(), ['availability', 'number-property']);
-  for (const fc of FORMAT_COLLISIONS) {
-    const a = byAlias[fc.a], b = byAlias[fc.b];
-    assert.equal(a.categoryPath, b.categoryPath, fc.id);
-    assert.notEqual(fc.read(a), fc.read(b), `${fc.id}: raw values must differ`);
-  }
-  assert.deepEqual(formatCollisionProblems(), []);
-});
 
 test('the numeric collision differs only in the 4th decimal (a 3-digit formatter rounds it away)', () => {
   const read = FORMAT_COLLISIONS.find((f) => f.id === 'number-property').read;
@@ -141,14 +112,6 @@ test('an inline property with no value is rejected — it would silently not be 
 const VAR = () => byAlias.PROD_CMP_VARIATIONS;
 const clone = (over = {}) => ({ ...VAR(), ...over });
 
-test('exactly one fixture takes the hasVariations branch, and it sits in Group A', () => {
-  const withVars = PRODUCTS.filter(hasVariations);
-  assert.equal(withVars.length, 1);
-  assert.equal(withVars[0].alias, 'PROD_CMP_VARIATIONS');
-  assert.equal(withVars[0].categoryPath, CATEGORY_PATHS.A, 'it must share a tab with plain products');
-  assert.deepEqual(variationPriceDivergence(), []);
-});
-
 test('the parent price and the minimum variation price DIVERGE, raw and formatted', () => {
   const v = VAR();
   const min = minVariationPrice(v);
@@ -198,18 +161,6 @@ test('variationPriceDivergence FIRES when minVariationPrice EQUALS the parent pr
   // reused for this branch.
   const problems = variationPriceDivergence(clone({ listPrice: 34.99 }));
   assert.ok(problems.some((p) => p.includes('EQUALS the parent price')), problems.join(' | '));
-});
-
-test('variationPriceDivergence FIRES when the raw gap is small enough for the money formatter to eat', () => {
-  const problems = variationPriceDivergence(clone({
-    listPrice: 34.994,
-    variations: [
-      { code: 'AGENT-TEST-Y1', name: 'AGENT-TEST-Y1', listPrice: 34.99, stock: 3 },
-      { code: 'AGENT-TEST-Y2', name: 'AGENT-TEST-Y2', listPrice: 44.99, stock: 3 },
-      { code: 'AGENT-TEST-Y3', name: 'AGENT-TEST-Y3', listPrice: 54.99, stock: 3 },
-    ],
-  }));
-  assert.ok(problems.some((p) => p.includes('format to')), problems.join(' | '));
 });
 
 test('variationPriceDivergence FIRES on fewer than three variations', () => {

@@ -192,25 +192,3 @@ test('the committed CSV columns agree with the derivation for every Test Fixture
     );
   }
 });
-
-test('the sub-$5 fixture is genuinely below the COUPON_FIXED5 discount amount', async () => {
-  // The whole point of PROD-107: with the previously-cheapest fixture at 9.99 a $5 fixed-amount coupon
-  // could never exceed the subtotal, so a "total floors at zero, never negative" assertion passed
-  // vacuously. If this ever regresses, the boundary silently stops being reachable again.
-  const { readFileSync } = await import('node:fs');
-  const { join, dirname } = await import('node:path');
-  const { fileURLToPath } = await import('node:url');
-  const { parse } = await import('csv-parse/sync');
-  const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-  const rows = parse(readFileSync(join(root, 'test-data', CSV_SOURCE.file), 'utf8'), {
-    columns: true, skip_empty_lines: true, relax_quotes: true, relax_column_count: true,
-  });
-  const row = rows.find((r) => r[CSV_SOURCE.map.csvId] === 'PROD-107');
-  assert.ok(row, 'PROD-107 (the sub-$5 fixture) must exist');
-  const FIXED_DISCOUNT = 5; // @td(COUPON_FIXED5) — "Fixed $5 dollar off cart subtotal"
-  assert.ok(
-    Number(row[CSV_SOURCE.map.listPrice]) < FIXED_DISCOUNT,
-    `PROD-107 price ${row[CSV_SOURCE.map.listPrice]} must stay strictly below the $${FIXED_DISCOUNT} fixed discount`,
-  );
-  assert.ok(Number(row[CSV_SOURCE.map.eurPrice]) < FIXED_DISCOUNT, 'the EUR price must clear the same boundary');
-});

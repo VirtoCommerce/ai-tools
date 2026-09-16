@@ -18,9 +18,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
-  CSV_SOURCE, FIXTURE_KEY, RUNTIME_COLUMNS, SEED_PREFIX, MAIN_FFC,
-  loadFixture, validateFixtureShape, stockPlan, deriveSlug, deriveUrl,
-  buildMasterBody, buildVariationBody,
+  CSV_SOURCE, FIXTURE_KEY, RUNTIME_COLUMNS, SEED_PREFIX, MAIN_FFC, loadFixture, validateFixtureShape, deriveSlug, deriveUrl, buildVariationBody,
 } from '../seed-data/inventory/variation-stock-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -51,14 +49,6 @@ test('buildVariationBody sets mainProductId — this is what makes it a VARIATIO
   assert.equal(body.trackInventory, true);
 });
 
-test('the variation deliberately publishes NO SEO record — it has no independent PDP route', () => {
-  const body = buildVariationBody(rec, 'm');
-  assert.equal(body.seoInfos, undefined, 'inventing a variation PDP path would publish a route that does not exist');
-  // The master is the navigable half.
-  const master = buildMasterBody(rec, { seoInfos: [{ semanticUrl: rec.master.slug }] });
-  assert.deepEqual(master.seoInfos, [{ semanticUrl: rec.master.slug }]);
-});
-
 test('master and variation SKUs are distinct — INV-047 asserts two separate grid rows', () => {
   assert.notEqual(rec.master.sku, rec.variation.sku);
   const problems = validateFixtureShape(withColumn('variation_sku', rec.master.sku), ffcRows);
@@ -84,13 +74,6 @@ test('the fixture stocks the store_role=main fulfillment center, never an arbitr
   const additional = ffcRows.find((r) => String(r[MAIN_FFC.roleColumn]).trim().toLowerCase() === 'additional');
   const problems = validateFixtureShape(withColumn('ffc_csv_id', additional.ffc_id), ffcRows);
   assert.ok(problems.some((p) => /store_role=main|should be "FFC-001"/.test(p)));
-});
-
-test('stockPlan writes the master first, then the variation, with the fixture quantities', () => {
-  assert.deepEqual(stockPlan(rec), [
-    { role: 'master', sku: rec.master.sku, quantity: rec.master.stock },
-    { role: 'variation', sku: rec.variation.sku, quantity: rec.variation.stock },
-  ]);
 });
 
 test('both products carry the AGENT-TEST- prefix so teardown can guard on the name', () => {

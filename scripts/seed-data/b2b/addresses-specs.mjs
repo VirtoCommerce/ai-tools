@@ -65,15 +65,22 @@ export const lastPageSize = (n) => (Number(n) % ADDRESSES_PER_PAGE) || ADDRESSES
 /**
  * TARGET_TOTAL is a number with a stated rationale, so verify the rationale instead of trusting
  * the number: it must yield >= MIN_PAGES pages and a partial last page. Returns [] when coherent.
+ *
+ * `total` is a parameter, defaulting to TARGET_TOTAL, for one reason: with the total hard-wired to a
+ * module constant this function was UNVERIFIABLE. Measured 2026-09-15 — replacing its whole body with
+ * `return []` left BOTH `td:validate:b2b` green (the committed total is coherent, so the real function
+ * also returns []) AND its unit test green (that test never called it; it re-derived the predicate
+ * inline and asserted arithmetic, and has been deleted). A guard nothing can detect the breaking of is
+ * not a guard. Callers pass nothing and are unaffected.
  */
-export function assertContractCoherent() {
+export function assertContractCoherent(total = TARGET_TOTAL) {
   const errs = [];
-  const pages = pageCount(TARGET_TOTAL);
+  const pages = pageCount(total);
   if (pages < MIN_PAGES) {
-    errs.push(`TARGET_TOTAL ${TARGET_TOTAL} yields ${pages} page(s) at ${ADDRESSES_PER_PAGE}/page — needs >= ${MIN_PAGES}`);
+    errs.push(`TARGET_TOTAL ${total} yields ${pages} page(s) at ${ADDRESSES_PER_PAGE}/page — needs >= ${MIN_PAGES}`);
   }
-  if (REQUIRE_PARTIAL_LAST_PAGE && TARGET_TOTAL % ADDRESSES_PER_PAGE === 0) {
-    errs.push(`TARGET_TOTAL ${TARGET_TOTAL} is an exact multiple of ${ADDRESSES_PER_PAGE} — a partial last page is required`);
+  if (REQUIRE_PARTIAL_LAST_PAGE && total % ADDRESSES_PER_PAGE === 0) {
+    errs.push(`TARGET_TOTAL ${total} is an exact multiple of ${ADDRESSES_PER_PAGE} — a partial last page is required`);
   }
   return errs;
 }

@@ -41,8 +41,10 @@ storefront or Admin SPA, or a full suite run against the freshly seeded env.
    before authoring anything new. Author only the genuine gap.
 3. **Is the entity flat or nested?** — flat tabular (users, prices, stock) → **CSV**; nested API body
    (orders, quotes, configurable products, reward trees) → **JSON-shaped-to-Swagger**, schema-validated.
-4. **What proves it works?** — a matching `td:validate:<domain>` drift-guard, a reverse teardown with
-   zero-residue, and `scripts/unit/` tests. If you can't gate it, you're not done.
+4. **What proves it works?** — a matching `td:validate:<domain>` drift-guard (which owns the *data*
+   contract), a reverse teardown with zero-residue, and `scripts/unit/` tests **only for the
+   derivation logic** (§Step 3). If you can't gate it, you're not done; if the gate already covers it,
+   a second copy in a unit test is not coverage, it is duplication.
 5. **Did the data actually land?** — you don't stop at a green `--dry-run`. On a non-prod env you run
    the **real** seed, confirm runtime GUIDs wrote to `aliases.<env>.json`, and run `td:reconcile`
    (live Platform-API probe) green. Only browser-level confirmation is delegated.
@@ -108,9 +110,30 @@ You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/
    **side-effect-free `*-specs.mjs`** as the single source of truth (importable by seeder + validator
    + tests). Idempotent find-or-create; `TEST_ENV`-aware; `--teardown` + `--dry-run` flags;
    `AGENT-TEST-` naming. Nested entities → **JSON-shaped-to-Swagger** fixtures; flat → CSV.
-3. **Write unit tests.** For the spec module, body/row mapping, and validator logic, as
-   `scripts/unit/<name>.test.mjs` (node test runner via `tsx`, pattern: `scripts/unit/seed-b2b-fixtures.test.mjs`).
-   Pure logic only — no live API in unit tests (mock or test the side-effect-free functions).
+3. **Unit-test the DERIVATION, never the DECLARATION.** A unit test earns its place only where the
+   expected value is derived *independently* of the thing asserted. Two categories, and only one of
+   them is yours:
+   - **TEST the builders and transforms** — `buildXBody`, `resolveTokens`, `windowDates`, row→payload
+     mapping, arithmetic, teardown/search semantics. A wrong builder seeds wrong data silently, and
+     **nothing else catches it**: measured 2026-09-15, three semantic mutations of `missions-specs.mjs`
+     builders (offset sign flip, open-ended `null` → date, raw currency intent leaked into the body)
+     were caught by the unit test and **missed by `td:validate:missions`**.
+   - **DO NOT TEST the declared fixture data.** Asserting that `EXCLUDED_PRODUCT.linkedIntoStoreCatalog`
+     is `false`, or that `validateFixtureShape()` returns `[]` on the committed spec, restates a literal
+     that lives one file away in the same commit — it can only fail when someone edits the data on
+     purpose, and it is already covered by the drift guard, which calls the *same* validator and adds
+     the alias-registry, GUID-leak and URL-shape checks on top. Same measurement: four data mutations
+     across `catalog-edge` / `variation-stock` / `orders` / `rbac` were caught by **both**, i.e. the
+     unit test added nothing. **That coverage belongs in `td:validate:<domain>` (step 3b), not here.**
+
+   File as `scripts/unit/<name>.test.mjs` (node test runner via `tsx`, pattern:
+   `scripts/unit/seed-b2b-fixtures.test.mjs`). Pure logic only — no live API (mock, or test the
+   side-effect-free functions). **A spec module that is pure declaration gets NO unit-test file at all.**
+3b. **Put the fixture's non-vacuity contract in the drift guard.** `td:validate:<domain>` is the
+   stronger check and the one that runs against committed *and* seeded state — see
+   [`knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md)
+   §7a. Verify the split with `npm run td:mutation-check -- <domain>`: a
+   mutation both catch is a unit test to delete; one only the unit test catches is one to keep.
 4. **Self-review** against the Judge checklist (LAYER 4) — revise until it passes.
 5. **Run the static gates:** `npm test` · `npm run td:validate` · `npm run td:validate:<domain>` · a
    `--dry-run` seed — all green.
@@ -187,7 +210,11 @@ A lightweight in-agent analogue of the developers team's Gate-4 reviewer. All mu
 - [ ] No runtime GUID in a committed CSV/JSON — it writes to `aliases.<env>.json` only.
 - [ ] Idempotent find-or-create; `TEST_ENV`-aware; `ENV_RISK`/prod guard honored; `AGENT-TEST-` prefix.
 - [ ] Ships a matching `td:validate:<domain>` drift-guard **and** a reverse `--teardown` (zero-residue).
-- [ ] Ships unit tests in `scripts/unit/`; `npm test` green.
+- [ ] **Every unit test shipped would fail for a reason nobody intended.** Each one exercises a builder
+      / transform / teardown path whose expected value is derived independently — none restates a literal
+      the spec module declares, and none re-runs a validator `td:validate:<domain>` already calls. Proven,
+      not asserted: `npm run td:mutation-check -- <domain>` shows no mutation caught by BOTH. Declaration-only
+      spec ⇒ **no test file**, and that is a pass, not a gap. `npm test` green.
 - [ ] **Provisioned live**, not just dry-run: real seed ran on a non-prod env, runtime GUIDs landed in
       `aliases.<env>.json`, and `td:reconcile` is green (or the reason it couldn't run is reported).
 - [ ] Single source of truth (a side-effect-free `*-specs.mjs`) — no second hand-maintained mirror.

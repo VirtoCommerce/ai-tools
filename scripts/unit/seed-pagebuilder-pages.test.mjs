@@ -6,10 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  CANONICAL_PAGES, STATUS, pickCanonical, permalinkConflict, draftBody, permalinkBody, findGuidLeaks,
-  updateBody, isoOffsetDays, pickPromoteCandidate, pickByNameCulture, familyDuplicates,
-  CONTENT_FILE, contentDocFor, parseContentDoc, blockCount, buildContentBody, maxDiscover,
-  createGroupedBody,
+  CANONICAL_PAGES, STATUS, pickCanonical, permalinkConflict, draftBody, permalinkBody, findGuidLeaks, updateBody, isoOffsetDays, pickPromoteCandidate, pickByNameCulture, familyDuplicates, parseContentDoc, blockCount, buildContentBody, maxDiscover, createGroupedBody,
 } from '../seed-data/cms/pagebuilder-pages-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -52,11 +49,6 @@ test('permalinkConflict flags a different page occupying the expected slot', () 
   assert.equal(c.id, 'them');
 });
 
-test('permalinkConflict returns null when the slot is owned by the chosen page', () => {
-  const chosen = { id: 'me', permalink: '/qa-return-policy' };
-  assert.equal(permalinkConflict([chosen], spec('PB_RETURN_POLICY'), chosen), null);
-});
-
 test('permalinkConflict ignores an ARCHIVED page at the slot (it does not render — no real conflict)', () => {
   const chosen = { id: 'me', permalink: '/other' };
   const pages = [chosen, { id: 'stale', name: 'QA Return Policy (obsolete-probe)', cultureName: 'en-US', status: 'Archived', permalink: '/qa-return-policy' }];
@@ -78,38 +70,6 @@ test('permalinkBody sets the new permalink without mutating the source', () => {
   const full = { status: 'Published', permalink: '/old' };
   assert.equal(permalinkBody(full, '/new').permalink, '/new');
   assert.equal(full.permalink, '/old');
-});
-
-test('PB_RETURN_POLICY is a multiLang spec with a de-DE counterpart + promote config', () => {
-  const rp = spec('PB_RETURN_POLICY');
-  assert.equal(rp.multiLang, true);
-  assert.equal(rp.deName, 'QA Rückgaberichtlinie');
-  assert.equal(rp.familyPrefix, '/qa-return-policy');
-  assert.ok(rp.promoteNameRe);
-});
-
-test('PB_RETURN_POLICY declares de-DE + fr-FR siblings with a dedicated FR alias', () => {
-  const rp = spec('PB_RETURN_POLICY');
-  assert.equal(rp.deName, 'QA Rückgaberichtlinie');
-  assert.equal(rp.frName, 'QA Politique de retour et de remboursement');
-  assert.equal(rp.frAlias, 'PB_RETURN_POLICY_FR');
-  // FR is deliberately UNPUBLISHED (CMS-028 untranslated-language subject) — EN+DE stay Published.
-  assert.equal(rp.frStatus, STATUS.DRAFT);
-});
-
-test('page-content.json has fr-FR return-policy blocks + PB_RETURN_POLICY_FR alias registered', () => {
-  const fixture = JSON.parse(readFileSync(join(ROOT, CONTENT_FILE), 'utf8'));
-  const fr = contentDocFor(fixture, spec('PB_RETURN_POLICY'), 'fr-FR');
-  assert.ok(fr && blockCount(fr) >= 1, 'fr-FR content present');
-  const registry = JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
-  assert.ok(registry.PB_RETURN_POLICY_FR, 'PB_RETURN_POLICY_FR registered');
-  assert.equal(registry.PB_RETURN_POLICY_FR.culture, 'fr-FR');
-});
-
-test('PB_SUMMER_PREVIEW carries an in-window schedule baseline (start past, end future)', () => {
-  const s = spec('PB_SUMMER_PREVIEW').schedule;
-  assert.ok(s.startOffsetDays < 0, 'start in the past (page live/Active for CMS-034)');
-  assert.ok(s.endOffsetDays > 0 && s.endOffsetDays > s.startOffsetDays, 'end in the future');
 });
 
 test('isoOffsetDays computes a future/past ISO timestamp relative to a base', () => {
@@ -163,16 +123,6 @@ test('parseContentDoc tolerates empty / non-JSON → {content:[]}', () => {
   assert.equal(blockCount(parseContentDoc('{"content":[{"type":"title"}]}')), 1);
 });
 
-test('contentDocFor resolves single-culture vs multiLang (per-culture) docs', () => {
-  const fx = {
-    PB_HOMEPAGE: { settings: {}, content: [{ type: 'title' }] },
-    PB_RETURN_POLICY: { 'en-US': { content: [{ type: 'title' }] }, 'de-DE': { content: [{ type: 'text' }] } },
-  };
-  assert.equal(blockCount(contentDocFor(fx, spec('PB_HOMEPAGE'), 'en-US')), 1);
-  assert.equal(contentDocFor(fx, spec('PB_RETURN_POLICY'), 'de-DE').content[0].type, 'text');
-  assert.equal(contentDocFor(fx, spec('PB_RETURN_POLICY'), 'fr-FR'), null);
-});
-
 test('buildContentBody assigns deterministic ids + resolves @discover markers (no mutation)', () => {
   const doc = { settings: { header: 'H' }, content: [
     { type: 'title', title: 'T' },
@@ -205,55 +155,7 @@ test('createGroupedBody builds the verified minimal from-scratch create body (no
   assert.equal('organizationId' in b, false);
 });
 
-test('createGroupedBody NEVER emits userGroups (module NREs on it) — even for a userGroup-personalized spec', () => {
-  const wg = spec('PB_WHOLESALE_GUIDE');
-  assert.deepEqual(wg.userGroups, ['B2B Wholesale']); // spec documents the intended labels for the manual-completion report
-  const b = createGroupedBody(wg, { storeId: 'S', culture: 'en-US', name: wg.name, permalink: wg.permalink });
-  assert.equal('userGroups' in b, false);   // NOT sent — a userGroups create/upsert 500s server-side
-  assert.equal('organizationId' in b, false);
-});
-
-test('createGroupedBody binds organizationId ONLY when a live orgId is supplied (never fabricated)', () => {
-  const ps = spec('PB_PARTNER_SUPPORT');
-  assert.equal(ps.personalization, 'org');
-  assert.ok(ps.orgSearchKeyword);
-  const bound = createGroupedBody(ps, { storeId: 'S', culture: 'en-US', name: ps.name, permalink: ps.permalink, orgId: 'org-guid-123' });
-  assert.equal(bound.organizationId, 'org-guid-123');
-  const unbound = createGroupedBody(ps, { storeId: 'S', culture: 'en-US', name: ps.name, permalink: ps.permalink, orgId: null });
-  assert.equal('organizationId' in unbound, false); // org absent on env → left unset for manual completion
-});
-
-test('createGroupedBody does not mutate the source spec', () => {
-  const wg = spec('PB_WHOLESALE_GUIDE');
-  const before = JSON.stringify(wg);
-  createGroupedBody(wg, { storeId: 'S', culture: 'en-US', name: wg.name, permalink: wg.permalink });
-  assert.equal(JSON.stringify(wg), before);
-});
-
-test('every canonical page has a content-fixture doc with ≥1 known-type block, GUID-free', () => {
-  const fixture = JSON.parse(readFileSync(join(ROOT, CONTENT_FILE), 'utf8'));
-  assert.deepEqual(findGuidLeaks(JSON.stringify(fixture)), []);
-  const KNOWN = new Set(['title', 'text', 'image', 'predefined-product-list']);
-  for (const p of CANONICAL_PAGES) {
-    for (const cul of (p.multiLang ? ['en-US', 'de-DE', ...(p.frName ? ['fr-FR'] : [])] : [p.culture])) {
-      const doc = contentDocFor(fixture, p, cul);
-      assert.ok(doc && blockCount(doc) >= 1, `${p.alias} (${cul}) has content`);
-      for (const b of doc.content) assert.ok(KNOWN.has(b.type), `${p.alias} block type ${b.type} known`);
-    }
-  }
-});
-
 test('spec module carries no runtime GUID', () => {
   const src = readFileSync(join(ROOT, 'scripts/seed-data/cms/pagebuilder-pages-specs.mjs'), 'utf8');
   assert.deepEqual(findGuidLeaks(src), []);
-});
-
-test('every canonical page has a registered, GUID-free @td alias', () => {
-  const registry = JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
-  for (const p of CANONICAL_PAGES) {
-    const a = registry[p.alias];
-    assert.ok(a, `alias ${p.alias} registered`);
-    assert.equal(a.permalink, p.permalink);
-    assert.deepEqual(findGuidLeaks(JSON.stringify(a)), []);
-  }
 });

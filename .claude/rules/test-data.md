@@ -59,6 +59,14 @@ The decision tree, the three alias shapes, JS and CSV-runner recipes, and the an
 
 Runtime platform GUIDs land in `test-data/aliases.{TEST_ENV}.json` (every env, `vcst` included); business keys stay in the committed CSV; a new seeder MUST follow the four-point multi-env rule. Full model, per-domain source-of-truth notes and the mandatory authoring rule: [`knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md) §Seed writeback + §Authoring rule.
 
+## FOURTH RULE — a unit test over fixture DATA is duplication; the drift guard owns it
+
+The three rules above govern where a value comes from, which values exist, and where evidence lands. This one governs **what deserves a unit test**, and it is the GOLDEN RULE pointed at our own test code: a test that re-states a literal the spec module declares — same repo, same commit, same author — is a transcribed constant with a test runner attached. It cannot fail for a reason nobody intended.
+
+**Test the DERIVATION, never the DECLARATION.** Builders, transforms, token resolution, teardown/search semantics → unit test, because the value is computed and a wrong implementation writes something no human wrote down. Declared fixture values, non-vacuity contracts, alias-registry completeness, GUID leaks → **`td:validate:<domain>`**, which calls the same validator and adds the registry/GUID/URL checks on top.
+
+Measured 2026-09-15 with `npm run td:mutation-check`: four *data* mutations (`catalog-edge`, `variation-stock`, `orders`, `rbac`) were caught by **both** the unit test and the guard — the test added nothing; three *logic* mutations in `missions-specs.mjs` builders were caught **only** by the unit test. **A spec module that is pure declaration gets no unit-test file, and that is a pass, not a gap.** The arbiter, the table and the full measurement: [`knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md) §7a — Unit test or drift guard.
+
 ## Where this rule is enforced (on demand)
 
 Every skill, agent, script and per-domain `td:validate:<domain>` guard that enforces this file — 28 rows — is listed in [`knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md) §Where this rule is enforced. Adding a seeder means adding a row there.

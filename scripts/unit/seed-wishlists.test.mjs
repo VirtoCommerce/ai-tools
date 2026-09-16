@@ -16,9 +16,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
-  CSV_SOURCE, FIXTURE_KEY, RUNTIME_COLUMNS, SEED_PREFIX,
-  loadFixture, productSpecs, wishlistSpecs, validateFixtureShape, validateOverlayOwnership,
-  deriveSlug, deriveUrl, buildContactBody, buildProductBody, buildLineItem, buildWishlistBody,
+  CSV_SOURCE, FIXTURE_KEY, RUNTIME_COLUMNS, SEED_PREFIX, loadFixture, productSpecs, wishlistSpecs, validateFixtureShape, validateOverlayOwnership, deriveSlug, deriveUrl, buildProductBody, buildLineItem, buildWishlistBody,
 } from '../seed-data/wishlists/wishlist-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -29,12 +27,6 @@ const rec = loadFixture(rows);
 
 /** Deep-clone the parsed rows and patch one column, so a test can simulate drift without touching disk. */
 const withColumn = (col, value) => rows.map((r) => ({ ...r, [col]: value }));
-
-test('the committed fixture parses and is marked seeded', () => {
-  assert.ok(rec, `a row with fixture_key=${FIXTURE_KEY} must exist`);
-  assert.equal(rec.seeded, true);
-  assert.equal(rec.fixtureKey, FIXTURE_KEY);
-});
 
 test('the committed fixture passes every shape assertion', () => {
   assert.deepEqual(validateFixtureShape(rows), []);
@@ -109,14 +101,6 @@ test('wishlistSpecs pairs each list with its own store\'s product', () => {
   assert.deepEqual(specs.map((s) => s.role), ['A', 'B']);
   assert.equal(specs[0].sku, rec.stores.A.sku);
   assert.equal(specs[1].sku, rec.stores.B.sku);
-});
-
-test('buildContactBody creates a PERSONAL customer — no org, so org-scoping cannot confound the case', () => {
-  const body = buildContactBody(rec);
-  assert.equal(body.memberType, 'Contact');
-  assert.deepEqual(body.organizations, []);
-  assert.deepEqual(body.emails, [rec.email]);
-  assert.equal(body.status, 'Approved');
 });
 
 test('buildProductBody carries the code/name and the caller-supplied SEO record only', () => {

@@ -26,10 +26,6 @@ import { placeEarnOrder } from '../seed-data/loyalty/loyalty-earn.mjs';
 
 /* ── A. the discriminating predicate ─────────────────────────────────────────────────────── */
 
-test('the DECLARED plan is discriminating', () => {
-  assert.deepEqual(planProblems(), []);
-});
-
 test('the declared plan funds all three scopes, two of them organization-scoped', () => {
   assert.equal(POOLS.length, 3);
   assert.equal(ORG_POOLS.length, 2);
@@ -61,11 +57,6 @@ test('EQUAL values on both sides of the distinction are rejected', () => {
   assert.ok(problems.some((p) => /SECOND RULE/.test(p)));
 });
 
-test('an exact integer MULTIPLE is rejected — a double-count would read as the other pool', () => {
-  const problems = divergenceProblems({ TECHFLOW: 30000, BUILDRIGHT: 60000, USER: 210000 });
-  assert.ok(problems.some((p) => /exact factor of 2/.test(p)));
-});
-
 test('a figure equal to the SUM of the other two is rejected', () => {
   // 1u / 2u / 3u — the naive choice. 3 = 1 + 2, so a "pooled across both scopes" bug reads as
   // BuildRight's own figure.
@@ -77,19 +68,6 @@ test('a figure equal to the DIFFERENCE of the other two is rejected', () => {
   // 4 / 9 / 5 — pairwise non-dividing and no sum collision, but 4 = 9 - 5.
   const problems = divergenceProblems({ USER: 4, TECHFLOW: 9, BUILDRIGHT: 5 });
   assert.ok(problems.some((p) => /equals the DIFFERENCE of the other two/.test(p)));
-});
-
-test('the chosen {2, 3, 7} survives every rule, and the naive {1, 2, 3} does not', () => {
-  assert.deepEqual(divergenceProblems({ USER: 2, TECHFLOW: 3, BUILDRIGHT: 7 }), []);
-  assert.ok(divergenceProblems({ USER: 1, TECHFLOW: 2, BUILDRIGHT: 3 }).length > 0);
-});
-
-test('the predicate is scale-free — grading units and grading points give the same verdict', () => {
-  const perUnit = 30000;
-  const units = { USER: 2, TECHFLOW: 3, BUILDRIGHT: 7 };
-  const points = Object.fromEntries(Object.entries(units).map(([k, v]) => [k, v * perUnit]));
-  assert.deepEqual(divergenceProblems(units), divergenceProblems(points));
-  assert.deepEqual(divergenceProblems(points), []);
 });
 
 test('planProblems rejects a non-integer or non-positive earn quantity', () => {
@@ -109,16 +87,6 @@ test('chooseUserQty returns the DECLARED 2 when the org earns left the user scop
   assert.equal(qty, poolByKey('USER').qty, 'the first candidate must be the declared quantity, so the fixture matches its own documentation');
 });
 
-test('chooseUserQty avoids the collision if an org-mode earn DID credit the user scope', () => {
-  // Hypothetical other build: the user scope already holds 3 + 7 = 10 units. The declared 2 would
-  // land on 12, which is exactly 4x TechFlow's 3 — the coincidence the predicate rejects.
-  assert.ok(divergenceProblems({ TECHFLOW: 3, BUILDRIGHT: 7, USER: 12 }).length > 0);
-  const { qty, problems } = chooseUserQty({ currentUserUnits: 10, techflowUnits: 3, buildrightUnits: 7 });
-  assert.deepEqual(problems, []);
-  assert.notEqual(qty, 2);
-  assert.deepEqual(divergenceProblems({ TECHFLOW: 3, BUILDRIGHT: 7, USER: 10 + qty }), []);
-});
-
 test('chooseUserQty reports failure rather than returning a quantity that answers nothing', () => {
   // Organization pools that are themselves confusable cannot be rescued by any user quantity.
   const { qty, problems } = chooseUserQty({ currentUserUnits: 0, techflowUnits: 5, buildrightUnits: 5 });
@@ -133,23 +101,6 @@ test('every candidate user quantity is a positive integer, cheapest first', () =
 });
 
 /* ── A3. grading a live read-back ────────────────────────────────────────────────────────── */
-
-test('seededStateProblems flags a pool that never moved, even when the triple diverges', () => {
-  const before = { TECHFLOW: 0, BUILDRIGHT: 0, USER: 60000 };
-  const after = { TECHFLOW: 90000, BUILDRIGHT: 210000, USER: 60000 };
-  const problems = seededStateProblems({ before, after });
-  assert.deepEqual(divergenceProblems(after), [], 'the triple itself is fine — only the movement is not');
-  assert.equal(problems.length, 1);
-  assert.ok(/USER did not move \(60000 → 60000\)/.test(problems[0]));
-  assert.ok(/non-reversible/.test(problems[0]), 'the message must warn against a blind retry — a retry earns twice');
-});
-
-test('seededStateProblems is clean when all three moved to a discriminating triple', () => {
-  assert.deepEqual(seededStateProblems({
-    before: { TECHFLOW: 0, BUILDRIGHT: 0, USER: 0 },
-    after: { TECHFLOW: 90000, BUILDRIGHT: 210000, USER: 60000 },
-  }), []);
-});
 
 test('a partial (--only) run asserts movement ONLY for the pools it earned into', () => {
   const state = {

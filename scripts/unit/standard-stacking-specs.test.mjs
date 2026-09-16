@@ -45,12 +45,6 @@ test('stackingExpectation reproduces the numbers PRICE-061 asserts, for all thre
   assert.deepEqual(stackingExpectation(fx, 'effective'), stackingExpectation(fx, 'tier'));
 });
 
-test('all three layer outcomes are mutually distinct', () => {
-  const fx = STACKING_FIXTURES['PROD-111'];
-  const ext = ['list', 'sale', 'tier'].map((n) => stackingExpectation(fx, n).extendedPrice);
-  assert.equal(new Set(ext).size, 3, `expected three distinct extendedPrices, got ${ext.join(', ')}`);
-});
-
 /** Temporarily swap one fixture's layers so the guard is exercised against real drift, then restore. */
 function withLayers(id, layers, fn) {
   const saved = STACKING_FIXTURES[id].layers;
@@ -98,16 +92,6 @@ test('VACUITY: a tier threshold above the quantity the case adds is rejected', (
   } finally {
     SPEC_OVERLAYS['PROD-111'].tierPrices = saved;
   }
-});
-
-test('the sale layer lives INSIDE the tier rows, because buildPrices drops sale_price', () => {
-  const tiers = SPEC_OVERLAYS['PROD-111'].tierPrices;
-  assert.equal(tiers.length, 2);
-  assert.deepEqual(tiers[0], { minQuantity: 1, list: 200.00, sale: 150.00 });
-  assert.deepEqual(tiers[1], { minQuantity: 10, list: 200.00, sale: 120.00 });
-  // Proof of the precedence that forces the shape: a record carrying BOTH is resolved to the tiers.
-  const out = buildPrices({ tierPrices: tiers, listPrice: 200, salePrice: 150 });
-  assert.deepEqual(out, tiers, 'buildPrices must return tierPrices verbatim, ignoring listPrice/salePrice');
 });
 
 test('PROD-110 keeps the flat sale shape (no tier override)', () => {

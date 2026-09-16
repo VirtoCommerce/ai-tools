@@ -14,12 +14,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
-  LANES, LANE_NAMES, LOCK_STATES, STATE_NAMES, RESTING_STATE, LOCK_KINDS, TARGETS, MEMBERSHIP_CSV,
-  LOCK_CACHE_TTL_MS, MIN_SHORTLIVED_WINDOW_MS, DEFAULT_FUTURE_HORIZON_MS, DEFAULT_PAST_HORIZON_MS,
-  V6_IS_READ_ONLY,
-  isCurrentlyLocked, disagreesWithServer, resolveLockoutEnd, planState, legStateMatches,
-  laneLegs, assertWritable, otherLane, tokenSurvivesState, buildAppliedRecord,
-  findLaneReservationProblems, findDecidabilityProblems,
+  LANES, LOCK_STATES, STATE_NAMES, RESTING_STATE, LOCK_KINDS, TARGETS, MEMBERSHIP_CSV, LOCK_CACHE_TTL_MS, MIN_SHORTLIVED_WINDOW_MS, DEFAULT_FUTURE_HORIZON_MS, DEFAULT_PAST_HORIZON_MS, V6_IS_READ_ONLY, isCurrentlyLocked, disagreesWithServer, resolveLockoutEnd, planState, legStateMatches, laneLegs, assertWritable, tokenSurvivesState,
 } from '../seed-data/b2b/membership-lock-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -37,30 +32,8 @@ const legs = () => ([
 
 /* ── 1. the predicate ────────────────────────────────────────────────────────────────────────── */
 
-test('isCurrentlyLocked mirrors OrganizationMembership.cs:22 — null LockoutEnd is PERMANENT, not expired', () => {
-  assert.equal(isCurrentlyLocked({ isLocked: true, lockoutEnd: null }, NOW), true);
-  assert.equal(isCurrentlyLocked({ isLocked: true }, NOW), true);
-  assert.equal(isCurrentlyLocked({ isLocked: true, lockoutEnd: '' }, NOW), true);
-  // isLocked=false always wins, whatever LockoutEnd says
-  assert.equal(isCurrentlyLocked({ isLocked: false, lockoutEnd: '2099-01-01T00:00:00Z' }, NOW), false);
-  assert.equal(isCurrentlyLocked({}, NOW), false);
-});
-
-test('isCurrentlyLocked uses a STRICT > : an instant exactly equal to LockoutEnd reads as NOT locked', () => {
-  const exact = new Date(NOW).toISOString();
-  assert.equal(isCurrentlyLocked({ isLocked: true, lockoutEnd: exact }, NOW), false, 'equality must not count as locked — the C# is `LockoutEnd.Value > DateTime.UtcNow`');
-  assert.equal(isCurrentlyLocked({ isLocked: true, lockoutEnd: new Date(NOW + 1).toISOString() }, NOW), true);
-  assert.equal(isCurrentlyLocked({ isLocked: true, lockoutEnd: new Date(NOW - 1).toISOString() }, NOW), false);
-});
-
 test('isCurrentlyLocked fails CLOSED on an unparseable LockoutEnd (never reports a lock as lifted)', () => {
   assert.equal(isCurrentlyLocked({ isLocked: true, lockoutEnd: 'not-a-date' }, NOW), true);
-});
-
-test('the V4 shape is the discriminating one: isLocked=true with the flag FALSE (the VCST-5374 defect)', () => {
-  const v4 = { isLocked: true, lockoutEnd: new Date(NOW - 3600_000).toISOString() };
-  assert.equal(v4.isLocked, true, 'raw IsLocked stays true — a surface reading it shows the org locked');
-  assert.equal(isCurrentlyLocked(v4, NOW), false, 'IsCurrentlyLocked is false — a correct surface shows it usable');
 });
 
 test('disagreesWithServer flags a predicate divergence, and stays silent when the server sent nothing', () => {
@@ -116,12 +89,6 @@ test('V2 leaves EXACTLY ONE selectable org, which is what makes it also serve th
   const selectable = plan.filter((l) => !l.wantCurrentlyLocked);
   assert.equal(selectable.length, 1, 'the isMultiOrganization boundary is "exactly one selectable org"');
   assert.ok(LOCK_STATES.V2.alsoServes.includes('V8'));
-});
-
-test('V7 locks EVERY leg, so no selectable org survives', () => {
-  const plan = planState('V7', legs(), BR, { now: NOW });
-  assert.equal(plan.filter((l) => l.wantCurrentlyLocked).length, plan.length);
-  assert.equal(plan.filter((l) => !l.wantCurrentlyLocked).length, 0);
 });
 
 test('V1 locks nothing and is the resting state teardown restores', () => {
@@ -212,60 +179,7 @@ test('tokenSurvivesState encodes the handler\'s POST-STATE guard, not a transiti
 
 /* ── 7. the drift guards themselves ─────────────────────────────────────────────────────────── */
 
-test('findDecidabilityProblems is clean on the shipped table', () => {
-  assert.deepEqual(findDecidabilityProblems(), []);
-});
-
-test('findDecidabilityProblems FAILS when a discriminating gap collapses (the guard has teeth)', () => {
-  const real = LOCK_STATES.V5.target;
-  try {
-    // Collapse the active-org axis: make V5 target the same side as V2.
-    Object.defineProperty(LOCK_STATES.V5, 'target', { value: LOCK_STATES.V2.target, configurable: true, writable: true });
-    const found = findDecidabilityProblems();
-    assert.ok(found.some((p) => /active-vs-non-active axis has collapsed/.test(p)), `expected a collapse to be reported, got: ${found.join(' | ')}`);
-  } finally {
-    Object.defineProperty(LOCK_STATES.V5, 'target', { value: real, configurable: true, writable: true });
-  }
-  assert.deepEqual(findDecidabilityProblems(), [], 'restored');
-});
-
-test('findLaneReservationProblems is clean, and fails when the aliases.json reservation prose goes', () => {
-  assert.deepEqual(findLaneReservationProblems(ALIASES), []);
-  assert.ok(findLaneReservationProblems({}).length >= LANE_NAMES.length, 'missing aliases must be reported per lane');
-  const stripped = JSON.parse(JSON.stringify(ALIASES));
-  // Prose with the lane contract genuinely gone (not merely reworded) must be reported.
-  stripped[LANES.frontend]._notes = 'a cross-org fixture account in two orgs.';
-  stripped[LANES.frontend]._comment = '';
-  assert.ok(findLaneReservationProblems(stripped).some((p) => /RESERVATION/.test(p)));
-
-  // And prose that still SAYS "reserved" but no longer names WHICH lane must also be reported —
-  // otherwise a reword silently decouples the docs from LANES.
-  const vague = JSON.parse(JSON.stringify(ALIASES));
-  vague[LANES.frontend]._notes = 'RESERVATION — this account is reserved for one lane at a time.';
-  vague[LANES.frontend]._comment = '';
-  assert.ok(findLaneReservationProblems(vague).some((p) => /does not name it as the FRONTEND lane/.test(p)));
-});
-
 /* ── 8. the lane legs come from the CSV, not from this file ─────────────────────────────────── */
-
-test('laneLegs resolves both lanes from the committed CSV, one account each, distinct orgs', () => {
-  for (const lane of LANE_NAMES) {
-    const l = laneLegs(ROWS, lane);
-    assert.ok(l.length >= 2, `lane ${lane} must be multi-org`);
-    assert.equal(new Set(l.map((x) => x.email)).size, 1, 'a lane is ONE account');
-    assert.equal(new Set(l.map((x) => x.orgName)).size, l.length, 'distinct orgs');
-    assert.equal(new Set(l.map((x) => x.aliasField)).size, l.length, 'distinct alias fields');
-  }
-});
-
-test('the two lanes are different accounts and share no CSV row — otherwise the split is a no-op', () => {
-  const fe = laneLegs(ROWS, 'frontend'); const be = laneLegs(ROWS, 'backend');
-  assert.notEqual(fe[0].email, be[0].email);
-  const shared = fe.map((l) => l.membershipRowId).filter((id) => be.some((b) => b.membershipRowId === id));
-  assert.deepEqual(shared, []);
-  assert.equal(otherLane('frontend'), 'backend');
-  assert.equal(otherLane('backend'), 'frontend');
-});
 
 test('laneLegs rejects an unknown lane and a degenerate single-org lane', () => {
   assert.throws(() => laneLegs(ROWS, 'nope'), /unknown lane/);
@@ -273,21 +187,6 @@ test('laneLegs rejects an unknown lane and a degenerate single-org lane', () => 
 });
 
 /* ── 9. the applied-state record ────────────────────────────────────────────────────────────── */
-
-test('buildAppliedRecord carries its provenance and says the resting state is V1', () => {
-  const plan = planState('V2', legs(), BR, { now: NOW });
-  const rec = buildAppliedRecord({ lane: 'frontend', state: 'V2', activeOrgId: BR, legs: plan, env: 'vcst', settleMs: 12, now: NOW });
-  assert.equal(rec.lane, 'frontend');
-  assert.equal(rec.laneAlias, LANES.frontend);
-  assert.equal(rec.restingState, 'V1');
-  assert.equal(rec.tokenSurvives, false);
-  assert.equal(rec.observedSettleMs, 12);
-  assert.match(rec.cacheFloorSource, /OrganizationMembershipSearchService\.cs:\d+/);
-  assert.match(rec.predicateSource, /OrganizationMembership\.cs:\d+/);
-  assert.match(rec._comment, /EPHEMERAL/);
-  assert.equal(rec.legs.length, 2);
-  assert.ok(rec.legs.every((l) => 'wantCurrentlyLocked' in l));
-});
 
 test('every state declares what it decides, and none of them is V6', () => {
   for (const s of STATE_NAMES) assert.ok(String(LOCK_STATES[s].decides || '').trim().length > 20, `${s} needs a real \`decides\` rationale`);

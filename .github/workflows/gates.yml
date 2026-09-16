@@ -53,6 +53,24 @@ jobs:
         run: npm run suites:lint
       - name: td:validate — every @td() resolves, no hardcoded GUIDs
         run: npm run td:validate
+      # The 22 per-domain fixture drift guards. Until 2026-09-15 these ran in NO workflow — only the
+      # generic resolver check above did — so the strongest check the repo owns over its fixture data
+      # ran when someone remembered to type it. They are also what makes the unit-test ROI rule safe
+      # (test-data-authoring.md §7a): once authors stop unit-testing declared fixture data, this is
+      # the only thing left covering it. Known-red guards are listed in td-validate-all.mjs KNOWN_RED
+      # with their reason rather than skipped silently.
+      - name: td:validate:all — per-domain fixture drift guards
+        run: npm run td:validate:all
+      # RULE 1 of when-to-write-a-test.md, made executable: a change shipping no executable source may
+      # not add a scripts/unit/ test. PR-only — it is a diff question, and `push` has no base to diff
+      # against. The default checkout is shallow, so the base ref is fetched first; without it the
+      # script exits 2 ("base unavailable", a checkout fact) rather than passing silently.
+      - name: Fetch base ref for test:roi-check
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags --depth=50 origin "${{ github.base_ref }}"
+      - name: test:roi-check — NO CODE ⇒ NO UNIT TEST
+        if: github.event_name == 'pull_request'
+        run: npm run test:roi-check -- --base "origin/${{ github.base_ref }}"
       - name: bl:lint / ecl:lint — oracle citation integrity
         run: npm run bl:lint && npm run ecl:lint
       - name: suites:executability:check — determinism ratchet

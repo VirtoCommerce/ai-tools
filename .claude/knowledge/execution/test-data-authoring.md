@@ -178,10 +178,50 @@ Reference implementation: `scripts/seed-data/b2b/addresses-specs.mjs` (`seedOute
 
 ## 7. Unit tests (`scripts/unit/<name>.test.mjs`)
 
-Test the **pure** logic from `*-specs.mjs` (body/row mapping, token resolution, transition/status
-rules, the validator's shape check) with the node test runner via `tsx` — no env, no network. Mock the
-HTTP layer if you must test a seeder function (see `scripts/unit/seed-b2b-fixtures.test.mjs` `__setApi`
-pattern). Run by `npm test`. Green is a gate.
+Test the **pure DERIVATION** logic from `*-specs.mjs` (body/row mapping, token resolution,
+transition/status rules, teardown search semantics) with the node test runner via `tsx` — no env, no
+network. Mock the HTTP layer if you must test a seeder function (see
+`scripts/unit/seed-b2b-fixtures.test.mjs` `__setApi` pattern). Run by `npm test`. Green is a gate.
+
+**Do NOT unit-test the declared fixture data, and do NOT re-run the validator's shape check here** —
+see §7a below.
+
+## 7a. Unit test or drift guard — the ROI rule
+
+A unit test earns its place only where **the expected value is derived independently of the thing
+asserted**. Restating a literal that lives one file away, in the same commit, written by the same
+author, is not a test: it can only fail when someone edits the data deliberately, at which point they
+edit the assertion too. It is a diff notification with a test runner attached.
+
+**The split, and which artifact owns each half:**
+
+| What you are checking | Owner | Why |
+|---|---|---|
+| A builder / transform: `buildXBody`, `resolveTokens`, `windowDates`, row→payload mapping, arithmetic, teardown/search semantics | **unit test** | The output is computed, so a wrong implementation produces a wrong value no human wrote down. Nothing else catches it |
+| The fixture's declared values, its non-vacuity contract, alias-registry completeness, GUID leaks, URL shape, cross-file coherence | **`td:validate:<domain>`** | The guard calls the same `validateFixtureShape()` a unit test would, and adds the registry/GUID/URL checks on top. It is strictly stronger, and it also sees seeded state |
+
+**Measured 2026-09-15** (`npm run td:mutation-check`), the two directions that make this a rule rather
+than a preference:
+
+- **Data mutations — the unit test added nothing.** `catalog-edge` `linkedIntoStoreCatalog false→true`,
+  `catalog-edge` `keepEmpty true→false`, `variation-stock` quantity, `orders` seed-prefix, `rbac`
+  `isAdministrator false→true`: **4/4 caught by BOTH** the unit test and the drift guard.
+- **Logic mutations — only the unit test caught them.** In `missions-specs.mjs`: `windowDates` offset
+  sign flip, `windowDates` open-ended `null → date`, `buildGoalNode` leaking the raw currency intent
+  into the body: **3/3 caught by the unit test, MISSED by `td:validate:missions`**.
+
+So a data-mirror test is duplication, and a builder test is the only line of defence. **`npm run
+td:mutation-check -- <domain>` is the arbiter** — it perturbs the spec module and reports which of the
+two caught it. A mutation both catch is a unit test to delete; one only the unit test catches is one to
+keep; one **neither** catches is a missing guard check, and that is the finding worth acting on.
+
+**A spec module that is pure declaration gets no unit-test file at all** — its drift guard is the
+complete answer, and "no test file" is a pass rather than a gap.
+
+> **Corollary for the always-loaded tier:** this is why no checklist in this repo says "ships unit
+> tests" as a binary box. A binary box is satisfied by volume, and volume is what produced ~10k lines
+> of assertion over declarative fixture data. The box asks whether each test **could fail for a reason
+> nobody intended** (`.claude/agents/test-data-engineer.md` §Self-review — the Judge).
 
 ## 8. npm wiring + bootstrap
 

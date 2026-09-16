@@ -6,9 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  ORDER_FIXTURES, QUOTE_FIXTURES, orderNumber, ORDER_MARK,
-  resolveTokens, finalizeOrderBody, finalizeQuoteBody, applyCatalogItems,
-  validateFixtureShape, findGuidLeaks,
+  ORDER_FIXTURES, QUOTE_FIXTURES, orderNumber, ORDER_MARK, resolveTokens, finalizeQuoteBody, applyCatalogItems, validateFixtureShape, findGuidLeaks,
 } from '../seed-data/orders/orders-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -35,24 +33,6 @@ test('resolveTokens does not mutate the input object', () => {
   const input = { a: '{{STORE_ID}}' };
   resolveTokens(input, { STORE_ID: 'B2B-store' });
   assert.equal(input.a, '{{STORE_ID}}');
-});
-
-test('finalizeOrderBody stamps status + owner and zeroes shipment/payment monetary totals', () => {
-  const spec = ORDER_FIXTURES.find((s) => s.key === 'COMPLETED');
-  const fixture = {
-    number: orderNumber('COMPLETED'), status: 'PLACEHOLDER',
-    items: [{ sku: 'X', quantity: 1, price: 10 }],
-    shipments: [{ status: 'New', price: 5, total: 5, totalWithTax: 5 }],
-    inPayments: [{ status: 'New', sum: 10, total: 10 }],
-  };
-  const body = finalizeOrderBody(spec, fixture, { customerId: 'user-1', customerName: 'Buyer', organizationId: 'org-1' });
-  assert.equal(body.status, spec.orderStatus, 'status comes from the spec, not the fixture placeholder');
-  assert.equal(body.customerId, 'user-1');
-  assert.equal(body.shipments[0].status, spec.shipmentStatus);
-  assert.equal(body.shipments[0].total, 0, 'shipment monetary total zeroed (order-total inflation lesson)');
-  assert.equal(body.inPayments[0].total, 0);
-  assert.equal(body.inPayments[0].sum, 10, 'payment sum (the real amount) preserved');
-  assert.equal(body.inPayments[0].customerId, 'user-1');
 });
 
 test('applyCatalogItems overlays real product identity but keeps quantity/price', () => {

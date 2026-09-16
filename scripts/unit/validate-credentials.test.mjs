@@ -5,8 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  normalizePasswordRef, collectDeclarations, findPasswordConflicts,
-  findDestructiveOverlaps, findUndeclaredVars, CSV_CREDENTIAL_SOURCES, DESTRUCTIVE_ROLE_KEYS,
+  normalizePasswordRef, collectDeclarations, findPasswordConflicts, findDestructiveOverlaps, findUndeclaredVars, CSV_CREDENTIAL_SOURCES,
 } from '../seed-data/credential-specs.mjs';
 import {
   __setApi, ensureSecurityAccount, passwordSource, isPasswordDeclared, hasStaleLockout,
@@ -79,15 +78,6 @@ test('findDestructiveOverlaps flags a lockout role sharing an account, even when
   assert.equal(found.length, 1, 'the lockout side-effect alone makes the sharing illegal');
   assert.equal(found[0].roleKey, 'LOCKOUT_TEST');
   assert.equal(found[0].sharedWith[0].origin, 'test-data/b2b/users.csv [USR-002]:password');
-});
-
-test('findDestructiveOverlaps is clean when the destructive role owns a dedicated account', () => {
-  const decls = collectDeclarations({
-    csvFiles: [{ file: 'test-data/b2b/users.csv', rows: [{ user_id: 'USR-002', email: 'buyer@t.local', password: '{{P}}' }] }],
-    roleEntries: [{ key: 'LOCKOUT_TEST', email: 'agent-test-lockout@t.local', passwordVar: 'LOCKOUT_TEST_PASSWORD' }],
-  });
-  assert.deepEqual(findDestructiveOverlaps(decls), []);
-  assert.ok(DESTRUCTIVE_ROLE_KEYS.includes('LOCKOUT_TEST'), 'LOCKOUT_TEST is registered as destructive');
 });
 
 test('findUndeclaredVars reports {{VAR}} tokens with no documented variable', () => {

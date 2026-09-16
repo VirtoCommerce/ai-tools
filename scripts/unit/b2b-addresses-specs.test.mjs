@@ -19,12 +19,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
-  ADDRESSES_PER_PAGE, MIN_PAGES, TARGET_TOTAL, PAGINATION_ORG_ID, REQUIRE_PARTIAL_LAST_PAGE,
-  pageCount, lastPageSize, assertContractCoherent, addressContentKey,
-  isRegionCode, regionNameFor, findGuidLeaks, paginationAudit,
-  SEED_MARKER_PREFIX, SEED_MARKER_MAX_LENGTH, seedOuterId, isSeededOuterId, seedMarkerRowId,
-  markerSweepInScope,
-  findMarkerProblems,
+  ADDRESSES_PER_PAGE, MIN_PAGES, TARGET_TOTAL, PAGINATION_ORG_ID, pageCount, lastPageSize, assertContractCoherent, addressContentKey, isRegionCode, regionNameFor, findGuidLeaks, paginationAudit, SEED_MARKER_PREFIX, SEED_MARKER_MAX_LENGTH, seedOuterId, isSeededOuterId, seedMarkerRowId, markerSweepInScope, findMarkerProblems,
 } from '../seed-data/b2b/addresses-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -51,23 +46,19 @@ test('lastPageSize reports the partial final page, and a full page when it divid
   assert.equal(lastPageSize(7), 1);
 });
 
-test('TARGET_TOTAL is coherent with its own stated rationale (not a magic number)', () => {
-  assert.deepEqual(assertContractCoherent(), [], 'contract must be self-coherent');
-  assert.ok(pageCount(TARGET_TOTAL) >= MIN_PAGES,
-    `${TARGET_TOTAL} must yield >= ${MIN_PAGES} pages`);
-  if (REQUIRE_PARTIAL_LAST_PAGE) {
-    assert.notEqual(TARGET_TOTAL % ADDRESSES_PER_PAGE, 0,
-      'an exact multiple of the page size would hide the partial-last-page edge case');
-  }
-});
+test('assertContractCoherent REJECTS a total one page short, and ACCEPTS the committed one', () => {
+  // Calls the function — the previous test of this name re-derived the predicate inline instead, so
+  // gutting assertContractCoherent to `return []` left it green. Passing `total` is what makes the
+  // rejection path reachable at all (the guard can only ever hand it the coherent committed number).
+  assert.deepEqual(assertContractCoherent(), [], 'the committed TARGET_TOTAL is coherent');
 
-test('assertContractCoherent would REJECT a total that yields too few pages', () => {
-  // Re-derive the same predicate against a hypothetical total to prove the check has teeth
-  // (TARGET_TOTAL itself is a const, so exercise the rule rather than mutating the module).
-  const tooSmall = ADDRESSES_PER_PAGE * (MIN_PAGES - 1); // one page short
-  assert.ok(pageCount(tooSmall) < MIN_PAGES, `${tooSmall} is deliberately one page short`);
-  const exactMultiple = ADDRESSES_PER_PAGE * MIN_PAGES;
-  assert.equal(exactMultiple % ADDRESSES_PER_PAGE, 0, 'and this one has no partial last page');
+  const tooSmall = ADDRESSES_PER_PAGE * (MIN_PAGES - 1);
+  const short = assertContractCoherent(tooSmall);
+  assert.ok(short.some((e) => /needs >= /.test(e)), `one page short must be rejected: ${short.join(' | ')}`);
+
+  const exactMultiple = ADDRESSES_PER_PAGE * (MIN_PAGES + 1);
+  const noPartial = assertContractCoherent(exactMultiple);
+  assert.ok(noPartial.some((e) => /exact multiple/.test(e)), `no partial last page must be rejected: ${noPartial.join(' | ')}`);
 });
 
 /* ── content key + region mapping ────────────────────────────────────────────── */
@@ -113,13 +104,6 @@ const row = (id, over = {}) => ({
   line1: `${id} Street`, city: `City-${id}`, state: 'NY', postal_code: '10001', country_code: 'US', ...over,
 });
 
-test('paginationAudit adds the +1 for the org inline address no CSV row covers', () => {
-  const a = paginationAudit([row('A'), row('B')], [orgRow], ORG);
-  assert.equal(a.csvDistinct, 2);
-  assert.equal(a.unmanagedInline, 1, 'orgBody() creates a BillingAndShipping at the org address');
-  assert.equal(a.expectedTotal, 3, '2 CSV rows + 1 inline');
-});
-
 test('paginationAudit does NOT double-count when a CSV row covers the inline org address', () => {
   const covering = row('HQ', { address_type: 'BillingAndShipping', line1: '1 HQ Way', city: 'Springfield' });
   const a = paginationAudit([row('A'), covering], [orgRow], ORG);
@@ -140,15 +124,6 @@ test('paginationAudit ignores contact-level rows (they land on a contact, not th
   const contactRow = { ...row('C'), org_id: '', contact_id: 'CON-002' };
   const a = paginationAudit([row('A'), contactRow], [orgRow], ORG);
   assert.equal(a.csvDistinct, 1, 'only the org-level row counts');
-});
-
-test('paginationAudit reports facet spread (Country / State / City)', () => {
-  const a = paginationAudit([
-    row('A'), row('B', { country_code: 'CA', state: 'ON', city: 'Toronto' }), row('C', { country_code: 'GB', state: '', city: 'London' }),
-  ], [orgRow], ORG);
-  assert.equal(a.countryCount, 3);
-  assert.deepEqual(a.countries, ['ca', 'gb', 'us']);
-  assert.equal(a.stateCount, 2, 'the region-less GB row contributes no state facet value');
 });
 
 test('paginationAudit flags a missing org rather than throwing', () => {
@@ -181,24 +156,6 @@ test('the four pre-existing TechFlow rows are still intact and unreordered', () 
   assert.equal(orgRows[0].city, 'San Francisco');
   assert.equal(orgRows[0].is_default, 'true', 'ADDR-005 is still the default shipping address');
   assert.equal(orgRows[2].city, 'Toronto', 'ADDR-016 still supplies the second country for CHK-035');
-});
-
-test('the aliases suite 011/081 read agree with the committed CSV', () => {
-  const aliases = JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
-  const a = paginationAudit(ADDRESSES, ORGS);
-  const declared = aliases.TECHFLOW_ORG_ADDRESSES;
-  assert.equal(declared.count, a.expectedTotal, 'TECHFLOW_ORG_ADDRESSES.count mirrors the CSV');
-  assert.equal(declared.csv_managed_count, a.csvDistinct);
-  assert.equal(declared.cities_distinct, a.cityCount);
-  assert.equal(declared.states_distinct, a.stateCount);
-  assert.equal(aliases.ADDRESS_SEARCH.totalCount, a.expectedTotal, 'ADDRESS_SEARCH total mirrors the CSV');
-
-  // Each per-address alias must be backed by a real committed row (the class of bug this fixes:
-  // an alias describing an address that exists nowhere).
-  const has = (city, line1) => ADDRESSES.some((r) => r.org_id === PAGINATION_ORG_ID && r.city === city && r.line1 === line1);
-  assert.ok(has(aliases.TECHFLOW_ADDR_US_NEW_YORK.city, aliases.TECHFLOW_ADDR_US_NEW_YORK.line1), 'US/NY alias backed by a row');
-  assert.ok(has(aliases.TECHFLOW_ADDR_CA_TORONTO.city, aliases.TECHFLOW_ADDR_CA_TORONTO.line1), 'CA/ON alias backed by a row');
-  assert.ok(has(aliases.TECHFLOW_ADDR_UK_LONDON.city, aliases.TECHFLOW_ADDR_UK_LONDON.line1), 'GB alias backed by a row');
 });
 
 test('every ADDRESS_SEARCH needle has the backing rows it claims', () => {

@@ -59,6 +59,7 @@ is the one distributed plugin and deliberately duplicates (rather than reference
 - NEVER share a browser session between parallel agents — each gets its own isolated context
 - Run deep/comprehensive tests unless explicitly told smoke. Always capture HAR files.
 - Batch regression in groups of 3 (matching browser pool slots)
+- **NO CODE ⇒ NO UNIT TEST.** A change that ships no executable behaviour — a prompt, knowledge file, suite CSV, manifest, fixture row, workflow, doc — gets **no** `scripts/unit/` test; the existing gate (`context:check` / `suites:lint` / `td:validate:<domain>` / `bl:lint`) already owns it, and a second copy fails only when someone edits the data on purpose. Where there IS code, test the **derivation** (computed output) and never the **declaration** (a literal one file away). Missing coverage goes in the guard, not a new test. The one unconditional exception is `/qa-fix` **G2** bug reproductions. Rules, the gate-per-change-type table and the arbiters (`td:mutation-check`, `td:test-attribution`): `.claude/knowledge/execution/when-to-write-a-test.md`
 
 **Browser:**
 - Use `chromium` (not `chrome`). WebKit NOT supported on Windows — use Edge fallback.
@@ -110,6 +111,7 @@ Each row names THE file that is normative for its topic. Read it before acting o
 | Prior art per ticket (read the sources directly) | `reports/ba/<domain>/` · `reports/ba/test-models/` · `reports/tickets/**/summary.json` |
 | Bug auto-fix gate ladder G0–G7, ownership routing, no-auto-merge, client-code containment | `.claude/knowledge/execution/quality-gates.md` |
 | Test data — `@td()` / `{{VAR}}`, GOLDEN RULE, SECOND RULE | `.claude/rules/test-data.md`; seeder authoring `.claude/knowledge/execution/test-data-authoring.md` |
+| **Whether a change needs a unit test at all** (NO CODE ⇒ NO TEST; derivation vs declaration; which gate already owns it) | `.claude/knowledge/execution/when-to-write-a-test.md` |
 | Report policy — categories, caps, severity folders, inline screenshots | `.claude/rules/reports.md` (stub) → `.claude/knowledge/execution/reports-policy.md` |
 | Regression — modes, manifest, suite-authoring, selection groups | `.claude/rules/regression.md`; lanes / promotion / scaffold / selection / selectors / pipelines / suites under `.claude/knowledge/execution/regression-*.md` |
 | Agents — roster, browser lanes, delegation | `.claude/rules/agents.md`; knowledge-base read-before-write rules `.claude/ROUTING.md` |
@@ -120,4 +122,4 @@ Each row names THE file that is normative for its topic. Read it before acting o
 | Tier classification for cross-product reuse | `.claude/architecture/TIER.md` |
 | Command / skill arguments | each file's frontmatter (the `/` menu) |
 | Virto Commerce docs | VirtoOZ MCP via `/vc-docs` (Context7 `/virtocommerce/vc-docs` fallback) |
-| Why any of the above is shaped the way it is | `docs/decisions/qa-test-evolution.md`, `docs/decisions/self-diagnostics-design.md`, `docs/decisions/regression-history.md`, `docs/decisions/mirror-parity.md` |
+| Why any of the above is shaped the way it is | `docs/decisions/qa-test-evolution.md`, `docs/decisions/self-diagnostics-design.md`, `docs/decisions/regression-history.md`, `docs/decisions/mirror-parity.md`, `docs/decisions/unit-test-roi.md` |
