@@ -1,0 +1,98 @@
+{
+  "base": "C:/_VIRTO/vc-knowledge",
+  "limit": 2,
+  "at": "2026-09-10T18:08:55.095Z",
+  "note": "after one entry per GraphQL type",
+  "rows": [
+    {
+      "row": 1,
+      "held": "HELD",
+      "question": "how do I create a percentage-discount promotion in the Virto Commerce Admin SPA?",
+      "served": [
+        "KB-C0B7076C",
+        "KB-B321AACD"
+      ],
+      "miss": false
+    },
+    {
+      "row": 2,
+      "held": "HELD",
+      "question": "how does the storefront cart show an applied promotion discount in GraphQL?",
+      "served": [
+        "KB-AE6BEE53",
+        "KB-198E4A55"
+      ],
+      "miss": false
+    },
+    {
+      "row": 3,
+      "held": "HELD",
+      "question": "which GraphQL mutation adds a product to the shopping cart, and what input does it need?",
+      "served": [
+        "KB-C941FAA3",
+        "KB-7A3E98A3"
+      ],
+      "miss": false
+    },
+    {
+      "row": 4,
+      "held": "NOT-USED",
+      "question": "which GraphQL mutation adds a product to the shopping cart, and what input does it need?",
+      "served": [
+        "KB-C941FAA3",
+        "KB-7A3E98A3"
+      ],
+      "miss": false
+    },
+    {
+      "row": 5,
+      "held": "HELD",
+      "question": "Mutations.addItem InputAddItemType",
+      "served": [
+        "KB-C941FAA3",
+        "KB-7A3E98A3"
+      ],
+      "miss": false
+    },
+    {
+      "row": 6,
+      "held": "HELD",
+      "question": "which mutation changes the quantity of a line item already in the cart?",
+      "served": [
+        "KB-17361565",
+        "KB-EE4185D8"
+      ],
+      "miss": false
+    },
+    {
+      "row": 7,
+      "held": "HELD",
+      "question": "InputChangeCartItemQuantityType fields",
+      "served": [
+        "KB-0181473A",
+        "KB-E3B2F107"
+      ],
+      "miss": false
+    },
+    {
+      "row": 8,
+      "held": "UNANSWERED",
+      "question": "what fields does CartTotalType have?",
+      "served": [
+        "KB-93BB76C6",
+        "KB-D61E2FFA"
+      ],
+      "miss": false
+    },
+    {
+      "row": 9,
+      "held": "UNANSWERED",
+      "question": "what fields does CartTotalType have?",
+      "served": [
+        "KB-93BB76C6",
+        "KB-D61E2FFA"
+      ],
+      "miss": false
+    }
+  ]
+}

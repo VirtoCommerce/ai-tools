@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "playwright-chrome": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@playwright/mcp@0.0.77",
+        "--browser",
+        "chrome",
+        "--isolated",
+        "--secrets",
+        "C:/_VIRTO/vc-mcp-testing-module/.env.playwright.local",
+        "--viewport-size",
+        "1920x1080",
+        "--output-dir",
+        "C:/_VIRTO/_arena/artifacts"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--dns-result-order=ipv4first",
+        "npm_config_prefer_offline": "true"
+      }
+    }
+  }
+}

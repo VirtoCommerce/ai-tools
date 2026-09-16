@@ -1,0 +1,22 @@
+session:   8df1fb2c
+questions: 3 rows
+tool log:  177 calls (177 lines, batch actions unpacked)
+
+1. COVERAGE
+   before the first row:  7 call(s) — work done before anything was logged
+   after the last row:    29 call(s) — tail-end work, normally the report and the write-up
+   calls per row:         median 40, max 101, rows with an empty window 0
+
+2. UNDER-LOGGED WINDOWS   (a window far above the median covered questions that were not written down)
+   none above 120 calls. The log kept pace with the work.
+
+3. METHOD NOT FOUND IN ITS WINDOW   (heuristic token match — a hit is a question, not a verdict)
+   every row's named method appears among the calls it is attributed.
+
+4. TOOL MIX BY PHASE
+   orient       40 calls   mcp__playwright-chrome__browser_snapshot 12 · mcp__playwright-chrome__browser_click 8 · Bash 6 · mcp__playwright-chrome__browser_network_request 4 · mcp__playwright-chrome__browser_navigate 2 · mcp__playwright-chrome__browser_fill_form 2 · mcp__playwright-chrome__browser_type 2 · ToolSearch 1 · mcp__playwright-chrome__browser_network_requests 1 · mcp__playwright-chrome__browser_tabs 1 · mcp__playwright-chrome__browser_wait_for 1
+   diagnose    101 calls   mcp__playwright-chrome__browser_snapshot 33 · mcp__playwright-chrome__browser_click 32 · mcp__playwright-chrome__browser_tabs 10 · mcp__playwright-chrome__browser_type 9 · Bash 6 · mcp__playwright-chrome__browser_navigate 4 · mcp__playwright-chrome__browser_network_request 3 · mcp__playwright-chrome__browser_network_requests 2 · mcp__playwright-chrome__browser_press_key 2
+   restore      29 calls   mcp__playwright-chrome__browser_snapshot 11 · Bash 8 · mcp__playwright-chrome__browser_click 6 · mcp__playwright-chrome__browser_type 2 · mcp__playwright-chrome__browser_tabs 1 · mcp__playwright-chrome__browser_navigate 1
+
+Nothing above is a pass or a fail. Report 2 is where unlogged questions show up, and
+report 3 is where a row and the record of what happened do not line up.

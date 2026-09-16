@@ -1,0 +1,21 @@
+session:   95777cf8
+questions: 4 rows
+tool log:  319 calls (319 lines, batch actions unpacked)
+
+1. COVERAGE
+   before the first row:  7 call(s) — work done before anything was logged
+   after the last row:    309 call(s) — tail-end work, normally the report and the write-up
+   calls per row:         median 1, max 309, rows with an empty window 0
+
+2. UNDER-LOGGED WINDOWS   (a window far above the median covered questions that were not written down)
+   row 4  309 calls (median 1)  [orient]  What is the role object on an organization contact in the storefront API, 
+   Re-read those windows: the row names one question and the calls did several.
+
+3. METHOD NOT FOUND IN ITS WINDOW   (heuristic token match — a hit is a question, not a verdict)
+   every row's named method appears among the calls it is attributed.
+
+4. TOOL MIX BY PHASE
+   orient      312 calls   mcp__playwright-chrome__browser_snapshot 109 · mcp__playwright-chrome__browser_click 92 · mcp__playwright-chrome__browser_navigate 30 · mcp__playwright-chrome__browser_type 28 · Bash 24 · mcp__playwright-chrome__browser_tabs 19 · mcp__playwright-chrome__browser_take_screenshot 3 · ToolSearch 2 · mcp__playwright-chrome__browser_press_key 2 · AskUserQuestion 1 · mcp__playwright-chrome__browser_console_messages 1 · mcp__playwright-chrome__browser_hover 1
+
+Nothing above is a pass or a fail. Report 2 is where unlogged questions show up, and
+report 3 is where a row and the record of what happened do not line up.

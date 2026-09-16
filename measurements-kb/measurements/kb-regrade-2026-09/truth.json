@@ -1,0 +1,187 @@
+{
+  "builtAt": "2026-09-12T08:15:06.068Z",
+  "rows": [
+    {
+      "id": "r01.1",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "The Admin SPA promotion blade is a thin client over the Marketing REST surface the base listed. A percentage-discount promotion is a Promotion whose dynamicExpression tree carries a BlockReward child of id RewardCartGetOfRelSubtotal with amount = the percent; the tree skeleton comes from GET /api/marketing/promotions/new and the promotion is saved with POST /api/marketing/promotions. storeIds must be set explicitly - the /new template returns it null.",
+      "note": "The base named the right routes and the right module, but it describes the REST surface only. It says nothing about the condition/reward expression tree, which is the whole substance of a promotion, and nothing about the Admin SPA screens the question actually asked about."
+    },
+    {
+      "id": "r01.2",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "CartType.discounts (a DiscountType list carrying promotionId, description, amount, coupon) plus CartType.discountTotal. Both proved to be the fields that actually moved when the promotion applied.",
+      "note": "Answered the question directly. It also flagged that Query.cart requires storeId and currencyCode, which was load-bearing."
+    },
+    {
+      "id": "r01.3",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "Mutations.addItem(command: InputAddItemType!): CartType",
+      "note": "Named the mutation correctly, but expanded only the CartType return type. The input type - the half the question asked for - came from a second, more specific ask."
+    },
+    {
+      "id": "r01.4",
+      "held": "NOT-USED",
+      "backedBy": "KB-DERIVED",
+      "answer": "Same content as row 3; this was a re-ask through --json whose output I failed to parse, so nothing was consumed from it.",
+      "note": "My own parse error, not a base failure. Recorded so the re-ask is not read as a second consultation that produced value."
+    },
+    {
+      "id": "r01.5",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "InputAddItemType: productId (String!), quantity (Int!), storeId (String!), userId (String!) required; cartId/cartName/cartType/currencyCode/cultureName/price optional. userId being required is the field that matters - an addItem without it is rejected.",
+      "note": "Exact and complete. Addressing the type by name rather than asking a prose question is what made the base expand it."
+    },
+    {
+      "id": "r01.6",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "Mutations.changeCartItemQuantity(command: InputChangeCartItemQuantityType!): CartType",
+      "note": ""
+    },
+    {
+      "id": "r01.7",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "InputChangeCartItemQuantityType: lineItemId (String!), quantity (Int!), storeId (String!), userId (String!) required, plus optional cartId/cartName/cartType/currencyCode/cultureName. Used verbatim and it worked first try.",
+      "note": ""
+    },
+    {
+      "id": "r01.8",
+      "held": "UNANSWERED",
+      "backedBy": "KB-DERIVED",
+      "answer": "CartTotalType has isDefaultTotalCurrency (Boolean), total, subTotal, taxTotal, discountTotal (all MoneyType). It has no label and no amount field - the names I had guessed - so the query failed until I introspected it.",
+      "note": "The derived plane expands the field's own return type and its input types, but not object types nested inside them. CartTotalType is reachable only as CartType.cartTotals, so it is named in the base and never described. This is a systematic shape of the gap, not a one-off miss."
+    },
+    {
+      "id": "r01.9",
+      "held": "UNANSWERED",
+      "backedBy": "KB-DERIVED",
+      "answer": "Same gap as row 8; re-asking in different words returned the Query.cart entry again rather than the nested type.",
+      "note": "Re-asking does not help when the entry simply does not contain the nested type - the retrieval was right, the corpus had nothing deeper to give."
+    },
+    {
+      "id": "r02.1",
+      "held": "UNANSWERED",
+      "backedBy": "KB-DERIVED",
+      "answer": "It appears as exactly one order-level entry in CustomerOrder.discounts carrying promotionId, name/promotionName, description, coupon and a money amount (34.899 raw / 34.90 rounded). No percentage rate is stored anywhere on the order.",
+      "note": "The base answered with the /api/order/customerOrders route table, which is true but not an answer to where a discount lands."
+    },
+    {
+      "id": "r02.2",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "CustomerOrderType carries discounts:[OrderDiscountType], discountAmount, discountTotal(+WithTax); OrderLineItemType carries its own discounts, discountAmount, discountTotal. All present on the live order; the line-item ones were 0/empty.",
+      "note": ""
+    },
+    {
+      "id": "r02.3",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "amount, coupon, description, promotionDescription, promotionId, promotionName - exactly as delivered. On the live order amount/description/promotionId/promotionName were populated, coupon null. No percentage field exists.",
+      "note": ""
+    },
+    {
+      "id": "r02.4",
+      "held": "NOT-USED",
+      "backedBy": "KB-DERIVED",
+      "answer": "Did not need the REST route: an existing dynamic promotion (10% off cart subtotal, condition subtotal >= 200, store B2B-store) was activated through the Admin SPA Marketing blade instead.",
+      "note": "Unmoved call count is an artefact: rows 3 and 4 were two kb deliver calls chained inside ONE Bash tool call, so the hook stamped both at call 7. The lookup did happen."
+    },
+    {
+      "id": "r02.5",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "Only the money amount. Neither cart nor order stores the rate: DiscountType and OrderDiscountType have no percent field, while OrderLineItemType does keep taxPercentRate - so the schema keeps a rate for tax and not for discounts.",
+      "note": ""
+    },
+    {
+      "id": "r02.6",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "discounts, discountAmount(+WithTax), discountTotal(+WithTax) exist on OrderLineItemType. On this order every one of them was 0/empty even though the cart-level 10% applied.",
+      "note": ""
+    },
+    {
+      "id": "r02.7",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "Cart DiscountType: amount(Decimal!), amountWithTax, coupon, description, moneyAmount(MoneyType!), moneyAmountWithTax, promotionId - and NO promotionName, unlike OrderDiscountType. Corrected my assumption that the two types matched.",
+      "note": "Explains the 34.8990 vs 34.90 difference between cart and order: amount is a raw Decimal on the cart and a MoneyType on the order."
+    },
+    {
+      "id": "r02.8",
+      "held": "HELD",
+      "backedBy": "KB-EXPERIENTIAL",
+      "answer": "Served KB-996BDF08, another agent's single observation: a cart-subtotal reward lands only on CartType.discounts and discountTotal, line items stay at 0. My cart reproduced it exactly, and the same shape carried through to the placed order. Confirmed it.",
+      "note": ""
+    },
+    {
+      "id": "r02.9",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "The base surfaced only the derived DiscountType table for this wording; the experiential entry KB-D4A064A5 that answers it did not rank. Read it off disk: raw amount at full precision vs rounded discountTotal. Reproduced (34.8990 vs 34.90) and confirmed it.",
+      "note": "Resolver ranking issue, not a content gap: the entry existed and answered the question but lost to derived type tables for this phrasing."
+    },
+    {
+      "id": "r02.10",
+      "held": "NOT-USED",
+      "backedBy": "KB-DERIVED",
+      "answer": "KB-35A09C64 says promotions are re-evaluated on every cart read. I did not test it - I activated the promotion before any cart existed - so I neither confirmed nor disputed it.",
+      "note": "Same batching artefact as row 4: rows 9 and 10 were two kb deliver calls chained inside one Bash tool call, so both carry call count 161."
+    },
+    {
+      "id": "r03.1",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "Three org roles are offered by the B2B storefront on this deployment: Organization maintainer, Purchasing agent, Organization employee. The platform carries many more roles (Organization manager, Store manager, ...), but the storefront's Change role dialog offers only those three.",
+      "note": "The base answered with the /api/members REST surface and named GET /api/members/customers/invite/roles as the operation that returns them, which is right, but the role VALUES are data and not contract, so the derived plane structurally cannot hold them. The pointer was the useful part."
+    },
+    {
+      "id": "r03.2",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "Own-orders and org-orders are two distinct root fields, not one field with an argument: Query.orders vs Query.organizationOrders. The storefront surfaces the split as an All orders / My orders toggle on /account/orders, and that toggle is itself role-gated - present for Organization maintainer, absent for Organization employee.",
+      "note": "The base's answer pointed at the right seam. It could not say which roles get the toggle - that is behaviour, not schema."
+    },
+    {
+      "id": "r03.3",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "changeOrganizationContactRole, lockOrganizationContact, unlockOrganizationContact all exist and the storefront exposes them as the per-row Actions menu (Edit role / Block user / Delete) plus an Invite members button, on /company/members. All four controls render only for Organization maintainer.",
+      "note": "Base named the mutations; which principal may call them is not in the schema."
+    },
+    {
+      "id": "r03.4",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "InputChangeOrganizationContactRoleType.roleIds is [String!] documented as 'Role IDs or names', so the schema deliberately does not enumerate the values. On the wire the storefront sends the role the Change role dialog offered, and the write lands on the SAME platform role assignment the Admin SPA shows under Security > Users > account > Roles.",
+      "note": "The two surfaces are one store; that is the fact the schema could not give me and the one the task actually needed."
+    },
+    {
+      "id": "r04.1",
+      "held": "HELD",
+      "backedBy": "KB-EXPERIENTIAL",
+      "answer": "It holds and it is worse than the entry stated. The Active column is not merely unfaithful to the account lock - it reads the CONTACT's status field, while the lock lives on the security account, and the roster's query never selects any account status field at all. 'Blocked User', whose account is Locked in Admin on both its Status enum and its derived Locked state, renders Active with the green tick and its row menu offers 'Block user' rather than 'Unblock user'.",
+      "note": "Confirmed KB-4B889114 (now 2 observations). The mechanism behind it was not in the base; captured as KB-27B4CD10 and KB-06409954."
+    },
+    {
+      "id": "r04.2",
+      "held": "HELD",
+      "backedBy": "KB-DERIVED",
+      "answer": "UserType carries 30 fields including lockedState (Boolean, 'Account locked state'), lockoutEnd, lockoutEnabled and accessFailedCount. This was the load-bearing part: it proved the members roster's omission is a choice, not a limit, because the page already selects securityAccounts (which returns [UserType]) and takes only id, email and roles from it.",
+      "note": "Derived plane, correct and complete. Saved an introspection round-trip and changed the finding from 'the API cannot say' to 'the API says and the page does not ask'. Captured the consequence as KB-0B6067F8."
+    },
+    {
+      "id": "r04.3",
+      "held": "HELD",
+      "backedBy": "KB-EXPERIENTIAL",
+      "answer": "Yes - the Companies and contacts keyword box is index-backed, and it returned a clean 'No data' for a contact that demonstrably still existed (member id fcac618e-9c62-4133-bfa3-e0501555ab52, reached by sorting the unfiltered list by Name). Security > Users does not go through the index.",
+      "note": "Asked at the moment it mattered - I was about to report a cleanup as complete on the strength of a 'No data'. The entry stopped a false negative. Confirmed KB-7040852E (now 2 observations)."
+    }
+  ]
+}

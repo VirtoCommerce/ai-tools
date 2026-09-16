@@ -1,0 +1,539 @@
+{
+  "base": "C:/_VIRTO/vc-knowledge",
+  "at": "2026-09-14T13:05:06.546Z",
+  "rows": [
+    {
+      "row": "r1.1",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 2,
+      "question": "how do I create a percentage-discount promotion in the Virto Commerce Admin SPA?",
+      "served": [
+        "KB-C0B7076C",
+        "KB-A3CE7FBA"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.2",
+      "held": "HELD",
+      "want": "KB-D61E2FFA",
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 2,
+      "question": "how does the storefront cart show an applied promotion discount in GraphQL?",
+      "served": [
+        "KB-E7790BF6",
+        "KB-8264632C"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.3",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 2,
+      "question": "which GraphQL mutation adds a product to the shopping cart, and what input does it need?",
+      "served": [
+        "KB-C941FAA3",
+        "KB-7A3E98A3"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.4",
+      "held": "NOT-USED",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 2,
+      "question": "which GraphQL mutation adds a product to the shopping cart, and what input does it need?",
+      "served": [
+        "KB-C941FAA3",
+        "KB-7A3E98A3"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.5",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 2,
+      "question": "Mutations.addItem InputAddItemType",
+      "served": [
+        "KB-C941FAA3",
+        "KB-7A3E98A3"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.6",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 2,
+      "question": "which mutation changes the quantity of a line item already in the cart?",
+      "served": [
+        "KB-A1B35892",
+        "KB-17361565"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.7",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 2,
+      "question": "InputChangeCartItemQuantityType fields",
+      "served": [
+        "KB-0181473A",
+        "KB-E3B2F107"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.8",
+      "held": "UNANSWERED",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 2,
+      "question": "what fields does CartTotalType have?",
+      "served": [
+        "KB-93BB76C6",
+        "KB-D61E2FFA"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.9",
+      "held": "UNANSWERED",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 2,
+      "question": "what fields does CartTotalType have?",
+      "served": [
+        "KB-93BB76C6",
+        "KB-D61E2FFA"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.1",
+      "held": "UNANSWERED",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "how does a percentage discount appear on a CustomerOrder in Virto Commerce",
+      "served": [
+        "KB-746B7535",
+        "KB-FF7E4D5B",
+        "KB-A646D086"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.2",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "what fields does the Discount type carry on a CustomerOrder and its line items",
+      "served": [
+        "KB-FF7E4D5B",
+        "KB-59E4B5FC",
+        "KB-D1F02657"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.3",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "OrderDiscountType fields",
+      "served": [
+        "KB-3BD60965",
+        "KB-C37E5F51",
+        "KB-12CEF821"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.4",
+      "held": "NOT-USED",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "how do I create a percentage discount promotion in the marketing module",
+      "served": [
+        "KB-C0B7076C",
+        "KB-FF7E4D5B",
+        "KB-35A09C64"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.5",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "does a cart line item or the cart total keep the discount percentage anywhere, or only the money amount",
+      "served": [
+        "KB-FF7E4D5B",
+        "KB-AB35BCDC",
+        "KB-A3CE7FBA"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.6",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "OrderLineItemType discount fields",
+      "served": [
+        "KB-12CEF821",
+        "KB-C85CD432",
+        "KB-AB35BCDC"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.7",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "DiscountType fields on the cart",
+      "served": [
+        "KB-C495274F",
+        "KB-D4A064A5",
+        "KB-C1024558"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.8",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "where does a cart-level promotion reward land on the cart and how is it rounded",
+      "served": [
+        "KB-996BDF08",
+        "KB-E7790BF6",
+        "KB-FF7E4D5B"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.9",
+      "held": "HELD",
+      "want": "KB-D4A064A5",
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "how many decimal places does a promotion discount amount have on the cart",
+      "served": [
+        "KB-D4A064A5",
+        "KB-C495274F",
+        "KB-A3CE7FBA"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.10",
+      "held": "NOT-USED",
+      "want": null,
+      "anchor": "KB-35A09C64",
+      "because": "this row is NOT-USED: the run asked and did nothing with the answer, so rank 1 records nothing anybody acted on. What the raised floor removed from it was three entries whose whole evidence was the word 'cart', leaving the one entry that matches every content term of the question",
+      "by": "the author of the floor change, 2026-09-12",
+      "limit": 3,
+      "question": "when are promotions re-evaluated on a cart",
+      "served": [
+        "KB-35A09C64"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r3.1",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "What roles can a member of an organization have in the B2B storefront, and what does each one allow?",
+      "served": [
+        "KB-02238DE5",
+        "KB-BAEBCDA7",
+        "KB-4D082C89"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r3.2",
+      "held": "HELD",
+      "want": "KB-6FE58084",
+      "anchor": "KB-6FE58084",
+      "because": "rank 1 was rest-api-order-customerorders, which pass 1 called 'off-topic' and pass 2 'the Admin REST order API, the wrong surface'. Neither grader could see the other's answer or mine. The entry run 03 actually cited by id is KB-6FE58084",
+      "by": "both blind graders, independently",
+      "limit": 3,
+      "question": "How does the storefront xAPI decide whether an order query returns only my orders or the whole organization’s orders?",
+      "served": [
+        "KB-6FE58084",
+        "KB-59E4B5FC",
+        "KB-360127D0"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r3.3",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "Which GraphQL mutations let a storefront user invite, lock, unlock a member or change an organization contact’s role?",
+      "served": [
+        "KB-F59E629F",
+        "KB-3C99FC76",
+        "KB-0B6067F8"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r3.4",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "What is the role object on an organization contact in the storefront API, and what values can it take?",
+      "served": [
+        "KB-4A8606CA",
+        "KB-B769C7B1",
+        "KB-BAEBCDA7"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r6.1",
+      "held": "NOT-USED",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "How does a storefront user create a wishlist scoped to the organization, and what does the scope field accept?",
+      "served": [
+        "KB-E367DA11",
+        "KB-EAA7BA2F",
+        "KB-FA724D31"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r6.2",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "What fields does InputCreateWishlistType have?",
+      "served": [
+        "KB-9A07ABAA",
+        "KB-48EC33A6",
+        "KB-DEEEFD73"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r6.3",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "What arguments does Query.wishlists take and what does its scope argument do?",
+      "served": [
+        "KB-EAA7BA2F",
+        "KB-89E15DD5",
+        "KB-5B7569EF"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r6.4",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "Does Query.sharedWishlist require the caller to be signed in, and what can the holder of a sharingKey do with the list?",
+      "served": [
+        "KB-7A12CF52",
+        "KB-8F43AA9F",
+        "KB-6824BC2B"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r6.5",
+      "held": "HELD",
+      "want": "KB-27B4CD10",
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "Does the Active column on the storefront company members page reflect the security account lock state?",
+      "served": [
+        "KB-27B4CD10",
+        "KB-4B889114",
+        "KB-0B6067F8"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r7.1",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "how does a configurable product become a line item in the cart",
+      "served": [
+        "KB-A1B35892",
+        "KB-59E4B5FC",
+        "KB-57A0330B"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r7.2",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "which REST route searches catalog products by product type",
+      "served": [
+        "KB-C440D4E3",
+        "KB-55319E5A",
+        "KB-23239079"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r7.3",
+      "held": "HELD",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "which money fields does an order line item carry with and without tax",
+      "served": [
+        "KB-12CEF821",
+        "KB-AB35BCDC",
+        "KB-4D26A022"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r7.4",
+      "held": "NOT-USED",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "does the admin order screen show the same totals the storefront charged",
+      "served": [
+        "KB-0DD47BD1",
+        "KB-4982C91F",
+        "KB-FA724D31"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r7.5",
+      "held": "NOT-USED",
+      "want": null,
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "how does a percentage reward land on the money fields of a customer order",
+      "served": [
+        "KB-FF7E4D5B",
+        "KB-CC195687",
+        "KB-360127D0"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r7.6",
+      "held": "HELD",
+      "want": "KB-4869F834",
+      "anchor": null,
+      "because": null,
+      "by": null,
+      "limit": 3,
+      "question": "what shape does a chosen configuration take on an order line item",
+      "served": [
+        "KB-360127D0",
+        "KB-59E4B5FC",
+        "KB-AB35BCDC"
+      ],
+      "miss": false
+    }
+  ]
+}

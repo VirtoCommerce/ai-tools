@@ -1,0 +1,56 @@
+{
+  "_comment": "Arm C - the arena WITH the base. KB_BASE is the whole treatment and VC_MEASURE_OUT is where the log goes; nothing else may differ from arm A's file. The previous version of this comment said exactly that and was FALSE: this file was missing the browser_network_request deny, so arm C had a tool arms A and B did not, in BOTH rounds. Verify with a diff, never with this sentence.",
+  "env": {
+    "VC_MEASURE_OUT": "C:/_VIRTO/_comparison-logs/arm-C",
+    "VC_MEASURE_CAP": "600",
+    "VC_MEASURE_SECRETS": "C:/_VIRTO/vc-mcp-testing-module/.env.playwright.local",
+    "KB_BASE": "C:/_VIRTO/vc-knowledge"
+  },
+  "enabledMcpjsonServers": [
+    "playwright-chrome"
+  ],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:/_VIRTO/vc-kb-lab/vendor/agent-log/tool-log.mjs\""
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "mcp__playwright-chrome__browser_snapshot",
+      "mcp__playwright-chrome__browser_navigate",
+      "mcp__playwright-chrome__browser_navigate_back",
+      "mcp__playwright-chrome__browser_click",
+      "mcp__playwright-chrome__browser_press_key",
+      "mcp__playwright-chrome__browser_type",
+      "mcp__playwright-chrome__browser_fill_form",
+      "mcp__playwright-chrome__browser_hover",
+      "mcp__playwright-chrome__browser_select_option",
+      "mcp__playwright-chrome__browser_wait_for",
+      "mcp__playwright-chrome__browser_take_screenshot",
+      "mcp__playwright-chrome__browser_console_messages",
+      "mcp__playwright-chrome__browser_network_requests",
+      "Bash",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformBackendSourceCode",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__FrontendSourceCode",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformFrontendSourceCode",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__StorefrontDeveloperGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformDeveloperGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__PlatformUserGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__StorefrontUserGuide",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__VirtoCommerce",
+      "mcp__da5c9759-df1a-45ee-b041-dc8d5a358abc__B2BExperts"
+    ],
+    "deny": [
+      "mcp__playwright-chrome__browser_evaluate",
+      "mcp__playwright-chrome__browser_run_code_unsafe",
+      "mcp__playwright-chrome__browser_network_request"
+    ]
+  }
+}

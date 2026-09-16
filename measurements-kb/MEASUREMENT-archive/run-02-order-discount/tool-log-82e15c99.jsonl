@@ -1,0 +1,172 @@
+{"ts":"2026-09-10T19:30:10.345Z","session":"82e15c99","tool":"Bash","target":"cat \"C:/_VIRTO/vc-kb-lab/measurements/kb-live-2026-09/RUN-BRIEF.md\"","ok":true}
+{"ts":"2026-09-10T19:30:18.013Z","session":"82e15c99","tool":"Bash","target":"ls -la && echo \"--- env files ---\" && ls -la .env* 2>/dev/null && echo \"--- bin ---\" && ls -la bin/ && echo \"--- vendor ---\" && ls -la vendor/agent-log/ && echo \"--- MEASUREMENT ---\" && ls -la MEASURE…","ok":true}
+{"ts":"2026-09-10T19:30:25.350Z","session":"82e15c99","tool":"Bash","target":"cat README.md && echo \"=== .env.vcptcore_stable ===\" && cat .env.vcptcore_stable && echo \"=== .mcp.json ===\" && cat .mcp.json","ok":true}
+{"ts":"2026-09-10T19:30:36.398Z","session":"82e15c99","tool":"Bash","target":"cat .claude/settings.json 2>/dev/null; echo \"=== tool-log head ===\"; head -3 MEASUREMENT/tool-log-82e15c99.jsonl","ok":true}
+{"ts":"2026-09-10T19:30:40.887Z","session":"82e15c99","tool":"mcp__ccd_session__mark_chapter","target":"keys:title,summary","ok":true}
+{"ts":"2026-09-10T19:30:46.313Z","session":"82e15c99","tool":"Bash","target":"KB_PHASE=orient TEST_ENV=vcptcore_stable node bin/kb.mjs deliver \"how does a percentage discount appear on a CustomerOrder in Virto Commerce\" 2>&1 | head -60","ok":true}
+{"ts":"2026-09-10T19:30:54.006Z","session":"82e15c99","tool":"Bash","target":"KB_PHASE=orient TEST_ENV=vcptcore_stable node bin/kb.mjs deliver \"what fields does the Discount type carry on a CustomerOrder and its line items\" 2>&1 | head -70","ok":true}
+{"ts":"2026-09-10T19:31:01.040Z","session":"82e15c99","tool":"Bash","target":"KB_PHASE=orient TEST_ENV=vcptcore_stable node bin/kb.mjs deliver \"OrderDiscountType fields\" 2>&1 | head -40; echo \"########\"; KB_PHASE=orient TEST_ENV=vcptcore_stable node bin/kb.mjs deliver \"how do I…","ok":true}
+{"ts":"2026-09-10T19:31:19.627Z","session":"82e15c99","tool":"ToolSearch","target":"select:mcp__playwright-chrome__browser_navigate,mcp__playwright-chrome__browser_snapshot,mcp__playwright-chrome__browser_click,mcp__playwright-chrome__browser_type,mcp__playwright-chrome__browser_fill…","ok":true}
+{"ts":"2026-09-10T19:31:23.632Z","session":"82e15c99","tool":"Bash","target":"ls MEASUREMENT/ && echo \"=== csv ===\" && cat MEASUREMENT/questions-*.csv 2>/dev/null | cut -c1-400","ok":true}
+{"ts":"2026-09-10T19:31:31.293Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_navigate","target":"https://vcptcore-stable-storefront.govirto.com","ok":true}
+{"ts":"2026-09-10T19:31:39.007Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:depth","ok":true}
+{"ts":"2026-09-10T19:31:47.683Z","session":"82e15c99","tool":"Bash","target":"grep -n -iE \"user|email|b2b\" .env.defaults | grep -viE \"password|secret|token|key\" | head -30","ok":true}
+{"ts":"2026-09-10T19:31:54.604Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_navigate","target":"https://vcptcore-stable-storefront.govirto.com/sign-in","ok":true}
+{"ts":"2026-09-10T19:31:58.692Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:target,depth","ok":true}
+{"ts":"2026-09-10T19:32:03.978Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:32:10.114Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Sign in button","ok":true}
+{"ts":"2026-09-10T19:32:20.446Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:target,depth","ok":true}
+{"ts":"2026-09-10T19:32:24.795Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:target","ok":true}
+{"ts":"2026-09-10T19:32:35.703Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:32:41.362Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Sign in button","ok":true}
+{"ts":"2026-09-10T19:32:45.495Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:target,depth","ok":true}
+{"ts":"2026-09-10T19:32:51.926Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_requests","target":"keys:static,filter","ok":true}
+{"ts":"2026-09-10T19:32:54.971Z","session":"82e15c99","tool":"ToolSearch","target":"select:mcp__playwright-chrome__browser_network_request","ok":true}
+{"ts":"2026-09-10T19:33:00.434Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_request","target":"keys:index,part","ok":true}
+{"ts":"2026-09-10T19:33:06.116Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_request","target":"keys:index,part","ok":true}
+{"ts":"2026-09-10T19:33:18.544Z","session":"82e15c99","tool":"Bash","target":"grep -oE \"^[A-Z0-9_]+\" .env.local | sort | head -60","ok":true}
+{"ts":"2026-09-10T19:33:32.406Z","session":"82e15c99","tool":"Bash","target":"grep -nE \"^[A-Z0-9_]*(USER|EMAIL|LOGIN)[A-Z0-9_]*=\" .env.defaults .env.vcptcore_stable .env.vcst 2>/dev/null | grep -viE \"password\" | head -40; echo \"=== names only in .env.local matching EMAIL/USER =…","ok":true}
+{"ts":"2026-09-10T19:33:54.029Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:34:02.933Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:34:09.205Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:34:23.787Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:34:30.624Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:34:37.941Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:34:44.466Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Sign in button","ok":true}
+{"ts":"2026-09-10T19:34:55.702Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_navigate","target":"https://vcptcore-stable.govirto.com","ok":true}
+{"ts":"2026-09-10T19:35:00.938Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:depth","ok":true}
+{"ts":"2026-09-10T19:35:09.522Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_type","target":"Admin login textbox","ok":true}
+{"ts":"2026-09-10T19:35:16.011Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_type","target":"Admin password textbox","ok":true}
+{"ts":"2026-09-10T19:35:26.459Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Log in button","ok":true}
+{"ts":"2026-09-10T19:36:19.003Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:depth","ok":true}
+{"ts":"2026-09-10T19:36:28.037Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Contacts menu item","ok":true}
+{"ts":"2026-09-10T19:36:37.920Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:depth","ok":true}
+{"ts":"2026-09-10T19:36:58.757Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"More menu item","ok":true}
+{"ts":"2026-09-10T19:37:04.381Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:target,depth","ok":true}
+{"ts":"2026-09-10T19:37:11.161Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Marketing menu item","ok":true}
+{"ts":"2026-09-10T19:37:22.077Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:target,depth","ok":true}
+{"ts":"2026-09-10T19:37:33.026Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"KB-LAB 10% off cart over 200 promotion row","ok":true}
+{"ts":"2026-09-10T19:37:37.717Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:target,depth","ok":true}
+{"ts":"2026-09-10T19:37:49.635Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Active toggle block of the promotion blade","ok":true}
+{"ts":"2026-09-10T19:38:02.604Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Promotions list blade","ok":true}
+{"ts":"2026-09-10T19:38:18.106Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Test coupon promotion row","ok":true}
+{"ts":"2026-09-10T19:38:22.929Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Test coupon promotion blade","ok":true}
+{"ts":"2026-09-10T19:38:37.424Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"test promo row","ok":true}
+{"ts":"2026-09-10T19:38:43.199Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"test promo blade","ok":true}
+{"ts":"2026-09-10T19:38:55.118Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:target,depth","ok":true}
+{"ts":"2026-09-10T19:39:11.310Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_tabs","target":"https://vcptcore-stable-storefront.govirto.com/sign-in","ok":true}
+{"ts":"2026-09-10T19:39:17.856Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:39:25.280Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Sign in button","ok":true}
+{"ts":"2026-09-10T19:39:33.841Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Sign-in page main area","ok":true}
+{"ts":"2026-09-10T19:39:55.053Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:40:01.124Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:40:11.568Z","session":"82e15c99","tool":"Bash","target":"grep -nE \"@\" .env.defaults | head -40; echo \"=== vcptcore layer full ===\"; grep -vE \"^\\s*#\" .env.vcptcore_stable | grep -vE \"^\\s*$\"","ok":true}
+{"ts":"2026-09-10T19:40:20.769Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_tabs","target":"keys:action,index","ok":true}
+{"ts":"2026-09-10T19:40:27.910Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Contacts menu item in left nav","ok":true}
+{"ts":"2026-09-10T19:40:40.616Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Contacts list blade","ok":true}
+{"ts":"2026-09-10T19:40:49.524Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_type","target":"Contacts search box","ok":true}
+{"ts":"2026-09-10T19:40:55.813Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Contacts list filtered","ok":true}
+{"ts":"2026-09-10T19:41:04.314Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Elena Mutykova contact row","ok":true}
+{"ts":"2026-09-10T19:41:10.186Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Contact detail blade","ok":true}
+{"ts":"2026-09-10T19:41:17.960Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Accounts widget on contact blade","ok":true}
+{"ts":"2026-09-10T19:41:23.873Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Accounts blade","ok":true}
+{"ts":"2026-09-10T19:41:38.959Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Security menu item in left nav","ok":true}
+{"ts":"2026-09-10T19:41:44.506Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Security users blade","ok":true}
+{"ts":"2026-09-10T19:41:56.135Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_type","target":"Security users search box","ok":true}
+{"ts":"2026-09-10T19:42:47.015Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:43:03.102Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_tabs","target":"keys:action,index","ok":true}
+{"ts":"2026-09-10T19:43:09.745Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:43:17.469Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_fill_form","target":"keys:fields","ok":true}
+{"ts":"2026-09-10T19:43:26.133Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Sign in button","ok":true}
+{"ts":"2026-09-10T19:43:39.420Z","session":"82e15c99","tool":"Bash","target":"KB_PHASE=reproduce TEST_ENV=vcptcore_stable node bin/kb.mjs deliver \"does a cart line item or the cart total keep the discount percentage anywhere, or only the money amount\" 2>&1 | head -45","ok":true}
+{"ts":"2026-09-10T19:43:47.452Z","session":"82e15c99","tool":"Bash","target":"KB_PHASE=reproduce TEST_ENV=vcptcore_stable node bin/kb.mjs deliver \"OrderLineItemType discount fields\" 2>&1 | sed -n '1,70p'","ok":true}
+{"ts":"2026-09-10T19:43:54.177Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_tabs","target":"keys:action,index","ok":true}
+{"ts":"2026-09-10T19:44:00.004Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"More menu item","ok":true}
+{"ts":"2026-09-10T19:44:12.142Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Marketing link in More menu","ok":true}
+{"ts":"2026-09-10T19:44:28.223Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"KB-LAB promotion row","ok":true}
+{"ts":"2026-09-10T19:44:42.514Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:target,depth","ok":true}
+{"ts":"2026-09-10T19:44:59.423Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Active toggle on KB-LAB promotion","ok":true}
+{"ts":"2026-09-10T19:45:23.368Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:45:43.552Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Save button on promotion blade","ok":true}
+{"ts":"2026-09-10T19:46:04.960Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Promotions grid after save","ok":true}
+{"ts":"2026-09-10T19:46:36.857Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:47:21.832Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Save toolbar button","ok":true}
+{"ts":"2026-09-10T19:47:37.002Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:47:56.111Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_tabs","target":"keys:action,index","ok":true}
+{"ts":"2026-09-10T19:48:12.134Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_navigate","target":"https://vcptcore-stable-storefront.govirto.com/search?keyword=printer","ok":true}
+{"ts":"2026-09-10T19:48:17.768Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale,fullPage","ok":true}
+{"ts":"2026-09-10T19:48:45.285Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_navigate","target":"https://vcptcore-stable-storefront.govirto.com/search?keyword=Xerox%20WorkCentre%203215","ok":true}
+{"ts":"2026-09-10T19:48:50.426Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_snapshot","target":"keys:target,depth","ok":true}
+{"ts":"2026-09-10T19:49:02.105Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Increase quantity for Xerox WorkCentre 3215/NI ($149.00)","ok":true}
+{"ts":"2026-09-10T19:49:08.393Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Increase quantity for Epson Expression Premium XP-830 ($199.99)","ok":true}
+{"ts":"2026-09-10T19:49:13.705Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_navigate","target":"https://vcptcore-stable-storefront.govirto.com/cart","ok":true}
+{"ts":"2026-09-10T19:49:19.345Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale,fullPage","ok":true}
+{"ts":"2026-09-10T19:49:29.165Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Discount expander in order summary","ok":true}
+{"ts":"2026-09-10T19:49:34.599Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Order summary panel","ok":true}
+{"ts":"2026-09-10T19:49:43.321Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_requests","target":"keys:static,filter","ok":true}
+{"ts":"2026-09-10T19:49:48.519Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_request","target":"keys:index,part","ok":true}
+{"ts":"2026-09-10T19:49:55.148Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_request","target":"keys:index,part,filename","ok":true}
+{"ts":"2026-09-10T19:50:02.400Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_request","target":"keys:index,part","ok":true}
+{"ts":"2026-09-10T19:50:09.728Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_request","target":"keys:index,part","ok":true}
+{"ts":"2026-09-10T19:50:15.503Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_request","target":"keys:index,part","ok":true}
+{"ts":"2026-09-10T19:50:32.089Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Select a shipping address link","ok":true}
+{"ts":"2026-09-10T19:50:37.234Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:50:43.388Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Organization address row in Select address dialog","ok":true}
+{"ts":"2026-09-10T19:50:50.646Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"OK button in Select address dialog","ok":true}
+{"ts":"2026-09-10T19:51:01.478Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:51:07.331Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Delivery method dropdown","ok":true}
+{"ts":"2026-09-10T19:51:12.878Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:51:21.614Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Fixed Rate (Ground) delivery option","ok":true}
+{"ts":"2026-09-10T19:51:28.377Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Payment method dropdown","ok":true}
+{"ts":"2026-09-10T19:51:35.034Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Test payment method option","ok":true}
+{"ts":"2026-09-10T19:51:41.308Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:51:55.839Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"PLACE ORDER button (single-page checkout)","ok":true}
+{"ts":"2026-09-10T19:52:01.035Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:52:08.621Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_requests","target":"keys:static,filter","ok":true}
+{"ts":"2026-09-10T19:52:14.218Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_request","target":"keys:index,part","ok":true}
+{"ts":"2026-09-10T19:52:24.579Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"SHOW ORDER button","ok":true}
+{"ts":"2026-09-10T19:52:31.891Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale,fullPage","ok":true}
+{"ts":"2026-09-10T19:52:40.138Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Discount expander in order summary","ok":true}
+{"ts":"2026-09-10T19:52:46.324Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"Order summary sidebar","ok":true}
+{"ts":"2026-09-10T19:52:53.030Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_requests","target":"keys:static,filter","ok":true}
+{"ts":"2026-09-10T19:52:58.458Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_request","target":"keys:index,part","ok":true}
+{"ts":"2026-09-10T19:53:19.026Z","session":"82e15c99","tool":"Bash","target":"KB_PHASE=verify TEST_ENV=vcptcore_stable node bin/kb.mjs deliver \"DiscountType fields on the cart\" 2>&1 | sed -n '1,22p'","ok":true}
+{"ts":"2026-09-10T19:53:36.234Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_tabs","target":"keys:action,index","ok":true}
+{"ts":"2026-09-10T19:53:48.081Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"More menu item","ok":true}
+{"ts":"2026-09-10T19:53:59.883Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Orders link in More menu","ok":true}
+{"ts":"2026-09-10T19:54:06.595Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Order CO260910-00001 row in Admin orders grid","ok":true}
+{"ts":"2026-09-10T19:54:12.079Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_requests","target":"keys:static,filter","ok":true}
+{"ts":"2026-09-10T19:54:17.662Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_network_request","target":"keys:index,part","ok":true}
+{"ts":"2026-09-10T19:54:42.792Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:54:52.255Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Discounts widget on the Admin order blade","ok":true}
+{"ts":"2026-09-10T19:54:58.741Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:55:37.126Z","session":"82e15c99","tool":"Bash","target":"cut -d, -f1,7,8 MEASUREMENT/questions-82e15c99.csv","ok":true}
+{"ts":"2026-09-10T19:55:45.618Z","session":"82e15c99","tool":"Bash","target":"node vendor/agent-log/log-row.mjs mark --row 1 \\ --answer \"It appears as exactly one order-level entry in CustomerOrder.discounts carrying promotionId, name/promotionName, description, coupon and a mo…","ok":true}
+{"ts":"2026-09-10T19:55:56.383Z","session":"82e15c99","tool":"Bash","target":"node vendor/agent-log/log-row.mjs mark --row 2 \\ --answer \"CustomerOrderType carries discounts:[OrderDiscountType], discountAmount, discountTotal(+WithTax); OrderLineItemType carries its own discounts…","ok":true}
+{"ts":"2026-09-10T19:56:08.966Z","session":"82e15c99","tool":"Bash","target":"node vendor/agent-log/log-row.mjs mark --row 5 \\ --answer \"Only the money amount. Neither cart nor order stores the rate: DiscountType and OrderDiscountType have no percent field, while OrderLineItemT…","ok":true}
+{"ts":"2026-09-10T19:56:22.460Z","session":"82e15c99","tool":"Bash","target":"MSYS_NO_PATHCONV=1 KB_PHASE=verify TEST_ENV=vcptcore_stable node bin/kb.mjs capture \\ --subject \"cart-subtotal-percentage-reward-on-customerorder\" \\ --question \"when a percentage promotion discounts t…","ok":true}
+{"ts":"2026-09-10T19:56:35.938Z","session":"82e15c99","tool":"Bash","target":"MSYS_NO_PATHCONV=1 KB_PHASE=verify TEST_ENV=vcptcore_stable node bin/kb.mjs capture \\ --subject \"discount-rate-not-persisted-on-order\" \\ --question \"can I tell from a placed order what percentage a pr…","ok":true}
+{"ts":"2026-09-10T19:56:48.107Z","session":"82e15c99","tool":"Bash","target":"MSYS_NO_PATHCONV=1 KB_PHASE=verify TEST_ENV=vcptcore_stable node bin/kb.mjs capture \\ --subject \"order-discount-amount-rounding-split\" \\ --question \"why does the same order discount show two different…","ok":true}
+{"ts":"2026-09-10T19:57:00.942Z","session":"82e15c99","tool":"Bash","target":"MSYS_NO_PATHCONV=1 KB_PHASE=verify TEST_ENV=vcptcore_stable node bin/kb.mjs capture \\ --subject \"discount-row-withtax-zero-without-tax-provider\" \\ --question \"is discountAmountWithTax on an order disc…","ok":true}
+{"ts":"2026-09-10T19:57:09.601Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"More menu item","ok":true}
+{"ts":"2026-09-10T19:57:16.186Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Marketing link in More menu","ok":true}
+{"ts":"2026-09-10T19:57:22.630Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"KB-LAB promotion row","ok":true}
+{"ts":"2026-09-10T19:57:28.991Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:57:37.436Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Active toggle on KB-LAB promotion blade","ok":true}
+{"ts":"2026-09-10T19:57:44.487Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_click","target":"Save toolbar button","ok":true}
+{"ts":"2026-09-10T19:57:49.957Z","session":"82e15c99","tool":"mcp__playwright-chrome__browser_take_screenshot","target":"keys:type,scale","ok":true}
+{"ts":"2026-09-10T19:57:58.760Z","session":"82e15c99","tool":"Bash","target":"node vendor/agent-log/log-row.mjs check 2>&1 | tail -20; echo \"=== reconcile ===\"; node vendor/agent-log/reconcile.mjs MEASUREMENT 2>&1 | tail -40","ok":true}
+{"ts":"2026-09-10T19:58:11.060Z","session":"82e15c99","tool":"Bash","target":"node vendor/agent-log/log-row.mjs mark --row 4 \\ --answer \"Did not need the REST route: an existing dynamic promotion (10% off cart subtotal, condition subtotal >= 200, store B2B-store) was activated …","ok":true}
+{"ts":"2026-09-10T19:58:28.205Z","session":"82e15c99","tool":"Bash","target":"cut -d, -f1,14,19 MEASUREMENT/questions-82e15c99.csv | tail -5; echo \"=== kb stat ===\"; TEST_ENV=vcptcore_stable node bin/kb.mjs stat 2>&1 | tail -20","ok":true}
+{"ts":"2026-09-10T19:58:41.550Z","session":"82e15c99","tool":"Bash","target":"KB_PHASE=verify TEST_ENV=vcptcore_stable node bin/kb.mjs deliver \"where does a cart-level promotion reward land on the cart and how is it rounded\" 2>&1 | head -50","ok":true}
+{"ts":"2026-09-10T19:58:50.313Z","session":"82e15c99","tool":"Bash","target":"KB_PHASE=verify TEST_ENV=vcptcore_stable node bin/kb.mjs deliver \"how many decimal places does a promotion discount amount have on the cart\" 2>&1 | head -12; echo \"#####\"; KB_PHASE=verify TEST_ENV=vcp…","ok":true}
+{"ts":"2026-09-10T19:59:00.672Z","session":"82e15c99","tool":"Bash","target":"cd /c/_VIRTO/vc-knowledge && sed -n '1,40p' captured/KB-D4A064A5.md; echo \"#############\"; sed -n '1,40p' captured/KB-35A09C64.md","ok":true}
+{"ts":"2026-09-10T19:59:16.537Z","session":"82e15c99","tool":"Bash","target":"KB_PHASE=verify TEST_ENV=vcptcore_stable node bin/kb.mjs confirm KB-996BDF08 --deployment vcptcore_stable 2>&1 | tail -6; echo \"#####\"; KB_PHASE=verify TEST_ENV=vcptcore_stable node bin/kb.mjs confirm…","ok":true}
+{"ts":"2026-09-10T19:59:21.371Z","session":"82e15c99","tool":"Bash","target":"cut -d, -f1,7,8 MEASUREMENT/questions-82e15c99.csv | tail -4","ok":true}
+{"ts":"2026-09-10T19:59:34.012Z","session":"82e15c99","tool":"Bash","target":"node vendor/agent-log/log-row.mjs mark --row 8 \\ --answer \"Served KB-996BDF08, another agent's single observation: a cart-subtotal reward lands only on CartType.discounts and discountTotal, line items…","ok":true}
+{"ts":"2026-09-10T19:59:41.084Z","session":"82e15c99","tool":"Bash","target":"node vendor/agent-log/log-row.mjs check 2>&1 | tail -14; echo \"=== reconcile ===\"; node vendor/agent-log/reconcile.mjs MEASUREMENT 2>&1 | sed -n '1,20p'","ok":true}
+{"ts":"2026-09-10T19:59:49.467Z","session":"82e15c99","tool":"Bash","target":"node vendor/agent-log/log-row.mjs mark --row 10 \\ --answer \"KB-35A09C64 says promotions are re-evaluated on every cart read. I did not test it - I activated the promotion before any cart existed - so …","ok":true}
+{"ts":"2026-09-10T20:00:03.902Z","session":"82e15c99","tool":"Write","target":"C:\\Users\\Danil\\.claude\\projects\\C---VIRTO-vc-kb-lab\\memory\\probe-secret-names-without-submitting.md","ok":true}
+{"ts":"2026-09-10T20:00:15.414Z","session":"82e15c99","tool":"Write","target":"C:\\Users\\Danil\\.claude\\projects\\C---VIRTO-vc-kb-lab\\memory\\storefront-signin-vcptcore-stable.md","ok":true}
+{"ts":"2026-09-10T20:00:23.838Z","session":"82e15c99","tool":"Bash","target":"cd /c/Users/Danil/.claude/projects/C---VIRTO-vc-kb-lab/memory && cat >> MEMORY.md <<'EOF' - [Probe secret names without submitting](probe-secret-names-without-submitting.md) — the echoed fill() code s…","ok":true}
+{"ts":"2026-09-10T20:00:29.280Z","session":"82e15c99","tool":"mcp__ccd_session__mark_chapter","target":"keys:title,summary","ok":true}

@@ -1,0 +1,296 @@
+{
+  "base": "C:/_VIRTO/vc-knowledge",
+  "at": "2026-09-11T14:51:38.283Z",
+  "rows": [
+    {
+      "row": "r1.1",
+      "held": "HELD",
+      "want": null,
+      "limit": 2,
+      "question": "how do I create a percentage-discount promotion in the Virto Commerce Admin SPA?",
+      "served": [
+        "KB-C0B7076C",
+        "KB-B321AACD"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.2",
+      "held": "HELD",
+      "want": "KB-0F2210AE",
+      "limit": 2,
+      "question": "how does the storefront cart show an applied promotion discount in GraphQL?",
+      "served": [
+        "KB-AE6BEE53",
+        "KB-198E4A55"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.3",
+      "held": "HELD",
+      "want": null,
+      "limit": 2,
+      "question": "which GraphQL mutation adds a product to the shopping cart, and what input does it need?",
+      "served": [
+        "KB-C941FAA3",
+        "KB-7A3E98A3"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.4",
+      "held": "NOT-USED",
+      "want": null,
+      "limit": 2,
+      "question": "which GraphQL mutation adds a product to the shopping cart, and what input does it need?",
+      "served": [
+        "KB-C941FAA3",
+        "KB-7A3E98A3"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.5",
+      "held": "HELD",
+      "want": null,
+      "limit": 2,
+      "question": "Mutations.addItem InputAddItemType",
+      "served": [
+        "KB-C941FAA3",
+        "KB-7A3E98A3"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.6",
+      "held": "HELD",
+      "want": null,
+      "limit": 2,
+      "question": "which mutation changes the quantity of a line item already in the cart?",
+      "served": [
+        "KB-17361565",
+        "KB-EE4185D8"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.7",
+      "held": "HELD",
+      "want": null,
+      "limit": 2,
+      "question": "InputChangeCartItemQuantityType fields",
+      "served": [
+        "KB-0181473A",
+        "KB-E3B2F107"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.8",
+      "held": "UNANSWERED",
+      "want": null,
+      "limit": 2,
+      "question": "what fields does CartTotalType have?",
+      "served": [
+        "KB-93BB76C6",
+        "KB-D61E2FFA"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r1.9",
+      "held": "UNANSWERED",
+      "want": null,
+      "limit": 2,
+      "question": "what fields does CartTotalType have?",
+      "served": [
+        "KB-93BB76C6",
+        "KB-D61E2FFA"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.1",
+      "held": "UNANSWERED",
+      "want": null,
+      "limit": 3,
+      "question": "how does a percentage discount appear on a CustomerOrder in Virto Commerce",
+      "served": [
+        "KB-746B7535",
+        "KB-7C35392D",
+        "KB-D1F02657"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.2",
+      "held": "HELD",
+      "want": null,
+      "limit": 3,
+      "question": "what fields does the Discount type carry on a CustomerOrder and its line items",
+      "served": [
+        "KB-D1F02657",
+        "KB-4A446E42",
+        "KB-FF7E4D5B"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.3",
+      "held": "HELD",
+      "want": null,
+      "limit": 3,
+      "question": "OrderDiscountType fields",
+      "served": [
+        "KB-3BD60965",
+        "KB-C37E5F51",
+        "KB-12CEF821"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.4",
+      "held": "NOT-USED",
+      "want": null,
+      "limit": 3,
+      "question": "how do I create a percentage discount promotion in the marketing module",
+      "served": [
+        "KB-C0B7076C",
+        "KB-B321AACD",
+        "KB-9C4FD9E4"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.5",
+      "held": "HELD",
+      "want": null,
+      "limit": 3,
+      "question": "does a cart line item or the cart total keep the discount percentage anywhere, or only the money amount",
+      "served": [
+        "KB-D1F02657",
+        "KB-12CEF821",
+        "KB-D61E2FFA"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.6",
+      "held": "HELD",
+      "want": null,
+      "limit": 3,
+      "question": "OrderLineItemType discount fields",
+      "served": [
+        "KB-12CEF821",
+        "KB-C85CD432",
+        "KB-D1F02657"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.7",
+      "held": "HELD",
+      "want": null,
+      "limit": 3,
+      "question": "DiscountType fields on the cart",
+      "served": [
+        "KB-C495274F",
+        "KB-D61E2FFA",
+        "KB-AE6BEE53"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.8",
+      "held": "HELD",
+      "want": null,
+      "limit": 3,
+      "question": "where does a cart-level promotion reward land on the cart and how is it rounded",
+      "served": [
+        "KB-996BDF08",
+        "KB-FF7E4D5B",
+        "KB-D4A064A5"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.9",
+      "held": "HELD",
+      "want": "KB-D4A064A5",
+      "limit": 3,
+      "question": "how many decimal places does a promotion discount amount have on the cart",
+      "served": [
+        "KB-C495274F",
+        "KB-AE6BEE53",
+        "KB-1556D69D"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r2.10",
+      "held": "NOT-USED",
+      "want": null,
+      "limit": 3,
+      "question": "when are promotions re-evaluated on a cart",
+      "served": [
+        "KB-C0B7076C",
+        "KB-35A09C64",
+        "KB-FF7E4D5B"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r3.1",
+      "held": "HELD",
+      "want": null,
+      "limit": 3,
+      "question": "What roles can a member of an organization have in the B2B storefront, and what does each one allow?",
+      "served": [
+        "KB-02238DE5",
+        "KB-4F55B270",
+        "KB-B769C7B1"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r3.2",
+      "held": "HELD",
+      "want": null,
+      "limit": 3,
+      "question": "How does the storefront xAPI decide whether an order query returns only my orders or the whole organization’s orders?",
+      "served": [
+        "KB-746B7535",
+        "KB-C37E5F51",
+        "KB-6FE58084"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r3.3",
+      "held": "HELD",
+      "want": null,
+      "limit": 3,
+      "question": "Which GraphQL mutations let a storefront user invite, lock, unlock a member or change an organization contact’s role?",
+      "served": [
+        "KB-F59E629F",
+        "KB-3C99FC76",
+        "KB-F51DA09D"
+      ],
+      "miss": false
+    },
+    {
+      "row": "r3.4",
+      "held": "HELD",
+      "want": null,
+      "limit": 3,
+      "question": "What is the role object on an organization contact in the storefront API, and what values can it take?",
+      "served": [
+        "KB-B769C7B1",
+        "KB-02238DE5",
+        "KB-08DFEDF2"
+      ],
+      "miss": false
+    }
+  ]
+}

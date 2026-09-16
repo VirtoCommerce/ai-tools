@@ -1,0 +1,23 @@
+session:   f00f5968
+questions: 4 rows
+tool log:  217 calls (217 lines, batch actions unpacked)
+
+1. COVERAGE
+   before the first row:  9 call(s) — work done before anything was logged
+   after the last row:    31 call(s) — tail-end work, normally the report and the write-up
+   calls per row:         median 53, max 85, rows with an empty window 0
+
+2. UNDER-LOGGED WINDOWS   (a window far above the median covered questions that were not written down)
+   none above 159 calls. The log kept pace with the work.
+
+3. METHOD NOT FOUND IN ITS WINDOW   (heuristic token match — a hit is a question, not a verdict)
+   every row's named method appears among the calls it is attributed.
+
+4. TOOL MIX BY PHASE
+   orient       85 calls   mcp__playwright-chrome__browser_snapshot 28 · mcp__playwright-chrome__browser_click 23 · Bash 13 · mcp__playwright-chrome__browser_navigate 5 · mcp__playwright-chrome__browser_fill_form 2 · mcp__playwright-chrome__browser_press_key 2 · mcp__playwright-chrome__browser_network_request 2 · mcp__playwright-chrome__browser_tabs 2 · Write 2 · ToolSearch 1 · mcp__playwright-chrome__browser_evaluate 1 · mcp__playwright-chrome__browser_type 1 · mcp__playwright-chrome__browser_network_requests 1 · mcp__playwright-chrome__browser_take_screenshot 1 · Edit 1
+   understand   39 calls   mcp__playwright-chrome__browser_click 11 · mcp__playwright-chrome__browser_snapshot 10 · Bash 5 · mcp__playwright-chrome__browser_navigate 5 · mcp__playwright-chrome__browser_network_request 4 · mcp__playwright-chrome__browser_network_requests 2 · mcp__playwright-chrome__browser_type 1 · mcp__playwright-chrome__browser_tabs 1
+   change       53 calls   Bash 16 · mcp__playwright-chrome__browser_snapshot 12 · mcp__playwright-chrome__browser_click 10 · mcp__playwright-chrome__browser_type 5 · mcp__playwright-chrome__browser_navigate 4 · mcp__playwright-chrome__browser_tabs 2 · mcp__playwright-chrome__browser_press_key 1 · mcp__playwright-chrome__browser_network_requests 1 · mcp__playwright-chrome__browser_network_request 1 · Write 1
+   restore      31 calls   Bash 28 · mcp__playwright-chrome__browser_tabs 1 · mcp__playwright-chrome__browser_navigate 1 · mcp__playwright-chrome__browser_snapshot 1
+
+Nothing above is a pass or a fail. Report 2 is where unlogged questions show up, and
+report 3 is where a row and the record of what happened do not line up.

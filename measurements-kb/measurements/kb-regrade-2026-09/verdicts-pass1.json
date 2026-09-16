@@ -1,0 +1,167 @@
+{
+  "partA": [
+    { "id": "r01.1", "verdict": "PARTLY", "why": "The REST table names POST /api/marketing/promotions as the creation call, but nothing served touches the Admin SPA flow, the promotion body, or how a percentage reward is expressed; the createOrderFromCart entry is off-topic." },
+    { "id": "r01.2", "verdict": "PARTLY", "why": "Query.cart is the right read and points onward to CartType, but no served entry names a discount field (CartType.discounts, discountTotal, LineItemType.discounts); initializeCartPayment is off-topic." },
+    { "id": "r01.3", "verdict": "PARTLY", "why": "addItem is named with its argument type InputAddItemType!, which answers 'which mutation', but the fields that input needs are not served, only a pointer to the type's own entry." },
+    { "id": "r01.4", "verdict": "PARTLY", "why": "Same served pair as r01.3 and the same gap: the mutation is named, the InputAddItemType fields are not; the repeat ask suggests the first answer did not suffice." },
+    { "id": "r01.5", "verdict": "PARTLY", "why": "The asker typed the input type's name; the served entries are the two mutation signatures that reference InputAddItemType, not the type's field list." },
+    { "id": "r01.6", "verdict": "ANSWERED", "why": "changeCartItemQuantity is served with its signature, and the question asked only which mutation, not what its input contains." },
+    { "id": "r01.7", "verdict": "PARTLY", "why": "Both served entries are mutation signatures that name InputChangeCartItemQuantityType (or its bulk sibling) and point to its entry; the fields themselves are not served." },
+    { "id": "r01.8", "verdict": "NOT-ANSWERED", "why": "Neither Query.cart nor Query.carts names CartTotalType or any of its fields; a query's argument list says nothing about a type two hops away under CartType.cartTotals." },
+    { "id": "r01.9", "verdict": "NOT-ANSWERED", "why": "Identical to r01.8; the repeat returned the same two query signatures and still nothing about CartTotalType." },
+    { "id": "r02.1", "verdict": "PARTLY", "why": "The customerOrders table identifies GET /api/order/customerOrders/{id} as the read that returns a CustomerOrder, but neither it nor the payments table mentions any discount field or where a percentage reward lands; this is the weakest PARTLY in the set." },
+    { "id": "r02.2", "verdict": "PARTLY", "why": "CustomerOrderType shows discounts is [OrderDiscountType!]! and items is [OrderLineItemType!]!, so the asker learns which type to look up, but the Discount type's own fields are not served; CustomerOrderConnection is off-topic." },
+    { "id": "r02.3", "verdict": "ANSWERED", "why": "OrderDiscountType is served with all six fields and their types; OrderShipmentType in the second slot is noise." },
+    { "id": "r02.4", "verdict": "PARTLY", "why": "As r01.1: the REST table names the creation operation and says it adds a dynamic promotion, but the body shape and the percentage reward are absent; createOrderFromCart is off-topic." },
+    { "id": "r02.5", "verdict": "PARTLY", "why": "The question is about the cart's line item and total; the served CustomerOrderType and OrderLineItemType are order-side, so the asker can see only by analogy that discount fields are money-typed with no rate (while taxPercentRate exists), and still has to check LineItemType, CartType and DiscountType." },
+    { "id": "r02.6", "verdict": "ANSWERED", "why": "OrderLineItemType is served in full, including discountAmount, discountAmountWithTax, discounts, discountTotal and discountTotalWithTax." },
+    { "id": "r02.7", "verdict": "ANSWERED", "why": "DiscountType is served with its seven fields and CartType confirms discounts is [DiscountType!]!." },
+    { "id": "r02.8", "verdict": "PARTLY", "why": "KB-996BDF08 answers where the reward lands (CartType.discounts and discountTotal, never the line items) but says nothing about rounding; CartConnection is off-topic." },
+    { "id": "r02.9", "verdict": "PARTLY", "why": "DiscountType shows amount is Decimal! beside moneyAmount MoneyType!, which hints at two precisions, but no served entry states how many decimal places either carries." },
+    { "id": "r02.10", "verdict": "ANSWERED", "why": "KB-35A09C64 states promotions are re-evaluated on every storefront cart read and shows an isActive flip appearing on the next Query.cart with no mutation between." },
+    { "id": "r03.1", "verdict": "PARTLY", "why": "The members table names GET /api/members/customers/invite/roles as the call that lists invitable roles, but no role name and nothing about what any role allows is served; InventoryInfo is unrelated." },
+    { "id": "r03.2", "verdict": "PARTLY", "why": "Query.organizationOrders with its optional organizationId shows a separate organization-scope query exists, but nothing served explains what decides the scope (role, permission, default organization); the REST orders table is off-topic." },
+    { "id": "r03.3", "verdict": "PARTLY", "why": "Two of the four asked-for mutations are served (lockOrganizationContact, unlockOrganizationContact); inviteUser and changeOrganizationContactRole are not, although the latter exists in the packet." },
+    { "id": "r03.4", "verdict": "PARTLY", "why": "The served input type says roles are assigned as 'Role IDs or names' strings, which touches what values are accepted on write, but the role object as read on a contact (RoleType under securityAccounts.roles) and its possible values are not served." },
+    { "id": "r04.1", "verdict": "ANSWERED", "why": "KB-4B889114 answers directly: an account locked in Admin without the storefront Block action still renders Active with the green tick, while a storefront Block shows Blocked." },
+    { "id": "r04.2", "verdict": "ANSWERED", "why": "UserType is served with all 30 fields; GraphQLSettingsType in the second slot is noise." },
+    { "id": "r04.3", "verdict": "ANSWERED", "why": "KB-7040852E answers both halves: the keyword box goes through the member search index while the list reads the database, and a contact with a missing index entry is in the list but absent from search." }
+  ],
+  "partB": [
+    {
+      "id": "KB-02238DE5",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "Anchor Mutations.changeOrganizationContactRole is not exercised by the claim, which is about what a role gates, not how roles change. The behaviour lives in the storefront theme, so appliesTo should carry a storefront version; a customised theme can guard routes and refute it."
+    },
+    {
+      "id": "KB-06409954",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "Fourth telling of the lock-state divergence alongside KB-4B889114, KB-27B4CD10 and KB-0B6067F8; merge them. Calls the account Status an enum while KB-E17E4CEF calls the same field a free string. Anchors cover only the storefront lock mutations, not the Admin lock and Status writes the body also describes."
+    },
+    {
+      "id": "KB-0B6067F8",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "The field's existence is already in the derived UserType entry; the experiential value is that the roster query omits it, which is a storefront-version fact and should be pinned. Repeats the claim that contact status stays Approved for a PendingApproval account, which KB-4D082C89 contradicts for invitees."
+    },
+    {
+      "id": "KB-27B4CD10",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "Contradicts KB-4D082C89: here a never-completed invitee has account Status PendingApproval, contact status Approved and renders Active; there the same person has an empty Status, contact status Invited and renders 'Invited'. One is wrong or the scenarios differ, and neither says so. Anchor 'GET /company/members' is a storefront route written as a REST coordinate. Third telling of the finding in KB-4B889114 and KB-06409954."
+    },
+    {
+      "id": "KB-35A09C64",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "Generalises 'every cart read' from a single isActive flip; acceptable as a mechanism, but appliesTo carries no platform or xAPI version for behaviour that lives in the cart aggregate, and a deployment with cart response caching would refute it."
+    },
+    {
+      "id": "KB-4982C91F",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "The 348.99 / 34.8990 / 34.90 figures are worked examples, not fixtures, so not MIXED. Anchor Discount.discountAmount is ambiguous because the cart and the order both expose a Discount model on the REST surface; qualify it as the order's."
+    },
+    {
+      "id": "KB-4B889114",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "States THAT the column is unfaithful; KB-27B4CD10 states WHY (the roster projects contact status and never selects an account field). Merge into one entry carrying the mechanism, and keep this entry's Block/Unblock round-trip as evidence."
+    },
+    {
+      "id": "KB-4D082C89",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "Contradicts KB-27B4CD10 on what a pending invitee looks like on both surfaces (see that entry). Anchor 'GET /company/members' is not a REST coordinate. Two facts fused: invite provisions an account immediately with the chosen role, and how that account renders on each surface; only the second answers the question field."
+    },
+    {
+      "id": "KB-6CC1EFE6",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "Two facts fused: the no-cascade between account and contact deletes (the mechanism) and 'a contact created by an invitation is often not in the member search index', which is a frequency observed on this deployment, already recorded in KB-7040852E, and not shown to be a mechanism. The contact delete path the body describes has no anchor."
+    },
+    {
+      "id": "KB-7040852E",
+      "kind": "MECHANISM",
+      "transfer": "UNCLEAR",
+      "channel": "RIGHT",
+      "note": "Stated unconditionally, but keyword search goes through the index only where member indexed search is enabled and the Member document type is indexed; on a deployment without it the keyword box reads the database and the claim fails. The body should name that condition. Anchor 'Admin SPA: Contacts > Companies and contacts' is a breadcrumb, not a coordinate."
+    },
+    {
+      "id": "KB-996BDF08",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": null
+    },
+    {
+      "id": "KB-A646D086",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "The taxProvider axis was never varied, so the entry cannot tell whether the zero is caused by the missing tax provider or is a general gap in how the order discount row is populated; the subject line asserts the cause. Safe as scoped, but the causal framing is not supported by the body."
+    },
+    {
+      "id": "KB-B769C7B1",
+      "kind": "MIXED",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "'here 3 of the ~15' is this deployment's role catalogue and will rot; drop it. The explanation that the storefront dialog 'lists what GET /api/members/customers/invite/roles returns' is asserted, not shown: nothing in the body observes the storefront calling that platform endpoint, and a storefront on the xAPI would not call it directly."
+    },
+    {
+      "id": "KB-BC6FC633",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "Anchor 'Admin SPA: Security > Users > <account> > Roles' is a breadcrumb, not a coordinate; PUT /api/platform/security/users alone can carry the anchor."
+    },
+    {
+      "id": "KB-CA4C93E4",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "The negative claim is mostly derivable from the derived OrderDiscountType field list; the experiential value is that promotionId points at a mutable definition and description is free text, which the body does carry. Keep, but say the absence was checked on both the GraphQL and REST models it anchors."
+    },
+    {
+      "id": "KB-D4A064A5",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "Omits the fix: DiscountType also carries moneyAmount (MoneyType), the rounded sibling one field away from amount; an asker acting on this entry should be told to select that instead of re-rounding by hand."
+    },
+    {
+      "id": "KB-E17E4CEF",
+      "kind": "MECHANISM",
+      "transfer": "UNCLEAR",
+      "channel": "RIGHT",
+      "note": "'Fixed four-item picker' is not the mechanism: the picker is populated from the platform's account-statuses dictionary setting, whose default is those four values, so a deployment that added Locked or PendingApproval to the setting refutes the entry as written. The durable claim is that the default list omits the values the lock and invite flows write. Anchor GET /api/platform/security/users is a loose fit for a blade-level claim."
+    },
+    {
+      "id": "KB-FA724D31",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": "Anchor Mutations.deleteOrganizationContact should be checked against the schema: nothing in the packet's derived plane names it, and the behaviour described (membership removed, contact and account untouched) is that of a remove-member-from-organization operation. If the name is wrong the entry has no real coordinate."
+    },
+    {
+      "id": "KB-FF7E4D5B",
+      "kind": "MECHANISM",
+      "transfer": "TRANSFERABLE",
+      "channel": "RIGHT",
+      "note": null
+    }
+  ],
+  "sawSomethingIShouldNotHave": false,
+  "overall": "Part A: 8 of 26 answered, 16 partly, 2 not. Every full answer was either an exact type-name lookup that landed (OrderDiscountType, OrderLineItemType, DiscountType, UserType) or an experiential entry an earlier run had written; the 'how do I' and 'where does it appear' questions got REST tables and mutation signatures that name the neighbourhood and stop, exact type names sometimes lost to the mutations that mention them (CartTotalType, InputAddItemType, InputChangeCartItemQuantityType), and the second served slot was off-topic in 11 of 26 rows. Part B: 18 mechanisms and 1 mixed, all on the observation channel and rightly so, 17 transferable and 2 dependent on configuration the body never names; the faults are one direct contradiction about pending invitees (KB-27B4CD10 vs KB-4D082C89), the same lock-state finding written four times, three anchors that are breadcrumbs or routes rather than coordinates plus one that may not exist, and two causal explanations the bodies never demonstrate. The writers followed the mechanism instruction well; retrieval and deduplication did not keep up."
+}

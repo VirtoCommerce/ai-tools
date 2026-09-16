@@ -1,0 +1,23 @@
+session:   6d4f2631
+questions: 6 rows
+tool log:  302 calls (302 lines, batch actions unpacked)
+
+1. COVERAGE
+   before the first row:  7 call(s) — work done before anything was logged
+   after the last row:    7 call(s) — tail-end work, normally the report and the write-up
+   calls per row:         median 50, max 134, rows with an empty window 0
+
+2. UNDER-LOGGED WINDOWS   (a window far above the median covered questions that were not written down)
+   none above 150 calls. The log kept pace with the work.
+
+3. METHOD NOT FOUND IN ITS WINDOW   (heuristic token match — a hit is a question, not a verdict)
+   every row's named method appears among the calls it is attributed.
+
+4. TOOL MIX BY PHASE
+   orient       95 calls   Bash 25 · mcp__playwright-chrome__browser_network_request 16 · mcp__playwright-chrome__browser_network_requests 14 · mcp__playwright-chrome__browser_snapshot 12 · mcp__playwright-chrome__browser_click 12 · mcp__playwright-chrome__browser_navigate 7 · mcp__playwright-chrome__browser_tabs 3 · mcp__playwright-chrome__browser_type 3 · mcp__playwright-chrome__browser_fill_form 2 · Write 1
+   locate      134 calls   Bash 49 · mcp__playwright-chrome__browser_snapshot 22 · mcp__playwright-chrome__browser_network_request 20 · mcp__playwright-chrome__browser_navigate 15 · mcp__playwright-chrome__browser_click 13 · mcp__playwright-chrome__browser_network_requests 8 · mcp__playwright-chrome__browser_tabs 3 · Write 2 · mcp__playwright-chrome__browser_wait_for 2
+   verify       59 calls   Bash 31 · mcp__playwright-chrome__browser_click 10 · mcp__playwright-chrome__browser_snapshot 9 · mcp__playwright-chrome__browser_tabs 3 · mcp__playwright-chrome__browser_network_requests 2 · mcp__playwright-chrome__browser_network_request 2 · mcp__playwright-chrome__browser_navigate 1 · mcp__playwright-chrome__browser_type 1
+   report        7 calls   Bash 7
+
+Nothing above is a pass or a fail. Report 2 is where unlogged questions show up, and
+report 3 is where a row and the record of what happened do not line up.

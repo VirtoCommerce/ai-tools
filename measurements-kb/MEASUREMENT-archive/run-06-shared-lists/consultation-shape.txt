@@ -1,0 +1,15 @@
+run                        calls  consults  kb calls  largest silence  consults in middle 60%
+run-01-promotions             81         9        16               22                       8
+                           at calls: 7, 27, 40, 41, 43, 51, 52, 57, 58
+run-02-order-discount        172         8        14               72                       3
+                           at calls: 5, 6, 7, 80, 81, 132, 160, 161
+run-03-org-roles             319         4        13              308                       0
+                           at calls: 7, 8, 9, 10
+run-04-member-state          177         3        17              100                       1
+                           at calls: 7, 47, 148
+run-05-invitation            217         4        25               84                       2
+                           at calls: 9, 94, 133, 186
+run-06-shared-lists          248         6        27               96                       3
+                           at calls: 9, 11, 12, 93, 94, 191
+MEASUREMENT (current)        248         6        27               96                       3
+                           at calls: 9, 11, 12, 93, 94, 191
