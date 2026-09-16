@@ -291,6 +291,46 @@ export async function uploadAsset(folderUrl, fileName, bytes, contentType, { exp
   return info;
 }
 
+/**
+ * Multipart upload to a **file-experience-api scope** (`POST /api/files/{scope}`) — a different
+ * surface from `uploadAsset` above: the platform asset store is folder-addressed and public, whereas
+ * a file-exp-api scope is a named, size/extension-constrained bucket whose files carry an owner
+ * stamp, and which a module then CLAIMS (e.g. VCST-5730 `sales-rep-documents`).
+ *
+ * The endpoint answers **200 with `succeeded:false`** for a rejected file (unknown scope, oversize,
+ * disallowed extension), so a naive status check reads a refusal as a success. This helper therefore
+ * throws on `succeeded:false` and surfaces the `errorCode` — `INVALID_SCOPE` in particular means the
+ * scope is absent from the deployment's `FileUpload:Scopes` appsettings, which no API call can fix.
+ * Returns the upload descriptor `{ id, name, size, contentType, url, publicUrl, ... }`.
+ */
+export async function uploadScopedFile(scope, fileName, bytes, contentType, { expectStatus = [200, 201] } = {}) {
+  if (DRY_RUN) {
+    verbose(`[DRY] upload ${fileName} (${bytes?.length ?? 0}B) → scope ${scope}`);
+    return { id: `dry-file-${Math.random().toString(36).slice(2, 10)}`, name: fileName, size: bytes?.length ?? 0, _dryRun: true };
+  }
+  const form = new FormData();
+  form.append('file', new Blob([bytes], { type: contentType || 'application/octet-stream' }), fileName);
+  const res = await fetch(`${BACK_URL}/api/files/${encodeURIComponent(scope)}`, {
+    method: 'POST', headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/json' }, body: form,
+  });
+  if (!expectStatus.includes(res.status)) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`upload ${fileName} → scope ${scope}: ${res.status}: ${text.slice(0, 300)}`);
+  }
+  const j = await res.json().catch(() => null);
+  const info = Array.isArray(j) ? j[0] : j;
+  if (!info) throw new Error(`upload ${fileName} → scope ${scope}: empty response`);
+  if (info.succeeded === false || !info.id) {
+    const code = info.errorCode || 'UNKNOWN';
+    const hint = code === 'INVALID_SCOPE'
+      ? ` — the "${scope}" scope is not configured in this deployment's FileUpload:Scopes appsettings`
+      + ' (a config + redeploy change in vc-deploy-dev; no API call can add it)'
+      : '';
+    throw new Error(`upload ${fileName} rejected by scope ${scope}: ${code} ${info.errorMessage || ''}${hint}`);
+  }
+  return info;
+}
+
 /** True if an asset URL currently serves 200 (absolute or BACK_URL-relative). Cache-busted to
  * dodge a stale CDN negative-cache from a prior missing file. */
 export async function assetUrlOk(url) {

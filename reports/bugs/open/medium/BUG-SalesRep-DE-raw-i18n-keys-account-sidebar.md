@@ -35,6 +35,28 @@ Evidence: `reports/tickets/Sprint26-15/VCST-5586/screenshots/SR-CP-056-de-locali
 
 ---
 
+## Update 2026-08-20 — reproduces in **ENGLISH**, on a clean load, for a **buyer** only
+
+Found while testing VCST-5724 on **vcst-qa** @ theme `2.56.0-pr-2438-ef16` (a different env AND a different build from the original report).
+
+Signed in as a **buyer** (`agent-test-multiorg-20260615@yopmail.com`), on a clean full load of `{{FRONT_URL}}/account/lists` with the storefront in **English**, three sidebar links render raw keys:
+
+- `Quotes.navigation.route_name`
+- `Push_messages.menu_item_name`
+- `Loyalty.navigation.route_name`
+
+The **sales-rep** account on the same env, same build, same English locale renders all three correctly ("Quote requests" / "Notifications" / "Points history").
+
+**This contradicts both hypotheses in the original report.** The keys were framed as (a) a German locale-file gap plus (b) a lazy-load race on the in-page language switch. English on a hard load rules out both: `en.json` is by definition not missing its own keys, and there was no locale switch. The discriminator is the **account**, not the locale or the navigation timing — the same three keys resolve for one user and not another in identical conditions.
+
+That points at **account/permission-scoped locale-resource loading**: these three entries come from modules whose i18n bundle is registered conditionally (quotes, push-messages, loyalty), and a buyer evidently reaches the sidebar before — or without — the bundle that owns their labels. Note these are exactly the three keys the original report attributed to the switch-race, which is consistent with one root cause (bundle not loaded for this principal) surfacing through two different triggers.
+
+**Consequence for the fix:** filling the German gaps in `de.json` will not fix this. Reproducing under EN first is the cheaper diagnostic, and the proposed en-vs-sibling-locale CI guard would **not** have caught it — the key is present in `en.json` and still renders raw. The guard needs to be a runtime/registration check, not a locale-parity check.
+
+Evidence: `reports/tickets/Sprint26-15/VCST-5724/screenshots/INCIDENTAL-raw-i18n-keys-buyer-sidebar-en.png`
+
+---
+
 ## Re-verification 2026-08-26 — PARTIALLY FIXED, and **the stated root cause is wrong**
 
 Re-tested live on **vcst-qa @ Theme 2.56.0-pr-2451** (the draft ran on vcptcore-qa @ 2.55.0-pr-2408), signed in as `@td(SR_REP_PRIMARY)`.

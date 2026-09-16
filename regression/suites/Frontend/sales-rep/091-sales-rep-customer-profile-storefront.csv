@@ -488,3 +488,180 @@ SR-CP-058,"Recent Orders and Top Sellers Filter Rows Are Built From the Customer
 [STATE] a category chip represents the product's TOP-LEVEL catalog ancestor, not its own leaf sub-category — one chip may cover multiple sub-categories {SPEC}","[API] the status/category chip vocabularies returned for @td(ORG_ACME.id) are a DISTINCT projection over that organization's own orders/products, not the full platform dictionary {SPEC}
 [NETWORK] no 4xx/5xx while switching between organizations or applying chips
 [CONSOLE] no uncaught JS errors","a chip renders that returns zero rows when applied (a 'dead chip' — the exact defect VCST-5590 targeted); the zero-order organization shows a chip row (even an 'All'-only one) instead of none; the zero-order organization's empty-state text is missing, generic, or identical for both blocks instead of each having its own; a status chip persists after switching to an organization that doesn't have that status",reset any applied chip filter back to 'All' before leaving the page,VCST-5590,Automated
+SR-CP-068,Max Rows Input Renders Only in Edit Mode on Customer Profile's Two Configurable Widgets (AC #4 Parity),Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,BL-SR-025,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Both surfaces (`dashboard` and `customerProfile`) register the SAME two configurable blocks (`orders`, `top_sellers`) with identical settings (AC #4); the dashboard-surface analogue is cited in References.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered, outside edit mode
+[ASSERT] no rows input visible outside edit mode
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible","[DOM] outside edit mode, neither 'Recent orders' nor 'Top sellers' shows a Max rows input {SPEC}
+[DOM] in edit mode, 'Recent orders' and 'Top sellers' both show a Max rows input {SPEC}
+[DOM] in edit mode, no stat card (e.g. 'Active projects') on the customer profile renders a 'Max rows' input or any settings control {SPEC}",,a stat card renders a rows input; the two list widgets show no rows input in edit mode,[ACT] click 'Editing layout' (Cancel) to exit edit mode,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified; dashboard analogue: SR-HD-061 in 093-sales-rep-hub-dashboard-storefront",Draft
+SR-CP-069,"Customer Profile Enforces the Same Per-Block Ranges: Recent Orders 1-20, Top Sellers 1-10",Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,"BL-SR-008, BL-SR-019, BL-SR-022",ECL-7.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Confirms the ranges are block-registry-driven (shared with the dashboard), not surface-specific; the dashboard-surface analogues are cited in References.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ACT] clear 'Recent orders' Max rows
+[ACT] type '21' into the field
+[ACT] blur the field
+[ASSERT] field value after blur
+[ACT] clear 'Top sellers' Max rows
+[ACT] type '11' into the field
+[ACT] blur the field
+[ASSERT] field value after blur","[FORMAT] 'Recent orders' clamps '21' down to '20', the same ceiling as the dashboard {SPEC}
+[FORMAT] 'Top sellers' clamps '11' down to '10', the same ceiling as the dashboard, NOT 20 {SPEC}",,either widget's ceiling differs between customer profile and dashboard -- would mean the ranges are duplicated per-surface rather than shared from one registry; Recent Orders and Top Sellers share one uniform ceiling instead of their own distinct ones,[ACT] click 'Editing layout' (Cancel) to discard the draft -- no Save was performed,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified; dashboard analogues: SR-HD-062/SR-HD-063 in 093-sales-rep-hub-dashboard-storefront",Draft
+SR-CP-059,Row Count Applies Only After Save on Customer Profile Too -- No Refetch Per Keystroke,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,BL-SR-024,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-066. Read-only, network-trace only.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile settles, note the salesRepOrders request count
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ACT] clear 'Recent orders' Max rows
+[ACT] type '3' into the field
+[ACT] type '18' into the field, replacing '3' (no blur between edits)
+[WAIT] brief pause
+[ASSERT] salesRepOrders request count since entering edit mode","[STATE] no additional salesRepOrders request fires as a result of typing into the Max rows field on the customer profile {SPEC}
+[DOM] the 'Recent orders' table on the customer profile still shows 5 rows (the last saved cap) while typing, before Save is clicked {SPEC}",[API] network trace shows zero new salesRepOrders calls attributable to the Max rows field edits,typing into the Max rows field fires a new salesRepOrders request per keystroke on the customer profile; the rendered table refreshes before Save is clicked,[ACT] click 'Editing layout' (Cancel) to discard the draft -- no Save was performed,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified",Draft
+SR-CP-060,Default Checked Status Tabs on Customer Profile Are Also the Full Live Rule Catalog (Deviation #2 Parity),Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,BL-SR-009,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-067 -- confirms the same fictional-AC-vs-live-catalog deviation applies identically on the customer profile.",front_url={{FRONT_URL}},"[GQL] as SR_REP_PRIMARY, query salesRepOrderFilterRules and record the returned rule names
+[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ASSERT] which tabs render checked by default","[COUNT] every rule returned by salesRepOrderFilterRules starts checked on the customer profile too {SPEC}
+[DOM] no tab labeled 'On hold', 'Active', or 'Fix-it' appears anywhere in the status tabs row {SPEC}",[API] salesRepOrderFilterRules response cross-checked against the rendered customer-profile tab set 1:1,"a fictional AC name renders as a tab, or a live rule is missing from the default checked set on the customer profile",[ACT] click 'Editing layout' (Cancel) to exit edit mode,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified",Draft
+SR-CP-061,Persistence Wire Format on Customer Profile: Unchecked Tab Writes false; Checked Tab Writes Nothing,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,"BL-SR-019, BL-SR-022, BL-SR-023",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-070, scoped to `salesRepLayout(scope:""customerProfile"")`. Uses SR_REP_LAYOUT because this case Saves; Cleanup MUST restore defaults.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ACT] uncheck exactly one status tab, leave all others checked
+[ACT] clear 'Recent orders' Max rows
+[ACT] type '9' into the field
+[ACT] click 'Save layout'
+[WAIT] save completes
+[GQL] as SR_REP_LAYOUT, query salesRepLayout(scope:""customerProfile"") and inspect the `orders` block's settings list","[STATE] the settings list contains {key:'maxRows', value:9} {SPEC}
+[STATE] the settings list contains exactly one {key:'tab.<ruleName>', value:false} entry for the unchecked tab {SPEC}
+[STATE] no settings entry exists for any tab left checked {SPEC}
+[STATE] the `salesRepLayout(scope:""customerProfile"")` document carries no organization/customer id field anywhere (BL-SR-023) -- confirming this setting lives on the scope-wide document, not a per-customer one {SPEC}","[API] saveSalesRepLayout(scope:""customerProfile"") payload + the subsequent salesRepLayout(scope:""customerProfile"") read both inspected directly",a checked tab is written explicitly; the unchecked tab is missing instead of {value:false}; the document unexpectedly carries a customer/organization id,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified",Draft
+SR-CP-062,Widget Settings Are Scope-Wide -- the Same Max Rows / Tab Selection Applies on a Different Served Customer,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,High,"BL-SR-023, BL-SR-024",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-CP-042, extended from arrangement to the new settings fields: SR_REP_LAYOUT serves both @td(ORG_ACME.id) and @td(ORG_TECHFLOW.id) -- this proves widget settings are ONE document per rep per surface, not one per customer (AC #4 + BL-SR-023). Cleanup MUST restore defaults since this case Saves.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ACT] set 'Top sellers' Max rows to '2'
+[ACT] uncheck one status tab on 'Recent orders'
+[ACT] click 'Save layout'
+[WAIT] save completes
+[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_TECHFLOW.name) row to open ITS profile, a different served customer
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ASSERT] Max rows value and tab-checked state on @td(ORG_TECHFLOW.name)'s profile","[STATE] on @td(ORG_TECHFLOW.name)'s profile, 'Top sellers' Max rows also shows '2' and the same status tab is unchecked -- the identical setting, even though this is a different customer than the one it was saved from {SPEC}
+[STATE] no edit action was taken on @td(ORG_TECHFLOW.name)'s profile before this state appeared {SPEC}","[API] a single salesRepLayout(scope:""customerProfile"") document (no organization id) serves both profile views -- confirmed by identical settings on both",the settings differ between @td(ORG_ACME.name)'s and @td(ORG_TECHFLOW.name)'s profiles -- would mean settings are (incorrectly) tracked per-customer; the saveSalesRepLayout payload unexpectedly carries an organization/customer id,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified",Draft
+SR-CP-063,Widget Settings Persist Across a Reload and a Fresh Sign-In on Customer Profile,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,"BL-SR-024, BL-SR-016",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-072, scoped to customerProfile.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ACT] set 'Recent orders' Max rows to '6'
+[ACT] uncheck one status tab on 'Recent orders'
+[ACT] click 'Save layout'
+[WAIT] save completes
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.id) (full reload of the same profile)
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ASSERT] Max rows value and tab-checked state after reload
+[ACT] sign out
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ASSERT] Max rows value and tab-checked state after a fresh sign-in","[STATE] after the reload, 'Recent orders' Max rows shows 6 with the same tab unchecked {SPEC}
+[STATE] after a fresh sign-in, the same settings render identically {SPEC}","[API] saveSalesRepLayout(scope:""customerProfile"") payload and subsequent reads agree across reload and re-sign-in",settings revert to defaults after reload or a fresh sign-in on the customer profile; the tab-checked state disagrees between the reload and the fresh sign-in,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified",Draft
+SR-CP-064,Cancel and Reset Cover Widget-Settings Changes on Customer Profile,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,BL-SR-024,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-071. Read-only against SR_REP_PRIMARY -- neither path ever saves.",front_url={{FRONT_URL}},"--- SCREEN: Cancel discards settings edits ---
+[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ACT] set 'Recent orders' Max rows to '2'
+[ACT] uncheck one status tab on 'Recent orders'
+[ACT] click 'Editing layout' (Cancel)
+[WAIT] edit bar closes
+[ACT] click 'Edit layout' again
+[WAIT] edit bar visible
+[ASSERT] Max rows value and tab-checked state on re-entry
+--- SCREEN: Reset restores registry defaults into the draft ---
+[ACT] set 'Recent orders' Max rows to '2' again
+[ACT] uncheck one status tab on 'Recent orders' again
+[ACT] click 'Reset'
+[WAIT] draft re-renders
+[ASSERT] Max rows value and tab-checked state immediately after Reset","[STATE] after Cancel and re-entering edit mode, Max rows is back to 5 and every tab is checked {SPEC}
+[STATE] immediately after Reset (before Save), Max rows shows 5 and every tab is checked {SPEC}
+[STATE] neither Cancel nor Reset issued a save call {SPEC}",,a Cancelled settings edit persists into the next edit session on the customer profile; Reset does not restore registry defaults,"none (read-only, no Save was performed)","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified",Draft
+SR-CP-065,"The Max Rows Input Is Drag-Filtered on Customer Profile Too -- a Mousedown Inside It Focuses, Not Drags",Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Low,BL-SR-027,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Direct analogue of SR-HD-077. Read-only.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ACT] press down inside 'Recent orders' Max rows input
+[ACT] release without moving the pointer
+[WAIT] brief pause","[STATE] the click focuses the Max rows input, not a drag start {SPEC}
+[DOM] 'Recent orders' remains in its original position {SPEC}",,pressing down inside the Max rows input starts a drag on the customer profile; the widget's position changes after the click,[ACT] click 'Editing layout' (Cancel) to exit edit mode,"VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified",Draft
+SR-CP-066,E2E Cross-Layer: Customer Profile Recent Orders and Top Sellers Render the Configured Row Count,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,High,"BL-SR-002, BL-SR-008, BL-SR-024",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). SR_REP_LAYOUT's ORG-001 (ACME) profile is being seeded (parallel test-data task) with >=6 orders and >=6 distinct top-seller products for this customer -- enough that a saved cap below 6 is genuinely constraining. Precondition: >=6 orders and >=6 distinct top-seller products for @td(ORG_ACME.id) once seeded (do NOT assert an exact count).",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ACT] set 'Recent orders' Max rows to '4'
+[ACT] set 'Top sellers' Max rows to '3'
+[ACT] click 'Save layout'
+[WAIT] save completes
+[NAV] reload the same profile page
+[WAIT] widgets rendered
+[ASSERT] rendered row counts for both widgets
+[GQL] as SR_REP_LAYOUT, issue the same salesRepOrders and salesRepTopSellers queries the widgets fire (organizationId = @td(ORG_ACME.id)) and read their take/first parameters","[COUNT] 'Recent orders' renders exactly 4 rows for this customer {SPEC}
+[COUNT] 'Top sellers' renders exactly 3 rows for this customer {SPEC}
+[MATH] the underlying salesRepOrders request uses take/first = 4 {SPEC}
+[MATH] the underlying salesRepTopSellers request uses take = 3 {SPEC}","[API] both requests scoped to organizationId=@td(ORG_ACME.id), errors[] empty, item counts <= their respective take values",either widget renders a row count other than its saved cap; the underlying request parameter disagrees with the saved setting,"[ACT] Edit layout, then Reset, then Save layout, to restore registry defaults for SR_REP_LAYOUT's customer-profile layout before ending the session","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified",Draft
+SR-CP-067,Editing Customer-Profile Widget Settings Produces No Console Errors and No Failed Network Requests,Storefront > Sales Rep > Customer Profile > Saved Layout > Widget Settings,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+LAYOUT API GATE (see SR-CP-036 -- salesRepLayout/saveSalesRepLayout must be deployed and reachable on the target env). Baseline guard case, analogue of SR-HD-082, scoped to the customer profile.",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the @td(ORG_ACME.name) row to open its profile
+[WAIT] profile page rendered
+[ACT] click 'Edit layout'
+[WAIT] edit bar visible
+[ACT] set 'Recent orders' Max rows to '1' (boundary)
+[ACT] set 'Top sellers' Max rows to '10' (boundary)
+[ACT] uncheck one status tab
+[ACT] tick that status tab's checkbox again
+[ACT] uncheck every status tab
+[ACT] click 'Reset'
+[WAIT] draft re-renders
+[ACT] click 'Editing layout' (Cancel)
+[WAIT] edit bar closes
+[ASSERT] console messages and network requests captured across the whole sequence","[STATE] no console error was logged at any point during the sequence {OBSERVED}
+[STATE] no network request in the sequence returned 4xx/5xx or a GraphQL errors[] entry {OBSERVED}",,any console error appears during pure settings interaction with no persist action on the customer profile; any network request returns 4xx/5xx or a GraphQL errors[] entry,"none (read-only, no Save was performed)","VCST-5649, PR vc-frontend#2425 (merged dev 2026-08-07); design doc client-app/modules/sales-rep/specs/VCST-5649-widget-settings/2026-08-04-widget-settings-design.md; New: authored 2026-08-11, not yet live-verified",Draft

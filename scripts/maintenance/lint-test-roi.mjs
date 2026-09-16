@@ -13,7 +13,20 @@
  *      prompt / CSV / manifest / doc edit, and its gate is context:check / suites:lint /
  *      td:validate:<domain> / bl:lint, not a second copy in the test runner.
  *   2. NEW unit-test file added whose only repo imports are `*-specs.mjs` declarative spec modules
- *      that already have a `td:validate:<domain>` guard → FAIL. That coverage belongs in the guard.
+ *      that already have a `td:validate:<domain>` guard, AND that pulls no DERIVATION from them
+ *      → FAIL. That coverage belongs in the guard.
+ *
+ *      "Derivation" is decided by what the file actually IMPORTS, not by which module it imports
+ *      from: a binding that resolves to a FUNCTION (a builder, a transform, a predicate) is a
+ *      derivation; anything else is a declared value. That is RULE 4's own distinction — "test the
+ *      DERIVATION, never the DECLARATION" (`.claude/rules/test-data.md`) — and without it this
+ *      check fired on the wrong half, because a spec module may export BOTH. Measured 2026-09-16 on
+ *      PR #304: `sales-rep-docs-specs.mjs` exports the DOCUMENTS table AND `crc32`,
+ *      `buildCreateRequest`, `paginationBoundaries`, `expectedPermissions`, so "imports only
+ *      guarded spec modules" said nothing about whether the coverage was duplicated.
+ *      `td:test-attribution -- sales-rep-docs` returned DELETE 1 · KEEP 5 on the very file this
+ *      check told the author to delete — five mutations nothing else caught. A guard cannot absorb
+ *      that: it validates seeded DATA, it never calls the builders.
  *
  * ESCAPE HATCH, because backfilling coverage for PRE-EXISTING code is legitimate and this check
  * cannot see intent: put a line in the new test file's header —
@@ -29,7 +42,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -76,6 +89,34 @@ const guardedSpecs = (() => {
   return out;
 })();
 
+/**
+ * Does this test file import at least one DERIVATION (a function binding) from a repo module?
+ *
+ * Decided by loading the module and testing `typeof` — spec modules are side-effect-free by
+ * convention, so this is safe, and it is the only way to tell `DOCUMENTS` (a declared table) from
+ * `buildCreateRequest` (a builder) without re-implementing a parser. A module that fails to load
+ * contributes NO derivation, so an unreadable import can never silently excuse a test file.
+ */
+async function importsADerivation(absTestPath, src) {
+  for (const m of src.matchAll(/import\s*\{([^}]*)\}\s*from\s*'(\.[^']+)'/gs)) {
+    const names = m[1]
+      .split(',')
+      .map((s) => s.trim().split(/\s+as\s+/)[0].trim())
+      .filter(Boolean);
+    const r = resolve(dirname(absTestPath), m[2]);
+    const file = [r, `${r}.mjs`, `${r}.ts`, `${r}.js`].find((c) => existsSync(c));
+    if (!file || !file.startsWith(ROOT)) continue;
+    let mod;
+    try {
+      mod = await import(pathToFileURL(file).href);
+    } catch {
+      continue;
+    }
+    if (names.some((n) => typeof mod?.[n] === 'function')) return true;
+  }
+  return false;
+}
+
 const problems = [];
 let exempt = 0;
 for (const t of addedTests) {
@@ -100,7 +141,7 @@ for (const t of addedTests) {
     const r = resolve(dirname(abs), m[1]);
     return [r, `${r}.mjs`, `${r}.ts`, `${r}.js`].find((c) => existsSync(c)) || r;
   }).filter((p) => p.startsWith(ROOT));
-  if (imports.length && imports.every((p) => guardedSpecs.has(p))) {
+  if (imports.length && imports.every((p) => guardedSpecs.has(p)) && !(await importsADerivation(abs, src))) {
     problems.push(`${t}\n      NEW unit test whose only repo imports are declarative spec module(s) already `
       + `owned by a td:validate:<domain> drift guard. RULE 3: that coverage belongs in the guard, which `
       + `also sees seeded state and checks the alias registry / GUID leaks / URL shapes. `

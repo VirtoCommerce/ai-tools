@@ -1,6 +1,16 @@
 # BUG: German AOV widget subtitle leaves "YTD" untranslated
 
-## Status: CONFIRMED — filed as [VCST-5684](https://virtocommerce.atlassian.net/browse/VCST-5684)
+## Status: FIXED — [VCST-5684](https://virtocommerce.atlassian.net/browse/VCST-5684)
+
+## Resolution
+
+Fixed by vc-frontend PR [#2429](https://github.com/VirtoCommerce/vc-frontend/pull/2429) (`fix/VCST-5684-ytd-untranslated`, head `796dc06c`) — data-only, 6 locale files. `sales_rep.customer_profile.stats.per_order` rewritten in de/es/fr/it/pl/pt; `sales_rep.my_customers.table.ytd` in es/fr/it/pl/pt. German subtitle now reads `"Durchschnitt pro Bestellung (seit Jahresbeginn)"`. `en.json` intentionally unchanged.
+
+**Verified 2026-08-14** on vcst-qa @ Theme `2.56.0-pr-2429-796d-796dc06c` — STR 3/3 full page loads, plus a static sweep of all 12 non-English sales-rep locale chunks (zero surviving `YTD`/`MTD`). Evidence: `reports/tickets/Sprint26-15/VCST-5684/evidence.html`.
+
+PR is still **open** — merge/release remain with a human.
+
+Incidental, unrelated finding during verification: [BUG-SalesRep-nav-link-raw-i18n-key-fr-es](../open/BUG-SalesRep-nav-link-raw-i18n-key-fr-es.md).
 
 **Severity: Low** (copy/i18n polish; meaning is still inferable).
 

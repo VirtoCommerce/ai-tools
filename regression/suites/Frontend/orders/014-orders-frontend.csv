@@ -1,13 +1,13 @@
-﻿"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"CHK-010","Order History - View Orders","Orders > History","High","BL-ORD-001","","[PRE:CLEAR_SESSION]
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+CHK-010,Order History - View Orders,Orders > History,High,BL-ORD-001,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 User has at least one previous order, user logged in","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
 [WAIT] Wait for orders list to load","[DOM] Orders list rendered with at least one row
 [DOM] Order number, date, status, total shown per row
 [STATE] Orders sorted descending by date (most recent first)
 [DOM] Link to order detail available per row","[API] GET /account/orders returns list with correct fields
-[CONSOLE] No errors loading order history","Orders list empty when orders exist; orders not sorted correctly","none","VCST-4499","Automated"
-"CHK-011","Order History - View Details","Orders > Detail","High","BL-ORD-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No errors loading order history",Orders list empty when orders exist; orders not sorted correctly,none,VCST-4499,Automated
+CHK-011,Order History - View Details,Orders > Detail,High,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 At least one order exists in user's history, user logged in","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
 [ACT] click on an existing order to view detail
 [WAIT] Wait for order detail page to load","[DOM] Line items with name, quantity, unit price rendered
@@ -15,24 +15,24 @@ At least one order exists in user's history, user logged in","url={{FRONT_URL}},
 [DOM] Payment method shown (no full card numbers)
 [DOM] Status label visible
 [DOM] Subtotal, shipping, tax, grand total shown","[API] GET /account/orders/{orderId} returns full order detail
-[CONSOLE] No 404 or 500 errors on detail page","Order detail page shows no line items; clicking order link results in error page","none","VCST-4499","Automated"
-"CHK-012","Order - Pickup Details Display","Orders > Detail > Pickup","High","BL-ORD-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No 404 or 500 errors on detail page",Order detail page shows no line items; clicking order link results in error page,none,VCST-4499,Automated
+CHK-012,Order - Pickup Details Display,Orders > Detail > Pickup,High,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 {{BOPIS_PICKUP_ORDER}} env var set; user logged in as {{USER_EMAIL}}","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, bopis_order_id={{BOPIS_PICKUP_ORDER}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
 [ACT] Locate the order identified by {{BOPIS_PICKUP_ORDER}} and click to view detail
 [WAIT] Wait for the order detail page to load","[DOM] Pickup location name and address rendered
 [DOM] Store hours section present if configured
 [DOM] Pickup instructions text visible
 [STATE] No delivery shipping address section shown for pickup order","[API] GET /account/orders/{orderId} returns fulfillmentType = pickup
-[CONSOLE] No rendering errors for pickup order type","Pickup location details missing; delivery address shown instead of pickup info","none","VCST-4499","Draft"
-"CHK-013","Order - Delivery Details Display","Orders > Detail > Delivery","High","BL-ORD-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No rendering errors for pickup order type",Pickup location details missing; delivery address shown instead of pickup info,none,VCST-4499,Draft
+CHK-013,Order - Delivery Details Display,Orders > Detail > Delivery,High,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 @td(SHIPPED_ORDER.number) env var set; user logged in as {{USER_EMAIL}}","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, shipped_order=@td(SHIPPED_ORDER.number)","[NAV] Navigate to {{FRONT_URL}}/account/orders
 [ACT] Locate the order identified by @td(SHIPPED_ORDER.number) and click to view detail
 [WAIT] Wait for the order detail page to load
 [COND: order has tracking] Verify tracking number shown
 [COND: order has tracking] Verify tracking link is a clickable anchor","[DOM] Shipping address rendered correctly
 [DOM] Carrier name shown if shipment populated","[API] GET /account/orders/{orderId} returns shipmentDetails with carrier and tracking
-[CONSOLE] No errors rendering tracking info","Shipping address not shown; tracking link absent when tracking number is populated","none","VCST-4499; Dropped 2 tracking assertions — the storefront renders no tracking number/link at all (order-details.vue, verified 2026-07-25); they were hedged 'if present' and so unfalsifiable. Shipping-address + carrier assertions retained.","Draft"
-"CHK-022","Order Status - New","Orders > Status","Critical","BL-ORD-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No errors rendering tracking info",Shipping address not shown; tracking link absent when tracking number is populated,none,"VCST-4499; Dropped 2 tracking assertions — the storefront renders no tracking number/link at all (order-details.vue, verified 2026-07-25); they were hedged 'if present' and so unfalsifiable. Shipping-address + carrier assertions retained.",Draft
+CHK-022,Order Status - New,Orders > Status,Critical,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in, order just placed through storefront","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Complete checkout and place order via storefront
 [NAV] Navigate to {{FRONT_URL}}/account/orders
@@ -40,8 +40,8 @@ User logged in, order just placed through storefront","url={{FRONT_URL}}, user={
 [WAIT] Wait for the resulting view to settle","[DOM] Status label = 'New' on order list row
 [DOM] Status label = 'New' on order detail page
 [STATE] Status visible immediately after order placement without page reload","[API] GET /account/orders/{orderId} returns status = New
-[CONSOLE] No errors loading order status","Status not shown after order placement; status shows wrong value (e.g. Pending instead of New)","Cancel order via {{ADMIN_URL}}/orders","Coverage Gap Analysis","Draft"
-"CHK-023","Order Status - Processing (Admin-Driven)","Orders > Status","High","BL-ORD-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No errors loading order status",Status not shown after order placement; status shows wrong value (e.g. Pending instead of New),Cancel order via {{ADMIN_URL}}/orders,Coverage Gap Analysis,Draft
+CHK-023,Order Status - Processing (Admin-Driven),Orders > Status,High,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Order in New status exists (place via CHK-022 or use fresh New order); admin access available","url={{FRONT_URL}}, admin={{ADMIN_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Place a new order via storefront or use any existing New order; note the order number
 [NAV] Navigate to {{ADMIN_URL}}/orders and locate the target order by order number
 [ACT] Update order status to 'Processing' in admin; save
@@ -52,8 +52,8 @@ Order in New status exists (place via CHK-022 or use fresh New order); admin acc
 [STATE] Status update reflected on storefront without requiring re-login
 [COND: timeline present] Order history shows New → Processing transition","[API] GET /account/orders/{orderId} returns status = Processing after admin update
 [ADMIN] Admin order detail confirms status = Processing
-[CONSOLE] No JS errors on status refresh in storefront","Storefront still shows 'New' after admin sets Processing; admin save throws error","Revert order to New via admin if needed for other tests","Coverage Gap Analysis","Draft"
-"CHK-024","Order Status - Shipped with Tracking Number","Orders > Status","High","BL-ORD-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No JS errors on status refresh in storefront",Storefront still shows 'New' after admin sets Processing; admin save throws error,Revert order to New via admin if needed for other tests,Coverage Gap Analysis,Draft
+CHK-024,Order Status - Shipped with Tracking Number,Orders > Status,High,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Order in New or Processing status exists (fresh order or @td(PROCESSING_ORDER.number) env var); admin access available","url={{FRONT_URL}}, admin={{ADMIN_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, tracking_number=@td(SAMPLE_TRACKING_NUMBER.value)","[NAV] Navigate to {{ADMIN_URL}}/orders and find a Processing or New order; note order number
 [ACT] Update order status to 'Shipped' in admin
 [ACT] Enter @td(SAMPLE_TRACKING_NUMBER.value) (any non-empty alphanumeric string) as tracking number; enter carrier name
@@ -64,16 +64,16 @@ Order in New or Processing status exists (fresh order or @td(PROCESSING_ORDER.nu
 [DOM] Carrier name visible
 [DOM] Tracking number rendered as anchor (href present)","[API] GET /account/orders/{orderId} returns status = Shipped with shipmentDetails.trackingNumber populated
 [ADMIN] Shipment details saved correctly in admin
-[CONSOLE] No errors rendering tracking section","Tracking number not shown in storefront after admin update; tracking displayed as plain text not a link","none — intentional test action; leave order in Shipped state","Coverage Gap Analysis; PARKED — storefront has no shipment-tracking UI: order-details.vue renders no tracking number/link and locales/en.json has no tracking string, while trackingNumber+trackingUrl DO exist in the xAPI schema (verified 2026-07-25 vs vc-frontend@dev). Kept as the acceptance test for a future ""surface tracking on order detail"" story. Left at Draft deliberately (Draft is not regression-eligible) — do NOT promote or run until that story ships.","Draft"
-"CHK-025","Order Status - Completed","Orders > Status","High","BL-ORD-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No errors rendering tracking section",Tracking number not shown in storefront after admin update; tracking displayed as plain text not a link,none — intentional test action; leave order in Shipped state,"Coverage Gap Analysis; PARKED — storefront has no shipment-tracking UI: order-details.vue renders no tracking number/link and locales/en.json has no tracking string, while trackingNumber+trackingUrl DO exist in the xAPI schema (verified 2026-07-25 vs vc-frontend@dev). Kept as the acceptance test for a future ""surface tracking on order detail"" story. Left at Draft deliberately (Draft is not regression-eligible) — do NOT promote or run until that story ships.",Draft
+CHK-025,Order Status - Completed,Orders > Status,High,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 @td(COMPLETED_ORDER.number) env var set OR admin access available to promote a Shipped order to Completed; user logged in as {{USER_EMAIL}}","url={{FRONT_URL}}, admin={{ADMIN_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, completed_order=@td(COMPLETED_ORDER.number)","[NAV] If @td(COMPLETED_ORDER.number) is set: navigate directly to that order detail. Otherwise: navigate to {{ADMIN_URL}}/orders, find a Shipped order, update to Completed and save
 [NAV] Navigate to {{FRONT_URL}}/account/orders in storefront
 [ACT] Open the Completed order detail page
 [COND: buyer-cancel feature enabled] Verify 'Cancel Order' button is absent or disabled for Completed orders","[DOM] Status = 'Completed' on order detail
 [COND: buyer-cancel enabled] Cancel order button absent or disabled for completed orders","[API] GET /account/orders/{orderId} returns status = Completed
 [ADMIN] Status confirmed as Completed in admin
-[CONSOLE] No errors on completed order detail page","Completed status not reflected in storefront; Cancel option still active for completed orders when feature is enabled","none","Coverage Gap Analysis","Draft"
-"CHK-039","Reorder - Add to Cart","Orders > Reorder","High","BL-ORD-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No errors on completed order detail page",Completed status not reflected in storefront; Cancel option still active for completed orders when feature is enabled,none,Coverage Gap Analysis,Draft
+CHK-039,Reorder - Add to Cart,Orders > Reorder,High,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 @td(COMPLETED_ORDER.number) env var set; user logged in as {{USER_EMAIL}}","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, completed_order=@td(COMPLETED_ORDER.number)","[NAV] Navigate to {{FRONT_URL}}/account/orders
 [ACT] Locate order @td(COMPLETED_ORDER.number) (or any completed order visible) and click to view detail
@@ -88,8 +88,8 @@ Order in New or Processing status exists (fresh order or @td(PROCESSING_ORDER.nu
 [DOM] Cart count updates after Reorder
 [DOM] Cart contains all line items from the reordered order with matching quantities
 [STATE] Existing cart items not replaced (items added)","[API] addItemsToCart or equivalent mutation returns success
-[CONSOLE] No errors during reorder action; [API] mutation response errors[] is empty","Reorder button absent when feature is enabled; items not added to cart; cart count not updated after reorder","Remove reordered items from cart","REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis)","Draft"
-"CHK-040","Reorder - Current Prices","Orders > Reorder > Pricing","High","BL-ORD-001, BL-CHK-002","ECL-4.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No errors during reorder action; [API] mutation response errors[] is empty",Reorder button absent when feature is enabled; items not added to cart; cart count not updated after reorder,Remove reordered items from cart,REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis),Draft
+CHK-040,Reorder - Current Prices,Orders > Reorder > Pricing,High,"BL-ORD-001, BL-CHK-002",ECL-4.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 @td(COMPLETED_ORDER.number) env var set (an older order); user logged in as {{USER_EMAIL}}; reorder feature enabled","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, completed_order=@td(COMPLETED_ORDER.number)","[NAV] Navigate to {{FRONT_URL}}/account/orders
 [ACT] Locate order @td(COMPLETED_ORDER.number) and open its detail; note the original unit prices recorded on the order
@@ -99,8 +99,8 @@ Order in New or Processing status exists (fresh order or @td(PROCESSING_ORDER.nu
 [MATH] Cart total uses current catalog prices (verify one item price against live PDP price if discrepancy observed)
 [DOM] Cart functional and can proceed to checkout","[API] addItemsToCart mutation succeeds; no price-mismatch error returned
 [API] Product price API returns current prices for reordered SKUs
-[CONSOLE] No errors on price calculation","System error thrown when prices differ; cart shows historical order prices instead of current; cart total uses stale prices","Remove items from cart","REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis)","Draft"
-"CHK-041","Reorder - Partial Availability","Orders > Reorder > Availability","High","BL-ORD-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No errors on price calculation",System error thrown when prices differ; cart shows historical order prices instead of current; cart total uses stale prices,Remove items from cart,REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis),Draft
+CHK-041,Reorder - Partial Availability,Orders > Reorder > Availability,High,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 {{ORDER_WITH_DISCONTINUED_ITEM}} env var set; user logged in as {{USER_EMAIL}}; reorder feature enabled","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, discontinued_order_id={{ORDER_WITH_DISCONTINUED_ITEM}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
 [ACT] Locate order {{ORDER_WITH_DISCONTINUED_ITEM}} and click Reorder
@@ -111,8 +111,8 @@ Order in New or Processing status exists (fresh order or @td(PROCESSING_ORDER.nu
 [STATE] Discontinued item absent from cart
 [STATE] Cart functional and can proceed to checkout","[API] Reorder mutation response includes unavailableItems field
 [CONSOLE] No unhandled exceptions
-[NETWORK] No 404 errors for available products","Discontinued item silently skipped without notification; available items not added; cart broken after partial reorder","Remove items from cart","REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis)","Draft"
-"CHK-042","Reorder - Out of Stock Item","Orders > Reorder > Availability","Medium","BL-ORD-001","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] No 404 errors for available products",Discontinued item silently skipped without notification; available items not added; cart broken after partial reorder,Remove items from cart,REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis),Draft
+CHK-042,Reorder - Out of Stock Item,Orders > Reorder > Availability,Medium,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 {{ORDER_WITH_OOS_ITEM}} env var set; user logged in as {{USER_EMAIL}}; reorder feature enabled","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, oos_order_id={{ORDER_WITH_OOS_ITEM}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
 [ACT] Locate order {{ORDER_WITH_OOS_ITEM}} and click Reorder
@@ -122,8 +122,8 @@ Order in New or Processing status exists (fresh order or @td(PROCESSING_ORDER.nu
 [STATE] Out-of-stock item either absent from cart or flagged as OOS in cart
 [DOM] Available items present in cart
 [STATE] Cart functional with available items","[API] Inventory check during reorder returns out-of-stock status
-[CONSOLE] No unhandled exceptions for OOS during reorder","Out-of-stock item silently added to cart as available; no OOS notification; cart broken","Remove items from cart","REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis)","Draft"
-"CHK-045","Billing Address Persists in Order Detail","Orders > Detail > Billing","Medium","BL-CHK-002","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No unhandled exceptions for OOS during reorder",Out-of-stock item silently added to cart as available; no OOS notification; cart broken,Remove items from cart,REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis),Draft
+CHK-045,Billing Address Persists in Order Detail,Orders > Detail > Billing,Medium,BL-CHK-002,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Order completed with different billing and shipping addresses, user on confirmation or in order history","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Place order with different billing and shipping addresses (use CHK-043 setup)
 [NAV] Navigate to {{FRONT_URL}}/account/orders
 [ACT] click on the just-placed order to view detail
@@ -132,8 +132,8 @@ Order completed with different billing and shipping addresses, user on confirmat
 [STATE] Billing address matches address entered at checkout
 [STATE] Shipping address matches shipping address from checkout
 [DOM] Both addresses clearly labeled and not conflated","[API] GET /account/orders/{orderId} returns both shippingAddress and billingAddress fields
-[CONSOLE] No errors rendering dual addresses on order detail","Billing address absent from order detail; billing and shipping addresses identical despite entering different ones","Cancel or archive order if needed","Coverage Gap Analysis","Draft"
-"CHK-047","Invoice PDF Download - Admin-Only (Not on Storefront Order Detail)","Orders > Invoice > Admin","High","BL-ORD-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No errors rendering dual addresses on order detail",Billing address absent from order detail; billing and shipping addresses identical despite entering different ones,Cancel or archive order if needed,Coverage Gap Analysis,Draft
+CHK-047,Invoice PDF Download - Admin-Only (Not on Storefront Order Detail),Orders > Invoice > Admin,High,BL-ORD-003,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 {{INVOICE_AVAILABLE_ORDER}} env var set; admin access available at {{ADMIN_URL}}; invoice PDF generation is Admin-only — not exposed on the storefront order detail page","url={{FRONT_URL}}, admin={{ADMIN_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, invoice_order_id={{INVOICE_AVAILABLE_ORDER}}","[ADMIN] Log in to Admin SPA at {{ADMIN_URL}}
 [NAV] Navigate to Orders module and locate order {{INVOICE_AVAILABLE_ORDER}} (completed/paid); open the order detail blade
 [COND: invoice feature enabled] Verify 'Print Invoice' / 'Download Invoice' action visible in Admin order detail
@@ -144,15 +144,15 @@ Order completed with different billing and shipping addresses, user on confirmat
 [STATE] Clicking action in Admin triggers PDF download or opens PDF in new tab
 [STATE] Storefront order detail page has no invoice download control (Admin-only by design)","[ADMIN] Invoice PDF action available on order detail blade
 [CONSOLE] No errors when clicking download invoice in Admin
-[NETWORK] PDF download request returns 2xx (not 404 or 500)","Invoice PDF action absent in Admin when feature is configured; action visible but click produces 404 error; storefront unexpectedly exposes an invoice download control","none","Coverage Gap Analysis","Draft"
-"CHK-048","Invoice PDF Content","Orders > Invoice > Content","High","BL-ORD-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[NETWORK] PDF download request returns 2xx (not 404 or 500)",Invoice PDF action absent in Admin when feature is configured; action visible but click produces 404 error; storefront unexpectedly exposes an invoice download control,none,Coverage Gap Analysis,Draft
+CHK-048,Invoice PDF Content,Orders > Invoice > Content,High,BL-ORD-003,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 {{INVOICE_AVAILABLE_ORDER}} env var set; invoice feature enabled; user on order detail page","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, invoice_order_id={{INVOICE_AVAILABLE_ORDER}}","[NAV] Navigate to order detail for {{INVOICE_AVAILABLE_ORDER}} at {{FRONT_URL}}/account/orders
 [COND: invoice feature enabled] [ACT] click 'Download Invoice'
 [WAIT] Wait for download to initiate","[NETWORK] PDF download response: 2xx status, Content-Type application/pdf, Content-Length > 0
 [DOM] No JS error toast after download
 [STATE] Order detail page remains visible after download click","[NETWORK] PDF download returns valid PDF MIME type and non-zero Content-Length
-[CONSOLE] No errors initiating download","PDF download returns 404 or 500; Content-Length = 0; JS error on download initiation","none","Coverage Gap Analysis","Draft"
-"CHK-049","Invoice Not Available for Pending Orders","Orders > Invoice > Access Control","Medium","BL-ORD-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No errors initiating download",PDF download returns 404 or 500; Content-Length = 0; JS error on download initiation,none,Coverage Gap Analysis,Draft
+CHK-049,Invoice Not Available for Pending Orders,Orders > Invoice > Access Control,Medium,BL-ORD-003,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in, has at least one order with Pending or Processing status","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
 [ACT] Find order with 'Pending' or 'Processing' status and click to view detail
 [WAIT] Wait for order detail to load
@@ -161,10 +161,10 @@ User logged in, has at least one order with Pending or Processing status","url={
 [WAIT] Wait for the resulting view to settle","[DOM] Download Invoice button absent or disabled for Pending/Processing orders
 [STATE] If button present, clicking shows informational message (not 500 error)
 [STATE] No exception or system error when attempting to access invoice for non-eligible order","[API] GET /orders/{orderId}/invoice returns 404 or informational response for pending orders (not 500)
-[CONSOLE] No unhandled exceptions when invoice not available","Download Invoice button shown and functional for pending orders; clicking invoice on pending order returns 500 error instead of informational message","none","Coverage Gap Analysis","Draft"
-"ORD-001","Reorder - All Items Added to Cart at Current Prices","Orders > Reorder","High","BL-ORD-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[CONSOLE] No unhandled exceptions when invoice not available",Download Invoice button shown and functional for pending orders; clicking invoice on pending order returns 500 error instead of informational message,none,Coverage Gap Analysis,Draft
+ORD-001,Reorder - All Items Added to Cart at Current Prices,Orders > Reorder,High,BL-ORD-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-@td(COMPLETED_ORDER.number) env var set; logged in as buyer ({{USER_EMAIL}}); reorder feature enabled; all ordered items still available","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number)","[NAV] Navigate to /account/orders
+@td(COMPLETED_ORDER.number) env var set; logged in as buyer ({{USER_EMAIL}}); reorder feature enabled; all ordered items still available",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number),"[NAV] Navigate to /account/orders
 [ACT] locate order @td(COMPLETED_ORDER.number) (or any visible completed order) and click to open detail
 [WAIT] Wait for the order detail page to load
 [KEY] note item names and quantities from order detail
@@ -172,28 +172,28 @@ User logged in, has at least one order with Pending or Processing status","url={
 [WAIT] wait for cart page to load","[COND: reorder feature enabled] all items from completed order present in cart
 [MATH] quantities in cart = original order quantities for each line item
 [DOM] success notification or badge update visible after reorder
-[STATE] cart functional for checkout","[API] reorder mutation response contains all expected line items; [CONSOLE] no errors on cart page after reorder; [NETWORK] 2xx on add-to-cart requests","not all items added to cart after reorder; quantities defaulted to 1 instead of original values","clear cart after test","Coverage Gap Analysis","Draft"
-"ORD-002","Reorder - Discontinued Item Handled Gracefully","Orders > Reorder","High","BL-ORD-001","ECL-7.1, ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[STATE] cart functional for checkout",[API] reorder mutation response contains all expected line items; [CONSOLE] no errors on cart page after reorder; [NETWORK] 2xx on add-to-cart requests,not all items added to cart after reorder; quantities defaulted to 1 instead of original values,clear cart after test,Coverage Gap Analysis,Draft
+ORD-002,Reorder - Discontinued Item Handled Gracefully,Orders > Reorder,High,BL-ORD-001,"ECL-7.1, ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-{{ORDER_WITH_DISCONTINUED_ITEM}} env var set; logged in as buyer ({{USER_EMAIL}}); reorder feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};discontinued_order_id={{ORDER_WITH_DISCONTINUED_ITEM}}","[NAV] Navigate to /account/orders
+{{ORDER_WITH_DISCONTINUED_ITEM}} env var set; logged in as buyer ({{USER_EMAIL}}); reorder feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};discontinued_order_id={{ORDER_WITH_DISCONTINUED_ITEM}},"[NAV] Navigate to /account/orders
 [ACT] locate order {{ORDER_WITH_DISCONTINUED_ITEM}} and click 'Reorder all'
 [WAIT] wait for cart page to load","[DOM] available items present in cart after reorder
 [STATE] discontinued item absent from cart line items
 [DOM] warning/notification message lists the unavailable item by name or SKU
 [DOM] cart functional with available items
-[STATE] warning message identifies which item(s) could not be added by name or SKU","[API] reorder mutation response includes unavailable_items or partial_result field; [CONSOLE] no unhandled JS exceptions on cart page with partial reorder","reorder silently drops all items including available ones; no warning for discontinued item; discontinued item added to cart","clear cart after test","REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis)","Draft"
-"ORD-003","Reorder - Quantities Match Original Order","Orders > Reorder","High","BL-ORD-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[STATE] warning message identifies which item(s) could not be added by name or SKU",[API] reorder mutation response includes unavailable_items or partial_result field; [CONSOLE] no unhandled JS exceptions on cart page with partial reorder,reorder silently drops all items including available ones; no warning for discontinued item; discontinued item added to cart,clear cart after test,REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis),Draft
+ORD-003,Reorder - Quantities Match Original Order,Orders > Reorder,High,BL-ORD-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-@td(COMPLETED_ORDER.number) env var set (order must have 2+ items with varied quantities); logged in as buyer ({{USER_EMAIL}}); reorder feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number)","[NAV] Navigate to /account/orders
+@td(COMPLETED_ORDER.number) env var set (order must have 2+ items with varied quantities); logged in as buyer ({{USER_EMAIL}}); reorder feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number),"[NAV] Navigate to /account/orders
 [ACT] locate order @td(COMPLETED_ORDER.number) and open detail
 [KEY] record each line item name and quantity from order detail (note at least 2 items with different quantities)
 [COND: reorder feature enabled] [ACT] click 'Reorder all'
 [WAIT] wait for cart page","[DOM] each reordered item present in cart
 [MATH] qty per cart line = qty recorded from order detail
-[STATE] no cart line item shows qty = 1 when original order qty was greater than 1","[API] reorder mutation response line items include correct quantity values; [CONSOLE] no errors processing quantity mapping in cart","any item quantity defaults to 1 instead of original order quantity","clear cart after test","Coverage Gap Analysis","Draft"
-"ORD-004","Order Status - New Order Shows Correct Status","Orders > Status","High","BL-ORD-003","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[STATE] no cart line item shows qty = 1 when original order qty was greater than 1",[API] reorder mutation response line items include correct quantity values; [CONSOLE] no errors processing quantity mapping in cart,any item quantity defaults to 1 instead of original order quantity,clear cart after test,Coverage Gap Analysis,Draft
+ORD-004,Order Status - New Order Shows Correct Status,Orders > Status,High,BL-ORD-003,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Buyer logged in as {{USER_EMAIL}}; able to complete checkout and place a new order; payment method available","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to storefront and add item to cart
+Buyer logged in as {{USER_EMAIL}}; able to complete checkout and place a new order; payment method available",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to storefront and add item to cart
 [ACT] proceed through checkout
 [WAIT] Wait for the resulting view to settle
 [ACT] place order
@@ -207,9 +207,9 @@ Buyer logged in as {{USER_EMAIL}}; able to complete checkout and place a new ord
 [FORMAT] order date matches today's date (YYYY-MM-DD format)
 [DOM] order detail page shows all items, quantities, shipping, and payment summary
 [DOM] order number on detail matches confirmation page
-[STATE] all order details complete (items, quantities, prices, shipping address)","[API] GET orders list includes new order with status New; [CONSOLE] no errors loading order history after placement","newly placed order absent from /account/orders list; status shows incorrect value (e.g. Processing before admin action); order date missing or incorrect; order detail missing line items","none — order is read-only after placement","Coverage Gap Analysis","Draft"
-"ORD-005","Order Status - Admin Ships Order With Tracking","Orders > Status","High","BL-ORD-003","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}} available; admin can access {{ADMIN_URL}}","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};admin_url={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};sample_tracking_number=@td(SAMPLE_TRACKING_NUMBER.value)","[ADMIN] Log in to Admin SPA at {{ADMIN_URL}}
+[STATE] all order details complete (items, quantities, prices, shipping address)",[API] GET orders list includes new order with status New; [CONSOLE] no errors loading order history after placement,newly placed order absent from /account/orders list; status shows incorrect value (e.g. Processing before admin action); order date missing or incorrect; order detail missing line items,none — order is read-only after placement,Coverage Gap Analysis,Draft
+ORD-005,Order Status - Admin Ships Order With Tracking,Orders > Status,High,BL-ORD-003,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}} available; admin can access {{ADMIN_URL}}",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};admin_url={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};sample_tracking_number=@td(SAMPLE_TRACKING_NUMBER.value),"[ADMIN] Log in to Admin SPA at {{ADMIN_URL}}
 [NAV] navigate to Orders
 [ACT] find the target New status order placed by {{USER_EMAIL}}
 [ACT] update order status to 'Shipped'
@@ -225,9 +225,9 @@ Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials {{ADMIN
 [STATE] order status = 'Shipped' in storefront list and detail after admin update
 [DOM] tracking number displayed on order detail matches @td(SAMPLE_TRACKING_NUMBER.value) value entered in admin
 [DOM] tracking number rendered as clickable anchor link
-[COND: timeline present] status history shows New → Shipped transition","[ADMIN] verify admin Orders list shows Shipped status; [API] GET order detail returns status=Shipped and tracking_number field; [CONSOLE] no errors on storefront order detail after admin update","admin save fails silently; storefront still shows 'New' after admin ships; tracking number absent; tracking displayed as plain text not a link","none — status update is intentional test action","Coverage Gap Analysis; PARKED — storefront has no shipment-tracking UI: order-details.vue renders no tracking number/link and locales/en.json has no tracking string, while trackingNumber+trackingUrl DO exist in the xAPI schema (verified 2026-07-25 vs vc-frontend@dev). Kept as the acceptance test for a future ""surface tracking on order detail"" story. Left at Draft deliberately (Draft is not regression-eligible) — do NOT promote or run until that story ships.; NOTE: the [ADMIN] half (admin can save a shipment + tracking number) is valid and belongs in a Backend/orders suite (017-019), not this Frontend suite — split it out when the story lands.","Draft"
-"ORD-006","Order Status Filter - Filter by Processing","Orders > Status","High","BL-ORD-003","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-@td(SHIPPED_ORDER.number) env var set; buyer logged in as {{USER_EMAIL}}; account has orders in at least 2 different statuses including Shipped","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};processing_order=@td(PROCESSING_ORDER.number)","[NAV] Navigate to /account/orders
+[COND: timeline present] status history shows New → Shipped transition",[ADMIN] verify admin Orders list shows Shipped status; [API] GET order detail returns status=Shipped and tracking_number field; [CONSOLE] no errors on storefront order detail after admin update,admin save fails silently; storefront still shows 'New' after admin ships; tracking number absent; tracking displayed as plain text not a link,none — status update is intentional test action,"Coverage Gap Analysis; PARKED — storefront has no shipment-tracking UI: order-details.vue renders no tracking number/link and locales/en.json has no tracking string, while trackingNumber+trackingUrl DO exist in the xAPI schema (verified 2026-07-25 vs vc-frontend@dev). Kept as the acceptance test for a future ""surface tracking on order detail"" story. Left at Draft deliberately (Draft is not regression-eligible) — do NOT promote or run until that story ships.; NOTE: the [ADMIN] half (admin can save a shipment + tracking number) is valid and belongs in a Backend/orders suite (017-019), not this Frontend suite — split it out when the story lands.",Draft
+ORD-006,Order Status Filter - Filter by Processing,Orders > Status,High,BL-ORD-003,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+@td(SHIPPED_ORDER.number) env var set; buyer logged in as {{USER_EMAIL}}; account has orders in at least 2 different statuses including Shipped",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};processing_order=@td(PROCESSING_ORDER.number),"[NAV] Navigate to /account/orders
 [ASSERT] verify status filter dropdown or control visible
 [ACT] select 'Processing' from status filter
 [WAIT] wait for filtered results to load
@@ -238,10 +238,10 @@ Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials {{ADMIN
 [STATE] all visible orders show 'Processing' status after filter applied
 [STATE] orders with other statuses absent from filtered view
 [STATE] clearing filter restores full order list
-[STATE] all orders restored","[API] filtered orders query scoped to status=Shipped; [CONSOLE] no JS errors on filter interaction; [NETWORK] 2xx on filtered orders request","status filter control absent; filter shows non-Shipped orders; clearing filter does not restore full list","none","Coverage Gap Analysis; Re-scoped from 'Shipped' to 'Processing' — verified 2026-07-25 vs vc-frontend@dev: ""Shipped"" is absent from $cfg.orders_statuses (New/Processing/Pending/Cancelled/Completed/Payment required/Ready for pickup), so it is not a stylable or filterable storefront status (order-status.vue)","Draft"
-"ORD-007","Reorder into Non-Empty Cart - Items Merge","Orders > Reorder","High","BL-CART-008, BL-ORD-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[STATE] all orders restored",[API] filtered orders query scoped to status=Shipped; [CONSOLE] no JS errors on filter interaction; [NETWORK] 2xx on filtered orders request,status filter control absent; filter shows non-Shipped orders; clearing filter does not restore full list,none,"Coverage Gap Analysis; Re-scoped from 'Shipped' to 'Processing' — verified 2026-07-25 vs vc-frontend@dev: ""Shipped"" is absent from $cfg.orders_statuses (New/Processing/Pending/Cancelled/Completed/Payment required/Ready for pickup), so it is not a stylable or filterable storefront status (order-status.vue)",Draft
+ORD-007,Reorder into Non-Empty Cart - Items Merge,Orders > Reorder,High,"BL-CART-008, BL-ORD-001",ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-@td(COMPLETED_ORDER.number) env var set (order must contain a SKU also present in catalog); buyer logged in as {{USER_EMAIL}}; reorder feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number)","[NAV] Open order @td(COMPLETED_ORDER.number) detail
+@td(COMPLETED_ORDER.number) env var set (order must contain a SKU also present in catalog); buyer logged in as {{USER_EMAIL}}; reorder feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number),"[NAV] Open order @td(COMPLETED_ORDER.number) detail
 [KEY] note first item SKU from order (call it Item A) and its quantity
 [NAV] navigate to Item A product page and add qty 1 to cart
 [WAIT] verify cart badge shows 1
@@ -251,10 +251,10 @@ Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials {{ADMIN
 [MATH] Item A qty = pre-existing qty (1) + qty from completed order
 [DOM] all other reordered items present
 [DOM] success notification visible
-[STATE] Item A appears only once in cart (no duplicate rows)","[API] reorder mutation response — no duplicate SKU entries; [CONSOLE] no JS errors on cart page after merge; [NETWORK] 2xx on reorder request; [API] mutation response errors[] is empty","Item A appears as two separate line items (duplication bug); Item A quantity ignores pre-existing cart qty; cart cleared before reorder items added","clear cart after test","Coverage Gap Analysis","Draft"
-"ORD-008","Reorder into Cart with Items from Same Org - Merge Behavior Verified","Orders > Reorder","High","BL-CART-008, BL-ORD-001","ECL-7.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[STATE] Item A appears only once in cart (no duplicate rows)",[API] reorder mutation response — no duplicate SKU entries; [CONSOLE] no JS errors on cart page after merge; [NETWORK] 2xx on reorder request; [API] mutation response errors[] is empty,Item A appears as two separate line items (duplication bug); Item A quantity ignores pre-existing cart qty; cart cleared before reorder items added,clear cart after test,Coverage Gap Analysis,Draft
+ORD-008,Reorder into Cart with Items from Same Org - Merge Behavior Verified,Orders > Reorder,High,"BL-CART-008, BL-ORD-001","ECL-7.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-@td(COMPLETED_ORDER.number) env var set; buyer logged in as {{USER_EMAIL}}; reorder feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number)","[NAV] Open order @td(COMPLETED_ORDER.number) detail
+@td(COMPLETED_ORDER.number) env var set; buyer logged in as {{USER_EMAIL}}; reorder feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number),"[NAV] Open order @td(COMPLETED_ORDER.number) detail
 [KEY] note first item SKU (Product X) and its quantity
 [NAV] navigate to Product X product page and add qty 2 to cart; also add one additional unrelated product (Product Y) qty 1 to cart
 [NAV] navigate to /account/orders
@@ -265,9 +265,9 @@ Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials {{ADMIN
 [STATE] no pre-existing cart items lost during reorder merge
 [STATE] Product X appears exactly once in cart (no duplicate rows)
 [STATE] Product Y still present with qty 1 unchanged
-[STATE] total line count = number of distinct SKUs only","[API] cart query after reorder returns distinct line items per SKU; [CONSOLE] no merge errors; [NETWORK] no 4xx on cart update; [API] mutation response errors[] is empty","Product X duplicated as two rows; Product Y quantity altered by reorder; pre-existing cart items lost","clear cart after test","Coverage Gap Analysis","Draft"
-"ORD-009","Return Request - Submit with Reason","Orders > Returns","High","PROPOSED-BL-RTN-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-@td(COMPLETED_ORDER.number) env var set; buyer logged in as {{USER_EMAIL}}; return/RMA feature enabled (RETURNS_FEATURE_ENABLED=true)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number)","[NAV] Navigate to /account/orders
+[STATE] total line count = number of distinct SKUs only",[API] cart query after reorder returns distinct line items per SKU; [CONSOLE] no merge errors; [NETWORK] no 4xx on cart update; [API] mutation response errors[] is empty,Product X duplicated as two rows; Product Y quantity altered by reorder; pre-existing cart items lost,clear cart after test,Coverage Gap Analysis,Draft
+ORD-009,Return Request - Submit with Reason,Orders > Returns,High,PROPOSED-BL-RTN-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+@td(COMPLETED_ORDER.number) env var set; buyer logged in as {{USER_EMAIL}}; return/RMA feature enabled (RETURNS_FEATURE_ENABLED=true)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number),"[NAV] Navigate to /account/orders
 [ACT] locate order @td(COMPLETED_ORDER.number) and click to open detail
 [WAIT] Wait for the order detail page to load
 [COND: returns feature enabled] verify 'Return' or 'Request Return' button visible on order detail
@@ -282,9 +282,9 @@ Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials {{ADMIN
 [DOM] return reason field present and required
 [STATE] confirmation shown after submission
 [STATE] return request status visible on order detail
-[STATE] confirmation message shown","[API] return mutation response errors[] is empty; [CONSOLE] no JS errors on return form submission; [NETWORK] 2xx on return endpoint","'Return' button absent when feature is enabled; return form missing line items; no confirmation shown after submission","none — return request is intentional test action","ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis)","Draft"
-"ORD-010","Return Request - Partial Return","Orders > Returns","High","PROPOSED-BL-RTN-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-@td(COMPLETED_ORDER.number) env var set (order must have 2+ line items); buyer logged in as {{USER_EMAIL}}; return/RMA feature enabled","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number)","[NAV] Navigate to /account/orders
+[STATE] confirmation message shown",[API] return mutation response errors[] is empty; [CONSOLE] no JS errors on return form submission; [NETWORK] 2xx on return endpoint,'Return' button absent when feature is enabled; return form missing line items; no confirmation shown after submission,none — return request is intentional test action,ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis),Draft
+ORD-010,Return Request - Partial Return,Orders > Returns,High,PROPOSED-BL-RTN-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+@td(COMPLETED_ORDER.number) env var set (order must have 2+ line items); buyer logged in as {{USER_EMAIL}}; return/RMA feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number),"[NAV] Navigate to /account/orders
 [ACT] locate order @td(COMPLETED_ORDER.number) with 2+ line items and click detail
 [WAIT] Wait for the order detail page to load
 [KEY] note Item A and Item B
@@ -299,9 +299,9 @@ Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials {{ADMIN
 [STATE] Item B absent from return request
 [DOM] return form blocks submission with zero items selected
 [STATE] confirmation shows only Item A
-[STATE] Item B not included","[API] return mutation payload includes only selected Item A line ID; [CONSOLE] no JS errors; [NETWORK] 2xx on partial return","return form all-or-nothing only; deselected Item B included; submit allowed with no items selected","none","ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis)","Draft"
-"ORD-011","Order Cancellation - Cancel New Order","Orders > Cancellation","High","BL-ORD-002","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; order placed via CHK-022 or any New order exists; buyer-cancel feature enabled (STORE_CONFIG_BUYER_CANCEL=true)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[STATE] Item B not included",[API] return mutation payload includes only selected Item A line ID; [CONSOLE] no JS errors; [NETWORK] 2xx on partial return,return form all-or-nothing only; deselected Item B included; submit allowed with no items selected,none,ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis),Draft
+ORD-011,Order Cancellation - Cancel New Order,Orders > Cancellation,High,BL-ORD-002,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; order placed via CHK-022 or any New order exists; buyer-cancel feature enabled (STORE_CONFIG_BUYER_CANCEL=true)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] click on an order with status 'New'
 [WAIT] wait for order detail
 [COND: buyer-cancel enabled] verify 'Cancel Order' button visible on detail page
@@ -316,19 +316,19 @@ Buyer logged in as {{USER_EMAIL}}; order placed via CHK-022 or any New order exi
 [DOM] confirmation dialog shown
 [DOM] reason field present
 [STATE] order status = cancelled value after confirmation
-[STATE] order shows cancelled in orders list","[API] cancelOrder mutation response errors[] is empty; [CONSOLE] no errors; [NETWORK] 2xx on cancel endpoint","'Cancel Order' button absent when buyer-cancel feature is enabled; reason field missing; status not updated after confirmation","none — cancellation is final","Coverage Gap Analysis","Draft"
-"ORD-012","Order Cancellation - Cancel Button Absent on Completed Order","Orders > Cancellation","High","BL-ORD-002","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-@td(SHIPPED_ORDER.number) env var set; buyer logged in as {{USER_EMAIL}}","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number)","[NAV] Navigate to /account/orders
+[STATE] order shows cancelled in orders list",[API] cancelOrder mutation response errors[] is empty; [CONSOLE] no errors; [NETWORK] 2xx on cancel endpoint,'Cancel Order' button absent when buyer-cancel feature is enabled; reason field missing; status not updated after confirmation,none — cancellation is final,Coverage Gap Analysis,Draft
+ORD-012,Order Cancellation - Cancel Button Absent on Completed Order,Orders > Cancellation,High,BL-ORD-002,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+@td(SHIPPED_ORDER.number) env var set; buyer logged in as {{USER_EMAIL}}",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number),"[NAV] Navigate to /account/orders
 [ACT] click on an order with status 'Completed'
 [WAIT] wait for order detail page","[DOM] 'Cancel Order' button absent on Completed order detail page
 [DOM] no cancellation option in any contextual menu or action dropdown
 [STATE] order status reads 'Completed' correctly
 [DOM] page renders completely without placeholder or error state
 [DOM] Reorder and other available actions still functional
-[STATE] page loads without JS errors","[CONSOLE] no JS errors on Shipped order detail page; [NETWORK] no unexpected 4xx/5xx requests when loading Shipped order detail","'Cancel Order' button present on Shipped order (cancellation should be blocked at this status); page errors when loading Shipped order detail; order status incorrectly displayed","none","Coverage Gap Analysis; Re-scoped from 'Shipped' to 'Completed' (terminal, post-fulfillment) — verified 2026-07-25 vs vc-frontend@dev: ""Shipped"" is absent from $cfg.orders_statuses (New/Processing/Pending/Cancelled/Completed/Payment required/Ready for pickup), so it is not a stylable or filterable storefront status (order-status.vue)","Draft"
-"ORD-013","Order Confirmation Page - Minimal Details Shown; Full Breakdown via Show Order","Orders > Confirmation","High","BL-ORD-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[STATE] page loads without JS errors",[CONSOLE] no JS errors on Shipped order detail page; [NETWORK] no unexpected 4xx/5xx requests when loading Shipped order detail,'Cancel Order' button present on Shipped order (cancellation should be blocked at this status); page errors when loading Shipped order detail; order status incorrectly displayed,none,"Coverage Gap Analysis; Re-scoped from 'Shipped' to 'Completed' (terminal, post-fulfillment) — verified 2026-07-25 vs vc-frontend@dev: ""Shipped"" is absent from $cfg.orders_statuses (New/Processing/Pending/Cancelled/Completed/Payment required/Ready for pickup), so it is not a stylable or filterable storefront status (order-status.vue)",Draft
+ORD-013,Order Confirmation Page - Minimal Details Shown; Full Breakdown via Show Order,Orders > Confirmation,High,BL-ORD-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Buyer logged in as {{USER_EMAIL}}; able to place a new order; payment method and shipping address configured; {{FRONT_URL}}/checkout/completed is intentionally minimal by design — full order details live on the order-detail page reached via 'Show order'","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to storefront
+Buyer logged in as {{USER_EMAIL}}; able to place a new order; payment method and shipping address configured; {{FRONT_URL}}/checkout/completed is intentionally minimal by design — full order details live on the order-detail page reached via 'Show order'",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to storefront
 [ACT] add item to cart
 [WAIT] Wait for the cart to update
 [ACT] proceed through checkout steps
@@ -347,9 +347,9 @@ Buyer logged in as {{USER_EMAIL}}; able to place a new order; payment method and
 [MATH] line totals = unit price × qty (verified on order detail page)
 [MATH] grand total = subtotal + shipping + taxes (verified on order detail page)
 [FORMAT] shipping address matches address entered at checkout (verified on order detail page)
-[DOM] shipping method or estimated delivery shown on order detail page","[API] GET order detail by confirmation order ID returns matching data; [CONSOLE] no JS errors on confirmation or order detail page; [NETWORK] 2xx on confirmation and order detail page load","confirmation page shows no order number or confirmation message; 'Show order'/'Continue Shopping' links absent; order detail page missing ordered items, totals, or shipping address after navigating via 'Show order'","none — order is placed and final","Coverage Gap Analysis","Draft"
-"ORD-014","Invoice PDF Download - Admin-Only (Not on Storefront Order Detail)","Orders > Documents","Medium","BL-ORD-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Admin access available at {{ADMIN_URL}}; at least one completed order exists; invoice PDF generation is Admin-only — not exposed on the storefront order detail page","url={{FRONT_URL}};admin_url={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ADMIN] Log in to Admin SPA at {{ADMIN_URL}}
+[DOM] shipping method or estimated delivery shown on order detail page",[API] GET order detail by confirmation order ID returns matching data; [CONSOLE] no JS errors on confirmation or order detail page; [NETWORK] 2xx on confirmation and order detail page load,"confirmation page shows no order number or confirmation message; 'Show order'/'Continue Shopping' links absent; order detail page missing ordered items, totals, or shipping address after navigating via 'Show order'",none — order is placed and final,Coverage Gap Analysis,Draft
+ORD-014,Invoice PDF Download - Admin-Only (Not on Storefront Order Detail),Orders > Documents,Medium,BL-ORD-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Admin access available at {{ADMIN_URL}}; at least one completed order exists; invoice PDF generation is Admin-only — not exposed on the storefront order detail page",url={{FRONT_URL}};admin_url={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[ADMIN] Log in to Admin SPA at {{ADMIN_URL}}
 [NAV] navigate to Orders module and open a completed order's detail
 [ASSERT] verify 'Print Invoice' / 'Download Invoice' action visible in Admin order detail
 [ACT] click 'Print Invoice' / 'Download Invoice' in Admin
@@ -361,9 +361,9 @@ Admin access available at {{ADMIN_URL}}; at least one completed order exists; in
 [STATE] clicking action in Admin triggers file download without navigation away from the blade
 [FORMAT] downloaded file has .pdf extension
 [STATE] file size > 0 bytes (non-empty PDF)
-[STATE] storefront order detail page has no invoice download control (Admin-only by design)","[ADMIN] Invoice PDF action available and functional on order detail blade; [NETWORK] PDF download request returns 2xx with Content-Type: application/pdf; [CONSOLE] no JS errors on download initiation","'Download Invoice' action absent in Admin on completed order; clicking action shows error message instead of downloading; downloaded file is 0 bytes or corrupted; file extension is not .pdf; storefront unexpectedly exposes an invoice download control","none","Coverage Gap Analysis","Draft"
-"ORD-015","Order Search by Order Number","Orders > Search","High","BL-ORD-003","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has multiple orders; at least one order with a known order number exists","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[STATE] storefront order detail page has no invoice download control (Admin-only by design)",[ADMIN] Invoice PDF action available and functional on order detail blade; [NETWORK] PDF download request returns 2xx with Content-Type: application/pdf; [CONSOLE] no JS errors on download initiation,'Download Invoice' action absent in Admin on completed order; clicking action shows error message instead of downloading; downloaded file is 0 bytes or corrupted; file extension is not .pdf; storefront unexpectedly exposes an invoice download control,none,Coverage Gap Analysis,Draft
+ORD-015,Order Search by Order Number,Orders > Search,High,BL-ORD-003,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has multiple orders; at least one order with a known order number exists",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [KEY] note the order number of any existing order (e.g. ORD-12345)
 [ASSERT] verify the 'Search by number, name or other data' search input and its 'Search orders' button are visible on the orders list page
 [ACT] type the exact order number into the 'Search by number, name or other data' input
@@ -378,9 +378,9 @@ Buyer logged in as {{USER_EMAIL}}; account has multiple orders; at least one ord
 [STATE] orders not matching the search term absent from results
 [DOM] order number in result row matches the entered search term
 [STATE] clearing search field restores full order list
-[DOM] no 'no results' empty state for a valid order number","[API] orders search query with order number filter returns single matching record; [CONSOLE] no errors on search submission; [NETWORK] 2xx on search request","search field absent on orders page; search returns all orders instead of filtered results; correct order absent from results; entering valid order number shows empty state","none","Coverage Gap Analysis","Draft"
-"ORD-016","Orders List Pagination","Orders > Search","Medium","BL-ORD-003","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has more orders than fit on a single page (typically more than 10-20 orders)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[DOM] no 'no results' empty state for a valid order number",[API] orders search query with order number filter returns single matching record; [CONSOLE] no errors on search submission; [NETWORK] 2xx on search request,search field absent on orders page; search returns all orders instead of filtered results; correct order absent from results; entering valid order number shows empty state,none,Coverage Gap Analysis,Draft
+ORD-016,Orders List Pagination,Orders > Search,Medium,BL-ORD-003,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has more orders than fit on a single page (typically more than 10-20 orders)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ASSERT] verify pagination controls (page numbers or Next/Previous buttons) visible when order count exceeds page size
 [KEY] note number of orders shown on page 1
 [ACT] click 'Next' or page 2 button
@@ -394,9 +394,9 @@ Buyer logged in as {{USER_EMAIL}}; account has more orders than fit on a single 
 [STATE] navigating back to page 1 restores original order list
 [MATH] total order count across all pages = total orders in account
 [DOM] page size consistent between pages
-[STATE] same orders from page 1 shown again","[API] paginated orders query with page/offset params returns distinct result sets per page; [CONSOLE] no errors on pagination navigation; [NETWORK] 2xx on each page request; [API] mutation response errors[] is empty","pagination controls absent when orders exceed page size; page 2 shows same orders as page 1; current page indicator not updated; back navigation reloads all orders ignoring pagination","none","Coverage Gap Analysis","Draft"
-"ORD-017","Order Date Range Filter","Orders > Search","Medium","BL-ORD-003","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has orders placed on various dates including both inside and outside a known test date range","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[STATE] same orders from page 1 shown again",[API] paginated orders query with page/offset params returns distinct result sets per page; [CONSOLE] no errors on pagination navigation; [NETWORK] 2xx on each page request; [API] mutation response errors[] is empty,pagination controls absent when orders exceed page size; page 2 shows same orders as page 1; current page indicator not updated; back navigation reloads all orders ignoring pagination,none,Coverage Gap Analysis,Draft
+ORD-017,Order Date Range Filter,Orders > Search,Medium,BL-ORD-003,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders placed on various dates including both inside and outside a known test date range",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ASSERT] verify date range filter control (date pickers or date range input) visible on orders list page
 [ACT] set start date to first day of previous calendar month
 [ACT] set end date to last day of previous calendar month
@@ -411,9 +411,9 @@ Buyer logged in as {{USER_EMAIL}}; account has orders placed on various dates in
 [FORMAT] order dates in results formatted consistently and fall within selected range
 [STATE] clearing date range filter restores unfiltered order list
 [DOM] active filter state visually indicated while filter is applied
-[STATE] all orders restored","[API] orders query with date range params returns only in-range records; [CONSOLE] no errors on date filter application; [NETWORK] 2xx on filtered request","date range filter absent on orders page; filter shows orders outside the specified range; clearing filter does not restore full list; date picker interaction causes JS errors","none","Coverage Gap Analysis","Draft"
-"ORD-018","Order Status - Processing State Reflected on Storefront","Orders > Status","High","BL-ORD-003, BL-ORD-001","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials available at {{ADMIN_URL}}; admin can access Orders module","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};admin_url={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}}","[ADMIN] Log in to Admin SPA at {{ADMIN_URL}}
+[STATE] all orders restored",[API] orders query with date range params returns only in-range records; [CONSOLE] no errors on date filter application; [NETWORK] 2xx on filtered request,date range filter absent on orders page; filter shows orders outside the specified range; clearing filter does not restore full list; date picker interaction causes JS errors,none,Coverage Gap Analysis,Draft
+ORD-018,Order Status - Processing State Reflected on Storefront,Orders > Status,High,"BL-ORD-003, BL-ORD-001",ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials available at {{ADMIN_URL}}; admin can access Orders module",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};admin_url={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}},"[ADMIN] Log in to Admin SPA at {{ADMIN_URL}}
 [NAV] navigate to Orders module
 [ACT] find target order by order number
 [ACT] change order status from 'New' to 'Processing'
@@ -429,9 +429,9 @@ Order exists in 'New' status placed by {{USER_EMAIL}}; admin credentials availab
 [STATE] storefront order list shows 'Processing' status after admin update
 [STATE] order detail page status = 'Processing' (not 'New')
 [DOM] status indicator visually distinct from 'New' status (different color or label)
-[DOM] status history or audit trail (if present) shows New → Processing transition","[ADMIN] verify admin Orders list reflects Processing status; [API] GET order detail returns status=Processing; [CONSOLE] no errors on storefront order detail after admin status change","admin save fails silently; storefront still shows 'New' after admin sets Processing; order detail shows incorrect intermediate status; status history absent or shows incorrect transition","none — status update is intentional test action","Coverage Gap Analysis","Draft"
-"ORD-019","Order List - Filter by Multiple Statuses","Orders > Filtering","High","BL-ORD-003","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has orders in at least 3 different statuses (New and Shipped and Completed)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[DOM] status history or audit trail (if present) shows New → Processing transition",[ADMIN] verify admin Orders list reflects Processing status; [API] GET order detail returns status=Processing; [CONSOLE] no errors on storefront order detail after admin status change,admin save fails silently; storefront still shows 'New' after admin sets Processing; order detail shows incorrect intermediate status; status history absent or shows incorrect transition,none — status update is intentional test action,Coverage Gap Analysis,Draft
+ORD-019,Order List - Filter by Multiple Statuses,Orders > Filtering,High,BL-ORD-003,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders in at least 3 different statuses (New and Shipped and Completed)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ASSERT] verify status filter control visible
 [ACT] select 'New' status filter
 [WAIT] wait for filtered results
@@ -446,9 +446,9 @@ Buyer logged in as {{USER_EMAIL}}; account has orders in at least 3 different st
 [STATE] Completed orders absent from multi-status filtered view
 [STATE] clearing filters restores full unfiltered order list
 [DOM] active filter indicators show both selected statuses
-[STATE] all orders restored including Completed","[API] orders query with multi-status filter returns correctly scoped results; [CONSOLE] no JS errors on multi-filter interaction; [NETWORK] 2xx on filtered orders request","multi-status filter not supported (single select only); filter shows orders of unselected statuses; clearing filters causes page error; filter count badge incorrect","none","Coverage Gap Analysis — GAP-F01; Re-scoped second status from 'Shipped' to 'Processing' — verified 2026-07-25 vs vc-frontend@dev: ""Shipped"" is absent from $cfg.orders_statuses (New/Processing/Pending/Cancelled/Completed/Payment required/Ready for pickup), so it is not a stylable or filterable storefront status (order-status.vue)","Draft"
-"ORD-020","Order List - Sort by Date Ascending and Descending","Orders > Filtering","High","BL-ORD-003","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has 5+ orders placed on different dates","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[STATE] all orders restored including Completed",[API] orders query with multi-status filter returns correctly scoped results; [CONSOLE] no JS errors on multi-filter interaction; [NETWORK] 2xx on filtered orders request,multi-status filter not supported (single select only); filter shows orders of unselected statuses; clearing filters causes page error; filter count badge incorrect,none,"Coverage Gap Analysis — GAP-F01; Re-scoped second status from 'Shipped' to 'Processing' — verified 2026-07-25 vs vc-frontend@dev: ""Shipped"" is absent from $cfg.orders_statuses (New/Processing/Pending/Cancelled/Completed/Payment required/Ready for pickup), so it is not a stylable or filterable storefront status (order-status.vue)",Draft
+ORD-020,Order List - Sort by Date Ascending and Descending,Orders > Filtering,High,BL-ORD-003,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has 5+ orders placed on different dates",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ASSERT] verify sort control or column header for date visible
 [KEY] note default sort order (most recent first)
 [ACT] click date sort to toggle ascending order
@@ -460,9 +460,9 @@ Buyer logged in as {{USER_EMAIL}}; account has 5+ orders placed on different dat
 [FORMAT] dates in list follow consistent format and are in correct chronological sequence
 [DOM] sort direction indicator (arrow icon or label) reflects current sort state
 [STATE] no orders missing or duplicated after sort change
-[STATE] orders sorted most recent first (descending dates)","[API] orders query with sort param returns correctly ordered results; [CONSOLE] no JS errors on sort interaction; [NETWORK] 2xx on sorted request","sort control absent; clicking sort does not change order; dates not in chronological sequence after sort; sort indicator does not update","none","Coverage Gap Analysis — GAP-F01","Draft"
-"ORD-021","Order List - Sort by Order Total","Orders > Filtering","Medium","BL-ORD-003","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has orders with different total amounts","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[STATE] orders sorted most recent first (descending dates)",[API] orders query with sort param returns correctly ordered results; [CONSOLE] no JS errors on sort interaction; [NETWORK] 2xx on sorted request,sort control absent; clicking sort does not change order; dates not in chronological sequence after sort; sort indicator does not update,none,Coverage Gap Analysis — GAP-F01,Draft
+ORD-021,Order List - Sort by Order Total,Orders > Filtering,Medium,BL-ORD-003,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders with different total amounts",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ASSERT] verify sort option for order total available (column header or dropdown)
 [ACT] apply sort by total ascending
 [WAIT] wait for list to re-sort
@@ -472,9 +472,9 @@ Buyer logged in as {{USER_EMAIL}}; account has orders with different total amoun
 [STATE] descending sort shows highest total first
 [MATH] totals in list are in correct numerical order (not alphabetical string sort)
 [DOM] each order row displays total amount
-[DOM] sort indicator reflects current direction","[API] orders query with sort=total returns correctly ordered results; [CONSOLE] no errors on total sort; [NETWORK] 2xx on sorted request","sort by total not available; totals sorted alphabetically instead of numerically (e.g. $9 after $80); sort indicator absent","none","Coverage Gap Analysis — GAP-F01","Draft"
-"ORD-022","Order List - Search Reset and Clear Filters","Orders > Filtering","Medium","BL-ORD-003","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has 5+ orders; at least one filter (status or date) has been applied","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[DOM] sort indicator reflects current direction",[API] orders query with sort=total returns correctly ordered results; [CONSOLE] no errors on total sort; [NETWORK] 2xx on sorted request,sort by total not available; totals sorted alphabetically instead of numerically (e.g. $9 after $80); sort indicator absent,none,Coverage Gap Analysis — GAP-F01,Draft
+ORD-022,Order List - Search Reset and Clear Filters,Orders > Filtering,Medium,BL-ORD-003,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has 5+ orders; at least one filter (status or date) has been applied",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [KEY] note total order count in unfiltered list
 [ACT] apply status filter for 'Processing'
 [WAIT] wait for filtered results
@@ -491,9 +491,9 @@ Buyer logged in as {{USER_EMAIL}}; account has 5+ orders; at least one filter (s
 [STATE] order count after clear matches pre-filter count
 [DOM] search field clear (X) button functional
 [STATE] no residual filter or search state after clearing
-[DOM] filter indicators removed after clear","[API] unfiltered orders query returns full result set after clear; [CONSOLE] no errors on filter clear interaction; [NETWORK] 2xx on reset request","clear/reset button absent when filters are active; clearing does not restore full list; residual filter state persists after clear; order count incorrect after reset","none","Coverage Gap Analysis — GAP-F01; Re-scoped filter from 'Shipped' to 'Processing' — verified 2026-07-25 vs vc-frontend@dev: ""Shipped"" is absent from $cfg.orders_statuses (New/Processing/Pending/Cancelled/Completed/Payment required/Ready for pickup), so it is not a stylable or filterable storefront status (order-status.vue)","Draft"
-"ORD-023","Order List - Sort by Status Column","Orders > Filtering","Medium","BL-ORD-003","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has orders in at least 3 different statuses","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[DOM] filter indicators removed after clear",[API] unfiltered orders query returns full result set after clear; [CONSOLE] no errors on filter clear interaction; [NETWORK] 2xx on reset request,clear/reset button absent when filters are active; clearing does not restore full list; residual filter state persists after clear; order count incorrect after reset,none,"Coverage Gap Analysis — GAP-F01; Re-scoped filter from 'Shipped' to 'Processing' — verified 2026-07-25 vs vc-frontend@dev: ""Shipped"" is absent from $cfg.orders_statuses (New/Processing/Pending/Cancelled/Completed/Payment required/Ready for pickup), so it is not a stylable or filterable storefront status (order-status.vue)",Draft
+ORD-023,Order List - Sort by Status Column,Orders > Filtering,Medium,BL-ORD-003,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders in at least 3 different statuses",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ASSERT] verify status column header is clickable for sorting (if supported)
 [ACT] click status column header to sort
 [WAIT] wait for list to re-sort
@@ -504,9 +504,9 @@ Buyer logged in as {{USER_EMAIL}}; account has orders in at least 3 different st
 [DOM] sort indicator on status column reflects direction
 [STATE] total order count unchanged after sort
 [DOM] no page error or blank state after status sort
-[STATE] no orders lost or duplicated during sort","[API] orders query with sort=status returns grouped results; [CONSOLE] no JS errors on status sort; [NETWORK] 2xx on sorted request","status column not sortable; clicking header causes page error; orders duplicated or missing after sort","none","Coverage Gap Analysis — GAP-F01","Draft"
-"ORD-024","Order List - Empty State When No Orders Match Filter","Orders > Filtering","Medium","BL-ORD-003","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has orders but none in 'Cancelled' status (or another uncommon status)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[STATE] no orders lost or duplicated during sort",[API] orders query with sort=status returns grouped results; [CONSOLE] no JS errors on status sort; [NETWORK] 2xx on sorted request,status column not sortable; clicking header causes page error; orders duplicated or missing after sort,none,Coverage Gap Analysis — GAP-F01,Draft
+ORD-024,Order List - Empty State When No Orders Match Filter,Orders > Filtering,Medium,BL-ORD-003,ECL-3.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders but none in 'Cancelled' status (or another uncommon status)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] apply status filter for a status with zero matching orders (e.g. 'Cancelled')
 [WAIT] wait for filtered results
 [ASSERT] verify empty state message displayed (e.g. 'No orders found' or 'No results')
@@ -518,9 +518,9 @@ Buyer logged in as {{USER_EMAIL}}; account has orders but none in 'Cancelled' st
 [DOM] clear filter or reset option accessible from empty state
 [STATE] clearing filter from empty state restores full list
 [DOM] no blank white page or missing content area
-[STATE] all orders restored","[API] filtered orders query returns empty result set with 200 status; [CONSOLE] no JS errors on empty filter results; [NETWORK] no 4xx/5xx on empty result query","blank page shown instead of empty state message; no way to clear filter from empty state; clearing filter does not restore orders; error message shown instead of friendly empty state","none","Coverage Gap Analysis — GAP-F01","Draft"
-"ORD-025","Order List - Search with No Results Shows Empty State","Orders > Filtering","Medium","BL-ORD-003","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has orders","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[STATE] all orders restored",[API] filtered orders query returns empty result set with 200 status; [CONSOLE] no JS errors on empty filter results; [NETWORK] no 4xx/5xx on empty result query,blank page shown instead of empty state message; no way to clear filter from empty state; clearing filter does not restore orders; error message shown instead of friendly empty state,none,Coverage Gap Analysis — GAP-F01,Draft
+ORD-025,Order List - Search with No Results Shows Empty State,Orders > Filtering,Medium,BL-ORD-003,ECL-3.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has orders",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] enter a nonexistent order number in search field (e.g. 'XXXXINVALID99999')
 [KEY] press Enter or click search
 [WAIT] wait for search results
@@ -531,9 +531,9 @@ Buyer logged in as {{USER_EMAIL}}; account has orders","url={{FRONT_URL}};user={
 [DOM] no infinite loading spinner
 [STATE] clearing search restores full order list
 [DOM] search field retains entered text until explicitly cleared
-[STATE] all orders restored","[API] orders search query returns empty result set with 200; [CONSOLE] no JS errors on empty search; [NETWORK] 2xx on search request","blank page on invalid search; infinite spinner; clearing search does not restore list; JS error on search submission","none","Coverage Gap Analysis — GAP-F01","Draft"
-"ORD-026","Mobile - Order List Responsive Layout","Orders > Mobile","High","BL-ORD-003","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; account has 3+ orders; mobile viewport (375px width)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] resize browser to 375px width
+[STATE] all orders restored",[API] orders search query returns empty result set with 200; [CONSOLE] no JS errors on empty search; [NETWORK] 2xx on search request,blank page on invalid search; infinite spinner; clearing search does not restore list; JS error on search submission,none,Coverage Gap Analysis — GAP-F01,Draft
+ORD-026,Mobile - Order List Responsive Layout,Orders > Mobile,High,BL-ORD-003,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has 3+ orders; mobile viewport (375px width)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[ACT] resize browser to 375px width
 [NAV] navigate to /account/orders
 [WAIT] wait for page to load
 [ASSERT] verify orders list renders without horizontal scrollbar
@@ -547,9 +547,9 @@ Buyer logged in as {{USER_EMAIL}}; account has 3+ orders; mobile viewport (375px
 [FORMAT] font size >= 16px for body text (no iOS auto-zoom trigger)
 [DOM] touch targets >= 44x44px for interactive elements
 [NAV] tapping order navigates to detail page successfully at mobile viewport
-[STATE] order detail page loads correctly at mobile width","[CONSOLE] no layout-related JS warnings at 375px; [NETWORK] 2xx on orders page load at mobile viewport","horizontal scrollbar appears at 375px; text overlaps or clips making content unreadable; touch targets too small (< 44px); order detail fails to load after tap; auto-zoom triggered on iOS due to small font","none","Coverage Gap Analysis — GAP-F02","Draft"
-"ORD-027","Mobile - Order Filters Collapsed and Expandable","Orders > Mobile","Medium","BL-ORD-003","ECL-3.2","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); account has orders in multiple statuses","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] resize browser to 375px width
+[STATE] order detail page loads correctly at mobile width",[CONSOLE] no layout-related JS warnings at 375px; [NETWORK] 2xx on orders page load at mobile viewport,horizontal scrollbar appears at 375px; text overlaps or clips making content unreadable; touch targets too small (< 44px); order detail fails to load after tap; auto-zoom triggered on iOS due to small font,none,Coverage Gap Analysis — GAP-F02,Draft
+ORD-027,Mobile - Order Filters Collapsed and Expandable,Orders > Mobile,Medium,BL-ORD-003,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); account has orders in multiple statuses",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[ACT] resize browser to 375px width
 [NAV] navigate to /account/orders
 [WAIT] wait for page
 [ASSERT] verify filters are collapsed or behind a 'Filter' toggle button (not taking full screen space)
@@ -565,9 +565,9 @@ Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); account has or
 [STATE] selecting filter updates results while panel is open
 [STATE] collapsing filter panel preserves the active filter
 [DOM] active filter indicator visible even when panel is collapsed
-[STATE] filter panel closes and filtered results remain visible","[CONSOLE] no JS errors on filter toggle at mobile viewport; [NETWORK] 2xx on filtered request at mobile","filters take up full screen space at mobile width pushing content below fold; filter toggle absent; selecting filter causes page to jump to top; collapsing panel clears the active filter","none","Coverage Gap Analysis — GAP-F02","Draft"
-"ORD-028","Mobile - Order Detail Responsive Layout","Orders > Mobile","High","BL-ORD-003","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); order exists with line items and shipping address and payment info","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] resize browser to 375px width
+[STATE] filter panel closes and filtered results remain visible",[CONSOLE] no JS errors on filter toggle at mobile viewport; [NETWORK] 2xx on filtered request at mobile,filters take up full screen space at mobile width pushing content below fold; filter toggle absent; selecting filter causes page to jump to top; collapsing panel clears the active filter,none,Coverage Gap Analysis — GAP-F02,Draft
+ORD-028,Mobile - Order Detail Responsive Layout,Orders > Mobile,High,BL-ORD-003,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); order exists with line items and shipping address and payment info",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[ACT] resize browser to 375px width
 [NAV] navigate to /account/orders
 [ACT] tap on an order to open detail
 [WAIT] wait for detail page
@@ -578,9 +578,9 @@ Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); order exists w
 [DOM] action buttons >= 44px height and full-width or near-full-width at mobile
 [FORMAT] all monetary amounts display 2 decimal places
 [STATE] all sections accessible without horizontal scrolling
-[STATE] action buttons (Reorder and Return) are full-width or adequately sized for touch","[CONSOLE] no layout errors at 375px on order detail; [NETWORK] 2xx on order detail page load","horizontal scroll required to see content; line item details truncated making them unreadable; totals section hidden or clipped; action buttons too small for touch interaction","none","Coverage Gap Analysis — GAP-F02","Draft"
-"ORD-029","Order Detail - Line Item Details Display","Orders > Detail","High","BL-ORD-005","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; order exists with 2+ line items including product images in catalog","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[STATE] action buttons (Reorder and Return) are full-width or adequately sized for touch",[CONSOLE] no layout errors at 375px on order detail; [NETWORK] 2xx on order detail page load,horizontal scroll required to see content; line item details truncated making them unreadable; totals section hidden or clipped; action buttons too small for touch interaction,none,Coverage Gap Analysis — GAP-F02,Draft
+ORD-029,Order Detail - Line Item Details Display,Orders > Detail,High,BL-ORD-005,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; order exists with 2+ line items including product images in catalog",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] click on an order with multiple items
 [WAIT] wait for detail page
 [ASSERT] verify each line item shows product image thumbnail
@@ -597,9 +597,9 @@ Buyer logged in as {{USER_EMAIL}}; order exists with 2+ line items including pro
 [MATH] line total = unit price x quantity for each row
 [NAV] clicking product name navigates to correct PDP
 [FORMAT] prices displayed with 2 decimal places and currency symbol
-[STATE] navigation to product detail page","[API] GET order detail returns line items with imageUrl and name and sku and qty and unitPrice and lineTotal; [CONSOLE] no errors on order detail page; [NETWORK] image URLs return 2xx (no broken images)","product images missing or show broken placeholder; product name not clickable; SKU absent from line items; line total does not equal qty x unit price; clicking product name leads to 404","none","Coverage Gap Analysis — GAP-F03","Draft"
-"ORD-030","Order Detail - Shipment Tracking Link Display","Orders > Detail","High","BL-ORD-003, BL-ORD-007","ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-@td(SHIPPED_ORDER.number) env var set (shipped order with tracking number assigned in admin); buyer logged in as {{USER_EMAIL}}","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};shipped_order=@td(SHIPPED_ORDER.number)","[NAV] Navigate to /account/orders
+[STATE] navigation to product detail page",[API] GET order detail returns line items with imageUrl and name and sku and qty and unitPrice and lineTotal; [CONSOLE] no errors on order detail page; [NETWORK] image URLs return 2xx (no broken images),product images missing or show broken placeholder; product name not clickable; SKU absent from line items; line total does not equal qty x unit price; clicking product name leads to 404,none,Coverage Gap Analysis — GAP-F03,Draft
+ORD-030,Order Detail - Shipment Tracking Link Display,Orders > Detail,High,"BL-ORD-003, BL-ORD-007",ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+@td(SHIPPED_ORDER.number) env var set (shipped order with tracking number assigned in admin); buyer logged in as {{USER_EMAIL}}",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};shipped_order=@td(SHIPPED_ORDER.number),"[NAV] Navigate to /account/orders
 [ACT] locate order @td(SHIPPED_ORDER.number) and click to open detail
 [WAIT] wait for detail page
 [ASSERT] verify shipment tracking section visible on order detail
@@ -611,25 +611,25 @@ Buyer logged in as {{USER_EMAIL}}; order exists with 2+ line items including pro
 [DOM] carrier name displayed
 [DOM] shipment status label visible
 [NAV] tracking link opens carrier URL in new tab (target=_blank)
-[DOM] tracking section absent or hidden for orders without tracking","[API] GET order detail returns shipment with trackingNumber and trackingUrl; [CONSOLE] no errors loading tracking section; [NETWORK] tracking URL returns valid response (no 404)","tracking section absent on shipped order; tracking number displayed as plain text (not clickable); carrier name missing; clicking tracking link returns 404","none","Coverage Gap Analysis — GAP-F03; PARKED — storefront has no shipment-tracking UI: order-details.vue renders no tracking number/link and locales/en.json has no tracking string, while trackingNumber+trackingUrl DO exist in the xAPI schema (verified 2026-07-25 vs vc-frontend@dev). Kept as the acceptance test for a future ""surface tracking on order detail"" story. Left at Draft deliberately (Draft is not regression-eligible) — do NOT promote or run until that story ships.","Draft"
-"ORD-031","Order Detail - Payment Method Display","Orders > Detail","High","BL-ORD-001","ECL-1.1","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; order exists with a payment that has been authorized/captured","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[DOM] tracking section absent or hidden for orders without tracking",[API] GET order detail returns shipment with trackingNumber and trackingUrl; [CONSOLE] no errors loading tracking section; [NETWORK] tracking URL returns valid response (no 404),tracking section absent on shipped order; tracking number displayed as plain text (not clickable); carrier name missing; clicking tracking link returns 404,none,"Coverage Gap Analysis — GAP-F03; PARKED — storefront has no shipment-tracking UI: order-details.vue renders no tracking number/link and locales/en.json has no tracking string, while trackingNumber+trackingUrl DO exist in the xAPI schema (verified 2026-07-25 vs vc-frontend@dev). Kept as the acceptance test for a future ""surface tracking on order detail"" story. Left at Draft deliberately (Draft is not regression-eligible) — do NOT promote or run until that story ships.",Draft
+ORD-031,Order Detail - Payment Method Display,Orders > Detail,High,BL-ORD-001,ECL-1.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; order exists with a payment that has been authorized/captured",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] click on an order to open detail
 [WAIT] wait for detail page","[DOM] payment section present on order detail page
 [DOM] payment method name or logo visible
 [STATE] payment status displayed (Paid or Authorized etc.)
-[MATH] payment amount = order grand total","[API] GET order detail returns payment info with method and status and amount; [CONSOLE] no errors in payment section rendering","payment section absent from order detail; payment method name/logo missing; payment status missing; payment amount does not match order total","none","Coverage Gap Analysis — GAP-F03","Draft"
-"ORD-032","Order Detail - Shipping and Billing Address Display","Orders > Detail","High","BL-ORD-005","ECL-6.3","[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; order exists with distinct shipping and billing addresses","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+[MATH] payment amount = order grand total",[API] GET order detail returns payment info with method and status and amount; [CONSOLE] no errors in payment section rendering,payment section absent from order detail; payment method name/logo missing; payment status missing; payment amount does not match order total,none,Coverage Gap Analysis — GAP-F03,Draft
+ORD-032,Order Detail - Shipping and Billing Address Display,Orders > Detail,High,BL-ORD-005,ECL-6.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; order exists with distinct shipping and billing addresses",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] click on an order
 [WAIT] wait for detail page","[DOM] shipping address section present with all fields (name and street and city and state and zip and country)
 [DOM] billing address section present with all fields
 [STATE] if addresses differ then both sections show their respective distinct values
 [FORMAT] addresses formatted according to locale conventions
-[DOM] no truncated or missing address fields","[API] GET order detail returns shippingAddress and billingAddress objects with full fields; [CONSOLE] no errors rendering address sections; [NETWORK] 2xx on order detail load","shipping address absent from order detail; billing address missing; same address shown for both when they should differ; address fields truncated or incomplete","none","Coverage Gap Analysis — GAP-F03","Draft"
-"ORD-034","Reorder - Product Discontinued Mid-Catalog Shows Error","Orders > Reorder","High","BL-ORD-001","ECL-2.1, ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[DOM] no truncated or missing address fields",[API] GET order detail returns shippingAddress and billingAddress objects with full fields; [CONSOLE] no errors rendering address sections; [NETWORK] 2xx on order detail load,shipping address absent from order detail; billing address missing; same address shown for both when they should differ; address fields truncated or incomplete,none,Coverage Gap Analysis — GAP-F03,Draft
+ORD-034,Reorder - Product Discontinued Mid-Catalog Shows Error,Orders > Reorder,High,BL-ORD-001,"ECL-2.1, ECL-7.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Buyer logged in as {{USER_EMAIL}}; completed order exists where at least one item is now discontinued or removed from catalog entirely","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+Buyer logged in as {{USER_EMAIL}}; completed order exists where at least one item is now discontinued or removed from catalog entirely",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] find order containing a discontinued product
 [ACT] click 'Reorder all'
 [WAIT] wait for response","[DOM] warning/error message names the discontinued product
@@ -639,10 +639,10 @@ Buyer logged in as {{USER_EMAIL}}; completed order exists where at least one ite
 [DOM] cart checkout button functional with available items only
 [STATE] available items from the same order are added to cart
 [STATE] cart is functional despite the partial reorder
-[STATE] no silent failure (empty cart without explanation)","[API] reorder mutation response includes error or unavailable_items field; [CONSOLE] no unhandled exceptions; [NETWORK] no 500 errors on reorder request","all items silently dropped including available ones; no error message shown; cart empty with no explanation; discontinued item added to cart causing checkout failure","clear cart after test","REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis)","Draft"
-"ORD-035","Reorder - Price Changed Since Original Order","Orders > Reorder","High","BL-ORD-001, BL-PRICE-001","ECL-2.3","[PRE:SIGNIN_AS:USER_DEFAULT]
+[STATE] no silent failure (empty cart without explanation)",[API] reorder mutation response includes error or unavailable_items field; [CONSOLE] no unhandled exceptions; [NETWORK] no 500 errors on reorder request,all items silently dropped including available ones; no error message shown; cart empty with no explanation; discontinued item added to cart causing checkout failure,clear cart after test,REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis),Draft
+ORD-035,Reorder - Price Changed Since Original Order,Orders > Reorder,High,"BL-ORD-001, BL-PRICE-001",ECL-2.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Buyer logged in as {{USER_EMAIL}}; completed order exists where at least one item current catalog price differs from historical order price","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+Buyer logged in as {{USER_EMAIL}}; completed order exists where at least one item current catalog price differs from historical order price",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] click on order to view detail
 [WAIT] Wait for the order detail page to load
 [KEY] note historical unit price for items
@@ -653,10 +653,10 @@ Buyer logged in as {{USER_EMAIL}}; completed order exists where at least one ite
 [DOM] no price mismatch between cart display and actual current price
 [STATE] user not charged historical price
 [DOM] optional: price change indicator or note visible
-[STATE] user is informed or can see that prices may have changed","[API] cart query shows current prices not order-time prices; [CONSOLE] no pricing errors in console; [NETWORK] 2xx on reorder and cart requests","cart shows historical order prices instead of current; line totals calculated from old prices; no indication prices have changed; subtotal uses mixed old/new prices","clear cart after test","Coverage Gap Analysis — GAP-F21","Draft"
-"ORD-036","Reorder - Partial Availability with Mixed Items","Orders > Reorder","High","BL-ORD-001, BL-CART-001","ECL-2.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[STATE] user is informed or can see that prices may have changed",[API] cart query shows current prices not order-time prices; [CONSOLE] no pricing errors in console; [NETWORK] 2xx on reorder and cart requests,cart shows historical order prices instead of current; line totals calculated from old prices; no indication prices have changed; subtotal uses mixed old/new prices,clear cart after test,Coverage Gap Analysis — GAP-F21,Draft
+ORD-036,Reorder - Partial Availability with Mixed Items,Orders > Reorder,High,"BL-ORD-001, BL-CART-001",ECL-2.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Buyer logged in as {{USER_EMAIL}}; completed order has 3 items: Item A (available and in stock) and Item B (available but out of stock) and Item C (discontinued)","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[NAV] Navigate to /account/orders
+Buyer logged in as {{USER_EMAIL}}; completed order has 3 items: Item A (available and in stock) and Item B (available but out of stock) and Item C (discontinued)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] find order with mixed-availability items
 [ACT] click 'Reorder all'
 [WAIT] wait for response","[DOM] Item A present in cart
@@ -665,4 +665,255 @@ Buyer logged in as {{USER_EMAIL}}; completed order has 3 items: Item A (availabl
 [DOM] summary notification differentiates between out-of-stock and discontinued
 [DOM] cart functional for checkout with available items only
 [STATE] Item A added to cart successfully
-[STATE] summary message lists each unavailable item and reason","[API] reorder response includes per-item status (available or out_of_stock or discontinued); [CONSOLE] no unhandled exceptions; [NETWORK] 2xx on reorder request","all items silently dropped; no differentiation between out-of-stock and discontinued; cart non-functional after partial reorder; user not informed which items failed","clear cart after test","Coverage Gap Analysis — GAP-F21","Draft"
+[STATE] summary message lists each unavailable item and reason",[API] reorder response includes per-item status (available or out_of_stock or discontinued); [CONSOLE] no unhandled exceptions; [NETWORK] 2xx on reorder request,all items silently dropped; no differentiation between out-of-stock and discontinued; cart non-functional after partial reorder; user not informed which items failed,clear cart after test,Coverage Gap Analysis — GAP-F21,Draft
+ORD-084,"Date Range Filter -- Narrow Range Isolates the Multi-Order Day (Grounded, Live-Counted)",Orders > Filtering > Date Range,High,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Account @td(SR_REP_PRIMARY.email) (B2B-store) has a fixed order set that includes one calendar day shared by multiple (>=2) orders and at least one other day with exactly one order. Observed live on this PR build: exactly 6 orders share one day and 1 order sits on an isolated day -- informational only; the case re-derives the exact count live so a reseed cannot invalidate it. IMPORTANT: drive the Start/End date segments with real per-keystroke input (pressSequentially / real key events) -- NEVER browser fill(), which sets the value atomically and leaves the masked-segment component in a stale invalid state; this produced a convincing false 'same-day range rejected' failure for two independent automation agents on this component, and a third had to re-run to clear the artifact. Apply enables LIVE, the instant a typed value becomes complete and valid, without waiting for blur -- only the error MESSAGE is blur-gated; do not report live-Apply-enable as a bug.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered, unfiltered, default sort newest-first
+[KEY] live-discover the calendar day shared by the MOST orders across the full (paginated) list -- call it D_MULTI
+[KEY] count total orders whose Date column equals D_MULTI across all pages -- call it N_MULTI; assert N_MULTI >= 2
+[ACT] click 'Filters' button to open the Filters popover
+[WAIT] popover visible with 'Created date' section, preset defaults to 'Custom date'
+[ACT] pressSequentially D_MULTI (MM/DD/YYYY) into the Start date segment
+[ACT] pressSequentially D_MULTI (MM/DD/YYYY) into the End date segment
+[ASSERT] Apply button enabled immediately, before blur
+[ACT] click 'Apply'
+[WAIT] filtered orders list rendered, popover closed","[STATE] filtered order count exactly equals N_MULTI -- neither more nor fewer
+[DOM] every visible row's Date column equals D_MULTI; no other date appears in the filtered list
+[API] the orders query fires with both date bounds set to D_MULTI (inclusive single-day range)","[CONSOLE] no JS errors on filter apply
+[NETWORK] 2xx on the filtered request, no 4xx/5xx",filtered count != N_MULTI (range over- or under-inclusive); a row dated outside D_MULTI present in results; Apply stays disabled after a valid Start=End pair typed via real keystrokes,Click 'Reset' in the Filters popover to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge)",Draft
+ORD-085,Date Range Filter -- Full-Month Range Includes the Isolated Single-Order Day,Orders > Filtering > Date Range,High,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Same account/fixture as ORD-084: at least one calendar day holds exactly one order, distinct from the multi-order day. IMPORTANT: drive the Start/End date segments with real per-keystroke input (pressSequentially / real key events) -- NEVER browser fill(), which sets the value atomically and leaves the masked-segment component in a stale invalid state; this produced a convincing false 'same-day range rejected' failure for two independent automation agents on this component, and a third had to re-run to clear the artifact. Apply enables LIVE, the instant a typed value becomes complete and valid, without waiting for blur -- only the error MESSAGE is blur-gated; do not report live-Apply-enable as a bug.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered, unfiltered
+[KEY] live-discover a calendar day D_SINGLE that has EXACTLY one order across the full list (distinct from D_MULTI in ORD-084) and note its month/year
+[ACT] click 'Filters' button
+[WAIT] popover visible, preset 'Custom date'
+[ACT] pressSequentially the first day of D_SINGLE's month (MM/DD/YYYY) into Start date
+[ACT] pressSequentially the last day of D_SINGLE's month (MM/DD/YYYY) into End date
+[ASSERT] Apply enabled immediately
+[ACT] click 'Apply'
+[WAIT] filtered list rendered","[STATE] filtered order count exactly equals 1
+[DOM] the single returned row's Date column equals D_SINGLE
+[API] the orders query fires with both bounds spanning D_SINGLE's full month","[CONSOLE] no JS errors
+[NETWORK] 2xx on the filtered request",filtered count != 1 for a month range known to hold exactly one order; wrong order returned; month-boundary handling excludes D_SINGLE (off-by-one on first/last day of month),Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge)",Draft
+ORD-086,Date Range Filter -- Same-Day Range Returns the Full Multi-Order Day Set (Grounded),Orders > Filtering > Date Range,High,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Same fixture as ORD-084 (D_MULTI, a day shared by >=2 orders). This case adds a grounded, count-exact variant against a real multi-order day; the related generic same-day BVA coverage is cited in References. IMPORTANT: drive the Start/End date segments with real per-keystroke input (pressSequentially / real key events) -- NEVER browser fill(), which sets the value atomically and leaves the masked-segment component in a stale invalid state; this produced a convincing false 'same-day range rejected' failure for two independent automation agents on this component, and a third had to re-run to clear the artifact. Apply enables LIVE, the instant a typed value becomes complete and valid, without waiting for blur -- only the error MESSAGE is blur-gated; do not report live-Apply-enable as a bug.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover D_MULTI and its live count N_MULTI exactly as in ORD-084 (re-derive independently; do not assume ORD-084 ran first -- case independence)
+[ACT] click 'Filters'
+[WAIT] popover visible
+[ACT] pressSequentially D_MULTI into Start date
+[ACT] pressSequentially the SAME value D_MULTI into End date (single-day range, Start == End)
+[ASSERT] Apply enabled immediately for Start == End (boundary must not be rejected)
+[ACT] click 'Apply'
+[WAIT] filtered list rendered","[STATE] no inline validation error shown for Start == End
+[STATE] filtered count exactly equals N_MULTI (inclusive boundary honored on both ends, not narrowed to 0 and not widened to neighboring days)
+[DOM] every returned row's Date equals D_MULTI","[CONSOLE] no JS errors on same-day apply
+[NETWORK] the orders query fires with both bounds equal to D_MULTI",Apply disabled for Start == End; error message shown for a valid same-day range; filtered count is 0 (exclusive boundary bug) or > N_MULTI (window silently widened),Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); related: ORD-055, ORD-083 (generic same-day BVA, no fixture-exact count)",Draft
+ORD-087,Date Range Filter -- Out-of-Range Window Shows Empty State With Reset Search,Orders > Filtering > Date Range,High,BL-ORD-001,ECL-3.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Account's full order history falls within the current and immediately preceding two calendar months (per ORD-084/085 discovery). A range 5 years in the past is guaranteed to hold zero orders regardless of reseed, so this case needs no fixture-specific date.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered, unfiltered, at least 1 row present
+[ACT] click 'Filters'
+[WAIT] popover visible
+[ACT] pressSequentially 01/01/2020 into Start date
+[ACT] pressSequentially 01/31/2020 into End date
+[ASSERT] Apply enabled immediately
+[ACT] click 'Apply'
+[WAIT] result area updated","[STATE] the orders list area shows the empty-results view (""There are no results found"" or equivalent copy), NOT a loading spinner and NOT a toast notification
+[DOM] a 'Reset search' (or equivalent reset) action is visible and enabled in the empty state
+[ACT] click the empty-state reset action
+[STATE] the full unfiltered order list is restored","[CONSOLE] no JS errors while rendering the empty state
+[NETWORK] the zero-match request returns 2xx with an empty items array, not a 4xx/5xx",a spinner persists indefinitely instead of resolving to the empty state; the failure surfaces as a toast instead of an inline empty state; no reset action present in the empty state; reset action does not restore the full list,Ensure the date filter is cleared (via Reset) before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge)",Draft
+ORD-088,"Date Range Filter -- Start-Only Open-Ended Range Applies (""From X Onward"")",Orders > Filtering > Date Range,Medium,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Account has at least 2 orders on different calendar days.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover the date of the OLDEST visible order -- call it D_OLD
+[ACT] click 'Filters'
+[WAIT] popover visible, preset 'Custom date'
+[ACT] pressSequentially D_OLD into Start date
+[KEY] leave End date empty (no input)
+[ASSERT] Apply button enabled with only Start populated (open-ended range is a valid state)
+[ACT] click 'Apply'
+[WAIT] filtered list rendered","[STATE] every returned row's Date is on or after D_OLD
+[API] the orders query's date filter is sent as an open-ended lower-bound range (start bound = D_OLD, no upper bound present in the request) -- assert the request shape, not a specific literal string","[CONSOLE] no JS errors with only Start populated
+[NETWORK] 2xx on the filtered request",Apply stays disabled with only Start populated; the request is silently dropped/malformed with a missing End; an order dated before D_OLD is incorrectly included,Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge)",Draft
+ORD-089,"Date Range Filter -- End-Only Open-Ended Range Applies (""Up To X"")",Orders > Filtering > Date Range,Medium,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Account has at least 2 orders on different calendar days.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover the date of the NEWEST visible order -- call it D_NEW
+[ACT] click 'Filters'
+[WAIT] popover visible, preset 'Custom date'
+[KEY] leave Start date empty (no input)
+[ACT] pressSequentially D_NEW into End date
+[ASSERT] Apply button enabled with only End populated
+[ACT] click 'Apply'
+[WAIT] filtered list rendered","[STATE] every returned row's Date is on or before D_NEW
+[API] the orders query's date filter is sent as an open-ended upper-bound range (end bound = D_NEW, no lower bound present in the request) -- assert the request shape, not a specific literal string","[CONSOLE] no JS errors with only End populated
+[NETWORK] 2xx on the filtered request",Apply stays disabled with only End populated; request silently dropped/malformed with a missing Start; an order dated after D_NEW is incorrectly included,Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge)",Draft
+ORD-090,Date Range Filter -- Local-Timezone Conversion Is Consistent With the Displayed Order Date,Orders > Filtering > Date Range,High,BL-ORD-001,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The filter operates on local calendar days and converts to UTC server-side. This case is timezone-portable by design: it never asserts a literal UTC boundary string (that shifts with the runner's own timezone) -- it asserts the single invariant that must hold in any timezone: the date shown in the order list's Date column for a given order is the date that, when used as both Start and End, filters that same order back in.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover any one order row; read its rendered Date column value -- call it D_SHOWN, and note its order number as O_REF (used only to re-identify the row within this run, not asserted as a literal elsewhere)
+[ACT] click 'Filters'
+[WAIT] popover visible
+[ACT] pressSequentially D_SHOWN into Start date
+[ACT] pressSequentially D_SHOWN into End date
+[ACT] click 'Apply'
+[WAIT] filtered list rendered","[STATE] the order identified by O_REF IS present in the filtered results (the displayed date reliably round-trips through the filter, regardless of the runner's local UTC offset)
+[DOM] every returned row's Date equals D_SHOWN (no neighboring-day row leaks in due to a UTC/local off-by-one at the day boundary)","[NETWORK] the orders query's date bounds, whatever their literal UTC values, resolve to exactly D_SHOWN's local calendar day -- do not assert the literal UTC ISO string, only that the returned set matches D_SHOWN",the order identified by O_REF is MISSING when filtered by its own displayed date (local/UTC day-boundary conversion error); a neighboring day's order leaks into the D_SHOWN-filtered results,Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); grounded on a live UTC+3 observation where an order timestamped 2026-08-16T21:04Z rendered as 8/17/2026 locally and the filter correctly used the LOCAL date, not the raw UTC date, to match it",Draft
+ORD-091,Date Range Filter -- Reversed Range Shows the Exact Validation Message and Disables Apply,Orders > Filtering > Date Range > Validation,High,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Earlier Draft coverage (cited in References) documents EITHER/OR (message-or-auto-swap) language written before this behaviour was confirmed live. This case replaces that ambiguity with the exact grounded behaviour: a reversed range is rejected with a specific, translated error string, never auto-swapped. IMPORTANT: drive the Start/End date segments with real per-keystroke input (pressSequentially / real key events) -- NEVER browser fill(), which sets the value atomically and leaves the masked-segment component in a stale invalid state; this produced a convincing false 'same-day range rejected' failure for two independent automation agents on this component, and a third had to re-run to clear the artifact. Apply enables LIVE, the instant a typed value becomes complete and valid, without waiting for blur -- only the error MESSAGE is blur-gated; do not report live-Apply-enable as a bug.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover two distinct order dates D_A (earlier) and D_B (later), D_A < D_B
+[ACT] click 'Filters'
+[WAIT] popover visible
+[ACT] pressSequentially D_B (the LATER date) into Start date
+[ACT] pressSequentially D_A (the EARLIER date) into End date -- Start now after End (reversed)","[DOM] an inline validation message renders whose text is the real, rendered prose ""End date must be on or after start date"" -- sourced from the ui_kit.date_range_input.invalid_range translation key -- NOT a raw i18n key string and NOT silently auto-swapped dates
+[STATE] Apply button is disabled while the reversed range stands
+[NETWORK] no orders request fires while Apply is disabled
+[ACT] correct End date to a value on or after Start (pressSequentially a date >= D_B)
+[STATE] the validation message clears and Apply re-enables","[CONSOLE] no unhandled error while the reversed range is entered or corrected
+[NETWORK] confirm zero requests fired during the invalid window",Apply remains enabled for Start > End (validation bypassed); the dates are silently auto-swapped instead of surfacing the message; the rendered text is the literal key `ui_kit.date_range_input.invalid_range` rather than translated prose; correcting the range does not clear the message or re-enable Apply,Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); supersedes the EITHER/OR language in ORD-054/ORD-082 with the confirmed exact behaviour; exact string source: ui_kit.date_range_input.invalid_range",Draft
+ORD-092,Date Range Filter -- Unparseable Date Shows 'Invalid Date Format' Only After Blur,Orders > Filtering > Date Range > Validation,Medium,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Related existing Draft coverage (cited in References) covers invalid character masking. This case is distinct: it covers a value the mask ACCEPTS as characters but that is not a real calendar date, and the blur-gating of the resulting message. IMPORTANT: drive the Start/End date segments with real per-keystroke input (pressSequentially / real key events) -- NEVER browser fill(), which sets the value atomically and leaves the masked-segment component in a stale invalid state; this produced a convincing false 'same-day range rejected' failure for two independent automation agents on this component, and a third had to re-run to clear the artifact. Apply enables LIVE, the instant a typed value becomes complete and valid, without waiting for blur -- only the error MESSAGE is blur-gated; do not report live-Apply-enable as a bug.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters'
+[WAIT] popover visible
+[ACT] pressSequentially 99/99/9999 into the Start date segment
+[ASSERT] immediately after typing, BEFORE blur, no error message is shown yet (message is deliberately blur-gated -- do not report this as a bug)
+[ACT] press Tab to move focus away from the 'Start date' segment (blur it)
+[WAIT] blur handling settles","[DOM] after blur, an 'Invalid date format' message (or equivalent rendered prose) is shown for the Start date segment
+[STATE] Apply button is disabled while the unparseable value stands
+[NETWORK] no orders request fires for the unparseable value, before or after blur",[CONSOLE] no unhandled exception thrown parsing 99/99/9999,an error message renders before blur (breaks the documented blur-gated UX); no message ever renders after blur; Apply remains enabled with an unparseable date present; a request is sent with the literal invalid value,Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); related: ORD-071 (character masking, distinct from calendar-validity)",Draft
+ORD-093,Date Range Filter -- Reopening the Popover Repeatedly Preserves a Valid Range (Validity Latching),Orders > Filtering > Date Range,High,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+This is the PR's headline fix: a previously-applied valid range must not degrade (phantom error, Apply stuck disabled) across repeated close/reopen cycles of the same popover instance.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover two distinct order dates D_A < D_B
+[ACT] click 'Filters' button
+[WAIT] popover visible
+[ACT] pressSequentially D_A into Start date
+[ACT] pressSequentially D_B into End date
+[ASSERT] Apply enabled
+[ACT] click 'Apply'
+[WAIT] filtered list rendered, popover closed
+[ACT] click 'Filters' to reopen (cycle 1)
+[WAIT] popover visible
+[ASSERT] Start shows D_A, End shows D_B, no validation error, Apply enabled
+[ACT] click outside the popover to close it WITHOUT changing anything
+[WAIT] popover closed
+[ACT] click 'Filters' to reopen (cycle 2)
+[WAIT] popover visible
+[ASSERT] Start shows D_A, End shows D_B, no validation error, Apply enabled
+[ACT] click outside the popover to close it WITHOUT changing anything
+[WAIT] popover closed
+[ACT] click 'Filters' to reopen (cycle 3)
+[WAIT] popover visible
+[ASSERT] Start shows D_A, End shows D_B, no validation error, Apply enabled","[STATE] across all 3 reopen cycles, Start and End values are preserved exactly as applied (D_A/D_B)
+[STATE] no phantom validation error ever appears on any of the 3 reopen cycles
+[STATE] Apply is never stuck disabled on any of the 3 reopen cycles
+[DOM] every order row's 'Date' column value remains within D_A..D_B on the page behind the popover throughout all 3 cycles (reopening the popover itself neither clears nor reapplies the filter)",[CONSOLE] no JS errors across any of the 3 reopen cycles,any reopen shows a phantom 'invalid range' error for a range that was valid when applied; any reopen shows Apply disabled despite unchanged valid values; Start/End values reset or clear on reopen when the underlying filter is still active,Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); this case targets the specific defect class the PR fixes -- validity state failing to latch across popover remounts",Draft
+ORD-094,Date Range Filter -- Switching Filter Type Away From and Back To 'Custom Date' Resets Reversed State,Orders > Filtering > Date Range,Medium,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Continuation of the validity-latching fix area (ORD-093): a reversed, invalid Custom-date range must not leak its disabled state into an unrelated preset, and switching back to Custom must start clean, not resurrect the stale invalid pair.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover two distinct order dates D_A < D_B
+[ACT] click 'Filters'
+[WAIT] popover visible, preset 'Custom date'
+[ACT] pressSequentially D_B (the later date) into Start date
+[ACT] pressSequentially D_A (the earlier date) into End date (reversed, invalid)
+[ASSERT] Apply disabled, validation message shown (per ORD-091)
+[ACT] change the filter-type control away from 'Custom date' to any other preset (e.g. 'Last month')
+[ASSERT] Apply re-enables once a non-custom preset is selected
+[ACT] switch the filter-type control back to 'Custom date'","[STATE] on switching away from 'Custom date', Apply re-enables for the newly-selected preset (the stale reversed-range invalidity does not persist across filter types)
+[STATE] on switching back to 'Custom date', Start and End are BOTH cleared (empty) -- the invalid D_B/D_A pair is not resurrected
+[STATE] no validation error is shown immediately upon switching back with empty fields",[CONSOLE] no JS errors across the two filter-type switches,Apply stays disabled after switching to a different preset (stale invalidity leaks across filter types); switching back to 'Custom date' re-populates the previous reversed D_B/D_A pair; a validation error shows for the now-empty Custom fields,Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge)",Draft
+ORD-095,Date Range Filter -- Responsive Layout Flips Combined/Split at the 640px Breakpoint (Fixed at Mount),Orders > Filtering > Date Range > Responsive,Medium,BL-ORD-001,ECL-7.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Below 640px the filter renders as a single 'combined' field (one input, two masked segments, one shared error/details row, a visible 'Date range' group label). At 640px and above it renders as 'split' (two separately-labelled fields, each with its own calendar). The layout is decided once at mount, not reactively on resize.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders at viewport width 375px (mobile)
+[WAIT] orders list rendered
+[ACT] click 'Filters'
+[WAIT] popover visible
+[ASSERT] the date control renders as ONE field with two masked segments, a single shared 'Date range' group label, and one shared details/error row below it
+[ACT] resize the viewport to 1024px (desktop) WITHOUT reloading the page
+[ASSERT] the already-mounted popover's date control layout does NOT flip to split on this resize alone -- the layout is fixed at mount, not reactive
+[ACT] reload the page at viewport width 1024px
+[ACT] click 'Filters'
+[WAIT] popover visible","[DOM] at <640px on initial mount, the 'Date range' control renders as a SINGLE input element with two masked segments, one visible 'Date range' group label, and one shared details/error row beneath it
+[DOM] at >=640px on a fresh mount (post-reload), the control renders as TWO separate labelled fields -- 'Start date' and 'End date' -- each opening its own single-date calendar on click
+[STATE] a resize of an already-mounted popover does not itself re-flip the layout (confirms fixed-at-mount, not a live media-query binding)",[CONSOLE] no layout-thrashing errors on resize; [NETWORK] no unexpected requests triggered purely by resize,"the combined/split flip happens reactively mid-session on resize (contradicts the fixed-at-mount design); the breakpoint fires at a width other than 640px; the split layout's two fields lack independent, visible labels; the combined layout lacks a visible 'Date range' group label",Reset viewport to default; clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); breakpoint measured at exactly 640px",Draft
+ORD-096,VCST-4892 -- Typing a Leading Zero Does Not Wipe the Date Segment,Orders > Filtering > Date Range > Regression,High,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Regression guard for VCST-4892: typing '0' as the first character of a date segment previously wiped the field instead of accepting it as the leading digit of a two-digit month/day. IMPORTANT: drive the Start/End date segments with real per-keystroke input (pressSequentially / real key events) -- NEVER browser fill(), which sets the value atomically and leaves the masked-segment component in a stale invalid state; this produced a convincing false 'same-day range rejected' failure for two independent automation agents on this component, and a third had to re-run to clear the artifact. Apply enables LIVE, the instant a typed value becomes complete and valid, without waiting for blur -- only the error MESSAGE is blur-gated; do not report live-Apply-enable as a bug.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters'
+[WAIT] popover visible
+[ACT] pressSequentially '0' as the first keystroke into the Start date month segment
+[ASSERT] the segment still shows '0' (or the masked equivalent), NOT wiped/blanked
+[ACT] continue pressSequentially the remaining characters to complete 01/15/2026 into Start date","[STATE] the Start date field reads exactly 01/15/2026 after the full sequence -- the leading '0' keystroke did not clear any previously-typed or subsequently-typed characters
+[DOM] no intermediate blank/reset of the segment is observable after the '0' keystroke",[CONSOLE] no JS errors while typing the leading zero,the field wipes/blanks after the leading '0' keystroke (VCST-4892 regression); the completed date does not read 01/15/2026 after the full sequence,Click 'Reset' to clear the date filter before ending the session,"VCST-4892; VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge)",Draft
+ORD-097,VCST-5153 -- Escape Closes the Calendar and Returns Focus to the Invoking Date Field,Orders > Filtering > Date Range > Regression,High,BL-ORD-001,ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Regression guard for VCST-5153. NOTE: related existing coverage (cited in References) tests Escape-closes-calendar as a FAIL-DETECT case citing VCST-4892 with the bug marked still-open at that case's own last verification -- this case re-grounds the CORRECT, currently-observed behaviour under its own ticket (VCST-5153) and adds the focus-return assertion that earlier case does not cover.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters'
+[WAIT] popover visible
+[ACT] click the 'Open calendar' button for the Start date field
+[WAIT] calendar grid visible and focused
+[ACT] press Escape","[STATE] the calendar grid closes
+[STATE] focus returns to the Start date field/segment that opened it (not to the document body, not to a different control)",[CONSOLE] no JS errors on Escape,"the calendar does not close on Escape; focus lands somewhere other than the invoking date field after Escape (e.g. body, or the popover's outer container)",Click 'Reset' to clear the date filter before ending the session,"VCST-5153; VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); related: ORD-080 (Escape-closes only, filed against VCST-4892, marked still-open at last check -- re-verify whether ORD-080 should be retired or its ticket corrected)",Draft
+ORD-098,VCST-5211 -- Calendar Grid Supports Home/End/PageUp/PageDown/Shift+PageUp/PageDown (WAI-ARIA APG),Orders > Filtering > Date Range > Regression,Medium,BL-ORD-001,ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Regression guard for VCST-5211. NOTE: the Jira acceptance criteria for VCST-5211 specify Ctrl for the year jump; this is INCORRECT per the WAI-ARIA APG date-picker pattern and per the live-verified behaviour -- the correct and observed binding is Shift+PageUp/PageDown for year navigation. This case asserts the CORRECT (Shift) binding; flag the ticket's AC text as needing correction, do not change the assertion to match the AC.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] click 'Filters'
+[WAIT] popover visible
+[ACT] click the 'Open calendar' button for the Start date field
+[WAIT] calendar grid visible
+[ASSERT] focus moved into the day grid (not left on the trigger button)
+[ACT] press Home
+[ASSERT] focus moves to the first day of the focused week
+[ACT] press End
+[ASSERT] focus moves to the last day of the focused week
+[ACT] press PageUp
+[ASSERT] focus moves back one month, same day-of-week position
+[ACT] press PageDown
+[ASSERT] focus returns to the original month
+[ACT] press Shift+PageUp
+[ASSERT] focus moves back one YEAR
+[ACT] press Shift+PageDown
+[ASSERT] focus returns to the original year","[STATE] Home/End move within the current week row as described
+[STATE] PageUp/PageDown move by one month
+[STATE] Shift+PageUp/Shift+PageDown move by one year (not Ctrl+PageUp/PageDown)
+[DOM] the calendar grid retains a single visible focus indicator at all times during this sequence",[CONSOLE] no JS errors on any of the 6 key presses,"opening the calendar does not move focus into the day grid; Home/End do not move within the week; PageUp/PageDown do not move by month; Shift+PageUp/PageDown do not move by year (or only Ctrl+PageUp/PageDown does) -- flag as a real defect only if Shift truly fails, not merely because it differs from the Jira AC's stated Ctrl binding",Press Escape to close the calendar; click 'Reset' to clear the date filter before ending the session,"VCST-5211; VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); the Jira AC's stated Ctrl+PageUp/PageDown binding for year navigation is itself incorrect per WAI-ARIA APG and per live verification -- flagged for ticket correction, not for a test-case change",Draft
+ORD-099,Date Range Filter -- Clicking the Already-Selected Day Does Not Deselect It (preventDeselect),Orders > Filtering > Date Range,Medium,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The calendar is configured with preventDeselect: clicking a day that is already the current selection must be a no-op for that selection, distinct from the calendar footer's explicit 'Clear' action.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[KEY] live-discover an order date D and select it as Start date via the calendar (click the day cell for D)
+[ASSERT] Start date now shows D
+[ACT] reopen the calendar for the Start date field
+[ACT] click the SAME already-selected day cell for D again
+[WAIT] calendar re-renders after the click","[STATE] Start date STILL shows D after re-clicking the already-selected day -- the value is not cleared
+[ACT] open the calendar footer and click 'Clear'
+[STATE] Start date IS cleared after using the explicit footer 'Clear' action (contrast with the no-op re-click above -- these are two different, intentionally different, outcomes)",[CONSOLE] no JS errors on the re-click or on Clear,re-clicking the already-selected day clears the value (violates preventDeselect); the footer 'Clear' action fails to clear the value (the one action that IS supposed to clear it),Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge)",Draft
+ORD-100,Date Range Filter -- Validation Strings Render Fully Translated in de-DE and es-ES,Orders > Filtering > Date Range > i18n,Medium,BL-ORD-001,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The store exposes exactly 3 locales: en-US, de-DE, es-ES. This case runs the reversed-range scenario (per ORD-091) under the two non-English locales and asserts fully-translated output.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}, locale_de=de-DE, locale_es=es-ES","[NAV] Navigate to {{FRONT_URL}}/account/orders with the storefront locale set to de-DE (via the locale switcher or ?culture=de-DE)
+[KEY] live-discover two distinct order dates D_A < D_B
+[ACT] click 'Filters'
+[WAIT] popover visible
+[ACT] pressSequentially D_B (the later date) into Start date
+[ACT] pressSequentially D_A (the earlier date) into End date (reversed)
+[ASSERT] the de-DE validation message renders as ""Enddatum muss auf oder nach dem Startdatum liegen"" -- real translated prose, no raw i18n key, no English fallback text
+[ACT] switch locale to es-ES; repeat the same reversed-range entry
+[ASSERT] the es-ES validation message renders as ""La fecha de fin debe ser igual o posterior a la fecha de inicio"" -- real translated prose, no raw i18n key, no English fallback text","[DOM] the validation message element's text does not equal the literal key string 'ui_kit.date_range_input.invalid_range' in either locale
+[DOM] the validation message element's text does not equal the English string 'End date must be on or after start date' when de-DE/es-ES is active",[CONSOLE] no i18n-missing-key warnings logged for either locale,either locale shows the raw i18n key instead of translated prose; either locale silently falls back to English; the translated string is present but does not match the confirmed wording,Switch locale back to the default (en-US); click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); exact translated strings confirmed live: de-DE ""Enddatum muss auf oder nach dem Startdatum liegen"", es-ES ""La fecha de fin debe ser igual o posterior a la fecha de inicio""",Draft

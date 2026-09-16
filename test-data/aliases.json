@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.53",
+    "version": "1.5.54",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -55,7 +55,8 @@
     "changelog_1_5_39": "Cart-suite test-data gaps (TLC-2026-07-25): (1) NEW PROD_MULTI_CURRENCY (test-products.csv PROD-106 / SKU QA-MULTICUR-001, 24.99 USD + 22.49 EUR) — the first genuinely multi-currency AGENT-TEST fixture. Root cause it fixes: seed-standard-products.mjs created only a USD pricelist and hardcoded currency:'USD' on every price row, so switching the storefront to EUR collapsed every AGENT-TEST line to 0.00 with a disabled qty stepper and blocked the currency-switch-with-coupon case (CART-093). The seeder now creates ONE PRICELIST PER CURRENCY (SEED-<date>-Standards-<CUR>) driven by the new `price_eur` CSV column via standard-specs.mjs buildCurrencyPriceSets(), registers the currencies first (ensureCurrencies), and tears down every currency's pricelist. (2) NEW PROD_SUB_FIVE (PROD-107 / QA-SUBFIVE-001, $3.49) — makes the fixed-amount-discount-exceeds-subtotal boundary reachable; COUPON_FIXED5 is $5 off and the cheapest fixture was $9.99, so the 'total floors at zero' assertion passed vacuously. (3) PROD_OOS / PROD_LOW_STOCK / PROD_PACK_SIZE / PROD_TIER_PRICED gained `slug` + `url` fields, backed by new env-invariant `product_slug` / `storefront_url` columns, so cases navigate {{FRONT_URL}}@td(ALIAS.url) instead of hand-composing /product/<sku> — which renders a client-side 404 (HTTP 200 SPA soft-404). The only live-working path is /seed-test-fixtures/<product-slug>, which is DERIVABLE from the seeder's own slug rules (standard-specs.mjs productSlug / storefrontPathForAdHoc) and is drift-guarded, not hand-maintained. (4) Stale GUIDs + the pre-seeding 'Template only — NOT seeded' recipe removed from these four aliases' notes and from the test-products.csv notes column (they have been live-seeded since 2026-05-19; ids belong in aliases.<env>.json). (5) .env.vcst OOS_SKU / PACK_SIZE_SKU / TIER_PRICED_SKU pointed at OOS-PRODUCT-001 / BULK-PAPER-001 / CISCO-SW24-001, which do NOT EXIST on the env (verified 2026-07-25) and disagreed with these aliases — repointed to the canonical QA-* business keys; td:validate:standard now fails any .env.* whose non-empty *_SKU disagrees with the CSV row. @td(PROD_*.sku) is the single source of truth; the env vars are a legacy convenience mirror. PROD-106/107 are AUTHORED, NOT YET SEEDED — run `TEST_ENV=<env> npm run seed:products`.",
     "changelog_1_5_45": "VCST-5487 — added 4 new inline product aliases (REV_PROD_5IMAGES, REV_PROD_RATING38, REV_PROD_RATING35, REV_PROD_IMAGES30) for the customer-reviews-storefront (088) suite additions covering the product-reviews design update (vc-frontend PR #2417: one-decimal rating + review count, vc-rating.vue continuous partial star fill, review-images-modal). All four are stable catalog slugs verified live on vcst-qa — no runtime GUID, no seeder/writeback needed.",
     "changelog_1_5_48": "Sprint 26-16 gap-closing fixtures. PROD_FRACTIONAL_DISCOUNT + PROD_MIDPOINT_DISCOUNT (VCST-5691 discountPercent): an exact 12.5% ratio and an exact 4-decimal rounding midpoint (0.12345, where AwayFromZero->0.1235 diverges from ToEven->0.1234) - the only two shapes that can detect the defect, since every pre-existing sale/coupon fixture is an integer percent. WISH_TWO_STORE_CUSTOMER (VCST-5705): one customer, two wishlists, two REAL stores, two distinct products; without it CAT-079/CAT-080 pass vacuously on a single-store env, which is the defect itself. INV_VARIATION_STOCKED / INV_VARIATION_MASTER (VCST-5546): a real mainProductId-linked variation with stock DIVERGENT from its master at the store MAIN fulfillment center. The variation seeder additionally writes FC_EAST.id to aliases.<env>.json - it previously resolved to the bare CSV business key 'FFC-001', which is not a platform id on any env, so every @td(FC_EAST.id) in suite 056 was unusable against the API.",
-    "changelog_1_5_49": "VCST-5319 Loyalty Missions (VirtoCommerce.Loyalty 3.1006.0-pr-14-1be7) — first fixture set for the Missions feature. 12 aliases: MSN_STORE_SETTINGS (the Loyalty.Missions.Enable gate + the OBSERVED value of the base Loyalty.Enable switch), MSN_PERSKU_PRODUCT_A/_B (two live-discovered catalog products shared by the PerSku pair), and 9 missions — MSN_ORDERVALUE, MSN_ORDERVALUE_ALTCURRENCY, MSN_ORDERCOUNT, MSN_PERSKU_ALL, MSN_PERSKU_ANY, MSN_PUBLISHED_PRIVATE, MSN_ZEROTARGET, MSN_ZEROREWARD, MSN_DRAFT. Source of truth: scripts/seed-data/loyalty/missions-specs.mjs (side-effect-free); seeder seed-loyalty-missions.mjs; drift guard td:validate:missions; unit tests scripts/unit/loyalty-missions-specs.test.mjs. NO GUIDs in this base file — every mission id, product id/sku and the per-env store id live in aliases.<env>.json. THREE API FACTS the fixtures are shaped around, verified live on vcst-qa 2026-08-27 and cross-checked against source: (1) a PerSkuGoal carries NO inline items — the SKU targets are a separate LoyaltyMissionGoalItem entity keyed by missionId, so a mission-only seed produces a permanently uncompletable PerSku mission that passes every existence check; (2) a Published mission is IMMUTABLE (only Published -> Archived) and cannot be un-published, so idempotency is signature-compare-then-delete-and-recreate, never repair-in-place; (3) a mission can be created directly as Published. FOUR BEHAVIOURS worth knowing when authoring cases, all observed live: StartDate > EndDate is ACCEPTED SILENTLY (no validation at save); an unrecognised status string is ACCEPTED (no status vocabulary validation); the immutability refusal comes back as HTTP 500, not 4xx; and GET /api/loyalty-missions/{id} answers 200 + a null body for a missing id rather than 404. Server-side validators that DO exist (all HTTP 400): name required, store required, at least one condition, exactly one goal, at least one reward, and CURRENCY CODE REQUIRED ON AN ORDER-VALUE GOAL. That last one contradicts the DTO: OrderValueGoal.currencyCode is `nullable` in the published Swagger, but null AND \"\" are both rejected 400 — so a currency-agnostic order-value mission is NOT expressible, and the original C19 plan of leaving it null is impossible. The validation is also ASYMMETRIC: presence is enforced, validity is not (\"XYZ\" and lowercase \"usd\" persist verbatim), so a wrong-currency defect cannot surface at save time. Hence the MSN_ORDERVALUE / MSN_ORDERVALUE_ALTCURRENCY pair — identical threshold and reward, differing ONLY in currency — which moves C19 to accrual time where it is answerable. Both resolve their currency from the STORE (defaultCurrency / currencies) at seed time into the per-env overlay; neither commits a literal. NOT validated at save either: a negative goal value, a negative order count, and a negative reward are all accepted. TARGETING is group-only (UserGroupIsCondition.groups: string[]) — there is NO customer-id condition anywhere in the module, so a single-customer mission is not expressible."
+    "changelog_1_5_49": "VCST-5319 Loyalty Missions (VirtoCommerce.Loyalty 3.1006.0-pr-14-1be7) — first fixture set for the Missions feature. 12 aliases: MSN_STORE_SETTINGS (the Loyalty.Missions.Enable gate + the OBSERVED value of the base Loyalty.Enable switch), MSN_PERSKU_PRODUCT_A/_B (two live-discovered catalog products shared by the PerSku pair), and 9 missions — MSN_ORDERVALUE, MSN_ORDERVALUE_ALTCURRENCY, MSN_ORDERCOUNT, MSN_PERSKU_ALL, MSN_PERSKU_ANY, MSN_PUBLISHED_PRIVATE, MSN_ZEROTARGET, MSN_ZEROREWARD, MSN_DRAFT. Source of truth: scripts/seed-data/loyalty/missions-specs.mjs (side-effect-free); seeder seed-loyalty-missions.mjs; drift guard td:validate:missions; unit tests scripts/unit/loyalty-missions-specs.test.mjs. NO GUIDs in this base file — every mission id, product id/sku and the per-env store id live in aliases.<env>.json. THREE API FACTS the fixtures are shaped around, verified live on vcst-qa 2026-08-27 and cross-checked against source: (1) a PerSkuGoal carries NO inline items — the SKU targets are a separate LoyaltyMissionGoalItem entity keyed by missionId, so a mission-only seed produces a permanently uncompletable PerSku mission that passes every existence check; (2) a Published mission is IMMUTABLE (only Published -> Archived) and cannot be un-published, so idempotency is signature-compare-then-delete-and-recreate, never repair-in-place; (3) a mission can be created directly as Published. FOUR BEHAVIOURS worth knowing when authoring cases, all observed live: StartDate > EndDate is ACCEPTED SILENTLY (no validation at save); an unrecognised status string is ACCEPTED (no status vocabulary validation); the immutability refusal comes back as HTTP 500, not 4xx; and GET /api/loyalty-missions/{id} answers 200 + a null body for a missing id rather than 404. Server-side validators that DO exist (all HTTP 400): name required, store required, at least one condition, exactly one goal, at least one reward, and CURRENCY CODE REQUIRED ON AN ORDER-VALUE GOAL. That last one contradicts the DTO: OrderValueGoal.currencyCode is `nullable` in the published Swagger, but null AND \"\" are both rejected 400 — so a currency-agnostic order-value mission is NOT expressible, and the original C19 plan of leaving it null is impossible. The validation is also ASYMMETRIC: presence is enforced, validity is not (\"XYZ\" and lowercase \"usd\" persist verbatim), so a wrong-currency defect cannot surface at save time. Hence the MSN_ORDERVALUE / MSN_ORDERVALUE_ALTCURRENCY pair — identical threshold and reward, differing ONLY in currency — which moves C19 to accrual time where it is answerable. Both resolve their currency from the STORE (defaultCurrency / currencies) at seed time into the per-env overlay; neither commits a literal. NOT validated at save either: a negative goal value, a negative order count, and a negative reward are all accepted. TARGETING is group-only (UserGroupIsCondition.groups: string[]) — there is NO customer-id condition anywhere in the module, so a single-customer mission is not expressible.",
+    "changelog_1_5_54": "VCST-5730 Shared Document Library for Sales Reps — 2 new CSV-backed rep aliases (SR_REP_DOCS = Advanced Sales Representative, i.e. sales-rep-documents:read; SR_REP_DOCS_WRITER = Sales Representative + Sales Rep Documents Manager, i.e. :write WITHOUT :read, which is what makes the deployed read-gate disjunction falsifiable) backed by test-data/sales-rep/document-reps.csv, plus 12 inline SR_DOC_* document aliases whose single source of truth is scripts/seed-data/sales-rep/sales-rep-docs-specs.mjs (the file BYTES are part of each fixture and are synthesized there, so a CSV mirror would be a second hand-maintained source). The 12 cover pdf/docx/xlsx/txt/png/jpg + an unknown .vcqa extension, a Cyrillic file name with spaces, a ~3 MB file, a blank display name (the NormalizeName fallback), 3 categories and 2 pinned rows — and 12 is chosen so \"exactly page size\" and \"page size + 1\" are both reachable at a page size of 5 AND of 10. Guard: npm run td:validate:sales-rep-docs."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -990,7 +991,9 @@
       "name": "user_name",
       "platform_id": "platform_id",
       "roles": "roles"
-    }
+    },
+    "organization_id": "@td(ORG_ACME.platform_id)",
+    "notes": "Buyer actor for AcmeCorp (b2b/users.csv USR-002); the [AUTH role=ACME_BUYER] caller for suite 050m SR-GQL-001/003-008. `organization_id` makes the password grant EXPLICITLY org-scoped — the same VCST-5281 mechanism documented on TECHFLOW_ADMIN, and it must resolve to the platform GUID, hence @td(ORG_ACME.platform_id) (the CSV `org_id` is the business key ORG-001, not a GUID). Added 2026-08-17: on vcptcore-qa the live graph was already correct — ACME_BUYER holds an Approved OrganizationMembership in ORG_ACME and SR_REP_PRIMARY serves that same org — but the contact's `currentOrganizationId` is null there, so the IMPLICIT grant produced an org-less token and `customerSalesReps` returned totalCount=0 with an EMPTY errors[]. That is the silent variant of the VCST-5281 trap: it reads as 'no reps serve this org' (a data gap) rather than as an auth failure, so it survives an errors[]-only assertion. Deliberately NOT declaring `store_id`: store context is the {{VAR}} layer (.claude/rules/test-data.md), and graphql-auth.ts falls back to the per-env STORE_ID. Consumed by scripts/lib/graphql-auth.ts resolveRole()."
   },
   "ACME_VIEWER": {
     "file": "b2b/users",
@@ -1887,14 +1890,10 @@
     }
   },
   "SEARCH_KITCHEN": {
-    "file": "search-queries/top-50-amazon",
-    "filter": {
-      "query_id": "SQ-AM-023"
-    },
-    "fields": {
-      "query": "search_query",
-      "category": "category"
-    }
+    "_inline": true,
+    "query": "kitchen",
+    "category": "Home > Kitchen",
+    "notes": "Kitchen-domain search term for SMK-006 / SMK-023, which require a term that returns MULTIPLE results with a facet panel. Live-verified 2026-08-17 via POST {BACK_URL}/graphql products(storeId:\"B2B-store\", query:\"kitchen\", first:3) on BOTH shared QA envs: vcptcore-qa totalCount=31, vcst-qa totalCount=159, in-stock items present on both. Was previously CSV-backed at top-50-amazon SQ-AM-023 (\"coffee maker\"). That corpus is a reference list of real Amazon queries — it never claimed its terms exist in OUR catalog, and the multi-word phrase requires every term to match: on vcptcore-qa \"coffee maker\"=0 while \"coffee\"=3 and \"kitchen\"=31 (vcst-qa \"coffee maker\"=35, so the mismatch was vcptcore-only and invisible from the primary env). That blocked SMK-006/023 in REG-2026-08-17-1030. Made inline — the SEARCH_QUERY precedent below — because the must-return-results contract belongs to the ALIAS, not to the untouched query corpus. Counts are a verification snapshot, NOT an assertion target: per feedback_env_resilience, cases assert >=1 result + a facet panel, never an exact count. Single-word and lowercase so it round-trips through URL/query-string/CSV unescaped. Re-verify with the same query before repointing."
   },
   "SEARCH_FITNESS": {
     "file": "search-queries/top-50-amazon",
@@ -4543,6 +4542,414 @@
       "createdDate": "created_date"
     },
     "notes": "The NON-New in-window order (Processing). ROLLING-WINDOW order on ORG_ACME (ORG-001), seeded by npm run seed:sales-rep and drift-guarded by npm run td:validate:sr-orders. CustomerOrder.createdDate is SERVER-ASSIGNED and silently ignored on POST/PUT, so a past-dated order is impossible - but the 7-day window INCLUDES NOW, so a freshly created order lands inside it by construction. That also means the order AGES OUT: the seeder adds FRESHNESS as an extra idempotency term (sales-rep-orders-specs.mjs isFresh) and rebuilds the order once it falls outside the window, because the base content-based idempotency happily leaves a correct-but-stale order in place - which is how these cases came to assert against an empty window. NEVER a fixed seed date; the instant comes from the server at seed time. .number resolves the order_key, NOT the platform order number - the seeder prefixes it with AGENT-TEST-, so the live number is 'AGENT-TEST-' + @td(...number). .id / .createdDate are runtime and live in aliases.<env>.json only. It exists so SR-CP-057 can DISCRIMINATE: the card's value counts New-status orders only, while its delta is the same window's ALL-status volume. With only New orders in the window the two figures coincide and the assertion cannot fail - the vacuity the td:validate:sr-orders shape check exists to catch."
+  },
+  "SR_ROWCAP_ORDER_ACME_NEW": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-SRO-ROWCAP-ACME-01",
+    "_notes": "VCST-5649 widget row-cap fixture — a New-status order in ORG-001/AcmeCorp attributed to SR_REP_LAYOUT (order.CustomerId == that rep's ApplicationUser id, which is what salesRepOrders matches on). Representative row for the 'All tab / New tab shows it' assertions and for the org-scoped customerProfile widget. One of 14 orders whose shape is the single source of truth in scripts/seed-data/sales-rep/sales-rep-rowcap-specs.mjs ROWCAP_ORDERS; the set exists because a row CAP is only observable when the data set is strictly larger than the cap, and SR_REP_LAYOUT previously had ZERO rep-attributed orders. `number` is the business key; the runtime id lands in aliases.<env>.json via npm run seed:sales-rep-stats."
+  },
+  "SR_ROWCAP_ORDER_ACME_CANCELLED": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-SRO-ROWCAP-ACME-07",
+    "_notes": "VCST-5649 widget row-cap fixture — the Cancelled-status order in ORG-001/AcmeCorp for SR_REP_LAYOUT. The row behind the status-tab checkbox assertions. NOTE the semantics, confirmed live 2026-08-11: unchecking the Cancelled tab hides the CHIP, it does NOT remove this row from the unfiltered 'All' tab (no `filter` is sent, and 'All' means all). The row disappears only when a DIFFERENT status tab is the active filter. An earlier version of this note claimed the opposite; it was wrong. Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
+  },
+  "SR_ROWCAP_ORDER_TECH_COMPLETED": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-SRO-ROWCAP-TECH-04",
+    "_notes": "VCST-5649 widget row-cap fixture — a Completed-status order in ORG-002/TechFlow for SR_REP_LAYOUT. The cross-org row: it must appear in the dashboard scope (all served customers) and must NOT appear in the ORG-001 customerProfile scope, which is what proves the two scopes cap independent data sets. Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
+  },
+  "SR_REP_DOCS": {
+    "file": "sales-rep/document-reps",
+    "filter": {
+      "rep_key": "SR_REP_DOCS"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "password": "password",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store",
+      "roleName": "role_name",
+      "extraRoleName": "extra_role_name"
+    },
+    "_notes": "VCST-5730 — sales rep WITH shared-document-library READ access (\"Advanced Sales Representative\" = sales-rep:access + sales-rep-documents:read). The happy-path caller for list/search/filter/paginate/download. Do NOT substitute an SR_REP_* rep from sales-rep/sales-reps.csv: those hold sales-rep:access ONLY and are this feature's permission-NEGATIVE fixture. Runtime GUIDs in aliases.<env>.json (npm run seed:sales-rep-docs); password var SR_REP_PASSWORD (falls back to TEST_USER_PASSWORD), never committed."
+  },
+  "SR_REP_DOCS_WRITER": {
+    "file": "sales-rep/document-reps",
+    "filter": {
+      "rep_key": "SR_REP_DOCS_WRITER"
+    },
+    "fields": {
+      "id": "contact_id",
+      "user_id": "user_id",
+      "email": "email",
+      "password": "password",
+      "firstName": "first_name",
+      "lastName": "last_name",
+      "fullName": "full_name",
+      "store": "store",
+      "roleName": "role_name",
+      "extraRoleName": "extra_role_name"
+    },
+    "_notes": "VCST-5730 — sales rep with sales-rep-documents:WRITE but NOT :read (\"Sales Representative\" + \"Sales Rep Documents Manager\"). Use for the read-gate disjunction (SalesRepDocumentPermissions.HasReadAccess = Administrator OR :read OR :write) and for upload/pin/delete-authorised cases. Two roles are structurally required: POST /api/sales-rep silently substitutes a granting role for a non-granting roleId, so the write-only role is added to the ApplicationUser afterwards. Runtime GUIDs in aliases.<env>.json."
+  },
+  "SR_DOC_PDF": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Product-Catalog.pdf",
+    "displayName": "AGENT-TEST-Product Catalog 2026",
+    "category": "AGENT-TEST-Catalogs",
+    "contentType": "application/pdf",
+    "pinned": true,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (PDF). The canonical readable document: PDF mime, pinned, non-empty summary + pageCount. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_DOCX": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Contract-Template.docx",
+    "displayName": "AGENT-TEST-Contract Template",
+    "category": "AGENT-TEST-Contracts",
+    "contentType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (DOCX). Long OOXML content type (73 chars) — icon mapping and any mime-column truncation. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_XLSX": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Price-List.xlsx",
+    "displayName": "AGENT-TEST-Price List Q3",
+    "category": "AGENT-TEST-Pricing",
+    "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (XLSX). Second OOXML mime, and a NULL pageCount (the field is optional on this build). Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_TXT": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Release-Notes.txt",
+    "displayName": "AGENT-TEST-Release-Notes.txt",
+    "category": "AGENT-TEST-Contracts",
+    "contentType": "text/plain",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (TXT). BLANK metadata name + BLANK summary — proves the deployed NormalizeName fallback (displayName := file name) and an empty-summary render. Still sweepable: the FILE name carries the prefix. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_PNG": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Brand-Logo.png",
+    "displayName": "AGENT-TEST-Brand Logo",
+    "category": "AGENT-TEST-Catalogs",
+    "contentType": "image/png",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (PNG). image/png: whether the UI renders an inline preview or falls back to a file icon. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_JPG": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Warehouse-Photo.jpg",
+    "displayName": "AGENT-TEST-Warehouse Photo",
+    "category": "AGENT-TEST-Catalogs",
+    "contentType": "image/jpeg",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (JPG). image/jpeg alongside image/png, so an image branch keyed on the exact mime is caught. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_UNKNOWN_EXT": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Legacy-Export.zip",
+    "displayName": "AGENT-TEST-Legacy Export",
+    "category": "AGENT-TEST-Contracts",
+    "contentType": "application/zip",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (UNKNOWN_EXT). Opaque, non-previewable but ALLOWED type (.zip): icon fallback and no broken preview. Was .vcqa until 2026-08-21 - the upload scope's AllowedExtensions guard rejects an unrecognised extension (INVALID_EXTENSION), so an unknown extension can never become a document. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_UNICODE": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Каталог продукции 2026.pdf",
+    "displayName": "AGENT-TEST-Каталог продукции 2026",
+    "category": "AGENT-TEST-Catalogs",
+    "contentType": "application/pdf",
+    "pinned": true,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (UNICODE). Non-ASCII AND spaces in one file name: percent-encoding of the blob path, the Content-Disposition filename on download, and keyword search over a Cyrillic name. Second pinned row. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_LARGE": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Large-Spec-Bundle.pdf",
+    "displayName": "AGENT-TEST-Large Spec Bundle",
+    "category": "AGENT-TEST-Pricing",
+    "contentType": "application/pdf",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (LARGE). About 3 MB: human-readable size rendering (MB not KB) and a download that is not instant. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_FILLER_01": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Filler-01.pdf",
+    "displayName": "AGENT-TEST-Filler 01",
+    "category": "AGENT-TEST-Catalogs",
+    "contentType": "application/pdf",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (FILLER_01). Volume so page 1 fills at both page sizes and a second page exists. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_FILLER_02": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Filler-02.pdf",
+    "displayName": "AGENT-TEST-Filler 02",
+    "category": "AGENT-TEST-Contracts",
+    "contentType": "application/pdf",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (FILLER_02). Volume so page 1 fills at both page sizes and a second page exists. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_FILLER_03": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Filler-03.pdf",
+    "displayName": "AGENT-TEST-Filler 03",
+    "category": "AGENT-TEST-Pricing",
+    "contentType": "application/pdf",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (FILLER_03). Volume so page 1 fills at both page sizes and a second page exists. Business keys here; the runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) — id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss, never another env's GUID."
+  },
+  "SR_DOC_FILLER_04": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Filler-04.pdf",
+    "displayName": "AGENT-TEST-Filler 04",
+    "category": "AGENT-TEST-Catalogs",
+    "contentType": "application/pdf",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (FILLER_04). Added 2026-08-21: the storefront page size is hardcoded to 15 with no UI control, so the pagination AC was unreachable at 12 fixtures. Business keys here; runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) - id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss."
+  },
+  "SR_DOC_FILLER_05": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Filler-05.pdf",
+    "displayName": "AGENT-TEST-Filler 05",
+    "category": "AGENT-TEST-Contracts",
+    "contentType": "application/pdf",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (FILLER_05). Added 2026-08-21: the storefront page size is hardcoded to 15 with no UI control, so the pagination AC was unreachable at 12 fixtures. Business keys here; runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) - id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss."
+  },
+  "SR_DOC_FILLER_06": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Filler-06.pdf",
+    "displayName": "AGENT-TEST-Filler 06",
+    "category": "AGENT-TEST-Pricing",
+    "contentType": "application/pdf",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (FILLER_06). Added 2026-08-21: the storefront page size is hardcoded to 15 with no UI control, so the pagination AC was unreachable at 12 fixtures. Business keys here; runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) - id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss."
+  },
+  "SR_DOC_FILLER_07": {
+    "_inline": true,
+    "id": "",
+    "file_id": "",
+    "url": "",
+    "fileName": "AGENT-TEST-Filler-07.pdf",
+    "displayName": "AGENT-TEST-Filler 07",
+    "category": "AGENT-TEST-Catalogs",
+    "contentType": "application/pdf",
+    "pinned": false,
+    "fields": {
+      "id": "id",
+      "file_id": "file_id",
+      "url": "url",
+      "fileName": "fileName",
+      "displayName": "displayName",
+      "category": "category",
+      "contentType": "contentType",
+      "pinned": "pinned"
+    },
+    "_notes": "VCST-5730 shared document library fixture (FILLER_07). Added 2026-08-21: the storefront page size is hardcoded to 15 with no UI control, so the pagination AC was unreachable at 12 fixtures. Business keys here; runtime document id / fileId / url arrive from aliases.<env>.json (npm run seed:sales-rep-docs) - id is deliberately \"\" in this committed base so an unseeded env resolves to a clear miss."
   },
   "ORDER_REP_PLACED": {
     "file": "sales-rep/sales-rep-orders",

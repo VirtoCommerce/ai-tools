@@ -20,7 +20,13 @@
  * GUIDs are written to test-data/aliases.<env>.json — never into a committed fixture.
  *
  * Flags: --dry-run (reads only) · --verbose · --teardown (removes only what this seeder creates)
- *        --only <fixture_key>  (TOPSELLERS | ACME | WEST)
+ *        --only <fixture_key>  (ACME | WEST | ROWCAP)
+ *
+ *   3. WIDGET ROW-CAP ORDERS for SR_REP_LAYOUT (VCST-5649) — `--only ROWCAP`. A cap on rendered rows
+ *      is only observable when the data set is strictly larger than the cap, and the layout rep (the
+ *      only one whose persisted layout those cases may mutate) had ZERO rep-attributed orders. Shape
+ *      + thresholds live in sales-rep-rowcap-specs.mjs. `--only ROWCAP` scopes BOTH the seed and the
+ *      teardown to that family, so the shared statistics fixtures above are never swept with it.
  *
  * Run:  TEST_ENV=vcptcore npm run seed:sales-rep-stats
  * Then: TEST_ENV=vcptcore node scripts/seed-data/sales-rep/probe-sales-rep-statistics.mjs
@@ -33,6 +39,11 @@ import {
   TOP_SELLER_ORDER, CART_FIXTURES, cartName, statsOrderNumber,
   shapedOrderTotal, buildShapedItems, requiredProductSlots, expectedRankings, rankingsDiverge, preferSanelyPriced,
 } from './sales-rep-stats-specs.mjs';
+import {
+  ROWCAP_ORDERS, ROWCAP_ALIASES, ROWCAP_REP_KEY, ROWCAP_STORE, ROWCAP_PROFILE_ORG_KEY,
+  rowcapOrderNumber, rowcapOrderTotal, rowcapCustomerName, rowcapShortfalls,
+  requiredRowcapProductSlots, buildRowcapItems, rowcapOrdersForOrg, rowcapStatuses,
+} from './sales-rep-rowcap-specs.mjs';
 
 const REP_KEY = 'SR_REP_PRIMARY';
 const REP_PASSWORD = process.env.SR_REP_PASSWORD || process.env.TEST_USER_PASSWORD || 'Password1!';
@@ -200,6 +211,92 @@ async function seedShapedOrder(spec, orgs, customerId, products) {
   return created?.id || null;
 }
 
+// ---- fixture 1b: widget row-cap orders for SR_REP_LAYOUT (VCST-5649) -------
+
+/**
+ * A cap on rendered rows is only observable when the data set is STRICTLY LARGER than the cap, and
+ * the VCST-5649 cases must run as SR_REP_LAYOUT (the only rep whose persisted layout they may
+ * mutate) — which had ZERO rep-attributed orders. These orders give it enough rows, across enough
+ * orgs, statuses and distinct products, for the caps and status tabs to actually bite.
+ *
+ * Attribution is `customerId = the LAYOUT rep's ApplicationUser id` — the same mechanism the base
+ * seeder uses for SR_REP_PRIMARY. SR_REP_PRIMARY's own orders live in a different number space
+ * (AGENT-TEST-SRO-*) and are never touched here.
+ */
+async function seedRowcapOrder(spec, orgs, customerId, products) {
+  const org = orgs[spec.orgKey];
+  if (!org?.id) { log(`WARN: org ${spec.orgKey} has no pinned platform_id — skipping row-cap order ${spec.key}`); return null; }
+  const number = rowcapOrderNumber(spec.key);
+  const items = buildRowcapItems(spec, products);
+  const total = rowcapOrderTotal(spec);
+  const customerName = rowcapCustomerName(spec.orgKey);
+
+  // Idempotent + self-healing on exactly the properties the acceptance criteria read: attribution
+  // (else the order is invisible to salesRepOrders), org (customerProfile scope), status (the tab
+  // cases), total, and line shape (the distinct-product count the Top-sellers cap depends on).
+  const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 1 });
+  const existing = (found?.results || [])[0];
+  if (existing) {
+    const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
+    const shapeOk = (full?.items || []).length === items.length
+      && items.every((want) => (full.items).some((got) => got.sku === want.sku && got.quantity === want.quantity && Math.abs((got.price || 0) - want.price) < 0.01));
+    const ok = full?.customerId === customerId
+      && full?.organizationId === org.id
+      && full?.status === spec.status
+      && full?.storeId === ROWCAP_STORE
+      && Math.abs((full?.total || 0) - total) < 0.01
+      && shapeOk;
+    if (ok) { verbose(`row-cap order ${number} exists (attribution + org + status + store + total + shape ok)`); return existing.id; }
+    await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
+    log(`row-cap order ${number} rebuilding (cust=${full?.customerId === customerId}, org=${full?.organizationId === org.id}, status=${full?.status === spec.status}, shape=${shapeOk})`);
+  }
+
+  const shipAddr = orderAddress(org, 'Shipping');
+  const billAddr = orderAddress(org, 'Billing');
+  // Same totals lesson as the shaped order: zero the shipment/payment monetary totals or the
+  // platform folds them back into order.Total and the idempotency check rebuilds on every reseed.
+  const body = {
+    number, storeId: ROWCAP_STORE, organizationId: org.id, organizationName: org.name,
+    customerId, customerName, currency: 'USD', status: spec.status,
+    total, subTotal: total, shippingTotal: 0, shippingTotalWithTax: 0, taxTotal: 0,
+    items, addresses: [shipAddr, billAddr],
+    shipments: [{
+      shipmentMethodCode: 'FixedRate', shipmentMethodOption: 'Ground', currency: 'USD',
+      organizationId: org.id, organizationName: org.name,
+      price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
+      status: 'New', number: `${number}-S1`, deliveryAddress: shipAddr, items: [],
+    }],
+    inPayments: [{
+      gatewayCode: 'DefaultManualPaymentMethod', currency: 'USD',
+      customerId, customerName, organizationId: org.id, organizationName: org.name,
+      sum: total, price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
+      status: 'New', paymentStatus: 'New', number: `${number}-P1`, billingAddress: billAddr,
+    }],
+  };
+  const created = await api('POST', '/api/order/customerOrders', body);
+  log(`row-cap order ${number} (${spec.status}, ${spec.orgKey}, $${total}) -> ${created?.id || '(created)'}`);
+  return created?.id || null;
+}
+
+async function seedRowcapOrders(orgs, customerId, products) {
+  // Refuse to write a set that cannot prove the acceptance criteria — a silently-insufficient
+  // fixture makes every cap assertion pass vacuously, which is worse than not seeding at all.
+  const short = rowcapShortfalls();
+  if (short.length) throw new Error(`row-cap fixture set is insufficient:\n  - ${short.join('\n  - ')}`);
+  log(`row-cap set: ${ROWCAP_ORDERS.length} order(s), ${rowcapOrdersForOrg(ROWCAP_PROFILE_ORG_KEY).length} in ${ROWCAP_PROFILE_ORG_KEY}, statuses [${rowcapStatuses().join(', ')}]`);
+
+  const writeback = {};
+  const idByKey = {};
+  for (const spec of ROWCAP_ORDERS) {
+    const id = await seedRowcapOrder(spec, orgs, customerId, products);
+    if (id) idByKey[spec.key] = id;
+  }
+  for (const [alias, key] of Object.entries(ROWCAP_ALIASES)) {
+    if (idByKey[key]) writeback[alias] = { id: idByKey[key], number: rowcapOrderNumber(key) };
+  }
+  return writeback;
+}
+
 // ---- fixture 2: active carts (storefront xAPI as the rep) ------------------
 
 /** Find the rep's cart by name within the current org context. */
@@ -256,10 +353,17 @@ async function seedCart(spec, orgs, rep, userId, products) {
 // ---- teardown --------------------------------------------------------------
 
 async function teardown(orgs, rep, userId) {
-  log('TEARDOWN — removing only the AGENT-TEST-SR statistics fixtures');
+  // Teardown mirrors the seed's `--only ROWCAP` split. Without this, tearing down the VCST-5649
+  // row-cap orders would also sweep SR_REP_PRIMARY's shaped order + both carts — fixtures a
+  // different set of cases depends on, on a SHARED env.
+  const runRowcap = !ONLY || ONLY === 'ROWCAP';
+  const runStats = ONLY !== 'ROWCAP';
+  log(runStats
+    ? `TEARDOWN — removing only the AGENT-TEST-SR statistics${runRowcap ? ' + row-cap' : ''} fixtures`
+    : 'TEARDOWN (scoped to ROWCAP) — removing only the AGENT-TEST-SRO-ROWCAP orders');
 
   // Carts first (children of the org/product graph), then the order.
-  for (const spec of CART_FIXTURES) {
+  for (const spec of runStats ? CART_FIXTURES : []) {
     const org = orgs[spec.orgKey];
     if (!org?.id) continue;
     try {
@@ -279,7 +383,7 @@ async function teardown(orgs, rep, userId) {
   }
 
   const number = statsOrderNumber(TOP_SELLER_ORDER.key);
-  const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 });
+  const found = runStats ? await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 }) : null;
   for (const o of (found?.results || [])) {
     // `api()` already skips the DELETE under --dry-run; say so rather than reporting a deletion
     // that did not happen (the log line runs either way).
@@ -287,11 +391,26 @@ async function teardown(orgs, rep, userId) {
     log(DRY_RUN ? `  [DRY] would delete shaped order ${number}` : `  deleted shaped order ${number}`);
   }
 
+  // Row-cap orders (VCST-5649) — deleted by their own AGENT-TEST-SRO-ROWCAP- number space, so
+  // SR_REP_PRIMARY's AGENT-TEST-SRO-* orders can never be caught by this sweep.
+  for (const spec of runRowcap ? ROWCAP_ORDERS : []) {
+    const n = rowcapOrderNumber(spec.key);
+    const hit = await api('POST', '/api/order/customerOrders/search', { keyword: n, take: 5 });
+    for (const o of (hit?.results || [])) {
+      await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
+      log(DRY_RUN ? `  [DRY] would delete row-cap order ${n}` : `  deleted row-cap order ${n}`);
+    }
+  }
+
   // Zero-residue assert. Meaningless in a dry run — nothing was deleted, so the fixture is still
   // there by design and a WARN would read as a teardown failure.
   if (DRY_RUN) { log('  [DRY] residue check skipped (nothing was deleted)'); log('Teardown complete (dry run — no writes).'); return; }
-  const after = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 });
-  const residue = (after?.results || []).length;
+  const after = runStats ? await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 }) : null;
+  let residue = (after?.results || []).length;
+  for (const spec of runRowcap ? ROWCAP_ORDERS : []) {
+    const hit = await api('POST', '/api/order/customerOrders/search', { keyword: rowcapOrderNumber(spec.key), take: 5 });
+    residue += (hit?.results || []).length;
+  }
   log(residue === 0 ? '  verifyRemoved: zero residue' : `  WARN verifyRemoved: ${residue} order(s) still present`);
   log('Teardown complete.');
 }
@@ -314,23 +433,46 @@ async function main() {
   const r = expectedRankings();
   log(`spec oracle: by-units slots [${r.byUnits}] vs by-revenue slots [${r.byRevenue}] (divergent)`);
 
-  const need = requiredProductSlots();
+  // `--only ROWCAP` runs JUST the VCST-5649 row-cap phase (and nothing else runs it away).
+  const runRowcap = !ONLY || ONLY === 'ROWCAP';
+  const runStats = ONLY !== 'ROWCAP';
+
+  // Both fixture families index the SAME discovered product list, so discover enough slots for the
+  // larger of the two — a short list would silently collapse row-cap slots onto one product.
+  const need = Math.max(requiredProductSlots(), requiredRowcapProductSlots());
   const repTok = await repToken(rep.email, rep.store || STORE_ID);
   const orderProducts = await discoverStoreProducts(repTok, need);
-  const cartProducts = await discoverStoreProducts(repTok, need, { cartable: true });
+  const cartProducts = runStats ? await discoverStoreProducts(repTok, need, { cartable: true }) : [];
   log(`discovered ${orderProducts.length} distinct store product(s) for order lines: ${orderProducts.map((p) => p.sku).join(', ')}`);
-  log(`discovered ${cartProducts.length} distinct CARTABLE product(s): ${cartProducts.map((p) => p.sku).join(', ')}`);
-  if (orderProducts.length < need) throw new Error(`need ${need} distinct store products for the shaped order, found ${orderProducts.length}`);
+  if (runStats) log(`discovered ${cartProducts.length} distinct CARTABLE product(s): ${cartProducts.map((p) => p.sku).join(', ')}`);
+  if (orderProducts.length < need) throw new Error(`need ${need} distinct store products for the shaped + row-cap orders, found ${orderProducts.length}`);
 
   const writeback = {};
 
-  const orderId = await seedShapedOrder(TOP_SELLER_ORDER, orgs, userId, orderProducts);
-  if (orderId) writeback[TOP_SELLER_ORDER.alias] = { id: orderId, number: statsOrderNumber(TOP_SELLER_ORDER.key) };
+  if (runStats) {
+    const orderId = await seedShapedOrder(TOP_SELLER_ORDER, orgs, userId, orderProducts);
+    if (orderId) writeback[TOP_SELLER_ORDER.alias] = { id: orderId, number: statsOrderNumber(TOP_SELLER_ORDER.key) };
+  }
 
-  for (const spec of CART_FIXTURES) {
-    if (ONLY && spec.key !== ONLY) continue;
-    const id = await seedCart(spec, orgs, rep, userId, cartProducts);
-    if (id) writeback[spec.alias] = { id, name: cartName(spec.key) };
+  // VCST-5649 row-cap orders — attributed to SR_REP_LAYOUT, NOT to the primary rep above.
+  if (runRowcap) {
+    const layoutRep = repRow(ROWCAP_REP_KEY);
+    const layoutUserId = await resolveUserId(layoutRep.email);
+    if (!layoutUserId) {
+      // Fail loud, like the base seeder: an order stamped with the wrong id is invisible to
+      // salesRepOrders, so the row-cap cases would read "cap works" from an empty widget.
+      throw new Error(`could not resolve the ApplicationUser id for ${ROWCAP_REP_KEY} <${layoutRep.email}> — run npm run seed:sales-rep first`);
+    }
+    verbose(`row-cap orders attributed to ${ROWCAP_REP_KEY} ApplicationUser=${layoutUserId}`);
+    Object.assign(writeback, await seedRowcapOrders(orgs, layoutUserId, orderProducts));
+  }
+
+  if (runStats) {
+    for (const spec of CART_FIXTURES) {
+      if (ONLY && spec.key !== ONLY) continue;
+      const id = await seedCart(spec, orgs, rep, userId, cartProducts);
+      if (id) writeback[spec.alias] = { id, name: cartName(spec.key) };
+    }
   }
 
   if (!DRY_RUN && Object.keys(writeback).length) {

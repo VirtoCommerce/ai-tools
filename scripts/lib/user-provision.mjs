@@ -53,7 +53,12 @@ for (const [k, v] of Object.entries(process.env)) {
   if (k.endsWith(_ENV_SUFFIX) && v) process.env[k.slice(0, -_ENV_SUFFIX.length)] = v;
 }
 
-export const BACK_URL = process.env.BACK_URL;
+// Strip trailing slash(es) — some envs set BACK_URL with one (e.g. `.env.vcptcore`), which would
+// produce `//connect/token` and 404 on EVERY call this module makes. `seed-common.mjs` already
+// normalizes the same way; this module diverging meant no user seeder could authenticate against
+// such an env at all, so a stale lockout / drifted password there could never be repaired by
+// re-seeding (REG-2026-08-17-1030, ACME_BUYER on vcptcore-qa).
+export const BACK_URL = (process.env.BACK_URL || '').replace(/\/+$/, '');
 export const ADMIN = process.env.ADMIN;
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 export const STORE_ID = process.env.STORE_ID || 'B2B-store';

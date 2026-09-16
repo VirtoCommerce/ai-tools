@@ -204,7 +204,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 50,
+      "testCount": 56,
       "estimatedMinutes": 20,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -389,7 +389,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 51,
+      "testCount": 68,
       "estimatedMinutes": 34,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1255,7 +1255,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P1",
-      "testCount": 29,
+      "testCount": 34,
       "estimatedMinutes": 3,
       "agent": "none",
       "runner": "layout-runner",
@@ -1731,7 +1731,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 129,
+      "testCount": 155,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1746,8 +1746,8 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 126,
-        "browser": 0,
+        "machine": 151,
+        "browser": 1,
         "manual": 0,
         "deprecated": 3
       }
@@ -3202,7 +3202,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 58,
+      "testCount": 69,
       "estimatedMinutes": 71,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3250,7 +3250,7 @@
       "layer": "backend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 22,
+      "testCount": 43,
       "estimatedMinutes": 95,
       "agent": "qa-backend-expert",
       "tags": [
@@ -3275,7 +3275,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 63,
+      "testCount": 80,
       "estimatedMinutes": 61,
       "agent": "qa-frontend-expert",
       "tags": [

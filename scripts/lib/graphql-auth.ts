@@ -133,7 +133,18 @@ export function resolveRole(
       const resolver = new TestDataResolver(testDataDir);
       emailRaw = resolver.resolve(`@td(${role}.email)`);
       passwordRaw = resolver.resolve(`@td(${role}.password)`);
-      sidRaw = resolver.resolve(`@td(${role}.store_id)`);
+      // Store context is the `{{VAR}}` layer, NOT `@td()` (.claude/rules/test-data.md §Four data
+      // layers) — the per-env `STORE_ID` below is the correct default for every role. Probing
+      // `@td(<role>.store_id)` unconditionally made the resolver log
+      //   Unknown field "store_id" on alias "<role>". Available: email, password, …
+      // for EVERY CSV-backed role that (correctly) does not declare one — a false error that read
+      // as the cause of the 8 blocked 050m cases in REG-2026-08-17-1030. The value was never
+      // actually wrong: resolve() passes an unresolved token through and the STORE_ID fallback
+      // already applied. So only ask when the alias genuinely declares a pinned store — the
+      // escape hatch a deliberately store-bound fixture (e.g. a second-store rep) needs.
+      const declaresStoreId = !!(entry as { fields?: Record<string, string> }).fields?.store_id
+        || typeof (entry as { store_id?: string }).store_id === "string";
+      if (declaresStoreId) sidRaw = resolver.resolve(`@td(${role}.store_id)`);
       // Org context for a CSV-backed / direct-field role. Declared on the alias as
       // `organization_id` exactly like the _inline branch above, and resolved the same way
       // so it can point at another alias for the runtime GUID — e.g.

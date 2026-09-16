@@ -24,28 +24,28 @@ BSM-003,Platform Health Endpoint — Modules and Services,Backend Smoke > Platfo
 [BODY] Redis health entry present
 [BODY] SQL Server health entry present
 [BODY] overall health status is 'Healthy' (no 'Unhealthy' or 'Degraded' entries)","[API] GET {{BACK_URL}}/api/platform/modules returns 200 with non-empty module list
-[BODY] modules array contains items with 'id' and 'version' fields","Health endpoint returns 503 or 500, any subsystem marked 'Unhealthy' (Redis down, SQL Server unreachable), modules API returns empty array, health endpoint requires auth but token fails",none,"Suite 049 (Platform API)",Automated
-BSM-004,Platform Modules API — Installed Modules List,Backend Smoke > Platform Health,Critical,BL-CROSS-011,ECL-10.1,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/platform/modules
+[BODY] modules array contains items with 'id' and 'version' fields","Health endpoint returns 503 or 500, any subsystem marked 'Unhealthy' (Redis down, SQL Server unreachable), modules API returns empty array, health endpoint requires auth but token fails",none,Suite 049 (Platform API),Automated
+BSM-004,Platform Modules API — Installed Modules List,Backend Smoke > Platform Health,Critical,BL-CROSS-011,ECL-10.1,Admin Bearer token obtained (BSM-002),back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/platform/modules
 [SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK
 [BODY] response is a JSON array with at least 10 items
 [BODY] each module entry has 'id', 'version', 'state' fields
 [BODY] core modules present: VirtoCommerce.Catalog, VirtoCommerce.Orders, VirtoCommerce.Customer, VirtoCommerce.Pricing, VirtoCommerce.Inventory, VirtoCommerce.Marketing
-[BODY] all listed modules show state = 'Installed' (no 'Error' or 'Missing' state)","[ADMIN] navigate to {{BACK_URL}}/ui#/modules blade — module list matches API response count
+[BODY] all listed modules show state = 'Installed' (no 'Error' or 'Missing' state)","[ADMIN] navigate to {{BACK_URL}}#!/workspace/modules blade — module list matches API response count
 [BLADE] no module shows a red error indicator in the Admin blade","403 Forbidden (token lacks permissions), empty module array (platform failure), any core module absent, state = 'Error' for any core module, count mismatch between API and Admin blade by >2",none,"Suite 049 (Platform API), Suite 020 (Platform Users)",Automated
-BSM-011,Admin SPA — Organizations Blade Opens,Backend Smoke > Customers Admin,Critical,"BL-CROSS-006, BL-B2B-001",ECL-6.1,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/customerDetails
+BSM-011,Admin SPA — Organizations Blade Opens,Backend Smoke > Customers Admin,Critical,"BL-CROSS-006, BL-B2B-001",ECL-6.1,Admin logged in (BSM-001 passed),back_url={{BACK_URL}},"[NAV] {{BACK_URL}}#!/workspace/customers
 [WAIT] Customers module blade loads
 [ACT] switch to 'Organizations' tab or filter
 [WAIT] organizations list visible","[BLADE] Organizations section shows org list grid
 [GRID] at least 1 organization row visible
 [GRID] columns include: Name, Members count (or similar)
 [DOM] 'Add' and search controls present","[API] GET {{BACK_URL}}/api/members/search?memberType=Organization&take=10 → 200 with results.items array
-[BODY] API returns at least 1 organization","Organizations section shows 0 results when orgs exist, API 500 on organization search, blade does not switch to Organizations view",none,"Suite 027 (Customer Orgs & Invites)",Automated
-BSM-016,Platform REST API — Security Current User Endpoint,Backend Smoke > Platform API,Critical,BL-AUTH-001,ECL-4.1,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser
+[BODY] API returns at least 1 organization","Organizations section shows 0 results when orgs exist, API 500 on organization search, blade does not switch to Organizations view",none,Suite 027 (Customer Orgs & Invites),Automated
+BSM-016,Platform REST API — Security Current User Endpoint,Backend Smoke > Platform API,Critical,BL-AUTH-001,ECL-4.1,Admin Bearer token obtained (BSM-002),back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser
 [SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK
 [BODY] response includes 'id' and 'userName' fields
 [BODY] userName matches {{ADMIN}}
 [BODY] roles array non-empty (includes 'Administrator' or platform admin role)
-[BODY] permissions array non-empty","[ADMIN] navigate to Users blade — admin user visible with matching details","401 on valid token, userName field missing or empty, roles array empty (role assignment lost), HTTP 500 on currentuser endpoint",none,"Suite 049 (Platform API)",Automated
+[BODY] permissions array non-empty",[ADMIN] navigate to Users blade — admin user visible with matching details,"401 on valid token, userName field missing or empty, roles array empty (role assignment lost), HTTP 500 on currentuser endpoint",none,Suite 049 (Platform API),Automated
 BSM-017,Platform REST API — Catalog Search Products Endpoint,Backend Smoke > Platform API,Critical,BL-CROSS-001,ECL-1.1,"Admin Bearer token obtained (BSM-002), at least 1 product in catalog",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] POST {{BACK_URL}}/api/catalog/search
 [SETUP] Authorization: Bearer {{bearer_token}}
 [SETUP] Content-Type: application/json
@@ -53,16 +53,16 @@ BSM-017,Platform REST API — Catalog Search Products Endpoint,Backend Smoke > P
 [BODY] 'items' array in response with at least 1 element
 [BODY] 'totalCount' field > 0
 [BODY] each item has 'id', 'code', 'name' fields
-[SCHEMA] response structure matches expected catalog search contract","[ADMIN] product count in API response aligns with Products blade row count in Admin","HTTP 500 or 403, empty items array when catalog has products, totalCount = 0, items missing required fields (id, code, name), response not JSON",none,"Suite 049 (Platform API), Suite 051 (Catalog Admin Products)",Automated
-BSM-018,Platform REST API — Orders Search Endpoint,Backend Smoke > Platform API,Critical,"",ECL-8.1,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] POST {{BACK_URL}}/api/order/customerOrders/search
+[SCHEMA] response structure matches expected catalog search contract",[ADMIN] product count in API response aligns with Products blade row count in Admin,"HTTP 500 or 403, empty items array when catalog has products, totalCount = 0, items missing required fields (id, code, name), response not JSON",none,"Suite 049 (Platform API), Suite 051 (Catalog Admin Products)",Automated
+BSM-018,Platform REST API — Orders Search Endpoint,Backend Smoke > Platform API,Critical,,ECL-8.1,Admin Bearer token obtained (BSM-002),back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] POST {{BACK_URL}}/api/order/customerOrders/search
 [SETUP] Authorization: Bearer {{bearer_token}}
 [SETUP] Content-Type: application/json
 [SETUP] body: {""take"": 5}","[STATUS] HTTP 200 OK
 [BODY] 'results' array present (may be empty if no orders; totalCount field present)
 [BODY] 'totalCount' >= 0
 [BODY] if results non-empty: each order has 'id', 'number', 'status', 'total' fields
-[SCHEMA] response structure matches order search contract","[ADMIN] order count from API aligns with Orders blade grid row count in Admin","HTTP 500 or 403, missing totalCount field, results array absent (null vs empty is acceptable), orders present in Admin blade but API returns 0",none,"Suite 049 (Platform API), Suite 017 (Orders Management)",Automated
-BSM-019,GraphQL xAPI — Schema Introspection,Backend Smoke > GraphQL xAPI,Critical,BL-CROSS-011,ECL-10.1,"Admin logged in to {{BACK_URL}} (session cookie available)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui/graphiql
+[SCHEMA] response structure matches order search contract",[ADMIN] order count from API aligns with Orders blade grid row count in Admin,"HTTP 500 or 403, missing totalCount field, results array absent (null vs empty is acceptable), orders present in Admin blade but API returns 0",none,"Suite 049 (Platform API), Suite 017 (Orders Management)",Automated
+BSM-019,GraphQL xAPI — Schema Introspection,Backend Smoke > GraphQL xAPI,Critical,BL-CROSS-011,ECL-10.1,Admin logged in to {{BACK_URL}} (session cookie available),back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL interface loaded (query editor visible)
 [ACT] clear any existing query in the editor
 [ACT] type introspection query: { __schema { types { name } } }
@@ -70,7 +70,7 @@ BSM-019,GraphQL xAPI — Schema Introspection,Backend Smoke > GraphQL xAPI,Criti
 [WAIT] response panel populates","[DOM] GraphiQL editor loads without error
 [ERRORS] response data panel shows no errors[] array
 [DATA] __schema.types array present with at least 20 type entries
-[DATA] core type names present: 'Query', 'Product', 'CartType', 'CustomerOrderType'","[API] introspection also succeeds via: POST {{BACK_URL}}/graphql with Authorization: Bearer {{bearer_token}} and body {""query"": ""{__schema{types{name}}}""} → 200 with no errors","GraphiQL page fails to load (404, Angular crash), introspection returns errors[] (introspection disabled), types array empty, key types absent (schema corrupt or xAPI module not loaded)",none,"Suite 050 (GraphQL xAPI)",Automated
+[DATA] core type names present: 'Query', 'Product', 'CartType', 'CustomerOrderType'","[API] introspection also succeeds via: POST {{BACK_URL}}/graphql with Authorization: Bearer {{bearer_token}} and body {""query"": ""{__schema{types{name}}}""} → 200 with no errors","GraphiQL page fails to load (404, Angular crash), introspection returns errors[] (introspection disabled), types array empty, key types absent (schema corrupt or xAPI module not loaded)",none,Suite 050 (GraphQL xAPI),Automated
 BSM-020,GraphQL xAPI — Products Query Basic,Backend Smoke > GraphQL xAPI,Critical,BL-CROSS-001,ECL-1.1,"GraphiQL accessible (BSM-019 passed), storeId known",back_url={{BACK_URL}}; store_id={{STORE_ID}},"[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL loaded
 [ACT] enter query:
@@ -89,7 +89,7 @@ query {
 [DATA] products.items array has at least 1 element
 [DATA] products.totalCount > 0
 [DATA] each item has non-empty id, name, code fields","[ADMIN] product count from GraphQL totalCount aligns with catalog Admin blade product count (within ±10%)
-[NETWORK] no 4xx/5xx on GraphQL HTTP request","GraphQL errors[] present, items array empty when catalog has products, totalCount = 0, partial data with null fields, HTTP 500 on GraphQL endpoint",none,"Suite 050 (GraphQL xAPI)",Automated
+[NETWORK] no 4xx/5xx on GraphQL HTTP request","GraphQL errors[] present, items array empty when catalog has products, totalCount = 0, partial data with null fields, HTTP 500 on GraphQL endpoint",none,Suite 050 (GraphQL xAPI),Automated
 BSM-021,GraphQL xAPI — Cart Query (Empty Cart),Backend Smoke > GraphQL xAPI,Critical,"BL-CART-001, BL-CROSS-010",ECL-3.1,"GraphiQL accessible (BSM-019 passed), storeId and userId known",back_url={{BACK_URL}}; store_id={{STORE_ID}},"[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL loaded
 [ACT] enter query:
@@ -108,44 +108,45 @@ query {
 [DATA] cart.id field present (non-empty string)
 [DATA] cart.itemsCount is 0 for anonymous user with no items
 [DATA] cart.total.amount is 0 or null for empty cart","[NETWORK] GraphQL POST request returns HTTP 200
-[BODY] HTTP response body contains 'data' key without null","cart returns null (xCart module not loaded), errors[] present referencing invalid storeId or missing context, HTTP 500 on cart query, total.amount is negative",none,"Suite 050 (GraphQL xAPI)",Automated
-BSM-023,Admin SPA — Hangfire Dashboard Accessible,Backend Smoke > Platform Health,Critical,BL-CROSS-011,ECL-10.1,"Admin credentials known ({{ADMIN}} / {{ADMIN_PASSWORD}})",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/hangfire
+[BODY] HTTP response body contains 'data' key without null","cart returns null (xCart module not loaded), errors[] present referencing invalid storeId or missing context, HTTP 500 on cart query, total.amount is negative",none,Suite 050 (GraphQL xAPI),Automated
+BSM-023,Admin SPA — Hangfire Dashboard Accessible,Backend Smoke > Platform Health,Critical,BL-CROSS-011,ECL-10.1,Admin credentials known ({{ADMIN}} / {{ADMIN_PASSWORD}}),back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/hangfire
 [WAIT] Hangfire dashboard page loads","[DOM] Hangfire dashboard page renders (title contains 'Hangfire' or 'Dashboard')
 [DOM] job queue statistics visible (Enqueued, Scheduled, Succeeded, Failed counts)
 [DOM] 'Failed' jobs count is 0 or very low (< 5) — spike indicates platform issue
-[DOM] server list shows at least 1 Hangfire server active","[NETWORK] no 401/403 on /hangfire (dashboard accessible to admin session)","Hangfire page returns 404 (background jobs service not running), Failed job count > 20 (platform degradation signal), no servers listed (all workers down), page loads but shows only error state",none,"Suite 049 (Platform API)",Automated
-BSM-024,Admin SPA — Platform Settings Blade Opens,Backend Smoke > Platform Health,Critical,BL-CROSS-011,ECL-10.1,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/settings
+[DOM] server list shows at least 1 Hangfire server active",[NETWORK] no 401/403 on /hangfire (dashboard accessible to admin session),"Hangfire page returns 404 (background jobs service not running), Failed job count > 20 (platform degradation signal), no servers listed (all workers down), page loads but shows only error state",none,Suite 049 (Platform API),Automated
+BSM-024,Admin SPA — Platform Settings Blade Opens,Backend Smoke > Platform Health,Critical,BL-CROSS-011,ECL-10.1,Admin logged in (BSM-001 passed),back_url={{BACK_URL}},"[NAV] {{BACK_URL}}#!/workspace/settings
 [WAIT] Platform Settings blade loads
 [ASSERT] settings categories visible","[BLADE] Settings blade title visible (e.g., 'Settings' or 'Platform Settings')
 [DOM] settings sections/tabs visible: e.g., 'Platform', 'Stores', module-specific groups
 [DOM] settings entries render with Name and Value columns or key-value pairs
 [DOM] 'Save changes' button present (or equivalent save action)","[API] GET {{BACK_URL}}/api/platform/settings → 200 with non-empty settings array
 [BODY] settings array contains core entries (e.g., platform-level settings)","Settings blade returns 404, API returns 500 or empty array, settings blade renders blank with no sections, Angular error thrown on settings blade open",none,"Suite 063 (Core Settings), Suite 020 (Platform Users)",Automated
-BSM-025,Admin REST API — Unauthorized Request Returns 401,Backend Smoke > Platform API,Critical,BL-AUTH-001,ECL-4.1,"No token (unauthenticated request)",back_url={{BACK_URL}},"[HTTP] GET {{BACK_URL}}/api/platform/modules
+BSM-025,Admin REST API — Unauthorized Request Returns 401,Backend Smoke > Platform API,Critical,BL-AUTH-001,ECL-4.1,No token (unauthenticated request),back_url={{BACK_URL}},"[HTTP] GET {{BACK_URL}}/api/platform/modules
 [SETUP] no Authorization header (omit token entirely)","[STATUS] HTTP 401 Unauthorized
 [BODY] response body contains error message or code (not a stack trace)
 [HEADER] WWW-Authenticate header present in response","[HTTP] also verify: GET {{BACK_URL}}/api/catalog/catalogs without token → 401 (not 200 or 500)
 [HTTP] verify: GET {{BACK_URL}}/api/order/customerOrders without token → 401","HTTP 200 returned without auth (broken access control), HTTP 500 returned instead of 401, stack trace exposed in 401 response body, WWW-Authenticate header absent",none,"Suite 049 (Platform API), Suite 044 (Security Tests)",Automated
-BSM-027,Admin SPA — Roles and Permissions Blade Opens,Backend Smoke > Platform Admin,High,"BL-AUTH-005, BL-AUTH-006",ECL-4.2,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/security/roles
+BSM-027,Admin SPA — Roles and Permissions Blade Opens,Backend Smoke > Platform Admin,High,"BL-AUTH-005, BL-AUTH-006",ECL-4.2,Admin logged in (BSM-001 passed),back_url={{BACK_URL}},"[NAV] {{BACK_URL}}#!/workspace/security
+[ACT] click 'Roles' in the Security blade menu
 [WAIT] Roles blade loads
 [ASSERT] roles list visible","[BLADE] Roles blade title visible (e.g., 'Roles')
 [GRID] grid shows at least 2 default roles (e.g., 'Administrator', 'Catalog reviewer')
 [DOM] role row clickable to open permissions detail blade
 [DOM] 'Add Role' button present","[API] GET {{BACK_URL}}/api/platform/security/roles?take=10 → 200 with 'items' array containing at least 1 role
 [BODY] each role has 'id', 'name', 'permissions' fields","Roles blade fails to open, API returns empty roles array, permissions detail blade fails to open on role click, missing default platform roles",none,"Suite 020 (Platform Users), Suite 049 (Platform API)",Automated
-BSM-028,Admin SPA — Dynamic Properties Blade Opens,Backend Smoke > Platform Admin,Medium,BL-CROSS-011,ECL-10.1,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui#/dynamicProperties
+BSM-028,Admin SPA — Dynamic Properties Blade Opens,Backend Smoke > Platform Admin,Medium,BL-CROSS-011,ECL-10.1,Admin logged in (BSM-001 passed),back_url={{BACK_URL}},"[NAV] {{BACK_URL}}#!/workspace/dynamicProperties
 [WAIT] Dynamic Properties blade loads
 [ASSERT] object type list visible","[BLADE] Dynamic Properties blade title visible
 [GRID] list shows entity types that support dynamic properties (e.g., 'VirtoCommerce.OrderModule.Core.Model.CustomerOrder')
-[DOM] clicking an entity type opens its properties list blade","[API] GET {{BACK_URL}}/api/platform/dynamic/types → 200 with non-empty array of object types","Dynamic Properties blade fails to open, API returns 500, entity type list empty, clicking type does not open nested blade",none,"Suite 021 (Platform Dynamic Properties)",Automated
-BSM-029,Platform REST API — Settings Read and Write Round-Trip,Backend Smoke > Platform API,High,BL-CROSS-011,ECL-10.1,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/platform/settings?group=Platform
+[DOM] clicking an entity type opens its properties list blade",[API] GET {{BACK_URL}}/api/platform/dynamic/types → 200 with non-empty array of object types,"Dynamic Properties blade fails to open, API returns 500, entity type list empty, clicking type does not open nested blade",none,Suite 021 (Platform Dynamic Properties),Automated
+BSM-029,Platform REST API — Settings Read and Write Round-Trip,Backend Smoke > Platform API,High,BL-CROSS-011,ECL-10.1,Admin Bearer token obtained (BSM-002),back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/platform/settings?group=Platform
 [SETUP] Authorization: Bearer {{bearer_token}}
 [ASSERT] at least 1 setting returned
 [HTTP] POST {{BACK_URL}}/api/platform/settings
 [SETUP] body: same setting array (no value change — read-back write)","[STATUS] GET returns 200 with non-empty settings array
 [STATUS] POST returns 200 or 204
 [BODY] each setting has 'name', 'value', 'valueType' fields
-[BODY] POST does not corrupt existing setting values","[ADMIN] navigate to {{BACK_URL}}/ui#/settings — settings blade still renders correctly after the API round-trip","GET returns empty array, POST returns 500 or 403, POST corrupts existing setting values, read-back response does not match written payload",none,"Suite 049 (Platform API), Suite 063 (Core Settings)",Automated
+[BODY] POST does not corrupt existing setting values",[ADMIN] navigate to {{BACK_URL}}#!/workspace/settings — settings blade still renders correctly after the API round-trip,"GET returns empty array, POST returns 500 or 403, POST corrupts existing setting values, read-back response does not match written payload",none,"Suite 049 (Platform API), Suite 063 (Core Settings)",Automated
 BSM-049,GraphQL xAPI — Cart Add Item Mutation,Backend Smoke > GraphQL xAPI,High,"BL-CART-001, BL-CAT-006",ECL-3.2,"GraphiQL accessible (BSM-019 passed), a valid product ID in catalog known",back_url={{BACK_URL}}; store_id={{STORE_ID}}; product_id={{PRODUCT_ID}},"[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL loaded
 [ACT] enter mutation:
@@ -172,7 +173,7 @@ mutation {
 [DATA] cart.id field non-empty
 [DATA] cart.itemsCount = 1 (or incremented if userId has prior cart)
 [DATA] cart.items array has at least 1 element with quantity = 1","[NETWORK] GraphQL POST HTTP 200
-[BODY] 'data' key present without null at cart level","errors[] present (storeId invalid, product not found), cart.id null, itemsCount unchanged after mutation, HTTP 500 on GraphQL endpoint, mutation rejected with 403","Remove test cart via clearCart mutation or leave ephemeral (test userId is unique).","Suite 050 (GraphQL xAPI)",Automated
+[BODY] 'data' key present without null at cart level","errors[] present (storeId invalid, product not found), cart.id null, itemsCount unchanged after mutation, HTTP 500 on GraphQL endpoint, mutation rejected with 403",Remove test cart via clearCart mutation or leave ephemeral (test userId is unique).,Suite 050 (GraphQL xAPI),Automated
 BSM-050,GraphQL xAPI — Customer Order History Query,Backend Smoke > GraphQL xAPI,Medium,"BL-ORD-005, BL-CROSS-010",ECL-8.1,"GraphiQL accessible (BSM-019 passed), storeId known, at least 1 order exists",back_url={{BACK_URL}}; store_id={{STORE_ID}},"[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL loaded
 [ACT] enter query:
@@ -193,18 +194,18 @@ query {
 [ACT] click Execute Query","[ERRORS] no errors[] in response
 [DATA] orders.totalCount >= 0
 [DATA] if totalCount > 0: items array non-empty with id, number, status fields
-[DATA] total.amount > 0 for each completed order (not null)","[ADMIN] order count from GraphQL totalCount matches Orders blade grid row count (within ±5%)","GraphQL errors[] present, items null when orders exist, total.amount = null for completed orders, HTTP 500, totalCount field absent",none,"Suite 050 (GraphQL xAPI), Suite 017 (Orders Management)",Automated
-BSM-051,Platform REST API — Import/Export Module Health Check,Backend Smoke > Import-Export,High,BL-CROSS-011,ECL-10.1,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/import/providers
+[DATA] total.amount > 0 for each completed order (not null)",[ADMIN] order count from GraphQL totalCount matches Orders blade grid row count (within ±5%),"GraphQL errors[] present, items null when orders exist, total.amount = null for completed orders, HTTP 500, totalCount field absent",none,"Suite 050 (GraphQL xAPI), Suite 017 (Orders Management)",Automated
+BSM-051,Platform REST API — Import/Export Module Health Check,Backend Smoke > Import-Export,High,BL-CROSS-011,ECL-10.1,Admin Bearer token obtained (BSM-002),back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/import/providers
 [SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK (or 404 if import module not installed — record as SKIP)
 [BODY] if 200: response is array of import provider definitions
 [BODY] each provider has 'typeName' or 'name' field
-[BODY] no 'error' or 'exception' fields in response","[ADMIN] navigate to Admin SPA — verify Import/Export section accessible in left nav (module present)","HTTP 500 (module installed but broken), 403 Forbidden (permissions misconfigured), provider entries with null 'typeName'",none,"Suite 073 (Import-Export)",Automated
+[BODY] no 'error' or 'exception' fields in response",[ADMIN] navigate to Admin SPA — verify Import/Export section accessible in left nav (module present),"HTTP 500 (module installed but broken), 403 Forbidden (permissions misconfigured), provider entries with null 'typeName'",none,Suite 073 (Import-Export),Automated
 BSM-052,Admin SPA — Export Job from Catalog Accessible,Backend Smoke > Import-Export,Medium,BL-CROSS-011,ECL-10.1,"Admin logged in, Import/Export module accessible (BSM-051 passed with 200)",back_url={{BACK_URL}},"[NAV] {{BACK_URL}}/ui
 [WAIT] Admin SPA loaded
 [ACT] find and click the 'Import' or 'Export' navigation item in left sidebar
 [WAIT] Import/Export module blade loads","[BLADE] Import/Export blade visible with tabs or sections (e.g., 'Import', 'Export', 'Job History')
 [DOM] export job types visible (e.g., catalog product export, customer export)
-[DOM] 'Create Export Job' or 'New Export' button present","[API] GET {{BACK_URL}}/api/import/runs?take=5 → 200 with 'totalCount' >= 0","Import/Export blade fails to open, no job type options visible, API returns 500, blade shows Angular error on open",none,"Suite 073 (Import-Export)",Automated
+[DOM] 'Create Export Job' or 'New Export' button present",[API] GET {{BACK_URL}}/api/import/runs?take=5 → 200 with 'totalCount' >= 0,"Import/Export blade fails to open, no job type options visible, API returns 500, blade shows Angular error on open",none,Suite 073 (Import-Export),Automated
 BSM-065,GraphQL xAPI — Me (Profile) Query,Backend Smoke > GraphQL xAPI,High,BL-CROSS-006,ECL-6.1,"GraphiQL accessible (BSM-019 passed), authenticated admin session active",back_url={{BACK_URL}}; store_id={{STORE_ID}},"[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL loaded
 [ACT] enter query:
@@ -225,24 +226,24 @@ query {
 [DATA] me.id field non-empty
 [DATA] me.email matches authenticated session
 [DATA] no partial null fields on a logged-in session","[NETWORK] GraphQL POST HTTP 200
-[BODY] 'data.me' key present (not null for authenticated user)","errors[] with 'Unauthorized' or 'storeId required', me returns null for authenticated session, HTTP 500, required id and email fields absent",none,"Suite 050 (GraphQL xAPI)",Automated
-BSM-066,Platform REST API — Bulk Import Schema Validation (Error Path),Backend Smoke > Import-Export,Medium,BL-CROSS-011,ECL-10.1,"Admin Bearer token obtained (BSM-002)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] POST {{BACK_URL}}/api/pricing/pricelists/import
+[BODY] 'data.me' key present (not null for authenticated user)","errors[] with 'Unauthorized' or 'storeId required', me returns null for authenticated session, HTTP 500, required id and email fields absent",none,Suite 050 (GraphQL xAPI),Automated
+BSM-066,Platform REST API — Bulk Import Schema Validation (Error Path),Backend Smoke > Import-Export,Medium,BL-CROSS-011,ECL-10.1,Admin Bearer token obtained (BSM-002),back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] POST {{BACK_URL}}/api/pricing/pricelists/import
 [SETUP] Authorization: Bearer {{bearer_token}}
 [SETUP] Content-Type: application/json
 [SETUP] body: {} (empty payload — intentionally invalid)","[STATUS] HTTP 400 Bad Request (not 500)
 [BODY] error message present describing the validation failure
-[BODY] no 'NullReferenceException' or stack trace in response body","[ADMIN] Pricing blade still accessible after the failed import request (no side effects on the module)","HTTP 500 returned instead of 400 (unhandled exception), stack trace exposed in response body, pricing blade crashes after failed import API call",none,"Suite 049 (Platform API), Suite 055 (Pricing Management)",Automated
-BSM-067,Platform REST API — Bulk Delete Without Auth Returns 401,Backend Smoke > Platform API,High,BL-AUTH-001,ECL-4.1,"No authentication token",back_url={{BACK_URL}},"[HTTP] DELETE {{BACK_URL}}/api/catalog/products?ids=nonexistent-id
+[BODY] no 'NullReferenceException' or stack trace in response body",[ADMIN] Pricing blade still accessible after the failed import request (no side effects on the module),"HTTP 500 returned instead of 400 (unhandled exception), stack trace exposed in response body, pricing blade crashes after failed import API call",none,"Suite 049 (Platform API), Suite 055 (Pricing Management)",Automated
+BSM-067,Platform REST API — Bulk Delete Without Auth Returns 401,Backend Smoke > Platform API,High,BL-AUTH-001,ECL-4.1,No authentication token,back_url={{BACK_URL}},"[HTTP] DELETE {{BACK_URL}}/api/catalog/products?ids=nonexistent-id
 [SETUP] no Authorization header
 [HTTP] DELETE {{BACK_URL}}/api/order/customerOrders?ids=nonexistent-id
 [SETUP] no Authorization header","[STATUS] first DELETE returns 401 Unauthorized
 [BODY] error message present (no stack trace)
 [HEADER] WWW-Authenticate header present on first DELETE
-[STATUS] second DELETE also returns 401 (consistent across modules)","[HTTP] additionally verify: DELETE {{BACK_URL}}/api/members?ids=nonexistent → 401 (members module consistent)","HTTP 200 returned without auth on any endpoint (broken access control), HTTP 500 instead of 401, stack trace exposed in 401 body, WWW-Authenticate header absent",none,"Suite 044 (Security Tests), Suite 049 (Platform API)",Automated
-BSM-068,Platform Settings — User Lockout Configuration Accessible,Backend Smoke > Platform Admin,Medium,BL-AUTH-003,ECL-4.3,"Admin logged in (BSM-001 passed)",back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/platform/settings?keyword=lockout
+[STATUS] second DELETE also returns 401 (consistent across modules)",[HTTP] additionally verify: DELETE {{BACK_URL}}/api/members?ids=nonexistent → 401 (members module consistent),"HTTP 200 returned without auth on any endpoint (broken access control), HTTP 500 instead of 401, stack trace exposed in 401 body, WWW-Authenticate header absent",none,"Suite 044 (Security Tests), Suite 049 (Platform API)",Automated
+BSM-068,Platform Settings — User Lockout Configuration Accessible,Backend Smoke > Platform Admin,Medium,BL-AUTH-003,ECL-4.3,Admin logged in (BSM-001 passed),back_url={{BACK_URL}}; bearer_token=<from BSM-002>,"[HTTP] GET {{BACK_URL}}/api/platform/settings?keyword=lockout
 [SETUP] Authorization: Bearer {{bearer_token}}","[STATUS] HTTP 200 OK
 [BODY] settings array contains lockout-related entries (e.g., 'VirtoCommerce.Platform.Security.MaxPasswordAge', 'MaxFailedAccessAttempts')
-[BODY] each setting has 'name', 'value', 'valueType' fields","[ADMIN] navigate to {{BACK_URL}}/ui#/settings → Platform settings group → security settings section visible with matching lockout entries","API returns 500, settings array empty for platform security group, lockout settings absent (security misconfiguration risk), Admin settings blade fails to render security section",none,"Suite 063 (Core Settings), Suite 020 (Platform Users)",Automated
+[BODY] each setting has 'name', 'value', 'valueType' fields",[ADMIN] navigate to {{BACK_URL}}#!/workspace/settings → Platform settings group → security settings section visible with matching lockout entries,"API returns 500, settings array empty for platform security group, lockout settings absent (security misconfiguration risk), Admin settings blade fails to render security section",none,"Suite 063 (Core Settings), Suite 020 (Platform Users)",Automated
 BSM-074,GraphQL xAPI — xCatalog Categories Query,Backend Smoke > GraphQL xAPI,High,"BL-CAT-002, BL-CROSS-001",ECL-1.1,"GraphiQL accessible (BSM-019 passed), storeId known",back_url={{BACK_URL}}; store_id={{STORE_ID}},"[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL loaded
 [ACT] enter query:
@@ -263,8 +264,8 @@ query {
 [ACT] click Execute Query","[ERRORS] no errors[] in response
 [DATA] categories.totalCount > 0
 [DATA] items array non-empty with id, name, slug fields
-[DATA] for nested categories: parent object present with non-null id","[ADMIN] category count from GraphQL totalCount aligns with Admin Catalog blade categories count (within ±5%)","errors[] present, totalCount = 0 when categories exist, slug field null for published categories (SEO regression), HTTP 500 on GraphQL endpoint",none,"Suite 050 (GraphQL xAPI), Suite 053 (Catalog Admin Categories)",Automated
-BSM-115,GraphQL xAPI — Store assetPublicUrl Field and StoreAssetUrl Scalar Are Queryable (Read-Only),Backend Smoke > GraphQL xAPI,High,BL-GQL-003,ECL-2.1,"GraphiQL accessible (BSM-019 passed); VCST-5089 deployed. NON-MUTATING by design — does not set/reset any store's assetPublicUrl (that would break shared storefront imagery for the whole team mid-smoke-run); smoke coverage here is limited to 'the field and scalar exist and resolve without error'. Full read/write/rewrite regression coverage lives in suite 050m (GraphQL Store Asset URL) and admin suite 034 (STORE-052/053/054).","back_url={{BACK_URL}}; store_id={{STORE_ID}}","[NAV] {{BACK_URL}}/ui/graphiql
+[DATA] for nested categories: parent object present with non-null id",[ADMIN] category count from GraphQL totalCount aligns with Admin Catalog blade categories count (within ±5%),"errors[] present, totalCount = 0 when categories exist, slug field null for published categories (SEO regression), HTTP 500 on GraphQL endpoint",none,"Suite 050 (GraphQL xAPI), Suite 053 (Catalog Admin Categories)",Automated
+BSM-115,GraphQL xAPI — Store assetPublicUrl Field and StoreAssetUrl Scalar Are Queryable (Read-Only),Backend Smoke > GraphQL xAPI,High,BL-GQL-003,ECL-2.1,GraphiQL accessible (BSM-019 passed); VCST-5089 deployed. NON-MUTATING by design — does not set/reset any store's assetPublicUrl (that would break shared storefront imagery for the whole team mid-smoke-run); smoke coverage here is limited to 'the field and scalar exist and resolve without error'. Full read/write/rewrite regression coverage lives in suite 050m (GraphQL Store Asset URL) and admin suite 034 (STORE-052/053/054).,back_url={{BACK_URL}}; store_id={{STORE_ID}},"[NAV] {{BACK_URL}}/ui/graphiql
 [WAIT] GraphiQL loaded
 [ACT] enter query:
 query {
@@ -280,4 +281,4 @@ query {
 [ACT] click Execute Query button
 [WAIT] response appears","[ERRORS] no errors[] in either response
 [DATA] first response: store.storeId = {{STORE_ID}} and store.assetPublicUrl is present as a field (null or a string — either is acceptable, this smoke case does not configure it)
-[DATA] second response: __type.name = StoreAssetUrl and __type.kind = SCALAR (schema scalar exists — confirms VCST-5089 is deployed on this env)","[NETWORK] both GraphQL POST requests return HTTP 200","errors[] present on either query (feature not deployed or schema regression); assetPublicUrl field absent from store{} response; StoreAssetUrl scalar absent from schema (__type returns null)",none,"VCST-5089; Suite 050m (GraphQL Store Asset URL); Suite 034 (Store Management)",Draft
+[DATA] second response: __type.name = StoreAssetUrl and __type.kind = SCALAR (schema scalar exists — confirms VCST-5089 is deployed on this env)",[NETWORK] both GraphQL POST requests return HTTP 200,errors[] present on either query (feature not deployed or schema regression); assetPublicUrl field absent from store{} response; StoreAssetUrl scalar absent from schema (__type returns null),none,VCST-5089; Suite 050m (GraphQL Store Asset URL); Suite 034 (Store Management),Draft

@@ -23,6 +23,12 @@ import {
   expectedRankings, rankingsDiverge, requiredProductSlots,
   buildStatisticsWindows, COMPARISON_AXES,
 } from './sales-rep-stats-specs.mjs';
+import {
+  ROWCAP_ORDERS, ROWCAP_ALIASES, ROWCAP_REP_KEY, ROWCAP_STORE, ROWCAP_PROFILE_ORG_KEY,
+  rowcapOrderNumber, rowcapOrderTotal, rowcapShortfalls, rowcapOrgKeys,
+  rowcapOrdersForOrg, rowcapStatuses, rowcapTopSellerSlots,
+} from './sales-rep-rowcap-specs.mjs';
+import { isDisposableLayoutRep } from './sales-rep-layout-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const problems = [];
@@ -116,8 +122,69 @@ if (w.prevWeek.from !== '2026-07-27T00:00:00.000Z') fail(`prevWeek start drifted
 if (w.prevMonth.to !== '2026-07-03T23:59:59.999Z') fail(`prevMonth end drifted: ${w.prevMonth.to} (same day-span in the previous month)`);
 if (w.lastYear.to !== '2025-08-03T23:59:59.999Z') fail(`lastYear end drifted: ${w.lastYear.to}`);
 
+// ---- [9] VCST-5649 widget row-cap fixtures ---------------------------------
+// Same seeder, same teardown, so the same guard. These checks all exist because the corresponding
+// failure is SILENT: an insufficient set makes every "the cap took effect" assertion pass on an
+// under-full widget, which is indistinguishable from a working cap.
+{
+  const shortfalls = rowcapShortfalls();
+  for (const s of shortfalls) fail(`row-cap fixture set: ${s}`);
+
+  // Deterministic business keys + line arithmetic.
+  const seenKey = new Set();
+  for (const o of ROWCAP_ORDERS) {
+    if (seenKey.has(o.key)) fail(`row-cap order key ${o.key} is duplicated — the order number is the idempotency key`);
+    seenKey.add(o.key);
+    if (!rowcapOrderNumber(o.key).startsWith('AGENT-TEST-')) fail(`row-cap order ${o.key} number is not AGENT-TEST- prefixed — teardown would not sweep it`);
+    if (!(rowcapOrderTotal(o) > 0)) fail(`row-cap order ${o.key} has a non-positive total`);
+    for (const l of o.lines) {
+      if (!(l.quantity > 0)) fail(`row-cap order ${o.key} line slot ${l.productSlot} has non-positive quantity`);
+      if (!(l.unitPrice > 0)) fail(`row-cap order ${o.key} line slot ${l.productSlot} has non-positive unitPrice`);
+    }
+  }
+
+  // The row-cap orders must be attributed to the DISPOSABLE-layout rep, never the shared primary —
+  // seeding them onto SR_REP_PRIMARY would pollute the ~40 cases pinned to its data shape.
+  if (!isDisposableLayoutRep(ROWCAP_REP_KEY)) {
+    fail(`row-cap orders are attributed to ${ROWCAP_REP_KEY}, which is NOT in the disposable-layout allowlist — only a disposable rep may carry throwaway fixtures`);
+  }
+  const repRow = readCsv('test-data/sales-rep/sales-reps.csv').find((r) => r.rep_key === ROWCAP_REP_KEY);
+  if (!repRow) fail(`row-cap rep ${ROWCAP_REP_KEY} missing from test-data/sales-rep/sales-reps.csv`);
+  else {
+    if (String(repRow.seeded).toLowerCase() !== 'true') fail(`row-cap rep ${ROWCAP_REP_KEY} is seeded=false — its orders would have no account to attribute to`);
+    if (repRow.store !== ROWCAP_STORE) fail(`row-cap rep ${ROWCAP_REP_KEY} store "${repRow.store}" != the widget store "${ROWCAP_STORE}"`);
+    // Every org the fixture set targets must actually be SERVED by the rep, or salesRepOrders
+    // filters those orders out and the count silently drops below the cap thresholds.
+    const served = new Set(String(repRow.served_orgs || '').split(';').map((s) => s.trim()).filter(Boolean));
+    for (const key of rowcapOrgKeys()) {
+      if (!served.has(key)) fail(`row-cap orders target ${key} but ${ROWCAP_REP_KEY} does not serve it (served_orgs=${repRow.served_orgs})`);
+    }
+  }
+
+  // Orgs pinned, aliases registered, no GUID leak in the committed base (DV-021).
+  for (const key of rowcapOrgKeys()) {
+    const o = orgs[key];
+    if (!o) { fail(`row-cap orgKey ${key} not found in test-data/b2b/organizations.csv`); continue; }
+    if (!o.platform_id) fail(`row-cap orgKey ${key} has no pinned platform_id in b2b/organizations.csv`);
+  }
+  for (const [alias, key] of Object.entries(ROWCAP_ALIASES)) {
+    if (!ROWCAP_ORDERS.some((o) => o.key === key)) { fail(`alias ${alias} points at unknown row-cap order key ${key}`); continue; }
+    const entry = aliases[alias];
+    if (!entry) { fail(`alias ${alias} missing from committed test-data/aliases.json`); continue; }
+    if (entry.number !== rowcapOrderNumber(key)) fail(`alias ${alias}.number = "${entry.number}" but the spec says "${rowcapOrderNumber(key)}"`);
+    if (entry.id !== '') fail(`alias ${alias}.id must be "" in the committed base (got "${entry.id}") — the runtime id comes from the env overlay`);
+    for (const [k, v] of Object.entries(entry)) {
+      if (typeof v === 'string' && GUID_RE.test(v.trim())) fail(`alias ${alias}.${k} carries a runtime platform GUID in the COMMITTED aliases.json (DV-021)`);
+    }
+  }
+
+  if (!shortfalls.length) {
+    notes.push(`row-cap: ${ROWCAP_ORDERS.length} order(s) for ${ROWCAP_REP_KEY}, ${rowcapOrdersForOrg(ROWCAP_PROFILE_ORG_KEY).length} in ${ROWCAP_PROFILE_ORG_KEY}, statuses [${rowcapStatuses().join(', ')}], ${rowcapTopSellerSlots().length} distinct non-cancelled product slot(s)`);
+  }
+}
+
 // ---- report ----------------------------------------------------------------
-console.log('sales-rep statistics fixtures — static drift guard');
+console.log('sales-rep statistics + row-cap fixtures — static drift guard');
 for (const n of notes) console.log(`  note: ${n}`);
 if (problems.length) {
   console.error(`\nFAILED (${problems.length}):`);

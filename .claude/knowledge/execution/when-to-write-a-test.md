@@ -57,6 +57,15 @@ registry, GUID leaks and URL shapes, and runs on every PR.
 **Missing coverage belongs in the guard, not in a new unit test.** The guard is where a second reader
 will look, and it is the artifact a client deployment actually runs.
 
+**The ground a guard owns is DATA, not the functions beside it.** A `*-specs.mjs` module routinely
+exports both, and the guard validates the declared values without ever calling the builders — so a
+test covering a DERIVATION is not duplication no matter which module it imports from (the
+test-the-derivation-never-the-declaration rule: [`.claude/rules/test-data.md`](../../rules/test-data.md)
+§FOURTH RULE). `test:roi-check` enforces exactly that boundary: it fires only on a new test whose repo
+imports are guarded spec modules AND which pulls no function binding out of them. When the gate and
+this rule seem to disagree about a real file, `td:test-attribution` below is the arbiter, not either
+one of them.
+
 ## RULE 4 — G2 bug reproductions are exempt
 
 None of the above touches `/qa-fix`. A confirmed bug still gets a **new failing test that reproduces

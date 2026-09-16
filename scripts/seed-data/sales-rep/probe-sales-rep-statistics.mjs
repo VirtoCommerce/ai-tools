@@ -65,7 +65,7 @@ function statsSelection(w) {
 }
 function cartSelection(w) {
   const periods = Object.entries(w)
-    .map(([k, v]) => `${k}: period(from: "${v.from}", to: "${v.to}") { total { ${MONEY} } count average { ${MONEY} } lastCartDate warning }`)
+    .map(([k, v]) => `${k}: period(from: "${v.from}", to: "${v.to}") { total { ${MONEY} } count average { ${MONEY} } warning }`)
     .join('\n      ');
   const comparisons = COMPARISON_AXES
     .map((a) => `${a.key}: comparison(current: { from: "${w[a.current].from}", to: "${w[a.current].to}" }, previous: { from: "${w[a.previous].from}", to: "${w[a.previous].to}" }) { totalChange { ${MONEY} } totalChangePercent countChange countChangePercent }`)
@@ -135,7 +135,7 @@ async function main() {
   reportComparisons('comparisons:', dash.orders, [['totalChange', money], ['totalChangePercent', pct], ['countChange', String], ['countChangePercent', pct], ['averageChange', money], ['averageChangePercent', pct]]);
 
   log(`\n salesRepCustomerCartStatistics  currencyCode=${dash.carts?.currencyCode}`);
-  reportPeriods('periods:', dash.carts, 'count', 'lastCartDate');
+  reportPeriods('periods:', dash.carts, 'count');
   reportComparisons('comparisons:', dash.carts, [['totalChange', money], ['totalChangePercent', pct], ['countChange', String], ['countChangePercent', pct]]);
 
   log(`\n salesRepCustomerCounts  assignedCustomers=${dash.counts?.assignedCustomers}`);
@@ -162,7 +162,7 @@ async function main() {
     log(`\n=== ORG ${key} (${o.org_name}) ===`);
     reportPeriods('orders periods:', r.orders);
     reportComparisons('orders comparisons:', r.orders, [['totalChange', money], ['totalChangePercent', pct], ['countChange', String], ['countChangePercent', pct]]);
-    reportPeriods('carts periods:', r.carts, 'count', 'lastCartDate');
+    reportPeriods('carts periods:', r.carts, 'count');
   }
 
   if (AS_JSON) console.log(JSON.stringify({ windows: w, dashboard: dash }, null, 2));

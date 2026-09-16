@@ -85,6 +85,14 @@ tests/screenshots/**/*.png
 /*.yml
 /*.yaml
 
+# Ad-hoc investigation scratch — one-off probe scripts, API dumps, downloaded
+# build bundles and run-scoped working files. Disposable by construction: each
+# file's value lives in the run that produced it, and whatever must survive
+# belongs in a suite CSV, a seeder, or a report. Ignored because these routinely
+# hold live tokens (a /connect/token response saved next to the probe that used
+# it), and this repo is public — an untracked .scratch/ rides along on `git add -A`.
+.scratch/
+
 # Local environment (qa-local-env / start-local) — Docker checkout + generated
 # manifest are transient working state, never committed.
 .local-env/

@@ -846,11 +846,11 @@
     "user_id": "adda6ecd-d25d-43ab-ae70-c23f051b003d"
   },
   "SR_STATS_TOPSELLER_ORDER": {
-    "id": "c8f67524-7726-40cc-9e7d-9603d40a8179",
+    "id": "3f732df3-9fc0-4861-8e99-882d7bf265f6",
     "number": "AGENT-TEST-SRO-STATS-TOPSELLERS"
   },
   "SR_STATS_CART_ACME": {
-    "id": "463c6a87-feb8-4856-bc57-129ffc80cb42",
+    "id": "0fe1d98e-5a32-4a02-bbd1-b76271fa7d01",
     "name": "AGENT-TEST-SR-CART-ACME"
   },
   "SR_STATS_CART_WEST": {

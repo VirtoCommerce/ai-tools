@@ -170,5 +170,212 @@
   "SR_REP_ACME3": {
     "id": "824d1097-1663-4c1d-8836-5cc5eec5ebaa",
     "user_id": "39262982-f55e-4ce5-b0c1-59e1eee962fb"
+  },
+  "SR_ROWCAP_ORDER_ACME_NEW": {
+    "id": "2d71a04a-4d6e-4b6e-b951-549cee63c4f5",
+    "number": "AGENT-TEST-SRO-ROWCAP-ACME-01"
+  },
+  "SR_ROWCAP_ORDER_ACME_CANCELLED": {
+    "id": "039fda6f-3d79-4920-915f-093a02bfa49b",
+    "number": "AGENT-TEST-SRO-ROWCAP-ACME-07"
+  },
+  "SR_ROWCAP_ORDER_TECH_COMPLETED": {
+    "id": "5333d182-ea21-4cc4-b2c9-8bf78b883ac7",
+    "number": "AGENT-TEST-SRO-ROWCAP-TECH-04"
+  },
+  "SR_I18N_SINGULAR_ORDER": {
+    "id": "38c526aa-ce8b-4703-a109-8d6b96c868ea",
+    "number": "AGENT-TEST-SRO-I18N-ACME3"
+  },
+  "SR_I18N_SINGULAR_CART": {
+    "id": "c08fe913-9663-4e3a-b366-85527a323394",
+    "name": "AGENT-TEST-SR-CART-I18N-ACME3"
+  },
+  "ACME_ADMIN": {
+    "platform_id": "143bc845-7ba3-4982-ae9a-a9446a399705"
+  },
+  "ACME_BUYER": {
+    "platform_id": "4590f5a9-add6-4d63-b698-6f691493c81e"
+  },
+  "ACME_VIEWER": {
+    "platform_id": "94a4f116-5f10-4a55-9e01-f483b43120a2"
+  },
+  "ACME_BUYER2": {
+    "platform_id": "a99ac87e-76a3-438c-8786-41926493faf7"
+  },
+  "TECHFLOW_ADMIN": {
+    "platform_id": "e3764a66-5aa5-47c4-85f6-4078d99f5a4d"
+  },
+  "TECHFLOW_BUYER": {
+    "platform_id": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b"
+  },
+  "BUILDRIGHT_ADMIN": {
+    "platform_id": "3302dcbc-e2b2-41c4-a272-81411c9a083b"
+  },
+  "ACMEWEST_ADMIN": {
+    "platform_id": "17f48d14-1b9c-485b-ab34-1da255f5cc6f"
+  },
+  "EU_ADMIN": {
+    "platform_id": "978b3edd-9409-42ea-a7bb-ea493f67447c"
+  },
+  "SUPPORT_AGENT": {
+    "userId": "143bc845-7ba3-4982-ae9a-a9446a399705"
+  },
+  "NO_IMPERSONATE_OPERATOR": {
+    "userId": "8b96dc60-4bdd-4efd-9e41-4b68821c8120"
+  },
+  "IMPERSONATE_TARGET": {
+    "userId": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b"
+  },
+  "OTHER_ORG_USER": {
+    "userId": "3302dcbc-e2b2-41c4-a272-81411c9a083b"
+  },
+  "USER_EUR": {
+    "platform_id": "978b3edd-9409-42ea-a7bb-ea493f67447c"
+  },
+  "IMPERSONATION_ADMIN": {
+    "userId": "a9509332-c04c-4456-80f3-e0ade72af338"
+  },
+  "IMPERSONATE_TARGET_MANY_ORGS": {
+    "userId": "327dca97-411e-48aa-be79-51c1001df306"
+  },
+  "IMPERSONATE_TARGET_BLOCKED": {
+    "userId": "242d4347-f46d-44dd-ac8e-fc197400eb66"
+  },
+  "IMPERSONATE_TARGET_INVITED": {
+    "userId": "fa945873-f304-4d1f-a66b-1494e697b98f"
+  },
+  "ORG_ASSOC_ONLY_NO_GLOBAL": {
+    "userId": "adf38641-b1ff-47b5-847f-8611c14b5d7d",
+    "contactId": "907881b7-e5eb-4996-8829-47cb4acfed0b"
+  },
+  "MULTI_ORG_TF_BR": {
+    "id": "3967e722-f075-4ebe-8810-d72fe03ca57c",
+    "userId": "6e16b4ac-c0e4-41a6-831b-0998526f4873",
+    "techflow_membership_id": "0f3a36f6-cec7-45f4-9104-13286bbfd47e",
+    "buildright_membership_id": "5e5026b3-4d0f-4455-84e0-b20c9a7b792c"
+  },
+  "MULTI_ORG_TF_BR_ALT": {
+    "id": "daf1facf-32a3-4d16-a2f3-efb9f557d1fb",
+    "userId": "c30f97bb-0f00-4b44-ba1b-a96149ca94ad",
+    "techflow_membership_id": "41d28a2c-118d-4248-91e9-d50a58f09327",
+    "buildright_membership_id": "62911b28-b832-44db-a625-9107d7c411bf"
+  },
+  "ORG_TF_ONLY_INVITEE": {
+    "id": "7f6fb60f-16ad-4bf4-b1bd-1e3208f6bfdd",
+    "userId": "04fe8140-b3c4-4226-b4fe-45ac0cc2b51d",
+    "techflow_membership_id": "c1a0a406-43ab-4209-af08-0e571a61c063"
+  },
+  "ORG_TF_ONLY_STATUS": {
+    "id": "fe96088e-1fc8-433b-b4f4-441602dd9d77",
+    "userId": "33186948-6ee2-46e2-921a-e822521d35d6",
+    "techflow_membership_id": "d502a102-b1b2-498a-9787-f5ec93d09b9b"
+  },
+  "ORG_TF_MBR_INVITED": {
+    "id": "d842d129-af2f-41c2-80d9-afa96e198286",
+    "userId": "02cec233-9e4a-4c7d-8965-f65d8c73ecf4",
+    "techflow_membership_id": "34b08174-9bf4-4e9c-9c06-d8554ab6e714"
+  },
+  "ORG_TF_MBR_REJECTED": {
+    "id": "05634ca7-b1a9-467d-846d-b100b8a84611",
+    "userId": "0482533a-059e-4bb1-b385-ec88aa2fc6f6",
+    "techflow_membership_id": "1986ce23-94a8-447e-9152-a2663486d120"
+  },
+  "ORG_TF_MBR_DELETED": {
+    "id": "6f2ad089-2a90-4a5f-8fbf-b1c021529767",
+    "userId": "52535e71-76d8-4988-bd2c-80c4eb0246dc",
+    "techflow_membership_id": "8064c3a7-c7fc-44fd-8016-1bdbb0781077"
+  },
+  "VIRTUAL_CATALOG_B2B": {
+    "_inline": true,
+    "id": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "SR_REP_DOCS": {
+    "id": "c90b9d4a-3135-4989-a34d-f67ac61d21dd",
+    "user_id": "c6c15286-7eed-4c77-841d-ed1e41db2f40"
+  },
+  "SR_REP_DOCS_WRITER": {
+    "id": "1103fbb7-768f-4f87-9a38-33de80b98194",
+    "user_id": "ae06f2f5-1205-4434-ab61-7d60d5ffd5b9"
+  },
+  "SR_DOC_PDF": {
+    "id": "3ad219f7-56fd-4148-b430-ce9d7ba34b68",
+    "file_id": "05c275a2942c4d4da3355fa5972a873e",
+    "url": "/api/files/05c275a2942c4d4da3355fa5972a873e"
+  },
+  "SR_DOC_DOCX": {
+    "id": "e63bc45d-727d-4a81-b439-0af403006ad6",
+    "file_id": "f14f60101bdc4bfaa239875fd8d4c93e",
+    "url": "/api/files/f14f60101bdc4bfaa239875fd8d4c93e"
+  },
+  "SR_DOC_XLSX": {
+    "id": "7b906a4f-c6c0-4604-9f49-6c416f8ad550",
+    "file_id": "4668f27304454bbf8e0adcceca35bdaf",
+    "url": "/api/files/4668f27304454bbf8e0adcceca35bdaf"
+  },
+  "SR_DOC_TXT": {
+    "id": "aaacc84d-0c7a-42b8-b788-651073b584d5",
+    "file_id": "0a478ecd0d8b43e4b6cbd0bfaeff63e4",
+    "url": "/api/files/0a478ecd0d8b43e4b6cbd0bfaeff63e4"
+  },
+  "SR_DOC_PNG": {
+    "id": "e3c58994-9b42-4669-9c85-b087085c1cd8",
+    "file_id": "aa8212135e9e4f8e9b56d913e36ecbf7",
+    "url": "/api/files/aa8212135e9e4f8e9b56d913e36ecbf7"
+  },
+  "SR_DOC_JPG": {
+    "id": "13f0ec78-7028-4cd0-8cd1-ddf1c9af3eaf",
+    "file_id": "c1b463e3c988426a9af2c0e1a6891968",
+    "url": "/api/files/c1b463e3c988426a9af2c0e1a6891968"
+  },
+  "SR_DOC_UNKNOWN_EXT": {
+    "id": "d8c671fc-3719-472b-8ab0-db254cd9c89f",
+    "file_id": "242f46b7436c424c863bb0cfe5f50df9",
+    "url": "/api/files/242f46b7436c424c863bb0cfe5f50df9"
+  },
+  "SR_DOC_UNICODE": {
+    "id": "38daa6ee-6af0-47f7-bc98-2b5ce2eb2305",
+    "file_id": "217410e7eda549fe8aa19ae0d61a51f6",
+    "url": "/api/files/217410e7eda549fe8aa19ae0d61a51f6"
+  },
+  "SR_DOC_LARGE": {
+    "id": "40e3f29f-09e1-43f3-adeb-0879c886b50d",
+    "file_id": "89bc50333d6f4857b4ea4bf90cb80033",
+    "url": "/api/files/89bc50333d6f4857b4ea4bf90cb80033"
+  },
+  "SR_DOC_FILLER_01": {
+    "id": "86c9a679-81cb-46fb-9593-caacd8985ffc",
+    "file_id": "f1e462bc805743aebd08a8752ad17aca",
+    "url": "/api/files/f1e462bc805743aebd08a8752ad17aca"
+  },
+  "SR_DOC_FILLER_02": {
+    "id": "c00ce5ed-c3ba-4182-a613-630aefc96d96",
+    "file_id": "2cba139a8d0a4147ad68b9982ecc46bb",
+    "url": "/api/files/2cba139a8d0a4147ad68b9982ecc46bb"
+  },
+  "SR_DOC_FILLER_03": {
+    "id": "f0aabc96-a638-4a2a-ae4e-deddbbb1837c",
+    "file_id": "40249d807158409b9a237a6bf9dc4341",
+    "url": "/api/files/40249d807158409b9a237a6bf9dc4341"
+  },
+  "SR_DOC_FILLER_04": {
+    "id": "383602ce-e4e5-4037-836e-8814b6c8051f",
+    "file_id": "ed4a6dc6b1684f068d94f221ba9f7331",
+    "url": "/api/files/ed4a6dc6b1684f068d94f221ba9f7331"
+  },
+  "SR_DOC_FILLER_05": {
+    "id": "8e2053d3-df6d-4285-86c1-3d433da62950",
+    "file_id": "f6c2d612a1694611bb4aa9549207ca7d",
+    "url": "/api/files/f6c2d612a1694611bb4aa9549207ca7d"
+  },
+  "SR_DOC_FILLER_06": {
+    "id": "be49bbfb-25b6-4248-8e7d-1630989189ad",
+    "file_id": "1061c8e0547b4bac8b4507e6d989d410",
+    "url": "/api/files/1061c8e0547b4bac8b4507e6d989d410"
+  },
+  "SR_DOC_FILLER_07": {
+    "id": "f4899413-c9d5-4425-9088-6f56c506035a",
+    "file_id": "afa3111625f24b83ba01e6fd8a2a1c0f",
+    "url": "/api/files/afa3111625f24b83ba01e6fd8a2a1c0f"
   }
 }

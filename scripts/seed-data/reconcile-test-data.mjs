@@ -47,6 +47,7 @@ import { selectProbeTargets } from './overlay-specs.mjs';
 import { runStoreDefaultsCheck } from './store/check-store-defaults.mjs';
 import { parse } from 'csv-parse/sync';
 import { REP_ONLY_ORG } from './sales-rep/rep-only-org-specs.mjs';
+import { classifyStoreFfc, isBlockingStoreFfc, describeStoreFfc } from './store/store-ffc-specs.mjs';
 import {
   PRODUCTS as MSN_E2E_PRODUCTS, productFlagDrift, productFlagDriftMessage,
 } from './loyalty/missions-e2e-specs.mjs';
@@ -728,6 +729,31 @@ async function checkMissionFixtureProductFlags() {
   else if (!drifted) ok(`${checked} fixture product(s) carry every flag their spec declares`);
 }
 
+/* ── 15. Store fulfillment-center scope ──────────────────────────
+ * Live probe only — no static guard can see this. Distinct from [13], which checks the
+ * store's currency/language/url defaults, not which fulfillment centers serve it. Rationale,
+ * failure mode and the REG-2026-08-17-1030 evidence live with the pure logic in
+ * store/store-ffc-specs.mjs.
+ */
+async function checkStoreFulfillmentCenters() {
+  console.log('\n[15] Store fulfillment-center scope');
+  const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
+  if (!store?.id) { fail(`store ${STORE_ID} does not exist on ${new URL(BACK_URL).host}`); return; }
+
+  const search = await api('POST', '/api/inventory/fulfillmentcenters/search', { take: 200 }, { expectStatus: [200, 201] });
+  const live = new Set((search?.results || search?.items || []).map((f) => f.id));
+
+  const r = classifyStoreFfc(store, live);
+  if (isBlockingStoreFfc(r.status)) {
+    fail(describeStoreFfc(r.status, { storeId: STORE_ID, testEnv: TEST_ENV, main: r.main, additionalCount: r.additional.length }));
+    return;
+  }
+  ok(`store ${STORE_ID}: main FFC ${r.main} live, ${r.additional.length} additional assigned`);
+  if (r.danglingAdditional.length) {
+    warn(`${r.danglingAdditional.length} additional fulfillment-center id(s) on ${STORE_ID} no longer exist — harmless for availability while the main FFC is live, but re-run \`npm run seed:store\` to prune`);
+  }
+}
+
 /* ── main ─────────────────────────────────────────────────────── */
 (async () => {
   console.log(`=== test-data live reconciliation — TEST_ENV=${TEST_ENV} ===`);
@@ -747,6 +773,7 @@ async function checkMissionFixtureProductFlags() {
   await checkSalesRepServedOrgs();
   await checkStoreDefaults();
   await checkMissionFixtureProductFlags();
+  await checkStoreFulfillmentCenters();
 
   console.log('\n=== Summary ===');
   console.log(`  hard problems: ${problems.length}`);

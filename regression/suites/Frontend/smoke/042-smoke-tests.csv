@@ -46,7 +46,7 @@ SMK-003,Registration — Organization Account,Smoke > Registration,Critical,"BL-
 [ADMIN] organization appears in Organizations list
 [ADMIN] user assigned as organization admin role
 [CONSOLE] no errors during submission
-[NETWORK] no 4xx/5xx",'Company account' option missing from selector; 'Company name' field absent after selecting company type; org not created in admin; B2B nav absent,Delete test org and user via admin after test (AGENT-TEST- prefix),"VCST-4499; Synced 2026-07-27 (TLC-2026-07-27-0900): removed T&C consent step — /sign-up has no consent control on this build (verified live); account type is 'Company account' not 'Organization'; submit button is 'Sign up' not 'Create Account'",Automated
+[NETWORK] no 4xx/5xx",'Company account' option missing from selector; 'Company name' field absent after selecting company type; org not created in admin; B2B nav absent,Delete test org and user via admin after test (AGENT-TEST- prefix),VCST-4499; Synced 2026-07-27 (TLC-2026-07-27-0900): removed T&C consent step — /sign-up has no consent control on this build (verified live); account type is 'Company account' not 'Organization'; submit button is 'Sign up' not 'Create Account',Automated
 SMK-004,Authentication — Sign In Personal Account,Smoke > Auth,Critical,"BL-AUTH-001, BL-AUTH-003",ECL-4.2,Valid personal account credentials available; fresh browser,"email={{USER_EMAIL}}, password={{USER_PASSWORD}}, front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/sign-in
 [WAIT] sign-in form visible with Email and Password fields
 [ACT] fill 'Email': {{USER_EMAIL}}
