@@ -1,0 +1,736 @@
+=====
+e288dbf 2026-09-10 Create the knowledge base, empty
+The derived plane is populated by the extractor, never by hand. This commit is the
+empty base the gates must be green on.
+
+Refs VCST-5937
+
+=====
+8250eda 2026-09-10 Disable line-ending conversion; the corpus is byte-compared
+Refs VCST-5937
+
+=====
+53069a5 2026-09-10 Extract the derived plane: 409 entries from a pinned deployment
+The corpus is generated from what localhost publishes about itself at pin
+503caf812488bfdd (platform 3.1068.0): 88 OpenAPI documents and GraphQL
+introspection. Nothing in it is authored.
+
+Granularity: one entry per capability surface, keyed on the ROUTE PREFIX with the
+owning module carried as data. Justified against the step-0 demand rows rather
+than defaulted -- of the 15 CONTRACT questions measured, none is answered by a
+single operation, nine are answered by one coordinate (POST /connect/token) and
+the rest by a resource or a GraphQL root field with its input closure. A module
+key was rejected because five prefixes here are served by more than one module,
+and in two of those the split separates a reference-set answer from the question
+that asks it.
+
+  rest    134  route prefixes, depth 2, deepened to 3 above 25 operations
+  graphql 248  root fields of Query / Mutations / Subscriptions
+  no-rest  27  modules that expose no REST surface, recorded as a fact
+
+Four things the sweep found that the ADR does not record:
+
+  * /docs/PlatformUI/swagger.json IS a merged document -- all 825 coordinates
+    appear in it a second time. A per-module sweep that trusted the document name
+    would double the surface. Deduplicated on x-virtocommerce-module-id, which
+    every one of the 1650 operation instances carries.
+  * operationId is not unique: 816 distinct ids over 825 coordinates, and
+    InventoryModule_GetProductInventories is on two routes inside one module. The
+    anchor coordinate is VERB /route; operationId rides along as an alias.
+  * Subscriptions is plural too, not only Mutations. Root type names are read
+    from introspection, never assumed.
+  * A module record's platformVersion is the version it was BUILT against -- 22
+    distinct values here. The running platform version comes from
+    /api/platform/diagnostics/systeminfo.
+
+Gates: kb validate is green on an empty corpus and on this one; kb check
+regenerates and byte-compares 797 files; an unreachable deployment reports
+SKIPPED with exit 3 and leaves the corpus untouched.
+
+Refs VCST-5937
+
+=====
+8934325 2026-09-10 State the entry granularity in the repository, not only in the ticket
+The acceptance criterion asks for the granularity to be stated and justified
+against the step-0 demand data. A justification that lives only in a tracker
+comment drifts from the corpus it explains.
+
+Refs VCST-5937
+
+=====
+90d6630 2026-09-10 Derive the id from the subject; drop the counter and the id map
+Two people's agents writing this base have no shared counter to hand out the next
+number, so a sequence is wrong the moment there is more than one writer. A
+timestamp does not fix that -- it makes it worse. Two agents recording the SAME
+fact would mint two different ids and the base would hold the fact twice, which is
+the drift this project keeps paying for. A knowledge base wants two independent
+captures of one fact to COLLIDE, not to avoid each other.
+
+So the id is sha256(subject) truncated to 8 uppercase hex digits:
+
+  * same subject, same id, on any machine, in any order, with no shared state
+  * nothing to merge -- derived-ids.json is deleted, and with it a file that
+    duplicated the id/subject mapping catalog.md already carries
+  * the id is checkable: `kb validate` recomputes it from the subject, so a
+    hand-edited id or a renamed subject is caught rather than dangling later
+  * a genuine hash collision is a hard error at extract time, never a silent
+    merge of two facts
+
+Also: brain.json is now kb.json, and the word is gone from the code and the docs.
+
+Refs VCST-5937
+
+=====
+c1c2c9b 2026-09-10 Delete the orphaned id map, and make `kb check` able to see an orphan
+Dropping the counter left derived-ids.json on disk: the extractor stopped writing
+it and the gate kept reporting OK, because the compare only looked for files the
+regeneration produced and never for files the corpus still carried. A generated
+file nobody generates any more is exactly the thing a regeneration gate exists to
+notice, and this one could not.
+
+`kb check` now compares in both directions over every path the extractor owns --
+entries/**, derived/**, catalog.md, knowledge-index.json.
+
+Refs VCST-5937
+
+=====
+6276492 2026-09-10 Recover the prose the sources publish, and measure where it belongs
+Introspection was not asking for descriptions and the OpenAPI reader was dropping
+summary, so 417 operation summaries, 284 argument descriptions, 1314 type-field
+descriptions and 86 module descriptions were being discarded. Recovering them is
+extraction, not authoring: they are regenerated and byte-compared like every other
+cell, and they are the only place the surface says what it is FOR.
+
+Measured on 15 contract questions from the step-0 rows, indexing that prose makes
+retrieval WORSE -- top-3 falls from 12/15 to 11/15, and all three phrasings of the
+token question lose to /api/platform/security. The summaries are largely
+boilerplate ("Delete asset entries by ids"), so indexing them adds common words to
+the biggest entries and dilutes exactly the small precise ones.
+
+So the prose goes in the body and stays out of the index. The reader gets what the
+platform says; the resolver keeps ranking on coordinates, parameter names and type
+names. Back to top-1 10/15, top-3 12/15, with all three off-topic controls MISS.
+
+Also: `kb validate` now checks that an id is derivable from its subject only on the
+derived plane. An authored subject can be re-normalized later and the id must
+survive that, since ids are eternal (ADR 4.3) -- so on the experiential plane the
+id is minted once and then lives in the file rather than being recomputed from it.
+
+Refs VCST-5937
+
+=====
+6062837 2026-09-10 Re-extract from a release deployment instead of a dev laptop
+The corpus described localhost -- a developer stack whose module mix matches no
+shipped release. It now describes vcptcore-stable, and it says which release line
+that is.
+
+"The latest release build" turned out to have three readings that differ by a lot,
+so the one chosen is stated rather than assumed:
+
+  * newest vc-platform tag        3.1069.0    NOT a release build -- a platform tag
+                                              is one component's version, and the
+                                              contract is decided by the module mix
+  * current stable bundle (v15)   15.0.14     platform 3.1039.11; no deployment
+                                              available to this project runs it --
+                                              zero of 53 module versions match
+  * stable bundle v14             platform    what vcptcore-stable actually runs:
+                                  3.1007.26   exact platform match, 49/53 module
+                                              versions match. THIS is the corpus
+
+Identified by comparing the deployed module versions against every bundle under
+VirtoCommerce/vc-modules/bundles, not by trusting the environment's name.
+
+The corpus shrinks accordingly, which is the point: a release ships less than a
+developer's stack. 409 entries -> 287 (rest 103, graphql 168, no-REST 16), from
+687 coordinates across 58 documents.
+
+RELEASE_LINE is stated in the environment file rather than discovered at extraction
+time, so extraction stays offline-capable and the byte-compare stays deterministic.
+
+Refs VCST-5937
+
+=====
+637a7a0 2026-09-10 Pin the source of the release definition, not the release
+RELEASE_LINE=stable-bundle-v14 was a copy of a value that has a publisher, in a file
+that would never notice it moving. That is the transcription this repository's GOLDEN
+RULE forbids, and it is the failure mode this project keeps recording -- a restated
+fact drifting from its evidence.
+
+So the environment now pins RELEASE_REGISTRY, the source, and the identification is
+derived: the extractor reads the registry, follows all 16 bundles it lists, compares
+each against the module versions the deployment actually reports, and writes
+derived/release.json. Nothing states a version any more.
+
+What it found, by comparison rather than by the environment's name:
+
+  deployment         platform 3.1007.26, 56 modules installed
+  identified         bundle v14 -- platform matches exactly, 49 of 53 module
+                     versions match
+  current (latest)   bundle 15.0.14, platform 3.1039.11 -- 0 of 53 match
+  obtainFrom         read out of v14's own manifest: ghcr.io/virtocommerce/platform
+                     :3.1007.26, the module feeds, and theme 2.42.0
+
+Two honest details the source forced: the versioned bundle directories carry no
+BundleVersion field at all -- only bundles/latest does -- so it is recorded as null
+rather than invented; and the registry publishes no tags, so its URL names a branch,
+recorded as refIsMovable with a hash of the bytes read.
+
+The registry is a REQUIRED source once pinned: unreachable means SKIPPED and exit 3,
+leaving the corpus untouched. Identifying a release from a stale local copy is
+precisely what pinning the source exists to prevent.
+
+Refs VCST-5937
+
+=====
+29d0812 2026-09-10 Label GraphQL facts at what can be known about their version
+Exercising the pre-release rule against a QA deployment (2 modules on PR builds)
+showed it held for REST and failed silently for GraphQL: a REST entry carried
+version 3.1024.0-pr-316-1ac3 correctly, while every GraphQL entry carried no
+version at all.
+
+That is the worst half to lose. One of the pre-release modules,
+ProfileExperienceApiModule, exposes ZERO REST surface -- it exists only in the
+GraphQL schema -- so its facts were being merged into the release line with nothing
+to say they should not be.
+
+Introspection publishes no attribution of a schema field to the contributing module,
+so a GraphQL fact cannot be labelled at a module version at all. What can honestly
+be said now is: the platform version serving the schema, and, when the deployment
+runs pre-release modules, that any of them could be a contributor and none can be
+ruled out -- stated on the entry, not only in a table. The unresolvable construct is
+reported in unresolved.json rather than inferred.
+
+On this release corpus the flag is correctly absent: zero pre-release modules.
+
+Refs VCST-5937
+
+=====
+3d506d2 2026-09-10 Add the experiential plane, and the first three facts in it
+The base can now hold what an agent learned by doing, not only what a
+deployment publishes about itself. Two planes, separate directories,
+separate indexes: the derived one is regenerated and byte-gated, this one
+is written and has a lifecycle, and neither can break the other's gate.
+
+Records the identity rule and its evidence, and settles `kind`: decided
+OUT, with the reasoning on the record rather than inherited from either
+document that disagreed about it.
+
+The three captured entries are facts observed during step 1 and already
+written up in FINDINGS §13 -- the plural GraphQL mutation root, operationId
+not being unique, and the module record's platformVersion being a build
+target rather than the running version. Each is something the derived
+plane structurally cannot hold, which is why the plane exists.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+29997cf 2026-09-10 Seed the experiential plane with 37 measured facts
+Captured from the step-0 demand rows through the real kb capture door,
+runs 1B, 2D and 3F2. Runs 1A, 1C, 2E and 3G are held out to measure
+coverage. VALUE rows are excluded: concrete fixture data rots faster than
+any confirmation mechanism reacts.
+
+Three merges, each named and defended; two proposals declined. One of the
+merges is the design working end to end -- rows 2D-6 and 3F2-29 state one
+fact in two runs with wording similarity 0.00, so nothing textual could
+have brought them together, and the shared coordinate did. The merged
+entry carries both claims verbatim and two evidence rows.
+
+35 active entries, 5 retired. Every claim is read from the measurement
+data, never retyped, so there is one source of truth for each observation.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+b927bb7 2026-09-10 Record the cart-signature dispute the replay found
+Run 2E observed Query.cart requiring storeId and currencyCode; the seeded
+entry from run 2D records them as optional. Two observations of one
+signature disagree.
+
+The entry stays and is still served -- hiding a contested fact hides the
+contest -- at trust level disputed, with both sides in the delivered
+block, so nothing can paste the signature without seeing the
+disagreement.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+26bb31b 2026-09-10 Re-extract: the reference deployment moved, and the gate said so
+`kb check` began failing across all 291 generated files. The cause was upstream, not local: the
+byte-compare working exactly as it is meant to.
+
+Two independent movements, in one day:
+
+  the deployment   VirtoCommerce.Notifications 3.1001.4 -> 3.1001.8. The pin is a hash of the
+                   platform version and the installed module versions, and it is stamped into
+                   every entry's evidence, so one patch release rewrites the whole corpus.
+                   Platform version, document set, operation counts and the 687 coordinates are
+                   unchanged; nothing about the contract moved.
+
+  the registry     `latest` 15.0.14 -> 15.0.15; two bundles moved their pinned Notifications
+                   3.1009.2 -> 3.1009.3; one bundle that pinned 3.1001.7 left the candidate set
+                   entirely. The deployment now matches the pinned v14 bundle on 50 of 53
+                   comparable modules, up from 49 -- the module update moved it closer to the
+                   release it claims to be.
+
+Worth recording, because it is a limit of what the corpus can currently detect: the registry's
+`contentHash` (1fbd3c5c5399ebc0) did NOT change while the bundles it references did. The hash
+covers the index that names the bundles, not the manifests it points at, so a movement in those
+is invisible until an extraction re-reads them. The pointer is recorded, which is what makes the
+movement recoverable at all; the hash simply covers less than it appears to.
+
+The experiential plane is untouched, as the extractor's owned roots require: 40 captured entries
+before and after. `kb check` OK, 564 files byte-match. `kb validate` OK.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+fba9717 2026-09-10 Correct a coordinate MSYS mangled, and one axis value spelled two ways
+The new gate checks failed on the corpus the moment they existed, on exactly the two defects an
+independent review had found by hand. Both are corrections rather than new observations, so the
+ids stay and the evidence rows are untouched -- nothing was learned again, something was written
+down wrong.
+
+KB-D60D536B carried the anchor `C:/Program Files/Git/docs/{}/swagger.json`. That is Git Bash
+rewriting `--anchor "/docs/{ModuleId}/swagger.json"` before the tool ever saw it, so the entry
+about swagger documents shared no coordinate with the fact it was about. Corrected to
+`GET /docs/{ModuleId}/swagger.json`. It does NOT then collide with KB-6DB5B4D1, which names the
+same document: the anchor sets still differ, and they are two facts -- one about `operationId`
+uniqueness, one about finding a module's real routes -- that share a coordinate. That is the
+identity rule behaving as intended rather than a merge waiting to happen.
+
+KB-D60D536B and KB-5ACE63DB recorded `surface=rest` where seven other entries recorded
+`surface=platform-rest`. One value, two spellings, one author, hours apart. Unified on the
+spelling the rest of the corpus uses.
+
+`derived/release.json` loses the `latest` pointer's recorded value, per the tool change: a moving
+value inside a byte-compared artifact made `kb check` go red three times in one day for reasons
+that said nothing about this deployment.
+
+kb validate OK. kb check OK, 564 files byte-match, and green on a re-run.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+70951f9 2026-09-10 Record where each retired fact went, as a field the door can follow
+The five entries consolidation retired named their survivor in the retirement note and nowhere
+else. That is enough for a person re-reading the file and not enough for a refusal message to
+follow, which is why every one of those merges left a dead end: a writer observing the merged fact
+was refused, sent to the retired entry, and refused again by the remedy the message named.
+
+Backfilled from the prose each entry already carried, so nothing here is inferred:
+
+  KB-066957A8 -> KB-A8FD7BEC
+  KB-61AD6E50 -> KB-5E9C8E2A
+  KB-700FC47B -> KB-417E727E
+  KB-C11ABF96 -> KB-417E727E
+  KB-E34CA8A3 -> KB-417E727E
+
+kb validate OK. kb check OK, 564 files byte-match.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+f04265f 2026-09-10 Clear the experiential plane, so what fills it was written by whoever needed it
+The 35 active entries were transcribed after the fact, from rows an instrument recorded, by one
+person deciding what counted as a fact — who then wrote the anchors that decide identity, chose
+the merges, and graded the replay. An independent review put the number plainly: "the base answers
+20 of 26" is "the seeder's corpus agrees with the seeder's reading of the seeder's runs 20 of 26
+times". No amount of analysis separates those. Only a different writer does.
+
+Nothing is lost. Two tags, because they answer different questions:
+
+  seed-w0.5             exactly what the kb-replay measurement saw, uncorrected. Its referent.
+  seed-w0.5-corrected   the same 40 entries with the coordinate MSYS mangled repaired, the axis
+                        unified, and the retirement pointers backfilled. The SHADOW CORPUS: what
+                        one author wrote about seven runs, to compare against what agents write
+                        about the same platform once they write it themselves.
+
+Recorded at the moment of clearing, because it is the baseline the first runs are measured
+against: the base still declines nothing. Asked what residue a placed order leaves — a behavioural
+question no contract covers — it serves the derived route listing for /api/order/customerOrders at
+exit 0. So the starting condition is not "the base says nothing"; it is "the base answers a
+behavioural question with a contract table". Whether that helps or misleads is the first thing the
+live runs will show, and it is a sharper question than the one the seeded corpus could ask.
+
+kb validate OK on an empty experiential plane, which is what that gate was written to allow.
+kb check OK, 564 files byte-match. 287 derived entries, 1227 anchors, 0 captured.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+98b4e4a 2026-09-10 The first three facts an agent wrote because it needed them
+Session 5534eddb, task: create a percentage-discount promotion and prove it applies to a cart at
+checkout and stops applying when its conditions are not met. Deployment vcptcore_stable — the one
+the derived plane describes, which no seeded entry could say.
+
+  KB-996BDF08  a RewardCartGetOfRelSubtotal reward lands only on CartType.discounts and
+               discountTotal; every line item keeps discountTotal 0 and an empty discounts array
+               while the cart total is correctly reduced
+  KB-35A09C64  promotions are re-evaluated on every cart read rather than frozen into the stored
+               cart; an admin-side isActive flip shows on the very next Query.cart
+  KB-D4A064A5  DiscountType.amount carries the raw reward at full precision (29.997) while
+               CartType.discountTotal is rounded to currency precision (30.00)
+
+Four captures were attempted and one was REFUSED, exit 4, on identical normalized anchors and
+scope. That is the first refusal the door has produced for a writer who was not its author: the
+seeded pass made 37 captures and refused nothing. The writer did not walk around it by naming one
+more coordinate — it went on to record two different facts instead. One case, and the careless
+kind; it says nothing yet about a determined one.
+
+Each is behavioural, and none of them is derivable. Six of the eight coordinates they anchor on
+are named by no derived entry at all. The run also declined to record two things it had learned —
+a path-mangling quirk of its own shell, and this deployment's store configuration — which is the
+distinction that cost the seeded corpus eight of forty-five rows.
+
+kb validate OK. kb check OK, 564 files byte-match.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+a518d67 2026-09-10 Regenerate: every type in the schema now has an entry
+287 derived entries become 590. 303 of them describe a named GraphQL object or input-object type,
+anchored on the type and on each of its fields; the 168 root-field entries stop copying those
+tables into their bodies and name the type instead.
+
+Closes a gap that was a property of this corpus rather than an accident: 89 types were named in
+signatures and described nowhere, `CartTotalType` among them — a live run asked for its fields
+twice, was served the `Query.cart` entry both times, and settled it by introspecting the deployment
+by hand. It also removes ~280 KB of repeats, most of it `CartType`'s field table copied into 40
+entries.
+
+Measured before and after against the nine questions that run asked: five unchanged, three better,
+one worse. The reasoning and the one regression are in
+`vc-kb-lab/measurements/kb-retrieval-2026-09/`.
+
+kb validate OK. kb check OK, 1170 generated files byte-match.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+62ba376 2026-09-11 Four facts from run 02, and the first two confirmations the base has ever had
+Session 82e15c99 took a discounted cart through checkout to a placed order (CO260910-00001) on
+vcptcore_stable, signed in through the storefront UI, and recorded what a cart-subtotal percentage
+reward looks like once it becomes an order:
+
+  KB-FF7E4D5B  the reward lands only in the order's own discounts collection; line items, shipment
+               and subTotalDiscount all stay 0
+  KB-CA4C93E4  no rate is persisted anywhere — "10%" survives as prose in a description and as a
+               promotionId pointing at a promotion that stays editable after the order exists
+  KB-4982C91F  the raw/rounded split: discountAmount 34.8990 against discountTotal 34.90, both
+               rendered on one Admin blade
+  KB-A646D086  with no tax provider the row's discountAmountWithTax stays 0.0000 while
+               discountAmount holds the reduction, so reading the WithTax field reports no discount
+
+AND TWO CONFIRMATIONS. KB-996BDF08 and KB-D4A064A5, both written by run 01, were used by run 02,
+both held, and both now stand at two independent observations. That is the first time anything in
+this corpus has moved from what one agent reported to what two runs have seen — the mechanism has
+existed since the door was built and had never once been exercised by a second writer.
+
+One correction to the encoding, not to the claims. Three entries recorded a scope value that joins
+two: surface=xapi+rest and surface=rest+admin-ui, written that way because a fact visible on two
+surfaces had no single value and nothing said an axis may repeat. Split into one row per value,
+which is what was meant and what the fingerprint needs; the tool now names the shape and the brief
+explains it before a writer meets the choice.
+
+kb validate OK, 590 derived and 7 captured. kb check OK, 1170 files byte-match.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+0f6ab08 2026-09-11 Rename the derived index and catalog to name their plane
+knowledge-index.json -> derived-index.json
+catalog.md           -> derived-catalog.md
+
+Symmetric with captured-index.json and captured-catalog.md, which already said which plane they
+belong to. Contents are byte-identical; kb check passes on the new names, which is the evidence
+that nothing but the name moved.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+4c302eb 2026-09-11 Put the derived plane in one directory, so the tree says which half is generated
+`entries/` and `derived/` were the same plane under two names while `captured/` was the other one.
+Nothing in the layout told a reader which half is regenerated from a deployment and which was
+written by hand — the single most important thing to know about any file here, since one can be
+wiped and rebuilt at will and the other is the only copy there will ever be.
+
+  derived/            the projected plane
+    entries/          one .md per capability surface   (was entries/)
+    rest/ graphql/    the contract tables those cite
+    pin.json …        what the projection was taken from
+  captured/           the written plane
+
+590 files moved, recorded as renames. The experiential plane stays flat on purpose: it holds
+entries and nothing else, so a nested `entries/` there would be a directory with no siblings, added
+only to make two trees look alike.
+
+kb check OK on the new paths, 1170 files byte-match. kb validate OK, 590 derived and 7 captured.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+b4eed0d 2026-09-11 Five facts from run 03, the first run never told to consult the base
+The run was given a brief that says the base exists and declines to tell it to use the base, and a
+task about organization-role gating that needed a member the brief's account is not. It consulted
+the base unprompted -- four questions, all answered from the derived plane, all closed HELD -- and
+wrote five entries back.
+
+All five are mechanisms rather than instances, and none of them names an account, an order or a
+price. This is the first run whose editorial guidance came from `kb capture --help` rather than
+from its brief, which was the second thing this run was quietly testing.
+
+  KB-4B889114  the storefront roster's Active column is not a faithful read of the account lock,
+               with the round-trip that makes it a bug rather than a guess
+  KB-02238DE5  the org role gates controls, not routes -- so a permission test must assert on the
+               control and never on the nav
+  KB-B769C7B1  storefront org role and platform account role are one assignment behind two doors;
+               a live session keeps the role its token was minted with
+  KB-BC6FC633  Admin's role blade stages until Save, and every local signal says success meanwhile
+  KB-7040852E  the member keyword box is index-backed while the list beside it is not
+
+KB-BC6FC633 is the one that earns its place twice over: the run acted on the unsaved change,
+believed it had found a privilege escalation, and caught itself by re-reading after a reload. The
+entry is what stops the next agent spending that hour.
+
+The gate did its job on the way in. The run first scoped these `surface=storefront`, and validate
+refused it as one value reading like a typo of the corpus's `storefront-xapi`. They are genuinely
+different surfaces -- web UI against GraphQL API -- so the run renamed its own to
+`surface=storefront-ui` rather than bending the existing one.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+170a3e2 2026-09-11 Regenerate: the deployment moved a module version under us
+VirtoCommerce.Catalog's pinned version went 3.1029.5 -> 3.1029.6 on vcptcore_stable, and `kb check`
+had been red for it since some point during run 03. Nothing else in the projection moved: 1170
+generated files, one line in one of them.
+
+That is the byte-gate doing exactly what it is for. A corpus that describes a deployment has to be
+able to say when it has stopped describing it, and the alternative -- noticing months later that an
+entry cites a version that was never there -- is the failure this gate exists to make impossible.
+
+Re-ran the 23-row retrieval replay afterwards: unchanged, as expected, since no entry moved.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+9dee603 2026-09-11 Regenerate: scalar anchors and the entry they pointed at that never existed
+160 entries lose their `String`, `Boolean`, `Int` and `DateTime` anchors, and lose the line telling
+a reader to go and read `gql-type-string`, which was never generated. Produced by
+vc-kb-lab@41fa4c7; `kb check` OK, 1170 files byte-match.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+e514bdd 2026-09-11 Seven facts from run 04, and the first run that used the base while working
+The run the whole last stretch of work was built for. The number it was meant to move:
+
+  run    calls  touches  largest silence  touches in the middle 60%
+  01        83       13               21                          9
+  02       172       13               73                          3
+  03       319       10              256                          0
+  04       177       15               50                          9
+
+Run 03 consulted the base in its first three minutes and then worked 256 calls without opening it,
+writing everything from memory in its closing report. Run 04 touched it fifteen times, nine of them
+in the middle of the work, and wrote seven entries spread across the diagnose and restore phases --
+each when its question closed rather than when the work did.
+
+Two of those consultations changed the outcome rather than decorating it. Asking what fields
+UserType carries turned "the API cannot report lock state to the storefront" into "lockedState sits
+on the type the page already selects and the page omits it" -- an excuse into a defect. And during
+cleanup the run was about to report a contact deleted on the strength of an empty search result;
+KB-7040852E said that box is index-backed and can miss an existing record, and it had.
+
+  KB-27B4CD10  three independent fields represent "blocked", written by different doors
+  KB-0B6067F8  UserType.lockedState is reachable from the storefront and unused by the roster
+  KB-06409954  the members roster's status column reads the contact record, not the account
+  KB-4D082C89  a pending invitation is a locked account with a blank status
+  KB-E17E4CEF  "Delete member" detaches from the organization; contact and account survive
+  KB-FA724D31  the Admin status picker cannot restore a value it is willing to display
+  KB-6CC1EFE6  the storefront never offers Unblock for a member locked in Admin
+
+Three entries reached two observations: KB-4B889114, KB-7040852E and KB-B769C7B1. That is three
+times as many confirmations as the first three runs produced between them, and the first any run has
+made without being told to in the moment.
+
+The loop ended empty, and all three rows closed by `drop` with a reason rather than by capture --
+the run had answers, and said in each case why the answer was not an entry: confirmed rather than
+captured, or answered by the derived plane, or recorded as a different fact under a different
+question. Worth noting for the mechanism: closing on exact question wording never fired once. The
+reasons are better than a match would have been, but the match path is so far unused.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+fcaac3c 2026-09-12 Five facts from run 05, two disputes, and the first time a run corrected itself
+The run that used every verb. 24 touches over 217 calls, eleven of them in the middle 60%, largest
+silence 61 -- against run 03's 256 and zero.
+
+  capture 5 · deliver 4 · confirm 3 · dispute 2 · supersede 2 · demand 4 · consolidate 2 · reindex 1
+
+SUPERSEDE WAS USED, six hours after it existed, by an agent nobody told about it. KB-DC65E5F8 said
+the remedy for a destroyed invitation was "delete the row and invite again"; twenty minutes later
+the run proved that impossible and replaced it with KB-DA14E8B7. That is the exact move four
+previous runs could make and never did.
+
+Two disputes, both against clauses that did not survive contact rather than whole entries:
+KB-4D082C89's "a deployment with no reachable mailbox cannot move a member out of this state" --
+block then unblock does precisely that -- and KB-FA724D31's remedy of deleting the account under
+Security > Users, which turned out to have no handle to grab.
+
+Five confirmations, so KB-4B889114 and KB-06409954 now stand at three observations.
+
+  KB-BAEBCDA7  unblocking an invitation is not an inverse: it clears the lockout sentinel and
+               reports Active for an account with no password and an unconfirmed email
+  KB-DA14E8B7  a destroyed invitation cannot be re-sent; the address stays taken
+  KB-4E45A8BA  the contact Status dropdown cannot set the two values the platform writes into it
+  KB-4A8606CA  an account can become unreachable by id and by search while still resolving by name
+
+The pair the blind grader flagged is still both-active. The run confirmed both and disputed a
+different clause of one, which answers the question run 05 was set: the three protections got an
+agent to correct its OWN entry within the hour, and did not get it to resolve an inherited pair.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+645afe7 2026-09-12 A probe question, dropped rather than left open
+`kb deliver "does the order discount carry a percent or only an amount"` was put
+to the base to see whether the raised relevance floor moved its head. It did
+not. The loop recorded the ask, correctly -- it cannot tell a probe from work --
+so the outcome is written where the loop can count it.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+2eb0ce0 2026-09-13 Eight facts about shared lists, and a scope value the schema does not mention
+Run 06, the first run sent at ground the derived plane covers completely and the
+experiential plane did not cover at all. Twenty-one operations, WishlistType,
+and not one observation anywhere near them.
+
+The contract says scope is "List scope (private or organization)". Three values
+exist. The third, AnyoneAnonymous, appears in no doc string in the schema and is
+the one that matters: it serves the whole list -- names, skus, images,
+salePrice, subtotal -- to a caller with no account. The storefront's own roster
+renders it and an Organization-scoped list with the same badge, "Shared", so the
+one screen an owner would check cannot tell world-readable from colleagues-only.
+
+The sharing key is minted at creation, before anything is shared, and never
+rotates. Re-scoping to Private suspends it; the holder regains access the moment
+the owner shares again. Only deleting the list revokes it. That entry was
+superseded by its own author twenty minutes after writing it, because the first
+version recommended a remedy it had not yet tested.
+
+Also: wishlists have no REST surface and no Admin blade at all -- the XCart
+OpenAPI document has an empty paths object -- so a list cannot be audited or
+corrected by an administrator. The task assumed an Admin side existed and said
+so; it does not, and the absence is the finding.
+
+KB-27B4CD10 reaches three observations. It was served unasked by the arrival
+hook on /company/members and the run checked it rather than nodding: the
+contact renders Active while its account reads Locked, and the deployed bundle's
+GetOrganizationContacts selects no lock field. It deliberately did NOT confirm
+KB-4B889114, served beside it, because it never exercised that entry's
+distinctive claim.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+d08619b 2026-09-13 An address corrected, and nothing else touched
+KB-4A8606CA was filed under `GET /api/platform/security/users/id`. The route is
+`/api/platform/security/users/id/{id}` -- the anchor dropped the path parameter
+and therefore resolved to nothing, while reading exactly like a real coordinate.
+
+Corrected against this base's own derived plane, which carries the route in full.
+No observation is claimed, the claim is unchanged, the evidence is unchanged, and
+the id is unchanged -- KB-FA724D31 cites this entry and still resolves.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+1c4b984 2026-09-13 Eight facts from an order, and a payment that is for one amount and totals another
+Run 07 placed CO260913-00001 carrying three line items and checked every field
+the Admin shows against what the platform holds.
+
+The money reconciles exactly. Three lines, 46.30 + 99.99 + 26.20 = 172.49, equal
+to the header and to what the storefront charged, across all three surfaces,
+every WithTax twin equal to its counterpart. The run names its own caveat: tax
+is zero on this order, so it cannot distinguish a correct WithTax from a broken
+one.
+
+What does not reconcile is the payment. PaymentIn.sum is 172.49 and
+PaymentIn.total is 0, and the Admin renders both on one blade -- the operations
+tree says 172.49, the totals widget on the same screen says "Payment subtotal
+0.00". Both faithful to the platform; a field-by-field reconciliation that takes
+the widget for the amount owed reads zero on a paid order.
+
+That is the same shape as KB-4982C91F, which was served to the run for a
+different question and written by a promotions run: one quantity held twice at
+different precision, both rendered at once. The run declined to confirm it --
+its order carries no discount, so that entry's claim was not observable and a
+nod would have been a lie. It took the SHAPE and found it somewhere else.
+
+Also: a variation on an order records nothing about its parent (the link is a
+live catalog resolve, not stored data); the Admin never displays productType at
+all; and Cancel document cancels the order and its payment while leaving the
+shipment New and every line item isCancelled false.
+
+No configurable product exists on this deployment -- the categories for them are
+there and empty, the option products are there, the parent is not. Two demand
+rows stay open because of it, which is the base recording a gap it knows it has.
+
+KB-191B1B4C's anchor was rewritten by MSYS into a path inside the Git
+installation and left the corpus failing its gate. Corrected with `kb reanchor`
+-- and the first attempt at that correction was mangled identically.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+e6ae7b9 2026-09-14 The first entry that is a route, not a fact, and the first with a version on it
+KB-C51ACC81 -- how an order is placed on this storefront, from finding a product to reading it back
+in Admin. Distilled from run 07's archived tool log rather than from a fresh observation, and its
+body says so, because a transcription presented as an observation is the one thing the evidence row
+must never be able to hide.
+
+It is different from the 40 entries beside it in two ways that matter.
+
+It is a SEQUENCE. Every other captured entry answers "what is true"; this one answers "what do I do,
+in what order, and what should I see after each step". Run 07 spent 78 calls between reaching /cart
+and seeing its order in Admin, most of them rediscovering that this storefront has no /checkout
+route -- delivery method, payment method and Place order are all controls on /cart -- that the
+quantity stepper IS the add-to-cart control, that a variation is added from a row on its parent's
+page, and that #!/orders does not open the Orders module on its own.
+
+And it is anchored on STOREFRONT ROUTES: /cart, /search, /account/orders. Before it the whole
+experiential plane had two route anchors, both on /company/members, which is why the arrival hook
+was measured at close to nothing -- once in run 02's 172 calls, twice in run 03's 319. The derived
+plane is anchored on GraphQL type names that never appear in a URL. This is the first entry
+anchored on a route every order run visits.
+
+It is deliberately an ORDINARY capture. No flows/ directory, no third plane, no `type` field -- all
+three are designed and none is built, because the experiential plane already takes 12 of 30 head
+slots from 4% of the corpus and adding a class of long, common-word documents to it without
+retrieval evidence would be that trend made worse on purpose. One entry, one run, then decide. The
+argument for the plane is in the session that wrote this; the evidence for it is not in yet.
+
+Its evidence row is also the first in this base to carry a version -- pin c2f9c438eba4cd95,
+platform 3.1007.26, stamped by the door out of derived/pin.json. The 41 rows before it say only
+`vcptcore_stable`, which the README's own rule says proves nothing.
+
+Refutable by observation, and cheaply: walk it. A step that no longer works retires the step.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+a222fc5 2026-09-14 Close the gap a personal ignore file was covering
+.claude/settings.local.json was excluded here by a rule in one developer's ~/.config/git/ignore.
+That protection does not survive a clone: the next person or agent to hold this repository would
+have had nothing stopping them committing one, and it can carry env values -- during the run-06
+experiment it carried VC_MEASURE_OUT.
+
+.env* is refused outright. The corpus holds facts about a platform; every credential it could need
+lives in the workbench. There is no env file here today and this keeps that true by rule rather
+than by nobody having got round to it.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>

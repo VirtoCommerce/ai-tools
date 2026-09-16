@@ -1,0 +1,1523 @@
+=====
+2fab3fb 2026-09-10 Version the workbench, so the corpus has a fixed referent
+The base promises that `kb check` regenerates the corpus and byte-compares it, and
+what regenerates it is this code. Unversioned, the promise has no referent: the
+comparison keeps passing while quietly being about a different corpus, and a change
+in the platform's contract becomes indistinguishable from a change in the extractor.
+
+.env.local is gitignored -- it is bucket 3 of the env scheme and holds the only real
+secrets here. .env.defaults and the per-environment files are committed by design:
+URLs and identities, no passwords. .mcp.json carries placeholders only. Verified by
+scanning the staged diff before committing.
+
+Refs VCST-5937
+
+=====
+e3074fb 2026-09-10 Read the release from its pinned source instead of naming it
+The environment pins RELEASE_REGISTRY -- where the definition of a release is
+published -- and src/release.mjs derives which bundle a deployment is running by
+comparing its reported module versions against every bundle the registry lists.
+RELEASE_LINE, which named a version by hand, is gone.
+
+A pinned registry is a required source: unreachable means SKIPPED, the same as an
+unreachable deployment, because identifying a release from a stale local copy is
+what the pin exists to prevent.
+
+Refs VCST-5937
+
+=====
+5dc44ee 2026-09-10 Label GraphQL facts at what can be known; report what cannot
+Refs VCST-5937
+
+=====
+740325d 2026-09-10 Open the base to a second writer, on a leash
+Step 2 (VCST-5939). Until now only the extractor could write, so nothing an
+agent learned by doing could be recorded at all.
+
+Six verbs on one page -- ask, deliver, capture, consolidate, dispute,
+retire -- so every writer records the same shape instead of inventing one.
+
+The identity rule is measured, not chosen. Two records are the same fact
+when their normalized anchors and their scope axes agree; the claim's
+wording is deliberately not in the fingerprint, because over 19 labelled
+pairs the wording-similarity range of pairs that must collapse contains
+the range of pairs that must not, and one pair stating one fact scored
+0.00. Coordinates raise the candidate, scope decides.
+
+A capture that lands on a fact the base already holds is refused, never
+merged: whether two claims about one coordinate under one scope agree is
+exactly what the measurement showed text cannot be asked. The writer says
+which, with confirm or dispute. Consolidation merges only where scope
+agrees and keeps both claims -- a merge is a union, never a pick.
+
+No new top-level field. The confirmation count, the disputed flag and the
+versions a fact holds on are all computed from evidence[], so an entry can
+only say it holds where something actually looked.
+
+The captured plane lives in its own directory with its own index, so a
+capture cannot fail the byte-compare gate that polices the contract.
+
+16 new tests: three agents collapsing to one entry, one coordinate under
+two principals staying two facts, a planted wrong entry that cannot be
+served as settled once contradicted, and every gate still green on an
+empty corpus.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+c247ddd 2026-09-10 Consolidation proposes; a writer decides
+Seeding 37 measured facts into the base found two defects that only
+appear at volume.
+
+Transitive candidate grouping chained seven unrelated entries together
+through POST /graphql -- the plural mutation root next to four sales-rep
+grid facts. Candidates are now one group per coordinate that more than
+one entry names, so every member shares the same coordinate with every
+other member. Of 64 coordinates across 40 entries, 56 are named by
+exactly one entry: the relation is sparse and high-signal until the
+coordinate is generic, which is the function-word problem again.
+
+The serious one: agreeing scope proposed three merges and two were wrong.
+The password grant and the impersonation grant on /connect/token share a
+principal, a surface and a coordinate, and are different facts -- and the
+axis that separates them is the grant, which neither entry records. No
+rule over recorded scope could catch that.
+
+So there is no blanket apply any more. Consolidation proposes, a writer
+names the merge, and the scope check stays as a screen that can still
+refuse a named one. Same leash as capture, same measured reason: the tool
+can detect a difference and cannot certify a sameness.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+fb122c8 2026-09-10 Vendor the measurement logger, and teach it that the base is a source
+The toolkit that instrumented the step-0 demand measurement across seven runs, copied in whole
+the way MiniSearch is: one directory, no install step, nothing resolved at runtime from outside
+this repository. Its own 84 assertions come with it and pass here.
+
+One divergence from the canonical copies, which stay byte-identical to each other and to what
+this directory was created from -- the step-0 numbers were produced by that exact code, and an
+instrument that keeps moving underneath a measurement cannot re-run it. So the drift is
+one-directional and stated rather than discovered later.
+
+`backed_by` gains KB-DERIVED, KB-EXPERIENTIAL and KB-MISS, all three in NEEDS_A_CALL. With the
+original five values a base-answered row has to be filed as LIVE (nothing was probed) or ASSUMED
+(something was read), and "did the base answer, or did the agent go to the deployment" -- the
+question the base exists to settle -- stops being recoverable from the log. The two planes are
+separate values because they age differently. KB-MISS is a third value rather than an outcome
+recorded later, because a base that was asked and held nothing is a complete result at the moment
+of asking, and a row left unclosed would otherwise be indistinguishable from a hit nobody marked.
+
+reconcile.mjs is untouched and is meant to stay that way: it never reads `backed_by`, so new
+values there cost it nothing. A change that requires editing the reconciler is the signal to
+reconsider the change.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+107c3c6 2026-09-10 The door records itself, so a question is logged whether or not anyone remembers to
+An agent asked to keep its own record of what it looked up either forgets or writes a plausible
+reconstruction at the end. The door has no such problem: it is present at every consultation and
+every write, and it now writes both down.
+
+Two outputs, because a consultation and a write are different events and one shape cannot hold
+both without lying about one of them. `kb-log-<session>.jsonl` takes one line per invocation,
+every verb included. `questions-<session>.csv` takes one row per consultation, handed to
+log-row.mjs rather than formatted here -- that tool already owns the columns, the disjoint enums,
+the call-count stamp and a write that re-parses and compares, and it rewrites the whole file on
+every add, which makes it single-writer. One writer, one format, and reconcile.mjs joins the
+result to the hook's log unmodified.
+
+The door fills only the half of a row it can know. `held`, `found_elsewhere`, `used` and
+`applied` are judgments about work the door never sees, so they stay with the agent, and a row
+nobody closes stays (pending) where `log-row check` reports it. That report is not an oversight
+being tolerated: a question consulted whose outcome was never recorded is one of the things worth
+measuring.
+
+Nothing is defaulted. Without a phase the invocation is logged and the row is not; without the
+hook's ground-truth log the invocation is logged and the row is not, because an unstamped row is
+the unverifiable row the toolkit exists to prevent. Both say so on stderr. A column that always
+carries its default cannot tell "it was not recorded" from "it was always this".
+
+The verb log carries no question text and no served bodies, only a hash of the question: the text
+belongs in the CSV, and a second copy would double the surface a secret can land on for no new
+information. Coordinates and scope are recorded, since they are already committed inside the
+entries themselves. A refusal is kept whole, with the id it collided with -- whether the remedy a
+refusal names is reachable at all is exactly what the journal is being kept to find out.
+
+Off unless VC_MEASURE_OUT is set, never throws, and never changes an exit code.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+cacea6d 2026-09-10 Stop recording a pointer that moves, so the gate fires only for the corpus
+`kb check` went red three times in one day -- the registry's `latest` bundle moving 15.0.14 ->
+15.0.15 -> 15.0.16 -- and not one of those said anything about the deployment the corpus
+describes. Two extractions in one process agreed with each other, so the extractor was
+deterministic and the upstream was simply fast.
+
+Every field the `latest` pointer contributed describes wherever it is aimed at the moment of
+reading: the bundle version, that bundle's platform version, how many modules it matches. All of
+it moves when the publisher moves it, with nothing here having changed, and all of it was written
+into a byte-compared artifact. A gate that fires for reasons unrelated to the thing it guards gets
+ignored within a week, which is worse than no gate: it turns a real alarm into noise.
+
+Nothing read those fields. What makes a past identification auditable is already recorded and
+stays -- the registry URL, `refIsMovable`, and the content hash of the index that was read. "Is
+this deployment on the newest release" is a question whose answer changes without the deployment
+changing, so it is answered by running the extractor, not by reading a file committed weeks ago.
+
+Pin the source, not the value. The rule was already applied to the release definition; this is the
+same rule one level further in, where the value had been transcribed after all.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+8e19260 2026-09-10 The gate enforces the identity rule the base states, and can be shown failing
+Four checks the corpus gate did not have. Each one was written against a corpus carrying exactly
+that defect, because a gate that has never failed for you is a gate you have not tested -- and
+three of the four caught something already sitting in the live base.
+
+  the identity rule    Two active entries whose normalized anchors and scope agree are one fact by
+                       the rule the base writes down, and nothing enforced it. A corpus holding
+                       one fact twice passed, while `deliver` served both claims side by side at
+                       the same trust, each reading as an independent observation.
+
+  axis drift           Axis values have no vocabulary, so a misspelling is a new scope: it defeats
+                       the fingerprint above and blocks a merge over a difference that does not
+                       exist. Two shapes are reported. One typo apart -- which counts a
+                       TRANSPOSITION, because `grahpql` for `graphql` swaps two neighbours and
+                       plain edit distance scores that as 2, so the commonest way a person
+                       misspells a word is the one shape a distance-1 rule cannot see. And one
+                       value contained in the other as whole segments, which is the drift the
+                       corpus actually produced: `surface=rest` beside `surface=platform-rest`,
+                       from one author, hours apart, and nine edits away from each other.
+
+  stale artifacts      The captured index and catalog are now rebuilt in memory and byte-compared,
+                       the check the derived plane has had all along. The id-level checks ask
+                       whether the index MENTIONS the right entries; an index built from an older
+                       body mentions exactly the right ids while serving text the corpus no longer
+                       holds. Only rebuilding catches that, so building is now separate from
+                       writing.
+
+  anchor shape         An anchor is a coordinate someone else can look up, and a path on this
+                       machine is not one. `--anchor "/docs/{ModuleId}/swagger.json"` arrived as
+                       `C:/Program Files/Git/docs/{}/swagger.json`: MSYS rewrote the argument
+                       before the tool saw it, and the entry about swagger documents shared no
+                       coordinate with the fact it was about. Narrow on purpose -- the UI half of
+                       the corpus anchors on labels and selectors no coordinate grammar would
+                       admit, so the rule names the defect rather than prescribing a shape.
+
+`kb reindex` comes with them. `validate` detects a stale index by rebuilding and tells the reader
+to run a verb that rebuilds it; until now there was none, which is the same shape of dead end as a
+refusal that names a remedy which refuses in turn.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+975af0f 2026-09-10 A merge no longer leaves a dead end where every remedy refuses in turn
+Retirement keeps the file and its fingerprint, because ids are eternal. Three verbs then disagreed
+about what that means, and a writer fell through the gap between them: a capture of a fact that
+had been merged was refused and pointed at the retired entry; `kb confirm` on that entry refused
+in turn, since confirming it would revive a withdrawn fact; and `kb dispute` on it SUCCEEDED,
+writing a contradiction into a file no index serves. The third is the worst of the three -- a
+refusal is visible, and a dispute recorded where no reader will meet it is not.
+
+`supersededBy` becomes a field. It was already written, in prose, in the retirement note, which is
+exactly enough for a person re-reading the entry and not enough for a message to follow. A merge
+now records where the fact went, `survivorOf` walks the pointer (through a chain, since A can be
+merged into B and B later into C, and a writer sent to B has been sent nowhere), and the walk
+keeps a visited set so two entries pointing at each other stop instead of spinning.
+
+With that in place the three verbs agree. A collision on a retired fingerprint is answered against
+the entry that is actually served; `confirm` and `dispute` on a retired entry both refuse and both
+name where its fact is held; and `retire --superseded-by` refuses a pointer to an entry that does
+not exist, with the gate catching one that arrives another way.
+
+One case is deliberately allowed rather than refused: a fingerprint retired with NOTHING
+superseding it lets a capture through, with a note saying what it walked past. That retirement
+means the fact was withdrawn on purpose, and a later observation of it is not a duplicate -- it is
+the one piece of evidence that could show the withdrawal was premature. Refusing would make a
+withdrawn fact unrecordable forever.
+
+Verified end to end against a copy of the live base, where the five traps the merges left were
+real: the refusal now names KB-A8FD7BEC rather than the retired KB-066957A8, and both remedies it
+offers work on what it named.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+1b4c7b8 2026-09-10 Let the derived plane answer back, and say when an observation came from elsewhere
+Two holes on the same seam, both of which the corpus had already fallen through.
+
+THE PLANES NEVER SPOKE. They were built to stay apart -- one regenerated and byte-gated, the other
+written by whoever learned something -- and that separation is right: folding them into one store
+would let a belief be mistaken for a contract. But nothing connected them at all. A captured entry
+said `Query.cart` took all-optional arguments while the derived entry beside it, generated from
+introspection, said `storeId` and `currencyCode` were required; a later run observed them required;
+and the disagreement was filed as two observations disagreeing. It was not that. The base held the
+answer on the plane that cannot be wrong about a signature, and served the wrong one above it.
+
+`capture` now reports what the derived plane already says about the same coordinates -- after the
+write, not instead of it. Nothing is refused on the strength of it: an observation contradicting a
+generated contract is often the most valuable thing in the corpus, and telling that from a
+misreading is a judgement, the same reason `capture` refuses rather than merging and `consolidate`
+proposes rather than applying. `coordinateIndex` spans both planes and is the lookup step 3's drift
+detection needs, built once here rather than twice.
+
+AN ANSWER FROM ANOTHER DEPLOYMENT NOW SAYS SO. All 35 seeded entries were observed on an
+unversioned developer stack while the derived plane is pinned to a release, and the delivered block
+printed `observed @ localhost` beside `derived @ vcptcore_stable` without a word about the
+difference -- a whole plane served as though it were about the same system. It is named at the
+point of use and never filtered: where no contract covers a coordinate, an observation from
+somewhere else is still the best the base has. One confirmation on the reference deployment clears
+it, which is the cheapest way for the corpus to earn its way out.
+
+`normalizeAnchor` moves into anchors.mjs. Both the door and the lookup need it, and having the
+lookup import it from the door made a cycle whose only symptom was a constant read before it was
+initialized. It is re-exported from capture.mjs, so every existing caller is unaffected.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+46ba9e3 2026-09-10 Wire the ground-truth half, so a session's own account can be checked against it
+`tool-log.mjs` as a PostToolUse hook, with no matcher. An independent record of what a session did
+is only independent if it records everything, and a filter here would silently shrink the
+denominator of every coverage number computed from it later. The hook is fail-open by
+construction -- never throws, writes nothing on the happy path, always exits 0 -- so it cannot
+block or slow the work it measures.
+
+That completes the pair. The door writes what only it knows (the question, which plane answered,
+what it refused); the hook writes what the harness knows (every call, and its target); and
+`reconcile.mjs` joins them by session. The divergence between the two is the point: a lookup that
+happened and was never written down, or a row claiming a probe at a call count that never moved.
+Verified end to end in a live session -- both halves written, reconcile joining them unmodified,
+and every row's method found among the calls it is attributed.
+
+Secrets are redacted at write time, keyed on the VALUE read from the env layer rather than on a
+name like `password`, because `PW='...'` has no keyword to key on. Checked against all 32
+secret-bearing keys in the live `.env.local`: none reached the log, and each was replaced by a
+marker rather than dropped silently.
+
+ONE RUN PER DIRECTORY, documented rather than enforced. `log-row` and `reconcile` both refuse to
+guess which of several logs in a folder is this session, since picking the newest is how a row
+gets filed under another session's id; the environment offers nothing to disambiguate with
+(`CLAUDE_CODE_HOST_SESSION_ID` names the host, not the session the hook records). So a run is
+archived before the next one starts, and forgetting fails in the safe direction -- a refusal on
+stderr rather than one run's questions attributed to another.
+
+`MEASUREMENT/` is gitignored: it carries the question text an agent typed and the targets it
+addressed, so it goes through scrub-scan before anything is published, and what gets committed is
+the analysis rather than the raw log.
+
+One test stopped assuming an unset environment and now controls it, which is what made this change
+visible: settings.json sets VC_MEASURE_OUT, and a test reading the ambient value was asserting
+something about the machine it ran on.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+ee5d878 2026-09-10 The brief a live run is given
+The first measurement where the experiential plane is written by the agent that needed the fact,
+rather than transcribed afterwards by someone deciding what counted as one.
+
+Two things it deliberately does not do. It does not say what to record -- naming the facts is how
+the previous corpus became one person's reading of seven runs -- and it does not describe what the
+base knows, which would prime the very judgement being measured. It says what a fact is (something
+about the platform you had to find out, that would save the next run the same work), what it is not
+(a hypothesis, a plan, a fixture value, anything about the agent's own tooling), and that recording
+nothing is a result this measurement wants to be able to see.
+
+It closes two contamination routes explicitly: the QA repository, and `git show seed-w0.5`. The
+tags hold a hand-written corpus about this platform, and reading it would put the answers in front
+of the writer.
+
+Every command in it was run before it was written down. `deliver` adds the row, `log-row mark`
+closes it with the half the door cannot know, `capture` refuses or reports what the derived plane
+already says about the same coordinates, and `check` and `reconcile` both read the result. A brief
+carrying a command that does not work is worse than no brief.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+a530a19 2026-09-10 Keep archived runs out of git as well as live ones
+MEASUREMENT-archive/ holds the same thing MEASUREMENT/ does, one run older: the question text an
+agent typed and the targets it addressed. Ignoring one and not the other would have committed
+every run the moment it was set aside.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+fb78213 2026-09-10 Record what the writer was shown, not only that a capture happened
+Found by the first live run rather than by reasoning about the code. Capture #12 of session
+5534eddb anchored on Query.cart; the derived plane holds an entry for that coordinate; the door
+duly printed it at the writer — and the journal kept no trace of any of it. So in the data, an
+observation recorded in the face of a contradicting contract is indistinguishable from one
+recorded where the base had nothing to say.
+
+That distinction is the entire point of the cross-plane read. Instrumenting the capture and not
+the argument the base made against it measured the cheaper half.
+
+The verb line now carries `cross_plane`: the id, subject and normalized coordinate of every
+derived entry the writer was shown. Nothing else changes — it is still a read that refuses
+nothing.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+2f8cc34 2026-09-10 Name the browser lane, because only one of them can sign in
+The first run lost its entire UI half to a lane choice, not to a missing capability. It drove the
+built-in browser, met a login form, and correctly declined to type a password — while
+`playwright-chrome`, the one server configured with `--secrets`, was never called once, though it
+is the only MCP server enabled here besides atlassian.
+
+With `--secrets` the agent types the secret's NAME and the MCP substitutes the value on its way to
+the page, redacting it from its own logs. No credential enters the agent's context or the
+transcript at any point; what is typed is a variable name. That is the difference between this and
+handling a password, and it is why the authenticated half of the platform is testable at all.
+
+The flag belongs to @playwright/mcp alone. On the built-in browser, on claude-in-chrome, and on
+Chrome DevTools MCP there is no substitution, and typing a NAME submits the literal string — the
+QA repository documents losing a whole agent turn to exactly that. A brief that says "sign in"
+without saying which lane is a brief that will produce the same INCONCLUSIVE result again.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+9d6ac46 2026-09-10 Say who reads the secrets file, since the brief also says to stay out of that repo
+The brief told the run not to enter vc-mcp-testing-module and then pointed --secrets at a path
+inside it, which reads as a contradiction to anyone following it literally. The MCP server reads
+that file at startup; the agent never opens it and does not need to. Naming a key that is not
+there types the literal string and fails the sign-in, which is feedback enough.
+
+Also states why the file is scoped to login passwords rather than .env.local: so that no page and
+no injected instruction can talk a browser lane into typing an API token into a form.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+2beca35 2026-09-10 Describe every type in the schema, and measure what that cost
+An entry per named GraphQL object and input-object type, anchored on the type and on each
+`Type.field`. Root-field entries stop copying the referenced type's table into their body and name
+it instead. 287 derived entries become 590.
+
+Two defects with one cause, both properties of the corpus and not of any single run: 89 types were
+NAMED in signatures and described nowhere — `CartTotalType` is reachable only as
+`CartType.cartTotals`, so the plane mentioned it and stopped — while `CartType`'s field table was
+copied into 40 entries, ~280 KB of repeats and forty documents answering to the same terms. And of
+the eight anchors the first live run chose, six were named by no derived entry at all, nearly all
+of them `Type.field`: the cross-plane check was blind to the commonest coordinate shape the
+experiential plane uses.
+
+MEASURED, because the retrieval configuration rests on numbers that no longer reproduce and there
+was no way to notice a regression. The nine questions run 01 asked are the only held-out set that
+exists; the baseline reproduced its served lists exactly. The bar was set before the change: the
+two UNANSWERED rows gain an entry describing CartTotalType, and no HELD row loses what served it.
+
+Five rows unchanged, three better, one worse.
+
+The first cut was worse than that — six of nine — and the measurement is the only reason that is
+known. Removing the tables from the body, it also removed the referenced types' field names from
+the INDEX, and `Query.cart` stopped being findable for a question about cart discounts. The body
+and the index are not the same decision: a reader following a signature wants one hop rather than a
+duplicate, but "which operation gives me the discount" is answered by the operation that RETURNS a
+type carrying discounts. Restoring the names to the index alone took six regressions to one.
+
+The one that remains is recorded rather than chased. Row 2's top six are now all type entries, the
+operation entry pushed out, and `gql-type-carttype` sits fifth below three types that merely
+contain a discount-shaped field — one of them the very type run 01 recorded as the place a
+cart-level discount never appears. The mechanism is general: 303 short documents dense in field
+names will crowd any question carrying a common field word. Tuning against nine rows is how the
+previous corpus's numbers came to mean nothing, and there is no second set to check a fix against.
+
+kb validate OK, 590 derived. kb check OK, 1170 generated files byte-match. 70 tests.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+a46ebb6 2026-09-10 Tell a run what to do when the base serves another agent's belief
+Until now every answer the base gave was projected from the deployment, so the brief only had to
+explain capture. The corpus now holds three entries an agent wrote from observation, and the next
+run is the first that can be served one — with no instruction anywhere about what to do with it.
+
+confirm and dispute were mentioned only as remedies to a refused capture, which is the one
+situation where a writer is already blocked. The more common one is quieter: an entry is served, it
+is acted on, and it either holds or it does not, and neither outcome reaches the corpus. A
+confirmation is what moves a fact from one agent's report to something two runs have seen; without
+it every entry stays a single observation no matter how often it is used.
+
+Also names the OBSERVED ELSEWHERE marker, since a reader meeting it needs to know that one
+confirmation from them is what clears it.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+72b270f 2026-09-11 The secrets flag redacts what the server writes, not what it hands back
+Run 02 typed only names, as the brief says, and a credential reached its context anyway:
+browser_network_request with part request-body returned the sign-in POST with the password in
+plaintext, and part request-headers returned the bearer token. The brief claimed flatly that the
+plaintext never enters the context or the transcript. That is true of typing and false of the
+network inspector, and stating it without the qualifier is what made the boundary look wider than
+it is.
+
+Checked rather than assumed: one distinct value reached one tool_result line of that session's
+transcript, plus one JWT. It is a shared test password carried under 34 key names, which is why a
+naive scan reports 26 keys and one leak. Nothing reached the measurement logs, the questions CSV,
+the corpus or any other stored artifact.
+
+The brief now says read response bodies only on an authenticated flow, names the two parts that
+carry credentials, and says what to do if one comes back anyway: report it, quote nothing.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+6a40fb0 2026-09-11 An axis may repeat, and a joined value says so badly
+Run 02 had a fact visible on two surfaces and no way to say it, so it wrote surface=rest+admin-ui
+and surface=xapi+rest. The schema already allowed what it wanted — appliesTo is a list of rows, so
+an axis can simply appear twice — but nothing anywhere said so, and the tool met the workaround
+without comment.
+
+A joined value is worse than a wrong one. Scope exists to compute a fingerprint, and rest+admin-ui
+matches neither of the two records it stands for: a later observation on rest alone collides with
+nothing, and the entry it should have met stays invisible. The axis-drift check caught the symptom
+— rest beside rest+admin-ui — while the cause went unnamed.
+
+The gate now names a scope value that reads as two joined, and says what to do instead. The brief
+says it up front, where a writer meets it before making the choice.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+28a27f5 2026-09-11 Put the sign-in in the brief, where it is a stated condition rather than a side channel
+Run 02 spent three refused attempts finding the storefront account that works, stopped rather than
+risk a lockout, and wrote what it learned into project memory. The content is right and the place
+is wrong for this measurement: project memory loads into every session in this directory, so run 03
+would start already knowing it through a channel nothing instruments. What the base contributes
+stops being measurable the moment knowledge also arrives by a route the journal cannot see.
+
+It is also not platform knowledge. Run 01 declined to record that this store refuses anonymous
+carts, on the grounds that a deployment's own configuration is not a fact about the platform, and
+which account can sign in is the same kind of thing. So it belongs in neither the corpus nor
+memory: it is a condition of the experiment, and the brief is where a condition is stated so that
+anyone reading the measurement can see it.
+
+The probe technique goes with it — asking whether a secret name exists by reading the echoed
+fill() rather than by submitting a guess, which is what turns three burnt attempts into none.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+9193381 2026-09-11 A procedure counts, and the line was drawn in the wrong place
+Run 02 spent three refused sign-in attempts working out why an account could not log in, stopped
+short of a lockout, worked out the mechanism — the form posts a username rather than the email, so
+a contact whose account carries a different username can never sign in, and login_failed is
+returned identically either way — and then did not record any of it. It was following this brief,
+which told it not to record anything about environment layers, and sign-in read as environment.
+
+That was the brief's fault. The mechanism transfers to every Virto deployment and is worth more to
+the next run than most facts it could have recorded; only the specific account is a fixture. The
+exclusion now names what it meant — the run's own shell, browser lane and env files — and the test
+is stated as whether someone meeting this on a different stand would still be right to believe it.
+
+Also says outright that a procedure is recordable, with refutable-by practice. The vocabulary has
+carried that value since the schema was written, all seven entries in the corpus are observations,
+and nothing had ever told a writer the other kind existed.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+8e7b035 2026-09-11 What survives the experiment, and the one thing nobody has observed
+Two documents for the same question: what happens to all this once it stops being a measurement.
+
+docs/ADOPTION.md says where the run brief goes. Most of it dies -- phases, row marks, archiving,
+the ban on reading the frozen corpus are scaffolding for a measurement and nothing else. The lane
+and account conditions become project configuration, which is a shape the QA repository already
+has. One part has to survive: ask, record, confirm or dispute. It also states the split that
+decides the mechanism -- reading can be made automatic and should be, writing cannot, because
+deciding that something is worth the next run's time is a judgement no hook will make. Working use
+comes out LIGHTER than measured use, not heavier.
+
+And it names what is not known. Runs 01 and 02 were both told to consult the base, so "agents use
+it" is an assumption, and a load-bearing one: if an agent reaches for it unprompted a skill
+suffices and a hook is wasted work; if it does not, no amount of documentation substitutes for one.
+
+RUN-BRIEF-unprompted.md settles that for the price of one run. It says the base exists and how to
+use it, and does not say to consult it. What matters afterwards is not whether it asked, but which
+questions it brought and which it answered by going straight to the deployment.
+
+GENERATED rather than copied, and the generator refuses if its anchor block stops matching. Two
+hand-maintained briefs drift, and a drift nobody notices is a change of run conditions nobody
+recorded -- the precise failure this measurement exists to avoid. Verified: two hunks differ from
+the canonical brief, the inserted header and the step-2 swap, and nothing else.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+82cbb95 2026-09-11 Point a procedure at observation, not at the one channel with no executor
+I told the brief to record a procedure with refutable-by practice. Reading the ADR's own table
+rather than trusting that: practice means the rule is repeatedly observed not followed, its typical
+kinds are convention and process, and the executor column says nobody -- no automated executor
+exists. The ADR names the consequence directly: such an entry can enter, accrue weight, and be
+contradicted by nothing, for ever, which is item 18 of its own risk table.
+
+The sign-in diagnosis that prompted this is not a convention. That the form posts a username rather
+than the email, and that login_failed is returned identically whether the password was wrong or the
+login does not exist, are behaviours of the platform: somebody tries it and sees otherwise. A
+procedure is a way of phrasing a claim, not a different kind of claim, and it keeps the channel the
+claim already had.
+
+Had run 03 followed what I wrote, the corpus would have gained its first entry that nothing in the
+system could ever refute -- in a base whose whole admission rule exists to prevent exactly that.
+The brief now says so, and says that being unable to name the observation is a sign the claim is
+not ready rather than a sign a weaker channel is needed.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+7527a6d 2026-09-11 Name the index after the kind of knowledge it indexes
+`knowledge-index.json` and `catalog.md` said nothing about which of the two planes they cover,
+while their experiential counterparts already did. They are now `derived-index.json` and
+`derived-catalog.md`, symmetric with `captured-index.json` and `captured-catalog.md`.
+
+Named by PLANE rather than by folder, deliberately. The literal folder name would give
+`entries-index.json`, and that is worse than what it replaces: both planes hold entries, so the
+name would read as covering all of them while covering only half. The kind of knowledge is what
+distinguishes these files, so the kind is what names them.
+
+Content is untouched — `kb check` passes on the renamed files byte for byte, which is the whole
+evidence that this was a rename and nothing else.
+
+Leaves one asymmetry, not fixed here because it is a larger call: the folder `entries/` still says
+nothing about its plane, and `derived/` is already taken by the generated contract tables. Making
+the folders match would mean moving 590 entry files under `derived/` beside `rest/` and `graphql/`.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+0236bdf 2026-09-11 Name the two planes' directories once, in planes.mjs
+These paths were twenty string literals across six modules and five test files. That is the shape
+that loses one on a rename, and a lost one does not fail loudly: the extractor keeps writing to the
+old path while the gate keeps comparing the old path, and the corpus quietly grows a second copy of
+itself. This rename found two of them the hard way — a test file whose import landed inside a
+multi-line import statement, and another where the insertion was skipped because the comment I had
+just written happened to contain the module's own name.
+
+planes.mjs also carries what the extractor owns, which was declared in bin/kb.mjs next to the code
+that walks it rather than next to the paths it names. `capture.mjs` re-exports the captured
+constants so every existing caller is unaffected.
+
+The move itself: the derived plane's entries now live under `derived/entries/` beside the tables
+they cite. 72 tests, kb check OK on the new paths, kb validate OK.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+c19adb2 2026-09-11 Put the editorial half of the door on the door
+The run brief taught two different things and only one of them was going to survive it. The seven
+required inputs were never really taught by the brief -- "kb capture" with no arguments has always
+named them all, and that text is generated from the code, so it cannot drift. What the brief alone
+carried was the judgement: record the mechanism, not the instance; do not record a fixture, a
+hypothesis or a plan; do not reach for "practice", the one refutation channel nothing in this
+system can ever execute. That is the part that decides whether the base is worth reading in a year,
+and it lived in a file written to be thrown away.
+
+It now lives in "kb capture --help", beside the REQUIRED_INPUT list it qualifies. A CLAUDE.md line
+or a skill would be read before the work; this is read during it, at the moment someone is deciding
+whether what they just learned is worth another agent's time -- a judgement no gate downstream can
+make, since the gate checks that seven fields are filled and has no opinion about what is in them.
+The refusal for missing inputs now points at the page, which puts it in front of the one reader
+guaranteed to be fumbling.
+
+Help is not a verb: "capture --help" must leave no journal line. The journal is what the
+measurement reads to answer how often agents write to the base, and a manual-reading counted as a
+capture would inflate that number in the flattering direction. asksForHelp() covers both the
+top-level and the per-verb form, and a test asserts the empty output directory.
+
+Two drift guards, because one copy is only an advantage while it stays one: a test derives the
+required-input set from an actual refusal and fails if the help page does not explain every member,
+so an eighth input cannot be added without the page gaining it; and the brief's editorial section is
+now a pointer rather than a paraphrase.
+
+This changes run 03's conditions -- it will differ from 01 and 02 in two respects rather than one.
+Recorded in ADOPTION.md rather than left to be noticed later. The two are close to orthogonal, and
+the second is worth having: run 03 now also answers whether an agent who never saw the editorial
+rules in a brief writes usable entries from the tool alone.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+ff92b4b 2026-09-11 Make the task a file, like the brief
+Runs 01 and 02 were given their tasks in chat. The task is the single condition that decides what a
+run asks, what it goes looking for and therefore what it records -- and it existed only in a
+transcript, which is exactly the kind of side channel this measurement was built to close. Run 01's
+task is now reconstructable only by reading a conversation nobody archived.
+
+Run 03 gets an organization-role gating task across both surfaces, chosen because the account the
+brief names signs in as an ordinary Customer: the run needs a member with more than that, the brief
+does not say how to get one, and working that out is the transferable mechanism we have twice now
+wanted an agent rather than the author to record.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+0f47e25 2026-09-11 Record run 03's conditions while they are still observable
+Three differences from runs 01 and 02, two of them deliberate and one not. The third is the reason
+this page exists at all: the run met a permission classifier holding exactly one browser tool, and
+nobody would have reconstructed that from the logs afterwards -- the tool-call log shows a denial,
+not an allow-list with one entry in it.
+
+The finding is about adoption, not about the platform, so it stays out of the knowledge base: a run
+records nothing about its own tooling. What it says is that the permission allow-list is project
+configuration on the same footing as .mcp.json. An agentic run in auto mode cannot sign in to
+anything until the browser lane's interaction tools are allowed, and finding that out mid-task
+costs a session.
+
+browser_network_request stayed out of the list on purpose. It is the tool that handed run 02 a
+sign-in POST body in plaintext, and this run had not asked for it.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+e5e7717 2026-09-11 Stop paying entries for breadth, and stop treating the medium as a subject
+Two live runs hit the same defect independently: 303 of the derived plane's 590 entries are wide
+type tables, and a question with a specific subject was answered by whichever table happened to
+contain the most of its words. Run 02 diagnosed it in its own CSV -- "Resolver ranking issue, not a
+content gap: the entry existed and answered the question but lost to derived type tables for this
+phrasing" -- and found the entry by reading `kb stat` by hand.
+
+`bm25.d` 0.5 -> 0. `d` is BM25+'s flat per-term floor: every query term a document contains adds
+`idf * d` however little the document is about it. On a corpus whose largest family of documents
+exists to be broad, that pays breadth, and breadth is precisely what should not win a specific
+question.
+
+`graphql`, `graph`, `ql`, `gql`, `api` join the function words. The derived plane IS the GraphQL
+schema and the REST contract, so those words are in nearly every entry and discriminate nothing --
+the surface is a scope axis, not a search term. Left in they were worse than inert:
+`gql-type-graphqlsettingstype` is the one entry carrying `graphql` in its SUBJECT, a short field,
+and a rare-term-in-a-short-field score made it the FIRST answer to run 01's cart question, on the
+only content term it matched at all.
+
+Both are query-time settings. Nothing on disk changed and `kb check` is untouched.
+
+Measured on 23 rows -- every question runs 01, 02 and 03 asked, each replayed at the limit its own
+run used. 0 of 23 lost the entry that served it; 2 of the 3 rows a run recorded as buried are now
+served, plus five unaimed-at improvements. A grid over subject boost x b x d found nothing better:
+every setting that also fixed the third row sold a different one to buy it, and b >= 0.85 cost
+three rows outright.
+
+Three things stated rather than smoothed over:
+
+  * r1.2 is still buried, and left visibly failing in the harness output. `CartType` does not
+    contain the word "promotion" while the three entries above it do. That is a vocabulary gap and
+    a prefix-matching artefact, not something these settings reach.
+  * r2.5's anchor was overridden AFTER the change dropped it. Its recorded answer names three types,
+    none of them the entry that led its list -- so rank-1-is-what-was-used was wrong for that row.
+    The override prints its own reason in the output.
+  * the hand-written question that made the crowding legible is NOT fixed by this, and nearly got
+    written up as though it were. It was never one of the 23 rows.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+41fa4c7 2026-09-11 A scalar is not a coordinate
+Root-field entries anchored themselves on every type in their signature, scalars included, so 64
+entries claimed to be about `String`, 25 about `Boolean` and 21 about `Int`.
+
+An anchor's job is to raise a flag when the thing it names changes. `String` cannot change, so those
+anchors could never fire -- they were pure claim with no mechanism behind them. And the claim is not
+inert: `kb capture --anchor String` would have answered with dozens of unrelated derived facts
+through the cross-plane lookup, and anything that retrieves by coordinate inherits the same noise.
+This surfaced while measuring whether a coordinate-triggered hook is worth building, which is the
+kind of thing that measurement is for.
+
+Enums, interfaces and unions stay anchored. Those can gain a member, so an anchor on one can fire.
+
+It also closes a dangling pointer nobody had noticed. Every affected entry's body ended with
+"Types in this signature: ... `String` (SCALAR) -- `gql-type-string`", naming an entry that was
+never generated: `groupGraphqlTypes` has always built entries for OBJECT and INPUT_OBJECT only. The
+base was telling readers to go and read a file that does not exist.
+
+160 files, 773 deletions against 80 insertions. `kb check` OK, and the 23-row retrieval replay is
+byte-identical -- no row moved.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+02ae7ab 2026-09-11 Keep the question, so it outlives the moment it was asked
+Three runs consulted the base in their first minutes and wrote to it from their closing report.
+Run 03 exactly: four `deliver` calls at tool call 7-10 of 319, five `capture` calls at 266-269 and
+312, every one with KB_PHASE=report. Hours in between with no contact either way, and the writing
+done from memory -- so anything a run learned and then superseded was never written at all.
+
+A brief cannot fix it. Runs 01 and 02 were told in so many words to consult the base and
+front-loaded anyway. What was missing is that a question existed only in the asker's head.
+
+So the door keeps it. `deliver` and `ask` append to `demand.jsonl` beside the base; `capture` with
+the same question closes the row; `confirm` and `dispute` settle a served observation; every other
+verb prints one line saying what is open, and `kb demand` lists it.
+
+EVERY QUESTION IS RECORDED, NOT ONLY THE MISSES, and that is measured rather than cautious. Across
+all three runs the base was asked 23 questions and missed ZERO -- `deliver` always found something.
+A MISS-only loop would have stayed empty through every run this experiment has done. MISS is a
+coverage signal; whether an answer settled the question is something only the asker knows, and run
+03 wrote that down for a question the base "answered": the role values "are data and not contract,
+so the derived plane structurally cannot hold them". Served is not answered.
+
+It lives with the base, not the session. An unanswered question is a fact about the corpus, so the
+next agent inherits it and a question left open on Tuesday is still open on Friday -- which beats
+the thing that has failed in all three runs, an agent remembering.
+
+Three decisions with a reason, each pinned by a test:
+
+  * closing matches the QUESTION, never the anchors. A capture anchored on Query.cart would
+    otherwise close every open question that ever mentioned the cart, deleting the demand signal
+    while the gap was still there.
+  * `kb demand drop <key> --reason` exists because "if you learn nothing worth recording, record
+    nothing" is a real outcome and the loop needs somewhere to put it. Recorded, not erased.
+  * only experiential entries become something to confirm. A derived entry is byte-gated against
+    the deployment already.
+
+The loop is wired in the CLI, not in `deliver()`. The retrieval replay harness calls the library
+directly and therefore cannot pollute the demand log with 23 replayed questions.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+570252c 2026-09-11 Let the base arrive, and measure honestly what that is worth
+Three runs consulted the base in their opening minutes and never again -- run 03 asked all four of
+its questions at tool calls 7-10 of 319, then worked 255 calls without touching it. Runs 01 and 02
+were explicitly told to consult it and front-loaded anyway, so this is not a wording problem.
+
+Every entry in both planes is anchored on coordinates, and a tool call is made of coordinates. So a
+PostToolUse hook looks at what the agent just touched and hands back what the base holds about it.
+Nothing is asked and nothing has to be remembered.
+
+WHAT IT IS ACTUALLY WORTH. Replayed over three archived tool logs, counting only entries that
+existed BEFORE each run -- otherwise a run appears to be helped by answers it wrote itself:
+
+  run 01    83 calls    9 fires   (11%)   promotions, REST driven by curl
+  run 02   172 calls    1 fire            discount to checkout, browser against GraphQL
+  run 03   319 calls    2 fires           organization roles, browser UI
+
+Once or twice a run, except where the work touches routes directly. It is NOT shipped as a fix for
+the front-loading, and the header of the hook says so. What it does show is where the value is: run
+03's own two entries, anchored on `/company/members`, match nine of its calls -- worthless to run 03
+and exactly what the next UI run gets on arrival. The mechanism pays in proportion to how many
+entries are anchored on routes agents travel, and there are two.
+
+Three bugs were found by disbelieving the number, which read "2 hits in 319 calls" three times for
+three different reasons. Each is now a test:
+
+  * word boundaries applied to a coordinate that carries its own -- `/company/members` rejected nine
+    times because the character before it was the `m` of `.com`
+  * routes compared in the wrong case: normalizeAnchor lowercases a dotted coordinate and leaves a
+    route alone, so a lowered haystack matched no route at all -- half the corpus, silently
+  * and before those, a cruder probe that OVER-reported: 19 substring hits on the bare coordinate
+    `organization`, every one a URL carrying `organizationId`
+
+Plus one property of real text: `POST /api/members/search` appears verbatim in nothing anyone
+writes, because curl puts the host between the verb and the path. The path is now tried alone,
+which costs the verb distinction and is the right trade -- the entry is about the route.
+
+Writing this up fired the hook, because the measurement README names two coordinates. So
+additionalContext on PostToolUse demonstrably reaches the agent, which had been an assumption. It
+also names the false-positive class: writing about a coordinate looks like touching one.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+bc1ad13 2026-09-11 Teach the brief the loop, and tell a run the question this one exists to answer
+The protocol told a run to consult the base and to close a CSV row, and said nothing about the
+machinery added since. Three changes.
+
+The loop gets its own section. The base now keeps every question put to it until something is
+written back, and a row closes three ways -- a capture with the same question wording, a confirm or
+dispute on a served observation, or `kb demand drop --reason` when the answer turned out not to be
+worth an entry. The last is spelled out as legitimate: "record nothing" has been the standing
+instruction all along and the loop needed somewhere to put it.
+
+The CSV row and the loop are distinguished rather than conflated, because they are not the same
+thing and both are wanted. The row is the measurement -- what turned out to be true, where it
+really came from -- and only the asker can write it. The loop is the base's own memory, it outlives
+the run, and it settles itself when you capture.
+
+Step 2 gains the sentence three runs earned: SERVED IS NOT ANSWERED. The base was asked 23
+questions across three runs and missed none, so "KB MISS" is a coverage signal a run will almost
+never see -- while run 02 was served a generated type table for a question that needed an entry it
+had to go and read off disk. A run that reads "it answers or says MISS" and sees an answer will
+conclude it was answered.
+
+And the closing section now asks the question this run is for: WHEN did you touch the base, and why
+then? The three before it consulted inside their first three minutes, worked for over an hour
+without opening it, and wrote everything from memory in the report. A run that does the same should
+say so -- that is the result, not a confession.
+
+Also: the arrival hook is described where a run will meet it, and the confirm/dispute section says
+that an entry arriving unasked is still one agent's belief.
+
+The unprompted generator refused to run, exactly as designed, because step 2 stopped matching. Its
+two blocks are updated and both briefs regenerate byte-identical apart from that block.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+2e652ac 2026-09-11 Run 04: conditions written before it, and a task placed where the base can reach it
+The conditions page goes first because run 03's did, and that one earned it: the condition nobody
+planned -- a permission allow-list holding one browser tool -- was reconstructable afterwards only
+because it had been written down while it was still visible.
+
+The number this run is for is stated up front and needs nobody's judgement: when is the base
+touched, and how much work happens between the first touch and the last. Runs 01-03 answered it the
+same way three times, run 03 most starkly -- consulted in the first 3%, written in the last 17%,
+255 calls of silence between.
+
+Five changes since run 03 are listed with what each is meant to do. That is a lot of variables for
+one run, and it is deliberate rather than careless: they all aim at the same number, so if it does
+not move none of them worked, and if it does the next run separates them.
+
+The task is member STATE rather than member roles -- invited, active, blocked, removed, deleted, and
+whether each surface reports the same thing. It is placed on /company/members on purpose, where the
+base has two entries anchored and one of them, KB-4B889114, makes a claim this task will walk into.
+The conditions page says plainly that this is not a fair test of the arrival hook in general: it is
+a test of whether an entry that does arrive gets read and acted on, which no run has ever been
+observed doing. The general hit rate stays what the arrival measurement says it is.
+
+The scope section forbids deleting anyone who existed first and confines the one permitted
+invitation to the test organization, because run 03 showed a run will reverse what it changed if
+told which changes are reversible.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+2f17e22 2026-09-11 The outside check, assembled and ready to hand over
+Everything known about this base's quality was decided by a party with an interest in the answer.
+Each run graded its own question rows. Each run decided its own captures were worth writing. I read
+the reports, agreed, and wrote the commit messages claiming the entries are good, having also
+written the tooling. The independent reviewer proposed this falsifier at the start of the rebuild
+and it has been the cheapest open item ever since.
+
+The packet is 26 blinded question rows across four runs, the 19 entries agents wrote, and the 37
+entries those rows cite -- self-contained, so the whole job can be done without opening a
+repository. Blinded from the rows: `held`, `answer`, `found_via`, `note` and `backed_by`. The first
+is the verdict under test; the rest are the run's own reasoning, and a grader who reads "the base
+surfaced only the derived table for this wording" will agree rather than decide. Confirmation
+counts are NOT blinded: a confirmation is evidence a second run saw the same thing, not an opinion.
+
+BLINDING BY LOCATION, NOT BY INSTRUCTION -- this replaces the plan carried until now. The earlier
+plan was to grade in place with memory-guard.mjs parking the leaky memory entries. That works, and
+it enforces the rule by asking, while the material to avoid is a `git log` away: the commit messages
+in both repositories state my conclusions about exactly what is being graded. Copying the packet to
+a directory outside both repositories enforces it by construction, and takes the project memory with
+it, since Claude Code keys memory to the working directory. memory-guard stays documented as the
+fallback, with the two entries to park named and a warning against parking more.
+
+score.mjs refuses to manufacture agreement. `held` is what the run DID with an answer and the
+grader was asked whether the base ANSWERED; they line up at the ends and not in the middle, so
+NOT-USED is reported as unscorable rather than mapped. Where the two differ it names the row and
+stops: the run knew what it was trying to do, the grader read the entry cold as the next agent
+will, and neither wins by default.
+
+Part B has nothing to compare against, and the script says so where the number would go. That
+absence is the finding this exercise exists to remove.
+
+Stated in the README rather than discovered later: this is Claude grading Claude, with shared priors
+and shared blind spots. What makes it worth an hour is that the original reviewer was also a
+session, and it found the defect that caused this entire rebuild.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+91eb3ac 2026-09-12 The outside check disagrees, and caught this harness grading the wrong artifact
+Fourteen of twenty-six rows came back different, every one the same way: the run wrote HELD, the
+grader says PARTLY. A disagreement with no counter-examples is either a real bias or a difference
+in what the two parties were asked. Both were present.
+
+SIX ARE MINE. The packet copied today's entry files to explain what was served in the past, and the
+derived plane has been regenerated four times since run 01. Run 01 asked "Mutations.addItem
+InputAddItemType" and wrote down the full field list; the grader read today's gql-mutations-additem,
+found a pointer where the table used to be, and marked it PARTLY. Both correct, about different
+artifacts -- 5677 bytes then, 1202 now, the table moved into the type's own entry the next day.
+
+build-packet.mjs now resolves every cited entry at the commit that was HEAD when its run started,
+and Part A names the exact per-run file. Rebuilt: 18 of 47 cited entries differ from their current
+version. Not one stale file -- a third of the evidence. A corpus that is regenerated cannot be
+explained by its current state, and a re-grade that forgets that grades the wrong thing while
+looking exactly like one that did not.
+
+EIGHT STAND. For r02.1, r02.2, r02.5, r02.8, r02.9, r03.1, r03.3 and r03.4 the grader read text
+byte-identical to what the run read and still disagreed. So on the seventeen rows where the
+comparison is valid: nine agree, eight do not, and all eight say a run marked itself HELD on an
+answer that named the right neighbourhood and stopped. That is the bias the exercise was built to
+detect, and the first evidence that "the base answered 23 of 26" was ever generous.
+
+Part B holds up -- 18 of 19 mechanisms, 17 transferable, 19 of 19 on the right refutation channel
+and none reaching for `practice`. The capture help page is landing.
+
+But it found a contradiction no gate here can: KB-27B4CD10 and KB-4D082C89, written nine minutes
+apart by the same run, disagree about what a pending invitee looks like. Run 04 worked the
+distinction out mid-task, wrote the correct entry, and never went back to the first. The fingerprint
+check compares coordinates and scope, which differ; nothing compares claims. And the door has no
+verb for it -- `dispute` is framed as contradicting someone else, `retire --superseded-by` is heavy,
+and an agent that learns more has no natural way to correct what it wrote twenty minutes earlier.
+That absence is the thing to fix, not just this pair.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+9c7e257 2026-09-12 Three ways to notice you are contradicting yourself, before anyone else has to
+The blind grader found KB-27B4CD10 and KB-4D082C89 disagreeing about what a pending invitee looks
+like. Run 04 wrote them nine minutes apart, worked the distinction out in between, wrote the correct
+one, and left the first serving a refuted clause for a day.
+
+The fingerprint gate was RIGHT to pass them. Different anchors, different scope axes, two distinct
+facts -- which they are. The failure is not a duplicate slipping through; it is one clause inside an
+otherwise-correct entry going stale, and nothing in a text corpus will ever detect that. It takes
+reading two paragraphs and noticing a `because` in one is refuted by an observation in the other,
+and the only party who can is the writer, while the page is still open.
+
+So all three of these put the writer in front of it at a moment when acting costs seconds.
+
+BEFORE THE WRITE, capture now lists the experiential entries already anchored on the coordinates
+you named. The near-question check the door already had would not have fired on that pair -- their
+wordings are nothing alike, and only the coordinate was shared, which is exactly what an anchor is
+for.
+
+`kb supersede <id>` replaces an entry in one act: write the new fact, retire the old one pointing
+here, keep the reason in its body. This was already possible with capture + retire --superseded-by,
+and in four runs nobody ever did it -- two verbs in the right order while the work is still open,
+and the verb that comes to mind, `dispute`, is written for contradicting someone else. There was no
+move meaning "I know more now than when I wrote that".
+
+Capture-then-retire, and the order is load-bearing: a capture can be refused, and retiring first
+would leave the fact withdrawn with nothing in its place. The fingerprint gate needed one exemption
+to make this work at all -- replacing an entry about the SAME coordinates at the SAME scope is the
+ordinary case, and without it the fact being replaced collides with its own replacement. The
+exemption is exactly one id wide, and a test proves a collision with a third entry still refuses.
+
+`kb demand` now reports the consolidate groups. That verb has grouped entries by shared coordinate
+since the first six were built, it found this pair unprompted the first time anyone typed it, and
+nobody had ever run it. The brief's closing checklist now names it, with what a group means: not a
+defect, but a set a reader is served together, so its members had better agree.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+7c401f2 2026-09-12 Run 05: conditions, a task next door to run 04, and a defect left in on purpose
+Two things this run is for, and neither has been observed.
+
+DOES THE BASE HELP WHERE IT ACTUALLY COVERS? Every run so far worked fresh ground, so what was
+measured was what the base gives on an empty subject. Run 05 works next to run 04, where seven of
+the nineteen entries are about this area. Whether real coverage helps or misleads has never been
+seen, and it is the mode the thing is built for.
+
+ARE THE THREE PROTECTIONS USED? The anchor warning, `kb supersede` and `consolidate` in the closing
+list have never met a live agent.
+
+So KB-27B4CD10 keeps its refuted clause for the duration. Fixing it first would leave the
+protections with nothing to catch, and fixing it myself would mean recording an observation I did
+not make -- I have not seen the invitee state and a run has. The cost is named in the conditions
+page rather than hidden: if the run leans on that clause it loses time, bounded by a test deployment
+and a wrong causal attribution rather than a destructive instruction. Nothing in the brief or the
+task hints at any of it.
+
+The task is the invitation lifecycle from the maintainer's side -- what can be done about an
+outstanding invitation, not another mapping of member states. It lands on /company/members by its
+own logic rather than by instruction, which is where both the coverage question and the contradicted
+pair live.
+
+Run 05 is also the first repeat of run 04's conditions rather than another step. Run 04's result --
+fifteen touches, nine in the middle 60%, against run 03's zero -- is one observation. This is what
+makes it a finding or an accident.
+
+MEASUREMENT starts with the authoring session's log in it, because that hook fires on every tool
+call including the ones that write these files. The task says to set VC_MEASURE_SESSION to the other
+id, in one line, and the conditions page records it as a condition rather than leaving it to be hit.
+
+Also: the grader brief now says the entry files carry a run suffix and that `--r01` means that entry
+as run 01 was served it. The first pass had no suffixes and graded today's files against yesterday's
+rows, which is what produced six false disagreements.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+524612a 2026-09-12 reconcile was measuring whichever log sorted first
+Run 05 found it. `reconcile.mjs` resolved its logs with `files.find`, which takes whichever name
+sorts first and ignores VC_MEASURE_SESSION -- the variable log-row.mjs and the door both honour, and
+which the settings comment claims all of them do. So it reconciled run 05's four question rows
+against a ten-line log from the authoring session, and reported that the log had kept pace with the
+work. The only tell was a negative call count after the last row.
+
+Run 04's numbers were right by luck: `8df1fb2c` sorts before `c842f27b`. Run 05's `f00f5968` does
+not. A measurement that is correct by the accident of a hex string is not a measurement.
+
+It now honours the variable, and with two candidates and no variable set it refuses and says so,
+which is what journal.mjs has always done. Re-run properly, run 05 reads 217 calls, median 53 per
+row, no under-logged windows.
+
+Second deliberate divergence from the vendored toolkit. The first was `backed_by` gaining the
+KB-* values; both are in vendor/agent-log/README.md.
+
+Also in this commit: the re-grade packet no longer puts a run suffix on experiential entry files.
+Those are written once and graded as they stand today, so `KB-996BDF08--r02.md` never existed. The
+second grader hit that on five rows, worked out what had happened and graded them correctly, which
+is luck rather than design.
+
+And a stray screenshot removed from the working tree -- mine to own: it belonged to run 05, which
+was live at the time, and I took it for untracked cruft. Deleted with no way back. Probably harmless,
+since a screenshot reaches the agent as an image rather than being re-read from disk, but that is a
+hope rather than a fact.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+f7208a8 2026-09-12 The scrub scan cried wolf on every repository
+Pointed at a repository root it walked .git, matched the 40-hex token shape against every commit
+SHA in .git/logs/HEAD, and reported five files needing a scrub with not a secret among them. It did
+that to me one commit ago, against a base I had just pushed.
+
+A safety tool that fires on every repository is one people stop reading, and that is the failure it
+cannot afford -- the whole point is that a hit means stop. .git and node_modules are skipped now;
+everything in the working tree is still scanned.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+b389323 2026-09-12 One matched word was never evidence, and two graders said so without knowing it
+The plan after run 05 was to give the experiential plane a guaranteed slot and
+raise the floor. The first half was already false: that plane is 24 entries of
+614 and takes 20 of 60 slots, leading the list in 8 of 23 rows. It had taken
+BOTH of r1.2's, with two entries about order-discount rounding and about
+UserType.lockedState, on the evidence of `show`+`discount` and `show`+
+`storefront`. A reserved slot would have made that permanent.
+
+The floor goes from one exact content term to min(3, terms in the question) --
+min, because `InputAddItemType` is a whole question and cannot supply three.
+Five rows change; none loses an entry it was using; the off-topic entries the
+two blind graders named drop from 2 of 7 to 1 of 7.
+
+Field boosts and one extra slot were both built and both rejected, with what
+each cost in the README. No floor moved a single wanted entry: a filter cannot
+reorder, which is arithmetic rather than a tuning failure.
+
+The bar changed too, and not by me. "The ten PARTLY rows rise" needed a third
+blind grade to evaluate, so in practice I would have evaluated it. The graders
+named entries in their prose -- 7 they called off-topic, 10 the corpus holds and
+they wanted -- and grader-bar.mjs counts those instead.
+
+Two replay anchors are overridden and now record WHO: r3.2 by both graders
+independently, r2.10 by me, said plainly because it is the weaker of the two.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+7895ef7 2026-09-12 Three anchors that read like coordinates and resolve to nothing
+The plan asked for a check naming the breadcrumb anchors -- "Admin SPA:
+Security > Users > <account> > Roles" and one sibling. It found those, and
+found something worse beside them.
+
+  Mutations.deleteOrganizationContact   written after watching a Delete button;
+                                        the schema has Mutations.deleteContact
+  Promotion.isActive                    four Promotion fields are projected and
+                                        isActive is not one of them
+  GET /api/platform/security/users/id   the route is .../id/{id}
+
+All three look reached. Nothing pointed at them for a day.
+
+Reported by NAMESPACE, because the first cut printed 24 lines over 24 entries
+and a gate that long is a gate nobody reads. Twenty of them said one thing
+twenty times -- this base projects the platform REST API and the GraphQL schema,
+and the corpus holds observations about /company/members and about the C# model
+where the schema has DiscountType. That is coverage, and it is now said once per
+surface with the entries named. What the split buys is the other line: in a
+namespace projected in full, an unresolved coordinate is a claim the contract
+does not support.
+
+NOTICES, NOT PROBLEMS, and they print on a green run because every run is green.
+A menu path carries the only record of where somebody stood; answering it with a
+refusal would buy a tidy corpus by deleting the true half of the entry.
+
+None of the three is corrected here. Two of them are somebody's guess at what a
+button called, and replacing a guess with my own guess is how an observation
+becomes an assertion. The third is a spelling fix against this base's own
+contract, and there is no verb for that -- supersede mints a new id, and another
+entry cites this one. Named in the handoff for run 06.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+1dd6270 2026-09-12 Say it at the door, where the person who saw the screen is still standing
+The gate finds an unreachable anchor over the whole corpus. That is the right
+place to count them and the wrong place to act: the three it found had been in
+the base since the runs that wrote them, and the only party who could have told
+a misspelling from an unextracted surface was the agent who had just been
+looking at the button.
+
+So `kb capture` now says the same thing about the write in front of it, in the
+same position as the cross-plane read and for the same reason -- after the
+write, because the observation is recorded either way, and what to do about it
+is a judgement no tool can make.
+
+Three kinds, told apart rather than counted together:
+
+  invented    no derived entry names it, in a namespace where every sibling
+              resolves. The one worth stopping for.
+  menu-path   honest about where somebody stood. Move it to the body.
+  uncovered   a surface this base has never extracted. Not the writer's problem,
+              and deliberately silent at the door.
+
+The shape vocabulary moves to anchors.mjs beside normalizeAnchor, so the gate
+and the door cannot drift apart. What the writer was told is recorded in the
+journal next to crossPlane: a capture whose anchor was flagged and kept is a
+different act from one where nothing was flagged.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+f2b4fbe 2026-09-12 Run 06: a subject the contract covers completely and nobody has ever done
+Five runs and the claim that the derived plane answers "what is it called" and
+not "how does it work" has never been put to a run on purpose. It was inferred
+from two blind grades of lists rebuilt at old commits. Runs 01-03 worked fresh
+ground when the corpus was thin and retrieval was pre-fix; runs 04 and 05 worked
+ground where seven and then nineteen experiential entries already sat.
+
+Shared lists are the clean case. Twenty-one operations, WishlistType, a `scope`
+field documented as "List scope (private or organization)" and a `sharingKey`
+documented as "Sharing key (URL argument)" -- every coordinate the task turns on
+is named, nothing about what any of them does, and not one experiential entry
+anywhere near them.
+
+It is also the live read on the raised floor. The replay says five rows changed;
+only a run says whether the misses stop feeling like misses, and run 05 left the
+subjective form of the defect in its own words -- "asked what a maintainer can
+do, served what the states are" -- to compare against. The run's own questions
+then become new replay rows, which the existing 23 cannot be: the floor was
+tuned on those.
+
+The three wrong anchors stay wrong and the conditions say why. The run is not
+sent to fix them; what it does if it meets one is a finding.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+a677fcd 2026-09-13 The obvious way to give each run its own log folder does not work
+Setting up run 06 I tried to delete the one instruction the task gives about
+measurement -- "put VC_MEASURE_SESSION on every kb call" -- because it is the
+shape this rebuild keeps removing: telling the agent to remember something the
+mechanism could carry. Run 05 complied 25 times out of 25, having worked out on
+its own that a shell export does not survive between tool calls, and a single
+missed prefix would have dropped a question row silently.
+
+settings.json already named the alternative and log-row.mjs says in as many
+words that with a per-run VC_MEASURE_OUT "exactly one candidate exists by
+construction". So: override it in settings.local.json, which is read at session
+start, and the authoring session keeps the value it started with while the new
+run picks up the new one.
+
+The premise is false. The env block is re-read on EVERY hook invocation, and
+this session followed the new value within one tool call and filed its own logs
+in the run's folder. Two sessions cannot be separated by a setting they both
+read, and the door -- a child process of a shell -- has no way to learn which
+session it belongs to.
+
+Reverted whole. What survives is the finding, in the conditions and beside the
+rule in settings.json, so nobody spends the same half hour: the candidate for a
+real fix is CLAUDE_CODE_HOST_SESSION_ID, which IS per-session and IS inherited
+by tool children, but is a different identifier from the transcript id the logs
+are named by -- so the hook must record both. That changes the log format, and
+making that change on the morning of a run is how an instrument breaks the
+measurement it exists to protect.
+
+Also in the task: the run needs a second identity for one of its four questions
+and the brief names exactly one storefront sign-in that works. Rather than let
+it hunt for credentials against a lockout counter, it is told not to, and told
+what it does have for free -- a signed-out browser, which is the whole of the
+sharing-key question, and the Admin SPA.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+6256ccd 2026-09-13 The headline number of this measurement never had a script, and does not reproduce
+"Touches, largest silence, touches in the middle 60%" decided that briefs do not
+fix front-loading, is why the loop and the arrival hook exist, and is quoted in
+three run conditions and in a memory. It was computed by hand each time and the
+definition of "touch" was never written down. consultation-shape.mjs writes it
+down -- a call is a call and not a log line, a consultation is `kb deliver|ask`
+and not any kb invocation, and the silence counts the tail after the last one.
+
+With one definition over all six logs, and the question CSVs agreeing:
+
+  run 01   81 calls   9 consults   8 in the middle 60%   (told to consult)
+  run 02  172          8           3                     (told to consult)
+  run 03  319          4           0
+  run 04  177          3           1
+  run 05  217          4           2
+  run 06  248          6           3
+
+Run 01 did not front-load. Run 03 did, completely. And the rise I have been
+reporting for runs 04-06 -- 15, 24, 27 "touches" -- was counting kb calls, which
+is mostly WRITING. By consultations, 04 and 05 asked fewer questions than the
+two runs that were told to ask. What the loop and the arrival hook moved is how
+much a run writes back, which is worth having and is not what was claimed.
+
+Also from run 06, both its own findings about the instrument:
+
+  * browser_network_request is the one tool deliberately outside the permission
+    allow-list, because run 02 asked it for request-body on a sign-in POST and
+    got the password in plaintext. Run 06 used it 15 times and reported reading
+    response bodies only -- and the log could not corroborate that: it recorded
+    `keys:index,part` and never which part. The dangerous argument of the
+    dangerous tool was invisible in the ground-truth record. `part` is a mode,
+    not a payload, so logging it does not cross the rule that keeps bodies out.
+
+  * TASK-run-06 told the run KB_PHASE was "orient, work or close". I invented
+    that yesterday; the vocabulary is orient|locate|understand|reproduce|change|
+    diagnose|verify|restore|report and the brief has it right. The row was
+    refused, the run caught it in the door's output and re-asked. A run that
+    skimmed the refusal would have lost the row silently.
+
+Run 06's five questions join the replay as r6.1-r6.5 -- the first rows from a
+run that never saw the configuration these settings were tuned on.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+3decb71 2026-09-13 An anchor is where a claim is filed, so correcting one need not destroy its id
+Three entries were filed under coordinates that resolve to nothing, and nothing
+could fix any of them. `supersede` mints the id from the subject, so correcting
+an address meant destroying the number other entries cite -- and KB-4A8606CA,
+one of the three, is cited by KB-FA724D31. The only moves were to leave a
+known-wrong address in place or to break a reference, and for a day the base did
+the first.
+
+An anchor is not part of the claim. Changing it alters neither what the entry
+asserts nor who observed it, so the id has no business changing with it. That is
+the whole argument for editing in place here and against it everywhere else in
+capture.mjs.
+
+The one real hazard is that the FINGERPRINT does move -- identity is (normalized
+anchors, scope) -- so a correction can collide with an entry that was already
+there. Refused by the same rule the door uses, against the served survivor, and
+named in the message rather than found later by a gate.
+
+One of the three is corrected here: GET /api/platform/security/users/id gains
+the /{id} that makes it a route, verified against this base's own derived plane.
+The other two are somebody's guess at what a button called -- and for
+KB-FA724D31 the schema offers two candidates, deleteContact and
+removeMemberFromOrganization, where the entry's own claim ("removes the
+organization membership and nothing else") points at the second. Choosing
+between them by reading is how a guess becomes an assertion. A run can settle it
+in one move now that the move exists.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+111f812 2026-09-13 A session can find its own log, so a run stops having to remember which it is
+Two sessions sharing a measurement directory is the NORMAL state here: the
+authoring session's hook recreates its log on every tool call, so nothing can
+leave the folder empty from inside it. The resolvers refuse to guess, correctly,
+and the price was an instruction on every kb call a run made. Run 05 carried the
+prefix 25 times out of 25 and run 06 did too -- and one missed prefix drops a
+question row with nothing downstream showing it missing. A mechanism asking an
+agent to remember is the shape this rebuild keeps removing.
+
+The transcript id the logs are named by is invisible to a child process.
+CLAUDE_CODE_HOST_SESSION_ID is not: the harness sets it per session and tool
+children inherit it. The hook now writes it into every record, and each of the
+three resolvers -- the door's, log-row's, reconcile's -- picks the log carrying
+its own. Nothing is guessed: several candidates and none of them mine is still a
+refusal, which is what the six archived runs get, since their logs predate the
+field.
+
+Read from the first line AND the last. A log that began before the field existed
+carries it on every line written since, and reading only the head would leave a
+live session unable to recognise its own file.
+
+Also here, and it is a negative result: I proposed serving an entry first when a
+question names the coordinate it is anchored on, to fix the one retrieval failure
+run 06 produced. Checked before building it. On that row it matches nothing but
+the bare word `organization`, and it fires only on a row that was already
+answered correctly. Dropped.
+
+What run 06's failure actually shows is in diagnose.mjs now: every matched term
+prints with how many documents carry it. Two candidates matched four of nine
+terms each and the coverage count cannot say that only one of them matched the
+noun the question was about. A first cut flagged candidates whose every matched
+term was common; it did not fire on the one case it was written for -- the loser
+matched `scoped`, which four documents carry -- so the flag was removed rather
+than shipped. A readout, not a rule.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+0e01417 2026-09-13 Run 07: an order with three kinds of product, and four entries written for something else
+Danil's question. Place one order carrying a simple product, a variation and a
+configurable one, then establish in the Admin whether what the platform holds is
+what the storefront charged -- field by field, for three kinds that reach the
+cart by three different routes.
+
+It is also the fourth coverage condition, and the one nobody has watched. Runs
+04-05 worked ground where the corpus held entries ON the subject; run 06 worked
+ground with coordinates and no experience at all. Here four entries about how a
+discount lands on an order sit one step away from "are the fields correct" --
+all four written by runs doing promotions work, none of them about this.
+
+Testable before the run starts, and tested: "does the admin order screen show
+the same totals the storefront charged" is served KB-4982C91F first, an entry
+about the Admin rendering an unrounded discount beside a rounded one. A reusable
+observation is the base's best property and also where a plausible near-miss
+costs the most. One run will start to say which this is.
+
+THE TASK PLACES ORDERS. Every task from run 01 to run 06 forbade it. An order
+cannot be deleted, only cancelled, so the scope section says what remains rather
+than implying a cleanup that does not exist.
+
+And the first task with no VC_MEASURE_SESSION line in it. Verified in the shape
+this run will actually meet, not only in the unit test: an authoring log that
+began before the host field existed and carries it only on its newest lines,
+beside a log written entirely after -- each session resolves to its own,
+stamped, no refusal.
+
+Promotion.isActive stays wrong on purpose. `kb reanchor` makes correcting it one
+move now, but the right value is somebody's observation and I have not seen the
+screen. It sits in cart territory, which this run works, and neither the brief
+nor the task mentions it.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+d9c6caf 2026-09-13 Run 07 found three holes in the instrument, and two of them were mine
+THE BRIEF NEVER SAID TO GATE THE BASE. Run 07 wrote an entry whose anchor Git
+Bash had rewritten into a path inside its own installation, and left the corpus
+failing `kb validate`. It did nothing wrong -- 6 deliver, 8 capture, 5 demand,
+1 consolidate, 1 stat, and no validate, because nothing ever asked. The rule
+lived only in my head, which is the third time this week. It is in the closing
+protocol now.
+
+THE DOOR NOW REFUSES A SHELL-MANGLED ANCHOR. Everything else the door dislikes
+about an anchor is a judgement the writer is better placed to make. This one is
+not: `C:/Program Files/Git/{category}/{product-slug}` is not what anybody meant,
+it is what MSYS did to what they meant, and the entry is unreachable from the
+moment it exists. The clincher is that my own correction of it was mangled
+identically, by someone who had just read the failure and knew the cause.
+Knowing about the trap does not help you avoid it.
+
+RECONCILE MUST NOT MATCH ON THE HOST ID, and I had made it. The door resolves
+that way because the caller IS the run. reconcile is run by an analyst pointing
+at somebody else's directory, so the caller's own host id names the wrong log
+confidently -- reproducing the exact defect run 05 caught. Removed, with the
+reason written where the next person will look. The refusal caught it.
+
+And the fix made after run 06 paid off immediately: 38 of 38
+browser_network_request calls recorded `response-body`. Run 06 made the same
+claim and the log could not corroborate it. This one is verified.
+
+RETRIEVAL — part four of the README. Four rows now show one shape: the written
+plane displacing the derived entry that names the exact type asked about. The
+planes ARE on the same scale (mean best score 323.5 against 344.8), so the
+category error I assumed is not there. What is disproportionate is the win rate
+-- 39 documents against 590, leading 12 of 30 rows. Four mechanisms measured;
+every one buys a row and sells another, and every constant in them is
+underivable. Nothing shipped. The trend is recorded instead, because it is
+monotone and cheaper to be right about later than a knob chosen today.
+
+The baseline is re-taken, with r2.5's regression written down first -- a
+baseline re-taken without recording what it swallows launders a regression. r2.5
+will report LOST forever, because its anchor is an explicit override; that is
+the r1.2 precedent and only a run can settle it.
+
+And the conditions page contaminated its own measurement: run 07 read it at call
+2, hypothesis and predicted answer included. From run 08, a conditions page
+records what is TRUE about the setup and the prediction goes in the commit
+message -- pre-registration a run does not read. Verified: no git log, git show
+or archive access in 302 calls.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+0d6659b 2026-09-14 The name of a deployment is not evidence of anything, so the door stamps the version
+54 of 54 evidence rows in the live base carried a deployment NAME and no version. The CLI has
+accepted --pin and --platform-version since the door was built, and no run has ever passed them --
+while derived/pin.json, in the same base, held 3.1007.26 the whole time. The README's own rule is
+that an environment's name proves nothing; a corpus of rows saying only `vcptcore_stable` is that
+rule being broken by the door that enforces it.
+
+stampOf() resolves the version rather than asking for it. M3 forbids inventing a plausible value;
+it does not forbid reading one that already has a home, and asking a writer to retype a published
+number is the second copy this base refuses everywhere else.
+
+It stamps ONLY when the observation was made on the deployment the corpus was projected from. On
+any other deployment the pin describes a different system, so nothing is stamped and the writer is
+told, with the flag that fixes it. It does not REFUSE: a foreign-deployment observation is how
+observedElsewhere is populated at all, and three tests in capture.test.mjs encode this base's
+stance that a fact whose limits are visible beats no fact. Refusing would have been the tidier
+rule and the wrong one.
+
+Why a pin and not a set of labels: a UI fact breaks on a storefront release, a server fact on a
+module release, and the platform version is the coarsest of the three. Three fields would be three
+copies. The pin is one key that release.json resolves into the whole vector -- bundle, platform,
+50 matched module versions, theme -- which is the same reason the registry is pinned by URL and
+not by version.
+
+readPin moved from resolve.mjs to capture.mjs and is imported back; resolve already depends on
+capture, so that direction was the one without a cycle.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+84b1da2 2026-09-14 Run 08 asks about a shipment, and carries the first flow entry the base has ever held
+The task is the order's SHIPMENT -- run 07 created SH260913-00001 and never looked at it, and
+nothing in the base describes one. That is a genuine hole rather than a re-ask, which is the bar a
+run has to clear to be worth a day.
+
+The second thing this run is for is KB-C51ACC81, written into the base yesterday from run 07's
+archived tool log: the route sequence from finding a product to reading the order back in Admin.
+Run 07 spent 78 calls between reaching /cart and seeing the order in Admin, and 118 of its 302
+calls on travel -- navigating, clicking, typing, snapshotting. Most of the 78 was rediscovering
+that this storefront has no /checkout route (delivery, payment and Place order are controls on
+/cart), that the quantity stepper IS the add-to-cart control, that a variation is added from a row
+on its parent's page, and that #!/orders does not open the Orders module on its own.
+
+PRE-REGISTERED PREDICTIONS, here rather than in RUN-08-CONDITIONS.md, because run 07 read its
+conditions page at call 2 and contaminated the verdict on the thing it existed to test:
+
+  1. Run 08's travel share falls below run 07's 39%. Stated with low confidence -- the shipment
+     task needs less catalog hunting than three product kinds did, so a fall is over-determined
+     and will not by itself be evidence for the entry.
+  2. The sharper one: run 08 reaches a placed order in FEWER THAN 40 calls from first arriving on
+     /cart, against run 07's 78. This is the number that is about the entry rather than the task.
+  3. KB-C51ACC81 is served, by `kb ask` or by the arrival hook, before the run places its order.
+     The hook was measured at close to nothing over three runs' logs -- once in run 02's 172 calls,
+     twice in run 03's 319 -- for a stated reason: the derived plane is anchored on GraphQL type
+     names that never appear in a URL, and only two captured entries were anchored on routes, both
+     on /company/members. This is the first entry anchored on /cart, which every order run visits.
+     If the hook fires here and the entry gets used, the mechanism pays in proportion to route
+     anchors, exactly as that measurement said it would.
+  4. Nothing in run 08 disputes KB-C51ACC81. If something does, the entry was distilled wrong and
+     the dispute is worth more than the travel number.
+
+If 2 holds and 3 does not, the entry was found by retrieval and the hook is still worthless. If 3
+holds and 2 does not, the entry was delivered and ignored, which is a different and worse problem
+than not being found.
+
+What is NOT being done here: no flows/ directory, no new plane, no `type` field, no change to
+retrieval. One entry through the existing door, measured against a run that did the same work
+without it. A plane is a week of work and this is a day.
+
+Sign-in stays in the brief and out of the base. It is a condition of the experiment rather than a
+fact about the platform, and KIND-ANALYSIS already measured that harness knowledge -- asked in 7 of
+7 runs -- is the one class a platform base cannot hold by construction.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+=====
+2f092b2 2026-09-14 Close the gap a personal ignore file was covering
+.claude/settings.local.json was excluded here only by a rule in ~/.config/git/ignore -- protection
+that does not survive a clone. It can carry env values: during the run-06 experiment it carried
+VC_MEASURE_OUT, which is how that experiment was found not to work.
+
+.scratch-*/ joins it. Run 07 wrote response bodies pulled off a live deployment into .scratch-run07/;
+those are unredacted platform responses and belong nowhere near a commit. The directory was gone by
+the time anyone looked, which is luck rather than a rule.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
