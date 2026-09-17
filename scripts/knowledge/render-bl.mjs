@@ -114,6 +114,16 @@ export function bodiesFromBase(base) {
   for (const e of readRules(base)) {
     const rid = ruleIdOf(e.data.subject);
     if (!rid) continue;
+    // A WITHDRAWN RULE LEAVES THE PAGE, and the marker it leaves behind is what says so out loud.
+    //
+    // Rendering it anyway was the first behaviour, and it is the wrong one in the direction that
+    // costs a reader: `kb retire` appends a `**Retired.**` paragraph to the body, so the entry went
+    // on standing in the oracle — read by 172 consumers as an invariant — with one extra line that
+    // `bl:lint`'s field schema does not know about, while `kb rules` had already stopped serving
+    // it. Skipping it here turns the marker into a `missing`, which refuses the render and names
+    // the line a person has to delete. Retiring is destructive and stays a human act; this only
+    // makes the page and the base disagree loudly instead of quietly.
+    if (e.data.status !== "active") continue;
     const ls = e.body.trimEnd().split("\n");
     while (ls.length && ls[0].trim() === "") ls.shift();
 
@@ -195,8 +205,22 @@ function main(argv) {
   let { text, missing, unused } = render(scaffoldText, bodiesFromBase(base));
 
   if (missing.length) {
-    console.error(`[bl:render] FAIL — ${missing.length} marker(s) name a rule the base does not hold:`);
-    for (const id of missing) console.error(`  ${id}`);
+    // Read only on the failure path: it is a second pass over the store, and the answer only
+    // changes what the message says.
+    const retired = new Set(
+      readRules(base)
+        .filter((e) => e.data.status !== "active")
+        .map((e) => ruleIdOf(e.data.subject))
+        .filter(Boolean),
+    );
+    console.error(`[bl:render] FAIL — ${missing.length} marker(s) name a rule the base does not serve:`);
+    for (const id of missing) console.error(`  ${id}${retired.has(id) ? "   — retired" : ""}`);
+    if (missing.some((id) => retired.has(id))) {
+      console.error(
+        `\nA retired rule leaves the page. Delete its \`<!--RULE <id>-->\` line from`
+          + `\n${knowledgeLabel(SCAFFOLD_REL)} — that deletion is the human half of retiring one.`,
+      );
+    }
     return 1;
   }
   // A rule with no marker would be INVISIBLE on the page while still being in the corpus — the exact
@@ -255,8 +279,10 @@ function main(argv) {
     }
     console.error(
       `[bl:render] FAIL — ${knowledgeLabel(PAGE_REL)} is not what the records render. Either the page was`
-        + "\nhand-edited (edit the RECORD — `kb amend` — and re-render) or the renderer changed."
-        + "\nRun `npm run bl:render` to see the diff in git.",
+        + "\nhand-edited or the renderer changed. The page is GENERATED: the rule's own record is the"
+        + "\nartifact to edit — `kb show <BL-id>` prints its path under `rules/` — then `kb reindex`"
+        + "\nand render again. Run `npm run bl:render` to see the diff in git."
+        + "\n(`kb amend` is for flows and refuses a rule; a rule's body is edited in its record.)",
     );
     return 1;
   }

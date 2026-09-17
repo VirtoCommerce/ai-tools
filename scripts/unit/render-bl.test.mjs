@@ -8,7 +8,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { split, render } from "../knowledge/render-bl.mjs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { split, render, bodiesFromBase } from "../knowledge/render-bl.mjs";
 
 const PAGE = [
   "---",
@@ -75,4 +79,26 @@ test("a marker with no rule fails loudly rather than rendering an empty section"
   const { missing, text } = render(scaffold, bodies);
   assert.deepEqual(missing, ["BL-PRICE-002"]);
   assert.match(text, /<!--RULE BL-PRICE-002-->/, "the marker survives, so the failure is visible in the diff too");
+});
+
+// A WITHDRAWN RULE MUST NOT KEEP STANDING IN THE ORACLE. `kb retire` appends a `**Retired.**`
+// paragraph to the record and stops serving it; rendering it anyway left the page teaching an
+// invariant the base had already withdrawn. Not reachable through `split`/`render` — the status is
+// read where the records are, so this drives `bodiesFromBase` against a base on disk.
+test("a retired rule leaves the page, and its marker is what says so", () => {
+  const dir = mkdtempSync(join(tmpdir(), "bl-render-"));
+  mkdirSync(join(dir, "rules"));
+  const record = (id, rid, status) =>
+    `---\nid: ${id}\nsubject: ${rid} A title\nplane: normative\nstatus: ${status}\n`
+    + `refutableBy: observation\nevidence:\n---\n\n${rid}: A title \`[P1-data]\`\n- **Rule:** Something.\n`;
+  writeFileSync(join(dir, "rules", "KB-00000001.md"), record("KB-00000001", "BL-CART-001", "active"));
+  writeFileSync(join(dir, "rules", "KB-00000002.md"), record("KB-00000002", "BL-CART-002", "retired"));
+
+  const bodies = bodiesFromBase(dir);
+  assert.deepEqual([...bodies.keys()], ["BL-CART-001"]);
+
+  // …and the page therefore refuses rather than dropping the entry quietly.
+  const { missing } = render("<!--RULE BL-CART-001-->\n<!--RULE BL-CART-002-->\n", bodies);
+  assert.deepEqual(missing, ["BL-CART-002"]);
+  rmSync(dir, { recursive: true, force: true });
 });
