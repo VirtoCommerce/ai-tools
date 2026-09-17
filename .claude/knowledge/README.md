@@ -40,6 +40,10 @@ the one this file used to carry named four folders that no longer exist in it.
 
 - **Reference, don't inline.** Agents cite an ID (`BL-AUTH-005`, `ECL-13.3`, `VC-CART-*`) or a path,
   never paste the body into a report. See [`.claude/rules/reports.md`](../rules/reports.md).
+- **A cited id opens: `kb show BL-CART-003` · `kb show ECL-13.3` · `kb show VC-CART-001`.** A `BL-*`
+  resolves to its RECORD (evidence, confirmations, disputable); the other two to the SECTION of the
+  page that carries them, printed as what it is — asserted, with nothing to dispute. Pages say which
+  ids are theirs with `citedAs:` in their front matter.
 - **`oracles/` is the correctness backbone.** Exploratory and review flows use it as the
   "Familiar Problems" oracle and to seed Bad Neighborhood tours.
 - **`business-logic.md` is GENERATED** from one record per rule in the base's normative plane

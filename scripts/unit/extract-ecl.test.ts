@@ -13,8 +13,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "fs";
+import { dirname } from "path";
 import { parseLibrary } from "../knowledge/lint-ecl.ts";
 import { eclPath, renderMarkdown, selectSections, sliceLibrary, type EclSlice } from "../knowledge/extract-ecl.ts";
+import { pageSections } from "../../plugins/vc-kb/src/pages.mjs";
+import { knowledgeRoot } from "../lib/knowledge-base.mjs";
 
 const text = readFileSync(eclPath(), "utf-8");
 const slices = sliceLibrary(text);
@@ -252,4 +255,30 @@ test("the same library in LF and CRLF selects the same ids", () => {
   const lf = sliceLibrary(CRLF.replace(/\r\n/g, "\n")).map((s) => s.id);
   const crlf = sliceLibrary(CRLF).map((s) => s.id);
   assert.deepEqual(crlf, lf, "line endings must not change which sections an extract contains");
+});
+
+// THE THIRD PARSER. `kb show ECL-13.3` opens a section without going through either of the two
+// above — the plugin ships standalone and cannot import this repo's scripts, so it has its own
+// reader of the library's headings. Two implementations of one contract drift, and the drift is
+// silent in the worst direction: the gate passes a citation and the door calls it a dead
+// reference, or the door opens a section the gate does not know exists.
+//
+// Same technique as test one, one parser further along: compare id sets over the real library.
+test("the kb tool's resolver sees exactly the sections the ecl:lint gate sees", () => {
+  const fromGate = parseLibrary(text).sections.map((s) => s.id).sort();
+  const fromTool = pageSections(dirname(knowledgeRoot()))
+    .filter((s) => s.prefix === "ECL")
+    .map((s) => `ECL-${s.id}`)
+    .sort();
+  // A STALE CHECKOUT IS ITS OWN DIAGNOSIS, and without this line it reads as a total disagreement
+  // between the two parsers — 54 sections against none — which sends the reader to the wrong file.
+  assert.ok(
+    fromTool.length > 0,
+    "no page in this base claims the ECL prefix. The library declares `citedAs: ECL` in its front matter; a checkout taken before that landed will not have it — `kb sync`",
+  );
+  assert.deepEqual(
+    fromTool,
+    fromGate,
+    "`kb show` and `ecl:lint` disagree about what an ECL section is — a cited id would open the wrong thing, or nothing",
+  );
 });

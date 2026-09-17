@@ -206,6 +206,8 @@ export function renderMarkdown(selected: readonly EclSlice[], scope: string, tot
     "> applies. The `ECL-N.M` ids are the citation contract `Edge_Case_Refs` uses; cite them, do not",
     "> renumber. A pattern's `[OBSERVED]` / `[THEORETICAL]` status is part of the row — an observed",
     "> pattern has been seen in this product, a theoretical one has not.",
+    "> **A cited id opens on its own: `kb show ECL-13.3`** — use it for one section you meet",
+    "> later, rather than re-extracting or reading the whole library.",
     "",
     `**Included:** ${ids || "(none)"}`,
     "",

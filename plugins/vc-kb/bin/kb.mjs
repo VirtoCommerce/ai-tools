@@ -17,6 +17,7 @@ import { consolidate, renderConsolidation, MergeRefused } from '../src/consolida
 import { plan, renderPlan } from '../src/todo.mjs';
 import { writtenNeighbours } from '../src/coordinates.mjs';
 import { ruleIdOf, ruleDomainOf, severityOf, byDomain } from '../src/rules.mjs';
+import { findSection, pageSections } from '../src/pages.mjs';
 import { record } from '../src/journal.mjs';
 import {
   recordAsk, recordUses, recordSettled, closeQuestions, openQuestions, buriedQuestion, dropQuestion,
@@ -72,7 +73,10 @@ The six verbs (ADR §13.3). Everything else on this page serves them.
   kb show        <id>                         open ONE entry by id. What the catalog needs: when the
                                               written register is handed over whole, a reader picks a
                                               line and opens it. A rule opens by the id its author
-                                              gave it: kb show BL-CART-003.
+                                              gave it: kb show BL-CART-003. A cited SECTION of a page
+                                              in knowledge/ opens the same way -- kb show ECL-13.3,
+                                              kb show VC-CART-001 -- printed as a page, which is to
+                                              say asserted, with no evidence and nothing to dispute.
   kb rules       [<domain>]                   the NORMATIVE plane: what must hold, as opposed to what
                                               was seen. No argument lists the domains; a domain prints
                                               its rules. A rule is written with
@@ -362,8 +366,42 @@ async function main() {
       const hit = readRules(base).find((e) => ruleIdOf(e.data.subject) === wanted);
       if (hit) entry = hit;
     }
+    // A CITED SECTION OF A PAGE IS ALSO SOMETHING TO OPEN BY ID, and until this the door said "not
+    // in this base" about ids the base holds — `ECL-13.3`, cited 3,095 times in the consuming
+    // project's suites, and `VC-CART-001`. They are not entries and they do not become entries
+    // here: `knowledge/` is the fourth store and deliberately not a plane, so what is printed says
+    // so, with no trust line and no confirmation count it has not earned.
+    //
+    // AFTER the record lookups, never before. A `BL-*` id resolves to its RECORD, which carries the
+    // evidence and can be disputed; the page is its printout, and answering with the printout would
+    // hand back the one copy nothing can be recorded against.
+    let section = null;
+    if (!entry) {
+      section = findSection(base, id);
+      if (section?.ambiguous) {
+        console.error(`kb show: ${id} names a section in more than one page, and this tool does not guess which:`);
+        for (const p of section.ambiguous) console.error(`  ${p.page}:${p.line}  ${p.title}`);
+        console.error('A page says which ids are its own with `citedAs:` in its front matter.');
+        return 1;
+      }
+      if (section) {
+        console.log(`${id}  ${section.title}   [page section — asserted, not observed]`);
+        console.log(`  page       : ${section.page}:${section.line}`);
+        console.log('  this is a PAGE, not an entry: no evidence rows, no confirmations, nothing to');
+        console.log('  dispute. Watched it NOT hold? That is an observation — `kb capture`.');
+        console.log('');
+        console.log(section.text);
+        return { code: 0, outcome: { served: [{ id, plane: 'page' }], detail: { verb: 'show', page: section.page } } };
+      }
+    }
     if (!entry) {
       console.error(`kb show: ${id} is not in ${base}. Ids in the catalog are exact; check the line you read it from.`);
+      // A CITATION THAT NAMES A REAL PAGE AND A SECTION THAT IS NOT THERE is a different failure
+      // from a mistyped id, and the reader can only act on the difference if told: the page is
+      // where it should be, so what is stale is the citation.
+      const prefix = (id.match(/^([A-Z][A-Z0-9]*)-/) ?? [])[1];
+      const claimant = prefix ? pageSections(base).find((s) => s.prefix === prefix) : null;
+      if (claimant) console.error(`  ${claimant.page} carries the ${prefix} sections and has no ${id} — the citation is stale, not the page.`);
       return 1;
     }
     const d = entry.data;
@@ -957,6 +995,15 @@ async function main() {
       const disputedRules = activeRules.filter((e) => isDisputed(e.data)).length;
       console.log(`${activeRules.length} rules active (${rules.length - activeRules.length} retired) in rules/`
         + `${disputedRules ? `, ${disputedRules} DISPUTED by an observation here` : ''}`);
+    }
+    // THE PAGES, WHICH ARE NOT A PLANE and are counted here anyway: an id that `kb show` can open
+    // is a capability nobody discovers by reading the six verbs, and the suites cite thousands of
+    // them. Grouped by the prefix each page claims, because that is the form a reader holds.
+    const sections = pageSections(base);
+    if (sections.length) {
+      const claimed = [...new Set(sections.map((s) => s.prefix).filter(Boolean))].sort();
+      console.log(`${sections.length} addressable section(s) in knowledge/ — \`kb show\` opens one by id`
+        + `${claimed.length ? ` (${claimed.join(', ')})` : ''}`);
     }
     // The two kinds of evidence, counted apart. A corpus that cannot say how much of itself was
     // read off a running system and how much out of code cannot answer the question the review

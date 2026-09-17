@@ -107,6 +107,13 @@ records the reason; `N/A` means *genuinely undocumentable*, never "no doc found 
 `ECL-<n>.<m>` is a **citation contract**. Test cases across `regression/suites/**` cite these
 numbers in their `Edge_Case_Refs` column, and `npm run ecl:lint` (ECLC-001) is the gate.
 
+**And a cited id OPENS.** `kb show ECL-13.3` prints that section — the library declares
+`citedAs: ECL` in its front matter, so the prefix says which page a number belongs to. Use it to
+read one section without the 121 KB page, from anywhere, including a machine that has the base and
+none of this repository. `npm run ecl:extract -- --id ECL-13.3` is the other half: the same text
+wrapped in the subset banner a dispatch brief needs. A padded citation (`ECL-05.1`) resolves like
+the gate's does; an id the page does not carry says so, and that the CITATION is stale, not the page.
+
 - **NEVER renumber a surviving section.** Renumbering to "tidy up" silently repoints every
   citation that was previously correct — a corruption no gate can detect, because the new
   refs still resolve.
