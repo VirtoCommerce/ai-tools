@@ -35,7 +35,7 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
 import { knowledgePath, knowledgeLabel, KnowledgeBaseMissing } from "../lib/knowledge-base.mjs";
 import { readRules } from "../../plugins/vc-kb/src/capture.mjs";
-import { ruleIdOf, severityOf } from "../../plugins/vc-kb/src/rules.mjs";
+import { ruleIdOf, ruleDomainOf, severityOf } from "../../plugins/vc-kb/src/rules.mjs";
 import { resolveBase } from "../../plugins/vc-kb/src/base.mjs";
 
 export const PAGE_REL = "oracles/business-logic.md";
@@ -191,7 +191,8 @@ function main(argv) {
     return 1;
   }
 
-  const { text, missing, unused } = render(readFileSync(scaffoldPath, "utf8"), bodiesFromBase(base));
+  let scaffoldText = readFileSync(scaffoldPath, "utf8");
+  let { text, missing, unused } = render(scaffoldText, bodiesFromBase(base));
 
   if (missing.length) {
     console.error(`[bl:render] FAIL — ${missing.length} marker(s) name a rule the base does not hold:`);
@@ -199,8 +200,45 @@ function main(argv) {
     return 1;
   }
   // A rule with no marker would be INVISIBLE on the page while still being in the corpus — the exact
-  // asymmetry that makes a generated file untrustworthy. Reported, never silently appended: where a
-  // new rule belongs is an authoring decision about the scaffold.
+  // asymmetry that makes a generated file untrustworthy.
+  //
+  // IT IS PLACED, NOT REFUSED, when its domain already has a heading — because that is not an
+  // authoring decision. `BL-CART-099` belongs under `## Domain 2: Cart (BL-CART)`; the id says so,
+  // all 25 domain headings carry their prefix in brackets, and the only free choice is the position
+  // WITHIN the domain, where the end is the obvious answer. Making a person hand-edit the scaffold
+  // for that was a step whose entire content was "type what the id already said" — and a step like
+  // that is forgotten, after which `--check` fails on somebody else's commit.
+  //
+  // `--check` never writes, so CI still reports the omission rather than quietly repairing it.
+  //
+  // A rule in a domain the page has NO heading for is still refused: a new domain needs a title, a
+  // position among the others and usually a sentence, and none of that is derivable from an id.
+  if (unused.length && !argv.includes("--check")) {
+    const placed = [];
+    for (const id of [...unused]) {
+      const domain = ruleDomainOf(id);
+      // Found by scanning lines rather than with a pattern: the heading is `## <title> (<DOMAIN>)`,
+      // and a regex for that needs three escapes, each of them a chance to write `(` where an
+      // escaped one was meant — which is exactly how this went wrong once. Scanning asks the same
+      // question with no escaping at all.
+      const all = scaffoldText.split("\n");
+      const at = all.findIndex((l) => l.startsWith("## ") && l.trimEnd().endsWith("(" + domain + ")"));
+      if (at === -1) continue;
+      let last = all.length;
+      for (let n = at + 1; n < all.length; n += 1) {
+        if (all[n].startsWith("## ")) { last = n; break; }
+      }
+      while (last > at + 1 && all[last - 1].trim() === "") last -= 1;
+      all.splice(last, 0, "", marker(id));
+      scaffoldText = all.join("\n");
+      placed.push(id);
+    }
+    if (placed.length) {
+      writeFileSync(scaffoldPath, scaffoldText, "utf8");
+      for (const id of placed) console.log("[bl:render] placed " + id + " under " + ruleDomainOf(id));
+      ({ text, missing, unused } = render(scaffoldText, bodiesFromBase(base)));
+    }
+  }
   if (unused.length) {
     console.error(`[bl:render] FAIL — ${unused.length} rule(s) in the base have no marker on the page:`);
     for (const id of unused) console.error(`  ${id}`);
