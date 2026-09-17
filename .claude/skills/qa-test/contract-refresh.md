@@ -74,7 +74,7 @@ scripts, and running one does **not** freshen the other.
 
 | Artifact | What reads it | Refreshed by | Notes |
 |---|---|---|---|
-| `.claude/knowledge/api/graphql-schema.md` | **the agents** — `1c`, `1d`, `1e`, the Step-3b authoring pack | `npm run schema:refresh` | Writes only this file. Its header carries the introspection date (`> **Source**: … (YYYY-MM-DD)`) — that date is the rev you quote. **Does NOT touch the schema cache.** |
+| `knowledge/api/graphql-schema.md` | **the agents** — `1c`, `1d`, `1e`, the Step-3b authoring pack | `npm run schema:refresh` | Writes only this file. Its header carries the introspection date (`> **Source**: … (YYYY-MM-DD)`) — that date is the rev you quote. **Does NOT touch the schema cache.** |
 | `scripts/.graphql-schema.cache.json` + the 74 fixtures under `test-data/graphql/` | **the runner and the fixture gate** — `graphql-runner.ts`, `validate-graphql-fixtures.ts` | `npm run graphql:fixtures:validate:refresh` | Introspects live, `saveSchemaCache`, then validates all 74 fixtures and **exits non-zero on drift**. |
 
 So when `contract_surface` is `true`, `1b` item 2d runs **both — concurrently, in one message**:

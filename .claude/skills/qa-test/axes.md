@@ -69,7 +69,7 @@ block, and it was the one the shared *"same discipline"* phrasing concealed.
 
 **It resolves an artifact, not a surface.** Every other axis asks *does this ticket touch X, so should we
 also test X?* This one asks *does the persistent answer to "what exists and where" EXIST yet?* —
-`.claude/knowledge/domain/<name>.md`, `domain_slug` matching the ticket's domain. That makes its response
+`knowledge/domain/<name>.md`, `domain_slug` matching the ticket's domain. That makes its response
 unlike any other: the other five *consume* something already in the repo, and 2g's `ABSENT` branch
 **produces** it.
 

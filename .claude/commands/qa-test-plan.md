@@ -46,7 +46,7 @@ Before scoping the sprint, bring the storefront sitemap current — the sprint b
 /qa-sitemap
 ```
 
-(or, headless / non-interactive: `npm run sitemap:refresh` then apply the diff per the `/qa-sitemap` methodology). It is **diff-gated** — on a quiet sprint the deterministic crawler prints `SITEMAP_CHANGED=no` and nothing is written, so this step is a cheap no-op when the catalog hasn't moved. When it does change, `.claude/knowledge/domain/sitemap.md` (+ the plugin mirror) is refreshed and the rev bumped **before** the plan is written, so any sitemap references in the plan are current.
+(or, headless / non-interactive: `npm run sitemap:refresh` then apply the diff per the `/qa-sitemap` methodology). It is **diff-gated** — on a quiet sprint the deterministic crawler prints `SITEMAP_CHANGED=no` and nothing is written, so this step is a cheap no-op when the catalog hasn't moved. When it does change, `knowledge/domain/sitemap.md` (+ the plugin mirror) is refreshed and the rev bumped **before** the plan is written, so any sitemap references in the plan are current.
 
 Skip only with an explicit `--no-sitemap` flag (e.g. offline). Do not block the plan if the environment is unreachable — note "sitemap not refreshed (env unreachable)" and continue.
 

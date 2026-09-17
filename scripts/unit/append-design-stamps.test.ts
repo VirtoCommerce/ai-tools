@@ -16,6 +16,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve, join } from "node:path";
+import { knowledgePath } from "../lib/knowledge-base.mjs";
 import {
   COLUMNS,
   validateDesignStamps,
@@ -145,9 +146,9 @@ test("every catalog entry carries an in-vocabulary Archetype", () => {
   const known = new Set([...v.archetypes, ...v.nonDefectArchetypes]);
   const ids = loadCatalogProbeIds();
   assert.ok(ids.size >= 50, `expected the full catalog, saw ${ids.size} entries`);
-  // Read the catalog once more the same way the loader does, and pair ids to tags.
-  const root = resolve(fileURLToPath(import.meta.url), "../../..");
-  const md = readFileSync(join(root, ".claude/knowledge/oracles/vc-bug-catalog.md"), "utf-8");
+  // Read the catalog once more the same way the loader does, and pair ids to tags. It lives in the
+  // knowledge base now (phase 4.1), so it is resolved rather than joined to the repo root.
+  const md = readFileSync(knowledgePath("oracles/vc-bug-catalog.md"), "utf-8");
   let cur: string | null = null;
   const tagged = new Set<string>();
   for (const line of md.split("\n")) {

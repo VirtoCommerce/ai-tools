@@ -13,9 +13,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "fs";
 import { parseOracle } from "../knowledge/lint-bl.ts";
-import { BL_PATH, renderMarkdown, selectSlices, sliceOracle, type Slice } from "../knowledge/extract-bl.ts";
+import { blPath, renderMarkdown, selectSlices, sliceOracle, type Slice } from "../knowledge/extract-bl.ts";
 
-const text = readFileSync(BL_PATH, "utf-8");
+const text = readFileSync(blPath(), "utf-8");
 const slices = sliceOracle(text);
 
 test("the slicer sees exactly the invariants the bl:lint gate sees", () => {

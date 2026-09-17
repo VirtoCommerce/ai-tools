@@ -4,7 +4,7 @@
 
 ## Storefront Selectors — generated, gated, and measured against the source
 
-`.claude/knowledge/automation/storefront-selectors.md` (455 lines) and
+`knowledge/automation/storefront-selectors.md` (455 lines) and
 `.claude/knowledge/execution/test-execution-preflight.md` hand-listed the storefront's
 `data-test-id` surface. Both were verified live on their capture dates and were correct then.
 Diffed against `vc-frontend@dev` (`17c99c7`, 2026-08-26): of the 78 distinct selectors they assert,

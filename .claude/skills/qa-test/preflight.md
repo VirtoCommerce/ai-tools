@@ -120,7 +120,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
 
 1. **Environment health** — `/qa-env-check endpoints`. If unhealthy, warn user.
 2. **Build & version** — GitHub MCP `get_file_contents` on `backend/packages.json` + `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`, or the branch matching `TEST_ENV`). Record platform + theme + ticket-relevant module versions — this is the **`declared`** (git) state. Then probe `GET {{BACK_URL}}/api/platform/modules` for the **`deployed`** state, which is the ground truth and routinely differs (deploy in flight, failed, or partially applied). A failed probe records `deployed: UNKNOWN` — **never** fall back to `declared`. **PR testing:** confirm the PR's artifact version appears in `packages.json`/`artifact.json`; if not deployed → offer `/qa-deploy-pr <ticket-key>` (**ask first**) or warn and ask whether to wait.
-2-release. **Recent-release check** — read `.claude/knowledge/domain/release-ledger.md` §1 + the newest §2 month(s) for the ticket's component(s), and record the Δ vs `deployed` in `summary.json` as `releasedThrough`. Full precedence rule: `agent-dispatch.md § Build Verification`. Three consequences, and they are the reason this step exists rather than being a header field:
+2-release. **Recent-release check** — read `knowledge/domain/release-ledger.md` §1 + the newest §2 month(s) for the ticket's component(s), and record the Δ vs `deployed` in `summary.json` as `releasedThrough`. Full precedence rule: `agent-dispatch.md § Build Verification`. Three consequences, and they are the reason this step exists rather than being a header field:
    - **A ⚠ BREAKING change in the component under test forces FULL**, whatever `1a` scored. `ticket-routing.md` says *when in doubt → FULL*; a contract that moved last month is doubt with a date on it, and a FAST run would author no cases and write no Test Model against it.
    - **It feeds `1d`'s AC↔implementation check a third leg.** That check is otherwise static — ACs vs *this* PR's diff — and a breaking change elsewhere in the same component is invisible to that diff while being the likeliest cause of a DRIFT nobody owns.
    - **Released ≠ deployed.** A capability the ledger records that the probe does not carry is `NOT_DEPLOYED` → BLOCKED-on-deploy, never a FAIL and never a filed bug. And the ledger carries **no behaviour**, so it can never ground an assertion as `{DOC}`; that stays `{OBSERVED}`.
@@ -183,7 +183,7 @@ every claim as a hypothesis · `ABSENT` skip to the prior art · `unresolved` re
 direction and the two-moment all-layer rule: [`axes.md`](axes.md) §2g — cite it, do not
 restate it here.** Record the block; **`null` means the axis never ran, which is a gap, not `ABSENT`.**
 
-**1. The domain map** — `.claude/knowledge/domain/<name>.md` whose `domain_slug` matches this ticket's
+**1. The domain map** — `knowledge/domain/<name>.md` whose `domain_slug` matches this ticket's
 domain (shape: `domain-map.md`). The feature-scoped, persistent answer to *what exists and where*: actors,
 value chain, **surface inventory per layer**, where the layers **disagree**, and the shape of existing
 coverage. It supplies `1e` clause 11's chain position and clause 11b's surface list, and its `D*`

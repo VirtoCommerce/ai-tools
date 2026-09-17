@@ -47,8 +47,13 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { APPENDIX_RE, CHAPTER_RE, FENCE_RE, SECTION_RE } from "./lint-ecl.ts";
+import { knowledgeLabel, knowledgePath, KnowledgeBaseMissing } from "../lib/knowledge-base.mjs";
 
-export const ECL_PATH = join(".claude", "knowledge", "oracles", "e-commerce-edge-cases-library.md");
+/** Same split as `extract-bl.ts`: the tail is stable, the absolute path is not, and only the
+ *  stable one may be printed. */
+export const ECL_REL = "oracles/e-commerce-edge-cases-library.md";
+export const eclPath = (): string => knowledgePath(ECL_REL);
+export const eclLabel = (): string => knowledgeLabel(ECL_REL);
 
 export interface EclSlice {
   /** `ECL-13.3` — the citation contract the suites' `Edge_Case_Refs` use. */
@@ -195,7 +200,7 @@ export function renderMarkdown(selected: readonly EclSlice[], scope: string, tot
   return [
     `# ECL edge cases — extract (${selected.length} of ${total})`,
     "",
-    `> Verbatim slice of \`${ECL_PATH}\`, produced by \`npm run ecl:extract -- ${scope}\`.`,
+    `> Verbatim slice of \`${eclLabel()}\`, produced by \`npm run ecl:extract -- ${scope}\`.`,
     "> **This is a SUBSET.** Sections outside the filter are not shown and are not absent — if the",
     "> task turns out to touch another chapter, extract that too rather than concluding no edge case",
     "> applies. The `ECL-N.M` ids are the citation contract `Edge_Case_Refs` uses; cite them, do not",
@@ -225,7 +230,7 @@ function listArg(argv: readonly string[], name: string): string[] {
 
 function main(): void {
   const argv = process.argv.slice(2);
-  const file = argv.find((a) => !a.startsWith("--") && a.endsWith(".md")) ?? ECL_PATH;
+  const file = argv.find((a) => !a.startsWith("--") && a.endsWith(".md")) ?? eclPath();
   const text = readFileSync(file, "utf-8");
   const slices = sliceLibrary(text);
 
@@ -285,4 +290,21 @@ const isCli = (() => {
   }
 })();
 
-if (isCli) main();
+/**
+ * A missing base is an OPERATOR CONDITION with a one-line remedy, not a crash. Printing a stack
+ * trace teaches the reader that the tool is broken; the truth is that this machine has not fetched
+ * the corpus yet. Exit 2, the same code the door uses for it.
+ */
+function runCli(fn: () => void): void {
+  try {
+    fn();
+  } catch (e) {
+    if (e instanceof KnowledgeBaseMissing) {
+      console.error(e.message);
+      process.exit(2);
+    }
+    throw e;
+  }
+}
+
+if (isCli) runCli(main);

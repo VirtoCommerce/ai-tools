@@ -17,7 +17,7 @@ Context:     [FULL: ba-system-analyzer | FAST/inline]
 Prior model: [reports/ba/test-models/<PREDECESSOR>-<date>.md — the newest model for THIS surface, whose
              Part 0 is carried forward below (chain, diagrams, variants, reverse edges), with any
              correction recorded as drift against it | none — first model for this surface]
-Domain map:  [.claude/knowledge/domain/<name>.md @ rev N (generated YYYY-MM-DD) | ABSENT]
+Domain map:  [knowledge/domain/<name>.md @ rev N (generated YYYY-MM-DD) | ABSENT]
              ABSENT is a valid value and blocks nothing — but then Chain position below reads
              "unverified", so the omission is recorded rather than invisible (gate clauses 11/11b).
 Chain position: [this ticket's chain as a SLICE of the domain chain — the links it TOUCHES and,

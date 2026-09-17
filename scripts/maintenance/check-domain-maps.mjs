@@ -35,12 +35,13 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
+import { knowledgePath, knowledgeLabel } from "../lib/knowledge-base.mjs";
 
 // fileURLToPath, not .pathname — a space in the repo path URL-encodes to %20 and existsSync fails SILENTLY,
 // which reads as "no maps to check" and passes. Measured on this repo (".../My Projects/...").
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
-const DOMAIN_DIR = join(ROOT, ".claude", "knowledge", "domain");
-const BL_ORACLE = join(ROOT, ".claude", "knowledge", "oracles", "business-logic.md");
+const DOMAIN_DIR = knowledgePath("domain");
+const BL_ORACLE = knowledgePath("oracles/business-logic.md");
 const REQUIRED = ["domain_slug", "generated", "rev", "stale_after_days", "sources"];
 const json = process.argv.includes("--json");
 
@@ -78,7 +79,7 @@ const slugSeen = new Map();
 const slugs = validSlugs();
 
 if (!existsSync(DOMAIN_DIR)) {
-  console.log("[domain:check] no .claude/knowledge/domain/ — nothing to check");
+  console.log(`[domain:check] no ${knowledgeLabel("domain")}/ in the base — nothing to check`);
   process.exit(0);
 }
 

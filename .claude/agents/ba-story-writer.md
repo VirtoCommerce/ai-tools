@@ -34,12 +34,12 @@ If `existing_story` is present (or `mode: "review"`), run **Mode B** (jump to th
 
 Read `CLAUDE.md`, `.claude/rules/agents.md`, and the most recent `vc/shared/docs/Sprint plans/sprint-XX-XX-summary.json` for active sprint scope. Skim `reports/ba/` for prior stories on the same feature to avoid contradicting earlier ACs. Knowledge files to consult before writing ACs/test scenarios:
 
-- `.claude/knowledge/oracles/business-logic.md` — `BL-DOMAIN-NNN` invariants. Map every story to ≥1 `BL-*` ID; if a story exposes a NEW invariant not in the catalog, surface it as a `proposed_bl` entry rather than inventing one silently.
-- `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` — `ECL-*` edge case patterns. Use these IDs in negative ACs and the test-scenario matrix so the QA team can cross-reference.
-- `reports/ba/` + `reports/ba/test-models/` + `.claude/knowledge/domain/` — **Step 0, always**: the prior BA analysis, prior test models and existing suites for this surface. Amend what exists; never fork it. A **test model** is read-only from here — it is `/qa-test` `1e`’s artifact and carries its own amend / carry-forward rule.
-- `.claude/knowledge/domain/sitemap.md` — full storefront URL map (use for navigation language in ACs).
-- `.claude/knowledge/domain/products.md` — product-type vocabulary for catalog/PDP stories.
-- `.claude/knowledge/api/graphql-schema.md` — authoritative xAPI field/argument names; reference exact names in Technical Notes, never paraphrase.
+- `knowledge/oracles/business-logic.md` — `BL-DOMAIN-NNN` invariants. Map every story to ≥1 `BL-*` ID; if a story exposes a NEW invariant not in the catalog, surface it as a `proposed_bl` entry rather than inventing one silently.
+- `knowledge/oracles/e-commerce-edge-cases-library.md` — `ECL-*` edge case patterns. Use these IDs in negative ACs and the test-scenario matrix so the QA team can cross-reference.
+- `reports/ba/` + `reports/ba/test-models/` + `knowledge/domain/` — **Step 0, always**: the prior BA analysis, prior test models and existing suites for this surface. Amend what exists; never fork it. A **test model** is read-only from here — it is `/qa-test` `1e`’s artifact and carries its own amend / carry-forward rule.
+- `knowledge/domain/sitemap.md` — full storefront URL map (use for navigation language in ACs).
+- `knowledge/domain/products.md` — product-type vocabulary for catalog/PDP stories.
+- `knowledge/api/graphql-schema.md` — authoritative xAPI field/argument names; reference exact names in Technical Notes, never paraphrase.
 - `.claude/knowledge/api/graphql-test-cases-runner.md` — runner-native test format; AC for GraphQL behavior must be falsifiable as `[ERRORS]` / `[DATA]` / `[COUNT]` predicates.
 - `test-data/aliases.json` + `test-data/README.md` — `@td(ALIAS.field)` resolver registry. Use these aliases (e.g. `@td(STORE_PRIMARY.id)`, `@td(CYBERSOURCE_VISA.number)`, `@td(ACME_ADMIN.email)`, `@td(CFG_LAPTOP.id)`) in ACs and test scenarios instead of hardcoding GUIDs/SKUs/emails/prices/coupon codes.
 - `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` — golden-set xAPI fixtures (63 ops). When a story touches a GraphQL operation that already has a fixture (`me`, `currentOrganizationAddresses`, `addItem`, `createOrderFromCart`, etc.), reference the fixture name in Technical Notes so QA reuses it rather than authoring a new one. If the story introduces a new mutation/query, call out in Technical Notes that the QA team will need to add `test-data/graphql/{queries|mutations}/<opName>.graphql` and an `index.json` entry.
@@ -209,7 +209,7 @@ Security considerations:
 ```
 
 When the story touches **GraphQL xAPI** queries/mutations:
-- Reference exact field/argument names from `.claude/knowledge/api/graphql-schema.md` (live introspection snapshot) — not paraphrased names
+- Reference exact field/argument names from `knowledge/api/graphql-schema.md` (live introspection snapshot) — not paraphrased names
 - Note that QA will write tests against this story in **runner-native format** (`scripts/graphql/graphql-runner.ts`) — see `.claude/knowledge/api/graphql-test-cases-runner.md`. Acceptance Criteria for GraphQL behavior should be falsifiable against `errors[]`, response field paths, or counts so the test author can map them directly to `[ERRORS]` / `[DATA]` / `[COUNT]` assertions without rewriting.
 
 ### 10. Test Scenarios

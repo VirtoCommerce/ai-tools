@@ -183,7 +183,7 @@ Step 5 — Also check test repo changes:
 - Merge with deploy-detected affected suites (deduplicate)
 
 **Changelog (`changelog <version>`):**
-1. **Resolve through the local ledger** — `.claude/knowledge/domain/release-ledger.md`. §4 (component → month index) maps the version to its month; §2/§3 give that month's feature list with each feature's `component@version`, docs deep link and **⚠ BREAKING** flag; the digest URL is the citation. This is a local file read, no MCP call.
+1. **Resolve through the local ledger** — `knowledge/domain/release-ledger.md`. §4 (component → month index) maps the version to its month; §2/§3 give that month's feature list with each feature's `component@version`, docs deep link and **⚠ BREAKING** flag; the digest URL is the citation. This is a local file read, no MCP call.
    - Step 1 used to be "query Context7 for release notes for the specified version". That corpus does not carry them — its newest version page is Platform **3.917.1** while production is past **3.1050**. Fall back to Context7 only if the ledger's `generated:` date is >45 days old, or the version predates its window (§5 states the oldest month indexed).
 2. **Confirm against GitHub Releases** — the authoritative version + date, and the escape hatch for a version the ledger predates:
    ```bash

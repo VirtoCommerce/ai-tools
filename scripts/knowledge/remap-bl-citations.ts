@@ -44,8 +44,9 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { knowledgePath } from "../lib/knowledge-base.mjs";
 
-const ORACLE = ".claude/knowledge/oracles/business-logic.md";
+const ORACLE = knowledgePath("oracles/business-logic.md");
 const SUITES = "regression/suites";
 
 const argv = process.argv.slice(2);

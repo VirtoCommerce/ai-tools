@@ -58,6 +58,7 @@ import { readFileSync, readdirSync, statSync } from "fs";
 import { dirname, join, relative, resolve } from "path";
 import { fileURLToPath } from "url";
 import { parseSuite, type Row } from "../test-cases/append-test-cases-to-suite.js";
+import { knowledgePath, KnowledgeBaseMissing } from "../lib/knowledge-base.mjs";
 
 type Severity = "Blocker" | "Critical" | "High" | "Medium" | "Informational";
 const SEVERITY_ORDER: Severity[] = ["Informational", "Medium", "High", "Critical", "Blocker"];
@@ -393,7 +394,7 @@ function main(): void {
   const argv = process.argv.slice(2);
   const here = dirname(fileURLToPath(import.meta.url));
   const repoRoot = resolve(here, "..", "..");
-  const file = argv.find((a) => !a.startsWith("--")) ?? join(repoRoot, ".claude", "knowledge", "oracles", "e-commerce-edge-cases-library.md");
+  const file = argv.find((a) => !a.startsWith("--")) ?? knowledgePath("oracles/e-commerce-edge-cases-library.md");
   const json = argv.includes("--json");
   const filterArg = argv.find((a) => a.startsWith("--filter="))?.split("=")[1];
   const failOnArg = (argv.find((a) => a.startsWith("--fail-on=")) ?? "--fail-on=High").split("=")[1] as Severity;
@@ -478,4 +479,21 @@ function main(): void {
 }
 
 const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
-if (isCli) main();
+/**
+ * A missing base is an OPERATOR CONDITION with a one-line remedy, not a crash. Printing a stack
+ * trace teaches the reader that the tool is broken; the truth is that this machine has not fetched
+ * the corpus yet. Exit 2, the same code the door uses for it.
+ */
+function runCli(fn: () => void): void {
+  try {
+    fn();
+  } catch (e) {
+    if (e instanceof KnowledgeBaseMissing) {
+      console.error(e.message);
+      process.exit(2);
+    }
+    throw e;
+  }
+}
+
+if (isCli) runCli(main);

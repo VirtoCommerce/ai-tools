@@ -24,7 +24,7 @@ Done **first**, because 5-report.2's comment carries a mandatory `Release note:`
 block — both of which need these values. The **layer itself is not decided here**: it was derived at `1b`
 item 2b and is read from `summary.json.layer`. What 5-report.0 resolves is everything downstream of it:
 
-- **`audience` is derived from the layer**, per `.claude/knowledge/ba/virto-doc-style.md` §9.1 — never a
+- **`audience` is derived from the layer**, per `knowledge/ba/virto-doc-style.md` §9.1 — never a
   choice made here.
 - **Versions come from `build.deployed`** (probed), never from `build.relevant_modules` (declared git
   state) and never from the release ledger, which records what shipped **upstream**. `UNKNOWN` is legal;

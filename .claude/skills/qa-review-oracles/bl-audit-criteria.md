@@ -175,8 +175,8 @@ Two rules bound the gate itself:
 
    | Prefix | Why it is not an invariant | Where the traceability goes instead |
    |---|---|---|
-   | `BL-PERF` | performance budgets are environment- and hardware-specific; an entry would violate the oracle's own env-agnostic rule | `.claude/knowledge/execution/performance-thresholds.md` |
-   | `BL-COMPAT` | browser-engine quirks are tooling facts, not platform invariants | `.claude/knowledge/automation/browser-quirks.md` |
+   | `BL-PERF` | performance budgets are environment- and hardware-specific; an entry would violate the oracle's own env-agnostic rule | `knowledge/execution/performance-thresholds.md` |
+   | `BL-COMPAT` | browser-engine quirks are tooling facts, not platform invariants | `knowledge/automation/browser-quirks.md` |
    | `BL-API` | a coverage tag, not a normative rule — heterogeneous cases sharing one label | the owning domain's own `BL-*` invariant |
 
    Exclusion **moves** the citations (Step 4, `/qa-review-tests --fix`), it never destroys them.

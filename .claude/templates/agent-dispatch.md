@@ -148,7 +148,7 @@ Every command that uses a browser SHOULD run these checks before dispatching age
 
 1. **Environment health** — invoke `/qa-env-check endpoints` (or inline: `curl -sk {BACK_URL}/health`)
 2. **Build & version verification** — fetch the `declared`, `deployed` **and** `released-through` state (see Build Verification below)
-3. **Recent-release check** — read `.claude/knowledge/domain/release-ledger.md` §1–§2 for the components in scope and record the Δ vs `deployed`. This is the step that turns "a test failed" into "a test failed on a surface that changed three weeks ago". Fall back to a Context7 query for module behaviour only where the ledger is silent or >45 days stale
+3. **Recent-release check** — read `knowledge/domain/release-ledger.md` §1–§2 for the components in scope and record the Δ vs `deployed`. This is the step that turns "a test failed" into "a test failed on a surface that changed three weeks ago". Fall back to a Context7 query for module behaviour only where the ledger is silent or >45 days stale
 4. **Duplicate check** — scan reports/ for recent runs matching scope
 5. If any pre-flight fails → warn user with specific failure, ask whether to proceed
 
@@ -195,7 +195,7 @@ Extract and include in reports/agent prompts — four rows, not one:
 ```
 declared (git)      : Platform {PlatformVersion}, Theme {version}, {scope-relevant modules}
 deployed (probed)   : Platform {live version}, {scope-relevant modules}   | or UNKNOWN + reason
-released-through    : Platform {ledger §1}, {scope-relevant components}   | .claude/knowledge/domain/release-ledger.md
+released-through    : Platform {ledger §1}, {scope-relevant components}   | knowledge/domain/release-ledger.md
 Δ behind upstream   : {components where deployed < released, with both versions}
 ```
 
@@ -204,7 +204,7 @@ released-through    : Platform {ledger §1}, {scope-relevant components}   | .cl
 ```
 documented — VirtoOZ MCP                           -> what the docs say behaviour IS
                                                       (evergreen; ~9 months stale on releases)
-released   — .claude/knowledge/domain/release-ledger.md -> what EXISTS in the product line
+released   — knowledge/domain/release-ledger.md -> what EXISTS in the product line
                                                       (fresh to its last refresh; a DIGEST, non-exhaustive)
 declared   — vc-deploy-dev backend/packages.json   -> what SHOULD be on this env (git)
 deployed   — GET {{BACK_URL}}/api/platform/modules -> what IS RUNNING here      <- GROUND TRUTH

@@ -41,10 +41,23 @@
  * worse than a loud failure — an agent handed zero invariants would report "no invariant applies").
  */
 import { readFileSync } from "fs";
-import { join } from "path";
 import { DOMAIN_RE, ENTRY_RE } from "./lint-bl.ts";
+import { knowledgeLabel, knowledgePath, KnowledgeBaseMissing } from "../lib/knowledge-base.mjs";
 
-export const BL_PATH = join(".claude", "knowledge", "oracles", "business-logic.md");
+/**
+ * The oracle's place in the base, and the two roles that place plays.
+ *
+ * `BL_REL` is the tail, unchanged by the move out of `.claude/knowledge/` — only the prefix moved.
+ * `blLabel()` is what gets PRINTED and is the same string on every machine. `blPath()` is what gets
+ * OPENED, and is not: it depends on where this machine keeps its base.
+ *
+ * They used to be one constant, which was harmless only while the file sat at a repo-relative path.
+ * Stamping an absolute home-directory path into the extract's own header would put a machine path
+ * into text an agent reads, and may quote back into a report.
+ */
+export const BL_REL = "oracles/business-logic.md";
+export const blPath = (): string => knowledgePath(BL_REL);
+export const blLabel = (): string => knowledgeLabel(BL_REL);
 
 export interface Slice {
   id: string;
@@ -189,7 +202,7 @@ export function renderMarkdown(selected: readonly Slice[], scope: string, total:
   return [
     `# BL invariants — extract (${selected.length} of ${total})`,
     "",
-    `> Verbatim slice of \`${BL_PATH}\`, produced by \`npm run bl:extract -- ${scope}\`.`,
+    `> Verbatim slice of \`${blLabel()}\`, produced by \`npm run bl:extract -- ${scope}\`.`,
     "> **This is a SUBSET.** Invariants outside the filter are not shown and are not absent — if the",
     "> task turns out to touch another domain, extract that domain too rather than concluding no rule",
     "> applies. The `BL-*` ids are the citation contract the suites use; cite them, do not renumber.",
@@ -217,7 +230,7 @@ function listArg(argv: readonly string[], name: string): string[] {
 
 function main(): void {
   const argv = process.argv.slice(2);
-  const file = argv.find((a) => !a.startsWith("--") && a.endsWith(".md")) ?? BL_PATH;
+  const file = argv.find((a) => !a.startsWith("--") && a.endsWith(".md")) ?? blPath();
   const text = readFileSync(file, "utf-8");
   const slices = sliceOracle(text);
 
@@ -277,4 +290,21 @@ const isCli = (() => {
   }
 })();
 
-if (isCli) main();
+/**
+ * A missing base is an OPERATOR CONDITION with a one-line remedy, not a crash. Printing a stack
+ * trace teaches the reader that the tool is broken; the truth is that this machine has not fetched
+ * the corpus yet. Exit 2, the same code the door uses for it.
+ */
+function runCli(fn: () => void): void {
+  try {
+    fn();
+  } catch (e) {
+    if (e instanceof KnowledgeBaseMissing) {
+      console.error(e.message);
+      process.exit(2);
+    }
+    throw e;
+  }
+}
+
+if (isCli) runCli(main);

@@ -14,9 +14,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "fs";
 import { parseLibrary } from "../knowledge/lint-ecl.ts";
-import { ECL_PATH, renderMarkdown, selectSections, sliceLibrary, type EclSlice } from "../knowledge/extract-ecl.ts";
+import { eclPath, renderMarkdown, selectSections, sliceLibrary, type EclSlice } from "../knowledge/extract-ecl.ts";
 
-const text = readFileSync(ECL_PATH, "utf-8");
+const text = readFileSync(eclPath(), "utf-8");
 const slices = sliceLibrary(text);
 
 test("the slicer sees exactly the sections the ecl:lint gate sees", () => {

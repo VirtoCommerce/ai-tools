@@ -59,9 +59,17 @@ test("the mirror has not silently shrunk", () => {
   // Not a transcribed count of anything derived — a floor. Files may be added to either tree; a
   // shared path DISAPPEARING means one side was deleted, which is exactly the fork-by-omission the
   // registry cannot see (it only compares paths present in both).
-  assert.ok(audit.shared.length >= 92, `shared paths dropped to ${audit.shared.length}`);
+  //
+  // LOWERED 92 -> 72 AND 40 -> 28 on 2026-09-17, and this is the burn-down the floor exists to
+  // force. Twenty shared paths stopped being shared because their `.claude/` copy moved into the
+  // knowledge base (migration phase 4.1): a file whose truth depends on the PLATFORM belongs in the
+  // base, not in two copies of a working repository. That is a DECLARED disappearance — the
+  // corresponding entries left BYTE_IDENTICAL and FORKS in the same commit, each with its reason —
+  // and it is the only kind for which this number may move. Lowering it to make a red test green
+  // without a commit that says where the files went is the defect, not the number.
+  assert.ok(audit.shared.length >= 72, `shared paths dropped to ${audit.shared.length}`);
   assert.ok(
-    audit.identical.length + audit.structural.length >= 40,
+    audit.identical.length + audit.structural.length >= 28,
     `gated pairs dropped to ${audit.identical.length + audit.structural.length}`,
   );
 });

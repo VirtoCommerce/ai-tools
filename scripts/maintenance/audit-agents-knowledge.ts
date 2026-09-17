@@ -24,6 +24,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
+import { knowledgeLabel } from "../lib/knowledge-base.mjs";
 
 type Applicability = "universal" | "reference" | "vcst-specific";
 
@@ -85,23 +86,23 @@ const CLASSIFICATIONS: Classification[] = [
     rationale: "Vue 3 / TS Gate-4 review discipline against BL-UI invariants + Vue 3 best practices. Universal." },
 
   // Knowledge files (26)
-  { path: ".claude/knowledge/api/api-auth.md", category: "knowledge", applicability: "universal",
+  { path: knowledgeLabel("api/api-auth.md"), category: "knowledge", applicability: "universal",
     rationale: "VC platform OAuth2 token endpoint pattern. Same for every VC deployment." },
-  { path: ".claude/knowledge/automation/browser-quirks.md", category: "knowledge", applicability: "universal",
+  { path: knowledgeLabel("automation/browser-quirks.md"), category: "knowledge", applicability: "universal",
     rationale: "Per-browser rendering differences. Cross-VC universal." },
-  { path: ".claude/knowledge/oracles/business-logic.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("oracles/business-logic.md"), category: "knowledge", applicability: "reference",
     rationale: "76 storefront BLs covering pricing, cart, checkout, B2B, etc. Universal as a STARTING POINT (most BLs are platform-level invariants). Customer adapts: some BLs encode vcst-specific assumptions (specific currency, specific tier rules, specific role names). Customer's own BL-{CUSTOMER}-* IDs namespace alongside." },
-  { path: ".claude/knowledge/domain/catalog.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("domain/catalog.md"), category: "knowledge", applicability: "reference",
     rationale: "Storefront catalog reference — assumes vcst's catalog structure. Customer adapts." },
-  { path: ".claude/knowledge/oracles/critical-ui-scope.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("oracles/critical-ui-scope.md"), category: "knowledge", applicability: "reference",
     rationale: "vcst's 7 components × 8 pages coverage matrix. Customer adapts to their components/pages." },
-  { path: ".claude/knowledge/execution/debugging-signals.md", category: "knowledge", applicability: "universal",
+  { path: knowledgeLabel("execution/debugging-signals.md"), category: "knowledge", applicability: "universal",
     rationale: "Console + network debugging heuristics. Cross-VC universal." },
-  { path: ".claude/knowledge/oracles/e-commerce-edge-cases-library.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("oracles/e-commerce-edge-cases-library.md"), category: "knowledge", applicability: "reference",
     rationale: "13 generic ECL (universal) + 7 VC-specific (reference). File-level classification is reference because the VC-specific ones are intermixed; future refactor: split into universal + VC-specific files." },
-  { path: ".claude/knowledge/api/graphiql-interaction.md", category: "knowledge", applicability: "universal",
+  { path: knowledgeLabel("api/graphiql-interaction.md"), category: "knowledge", applicability: "universal",
     rationale: "GraphiQL UI interaction guide — CodeMirror editor steps. Universal across VC deployments." },
-  { path: ".claude/knowledge/api/graphql-schema.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("api/graphql-schema.md"), category: "knowledge", applicability: "reference",
     rationale: "xAPI GraphQL schema reference. The schema SHAPE is universal across VC, but field availability varies by module set + customer modifications. Customer regenerates from their live introspection." },
   { path: ".claude/knowledge/api/graphql-test-cases-runner.md", category: "knowledge", applicability: "universal",
     rationale: "Runner contract grammar (tag syntax, predicate shapes, @td()/{{VAR}} forms). Format spec, universal." },
@@ -109,13 +110,13 @@ const CLASSIFICATIONS: Classification[] = [
     rationale: "Decision tree + xAPI discovery patterns + AGENT-TEST- prefix conventions. Pattern is universal; xAPI examples cross-VC." },
   { path: ".claude/knowledge/execution/module-suite-map.md", category: "knowledge", applicability: "reference",
     rationale: "vcst's module → suite mapping. Customer's mapping differs by module set + custom suites." },
-  { path: ".claude/knowledge/api/order-creation-matrix.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("api/order-creation-matrix.md"), category: "knowledge", applicability: "reference",
     rationale: "vcst's payment + shipping combinations matrix. Customer's processor + shipping set differs." },
-  { path: ".claude/knowledge/execution/performance-thresholds.md", category: "knowledge", applicability: "universal",
+  { path: knowledgeLabel("execution/performance-thresholds.md"), category: "knowledge", applicability: "universal",
     rationale: "Web Vitals + LCP/CLS/TTI budgets. Cross-app universal." },
-  { path: ".claude/knowledge/api/platform-patterns.md", category: "knowledge", applicability: "universal",
+  { path: knowledgeLabel("api/platform-patterns.md"), category: "knowledge", applicability: "universal",
     rationale: "VC platform architecture patterns. Same for every VC deployment." },
-  { path: ".claude/knowledge/domain/products.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("domain/products.md"), category: "knowledge", applicability: "reference",
     rationale: "Storefront product types + xAPI fields. Customer's products differ; pattern reusable." },
   // GENERATED FILE — this script must stay a no-op on it. The generator emits
   // `applicability: universal` itself, so ensureApplicabilityFrontmatter takes its
@@ -123,27 +124,27 @@ const CLASSIFICATIONS: Classification[] = [
   // WITHOUT changing the generator's own emitted value would make this script rewrite a
   // generated file, which scripts/unit/release-ledger.test.mjs then reports as a hand-edit.
   // Keep the two in sync: scripts/maintenance/refresh-release-ledger.mjs -> renderDoc().
-  { path: ".claude/knowledge/domain/release-ledger.md", category: "knowledge", applicability: "universal",
+  { path: knowledgeLabel("domain/release-ledger.md"), category: "knowledge", applicability: "universal",
     rationale: "GENERATED (npm run releases:refresh) from the monthly community release digests. Upstream release history is deployment-independent — every deployment ships the same product line, so unlike sitemap.md there is nothing customer-specific to parameterize. Carries NO deployment facts by design: what is DEPLOYED is a live /api/platform/modules probe, not this file." },
-  { path: ".claude/knowledge/domain/sitemap.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("domain/sitemap.md"), category: "knowledge", applicability: "reference",
     rationale: "Full storefront URL map. Customer's sitemap differs by storefront customizations. @td(VIRTUAL_CATALOG_B2B.id) already used in some entries." },
-  { path: ".claude/knowledge/domain/store-settings.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("domain/store-settings.md"), category: "knowledge", applicability: "reference",
     rationale: "Storefront store config patterns. Customer's settings differ." },
-  { path: ".claude/knowledge/automation/storefront-config-flags.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("automation/storefront-config-flags.md"), category: "knowledge", applicability: "reference",
     rationale: "vc-frontend $cfg.* flag inventory. Customer with stock vc-frontend = applicable; customer with custom storefront = adapt." },
-  { path: ".claude/knowledge/automation/storefront-selectors.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("automation/storefront-selectors.md"), category: "knowledge", applicability: "reference",
     rationale: "vc-frontend stable selectors (data-test-id / role / aria-label). Customer with custom theme adapts selector strategy." },
   { path: ".claude/knowledge/execution/test-execution-preflight.md", category: "knowledge", applicability: "universal",
     rationale: "Pre-run readiness checklist (env health, fixture seed, MCP status). Universal." },
   { path: ".claude/knowledge/execution/test-runner-tags.md", category: "knowledge", applicability: "universal",
     rationale: "CSV column / step / assertion tag reference. Format spec, universal." },
-  { path: ".claude/knowledge/oracles/vc-bug-catalog.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("oracles/vc-bug-catalog.md"), category: "knowledge", applicability: "reference",
     rationale: "Historical VC bug patterns indexed by domain. Customer reads as 'Familiar Problems' oracle but VC-specific entries (VCST-NNNN refs) are vcst's history. Useful learning artifact, adapt for customer's." },
-  { path: ".claude/knowledge/architecture/vc-module-architecture.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("architecture/vc-module-architecture.md"), category: "knowledge", applicability: "reference",
     rationale: "VC module repo anatomy + .NET 10 / xUnit / Angular conventions for the auto-fix pipeline. Universal PATTERN; repo list + routing are data (ci/). Customer adapts to their module set." },
-  { path: ".claude/knowledge/architecture/vc-frontend-architecture.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("architecture/vc-frontend-architecture.md"), category: "knowledge", applicability: "reference",
     rationale: "vc-frontend storefront repo anatomy + Vue 3 / TS / vitest / @vue/test-utils / Storybook conventions for the auto-fix pipeline. Applicable to stock vc-frontend; customer with a custom storefront adapts." },
-  { path: ".claude/knowledge/domain/white-labeling.md", category: "knowledge", applicability: "reference",
+  { path: knowledgeLabel("domain/white-labeling.md"), category: "knowledge", applicability: "reference",
     rationale: "Storefront white-labeling feature reference. Customer's branding differs." },
 ];
 

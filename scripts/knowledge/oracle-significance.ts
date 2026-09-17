@@ -45,6 +45,11 @@
  * lint parsers; `scripts/unit/oracle-significance.test.ts` pins the model.
  */
 
+// The only import this module has, and it is here so a knowledge path is SPELLED in one place.
+// `knowledgeLabel` is pure string work — it reads nothing — so the scoring core stays testable
+// without a base on disk.
+import { knowledgeLabel } from "../lib/knowledge-base.mjs";
+
 export type Tier = "T1" | "T2" | "T3" | "EXCLUDED";
 
 /** Tiers in ascending significance, for comparisons. `EXCLUDED` sits outside the order. */
@@ -133,11 +138,11 @@ const P0_FLOOR_TIER: Tier = "T2";
 export const NON_INVARIANT_PREFIXES: Readonly<Record<string, { reason: string; redirect: string }>> = {
   "BL-PERF": {
     reason: "performance budgets are environment- and hardware-specific; an invariant here would violate the oracle's env-agnostic rule",
-    redirect: ".claude/knowledge/execution/performance-thresholds.md",
+    redirect: knowledgeLabel("execution/performance-thresholds.md"),
   },
   "BL-COMPAT": {
     reason: "browser-engine quirks are tooling facts, not platform invariants",
-    redirect: ".claude/knowledge/automation/browser-quirks.md",
+    redirect: knowledgeLabel("automation/browser-quirks.md"),
   },
   "BL-API": {
     reason: "a coverage tag, not a normative rule — heterogeneous cases sharing one label",

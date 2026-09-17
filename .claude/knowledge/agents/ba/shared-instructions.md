@@ -21,7 +21,7 @@ first rather than an amendment to it (`reports/ba/test-models/` carries two VCST
 this reason).
 
 **Before any other work, read your target's domain section of**
-Read the prior art directly: `reports/ba/<domain folder>/` (prior BA analysis), `reports/ba/test-models/` (prior test models), `.claude/knowledge/domain/<domain>.md` (domain knowledge), and `reports/tickets/**/summary.json` (tickets already tested). (The generated index that used to front these was removed 2026-09-08; read the sources.) Per domain that means: the suites and their
+Read the prior art directly: `reports/ba/<domain folder>/` (prior BA analysis), `reports/ba/test-models/` (prior test models), `knowledge/domain/<domain>.md` (domain knowledge), and `reports/tickets/**/summary.json` (tickets already tested). (The generated index that used to front these was removed 2026-09-08; read the sources.) Per domain that means: the suites and their
 `BL-*`/`ECL-*` citations, the domain-knowledge docs, **the prior BA analysis**, **the prior test models**,
 and the tickets already tested there — **plus each domain's `Test object` block**: purpose (the value
 chain), the operations, the data its assertions read, the variants that change behaviour without changing
@@ -53,7 +53,7 @@ Then, in your report:
    | Axis | Answers | Limits |
    |---|---|---|
    | the prior document + its date | what we believed, and when | may be stale with nothing flagging it |
-   | **release documentation** — `.claude/knowledge/domain/release-ledger.md` since that date, VirtoOZ for intended behaviour | did this component MOVE after the doc was written | released upstream ≠ deployed here · non-exhaustive, so a miss is not absence · carries no behaviour — it raises a SUSPICION and never settles one |
+   | **release documentation** — `knowledge/domain/release-ledger.md` since that date, VirtoOZ for intended behaviour | did this component MOVE after the doc was written | released upstream ≠ deployed here · non-exhaustive, so a miss is not absence · carries no behaviour — it raises a SUSPICION and never settles one |
    | **live** — the running env (your browser lane, or `qa-testing-expert` when you have none) | what it does NOW | the only axis that settles a disagreement |
 
    Then carry a verdict per claim: **CONFIRMED** · **DRIFT** (say to what, and amend the document) ·
@@ -91,7 +91,7 @@ memory** — ground it in a tool result and cite the source.
 ## The four documentation audiences
 
 The BA team writes for four distinct audiences, each with its own Virto style. The canonical skeletons,
-voice rules, and signature elements live in **`.claude/knowledge/ba/virto-doc-style.md` — read it
+voice rules, and signature elements live in **`knowledge/ba/virto-doc-style.md` — read it
 before authoring any doc.**
 
 | Audience | Style source | Owned by |
@@ -120,7 +120,7 @@ Never hardcode GUIDs, SKUs, prices, emails, coupon codes, or URL hosts. Full rul
 ## Business-invariant proposals are advisory only
 
 `ba-system-analyzer` may surface `PROPOSED-BL-*` candidates. **Never modify
-`.claude/knowledge/oracles/business-logic.md`.** Proposals are staged to `reports/ba/bl-proposals-{date}.md`
+`knowledge/oracles/business-logic.md`.** Proposals are staged to `reports/ba/bl-proposals-{date}.md`
 for **explicit per-entry user approval**. Every proposal must cite a source (VirtoOZ/Context7 quote,
 GitHub `file:line`, VC docs §, or UI screenshot path); drop unsourced entries. See `/ba-analyze` Step 4.5.
 
@@ -179,12 +179,12 @@ orchestrator owns index generation across runs — do not write your own `README
 
 | File | When |
 |------|------|
-| `reports/ba/` · `reports/ba/test-models/` · `.claude/knowledge/domain/` | **Step 0 — before anything else, every mode.** What already exists on this surface: suites, oracle citations, prior BA analysis, prior test models, tickets already tested. Generated; never hand-edit |
-| `.claude/knowledge/ba/virto-doc-style.md` | **Before authoring any documentation** — the four audience skeletons, plus §9 for release notes (where the layer picks the audience) |
-| `.claude/knowledge/oracles/business-logic.md` | Before drafting BL proposals or story `Business_Rule` mappings |
-| `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | Negative ACs / pain-point risk cross-refs (ECL-*) |
-| `.claude/knowledge/domain/sitemap.md`, `products.md`, `catalog.md`, `store-settings.md` | Storefront/catalog/admin doc references |
-| `.claude/knowledge/api/graphql-schema.md` | Authoritative xAPI field/type names for developer docs & story tech notes |
+| `reports/ba/` · `reports/ba/test-models/` · `knowledge/domain/` | **Step 0 — before anything else, every mode.** What already exists on this surface: suites, oracle citations, prior BA analysis, prior test models, tickets already tested. Generated; never hand-edit |
+| `knowledge/ba/virto-doc-style.md` | **Before authoring any documentation** — the four audience skeletons, plus §9 for release notes (where the layer picks the audience) |
+| `knowledge/oracles/business-logic.md` | Before drafting BL proposals or story `Business_Rule` mappings |
+| `knowledge/oracles/e-commerce-edge-cases-library.md` | Negative ACs / pain-point risk cross-refs (ECL-*) |
+| `knowledge/domain/sitemap.md`, `products.md`, `catalog.md`, `store-settings.md` | Storefront/catalog/admin doc references |
+| `knowledge/api/graphql-schema.md` | Authoritative xAPI field/type names for developer docs & story tech notes |
 | `.claude/knowledge/api/graphql-test-cases-runner.md` | When recommending GraphQL test coverage downstream |
 | `.claude/knowledge/execution/module-suite-map.md` | Mapping VC modules → existing regression suites |
 | `test-data/aliases.json` + `test-data/graphql/index.json` | Resolving example values & golden-set fixtures |

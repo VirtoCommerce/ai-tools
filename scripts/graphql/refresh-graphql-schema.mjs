@@ -13,10 +13,11 @@ import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parse } from 'dotenv';
 import { resolveTestEnv } from '../lib/resolve-test-env.js';
+import { knowledgePath } from '../lib/knowledge-base.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..');
-const OUTPUT = resolve(ROOT, '.claude/knowledge/api/graphql-schema.md');
+const OUTPUT = knowledgePath('api/graphql-schema.md');
 
 // Parse args
 const args = process.argv.slice(2);

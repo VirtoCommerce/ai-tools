@@ -83,10 +83,14 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { knowledgePath, knowledgeLabel } from '../lib/knowledge-base.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SNAPSHOT = resolve(ROOT, '.claude/knowledge/domain/release-ledger-snapshot.json');
-const DOC = resolve(ROOT, '.claude/knowledge/domain/release-ledger.md');
+// LAZY, because these now resolve a knowledge base and this module is IMPORTED by unit tests that
+// exercise the renderer alone. Resolving at import time made "no base on this machine" a load
+// error for tests that never needed one.
+const SNAPSHOT = () => knowledgePath('domain/release-ledger-snapshot.json');
+const DOC = () => knowledgePath('domain/release-ledger.md');
 
 const RSS_URL = 'https://www.virtocommerce.org/c/news-digest/15.rss';
 const CATEGORY_ID = 15;
@@ -1045,7 +1049,7 @@ async function main() {
     fail2('SOURCE SHAPE CHANGED', `${items.length} items parsed but 0 versioned headings found`);
   }
 
-  const prev = existsSync(SNAPSHOT) ? JSON.parse(readFileSync(SNAPSHOT, 'utf8')) : null;
+  const prev = existsSync(SNAPSHOT()) ? JSON.parse(readFileSync(SNAPSHOT(), 'utf8')) : null;
   const digests = mergeDigests(prev?.digests, fresh);
   const monthsInWindow = fresh.filter((d) => d.month).map((d) => d.month).sort();
 
@@ -1078,7 +1082,7 @@ async function main() {
   console.error(changes ? lines.join('\n') : '  (no upstream change)');
   console.error('==================================================');
 
-  const prevDoc = existsSync(DOC) ? readFileSync(DOC, 'utf8') : null;
+  const prevDoc = existsSync(DOC()) ? readFileSync(DOC(), 'utf8') : null;
   const tail =
     changes || !prevDoc
       ? buildTail(prevDoc, next.rev, next.generatedIso.slice(0, 10), lines)
@@ -1125,10 +1129,10 @@ async function main() {
   if (dryRun) {
     log('[dry-run] Nothing written.');
   } else {
-    writeFileSync(SNAPSHOT, JSON.stringify(next, null, 2) + '\n', 'utf8');
-    writeFileSync(DOC, doc, 'utf8');
+    writeFileSync(SNAPSHOT(), JSON.stringify(next, null, 2) + '\n', 'utf8');
+    writeFileSync(DOC(), doc, 'utf8');
     log(
-      `${changes ? 'UPDATED' : 'unchanged'} → .claude/knowledge/domain/release-ledger.md ` +
+      `${changes ? 'UPDATED' : 'unchanged'} → ${knowledgeLabel('domain/release-ledger.md')} ` +
         `(${doc.split('\n').length} lines, rev ${next.rev})`
     );
     if (changes) log('Ledger moved — re-read §1 before designing tests against a recently changed module.');

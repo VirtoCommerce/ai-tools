@@ -30,8 +30,8 @@ Keep the QA pipeline's shared oracles grounded in reality. For each in-scope ent
 
 | Axis | Oracle | Deterministic core | Suite citation column | Criteria file |
 |---|---|---|---|---|
-| **`bl`** | `.claude/knowledge/oracles/business-logic.md` | `bl:audit:collect` / `bl:lint` | `Business_Rule` | [bl-audit-criteria.md](../skills/qa-review-oracles/bl-audit-criteria.md) |
-| **`ecl`** | `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | `ecl:audit:collect` / `ecl:lint` | `Edge_Case_Refs` | [ecl-audit-criteria.md](../skills/qa-review-oracles/ecl-audit-criteria.md) |
+| **`bl`** | `knowledge/oracles/business-logic.md` | `bl:audit:collect` / `bl:lint` | `Business_Rule` | [bl-audit-criteria.md](../skills/qa-review-oracles/bl-audit-criteria.md) |
+| **`ecl`** | `knowledge/oracles/e-commerce-edge-cases-library.md` | `ecl:audit:collect` / `ecl:lint` | `Edge_Case_Refs` | [ecl-audit-criteria.md](../skills/qa-review-oracles/ecl-audit-criteria.md) |
 
 Omitting the axis means `all` (run `bl` then `ecl`; they touch different files, so they do not race — but do not interleave their single-writer applies).
 

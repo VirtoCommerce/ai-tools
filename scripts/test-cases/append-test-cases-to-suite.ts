@@ -44,6 +44,7 @@ import { fileURLToPath } from "url";
 import { parse as parseCsv } from "csv-parse/sync";
 import { stringify as stringifyCsv } from "csv-stringify/sync";
 import { hasDiscriminatingAssertion, isUnclassified } from "./lint-test-cases.js";
+import { knowledgeLabel, knowledgePath } from "../lib/knowledge-base.mjs";
 
 export const COLUMNS = [
   "ID",
@@ -285,8 +286,23 @@ export interface DesignVocabulary {
 }
 
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../..");
-const CATALOG_MD = "/.claude/knowledge/oracles/vc-bug-catalog.md";
+const CATALOG_MD = "oracles/vc-bug-catalog.md";
 const TECHNIQUES_MD = "/.claude/skills/qa-test-design/test-design-techniques.md";
+
+/**
+ * The defect-archetype vocabulary moved into the knowledge base (phase 4.1) — it describes defect
+ * shapes in the PLATFORM, not this repository's conventions — while the technique vocabulary stayed,
+ * because its subject is our own test-design skill. So the two are read through different doors, and
+ * a missing base is reported as a missing base rather than as a missing file.
+ */
+function readKnowledgeVocab(rel: string): string {
+  const full = knowledgePath(rel);
+  if (existsSync(full)) return readFileSync(full, "utf-8");
+  return fail(
+    `Cannot read the vocabulary source ${knowledgeLabel(rel)} — the base is reachable but does not ` +
+      `hold it. Refusing to append: without it, a bad Archetype token cannot be told from a good one.`,
+  );
+}
 
 /** First readable candidate: repo-root-relative (cwd-independent), then cwd. */
 function readVocabFile(relPath: string): string {
@@ -312,10 +328,10 @@ function tableTokens(section: string): Set<string> {
 
 /** Parse both vocabularies from the markdown files that own them. */
 export function loadDesignVocabulary(): DesignVocabulary {
-  const catalog = readVocabFile(CATALOG_MD);
+  const catalog = readKnowledgeVocab(CATALOG_MD);
   const start = catalog.indexOf("### Defect archetypes");
   if (start < 0)
-    fail(`${CATALOG_MD} has no "### Defect archetypes" section — cannot validate Archetype stamps.`);
+    fail(`${knowledgeLabel(CATALOG_MD)} has no "### Defect archetypes" section — cannot validate Archetype stamps.`);
   // The section runs to the next `## ` domain heading.
   const rest = catalog.slice(start);
   const end = rest.search(/\n## [^#]/);
@@ -342,7 +358,7 @@ export function loadDesignVocabulary(): DesignVocabulary {
   const techniques = tableTokens(techEnd < 0 ? techRest : techRest.slice(0, techEnd));
 
   if (archetypes.size === 0)
-    fail(`Parsed 0 defect archetypes from ${CATALOG_MD} — the table shape changed; fix the parser.`);
+    fail(`Parsed 0 defect archetypes from ${knowledgeLabel(CATALOG_MD)} — the table shape changed; fix the parser.`);
   if (techniques.size === 0)
     fail(`Parsed 0 technique tokens from ${TECHNIQUES_MD} — expected the "§0 Technique tokens" table.`);
 
@@ -377,7 +393,7 @@ export function validateDesignStamps(
     if (!a) {
       errors.push(
         `${where}: References must carry an "Archetype:<TOKEN>" stamp — the defect shape this case ` +
-          `probes (vocabulary: .claude/knowledge/oracles/vc-bug-catalog.md § Defect archetypes)`,
+          `probes (vocabulary: ${knowledgeLabel(CATALOG_MD)} § Defect archetypes)`,
       );
     } else if (vocab.nonDefectArchetypes.has(a[1])) {
       errors.push(
@@ -460,7 +476,7 @@ export function validateDesignStamps(
 /** Every `### VC-*` entry id in the catalog, for Probe-stamp validation. */
 export function loadCatalogProbeIds(): Set<string> {
   const out = new Set<string>();
-  for (const line of readVocabFile(CATALOG_MD).split("\n")) {
+  for (const line of readKnowledgeVocab(CATALOG_MD).split("\n")) {
     const m = /^###\s+(VC-[A-Z0-9]+-\d+)/.exec(line);
     if (m) out.add(m[1]);
   }

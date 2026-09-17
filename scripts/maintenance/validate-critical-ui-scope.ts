@@ -40,8 +40,9 @@
 
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join, relative } from "path";
+import { knowledgePath } from "../lib/knowledge-base.mjs";
 
-const SCOPE_FILE = join(".claude", "knowledge", "oracles", "critical-ui-scope.md");
+const SCOPE_FILE = knowledgePath("oracles/critical-ui-scope.md");
 const SUITES_DIR = join("regression", "suites");
 
 interface Cell {

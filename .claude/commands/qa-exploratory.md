@@ -92,7 +92,7 @@ Rationale, the charter derivation table and the record: [`exploratory-lane.md`](
    - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
    - Record platform version and theme version — include in the session report header
 3. **Duplicate check** — scan `reports/exploratory/` for an `SBTM-*` session on the same domain in the last 24 hours. If found, warn user and show previous findings.
-3a. **What shipped recently** — read `.claude/knowledge/domain/release-ledger.md` §1–§2 for the components in scope (map domain → component via [module-suite-map.md](../knowledge/execution/module-suite-map.md)). Carry the newest 1–2 months' features into Step 5's coverage map.
+3a. **What shipped recently** — read `knowledge/domain/release-ledger.md` §1–§2 for the components in scope (map domain → component via [module-suite-map.md](../knowledge/execution/module-suite-map.md)). Carry the newest 1–2 months' features into Step 5's coverage map.
 
    **This is the strongest C1 signal this pre-flight can compute.** A feature that shipped last month is in *neither* of Step 5's subtract-lists **by construction**: no suite asserts it (nobody has authored one yet) and `vc-bug-catalog.md` has never recorded a failure in it (nobody has run it here). It is not *probably* uncovered — it is **provably** uncovered. A **⚠ BREAKING** row is stronger still: it names a surface whose contract moved, i.e. C4 latent blast radius with a date on it.
 
@@ -185,7 +185,7 @@ For each session, the agent should:
 | `catalog` | Filters + sort combinations, pagination, empty categories, long product names, variant selection | Tourist | Garbage Collector + Bad Neighborhood |
 | `B2B` | Multi-org switching, quote lifecycle, approval workflow, role permissions, bulk order | B2B Procurement Officer | Scenario Tour + Soap Opera |
 | `mobile` | Touch targets, scroll behavior, hamburger menu, form usability, viewport overflow | Impatient Buyer | Supermodel + Couch Potato |
-| `new` | Read the newest 1–2 months of `.claude/knowledge/domain/release-ledger.md` §2, drop anything `NOT_DEPLOYED` against the live probe, and focus exploration on what remains — **⚠ BREAKING** rows first | (depends on component) | Bad Neighborhood + Saboteur |
+| `new` | Read the newest 1–2 months of `knowledge/domain/release-ledger.md` §2, drop anything `NOT_DEPLOYED` against the live probe, and focus exploration on what remains — **⚠ BREAKING** rows first | (depends on component) | Bad Neighborhood + Saboteur |
 
 Personas live in `skills/qa-sbtm/personas.md`. Tours live in `skills/qa-sbtm/adversarial-heuristics.md`.
 

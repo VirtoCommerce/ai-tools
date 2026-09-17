@@ -29,7 +29,7 @@ returned nothing for either. So route the release axis somewhere else FIRST.
 
 | Question shape | Read FIRST |
 |---|---|
-| what shipped · what's new · which version introduced X · since when · is X supported yet · recently added · new in · `3.10NN` / `2.5N` · *что нового* · *релиз* · *в какой версии* | **`.claude/knowledge/domain/release-ledger.md`** §1 (latest per component), §2 (last 6 months in full), §3 (older months index), §4 (component → month) |
+| what shipped · what's new · which version introduced X · since when · is X supported yet · recently added · new in · `3.10NN` / `2.5N` · *что нового* · *релиз* · *в какой версии* | **`knowledge/domain/release-ledger.md`** §1 (latest per component), §2 (last 6 months in full), §3 (older months index), §4 (component → month) |
 | how does X work · where is it configured · what fields · API shape · deployment | VirtoOZ, per the table below |
 | is it deployed on the env I am testing? | **neither** — `GET {{BACK_URL}}/api/platform/modules`. See `.claude/templates/agent-dispatch.md` § Build Verification |
 

@@ -1,4 +1,4 @@
-// Guards the generated VC release ledger — `.claude/knowledge/domain/release-ledger.md`.
+// Guards the generated VC release ledger — `knowledge/domain/release-ledger.md`, in the knowledge base.
 //
 // WHY THIS IS A UNIT TEST AND NOT A `*:check` SCRIPT
 // `npm test` (tsx --test scripts/unit/**/*.test.mjs, .github/workflows/unit-tests.yml) is the
@@ -20,6 +20,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { knowledgePath } from '../lib/knowledge-base.mjs';
 
 import {
   parseRss,
@@ -38,8 +39,20 @@ import {
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const FIXTURE = resolve(ROOT, 'scripts/unit/fixtures/news-digest-15.rss');
-const DOC = resolve(ROOT, '.claude/knowledge/domain/release-ledger.md');
-const SNAPSHOT = resolve(ROOT, '.claude/knowledge/domain/release-ledger-snapshot.json');
+// The ledger moved into the base with the rest of the platform knowledge (phase 4.1). The
+// committed-artifact block below therefore SKIPS when no base is reachable rather than failing: a
+// machine that has not run `kb sync` has nothing to check, which is not the same as a ledger that
+// is wrong. The generator's own unit tests above need no base and keep running either way.
+const ledgerPaths = (() => {
+  try {
+    return { doc: knowledgePath('domain/release-ledger.md'), snap: knowledgePath('domain/release-ledger-snapshot.json') };
+  } catch {
+    return null;
+  }
+})();
+const noBase = ledgerPaths ? false : 'no knowledge base reachable — run `kb sync`';
+const DOC = ledgerPaths?.doc ?? '';
+const SNAPSHOT = ledgerPaths?.snap ?? '';
 
 const digests = buildDigests(parseRss(readFileSync(FIXTURE, 'utf8')));
 const byMonth = (m) => digests.find((d) => d.month === m);
@@ -251,12 +264,12 @@ test('computeLatest picks the highest version per component, not the newest mont
 // 3. The committed artifacts
 // ---------------------------------------------------------------------------
 
-test('committed ledger: doc and snapshot both exist', () => {
+test('committed ledger: doc and snapshot both exist', { skip: noBase }, () => {
   assert.ok(existsSync(DOC), `${DOC} missing — run \`npm run releases:refresh\``);
   assert.ok(existsSync(SNAPSHOT), `${SNAPSHOT} missing — run \`npm run releases:refresh\``);
 });
 
-test('committed ledger: the doc is exactly what the snapshot renders', () => {
+test('committed ledger: the doc is exactly what the snapshot renders', { skip: noBase }, () => {
   // Catches a hand-edit to a generated file — the GOLDEN RULE failure mode. Provenance lines
   // move on every run, so they are stripped before comparing (same rule as
   // sync-design-tokens.mjs), which keeps a date-only refresh from reading as drift.
@@ -270,7 +283,7 @@ test('committed ledger: the doc is exactly what the snapshot renders', () => {
   );
 });
 
-test('committed ledger: stays within its size bound', () => {
+test('committed ledger: stays within its size bound', { skip: noBase }, () => {
   // Measured on the PROJECTION (§1-§5) only. The changelog tail is capped at
   // CHANGELOG_KEEP revs but still varies with how much moved upstream, and folding it in
   // is what made the original bound trip in ~13 refreshes while blaming the detail window.
@@ -281,7 +294,7 @@ test('committed ledger: stays within its size bound', () => {
   assert.ok(monthSections <= 6, `${monthSections} full month sections (bound 6)`);
 });
 
-test('committed ledger: version facts live in frontmatter only, never restated in the body', () => {
+test('committed ledger: version facts live in frontmatter only, never restated in the body', { skip: noBase }, () => {
   // This is the sitemap.md defect, foreclosed: that file reports one platform version in its
   // header and a different, older one in section 13, because ONE FACT lived in TWO PLACES and
   // diff-gated rewriting only touched one of them.
@@ -308,7 +321,7 @@ test('committed ledger: version facts live in frontmatter only, never restated i
   assert.deepEqual(offenders, [], 'a version literal in the prose body will rot independently of the frontmatter');
 });
 
-test('committed ledger: staleness is surfaced (warn), then enforced (fail)', () => {
+test('committed ledger: staleness is surfaced (warn), then enforced (fail)', { skip: noBase }, () => {
   // Two tiers on purpose. A hard-only threshold gets bumped or skipped the first time it
   // reddens main; the soft tier means that by the time the hard one trips, everyone has seen
   // the warning repeatedly. Failing on the calendar alone is what trains people to ignore a
@@ -337,7 +350,7 @@ test('committed ledger: staleness is surfaced (warn), then enforced (fail)', () 
   }
 });
 
-test('committed ledger: declares itself non-exhaustive', () => {
+test('committed ledger: declares itself non-exhaustive', { skip: noBase }, () => {
   // Presence is evidence; absence is not. Without this an agent will reason from silence and
   // report "that feature does not exist" off an editorial monthly digest.
   const text = readFileSync(DOC, 'utf8');

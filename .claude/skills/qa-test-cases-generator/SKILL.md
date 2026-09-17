@@ -416,7 +416,7 @@ Generated test cases route to the correct executing agent by layer:
   query return byte-identical results, `totalCount 990` across 4 distinct users, while `{userId: uid}`
   (singular) returns `19` for one — so a per-user claim was being made from a global count. This is the
   same "check the instrument against a known-good control" move that catches a wrong auth context,
-  applied to a query parameter; see also `.claude/knowledge/api/graphql-schema.md` on optional arguments
+  applied to a query parameter; see also `knowledge/api/graphql-schema.md` on optional arguments
   that are accepted and answer for a context you never chose.
 - **A verification that reports on a RECORDED SNAPSHOT is not checking the thing it names.** Same
   family as the one below, one step removed: the check does not share the action's implementation, it

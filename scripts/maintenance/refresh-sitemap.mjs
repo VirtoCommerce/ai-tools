@@ -42,6 +42,7 @@ import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { parse } from 'dotenv';
 import { resolveTestEnv } from '../lib/resolve-test-env.js';
+import { knowledgePath } from '../lib/knowledge-base.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..');
@@ -77,7 +78,7 @@ const CULTURE = cfg('CULTURE_NAME', 'en-US');
 // resolved TEST_ENV, override with --label). This is why pointing at a client store
 // never clobbers the vcst baseline or reports a whole-catalog false "changed".
 const label = (flagVal('--label') || testEnv).replace(/[^a-z0-9_-]/gi, '');
-const SNAPSHOT = resolve(ROOT, `.claude/knowledge/domain/sitemap-snapshot.${label}.json`);
+const SNAPSHOT = knowledgePath(`domain/sitemap-snapshot.${label}.json`);
 
 if (!BACK_URL) {
   console.error(

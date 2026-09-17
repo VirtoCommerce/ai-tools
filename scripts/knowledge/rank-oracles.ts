@@ -28,6 +28,7 @@ import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { parseOracle, buildCoverage } from "./lint-bl.ts";
 import { parseLibrary, buildCitations } from "./lint-ecl.ts";
+import { knowledgePath, KnowledgeBaseMissing } from "../lib/knowledge-base.mjs";
 import {
   gate,
   rankOrder,
@@ -52,7 +53,7 @@ interface Row {
 }
 
 function collectBl(repoRoot: string): Ranked<Row>[] {
-  const oracle = join(repoRoot, ".claude", "knowledge", "oracles", "business-logic.md");
+  const oracle = knowledgePath("oracles/business-logic.md");
   const invariants = parseOracle(readFileSync(oracle, "utf-8"));
   const coverage = buildCoverage(join(repoRoot, "regression", "suites"));
   const known = new Set(invariants.map((i) => i.id));
@@ -79,14 +80,14 @@ function collectBl(repoRoot: string): Ranked<Row>[] {
 }
 
 function collectEcl(repoRoot: string): Ranked<Row>[] {
-  const library = join(repoRoot, ".claude", "knowledge", "oracles", "e-commerce-edge-cases-library.md");
+  const library = knowledgePath("oracles/e-commerce-edge-cases-library.md");
   const { sections, appendixBlRefs } = parseLibrary(readFileSync(library, "utf-8"));
   // An ECL section's BUSINESS value is read from the BL invariants it links to, so the
   // normative oracle is the source rather than the library's own prose. `appendixBlRefs`
   // supplies that link for the 5-column chapters, which have no `BL Invariant` column of
   // their own — without it the business axis is unreachable for 45 of 54 sections.
   const blSeverity = new Map(
-    parseOracle(readFileSync(join(repoRoot, ".claude", "knowledge", "oracles", "business-logic.md"), "utf-8")).map((i) => [i.id, i.severity]),
+    parseOracle(readFileSync(knowledgePath("oracles/business-logic.md"), "utf-8")).map((i) => [i.id, i.severity]),
   );
   const blSeverityOf = (id: string) => blSeverity.get(id);
   const citations = buildCitations(join(repoRoot, "regression", "suites"));
@@ -272,4 +273,21 @@ function main(): void {
 }
 
 const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
-if (isCli) main();
+/**
+ * A missing base is an OPERATOR CONDITION with a one-line remedy, not a crash. Printing a stack
+ * trace teaches the reader that the tool is broken; the truth is that this machine has not fetched
+ * the corpus yet. Exit 2, the same code the door uses for it.
+ */
+function runCli(fn: () => void): void {
+  try {
+    fn();
+  } catch (e) {
+    if (e instanceof KnowledgeBaseMissing) {
+      console.error(e.message);
+      process.exit(2);
+    }
+    throw e;
+  }
+}
+
+if (isCli) runCli(main);

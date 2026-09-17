@@ -7,7 +7,7 @@
 // On a miss it returns the input UNCHANGED with no error, so the literal string
 // lands in the field and the only symptom is the site's generic "Login attempt
 // failed" — which reads exactly like a wrong password. That silent failure cost a
-// whole run on 2026-09-09 (see .claude/knowledge/domain/mobile-navigation.md §10).
+// whole run on 2026-09-09 (see knowledge/domain/mobile-navigation.md §10).
 //
 // This hook blocks the three ways to get a miss, before the keystroke happens:
 //   1. `{{KEY}}` / `${KEY}` / `%KEY%` — the repo's own test-data token syntax

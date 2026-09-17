@@ -112,18 +112,14 @@ export const FORKS = {
   "knowledge/agents/README.md": "plugin-scope",
   "knowledge/agents/developers/shared-instructions.md": "undecided",
   "knowledge/agents/qa/shared-instructions.md": "plugin-scope",
-  "knowledge/api/graphql-schema.md": "root-ahead",
+  // Eight more knowledge forks left this table on 2026-09-17 with the same reasoning as the
+  // BYTE_IDENTICAL block above: their `.claude/` copy moved into the knowledge base, so there is no
+  // longer a pair to declare a fork BETWEEN. plugins/vc-fix/ keeps its copies until it can declare a
+  // dependency on vc-kb; this is knowing duplication, not an undeclared fork.
   "knowledge/api/graphql-test-cases-runner.md": "plugin-scope",
-  "knowledge/architecture/vc-frontend-architecture.md": "plugin-scope",
-  "knowledge/architecture/vc-module-architecture.md": "undecided",
-  "knowledge/automation/storefront-selectors.md": "plugin-scope",
-  "knowledge/domain/catalog.md": "plugin-scope",
-  "knowledge/domain/store-settings.md": "plugin-scope",
   "knowledge/execution/live-discovery.md": "plugin-scope",
   "knowledge/execution/module-suite-map.md": "plugin-scope",
   "knowledge/execution/tracker-ops.md": "undecided",
-  "knowledge/oracles/critical-ui-scope.md": "plugin-scope",
-  "knowledge/oracles/vc-bug-catalog.md": "plugin-scope",
   "skills/project-init/SKILL.md": "plugin-ahead",
   "skills/project-init/derive-context.mjs": "plugin-ahead",
   "skills/project-init/discover-repos.mjs": "plugin-ahead",
@@ -185,18 +181,17 @@ export const BYTE_IDENTICAL = [
   "hooks/expected.mjs",
   "hooks/redact.mjs",
   "hooks/session-telemetry.mjs",
-  "knowledge/api/api-auth.md",
-  "knowledge/api/graphiql-interaction.md",
-  "knowledge/api/order-creation-matrix.md",
-  "knowledge/api/platform-patterns.md",
-  "knowledge/automation/browser-quirks.md",
-  "knowledge/automation/storefront-config-flags.md",
-  "knowledge/domain/products.md",
-  "knowledge/domain/sitemap.md",
-  "knowledge/execution/debugging-signals.md",
-  "knowledge/execution/performance-thresholds.md",
-  "knowledge/oracles/business-logic.md",
-  "knowledge/oracles/e-commerce-edge-cases-library.md",
+  // TWELVE PLATFORM-KNOWLEDGE PAIRS LEFT THIS RATCHET on 2026-09-17, when their `.claude/` copy moved
+  // into the knowledge base (migration phase 4.1). They are not "deleted from both trees" and the
+  // entries are not being dropped to silence a failure — the root copy is now in
+  // VirtoCommerce/vc-knowledge, which is where a file whose truth depends on the PLATFORM belongs.
+  //
+  // `plugins/vc-fix/` KEEPS ITS COPIES, on purpose and for now. vc-fix is distributed, and it does
+  // not declare a dependency on vc-kb yet — that range would resolve against a `vc-kb--v0.1.0` tag
+  // which does not exist, and declaring it early strands every vc-fix installer. Until vc-fix can
+  // reach the base, deleting its knowledge would take that knowledge away from every client install
+  // and give them nothing back. So the duplication survives this phase KNOWINGLY, tracked here
+  // rather than forgotten, and closes when vc-fix declares the dependency.
   "skills/angular-admin/angular-patterns.md",
   "skills/angular-admin/css-layout-patterns.md",
   "skills/angular-admin/scratch-harness-patterns.md",

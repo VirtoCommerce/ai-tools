@@ -41,6 +41,16 @@ jobs:
           cache: 'npm'
       - name: Install
         run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+      # THE GATES BELOW READ THE KNOWLEDGE BASE. The oracles, domain maps and API references moved
+      # into VirtoCommerce/vc-knowledge (migration phase 4.1) — what makes them untrue is a change in
+      # the PLATFORM, not in this repository — so bl:lint, ecl:lint, domain:check and parts of
+      # `npm test` need it fetched first. The repository is public, so this needs no token.
+      #
+      # It is a REAL dependency, not a convenience: before the move these files were in the checkout
+      # and therefore always present. A runner that cannot reach the base fails HERE, loudly, rather
+      # than letting a downstream gate report an absent corpus as a clean one.
+      - name: kb sync — fetch the knowledge base the gates read
+        run: node plugins/vc-kb/bin/kb.mjs sync
       # The always-loaded instruction budget (CLAUDE.md + .claude/rules/) and the doc-integrity ratchet.
       # This is the gate that stops the 2026-09 re-tiering from growing back.
       - name: context:check — always-loaded budget + doc ratchet

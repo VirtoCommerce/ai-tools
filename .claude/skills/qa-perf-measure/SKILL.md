@@ -63,7 +63,7 @@ expensive mistake available here.
 ## Supporting files
 - [`../../knowledge/execution/es-call-ab-method.md`](../../knowledge/execution/es-call-ab-method.md) —
   the recipe: env confirmation, fixture filter, the KQL + its gotchas, the confounds, worked examples.
-- `.claude/knowledge/execution/performance-thresholds.md` — latency budgets. A **count** has no
+- `knowledge/execution/performance-thresholds.md` — latency budgets. A **count** has no
   threshold; do not invent one.
 - `plugins/vc-perf/skills/perf-loadtest/SKILL.md` — the k6 L2 harness for `--load`. **Requires the separate
   `vc-perf` plugin** (not enabled by default — see §Agent delegation); the core measurement does not.
@@ -196,7 +196,7 @@ category correctly is the whole point of this phase.
 - Command: `commands/qa-perf-measure.md`
 - Recipe: `.claude/knowledge/execution/es-call-ab-method.md`
 - Local L3 attribution: `/qa-local-env` + `plugins/vc-perf/skills/perf-trace/SKILL.md`
-- Latency budgets: `.claude/knowledge/execution/performance-thresholds.md`, `BL-GQL-002`
+- Latency budgets: `knowledge/execution/performance-thresholds.md`, `BL-GQL-002`
 - App Insights wiring + the same KQL gotchas: `.claude/skills/qa-monitoring/SKILL.md`
 - Reports policy (category 10): `.claude/rules/reports.md`
 - Worked example: `reports/tickets/Sprint26-15/VCST-5637/measurement-report.md`

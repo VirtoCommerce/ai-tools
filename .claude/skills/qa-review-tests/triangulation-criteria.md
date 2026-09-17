@@ -157,7 +157,7 @@ follow the evidence where it leads.
 | `cross-cutting` | mixed / often **`docs: N/A`** | vc-frontend, vc-platform | Storefront |
 
 For `layer: backend` + `concern: api` suites (GraphQL/REST), prefer the VirtoOZ `*SourceCode` tools
-and `.claude/knowledge/api/graphql-schema.md` over the guide tools; the live axis is GraphiQL, not a
+and `knowledge/api/graphql-schema.md` over the guide tools; the live axis is GraphiQL, not a
 browser flow.
 
 ## 3. Verdict decision table
