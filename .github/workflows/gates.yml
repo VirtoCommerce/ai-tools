@@ -83,6 +83,11 @@ jobs:
         run: npm run test:roi-check -- --base "origin/${{ github.base_ref }}"
       - name: bl:lint / ecl:lint — oracle citation integrity
         run: npm run bl:lint && npm run ecl:lint
+      # The base is read by installs that do NOT have this repository. A page there citing
+      # `regression/suites/…` or `/qa-exploratory` is pointing at something the reader cannot open,
+      # and they have no way to tell that from a pointer they have not found yet.
+      - name: knowledge:refs — base pages carry the internal-reference banner
+        run: npm run knowledge:refs
       - name: suites:executability:check — determinism ratchet
         run: npm run suites:executability:check
       - name: scope:validate — critical-ui-scope ↔ suite manifest

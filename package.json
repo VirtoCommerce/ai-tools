@@ -262,7 +262,8 @@
     "test:roi-check": "node scripts/maintenance/lint-test-roi.mjs",
     "test:quality": "node scripts/maintenance/test-quality-report.mjs",
     "kb:test": "node --test \"plugins/vc-kb/test/**/*.test.mjs\"",
-    "kb:test:logger": "node plugins/vc-kb/vendor/agent-log/test-log-row.mjs && node plugins/vc-kb/vendor/agent-log/test-tool-log.mjs"
+    "kb:test:logger": "node plugins/vc-kb/vendor/agent-log/test-log-row.mjs && node plugins/vc-kb/vendor/agent-log/test-tool-log.mjs",
+    "knowledge:refs": "node scripts/maintenance/lint-knowledge-refs.mjs"
   },
   "repository": {
     "type": "git",
