@@ -167,6 +167,29 @@ narrowness: the ticket names one control, the map names the whole surface that c
 
 **Authoring or reviewing GraphQL test cases? Read `graphql-test-cases-runner.md` first.** It is the canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar used by `scripts/graphql/graphql-runner.ts` (tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, common failure modes, authoring checklist). Do not invent tags, predicate shapes, or path syntax not documented there.
 
+## Product behaviour — ask VirtoOZ, never guess (MANDATORY, every agent, every run)
+
+Applies to any question of how the platform or the storefront is **supposed** to behave. Grounding order:
+
+1. **This repo's knowledge first** — the domain map (`knowledge/domain/<slug>.md`), the oracles (`BL-*`, `ECL-*`), `.claude/ROUTING.md` §Knowledge bases. Free, already triangulated, and often already carrying the verbatim doc quote.
+2. **VirtoOZ next** — `/vc-docs`, topic-scoped tool (the topic→tool table is `knowledge/agents/ba/shared-instructions.md` §Documentation source — VirtoOZ first, always). Context7 `/virtocommerce/vc-docs` is the fallback only.
+3. **Live / source last** — what the environment actually does.
+
+**Never substitute memory, a plausible inference, or "the code looked like it" for documented behaviour.** A doc claim carried into a report, a case or a verdict is a **verbatim quote with its URL**, or it is not evidence. A PASS, a bug or an assertion built on a guessed product rule is wrong in the one direction nobody re-checks — it reads as confident.
+
+Docs are ONE source: a `BL-*`/`ECL-*` promotion still needs its 3-source bar (docs + live + source), and **live behaviour that contradicts the docs is a FINDING** — live wins for this run, report the divergence, never silently route around it.
+
+**Close the loop.** Anything you had to ask VirtoOZ that this repo should already have known goes back into the right knowledge file per `.claude/ROUTING.md` read-before-you-write rules — and if there is no domain map for what you tested, say so in your report and ask the orchestrator to run `/qa-domain-map <slug>`. Never author a map inline mid-run.
+
+**Which source is authoritative depends on the feature's MATURITY — and a missing doc is itself a result:**
+
+| The feature is… | Authoritative source | When it isn't there |
+|---|---|---|
+| **Released / existing** | VirtoOZ **+** this repo's domain maps and oracles — provenance `{DOC}` / `{BL}` | **A released feature VirtoOZ does not document, or documents wrongly, is a FINDING** — a doc gap / doc drift, reported with the verbatim quote + URL beside the live observation. Then fall through to source + live for this run. **Never read documentation silence as "no requirement"** |
+| **New / unreleased** | the ticket's AC `{SPEC}` + source + **live on the deployed build** `{OBSERVED}` | there is no VirtoOZ page yet and often no source snapshot — live is the primary ground truth, and the assertion is confirmed live before promotion (§5 below, Dimension 10 / `GRD-*`) |
+
+Doc drift is normal here and is measured, not hypothetical: `knowledge/domain/sales-rep.md` §D1 (the published API reference lists 13 queries + 1 mutation; live introspection returns 21 + 2) and §D10 (the guide claims store scoping the live schema does not enforce). So **a VirtoOZ answer for a released feature is triangulated against live, never substituted for it** — and when they disagree, both go in the report.
+
 ## Live-Verification Policy
 
 Test data, schema, and design intent are verified against **live state**, not against assumptions or stale references. Apply these checks in order before authoring, executing, or filing a bug.

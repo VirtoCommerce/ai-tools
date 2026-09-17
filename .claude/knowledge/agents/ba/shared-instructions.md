@@ -86,6 +86,8 @@ For any Virto Commerce concept, terminology, module behavior, API surface, or do
 Context7 (`/virtocommerce/vc-docs`) is the **fallback** only. **Never paraphrase platform behavior from
 memory** — ground it in a tool result and cite the source.
 
+**Grounding order** (same for all three teams — QA, BA, Developers): this repo's own knowledge first (Step 0 prior art + `knowledge/domain/<slug>.md` + the oracles), **VirtoOZ second**, live/source last. Anything VirtoOZ had to tell you that the repo should have known goes back into the right knowledge file per `.claude/ROUTING.md`. The rule itself: [`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
+
 ## The four documentation audiences
 
 The BA team writes for four distinct audiences, each with its own Virto style. The canonical skeletons,
