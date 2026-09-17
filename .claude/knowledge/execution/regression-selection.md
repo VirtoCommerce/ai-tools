@@ -75,7 +75,7 @@ suites assert the OLD label **62 times** (093: 43, 091: 19). The Dim-11 rotation
 almost nothing in the corpus carries an `Audited:` stamp, and **not one** of the rows in the four suites
 the two FULL `/qa-test` runs touched does. The stamped share is a moving number (every append changes
 it, and the append that added this section moved it), so it is measured once in
-[`skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md) §1 and cited from here —
+[`skills/qa-test/coverage-triage.md`](../../skills/qa-test/coverage-triage.md) §1 and cited from here —
 a count transcribed into four files is wrong in four places at once, silently (§GOLDEN RULE).
 
 | Command | Does |

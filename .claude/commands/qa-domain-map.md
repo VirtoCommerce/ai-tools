@@ -18,8 +18,8 @@ and **no pipeline ever passes that flag**. Staleness is a suspicion; rewriting o
 An incremental write-back of what a run actually verified is neither, and has its own step
 ([`skills/qa-test/reporting.md`](../skills/qa-test/reporting.md) §5-docs-map).
 
-**Shape:** [`knowledge/domain/domain-map.md`](../knowledge/domain/domain-map.md) — it lives beside the maps it shapes, not in `templates/`.
-**Reference implementation:** [`knowledge/domain/b2b-organizations.md`](../knowledge/domain/b2b-organizations.md).
+**Shape:** `knowledge/domain/domain-map.md` — it lives beside the maps it shapes, not in `templates/`.
+**Reference implementation:** `knowledge/domain/b2b-organizations.md`.
 **Why the artifact exists:** `docs/decisions/qa-test-evolution.md` §Domain maps.
 
 ## Usage

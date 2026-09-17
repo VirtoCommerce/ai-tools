@@ -74,7 +74,7 @@ copy of a scale flags conforming components after a design refresh).
 
 Coffee and Red are the WCAG-gated themes; a failure on `purple-pink`, `watermelon` or `black-gold` is
 **known-unsupported, informational, never a bug**
-([`vc-bug-catalog.md`](../../knowledge/oracles/vc-bug-catalog.md) §VC-UI-001). Report it under that id and
+(`knowledge/oracles/vc-bug-catalog.md` §VC-UI-001). Report it under that id and
 move on — filing it is noise, and silently dropping it hides a real datum.
 
 **Pair the run with a deliberate negative control on an ungated preset.** A UI-kit pass is mostly

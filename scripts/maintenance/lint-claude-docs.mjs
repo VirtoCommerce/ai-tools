@@ -172,6 +172,36 @@ export function isTranscribedCount(line, matchIndex) {
 /** A markdown link target immediately following a backticked label: `` `label` ``](target). */
 const LINK_RE = /^\]\(([^)\s]*)\)/;
 
+/**
+ * ANY markdown link, with its target and whether it is an image — `[text](target)` / `![alt](path)`.
+ *
+ * The rule above reads a link only when the LABEL is a backticked repo path, which meant the
+ * strongest citation a document can make — the one a reader clicks — went unchecked whenever the
+ * text was prose. `[BL-UI-002](../../knowledge/oracles/business-logic.md)` was invisible to every
+ * code here. Measured 2026-09-17, while the platform knowledge moved into the knowledge base:
+ * 113 link targets under `.claude/` resolved to nothing, 92 of them into a tree that is no longer
+ * in any checkout, and DOC-003 reported 0 the whole time.
+ */
+const ANY_LINK_RE = /(!)?\[[^\]\n]*\]\(([^)\s]+)\)/g;
+
+/**
+ * Is this link target a citation of a path in THIS repository, i.e. something to check at all?
+ *
+ * Four things are not, and each would be a phantom finding on a ratchet pinned at zero:
+ *   - an image link — `![alt](path)` in a paragraph ABOUT markdown rendering is markup being
+ *     quoted, not a file being cited (five of them explain why Jira drops such an image)
+ *   - an external scheme or a bare `#anchor`, which names no path here
+ *   - a placeholder — `{date}`, `<ticket>`, `XX`
+ *   - a `knowledge/…` path: that is the knowledge BASE, a separate repository fetched by `kb sync`,
+ *     and it is deliberately cited rather than linked for exactly this reason
+ */
+export function isRepoLinkTarget(raw, isImage) {
+  if (isImage || !raw || EXTERNAL_RE.test(raw) || raw.startsWith('#')) return false;
+  const cited = raw.split('#')[0].replace(/\/$/, '');
+  if (!cited || cited.startsWith('knowledge/')) return false;
+  return !isPlaceholderPath(cited);
+}
+
 /** A link target that leaves the repository: any URI scheme (`https:`, `mailto:`, and a Windows
  *  `C:` drive too) or a protocol-relative `//host/…`. */
 const EXTERNAL_RE = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
@@ -234,7 +264,10 @@ export function isGitIgnored(p, root = '.') {
   // Output format is `<source>:<line>:<pattern>` then a TAB then `<pathname>`. An empty pattern field
   // is not a rule, so it is not a match.
   try {
-    const out = execFileSync('git', ['check-ignore', '-v', '--', p], { cwd: root, encoding: 'utf8' });
+    // stderr discarded: a citation that points OUTSIDE the repo makes git print `fatal: … is
+    // outside repository`, twice per finding, in the middle of the gate's own report — noise on
+    // the one path where the reader is trying to read a finding.
+    const out = execFileSync('git', ['check-ignore', '-v', '--', p], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
     return out.split(/\r?\n/).some((l) => {
       const m = /:\d+:([^\t]*)\t/.exec(l);
       return !!m && m[1].trim() !== '';
@@ -408,6 +441,13 @@ export function lint(root = '.') {
           if (isPlaceholderPath(label) || pathResolves(f, cited) || ignored(cited) || ignored(cited + '/')) continue;
           const detail = `cited path does not exist: ${cited === label ? label : `${label} → ${cited}`}`;
           add(isEphemeralPath(citedFromRoot(f, cited)) ? 'DOC-003E' : 'DOC-003', f, i + 1, detail);
+        }
+        for (const m of l.matchAll(ANY_LINK_RE)) {
+          if (exempt) break;
+          if (!isRepoLinkTarget(m[2], m[1])) continue;
+          const cited = m[2].split('#')[0].replace(/\/$/, '');
+          if (pathResolves(f, cited) || ignored(cited) || ignored(cited + '/')) continue;
+          add(isEphemeralPath(citedFromRoot(f, cited)) ? 'DOC-003E' : 'DOC-003', f, i + 1, `link target does not exist: ${cited}`);
         }
         for (const m of l.matchAll(SEC_RE)) {
           let t = m[1];

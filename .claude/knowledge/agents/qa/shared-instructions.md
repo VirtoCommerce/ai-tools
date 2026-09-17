@@ -38,7 +38,7 @@ oracle's own markdown, sliced verbatim, and carries a header saying so. Re-openi
 re-read what you were handed costs most of your context and adds nothing — the extract IS the source,
 character for character. The same applies to every other item a brief supplies as text rather than as a
 path (matrix rows, the journey case, schema fragments): that is the **dispatch pack**, and what may and
-may not travel in one is [`skills/qa-test/dispatch-pack.md`](../../skills/qa-test/dispatch-pack.md).
+may not travel in one is [`skills/qa-test/dispatch-pack.md`](../../../skills/qa-test/dispatch-pack.md).
 Three conditions, all real:
 
 - **An extract is a SUBSET.** It states which ids it contains. If the work turns out to touch a domain

@@ -24,7 +24,7 @@ Read the relevant file **before** invoking the matching Postman MCP tools.
 | [mcp-tools.md](mcp-tools.md) | Always first — tool inventory, workspace ID, collection ID formats, `model: "full"` rule |
 | [variables-and-environments.md](variables-and-environments.md) | Before `createEnvironment`/`putEnvironment` or whenever you set/get a variable |
 | [collections-and-requests.md](collections-and-requests.md) | Before `createCollection`/`createCollectionRequest` — schema, auth flow, chaining patterns |
-| [graphql-authoring.md](graphql-authoring.md) | Before any GraphQL request — links to canonical [`graphql-schema.md`](../../knowledge/api/graphql-schema.md) and [`graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) |
+| [graphql-authoring.md](graphql-authoring.md) | Before any GraphQL request — links to canonical `knowledge/api/graphql-schema.md` and [`graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) |
 | [test-data-fixtures.md](test-data-fixtures.md) | Before authoring values into bodies — `@td()` resolver, [`test-data/aliases.json`](../../../test-data/aliases.json), fixture conventions |
 | [execution.md](execution.md) | After authoring — verify checklist + Newman/Postman CLI/Monitor + endpoint quick-reference |
 | [bug-evidence.md](bug-evidence.md) | Before building a collection as **bug evidence** — an optional artifact for the narrow class of API/GraphQL defect whose finding is a disagreement or needs ≥2 controls. Criterion, anatomy, the secrets rule, and how it relates to the regression carrier |
@@ -77,7 +77,7 @@ See [collections-and-requests.md](collections-and-requests.md). Every collection
 5. First request = OAuth2 token with `auth: { type: "noauth" }`
 
 ### Step 5 — Add Requests
-Resolve fixture values via [test-data-fixtures.md](test-data-fixtures.md) (`@td()` resolver, [`test-data/aliases.json`](../../../test-data/aliases.json)). For GraphQL bodies, verify field names against [`graphql-schema.md`](../../knowledge/api/graphql-schema.md) **before** writing — see [graphql-authoring.md](graphql-authoring.md).
+Resolve fixture values via [test-data-fixtures.md](test-data-fixtures.md) (`@td()` resolver, [`test-data/aliases.json`](../../../test-data/aliases.json)). For GraphQL bodies, verify field names against `knowledge/api/graphql-schema.md` **before** writing — see [graphql-authoring.md](graphql-authoring.md).
 
 Every request must have URL using `{{baseUrl}}`, proper headers, and a test script with at least a status-code assertion.
 
@@ -151,7 +151,7 @@ Read and output [examples.md](examples.md).
 - **NEVER hardcode passwords in agent prompts** — agents read `process.env` at runtime (populated by `config.js` from `.env.${TEST_ENV}` + `.env.local`; default `TEST_ENV=vcst`)
 - **ALWAYS include the auth request first** — every collection starts with OAuth2 token acquisition
 - **ALWAYS validate status codes** in test scripts — don't assume 200
-- **ALWAYS verify GraphQL field names** against [`graphql-schema.md`](../../knowledge/api/graphql-schema.md) before authoring
+- **ALWAYS verify GraphQL field names** against `knowledge/api/graphql-schema.md` before authoring
 - **A GraphQL body is `mode: "graphql"`, NEVER `mode: "raw"`** — `body.graphql.query` + `body.graphql.variables` (variables as their own JSON string). Postman then treats the query and its variables as first-class (schema autocomplete, a real variables pane) instead of one opaque blob, and a variable change no longer means editing a hand-embedded JSON string. This is stated in [`graphql-authoring.md`](graphql-authoring.md) §3 and is repeated here because that file is read *on demand* while this list is read every time — the rule was missed on VCST-5933 for exactly that reason. Only a genuine REST JSON body stays `raw`.
 - **ALWAYS use `pm.collectionVariables.set()`** for entity IDs from chained requests
 - **ALWAYS use `pm.environment.get()`** for credentials and URLs

@@ -47,9 +47,9 @@ Session-Based Test Management (SBTM) structures exploratory testing into time-bo
 
 The last two fields are the charter's oracle grounding, and they are not bookkeeping. `Edge-Case Refs`
 is a *floor* of known boundary/failure shapes from
-[`e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) — never a
+`knowledge/oracles/e-commerce-edge-cases-library.md` — never a
 ceiling, since a finding outside every ref is the better finding. `BL Refs` from
-[`business-logic.md`](../../knowledge/oracles/business-logic.md) is what makes a deviation recognisable
+`knowledge/oracles/business-logic.md` is what makes a deviation recognisable
 as a bug *during* the session rather than a "huh" dismissed in 60 seconds. Without the refs a session's
 coverage is unreportable and its ideas silently fork from the oracle they paraphrase — see
 [`charter-library.md`](charter-library.md) §Edge-Case Refs. Both oracles are read-only from a session:
@@ -389,7 +389,7 @@ CRISP and SFDPOT (sections 3–4) are **quality-attribute** heuristics — they 
 - [personas.md](personas.md) — Persona-driven exploration: 6 personas (Impatient Buyer, Screen-Reader User, Malicious User, Slow-Network User, B2B Procurement Officer, Session-Corrupted User) with mindset + starter test ideas
 - [modern-web-attack-surface.md](modern-web-attack-surface.md) — Browser-specific probes: DevTools-as-attack-tool, multi-tab state collisions, storage/cache drift, history/router races, browser-feature attack surface, network/performance probes
 
-Use the **VC bug catalog** as a "Familiar Problems" oracle and to seed Bad Neighborhood Tours: [../../agents/knowledge/oracles/vc-bug-catalog.md](../../knowledge/oracles/vc-bug-catalog.md).
+Use the **VC bug catalog** as a "Familiar Problems" oracle and to seed Bad Neighborhood Tours: `knowledge/oracles/vc-bug-catalog.md`.
 
 ### Combining heuristic layers in a 30-minute session
 

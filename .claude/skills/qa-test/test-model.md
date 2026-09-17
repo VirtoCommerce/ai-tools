@@ -177,7 +177,7 @@ names a way this feature can be *wrong*, and the case authored from it is the th
    interaction rule — cite it, never restate it); **`t=2` by default, `t=3` ceiling, `t=4` revenue-critical
    only.**
 7. **Archetype is one token** from the Defect archetypes table in
-   [`knowledge/oracles/vc-bug-catalog.md`](../../knowledge/oracles/vc-bug-catalog.md). It is what makes a
+   `knowledge/oracles/vc-bug-catalog.md`. It is what makes a
    blind spot visible *at design time* rather than in a later audit.
 8. **`Reduction` is the anti-vanity field.** Without it, "M scenarios" is unfalsifiable; with it a reader
    can attack the reduction ("do status and lock actually not interact?"), which is where real coverage
@@ -382,7 +382,7 @@ larger mechanism?* (clause 11), and nothing else stops a case asserting that a c
 does not (clause 11b). The measured runs behind both, and why naming the links you did not cover is
 contradictable while "the matrix is complete" is not:
 [`docs/decisions/qa-test-evolution.md`](../../../docs/decisions/qa-test-evolution.md) ·
-[`knowledge/domain/domain-map.md`](../../knowledge/domain/domain-map.md).
+`knowledge/domain/domain-map.md`.
 
 **Both read the `domain_map` token (2g); neither re-derives it** ([`axes.md`](axes.md)).
 `PRESENT`/`STALE` ⇒ both bind against the map's inventory, and on `STALE` a variant resolving only to a

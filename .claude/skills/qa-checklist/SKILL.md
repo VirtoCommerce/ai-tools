@@ -36,10 +36,10 @@ Checklist items are written to be testable; they assume readers will resolve tes
 | File | Use when |
 |------|----------|
 | [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) + [`test-data/aliases.json`](../../../test-data/aliases.json) | Any checklist item that mentions a specific entity (product, org, address, coupon, card, store) — resolve via `@td(ALIAS.field)` instead of inventing values |
-| [`../../../agents/knowledge/api/graphql-schema.md`](../../knowledge/api/graphql-schema.md) | Any GraphQL query/mutation/field name in a checklist item — verify it exists in the live schema before deriving a test case |
+| `knowledge/api/graphql-schema.md` | Any GraphQL query/mutation/field name in a checklist item — verify it exists in the live schema before deriving a test case |
 | [`../../../agents/knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) | Authoring runner-native GraphQL test cases derived from `graphql-checklist.md` items (CSV format, `[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]` grammar) |
-| [`../../../agents/knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) | **Mandatory input, not a cross-link** — see §Oracle Grounding below. A checklist item that states an expected outcome must cite the `BL-*` it restates |
-| [`../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) | **Mandatory input** — the `ECL-<n>.<m>` sections are where the domain's edge-case items come FROM (§Oracle Grounding). The library names checklists as one of its own consumers (§Using This Library) |
+| `knowledge/oracles/business-logic.md` | **Mandatory input, not a cross-link** — see §Oracle Grounding below. A checklist item that states an expected outcome must cite the `BL-*` it restates |
+| `knowledge/oracles/e-commerce-edge-cases-library.md` | **Mandatory input** — the `ECL-<n>.<m>` sections are where the domain's edge-case items come FROM (§Oracle Grounding). The library names checklists as one of its own consumers (§Using This Library) |
 
 ## Oracle Grounding (mandatory)
 
@@ -48,8 +48,8 @@ already answer, and it must read them rather than re-derive them from the UI:
 
 | Oracle | Answers | How it lands in a checklist |
 |---|---|---|
-| [`business-logic.md`](../../knowledge/oracles/business-logic.md) (204 `BL-*`) | *what the correct outcome IS* | Any item asserting an outcome cites the invariant it restates: `- [ ] … (BL-PRICE-001)` |
-| [`e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) (54 `ECL-<n>.<m>`) | *which boundary/failure shapes exist for this domain* | Edge-case and error-path items are derived FROM a section and cite it: `- [ ] … (ECL-1.3)` |
+| `knowledge/oracles/business-logic.md` (204 `BL-*`) | *what the correct outcome IS* | Any item asserting an outcome cites the invariant it restates: `- [ ] … (BL-PRICE-001)` |
+| `knowledge/oracles/e-commerce-edge-cases-library.md` (54 `ECL-<n>.<m>`) | *which boundary/failure shapes exist for this domain* | Edge-case and error-path items are derived FROM a section and cite it: `- [ ] … (ECL-1.3)` |
 
 **Why this is mandatory and not advisory.** An item written only from UI exploration encodes what the
 build currently does; an item grounded in a `BL-*` encodes what it is supposed to do — only the second

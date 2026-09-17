@@ -94,7 +94,7 @@ invariant is promoted. Full rule, the enforceable quote test and the measured in
 [`../qa/shared-instructions.md`](../qa/shared-instructions.md) §What VirtoOZ is authoritative FOR — split
 the CLAIM, not the source.
 
-**Grounding order** (same for all three teams — QA, BA, Developers): this repo's own knowledge first (Step 0 prior art + `knowledge/domain/<slug>.md` + the oracles), **VirtoOZ second**, live/source last. Anything VirtoOZ had to tell you that the repo should have known goes back into the right knowledge file per `.claude/ROUTING.md`. The rule itself: [`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
+**Grounding order** (same for all three teams — QA, BA, Developers): this repo's own knowledge first (Step 0 prior art + `knowledge/domain/<slug>.md` + the oracles), **VirtoOZ second**, live/source last. Anything VirtoOZ had to tell you that the repo should have known goes back into the right knowledge file per `.claude/ROUTING.md`. The rule itself: [`../../../CLAUDE.md`](../../../../CLAUDE.md) §Essential Rules → *Product context*.
 
 ## The four documentation audiences
 

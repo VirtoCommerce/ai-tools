@@ -288,7 +288,7 @@ than `summary.json`, and a fix’s release story is the bundle/hotfix narrative 
 The release-note pointer above hands off a *what shipped* record. **This step delivers the ordinary
 product documentation** — the §3/§4/§5 guides for the surface this ticket moved — and **posts it as one
 comment on the ticket**, so the people who asked for the change read it where they are already looking.
-Shape, audience derivation, size caps and refusals: [`knowledge/ba/virto-doc-style.md`](../../knowledge/ba/virto-doc-style.md) §10.
+Shape, audience derivation, size caps and refusals: `knowledge/ba/virto-doc-style.md` §10.
 
 Runs **after 5-status**, on **both paths**. FAST is included deliberately and costs nothing: a P2 config tweak
 refuses `not-user-visible`, which is the correct outcome, not a skipped step.

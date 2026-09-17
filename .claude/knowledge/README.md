@@ -1,30 +1,51 @@
-# Agent Knowledge Base
+# Agent Knowledge — the two trees, and which one you are in
 
-Cross-agent reference files (32) grouped by **what an agent reaches for the file to answer**.
-These are shared knowledge bases agents consult during testing, authoring, and fixing — not
-per-task notes. Paths are referenced throughout `.claude/`, `ci/`, and the validator scripts;
-move a file → update its references (and `scripts/maintenance/audit-agents-knowledge.ts` /
-`scripts/maintenance/detect-vcst-isms.ts`).
+Cross-agent reference files, grouped by **what an agent reaches for the file to answer**. Since the
+2026-09-17 migration they live in **two places**, and telling them apart is the first thing to know:
 
-## Folders
+| Written | Lives in | What makes it untrue |
+|---|---|---|
+| `.claude/knowledge/…` | THIS repository | a change in **how we run** — our gates, our lanes, our tracker discipline |
+| `knowledge/…` (no prefix) | the KNOWLEDGE BASE, `VirtoCommerce/vc-knowledge`, fetched once per machine by **`kb sync`** into `~/.claude/vc-knowledge` | a change in **the platform** |
 
-| Folder | Answers | Files |
-|--------|---------|-------|
-| [`oracles/`](./oracles) | "Is this behavior correct? Has it failed before?" — the HICCUPPS-F "Familiar Problems" set | `business-logic.md` (BL-*), `e-commerce-edge-cases-library.md` (ECL-*), `vc-bug-catalog.md` (VC-* historical failures), `critical-ui-scope.md` (BL-UI matrix) |
-| [`domain/`](./domain) | VC storefront/platform domain facts & judgment | `catalog.md`, `products.md`, `store-settings.md`, `white-labeling.md`, `sitemap.md`, `release-ledger.md` ("what shipped upstream, when") |
-| [`api/`](./api) | REST + GraphQL surface, schema & authoring contracts | `api-auth.md`, `platform-patterns.md`, `graphql-schema.md`, `graphiql-interaction.md`, `graphql-test-cases-runner.md`, `order-creation-matrix.md` |
-| [`automation/`](./automation) | How to drive the live UI as a real user | `storefront-selectors.md`, `storefront-config-flags.md`, `browser-quirks.md` |
-| [`execution/`](./execution) | Running the suite: preflight, tags, data resolution, signals, thresholds, routing | `test-execution-preflight.md`, `test-runner-tags.md`, `live-discovery.md`, `module-suite-map.md`, `debugging-signals.md`, `performance-thresholds.md`, `es-call-ab-method.md`, `tracker-ops.md`, `ticket-routing.md`, `test-data-authoring.md` |
-| [`architecture/`](./architecture) | Repo anatomy for the developers team (auto-fix) | `vc-frontend-architecture.md`, `vc-module-architecture.md` |
-| [`ba/`](./ba) | BA documentation craft | `virto-doc-style.md` |
-| [`diagnostics/`](./diagnostics) | Self-diagnostics oracle: per-skill expected phases/gates + S0–S3 rubric | `skill-expectations.md` |
+A `knowledge/…` path is therefore **cited, never linked** — a markdown link to it cannot resolve
+from a checkout, and 92 links that tried were repaired on 2026-09-17. Write it as a backticked path,
+or reach it through the tool: `kb show BL-CART-003`, `npm run bl:extract -- --domain cart`.
+
+`ls` each folder for its files — a transcribed inventory here is a second copy that goes stale, and
+the one this file used to carry named four folders that no longer exist in it.
+
+## In this repository
+
+| Folder | Answers |
+|--------|---------|
+| `agents/` | Per-team framework (QA / BA / developers `shared-instructions.md`) + the agents README |
+| `api/` | The GraphQL **test-case runner grammar** — how our CSV cases drive GraphQL (the SCHEMA itself is in the base) |
+| `execution/` | Running the suite and the pipeline: preflight, tags, lanes, promotion, selection, data resolution, routing, ticket status, tracker ops, reports policy, quality gates, when a change needs a unit test |
+| `diagnostics/` | The self-diagnostics oracle: per-skill expected phases/gates + the S0–S3 rubric |
+
+## In the knowledge base (`kb sync`)
+
+| Folder | Answers |
+|--------|---------|
+| `knowledge/oracles/` | "Is this behaviour correct? Has it failed before?" — `business-logic.md` (`BL-*`), `e-commerce-edge-cases-library.md` (`ECL-*`), `vc-bug-catalog.md` (`VC-*`), `critical-ui-scope.md` |
+| `knowledge/domain/` | Domain maps — actors, value chain, surface inventory per layer, plus `release-ledger.md` |
+| `knowledge/api/` | The REST + GraphQL surface: auth, platform patterns, `graphql-schema.md`, order-creation matrix |
+| `knowledge/automation/` | Driving the live UI as a real user: selectors, config flags, browser quirks |
+| `knowledge/architecture/` | Repo anatomy for the developers team (auto-fix) |
+| `knowledge/ba/` | BA documentation craft (`virto-doc-style.md`) |
+| `knowledge/execution/` | Platform-side execution facts: debugging signals, performance thresholds |
 
 ## Conventions
 
-- **Reference, don't inline.** Agents cite an ID (`BL-AUTH-005`, `ECL-03`, `VC-CART-*`) or a path,
+- **Reference, don't inline.** Agents cite an ID (`BL-AUTH-005`, `ECL-13.3`, `VC-CART-*`) or a path,
   never paste the body into a report. See [`.claude/rules/reports.md`](../rules/reports.md).
 - **`oracles/` is the correctness backbone.** Exploratory and review flows use it as the
   "Familiar Problems" oracle and to seed Bad Neighborhood tours.
+- **`business-logic.md` is GENERATED** from one record per rule in the base's normative plane
+  (`npm run bl:render`, byte-compared by `bl:render:check`). **Never hand-edit the page** — edit the
+  rule's record (`kb show <BL-id>` prints its path) and re-render. Procedure, including adding and
+  retiring a rule: [`bl-audit-criteria.md`](../skills/qa-review-oracles/bl-audit-criteria.md) §4.
 - **`graphql-schema.md` is generated** from live introspection via
   `scripts/graphql/refresh-graphql-schema.mjs` — verify field names there before authoring GraphQL.
 - **`release-ledger.md` is generated** from the monthly community release digests via
@@ -35,5 +56,6 @@ move a file → update its references (and `scripts/maintenance/audit-agents-kno
   **released upstream**, never what is **deployed on the env under test** (that is a live
   `/api/platform/modules` probe — see `.claude/templates/agent-dispatch.md` § Build Verification).
   It carries a `stale_after_days: 45` contract that `scripts/unit/release-ledger.test.mjs` enforces.
-- **Cross-file links use relative paths** (e.g. an `oracles/` file links a selector as
-  `../automation/storefront-selectors.md`).
+- **A generated page's generator writes into the base**, so the commit lands in `vc-knowledge` and
+  this repo's `git diff` stays empty. Say so wherever a report would otherwise imply nothing changed.
+- **Cross-file links use relative paths** — but only WITHIN one tree. Between trees, cite the path.

@@ -21,7 +21,7 @@ To use: copy the charter, fill in `{YYYY-MM-DD}`, set the Risk Level from `/qa-r
 
 ## Edge-Case Refs — why every charter carries them
 
-Each charter declares an `Edge-Case Refs` line naming the [`e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md)
+Each charter declares an `Edge-Case Refs` line naming the `knowledge/oracles/e-commerce-edge-cases-library.md`
 sections it hunts. This is not decoration:
 
 - **These charters were already restatements of the library, uncited.** Charter A's test ideas
@@ -420,8 +420,8 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 - [adversarial-heuristics.md](adversarial-heuristics.md) — Whittaker tours, FAILURE, Soap Opera, HICCUPPS-F referenced by these charters
 - [personas.md](personas.md) — Personas referenced in each charter
 - [modern-web-attack-surface.md](modern-web-attack-surface.md) — Probe library used by Charters F, G, K
-- [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../knowledge/oracles/vc-bug-catalog.md) — VC historical bugs; many charters reference specific entries
-- [../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md](../../knowledge/oracles/e-commerce-edge-cases-library.md) — the `ECL-<n>.<m>` sections every charter's `Edge-Case Refs` line points at (§Edge-Case Refs above)
-- [../../../agents/knowledge/oracles/business-logic.md](../../knowledge/oracles/business-logic.md) — the `BL-*` invariants a session judges its observations against; loaded per-domain at `/qa-exploratory` pre-flight Step 5a, not pinned per charter
+- `knowledge/oracles/vc-bug-catalog.md` — VC historical bugs; many charters reference specific entries
+- `knowledge/oracles/e-commerce-edge-cases-library.md` — the `ECL-<n>.<m>` sections every charter's `Edge-Case Refs` line points at (§Edge-Case Refs above)
+- `knowledge/oracles/business-logic.md` — the `BL-*` invariants a session judges its observations against; loaded per-domain at `/qa-exploratory` pre-flight Step 5a, not pinned per charter
 - [../../../rules/test-data.md](../../rules/test-data.md) — `@td()` resolver policy; charters must resolve test data, not hardcode
 - [../../../agents/knowledge/execution/live-discovery.md](../../knowledge/execution/live-discovery.md) — Decision tree + JS recipes for `live-discover` / `random-data` / `@td()`; required reading when a charter needs runtime data resolution

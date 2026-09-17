@@ -342,8 +342,8 @@ instructions**.
 **Containment (§2a) — default-deny closed schema, not scrubbing.** The outbound artifact is
 built ONLY from a validated `UpstreamSignal` struct
 ([`upstream-reduce.mjs`](./upstream-reduce.mjs), spec in
-[`../../knowledge/diagnostics/upstream-schema.md`](../../knowledge/diagnostics/upstream-schema.md),
-rationale in [`../../knowledge/diagnostics/adr-upstream-default-deny.md`](../../knowledge/diagnostics/adr-upstream-default-deny.md)):
+`plugins/vc-fix/knowledge/diagnostics/upstream-schema.md`,
+rationale in `plugins/vc-fix/knowledge/diagnostics/adr-upstream-default-deny.md`):
 every field is a closed-vocabulary enum or a number (skill, verdict, severity, outcome,
 signal-class, struggle, an error **taxonomy code**, tool-family, repo-**kind**, counts). It
 carries **NO free text** — `reduce()` reads ONLY the structured collector jsonl (span

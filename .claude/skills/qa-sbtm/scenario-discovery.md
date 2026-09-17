@@ -2,7 +2,7 @@
 
 **Exploratory testing's primary job is to discover scenarios our existing coverage misses.** Running known patterns against known soft spots is *re-validation* (still useful, but not the point). This file collects techniques specifically aimed at gap-finding.
 
-Use this as the **default lens** for `/qa-exploratory`. The other files in this skill — `adversarial-heuristics.md`, `personas.md`, `modern-web-attack-surface.md`, `charter-library.md` — and the [vc-bug-catalog](../../knowledge/oracles/vc-bug-catalog.md) act as **filters**: they help you spot familiar problems faster and avoid re-discovering known ones, freeing attention for genuinely new scenarios.
+Use this as the **default lens** for `/qa-exploratory`. The other files in this skill — `adversarial-heuristics.md`, `personas.md`, `modern-web-attack-surface.md`, `charter-library.md` — and the `knowledge/oracles/vc-bug-catalog.md` act as **filters**: they help you spot familiar problems faster and avoid re-discovering known ones, freeing attention for genuinely new scenarios.
 
 ---
 
@@ -11,7 +11,7 @@ Use this as the **default lens** for `/qa-exploratory`. The other files in this 
 Every exploratory session ends with at least one **net-new scenario** — something that:
 
 1. Is not covered by any CSV suite in [`regression/suites/`](../../../regression/suites)
-2. Is not in the [VC bug catalog](../../knowledge/oracles/vc-bug-catalog.md) or ECL
+2. Is not in the the VC bug catalog (`knowledge/oracles/vc-bug-catalog.md`) or ECL
 3. The charter author would not have predicted before the session
 
 If you can't name a net-new scenario at debrief, the session **was not exploratory** — it was re-validation. Both are valid uses of time, but call the session what it is and update the coverage matrix honestly.
@@ -254,7 +254,7 @@ Cross-ref: [../../../rules/test-data.md](../../rules/test-data.md) is the projec
 - [adversarial-heuristics.md](adversarial-heuristics.md) — Apply these as a *filter* (familiar-problems oracle) during discovery sessions, not as the primary checklist
 - [personas.md](personas.md) — Persona lens helps surface scenarios a different user type would hit
 - [charter-library.md](charter-library.md) — Pre-built charters; use as starting points, then galumph or hostile-interview to discover what they miss
-- [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../knowledge/oracles/vc-bug-catalog.md) — Read first to AVOID re-discovering known patterns
+- `knowledge/oracles/vc-bug-catalog.md` — Read first to AVOID re-discovering known patterns
 - [../../../agents/knowledge/execution/live-discovery.md](../../knowledge/execution/live-discovery.md) — Decision tree + JS recipes for resolving test data at runtime (`live-discover` / `random-data` / `@td()`); essential for galumphing, feature-pair matrix, and any session that needs to pick "any product / any address"
 - [../../../agents/knowledge/execution/module-suite-map.md](../../knowledge/execution/module-suite-map.md) — Source for coverage-diff hunting (§ 1.1)
 - [../../testing/qa-coverage-gap/SKILL.md](../qa-coverage-gap/SKILL.md) — Programmatic coverage-gap analysis (complementary to manual exploratory discovery)

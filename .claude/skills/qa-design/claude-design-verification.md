@@ -292,5 +292,5 @@ Two failure modes this catches that a screenshot review does not:
 - [`design-system-consistency.md`](design-system-consistency.md) — the live-token audit this diff sits beside
 - [`scripts/lib/verify-design-spec.ts`](../../../scripts/lib/verify-design-spec.ts) — extractor, snippets, classifiers
 - [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts) — BL-UI invariants, non-text contrast, sized-control audit
-- [`knowledge/oracles/critical-ui-scope.md`](../../knowledge/oracles/critical-ui-scope.md) — which components/pages to audit first
+- `knowledge/oracles/critical-ui-scope.md` — which components/pages to audit first
 - `.claude/rules/reports.md` — a design-drift bug is filed per the existing Findings → Filings tree (rollup at 5+ components)

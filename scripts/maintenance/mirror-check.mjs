@@ -67,6 +67,15 @@ export const PATH_REWRITES = [
   [/(?:\.\.\/)*(?:\.claude\/)?knowledge\/execution\/quality-gates\.md/g, "@QUALITY_GATES"],
   [/(?:\.\.\/)*(?:\.claude\/)?rules\/mcp-browsers\.md/g, "@BROWSERS"],
   [/(?:\.\.\/)*(?:\.claude\/)?knowledge\/execution\/browser-lanes\.md/g, "@BROWSERS"],
+  // Three self-diagnostics documents that exist ONLY under `plugins/vc-fix/knowledge/`. The plugin
+  // copy of `skill-expectations.md` reaches them as siblings; the root copy has to name them by
+  // their plugin path, because there is no twin in `.claude/` to link. Until 2026-09-17 the root
+  // copy simply carried the PLUGIN's relative strings — which resolved in neither tree, and read as
+  // parity only because nothing checked a link target. Tokenised here so the pair stays gated on
+  // its CONTENT, which is what matters in an oracle both surfaces are judged against.
+  [/(?:\.\.\/)*(?:knowledge\/)?execution\/plugin-root\.md/g, "@PLUGIN_ROOT_DOC"],
+  [/(?:\.\.\/)*(?:\.\/)?(?:knowledge\/diagnostics\/)?upstream-schema\.md/g, "@UPSTREAM_SCHEMA"],
+  [/(?:\.\.\/)*(?:\.\/)?(?:knowledge\/diagnostics\/)?adr-upstream-default-deny\.md/g, "@UPSTREAM_ADR"],
   [/(?:\.\.\/)*(?:\.claude\/)?rules\/([a-z-]+\.md)/g, "@RULES/$1"],
   [/(?:\.\.\/)*\.claude\//g, "@CLAUDE/"],
   // Strip the `../` prefix entirely rather than tokenising it. The two trees sit at different
@@ -117,6 +126,7 @@ export const FORKS = {
   // longer a pair to declare a fork BETWEEN. plugins/vc-fix/ keeps its copies until it can declare a
   // dependency on vc-kb; this is knowing duplication, not an undeclared fork.
   "knowledge/api/graphql-test-cases-runner.md": "plugin-scope",
+
   "knowledge/execution/live-discovery.md": "plugin-scope",
   "knowledge/execution/module-suite-map.md": "plugin-scope",
   "knowledge/execution/tracker-ops.md": "undecided",

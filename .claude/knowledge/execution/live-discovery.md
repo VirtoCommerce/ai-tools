@@ -306,5 +306,5 @@ When a test fails on discovered data, the diff between "what we asked for" and "
 - [`scripts/lib/graphql-auth.ts`](../../../scripts/lib/graphql-auth.ts) — `TokenCache` (called by `tokenForRole`)
 - [`scripts/lib/graphql-executor.ts`](../../../scripts/lib/graphql-executor.ts) — `executeOperation` (called by every `discover*`)
 - [`scripts/lib/graphql-case-parser.ts`](../../../scripts/lib/graphql-case-parser.ts) — `[GQL-CAPTURE label.path → VAR]` grammar (used by CSV recipes)
-- [`knowledge/api/graphql-schema.md`](../api/graphql-schema.md) — schema reference; consult before writing new discovery queries
+- `knowledge/api/graphql-schema.md` — schema reference; consult before writing new discovery queries
 - [`test-data/aliases.json`](../../../test-data/aliases.json) — registry for `@td()` references (the other half of the data layer)

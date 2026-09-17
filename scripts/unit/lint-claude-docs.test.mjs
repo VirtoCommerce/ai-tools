@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored, promptFiles, checkPromptBudget, PROMPT_BASELINE_PATH } from '../maintenance/lint-claude-docs.mjs';
+import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, isRepoLinkTarget, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored, promptFiles, checkPromptBudget, PROMPT_BASELINE_PATH } from '../maintenance/lint-claude-docs.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -383,4 +383,20 @@ test('DOC-006 is scoped to the always-loaded tier and ratchets at zero', () => {
   );
   const alwaysLoaded = new Set(alwaysLoadedFiles(ROOT));
   assert.ok(offenders.every((f) => alwaysLoaded.has(f.file)), 'DOC-006 must not reach the on-demand tier');
+});
+
+// The link-target rule, added 2026-09-17 after 113 dangling links sat under a DOC-003 reading 0.
+// Its whole value is in what it does NOT check: a gate pinned at zero cannot afford one phantom.
+test('isRepoLinkTarget checks a repo path and nothing else', () => {
+  assert.equal(isRepoLinkTarget('../rules/reports.md', undefined), true);
+  assert.equal(isRepoLinkTarget('scripts/lib/knowledge-base.mjs', undefined), true);
+  assert.equal(isRepoLinkTarget('../rules/reports.md#section', undefined), true, 'a fragment is dropped, not a reason to skip');
+
+  assert.equal(isRepoLinkTarget('path', '!'), false, 'an image link quotes markup, it does not cite a file');
+  assert.equal(isRepoLinkTarget('https://example.com/x.md', undefined), false);
+  assert.equal(isRepoLinkTarget('#anchor', undefined), false);
+  assert.equal(isRepoLinkTarget('./bl-proposals-{date}.md', undefined), false, 'placeholder');
+  // The knowledge BASE is a separate repository fetched by `kb sync`; it is cited, never linked,
+  // and checking it here would fail every machine that has not run the fetch.
+  assert.equal(isRepoLinkTarget('knowledge/oracles/business-logic.md', undefined), false);
 });
