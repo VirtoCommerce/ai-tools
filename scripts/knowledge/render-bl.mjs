@@ -35,7 +35,7 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
 import { knowledgePath, knowledgeLabel, KnowledgeBaseMissing } from "../lib/knowledge-base.mjs";
 import { readRules } from "../../plugins/vc-kb/src/capture.mjs";
-import { ruleIdOf } from "../../plugins/vc-kb/src/rules.mjs";
+import { ruleIdOf, severityOf } from "../../plugins/vc-kb/src/rules.mjs";
 import { resolveBase } from "../../plugins/vc-kb/src/base.mjs";
 
 export const PAGE_REL = "oracles/business-logic.md";
@@ -116,8 +116,26 @@ export function bodiesFromBase(base) {
     if (!rid) continue;
     const ls = e.body.trimEnd().split("\n");
     while (ls.length && ls[0].trim() === "") ls.shift();
-    if (ls.length > 1 && ls[1].trim() === "") ls.splice(1, 1);
-    if (ls.length) ls[0] = `### ${ls[0]}`;
+
+    // TWO SHAPES, BECAUSE RULES ARRIVE TWO WAYS, and assuming one was a bug this file shipped with.
+    //
+    // A rule TRANSCRIBED from the page carries the page's own heading as its first body line, with
+    // the colon and the severity tag the page uses. A rule CAPTURED through the door does not: its
+    // id and title are the `subject`, and the body is the claim alone. Prefixing "### " blindly
+    // turned the second kind into a heading made of its own claim text — and the entry then
+    // vanished from the page, while `missing` and `unused` both read zero because the marker had
+    // been substituted with something. Found by adding a rule, not by reading the code.
+    if (ls.length && ls[0].startsWith(rid)) {
+      if (ls.length > 1 && ls[1].trim() === "") ls.splice(1, 1);
+      ls[0] = `### ${ls[0]}`;
+    } else {
+      // Synthesised in the page's own shape: `### <id>: <title> `[severity]``. The title is what
+      // the subject says after the id; the severity is read off the claim, where `severityOf`
+      // already looks for it, and is omitted rather than invented when the claim carries none.
+      const title = String(e.data.subject).slice(rid.length).trim().replace(/^[:\-\s]+/, "");
+      const sev = severityOf(e.body);
+      ls.unshift(`### ${rid}: ${title}${sev ? ` \`[${sev}]\`` : ""}`);
+    }
     map.set(rid, `${ls.join("\n")}\n`);
   }
   return map;
