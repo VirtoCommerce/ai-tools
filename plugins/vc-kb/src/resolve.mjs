@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { loadIndex, tokenize, SEARCH_OPTIONS } from './index-build.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { CAPTURED_DIR, CAPTURED_INDEX, FLOWS_DIR, FLOWS_INDEX, confirmationsOf, disputesOf, isDisputed, observedOn, readPin, evidenceKinds } from './capture.mjs';
-import { DERIVED_INDEX } from './planes.mjs';
+import { DERIVED_INDEX, RULES_DIR, RULES_INDEX } from './planes.mjs';
 import { sourceDoor, renderSourceDoor } from './source-door.mjs';
 import { coordinateIndex } from './coordinates.mjs';
 import { structuredMatches } from './arrive.mjs';
@@ -145,7 +145,15 @@ export function openBase(base) {
   if (captured.degraded) return { degraded: captured.degraded };
   // The flow index is deliberately NOT opened here. `ask` must not be able to reach it even by
   // accident: that is the whole of the separation, and a field on this object is how it would leak.
-  return { derived, captured: captured.index, pin: readPin(base) };
+  //
+  // THE RULES INDEX IS OPENED, AND THAT IS NOT THE SAME DECISION. A flow is withheld because a
+  // procedure and a fact answer different QUESTIONS and must never compete. A rule answers the same
+  // question a fact does -- "does a coupon apply to the sale price" IS BL-CART-003 -- so withholding
+  // it would mean the base holds the answer and does not hand it over. It is served in its own
+  // block rather than in the ranked list, for the reason recorded at `ask`.
+  const rules = loadPlane(base, RULES_INDEX, { requiredWhen: () => storeHasEntries(base, RULES_DIR) });
+  if (rules.degraded) return { degraded: rules.degraded };
+  return { derived, captured: captured.index, rules: rules.index, pin: readPin(base) };
 }
 
 export function openFlows(base) {
@@ -516,7 +524,25 @@ export function ask(base, question, { limit = 3 } = {}) {
   const named = derivedByCoordinate(base, question);
   const hits = [...named, ...written.sort((a, b) => b.score - a.score)];
 
-  if (!hits.length) {
+  // RULES ARE SERVED, IN THEIR OWN BLOCK, AFTER WHAT SOMEBODY ACTUALLY SAW.
+  //
+  // Merging them into the ranked list was the obvious thing and would have been wrong: 217 rules
+  // against 100 observations, every rule `attested: false` because it was transcribed from a page
+  // and nobody has watched one hold, and BM25 does not know the difference. The earned half of the
+  // corpus would have been drowned by the asserted half on its first day.
+  //
+  // A separate block keeps both facts visible at once: what the rule SAYS should happen, and what
+  // somebody SAW happen. Where they disagree that is a finding — which is the entire reason the
+  // rules are entries at all, rather than a page nobody can contradict.
+  const ruleHits = search(opened.rules)
+    .filter((h) => contentMatches(h, queryTerms).length >= floor)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+
+  // A question the observations do not cover but a RULE does is no longer a MISS. It used to be,
+  // and that was the base holding the answer while reporting "no entry covers this" — the one
+  // output that costs more than silence, aimed at itself.
+  if (!hits.length && !ruleHits.length) {
     // An uncovered question returns an explicit MISS. It does not return the nearest thing with
     // the caveat filed off, because a plausible invention is the one output that costs more than
     // silence.
@@ -550,9 +576,10 @@ export function ask(base, question, { limit = 3 } = {}) {
   return {
     miss: false,
     question,
-    searched,
+    searched: [...searched, ...(ruleHits.length ? ['normative'] : [])],
     pin: opened.pin?.pin ?? null,
     results: hits.slice(0, limit).map((h) => answerFor(base, h, opened.pin?.deployment ?? null)),
+    rules: ruleHits.map((h) => answerFor(base, h, opened.pin?.deployment ?? null)),
     degraded: null,
   };
 }
@@ -579,6 +606,10 @@ export function renderAnswer(res) {
     }
     return out.join('\n');
   }
+  if (!res.results.length && (res.rules ?? []).length) {
+    out.push('No observation covers this. What the rules REQUIRE, below — nobody has yet watched it hold here.');
+    out.push('');
+  }
   for (const r of res.results) {
     out.push(`${r.id}  ${r.subject}   [${r.plane} · trust: ${r.trust.level}]`);
     out.push(`  question   : ${r.question}`);
@@ -597,6 +628,20 @@ export function renderAnswer(res) {
     out.push(r.body.split('\n').map((l) => `  ${l}`).join('\n'));
     out.push('');
   }
-  out.push(`-- ${res.results[0].protocol}`);
+  // A LABELLED BLOCK, AFTER the observations and visibly different from them. 217 transcribed
+  // rules beside 100 observed facts, every rule `attested: false`, is a corpus whose asserted half
+  // outnumbers its earned half two to one; printing them in one ranked list would teach a reader
+  // that the two are interchangeable. They are not — a rule says what SHOULD happen, an
+  // observation says what somebody SAW — and where they disagree, that is the finding this plane
+  // exists to surface.
+  if ((res.rules ?? []).length) {
+    out.push(`what the RULES require (${res.rules.length}) — asserted here, not observed:`);
+    for (const r of res.rules) {
+      out.push(`  ${r.id}  ${r.subject}`);
+      out.push(`    watched it NOT hold? \`kb dispute ${r.id}\` — that disagreement is the point`);
+    }
+    out.push('');
+  }
+  out.push(`-- ${(res.results[0] ?? res.rules[0]).protocol}`);
   return out.join('\n');
 }

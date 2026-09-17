@@ -83,6 +83,11 @@ jobs:
         run: npm run test:roi-check -- --base "origin/${{ github.base_ref }}"
       - name: bl:lint / ecl:lint — oracle citation integrity
         run: npm run bl:lint && npm run ecl:lint
+      # The BL oracle page is GENERATED from the 217 records in the base's normative plane. If it is
+      # not exactly what they render, either somebody hand-edited a generated file or the renderer
+      # changed — and a silent rewrite of 217 invariants is the one thing nobody reviews.
+      - name: bl:render:check — the oracle page is what the records render
+        run: npm run bl:render:check
       # The base is read by installs that do NOT have this repository. A page there citing
       # `regression/suites/…` or `/qa-exploratory` is pointing at something the reader cannot open,
       # and they have no way to tell that from a pointer they have not found yet.

@@ -54,6 +54,28 @@ function makeBase() {
 }
 const drop = (dir) => rmSync(dir, { recursive: true, force: true });
 
+// A base holding both planes, indexed the way the door indexes them, so `ask` can be driven against
+// it. Built from `capture` rather than by writing files, because every refusal the door makes is a
+// rule somebody argued for and a fixture that skips them tests a corpus the door would not accept.
+function baseWithRules(rules, observations) {
+  const dir = makeBase();
+  const page = withPage(dir);
+  for (const r of rules) {
+    capture(dir, {
+      rule: true, subject: r.subject, claim: r.body, refutableBy: 'observation',
+      anchors: [], appliesTo: ['surface=storefront-ui'], from: page,
+    });
+  }
+  for (const o of observations) {
+    capture(dir, {
+      subject: o.subject, question: o.subject, claim: o.body,
+      refutableBy: 'observation', anchors: ['GET /api/cart'], appliesTo: ['surface=storefront-ui'],
+      deployment: 'vcptcore_stable',
+    });
+  }
+  return dir;
+}
+
 // A page that exists, so `--from` resolves. The door refuses a path nothing resolves to, which is
 // the whole property that makes a transcription auditable.
 function withPage(dir, name = 'business-logic.md') {
@@ -395,4 +417,60 @@ test('a relative --from resolves against the base, so the stored path travels wi
       /does not exist/,
     );
   } finally { drop(dir); }
+});
+
+// ---- rules in `ask` -------------------------------------------------------------------------------
+
+// THE POINT OF MAKING RULES ENTRIES. Until 2026-09-17 `kb ask "does a coupon apply to the sale
+// price"` returned the observations around BL-CART-003 and never the rule itself — the base held the
+// answer and did not hand it over. These pin the shape that fixes it without the fix costing what a
+// naive merge would have cost.
+test('a question a rule answers reaches the rule, in its own block and not in the ranked list', async () => {
+  const { ask } = await import('../src/resolve.mjs');
+  const dir = baseWithRules([
+    { subject: 'BL-CART-003 coupon and sale interaction', body: 'A percentage coupon applies to the already-discounted sale price, never the list price.' },
+  ], [
+    { subject: 'cart totals render', body: 'The cart page shows a subtotal line.' },
+  ]);
+
+  const r = ask(dir, 'does a coupon apply to the sale price or the list price');
+  assert.equal(r.miss, false);
+  assert.ok((r.rules ?? []).length >= 1, 'the rule is served');
+  assert.match(r.rules[0].subject, /BL-CART-003/);
+  assert.ok(
+    !r.results.some((x) => /BL-CART-003/.test(x.subject)),
+    'and is NOT mixed into the ranked list: 217 asserted rules would drown 100 observed facts',
+  );
+  assert.ok(r.searched.includes('normative'), 'the answer says which planes it read');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('a question only a rule answers is no longer a MISS', async () => {
+  const { ask } = await import('../src/resolve.mjs');
+  const dir = baseWithRules([
+    { subject: 'BL-PLAT-009 idempotency of the settlement job', body: 'Re-running settlement for one period MUST NOT double-post ledger entries.' },
+  ], []);
+
+  const r = ask(dir, 'can settlement double-post ledger entries when it is re-run');
+  assert.equal(r.miss, false, 'holding the answer and reporting MISS is the one output worse than silence');
+  assert.equal(r.results.length, 0, 'no observation covers it, and none is invented');
+  assert.match(r.rules[0].subject, /BL-PLAT-009/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('the rendered answer separates what was SEEN from what is REQUIRED', async () => {
+  const { ask, renderAnswer } = await import('../src/resolve.mjs');
+  const dir = baseWithRules(
+    [{ subject: 'BL-CART-003 coupon and sale interaction', body: 'A coupon applies to the discounted sale price.' }],
+    [{ subject: 'coupon applied on a sale item', body: 'Observed a coupon taking 10% of the sale price on vcptcore.' }],
+  );
+
+  const text = renderAnswer(ask(dir, 'coupon on a sale price'));
+  assert.match(text, /what the RULES require/);
+  assert.ok(
+    text.indexOf('what the RULES require') > text.indexOf('coupon applied on a sale item'),
+    'the observed half comes first — it is the half that was earned',
+  );
+  assert.match(text, /asserted here, not observed/, 'and the reader is told which is which');
+  rmSync(dir, { recursive: true, force: true });
 });
