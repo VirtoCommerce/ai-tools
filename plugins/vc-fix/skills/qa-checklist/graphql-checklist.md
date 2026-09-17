@@ -10,8 +10,8 @@
 
 | File | Purpose |
 |------|---------|
-| [`knowledge/api/graphql-schema.md`](../../knowledge/api/graphql-schema.md) | **Authoritative** live introspection snapshot — query/mutation names, input types, return types. Verify every name and field against this before writing. |
-| [`knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) | Tag grammar / predicate shapes / query-authoring conventions (the CSV-suite runner it also documents is full `vc-qa` plugin only, not shipped here). |
+| `knowledge/api/graphql-schema.md` | **Authoritative** live introspection snapshot — query/mutation names, input types, return types. Verify every name and field against this before writing. |
+| `knowledge/api/graphql-test-cases-runner.md` | Tag grammar / predicate shapes / query-authoring conventions (the CSV-suite runner it also documents is full `vc-qa` plugin only, not shipped here). |
 | Test data | Resolve ad hoc (live-discover the entity, or ask the user) rather than inventing values — `@td()` / `test-data/` are full `vc-qa` plugin only, not shipped here. |
 
 ---

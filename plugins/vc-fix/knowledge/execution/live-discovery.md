@@ -319,4 +319,4 @@ Full `vc-qa` plugin only — none of these are shipped in this plugin:
 - `test-data/aliases.json` — registry for `@td()` references (the other half of the data layer)
 
 Shipped in this plugin:
-- [`knowledge/api/graphql-schema.md`](../api/graphql-schema.md) — schema reference; consult before writing new discovery queries
+- `knowledge/api/graphql-schema.md` — schema reference; consult before writing new discovery queries

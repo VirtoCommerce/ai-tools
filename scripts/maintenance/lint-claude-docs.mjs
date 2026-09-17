@@ -72,6 +72,9 @@ export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0
 export const INFORMATIONAL = new Set(['DOC-003E']);
 
 export const GENERIC_SCRIPTS = new Set(['build', 'dev', 'lint', 'test', 'start', 'typecheck', 'storybook', 'preview', 'format', 'install', 'serve', 'watch']);
+/** The distributed plugin tree, scanned for ONE rule — see the loop that uses it. */
+export const PLUGIN_ROOT = 'plugins/vc-fix';
+
 export const PLACEHOLDER_RE = /XX|YYYY|NNN|<[^>]*>|\*|\{|Sprint-current|\.\.\.|…/;
 
 export const posix = (p) => p.split(path.sep).join('/');
@@ -457,6 +460,29 @@ export function lint(root = '.') {
           const q = norm(m[2]);
           if (q.length < 3 || /^\d/.test(q)) continue;            // numbered anchors (§1a, §5.0) are checked by doclint's stricter form
           if (!headingMatch(hs, m[2])) add('DOC-004', f, i + 1, `§${m[2].trim()} not found as a heading in ${t}`);
+        }
+      });
+    }
+
+    // THE DISTRIBUTED SURFACE GETS THE LINK RULE AND NOTHING ELSE.
+    //
+    // A broken link in `plugins/vc-fix/` is worse than one here: a client follows it, finds
+    // nothing, and nobody on this team ever sees it. Seven were shipping the day this was written —
+    // `[`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md)` in the
+    // checklist skill, pointing into a directory the plugin EMPTIED when the oracles moved to the
+    // base. The link form is invisible to every other rule here, which is how they survived.
+    //
+    // Only this rule runs over the plugin. DOC-002 would check its `npm run` names against the
+    // ROOT package.json, which is a different project's script list, and DOC-004's `§` rule would
+    // resolve plugin-relative paths against this tree. Both would report defects that are not.
+    for (const f of walkMd(PLUGIN_ROOT).filter((p) => !p.includes(`${path.sep}node_modules${path.sep}`))) {
+      fs.readFileSync(f, 'utf8').split(/\r?\n/).forEach((l, i) => {
+        if (l.includes(MAY_NOT_EXIST)) return;
+        for (const m of l.matchAll(ANY_LINK_RE)) {
+          if (!isRepoLinkTarget(m[2], m[1])) continue;
+          const cited = m[2].split('#')[0].replace(/\/$/, '');
+          if (pathResolves(f, cited) || ignored(cited) || ignored(cited + '/')) continue;
+          add(isEphemeralPath(citedFromRoot(f, cited)) ? 'DOC-003E' : 'DOC-003', f, i + 1, `link target does not exist: ${cited}`);
         }
       });
     }
