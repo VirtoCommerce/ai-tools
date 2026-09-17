@@ -241,16 +241,26 @@ test('a clone whose index was never committed gets one built, and nothing else i
 
   assert.deepEqual(r.indexed, ['rules-index.json']);
   assert.equal(existsSync(join(dest, 'rules-index.json')), true);
-  assert.match(renderSync(r), /built the missing retrieval index: rules-index\.json/);
+  assert.match(renderSync(r), /built the retrieval index git does not carry: rules-index\.json/);
 
   // The CATALOG is tracked, and its byte comparison is what catches an entry edited by hand. A
   // fetch that rewrote it would destroy that signal — and would leave the checkout dirty, so the
   // next `kb sync` could not fast-forward.
   assert.equal(spawnSync('git', ['status', '--porcelain'], { cwd: dest, encoding: 'utf8' }).stdout.trim(), '');
 
-  // An index the checkout DOES carry is left alone, stale or not: repairing one is `kb reindex`.
+  // AN IGNORED INDEX IS OURS, PRESENT OR NOT. It never arrives with a pull, so after a fetch that
+  // changed the entries it is stale — and a stale index is not a notice, it is a `kb validate`
+  // PROBLEM. Measured the first time a real pull carried a corrected rule.
   writeFileSync(join(dest, 'rules-index.json'), 'stale but present');
-  assert.deepEqual(repairIndexes(dest), []);
+  assert.deepEqual(repairIndexes(dest), ['rules-index.json']);
+  assert.notEqual(readFileSync(join(dest, 'rules-index.json'), 'utf8'), 'stale but present');
+
+  // A TRACKED one is git's to deliver and is left alone — rewriting it would dirty the tree and the
+  // next fast-forward could not run, which is the whole reason this touches only what git ignores.
+  writeFileSync(join(dest, 'captured-index.json'), 'tracked and stale');
+  git(['add', 'captured-index.json'], dest);
+  assert.ok(!repairIndexes(dest).includes('captured-index.json'));
+  assert.equal(readFileSync(join(dest, 'captured-index.json'), 'utf8'), 'tracked and stale');
 
   rmSync(origin, { recursive: true, force: true });
   rmSync(home, { recursive: true, force: true });

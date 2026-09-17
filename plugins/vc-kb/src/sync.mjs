@@ -44,17 +44,24 @@ export class SyncRefused extends Error {}
  * "MISS (degraded)", including questions the corpus answers well. The feature that put 217 rules
  * in reach of `kb ask` was inert on any machine that followed the setup.
  *
- * ONLY WHAT IS MISSING IS BUILT, and only the INDEX. Two things follow from the same argument. A
- * rebuild of an index the checkout DOES carry would rewrite a tracked file and leave the working
- * tree dirty, so the next `kb sync` could not fast-forward; and `kb reindex` writes the CATALOG
- * beside the index, which IS tracked and whose byte comparison is what catches an entry edited by
- * hand — a fetch that quietly rewrote it would destroy that signal. So: absent index, ignored by
- * the base, built here. Present-but-stale is `kb reindex`'s business and a human's decision.
+ * WHAT GIT DOES NOT CARRY IS OURS TO KEEP CORRECT, and only the INDEX is touched. An index the
+ * repository TRACKS arrives with the pull and is left alone: rewriting it would dirty the working
+ * tree and the next `kb sync` could not fast-forward. An IGNORED one never arrives at all, so
+ * after a fetch that changed the entries it is stale — and a stale index is not a notice, it is a
+ * `kb validate` PROBLEM. Measured the first time a real pull carried a corrected rule: the entry
+ * came down, the index git never had did not, and validate failed on that machine.
+ *
+ * The CATALOG is never rebuilt here. It is tracked, it comes down with the pull, and its byte
+ * comparison is what catches an entry edited by hand — a fetch that quietly rewrote it would
+ * destroy that signal.
  */
 export function repairIndexes(dir) {
   const built = [];
   for (const [plane, store] of Object.entries(WRITTEN_STORES)) {
-    if (!existsSync(join(dir, store.dir)) || existsSync(join(dir, store.index))) continue;
+    if (!existsSync(join(dir, store.dir))) continue;
+    // Present AND git's to deliver: leave it alone. Present and OURS: rebuild it, because nothing
+    // else will, and `kb validate` fails on a stale one.
+    if (existsSync(join(dir, store.index)) && !isUntracked(dir, store.index)) continue;
     try {
       if (!readStore(dir, plane).length) continue;
       writeFileSync(join(dir, store.index), buildCapturedArtifacts(dir, plane).index);
@@ -75,6 +82,17 @@ const gitOut = (args, cwd) => {
   const r = git(args, cwd);
   return r.status === 0 ? String(r.stdout ?? '').trim() : null;
 };
+
+/**
+ * Does git carry this file, or is it ours to maintain?
+ *
+ * The line between the two is the whole of the index question. A tracked index arrives with the
+ * pull and is git's business; an ignored one does not arrive at ALL, so after a fetch that changed
+ * the entries it is stale, and `kb validate` FAILS on a stale index — not a notice, a problem.
+ * Measured the first time a real pull carried a corrected rule: the entry came down, the index git
+ * never had did not, and the next `kb validate` on that machine failed.
+ */
+const isUntracked = (dir, file) => gitOut(['ls-files', '--', file], dir) === '';
 
 /**
  * How old the CONTENT is -- the date of the commit checked out, not when the clone was taken.
@@ -265,7 +283,7 @@ export function renderSync(result) {
   // Reported rather than done silently: a person who sees `rules-index.json` built here knows why
   // the first fetch took a moment, and knows that a base can arrive without one.
   const built = indexed.length ? `
-  built the missing retrieval index: ${indexed.join(', ')}` : '';
+  built the retrieval index git does not carry: ${indexed.join(', ')}` : '';
   const kept = replayed ? `
   kept ${replayed} unpushed demand row(s) — re-applied on top of what came down` : '';
   return `base ${verb} at ${dir}${when}${built}${kept}`;
