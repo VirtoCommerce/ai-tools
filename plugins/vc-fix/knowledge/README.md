@@ -1,30 +1,37 @@
 # Agent Knowledge Base
 
-Cross-agent reference files (30) grouped by **what an agent reaches for the file to answer**.
-These are shared knowledge bases agents consult during testing, authoring, and fixing — not
-per-task notes. Paths are referenced throughout `agents/`, `commands/`, `skills/`, and
-`.claude/`; move a file → update its references.
+**Most of what agents reach for is NOT here any more — it is in the knowledge base.**
 
-## Folders
+The oracles (`BL-*`, `ECL-*`, `VC-*`, the `BL-UI` matrix), the domain maps, the API and
+architecture references describe the PLATFORM: what makes them untrue is a change out there, not a
+change to this plugin. They live in [VirtoCommerce/vc-knowledge](https://github.com/VirtoCommerce/vc-knowledge)
+and travel with it, so one copy serves every project on a machine instead of one copy per plugin
+going quietly out of step.
 
-| Folder | Answers | Files |
-|--------|---------|-------|
-| [`oracles/`](oracles/) | "Is this behavior correct? Has it failed before?" — the HICCUPPS-F "Familiar Problems" set | `business-logic.md` (BL-*), `e-commerce-edge-cases-library.md` (ECL-*), `vc-bug-catalog.md` (VC-* historical failures), `critical-ui-scope.md` (BL-UI matrix) |
-| [`domain/`](domain/) | VC storefront/platform domain facts & judgment | `catalog.md`, `products.md`, `store-settings.md`, `sitemap.md` |
-| [`api/`](api/) | REST + GraphQL surface, schema & authoring contracts | `api-auth.md`, `platform-patterns.md`, `graphql-schema.md`, `graphiql-interaction.md`, `graphql-test-cases-runner.md`, `order-creation-matrix.md` |
-| [`automation/`](automation/) | How to drive the live UI as a real user | `storefront-selectors.md`, `storefront-config-flags.md`, `browser-quirks.md` |
-| [`execution/`](execution/) | Test-data resolution, dedup/triage signals, module mapping, tracker ops, deploy/verify recipes | `live-discovery.md`, `module-suite-map.md`, `debugging-signals.md`, `performance-thresholds.md`, `tracker-ops.md`, `azure-html-format.md`, `frontend-local-verify.md`, `plugin-root.md` |
-| [`architecture/`](architecture/) | Repo anatomy for the developers team (auto-fix) | `vc-frontend-architecture.md`, `vc-module-architecture.md` |
-| [`diagnostics/`](diagnostics/) | Self-diagnostics oracle: per-skill expected phases/gates + S0–S3 rubric, and the **completion-signal authoring contract** (every skill/command must emit `session-telemetry.mjs complete --skill "<name>"` as its terminal step), plus the upstream default-deny spec + ADR | `skill-expectations.md`, `upstream-schema.md`, `adr-upstream-default-deny.md` |
+## Getting them
 
-## Conventions
+    kb sync
 
-- **Reference, don't inline.** Agents cite an ID (`BL-AUTH-005`, `ECL-03`, `VC-CART-*`) or a path,
-  never paste the body into a report. See [`.claude/rules/reports.md`](../.claude/rules/reports.md).
-- **`oracles/` is the correctness backbone.** Exploratory and review flows use it as the
-  "Familiar Problems" oracle and to seed Bad Neighborhood tours.
-- **`graphql-schema.md` is a live-introspection snapshot** — verify field names there before
-  authoring GraphQL (the refresh script that generates it is full `vc-qa` plugin only, not shipped
-  here; introspect `{{BACK_URL}}/graphql` directly to check for drift).
-- **Cross-file links use relative paths** (e.g. an `oracles/` file links a selector as
-  `../automation/storefront-selectors.md`).
+Fetches the base once per machine into `~/.claude/vc-knowledge`. Needs the **vc-kb** plugin, which
+vc-fix declares as a dependency. Without it every path below resolves to nothing, and the tools that
+read them say so and exit 2 rather than reporting an empty corpus as a clean one.
+
+**A path written `knowledge/<something>` is in the BASE**, at `~/.claude/vc-knowledge/knowledge/…` —
+the tail is unchanged from when these files lived here, so every reference in `agents/`, `commands/`
+and `skills/` still reads correctly. A path written `knowledge/…` *relative to this plugin* is one
+of the files listed under **What is still here**.
+
+`npm run bl:extract -- --domain <d>` hands an agent the invariants for one domain without naming a
+path at all — about 7% of the oracle instead of all of it.
+
+## What is still here
+
+What stayed is what this PLUGIN owns — a change to vc-fix is what would make it untrue:
+
+| Folder | What |
+|--------|------|
+| `agents/` | the shared instruction sets for this plugin's agent teams |
+| `api/graphql-test-cases-runner.md` | the runner's own contract grammar — our format, not the platform's |
+| `diagnostics/` | the self-diagnostics subsystem: the oracle, the upstream schema, the default-deny ADR |
+| `execution/` | how this plugin runs: tracker ops, live discovery, the module→suite map, local verify, plugin-root resolution, Azure HTML |
+

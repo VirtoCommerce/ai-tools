@@ -110,16 +110,15 @@ Discipline (honor `.claude/rules/reports.md` brevity + `feedback_env_resilience`
 - Keep the **guest-crawl caveat** and the **"not re-verified this rev"** note honest — say which sections you actually touched.
 - Never assert exact prices/IDs; counts are "as of <date>" snapshots, flagged as drift candidates.
 
-### Step 4 — Sync the plugin mirror
+### Step 4 — Nothing to mirror
 
-`plugins/vc-fix/knowledge/domain/sitemap.md` is a maintained duplicate (self-contained plugin copy). Copy the updated file over it, then re-apply its **one** intentional divergence — Note #1 uses path-free wording (no `.claude/rules/...` reference):
+The sitemap lives in the knowledge base now, and there is exactly one copy. Until 2026-09-17 this
+step said to copy it into vc-fix's own knowledge tree and then hand-restore that copy's one
+intentional divergence — a maintained duplicate, kept in step by a person remembering to.
+The duplicate is gone: `knowledge/domain/sitemap.md` is in the base, which vc-fix reads through
+`kb sync`, so a refresh reaches every consumer by being written once.
 
-```
-cp knowledge/domain/sitemap.md plugins/vc-fix/knowledge/domain/sitemap.md
-```
-then Edit the plugin copy's Note #1 back to: "Treat any hardcoded IDs/slugs/SKUs as drift candidates — resolve entities by querying the live system instead." Verify with `diff` that only that one line differs.
-
-> The `sitemap-snapshot.<env>.json` files live **only** under `.claude/` — QA-tooling artifacts, not plugin assets. Do not copy them into `plugins/vc-fix/`.
+`sitemap-snapshot.<env>.json` travels with it, in the base beside the page it snapshots.
 
 ### Step 5 — Report
 
