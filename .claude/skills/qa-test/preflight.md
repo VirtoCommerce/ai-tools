@@ -35,7 +35,7 @@ context gathering, the Test Model, authoring and seeding that are 30+ minutes of
   changes what you test. On a PR, review threads flag the reviewer's own risk areas.
 - **Analyze the attachments (both paths, always).** Screenshots, mockups, logs, HAR and short videos are
   primary evidence — **open them**, don't just note they exist. A screenshot usually shows the exact
-  expected-vs-actual (seeds 5b and each case's assertion); a design mockup is the visual oracle; a
+  expected-vs-actual (seeds 5-verdict.1 and each case's assertion); a design mockup is the visual oracle; a
   log/HAR/stack trace narrows the repro and the affected layer. Download each attachment and `Read` it.
   Reference the concrete finding, not the filename. An attachment that can't be fetched is a **noted gap**,
   never a silent skip.
@@ -61,7 +61,7 @@ context gathering, the Test Model, authoring and seeding that are 30+ minutes of
    live (`defect-lifecycle-workflow.md` §2 + `tracker-ops.md` §Live transition discovery). Never hardcode a
    status name.
 3. **Look up the FLOW** in `ticket-routing.md` §4, then the **EFFORT** (FAST/FULL) in §5 when the flow is
-   `feature-test`. Record **flow + type + path** — all three are `summary.json` fields, persisted at 5e.3; the path gates
+   `feature-test`. Record **flow + type + path** — all three are `summary.json` fields, persisted at 5-report.3; the path gates
    Steps 1c/1d, 3 and 5. Fail-safe defaults (§6): unresolvable → `feature-test` FULL; when in doubt → FULL.
 4. **Derive the SHAPE CLASS** — `ticket-routing.md` §5c, `feature-test` branch only. It costs **no I/O**: the
    signals come off the same diff read items 1 and 3 already did, and `1b` item 2c re-reads the same
@@ -130,7 +130,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
 
     | | Token | Derived from | Unresolved ⇒ | When true |
     |---|---|---|---|---|
-    | **2b** | `layer` | the PR diff → repo identity (`REPO_PROFILES` + `resolveOwningSubApp()`) · `regression.suites[]` → `config/test-suites.json` · which of theme/module/platform `build` moved · `bugs_filed[]` → fix-PR repo · the ticket's Components → `module-suite-map.md` | **`null` + `UNRESOLVED`** — fails **CLOSED**; **never default to `storefront`** | 5f/5h audience routing |
+    | **2b** | `layer` | the PR diff → repo identity (`REPO_PROFILES` + `resolveOwningSubApp()`) · `regression.suites[]` → `config/test-suites.json` · which of theme/module/platform `build` moved · `bugs_filed[]` → fix-PR repo · the ticket's Components → `module-suite-map.md` | **`null` + `UNRESOLVED`** — fails **CLOSED**; **never default to `storefront`** | 5-status/5-docs audience routing |
     | **2c** | `visual_surface` | `.vue`/`.scss`/`.css`/`.html`/blade/icons/tokens in the diff · derived layer `storefront`/`admin-spa` · a target suite `layer: frontend` | `true` | Step 4 dispatches `ui-ux-expert` ([`visual-axis.md`](visual-axis.md)) |
     | **2d** | `contract_surface` | `.graphql`/`*ExperienceApi*`/`*.Web/Controllers`/GraphType files · derived layer `api` · suite tags `graphql`/`xapi` · an AC naming a query/mutation/field | `true` | **both** refreshers, concurrently, in ONE message ([`contract-refresh.md`](contract-refresh.md)) |
     | **2e** | `coverage_surface` | the ticket's `1a` domains + derived layer + the target suites' manifest `domain`/`tags`/`requiresModules` — **never diff paths** (a path token may only ADD a suite) · the observables the change moves · the `BL-*`/`ECL-*` it amends | `true` | `tc:scope` in wave B, **scope + risk terms only** ([`coverage-triage.md`](coverage-triage.md)) |
@@ -148,7 +148,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
     axis is a LANE trigger, never an EFFORT trigger, and never promotes FAST → FULL.
 
     **Effort (`axes.md` §4): FULL derives and runs all five. FAST derives and applies `layer` and
-    `data_surface`** — the first because 5f/5h need it and it dispatches nothing, the second because it can
+    `data_surface`** — the first because 5-status/5-docs need it and it dispatches nothing, the second because it can
     only ever *remove* a dispatch, so gating it behind a flag would restore the cost it exists to end. The
     other **three** — `2c`/`2d`/`2e` — are **opt-in** there via `--visual` / `--contract` / `--coverage` /
     `--axes`, default off. Each of those has run at most **once in 28 recorded runs**, so mandatory-on-FAST
@@ -230,5 +230,5 @@ worse than reading none, because it arrives with a written deliverable's authori
 SAME ticket amends that model in place; another ticket on this surface writes its own file and carries the
 predecessor's Part 0 forward, citing it** — what is forbidden either way is a second independently-derived
 model of one surface, and VCST-5346 already has two:
-[`test-model.md`](test-model.md) §Why it is a durable file), and `5h` (an existing guide
+[`test-model.md`](test-model.md) §Why it is a durable file), and `5-docs` (an existing guide
 for this surface is amended, never forked).

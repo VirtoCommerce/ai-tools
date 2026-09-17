@@ -43,7 +43,7 @@ Everything below is that sentence's edge cases.
         ┌─────────────┼─────────────┬───────┴──────────────┐
         │             │             │                      │
   PASS / PASS   │  FAIL       │  BLOCKED             │  (run aborted
-  WITH NOTES    │             │                      │   before 5f)
+  WITH NOTES    │             │                      │   before 5-status)
         │             │             │                      │
         ▼             ▼             ▼                      ▼
      TESTED        REOPEN     NO TRANSITION          NO TRANSITION
@@ -55,7 +55,7 @@ Everything below is that sentence's edge cases.
 
 | | Opening hop | Closing hop |
 |---|---|---|
-| **Where** | **`1a`, immediately after the flow routes to `feature-test`** — before `1b`, and long before the first agent is dispatched | 5f, strictly **after** the report is posted |
+| **Where** | **`1a`, immediately after the flow routes to `feature-test`** — before `1b`, and long before the first agent is dispatched | 5-status, strictly **after** the report is posted |
 | **To** | the ticket's in-testing status, discovered live | `TESTED` / `REOPEN` / nothing — §4 |
 | **Confirm?** | **No.** It is the direct, reversible consequence of the operator invoking the command, and asking adds a prompt to every run for a move the operator already implied | **Yes — ask.** It is terminal for the run, it notifies watchers, and `REOPEN` hands work to another team. The one place `/qa-test` writes a verdict onto someone else's board |
 | **Skip when** | tracker MCP unconfigured · already in-testing · no such transition exists · the target is a bare feature name or a PR | tracker MCP unconfigured · the flow is `hotfix-verify` (§6) |
@@ -86,7 +86,7 @@ to hand off, and on the `verify-fix` branch it would be the second flow to move 
 | `PASS` / `PASS WITH NOTES` | → **`TESTED`** | Hand to the Feature Release Gate. `PASS WITH NOTES` is a PASS: the notes live in the comment, never in a different transition |
 | `FAIL` | → **`REOPEN`** | The comment lists every failure and every filed bug link, **before** the transition |
 | `BLOCKED` | **none — deliberately** | A **mandatory comment** naming the blocker (env / data / dependency / not-deployed), what it blocks, and that the ticket is **awaiting a re-run**. The ticket stays in-testing |
-| run aborted before 5f (STOP at a gate, operator interrupt) | **none** | The opening hop stays; say so in the chat close-out. Never "tidy up" by reversing it |
+| run aborted before 5-status (STOP at a gate, operator interrupt) | **none** | The opening hop stays; say so in the chat close-out. Never "tidy up" by reversing it |
 
 **Why `BLOCKED` transitions nothing, and why that needs saying.** It used to have no row at all — the
 table had two rows for a four-value verdict vocabulary — so a blocked run left the ticket sitting in
@@ -145,7 +145,7 @@ Three constraints on a bug's hop, and the first is the one that makes it safe:
 ## 7. Jira reachability — the opening hop is a precondition, not a courtesy
 
 On Jira both closing transitions are reachable **only from the in-testing status**, so a run that
-skipped the opening hop must do it at 5f before closing. On **Azure Boards** `System.State` is set
+skipped the opening hop must do it at 5-status before closing. On **Azure Boards** `System.State` is set
 directly and there is no reachability chain — but the opening hop still runs there, because its purpose
 was never only reachability: it tells everyone else on the board that QA started. Discover the available
 states live; if the project genuinely has no testing-like state, record
@@ -155,7 +155,7 @@ states live; if the project genuinely has no testing-like state, record
 
 "Resolved live" is not a property of a run, it is a property of **each hop**: the available transitions
 are a function of the **current** status, so the set fetched at `1a` describes the status the ticket was
-in *before* the opening hop and cannot name the closing ones. Re-fetch at 5f, from the in-testing status,
+in *before* the opening hop and cannot name the closing ones. Re-fetch at 5-status, from the in-testing status,
 and match on `to.name` there.
 
 **Measured 2026-09-11 on VCST-5024 (Jira, VCST), the same ticket, ~30 minutes apart:**
@@ -163,15 +163,15 @@ and match on `to.name` there.
 | Fetched from | Transitions offered |
 |---|---|
 | `Ready for test` (at `1a`) | Cancelled · On hold · **On QA → Testing** · go to inprogress → In progress |
-| `Testing` (at 5f) | Cancelled · On hold · **Need fixes → Reopen** · **Finish test → Tested** |
+| `Testing` (at 5-status) | Cancelled · On hold · **Need fixes → Reopen** · **Finish test → Tested** |
 
-Neither closing transition exists in the first list. A run that reuses `1a`'s set at 5f finds no
+Neither closing transition exists in the first list. A run that reuses `1a`'s set at 5-status finds no
 `REOPEN`-role target, and the nearest-looking candidate — *go to inprogress → In progress* — **is the
 wrong state**: it is the developer's working state, not the QA handoff state, and using it loses the
 "QA rejected this" signal the board reads. The correct target was `Reopen`, reachable only from
 `Testing`, and it was invisible until re-fetched.
 
-### 7b. The closing hop is effectively IRREVERSIBLE — which is what makes 5f's "ask first" load-bearing
+### 7b. The closing hop is effectively IRREVERSIBLE — which is what makes 5-status's "ask first" load-bearing
 
 The §1 diagram's arrow back into in-testing is the `--iterate` loop's, **not** an undo. On the VCST
 workflow there is **no transition from `Reopen` back to the in-testing status** — measured the same day,
@@ -198,7 +198,7 @@ Every hop **and every skip** appends one entry to **`summary.json.status_transit
 ```json
 { "hop": "opening", "at": "1a", "from": "READY FOR TEST", "to": "TESTING",
   "transition": "On QA", "confirmed": false, "actor": "qa-lead" }
-{ "hop": "closing", "at": "5f", "from": "TESTING", "to": null, "skipped": "verdict BLOCKED — comment posted, awaiting re-run",
+{ "hop": "closing", "at": "5-status", "from": "TESTING", "to": null, "skipped": "verdict BLOCKED — comment posted, awaiting re-run",
   "confirmed": true, "actor": "qa-lead" }
 ```
 
@@ -218,8 +218,8 @@ enforces the shape.
    (Same containment as `feedback_subagent_external_writes`.)
 2. **Comment before transition, always.** `REOPEN` without the failure list, and `BLOCKED` without the
    blocker comment, are both a status change nobody can act on.
-3. **Never re-grade a verdict to reach a nicer transition.** The verdict is 5c's, derived from 5a + 5b;
-   5f applies it. Wanting `TESTED` is not evidence.
+3. **Never re-grade a verdict to reach a nicer transition.** The verdict is 5-verdict's, derived from 5-triage + its own AC/DoD reconciliation;
+   5-status applies it. Wanting `TESTED` is not evidence.
 4. **A skip is stated in the chat close-out and recorded.** An omitted transition reads exactly like a
    successful one.
 5. **Never past `TESTED`.** No `Done`, no `Cancelled`, no `Closed`, in any flow, on any tracker.

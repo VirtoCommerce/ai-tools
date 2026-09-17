@@ -22,14 +22,14 @@ about to change how a step works.
 | [`test-model.md`](test-model.md) | Step 1e — the fault model: why Part 0 comes first, the eight rules the scenario table must satisfy, Part 0r, the gate, worked refs | Building or reviewing a Test Model |
 | [`authoring.md`](authoring.md) | Steps 2–3 — oracle loading, Artifacts A/B/C1, the scaffold + KEEP gate, the per-surface fan-out (3b), review/auto-fix | Authoring cases, or changing how they are authored |
 | [`close-out.md`](close-out.md) | Step 5 **spine** — AC/DoD reconciliation, the verdict table, the severity floor on filing | Deciding what the run concluded |
-| [`triage.md`](triage.md) | **5a** — correlate, validate evidence, classify, provenance, severity, dedup | Turning raw results into findings |
-| [`reporting.md`](reporting.md) | **5e · 5f · 5h** — the release gate, the tracker comment, `summary.json`, the checklist, the transition, the docs | Delivering the run |
+| [`triage.md`](triage.md) | **5-triage** — correlate, validate evidence, classify, provenance, severity, dedup | Turning raw results into findings |
+| [`reporting.md`](reporting.md) | **5-report · 5-status · 5-docs** — the release gate, the tracker comment, `summary.json`, the checklist, the transition | Delivering the run |
 | [`axes.md`](axes.md) | The four pre-flight axes as ONE mechanism — the contract they share, and the fail-CLOSED/fail-OPEN split the old "same discipline" phrasing hid | Adding an axis, or deciding whether one runs on FAST |
 | [`visual-axis.md`](visual-axis.md) | The visual axis — the `visual_surface` derivation, surface → axes → executor, the invariant-blocks/spec-advises verdict rule, the browser budget | A UI-visible ticket, or changing how design/a11y is scheduled |
 | [`contract-refresh.md`](contract-refresh.md) | The contract-refresh axis — the `contract_surface` derivation at `1b` 2d, the two-artifacts/two-commands split, `UNKNOWN` never falling back, drift as a `1e` input | A ticket touching GraphQL/xAPI, or changing when the schema + fixtures are refreshed |
 | [`coverage-triage.md`](coverage-triage.md) | The coverage-triage axis — the `coverage_surface` derivation at `1b` 2e, the `2a` phase's four dispositions, and why a `RE-BASE` is resolved BY the run rather than before it | A change that renames, moves or removes something existing cases already assert |
 | [`exploratory-lane.md`](exploratory-lane.md) | Step 3x — the discovery lane: why it runs beside 3a and before authoring, the five charter sources, the four routed outputs | A FULL run, or changing when discovery happens |
-| [`modes.md`](modes.md) | `--epic` and `--iterate` (5k) | Running either opt-in mode |
+| [`modes.md`](modes.md) | `--epic` and `--iterate` (5-loop) | Running either opt-in mode |
 | [`../../templates/test-model.md`](../../templates/test-model.md) | The Test Model fill-in shape + the authoring-plan JSON shape | Writing the model or a plan |
 
 ## The two things that hold the whole pipeline together
@@ -59,7 +59,7 @@ result:
 | Reverse edges | no reverse effect exists | covered by #, or `ABSENT IN PRODUCT` (a finding) |
 | Archetype / UIP sweep | not applicable | covered by #, or `WAIVED + reason` |
 | Regression Scope Exclusions | the suite passed | name every suite that contributed zero cases |
-| 5d below-floor findings | nothing minor was found | `Not filed (below severity floor): None` |
+| 5-file below-floor findings | nothing minor was found | `Not filed (below severity floor): None` |
 | A checklist condition with no case | condition covered | list it as uncovered |
 | An absent `contract` block | the schema was fresh | record `contract_surface` + its sources, or `UNKNOWN` |
 
@@ -99,10 +99,10 @@ one sentence is how it got inverted for a day without anything noticing.
 ## The verifier, in one place
 
 The FULL path dispatches a **fresh `qa-lead-orchestrator` in §Verifier Mode**
-([`.claude/agents/qa-lead-orchestrator.md`](../../agents/qa-lead-orchestrator.md)) **three times: Step 3,
-Step 5b and Step 5e — two of which are hard STOPs.** 5e's Feature-Release-Gate ratification is
-the non-blocking one: it re-derives the recommendation, it does not hold the close-out. (There was a
-fourth, at `5g`, until promotion left the pipeline on 2026-09-10.) What makes the
+([`.claude/agents/qa-lead-orchestrator.md`](../../agents/qa-lead-orchestrator.md)) **twice: Step 3 and
+Step 5-report — only the first is a hard STOP.** 5-report ratifies without holding the close-out: it
+re-derives the recommendation. (Two more went: `5g` on 2026-09-10 with promotion, `5b` on 2026-09-16 —
+folded into `5-verdict` as an inline self-check.) What makes the
 verifier independent rather than ceremonial:
 
 - It **re-derives evidence from source** — re-runs the deterministic core (`suites:review`, `td:validate`,
@@ -118,7 +118,7 @@ verifier independent rather than ceremonial:
 - **Loop = 1 round.** `REJECT → REASONS + FIX → the doer fixes → re-verify once`. Still not APPROVE →
   **STOP** for a human. A persistent REJECT never silently proceeds.
 
-Every other step — 1, 2, 4, 5d, 5f, 5h — and the entire FAST path self-check inline. Diagram + role/hand-off detail:
+Every other step — 1, 2, 4, 5-file, 5-status, 5-docs — and the entire FAST path self-check inline. Diagram + role/hand-off detail:
 `docs/qa-test-flow.md`.
 
 ## Ordering — what may move, and the three things that may not

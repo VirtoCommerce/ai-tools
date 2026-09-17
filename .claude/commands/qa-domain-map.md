@@ -16,7 +16,7 @@ that contradicts nothing. A refresh rewrites claims other tickets already cite, 
 forward and must contradict its own previous rev out loud — so a fresh map with no `--refresh` **STOPs**,
 and **no pipeline ever passes that flag**. Staleness is a suspicion; rewriting on a timer is a decision.
 An incremental write-back of what a run actually verified is neither, and has its own step
-([`skills/qa-test/reporting.md`](../skills/qa-test/reporting.md) §5h-map).
+([`skills/qa-test/reporting.md`](../skills/qa-test/reporting.md) §5-docs-map).
 
 **Shape:** [`.claude/knowledge/domain/domain-map.md`](../knowledge/domain/domain-map.md) — it lives beside the maps it shapes, not in `templates/`.
 **Reference implementation:** [`.claude/knowledge/domain/b2b-organizations.md`](../knowledge/domain/b2b-organizations.md).
@@ -137,10 +137,10 @@ in the same shape as its siblings.) Four deltas, and only four:
 
 **Step 5's routing still applies** — a `DRIFT`, a selection-group defect, a zero-coverage area or a
 suspected product defect found during an auto-build is routed exactly as it would be from a direct run,
-into the host run's `5h`. **It is still filed from nowhere else.**
+into the host run's `5-docs`. **It is still filed from nowhere else.**
 
 **When the map already EXISTS, the host run does not come back here.** It writes back what it verified at
-[`skills/qa-test/reporting.md`](../skills/qa-test/reporting.md) §5h-map — a bounded append from evidence
+[`skills/qa-test/reporting.md`](../skills/qa-test/reporting.md) §5-docs-map — a bounded append from evidence
 the run already produced, costing no dispatch: new §2 surfaces, a `D*` verdict upgraded live, a `G*`
 closed, a §4 count corrected. **An amendment sets `amended:` and never touches `generated` or `rev`**, so
 staleness keeps measuring the last full *enumeration* and a trickle of true facts can never silence

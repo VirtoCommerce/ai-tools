@@ -7,19 +7,26 @@ rationale: |
   coverage. Built because a /qa-test run (VCST-5317) tested one predicate on one control in great
   depth and never established the feature around it; the operator called that out. A ticket-scoped
   context step inherits the ticket's narrowness, so this file is the feature-scoped counterpart.
-generated: 2026-09-09
-rev: 1
-amended: 2026-09-11
+  Rev 2 folds in the QUOTES surface end-to-end (storefront + Admin + xAPI) after a Quotes question
+  exposed that rev 1 named the coverage hole (old §6a) but never inventoried the surface itself.
+generated: 2026-09-16
+rev: 2
 stale_after_days: 60
 expires_after_days: 120
 sources:
-  - reports/ba/Organization roles/ (9 prior-art docs, 2,269 lines — verdicts in §8)
-  - live enumeration on vcst-qa (Admin SPA + storefront + REST/GraphQL), 2026-09-09
-  - vc-module-customer @ dev dbff8b9 ("3.1024.0", 2026-09-01) + vc-module-profile-experience-api
-  - .claude/knowledge/api/graphql-schema.md (live introspection 2026-09-09)
-  - config/test-suites.json + regression/suites/**
-  - VirtoOZ StorefrontUserGuide + PlatformUserGuide, fetched first-hand 2026-09-09 (quotes verbatim in §3/§5)
-excludes: Sales Rep (deliberate — a separate later pass; see §6 note)
+  - reports/ba/Organization roles/ (9 prior-art docs, 2,269 lines — verdicts in §8, carried from rev 1)
+  - .claude/knowledge/domain/b2b-organizations.md rev 1 (2026-09-09, amended 2026-09-11) — this file IS the previous rev; every D*/G* id carried forward
+  - reports/ba/test-models/VCST-5317-2026-09-09.md, VCST-5281-*, VCST-5733-2026-09-02.md — read by path this pass, not re-opened line-by-line (no new claim needed from them beyond what rev 1 already extracted)
+  - live enumeration on vcst-qa (Admin SPA + storefront + REST/GraphQL), 2026-09-09 (rev 1) + 2026-09-16 (rev 2, Quotes-focused: storefront /account/quotes as 3 distinct accounts, Admin Quotes list + detail + status dropdown, org-switch quote-scoping probe)
+  - vc-module-customer @ dev dbff8b9 ("3.1024.0", 2026-09-01) + vc-module-profile-experience-api (rev 1)
+  - GET /api/platform/modules (context-free admin token), 2026-09-16 — VirtoCommerce.Quote 3.1002.0, Customer 3.1024.0 (same as rev 1 — a Customer-area DRIFT this pass is a rev-1 error, not a version change), ProfileExperienceApiModule 3.1018.0, Xapi 3.1021.0, XCart 3.1033.0, XOrder 3.1011.0
+  - .claude/knowledge/api/graphql-schema.md (live introspection refreshed 2026-09-16 — newer than rev 1's 2026-09-09 snapshot; its TYPE sections are a curated allowlist per its own header, queries/mutations lists are complete)
+  - config/test-suites.json + regression/suites/** (suite 015 quotes CSV read in full this pass — 116 lines / 32 cases)
+  - VirtoOZ StorefrontUserGuide + PlatformUserGuide + B2BExperts, fetched first-hand 2026-09-16 (quote-requests, submit-quotes, purchase-requests, manage-quotes, glossary §Approval workflow, managing-organization-roles) — quotes verbatim in §2/§3/§5
+  - .claude/knowledge/automation/storefront-config-flags.md (quote_statuses[] — 8-entry runtime dictionary)
+  - .claude/knowledge/domain/sitemap.md:387-389 (xCatalog/xProfile/xCMS/Quote GraphQL module table) — found stale this pass, see §8
+  - .claude/knowledge/oracles/business-logic.md — BL-B2B-003/004/005, BL-CROSS-006/008 read for orientation, cited not restated
+excludes: Sales Rep (deliberate — a separate later pass, now its own domain map `.claude/knowledge/domain/sales-rep.md` rev 2; see §6 note)
 ---
 
 # B2B / Multi-Organization — domain map
@@ -34,18 +41,47 @@ excludes: Sales Rep (deliberate — a separate later pass; see §6 note)
 `DRIFT` = prior art says otherwise and prior art is wrong · `MISSING` = documented, does not exist ·
 `UNVERIFIED` = not established, and **not** to be treated as true.
 
+## §0 — Changed since rev 1 (2026-09-16)
+
+Rev 1 named the quotes coverage hole (old §6a: *"015 has 32 cases, all Draft, none org-scoped… the
+entire B2B dimension of quotes is absent"*) but never inventoried the quotes surface itself. That is
+what this refresh adds, as a first-class area of §2/§3/§4/§5 rather than an appendix. Nothing in rev 1
+is retracted; the additions and corrections are:
+
+- **New storefront subsection §3f** — the full `/account/quotes` surface, walked live as three distinct
+  account shapes (single-org maintainer, multi-org member, personal/no-org). New finding: **quotes is
+  gated by authentication only, not by organization membership** — a personal account sees the identical
+  "Quote requests" page and sidebar entry as an org member. Rev 1's §3e "org-gated set" table did not
+  cover quotes at all; it now belongs in the *not*-org-gated column.
+- **New Admin subsection §2g** — the Quotes blade (list + detail + status switcher), enumerated live for
+  the first time. New finding: the **"Customer's company" field on a quote from a confirmed org member
+  reads "Not defined"** — the Quotes module's Admin surface does not visibly carry organization context
+  even when the requester unambiguously belongs to one.
+- **New API subsection §4e** — the Quote GraphQL surface (queries `quote`/`quotes`, the cart-side and
+  quote-side mutations), and a correction to our own knowledge: `sitemap.md:389` names `quoteRequest`/
+  `quoteRequests`, which do not exist in the live schema — see §8.
+- **D19–D22 (new)** — the quote-status vocabulary's four-way disagreement (storefront doc, admin doc,
+  storefront runtime config, and the *live* admin status-switcher itself all differ), the absence of any
+  "Convert to Order" control on either surface (contradicting `BL-B2B-003`'s wording), the sidebar
+  module-route i18n key leak (reproducible on 2 of 3 accounts, not on the third, in the same session as a
+  correctly-rendering footer), and the Admin "Customer's company: Not defined" observation above.
+- **G16–G17 (new)** — the concrete fixture blocker for testing quote org-scoping (a same-user,
+  cross-org quote pair does not exist; a same-user org-switch probe this pass came back empty on both
+  sides, which is *inconclusive*, not a negative result) and the i18n leak's unestablished root cause.
+- **§6 (coverage)** — suite 015's Draft/Automation_Status count (32 of 32) and its single-fixture
+  precondition (`[PRE:SIGNIN_AS:ORG_USER_DEFAULT]` on every one of its 32 rows, confirmed by a full-file
+  grep this pass) are now `CONFIRMED` rather than carried from rev 1 unverified.
+- Every other section is carried forward verbatim from rev 1 unless a row below says otherwise.
+
 ---
 
 ## §1 — Purpose and value chain
 
-**Purpose: `UNDECLARED`.** No declared purpose statement exists for this surface — not in the nine
-prior-art docs, not in a domain file (there was none until this one), and **not in either published
-guide, checked first-hand 2026-09-09**: `StorefrontUserGuide` §Company Members describes *how* to
-switch, invite and block, and `PlatformUserGuide` §Manage Organization Membership Status / §Manage
-Organization-Scoped Roles describe *how* to set status and roles. **Both are procedural; neither says
-what the feature is for.** That is the gap, and it is why the chain below had to be reconstructed. The chain below
-is **reconstructed** from source + live and is the first written statement of it. Cite it as a
-hypothesis to contradict, not as authority.
+**Purpose: `UNDECLARED`.** Unchanged from rev 1. No declared purpose statement exists for this surface —
+not in the nine prior-art docs, not in a domain file before rev 1, and not in either published guide
+(re-checked first-hand 2026-09-16, including `PlatformUserGuide`'s Quotes-module pages, which describe
+*how* to manage a quote but never *why* the org layer sits under the whole commerce flow the way it
+does). The chain below is **reconstructed**, unchanged from rev 1, plus one link this pass sharpens:
 
 | # | Link, in the customer's words | Mechanism |
 |---|---|---|
@@ -55,7 +91,7 @@ hypothesis to contradict, not as authority.
 | 4 | People become part of it | **Two independent linkages**: `Contact.Organizations` (association) **and** one `OrganizationMembership` row per (securityAccountUserId × orgId) |
 | 5 | Each person gets rights *in that company* | Effective roles = **global account roles ∪ org-level `Organization.Roles` ∪ per-member `OrganizationMembership.Roles`**, deduped |
 | 6 | Those rights become a session | `/connect/token` + `organization_id` → JWT carries the `organization_id` claim + org-scoped permission claims |
-| 7 | The buyer transacts under that company | Org context drives cart · ship-to addresses · org pricing · order scope · shared lists · quotes · branding |
+| 7 | The buyer transacts under that company | Org context drives cart · ship-to addresses · org pricing · order scope · shared lists · **quotes (partially — see D19–D21 and G16: the storefront surface is identical whether or not an org is in context, and Admin does not visibly bind a quote back to the requester's org)** · branding |
 | 8 | They move between companies | Switcher → `refresh(organizationId)` (`grant_type=refresh_token` + `organization_id`), then **every open tab reloads**; persisted to `localStorage["organization-id-<userName>"]` **and** server-side to `Contact.CurrentOrganizationId` |
 | 9 | Access is taken away | Two independent axes — **status** (`Invited`/`Rejected`/`Deleted` block) and **lock** (`IsLocked` + `LockoutEnd`). **Lock beats status.** Locking revokes tokens |
 
@@ -64,25 +100,28 @@ hypothesis to contradict, not as authority.
 | Actor | Can do | Verdict |
 |---|---|---|
 | **Platform admin** | All of §2. The **only** actor who can set a lockout expiry atomically, write a membership status directly, assign **any platform role**, reveal the hidden columns, and bulk-import members into an org | `CONFIRMED` live |
-| **Org maintainer** (storefront) | `/company/info` edit + addresses + logo; `/company/members` invite / change role / block / unblock / delete / resend / revoke; `Login on behalf` if separately permissioned | `CONFIRMED` live |
+| **Org maintainer** (storefront) | `/company/info` edit + addresses + logo; `/company/members` invite / change role / block / unblock / delete / resend / revoke; `Login on behalf` if separately permissioned; `/account/quotes` — same surface as every other account (§3f) | `CONFIRMED` live |
 | **Org employee / buyer** | Reads `/company/members` with no Actions column and no Invite button; browses, orders, lists, quotes. Permissions (`roles.csv` `org-employee`): `storefront:organization:view;storefront:user:view` — **the same two `purchasing-agent` holds**, so those two roles do not differ on any storefront RBAC axis | **`UNVERIFIED` — gap G1**, but for lack of an OBSERVATION, not for lack of a fixture: `ACME_VIEWER` is seeded and signable (G1, amended 2026-09-11). Source only so far (`canManageMembers`, `canShowDropdownFor`) |
-| **Personal shopper** | All of `/account/*` **plus `/account/addresses`**; **no `/company/*` at all** | `CONFIRMED` live |
-| **Sales rep** | `/company/sales-reps` renders in the org sidebar; three rep routes are the only ones clearing inherited `requiresOrganization` | out of scope |
+| **Personal shopper** | All of `/account/*` **plus `/account/addresses`**; **no `/company/*` at all**; **`/account/quotes` renders identically to an org account** (new this pass — see §3f) | `CONFIRMED` live |
+| **Sales rep** | `/company/sales-reps` renders in the org sidebar; three rep routes are the only ones clearing inherited `requiresOrganization` | out of scope — now covered by `.claude/knowledge/domain/sales-rep.md` |
 
 ---
 
 ## §2 — Admin back-office (Admin SPA)
 
 **The menu item is `Contacts`, NOT "Customers"** (key `customer.main-menu-title`, permission
-`customer:access`, priority 180). Live main menu (19): Home · Loyalty missions · Marketing · Loyalty ·
-**Contacts** · Catalog · Orders · Notifications · Push Messages · Pricing · System Operations · Tasks ·
-Sales Reps · Returns · Quotes · Settings · Security · Stores · More.
+`customer:access`, priority 180). Live main menu (2026-09-16, 18 items — one fewer than rev 1's 19: a
+**"Developer tools"** entry now appears where rev 1 recorded none; **"Marketing"/"Loyalty"** order and
+count otherwise match): Home · Loyalty missions · Marketing · Loyalty · **Contacts** · Catalog · Orders ·
+Notifications · Push Messages · Pricing · System Operations · Tasks · Sales Reps · Returns · **Quotes** ·
+Settings · Security · Stores · Developer tools · More. (Platform build this pass: `3.1071.0-pr-3108-016f`,
+a PR build — the menu composition is `UNVERIFIED` against a release build.)
 
 ### 2a. "Companies and contacts" root list (`#!/workspace/customers`)
 
 | Aspect | Live |
 |---|---|
-| Count | **792** (prior art: 647 on 2026-06-19 → `DRIFT`, data growth) |
+| Count | **792** (prior art: 647 on 2026-06-19 → `DRIFT`, data growth) — not re-counted this pass |
 | Toolbar | Refresh · Add · Delete · **Invite customers** · Import · Export · **Lock in organization** · More |
 | `More` (org drill-down only) | **Unlock in organization · Change roles** |
 | Visible columns | `actions` (⋮, pinned) · `Type` (icon) · `Name` |
@@ -198,7 +237,47 @@ accept/reject an invitation (invitee side) · a child-org list on the Company bl
 "owner" (no such field) · the roster from the org side · effective (resolved) status · the organization
 **logo** (xAPI `changeOrganizationLogo`; `Icon`/`Assets` are different things) · memberships of a
 contact's 2nd+ security account · **bulk lock/unlock/role change** · contracts / price lists per org
-(`UNVERIFIED`, gap G8).
+(`UNVERIFIED`, gap G8) · **which org a quote came from — see §2g: the field exists on the blade and
+reads "Not defined" for a confirmed org member's quote (D22)**.
+
+### 2g. Quotes (Admin) — new this pass
+
+**Menu item `Quotes`**, priority-ordered between `Returns` and `Settings` in the main menu. List blade
+`#!/workspace/quotes`.
+
+| Aspect | Live (2026-09-16) |
+|---|---|
+| Count | **2,239** |
+| Toolbar | Refresh · Delete (multi-select) |
+| Columns | **Quote # · Status · Item count · Customer · Created** — no Organization/Company column anywhere in the default or hidden set observed |
+| Search | Free-text keyword box, paged (5 visible pages on this load) |
+| Row click | Drills to the quote detail blade (same tab, not a new-tab pattern) |
+
+Status values **observed in the live grid** across the pages read: `Draft`, `Processing`, `Ordered`,
+`Declined`. (`On hold` and `Cancelled`/`Canceled` were not observed in the rows read this pass — absence
+here is not evidence they never occur; see D19.)
+
+**Quote detail blade** — toolbar varies by status; for a `Processing` quote (`AGENT-TEST-QTE-ADMIN-RESPONSE`,
+observed live) it is **Save · Reset · Submit proposal · Put on hold · Cancel document · Delete**.
+**No "Convert to Order" command exists anywhere on this toolbar** — see D20.
+
+| Field | Control | Live observation |
+|---|---|---|
+| **Customer** | link | `test-emily.johnson-20260310@test-agent.com` |
+| **Customer's company** | read-only text | **"Not defined"** — for a quote from a confirmed TechFlow org member (see D22) |
+| **Created / Last updated** | read-only timestamp | present |
+| **Status** | single-select dropdown | current value `Processing`; **dropdown options observed: `Processing`, `On hold`, `New`, `Declined`, `Proposal sent`, `Ordered`** — 6 values, and neither `Draft` nor `Cancelled`/`Canceled` appears as a selectable target from this state (see D19) |
+| **Expiry date** / **Reminder date** | date pickers | empty on this quote |
+| **Assigned to** | single-select (employee) | empty (`Select...`) |
+| **RFQ from** | single-select (store) | `B2B-store` |
+| **General comment** | textbox | populated (fixture note) |
+| **Internal comment** | textbox | empty |
+
+Widgets: **Shipping address** (one address shown, type "Shipping") · **Totals** (Subtotal / Shipping /
+Discount / Grand total) · **Attachments** (count badge) · **Dynamic properties** (count badge) ·
+**Changes** (history). No billing-address widget was distinguishable from the shipping one on this quote
+(both docs describe "shipping/billing addresses" as one widget — `UNVERIFIED` whether they are ever
+shown separately).
 
 ---
 
@@ -209,17 +288,19 @@ contact's 2nd+ security account · **bulk lock/unlock/role change** · contracts
 | Route | Guard | Live |
 |---|---|---|
 | `/company` | `requiresAuth` + **`requiresOrganization`** | → `CompanyInfo` |
-| **`/company/info`** | inherits both | **renders — in no prior-art doc** |
-| **`/company/members`** | inherits both | renders |
+| **`/company/info`** | inherits both | renders for an org account; **re-confirmed this pass: bounces a personal account to `/account/dashboard`** |
+| **`/company/members`** | inherits both | renders for an org account |
 | `/company/sales-reps` | inherits both | sidebar link renders (out of scope) |
-| `/account/dashboard` · `/orders` · `/orders/:id` · `/orders/:id/payment` · `/profile` · `/change-password` · `/lists` · `/lists/:id` · `/saved-for-later` · `/saved-credit-cards` · `/coupons` · `/back-in-stock` · `/points-history` · `/missions` · `/notifications` · `/quotes` · `/quotes/:id` · `/quotes/:id/edit` | `requiresAuth` + module gates | render for both org and personal users |
-| **`/account/addresses`** | `beforeEnter`: bounce if `isCorporateMember` | **org user → `/account/dashboard`**; personal user → link present |
+| `/account/dashboard` · `/orders` · `/orders/:id` · `/orders/:id/payment` · `/profile` · `/change-password` · `/lists` · `/lists/:id` · `/saved-for-later` · `/saved-credit-cards` · `/coupons` · `/back-in-stock` · `/points-history` · `/missions` · `/notifications` · **`/quotes`, `/quotes/:id`** · `/quotes/:id/edit` | `requiresAuth` + module gates | render for both org and personal users — **`/account/quotes` re-confirmed live this pass for all three account shapes in §3f, including a personal (no-org) account** |
+| **`/account/addresses`** | `beforeEnter`: bounce if `isCorporateMember` | org user → `/account/dashboard`; **personal user → link present, re-confirmed this pass** |
 | `/account/purchase-requests` | `PurchaseRequests.Enabled` | **404** — module not enabled on vcst-qa |
 | `/account/confirmemail` · `/account/impersonate/:userId` | `public: true` | source |
 
 **No route in vc-frontend carries a permission or role in its `meta`.** Route-level authz is exactly
 three flags (`public`, `requiresAuth`, `requiresOrganization`) plus `beforeEnter` closures. Every other
-permission gate lives **inside a component**.
+permission gate lives **inside a component**. **`/account/quotes` carries no `requiresOrganization`
+flag — it is gated only by `requiresAuth`**, which is why it renders identically for every account shape
+(§3f).
 
 ### 3b. `/company/info` — the company-addresses surface
 
@@ -267,6 +348,13 @@ Ordering is **not** plain lexicographic on the raw string under `sort: "name:asc
 **Mobile: `UNVERIFIED` at source-level detail** (gap G2) — but see §5 D7 and the VCST-5317 run, which
 found it live with **zero lock handling**.
 
+**Re-confirmed live this pass (desktop):** the switcher for the multi-org fixture (`MULTI_ORG_USER_EMAIL`)
+lists exactly **11 organizations**, matching rev 1's "~11 orgs" estimate exactly — several are
+deliberately named with quoting/escaping edge characters (`"Müller" % Schmidt GmbH`, `"Quoted" Double
+Quotes`, `'Single' Single Quotes`, `50% Off Redwood Provisions`) — these are **test fixtures for string
+escaping, not a product defect**; do not mistake the literal punctuation in an org's *name* for a
+rendering bug (an early hypothesis this pass, corrected before it was recorded as a finding).
+
 ### 3e. Personal vs organization account — the axis nobody had mapped
 
 | Surface | Org user | Personal user |
@@ -276,6 +364,7 @@ found it live with **zero lock handling**.
 | Sidebar **Corporate** section | present | **absent — the whole section** |
 | `/company/info`, `/company/members` | render | **→ `/account/dashboard`** |
 | **`/account/addresses`** | **→ `/account/dashboard`** | **link present** |
+| **`/account/quotes`** | **renders — new row, this pass** | **renders identically — new row, this pass** |
 | Header `Ship to:` | `Select address` | `Add new address` |
 | Dashboard "Monthly spend report" | Budget $58,152 / Spent $530,152 | **byte-identical** |
 
@@ -283,6 +372,11 @@ found it live with **zero lock handling**.
 **ORGANIZATION** members and shown for **PERSONAL** accounts — corporate members manage addresses under
 Company info. Enforced at **three** independent points (desktop `canShowUserItem`, mobile
 `canShowItem`, the route's `beforeEnter`), so a hand-typed URL is closed too.
+
+**Quotes is not on either gated list.** Unlike every other row in this table, `/account/quotes` and its
+sidebar entry are **not** conditioned on `isCorporateMember` in any direction — confirmed by direct
+observation on all three account shapes in §3f. This makes quotes the one B2B-flavoured feature in the
+whole storefront that a personal shopper reaches exactly like an org buyer does.
 
 **The full org-gated set:** `addresses` (hidden when corporate) · the whole `corporate` section ·
 `contact-organizations` (mobile only, `isMultiOrganization`) · the org-name label and switcher · operator
@@ -293,6 +387,36 @@ favourite toggle, wishlist sharing.
 
 **The Monthly-spend widget is NOT user-scoped** — byte-identical across two unrelated accounts, one with
 zero orders. Static/mock content, and the only dashboard element that ignores the signed-in identity.
+
+### 3f. Quote requests (storefront) — new this pass
+
+`/account/quotes` — sidebar entry under the **Purchasing** group (not Corporate), footer link under
+"Account details" on every page including signed-out. Page: heading "Quote requests" · **Request Quote**
+button · search box ("Search by number or status", disabled until data loads) · table `Quote number ·
+Date · Status · Total`. Row click opens `/account/quotes/:id` in a **new browser tab** (same pattern as
+`VcTable` row-click elsewhere in the storefront — `reference_vctable_rowclick_newtab.md`).
+
+**Observed per account (2026-09-16, read-only — no quote was created or mutated):**
+
+| Account | Org | Quotes visible | Statuses seen |
+|---|---|---|---|
+| `ORG_USER_EMAIL` (Emily Johnson, TechFlow maintainer) | AGENT-TEST-Org-TechFlow | **2** | Processing, Processing |
+| `MULTI_ORG_USER_EMAIL` (John Doe), org = *Lone Star Outfitters* | 1 of 11 | **0** — "There are no quote requests yet" | — |
+| same user, switched to *ACME Store* | 2 of 11 | **0** — "There are no quote requests yet" | — |
+| `USER2_EMAIL` (carl2026 carol) — personal, no org | n/a | **0** — "There are no quote requests yet" | — |
+
+**Quote detail (`RFQ260720-00001`, TechFlow/Emily, Processing)** — line items with product name, key
+properties, unit price, a **disabled** quantity stepper (editable only pre-submission per the docs, D-row
+not needed — matches `StorefrontUserGuide`), Subtotal; sidebar **Quote summary** (Subtotal/Discount/
+Shipping/Tax/Total), **Quote data** (Created, Status), **Shipping address**. **No "Convert to Order"
+control, no comment field, and no attachments widget were visible on this Processing-status quote** —
+consistent with the docs (comments/attachments/address edits are attached to the pre-submission **Draft**
+step; see D20 for the "Convert to Order" absence specifically).
+
+**Cart-side entry ("Add cart items to quote")** — documented (`StorefrontUserGuide` §Submit Quotes) and
+present in suite 015's `QUOTE-001` steps; **not independently re-clicked this pass** (would require
+adding cart items and is adjacent to, not required by, the read-only quotes inventory) — carried as
+`UNVERIFIED-live-this-pass`, `CONFIRMED` by docs + suite CSV.
 
 ---
 
@@ -391,11 +515,38 @@ context per org.
 `changeOrganizationContactRole(memberId, storeId, roleIds)` (**contact** id, org from JWT,
 whitelist-enforced → `RoleNotAllowed`, and a **full replace** — an empty `roleIds` clears every role).
 
+### 4e. Quotes (xAPI) — new this pass
+
+**Queries:** `quote(id, storeId, userId, currencyCode, cultureName)` · `quotes(after, first, keyword,
+sort, storeId, userId, currencyCode, cultureName, filter)` · `quoteAttachmentOptions()`.
+
+**Cart-side mutations** (build a quote from an active cart): `createQuoteFromCart` · `addQuoteItems` ·
+`changeQuoteItemQuantity` · `changeQuoteComment` · `removeQuoteItem`.
+
+**Quote-side mutations** (act on an existing quote): `createQuote` · `submitQuoteRequest` ·
+`approveQuoteRequest` · `declineQuoteRequest` · `cancelQuoteRequest` · `add/update/deleteQuoteAttachments` ·
+`updateQuoteAddresses` · `updateQuoteDynamicProperties`.
+
+**Naming — no `quoteRequest`/`quoteRequests` query exists.** The live schema (introspected 2026-09-16)
+uses `quote`/`quotes` throughout; `.claude/knowledge/domain/sitemap.md:389` names `quoteRequest`/
+`quoteRequests` for this module and is **stale** — see §8.
+
+**Org scoping — none observed in the schema.** None of the query or mutation signatures above take an
+`organizationId` argument; `quote`/`quotes` take `storeId`/`userId`/`currencyCode`/`cultureName` only.
+If quotes are org-scoped at all, the scoping is implicit (through `userId` → the user's current org via
+the ambient JWT context, per `reference_xapi_ambient_context_args.md`) rather than an explicit argument —
+**`UNVERIFIED`**, this is exactly the gap G16 below names.
+
+**No `approveQuoteRequest`/`declineQuoteRequest` maps to a control this pass observed live** — the
+Processing-status quote inspected in §3f had neither an Approve nor a Decline affordance, which the docs
+say only appears once a quote reaches **Proposal sent** (a status this pass's fixtures did not reach) —
+consistent, not a finding on its own.
+
 ---
 
 ## §5 — Where the layers DISAGREE
 
-The most valuable section. 11 of these 15 were found in this pass and appear in no prior-art doc.
+The most valuable section. D1–D18 were found in the rev-1 pass; D19–D22 are new this pass, all quotes-related.
 
 | # | Disagreement | Verdict |
 |---|---|---|
@@ -405,7 +556,7 @@ The most valuable section. 11 of these 15 were found in this pass and appear in 
 | **D4** | **`EffectiveStatus = membership.Status ?? contact.Status ?? "Approved"`** — a *global* contact status overrides **every** org, and the contact-level `Status` column is **hidden by default** | formula **`CONFIRMED` by `{DOC}` first-hand** — `PlatformUserGuide` documents the 3-step resolution order verbatim, plus a ⚠ warning that an account-wide blocking status *"loses access to every organization they belong to"* — and at source; the hidden-column half is new |
 | **D5** | **The lock axis is off by default where it is administered.** `Is Currently Locked`, `Locked state`, `Locked until` are all hidden-by-default columns; the blade's `Locked state` is read-only; no expiry at lock time. Meanwhile the flags are first-class GraphQL fields | new; severity softened — the Grid Menu **does** reveal them |
 | **D6** | **Switcher gate ≠ switcher list.** The **gate** `isMultiOrganization` = `me.contact.organizations { totalCount }` with **no arguments** (counts *every* status); the **list** = `organizations(statuses:[Approved])`. One Approved org + any `Invited`/`New`/`Locked`/`Deleted` one satisfies `totalCount > 1`, so the switcher renders while the list may return a single row or an empty state | `CONFIRMED` at source; live `UNVERIFIED` (**gap G6**) |
-| **D7** | **A locked org cannot be flagged in the switcher — structurally.** The list fragment `organizationFields.graphql` was literally `{ id name }` — no status, no lock field — and `statuses:[Approved]` excludes locked orgs anyway. Only post-click feedback existed | `CONFIRMED` at source. **Being changed by the unmerged VCST-5317 PRs** — see the note below |
+| **D7** | **A locked org cannot be flagged in the switcher — structurally.** The list fragment `organizationFields.graphql` was literally `{ id name }` — no status, no lock field — and `statuses:[Approved]` excludes locked orgs anyway. Only post-click feedback existed | `CONFIRMED` at source. **Being changed by the unmerged VCST-5317 PRs** — see the amendment note below |
 | **D8** | **The sticky org survives the filter that hides it.** `authorize()` re-sends `localStorage["organization-id-<userName>"]` on every password login, and resolution honours an explicit `organization_id` **before** any accessibility check — so a login can be pinned to an org the switcher no longer lists | source-confirmed. **The mechanism behind the known `/403`-with-no-switcher dead end** |
 | **D9** | **THREE role-assignment surfaces, three different role sources.** Invite (dedicated endpoint, **3** roles, **bypasses the whitelist**, single-role) · membership-via-**widget** (whitelist + **store override** + a **20-role cap**) · membership-via-**list command** (whitelist, **NO store override**, 20-cap). Same blade, same field, different effective whitelist depending on how you navigated in. `roles.search({keyword, take: 20})` means the picker is **silently truncated** on an env with 30+ roles | new; live on both Admin surfaces + settings API. **The single largest untested privilege surface** |
 | **D10** | **A role granted in Admin propagates verbatim to the customer UI.** `Sales Representative` sits on a membership because the picker allowed it; it renders in the storefront `Roles` cell and as a **Members-filter checkbox**, and `common.roles.<id>` has no key for it ⇒ the **raw platform name** displays | new, observed both sides |
@@ -417,6 +568,10 @@ The most valuable section. 11 of these 15 were found in this pass and appear in 
 | **D16** | **The published Storefront guide contradicts the build, AND contradicts itself in one paragraph.** `StorefrontUserGuide` §Switch between your companies ([url](https://docs.virtocommerce.org/storefront/user-guide/account/company-members)) says *"**Every company you belong to** is listed, with your current one marked… Select a different company from this list to work in it. **Only companies you currently have access to appear here.**"* Those two sentences disagree the moment you belong to a company you are locked out of — and the **first** one matches the new build while the **last** one is the old contract | `{DOC}` fetched first-hand 2026-09-09 + **live-verified**: at V2 the locked org IS returned (`totalCount = 2`, `isLockedForCurrentUser: true`). **Customer-facing and wrong either way** |
 | **D17** | **The org-membership LOCK axis is undocumented.** `PlatformUserGuide` §Manage Organization Membership Status documents the **status** axis completely and correctly — the 5 Invite-status values, the 3-step resolution order, and a ⚠ warning about the account-wide blast radius — and says **nothing about `IsLocked`/`LockoutEnd`**. The only "Block or unblock" article in the guide is for **Sales Reps**, a different entity | `{DOC}` fetched first-hand. So the control an operator uses to lock a member has **no user documentation**, which is also why the two-step-expiry behaviour (§2c) has never been written down |
 | **D18** | **The whitelist doc omits the empty-whitelist case.** `PlatformUserGuide` §Assign organization-level role states flatly *"Only roles allowed by the Organization roles whitelist appear in the dropdown."* Live, both whitelists are `[]` and **every** platform role appears — `if (!whitelist.length) return allRoles;` | `{DOC}` first-hand + live. The doc is not wrong about the mechanism, it is **silent about the default**, and the default is "no restriction" — which reads as the opposite of the sentence |
+| **D19** | **The quote-status vocabulary disagrees FOUR ways, and none of the four match.** `StorefrontUserGuide` (§Quote Requests, §Submit Quotes): **Draft, Processing, Proposal sent, Ordered, Declined, On hold** (6, no `New`/`Cancelled`). `PlatformUserGuide` (§Manage Quotes): **Draft, New, Processing, Proposal sent, Ordered, Cancelled** (6 — different set: has `New`, lacks `Declined`/`On hold`, spells the terminal status **`Cancelled`**, double-L). `storefront-config-flags.md` runtime `quote_statuses[]`: **New, Processing, Ordered, Proposal sent, On hold, Draft, Declined, Canceled** (8 — has all of both docs' sets **plus** `On hold`+`Declined`, spelling **`Canceled`**, single-L). **The LIVE Admin status-switcher dropdown**, opened on a `Processing` quote 2026-09-16: **Processing, On hold, New, Declined, Proposal sent, Ordered** (6 — omits `Draft` and `Cancelled`/`Canceled` entirely as transition targets; the grid separately shows `Draft` as a real persisted status, and `Cancelled` is reached via the toolbar's **`Cancel document`** action, not this dropdown, so it is a status the UI treats as a one-way exit rather than a switchable value) | `{DOC}` both guides fetched first-hand 2026-09-16 + `CONFIRMED` live (grid + status dropdown) + `CONFIRMED` config file. **Four vocabularies, four different memberships, two different spellings of the same terminal status.** This is the single highest-value new finding this pass for anyone asserting on a quote-status string |
+| **D20** | **No "Convert to Order" control exists on either surface**, contradicting the wording used elsewhere for this mechanism. Admin's Processing-quote toolbar is **Save · Reset · Submit proposal · Put on hold · Cancel document · Delete**; the storefront doc's only buyer-facing action once a proposal exists is **"approve or decline a quote request"** (`StorefrontUserGuide` §Approve or decline quote request), which the glossary confirms moves the quote through *Processing → Proposal sent → Ordered/Declined* as a status transition, not a literal "Convert to Order" button anywhere. **This does not contradict the underlying invariant** (a quote reaching `Ordered` does place an order) — it is a **surface-naming mismatch only**: `BL-B2B-003`'s prose names a "Convert to Order" action/button that this pass could not find on either the storefront or the Admin UI | `CONFIRMED` — surface search on both layers, plus two published-doc fetches, found no such control. **Do not edit the oracle from this map** — this is a proposal candidate for `/qa-review-oracles`, not an in-place fix |
+| **D21** | **Sidebar module-route labels leak raw i18n keys for two of three account shapes tested, in the same session where the footer (same routes, same labels) renders correctly.** Signed in as `ORG_USER_EMAIL` (TechFlow), every sidebar label rendered as normal English text (`Quote requests`, `Back-in-stock list`, `Missions & challenges`, `Points history`, `Sales reps`). Signed in as `MULTI_ORG_USER_EMAIL` (11-org account) and separately as `USER2_EMAIL` (personal, no org), the **same five sidebar entries** rendered their raw i18n keys instead — `Quotes.navigation.route_name`, `Back_in_stock.navigation.route_name`, `Shared.account.navigation.links.missions_challenges`, `Loyalty.navigation.route_name`, `Sales_rep.navigation.link` — and the page `<title>` itself read `quotes.meta.title`. **The footer's "Quote requests" link, in the identical page load, rendered the correct label every time**, on every account. Reproduced across a hard navigation (`page.goto`), a 3-second wait, and a full page reload — not a transient render race. All five broken keys belong to the **module-contributed routes** `sitemap.md` describes as added via `router.addRoute()` at bootstrap (back-in-stock, loyalty, quotes, sales-rep) — every **core** route label (Dashboard, Orders, Lists, Saved for later, Coupons, Notifications, Profile, Company info/members) rendered correctly on every account | `CONFIRMED` live, reproduced on 2 of 3 independent accounts, persists across navigation and reload. **Root cause not established — see gap G17.** A plausible mechanism (unconfirmed): each `addRoute()` module ships its own i18n namespace, loaded lazily; something about the TechFlow account's session (or its being the *first* account signed into this browser context) left that namespace warm while the later two logins did not reload it — but a full `page.goto` should re-boot the SPA, so this hypothesis is not yet supported and needs a fresh, TechFlow-free browser context to test cleanly |
+| **D22** | **Admin's "Customer's company" field reads "Not defined" for a quote from a confirmed org member.** `AGENT-TEST-QTE-ADMIN-RESPONSE`'s Customer field correctly resolves to `test-emily.johnson-20260310@test-agent.com` — a TechFlow org maintainer confirmed elsewhere in this map (§1 Actors, §3f) — but the adjacent **Customer's company** field on the same blade reads **"Not defined"**. Combined with §2g's observation that the Quotes list has no Organization/Company column at all, **the Admin surface for Quotes does not visibly carry organization context**, even for a requester who unambiguously belongs to one | `CONFIRMED` live for this one quote. **`UNVERIFIED`** whether this is a per-fixture data-population gap (this specific quote's `CustomerCompany`/`OrganizationId` field was never populated at creation) or the Quotes module's data model does not capture organization at all — see gap G16, which needs exactly this distinction to design a scoping test |
 
 > **D7 is mid-change.** `vc-module-profile-experience-api` **#145** and `vc-frontend` **#2469** — both
 > **OPEN/unmerged but PR-deployed on vcst-qa** — add `Organization.isLockedForCurrentUser`, stop
@@ -429,16 +584,23 @@ The most valuable section. 11 of these 15 were found in this pass and appear in 
 > those PRs merge or are reverted.
 >
 > **AMENDED 2026-09-10 (VCST-5317 Round 3, live-CONFIRMED).** Two of the three findings above are **CLOSED** by `vc-frontend` commit `878e765a` (still on the same unmerged PR #2469, deployed as `2.58.0-pr-2469-afce-afce27e1`). The **mobile** switcher now renders a locked org `disabled` with a lock icon and the lock reason as its accessible name, and a tap is refused before any `/connect/token` fires — measured at a genuine 375x812 on three independent lanes. The **stale-flag** defeat is closed too: both switchers refetch on every menu open, verified by a second distinct `GetOrganizations` request after a lock applied mid-session with no reload, and independently in a second tab. **The third finding still STANDS** — a locked org-s order history remains readable via `organizationOrders(organizationId:)` while `organization(id:)` is `Forbidden` (`totalCount 79`, re-measured 2026-09-10); that is VCST-5933, explicitly scoped out of #2469. **The row-s instruction is unchanged: re-read it after those PRs merge or are reverted** — nothing here is shipped.
+>
+> **2026-09-16 note:** this pass's storefront build was `2.58.0-pr-2467-8f0b-8f0bff22` — a **different**
+> PR number (`2467`, not `2469`) from the one D7/D8's amendment describes. Whether `2469` has since
+> merged, been superseded by `2467`, or the two are unrelated PRs both deployed to this env was **not
+> established this pass** — flag for whoever next touches D7/D8 to re-derive the PR state before trusting
+> the "still stands" line above.
 
 ---
 
 ## §6 — Coverage shape
 
 **Sales Rep is deliberately excluded** from this pass (8 suites, ~387 cases: `050m`, `050m2`, `089`,
-`090`, `091`, `092b`, `093`, `097`).
+`090`, `091`, `092b`, `093`, `097`) — now covered by `.claude/knowledge/domain/sales-rep.md`.
 
 **585 org-relevant cases across 35 suites** (555 excluding the all-`Manual` whitelabeling block), plus
 ~20 scattered across ~18 more suites at 1–5 each. Counts are *org-relevant cases*, not suite size.
+Counts below are carried from rev 1 except suite **015**, re-verified this pass.
 
 | Suite | Org-relevant | Suite | Org-relevant |
 |---|---|---|---|
@@ -446,7 +608,7 @@ The most valuable section. 11 of these 15 were found in this pass and appear in 
 | 008 B2B Members | **40** of 40 | 050d GraphQL xProfile | **38** of 58 |
 | 027 Customer Orgs & Invites | **71** of 71 | 010 Bulk Ship Dashboard | 26 of 53 |
 | 027b Org-Scoped Roles | **18** of 18 | 011b B2B Company E2E | **26** of 26 |
-| 082 Impersonation | **48** of 48 | 015 Quotes | 32 (0 org-**scoped**) |
+| 082 Impersonation | **48** of 48 | **015 Quotes** | **32 of 32 — re-verified 2026-09-16: ALL 32 rows are `Draft` Automation_Status, and ALL 32 carry the identical `[PRE:SIGNIN_AS:ORG_USER_DEFAULT]` precondition (confirmed by grep across the full 116-line file) — a single fixture, a single account, zero cross-org or cross-account rows** |
 | 074 Contracts | **18** of 18 | 007 B2B Lists | 10 of 50 |
 | 067/070/071 Whitelabeling | 8/12/10 (all `Manual`) | 021 Platform Dyn-Props | 8 of 39 |
 | 017 Orders Admin | 8 of 70 | 050h GraphQL Wishlist | 8 of 35 |
@@ -465,11 +627,13 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
 | Area | Count | Note |
 |---|---|---|
 | **Price lists per organization** | **0** | nearest proxies are blank-status legacy contract-price cases in `074` |
-| **Quote visibility scoped to the org** | **0** | `015` has 32 cases, **all Draft**, none org-scoped. No "member A's quote visible to maintainer B", no cross-org denial. The entire B2B dimension of quotes is absent |
+| **Quote visibility scoped to the org** | **0** | `015` has 32 cases, **all `Draft`**, all `ORG_USER_DEFAULT`-only (re-confirmed this pass). No "member A's quote visible to maintainer B", no cross-org denial. **The blocker is now concrete, not just named** — see gap G16: a live org-switch probe this pass (same user, two orgs) came back empty on both sides, which does not by itself prove or disprove scoping; the fixture needed is a user with a quote seeded under Org A and none under Org B |
+| **Admin org-context on a quote** | **0** | new this pass — the Admin Quotes blade shows no Organization column and "Customer's company: Not defined" on a confirmed org member's quote (D22); no case anywhere probes whether the Quotes module captures organization at all |
 | **The D9 role-picker asymmetry** | **0** | `027b`'s 18 cases test the org-level picker + server enforcement; none diffs invite-roles against membership-roles |
 | **`AssociatedOrganizationsOnlyScope`** | **0** | a scoped-RBAC permission scope (`'Only for associated organizations'`, hardcoded English), no coverage anywhere |
 | **Org-scoped member Import / Export** | **0** | a write path, org-scoped by the drill-down org |
 | **Admin-vs-storefront status/label parity** | **2** | D1/D2/D11 all sit in this hole |
+| **Quote-status vocabulary parity (D19)** | **0** | no case anywhere asserts a quote-status string against more than one of the four vocabularies in D19; a case authored against the storefront doc's 6 and a case authored against the config's 8 would both look "correct" in isolation |
 | **Org hierarchy** | **5** | 2 Draft, 3 blank-status; **no storefront-side case at all**; nothing covers D14 |
 | **`/company/info`** | **3** | one Automated E2E, one XSS-only, one widget-compat. **No field-level view/edit/validation** — and it is the company-addresses surface |
 | **Mobile switcher** | **5** | against **60** desktop cases — still a heavy skew on one control. **Amended 2026-09-10:** the row asserting the panel exposes *no* switcher (`B2C-ORG-047`) was executed in `REG-2026-09-10-1453` and **FAILED on that premise**, confirming it as a test defect rather than a product statement; two new rows were added (`B2C-ORG-068` refetch-on-open incl. the two-tab probe, `B2C-ORG-070` mobile degraded org-list) |
@@ -492,6 +656,7 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
 ### 6c. Selection-group and executability problems
 
 - **`selections.b2b` = `{where:{tag:"b2b"}}` → `006,007,008,009,010,011b,013,015,042,074` only.**
+  (Re-verified live in `config/test-suites.json` this pass — unchanged from rev 1.)
   `/qa-regression b2b` tests **none** of the Admin (`026`, `027`, `027b`), GraphQL (`050d`, `050h`),
   auth (`031`–`033`) or impersonation (`082`) coverage — and **does** run `009`, which has none.
 - **`envRiskGate: "staging"`** on `013, 015, 026, 027, 027b, 074` — the whole Admin/quotes/contracts
@@ -499,9 +664,10 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
 - **`requiresModules`** — `026/027/027b` need `customer`, `074` needs `contracts`; absent ⇒ silent skip.
 - **Firefox lane:** with `defaults.firefoxClickOk: false` (the documented rollback), 15 of the 18 core
   suites are `clickDriven` and get denied the slot, leaving only `026` and `074` eligible.
-- **The feature's centre of mass is Draft.** `006` (65, 0 Automated), `015` (32, 0 Automated) and 71
-  blank-status legacy cases in `026`+`074` ⇒ roughly **200 cases have never been executed or promoted**.
-  Executable coverage is concentrated in `007/031/033/042/050d/082`.
+- **The feature's centre of mass is Draft.** `006` (65, 0 Automated), `015` (32, 0 Automated, all one
+  fixture — re-confirmed this pass) and 71 blank-status legacy cases in `026`+`074` ⇒ roughly **200
+  cases have never been executed or promoted**. Executable coverage is concentrated in
+  `007/031/033/042/050d/082`.
 - `007` holds **16 Sales-Rep-subject cases** (`B2C-LIST-040`…`055`) **not** excluded from `full` the way
   the eight dedicated rep suites are.
 
@@ -520,9 +686,11 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
 | **G9** | `White labeling` / `Assets` / `Icon` org-widget contents | **OPEN** — enumerated, not opened |
 | **G11** | Which module registers **Orders** + **White labeling** onto the Company blade | **OPEN.** The literal-string search was a **false negative** against live |
 | **G12** | How many live contacts hold **>1 security account** | **OPEN.** `securityAccounts[0]` mechanism established, blast radius unsized |
-| **G13** | Is a per-org role change effective **immediately** or **at next sign-in**? | **CLOSED by docs, 2026-09-09 — and the earlier “the docs contradict each other” claim was WRONG.** Both guides, fetched first-hand, agree on **next sign-in**: `StorefrontUserGuide` §Edit user roles — *“A role change takes effect the next time the member signs in.”*; `PlatformUserGuide` §Assign organization-level role — *“Employees must sign in again. Effective permissions are recalculated at sign-in. An employee with an open Frontend session keeps their previous permissions until they sign out and back in. **The change is applied on the server immediately, so only the active session is stale.**”* That last clause is the reconciliation: **server-immediate, session-stale**. Still `UNVERIFIED` **live** — confirming it needs a mutation |
+| **G13** | Is a per-org role change effective **immediately** or **at next sign-in**? | **CLOSED by docs, 2026-09-09 — and the earlier "the docs contradict each other" claim was WRONG.** Both guides, fetched first-hand, agree on **next sign-in**: `StorefrontUserGuide` §Edit user roles — *"A role change takes effect the next time the member signs in."*; `PlatformUserGuide` §Assign organization-level role — *"Employees must sign in again. Effective permissions are recalculated at sign-in. An employee with an open Frontend session keeps their previous permissions until they sign out and back in. **The change is applied on the server immediately, so only the active session is stale.**"* That last clause is the reconciliation: **server-immediate, session-stale**. Still `UNVERIFIED` **live** — confirming it needs a mutation |
 | **G14** | The `ConfirmInvitation` route's URL path | **OPEN.** The route *name* is used to build the invite `urlSuffix`; the path string is unknown |
 | **G15** | Canonical role → permission mapping for the shipped org roles | **ANSWERED FROM SOURCE 2026-09-11 for the STOREFRONT axis; live confirmation still owed.** The docs are still silent, but the product is not. **`vc-frontend` reads exactly four permission strings** — `xapi:my_organization:edit`, `xapi:my_organization:user:invite`, `xapi:my_organization:order:view` (`client-app/core/enums/permissions.enum.ts`) and `platform:security:loginOnBehalf` — and **no `storefront:*` namespace appears anywhere in it**. The `storefront:*` names are real but belong to the **legacy** `vc-storefront` (`VirtoCommerce.Storefront.Model/Security/SecurityConstants.cs`), which also defines the `org-maintainer`/`purchasing-agent`/`org-employee` role ids our fixtures mirror. `vc-frontend` knows those same ids (`client-app/core/constants/security.ts`) but uses them ONLY to populate the member Change-role dropdown, gated by the `Customer.MembershipRolesWhitelist` setting — **never for authorization**. Server-side the same xapi string is enforced by `CheckAuthAsync` in `vc-module-profile-experience-api` `ProfileSchema.cs`. Three consequences: *Invite members* (`…user:invite`) and the per-row Actions menu (`…edit` OR `loginOnBehalf`) are **different gates on one page**; `useUser.checkPermissions()` **short-circuits true for `isAdministrator`**; and `org-employee` / `purchasing-agent` are indistinguishable to the SPA because **neither holds any string it reads**, not because they share one. **And the role→permission mapping is NOT a product contract at all**: no platform module seeds `org-maintainer`/`purchasing-agent`/`org-employee` (an org-wide `roleManager.CreateAsync` search finds only sales-rep + marketplace modules), `storefront:*` is never `RegisterPermissions`-ed by any module, and the two first-party seeds **disagree** — `vc-sample-data/Setup/adminOnlySample/PlatformEntries.json` gives `org-employee` only `storefront:organization:view` where `vc-storefront`'s `SecurityConstants.cs` gives it that plus `storefront:user:view`. `Customer.MembershipRolesWhitelist` ships the three NAMES as an allow-list; names are not grants. `FrontendSecurity:OrganizationMaintainerRole` is a name the platform LOOKS UP, failing registration with *"Create and configure a role with the name…"* when absent. What IS product invariant: effective roles = `Organization.Roles` ∪ `OrganizationMembership.Roles` (`MergeRoles`, `DistinctBy(RoleId)`) ∪ global account roles (`GlobalRolesResolver`), folded into the token **additively** by `OrganizationIdClaimProvider` (`existingPermissions.Add` — an org switch never drops a global grant), carried as repeated `permission` claims scoped by `organization_id`, recalculated only at sign-in, and zeroed for the org-scoped terms by a blocking membership status or lockout. What remains open: the ADMIN/platform axis, and a live `me.permissions` observation per role. |
+| **G16** | **Is a quote actually scoped to the organization, or purely to the requesting user?** | **NEW, OPEN.** Neither the xAPI `quote`/`quotes` signature (§4e) nor the Admin blade (§2g, D22) exposes an explicit organization argument or column. A live probe this pass — same multi-org user, switched between two of their 11 orgs, `/account/quotes` checked on each — came back **empty on both sides**, which is **inconclusive**, not a negative result: this user simply has no quotes seeded under either org. **Needs a fixture**: one user with a quote created while signed into Org A, then the same user switched to Org B, to see whether the quote (a) still shows (user-scoped), (b) disappears (org-scoped via ambient `userId`+current-org context), or (c) the org context has no effect on quote visibility at all. This is the concrete blocker `/qa-review-tests` / suite 015 authoring needs before "org-scoped quote" cases can be written at all — rev 1 named the coverage hole; this closes it into an actionable fixture requirement |
+| **G17** | **Root cause of the sidebar i18n key leak (D21)** | **NEW, OPEN.** Reproduced on 2 of 3 accounts this pass, with the footer correctly resolving the same labels in the same page load. Candidate explanations not yet tested: (a) locale/culture differs per account (not observed — all three showed `Language: English (United States) en` in the header); (b) the module i18n namespace loads once per browser/tab and the first account signed in (TechFlow) "won" it, with later logins in the same tab never re-fetching it despite a hard `page.goto` — needs a completely fresh browser context (not just a logout+re-login in the same tab) to rule in or out; (c) something about the account/org data itself (e.g. a missing preferred-locale field) causes the SPA's i18n loader to silently fail only for those two accounts. **Needs**: a fresh Firefox/Edge profile, sign in directly as `MULTI_ORG_USER_EMAIL` with no prior session in that browser, and check whether the sidebar labels are correct or broken on the very first render |
 
 ---
 
@@ -549,6 +717,7 @@ disagree. **Eleven Admin claims and four storefront claims are wrong** — the o
 | B20 — a pending row reads "Invite sent" as its *status* | **DRIFT** — it is a **Name**-column fallback off the *global* contact status (D11) |
 | C6 — storefront role vocabulary is 3 roles | **DRIFT** — 5 appear in the Members filter |
 | **C28r** — server-side whitelist enforcement is *not implemented* | **PARTLY STALE** — enforced on `changeOrganizationContactRole` via `RoleNotAllowed`; only `PUT /api/organizations` remains unguarded. **`BL-B2B-011` needs an oracle re-audit** |
+| **`sitemap.md:389`** — the xAPI "Quote" module exposes `quoteRequest`/`quoteRequests` | **DRIFT, found this pass.** Live introspection (2026-09-16) and `graphql-schema.md` (refreshed the same day) both show `quote`/`quotes` — no `quoteRequest*` name exists in the schema. `sitemap.md` is the stale document here, not `graphql-schema.md`; the two names likely diverged when the storefront-facing terminology ("quote **request**") was chosen independently of the GraphQL type name ("Quote") |
 
 Settled from the prior-art open list: **G2.1** (no domain file for this area) `CONFIRMED` — **closed by
 this file**; **G2.3** (no `/company/*` inventory) **closed** by §3a; **G1.5** (all-locked: hidden or empty

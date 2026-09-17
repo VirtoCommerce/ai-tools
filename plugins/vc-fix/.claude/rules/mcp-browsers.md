@@ -19,6 +19,12 @@ Additional MCP servers (configured at user/IDE level, or — depending on your l
 - **Microsoft Learn MCP** - Microsoft/Azure docs search, code samples, and full-page fetch
 - **VirtoOZ MCP** (`claude_ai_VirtoOZ_for_virtocommerce_com_docs`) - **Primary Virto Commerce documentation source.** 12 topic-scoped retrieval tools: `VirtoCommerce` (general), `PlatformUserGuide`, `PlatformDeveloperGuide`, `PlatformBackendSourceCode`, `PlatformFrontendSourceCode`, `StorefrontUserGuide`, `StorefrontDeveloperGuide`, `FrontendSourceCode`, `MarketplaceUserGuide`, `MarketplaceDeveloperGuide`, `DeploymentGuide`, `B2BExperts`. **All agents should use this via the `/vc-docs` skill** for VC architecture, module, API, deployment, and B2B questions — prefer it over Context7 for any Virto-specific topic.
 
+**Unclear product behaviour ⇒ ask VirtoOZ first.** Any agent, any task: when what the platform or the
+storefront is *supposed* to do is not clear, query VirtoOZ via `/vc-docs` before acting on a guess. It
+documents the platform's **CORE functionality** — on a CLIENT deployment it is authoritative for the core
+path and silent, never negative, about custom modules / themes / storefront forks. The rule, the client
+caveat and the 3-source bar: [`../../skills/vc-docs/SKILL.md`](../../skills/vc-docs/SKILL.md) §Scope.
+
 The 6 servers in the table above are configured in `.mcp.json` (project-level). The additional servers above are typically at the user/IDE level, though a given machine's `.mcp.json` may also include Chrome DevTools, Azure, Figma, and Atlassian — verify against your local file.
 
 ## Browser Automation Rules

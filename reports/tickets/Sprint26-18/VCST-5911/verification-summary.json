@@ -1,0 +1,87 @@
+{
+  "ticket": "VCST-5911",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-09-15",
+  "environment": "http://localhost",
+  "build": {
+    "platform": "3.1071.0-alpha.13389",
+    "theme": "2.58.0-pr-2479-cf20-cf20b0ad",
+    "relevant_modules": {},
+    "pr_build": "vc-frontend #2479 fix/VCST-5911 @ cf20b0ad (OPEN, unmerged) — footer-confirmed on both runs"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug",
+  "baseline_source": "reports/tickets/Sprint26-18/VCST-5910/testing-checklist.md § A11y findings — vcst-qa, 2026-09-08, theme 2.57.0-pr-2471-6ed5, Red preset",
+  "runs": [
+    {
+      "run": 1,
+      "time": "18:16",
+      "verdict": "BLOCKED",
+      "cause": "POST /graphql 400 — Argument 'storeId' of type 'String!' is required for field 'loyaltyBalance' but not provided. /account/missions rendered no cards; every surface PR #2479 changes was unreachable.",
+      "attributable_to_pr_under_test": false,
+      "environment_scope": "NOT local-only at the time — the identical dev-branch document returned the identical 400 on vcst-qa, verified by live introspection and a live POST",
+      "already_tracked_by": "vc-frontend PR #2475 (VCST-5024)",
+      "unblocked_by": "operator updated the loyalty module on localhost; loyaltyBalance no longer requires storeId (live introspection confirmed). This moved localhost away from vcst-qa, which still declares storeId: String! against a storefront that does not send it — that break is unchanged and still live there.",
+      "evidence_loss": "run 1's two VCST-5911-BLOCKER-*.png are gone from disk and were never git-tracked, so unrecoverable. Cause unknown. Run 1's finding is fully evidenced in text; loss recorded rather than absorbed."
+    },
+    {
+      "run": 2,
+      "time": "18:56-19:02",
+      "verdict": "VERIFIED_WITH_NOTES",
+      "passes": "3 consecutive, identical",
+      "missions_read": "totalCount 16 — 12 on page 1 + 4 on page 2, all read on all 3 passes"
+    }
+  ],
+  "checklist_total": 10,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "checklist_not_exercised": 2,
+  "defects_verified_fixed": [
+    {
+      "defect": "WCAG 1.4.11 — status dot below 3:1",
+      "method": "live getComputedStyle on every card, both themes, 3 passes; orchestrator independently recomputed the ratios from the reported hexes",
+      "result": "warning 2.09:1 -> 4.53:1 (#ab660e, --color-warning-700). success 7.18:1. Dark 4.37:1 / 12.54:1. Min observed 4.53:1, 16/16 light and 12/12 dark."
+    },
+    {
+      "defect": "WCAG 1.4.1 — status conveyed by colour alone on daysRemaining: null",
+      "method": "NOT exercised live (no InProgress + daysRemaining:null fixture on this env). Verified instead from source at PR head cf20b0ad: useMissionCard.ts now declares `let dateLabel: string` with no \"\" default and an exhaustive if/else-if/else, so TypeScript enforces assignment on every path — no code path can render a dot with no label. Corroborated live: 0 of 16 cards has an empty .mission-date-badge in either theme on all 3 passes.",
+      "result": "closed by construction; stronger than a single live observation"
+    }
+  ],
+  "not_exercised": [
+    "The literal \"No deadline\" string — needs an InProgress mission with daysRemaining: null; the only null-days mission on this env is status Completed, which correctly shows \"Mission completed\" instead.",
+    "The danger band (<10 days) — AGENT-TEST-MSN-ENDING-SOON has daysRemaining 5 but is Completed, so it resolves to success. Danger dot #a01313 vs warning-500 bar #fc9e00 = 3.86:1 is computed from live tokens, not observed."
+  ],
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "finding": "A successful loyaltyMissionProgress payload is discarded and replaced with a full-page error because an unrelated sibling query failed (missions.vue:107-112 Promise.all + bare catch; :13 VcEmptyView).",
+      "reason_not_filed": "DUPLICATE — reports/bugs/closed/BUG-missions-page-fails-whole-page-on-partial-graphql-response.md (VCST-5843), closed won't-fix 2026-09-02. Its closure text names the re-open condition: 'Re-open if a partial response is ever observed in the wild'. Run 1 met that condition with a new trigger. Operator was asked and redirected to the module update; no tracker write made on VCST-5843. Still open for decision.",
+      "severity": "Medium"
+    },
+    {
+      "finding": "GetLoyaltyBalance omits the now-required storeId, breaking /account/missions on vcst-qa.",
+      "reason_not_filed": "Already tracked — vc-frontend PR #2475 (VCST-5024) is the in-flight fix; VCST-5024's test model carries it as scenario 15. Still unresolved on vcst-qa.",
+      "severity": "High"
+    },
+    {
+      "finding": "Full-width danger alert 'Our server is currently experiencing technical issues' on every missions load, caused by the ws://localhost/graphql subscription-transport failure while the page itself works.",
+      "reason_not_filed": "Local-env infra, not PR-attributable and not reproducible off this machine. UX observation only.",
+      "severity": "Low"
+    }
+  ],
+  "business_rules_verified": ["BL-A11Y-003"],
+  "notes": [
+    "The dark-theme override in dark/atoms/vc-badge.scss is INERT on the Red preset — that preset defines --color-vc-background-solid-*, which wins by the PR's own var() precedence. Dark-mode green is not proof that rule works.",
+    "axe-core has no automated rule for WCAG 1.4.11 non-text contrast; it corroborates only that no AA text contrast regressed. The dot evidence is the getComputedStyle measurement.",
+    "Two fixtures would close the unexercised paths: an InProgress mission with daysRemaining: null, and one with daysRemaining < 10."
+  ],
+  "tracker_transition": {"role": "tested", "state": "Tested", "via": "Finish test"},
+  "caveat": "Run against localhost on an open/unmerged PR branch build at the operator's direction. VERIFIED means the fix works; it does NOT mean the fix is on vcst-qa. Merge, deploy and spot-check there still required.",
+  "evidence": "reports/tickets/Sprint26-18/VCST-5911/testing-checklist.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-18/VCST-5911/"
+}

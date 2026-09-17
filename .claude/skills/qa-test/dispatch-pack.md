@@ -69,7 +69,7 @@ ever a paraphrase: a summarised invariant is a second, drifting copy of a single
 | Step 4 — execution agents (up to 3 lanes) | `BL-*` + `ECL-*` text, **Artifact B**, `@td()` tokens | The prompt template already asks for the rule *text* ([`SKILL.md`](SKILL.md) §Agent dispatch); extract it rather than hand-cutting. **Artifact A rows came OUT of this pack on 2026-09-10** — `4c`'s C1 run executed the same rows and is the only thing that emits a `RUN_ID`, so the agent's copy was a second execution that grounded nothing |
 | `1c ‖ 1d` | scope's `BL-*` / `ECL-*` text + the contract rev | Prior art stays paths — see above |
 | The C1 regression runner | selection + `BL-*` text for the triage vocabulary | Artifact C is not an agent prompt ([`authoring.md`](authoring.md) §Artifact C) |
-| The verifier (Step 3, 5b, 5e) | rule text only | Evidence is re-derived, never supplied |
+| The verifier (Step 3, 5-report) | rule text only | Evidence is re-derived, never supplied |
 
 ## Cost, and when it is not worth it
 

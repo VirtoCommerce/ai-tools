@@ -205,7 +205,7 @@ test("--scope-out is parsed and defaults to null", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The exact-set path (`--ids`). `/qa-test` Step 5k round N+1 re-runs ONLY the previously-failed
+// The exact-set path (`--ids`). `/qa-test` Step 5-loop round N+1 re-runs ONLY the previously-failed
 // cases, which a tier union cannot express: `--also-ids` ADDS to a tier, so the smallest set was
 // always 'a whole tier, plus these'.
 // ---------------------------------------------------------------------------

@@ -93,3 +93,28 @@ then re-run the matrix above in Light and Dark and re-measure the dashboard stat
 ## Evidence
 
 `screenshots/VCST-5862-RED-dashboard-contrast.png`
+
+---
+
+# 2026-09-15 — Phase B (GREEN): **PASS**, one predicted residual survives
+
+**Env:** build `53555`, framework `2.6.0-rc.1`, Chrome/`playwright-chrome`, axe-core **4.12.1** rule `color-contrast`, Light + Dark. RED baseline above — cited, not re-derived. **Nodes 58 → 2 (Light), 49 → 1 (Dark)**; per route Light `#/` 2 · products/orders/offers 0, Dark 0/1/0/0. Counts vary with blade-stack depth and row state — the **signature list is the verdict**.
+
+| Signature (#356) | RED L/D | GREEN L/D | Renders | ≥4.5:1 |
+|---|---|---|---|---|
+| `.vc-user-info__role` "Administrator" | 2.41 / 3.40 | **4.54 / 5.09** | yes | yes (L margin only +0.04) |
+| `.vc-environment-banner__label` "Development" | 2.79 / not flagged | **7.51 / 8.27** | yes | yes |
+| `.vc-data-table__header-title-text` sorted ("Created Date") | 4.40 / not flagged | **5.75 / 8.96** | yes | yes |
+| `.vc-table-cell-date-ago` "1 day ago" | 2.52 / 3.16 | **7.81 / 5.76** | yes | yes |
+
+All four confirmed **on screen** (screenshots), so none "passes" by having vanished. **Banner variant:** vcmp-dev renders the **coloured `--success`** variant — the fixed-black-ink path (`--environment-banner-text-color:#000000`), not theme-following `neutral`: `#000` on `#57ab79` (L) = 7.51:1, on `#3fb950` (D) = 8.27:1.
+
+**OPEN QUESTION — measured, not predicted: axe treats `aria-disabled` exactly as native `disabled`.** `.vc-blade-toolbar-base-button__title` ("Delete selected") is **gone from the violation list** (0 nodes, 3/3 runs, both themes) **with no colour change** — ink is still `#a3a3a3` on `#fafafa` = **2.42:1** L (RED 2.41) and `#6e7681` = **3.41:1** D (RED 3.40). Scoped `axe.run('.vc-blade-toolbar')` → `violations=0 passes=4`: exactly the 4 actionable buttons (7.49 L / 6.21 D); the 5th is **excluded — neither pass nor violation**. **Control pair, like-for-like:** the pagination buttons carry the same muted ink at a *worse* **2.31:1** L / **3.16:1** D and are likewise excluded (`violations=0 passes=4 incomplete=1`) — but they are natively `<button disabled>` while the toolbar control is `aria-disabled` only. Same exclusion reached from two different mechanisms ⇒ VCST-5861's fix removed this node as predicted, and #356 was right to leave the colour alone.
+
+**PREDICTED RESIDUAL — CONFIRMED, survives; not a blocker for either ticket.** `.dashboard-stat-item__value--success` at **4.13:1** (`#43875f` on `#fafafa`, 18px normal, needs 4.5:1), **Light only, 2 nodes on `#/`**, identical in 3/3 runs — visible as "59 Published" (Products widget) and "19 Enabled" (Offers widget). Touched by neither PR → **standalone Medium / P2 candidate, its own ticket, never a Sub-task.**
+
+**New residual signatures (neither PR; reported, not filed):** `.vc-gallery__dnd-hint` **1.65:1** L / 3.62 D · `.vc-gallery__upload-btn` **2.77:1** L / 4.11 D · `.vc-select__selected-item` **3.07:1** L / 4.23 D · `.vc-label__language` 4.34:1 L — all on the **product-detail blade**, a surface the RED sweep never scanned. Plus `.vc-hint` 3.93:1 L / 4.22:1 D, which flags **only on the highlighted-row background** (why it appears in one run and not the next).
+
+**Limits.** **No AT pass was run** — computed-style + axe measurement, never screen-reader output. **Green theme not audited — unknown, not clean.** **BL-A11Y-003** is cited for the WCAG 1.4.3 criterion only: written *"on the accessibility-gated storefront themes"*, it is storefront-scoped by its own wording, not a vc-shell conformance target.
+
+**Evidence.** `screenshots/VCST-5862-GREEN-products-signatures-{light,dark}.png` · `screenshots/VCST-5862-GREEN-dashboard-residual-light.png` · HAR `test-results/chrome/har/session.har`

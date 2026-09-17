@@ -735,7 +735,7 @@ export function parseArgs(argv: string[]): Options {
       // An --ids list that names nothing must NEVER fall through to "no scoping": `ids.size === 0`
       // is the sentinel for UNSCOPED, so an empty value would INVERT the scope from nothing to
       // EVERYTHING — and with --apply that is a one-way Draft -> Automated flip across the whole
-      // suite. It is not a hypothetical: modes.md §5k's close-out prescribes three invocations whose
+      // suite. It is not a hypothetical: modes.md §5-loop's close-out prescribes three invocations whose
       // id sets are legitimately empty (if the final RED->GREEN run re-ran everything, two of them
       // are), so `--ids ""` is on the documented happy path. filter-cases.ts already fails closed on
       // the same input; this is the same rule, stated where this parser can enforce it.

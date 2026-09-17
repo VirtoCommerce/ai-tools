@@ -1,7 +1,7 @@
 {
   "ticket": "VCST-5861",
   "flow": "verify-fix",
-  "verdict": "BLOCKED",
+  "verdict": "VERIFIED",
   "blocker": "fix-not-deployed",
   "date": "2026-09-07",
   "environment": {
@@ -53,7 +53,7 @@
       }
     ]
   },
-  "post_fix_green": null,
+  "post_fix_green": "3/3",
   "limits": [
     "No AT pass was run - read from the rendered accessibility tree, not screen-reader output."
   ],
@@ -68,6 +68,23 @@
       "applied": false,
       "to": "Ready for test (unchanged)",
       "reason": "BLOCKED transitions nothing but requires a comment naming the blocker"
+    },
+    {
+      "hop": "opening",
+      "at": "1a",
+      "applied": true,
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA (id 4)"
+    },
+    {
+      "hop": "closing",
+      "at": "5f",
+      "applied": true,
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8)",
+      "note": "stops at Tested — never auto-Done"
     }
   ],
   "comment": {
@@ -96,5 +113,47 @@
     "finding": "VCST-5862 lists this control's title as a colour-contrast failure; that attribution is wrong",
     "proof": "pagination buttons carry the same #a3a3a3 ink at a worse ~2.3:1 and are NOT flagged, because they expose [disabled]; WCAG 1.4.3 exempts disabled controls",
     "consequence": "fixing THIS ticket removes that node from VCST-5862 with no colour change; re-verify the two together"
+  },
+  "phaseB_green": {
+    "date": "2026-09-15",
+    "build": {
+      "appVersion": "2.2.0-rc.1 (login footer)",
+      "assetBuildId": "53555",
+      "lastModified": "2026-09-15T08:18:58Z",
+      "frameworkVersion": "2.6.0-rc.1",
+      "frameworkBanner": "v2.6.0-rc.1 · 2026-09-08T10:09:58Z · 371aa8ec5"
+    },
+    "deployGate": {
+      "deployed": true,
+      "clearedOn": "2026-09-15",
+      "method": "commit-ancestry + npm dist-tag + exact-pin read + served-bundle marker",
+      "evidence": [
+        "npm rc dist-tag = 2.6.0-rc.1, gitHead cd4eeb6d",
+        "gh compare 8f5c54f4...cd4eeb6d => behind_by 0 (PR #355 contained)",
+        "gh compare 477cb529...cd4eeb6d => behind_by 0 (PR #356 contained)",
+        "vendor-portal@dev pin bumped 2.6.0-rc.0 -> 2.6.0-rc.1",
+        "app rebuilt 42234 -> 53555"
+      ]
+    },
+    "lane": "playwright-chrome (ui-ux-expert pinned off its default Chrome DevTools MCP: no --secrets there, vcmp-dev needs a password sign-in)",
+    "adjacentRegression": {
+      "method": "framework CI on both fix PRs (no config/test-suites.json suite covers vc-shell)",
+      "result": "all green — test, storybook-tests, static-checks, lint"
+    },
+    "limits": [
+      "No AT pass was run — rendered-tree / computed-style / axe measurement only",
+      "Green theme not audited — unknown, not clean; Light and Dark covered",
+      "Story-level axe gate has color-contrast disabled as a documented exception, and no suite covers vc-shell — nothing in CI stops this drifting back"
+    ],
+    "verdict": "VERIFIED",
+    "str": "3/3",
+    "greenChecks": {
+      "instrumentValidated": "button \"Sign in\" [disabled] each run",
+      "deleteSelected": "[disabled] exposed, Light+Dark",
+      "saveAsDraft": "[disabled] exposed, Light+Dark",
+      "reverseControl": "4 actionable buttons show [cursor=pointer], no [disabled]",
+      "tabOrder": "[disabled] [active] + visible focus ring — still focusable, as #355 intends",
+      "adjacent": "edit -> Save becomes actionable -> click persists -> returns to [disabled]"
+    }
   }
 }

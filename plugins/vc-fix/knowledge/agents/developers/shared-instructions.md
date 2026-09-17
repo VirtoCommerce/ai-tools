@@ -127,6 +127,17 @@ In the headless twin (`ci/run-fix-cycle.ts`) this routing is automatic (it calls
 hand: read `contributionPlan(routeRepo)`, then clone/branch/push/PR accordingly. The single-repo and
 no-auto-merge hard rules below are unchanged in every case.
 
+### VirtoOZ covers CORE, not the client's customisation
+**When the intended behaviour is unclear, query VirtoOZ via `/vc-docs` before coding against a guess** —
+a fix (and the reproduction test that pins it) built on guessed product behaviour is wrong in the one
+direction nobody re-checks. But those docs describe the platform's **CORE functionality** as
+VirtoCommerce ships it, so they answer only the platform side of the matrix above: authoritative for
+stock behaviour, and **silent, never negative, about client code**. On a `client`-owned repo a documented
+core behaviour is the **baseline you diff against**, not the spec the code must match — a divergence is a
+deliberate customisation until `classifyFrontendProvenance()` / the module's own source says otherwise,
+and "the docs do not mention it" is never grounds to "restore" core behaviour in client code. Scope and
+the full caveat: `skills/vc-docs/SKILL.md` §Scope.
+
 ### Frontend provenance — a client storefront fork mixes client + platform code
 When the routed repo is a **client `frontend` fork**, the *repo* is client-owned but an individual bug may
 live in **unmodified vc-frontend code** carried into the fork. Don't decide from the symptom — decide from

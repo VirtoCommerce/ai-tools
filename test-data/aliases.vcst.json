@@ -9,9 +9,13 @@
     "pricelistId": "3dd9ceb1-7b28-4b6e-9d6b-2b90c56a7894",
     "fields": {
       "id": "id",
-      "pricelistId": "pricelistId"
+      "pricelistId": "pricelistId",
+      "slug": "slug",
+      "url": "url"
     },
-    "_notes": "VCST-5103 per-env runtime GUIDs for the 1-PTS divisor product (moved out of base aliases.json per the multi-env rule). These are the last-known vcst values; `npm run seed:loyalty-fixtures` overwrites them with freshly-resolved ids on its live run (fixing any post-restore drift)."
+    "_notes": "VCST-5103 per-env runtime GUIDs for the 1-PTS divisor product (moved out of base aliases.json per the multi-env rule). These are the last-known vcst values; `npm run seed:loyalty-fixtures` overwrites them with freshly-resolved ids on its live run (fixing any post-restore drift). 2026-09-17: .slug + .url added for 083e's [NAV] deep-links, READ BACK from the platform's own seoInfos (product + category) exactly as resolveStorefrontPath() does — never composed locally. The vcst product predates loyaltySlug(), so its slugs are the legacy agent-test-/seed-loyalty-fixtures- forms rather than localhost's loyalty-* ones; the seeder only sets a slug on CREATE and reads it back otherwise, so a live re-seed would write these same two values. Verified live 2026-09-17 on vcst: the path renders the PDP (h1 \"AGENT-TEST PTS Unit Divisor\", SKU #AGENT-TEST-PTS-UNIT-001, Price PTS1), not a soft-404.",
+    "slug": "agent-test-pts-unit-divisor",
+    "url": "/loyalty-catalog/seed-loyalty-fixtures/agent-test-pts-unit-divisor"
   },
   "LOYALTY_VIP_USER": {
     "_inline": true,

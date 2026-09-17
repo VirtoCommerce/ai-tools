@@ -10,7 +10,7 @@
  * WHY THIS EXISTS. `/qa-test` read the existing corpus in exactly one direction — "which suites
  * cover this, so I author only the gaps" (`skills/qa-test/authoring.md` §Artifact A) — and never in
  * the other: "which existing rows does this change make WRONG?". So a stale case was reachable only
- * by FAILING at Step 4 and being triaged at 5a. That is reactive by construction, and three
+ * by FAILING at Step 4 and being triaged at 5-triage. That is reactive by construction, and three
  * independent things stop the failure ever happening:
  *
  *   1. `regression:select` maps CHANGED PATHS to suites by path token. Measured 2026-09-02 on
@@ -21,7 +21,7 @@
  *      so selection believes it mapped cleanly and never widens.
  *   2. Artifact C then applies `--cases critical`, which drops the High rows where most
  *      label/route assertions live (091: 24 High, 093: 29 High).
- *   3. A row that never executes is never triaged, so 5a cannot reach it.
+ *   3. A row that never executes is never triaged, so 5-triage cannot reach it.
  *
  * The concrete hole those three leave, same measurement: PR #2444 renames the hub widget to
  * "My recent orders" across 13 locales, and the existing suites assert the OLD label 62 times
@@ -42,7 +42,7 @@
  * RIGHT citation).
  *
  * THE `runFate` COLUMN IS THE POINT. A stale row that will run is a self-announcing problem: it goes
- * red at Step 4 and 5a triages it. A stale row that will NOT run is invisible forever. Reporting the
+ * red at Step 4 and 5-triage triages it. A stale row that will NOT run is invisible forever. Reporting the
  * two together is what makes the second class actionable, and it is why this tool reads the planned
  * case filter rather than leaving the caller to guess.
  *

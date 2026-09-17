@@ -165,6 +165,17 @@ For any "wrong field mapping" / "missing UI control" / "disabled element" / "rea
 
 Codified in memory: `feedback_verify_source_data_before_bug`, `feedback_verify_design_intent_before_bug`. Embedded in the `/qa-bug` skill — when invoked standalone, agents must still run these checks.
 
+### 5. Ask VirtoOZ before you guess how the product is SUPPOSED to behave
+
+**Any agent, any task: when the intended platform or storefront behaviour is unclear, query VirtoOZ via
+`/vc-docs` BEFORE acting on it.** The default, not a last resort — a verdict, a bug report or a test case
+built on guessed product behaviour is wrong in the one direction nobody re-checks, because it reads as
+confident. **VirtoOZ covers the platform's CORE functionality** (stock platform, Admin SPA, storefront),
+so on a CLIENT deployment it is authoritative for the core path and silent — never negative — about
+custom modules, themes and storefront forks: "the docs do not mention it" is not evidence of a defect.
+Docs are ONE source; live behaviour that contradicts them is a finding, not an error. Scope, the client
+caveat and tool selection: `skills/vc-docs/SKILL.md` §Scope.
+
 ## Virto Commerce Testing Scope
 
 ```

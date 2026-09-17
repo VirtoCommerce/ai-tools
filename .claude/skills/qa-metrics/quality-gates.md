@@ -91,7 +91,7 @@ deployment.
 bug list for the feature, and the change-scoped regression result (the Artifact-C suite selection from the
 `/qa-test` run). **Owner:** `qa-lead-orchestrator` (this is its go/no-go call).
 
-**Independently ratified at `/qa-test` Step 5e.** This gate is not self-certified by the run that produced
+**Independently ratified at `/qa-test` Step 5-report.** This gate is not self-certified by the run that produced
 the inputs: a **fresh `qa-lead-orchestrator` verifier instance** (§Verifier Mode) re-evaluates the criteria
 below from the raw inputs and may **downgrade** the GO/NO-GO. The pass-rate + bug-count math has a
 deterministic core:
@@ -141,8 +141,8 @@ and are combined with that math by the verifier.
 
 | Criterion | Threshold | Source |
 |-----------|-----------|--------|
-| `/qa-test` verdict | **PASS** or **PASS WITH NOTES** | `/qa-test` Step 5c |
-| Acceptance criteria + DoD | 100% verified — every atomic condition (story ACs + gap-ACs) carries PASS evidence, all reconciled SATISFIED-live, every DoD item MET/N-A, with the quantified AC-coverage/DoD estimate | `/qa-test` Step 5b |
+| `/qa-test` verdict | **PASS** or **PASS WITH NOTES** | `/qa-test` Step 5-verdict |
+| Acceptance criteria + DoD | 100% verified — every atomic condition (story ACs + gap-ACs) carries PASS evidence, all reconciled SATISFIED-live, every DoD item MET/N-A, with the quantified AC-coverage/DoD estimate | `/qa-test` Step 5-verdict |
 | `BL-*` invariants for the domain | Verified, none violated | `business-logic.md` |
 | Open P0 bugs in the feature | 0 — non-negotiable, outranks every other criterion | `reports/bugs/` |
 | Open P1/High bugs in the feature | **0 undeferred.** Fixed, or declared via `--p1-deferred N` with workaround + signed risk acceptance + monitoring plan (caps the verdict at CONDITIONAL GO) | `reports/bugs/` |

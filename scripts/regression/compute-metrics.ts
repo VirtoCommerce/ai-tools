@@ -446,7 +446,7 @@ export function evaluateGate(
     // pr = change-scoped (Artifact-C) regression pass rate; p0/p1 = open IN-SCOPE bug counts.
     // This computes ONLY the severity + completeness + pass-rate math; the qualitative §1a
     // criteria (AC coverage, BL-* preserved, NFRs, smoke, /qa-test verdict, security) stay
-    // agent-judged and are combined with it by the Step-5e verifier. Single GO floor
+    // agent-judged and are combined with it by the Step-5-report verifier. Single GO floor
     // (GATE_PASS_FLOOR.feature); below it => NO-GO. CONDITIONAL GO now means only "a High was
     // deferred", never "the pass rate nearly cleared the bar".
     if (p1Net > 0) {

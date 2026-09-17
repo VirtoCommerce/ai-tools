@@ -121,9 +121,9 @@ A lane whose findings reach no consumer buys a one-off observation and nothing e
 | 4 | **Oracle Feedback** — `[THEORETICAL]`→`[OBSERVED]`, a candidate pattern, a contradicted invariant | `/qa-review-oracles` | **Proposals, never edits.** `ba-system-analyzer` is the sole writer of both oracles and IDs are a citation contract |
 | 5 | **Checklist conditions the ACs never named** — a state the feature can reach that no AC describes, a control that exists and is unmentioned, a precondition the ticket assumes and the product does not hold | **Artifact B**, written after this lane returns | **This is why the lane moved ahead of the checklist (2026-09-10).** Before it, `3x`'s findings reached Artifact A only, and the checklist — the artifact that actually owns the verdict — was written from the ACs and a guess. Each condition returns with what was OBSERVED, so `B` carries an item that can be graded rather than a heading to go and look at. A lane that returns none says so: *"the ACs covered the reachable surface"* is a finding, not a blank |
 
-**Bugs found in the lane are ordinary findings and the lane files none of them.** They enter 5a's triage
+**Bugs found in the lane are ordinary findings and the lane files none of them.** They enter 5-triage's triage
 with the run's other findings, take a provenance (usually PRE-EXISTING, since the lane explores adjacent
-ground), and are filed or held by 5d's existing severity floor. The lane has no filing path of its own —
+ground), and are filed or held by 5-file's existing severity floor. The lane has no filing path of its own —
 same rule as the `2a` phase (*a scan is a claim about a test case, never about the product*) and 2d.
 
 **A Critical finding stops the lane immediately** and escalates, exactly as in `/qa-exploratory`.
@@ -218,7 +218,7 @@ Extra returns this caller needs, beyond /qa-exploratory's own §Output tables:
   - Model amendments (chain links / variants / reverse edges), with evidence
   - Per {HYPOTHESIS} row: the OBSERVED value, or "not reached + reason"
   - Per mission item 1–5: covered, or NOT REACHED + reason
-Do NOT file bugs — hand them back; the caller's 5a/5d owns triage, severity and filing.
+Do NOT file bugs — hand them back; the caller's 5-triage/5-file owns triage, severity and filing.
 ```
 
 **Everything not in that payload is `/qa-exploratory`'s own and is not restated here** — the environment
@@ -268,7 +268,7 @@ driven — a contradiction between two of the run's own records.
   "model_amendments": 3,             // applied to reports/ba/test-models/<TICKET>-<date>.md
   "scenarios_new": [{ "id": "EXP-01", "fate": "PROMOTE", "case_id": "SR-042", "oracle_ref": "NONE" }],
   "oracle_proposals": 2,             // routed to /qa-review-oracles
-  "bugs_surfaced": ["handed to 5a — never filed here"],
+  "bugs_surfaced": ["handed to 5-triage — never filed here"],
   "report": "reports/exploratory/SBTM-<ticket-key>-2026-09-03.md"
 }
 ```

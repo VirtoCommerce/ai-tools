@@ -1,0 +1,459 @@
+{
+  "ticket": "VCST-5024",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": null,
+    "narrow_story_tokens": null,
+    "escalated_reason": null
+  },
+  "layer": "cross-layer",
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "loy",
+    "path": ".claude/knowledge/domain/loyalty-missions.md",
+    "rev": 2,
+    "generated": "2026-09-11",
+    "age_days": 0,
+    "all_layer_chain": true,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "recommended": false,
+    "built_in_run": false,
+    "build_outcome": "not-attempted",
+    "build_skipped_reason": "already-present",
+    "amended_in_run": false,
+    "amend_outcome": "not-attempted",
+    "amendments": [],
+    "sources": [
+      ".claude/knowledge/domain/loyalty-missions.md rev 2",
+      ".claude/knowledge/domain/b2b-organizations.md"
+    ],
+    "unmapped_surfaces": [
+      "the organizationDetail2 loyalty balance widget (Admin SPA) — the map's §2a does not enumerate it",
+      "the split REST routes balance/user/{userId} and balance/organization/{organizationId} — §2a still records the pre-split balance/{userId}"
+    ]
+  },
+  "shape_class": {
+    "value": "none",
+    "surface_source": [
+      "PR diff x2 — a scope-key change behind a store setting, not a design-system or token-layer change"
+    ],
+    "skipped": []
+  },
+  "derived_oracle": null,
+  "verdict": "FAIL",
+  "date": "2026-09-11",
+  "timing": {
+    "started_at": "2026-09-11T13:50:00Z",
+    "finished_at": "2026-09-11T15:25:00Z",
+    "steps": {
+      "step1": 34.5,
+      "step2": 2,
+      "step3": 41,
+      "step4": 33.8,
+      "step5": 12
+    },
+    "time_to_first_test_minutes": 44.1,
+    "first_evidence_minutes": 78,
+    "reachability_minutes": 6.6,
+    "agent_dispatches": 8
+  },
+  "environment": "vcst-qa (TEST_ENV=vcst, ENV_RISK=test). NOTE: this run temporarily set Loyalty.LoyaltyBalanceCalculationMode=Organization on B2B-store with operator approval, window 14:34:06Z-15:07:52Z, and restored it — verified effective Customer, stored null, zero diff across all 106 store settings against _preflip-B2B-store-baseline.json. The first flip attempt via the settings-v2 tenant endpoint returned 204 and silently had no effect; the working write path is PATCH /api/stores/{id}. The schema has no field for a configuration mutation, so it is recorded here. RESTORE RESIDUES, recorded at the 5b gate and neither changing the ruling: (a) Customer.MembershipRolesWhitelist differs from the baseline in allowedValues ARRAY ORDER only (set-equal, serialization non-determinism); (b) the calculation-mode setting now has a PERSISTED ROW (id f4c6f048-...) where the baseline had id null — pre-flip it was a pure compiled default with no row, post-restore it is a row holding null. Effective value identical, every value identical; the row existence is new.",
+  "build": {
+    "platform": "3.1069.0",
+    "theme": "2.58.0-pr-2475-d710-d710e94f",
+    "relevant_modules": {
+      "VirtoCommerce.Loyalty": "3.1008.0-pr-17-116e",
+      "VirtoCommerce.Xapi": "3.1021.0",
+      "VirtoCommerce.Customer": "3.1024.0"
+    },
+    "deployed": "CONFIRMED live via GET /api/platform/modules and the storefront footer. Loyalty 3.1008.0-pr-17-116e is the tip commit of OPEN PR VirtoCommerce/vc-module-loyalty#17; the theme is the head of OPEN PR VirtoCommerce/vc-frontend#2475.",
+    "releasedThrough": "Loyalty last tagged release 3.1003.0 (2026-06) per the release ledger; the deployed build is a PR preview far ahead of it. No breaking ledger entry for this component."
+  },
+  "release": {
+    "layers": [
+      "module",
+      "api",
+      "admin-spa",
+      "storefront"
+    ],
+    "layer_source": "PR diff x2 -> repo identity; ticket domains -> module-suite-map",
+    "layers_conflict": false,
+    "audience": [
+      "Customer",
+      "Admin",
+      "Developer"
+    ],
+    "component_versions": {
+      "VirtoCommerce.Loyalty": "3.1008.0-pr-17-116e",
+      "vc-theme-b2b-vue": "2.58.0-pr-2475-d710"
+    },
+    "platform_version": "3.1069.0"
+  },
+  "documentation": {
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": false,
+    "comment_posted": false,
+    "refusal": null
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition_id": "4",
+      "confirmed": false,
+      "result": "success"
+    }
+  ],
+  "agents_dispatched": [
+    {
+      "item": "1r",
+      "agent": "qa-backend-expert",
+      "lane": "playwright-edge",
+      "outcome": "REACHABLE"
+    },
+    {
+      "item": "1c",
+      "agent": "ba-system-analyzer",
+      "lane": "none-needed",
+      "outcome": "complete"
+    },
+    {
+      "item": "1d",
+      "agent": "ba-story-writer",
+      "lane": "none",
+      "outcome": "complete"
+    },
+    {
+      "item": "3a",
+      "agent": "test-data-engineer",
+      "lane": "none",
+      "outcome": "complete, +1 top-up round"
+    },
+    {
+      "item": "A",
+      "agent": "test-management-specialist",
+      "lane": "none",
+      "outcome": "25 cases into 2 new suites"
+    },
+    {
+      "item": "3-cases gate",
+      "agent": "qa-lead-orchestrator (Verifier Mode)",
+      "lane": "none",
+      "outcome": "APPROVE"
+    },
+    {
+      "item": "4a",
+      "agent": "qa-frontend-expert + qa-backend-expert",
+      "lane": "chrome + edge",
+      "outcome": "complete"
+    },
+    {
+      "item": "4v",
+      "agent": "ui-ux-expert",
+      "lane": "chrome-devtools",
+      "outcome": "SKIPPED — both persistent profiles signed out"
+    },
+    {
+      "item": "4c/C1b",
+      "agent": "regression-orchestrator",
+      "lane": "machine",
+      "outcome": "REG-2026-09-11-1510"
+    }
+  ],
+  "epic": {
+    "parent": "VCST-5099 Loyalty - Mixed Cart (Draft)",
+    "siblings": [],
+    "roll_up": "Epic is still Draft, carries no Epic-level ACs and lists no sibling stories, so it supplies neither an integration surface nor an oracle. Stated rather than skipped."
+  },
+  "ac_analysis": {
+    "story_acs": 0,
+    "weak_acs": 3,
+    "gap_acs_added": 13,
+    "impl_coverage": "S1 COVERED / live SATISFIED WITH A CAVEAT (earning pools, but no shipped surface attributes a pooled row to the member who caused it). S2 DRIFT / live SATISFIED IN ITS PERMISSIVE HALF ONLY — B redeemed points A earned and the pool decremented, but the RESTRICTIVE half (T12: may a non-member or a locked member spend the pool?) was NOT TESTED, so the sentence is not wholly verified. S3 DRIFT / live FAILED (rows are written with the member own UserId and 0 of 22 are visible through any user-scoped read — written but unreachable).",
+    "conditions_total": 21,
+    "conditions_with_evidence": 17,
+    "conditions_satisfied": 9,
+    "conditions_failed": 6,
+    "conditions_not_tested": 3,
+    "conditions_blocked": 1,
+    "conditions_partial": 1,
+    "conditions_waived": 1,
+    "satisfaction_pct": 42.9,
+    "satisfaction_basis": "9 SATISFIED of 21 atomic conditions = 42.9%. Excluding the 1 WAIVED and 3 NOT TESTED from the denominator gives 9/17 = 52.9%. Both stated; neither rounded in the run's favour.",
+    "dod_total": 10,
+    "dod_met": 1,
+    "dod_completion_pct": 10,
+    "dod_basis": "1 MET of 10 = 10%. Excluding 2 NOT ASSESSED and 1 UNKNOWN gives 1/7 = 14.3%. The one MET is backward compatibility. The two hardest misses: exactly 1 test file touched across 63 changed files (+2 lines, the cart validator — not balance scoping, not the lock, not ResolveOwnerId, not the authorization handler), and a breaking API contract change (storeId now required on two queries).",
+    "dod_declared_on_ticket": false,
+    "conditions_not_tested_named": [
+      "T12 — redemption authorization (the RESTRICTIVE half of sentence 2). The permissive half is verified; whether a non-member or a locked member can SPEND the pool was never exercised. The Test Model records this as matrix GAP R5/L8.",
+      "T13 — concurrent earn from two members (authored as LOYORG-008, not executed)",
+      "T14 — concurrent redeem cannot overdraw (authored as LOYORG-009, not executed)"
+    ],
+    "p0_evidence": "D2/D3 sole-cause attribution is EVIDENCED, not asserted. Saved GraphQL payloads persisted to evidence/: the PTS-only cart carries BOTH LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED and LOYALTY_INSUFFICIENT_BALANCE; the mixed cart (cash line added) carries EXACTLY ONE validation error, LOYALTY_INSUFFICIENT_BALANCE with required=6 available=0. Re-parsed at the 5b gate: total validationErrors on the mixed cart = 1. GAP, recorded rather than left silent: NO HAR was captured this run, against the checklist own \"HAR always\" rule — the only HARs on disk predate the run. The saved payloads stand in for it.",
+    "g2_rederivation": "Re-read live at the 5b gate and persisted to evidence/G2-org-ledger-full.json (all 33 organization rows, signed sum 163505 — independently reconfirming C3). Member A pre-flip user-scoped: 20 mission rows totalling 9533. Post-flip org-scoped: 21 rows totalling 10152 — the same amount multiset PLUS one 619 (the genuinely new ORG_LOY_MISSION_2). So 20 of 21 reproduce the earlier set amount-for-amount. MECHANISM, newly evidenced: the (objectId, amount) overlap between the two populations is ZERO — org-scope rows carry NEW objectIds because new progress rows are created under the new owner key, so the dedup index structurally cannot see them as duplicates."
+  },
+  "total_cases": 34,
+  "passed": 15,
+  "failed": 9,
+  "blocked": 1,
+  "iterations": {
+    "enabled": false,
+    "rounds": 0,
+    "max_rounds": 0,
+    "outcome": null,
+    "per_round": []
+  },
+  "new_cases_authored": 25,
+  "promotion": {
+    "automated": 0,
+    "reviewed": 0,
+    "blocked": 0,
+    "reverted": 0
+  },
+  "regression": {
+    "c1": {
+      "ran": true,
+      "run_id": "REG-2026-09-11-1510",
+      "scope": "EXACT SET, split into two because the two halves need OPPOSITE store modes and cannot share one RUN_ID.",
+      "c1a_new_cases": {
+        "ran": false,
+        "planned_ids": 25,
+        "reason": "The 25 newly authored cases require Organization mode. Both execution lanes finished after the flip window closed, and re-flipping a shared store for a regression pass would have reopened it for roughly another hour. They enter the corpus as Draft and execute at promotion via /qa-test-lifecycle. A deviation from the C1 rule, stated — not a pass."
+      },
+      "c1b_repaired_cases": {
+        "ids": [
+          "MCO-GQL-004",
+          "LOY-038",
+          "MSN-019",
+          "MSN-020",
+          "MSN-021",
+          "MSN-027",
+          "MSN-032",
+          "MSN-033"
+        ],
+        "executed": 6,
+        "passed": 3,
+        "failed": 2,
+        "blocked": 1,
+        "pass_rate_pct": 50,
+        "not_executed": [
+          "MSN-019 (Deprecated, EX-201)",
+          "MSN-032 (Manual, EX-200)"
+        ],
+        "purpose_verdict": "The storeId repair is VERIFIED. No case failed on a storeId argument or GraphQL schema validation; every operation reports schemaValid true, schemaErrors empty. All three non-passes are pre-existing and unrelated to the repair.",
+        "non_passes": [
+          "MCO-GQL-004 BLOCKED — pre-existing case defect: the add_usd step has productId empty string in the CSV as authored",
+          "LOY-038 FAIL — fixture cross-contamination on a shared ORG_USER account",
+          "MSN-027 FAIL — fixture non-isolation: the account already carried prior mission progress before the run's first order"
+        ],
+        "closed_out": "Closed into reports/regression/history.json at the 5b gate (+3 per-suite rows). The status file was NOT overwritten — it describes REG-2026-09-10-1453, another run, and close-run correctly refused.",
+        "feature_gate": "compute-metrics --gate feature --run-id REG-2026-09-11-1510 --blocked-triaged 1 => NO-GO. The tool reports one reason: change-scoped regression 60% < 80% floor. READ THIS CAREFULLY: the tool also prints \"P0/P1 bug counts assumed 0\" because it has no tracker input. THIS RUN HAS TWO CRITICALS (the no-organization spend block, and mission-reward re-minting on adoption), so the true feature gate is NO-GO on SEVERITY as well as on pass rate — do not read this as NO-GO only because of 60%. Conversely, the 60% itself understates product quality: both FAILs are fixture-isolation defects in the EXISTING corpus (backlog B-44), neither a product defect nor caused by this change, and the BLOCKED case is a pre-existing empty productId in the CSV as authored. The pass rate and the severity point the same way for different reasons."
+      }
+    }
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_ids": [
+      "REG-2026-09-11-1510"
+    ],
+    "confirmed_bugs": 0,
+    "test_fixes_applied": 0,
+    "dismissed": 0,
+    "report_path": "reports/regression/REG-2026-09-11-1510/"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-5953",
+      "severity": "Critical",
+      "priority": "Highest",
+      "title": "[Loyalty][Org mode] A buyer with no organization sees their points balance and cannot spend it",
+      "relationship": "IN-SCOPE -> Sub-task of VCST-5024",
+      "report": "reports/bugs/open/critical-high/BUG-org-mode-no-organization-buyer-cannot-spend-own-points-VCST-5953.md",
+      "filed": "2026-09-11",
+      "evidence_comment": {
+        "id": "109358",
+        "posted": "2026-09-14",
+        "images_inline": 3,
+        "verified": "renderedBody: 3 attachment-backed <img>, 0 surviving !png! tokens, 0 error spans, 0 emoticons",
+        "attachments": [
+          "83853 sf-11-D1-noorg-READS-38916.png",
+          "83854 02-cart-blocked-needs-6-have-0.png",
+          "83855 03-customer-mode-no-error.png"
+        ]
+      }
+    },
+    {
+      "key": "VCST-5954",
+      "severity": "Critical",
+      "priority": "Highest",
+      "title": "[Loyalty][Org mode] Switching a store to Organization mode re-mints every past mission reward and strands existing balances",
+      "relationship": "IN-SCOPE -> Sub-task of VCST-5024",
+      "report": "reports/bugs/open/critical-high/BUG-org-mode-switch-remints-mission-rewards-and-strands-balances-VCST-5954.md",
+      "filed": "2026-09-11",
+      "evidence_comment": {
+        "id": "109357",
+        "posted": "2026-09-14",
+        "images_inline": 3,
+        "verified": "renderedBody: 3 attachment-backed <img>, 0 surviving !png! tokens, 0 error spans",
+        "attachments": [
+          "83850 I1-org-oplog-blade-filtered-by-organizationId.png",
+          "83851 I1-E2-org-ledger-40152-no-member-column.png",
+          "83852 D4-contact-blade-A-user-scoped-39533.png"
+        ]
+      },
+      "relive": "Re-confirmed read-only 2026-09-14: org pool 163,505 and Member A 39,533 still coexist as disjoint pools; store back in Customer mode. Not re-reproduced (the flip is an irreversible write)."
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "High",
+      "title": "Organization mode: contact-level loyalty transactions are written but unreachable from every user-scoped read",
+      "draft": "reports/bugs/open/critical-high/BUG-org-mode-contact-level-transactions-written-but-unreachable-VCST-5024.md",
+      "relationship": "IN-SCOPE -> Sub-task of VCST-5024",
+      "reason": "drafted, awaiting operator review"
+    },
+    {
+      "severity": "High",
+      "title": "POST /api/platform/settings/v2/tenant/Store/{id}/values returns 204 and the written value never takes effect",
+      "draft": "reports/bugs/open/critical-high/BUG-platform-settings-v2-tenant-write-returns-204-and-has-no-effect.md",
+      "relationship": "STANDALONE + related — platform settings surface, not loyalty; will outlive this ticket",
+      "reason": "drafted, awaiting operator review"
+    },
+    {
+      "severity": "Low",
+      "title": "Storefront exception: Missing required param \"orderId\" at 15:05:31Z, ~1 min after a redeem order",
+      "draft": null,
+      "relationship": "below the severity floor",
+      "reason": "BELOW SEVERITY FLOOR — not filed by policy. Unreproduced, no network capture exists to correlate it against, and the obvious hypothesis (a broken order confirmation) is refuted by sf-04."
+    }
+  ],
+  "discovery": {
+    "ran": false,
+    "skipped_reason": "Deliberately skipped with operator approval. The feature is dormant until the shared store is flipped, so a pre-flip session would have explored Customer-mode behaviour this change does not touch, and a post-flip session would have doubled the time a shared store sat in a non-default mode. 1c's full source read of both PR diffs and 1d's eleven weak sides had already produced 13 mechanism-derived conditions with no governing AC.",
+    "lane": null,
+    "minutes": 0,
+    "checklist_conditions": 0,
+    "charter_sources": []
+  },
+  "visual": {
+    "surface": true,
+    "surface_source": [
+      ".html blade + organization-loyalty-widget.js in the PR diff",
+      "derived layer includes storefront and admin-spa"
+    ],
+    "ran": false,
+    "skipped_reason": "All four axes SKIPPED. Both Chrome DevTools MCP persistent profiles (storefront buyer and admin) were signed out, and the lane has no --secrets so it may not type a credential. Third recorded recurrence of backlog B-26. The vs. DESIGN axis is separately SKIPPED because the ticket carries no design link. Partial mitigation: the storefront copy capture (item E3) was assigned to the frontend lane as capture-only and did land, so the {DOC}-contradiction evidence exists without this lane.",
+    "targets": [
+      "/account/points-history",
+      "/account/missions",
+      "Admin organization detail blade"
+    ],
+    "axes": {
+      "design_spec": "SKIPPED — no design link on the ticket",
+      "a11y": "SKIPPED — pages unreachable",
+      "design_system": "SKIPPED — pages unreachable"
+    }
+  },
+  "contract": {
+    "surface": true,
+    "surface_source": [
+      ".graphql files in vc-frontend#2475",
+      "*ExperienceApi* files in vc-module-loyalty#17",
+      "ACs naming queries"
+    ],
+    "schema": "Refreshed live 2026-09-11 — 108 queries / 140 mutations / 54 types. BREAKING CHANGE CONFIRMED: storeId is now String! (required) on loyaltyBalance and loyaltyPointsHistory. No query accepts an organizationId; scope is resolved server-side from the organization_id token claim.",
+    "fixtures": "graphql:fixtures:validate:refresh 75/75 passed. NOTE: that gate covers only test-data/graphql/** and does NOT see GraphQL embedded inside suite CSVs — 8 corpus cases were already invalid against this schema and no gate reported it (backlog B-39)."
+  },
+  "coverage_triage": {
+    "surface": true,
+    "surface_source": [
+      "ticket domains loyalty + b2b-organizations",
+      "derived layer",
+      "target suite manifest tags"
+    ],
+    "scope": "--domain loyalty --observable 'loyalty points balance' --observable 'loyalty points history' --observable 'mission progress' --oracle BL-LOY-001,002,003,015,016,018",
+    "counts": {
+      "hits": 41,
+      "will_run": 40,
+      "not_executing": 1,
+      "unscannable": 0
+    },
+    "dispositions": {
+      "CONFIRMED": 33,
+      "REPAIR": 8,
+      "RE_BASE": 0,
+      "SUPERSEDED": 0
+    },
+    "repaired": "8 cases across 3 suites (075b MCO-GQL-004; 075c LOY-038; 075d MSN-019/020/021/027/032/033) — 26 query invocations gained storeId: \"{{STORE_ID}}\". Re-linted: suites:lint OK (140 suites), 0 Blocker / 0 Critical on all three. Verified by execution at C1b. UNMATCHED OBSERVABLES: 'loyalty points balance' and 'loyalty points history' matched NOTHING in the whole corpus — a genuine coverage hole, now filled by the two new suites."
+  },
+  "test_data": {
+    "surface": true,
+    "surface_source": [
+      "no existing fixture provided two members of ONE organization — the multi-org fixtures are one account in TWO organizations, the inverse shape"
+    ],
+    "dispatched": true,
+    "fixtures_covering": [
+      "ORG_LOY_A",
+      "ORG_LOY_B",
+      "ORG_LOY_LOCKED",
+      "LOY_PERSONAL_NOORG",
+      "ORG_LOY_MISSION",
+      "ORG_LOY_MISSION_2",
+      "ORG_LOY_MISSION_PARTIAL"
+    ],
+    "divergence_resolved": "A earns 30000 at qty 1, B earns 90000 at qty 3, pooled 120000 — all mutually distinct, so a pooled total cannot be mistaken for either member's own or for a double-count. LOY_PERSONAL_NOORG funded to 38916 against a required 6, so a spend refusal can never be a genuine shortfall. Mission rewards 617/619/631 mutually distinct so one order moving several still leaves each grant identifiable. CAVEAT: the seeder's stated plan (30000/90000) differed from the live deltas (39533/100033) because store-wide missions also granted — divergence survived, the asserted arithmetic did not (backlog B-42).",
+    "td_validate": "green (DV-013/021/022/023/024 all clean); td:validate:org-loyalty clean, 7/7 aliases seeded"
+  },
+  "business_rules_verified": [
+    {
+      "id": "BL-LOY-007",
+      "verdict": "SATISFIED",
+      "evidence": "order cb99afd1 produced exactly {Earned:1, Redeemed:1} coexisting, no duplicates, at ORGANIZATION scope. The dedup key (ObjectId, ObjectType, OperationType) was deliberately not org-scoped and still holds. Independently re-proven by both execution lanes."
+    },
+    {
+      "id": "BL-LOY-008",
+      "verdict": "SATISFIED BY ITS OWN TERMS, OVER A WRONG OUTCOME",
+      "evidence": "required(6) > available(0), both parameters present, order not created — every clause passes. The defect is that available is 0 for an account visibly holding 38916. A green rule over a broken result."
+    },
+    {
+      "id": "BL-LOY-015",
+      "verdict": "VIOLATED — ESCALATED",
+      "evidence": "At organization scope every entry in a shared, spendable pool is unattributable to the person who caused it, on every shipped surface: no member field exists in the GraphQL schema and the Admin org ledger has no member column. Members see each other's earns AND spends."
+    },
+    {
+      "id": "BL-LOY-018",
+      "verdict": "VIOLATED",
+      "evidence": "20 mission rewards totalling 9533 points were granted a SECOND time for missions the same member had already completed, with no new qualifying activity — only a change of owner key. 'At most once' holds within a scope and does not survive a scope change."
+    },
+    {
+      "id": "BL-LOY-019",
+      "verdict": "PRE-EXISTING, BLAST RADIUS WIDENED",
+      "evidence": "No reversal path exists at any scope. This change does not introduce it but moves the exposure from one person's balance to a pool every member can spend."
+    },
+    {
+      "id": "BL-B2B-001",
+      "verdict": "SATISFIED",
+      "evidence": "Multi-org grants resolve the correct organization's claim; both of the multi-org fixture's organizations read 0 while the outlet held 133086. No bleed."
+    }
+  ],
+  "appinsights": {
+    "checked": true,
+    "layers": [
+      "backend",
+      "storefront"
+    ],
+    "window_minutes": 35,
+    "signals": "Backend: 4 exceptions, ALL attributable to this run's own probes (2 x Xapi AuthorizationError — the authorization guard working as designed; 1 x FieldsOnCorrectTypeError — an orchestrator field typo; 1 x ScalarLeafsError — a query-shape probe). Storefront: 1 exception, 'Missing required param orderId' at 15:05:31Z, roughly one minute after the redeem order and seen by neither lane's console capture.",
+    "correlated_failures": "ZERO product exceptions. Every confirmed defect in this run is SILENT — a wrong balance, a stranded row, a re-granted reward — which is precisely why ledger arithmetic rather than logs is what caught them. The single storefront exception is recorded as a low-severity incidental correlated with the redeem path, not a confirmed defect. The storefront exception was NOT REPRODUCED, and no network capture from this run exists to correlate it against (see the HAR gap above). The obvious hypothesis — a broken order confirmation — is REFUTED: sf-04 shows the confirmation page rendering normally for CO260911-00005. Recorded as unreproduced, not as triaged-and-dismissed."
+  },
+  "screenshots": "reports/tickets/Sprint26-18/VCST-5024/screenshots/ (36 files). Two were RENAMED at the 5b gate because their filenames asserted what the image refutes: sf-04-A-placeorder-no-confirmation.png -> sf-04-A-order-CO260911-00005-CONFIRMED.png (it shows ORDER COMPLETED); D4-G1-contact-A-shows-39533-while-storefront-reads-0.png -> D4-contact-blade-A-user-scoped-39533.png (it contains only the Admin half; the storefront figure is in sf-18). Durable non-screenshot evidence is in evidence/: D2-cart-ptsonly-BOTH-errors.json, D2-cart-mixed-SOLE-error.json, G2-org-ledger-full.json.",
+  "bugs_consolidated_from": 8,
+  "bugs_consolidation_note": "An initial pass listed 8. Consolidated to 4 on review: the re-mint and the strand are ONE migration defect filed once; the storeId required-argument change is a product DECISION needing a deprecation answer, not a malfunction, and is raised in the tracker comment; the BL-LOY-015 attribution escalation is an ORACLE AMENDMENT routed to /qa-review-oracles, not a new ticket; and the organization widget error-state finding was source-derived only (no 4xx induced) and was dropped rather than filed."
+}

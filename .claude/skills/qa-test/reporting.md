@@ -1,28 +1,28 @@
-# Steps 5e · 5f · 5h · 5h-map — report, transition, publish, write back
+# Steps 5-report · 5-status · 5-docs · 5-docs-map — report, transition, publish, write back
 
 > **MANDATORY — screenshots go INLINE in the comment.** A UI claim posted without its image embedded is not delivered: Markdown `![](path)` and prose file paths both post `200 OK` and render nothing. Attach, then reference `!file.png|width=700!` via the **v2** comment API, then VERIFY from `?expand=renderedBody` (one `<img …/attachment/content/N>` per image, zero surviving `!….png!`, zero `<span class="error">`). Mechanism + the ADF dead ends: `knowledge/execution/tracker-ops.md` §5c. Policy + the verification gate: `.claude/rules/reports.md` §5.0. A non-visual claim says so explicitly rather than silently shipping no image.
 
 
-Split out of [`close-out.md`](close-out.md), which keeps the close-out spine (5b · 5c · 5d) and cites
+Split out of [`close-out.md`](close-out.md), which keeps the close-out spine (5-verdict · 5-file) and cites
 this file. Read it when the verdict exists and the run has to be **delivered**: the Feature Release Gate,
 the tracker comment, `summary.json`, the checklist, the chat report, the status transition, and the
 per-ticket documentation.
 
-**The order is fixed and each step depends on the one before it:** 5e reports (and is what *publishes* the
-verdict 5c recorded), 5f transitions **after** the report, 5h documents **after** the transition, and
-`5h-map` writes back to the domain map last of all (FULL only, non-blocking). **Promotion is not here** —
+**The order is fixed and each step depends on the one before it:** 5-report reports (and is what *publishes* the
+verdict 5-verdict recorded), 5-status transitions **after** the report, 5-docs documents **after** the transition, and
+`5-docs-map` writes back to the domain map last of all (FULL only, non-blocking). **Promotion is not here** —
 `/qa-test` stopped promoting on 2026-09-10; the procedure lives in
 [`regression-promotion.md`](../../knowledge/execution/regression-promotion.md), run by
 [`/qa-test-lifecycle`](../../commands/qa-test-lifecycle.md) 6P and, for cases already grounded, by a
 direct [`/qa-regression`](../../commands/qa-regression.md) run's Step 6.5.
 
-## 5e. Report
+## 5-report. Report
 
 ### 0. Resolve the release-note fields
 
-Done **first**, because 5e.2's comment carries a mandatory `Release note:` line and 5e.3 persists the
+Done **first**, because 5-report.2's comment carries a mandatory `Release note:` line and 5-report.3 persists the
 block — both of which need these values. The **layer itself is not decided here**: it was derived at `1b`
-item 2b and is read from `summary.json.layer`. What 5e.0 resolves is everything downstream of it:
+item 2b and is read from `summary.json.layer`. What 5-report.0 resolves is everything downstream of it:
 
 - **`audience` is derived from the layer**, per `.claude/knowledge/ba/virto-doc-style.md` §9.1 — never a
   choice made here.
@@ -35,7 +35,7 @@ item 2b and is read from `summary.json.layer`. What 5e.0 resolves is everything 
   `not-user-visible` · `no-version`. A pure refactor with nothing a user can observe is a legitimate
   `not-user-visible`, not a thin note. A refusal is an outcome, not a failure.
 
-The **pointer** that hands these to `/ba-analyze` is 5f §Release note — after the report, with the
+The **pointer** that hands these to `/ba-analyze` is 5-status §Release note — after the report, with the
 transition, because it is a next-step hand-off rather than a value to compute.
 ### 1. Feed and independently ratify the Feature Release Gate
 
@@ -43,7 +43,7 @@ transition, because it is a next-step hand-off rather than a value to compute.
 ratify per round: a FAIL round is an automatic NO-GO the loop has *already acted on* by starting another
 round, so ratifying it emits N−1 recommendations about builds that no longer exist.
 
-The 5c verdict is the primary input to the **Feature Release Gate**
+The 5-verdict verdict is the primary input to the **Feature Release Gate**
 (`.claude/skills/qa-metrics/quality-gates.md` §1a), owned by `qa-lead-orchestrator`. **`/qa-test` does not
 decide release.**
 
@@ -60,10 +60,10 @@ one line that the sweep was not run. A missing criterion is stated, never implie
 
 Two things about the bug ledger and the run, because both changed on 2026-09-02:
 
-- **An open High blocks — it no longer downgrades on its own.** Either 5d's fix landed, or the High is
+- **An open High blocks — it no longer downgrades on its own.** Either 5-file's fix landed, or the High is
   **declared** deferred: `--p1-deferred N` asserts N of them carry a documented workaround + signed risk
   acceptance + a monitoring plan. A declared deferral caps the gate at **CONDITIONAL GO**, never a clean
-  GO. Report the declared count in the 5e comment; an undeclared High is a NO-GO, not a note.
+  GO. Report the declared count in the 5-report comment; an undeclared High is a NO-GO, not a note.
 - **Report the run's COMPLETENESS, not only its pass rate** (§0). BLOCKED sits outside the pass-rate
   denominator, so the rate rises as blockers accumulate; >10% of planned BLOCKED-and-untriaged returns
   **CANNOT EVALUATE** (exit 2). Triage via `/qa-triage-results` and pass `--blocked-triaged N`, or re-run
@@ -71,14 +71,14 @@ Two things about the bug ledger and the run, because both changed on 2026-09-02:
   on a null pass rate, and NOT EVALUATED is neither a pass nor a failure.
 
 **Independent verification (FULL):** a fresh `qa-lead` verifier re-evaluates §1a from the raw inputs — the
-5c verdict, the `reports/bugs/` open-P0/P1 ledger (now current, since 5d already filed), the regression pass
+5-verdict verdict, the `reports/bugs/` open-P0/P1 ledger (now current, since 5-file already filed), the regression pass
 rate via
 `npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id <regression.run_id> --p0-bugs N
 --p1-bugs N [--p1-deferred N] [--blocked-triaged N]`
 (`--run-id` **required**; `--suites <ids>` is the fallback), and the smoke result — and ratifies or
 **downgrades**. Recommendation only; a human decides release.
 
-### 2. Post the tracker comment (before the status transition — that is 5f)
+### 2. Post the tracker comment (before the status transition — that is 5-status)
 
 Markdown, never wiki markup; outcome-first, evidence referenced not inlined
 (`.claude/knowledge/execution/tracker-ops.md` §5a):
@@ -105,7 +105,7 @@ The `Not filed` line is **mandatory and says `None` when there are none** — an
 indistinguishable from a run that found no Low issues.
 
 **`--iterate`:** this full template is posted **once, at loop exit**. Rounds 1…N−1 post the much
-shorter **round delta** instead ([`modes.md`](modes.md) §5k §The round-delta comment) — the full
+shorter **round delta** instead ([`modes.md`](modes.md) §5-loop §The round-delta comment) — the full
 template every round buries the ticket under near-identical comments, while posting nothing leaves a
 prerelease deployed to the shared test env with no trace. The delta carries the same mandatory
 `Not filed` accounting.
@@ -118,11 +118,11 @@ AC-analysis + `ac_dod_estimate` block, counts, the **`regression`** block (`c1` 
 with relationship + severity, `bugs_not_filed`, the **`timing`** block,
 **`path`** plus **`path_route`** (how the EFFORT axis landed there — for a Story that is `1a`-provisional
 then `1b`-confirmed, `ticket-routing.md` §5b),
-**`layer`** (derived at `1b` item 2b) plus the **`release`** block resolved at 5e.0, and the four derived-axis
+**`layer`** (derived at `1b` item 2b) plus the **`release`** block resolved at 5-report.0, and the four derived-axis
 blocks — **`visual`** (2c), **`contract`** (2d), **`coverage_triage`** (2e's scan + Artifact A's `2a`
 phase) and **`discovery`**
 (Step 3x). In each of those, `null` means the axis **never ran**, which is not the same fact as an empty
-array. The **`documentation`** block is the one field written later — at **5h**, after the transition —
+array. The **`documentation`** block is the one field written later — at **5-docs**, after the transition —
 because it records an action that has not happened yet at this point.
 
 **Then validate it, because nothing used to.** The schema above was the declared contract and was cited by
@@ -153,7 +153,7 @@ the report rather than being inferred months later.
 was `0` in **every** `summary.json` that carried the block, for the whole of its existence — which is why
 the 2026-09-10 Step-3/4 restructure had to be designed against an unmeasured latency claim
 ([`docs/decisions/qa-test-evolution.md`](../../../docs/decisions/qa-test-evolution.md) §Cutting
-time-to-first-test). **Write each step's minutes as that step CLOSES, not at 5e.3 from memory** — by then
+time-to-first-test). **Write each step's minutes as that step CLOSES, not at 5-report.3 from memory** — by then
 the timestamps are gone. A step that genuinely took under a minute records a real fraction; `0` is a
 placeholder, and a placeholder here is the same failure as a blank matrix cell.
 
@@ -191,11 +191,11 @@ applicable* and *not checked* must stay distinguishable.
 
 ---
 
-## 5f. Change status — `qa-lead` only, ask first, and BLOCKED is a row
+## 5-status. Change status — `qa-lead` only, ask first, and BLOCKED is a row
 
 Strictly **after** the report is posted. **Single source of truth for the whole state machine:**
 [`.claude/knowledge/execution/ticket-status-transitions.md`](../../knowledge/execution/ticket-status-transitions.md)
-— cite it, never restate it. What this section owns is the 5f-shaped summary of it.
+— cite it, never restate it. What this section owns is the 5-status-shaped summary of it.
 
 | Verdict | Transition | Also required |
 |---|---|---|
@@ -209,7 +209,7 @@ verdict vocabulary, so a blocked run left the ticket in in-testing with no comme
 is a lie, and REOPEN files an env/data blocker into the developer queue as though it were a product
 defect. So the honest state is *still in testing, and here is why nobody is testing it*, and the comment
 is what makes that readable — which is why it is mandatory rather than nice-to-have. A run that STOPs at
-a gate before 5f is the same shape: the opening hop stays, and the close-out says so.
+a gate before 5-status is the same shape: the opening hop stays, and the close-out says so.
 
 **Confirmation is asymmetric, and that is deliberate.** The `1a` opening hop is **never** confirmed
 (reversible, and the operator implied it by invoking the command); this closing hop **always is** (it is
@@ -232,7 +232,7 @@ if round 1 skipped it, the exit round does it here, exactly as the paragraph abo
 
 **A BUG the loop verified is a different ticket, and it has its own hop** — taken by the inline
 `/qa-verify-fix` at round entry, capped at `TESTED`, and only when that bug's fix is merged and present in
-the round's probed build; everything else the loop left in in-testing closes out here at 5f alongside the
+the round's probed build; everything else the loop left in in-testing closes out here at 5-status alongside the
 ticket ([`modes.md`](modes.md) §Round entry ·
 [`ticket-status-transitions.md`](../../knowledge/execution/ticket-status-transitions.md) §5a). It does not
 make this a two-transition run: the count above is per ticket.
@@ -243,8 +243,8 @@ By default `/qa-test` verifies and reports; it never fixes — it states the nex
 not auto-triggers). This close-out is the `feature-test` flow's; `verify-fix` already ended at its own
 VERIFIED/REOPEN verdict, and `hotfix-verify` handed off before 1b.
 
-- **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate. Done — **5h publishes the
-  documentation to the ticket** (§5h) and `5h-map` writes back to the domain map (non-blocking). New cases
+- **PASS / PASS WITH NOTES** → ticket TESTED; hand to the Feature Release Gate. Done — **5-docs publishes the
+  documentation to the ticket** (§5-docs) and `5-docs-map` writes back to the domain map (non-blocking). New cases
   stay `Draft` — promotion is [`/qa-test-lifecycle`](../../commands/qa-test-lifecycle.md)'s pass, not this one.
   **Then point at the release note** — see §Release note below.
 - **FAIL → REOPEN** → `/qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge +
@@ -253,14 +253,14 @@ VERIFIED/REOPEN verdict, and `hotfix-verify` handed off before 1b.
   Bug to the `verify-fix` flow, since its status is now `fix-ready`.
 - **BLOCKED** → resolve the blocker (env/data/dependency) and **re-run `/qa-test <ticket-key>`** from the
   top; no partial credit.
-- **With `--iterate`** the FAIL bullet is what 5k automates, bounded — it is the loop, not a pointer.
+- **With `--iterate`** the FAIL bullet is what 5-loop automates, bounded — it is the loop, not a pointer.
   Everything else here is unchanged: merge and release stay the human’s, and the loop only ever
   re-tests an unmerged prerelease.
 
 ### Release note — a pointer, not a trigger
 
 The **machine half is already written and persisted** — `summary.json.layer` plus the `release` block,
-resolved at 5e.0 and written at 5e.3. Nothing is computed here.
+resolved at 5-report.0 and written at 5-report.3. Nothing is computed here.
 
 **Point, and stop.** `/ba-analyze` is `disable-model-invocation: true`, so nothing here can (or
 should) auto-fire it. When `refusal` is null, state exactly this:
@@ -281,14 +281,14 @@ than `summary.json`, and a fix’s release story is the bundle/hotfix narrative 
 
 ---
 
-## 5h. Publish the documentation to the ticket — after TESTED, both paths
+## 5-docs. Publish the documentation to the ticket — after TESTED, both paths
 
 The release-note pointer above hands off a *what shipped* record. **This step delivers the ordinary
 product documentation** — the §3/§4/§5 guides for the surface this ticket moved — and **posts it as one
 comment on the ticket**, so the people who asked for the change read it where they are already looking.
 Shape, audience derivation, size caps and refusals: [`knowledge/ba/virto-doc-style.md`](../../knowledge/ba/virto-doc-style.md) §10.
 
-Runs **after 5f**, on **both paths**. FAST is included deliberately and costs nothing: a P2 config tweak
+Runs **after 5-status**, on **both paths**. FAST is included deliberately and costs nothing: a P2 config tweak
 refuses `not-user-visible`, which is the correct outcome, not a skipped step.
 
 ### 1. Decide whether the ticket earned documentation
@@ -306,8 +306,8 @@ reason, when any of these holds (§10.4):
 
 **The verdict is not one of them.** `FAIL`/`BLOCKED` **scopes** this step rather than refusing it:
 document the conditions that PASSed, omit the ones that did not, and carry the mandatory `Not documented`
-line plus the verbatim verdict (§10.2/§10.4). 5f's release note keeps its `verdict-not-pass` gate —
-*what shipped* and *how do I use this* fail differently. **The precondition is 5f having run, not the ticket having reached TESTED** — a FAIL run transitions to REOPEN and never reaches TESTED, so a TESTED precondition would refuse precisely the runs this paragraph says to scope. What the ordering buys is that a human has already seen 5f's transition and the verdict behind it, whatever that verdict was; this step runs only once
+line plus the verbatim verdict (§10.2/§10.4). 5-status's release note keeps its `verdict-not-pass` gate —
+*what shipped* and *how do I use this* fail differently. **The precondition is 5-status having run, not the ticket having reached TESTED** — a FAIL run transitions to REOPEN and never reaches TESTED, so a TESTED precondition would refuse precisely the runs this paragraph says to scope. What the ordering buys is that a human has already seen 5-status's transition and the verdict behind it, whatever that verdict was; this step runs only once
 transitioned the ticket to TESTED. There is likewise no `no-version` refusal here: a how-to does not
 quote a build number, and requiring one would refuse guides that are perfectly writable (§10, head
 table).
@@ -325,7 +325,7 @@ Audiences come from the **§9.1 layer→audience row**, read for a different pur
 layer and do not build a second map.
 
 **Ask before posting.** The comment is an external write to the tracker; confirmation is required here
-exactly as it is at 5d and 5f, and a subagent never posts it unprompted
+exactly as it is at 5-file and 5-status, and a subagent never posts it unprompted
 (`.claude/rules/agents.md` §Agent Delegation, and the standing subagent external-write rule).
 
 **The posting mechanics are `tracker-ops.md`'s, not this step's** — read §5a/§5c/§5d **before** the first
@@ -346,29 +346,29 @@ prose, never embedded.
 Write the `documentation` block of `summary.json` (schema:
 [`qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json)) — `published`, `audiences`,
 `files`, `amended`, `comment_posted`, `refusal`. Two distinctions the block exists to keep: a **null**
-block means 5h never ran, while `published: false` with a non-null `refusal` means it ran and declined —
+block means 5-docs never ran, while `published: false` with a non-null `refusal` means it ran and declined —
 and `comment_posted: false` alongside `published: true` means the guides were written but the operator
-declined the post. Recording a refusal is the same discipline as the 5e comment’s `Not filed` line
+declined the post. Recording a refusal is the same discipline as the 5-report comment’s `Not filed` line
 saying `None`: an omission is indistinguishable from a step nobody ran.
 
-**`--iterate`: 5h runs AT LOOP EXIT, ONCE.** The loop re-tests an unmerged prerelease; documenting a
+**`--iterate`: 5-docs runs AT LOOP EXIT, ONCE.** The loop re-tests an unmerged prerelease; documenting a
 build that is about to be replaced publishes instructions for something nobody can use yet, and a
 per-round comment buries the ticket. One documentation comment per run, whatever the round count.
 
 ---
 
-## 5h-map. Amend the domain map with what this run ESTABLISHED — FULL, when a map exists
+## 5-docs-map. Amend the domain map with what this run ESTABLISHED — FULL, when a map exists
 
 `1c-map` fills the map in when it is missing. This is the other half of the same loop: when a map already
 exists, the run **writes back what it verified**, so the inventory tracks the product instead of decaying
 from the day it was built. It costs **zero dispatches** — every fact it writes is already in the run's
 artifacts, produced by `ba-system-analyzer` at `1c` and by the execution agents at Step 4.
 
-**Runs after 5f**, and that ordering is a guard, not a convenience: `1e` clause 11b binds the matrix
+**Runs after 5-status**, and that ordering is a guard, not a convenience: `1e` clause 11b binds the matrix
 against the map's inventory, so a run that widened the map first would be checking its own output. The
 verdict is recorded before anything is written back.
 
-**Independent of 5h's refusals.** `not-user-visible`, `not-deployed` and `layer-unresolved` decide whether
+**Independent of 5-docs's refusals.** `not-user-visible`, `not-deployed` and `layer-unresolved` decide whether
 the *ticket* earned a how-to guide. A surface this run rendered is a fact either way, and a `FAIL` or
 `BLOCKED` verdict changes nothing here — the map records what EXISTS, never what is correct.
 
@@ -384,7 +384,7 @@ the *ticket* earned a how-to guide. A surface this run rendered is a fact either
 
 **Never from a run:** §1 purpose or the value chain (a re-derivation, not an observation) · any claim
 whose provenance is `{HYPOTHESIS}` or inference · a **deletion** of any row · a **renumber** of any id ·
-anything observed on a different domain's surface. Each of those is a `5h` proposal, exactly as before.
+anything observed on a different domain's surface. Each of those is a `5-docs` proposal, exactly as before.
 
 **One evidence bar, and it is the run's own:** an amendment carries `CONFIRMED` and the observation
 behind it. A claim the run could not verify live does not get written more weakly — it does not get
@@ -418,7 +418,7 @@ nobody looked at.
 - Then run the shape's own gate clauses on the rows you touched, plus `npm run domain:check` and
   `npm run context:check`.
 - **Nothing here blocks.** A failed amendment records `domain_map.amend_outcome: FAILED` with the reason
-  and leaves the map untouched; the run's verdict was final at 5c.
+  and leaves the map untouched; the run's verdict was final at 5-verdict.
 
 ### Record it
 

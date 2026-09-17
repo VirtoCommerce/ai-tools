@@ -87,9 +87,11 @@ test("no gate spec contains a verdict word — the sheet is evidence, never a ru
 
 test("every gate a verifier can be dispatched to has a spec", () => {
   // 3-exec releases the EXECUTION agents and is INLINE (no fresh-verifier dispatch); 3 releases C1
-  // and is the hard STOP. 5g is no longer a /qa-test step (promotion moved to /qa-test-lifecycle 6P,
-  // 2026-09-10) but the gate is still reachable from there, so its spec stays.
-  assert.deepEqual(Object.keys(GATES).sort(), ["3", "3-exec", "5b", "5e", "5g"]);
+  // and is the hard STOP. 5-verdict is the close-out self-check — it kept its sheet when the 5b verifier
+  // dispatch was folded into 5-verdict (2026-09-16), because the deterministic half is what the doer now runs.
+  // 5g is no longer a /qa-test step (promotion moved to /qa-test-lifecycle 6P, 2026-09-10) but the gate
+  // is still reachable from there, so its spec stays.
+  assert.deepEqual(Object.keys(GATES).sort(), ["3", "3-exec", "5-report", "5-verdict", "5g"]);
 });
 
 test("3-exec is runnable without a suite — Artifact A does not exist yet when it fires", () => {

@@ -1,0 +1,63 @@
+{
+  "ticket": "VCST-5838",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-09-15",
+  "flow": "verify-fix",
+  "ticket_type": "Bug",
+  "environment": "http://localhost (vc-frontend PR build) -> https://vcst-qa.govirto.com (backend)",
+  "environment_note": "Hybrid topology discovered mid-run: only the FRONTEND is local. The storefront's GraphQL is proxied to the shared vcst-qa backend (products.totalCount 4550 on both; localhost:8090 reports 195). The initial brief's 'localhost:8090 platform' premise was wrong; the deployment gate is unaffected because the fix is entirely in the frontend bundle.",
+  "build": {
+    "platform_localhost_8090": "3.1071.0-alpha.13389 (NOT the storefront's backend)",
+    "theme": "2.58.0-pr-2478-e8f6-e8f6a9d7",
+    "relevant_modules": {},
+    "pr_build": "vc-theme-b2b-vue-2.58.0-pr-2478-e8f6-e8f6a9d7 (PR #2478 @ e8f6a9d7)"
+  },
+  "deployment_gate": {
+    "method": "CSS fingerprint of the served bundle against the PR diff (not a version string)",
+    "constructs_confirmed": 4,
+    "corroboration": "storefront footer reports 2.58.0-pr-2478-e8f6-e8f6a9d7"
+  },
+  "agent_used": "qa-frontend-expert",
+  "browser": "playwright-edge",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug (reports/bugs/open/low/BUG-storefront-dark-mode-active-pagination-contrast.md, CONFIRMED, 4.37:1)",
+  "surfaces_used": ["/company/members (4 pages)", "/account/missions (5 pages, the ticket's own STR path)"],
+  "measurements": [
+    {"preset": "red",    "mode": "dark",  "text": "rgb(10,10,10)",  "fill": "rgb(255,149,146)", "ratio": 9.40, "loads": 3, "pass": true},
+    {"preset": "red",    "mode": "light", "text": "rgb(255,255,255)", "fill": "rgb(229,33,33)", "ratio": 4.59, "loads": 1, "pass": true},
+    {"preset": "coffee", "mode": "dark",  "text": "rgb(17,15,14)",  "fill": "rgb(194,163,150)", "ratio": 8.17, "loads": 3, "pass": true},
+    {"preset": "coffee", "mode": "light", "text": "rgb(255,255,255)", "fill": "rgb(153,108,90)", "ratio": 4.52, "loads": 1, "pass": true}
+  ],
+  "checklist_total": 10,
+  "checklist_passed": 9,
+  "checklist_failed": 0,
+  "checklist_blocked": 1,
+  "blocked_items": [
+    {"item": 5, "name": "Ellipsis still visible/legible after text-neutral-400 was dropped", "reason": "Ellipsis only renders at >=10 pages (deployed bundle short-circuits: if (pages <= 9) return [1..pages]). Max reachable across every probed surface was 5. Not hand-injected, per constraint.", "residual_risk": "Static analysis of the deployed bundle: the ellipsis renders as a <span> with no type attribute, and the only base colour rule is [type=button]-scoped, so its colour now comes by inheritance rather than from a token. Falsifiable in one measurement on a >=10-page surface."}
+  ],
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    "Coffee light active chip clears AA by 0.02 (4.52 vs 4.50). NOT a regression - the light path resolves to primary-500 exactly as before this PR and was equally thin pre-fix. Flagged as fragile, not filed.",
+    "Ellipsis colour-by-inheritance risk (item 5) - unverified, not a confirmed defect, not filed."
+  ],
+  "business_rules_verified": ["BL-A11Y-003"],
+  "business_rules_note": "Ticket cites PROPOSED-BL-UI-008, which never landed. BL-A11Y-003 (WCAG 1.4.3 / 1.4.11) is the shipped invariant covering this.",
+  "gated_presets_asserted": ["red", "coffee"],
+  "harness_validation": {
+    "self_check": "#0a0a0a vs #d34247 must return 4.37 - passed on every load, via raw arrays and both CSS string formats",
+    "defect_found_and_fixed_mid_run": "Edge returns color(srgb 0-1 floats) for some values and rgb(0-255) for others; the first parser conflated them and reported 9.96 where the truth is 9.40. Parser fixed, self-check extended to both formats, all figures re-measured post-fix."
+  },
+  "shared_env_mutation": {
+    "target": "vcst-qa B2B-store white-labeling themePresetName",
+    "reason": "operator-authorised, to measure the Coffee gated preset",
+    "window": "2026-09-15T17:59:29Z -> 2026-09-15T18:02:51Z (3m22s)",
+    "restored": true,
+    "restore_verified": "record identical to pre-write snapshot on every field except modifiedDate/modifiedBy"
+  },
+  "tracker_transition": {"role": "tested", "state": "Tested"},
+  "evidence": "reports/tickets/Sprint26-18/VCST-5838/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-18/VCST-5838/"
+}

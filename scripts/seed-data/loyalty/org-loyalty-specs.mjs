@@ -24,10 +24,10 @@
  * --------------------------------------------------
  *   ORG_LOY_A          member #1 of the outlet org        half of "multiple managers, same outlet"
  *   ORG_LOY_B          member #2 of the SAME org          the other half; one account cannot express it
- *   ORG_LOY_LOCKED     member #3, membership isLocked     the authorization handler tests
- *                                                         `Organizations.Contains(orgId)` with NO
- *                                                         status check — with no locked member there
- *                                                         is nothing for it to refuse
+ *   ORG_LOY_LOCKED     member #3, membership isLocked     the org-scope refusal has an actor; with
+ *                                                         no locked member there is nothing to refuse
+ *                                                         (MEASURED mechanism below — it is NOT the
+ *                                                         loyalty authorization handler)
  *   LOY_PERSONAL_NOORG NO organization at all, NON-ZERO   the highest-severity hypothesis: on an
  *                      balance                            org-mode store the READ path may fall back
  *                                                         to the user while the SPEND path does not,
@@ -37,6 +37,30 @@
  *                                                         correct.
  *   ORG_LOY_MISSION    fresh per-run mission, group-      mission completion is TERMINAL per owner; a
  *                      targeted at the outlet's members   shared mission passes once and never again
+ *
+ * WHERE THE LOCK IS ACTUALLY ENFORCED — measured, not inferred (localhost, 2026-09-16T13:36Z)
+ * -------------------------------------------------------------------------------------------
+ * The refusal does NOT happen in the loyalty authorization handler. It happens UPSTREAM, at org-scope
+ * resolution, so the loyalty handler is never handed an orgId to check at all. A controlled flip of
+ * the ONE variable (unlock → re-lock of `ORG_LOY_LOCKED`'s membership, pool funded at 131 665 PTS):
+ *
+ *   state      token `organization_id`   me.contact.organizationId   loyaltyBalance   pointsHistory
+ *   LOCKED     absent (no `permission`)  null                        0                totalCount 0
+ *   UNLOCKED   the outlet org, 2 perms   the outlet org              131 665          totalCount 19
+ *   RE-LOCKED  absent                    null                        0                totalCount 0
+ *
+ * What a case author must NOT conclude from `me.contact.organizationId === null`: that the fixture
+ * lost its organization. It did not. `contact.organizations` still lists the outlet in BOTH states
+ * (REST `/api/members/{id}` and GraphQL `me.contact.organizations.items`) — affiliation survives the
+ * lock; only the RESOLVED CURRENT org is withheld. That surviving list is the in-band discriminator
+ * against `LOY_PERSONAL_NOORG`, whose list is `[]`.
+ *
+ * Two further consequences worth knowing before writing an assertion:
+ *   • the locked member is served HTTP 200 with `errors[]` ABSENT — the refusal is silent at the
+ *     loyalty surface; `query { organization(id) }` is where it surfaces loudly, as `Forbidden`.
+ *   • the persisted contact field `currentOrganizationId` is null for this account in EVERY state
+ *     (it is never written by this seeder), so it is NOT a lock signal. Read the token claim or
+ *     `me.contact.organizationId` instead.
  *
  * DIVERGENCE — the SECOND RULE (`.claude/rules/test-data.md`), enforced by `validateFixtureShape`
  * ---------------------------------------------------------------------------------------------
@@ -457,8 +481,8 @@ export function validateFixtureShape(rows = []) {
   // -- the locked member ---------------------------------------------------------
   const locked = accountByAlias(accounts, 'ORG_LOY_LOCKED');
   if (locked && !locked.membershipLocked) {
-    p('ORG_LOY_LOCKED: membership_locked is not true — the authorization handler tests '
-      + 'Organizations.Contains(orgId) with no status check, so with no locked member there is nothing to refuse');
+    p('ORG_LOY_LOCKED: membership_locked is not true — the lock is what withholds the resolved org '
+      + 'scope (token organization_id claim), so with no locked member there is nothing to refuse');
   }
   for (const a of accounts.filter((x) => x.aliasName !== 'ORG_LOY_LOCKED')) {
     if (a.membershipLocked) p(`${a.aliasName}: membership_locked must be false — only ORG_LOY_LOCKED is the locked actor`);

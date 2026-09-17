@@ -1,160 +1,57 @@
 {
-  "runId": "REG-2026-09-15-0947",
-  "status": "stalled",
-  "startedAt": "2026-09-15T07:48:07.248Z",
-  "selection": "loyalty",
-  "env": "vcst",
-  "note": "PHASED RUN (operator-approved). Loyalty.LoyaltyBalanceCalculationMode is a GLOBAL store setting: 075f/083e flip it to Organization as test steps, while the other 7 suites treat an Organization-mode store as a scope mismatch. Phase A runs the 7 Customer-mode suites with the store left at Customer. Then the ORG_LOY_A/B pool is re-seeded (drained by LOYORG-009 in REG-2026-09-14-1802) and the store flipped to Organization for Phase B. 083e (reads pool) runs BEFORE 075f, whose LOYORG-009 drains it and is pinned last. Store MUST be restored to Customer in close-out. Loyalty module is a PR build 3.1008.0-pr-17-116e.",
-  "phases": {
-    "A": {
-      "mode": "Customer",
-      "suites": [
-        "083c",
-        "083",
-        "083d",
-        "075",
-        "075b",
-        "083b",
-        "075c"
-      ],
-      "state": "pending"
-    },
-    "B": {
-      "mode": "Organization",
-      "suites": [
-        "083e",
-        "075f"
-      ],
-      "state": "pending"
-    }
-  },
-  "storeMode": {
-    "atRunStart": "Customer",
-    "current": "Customer",
-    "mustRestoreTo": "Customer"
-  },
-  "suites": [
-    {
-      "id": "083c",
-      "name": "Loyalty Missions Storefront",
-      "file": "regression/suites/Frontend/loyalty/083c-loyalty-missions-storefront.csv",
-      "status": "running",
-      "browser": "playwright-chrome",
-      "lane": 1,
-      "phase": "A",
-      "cases": 84,
-      "attempts": 1,
-      "summary": null
-    },
-    {
-      "id": "083",
-      "name": "Loyalty Catalog Browsing",
-      "file": "regression/suites/Frontend/loyalty/083-loyalty-catalog.csv",
-      "status": "running",
-      "browser": "playwright-firefox",
-      "lane": 3,
-      "phase": "A",
-      "cases": 26,
-      "attempts": 1,
-      "summary": null
-    },
-    {
-      "id": "083d",
-      "name": "Loyalty Missions E2E",
-      "file": "regression/suites/Frontend/loyalty/083d-loyalty-missions-e2e.csv",
-      "status": "running",
-      "browser": "playwright-firefox",
-      "lane": 3,
-      "phase": "A",
-      "cases": 8,
-      "attempts": 1,
-      "summary": null
-    },
-    {
-      "id": "075",
-      "name": "Loyalty",
-      "file": "regression/suites/Backend/loyalty/075-loyalty.csv",
-      "status": "blocked",
-      "browser": "playwright-edge",
-      "lane": 2,
-      "phase": "A",
-      "cases": 29,
-      "attempts": 1,
-      "summary": {
-        "note": "Lane 2 (playwright-edge) agent terminated: org monthly spend limit hit (HTTP 429 rate_limit) before any test case ran (stopped at admin sign-in during setup). Not a per-request rate limit that a 60s retry resolves — org limit resets weekly. Held for orchestrator/operator decision, not auto-retried."
-      }
-    },
-    {
-      "id": "075b",
-      "name": "Loyalty Mixed Cart Order",
-      "file": "regression/suites/Backend/loyalty/075b-loyalty-mixed-cart-order.csv",
-      "status": "blocked",
-      "browser": "playwright-edge",
-      "lane": 2,
-      "phase": "A",
-      "cases": 13,
-      "attempts": 1,
-      "summary": {
-        "note": "Lane 2 (playwright-edge) agent terminated: org monthly spend limit hit (HTTP 429 rate_limit) before any test case ran (stopped at admin sign-in during setup). Not a per-request rate limit that a 60s retry resolves — org limit resets weekly. Held for orchestrator/operator decision, not auto-retried."
-      }
-    },
-    {
-      "id": "083b",
-      "name": "Loyalty Mixed Cart Order",
-      "file": "regression/suites/Frontend/loyalty/083b-loyalty-mixed-cart-order.csv",
-      "status": "running",
-      "browser": "playwright-firefox",
-      "lane": 3,
-      "phase": "A",
-      "cases": 8,
-      "attempts": 1,
-      "summary": null
-    },
-    {
-      "id": "075c",
-      "name": "Loyalty Product Points Earning",
-      "file": "regression/suites/Backend/loyalty/075c-loyalty-product-points-earning.csv",
-      "status": "done",
-      "browser": null,
-      "lane": 0,
-      "phase": "A",
-      "cases": 10,
-      "attempts": 0,
-      "summary": {
-        "total": 10,
-        "pass": 6,
-        "fail": 4,
-        "blocked": 0,
-        "skipped": 0,
-        "lane": "fastpath"
-      }
-    },
-    {
-      "id": "083e",
-      "name": "Loyalty Organization Balance Storefront",
-      "file": "regression/suites/Frontend/loyalty/083e-loyalty-organization-balance.csv",
-      "status": "pending",
-      "browser": "playwright-chrome",
-      "lane": 1,
-      "phase": "B",
-      "cases": 7,
-      "attempts": 0,
-      "summary": null
-    },
-    {
-      "id": "075f",
-      "name": "Loyalty Organization Balance",
-      "file": "regression/suites/Backend/loyalty/075f-loyalty-organization-balance.csv",
-      "status": "pending",
-      "browser": "playwright-chrome",
-      "lane": 1,
-      "phase": "B",
-      "cases": 19,
-      "attempts": 0,
-      "summary": null
-    }
+ "runId": "REG-2026-09-16-1930",
+ "status": "completed",
+ "startedAt": "2026-09-16T17:31:14.441Z",
+ "selection": "083e --ids LOYORG-E2E-006,LOYORG-E2E-007 --no-promote",
+ "env": "localhost",
+ "scoped": true,
+ "purpose": "Resolve the two UNGROUNDED verdicts from the Dim-11 triangulation. Those assertions could not be decided read-only because deciding them REQUIRES placing orders that move real, irreversible loyalty pools. Operator explicitly authorised the mutation. E2E-006 assertion 4 (OUTCOME is an order confirmation) and E2E-007 assertions 2-6 (earn credits ORG_2, ORG_1 unmoved, ORDER_SPEND exists, ledger rows grow, no foreign rows) are what this run exists to decide.",
+ "preflightNote": "carts:check reported 2 competing carts on MULTI_ORG_TF_BR_ALT and was DELIBERATELY NOT SWEPT. The two carts carry DIFFERENT organizationIds (96f109a7=TechFlow created 12:56, 23525b44=BuildRight created 16:29) — they are PER-ORG carts, not competing ones. carts:check groups by (customerId,storeId,currency) and ignores organizationId, so it false-positives on every multi-org account and carts:sweep --apply would delete one company cart. Both are empty, so no stale-line risk. E2E-007 switches companies by design, so a second cart is expected product behaviour.",
+ "storeMode": {
+  "atRunStart": "Organization",
+  "mustRestoreTo": "Organization",
+  "atRunEnd": "Organization",
+  "restored": true
+ },
+ "baselines": {
+  "BuildRight (ORG_1) balance": 217836,
+  "BuildRight ledgerRows": 20,
+  "TechFlow (ORG_2) balance": 186097,
+  "TechFlow ledgerRows": 21,
+  "LOY_PERSONAL_NOORG user-scope": 96095,
+  "MULTI_ORG_TF_BR_ALT user-scope (fallback detector, must not move)": 63872
+ },
+ "suites": [
+  {
+   "id": "083e",
+   "name": "Loyalty Organization Balance Storefront",
+   "file": "regression/suites/Frontend/loyalty/083e-loyalty-organization-balance.csv",
+   "status": "done",
+   "browser": "playwright-chrome",
+   "lane": "browser",
+   "laneId": 1,
+   "cases": 2,
+   "sourceCases": 8,
+   "attempts": 1,
+   "startedAt": "2026-09-16T17:31:14.442Z",
+   "pass": 2,
+   "fail": 0,
+   "blocked": 0,
+   "skipped": 0,
+   "outOfScope": 6
+  }
+ ],
+ "finishedAt": "2026-09-16T17:41:24.567Z",
+ "crossLayerVerified": {
+  "BuildRight delta": 0,
+  "TechFlow delta": 30029,
+  "MULTI_ORG user-scope fallback delta": 0,
+  "LOY_PERSONAL_NOORG delta": 29,
+  "orders": [
+   "CO260916-00027",
+   "CO260916-00028",
+   "CO260916-00029"
   ],
-  "stalledAt": "2026-09-15T08:45:40.275Z",
-  "stalledReason": "no progress for 45 min (REG-2026-09-15-0947:in_progress:7:171:45)",
-  "finishedAt": "2026-09-15T08:45:40.275Z"
+  "token organization_id both checkouts": "TechFlow 96f109a7"
+ }
 }

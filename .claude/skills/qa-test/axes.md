@@ -62,8 +62,8 @@ block, and it was the one the shared *"same discipline"* phrasing concealed.
 | Dispatches an agent? | no | **yes** (`ui-ux-expert`) | no | no | **yes** (`test-data-engineer`) | **FULL only**, and only on `ABSENT` + all-layer (`ba-system-analyzer`, `1c-map`) |
 | Costs I/O in `1b`? | no | no | **yes** (~8.6 s) | yes (~1 s, wave B) | yes (~1 s, wave B) | **no** (one local frontmatter read) |
 | Has a conflict rule? | **yes** (`layers_conflict`) | no | no | no | no | no |
-| **Adds** a step, or **gates** one? | gates 5f/5h | adds the visual lane | adds two refreshers | adds Artifact A's `2a` phase | **gates Step 3a** | **adds `1c-map` on FULL; RECOMMENDS on FAST. Gates nothing, ever** |
-| Consumed by | 5f / 5h routing | Step 4's visual lane | `1c`/`1d`/`1e`/3b pack | phase `2a`'s dispositions | Step 3a's dispatch | `2-map`'s read order · `1c-map`'s trigger · `1e` clauses 11/11b · `1c`'s unmapped-surface report |
+| **Adds** a step, or **gates** one? | gates 5-status/5-docs | adds the visual lane | adds two refreshers | adds Artifact A's `2a` phase | **gates Step 3a** | **adds `1c-map` on FULL; RECOMMENDS on FAST. Gates nothing, ever** |
+| Consumed by | 5-status / 5-docs routing | Step 4's visual lane | `1c`/`1d`/`1e`/3b pack | phase `2a`'s dispositions | Step 3a's dispatch | `2-map`'s read order · `1c-map`'s trigger · `1e` clauses 11/11b · `1c`'s unmapped-surface report |
 
 ### 2g `domain_map` — the axis whose lane is a WRITE, not a read
 
@@ -102,8 +102,8 @@ staleness suspicion, not a mandate to rewrite — that decision stays with an op
 
 | State | Means | Consequence |
 |---|---|---|
-| `PRESENT` | a map matches the slug and is inside `stale_after_days` | `2-map` reads it first; `1e` clauses 11/11b bind against its inventory; **`5h-map` writes back what the run verified** ([`reporting.md`](reporting.md) §5h-map) |
-| `STALE` | matches, but past `stale_after_days` | **read it, and treat every claim as a hypothesis** — a stale map is the *more* dangerous artifact, because it is read as current and arrives with a written deliverable's authority. Recommend `--refresh`; **never auto-refresh**. `5h-map` still amends it — upgrading a stale cell with a live observation is strictly an improvement, and it moves `amended`, never `generated`, so the map stays STALE until someone re-enumerates |
+| `PRESENT` | a map matches the slug and is inside `stale_after_days` | `2-map` reads it first; `1e` clauses 11/11b bind against its inventory; **`5-docs-map` writes back what the run verified** ([`reporting.md`](reporting.md) §5-docs-map) |
+| `STALE` | matches, but past `stale_after_days` | **read it, and treat every claim as a hypothesis** — a stale map is the *more* dangerous artifact, because it is read as current and arrives with a written deliverable's authority. Recommend `--refresh`; **never auto-refresh**. `5-docs-map` still amends it — upgrading a stale cell with a live observation is strictly an improvement, and it moves `amended`, never `generated`, so the map stays STALE until someone re-enumerates |
 | `ABSENT` | no map for this slug | **only if the chain is all-layer** — FULL builds it at `1c-map`, FAST recommends. Single-layer, or a build that failed: `1e` records `Domain map: ABSENT — chain position unverified` |
 | `unresolved` | slug did not resolve, or the directory was unreadable | same as `ABSENT` — **fail open** (build on FULL, recommend on FAST); see the fail direction below. A slug that `bl:extract --list` does not know **stops the build, never the run**: a map filed under a slug no oracle uses is a map nothing can look up |
 
@@ -123,18 +123,18 @@ diff-based read stays silent, while its chain's first link is *an admin locks th
 Admin-layer action, and exactly where the mechanism it tested blind actually lives.
 
 **It is the only axis a run REPAYS, and since 2026-09-10 the repayment actually lands.** `1c` reports
-surfaces it touched that the map does not list into `domain_map.unmapped_surfaces[]`, and **`5h-map`
+surfaces it touched that the map does not list into `domain_map.unmapped_surfaces[]`, and **`5-docs-map`
 writes them into the map** after the verdict — along with a `D*` confirmed or refuted live, a `G*` this
 run closed, and a §4 count it proved wrong. Before that step those reports were proposals, which is the
 same shape as the recommendation above and failed the same way. Two guards make the write safe: it runs
-**after 5f**, so a run can never bind clause 11b against inventory it widened itself, and it moves
+**after 5-status**, so a run can never bind clause 11b against inventory it widened itself, and it moves
 `amended` and never `generated`, so amending is never mistaken for re-enumerating.
 
 **Why `layer` alone fails closed.** Every other axis answers *should we also do X?*, where a wrong `true`
 costs one agent or one script and a wrong `false` leaves a gap nobody sees — so doubt widens. `layer`
 answers *who is this written for?*, and a wrong value does not add work, it **routes the release note and
 the documentation to the wrong audience**. There is no safe default: `storefront` is not a conservative
-guess, it is a specific wrong answer. So an unresolvable layer is `null`, 5f refuses the fragment
+guess, it is a specific wrong answer. So an unresolvable layer is `null`, 5-status refuses the fragment
 (`release.refusal: "layer-unresolved"`) and names no command.
 
 **`data_surface` is the one axis that SUBTRACTS.** The other four ask *should we also do X?*, so a
@@ -188,13 +188,13 @@ need a superlative.
 **On FULL every axis derives and runs, as it always has.**
 
 **On FAST they are opt-in, default off** — `--visual` · `--contract` · `--coverage` · `--axes` (all three).
-`layer` is not on that list: it derives on both paths, always, because 5f and 5h need it and it dispatches
+`layer` is not on that list: it derives on both paths, always, because 5-status and 5-docs need it and it dispatches
 nothing. **`data_surface` is not on it either, and for the opposite reason:** it can only ever *remove* a
 dispatch, so making it opt-in would restore the always-on cost it exists to end. It derives and applies on
 both paths — on FAST it gates the same `3a`, which that path had always described as *"test data if
 needed"* without ever saying who decides.
 
-**Two narrow exceptions — and both are per-CLASSIFIER defaults, not new always-on axes.** Neither adds an
+**Two narrow exceptions on the FAST path — and both are per-CLASSIFIER defaults, not new always-on axes.** Neither adds an
 axis, neither changes the effort, and neither applies to any other ticket. This is the shape the
 "revisit at 5+ runs" rule below asks for: promote an axis where the evidence for it actually is, against
 one classifier, rather than flipping it on for every FAST run.
@@ -211,6 +211,14 @@ one classifier, rather than flipping it on for every FAST run.
    contrast failure or a token collision by construction. **The `coverage` half rests on thinner evidence,
    and §5c records both sides rather than only the argument** — so the revisit rule below applies to that
    default in particular. `contract` stays opt-in.
+
+**A third classifier does not take an axis — it takes the whole flow.** The `technical-change` FLOW
+([`ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5d;
+[`technical-change.md`](technical-change.md)) is not on the FAST/FULL axis at all, so nothing here opts in
+or out on it: `coverage` is not an axis there, it is the flow's own `2a` step and always runs; `layer`
+still derives, because 5-status and 5-docs need it; `visual` and `contract` do not run at all, argued in
+`technical-change.md` §7. Listed here so a reader counting exceptions on this page does not conclude the
+flow simply forgot to declare its axes.
 
 This restores a promise the pipeline had quietly inverted. `SKILL.md` §Effort routing records that the
 FAST/FULL split was made precisely because the old design marked everything expensive

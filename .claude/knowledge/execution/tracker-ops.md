@@ -132,8 +132,8 @@ guessing custom-field ids.
 
 ## 5b. Bug-filing relationship — Sub-task vs Link vs Standalone
 
-`/qa-test` Step 5d files a confirmed bug with one of three relationships to the ticket under test, set by
-that finding's **provenance** (5a). This is the contract `/qa-bug` follows when invoked with a relationship
+`/qa-test` Step 5-file files a confirmed bug with one of three relationships to the ticket under test, set by
+that finding's **provenance** (5-triage). This is the contract `/qa-bug` follows when invoked with a relationship
 context (`sub-task-of:<ticket-key>` / `link-only:<existing-bug-key>`); a standalone `/qa-bug` call
 (no relationship context) is unaffected and keeps creating an ordinary Bug as today.
 

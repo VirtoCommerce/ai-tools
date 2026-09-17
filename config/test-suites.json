@@ -3,7 +3,7 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-09-15",
+    "generated": "2026-09-16",
     "totalSuites": 141,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
@@ -2650,7 +2650,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 19,
+      "testCount": 22,
       "estimatedMinutes": 55,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2670,7 +2670,7 @@
       "notes": "SEPARATE SUITE, deliberately: every case here requires the store setting Loyalty.LoyaltyBalanceCalculationMode = Organization on {{STORE_ID}}. The platform default is Customer, which the REST of the loyalty corpus (075, 075b-e, 083, 083b-d) assumes — mixing these cases into those suites would make them unrunnable in the default mode. The run sets the mode before this suite and restores it after; LOYORG-006/007/014/019 own the mode for their own duration and each restores Organization. No other loyalty suite may run on the same store inside that window. Every balance assertion is a RELATIVE DELTA against a value read immediately before the action — a loyalty balance cannot be reset on this platform (the operation log is read-only, no balance set/debit API), so absolute figures are not reproducible. LOYORG-009 is DESTRUCTIVE (it drains the pooled balance) and must be scheduled last. PREFLIGHT (added 2026-09-11): run `npm run carts:check -- --email <each loyalty account>` before this suite. Every case here asserts a BALANCE DELTA, and xAPI resolves reads and writes to different carts when an account holds more than one cart for the same (customerId, storeId, currency) — which makes a delta measure the wrong cart and fail for a reason that is not the product. [PRE:RESET_CART] CANNOT cover this: it empties the RENDERED cart through the UI, so a competing cart stays invisible to it (see scripts/seed-data/carts/check-competing-carts.mjs). Note also that [PRE:*] primitives are DECLARATIVE — parsePreconditions is called by no runner, so an agent executing the case must act on them; they are inert on the machine lane.",
       "clickDriven": true,
       "lanes": {
-        "machine": 18,
+        "machine": 21,
         "browser": 1,
         "manual": 0
       }
@@ -3005,7 +3005,7 @@
       "layer": "frontend",
       "concern": "e2e",
       "priority": "P1",
-      "testCount": 7,
+      "testCount": 8,
       "estimatedMinutes": 60,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3023,7 +3023,7 @@
       "envRiskGate": "staging",
       "customerApplicability": "reference",
       "clickDriven": true,
-      "notes": "SEPARATE SUITE, deliberately: every case here requires the store setting Loyalty.LoyaltyBalanceCalculationMode = Organization on {{STORE_ID}}. The platform default is Customer, which the REST of the loyalty corpus (075, 075b-e, 083, 083b-d) assumes — mixing these cases into those suites would make them unrunnable in the default mode. The run sets the mode before this suite and restores it after; LOYORG-E2E-005 is the ONLY case that writes the mode itself, and it restores Organization at the end of its own steps. No other loyalty suite may run on the same store inside that window. Every balance assertion is a RELATIVE DELTA against a value read immediately before the action — a loyalty balance cannot be reset on this platform (the operation log is read-only, no balance set/debit API), so absolute figures are not reproducible. ORDERING (corrected 2026-09-14 — the previous text named LOYORG-006/007/014/019 and LOYORG-009, none of which exist in this CSV; the real ids are LOYORG-E2E-001..006). Run in CSV ORDER. LOYORG-E2E-001 is the destructive case (it spends the pooled balance) and LOYORG-E2E-005 writes the store mode, so 005 goes last. Critically, LOYORG-E2E-002 DEPENDS ON LOYORG-E2E-001: its precondition requires the pooled ledger to hold at least one row the reader did not cause, and it correctly reports BLOCKED against an empty ledger. Do NOT hoist the read-only cases ahead of 001 on destructiveness grounds — that was done on 2026-09-14 (REG-2026-09-14-0928) and BLOCKED 002 for a reason that was not the product. Reads-before-writes is the wrong heuristic for this suite; the CSV order already encodes the dependency. PREFLIGHT (added 2026-09-11): run `npm run carts:check -- --email <each loyalty account>` before this suite. Every case here asserts a BALANCE DELTA, and xAPI resolves reads and writes to different carts when an account holds more than one cart for the same (customerId, storeId, currency) — which makes a delta measure the wrong cart and fail for a reason that is not the product. [PRE:RESET_CART] CANNOT cover this: it empties the RENDERED cart through the UI, so a competing cart stays invisible to it (see scripts/seed-data/carts/check-competing-carts.mjs). Note also that [PRE:*] primitives are DECLARATIVE — parsePreconditions is called by no runner, so an agent executing the case must act on them; they are inert on the machine lane."
+      "notes": "SEPARATE SUITE, deliberately: every case here requires the store setting Loyalty.LoyaltyBalanceCalculationMode = Organization on {{STORE_ID}}. The platform default is Customer, which the REST of the loyalty corpus (075, 075b-e, 083, 083b-d) assumes — mixing these cases into those suites would make them unrunnable in the default mode. The run sets the mode before this suite and restores it after; LOYORG-E2E-005 is the ONLY case that writes the mode itself, and it restores Organization at the end of its own steps. No other loyalty suite may run on the same store inside that window. Every balance assertion is a RELATIVE DELTA against a value read immediately before the action — a loyalty balance cannot be reset on this platform (the operation log is read-only, no balance set/debit API), so absolute figures are not reproducible. ORDERING (corrected 2026-09-14 — the previous text named LOYORG-006/007/014/019 and LOYORG-009, none of which exist in this CSV; the real ids are LOYORG-E2E-001..008 — that 2026-09-14 correction said 001..006 and was itself stale: the CSV has held eight cases since #293). Run in CSV ORDER, with ONE deviation: LOYORG-E2E-005 is pulled to the END. LOYORG-E2E-001 is the destructive case (it spends the pooled balance) and stays FIRST. LOYORG-E2E-005 is the ONLY case that writes the store mode (it restores Organization at the end of its own steps), so it runs LAST and no other case can execute inside a window where the mode is wrong — note that \"005 last\" is no longer the same thing as \"last in the CSV\", which is what it meant back when this note assumed six cases. Critically, LOYORG-E2E-002 DEPENDS ON LOYORG-E2E-001: its precondition requires the pooled ledger to hold at least one row the reader did not cause, and it correctly reports BLOCKED against an empty ledger. Do NOT hoist the read-only cases ahead of 001 on destructiveness grounds — that was done on 2026-09-14 (REG-2026-09-14-0928) and BLOCKED 002 for a reason that was not the product. Reads-before-writes is the wrong heuristic for this suite; the CSV order already encodes the dependency. PREFLIGHT (added 2026-09-11): run `npm run carts:check -- --email <each loyalty account>` before this suite. Every case here asserts a BALANCE DELTA, and xAPI resolves reads and writes to different carts when an account holds more than one cart for the same (customerId, storeId, currency) — which makes a delta measure the wrong cart and fail for a reason that is not the product. [PRE:RESET_CART] CANNOT cover this: it empties the RENDERED cart through the UI, so a competing cart stays invisible to it (see scripts/seed-data/carts/check-competing-carts.mjs). Note also that [PRE:*] primitives are DECLARATIVE — parsePreconditions is called by no runner, so an agent executing the case must act on them; they are inert on the machine lane."
     },
     {
       "id": "084",

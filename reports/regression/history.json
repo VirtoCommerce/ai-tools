@@ -2360,5 +2360,38 @@
     "pass_rate": 75,
     "duration_minutes": 1.14,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-09-16-1437",
+    "date": "2026-09-16",
+    "suiteId": "075f",
+    "suiteName": "Loyalty Organization Balance",
+    "environment": "localhost",
+    "total": 14,
+    "passed": 3,
+    "failed": 11,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 21.4,
+    "duration_minutes": 2.67,
+    "mode": "interactive",
+    "pass_rate_note": "DENOMINATOR: passed / executed, counting BLOCKED in the denominator. 075f 3/14 = 21.4%; 083e 2/6 = 33.3%. A previously written 083e figure of 50 excluded BLOCKED and is inconsistent with the 075f row."
+  },
+  {
+    "runId": "REG-2026-09-16-1437",
+    "date": "2026-09-16",
+    "suiteId": "083e",
+    "suiteName": "Loyalty Organization Balance Storefront",
+    "environment": "localhost",
+    "browser": "playwright-chrome",
+    "total": 6,
+    "passed": 2,
+    "failed": 2,
+    "blocked": 2,
+    "skipped": 0,
+    "pass_rate": 33.3,
+    "duration_minutes": 15.17,
+    "mode": "interactive",
+    "pass_rate_note": "DENOMINATOR: passed / executed, counting BLOCKED in the denominator. 075f 3/14 = 21.4%; 083e 2/6 = 33.3%. A previously written 083e figure of 50 excluded BLOCKED and is inconsistent with the 075f row."
   }
 ]

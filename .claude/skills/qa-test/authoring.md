@@ -194,7 +194,7 @@ knowing it is still a hypothesis — that is a fine outcome; silently not knowin
   `/qa-review-tests file <suite> --fix`, because its mechanics — a renamed selector, a moved route, a
   removed arg, a dead `@td()` alias — mean the row cannot execute at all. A **`RE-BASE`** row is **not a
   gap to author**: it is an existing case that goes into
-  **Artifact C1's `--ids`**, so Step 4 executes it and 5a rewrites its expected value against the run's
+  **Artifact C1's `--ids`**, so Step 4 executes it and 5-triage rewrites its expected value against the run's
   own evidence — never rewritten here, where the unmerged change would be its own oracle. A
   **`SUPERSEDED`** row is a proposal only. Single source of truth:
   [`coverage-triage.md`](coverage-triage.md).
@@ -379,7 +379,7 @@ On FAST the conditions come from `1a`'s ACs directly, since there is no `1d` tab
 
 **When `visual_surface: true`, the visual conditions are rows in this table like any other** — one per
 applicable `BL-A11Y-*` / `BL-UI-*` invariant for the surface under audit, plus the design-system and
-`vs. DESIGN` axes, each with its verdict at 5e. This matters most exactly where the run is cheapest: on FAST
+`vs. DESIGN` axes, each with its verdict at 5-report. This matters most exactly where the run is cheapest: on FAST
 this file is the **only** durable record, so a visual condition that appears in neither the checklist nor a
 bug draft has been deleted rather than deprioritized. **An uncovered or `SKIPPED` visual condition is listed
 with its reason, never omitted** — the same rule the section already applies to uncovered functional
@@ -389,7 +389,7 @@ conditions, and the reason it exists.
 cap 120). A FAST run authors no cases and writes no Test Model, so the checklist is the **only** durable
 record of what was actually checked — terminal-only would leave the run unauditable the moment the session
 ends. **Update it in place at Step 5** with each item's verdict, so the committed file is the checklist that
-ran and not the one that was planned. It also carries any finding held below the 5d severity floor.
+ran and not the one that was planned. It also carries any finding held below the 5-file severity floor.
 
 **On `--iterate` it is APPEND-ONLY.** Round 1 writes the item table with verdicts as above; round N
 appends `## Round N — re-test (<probed version>, prerelease <PR>)` holding only the re-run items, each
@@ -406,8 +406,8 @@ never the round sections.
 **C1 gates the verdict, and nothing else runs from here.** Artifact C used to be two runs — C1 plus a
 change-scoped Critical sweep (C2) — folded into one `/qa-regression --cases critical --also-ids <new ids>`
 invocation at Step 4. That put a ~40-minute suite sweep on the critical path to a verdict that never
-depended on it: 5c's criteria are atomic conditions, reconciled ACs, DoD items, `BL-*` and IN-SCOPE bugs —
-every one of them a claim about *this ticket*. A Critical case failing in some other suite is, by 5a's own
+depended on it: 5-verdict's criteria are atomic conditions, reconciled ACs, DoD items, `BL-*` and IN-SCOPE bugs —
+every one of them a claim about *this ticket*. A Critical case failing in some other suite is, by 5-triage's own
 provenance rules, PRE-EXISTING or OUT-OF-SCOPE, and neither fails the ticket.
 
 Moving the sweep after the verdict (`5r`, 2026-09-02) fixed the latency and left the cost. **On 2026-09-10
@@ -423,7 +423,7 @@ Three consequences worth stating:
 - **`--ids` is an exact set and is mutually exclusive with `--cases`/`--also-ids`.** A tier union and an
   exact set answer different questions, and accepting both leaves *"did `--ids` narrow the tier, or extend
   it"* unanswerable. It also reads no `Priority` at all, so an unreadable one is not a finding on the C1
-  path — the same property `5k`'s RED→GREEN track already relies on.
+  path — the same property `5-loop`'s RED→GREEN track already relies on.
 - **`--also-ids` is gone from this pipeline entirely.** It existed to smuggle this run's own cases into a
   tier-filtered sweep. There is no tier-filtered sweep here any more, and the run's own cases have a run of
   their own. It survives on `/qa-regression` for callers that genuinely want a tier union plus named cases.

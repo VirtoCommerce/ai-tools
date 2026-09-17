@@ -54,6 +54,27 @@ Use Context7 only when VirtoOZ returns no relevant chunks or for non-VC librarie
 4. **Synthesize** — clear, structured answer; cite chunks via the URLs returned; reference VC modules/concepts by their correct names.
 5. **If docs don't cover the topic** — say so explicitly; suggest the relevant source-code tool or module repo on GitHub.
 
+## Scope — VirtoOZ documents the platform's CORE functionality
+
+**Ask VirtoOZ first whenever how the platform or the storefront is SUPPOSED to behave is unclear — any
+agent, any task, before acting on the guess.** This is the default, not a last resort: a bug report, a
+verdict, a reproduction test or a fix built on guessed product behaviour is wrong in the one direction
+nobody re-checks, because it reads as confident. Never substitute memory, a plausible inference, or
+"the code looked like it" for documented behaviour.
+
+**What it answers is CORE — stock platform, Admin SPA and storefront behaviour as VirtoCommerce ships
+it.** On a CLIENT deployment (`project-profile.json` ownership `client` — custom modules, a theme, a
+storefront fork) the customisation is not in these docs, so read an answer accordingly:
+
+- Authoritative for the **core path**; **silent, never negative, about client code**. "The docs do not
+  mention it" is not evidence the behaviour is wrong — a client override that diverges from documented
+  core is a deliberate customisation until provenance says otherwise.
+- Which side you are on is the ownership question `/qa-fix` already routes on — settle it from
+  `contributionPlan(repo)` (`knowledge/agents/developers/shared-instructions.md` §Where the fix goes),
+  then read the docs as the core **spec** or as the core **baseline** you are diffing against.
+- Docs are ONE source. Live behaviour that contradicts them is a **finding**, not an error; a claim that
+  decides a PASS/FAIL or a fix's expected value wants docs + live + source.
+
 ## Rules
 
 > **Deliberate divergence from the `.claude/` copy — do NOT "fix" this by copying that file over.**

@@ -68,6 +68,7 @@ import {
 } from './missions-e2e-specs.mjs';
 import {
   resolveWinningEarning, placeEarnOrder, pollBalanceChange, qtyForTarget, pointsPerUnit,
+  readLoyaltyBalance,
 } from './loyalty-earn.mjs';
 
 const argv = process.argv.slice(2);
@@ -93,6 +94,14 @@ const MAX_AGE_HOURS = argv.includes('--max-age-hours')
 const CATEGORY_PATH = 'Loyalty Missions E2E';
 const PRICELIST_NAME = (currency) => `AGENT-TEST-MSN-E2E-${currency}`;
 const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+// These products live under CATEGORY_PATH 'Loyalty Missions E2E', and every slug in the loyalty
+// catalog — the catalog, its categories and its products — starts with "loyalty". Without this the
+// SKU slugifies to `agent-test-msn-e2e-*`, which breaks the rule and would silently revert a
+// corrected slug the next time this seeder CREATES a product on a fresh environment.
+const loyaltySlug = (s) => {
+  const base = slugify(s).replace(/^seed-/, '').replace(/^agent-test-/, '');
+  return base === 'loyalty' || base.startsWith('loyalty-') ? base : `loyalty-${base}`;
+};
 
 let VIRTUAL_CATALOG_ID = null;
 
@@ -318,7 +327,7 @@ async function ensureProduct(spec, location, pricelistByCurrency, currencies) {
   const pricelist = pricelistByCurrency[currency];
 
   let product = await findProductByCode(spec.sku);
-  const slug = slugify(spec.sku);
+  const slug = loyaltySlug(spec.sku);
   if (!product) {
     if (DRY_RUN) { log(`  [DRY] would create ${spec.sku} (${spec.productName})`); return { ...spec, id: `dry-${spec.slot}`, catalogId: location.catalogId, currency, secondaryCurrency: secondary?.currency || '', slug, url: `/${slug}` }; }
     const created = await api('POST', '/api/catalog/products', {
@@ -619,11 +628,21 @@ async function resolveStorefrontFacts(products) {
   return out;
 }
 
-/** Live balance via the admin op-log endpoint. Keyed on the SECURITY-ACCOUNT id, not the member id. */
+/**
+ * Live balance, keyed on the SECURITY-ACCOUNT id, not the member id.
+ *
+ * Delegates to `readLoyaltyBalance` in `loyalty-earn.mjs`, which already owns the route resolution —
+ * vc-module-loyalty PR #17 (the VCST-5024 build) MOVED `/balance/{userId}` to `/balance/user/{userId}`
+ * and added `/balance/organization/{organizationId}`. This seeder used to hardcode the legacy path
+ * with `expectStatus: [200, 404]`, so on a PR-17 build the 404 was swallowed and every account read
+ * **0**. Measured here 2026-09-16: the earn had worked — 30350 points, three `Earned` rows in the op
+ * log — while the fixture gate read 0 and refused to publish. A gate that cannot tell "no points"
+ * from "no route" is not a gate, which is exactly why that helper resolves the route and falls back
+ * to the operation log rather than tolerating a 404.
+ */
 async function readBalance(userId) {
-  const r = await api('GET', `/api/loyalty-program-operation-log/balance/${encodeURIComponent(userId)}`, null, { expectStatus: [200, 404] });
-  if (typeof r === 'number') return r;
-  return Number(r?.balance ?? r?.points ?? r?.amount ?? 0) || 0;
+  const { balance } = await readLoyaltyBalance(api, { userId });
+  return Number(balance) || 0;
 }
 
 /**

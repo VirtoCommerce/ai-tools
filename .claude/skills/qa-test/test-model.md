@@ -123,7 +123,7 @@ two files for one fault model means that carry-forward picks one at random.
 An amendment is a `## Round N` section of 5–15 lines (the 80–160-line band is per model, not per round)
 and may do exactly three things:
 
-1. mark a hypothesis **CONFIRMED**, with the bug key 5d filed for it;
+1. mark a hypothesis **CONFIRMED**, with the bug key 5-file filed for it;
 2. mark one **CLEARED-by-fix**, with the round it went green and the prerelease it went green on;
 3. **add rows for mechanisms the FIX’s diff introduces** — a fix is a change, and it earns the same
    fault-model treatment the original change got. This is the loop’s one genuinely new coverage
@@ -134,7 +134,7 @@ the fix changed the mechanism, and that is a new ticket rather than a round. The
 re-fires **only on the amendment’s new rows** — inline, no verifier, exactly like the original
 `Model complete | 1e | inline` gate. Round bookkeeping lives in
 `summary.json.iterations.per_round[].artifacts.model_amendment`; the loop contract is
-[`modes.md`](modes.md) §5k §Artifact refresh between rounds.
+[`modes.md`](modes.md) §5-loop §Artifact refresh between rounds.
 
 The AC table and DoD checklist stay terminal-only; the Artifact B checklist goes to the ticket folder.
 

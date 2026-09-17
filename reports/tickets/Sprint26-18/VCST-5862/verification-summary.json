@@ -1,7 +1,7 @@
 {
   "ticket": "VCST-5862",
   "flow": "verify-fix",
-  "verdict": "BLOCKED",
+  "verdict": "VERIFIED_WITH_NOTES",
   "blocker": "fix-partially-deployed (framework half absent)",
   "date": "2026-09-07",
   "environment": {
@@ -189,7 +189,7 @@
       }
     ]
   },
-  "post_fix_green": null,
+  "post_fix_green": "3/3",
   "openQuestion": {
     "finding": ".dashboard-stat-item__value--success at 4.13:1 (#43875f on #fafafa, 18px) on the products and offers dashboard widgets",
     "why_not_filed_yet": "Not covered by PR #356 (framework) or PR #154 (which changed empty-state ink, not stat values), so it is expected to survive the deploy - but the dev's comment reports 'after: 0' on #/, and this element is data-dependent (it only renders when the widget has a success-stat value). Re-measure after the framework deploy before filing, to avoid a duplicate or a false finding.",
@@ -212,6 +212,23 @@
       "applied": false,
       "to": "Ready for test (unchanged)",
       "reason": "BLOCKED transitions nothing but requires a comment naming the blocker"
+    },
+    {
+      "hop": "opening",
+      "at": "1a",
+      "applied": true,
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA (id 4)"
+    },
+    {
+      "hop": "closing",
+      "at": "5f",
+      "applied": true,
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8)",
+      "note": "stops at Tested — never auto-Done"
     }
   ],
   "comment": {
@@ -259,5 +276,95 @@
     "expectation": "survives the deploy — touched by neither PR — so 'after: 0' would not hold",
     "caveat": "renders only when a widget carries a success stat, so the dev's clean run may have had different data",
     "action": "re-measure post-deploy; if real, its own Medium a11y ticket, never a blocker here"
+  },
+  "phaseB_green": {
+    "date": "2026-09-15",
+    "build": {
+      "appVersion": "2.2.0-rc.1 (login footer)",
+      "assetBuildId": "53555",
+      "lastModified": "2026-09-15T08:18:58Z",
+      "frameworkVersion": "2.6.0-rc.1",
+      "frameworkBanner": "v2.6.0-rc.1 · 2026-09-08T10:09:58Z · 371aa8ec5"
+    },
+    "deployGate": {
+      "deployed": true,
+      "clearedOn": "2026-09-15",
+      "method": "commit-ancestry + npm dist-tag + exact-pin read + served-bundle marker",
+      "evidence": [
+        "npm rc dist-tag = 2.6.0-rc.1, gitHead cd4eeb6d",
+        "gh compare 8f5c54f4...cd4eeb6d => behind_by 0 (PR #355 contained)",
+        "gh compare 477cb529...cd4eeb6d => behind_by 0 (PR #356 contained)",
+        "vendor-portal@dev pin bumped 2.6.0-rc.0 -> 2.6.0-rc.1",
+        "app rebuilt 42234 -> 53555"
+      ]
+    },
+    "lane": "playwright-chrome (ui-ux-expert pinned off its default Chrome DevTools MCP: no --secrets there, vcmp-dev needs a password sign-in)",
+    "adjacentRegression": {
+      "method": "framework CI on both fix PRs (no config/test-suites.json suite covers vc-shell)",
+      "result": "all green — test, storybook-tests, static-checks, lint"
+    },
+    "limits": [
+      "No AT pass was run — rendered-tree / computed-style / axe measurement only",
+      "Green theme not audited — unknown, not clean; Light and Dark covered",
+      "Story-level axe gate has color-contrast disabled as a documented exception, and no suite covers vc-shell — nothing in CI stops this drifting back"
+    ],
+    "verdict": "VERIFIED_WITH_NOTES",
+    "str": "3/3",
+    "nodes": {
+      "light": {
+        "red": 58,
+        "green": 2
+      },
+      "dark": {
+        "red": 49,
+        "green": 1
+      }
+    },
+    "signaturesFixed": [
+      {
+        "sig": ".vc-user-info__role",
+        "red": "2.41/3.40",
+        "green": "4.54/5.09",
+        "note": "Light margin only +0.04"
+      },
+      {
+        "sig": ".vc-environment-banner__label",
+        "red": "2.79/nf",
+        "green": "7.51/8.27",
+        "note": "coloured --success variant, fixed-black-ink path"
+      },
+      {
+        "sig": ".vc-data-table__header-title-text (sorted)",
+        "red": "4.40/nf",
+        "green": "5.75/8.96"
+      },
+      {
+        "sig": ".vc-table-cell-date-ago",
+        "red": "2.52/3.16",
+        "green": "7.81/5.76"
+      }
+    ],
+    "openQuestionResolved": {
+      "question": "does axe treat aria-disabled like native disabled for color-contrast?",
+      "answer": "YES — measured",
+      "evidence": ".vc-blade-toolbar-base-button__title gone from violations with NO colour change (still 2.42:1 L / 3.41:1 D); scoped axe.run(.vc-blade-toolbar) = violations 0 passes 4 (the 4 actionable buttons); the 5th excluded entirely. Control pair: pagination is literally <button disabled> at a worse 2.31:1 L and likewise excluded.",
+      "consequence": "#355 removed the node as predicted; #356 correctly left the colour alone"
+    },
+    "residualConfirmed": {
+      "sig": ".dashboard-stat-item__value--success",
+      "ratio": 4.13,
+      "theme": "Light only",
+      "nodes": 2,
+      "route": "#/",
+      "renderedAs": "\"59 Published\" (Products widget), \"19 Enabled\" (Offers widget)",
+      "touchedByEitherPR": false,
+      "action": "standalone Medium/P2 ticket, never a Sub-task"
+    },
+    "afterZeroClaim": {
+      "devClaim": "after: 0",
+      "holds": false,
+      "why": "2 nodes Light / 1 Dark remain, all from signatures neither PR touches"
+    },
+    "instrumentShift": "RED axe-core 4.10.2, GREEN axe-core 4.12.1 — per-signature ratios are computed-style and unaffected, but the 58->2 COUNT comparison carries this caveat"
   }
 }

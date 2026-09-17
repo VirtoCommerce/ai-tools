@@ -80,7 +80,7 @@ The three axes, and where each is specified:
 ### Dispatch the agent — do not invoke the command
 
 `/qa-design` is `disable-model-invocation: true`, so `/qa-test` may **not** auto-trigger it — the same
-constraint that makes 5f/5h *point* at `/ba-analyze` rather than run it. That costs nothing here:
+constraint that makes 5-status/5-docs *point* at `/ba-analyze` rather than run it. That costs nothing here:
 `/qa-design` is itself only an orchestration shell that delegates execution to `ui-ux-expert`. Step 4
 dispatches that agent directly, exactly as it dispatches `qa-frontend-expert` / `qa-backend-expert`, and the
 brief cites the `/qa-design` **skill** as the methodology. `/qa-accessibility` carries no
@@ -139,7 +139,7 @@ severity: [`triage.md`](triage.md) §7a.
 
 | Outcome | Lands in | May fail the ticket? |
 |---|---|---|
-| `BL-UI-*` **FAIL** (layout, overflow, alignment, CLS) | `summary.json.visual.invariant_failures[]` | **Yes** — an ordinary finding: triaged at 5a, severity-graded, filed under the existing 5d floor |
+| `BL-UI-*` **FAIL** (layout, overflow, alignment, CLS) | `summary.json.visual.invariant_failures[]` | **Yes** — an ordinary finding: triaged at 5-triage, severity-graded, filed under the existing 5-file floor |
 | `BL-A11Y-*` **FAIL**, ticket is functional / feature / E2E | `visual.a11y_findings[]` | **No** — filed as its **own standalone ticket** at its **real severity**, named in the report, never blocking ([`triage.md`](triage.md) §7a) |
 | `BL-A11Y-*` **FAIL**, ticket is *about* accessibility | `visual.invariant_failures[]` | **Yes** — the carve-out: an a11y/WCAG remediation ticket, ACs naming an accessibility outcome, or a `/qa-accessibility` run. The test is the ticket's own ACs, never the finding's severity |
 | `vs. DESIGN` **DRIFT** / **MISSING** | `visual.advisory[]` | **No** — recorded and reported, never blocking |
@@ -177,7 +177,7 @@ than as a PASS:
 
 When the checklist agents + regression lanes + this lane exceed 3, run in this order and **state the order
 chosen**: checklist track → visual lane → regression. The ticket verdict is the priority, and the visual
-lane feeds it (5c) while regression feeds the release gate (5e).
+lane feeds it (5-verdict) while regression feeds the release gate (5-report).
 
 Never schedule the visual lane on `playwright-firefox`: this pass is click- and hover-driven, and
 any of the three lanes will do — firefox clicks here again since 2026-09-08 (`.claude/rules/agents.md`).

@@ -126,7 +126,7 @@ accessibility.
 With Artifact A skipped there is no case corpus to fall back on and no `4c` run to point at. Everything this
 run knows is in [Artifact B](authoring.md) or it is lost.
 
-Two rules follow, and `5b` **REJECTed VCST-5653 on both of them** before approving it:
+Two rules follow, and the close-out gate **REJECTed VCST-5653 on both of them** before approving it:
 
 1. **Every item carries its verdict IN the artifact.** Per-item results that existed only in chat relays
    made two items read as silent blanks. A verdict in a relay is not evidence.
@@ -211,6 +211,6 @@ their owners — [`visual-axis.md`](visual-axis.md), [`qa-design/SKILL.md`](../q
 [`qa-accessibility/SKILL.md`](../qa-accessibility/SKILL.md). This file adds only what is specific to the
 change being the kit itself.
 
-**And it changes no verdict rule.** `5b` remains a hard STOP, the severity floor at `5d` is unchanged, and
+**And it changes no verdict rule.** `5-verdict`'s reconciliation still gates the verdict, the severity floor at `5-file` is unchanged, and
 the class never supplies a release recommendation — with C1 skipped the Feature Release Gate is
 `not-assessed`, never a pass.

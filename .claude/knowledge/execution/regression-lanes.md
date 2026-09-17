@@ -36,7 +36,7 @@ Three commands, run in this order by `regression-orchestrator` Step 3:
 | Command | Does |
 |---|---|
 | `npm run suites:filter -- <resolved.csv> --priority <tier> [--also-ids <ids>] --out <p>` | narrow a resolved CSV to a priority tier (+ named cases) **before** lanes sees it |
-| `npm run suites:filter -- <resolved.csv> --ids <ids> --out <p>` | the **exact-set** form — precisely those cases, no tier. Mutually exclusive with `--priority`/`--also-ids`; reads no `Priority`, so an unreadable one is not a finding here. `/qa-test` 5k's RED→GREEN track is its caller |
+| `npm run suites:filter -- <resolved.csv> --ids <ids> --out <p>` | the **exact-set** form — precisely those cases, no tier. Mutually exclusive with `--priority`/`--also-ids`; reads no `Priority`, so an unreadable one is not a finding here. `/qa-test` 5-loop's RED→GREEN track is its caller |
 | `npm run suites:lanes -- <ID> --run-id <R> [--csv <resolved>]` | classify every case → `suite-{ID}-lanes.json` + `suite-{ID}-resolved.browser.csv` |
 | `npm run suites:machine -- <ID> --run-id <R>` | run the machine rows via `graphql-runner.ts --case` → `suite-{ID}-results.machine.json` |
 | `npm run suites:merge -- <ID> --run-id <R>` | fold the fragments → the canonical `suite-{ID}-results.json` |

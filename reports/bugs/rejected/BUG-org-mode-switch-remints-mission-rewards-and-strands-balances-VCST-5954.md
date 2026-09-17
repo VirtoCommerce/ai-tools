@@ -1,6 +1,7 @@
 # BUG — Switching a store to Organization mode re-mints every past mission reward and strands existing balances
 
-## Status: CONFIRMED
+## Status: REJECTED
+By design
 
 **Severity:** Critical · **Priority:** High · **Found:** 2026-09-11 · **Ticket:** VCST-5954 (filed 2026-09-11, sub-task of VCST-5024)
 **Env:** vcst-qa — `BACK_URL=https://vcst-qa.govirto.com`, store `B2B-store`

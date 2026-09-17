@@ -1,5 +1,5 @@
 ---
-description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /qa-verify-fix inline, else feature-test at a FAST path (a checklist, plus the design/a11y visual lane when the ticket is UI-visible) or a FULL path (mandatory Test Model, case authoring, independent verifier gates, promotion). Regression is case-scoped to Critical + the run's new cases inside a 40-minute window. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
+description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /qa-verify-fix inline, else feature-test at a FAST path (a checklist, plus the design/a11y visual lane when the ticket is UI-visible) or a FULL path (mandatory Test Model, case authoring, independent verifier gates). Regression is C1 — the exact set of cases this run wrote or changed. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
 argument-hint: "<ticket-key> | feature name | PR #NNN | --epic <EPIC-KEY> [--iterate [--max-rounds N]]"
 disable-model-invocation: true
 ---
@@ -161,15 +161,15 @@ off by default; `2b`, `2f` and `2g` apply on both paths because none can add an 
 opt-in three still **derive** (token + sources recorded, so a `false` is auditable) — they just do not
 *run*. Per-axis behaviour on this path: [`axes.md`](../skills/qa-test/axes.md) §4.
 
-**`5r`/C2 was the largest breach of it** — ~24 dispatches, **93% of a FAST run's tokens**, for a *release*
-answer `5c` never depended on; removed 2026-09-10 ([`SKILL.md`](../skills/qa-test/SKILL.md) §Effort routing).
+**`5r`/C2 was the largest breach of it** — 93% of a FAST run's tokens for a *release* answer `5c` never
+depended on; removed 2026-09-10 ([`SKILL.md`](../skills/qa-test/SKILL.md) §Effort routing).
 
 **What FAST does not run is exactly §FULL mode's added list — read it there, not twice.** Two things are
 FAST-side only: the archetype/UIP/`VC-*` sweeps do not run, and the three opt-in axes run only under their
 flag. **No Artifact-A authoring means no new cases and no new regression coverage** — the route back in is
 [`/qa-test-lifecycle`](qa-test-lifecycle.md); A's `2a` triage phase still runs under `--coverage`.
 
-**Why the survivors survive** (the block above lists them; these are the four that get argued about): the
+**Why the survivors survive** — the four that get argued about: the
 `BL-*` **and `ECL-*`** rule text — without it a FAST verdict is ungrounded, not merely cheap · `5b`, which
 produces the verdict · the committed `testing-checklist.md`, this run's **only** durable record · **`5h`**,
 whose refusal set makes it free.
@@ -279,13 +279,10 @@ the Azure behaviour and the mandatory record — is
 **Cite it; do not restate it.**
 
 **It sits HERE, after routing, and not at Step 4 where it used to.** *In testing* means **QA owns this
-ticket now**, which is true the moment the run is accepted — not when the first browser opens. At Step 4
-the ticket sat in READY FOR TEST through `1a`–`3` (context, the Test Model, authoring, seeding, the
-discovery lane): 30+ minutes of real QA work during which the board said nobody had picked it up, and
-nothing stopped a teammate picking it up for real — the `1b` duplicate check guards only against *this
-pipeline* re-testing the same ticket within 2 h. A STOP before Step 4 (Step 3 is a hard-STOP gate) now
-leaves the ticket in-testing **with a comment saying why nobody is testing it**, which is the honest
-state and the same shape as a `BLOCKED` verdict.
+ticket now**, which is true the moment the run is accepted — not when the first browser opens. A STOP
+before Step 4 (Step 3 is a hard-STOP gate) therefore leaves the ticket in-testing **with a comment saying
+why nobody is testing it** — the honest state, and the same shape as a `BLOCKED` verdict. What the old
+placement cost: [`decisions`](../../docs/decisions/qa-test-evolution.md).
 
 **After routing is load-bearing, not incidental:** `verify-fix` owns its own close-out (two flows
 transitioning one ticket is how a ticket gets moved twice for one run) and `hotfix-verify` transitions
@@ -328,7 +325,7 @@ Four things it must leave behind, each consumed by a named later step:
 |---|---|---|
 | the **domain map** read (or `ABSENT`) | `1e` clauses 11 / 11b | **FULL builds a missing map** at `1c-map`; **FAST recommends and proceeds**. `STALE` is never auto-refreshed. Nothing here blocks |
 | the **bibliography** — prior BA analysis · prior test model · domain-knowledge docs · tickets already tested here | the `1c` brief, as **paths to read** | so `ba-system-analyzer` starts from the prior analysis instead of re-deriving it |
-| the **`Test object` block** — purpose · operations · data · variants · constraints | `1e`'s condition space | *you cannot design an experiment on an object whose properties you do not know.* A `1e` that skips it enumerates screens — the measured Loyalty Missions failure (127 cases, 71 placing zero orders, the mechanism end-to-end at 11%) |
+| the **`Test object` block** — purpose · operations · data · variants · constraints | `1e`'s condition space | *you cannot design an experiment on an object whose properties you do not know.* A `1e` that skips it enumerates screens — the measured Loyalty Missions failure |
 | an `UNDECLARED` purpose | `1e` (FULL) / the checklist (FAST) | **`UNDECLARED` is the run's FIRST finding, not a blank** (measured: 1 of 13 domains has a declared purpose) |
 
 **Both reads are pointer indexes, never behaviour** — neither can ground an assertion as `{DOC}` — and
@@ -384,14 +381,11 @@ every role resolves to a fixture alias or `FIXTURE-GAP`.**
 
 **Clauses 11/11b read the `domain_map` token (2g) and never re-derive it, and `1e` CONFIRMS 2g's
 provisional all-layer answer — both stated once, in
-[`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md) §The gate.** They were restated here and
-had already drifted (the key is `domain_map.all_layer_confirmed_at`, not `all_layer_confirmed_at`).
+[`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md) §The gate.**
 
-**Clauses 11, 11b and 4 each exist because a measured run passed every OTHER clause** — VCST-5317 (a
-complete matrix covering one predicate of a 35-suite feature, which also authored a Critical case asserting
-the ABSENCE of a component that does exist) and VCST-5735 (a matrix populated from its own scenario list,
-so complete by construction). The argument for all three, and what to re-derive after any rewrite of the
-scenario table: [`test-model.md`](../skills/qa-test/test-model.md) §Why clauses.
+**Clauses 11, 11b and 4 each exist because a measured run passed every OTHER clause** — VCST-5317 and
+VCST-5735. The argument for all three, and what to re-derive after any rewrite of the scenario table:
+[`test-model.md`](../skills/qa-test/test-model.md) §Why clauses.
 
 
 #### 1e-plan — emit the scenario matrix as an authoring plan *(FULL only)*
@@ -476,13 +470,13 @@ Three rules hold it ([`SKILL.md`](../skills/qa-test/SKILL.md) §Ordering):
 | **B** | Testing checklist (both paths) — written **after `3x` returns**, so it carries what discovery observed and not only what the ACs named. **One checklist, one execution pass** | `test-management-specialist`, or the orchestrator inline for a single-surface tweak | `reports/tickets/{SPRINT}/<ticket-key>/testing-checklist.md` |
 | **C1** | Ticket regression — **the exact set: every case this run wrote or changed** | orchestrator | scope assembled **at A's append** (§C1 — the exact set); one `/qa-regression … --ids` run, executed at `4c` |
 
-**There is no C2** — the change-scoped Critical sweep answered a *release* question, not this ticket's
-(§FAST mode). Cutting a release means running [`/qa-regression`](qa-regression.md) deliberately.
+**There is no C2** — the change-scoped Critical sweep answered a *release* question, not this ticket's (§FAST mode).
+Cutting a release means running [`/qa-regression`](qa-regression.md) deliberately.
 
 #### A phase `2a` — dispose the corpus, then author the gaps *(both paths — FAST under `--coverage`)*
 
-**`2a` is a PHASE of this step, not a step of its own** (merged 2026-09-11). Its label survives as a
-citation contract; the separate `## Step 2a` section does not. The **scan** already ran at `1b` item 2e —
+**`2a` is a PHASE of this step, not a step of its own** (merged 2026-09-11; its label survives, §Execution
+order). The **scan** already ran at `1b` item 2e —
 this phase **disposes each hit and applies every `REPAIR`**, and it runs **before the same agent authors a
 single new row**, which is the whole reason the two are one dispatch: mapping the corpus runs in two
 directions and one owner answers both. Full rules — owner, `runFate`, the domainless-change rule:
@@ -501,7 +495,7 @@ hit is a claim about a test case, never about the product; `neverAudited` is con
 
 #### C1 — the exact set: every case this run WROTE or CHANGED *(both paths)*
 
-**Three id sources, and they become available at different moments.** That is why the scope is a named
+**Three id sources, and they become available at different moments** — which is why the scope is a named
 step rather than something assembled in passing:
 
 | Source | Disposition | Available at | Why it must execute |
@@ -510,8 +504,8 @@ step rather than something assembled in passing:
 | **`REPAIR` ids** | fixed **before** the run — renamed selector, moved route, dead `@td()` alias | **A's `2a` phase** | **the fix is unverified until it runs.** A repaired case that never executes is the invisible class `2a` exists to find, re-created one step later |
 | **`RE-BASE` ids** | assertion kept, resolved **by** the run at 5a | **A's `2a` phase** | its old assertion, executed against the change, is the run's most strongly grounded check ([`coverage-triage.md`](../skills/qa-test/coverage-triage.md) §3a) |
 
-**One rule covers all three: *this run wrote or changed it, so this run runs it.*** (`REPAIR` was added
-2026-09-10 — [`coverage-triage.md`](../skills/qa-test/coverage-triage.md) §3b.) The scope is assembled
+**One rule covers all three: *this run wrote or changed it, so this run runs it***
+([`coverage-triage.md`](../skills/qa-test/coverage-triage.md) §3b). The scope is assembled
 **at A's append**, the first moment all three halves exist, as **one run and one `RUN_ID`** — 5a triages a
 single run and promotion grounds `{OBSERVED}` against a single `RUN_ID`.
 
@@ -538,8 +532,8 @@ Artifact-A row that is still being authored."* It is legal here and **mandatory 
 where the verifier checks that each one now resolves to a real appended row. A `PENDING-A` that survives
 `3-cases` is a REJECT, not a note.
 
-**Inline, deliberately — no fresh-verifier dispatch.** Every clause is a script or a list comparison, and
-a dispatch here would re-create the wait the restructure removes.
+**Inline, deliberately** — every clause is a script or a list comparison, and a fresh-verifier dispatch
+here would re-create the wait the restructure removes.
 
 #### 3-cases — the corpus-write gate *(FULL only — fresh `qa-lead` verifier, hard STOP)*
 
@@ -556,10 +550,9 @@ while this gate runs — which is why it can be a hard STOP without holding the 
 #### 3x — the discovery lane *(FULL only)*
 
 **Explore the model before authoring against it.** The pipeline derives for four steps and never looks at
-the running feature until Step 4 executes cases that are already written — so the model's `{HYPOTHESIS}`
-oracles, its `GAP` cells, its unresolved reverse edges, `1d`'s DRIFT ACs and `1b` 2e's at-risk rows all
-reach authoring as guesses. This lane spends **one browser lane for a scope-sized 30-60 minutes, inside time 3a is
-already spending**, to turn them into observations first.
+the running feature until Step 4 executes cases that are already written — so every unresolved cell,
+`{HYPOTHESIS}` oracle and DRIFT AC reaches authoring as a guess. This lane spends **one browser lane for a
+scope-sized 30-60 minutes, inside time 3a is already spending**, to turn them into observations first.
 
 **Invoke `/qa-exploratory ticket <ticket-key>`** — its `ticket` charter mode. **This pipeline supplies the
 CHARTER; that command runs the SESSION.** Deliberately *not* the visual lane's pattern: `/qa-design` is only
@@ -600,11 +593,11 @@ running**.
 | **4v** | **Visual lane** — `ui-ux-expert` on Chrome DevTools MCP, in the **same message** as 4a | `3-exec` | FULL when `visual_surface: true`; FAST only under `--visual`/`--axes`. **Dispatch the agent, never invoke `/qa-design`.** Axes, targets, the two things the brief must carry, verdicts, the SKIPPED rule: [`visual-axis.md`](../skills/qa-test/visual-axis.md). Writes `design-report.md` + `summary.json.visual` |
 | **4c** | **C1** — `/qa-regression <suite ids> --ids <new Draft ids + every REPAIR id + every RE-BASE id> --no-promote` | `3-cases` — **or A's `2a` phase when it authored nothing** (§C1) | Its own run; capture `RUN_ID` + wall-clock. **`--no-promote` is mandatory** — it suppresses `/qa-regression` Step 6.5, which would otherwise promote minutes-old cases from inside the run that authored them, re-creating the placement `5g`'s removal fixed. **Skip C1 saying so when the exact set is empty** — an omitted C1 must not read as a passing one |
 
-**The specialist agent no longer runs the Artifact-A rows.** It ran them *and* `4c` ran them, so every
-authored case executed twice — and only `4c` emits the `RUN_ID` that promotion needs, so the agent's copy
-grounded nothing ([`regression-promotion.md`](../knowledge/execution/regression-promotion.md)). **Track 4a is the checklist's home;
-`4c` is the cases'.** The Scope line in the agent brief now reads *"run ONLY the checklist above"* on both
-paths.
+**The specialist agent no longer runs the Artifact-A rows** — only `4c` emits the `RUN_ID` promotion needs,
+so the agent's copy grounded nothing
+([`regression-promotion.md`](../knowledge/execution/regression-promotion.md)). **Track 4a is the
+checklist's home; `4c` is the cases'.** The Scope line in the agent brief reads *"run ONLY the checklist
+above"* on both paths.
 
 #### When 4a returns, CHECK THE AUTHORING AGENT *(both paths; on FAST only the "authored nothing" row applies)*
 
@@ -618,17 +611,15 @@ orchestrator's next act is to establish where authoring stands, and say so:
 | **authored nothing** | C1's set is A's `2a` phase alone (§C1). Dispatch `4c` now; `3-cases` has nothing to rule on |
 | **aborted** (an early BLOCKED) | no append, no `3-cases`, no `4c`. Record what was aborted and carry the reason into 5a. **State how far its `2a` phase got** — an abort mid-triage can leave `REPAIR` edits half-applied with no gate having seen them; re-lint the touched suites (`suites:review`) and either finish or revert those rows (`git show HEAD:<path>`, [`coverage-triage.md`](../skills/qa-test/coverage-triage.md) §5) |
 
-**Wait on the completion signal; do not poll.** The harness reports a background agent's completion, so a
-timed re-check spends turns to learn what arrives on its own. What is forbidden is the third option —
-proceeding to 5a as though authoring had finished because nothing said otherwise. **`A` is backgrounded,
-not optional**, and `5a` joins on `4a` ‖ `4v` ‖ `4c`: a verdict reached while `4c` is still outstanding is
-a verdict missing a track it claims to have.
+**Wait on the completion signal; do not poll** — the harness reports a background agent's completion. What
+is forbidden is the third option: proceeding to 5a as though authoring had finished because nothing said
+otherwise. **`A` is backgrounded, not optional**, and `5a` joins on `4a` ‖ `4v` ‖ `4c`: a verdict reached
+while `4c` is still outstanding is a verdict missing a track it claims to have.
 
 #### The lane cap no longer holds by construction — count before every dispatch *(both paths)*
 
-Until 2026-09-10, `3x` closed before `A`, which closed before Step 4, so at most three lanes could ever be
-live and no arbitration rule was needed. **Execution now overlaps `3x`, so that guarantee is gone and the
-rule has to be explicit.** Max 3 concurrent browser agents, hard
+**Execution now overlaps `3x`, so the old by-construction three-lane ceiling is gone and the rule has to
+be explicit.** Max 3 concurrent browser agents, hard
 ([`.claude/rules/agents.md`](../rules/agents.md)). Count the live lanes before each dispatch and yield in
 this order:
 

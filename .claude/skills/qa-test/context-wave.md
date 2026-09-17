@@ -26,9 +26,9 @@ test?**
 | the primary AC path can be **walked** shallowly, end to end, without asserting | capture regression evidence |
 | the accounts and `@td()` fixtures the ticket assumes actually resolve and sign in | file a bug |
 
-**Returns `REACHABLE` or `BLOCKED(<reason>)`, and nothing else.** **Never evidence for `5c`** — a green
+**Returns `REACHABLE` or `BLOCKED(<reason>)`, and nothing else.** **Never evidence for `5-verdict`** — a green
 `1r` is not a passing condition. **On `BLOCKED`: stop deriving now** — `TaskStop` `3a` and any authoring,
-record what was aborted, go straight to `5c` BLOCKED → 5e → 5f (no transition, blocker comment required).
+record what was aborted, go straight to `5-verdict` BLOCKED → 5-report → 5-status (no transition, blocker comment required).
 Capped at ~5 min and one lane; a `1r` that starts exploring has become `3x`. It never blocks `1c`/`1d`.
 **Record** `timing.reachability_minutes` + a one-line verdict; `null` on FULL is a gap, not a zero.
 
@@ -47,7 +47,7 @@ returns:
 - **Existing functionality (current state)** — **first, and mandatory.** What the scope ALREADY DOES before this ticket, one line per capability, grounded in source/live/docs; plus the prior art it read **by path** (or the literal `none`), the prior model to amend, and what is new in this pass. A gap analysis with no baseline is a wish list. **A prior report is a HYPOTHESIS, never the baseline** — it is dated and the product moved after it, so each claim is triangulated against the `2-release` ledger Δ **and a live check**, then carries `CONFIRMED` / `DRIFT` / `MISSING` / `UNVERIFIED`. A `DRIFT` is a finding about the *document*, not a product bug.
 - **The test object** — purpose (the value chain) · **operations** (what can be done to it) · **properties** (what can be observed or varied) · **variants** (what changes its behaviour without changing its code) · **constraints** (`BL-*`/`ECL-*`, with what a violation costs) · **reverse edges**. Seeded from `2-map`'s `Test object` block and completed live. This is `1e`'s condition-space raw material: a model built without it enumerates screens, which is the Loyalty Missions shape. A map `UNDECLARED` is established here or reported as unestablished — **never** guessed.
 - **Affected surface** — module(s)/repo(s), storefront vs Admin SPA vs API/GraphQL layer, concrete code sites (grounded, not guessed).
-- **Surfaces the DOMAIN MAP does not list — mandatory when a map exists.** For every surface you touched, say whether `.claude/knowledge/domain/<name>.md` enumerates it; report the misses in `domain_map.unmapped_surfaces[]`. **Never edit the map from here** — `ba-system-analyzer` is its sole writer and `5h-map` does the write, once, after the verdict. Two corollaries, both amendments rather than proposals: a `D*` you confirmed or refuted **live** is a verdict upgrade, and a `G*` this run closed says what closed it. Anything not verified live stays a proposal. Without this the map decays the moment the product moves.
+- **Surfaces the DOMAIN MAP does not list — mandatory when a map exists.** For every surface you touched, say whether `.claude/knowledge/domain/<name>.md` enumerates it; report the misses in `domain_map.unmapped_surfaces[]`. **Never edit the map from here** — `ba-system-analyzer` is its sole writer and `5-docs-map` does the write, once, after the verdict. Two corollaries, both amendments rather than proposals: a `D*` you confirmed or refuted **live** is a verdict upgrade, and a `G*` this run closed says what closed it. Anything not verified live stays a proposal. Without this the map decays the moment the product moves.
 - **Related flows & integration boundaries** — adjacent features / cross-domain seams (cart ↔ checkout, org ↔ membership, …).
 - **Known pain points / historical failures** — cross-referenced to `vc-bug-catalog.md` (`VC-*`) + prior bugs.
 - **Docs grounding** — VirtoOZ/VC-doc references for how the feature is *supposed* to behave.
@@ -103,17 +103,17 @@ feature name or a PR with no governing story.
 Dispatch `ba-story-writer` in review mode (Mode B) — analyze only, no new story, no tracker writes. Pass
 `existing_story` (summary + description + ACs from `1a`), any **AC-affecting clarifications from the `1a`
 comments** (a comment that redefines expected behavior overrides the stale description), `jira_ref` +
-`domains`, and `implementation: { pr_diff }` — this is the **static** AC↔code check; the **live** one is 5b.
+`domains`, and `implementation: { pr_diff }` — this is the **static** AC↔code check; the **live** one is 5-verdict.1.
 It returns: an **AC Quality Scorecard** (per AC: testable? / clarity / smells / KEEP·REWRITE·SPLIT) ·
 **weak sides** with rewrites · **AC ↔ Implementation coverage** (SATISFIED / DRIFT / NOT-FOUND / CONTRADICTS
 vs the diff, plus unspecified implementation) · **gap analysis** (missing ACs for error paths, boundaries,
 guest/B2B, NFRs, integration seams — each mapped to a `BL-*`/`ECL-*` and phrased as a gap-AC) · an **AC →
 Test traceability seed** (atomic testable conditions, story ACs + gap-ACs, each with its `Impl verdict`) ·
 the **DoD checklist** (each item marked from what is statically inferable now vs flagged **"confirm at
-5b"**; skip with a note when there is no DoD section).
+5-verdict"**; skip with a note when there is no DoD section).
 
 **Surface inline** the weak ACs, DRIFT/CONTRADICTS/scope-creep findings and gap-ACs, then **proceed** — fold
 gap-ACs into scope and carry every DRIFT/NOT-FOUND/CONTRADICTS into execution as a thing to verify **live**
 (a static-diff finding is a suspicion, not a defect). The AC traceability table and the DoD checklist stay in
-working context (terminal-only, `.claude/rules/reports.md` §1); they are the spine for Step 3 and 5b.
+working context (terminal-only, `.claude/rules/reports.md` §1); they are the spine for Step 3 and 5-verdict.
 

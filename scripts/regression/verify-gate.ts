@@ -25,8 +25,8 @@
 // Usage:
 //   npx tsx scripts/regression/verify-gate.ts --gate 3-exec              # no --suite: nothing is authored yet
 //   npx tsx scripts/regression/verify-gate.ts --gate 3   --suite <suite.csv>
-//   npx tsx scripts/regression/verify-gate.ts --gate 5b  --run-id <RUN_ID>
-//   npx tsx scripts/regression/verify-gate.ts --gate 5e  --run-id <C2_RUN_ID>
+//   npx tsx scripts/regression/verify-gate.ts --gate 5-verdict  --run-id <RUN_ID>
+//   npx tsx scripts/regression/verify-gate.ts --gate 5-report  --run-id <C2_RUN_ID>
 //   npx tsx scripts/regression/verify-gate.ts --gate 5g  --suite <suite.csv>
 //
 // Exit: 0 = the sheet was produced. NOT a verdict — a gate whose every fact is a mismatch still
@@ -37,7 +37,7 @@ import { spawnSync } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { parse as parseCsv } from "csv-parse/sync";
 
-export type GateId = "3-exec" | "3" | "5b" | "5e" | "5g";
+export type GateId = "3-exec" | "3" | "5-verdict" | "5-report" | "5g";
 
 export interface CommandFact {
   label: string;
@@ -147,16 +147,16 @@ export const GATES: Record<GateId, GateSpec> = {
       "that Artifact A's 2a phase RAN and every hit is disposed - REPAIR applied and re-linted, and both REPAIR and RE-BASE carried into C1's --ids (an absent disposition block reads exactly like a clean triage)",
     ],
   },
-  "5b": {
-    title: "Step 5b — triage + AC/DoD reconciled against the implementation (hard STOP)",
+  "5-verdict": {
+    title: "Step 5-verdict — triage + AC/DoD reconciled against the implementation, then the verdict (inline self-check)",
     unchecked: [
       "every PASS carries a re-openable artifact (open the screenshots/traces; a claimed PASS with no artifact is a REJECT)",
       "each finding's severity grade, and its PRE-EXISTING / IN-SCOPE / OUT-OF-SCOPE provenance",
       "whether a reconciled AC is genuinely met, as opposed to merely reported met",
     ],
   },
-  "5e": {
-    title: "Step 5e — Feature Release Gate ratified (non-blocking)",
+  "5-report": {
+    title: "Step 5-report — Feature Release Gate ratified (non-blocking)",
     unchecked: [
       "re-evaluation from the RAW inputs per skills/qa-metrics/quality-gates.md §1a — this sheet reports the script's verdict inputs, not a second opinion on them",
       "whether a skipped C2 is recorded with its reason (an absent regression block reads as a clean sweep)",
@@ -211,7 +211,7 @@ function factsFor(gate: GateId, opts: { suite?: string; runId?: string }): Comma
       run("tc:scope (existing-coverage triage)", "npx", ["tsx", "scripts/test-cases/scope-existing-coverage.ts"],
         "non-zero = the scan itself failed; hits are DATA, not a failure"),
     );
-  } else if (gate === "5b" || gate === "5e") {
+  } else if (gate === "5-verdict" || gate === "5-report") {
     if (!opts.runId) throw new Error(`--gate ${gate} needs --run-id <RUN_ID> (unscoped returns the whole-history rate)`);
     facts.push(
       run("compute-metrics --gate feature", "npx",
@@ -255,7 +255,7 @@ function main(): void {
   };
   const gate = at("--gate") as GateId | undefined;
   if (!gate || !(gate in GATES)) {
-    console.error("usage: npx tsx scripts/regression/verify-gate.ts --gate <3-exec|3|5b|5e|5g> [--suite <csv>] [--run-id <ID>]");
+    console.error("usage: npx tsx scripts/regression/verify-gate.ts --gate <3-exec|3|5-verdict|5-report|5g> [--suite <csv>] [--run-id <ID>]");
     process.exit(1);
   }
   const suite = at("--suite");

@@ -79,7 +79,7 @@ Step 0a: the charter is **received, not authored**.
    and per mission item 1–5 *covered* or *NOT REACHED + reason*. A `PROMOTE` `Fate` here means the caller
    authors that case **in the same run**, not in a later sprint — so name the scenario precisely enough to
    author from.
-5. **File nothing.** Bugs go back to the caller; `/qa-test` 5a triages them, 5d applies the severity floor.
+5. **File nothing.** Bugs go back to the caller; `/qa-test` `5-triage` grades them, `5-file` files them.
    Everything else in Steps 0.1–0.5 below still runs — the charter says *what* to explore, pre-flight
    establishes *against what build*.
 

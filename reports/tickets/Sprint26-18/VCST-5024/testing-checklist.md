@@ -1,154 +1,134 @@
-# Testing checklist — VCST-5024
+# Testing Checklist — VCST-5024 (Artifact B)
 
-**[E2E] [Loyalty] Calculate earned/redeemed loyalty points totals on the organization level**
-Story · Medium · Sprint26-18 · FULL path · Epic VCST-5099 (Draft)
-Build under test: `VirtoCommerce.Loyalty 3.1008.0-pr-17-116e` (tip of open PR #17) + theme `2.58.0-pr-2475-d710`
-Model: `reports/ba/test-models/VCST-5024-2026-09-11.md` · verdicts filled in at 5e — **flip window 14:34:06Z → 15:07:52Z**, store restored and verified
+Run: 2026-09-16 · `TEST_ENV=localhost` · `--iterate --max-rounds 2` · Round 1
+Build: `VirtoCommerce.Loyalty 3.1008.0-pr-17-973e` (PR #17 head, confirmed via `/api/platform/modules`)
+Model: `reports/ba/test-models/VCST-5024-2026-09-16.md` (amends `-2026-09-11.md`)
+Prior round's checklist preserved at `testing-checklist-2026-09-11.md` — this file is NOT its continuation
+(different environment, different build); `--iterate` round 2 APPENDS to this file, never overwrites it.
 
-## The precondition that governs this whole run
+**THIS CHECKLIST IS ORDERED.** Phase 1 funds the organization pool. Until it does, the pool is 0 and every
+"can X spend the pool" question is refused for *insufficient balance* rather than *authorization* — the two
+are indistinguishable, which is a data defect, not a result (`test-data.md` SECOND RULE). Discovery (`3x`)
+measured the pool at 0.0 with all three outlet members at 0.0. **Do not run Phase 5 before Phase 1 passes.**
 
-`Loyalty.LoyaltyBalanceCalculationMode` on `B2B-store` is **unset → effectively `Customer`**, so the feature is
-dormant. Items marked **[ORG]** require the store flipped to `Organization`; items marked **[CUST]** must be
-observed **before** the flip; items marked **[ANY]** are mode-independent.
+## Standing rules for every item
+- Balances CANNOT be reset (op-log is read-only, no set/debit API, no reversal path — `BL-LOY-019`).
+  Read a balance IMMEDIATELY before an action and assert the **delta**. Never an absolute, never a figure
+  carried over from an earlier item or an earlier round.
+- Query a PTS product with `currencyCode:"PTS"`. Under `"USD"` the same healthy product reports
+  `isAvailable:false, isBuyable:false, price 0`. **That is the wrong query, not a bug — do not file it.**
+- Storefront free-text search does NOT match product code. Reach the PDP via `/product/<id>`
+  (302s to the slug) or the category `01a0a9dd-e645-7e8b-abdf-b825425e8952`. `/product/<sku>` always 404s.
+- The storefront's own default currency is **USD**, and in USD the points-only SKU renders
+  **"Price: $0.00" with no Add-to-Cart**. Every storefront item touching a PTS line must FIRST switch the
+  storefront currency to PTS via the currency selector. This is an explicit step, not a precondition.
+- `ORG_LOY_LOCKED` signs in normally — the lock is on the org MEMBERSHIP, not the account. Sign-in
+  succeeding is not evidence the lock is unapplied.
+- HAR always. Screenshots on every failure and on the final state of each phase.
 
-**Flip window discipline** — the store is shared. **Corrected in-run; the first attempt silently failed:**
-- Capture every [CUST] item first.
-- **Do NOT flip via `POST /api/platform/settings/v2/tenant/Store/{id}/values`.** It returns **204**, changes what the
-  settings API reports, and **changes nothing the module reads** — `StoreExtensions.IsOrganizationBalanceCalculationMode()`
-  resolves `store.Settings.GetValue<string>(…)` off the **store entity**, which stays `null` → `Customer`. This run lost
-  ~16 minutes and one consumed mission fixture to that. It is filed as a defect in its own right (K1).
-- **Flip via `PATCH /api/stores/{id}`** with JSON Patch on the `settings[]` element
-  (`[{"op":"replace","path":"/settings/<i>/value","value":"Organization"}]`) — never a whole-entity `PUT /api/stores`,
-  which replaces the store object and can null required defaults (currency / language / url).
-- **Verify by BEHAVIOUR, never by reading the setting back.** The decisive check: a member's `loyaltyBalance(storeId:)`
-  switches from their user-scoped figure to the organization's. Two settings readers disagree, so neither is evidence.
-- No loyalty regression suite may run inside the window.
-- Restore the same way, then diff **all** settings against `_preflip-B2B-store-baseline.json`.
-  Achieved this run: effective `Customer`, stored `null`, **zero diff across 106 settings**.
+## Fixtures (seeded 2026-09-16T11:29:30Z, all confirmed live)
+| Role | Email | Org / state |
+|---|---|---|
+| `ORG_LOY_A` | agent-test-orgloy-a@test-agent.com | outlet `01a0a9fa-8015-76aa-ac3a-0237b8e17e10`, Approved · earn plan qty 1 → 30,000 |
+| `ORG_LOY_B` | agent-test-orgloy-b@test-agent.com | same outlet, Approved · earn plan qty 3 → 90,000 |
+| `ORG_LOY_LOCKED` | agent-test-orgloy-locked@test-agent.com | same outlet, membership `isLocked=true` |
+| `LOY_PERSONAL_NOORG` | agent-test-orgloy-noorg@test-agent.com | **no org**, 33,872 PTS (stranded, pre-flip) |
 
----
-
-## A. Contract and scope guards [ANY] — decidable without the flip
-
-- [x] **A1** `loyaltyBalance` without `storeId` is rejected — `Argument 'storeId' of type 'String!' is required` *(S15)*
-      → **PASS — HTTP 400, `Argument 'storeId' of type 'String!' is required`**
-- [x] **A2** `loyaltyPointsHistory` without `storeId` is rejected, same error class *(S15)*
-      → **PASS — same error class (`PROVIDED_NON_NULL_ARGUMENTS`)**
-- [x] **A3** A caller supplying `organizationId` to `loyaltyBalance` is rejected as an unknown argument — scope cannot be caller-chosen *(S13)*
-      → **PASS — `Unknown argument 'organizationId'`; the schema itself is the scope guard**
-- [x] **A4** A member requesting **another member's** `userId` on `loyaltyPointsHistory` is **refused**, not returned empty — an empty success reads as clean and is not acceptable evidence *(S14)*
-      → **PASS — `Access denied.` with `data: null` on both balance and history; the own-id control returns normally**
-- [x] **A5** Corpus impact of A1/A2 is quantified: how many suite rows call these queries without `storeId` *(feeds the verdict; 8 found and repaired in-run)*
-      → **8 occurrences across 3 suites (075b 1, 075c 1, 075d 6) — repaired in-run, re-linted, executed as C1b**
-
-## B. Customer-mode baseline [CUST] — must be captured BEFORE the flip
-
-- [x] **B1** Balance, points-history `totalCount` and mission-progress `totalCount` recorded for a known loyalty account *(S16)*
-      → **CAPTURED — VIP fixture 2,702,311,237 · 219 ledger rows · 60 mission-progress rows**
-- [x] **B2** Org-scoped balance recorded for the fixture organization — expected `0` pre-flip, since no historical row carries an `organizationId` *(S16, and the control for S8)*
-      → **CAPTURED — org pool 0 pre-flip, as predicted: no historical row carries an organizationId**
-- [x] **B3** A member's user-scoped Admin balance (`balance/user/{userId}`) and their contact operation-log blade both render real, non-zero data *(the control for S4)*
-      → **CAPTURED — contact blade and `balance/user/{id}` both render real non-zero data**
-- [x] **B4** Mission progress for one member recorded with `status` + `percentage` *(the control for S8/S7)*
-      → **CAPTURED — A resolved 30 rows with a progressId, incl. the per-run mission Completed 1/1**
-
-## C. The mechanism under org mode [ORG] — the story's actual promise
-
-- [x] **C1** **[JOURNEY]** Member A orders, then member B orders; both read the **same pooled balance** = baseline + A + B; then one of them redeems at checkout and the pool decrements *(S1 — if this fails, the feature does not work)*
-      → **PASS — pool 0 → 40,152 (A alone) → 133,086 (A+B) → 163,505 (after redeem). B read 40,152, identical to A, having ordered nothing since the flip**
-- [x] **C2** Both members' orders produce ledger rows carrying **their own** `UserId` **and** the shared `OrganizationId` *(S1, sentence 3's "logging" half)*
-      → **PASS — all 26 post-flip rows carry `organizationId` AND the acting member's own `userId`**
-- [x] **C3** `balance/organization/{orgId}` equals the summed `Amount` of that organization's rows *(S6)*
-      → **PASS — `balance/organization` = 163,505 = the exact signed sum of the org rows, computed independently**
-- [x] **C4** Exactly **one** `Earned` and **one** `Redeemed` row per order — the dedup key was deliberately not org-scoped and must still hold *(S22, BL-LOY-007; a PASS here is the informative result)*
-      → **PASS — order cb99afd1 produced exactly {Earned:1, Redeemed:1}, coexisting, no duplicates. Independently re-proven by both lanes. BL-LOY-007 holds when the credit is org-keyed, which was the open half**
-
-## D. The scope split — highest-severity hypotheses [ORG]
-
-- [x] **D1** A **no-org** account can still **READ** its own personal balance on an org-mode store *(S3)*
-      → **PASS — the no-org account reads its own 38,916 on an org-mode store**
-- [x] **D2** A **no-org** account can still **SPEND** those points at checkout. Hypothesis: it cannot — the validator reads `0` and raises `LOYALTY_INSUFFICIENT_BALANCE` with `available: 0` *(S2 — P0-revenue)*
-      → **FAIL — P0-revenue. Sees 38,916; cart refuses with `available: 0`; Place order disabled.** Durable evidence: `evidence/D2-cart-mixed-SOLE-error.json`.
-- [x] **D3** D1 and D2 are compared explicitly. The finding is the **disagreement**, not either reading alone
-      → **FAIL — and the sole-cause attribution is EVIDENCED IN DATA, not asserted (strengthened at the 5b gate).** The PTS-only cart carries BOTH `LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED` and `LOYALTY_INSUFFICIENT_BALANCE` (`evidence/D2-cart-ptsonly-BOTH-errors.json`); the mixed cart, with a cash line added, carries **exactly one** validation error — `LOYALTY_INSUFFICIENT_BALANCE`, `required=6 available=0` (`evidence/D2-cart-mixed-SOLE-error.json`). The confound is removed in the data, not only in the narrative. **GAP: no HAR was captured this run**, against this checklist's own "HAR always" rule — the saved payloads stand in for it.
-- [x] **D4** A member's **user-scoped** balance and contact operation-log after earning in org mode. Hypothesis: both read `0`/empty, because org-scoped rows are excluded from every user-scoped read *(S4 — sentence 3's "stats" half)*
-      → **FAIL — 0 of 22 org-scoped rows visible in any user-scoped read; contact blade shows 39,533 while the same person's storefront reads 133,086**
-
-## E. Shared-ledger visibility [ORG]
-
-- [x] **E1** Member B's `/account/points-history` contains rows caused by member A *(S5)*
-      → **FAIL — B's points history shows A's order earning 30,000; A's shows B's Redeemed and Earned rows**
-- [x] **E2** Nothing in the rendered row or the GraphQL payload identifies **which member** caused it *(S5, escalates BL-LOY-015)*
-      → **FAIL — no member field exists in the GraphQL schema, and the Admin org ledger has no member column**
-- [x] **E3** The page's headings and possessive wording are recorded verbatim — the published guide says buyers view *their* points *(S21, {DOC} contradiction)*
-      → **CAPTURED — verbatim. Points-history makes NO ownership claim; the missions page says "Redeem your points"**
-
-## F. Missions under org mode [ORG]
-
-- [x] **F1** Member A completes the per-run mission; member B then sees it **Completed** and cannot earn it *(S7 — BL-LOY-018 becomes per-organization)*
-      → **PASS, behaviour CHANGED — B saw the mission Completed 1/1 carrying A's same progressId, having ordered nothing**
-- [x] **F2** The reward is granted **once**, not once per member *(S7)*
-      → **PASS, behaviour CHANGED — reward 619 granted ONCE for the organization. In Customer mode 617 fired once per member. BL-LOY-018 is now per-organization**
-
-## G. Mode-flip data behaviour [ORG → CUST]
-
-- [x] **G1** Immediately after the flip, the org balance reads `0` and each member's pre-flip mission progress no longer resolves *(S8)*
-      → **CONFIRMED — A 39,533 → "Balance: 0" and "No records found"; mission progress reverted to 0%, "0 of 1 orders"**
-- [x] **G2** Whether an already-completed mission can be completed **again** at org scope *(S8 — the double-reward risk)*
-      → **CONFIRMED — P0-revenue, and EXACTLY RE-DERIVED from the live ledger at the 5b gate** (`evidence/G2-org-ledger-full.json`, all 33 org rows re-read live and persisted). Member A pre-flip user-scoped: **20 mission rows totalling 9,533**. Post-flip org-scoped: **21 rows totalling 10,152** — the same amount multiset PLUS a single 619 (the genuinely new ORG_LOY_MISSION_2). So 20 of 21 reproduce the earlier set amount-for-amount: 617, 508x3, 506x3, 505x3, 503x3, 500x5, 250, 100 = 9,533. **MECHANISM, newly evidenced: the (objectId, amount) overlap is ZERO** — the org-scope rows carry NEW objectIds because new progress rows are created under the new owner key, so the dedup index structurally cannot see them as duplicates. FAILURE MODE (corrected): opening-balance INFLATION ON ADOPTION, not double-credit on rollback — 9,533 of the 40,152 opening pool (24%) was money already paid out once. The duplicate is written at org scope, so a flip back strands it rather than doubling anyone's spendable balance**
-- [x] **G3** After the restore, the member's pre-flip personal balance is intact and equals B1 *(S9, and the run's own restore verification)*
-      → **PASS — restore exact: effective Customer, stored null, ZERO diff across all 106 store settings**
-- [x] **G4** Points earned **during** the window are reachable from neither scope after restore, or are reachable — state which *(S9)*
-      → **CONFIRMED — the 163,505 pool persists but is readable ONLY via the admin-only `GET /api/loyalty-program-operation-log/balance/organization/{organizationId}`. No member can read or spend it from either scope. A and B revert to their intact pre-flip 39,533 / 100,033, and their original mission progressIds resolve again**
-
-## H. Authorization [ORG]
-
-- [x] **H1** A member **locked** in the organization, using a token minted before the lock, is refused the pooled balance and ledger *(S12 — ECL-14.3 on a money surface)*
-      → **PASS — `/connect/token` refuses the org claim for a locked membership even when explicitly requested; balance, ledger and progress all 0 against a non-zero pool of 133,086. ECL-14.3 (locked AFTER minting) remains untested**
-- [x] **H2** A multi-org member sees the correct organization's pool, and switching the active org changes it with no bleed *(S17)*
-      → **PASS, weak form — per-org grants resolve the right claim; both of MULTI's orgs read 0 while the outlet held 133,086. No bleed**
-
-## I. Back office [ORG]
-
-- [x] **I1** The organization blade's loyalty widget renders the correct pooled balance and opens the operation-log blade filtered by `organizationId` *(S20)*
-      → **PASS — the widget renders the correct pooled figure and opens the operation log filtered by organizationId**
-- [x] **I2** A failed request behind the widget is distinguishable from a genuine zero balance *(S20 — it initialises to `0` and early-returns)*
-      → **{HYPOTHESIS}, SOURCE-DERIVED — regraded at the 5b gate.** `organization-loyalty-widget.js` has a success callback only, no error callback and no loading/error state, and initialises `balance = 0` — so a failed request would leave a literal 0. **No 4xx was induced and no artifact shows one.** Reported as a source reading, not an observed verdict.
-
-## J. Accrual-eligibility scope [ORG]
-
-- [x] **J1** A second member's **first order** in an organization that has already ordered — does a first-order reward fire again? *(S19)*
-      → **BLOCKED — no first-order-conditioned program or mission exists on this store, so the hypothesis is not decidable without new fixtures**
-- [x] **J2** A registration bonus for a multi-org contact — which organization receives it? *(S18, `Organizations.FirstOrDefault()`)*
-      → **PARTIAL — read path only. The registration-time trigger needs a brand-new two-organization contact that no fixture provides**
-
-## K. Discoverability and documentation [ANY]
-
-- [x] **K1** The setting's location recorded: it is under group `Loyalty|Missions`, **absent** from the store's Loyalty settings widget, and `isPublic: false` *(S21 context)*
-      → **CONFIRMED defect — the settings-v2 tenant write returns 204 and changes nothing the module reads. The Admin UI path (entity mode → the blade's own PUT /api/stores) DOES work, so High rather than Critical**
-- [x] **K2** Whether any published guide documents organization-level loyalty *(1c found none across 13 VirtoOZ queries; confirm rather than assume)*
-      → **CONFIRMED — zero published coverage across 13 VirtoOZ queries, and it contradicts two currently-correct published statements**
+PTS SKU `AGENT-TEST-PTS-UNIT-001` @ 1 PTS · cash SKU `QA-LOY-PRIO-001` @ 60 USD ·
+missions 617 / 619 / 631 (fresh, 0 progress rows) · password `process.env.DEFAULT_TEST_PASSWORD`.
 
 ---
 
-## Conditions NOT covered by an item above — stated, because a blank reads as covered
+**Verdict legend:** `[x]` decided · `[~]` partial · `[!]` executed but **CONFOUNDED** — the observation is real,
+the cause is not isolated, so it decides nothing. Per-item evidence lives in `summary.json` → `ac_analysis.atomic_conditions` (the 21 conditions),
+`ac_analysis.dod_enumerated` (the 10 DoD items) and `regression.c1.case_triage` (the 20 C1 cases), kept there so
+this file stays under the 160-line report cap.
 
-| Condition | Disposition |
-|---|---|
-| **Concurrent earn** — two members of one organization ordering simultaneously; the pooled balance must equal the sum with no lost update *(S10)* | **`PENDING-A`** — covered by an Artifact-A row in `075f`, authored this run, executed at `4c`. The lock was re-keyed to the organization at `116e902c`, so the ticket comment that reported it broken is stale in CODE; this is the behavioural proof, and it needs two genuinely parallel sessions rather than a checklist step |
-| **Concurrent redeem** — two members spending one pool at once must not overdraw it *(S11)* | **`PENDING-A`** — as above, `075f` |
-| **Cancelled order in organization mode** *(S21 in the model's reverse-edge block)* | **WAIVED, and reported as a finding rather than tested.** `BL-LOY-019` already records that no reversal path exists anywhere in this module — the effect is not reversed today at user scope either. This change does not introduce the defect; it widens its blast radius from one person's balance to a pool every member can spend. Writing a case that asserts the broken behaviour would certify a defect |
+## Phase 0 — preconditions (verify, do not assume)
+- [x] **P0.1** · **PASS** · Store `B2B-store` reads `Loyalty.LoyaltyBalanceCalculationMode = "Organization"` **off the
+      store entity** (`GET /api/stores/B2B-store`), not off `/api/loyalty-setting/store/...`, which does not
+      expose this field. A seeder has already flipped and restored it once this run.
+      → if `Customer`: **STOP, report BLOCKED.** Every item below is void.
+- [x] **P0.2** · **PASS (with a trap recorded)** · Outlet org pooled balance and each member's user-scoped balance read 0 at start
+      (`/api/loyalty-program-operation-log/balance/{organization|user}/{id}`). Record all four figures + timestamp.
 
-**Both `PENDING-A` entries must resolve to a real appended row at the `3-cases` gate.** A `PENDING-A` that
-survives that gate is a REJECT, not a note.
+## Phase 1 — FUND THE POOL (gates Phases 3–5)  · model scenarios 1, 19 · `BL-LOY-007`
+- [x] **1.1** · **PASS** · `ORG_LOY_A` places one order for `QA-LOY-PRIO-001` qty 1 in Organization mode.
+      Assert: order created; ledger gains exactly ONE `Earned` row; that row carries **both** `UserId=A`
+      **and** `OrganizationId=outlet` (the pre-flip rows carry `organizationId: null` — the contrast is the point).
+- [~] **1.2** · **PARTIAL — this IS the S3 defect, not a separate one** · Pooled org balance moves 0 → **30,000**; A's user-scoped balance also reflects the earn.
+      Record both. If the pool stays 0, Phases 3–5 are BLOCKED, not failing — say so.
+- [x] **1.3** · **PASS (order-attributable; raw total includes mission fires)** · `ORG_LOY_B` places one order for `QA-LOY-PRIO-001` qty 3.
+      Assert: pooled balance moves 30,000 → **120,000**. 120,000 is distinct from A alone (30,000), B alone
+      (90,000), 2A and 2B — so a wrong scope key cannot produce this number by coincidence.
+      **Known fixture limit:** 90,000 is an exact 3× of 30,000, so this data CANNOT separate "pooled"
+      from "B counted three times". Do not claim it does.
+- [x] **1.4** · **PASS for (a)(b)(c) — (d) NOT VERIFIED, (e) not exercised** · Exactly ONE `Earned` and at most one `Redeemed` per order id — dedup holds under org scope
+      (`BL-LOY-007`, whose dedup key is NOT owner-scoped and was deliberately not changed).
+
+## Phase 2 — THE FIX UNDER TEST (VCST-5953 · scenarios 2 + 3) — independent of Phase 1
+- [x] **2.1** · **PASS** · `LOY_PERSONAL_NOORG` READ path: account page / `loyaltyBalance` serves a positive personal
+      balance (~33,872) on an Organization-mode store. Record the figure. *(`3x` observed 33,872.)*
+- [x] **2.2** · **PASS** · SPEND path, cart validation: a 1 PTS line produces **no `LOYALTY_INSUFFICIENT_BALANCE`**.
+      `LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED` on a points-only cart is a legitimate Mixed-Cart rule and
+      is NOT the defect. *(`3x` confirmed GREEN at this layer — this item re-confirms and extends it.)*
+- [x] **2.3** · **PASS via API · BLOCKED via storefront** · **The half `3x` could not reach: ORDER CREATION.** Add a cash line to satisfy Mixed Cart,
+      then place the order. Assert it is created with an order number, and the points actually move
+      (balance delta = the PTS total). This is the clause that makes RED→GREEN complete.
+- [x] **2.4** · **PASS — the decisive result** · Read and spend AGREE for this actor. The 2026-09-11 run's finding was their DISAGREEMENT;
+      agreement is what proves the fix. If `available` is reported at all, it equals 2.1's figure.
+
+## Phase 3 — pooled read (scenarios 5, 4) · `BL-LOY-015`
+- [x] **3.1** · **PASS** · `ORG_LOY_B` reads the pooled balance and sees A's contribution — one shared wallet.
+- [x] **3.2** · **FAIL — BL-LOY-015** · B's points history contains A's rows, and **no field names which member caused each row**.
+      Record verbatim what a buyer can and cannot tell. *(`BL-LOY-015` attribution — already recorded as
+      violated on the 2026-09-11 run; this re-checks it under the new build.)*
+- [x] **3.3** · **MEASURED — feeds the S3 verdict** · Admin: `balance/user/{A}` vs `balance/organization/{outlet}`. The prior run found org-scoped
+      rows excluded from every user-scoped read (`0 of 22` visible). Re-measure and record both numbers.
+- [x] **3.4** · **PASS — matrix cell R3/L9 CLOSED** · **Matrix cell R3/L9** — Admin CONTACT blade for `LOY_PERSONAL_NOORG` (the no-org actor) on an
+      Organization-mode store: does the existing `customerDetail1` loyalty widget show their 33,872, a 0, or
+      nothing at all? A literal 0 here is indistinguishable from a failed request (scenario 20's SILENT
+      archetype). `3x` did not reach this cell; it is covered here so no condition is left unmapped.
+
+## Phase 4 — mission under org scope (scenario 7) · `BL-LOY-018`
+- [x] **4.1** · **PASS** · After 1.1, mission progress accrues against the **shared owner key**, not A's user id.
+      Record `ownerId`, `userId`, `organizationId` on the progress row.
+- [x] **4.2** · **PASS** · A completes mission 617 → reward credited **once**. Pool moves by exactly 617.
+- [x] **4.3** · **ANSWERED — and it is the RULE, per BL-LOY-018** · **The open question the implementer's own 2026-09-02 comment raised and the PR answered
+      unilaterally:** can `ORG_LOY_B` still earn that same mission, or did A consume it for the whole org?
+      Record which, with the progress rows as evidence. Either answer is a finding; neither is a pass by default.
+      *Constraint: mission targeting here is a customer-GROUP proxy, not org-native (this build has only
+      `UserGroupIsCondition`/`AnyUserGroupCondition`). Conclude nothing about org-native targeting.*
+
+## Phase 5 — authorization, decidable ONLY after Phase 1 · scenario 12 · matrix GAP R5/L8
+- [!] **5.1** · **CONFOUNDED — not answered** · With the pool at 120,000, `ORG_LOY_LOCKED` READS the pooled balance. Refused, served, or
+      served-empty? *(`3x` observed served-200-empty at pool=0, which was confounded — this is the
+      unconfounded measurement.)*
+- [!] **5.2** · **CONFOUNDED — not answered** · **THE UNCOVERED CELL: can the locked member SPEND it?** Cart a PTS line and take it as far
+      as the platform allows. Record whether the cart validates, `Place Order` is enabled, and an order is
+      created. Hypothesis: membership is checked by `Contains()` over the org list with no status check.
+- [x] **5.3** · **PASS** · A member requesting ANOTHER member's `userId` is **refused at the server**, not merely
+      returned empty — empty reads as clean (scenario 14).
+
+## Phase 6 — scope, contract and backward compatibility
+- [x] **6.1** · **PASS** · Scope is ambient: a caller supplying `organizationId` cannot choose another org's pool (scenario 13).
+- [x] **6.2** · **PASS — and BREAKING, carried to DoD** · `storeId` is now REQUIRED on `loyaltyBalance` and `loyaltyPointsHistory` — omitting it fails
+      cleanly. This is a BREAKING contract change for third-party consumers (scenario 15, carried to 5b as DoD).
+- [x] **6.3** · **PASS** · Multi-org: `MULTI_ORG_LOY_POOLS` — switching active org changes which pool is read, with no
+      bleed (scenarios 17, 18). **Re-read BuildRight immediately before asserting**: it is shared with the
+      multiorg lane and its figure moves underneath this suite.
+- [x] **6.4** · **CONFIRMED contradiction (advisory, does not fail 5c)** · Storefront copy renders a SHARED company pool under personal-possessive wording the published
+      guide endorses (scenario 21, `{DOC}` contradiction — advisory, does not fail 5c).
 
 ---
 
-**Out-of-scope-bug rule applies.** The checklist is the floor, not the ceiling: file any incidental defect found on
-these surfaces. Verify before filing — a disabled control, an API-only limitation or declared by-design behaviour is
-not a bug.
-
-**Evidence:** `.claude/skills/qa-evidence/evidence-capture-policy.md`. Screenshots to
-`reports/tickets/Sprint26-18/VCST-5024/screenshots/`. HAR always; console errors only; network 4xx/5xx and >2 s.
-**Every balance assertion is RELATIVE to a value read immediately before** — a loyalty balance cannot be reset on
-this platform, so absolute figures are not reproducible.
+## Conditions NOT covered by this checklist, and why — silence is not an answer
+- **R3/L9 — Admin contact widget for the no-org actor.** `3x` NOT REACHED (box expired). Uncovered.
+- **Scenarios 10 / 11 (concurrent earn, concurrent redeem).** Covered by cases `LOYORG-008` (Automated) and
+  `LOYORG-009` (Draft), executed at `4c`, not by a checklist item — two simultaneous sessions are not a
+  checklist shape.
+- **Reverse edges.** `BL-LOY-019`: no reversal path exists for a balance accrual, and mission `Completed`
+  is terminal. **ABSENT IN PRODUCT** — reported as a finding, not covered by an item, and now pooled across
+  every member, which widens the blast radius from one person to a company.
+- **Scenario 8/9 (the mode flip).** Already measured this run, before execution: the flip is a **no-op on
+  existing data** in both directions. Recorded in the model (A2), not re-tested here.

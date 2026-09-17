@@ -154,7 +154,7 @@ The three lanes do **not** share slots.
    `npm run suites:filter -- … --ids <IDs> --out … --scope-out …` selects precisely those cases and
    reads no `Priority` at all — so an unreadable one is *not* a finding on this path (nothing
    consulted it). It is mutually exclusive with `--priority`/`--also-ids`, and it is what
-   `/qa-test` Step 5k's RED→GREEN track uses to re-run exactly the previously-failed cases. **An
+   `/qa-test` `5-loop`'s RED→GREEN track re-runs exactly the previously-failed cases. **An
    empty `tiers` in the sidecar therefore means *ids-only*, never *unfiltered*** — `sourceCases` is
    still the denominator, and `--scope-out` is just as mandatory. On an ids-only run **most suites in
    the selection legitimately contribute zero cases**, so the zero-kept line stops being an edge case

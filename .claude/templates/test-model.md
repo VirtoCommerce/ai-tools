@@ -32,7 +32,7 @@ Domains:     [Cart, Payment, ...]
 Flows & boundaries: [cart ↔ checkout, ...]
 Risk areas:  [VC-* pain points / historical failures]
 AC traceability: [N atomic conditions — story ACs + gap-ACs, each w/ Impl verdict]   (from 1d)
-DoD (optional — only when the ticket declares one): [Definition-of-Done items, each marked confirmed-now / confirm-at-5b]   (from 1d)
+DoD (optional — only when the ticket declares one): [Definition-of-Done items, each marked confirmed-now / confirm-at-5-verdict]   (from 1d)
 --- Part 0 — VALUE CHAIN (derived FIRST; /qa-test-design test-design-techniques.md §1a, FLOW) ---
 Value chain:  [one line per link, in the user's words: trigger → effect → persisted state → user-visible surface → what it unlocks]
 Chain diagrams: [Mermaid, in the file. `flowchart` ALWAYS (the journey: primary path + alternate/error branches);

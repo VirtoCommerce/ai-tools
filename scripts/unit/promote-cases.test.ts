@@ -491,7 +491,7 @@ test("--ids defaults to empty, so an unscoped run is unchanged", () => {
 test("an --ids value that names nothing is an error, not an unscoped full-suite promotion", () => {
   // `ids.size === 0` is the sentinel for "no scoping", so an empty list would INVERT the scope from
   // nothing to EVERYTHING — and --apply makes Draft -> Automated one-way. Not hypothetical: the
-  // modes.md §5k close-out prescribes three invocations whose id sets are legitimately empty, so this
+  // modes.md §5-loop close-out prescribes three invocations whose id sets are legitimately empty, so this
   // is reachable from the documented happy path. filter-cases.ts fails closed on the same input.
   for (const v of ["", ",", " , ", "  "]) {
     assert.throws(

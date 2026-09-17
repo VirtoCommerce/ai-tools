@@ -8,7 +8,7 @@ The pipeline read the existing corpus in exactly one direction. `authoring.md` �
 fix / enhancement with existing coverage → **map to existing** suite cases … author only the gaps"* —
 a question about what the corpus **already covers**. It never asked the other one: **which existing
 rows does this change make WRONG?** So a stale case was reachable by exactly one route — FAIL at
-Step 4, then 5a's test-defect triage — and that route is reactive by construction.
+Step 4, then 5-triage's test-defect triage — and that route is reactive by construction.
 
 It does work when it fires. VCST-5346 repaired three existing cases that way (`MSN-009` fixed,
 `MSN-E2E-004` decomposed into three checks, `MSN-019` retired), each a careful surgical edit. But the
@@ -37,7 +37,7 @@ this one reports success.
 **2. A change-scoped release sweep applies `--cases critical`**, which drops the High rows where most label and
 route assertions live: 091 carries 24 High, 093 carries 29.
 
-**3. A row that never executes is never triaged**, so 5a cannot reach it however good it is.
+**3. A row that never executes is never triaged**, so 5-triage cannot reach it however good it is.
 
 The hole those three leave, on the same ticket: PR #2444 renames the hub widget to *"My recent
 orders"* across 13 locales, and the existing suites assert the **old** label **62 times** (093: 43,
@@ -163,7 +163,7 @@ then made by an agent that has seen them live.
 |---|---|---|---|
 | **`CONFIRMED`** | still correct under the change | nothing | — |
 | **`REPAIR`** | **mechanically** stale — a renamed selector, a moved route, a removed arg, a dead `@td()` alias — so it cannot execute at all | `/qa-review-tests file <suite> --fix`, under Phase 4b's write-scope ceiling + revert-on-regression, **then carry the row into C1's `--ids`** | fixed **before** the run, **executed BY it** |
-| **`RE-BASE`** | asserting an **expected value** the change contradicts | keep the assertion as it stands; carry the case into **C1's `--ids`** | resolved **by** the run, at 5a |
+| **`RE-BASE`** | asserting an **expected value** the change contradicts | keep the assertion as it stands; carry the case into **C1's `--ids`** | resolved **by** the run, at 5-triage |
 | **`SUPERSEDED`** | asserting a surface the change removes | a proposal, recorded — never an edit | human |
 
 ### 3a. The `REPAIR` / `RE-BASE` split is the load-bearing rule
@@ -185,7 +185,7 @@ The split is exactly the line between the two:
   of 81+ cases).
 - **`RE-BASE` moves the oracle, so only the run may do it.** The old assertion is kept, the case is
   carried into C1, and Step 4 executes it. If it fails and the new behaviour matches the AC,
-  5a's **existing** test-defect path rewrites it — grounded in that run's own evidence, with a
+  5-triage's **existing** test-defect path rewrites it — grounded in that run's own evidence, with a
   `{OBSERVED}` that traces to an artifact. If it fails and the new behaviour does *not* match the AC,
   the old case was right and the finding is a bug. **Both outcomes are reachable, which is the entire
   point.** A pre-run rewrite makes only the first reachable.
@@ -206,7 +206,7 @@ Exclusions, one layer down.
 
 **Phase `2a` files no bug.** A `tc:scope` hit is a claim about a **test case**, never about the product —
 the same rule 2d applies to contract drift and `1d` applies to a static DRIFT verdict. A real defect
-found while triaging goes through the ordinary route: `1e` if it belongs in the fault model, 5a/5d if
+found while triaging goes through the ordinary route: `1e` if it belongs in the fault model, 5-triage/5-file if
 the run confirms it.
 
 ### 3c. What `neverAudited` is, and is not
@@ -239,7 +239,7 @@ produced (even an empty one) · `1` bad usage · `2` an explicitly named `--suit
 
 | Value | Meaning |
 |---|---|
-| `WILL_RUN` | executes under the planned Artifact-C selection. A stale row here is **self-announcing** — it goes red at Step 4 and 5a triages it |
+| `WILL_RUN` | executes under the planned Artifact-C selection. A stale row here is **self-announcing** — it goes red at Step 4 and 5-triage triages it |
 | `FILTERED_OUT` | in scope but the case filter drops it. A stale row here is **invisible forever**. This is the coverage hole |
 
 **`FILTERED_OUT` is NOT COMPUTABLE in `1b` wave B, and a `0` there is not a clean result.** Wave B runs
@@ -296,7 +296,7 @@ apply to this change* — a `26 at risk` line looks exactly like a `62 at risk` 
 
 So for a domainless change: **pair `tc:scope` with a corpus-wide pass and scope by `--suite` from what that
 returns**, not by `--domain` alone. Record **the literal invocation** in the artifact — a hit count whose
-command line is unrecorded is a claim a verifier cannot reproduce, and `5b` has rejected a run for exactly
+command line is unrecorded is a claim a verifier cannot reproduce, and the close-out gate has rejected a run for exactly
 that. Name the zero-contributing suites too; an unlisted suite and an empty one read the same.
 
 Turning this from a discipline into a tool behaviour — a `--surface` / `--all-domains` mode, or a warning

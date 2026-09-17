@@ -1,6 +1,6 @@
 // Unit tests for scripts/regression/compute-metrics.ts — the gate-verdict core.
 // Focus: the `feature` gate (Feature Release Gate, quality-gates.md §1a) added for
-// /qa-test Step 5h, its threshold boundaries, and the gate-name guard. Pure functions
+// /qa-test Step 5-docs, its threshold boundaries, and the gate-name guard. Pure functions
 // only (no history file, no CLI, no side effects — main() is CLI-guarded).
 // Run: `npx tsx --test scripts/unit/compute-metrics-gate.test.ts` / `npm test`.
 import { test } from "node:test";

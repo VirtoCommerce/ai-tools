@@ -1,6 +1,6 @@
 # BUG — Organization mode: a buyer with no organization sees their loyalty balance and cannot spend it
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **Severity:** Critical · **Priority:** High · **Found:** 2026-09-11 · **Ticket:** VCST-5953 (filed 2026-09-11, sub-task of VCST-5024)
 **Env:** vcst-qa — `FRONT_URL=https://vcst-qa-storefront.govirto.com`, `BACK_URL=https://vcst-qa.govirto.com`, store `B2B-store`
