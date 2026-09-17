@@ -75,6 +75,8 @@ The triangulation is read-only and per-entry, so **run it in parallel** — but 
 
 **3b — Fan-in (single writer, serialized):** the orchestrator collects all batches' verdicts, then applies edits **sequentially, one entry at a time, in one process** — concurrent writes to the same file race and corrupt it. Auto-apply CONFIRMED/DRIFT/MISSING/DUPLICATE (body-only, `Amended:` + `Source:` stamp, env-agnostic; MISSING reads the current max id fresh before each insert so parallel-discovered entries can't collide). Unconfirmed → the axis's proposals file.
 
+**On the `bl` axis the edit is not a page edit.** `business-logic.md` is GENERATED from one record per rule in the knowledge base: amend the record (`kb show <BL-id>` prints its path), add a MISSING one with `kb capture --rule`, then run `npm run bl:render` ONCE for the whole run. A page edit is lost at the next render and fails `bl:render:check` in CI. The single writer still matters — the render, the scaffold and the base's git history are shared even though the records are not. **Both oracles live in the BASE repository** (`VirtoCommerce/vc-knowledge`, at `~/.claude/vc-knowledge`): commit and push there, and say so in the report — this repo's `git diff` will be empty. Full procedure incl. retiring: [bl-audit-criteria.md](../skills/qa-review-oracles/bl-audit-criteria.md) §4.
+
 **3c — The value gate (growth only): valuable for the BUSINESS *and* for the PRODUCT.** A confirmed verdict is necessary, not sufficient. A **MISSING** entry — the only verdict that makes the oracle bigger — must clear both axes. Re-score it with the severity tag the triangulation just assigned (ECL: with the `BL-*` invariant the pattern endangers linked in its row) and read the gate verbatim:
 ```
 npm run oracles:rank -- --explain=BL-L10N-001 --severity=P1-ux
@@ -98,7 +100,7 @@ Full rules: [SKILL.md](../skills/qa-review-oracles/SKILL.md) + the axis's criter
 
 ### Step 5 — Re-run the gate, then report
 
-Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for this run's own edits**; a run that raises the High count has broken something. Then write `reports/knowledge/BL-AUDIT-<date>.md` or `ECL-AUDIT-<date>.md` (verdict table with a **Value** column — `business · product → label`, from `oracles:rank` — + Applied + **Held** (confirmed but not valuable enough, with which axis is missing) + **Excluded** (non-invariant class + redirect) + Not-applied + citation reconciliation + the gate's before/after counts), per [.claude/rules/reports.md](../rules/reports.md).
+Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`, plus `npm run bl:render:check` on the `bl` axis — it proves the page matches the records) — **it is the acceptance check for this run's own edits**; a run that raises the High count has broken something. Then write `reports/knowledge/BL-AUDIT-<date>.md` or `ECL-AUDIT-<date>.md` (verdict table with a **Value** column — `business · product → label`, from `oracles:rank` — + Applied + **Held** (confirmed but not valuable enough, with which axis is missing) + **Excluded** (non-invariant class + redirect) + Not-applied + citation reconciliation + the gate's before/after counts), per [.claude/rules/reports.md](../rules/reports.md).
 
 ---
 

@@ -296,7 +296,7 @@ Reclassify each case:
 
 **BL staleness detection (always):**
 - For each BL-* referenced by a STALE/BROKEN case, note it as a candidate for the **BL-audit phase** (Phase 4c) — record `{id, currentRule, observedBehavior, sourceOfChange, affectedCases}` so `/qa-review-bl` triangulates it against docs + live + source before any edit.
-- Phase 2 itself never edits `business-logic.md`; it only feeds the audit phase. A single-signal staleness note is not confirmation.
+- Phase 2 itself never edits the BL oracle; it only feeds the audit phase. A single-signal staleness note is not confirmation.
 
 **Phase 2 output:**
 ```
@@ -371,7 +371,7 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
    - If query/mutation doesn't exist in schema → do NOT generate a case for it
 7. **BL candidate collection (always):**
    - For each generated case whose gap maps to a testable business rule not already in `business-logic.md`, record a BL **candidate** (`BL-<DOMAIN>-<NNN>` shape, severity, **Rule**/**Verify**/**Violation signal**/**Agents**, `PROPOSED-` prefix, mandatory source).
-   - Add to `blProposals.new[]` in the delegation output. Phase 3 does NOT edit `business-logic.md` — candidates are handed to the **BL-audit phase (4c)**, which triangulates each against docs + live + source and auto-applies only the confirmed ones.
+   - Add to `blProposals.new[]` in the delegation output. Phase 3 does NOT edit the oracle — candidates are handed to the **BL-audit phase (4c)**, which triangulates each against docs + live + source and auto-applies only the confirmed ones.
 8. **Present to user** as Feature Test Matrix for approval before proceeding
 
 ---
@@ -462,7 +462,7 @@ domain <name>`. Invoke **`/qa-review-bl`** on the surfaced candidates, delegatin
 
 - Each candidate `BL-*` is triangulated against the three axes — **docs + live + source code**.
 - **Evidence bar = applicable-axes.** An axis that is *structurally unavailable* is **waived (N/A)**, not counted as a miss — most importantly, a **brand-new / undocumented / pre-GA module has no docs**, so the docs axis is waived. The bar is then the axes that CAN be verified, and **at least two must remain** (a single surviving axis is never enough to canonicalize).
-- **CONFIRMED / DRIFT / MISSING** → auto-applied to `business-logic.md` (body-only, `Amended:`/`Promoted:`+`Source:` stamp, env-agnostic) **only when every applicable (non-waived) axis is met AND the axes agree**.
+- **CONFIRMED / DRIFT / MISSING** → auto-applied to the `BL-*` record behind `business-logic.md` (body-only, `Amended:`/`Promoted:`+`Source:` stamp, env-agnostic) **only when every applicable (non-waived) axis is met AND the axes agree**.
 - **Held as a draft (not applied)** when an applicable axis **contradicts** another — e.g. live shows the opposite of source, commonly a **deploy-lag artifact** (the fix is merged but not on the pinned build) — or when an applicable axis is **unverifiable this run** (e.g. blocked on a missing fixture). A contradiction/gap is not a failure; it is a *not-yet*.
 - **CONTRADICTORY / UNGROUNDED / STALE-RETIRE**, plus any candidate that fails the applicable-axes bar → drafted to `reports/ba/bl-proposals-<date>.md`, each with its evidence + a **re-audit trigger** (the concrete condition that would let it promote later — docs published, module on a stable release, the contradicting fix deployed, or the blocking fixture authored). Retiring is never auto-applied.
 - The run's `reports/knowledge/BL-AUDIT-<date>.md` is the audit trail; its outcome feeds the Phase 6 **G6** gate.
@@ -754,7 +754,7 @@ Manifest: `config/test-suites.json` testCount updated for [suite ids]; `suites:l
 - [list of CSV files with change summary]
 
 ## BL Audit (when the run surfaced BL candidates)
-- Triangulated K invariants — X CONFIRMED/DRIFT/MISSING **auto-applied** to `business-logic.md`; Y drafted to `reports/ba/bl-proposals-<date>.md` (unconfirmed/contradictory/retire). Audit trail: `reports/knowledge/BL-AUDIT-<date>.md`. (Omit this section if 4c had no candidates.)
+- Triangulated K invariants — X CONFIRMED/DRIFT/MISSING **auto-applied** to the BL records; Y drafted to `reports/ba/bl-proposals-<date>.md` (unconfirmed/contradictory/retire). Audit trail: `reports/knowledge/BL-AUDIT-<date>.md`. (Omit this section if 4c had no candidates.)
 
 ## Next Steps
 - [ ] Address "Must Fix" items

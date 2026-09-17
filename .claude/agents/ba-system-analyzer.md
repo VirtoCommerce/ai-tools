@@ -344,7 +344,7 @@ saying so saves a reviewer's time.
 
 | Axis | Oracle | Entry unit | Criteria file |
 |---|---|---|---|
-| **`bl`** | `business-logic.md` | `### BL-<DOMAIN>-<NNN>` invariant (fixed field schema + severity tag) | `bl-audit-criteria.md` |
+| **`bl`** | `business-logic.md` — **GENERATED** from one record per rule; never edited as a page | `### BL-<DOMAIN>-<NNN>` invariant (fixed field schema + severity tag) | `bl-audit-criteria.md` |
 | **`ecl`** | `e-commerce-edge-cases-library.md` | `### <n>.<m>` section of pattern **rows** in a pipe table | `ecl-audit-criteria.md` |
 
 Everything in this section applies to both axes. Three `ecl`-specific rules you must not violate:

@@ -45,7 +45,7 @@ Team framework: `knowledge/agents/ba/shared-instructions.md` (VirtoOZ-first sour
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| **ba-system-analyzer** | sonnet | Repo structure, GitHub module search, live UI exploration (storefront + admin), user flows, pain points. **Also the sole writer of BOTH shared oracles** (`/qa-review-oracles`, alias `/qa-review-bl`): audits each `BL-*` invariant **and** each `ECL-<n>.<m>` edge-case section against docs (VirtoOZ) + live (delegating the `{OBSERVED}` axis to `qa-testing-expert`) + source (GitHub MCP), and **auto-applies confirmed changes** to `business-logic.md` / `e-commerce-edge-cases-library.md` (gated by a 3-source evidence bar, body-only; unconfirmed → the axis's proposals file). **Never renumbers a surviving entry** — IDs are a citation contract the suites point at — and **never edits a CSV** (citation remaps belong to `test-management-specialist` via `/qa-review-tests --fix`). See §8/§8a in its definition. |
+| **ba-system-analyzer** | sonnet | Repo structure, GitHub module search, live UI exploration (storefront + admin), user flows, pain points. **Also the sole writer of BOTH shared oracles** (`/qa-review-oracles`, alias `/qa-review-bl`): audits each `BL-*` invariant **and** each `ECL-<n>.<m>` edge-case section against docs (VirtoOZ) + live (delegating the `{OBSERVED}` axis to `qa-testing-expert`) + source (GitHub MCP), and **auto-applies confirmed changes** to the BL / ECL oracles (gated by a 3-source evidence bar, body-only, and for BL into the rule's RECORD — the page is generated; unconfirmed → the axis's proposals file). **Never renumbers a surviving entry** — IDs are a citation contract the suites point at — and **never edits a CSV** (citation remaps belong to `test-management-specialist` via `/qa-review-tests --fix`). See §8/§8a in its definition. |
 | **ba-api-specialist** | sonnet | API surface via Postman/Swagger, GitHub module code, live Swagger UI, health assessment |
 | **ba-story-writer** | sonnet | Agile user stories with BDD acceptance criteria, DoD, test scenarios |
 | **ba-doc-writer** | sonnet | Audience-targeted documentation — **Customer / Admin / Developer / Sales** (per `knowledge/ba/virto-doc-style.md`) + UX improvement specs |
@@ -92,7 +92,7 @@ Each agent MUST use its own separate browser session. Agents sharing a browser w
 > consumer re-denies click-driven suites through `browserDenyListFor` in `ci/lib/suite-manifest.ts`.
 > Root cause (dead `requestAnimationFrame` under Windows occlusion tracking vs Playwright's 5-tick stable
 > check), the sticky-stall finding, the probe and the run tables:
-> [`knowledge/automation/browser-quirks.md`](../knowledge/automation/browser-quirks.md) §Firefox.
+> `knowledge/automation/browser-quirks.md` §Firefox.
 
 ### QA Team Browsers
 | Agent | Playwright MCP Server | Alternative |

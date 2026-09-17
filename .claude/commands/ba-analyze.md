@@ -129,7 +129,7 @@ After synthesis and before writing the final report:
 3. **Validate sources:** every remaining proposal MUST have a non-empty `source` field. Drop any unsourced entry and log the drop in the terminal summary.
 4. **Score each surviving proposal on both value axes** and fill the mandatory Value Summary table — derived, never estimated: `npm run oracles:rank -- --explain=<ID> --severity=<the tag you are proposing>` prints business value, product value and the promotion decision verbatim. A proposal that comes back `low` or `undeclared` still gets written down (it is evidence someone considered it), but it is filed under that label, not mixed in with the ones that clear both axes.
 5. If any proposals remain after steps 2–4, write `reports/ba/bl-proposals-{date}.md` using the template below, **ordered by value, highest first**. If both arrays are empty, skip the file.
-6. **`/ba-analyze` itself never writes to `knowledge/oracles/business-logic.md`.** Its BL candidates come from opportunistic, often single-axis observation during analysis — that is by definition **not confirmed**, so it only ever stages drafts to `bl-proposals-{date}.md`. Do not bulk-promote, do not promote "all approved," do not infer approval from silence from a `/ba-analyze` run. **Auto-apply to the oracle happens only through `/qa-review-bl`** — the dedicated triangulation flow that confirms each candidate against **docs + live + source** (all three) before a body-only edit, and routes anything unconfirmed back to this same `bl-proposals-{date}.md`. So: `/ba-analyze` → drafts; `/qa-review-bl` → confirmed auto-apply + drafts for the rest. To act on this run's drafts, hand them to `/qa-review-bl` (or promote a specific approved entry by hand).
+6. **`/ba-analyze` itself never writes to the oracle.** Its BL candidates come from opportunistic, often single-axis observation — by definition **not confirmed** — so it only ever stages drafts to `bl-proposals-{date}.md`. Do not bulk-promote, do not promote "all approved," do not infer approval from silence. **Auto-apply happens only through `/qa-review-bl`**, which confirms each candidate against **docs + live + source** (all three) before a body-only edit and routes anything unconfirmed back to this same file. To act on this run's drafts, hand them to `/qa-review-bl` (or promote a specific approved entry by hand).
 
 **`bl-proposals-{date}.md` template** (identical to the format `/qa-test-lifecycle` Phase 4c and `/qa-review-bl` use for unconfirmed items, so a human sees a consistent shape regardless of source):
 
@@ -204,9 +204,9 @@ decision at one date, which is exactly the artifact a computed column belongs in
 ## Application Notes
 
 1. **Promote by value, highest first — and only what clears both axes.** A `low` or `undeclared` proposal is not a queue item for later; it is a proposal that does not belong in the oracle as written. Either raise it (declare the severity, or show the product leans on it) or leave it here.
-2. Assign final IDs by reading `knowledge/oracles/business-logic.md` for the next available `BL-<DOMAIN>-NNN` sequence.
+2. Assign final IDs from what the domain already holds — `kb rules <domain>` — taking the next free `BL-<DOMAIN>-NNN`.
 3. Replace `PROPOSED-` prefix with final ID.
-4. Paste the edited entry into the correct domain section of `business-logic.md`.
+4. Capture it as a RULE RECORD (`kb capture --rule …`), then `npm run bl:render`. **Never paste it into `business-logic.md`** — that page is generated from the records, so a paste is lost at the next render. Procedure: `/qa-review-oracles`'s `bl-audit-criteria.md` §4.
 5. After the entry lands, re-run any related `/qa-review-tests suite <ID> --verify` so test cases gain their `Business_Rule` mapping.
 ```
 

@@ -96,19 +96,37 @@ all present axes describe the same behavior and match the BL `Rule` text.
 
 ## 4. Edit-safety rules (when auto-applying)
 
-1. **Entry body only.** Edit inside a `### BL-*` block. Never touch the meta
-   Severity-Tags table or a `## Domain` heading as a side effect
-   (`feedback_bl_promotion_table_separately`).
-2. **Minimal, per-entry diffs.** One invariant per edit so any single change is
-   revertible from `git diff`.
+**`business-logic.md` is GENERATED, and is not the artifact you edit.** The page is rendered from
+one record per rule in the base's normative plane, and CI byte-compares it
+(`npm run bl:render:check`). An edit made on the page is lost at the next render and fails that
+gate on somebody else's commit. **The record is the artifact; the page is its printout.**
+
+| To | Do |
+|---|---|
+| **amend an existing invariant** | `kb show BL-CART-003` prints the record's path (`rules/KB-….md`). Edit its BODY there, leaving the `subject:` line exactly as it is — the `BL-*` id is the citation contract. Then `kb reindex`: the search index carries the rule's text, so `kb ask` keeps serving the old wording until you do. |
+| **add a MISSING one** | `kb capture --rule --subject "BL-<DOMAIN>-<NNN> <title>" --claim "<the whole entry body>" --refutable-by observation --deployment <env>`. Start the claim with the entry's own heading line — the id, the title and the severity tag in backticks, exactly as the page shows it — that line becomes the page's `###` heading. The door refuses a rule with no id, and refuses a second rule on an id the base already holds. |
+| **retire one** — human decision only (§5) | `kb retire <KB-id> --reason …`, then delete that rule's `<!--RULE BL-…-->` line from `oracles/business-logic.scaffold.md`. The render REFUSES until you do, naming the line. That refusal is the point: a withdrawn rule must leave the page loudly, not keep standing in it. |
+
+Then once, for the whole run: **`npm run bl:render`** — it writes the page, and places a new rule's
+marker under its domain heading by itself. **The change lands in the BASE repository**
+(`VirtoCommerce/vc-knowledge`, checked out at `~/.claude/vc-knowledge` — `kb sync` if it is not
+there): commit and push it THERE, and say so in the audit report, because this repo's `git diff`
+will be empty and a reader will otherwise read that as "nothing was applied".
+
+1. **Entry body only.** Edit inside the record's body. The meta Severity-Tags table and the
+   `## Domain` headings are not rules — they live in `business-logic.scaffold.md`, which is
+   authored, and nothing in an audit touches it (`feedback_bl_promotion_table_separately`).
+2. **Minimal, per-entry diffs.** One invariant per record, one record per edit, so any single
+   change is revertible from the base's `git diff`.
 3. **Stamp provenance on every applied entry:**
    - `- **Amended:** <date> (auto-applied, triangulated — BL-AUDIT-<date>)`
    - refresh `- **Source:**` with the `file:line` anchor (+ a docs reference).
-4. **MISSING → next free ID.** Read the oracle for the current max `BL-<DOMAIN>-NNN`,
-   use `+1`, zero-padded to 3 digits; place it under the matching `## Domain` heading.
-5. **Env-agnostic** (`feedback_bl_oracle_env_agnostic`). No env names, URLs, store
-   slugs, or route patterns anywhere in the entry — including the evidence note. Say
-   "the environment".
+4. **MISSING → next free ID.** `kb rules <domain>` lists what that domain already holds; use
+   max + 1, zero-padded to 3 digits. **Never renumber a survivor.**
+5. **Env-agnostic** (`feedback_bl_oracle_env_agnostic`). No env names, URLs, store slugs or route
+   patterns anywhere in the entry BODY — including the evidence note. Say "the environment". The
+   record's own `--deployment` stamp is metadata, not body: that is where the env name belongs, and
+   it is what lets a later reader weigh the observation.
 6. **Preserve existing structure.** Keep the canonical field order
    (`Rule` → `Verify` → `Violation signal` → `Agents` → optional `Source` /
    `Suite coverage` / `Amended`). Match the surrounding prose density.

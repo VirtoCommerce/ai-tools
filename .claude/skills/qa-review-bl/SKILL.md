@@ -1,6 +1,6 @@
 ---
 name: qa-review-bl
-description: "[QA Method] ALIAS of /qa-review-oracles bl — triangulate each BL invariant against docs + live + source code, auto-apply confirmed changes to business-logic.md, and reconcile test-case coverage. The methodology now lives in the merged qa-review-oracles skill."
+description: "[QA Method] ALIAS of /qa-review-oracles bl — triangulate each BL invariant against docs + live + source code, auto-apply confirmed changes to its records, and reconcile test-case coverage. The methodology now lives in the merged qa-review-oracles skill."
 argument-hint: "all | domain <name> | BL-<ID> | diff [--dry-run]"
 disable-model-invocation: true
 ---
@@ -10,7 +10,8 @@ disable-model-invocation: true
 **This skill is an alias. The methodology lives in [`/qa-review-oracles`](../qa-review-oracles/SKILL.md).**
 
 `/qa-review-bl <args>` is exactly `/qa-review-oracles bl <args>`. Invoke the merged skill and
-follow it, with the axis fixed to **`bl`** (oracle `knowledge/oracles/business-logic.md`,
+follow it, with the axis fixed to **`bl`** (oracle `knowledge/oracles/business-logic.md` — generated from the
+base's rule records, never edited as a page,
 deterministic core `bl:lint`/`bl:audit:collect`, criteria file
 [`bl-audit-criteria.md`](../qa-review-oracles/bl-audit-criteria.md), proposals
 `reports/ba/bl-proposals-<date>.md`, report `reports/knowledge/BL-AUDIT-<date>.md`).

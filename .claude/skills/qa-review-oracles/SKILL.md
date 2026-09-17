@@ -133,12 +133,11 @@ Collect the verdicts from all parallel agents, then apply **serially, one entry 
   npm run oracles:rank -- --explain=BL-L10N-001 --severity=P1-ux
   ```
 
-  | Business (what a violation costs) | Promotes when | Value label |
-  |---|---|---|
-  | `high` — `P0-revenue` / `P0-security` | **always** — uncited means untested, not unimportant, and the oracle is what test authoring reads | `high` (product `medium`+) / `qualified` |
-  | `medium` — `P1-data` / `P1-ux` | product value is `medium`+ (≥3 citing cases, or ≥1 with cross-domain reach / predominantly-`[OBSERVED]` rows) | `qualified` |
-  | `low` — `P2-ux` | **never.** Demand cannot buy a cosmetic rule into a file whose purpose is judging PASS/FAIL | `low` |
-  | `unknown` — no tag (BL) / no linked invariant (ECL) | **never.** Declaring what a violation costs is the price of entry | `undeclared` |
+  `high` (`P0-revenue` / `P0-security`) promotes at **any** product value — uncited means untested,
+  not unimportant. `medium` (`P1-*`) only at product `medium`+. `low` (`P2-ux`) and `unknown` (no
+  tag / no linked invariant) **never**: demand cannot buy a cosmetic or unpriced rule into a file
+  whose purpose is judging PASS/FAIL. Both axes, the labels and the EXCLUDED prefixes:
+  `bl-audit-criteria.md` §6a–6b.
 
   `APPLY` ⇒ insert it. `HOLD` ⇒ **do not write it**; record it in the audit report's *Held* section
   with both axes and its demand, so the decision is re-derivable and the entry can be promoted later
@@ -148,7 +147,8 @@ Collect the verdicts from all parallel agents, then apply **serially, one entry 
 - **CONFIRMED / DRIFT / DUPLICATE on an entry that already exists** → **auto-apply whatever its
   value** (the gate governs growth, never correction).
 - **All applied edits:**
-  - Edit the **entry body only** — never rewrite a meta/summary table as a side effect (BL: the Severity-Tags table; ECL: **Appendix D is updated deliberately, as its own coherent edit**, never incidentally).
+  - **`business-logic.md` is GENERATED — edit the RECORD** (`kb show <BL-id>` prints its path), then `npm run bl:render` once for the run; a page edit is lost and fails `bl:render:check`. ECL is still authored directly. **Both oracles live in the BASE repo** (`vc-knowledge`): commit there and say so, since this repo's diff stays empty. How, incl. adding and retiring: `bl-audit-criteria.md` §4.
+  - Edit the **entry body only** — never rewrite a meta/summary table as a side effect (BL: the Severity-Tags table, which is scaffold, not a rule; ECL: **Appendix D is its own deliberate edit**, never an incidental one).
   - Stamp `Amended: <date> (auto-applied, triangulated — <BL|ECL>-AUDIT-<date>)` and refresh the `Source:` anchor.
   - For MISSING, assign the next free ID under the correct heading; **never renumber survivors**.
   - Keep evidence **env-agnostic** — no env names, URLs or slugs; say "the environment".
@@ -163,7 +163,7 @@ Feed the audit back into the test-case review flow:
 
 ### Step 5: Re-run the gate, then write the audit report
 
-Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for your own edits**, and its High count belongs in the report. Then write the audit report (`.claude/rules/reports.md` — knowledge-maintenance artifact, target 15–40 / cap ~100 lines): per-entry verdict table with 3-axis evidence refs and a **Value** column (`business · product → label`, from `oracles:rank`) · **Applied** (one line before→after each; the full diff is in `git diff`) · **Held** (confirmed but not valuable enough — id, both axes, citing-case count, and which half is missing) · **Excluded** (non-invariant class + the redirect) · **Not applied** (link the proposals file) · citation reconciliation summary · the gate's before/after counts.
+Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for your own edits**, and its High count belongs in the report. On the `bl` axis run `npm run bl:render:check` too: it proves the page you left behind is what the records render. Then write the audit report (`.claude/rules/reports.md` — knowledge-maintenance artifact, target 15–40 / cap ~100 lines): per-entry verdict table with 3-axis evidence refs and a **Value** column (`business · product → label`, from `oracles:rank`) · **Applied** (one line before→after each; the full diff is in `git diff`) · **Held** (confirmed but not valuable enough — id, both axes, citing-case count, and which half is missing) · **Excluded** (non-invariant class + the redirect) · **Not applied** (link the proposals file) · citation reconciliation summary · the gate's before/after counts.
 
 ## Rules
 
@@ -178,18 +178,14 @@ Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the 
 - **Rank before you scope, and carry the Value column.** Auditing in file order spends the budget
   where the value is not. The queue is deterministic (`oracle-significance.ts`), so a promotion
   decision is re-derivable rather than argued from memory. The **Value** column is mandatory in the
-  proposals file and the audit report — and **derived there, never stored in the oracle**: product
-  value moves with every suite edit, so a number transcribed into `business-logic.md` would be wrong
-  by the next commit and wrong silently (`.claude/rules/test-data.md` §GOLDEN RULE).
+  proposals file and the audit report — and **derived there, never stored in the oracle**, because
+  product value moves with every suite edit (`bl-audit-criteria.md` §6b).
 - **Never infer a value signal from prose.** Only closed vocabularies score — the BL severity tag,
-  the ECL `Frequency`/`Status` columns. An unreadable cell contributes ZERO and caps the tier; it is
-  never guessed. (The ECL `Impact` column is free text and is deliberately unscored.)
+  the ECL `Frequency`/`Status` columns. An unreadable cell contributes ZERO and is never guessed.
 - **Parallel fan-out, single-writer fan-in.** Triangulate in parallel (≤3 browser agents, disjoint batches, isolated sessions); apply from **one** serialized writer.
 - **IDs are a citation contract.** ~65 test cases point at ECL section numbers and hundreds at BL IDs. **Never renumber a surviving entry**, never reuse a retired ID. Renumbering silently repoints every citation that was correct.
-- **Body-only edits.** Never rewrite a meta table as a side effect (`feedback_bl_promotion_table_separately`).
-- **Env-agnostic** (`feedback_bl_oracle_env_agnostic`) and data-agnostic — no hardcoded IDs/SKUs/prices/emails/URLs in any applied entry, even inside an evidence note.
-- **Never edit a CSV from this skill.** Citation remaps are `/qa-review-tests --fix`'s write, under `test-management-specialist`.
-- **Reversible.** Every applied edit is recorded in the audit report and lives in a git-tracked file; keep edits minimal and per-entry so one can be reverted alone.
+- **Body-only, env-agnostic, data-agnostic — and never a CSV.** No meta table rewritten as a side effect; no env name, ID, SKU, price, email or URL in an applied entry, not even in an evidence note. Per-axis detail: `bl-audit-criteria.md` §4 / `ecl-audit-criteria.md` §7. Citation remaps are `/qa-review-tests --fix`'s write, under `test-management-specialist`.
+- **Reversible.** One entry per edit, recorded in the audit report, in a git-tracked file — so one can be reverted alone.
 - **Retiring is destructive** → always a human proposal, never auto-applied.
 - **P0-security invariants** clear the *same* evidence bar — but given blast radius, if the live axis cannot safely be observed (e.g. a real privilege-escalation probe), treat the axis as absent ⇒ UNGROUNDED ⇒ proposals file.
 
