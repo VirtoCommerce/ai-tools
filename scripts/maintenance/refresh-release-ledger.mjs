@@ -811,6 +811,16 @@ export function renderDoc(snap, tail) {
   p('---');
   p();
   p('# VC Release Ledger — what shipped, when');
+  // THE INTERNAL-REFERENCE BANNER IS EMITTED, NOT HAND-WRITTEN. This page is generated, and it
+  // lives in the knowledge base, which is read by installs that do not have this repository. A
+  // banner added by hand to a generated file survives exactly until the next refresh — the same
+  // GOLDEN RULE the repo already states about transcribed constants. `npm run knowledge:refs`
+  // gates its presence; this is what puts it there.
+  p('');
+  p('> **Virto-internal references.** This page cites paths (`regression/suites/...`, `scripts/...`,');
+  p('> `.claude/...`) and commands (`/qa-test`, `/qa-design`, ...) that live in the VirtoCommerce QA');
+  p('> repository, which is not part of a plugin install. They are PROVENANCE -- where a claim was');
+  p('> checked -- never steps you have to follow. Every statement about the platform stands without them.');
   p();
   p(
     `**Generated** ${genDate} (rev ${snap.rev}) · **${monthly.length}** monthly digests · ` +

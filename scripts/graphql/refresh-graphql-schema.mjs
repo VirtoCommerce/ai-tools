@@ -326,6 +326,18 @@ async function main() {
   let md = '';
 
   md += `# GraphQL xAPI Schema Reference\n\n`;
+  // THE INTERNAL-REFERENCE BANNER IS EMITTED, NOT HAND-WRITTEN. This page is generated and lives
+  // in the knowledge base, which is read by installs that do not have this repository. A banner
+  // added by hand to a generated file survives exactly until the next refresh -- the same GOLDEN
+  // RULE the repo states about transcribed constants. `npm run knowledge:refs` gates its presence;
+  // this is what puts it there.
+  md += [
+    '> **Virto-internal references.** This page cites paths (`regression/suites/...`, `scripts/...`,',
+    '> `.claude/...`) and commands (`/qa-test`, `/qa-design`, ...) that live in the VirtoCommerce QA',
+    '> repository, which is not part of a plugin install. They are PROVENANCE -- where a claim was',
+    '> checked -- never steps you have to follow. Every statement about the platform stands without them.',
+    '', '',
+  ].join("\n");
   md += `> **Source**: Live introspection of \`{{BACK_URL}}/graphql\` (${today})\n`;
   md += `> **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.\n`;
   md += `> **Refresh**: \`npm run schema:refresh\` — run when the schema may have changed.\n`;
