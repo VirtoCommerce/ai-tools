@@ -1132,10 +1132,10 @@ export function retire(base, id, { reason, supersededBy } = {}) {
  * already there -- exactly the duplicate the door exists to refuse. It is refused here too, by the
  * same rule and against the served survivor, rather than being written and found later by a gate.
  */
-export function reanchor(base, id, { was, now: to, reason } = {}) {
+export function reanchor(base, id, { was, now: to, reason, drop = false } = {}) {
   const entry = loadEntry(base, id);
   if (!entry) throw new CaptureRefused(`no captured entry ${id}`);
-  if (!was || !to) throw new CaptureRefused('reanchor refused: --was and --now are both required');
+  if (!was || (!to && !drop)) throw new CaptureRefused('reanchor refused: --was and --now are both required (or --was with --drop)');
   if (!reason) {
     throw new CaptureRefused(
       'reanchor refused: --reason is required. A coordinate that changes without one is '
@@ -1159,13 +1159,31 @@ export function reanchor(base, id, { was, now: to, reason } = {}) {
       + anchors.map((a) => a.coordinate).join(', '),
     );
   }
-  if (normalizeAnchor(to) === from) {
+  if (!drop && normalizeAnchor(to) === from) {
     throw new CaptureRefused(`reanchor refused: "${was}" and "${to}" normalize to the same coordinate, so nothing would change`);
+  }
+
+  // REMOVING ONE IS THE SAME ACT AS MOVING IT, and it is here because the corpus contains addresses
+  // that should never have been addresses: `Admin SPA: Contacts > Companies and contacts` is a menu
+  // path, and `kb validate` says of one what nothing could then do — "nothing can raise one, no diff
+  // notices that a blade moved, keep the path in the body and anchor on the call the screen makes".
+  // Both entries carrying one ALREADY anchor on that call as well, so the menu path is a leftover;
+  // without this the only ways to drop it were to leave it or to rewrite the entry and destroy the
+  // id. An advisory nobody can act on is how a gate's notices become scenery.
+  //
+  // THE LAST ANCHOR CANNOT GO. `capture` refuses an entry with none — a fact filed under no
+  // coordinate is unreachable by every path except full-text luck — and a verb that could leave one
+  // in a state its own door would not accept is a verb that breaks the corpus quietly.
+  if (drop && anchors.length < 2) {
+    throw new CaptureRefused(
+      `reanchor refused: "${was}" is the only anchor ${id} carries, and an entry filed under no `
+      + 'coordinate is one nothing can reach. Correct it with --now instead, or retire the entry.',
+    );
   }
 
   // The hash goes with the old coordinate. It was taken over the thing at the old address, and
   // carrying it forward would claim this entry had been checked against the new one.
-  const next = anchors.map((a, i) => (i === hit ? { coordinate: to } : a));
+  const next = drop ? anchors.filter((_, i) => i !== hit) : anchors.map((a, i) => (i === hit ? { coordinate: to } : a));
 
   // The plane goes in, and for a flow that makes this whole check a no-op -- correctly. A flow is
   // identified by its goal, so moving an anchor cannot collide it with anything, and computing the
@@ -1185,10 +1203,13 @@ export function reanchor(base, id, { was, now: to, reason } = {}) {
   }
 
   entry.data.anchors = next;
-  const body = `${entry.body.replace(/\s+$/, '')}\n\n**Anchor corrected.** \`${was}\` → \`${to}\` — ${reason}\n`;
+  const note = drop
+    ? `**Anchor dropped.** \`${was}\` — ${reason}`
+    : `**Anchor corrected.** \`${was}\` → \`${to}\` — ${reason}`;
+  const body = `${entry.body.replace(/\s+$/, '')}\n\n${note}\n`;
   writeEntry(base, entry.data, body);
   const artifacts = rebuildCapturedArtifacts(base, entry.data.plane);
-  return { id, was, now: to, fingerprint: fp, artifacts };
+  return { id, was, now: drop ? null : to, dropped: drop, fingerprint: fp, artifacts };
 }
 
 /**

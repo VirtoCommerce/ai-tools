@@ -142,3 +142,45 @@ test('the fingerprint moves with the anchor, which is why the clash check exists
   assert.notEqual(fingerprint(loadEntry(dir, first.id).data), before);
   drop(dir);
 });
+
+// A COORDINATE THAT SHOULD NEVER HAVE BEEN ONE. Two live entries were filed under a menu path —
+// `Admin SPA: Contacts > Companies and contacts` — which nothing can raise: no diff notices that a
+// blade moved, and the next release renames it in silence. `kb validate` said exactly that, and
+// then nothing in the tool could act on it: correcting it needed a replacement coordinate that
+// does not exist, and rewriting the entry would have destroyed the id other entries cite.
+test('an anchor that should not be one can be dropped, and the entry keeps its id', () => {
+  const dir = makeBase();
+  const first = capture(dir, { ...FACT, anchors: ['POST /api/members/search', 'Admin SPA: Contacts > Companies and contacts'] });
+
+  const r = reanchor(dir, first.id, {
+    was: 'Admin SPA: Contacts > Companies and contacts',
+    drop: true,
+    reason: 'a menu path is not a coordinate; the screen is named in the body and the call it makes is the anchor',
+  });
+
+  assert.equal(r.id, first.id);
+  assert.equal(r.dropped, true);
+  const after = loadEntry(dir, first.id);
+  assert.deepEqual(after.data.anchors.map((a) => a.coordinate), ['POST /api/members/search']);
+  assert.deepEqual(after.data.evidence, loadEntry(dir, first.id).data.evidence, 'nobody observed anything new');
+  assert.match(readFileSync(join(dir, after.rel), 'utf8'), /Anchor dropped/);
+  assert.match(readFileSync(join(dir, after.rel), 'utf8'), /menu path is not a coordinate/);
+  drop(dir);
+});
+
+// `capture` refuses an entry with no anchor at all, so a verb that could leave one in that state
+// would break the corpus in a way its own door would not allow.
+test('the last anchor cannot be dropped', () => {
+  const dir = makeBase();
+  const first = capture(dir, { ...FACT, anchors: ['Mutations.deleteOrganizationContact'] });
+  assert.throws(
+    () => reanchor(dir, first.id, { was: 'Mutations.deleteOrganizationContact', drop: true, reason: 'because' }),
+    (e) => e instanceof CaptureRefused && /only anchor/.test(e.message),
+  );
+  assert.deepEqual(
+    loadEntry(dir, first.id).data.anchors.map((a) => a.coordinate),
+    ['Mutations.deleteOrganizationContact'],
+    'and nothing was written',
+  );
+  drop(dir);
+});

@@ -163,3 +163,39 @@ test('the door tells the writer which anchors nothing will raise, and how they d
   );
   drop(base);
 });
+
+// A NOTICE THAT SURVIVES ITS OWN REMEDY IS SCENERY. `amend` appends an erratum rather than
+// rewriting the step it corrects — deliberately, so the evidence rows above keep attesting to text
+// their observers actually walked — so a corrected entry carries BOTH the old sentence and its
+// correction, for good. KB-AFB2D3C5 in the live corpus is the case: a run walked it, found that an
+// order CAN be deleted, wrote `DELETE /api/order/customerOrders` into the amendments, and the
+// contradiction check went on reporting the step above as though nobody had looked.
+test('a contradiction the entry has already answered elsewhere is not raised again', () => {
+  const base = makeBase();
+  capture(base, {
+    ...FACT,
+    subject: 'what-happens-to-an-account-on-delete',
+    question: 'can an account be deleted?',
+    claim: 'An account cannot be deleted once provisioned.\n\n**Amendment.** It can: DELETE /api/platform/security/users removes it by name.',
+    anchors: ['Mutations.deleteContact'],
+  });
+  assert.deepEqual(noticesOf(base, /while the contract publishes/), []);
+  drop(base);
+});
+
+// …and the sentence itself does not count as having answered it: "X cannot be deleted, even though
+// DELETE /api/x exists" is precisely the claim worth a second look.
+test('an unexamined contradiction is still raised', () => {
+  const base = makeBase();
+  capture(base, {
+    ...FACT,
+    subject: 'what-happens-to-an-account-on-delete-unexamined',
+    question: 'can an account be deleted?',
+    claim: 'A user cannot be deleted once provisioned.',
+    anchors: ['Mutations.deleteContact'],
+  });
+  const raised = noticesOf(base, /while the contract publishes/);
+  assert.equal(raised.length, 1, raised.join('\n'));
+  assert.match(raised[0], /DELETE \/api\/platform\/security\/users/);
+  drop(base);
+});

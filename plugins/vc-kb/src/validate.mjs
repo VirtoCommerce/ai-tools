@@ -319,10 +319,21 @@ export function validate(base) {
       }
       const ns = namespaceOf(a.raw);
       if (ns && derivedNamespaces.has(ns)) {
+        // THREE EXPLANATIONS, AND THIS USED TO OFFER TWO. It said "misspelled or it was never
+        // there", and on 2026-09-17 a reader followed that advice into a correction that would have
+        // been false: `GET /api/platform/profiles/currentuser` is real, is what the Admin reads an
+        // operator's timezone from, and carries `[ApiExplorerSettings(IgnoreApi = true)]` — so it is
+        // absent from the OpenAPI document this base projects FROM, and no extraction of any
+        // freshness will ever hold it. "Projects in full" means the document in full, not the
+        // deployment. A notice that leaves out the explanation which happens to be true is how a
+        // gate talks somebody into breaking a sound entry.
         notice(`${rel}: anchor "${a.raw}" names nothing, in a namespace this base projects in full.`
-          + ` Every other "${ns}" coordinate resolves; this one does not, so it is misspelled or it was`
-          + ' never there. An anchor that reads like a real coordinate and resolves to nothing is worse'
-          + ' than no anchor: it looks reached.');
+          + ` Every other "${ns}" coordinate resolves and this one does not, so: it is misspelled, it`
+          + ' was never there, or it is hidden from the API document the projection is taken from'
+          + ' (ApiExplorerSettings(IgnoreApi = true) on the platform, an internal route). Check which'
+          + ' before correcting it — an anchor that reads like a real coordinate and resolves to'
+          + ' nothing is worse than no anchor, and a "correction" onto the wrong real one is worse'
+          + ' than both.');
         continue;
       }
       const key = ns ?? '(bare identifiers)';
@@ -528,6 +539,22 @@ export function validate(base) {
       for (const c of contradictions(body ?? '', ops)) {
         if (seen.has(c.coordinate)) continue;
         seen.add(c.coordinate);
+        // ALREADY EXAMINED IS NOT STILL OPEN. `amend` appends an erratum rather than rewriting the
+        // step -- deliberately, so the evidence rows above keep attesting to text their observers
+        // actually walked -- which means a corrected flow carries BOTH the old sentence and its
+        // correction, forever. KB-AFB2D3C5 is the case: a run walked it on 2026-09-15, found that
+        // an order CAN be deleted, and wrote `DELETE /api/order/customerOrders` into the
+        // amendments; the step above still says otherwise, so this check reported the contradiction
+        // as though nobody had looked. A notice that survives its own remedy is one readers learn
+        // to scroll past, and scrolling past is how the two real ones in the list get missed.
+        //
+        // So: if the entry names that route ANYWHERE ELSE than in the contradicting sentence, the
+        // corpus has engaged with it and this says nothing new. The sentence itself is excluded on
+        // purpose — "X cannot be deleted, even though DELETE /api/x exists" is precisely the claim
+        // worth raising.
+        const route = c.coordinate.split(' ').pop().toLowerCase();
+        const elsewhere = String(body ?? '').replace(c.sentence, '').toLowerCase();
+        if (route && elsewhere.includes(route)) continue;
         notice(`${rel}: ${data.id} says "${c.sentence.slice(0, 110)}" while the contract publishes `
           + `${c.coordinate}${c.operationId ? ` (${c.operationId})` : ''} — @kb(${c.via}). A published operation is not `
           + 'proof it works, and it may be permission-gated; check the platform rather than the sentence.');

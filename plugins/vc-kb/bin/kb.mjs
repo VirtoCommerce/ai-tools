@@ -90,7 +90,11 @@ The six verbs (ADR §13.3). Everything else on this page serves them.
                                               it is ABOUT. Writes no evidence row and cannot
                                               change an entry's identity.
   kb reanchor    <id> --was … --now … --reason …  correct a coordinate an entry is filed under,
-                                              leaving the claim, the id and the evidence untouched
+                                              leaving the claim, the id and the evidence untouched.
+                                              --was … --drop --reason … removes one instead, for a
+                                              coordinate that should never have been one (a menu
+                                              path); never the last, which would leave the entry
+                                              filed under nothing
   kb amend       <id> --step … --note …       correct ONE STEP of a flow, keeping its goal and id.
                                               Flows only: a fact's claim IS the entry, so use
                                               dispute or supersede for one. Writes no evidence row —
@@ -155,6 +159,7 @@ function args(argv) {
     if (a === '--json') out.json = true;
     else if (a === '--flow') out.flow = true;
     else if (a === '--rule') out.rule = true;
+    else if (a === '--drop') out.drop = true;
     else if (a === '--baseline') out.baseline = true;
     else if (a === '--merge') out.merge = String(argv[++i]).split(/[,\s]+/).filter(Boolean);
     else if (FLAGS[a]) {
@@ -776,10 +781,10 @@ async function main() {
       return 2;
     }
     try {
-      const r = reanchor(base, id, { was: a.was, now: a.now, reason: a.reason });
-      console.log(`REANCHORED ${r.id}`);
+      const r = reanchor(base, id, { was: a.was, now: a.now, reason: a.reason, drop: a.drop });
+      console.log(`${r.dropped ? 'DROPPED  ' : 'REANCHORED'} ${r.id}`);
       console.log(`  was         : ${r.was}`);
-      console.log(`  now         : ${r.now}`);
+      if (!r.dropped) console.log(`  now         : ${r.now}`);
       console.log(`  fingerprint : ${r.fingerprint}  (it MOVED: identity is anchors + scope)`);
       console.log(`  captured    : ${r.artifacts.active} active, ${r.artifacts.retired} retired`);
       console.log('  The id, the claim and the evidence are untouched. Anything citing this entry still resolves.');
