@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-09-16",
-    "totalSuites": 141,
+    "generated": "2026-09-17",
+    "totalSuites": 143,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1857,7 +1857,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 25,
+      "testCount": 32,
       "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
@@ -3411,6 +3411,58 @@
         "sprint"
       ],
       "customerApplicability": "universal",
+      "clickDriven": true
+    },
+    {
+      "id": "099",
+      "name": "Catalog Personalization (User Groups)",
+      "file": "regression/suites/Backend/catalog/099-catalog-personalization.csv",
+      "domain": "catalog-search",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 10,
+      "estimatedMinutes": 40,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "catalog",
+        "personalization",
+        "user-groups",
+        "tags",
+        "inheritance",
+        "backend"
+      ],
+      "requiresModules": [
+        "catalog",
+        "VirtoCommerce.CatalogPersonalization"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "100",
+      "name": "Catalog Personalization - Storefront Visibility",
+      "file": "regression/suites/Frontend/catalog/100-catalog-personalization-storefront.csv",
+      "domain": "catalog-search",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P0",
+      "testCount": 6,
+      "estimatedMinutes": 30,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "catalog",
+        "personalization",
+        "user-groups",
+        "storefront",
+        "visibility"
+      ],
+      "requiresModules": [
+        "catalog",
+        "VirtoCommerce.CatalogPersonalization"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
       "clickDriven": true
     }
   ],

@@ -6,6 +6,8 @@ argument-hint: "ticket <KEY>"
 
 # /qa-fix — Autonomous Bug Fix (interactive)
 
+> **Before posting any tracker comment, read `knowledge/execution/tracker-ops.md` §0 — the GOLDEN RULE.**
+
 Pick up a bug **already filed by `/qa-bug`** and drive it through the auto-fix lifecycle to an open PR,
 then **STOP for human review**. This is the **interactive twin** of the headless `ci/run-fix-cycle.ts`
 (the same relationship `/qa-regression` has with `ci/run-regression.ts`). It **reuses** that pipeline's

@@ -12,6 +12,72 @@ apply the same matrix by reading the profile.
 > is not exported that way — instead read `project-profile.json` directly (it's gitignored,
 > present only on a configured deployment) or infer the defaults when absent.
 
+## 0. GOLDEN RULE — ONE comment per ticket per run. Amend it; never append to it.
+
+**A tracker ticket is a shared inbox, not a work log.** Every comment notifies the assignee, the
+reporter and every watcher. A run that posts five times has interrupted those people five times to
+deliver one conclusion — and left them to reconcile which version is current.
+
+**The rule, and it is absolute:**
+
+1. **One comment per ticket per run.** Compose it locally, post it once, at close-out.
+2. **A correction EDITS that comment — it never becomes a second one.** `PUT /rest/api/3/issue/{key}/comment/{id}`
+   (§0a). New evidence, a retraction, a severity change, a formatting fix: all are edits.
+3. **Nothing is posted mid-run** "so they know sooner". Findings live in chat and in the local
+   report until close-out. If the operator explicitly says *post now*, that post becomes **the**
+   comment for the run and everything later amends it.
+4. **A second comment requires the operator to ask for one**, for a reason they state. Not because
+   the run learned something new — a run always learns something new.
+
+**Why this is mechanical and not a judgment call.** The failure mode is that every individual
+comment is defensible while the aggregate is spam, so judgment-in-the-moment cannot catch it — the
+judgment is what failed. The comment id is therefore recorded in `summary.json.tracker.comment_id`
+at first post, and its presence is what makes every later write an edit. **No id recorded ⇒ you have
+not posted yet. Id recorded ⇒ you may not POST, only PUT.**
+
+**Measured 2026-09-17, VCST-5378:** one run posted **five** comments in about one hour — a root-cause
+comment, a results comment correcting it, a delta measurement, a malformed wiki-markup comment, and a
+consolidated report superseding the first three. The fifth contained the other four. Teammates had
+already acted on the superseded ones.
+
+### 0a. How to amend (Jira)
+
+The Atlassian MCP exposes only `addCommentToJiraIssue` — **there is no edit or delete tool**, which is
+precisely why corrections turned into new comments.
+
+**Use the helper — it makes amending as cheap as posting, and keeps the ledger for you:**
+
+```bash
+npm run tracker:comment -- --ticket VCST-1234 --body-file body.md              # post (once)
+npm run tracker:comment -- --ticket VCST-1234 --amend 109824 --body-file body.md
+npm run tracker:comment -- --ticket VCST-1234 --get 109824                     # read it back
+npm run tracker:comment -- --ticket VCST-1234 --delete 109823
+npm run tracker:comment -- --ticket VCST-1234 --body-file body.md --force-new "<reason>"
+```
+
+It refuses a second `--post` for a ticket in the same run, rejects a wiki-markup body (§5a), writes
+`.tracker-comments.json` and mirrors the id into `summary.json.tracker.comment_id`. Two hooks close the
+loop for comments posted straight through the MCP: `.claude/hooks/record-tracker-comment.mjs` (PostToolUse)
+records the first id, `.claude/hooks/enforce-one-tracker-comment.mjs` (PreToolUse) blocks the second and
+prints the amend command. Both fail **open**. Behaviour is pinned by
+`scripts/unit/tracker-comment-guard.test.mjs`.
+
+**Raw REST**, if you are outside this repo (the plugin ships no `scripts/`):
+
+```bash
+# edit an existing comment (auth: JIRA_EMAIL + JIRA_API_TOKEN from .env.local)
+curl -sk -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X PUT \
+  -H "Content-Type: application/json" \
+  --data @body.json \
+  "https://<site>.atlassian.net/rest/api/3/issue/<KEY>/comment/<COMMENT_ID>"
+```
+
+Deleting is `DELETE` on the same URL. **Azure Boards:** `PATCH` the work item's comment endpoint
+(`/comments/{id}`, api-version 7.1-preview.4).
+
+**If you cannot authenticate for a PUT, you do not get to fall back to a new comment.** Say so, hand
+the operator the corrected body, and let them decide.
+
 ## 1. Which tracker / host am I on?
 
 | Profile field | Values | Drives |
@@ -199,7 +265,42 @@ Images live in a Jira comment only if **both** steps happen:
 `!clip.gif|width=700!` through the v2 API — and Jira animates it inline. Measured 2026-09-14 on
 VCST-5024 (attachment `83962`, 5 frames, 960×540): one `<img src=…/attachment/content/…>`, one `media`
 node with a 36-char UUID, zero literal `!….gif!`. `.webm`/`.mp4` are a different question and are
-**unmeasured** — WHEN a bug needs motion evidence at all is `reports-policy.md` §5.2.
+**measured 2026-09-17 and they DO NOT WORK** — see below. WHEN a bug needs motion evidence at all is
+`reports-policy.md` §5.2.
+
+**`.mp4` / `.webm` do not embed — a video reference renders a DEAD PLUGIN OBJECT (measured 2026-09-17,
+VCST-5378).** `!clip.mp4|width=700!` through the v2 API posts `200 OK` and produces neither an `<img>`
+nor a `<video>`; `?expand=renderedBody` returns:
+
+```html
+<div class="embeddedObject"><object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B"
+  codebase="https://www.apple.com/qtactivex/qtplugin.cab" type="video/mp4" width="700" height="380">
+  <embed pluginspage="https://www.apple.com/quicktime/download/" type="video/mp4" …/></object></div>
+```
+
+That is the **QuickTime ActiveX / NPAPI** embed. ActiveX died with IE11 and NPAPI was removed from Chrome
+in 2015, so the buyer-facing result in any current browser is an empty box. The file is still attached and
+downloadable from the attachments panel — but it is **not inline evidence**, and because it posts `200 OK`
+with zero `<span class="error">`, a run that stops at the status code will believe it worked. **Use an
+animated GIF** (`npm run gif`), which renders as a real media node and animates inline.
+
+Raw Playwright video is impractical anyway: a short session records **~84 MB** of VP8 `.webm`
+(`test-results/<lane>/video/`) and Playwright exposes no bitrate control — `recordVideo.size` sets frame
+dimensions only. Transcoding is not available on the QA machines (no `ffmpeg`).
+
+**The positive signal per media type**, all from `?expand=renderedBody`:
+
+| Attached | Renders as | Verdict |
+|---|---|---|
+| `.png` | `<span class="image-wrap"><img src="…/attachment/content/<id>" width="700">` | inline image |
+| `.gif` | same shape, animates | **the motion-evidence format** |
+| `.mp4` / `.webm` | `<div class="embeddedObject"><object classid="clsid:02BF25D5…">` | **dead — do not use** |
+
+**Read the `<img>`, never the filename.** The rendered `src` carries the numeric **attachment id**, not the
+file name, so "is the filename present in the HTML" is not a success test — it was wrong in the first cut of
+`scripts/tracker/comment.mjs` and reported two correctly-rendered images as failures. The reliable per-file
+signal is that no literal `!name!` survived. `npm run tracker:comment -- --attach <file>` performs the
+upload, the v2 embed and this whole check in one step.
 
 **Do not** hand-build an ADF `media` node with the numeric attachment id — Jira rejects it with
 `400 ATTACHMENT_VALIDATION_ERROR`. The `media.attrs.id` must be a media-service **UUID**, which the
@@ -253,9 +354,12 @@ itself**, in full, in the comment body. A summary plus a repo path is not a deli
 - **Repo paths are not readable by ticket readers.** A path is only resolvable by someone with that
   checkout, at that commit — and if the file is uncommitted, by literally no one but the author.
   Never cite a working-tree path as if it were a link.
-- **Summarize only when explicitly asked to.** "Push it to the ticket" means the content. If the
-  artifact is genuinely too large for one comment, split it across comments (one per logical
-  document) rather than shrinking it to an abstract.
+- **Summarize only when explicitly asked to.** "Push it to the ticket" means the content.
+- **An oversized artifact is still ONE comment** (§0). Do not split it across several — that is the
+  noise the GOLDEN RULE forbids, and it was licensed here until 2026-09-17. If it genuinely will not
+  fit, attach it as a file to the same ticket and reference the attachment from the single comment,
+  or ask the operator which half they want inline. Never shrink it to an abstract, and never serialise
+  it into a comment thread.
 - **A pointer is legitimate only when the target is reachable** — a merged-and-pushed GitHub URL, a
   PR link, an attachment on that same ticket.
 

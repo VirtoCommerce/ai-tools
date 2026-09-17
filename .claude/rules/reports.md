@@ -1,5 +1,8 @@
 # Reports — the rules that apply to every write (full policy on demand)
 
+## 0. GOLDEN RULE — ONE tracker comment per ticket per run. Amend it; never append.
+A ticket is a shared inbox, not a work log. Rule, mechanism, amend recipe and the measured incident: [`knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md) §0.
+
 **Full policy — single source of truth:** [`knowledge/execution/reports-policy.md`](../knowledge/execution/reports-policy.md). This stub keeps its section numbers so a `reports.md §N` citation still resolves; each §N below is the one-line rule and a pointer. Reports are read by humans on a deadline — long reports get skimmed and bugs get missed.
 
 ## 1. Only ten report categories

@@ -1,5 +1,7 @@
 # Step 5 — the close-out SPINE: reconcile → verdict → release regression → file
 
+> **Before posting any tracker comment, read `knowledge/execution/tracker-ops.md` §0 — the GOLDEN RULE.**
+
 Methodology for `/qa-test` Step 5. The command states the phase order and the gates; this file and its
 three siblings are the detail. **5-triage before 5-verdict is load-bearing:** the verdict is expressed in
 terms of a finding's *provenance* ([`triage.md`](triage.md)) and the AC/DoD state `5-verdict` reconciles before

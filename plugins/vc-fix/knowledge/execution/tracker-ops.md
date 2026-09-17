@@ -12,6 +12,53 @@ apply the same matrix by reading the profile.
 > is not exported that way — instead read `project-profile.json` directly (it's gitignored,
 > present only on a configured deployment) or infer the defaults when absent.
 
+## 0. GOLDEN RULE — ONE comment per ticket per run. Amend it; never append to it.
+
+**A tracker ticket is a shared inbox, not a work log.** Every comment notifies the assignee, the
+reporter and every watcher. A run that posts five times has interrupted those people five times to
+deliver one conclusion — and left them to reconcile which version is current.
+
+**The rule, and it is absolute:**
+
+1. **One comment per ticket per run.** Compose it locally, post it once, at close-out.
+2. **A correction EDITS that comment — it never becomes a second one.** `PUT /rest/api/3/issue/{key}/comment/{id}`
+   (§0a). New evidence, a retraction, a severity change, a formatting fix: all are edits.
+3. **Nothing is posted mid-run** "so they know sooner". Findings live in chat and in the local
+   report until close-out. If the operator explicitly says *post now*, that post becomes **the**
+   comment for the run and everything later amends it.
+4. **A second comment requires the operator to ask for one**, for a reason they state. Not because
+   the run learned something new — a run always learns something new.
+
+**Why this is mechanical and not a judgment call.** The failure mode is that every individual
+comment is defensible while the aggregate is spam, so judgment-in-the-moment cannot catch it — the
+judgment is what failed. The comment id is therefore recorded in `summary.json.tracker.comment_id`
+at first post, and its presence is what makes every later write an edit. **No id recorded ⇒ you have
+not posted yet. Id recorded ⇒ you may not POST, only PUT.**
+
+**Measured 2026-09-17, VCST-5378:** one run posted **five** comments in about one hour — a root-cause
+comment, a results comment correcting it, a delta measurement, a malformed wiki-markup comment, and a
+consolidated report superseding the first three. The fifth contained the other four. Teammates had
+already acted on the superseded ones.
+
+### 0a. How to amend (Jira)
+
+The Atlassian MCP exposes only `addCommentToJiraIssue` — **there is no edit or delete tool**, which is
+precisely why corrections turned into new comments. Use REST directly:
+
+```bash
+# edit an existing comment (auth: JIRA_EMAIL + JIRA_API_TOKEN from .env.local)
+curl -sk -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X PUT \
+  -H "Content-Type: application/json" \
+  --data @body.json \
+  "https://<site>.atlassian.net/rest/api/3/issue/<KEY>/comment/<COMMENT_ID>"
+```
+
+Deleting is `DELETE` on the same URL. **Azure Boards:** `PATCH` the work item's comment endpoint
+(`/comments/{id}`, api-version 7.1-preview.4).
+
+**If you cannot authenticate for a PUT, you do not get to fall back to a new comment.** Say so, hand
+the operator the corrected body, and let them decide.
+
 ## 1. Which tracker / host am I on?
 
 | Profile field | Values | Drives |

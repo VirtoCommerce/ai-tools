@@ -10,8 +10,8 @@
     },
     "contextOptions": {
       "viewport": {
-        "width": 1440,
-        "height": 900
+        "width": 1920,
+        "height": 1080
       },
       "locale": "en-US",
       "recordHar": {
@@ -21,10 +21,11 @@
       "recordVideo": {
         "dir": "./test-results/firefox/video",
         "size": {
-          "width": 1440,
-          "height": 900
+          "width": 1920,
+          "height": 1080
         }
-      }
+      },
+      "deviceScaleFactor": 2
     }
   },
   "outputDir": "./test-results/firefox",

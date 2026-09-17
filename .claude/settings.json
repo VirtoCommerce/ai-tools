@@ -19,6 +19,19 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-secret-token.mjs\""
           }
         ]
+      },
+      {
+        "matcher": "mcp__atlassian__addCommentToJiraIssue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-one-tracker-comment.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-jira-markdown.mjs\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -28,6 +41,15 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/typecheck-ts-only.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__atlassian__addCommentToJiraIssue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/record-tracker-comment.mjs\""
           }
         ]
       }

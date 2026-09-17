@@ -265,7 +265,8 @@
     "test:quality": "node scripts/maintenance/test-quality-report.mjs",
     "kb:test": "node --test \"plugins/vc-kb/test/**/*.test.mjs\"",
     "kb:test:logger": "node plugins/vc-kb/vendor/agent-log/test-log-row.mjs && node plugins/vc-kb/vendor/agent-log/test-tool-log.mjs",
-    "knowledge:refs": "node scripts/maintenance/lint-knowledge-refs.mjs"
+    "knowledge:refs": "node scripts/maintenance/lint-knowledge-refs.mjs",
+    "tracker:comment": "node scripts/tracker/comment.mjs"
   },
   "repository": {
     "type": "git",

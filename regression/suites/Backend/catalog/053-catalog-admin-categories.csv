@@ -332,3 +332,125 @@
 [ASSERT] Response succeeds (2xx)","[STATUS] Category-entry link request returns 403 Forbidden with a permission-denied error (AC-3) {SPEC}
 [STATUS] Product/item-entry link request returns 2xx (catalog:products:link retained) {SPEC}","[API] POST /api/catalog/listentrylinks (category entry) -> 403; (product entry) -> 2xx
 [CONSOLE] No errors","Category link created despite missing catalog:categories:link (server-side enforcement missing on this build); product link also blocked (over-restriction)","Delete any category/product link created; delete restrictedUser and restrictedRole via Admin (owns its own fixture)","VCST-5318 AC-3, PR #898 (VirtoCommerce/vc-module-catalog); CatalogModuleListEntryController","Not Automated"
+CATA-065,Assigned User Group Renders Its Name Once (no title+description duplicate),Catalog > Category > User groups,High,,,Admin can authenticate against {{BACK_URL}}; the Customer.MemberGroups dictionary holds at least one value; a category exists that the admin can edit,adminUrl={{BACK_URL}},"[AUTH] Sign in to adminUrl as an administrator
+[NAV] Open Catalog > a category the admin can edit
+[NAV] Open the 'AVAILABLE USER GROUPS' panel on that category
+[ACT] Tick the first group offered in the list
+[ACT] Save the category
+[WAIT] The save completes, the panel re-renders
+[ACT] Inspect the DOM of that group's row
+[ACT] Count the elements carrying the group name
+[ACT] Reload the blade
+[WAIT] The panel finishes rendering
+[ACT] Inspect the same row a second time","[DOM] The group's row renders the group name in exactly ONE element - no second element carrying the identical string is present in that row {SPEC}
+[DOM] The row's text is the group name plus at most one badge ('inherited', '+ inherited' or 'not in list') - the group name is never printed twice {SPEC}
+[DOM] After the blade reload the single-name row is still present, unchanged {OBSERVED}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Remove every AGENT-TEST- user group created by this case from the Customer.MemberGroups dictionary and clear the tags it assigned; verify by reading the entity back,VCST-5282 · Archetype:RENDER · Technique:EG,Draft
+CATA-066,"Assign And Remove A User Group By Checkbox (no Delete command, order stays fixed)",Catalog > Category > User groups,Medium,,,Admin can authenticate against {{BACK_URL}}; the dictionary holds at least two values; a category exists with no user group assigned,adminUrl={{BACK_URL}},"[AUTH] Sign in to adminUrl as an administrator
+[NAV] Open a category that has no user group assigned
+[NAV] Open the 'AVAILABLE USER GROUPS' panel
+[ACT] Record the group names in the order rendered when the panel opens
+[ACT] Tick the second group in the list
+[ACT] Save the category
+[WAIT] The save completes, the panel re-renders
+[HTTP] Read the category's tagged item back through the personalization API the blade itself calls
+[ACT] Compare the rendered order against the order recorded when the panel opened
+[ACT] Untick the same group
+[ACT] Save the category a second time
+[WAIT] The save completes, the panel re-renders
+[HTTP] Read the tagged item back a second time
+[ACT] Inspect the blade toolbar command set","[STATE] Ticking the row assigns that group - after the save the persisted tags contain its name {OBSERVED}
+[STATE] Unticking the same row removes it - after the save the persisted tags no longer contain that name {OBSERVED}
+[DOM] The sequence of group names is identical before and after every toggle - no row is present at a different position because its checkbox changed {SPEC}
+[DOM] The toolbar renders 'Save' plus 'Reset' only - no 'Delete' command is present, because unticking a row IS the removal {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Remove every AGENT-TEST- user group created by this case from the Customer.MemberGroups dictionary and clear the tags it assigned; verify by reading the entity back,VCST-5282 · Archetype:LIFECYCLE · Technique:ST,Draft
+CATA-067,Child Category Shows A Parent-Granted Group As inherited (and + inherited when also direct),Catalog > Category > User groups,High,,,Admin can authenticate against {{BACK_URL}}; a category tree at least two levels deep exists; the dictionary holds at least two values,adminUrl={{BACK_URL}}; parentCategory=live-discover(a category with at least one child); childCategory=live-discover(a child of parentCategory); groupA=live-discover(first value of the Customer.MemberGroups dictionary),"[AUTH] Sign in to adminUrl as an administrator
+[SETUP] Resolve parentCategory, childCategory, groupA per Test_Data
+[ACT] Tick groupA on parentCategory
+[ACT] Save parentCategory
+[WAIT] The save completes
+[NAV] Open childCategory
+[NAV] Open its 'AVAILABLE USER GROUPS' panel
+[ACT] Inspect the row rendered for groupA on the child
+[ACT] Tick groupA directly on childCategory as well
+[ACT] Save childCategory
+[WAIT] The save completes, the panel re-renders
+[ACT] Inspect that row a second time
+[HTTP] Read childCategory's tagged item back through the personalization API","[DOM] Before the direct assignment, the child's groupA row carries the badge text 'inherited' {SPEC}
+[DOM] With groupA also assigned directly, the same row carries '+ inherited' - reporting the direct grant together with the inherited one {SPEC}
+[API] childCategory's inheritedTags contains groupA in both states {OBSERVED}
+[STATE] The inherited grant cannot be revoked from childCategory - only from parentCategory {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Remove every AGENT-TEST- user group created by this case from the Customer.MemberGroups dictionary and clear the tags it assigned; verify by reading the entity back,VCST-5282 · Archetype:SCOPE · Technique:DT,Draft
+CATA-068,Top-Level Category With A Direct Group Reports No Self-Inheritance,Catalog > Category > User groups,High,,,Admin can authenticate against {{BACK_URL}}; a top-level category with no parent exists; the dictionary holds at least one value,adminUrl={{BACK_URL}}; topCategory=live-discover(a category whose parent is empty - REQUIRED discriminator); group=live-discover(first value of the Customer.MemberGroups dictionary),"[AUTH] Sign in to adminUrl as an administrator
+[SETUP] Resolve topCategory per Test_Data - a category with NO parent. This is the discriminator: on a nested category a self-inherited tag cannot be told apart from a genuinely inherited one
+[ACT] Tick exactly one group on topCategory
+[ACT] Save topCategory
+[WAIT] The save completes, the panel re-renders
+[HTTP] Read topCategory's tagged item back through the personalization API
+[ACT] Compare the tags collection against the inheritedTags collection
+[ACT] Inspect the group's row in the panel
+[ACT] Read the summary line above the list","[MATH] inheritedTags.length = 0 AND tags.length = 1 for a parentless category with exactly one direct group - the pre-fix build returned inheritedTags.length = tags.length {SPEC}
+[API] tags contains the assigned group AND inheritedTags is EMPTY - a category with no parent inherits from nothing {SPEC}
+[API] inheritedTags is not a copy of tags; the pre-fix build returned the two identical, which made the direct-versus-inherited distinction meaningless {SPEC}
+[DOM] No 'inherited' badge is present on the group's row {OBSERVED}
+[DOM] The summary line reports the group as '1 direct' with '0 inherited' {OBSERVED}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Remove every AGENT-TEST- user group created by this case from the Customer.MemberGroups dictionary and clear the tags it assigned; verify by reading the entity back,VCST-5282 · Archetype:SCOPE · Technique:BVA,Draft
+CATA-069,User Group Filter Appears Only Above The Threshold And Preserves Checked State,Catalog > Category > User groups,Medium,,,Admin can authenticate against {{BACK_URL}}; the admin may add and remove values in the Customer.MemberGroups dictionary; a category exists that the admin can edit,"adminUrl={{BACK_URL}}; seedGroups=AGENT-TEST-UG69-{run}-01..NN (added to reach 8 then 9 dictionary entries, removed at cleanup)","[AUTH] Sign in to adminUrl as an administrator
+[SETUP] Record the Customer.MemberGroups dictionary values VERBATIM. This case mutates a shared dictionary, so the recorded list is the teardown contract
+[ACT] Add AGENT-TEST- values until the dictionary holds exactly 8 entries
+[WAIT] The dictionary save completes
+[NAV] Open a category
+[NAV] Open its 'AVAILABLE USER GROUPS' panel
+[ACT] Look for the filter input placeholder 'Filter user groups' at 8 dictionary entries
+[ACT] Add one further AGENT-TEST- value, taking the dictionary to 9 entries
+[WAIT] The dictionary save completes
+[NAV] Reopen the panel
+[ACT] Look for the same filter input at 9 dictionary entries
+[ACT] Tick one group
+[ACT] Type a filter term that excludes the ticked group
+[ACT] Clear the filter term
+[ACT] Type a filter term matching no group at all","[DOM] At 8 dictionary entries the 'Filter user groups' input is absent {SPEC}
+[DOM] At 9 dictionary entries the 'Filter user groups' input is present - the threshold falls between these two sizes, which is why both are exercised {SPEC}
+[DOM] The ticked group is still checked after being filtered out of view, then brought back {OBSERVED}
+[DOM] A term matching nothing renders the empty-state text 'No user groups match' naming the term - no error is present, the panel is not silently blank {OBSERVED}
+[DOM] Clearing the filter restores the list - all 9 group rows are present again, in the order the panel had when it opened {OBSERVED}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Remove every AGENT-TEST- user group created by this case from the Customer.MemberGroups dictionary and clear the tags it assigned; verify by reading the entity back,VCST-5282 · Archetype:BOUNDARY · Technique:BVA,Draft
+CATA-070,Orphaned Assignment Renders not in list And Can Be Removed,Catalog > Category > User groups,Medium,,,Admin can authenticate against {{BACK_URL}}; the admin may remove a value from the Customer.MemberGroups dictionary; a category exists that the admin can edit,adminUrl={{BACK_URL}}; orphanGroup=AGENT-TEST-UG70-{run},"[AUTH] Sign in to adminUrl as an administrator
+[SETUP] Record the Customer.MemberGroups dictionary values VERBATIM as the teardown contract
+[ACT] Add orphanGroup to the dictionary
+[WAIT] The dictionary save completes
+[ACT] Tick orphanGroup on a category
+[ACT] Save that category
+[WAIT] The save completes
+[ACT] Remove orphanGroup from the dictionary, leaving the assignment on the category in place
+[WAIT] The dictionary save completes
+[NAV] Reopen that category
+[NAV] Reopen its 'AVAILABLE USER GROUPS' panel
+[ACT] Locate the row rendered for orphanGroup
+[ACT] Read the summary line above the list
+[ACT] Untick orphanGroup
+[ACT] Save the category a second time
+[WAIT] The save completes, the panel re-renders
+[HTTP] Read the category's tagged item back through the personalization API","[DOM] orphanGroup is still present as a checked row carrying the badge text 'not in list' - an assignment whose dictionary value is gone is not silently dropped from the panel {SPEC}
+[DOM] The summary line still counts orphanGroup as '1 direct' {OBSERVED}
+[STATE] Unticking clears it - the row is absent afterwards, the persisted tags no longer contain orphanGroup {OBSERVED}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Remove every AGENT-TEST- user group created by this case from the Customer.MemberGroups dictionary and clear the tags it assigned; verify by reading the entity back,VCST-5282 · Archetype:SILENT · Technique:EG,Draft
+CATA-071,"Access Counter Reports Direct And Inherited Separately, Rows Toggle From The Keyboard",Catalog > Category > User groups,Medium,,,Admin can authenticate against {{BACK_URL}}; a category tree at least two levels deep exists; the dictionary holds at least two values,"adminUrl={{BACK_URL}}; parentCategory=live-discover(a category with at least one child); childCategory=live-discover(a child of parentCategory); groupA,groupB=live-discover(two distinct values of the Customer.MemberGroups dictionary)","[AUTH] Sign in to adminUrl as an administrator
+[SETUP] Resolve parentCategory, childCategory, groupA, groupB per Test_Data, with nothing assigned on either category
+[NAV] Open childCategory
+[NAV] Open its 'AVAILABLE USER GROUPS' panel
+[ACT] Read the summary line in the nothing-assigned state
+[ACT] Tick groupA on parentCategory
+[ACT] Save parentCategory
+[WAIT] The save completes
+[NAV] Reopen childCategory
+[ACT] Read the summary line in the inherited-only state
+[ACT] Tick groupB directly on childCategory
+[ACT] Save childCategory
+[WAIT] The save completes, the panel re-renders
+[ACT] Read the summary line in the one-direct-plus-one-inherited state
+[ACT] Move focus to a group row with Tab
+[ACT] Press Space on the focused row","[DOM] With nothing assigned the summary reads 'Not assigned to any user group' {OBSERVED}
+[DOM] In the inherited-only state the summary reports '0 direct' with '1 inherited'; in the mixed state '1 direct' with '1 inherited' - each split matching the badges present on the rows beneath {SPEC}
+[DOM] Space toggles the focused row - its checkbox is checked after the keypress, Tab moves focus between rows, so the panel is operable without a mouse {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Remove every AGENT-TEST- user group created by this case from the Customer.MemberGroups dictionary and clear the tags it assigned; verify by reading the entity back,VCST-5282 · Archetype:RENDER · Technique:EP,Draft

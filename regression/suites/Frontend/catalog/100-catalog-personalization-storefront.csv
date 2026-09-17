@@ -1,0 +1,71 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+PERS-011,Anonymous Visitor Cannot Reach A Tagged Product But Can Reach An Untagged One,Storefront > Catalog > User group visibility,Critical,,,"A seeded and INDEXED pair exists in the same catalogue: taggedProduct carrying exactly one user group, and controlProduct carrying none. Both must already be in the search index - on an environment where CatalogPersonalization.EventBasedIndexation is false a freshly tagged product is NOT indexed, and this case would report a false pass. No user is signed in","storefrontUrl={{FRONT_URL}}; taggedProduct=live-discover(a product whose INDEXED user_groups carries exactly one real group - REQUIRED discriminator, an unindexed tag makes this case vacuous); controlProduct=live-discover(a product in the same catalogue whose indexed user_groups is the default any bucket)","[SETUP] Confirm taggedProduct and controlProduct are seeded AND present in the search index with their intended user_groups - an unindexed fixture makes every assertion below vacuous
+[NAV] Open storefrontUrl in a session with no signed-in user
+[ACT] Search the storefront for controlProduct by its SKU
+[WAIT] The result list renders
+[ACT] Search the storefront for taggedProduct by its SKU
+[WAIT] The result list renders
+[NAV] Request taggedProduct's product page directly by its URL","[MATH] The anonymous search for controlProduct result count = 1 - the control proves the search path works, so the tagged product's absence cannot be explained by a broken search {SPEC}
+[MATH] The anonymous search for taggedProduct result count = 0 {SPEC}
+[DOM] The empty result renders the storefront's no-results state, and taggedProduct's name is absent from the page {SPEC}
+[STATUS] The direct product-page request for taggedProduct does not render the product - a restricted entity must not be reachable by guessing its URL {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Leave the seeded fixture in place for the suite; if the case tagged anything itself, clear the tag and trigger the reindex that makes the catalogue visible again, then confirm the control product is reachable anonymously",VCST-5282 · Archetype:SCOPE · Technique:EP,Draft
+PERS-012,A Shopper Whose Contact Groups Include The Tag Can Reach The Product,Storefront > Catalog > User group visibility,Critical,,,taggedProduct is seeded and INDEXED with exactly one user group; a storefront account exists whose CONTACT carries that same group; that account can sign in,storefrontUrl={{FRONT_URL}}; taggedProduct=live-discover(a product indexed with exactly one group); grantedAccount=live-discover(a storefront account whose CONTACT Groups contain that same group); grantedAccountPwd={{DEFAULT_TEST_PASSWORD}},"[SETUP] Confirm taggedProduct is seeded AND indexed with exactly one group, and that grantedAccount's contact carries that same group
+[NAV] Open storefrontUrl
+[ACT] Sign in as grantedAccount
+[WAIT] The account menu reflects the signed-in state
+[ACT] Search the storefront for taggedProduct by its SKU
+[WAIT] The result list renders
+[NAV] Open taggedProduct's product page","[MATH] The signed-in search for taggedProduct result count = 1 {SPEC}
+[DOM] taggedProduct's name is present in the result list {SPEC}
+[DOM] The product page renders taggedProduct with its price and its add-to-cart control present - visible but unbuyable would be a different defect {SPEC}
+[REL] The same SKU that returns 1 result for this account returns 0 anonymously, so the difference is the account's group and nothing else {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Leave the seeded fixture in place for the suite; if the case tagged anything itself, clear the tag and trigger the reindex that makes the catalogue visible again, then confirm the control product is reachable anonymously",VCST-5282 · Archetype:SCOPE · Technique:EP,Draft
+PERS-013,A Shopper Outside The Granted Group Cannot Reach The Product,Storefront > Catalog > User group visibility,Critical,,,taggedProduct is seeded and INDEXED with exactly one user group; a storefront account exists whose contact carries a DIFFERENT group (not none - a signed-in account with an unrelated group is the discriminator; an account with no groups at all cannot tell this case apart from the anonymous one),"storefrontUrl={{FRONT_URL}}; taggedProduct=live-discover(a product indexed with exactly one group); controlProduct=live-discover(an untagged product in the same catalogue); outsiderAccount=live-discover(a storefront account whose contact Groups contain a DIFFERENT group - REQUIRED discriminator, an account with no groups cannot distinguish this case from the anonymous one); outsiderAccountPwd={{DEFAULT_TEST_PASSWORD}}","[SETUP] Confirm taggedProduct is seeded AND indexed with exactly one group, and that outsiderAccount's contact carries a DIFFERENT group
+[NAV] Open storefrontUrl
+[ACT] Sign in as outsiderAccount
+[WAIT] The account menu reflects the signed-in state
+[ACT] Search the storefront for taggedProduct by its SKU
+[WAIT] The result list renders
+[NAV] Request taggedProduct's product page directly by its URL
+[ACT] Search for the untagged control product in the same session
+[WAIT] The result list renders","[MATH] The search for taggedProduct result count = 0 for an account holding an unrelated group {SPEC}
+[MATH] The same session result count = 1 for the untagged control product, so the account's session is working and the zero is a restriction rather than a broken login {SPEC}
+[STATUS] The direct product-page request does not render taggedProduct {SPEC}
+[REL] Being signed in is not by itself sufficient to see a restricted product - only an intersecting group is {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Leave the seeded fixture in place for the suite; if the case tagged anything itself, clear the tag and trigger the reindex that makes the catalogue visible again, then confirm the control product is reachable anonymously",VCST-5282 · Archetype:SCOPE · Technique:EP,Draft
+PERS-014,A Group Granted Through The Organization Reaches Its Members,Storefront > Catalog > User group visibility,High,,,taggedProduct is seeded and INDEXED with exactly one user group; a storefront account exists whose CONTACT carries no groups but whose ORGANIZATION carries that group; that account can sign in,storefrontUrl={{FRONT_URL}}; taggedProduct=live-discover(a product indexed with exactly one group); orgMemberAccount=live-discover(an account whose contact Groups are EMPTY but whose organization Groups contain that group - REQUIRED discriminator); orgMemberAccountPwd={{DEFAULT_TEST_PASSWORD}},"[SETUP] Confirm taggedProduct is seeded AND indexed with exactly one group; orgMemberAccount's contact carries NO groups while its organization carries that group
+[NAV] Open storefrontUrl
+[ACT] Sign in as orgMemberAccount
+[WAIT] The account menu reflects the signed-in state
+[ACT] Search the storefront for taggedProduct by its SKU
+[WAIT] The result list renders
+[NAV] Open taggedProduct's product page","[MATH] The search result count = 1 for a member whose only route to the group is the organization {SPEC}
+[API] The member's own contact carries no groups, so the grant demonstrably travelled through the organization {SPEC}
+[DOM] taggedProduct's name is present on the rendered product page {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Leave the seeded fixture in place for the suite; if the case tagged anything itself, clear the tag and trigger the reindex that makes the catalogue visible again, then confirm the control product is reachable anonymously",VCST-5282 · Archetype:SCOPE · Technique:EP,Draft
+PERS-015,Products Under A Tagged Category Disappear For A Shopper Outside The Group,Storefront > Catalog > User group visibility,High,,,"TagsInheritancePolicy is DownTree; a seeded and INDEXED category carries exactly one user group, and holds at least one product that carries NO tag of its own; an untagged control category with its own product exists in the same catalogue. No user is signed in","storefrontUrl={{FRONT_URL}}; taggedCategory=live-discover(a category indexed with exactly one group); categoryProduct=live-discover(a product inside taggedCategory carrying NO tag of its own - REQUIRED discriminator, a directly tagged product would pass this case without inheritance working); controlProduct=live-discover(a product beneath an untagged category in the same catalogue)","[SETUP] Confirm taggedCategory is seeded AND indexed with one group, holds categoryProduct which carries no tag of its own, and that controlCategory with controlProduct is untagged
+[NAV] Open storefrontUrl in a session with no signed-in user
+[ACT] Search the storefront for categoryProduct by its SKU
+[WAIT] The result list renders
+[ACT] Search the storefront for controlProduct by its SKU
+[WAIT] The result list renders
+[NAV] Request categoryProduct's product page directly by its URL
+[NAV] Request taggedCategory's category page directly by its URL","[MATH] The anonymous search for categoryProduct result count = 0, although the product itself was never tagged - the restriction reached it by inheritance {SPEC}
+[REL] The anonymous search for controlProduct beneath the untagged category returns 1, so the catalogue as a whole is not simply empty {SPEC}
+[STATUS] Neither categoryProduct's page nor taggedCategory's page renders its entity for an anonymous visitor {SPEC}
+[REL] A restriction set once on a category covers every product beneath it, matching what the admin blade reports as inherited {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Leave the seeded fixture in place for the suite; if the case tagged anything itself, clear the tag and trigger the reindex that makes the catalogue visible again, then confirm the control product is reachable anonymously",VCST-5282 · Archetype:SCOPE · Technique:FLOW,Draft
+PERS-016,Category Listing And Search Agree On What A Shopper May See,Storefront > Catalog > User group visibility,High,,,taggedProduct is seeded and INDEXED with exactly one user group and sits in a browsable category; an untagged control product sits in the same category. No user is signed in,"storefrontUrl={{FRONT_URL}}; taggedProduct=live-discover(a product indexed with exactly one group, sitting in a browsable category); controlProduct=live-discover(an untagged product in that SAME category - REQUIRED discriminator, a control elsewhere cannot prove the listing itself renders)","[SETUP] Confirm taggedProduct and controlProduct are seeded AND indexed, sitting in the same browsable category
+[NAV] Open storefrontUrl in a session with no signed-in user
+[NAV] Open the category listing that holds both products
+[WAIT] The listing renders
+[ACT] Record every product name rendered in the listing
+[ACT] Record the listing's total product count
+[ACT] Record the facet counts shown beside the listing filters
+[ACT] Search the storefront for taggedProduct by its SKU
+[WAIT] The result list renders","[DOM] taggedProduct's name is absent from the category listing while controlProduct's name is present {SPEC}
+[REL] The listing's total count and the search result count agree about taggedProduct - a product hidden from one surface is hidden from the other {SPEC}
+[MATH] The sum(facet counts) = visible product count, so a restricted product is not counted in a facet it cannot be opened from {SPEC}
+[DOM] No 'restricted' or error placeholder is present where taggedProduct would have been - it is absent, not shown as blocked {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Leave the seeded fixture in place for the suite; if the case tagged anything itself, clear the tag and trigger the reindex that makes the catalogue visible again, then confirm the control product is reachable anonymously",VCST-5282 · Archetype:PARITY · Technique:EP,Draft

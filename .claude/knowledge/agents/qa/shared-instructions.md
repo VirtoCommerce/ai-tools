@@ -190,6 +190,45 @@ Docs are ONE source: a `BL-*`/`ECL-*` promotion still needs its 3-source bar (do
 
 Doc drift is normal here and is measured, not hypothetical: `knowledge/domain/sales-rep.md` §D1 (the published API reference lists 13 queries + 1 mutation; live introspection returns 21 + 2) and §D10 (the guide claims store scoping the live schema does not enforce). So **a VirtoOZ answer for a released feature is triangulated against live, never substituted for it** — and when they disagree, both go in the report.
 
+### What VirtoOZ is authoritative FOR — split the CLAIM, not the source
+
+The rule above says docs and live are triangulated. This one says **which half of a doc page to lean on**,
+because the two fail at very different rates:
+
+| Claim type | Authoritative source | Tag |
+|---|---|---|
+| Mechanism, gating, semantics, what-causes-what, required-vs-optional, lifecycle | VirtoOZ | `{DOC}` |
+| **Exact UI strings, control types (field vs dropdown vs toggle), layout, counts, ordering** | **live observation only** | `{OBSERVED}` |
+
+**A user guide is prose written for humans about what the product does. It paraphrases labels by design**
+— "click **Fixed points**" reads better than the real control, `Earn fixed amount of points per order`. It
+is not a UI string table and never tried to be. So a label, a widget type or an on-screen count carried
+into a case as `{DOC}` is a paraphrase promoted to a specification.
+
+**A documented rule binds to the SURFACE the doc names, and nowhere else.** Carrying it to a sibling field,
+column or blade is extrapolation wearing a citation's clothes — it manufactures a `{DOC}` tag on a claim no
+document makes, which is strictly worse than an honest `{HYPOTHESIS}`. The enforceable test, and the
+corollary to the verbatim-quote rule above: **if you cannot paste the sentence stating THIS claim about THIS
+surface, it is not `{DOC}`.** A quote about a neighbouring surface is not a quote about yours.
+
+**Docs contradicting an existing case, suite or knowledge file is a trigger to OBSERVE — never a licence to
+overwrite.** The artifact may be the only source in the room written from the screen. Cheap tell: when the
+older artifact is *more specific* than the doc, specificity usually means someone transcribed rather than
+paraphrased, and the artifact wins until live says otherwise.
+
+**Why this earns a rule rather than a code review:** it fails silently and INVERTED. A wrong label does not
+break the run — it makes a **correct product fail the test**, so the cost lands on whoever triages the
+phantom failure, not on whoever authored it. That is the GOLDEN RULE's transcribed-constant failure mode
+(`.claude/rules/test-data.md`), reached from a different direction, and it spreads the same way: by the next
+author copying neighbouring style.
+
+Measured 2026-09-17 (VCST-5959, suite `075-loyalty` re-author, platform 3.1071.0-pr-3108). A doc-first
+rewrite replaced two live-correct reward labels with the guide's shorthand (`'Fixed points'`, which exists
+nowhere in the UI), restated a searchable dropdown as a typed field, and transferred the Product-factors
+negative-value rejection onto an Order-loyalty reward value — where live showed `-5.00` is accepted, saved
+and read back unchanged. All three shipped past a green linter; only `--verify` caught them, and the
+pre-rewrite file had two of the three right.
+
 ## Live-Verification Policy
 
 Test data, schema, and design intent are verified against **live state**, not against assumptions or stale references. Apply these checks in order before authoring, executing, or filing a bug.

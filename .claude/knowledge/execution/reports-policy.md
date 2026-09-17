@@ -194,6 +194,16 @@ verification step rather than a note.
 
 **Skip:** every navigation step in a passing test, loading spinners, login page (unless testing auth), successful form fills mid-flow, same page across browsers when all pass, redundant confirmations of the same bug.
 
+**Capture the PROBLEM PLACE, not only the page.** A 1920×1080 viewport shrunk to `|width=700!` in a
+tracker comment renders body text at roughly 7 px — the reader cannot read the error you are pointing at,
+so the evidence does not carry its own claim. Take **two**: one viewport shot for context, and one
+**element** shot of the thing that is wrong (the toast, the invalid field, the mispriced line, the console
+row). Measured 2026-09-17: the same failure toast was 1920×1080 / 302 KB as a viewport capture and
+**320×96 / 6 KB** as an element capture — smaller *and* legible. The element shot is the one that belongs
+next to the claim; the viewport shot proves where it lives. Both count as one item against the budget
+below. Mechanism — `element` + **`target`** (not `ref`) on `browser_take_screenshot`, and `scale:"device"`
+when a still needs to survive zooming: [`browser-lanes.md`](browser-lanes.md) §Screenshot resolution.
+
 **Per-scope budget:**
 
 | Scope | Target | Max |
