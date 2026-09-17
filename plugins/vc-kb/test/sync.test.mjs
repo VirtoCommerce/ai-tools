@@ -10,7 +10,7 @@ import { tmpdir, homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { sync, baseAge, isCheckout, ageNotice, SyncRefused, renderSync } from '../src/sync.mjs';
+import { sync, baseAge, isCheckout, ageNotice, SyncRefused, renderSync, repairIndexes } from '../src/sync.mjs';
 import { managedBaseDir, looksLikeBase, BASE_MARKER } from '../src/base.mjs';
 
 const scratch = () => mkdtempSync(join(tmpdir(), 'kb-sync-'));
@@ -197,4 +197,61 @@ test('age is silent about a directory that is not a checkout, rather than guessi
 
 test('the real managed path is under the real home, and no test ever wrote to it', () => {
   assert.equal(managedBaseDir({ env: {} }), join(homedir(), '.claude', 'vc-knowledge'));
+});
+
+// A FETCH THAT LEAVES `kb ask` DEGRADED IS NOT A FETCH. The base ignores the written stores'
+// retrieval indexes — `kb reindex` rebuilds them — so a store whose index was never committed
+// arrives with none, and `openBase` answers a missing index with `degraded`. Measured 2026-09-17 on
+// a clone taken the documented way: `rules-index.json` was absent and EVERY `kb ask` on that
+// machine returned "MISS (degraded)", including questions the corpus answers well.
+test('a clone whose index was never committed gets one built, and nothing else is touched', () => {
+  const rule = [
+    '---',
+    'id: KB-00000001',
+    'subject: BL-CART-001 A title',
+    'plane: normative',
+    'status: active',
+    'refutableBy: observation',
+    'evidence:',
+    '---',
+    '',
+    'BL-CART-001: A title `[P1-data]`',
+    '- **Rule:** Something.',
+    '',
+  ].join('\n');
+  // `* -text` exactly as the real base carries it: the corpus is byte-gated, so git must convert
+  // nothing. Without it a Windows checkout with core.autocrlf=true hands back CRLF entries and the
+  // frontmatter parser rejects every one — which is worth knowing, and is the base's rule, not this
+  // test's convenience.
+  const origin = originRepo({ extra: {
+    '.gitattributes': '* -text\n',
+    // The base ignores the written indexes on the ground that `kb reindex` rebuilds them. That
+    // is the rule this whole repair exists because of, so the fixture carries it.
+    '.gitignore': 'rules-index.json\n',
+  } });
+  mkdirSync(join(origin, 'rules'));
+  writeFileSync(join(origin, 'rules', 'KB-00000001.md'), rule);
+  writeFileSync(join(origin, 'rules-catalog.md'), 'a catalog somebody tracks\n');
+  git(['add', '-A'], origin);
+  git(['commit', '--quiet', '-m', 'rules, but no index'], origin);
+
+  const home = scratch();
+  const dest = join(home, '.claude', 'vc-knowledge');
+  const r = sync({ dir: dest, repo: origin });
+
+  assert.deepEqual(r.indexed, ['rules-index.json']);
+  assert.equal(existsSync(join(dest, 'rules-index.json')), true);
+  assert.match(renderSync(r), /built the missing retrieval index: rules-index\.json/);
+
+  // The CATALOG is tracked, and its byte comparison is what catches an entry edited by hand. A
+  // fetch that rewrote it would destroy that signal — and would leave the checkout dirty, so the
+  // next `kb sync` could not fast-forward.
+  assert.equal(spawnSync('git', ['status', '--porcelain'], { cwd: dest, encoding: 'utf8' }).stdout.trim(), '');
+
+  // An index the checkout DOES carry is left alone, stale or not: repairing one is `kb reindex`.
+  writeFileSync(join(dest, 'rules-index.json'), 'stale but present');
+  assert.deepEqual(repairIndexes(dest), []);
+
+  rmSync(origin, { recursive: true, force: true });
+  rmSync(home, { recursive: true, force: true });
 });
