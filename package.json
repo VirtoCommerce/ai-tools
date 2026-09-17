@@ -260,7 +260,8 @@
     "td:validate:all": "node scripts/maintenance/td-validate-all.mjs",
     "td:test-attribution": "node scripts/maintenance/td-test-attribution.mjs",
     "test:roi-check": "node scripts/maintenance/lint-test-roi.mjs",
-    "test:quality": "node scripts/maintenance/test-quality-report.mjs"
+    "test:quality": "node scripts/maintenance/test-quality-report.mjs",
+    "tracker:comment": "node scripts/tracker/comment.mjs"
   },
   "repository": {
     "type": "git",

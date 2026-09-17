@@ -1959,6 +1959,27 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 
 ---
 
+## Domain 25: Agentic Commerce / UCP (BL-UCP)
+
+> **Declared 2026-09-17, deliberately EMPTY — no invariant has cleared the evidence bar yet.** The
+> section exists so `.claude/knowledge/domain/ucp.md` has a slug to resolve against; an empty domain
+> is an honest statement of the coverage hole, not an oversight. The Universal Commerce Protocol
+> adapter (agentic commerce over MCP: discovery → identity linking → cart → checkout → signed
+> handoff → storefront restore) currently ships **zero** invariants of its own, so its flow is judged
+> only against the general oracles it inherits by delegation — `BL-CART-*` (XCart), `BL-CHK-*` (the
+> checkout the buyer lands in), `BL-B2B-*` (org scoping) and `BL-AUTH-*` (the Platform token) — none
+> of which knows the handoff exists.
+>
+> Candidates surfaced but **not** promoted (each needs a `/qa-review-oracles` three-axis pass):
+> handoff-token single-use and TTL, the restore status matrix (400 vs 401 vs 403 vs 404), the
+> `mergeCart` ownership triple-check, `organization_id` deriving only from the Platform token, and
+> anonymous-plus-organization being refused. Surfaces, evidence and the open gaps:
+> `.claude/knowledge/domain/ucp.md` §4 and §5 (G5). The module is unmerged at time of writing
+> (vc-module-ucp#7 / vc-frontend#2467 / vc-platform#3108), which is the main reason nothing is
+> promoted yet.
+
+---
+
 ## Invariant Coverage Summary
 
 P0 column rolls up `[P0-revenue]` + `[P0-security]`; P1 column rolls up `[P1-data]` + `[P1-ux]`.

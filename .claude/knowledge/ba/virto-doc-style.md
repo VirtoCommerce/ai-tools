@@ -510,7 +510,7 @@ ending in the verbatim quoted success message.}
 `{{BACK_URL}}` for hosts, field names schema-validated.}
 
 ---
-*{TICKET} verdict {the run's own verdict, verbatim} · verified on {env} ·
+*{TICKET} · verified on {env} ·
 Not documented: {each omitted condition with its reason, or the word none} ·
 Evidence: `reports/tickets/{SPRINT}/{TICKET}/` · Audiences derived from layer `{layer}`*
 ```

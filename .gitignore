@@ -173,3 +173,6 @@ reports/vc-fix-plugin-diagnosis.md
 # The Playwright MCP servers write raw captures here; /qa-bug moves the ones it keeps
 # into reports/bugs/screenshots/<bug-slug>/. Nothing here is evidence of record.
 reports/bugs/screenshots/_incoming/
+
+# Tracker comment ledger — one comment per ticket per run (tracker-ops.md §0)
+.tracker-comments.json
