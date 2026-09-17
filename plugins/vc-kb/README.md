@@ -77,23 +77,40 @@ kb reindex                 rebuild the captured index and catalog from the entri
 kb stat                    what the corpus currently holds, on both planes
 ```
 
-**Where the base is.** Three places, in this order, and a person is behind all three:
+## Getting the base
+
+    kb sync
+
+One clone per machine, at `~/.claude/vc-knowledge`, and every project on that machine reads it.
+There is no install hook in Claude Code — nothing fires when a plugin is added — so this is a verb
+you run once rather than something that happens to you.
+
+It is staged: the clone lands in a temporary sibling, is checked for `kb.json` there, and only then
+is moved into place by a single rename. A fetch that fails leaves **nothing** behind, because a
+half-finished corpus is the one shape the answer contract cannot survive — it would be real but
+incomplete, and `ask` would report coverage misses for entries that exist. An existing checkout is
+fast-forwarded in place, never replaced: entries captured during a run are written straight into it.
+
+**Where the base is.** Four places, in this order:
 
 ```
 --base <dir>                       one invocation
 KB_BASE=<dir>                      this shell, and every hook in it
-knowledgeBase.path                 project-profile.json, written by /project-init
+knowledgeBase.path                 project-profile.json — an OVERRIDE, for a base of your own
+~/.claude/vc-knowledge             the managed checkout, what `kb sync` writes
 ```
 
-There is no fourth, no default constant and no search. The tool does not look for a `vc-knowledge`
-next to itself or above itself — two earlier versions did, and both could answer confidently out of
-a corpus nobody had named. If none of the three resolves, `kb` says where it looked and exits 2; it
-never carries on against a directory that is not there, because "the base holds nothing about your
-question" and "no base was read at all" are different answers.
+Nothing is searched for. The tool does not look for a `vc-knowledge` next to itself or above
+itself — two earlier versions did, and both could answer confidently out of a corpus nobody had
+named. The fourth entry is a default, but it is **checked** like every other candidate: no
+`kb.json`, no base, and `kb` says where it looked and exits 2. It never carries on against a
+directory that is not there, because "the base holds nothing about your question" and "no base was
+read at all" are different answers that demand opposite reactions — one says go find out and write
+it down, the other says go fix the install.
 
-`kb stat` names the base it used **and how it was chosen**. Two bases on one machine — a workbench
-checkout and the project's own — is the failure to watch for: reading one while writing the other
-leaves no trace anywhere else.
+`kb stat` names the base it used, **how it was chosen**, and **how old its content is**. All three
+matter: two bases on one machine is the failure to watch for, and a month-stale base answers
+plausibly, which is worse than not answering at all.
 
 ## The journal
 

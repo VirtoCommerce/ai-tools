@@ -23,7 +23,8 @@ import {
   unconfirmedUses, loopBanner,
 } from '../src/demand.mjs';
 import { OWNED_ROOTS, OWNED_FILES, DERIVED_ENTRIES } from '../src/planes.mjs';
-import { resolveBase, baseNotFoundMessage, baseProvenance } from '../src/base.mjs';
+import { resolveBase, baseNotFoundMessage, baseProvenance, managedBaseDir } from '../src/base.mjs';
+import { sync, renderSync, ageNotice, SyncRefused } from '../src/sync.mjs';
 
 const HERE = fileURLToPath(new URL('..', import.meta.url));
 const DEFAULT_BASE = resolveBase();
@@ -95,6 +96,9 @@ Supporting:
 
   kb confirm     <id> --deployment … --note … a repeat observation; raises the count, writes no second entry
   kb refute      [--baseline]                  do licensed claims still stand on published coordinates
+  kb sync        [--ref <branch>]             fetch the base onto this machine, or bring the
+                                              checkout up to date. One clone per machine, at
+                                              ~/.claude/vc-knowledge; every project reads it
   kb extract     [--env <name>]               regenerate the derived plane from a deployment
   kb check       [--env <name>]               regenerate in memory and byte-compare
   kb validate                                 gate the corpus on disk; needs no deployment
@@ -235,6 +239,22 @@ async function main() {
   if (asksForHelp(process.argv.slice(2))) {
     console.log(VERB_HELP[cmd] ?? USAGE);
     return 0;
+  }
+
+  // BEFORE THE BASE GATE, because this is the one verb whose entire job is that there is no base
+  // yet. Everything else needs one; this is how a machine gets one.
+  if (cmd === 'sync') {
+    try {
+      const r = sync({ dir: a.dir ?? a.base ?? managedBaseDir(), ref: a.ref });
+      console.log(renderSync(r));
+      if (r.action === 'cloned') {
+        console.log('  every project on this machine now reads this corpus — `kb stat` names it');
+      }
+      return 0;
+    } catch (e) {
+      if (e instanceof SyncRefused) { console.error(e.message); return 2; }
+      throw e;
+    }
   }
 
   // After the help pages, because `kb --help` must work on a machine that has no base yet, and
@@ -927,6 +947,11 @@ async function main() {
     const chose = a.base ? { dir: a.base, source: '--base' } : baseProvenance();
     console.log(`${derived} derived entries, ${anchors} anchors, at ${base}`
       + `${chose ? `  [${chose.source}]` : ''}`);
+    // HOW OLD WHAT IS IN IT IS. A month-stale base answers plausibly, and a plausible stale answer
+    // is worse than no answer because nothing about it looks wrong. Printed always, flagged past a
+    // month; never a gate -- an old base is still a base.
+    const fresh = ageNotice(base);
+    if (fresh) console.log(`  ${fresh.line}`);
     console.log(`${active.length} captured entries active (${captured.length - active.length} retired) in ${CAPTURED_DIR}/`);
     if (rules.length) {
       const disputedRules = activeRules.filter((e) => isDisputed(e.data)).length;

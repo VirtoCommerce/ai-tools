@@ -32,7 +32,12 @@ Zero runtime dependencies, Node ≥ 20, no install step.
 
 ## Where the base is
 
-`--base <dir>` → `KB_BASE` → `knowledgeBase.path` in `project-profile.json`.
+`--base <dir>` → `KB_BASE` → `knowledgeBase.path` in `project-profile.json` → `~/.claude/vc-knowledge`.
+
+`kb sync` fetches that last one: one clone per machine, staged through a temporary directory so a
+failed fetch leaves nothing a later read could mistake for a base. It is a verb because Claude Code
+has no install event — the hook surface is SessionStart, UserPromptSubmit, Pre/PostToolUse, Stop and
+SubagentStop, and none of them fire on install.
 
 **The base is declared, never discovered.** Two earlier versions searched for it — one counted
 three directories up because that is how deep `plugins/vc-kb` sits, the other climbed looking for a
@@ -58,11 +63,11 @@ other leaves no trace anywhere else.
 
 | | |
 |---|---|
-| `bin/kb.mjs` | the door — 22 verbs |
-| `src/` (31 modules + `data/`) | resolver, write path, extractor, rules, refutation, provenance, topics. `base.mjs` was written for this port and rewritten for it again |
-| `test/` (26 files + 1 helper) | **293 assertions**, and the only thing that says the port broke nothing |
+| `bin/kb.mjs` | the door |
+| `src/` | resolver, write path, extractor, rules, refutation, provenance, topics. `base.mjs` was written for this port and rewritten for it again; `sync.mjs` is new |
+| `test/` | the only thing that says the port broke nothing |
 | `vendor/minisearch.js` | the index |
-| `vendor/agent-log/` (7 files) | `log-row` (the journal hands question rows to it), `tool-log` (the journal reads its call counts, and two tests drive it), `scrub-scan` / `scrub-apply` (secrets in artifacts at rest), and their 73 assertions |
+| `vendor/agent-log/` | `log-row` (the journal hands question rows to it), `tool-log` (the journal reads its call counts, and two tests drive it), `scrub-scan` / `scrub-apply` (secrets in artifacts at rest) |
 | `hooks/arrive.mjs` | **ported, NOT wired** — see below |
 
 ## What did not, and why
@@ -112,12 +117,17 @@ the file's own header carries the same instruction.
 
 ## Gates
 
-    node --test plugins/vc-kb/test/*.test.mjs                  # 293
-    node plugins/vc-kb/vendor/agent-log/test-log-row.mjs       # 45
-    node plugins/vc-kb/vendor/agent-log/test-tool-log.mjs      # 28
+None of the counts above are written down, on purpose. This page carried "22 verbs" for exactly one
+commit before `kb sync` made it 23 — the same defect measured the same week in seven agent
+definitions asserting `108 rules` against an actual 217. `npm run kb:test` prints the assertion
+count, `ls plugins/vc-kb/{src,test}` the file counts, and `kb --help` the verbs.
+
+    node --test plugins/vc-kb/test/*.test.mjs
+    node plugins/vc-kb/vendor/agent-log/test-log-row.mjs
+    node plugins/vc-kb/vendor/agent-log/test-tool-log.mjs
     node plugins/vc-kb/bin/kb.mjs validate                     # gates the corpus, needs no deployment
 
-One of the 293 needs a real corpus — it asks what retrieval does across hundreds of entries, which
+Exactly ONE assertion needs a real corpus — it asks what retrieval does across hundreds of entries, which
 no fixture stands in for — and **SKIPS** when no base resolves, because "nothing to measure against"
 and "retrieval regressed" are different results and a red test must only ever mean the second. Give
 it a base with `KB_BASE`, and give it a **COPY**: see below.

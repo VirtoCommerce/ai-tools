@@ -8,8 +8,10 @@
 //                            base under construction is not yet a base -- `kb extract` writes
 //                            one from nothing and several gates run against a temp directory.
 //   2. `KB_BASE`             the environment.
-//   3. the project profile   `knowledgeBase.path` in `project-profile.json`, which `/project-init`
-//                            writes when it clones the base into the project folder.
+//   3. the project profile   `knowledgeBase.path` in `project-profile.json`. An OVERRIDE, for a
+//                            deployment pointed at a base of its own -- a client's, or a checkout
+//                            under construction -- not the ordinary case.
+//   4. the managed checkout   `~/.claude/vc-knowledge`, the one directory `kb sync` writes to.
 //
 // THE BASE IS NEVER SEARCHED FOR. An earlier version of this file walked up from the tool's own
 // directory looking for a `vc-knowledge` beside some ancestor, and the version before THAT counted
@@ -26,22 +28,53 @@
 // (The first version of this file fell through, and a probe pointed at a deliberately bogus
 // KB_BASE answered out of the real corpus with full confidence.)
 //
-// THERE IS NO FALLBACK CONSTANT, and that is the point. If none of the three resolves, the door
-// says so and exits; it does not carry on against a directory that does not exist. The answer
-// contract distinguishes three states -- an answer, an absence of COVERAGE, and an absence of the
-// BASE -- and a default path that happens to be wrong collapses the last two into the second,
-// which makes an outage look like a gap in knowledge. That is the specific failure `degraded`
-// exists to prevent, and it would be silly to defeat it in the first line of the program.
+// STEP 4 IS A DEFAULT, AND THIS FILE USED TO FORBID ONE. The rule read "there is no fallback
+// constant, and that is the point", and it was not caution -- it was written after a measured loss.
+// On 2026-09-16 a path resolved somewhere nobody would ever read, three entries plus an index and a
+// catalog were written there, every command reported success, and it surfaced only because a later
+// read of the real base came up one entry short.
+//
+// What that rule protects is the answer contract: an answer, an absence of COVERAGE, and an absence
+// of the BASE are three states, not two. A default that happens to be WRONG collapses the last two
+// into the second, so an outage reads as a gap in knowledge -- and the two demand opposite
+// reactions. A MISS says go find out and WRITE IT DOWN. A missing base says go fix the install.
+//
+// The managed checkout is admitted because it cannot be the wrong corpus in the way the old
+// constant could. That constant named one machine's directory, so it was wrong BY CONSTRUCTION
+// everywhere else. This one names the tool's own pocket -- the single directory `kb sync` writes --
+// so it is the same answer on every machine. And it is CHECKED like every other candidate: no
+// `kb.json`, no base, and the door still says so and still exits 2. It proposes a place to look; it
+// never declares one.
+//
+// The guarantee moves from structural to disciplinary, which is a real cost, so the discipline
+// ships WITH it and not after: `kb sync` stages into a temporary directory and renames, so a
+// half-finished clone can never present itself as a base (`src/sync.mjs`), and the readiness line
+// prints how old the checkout's content is, because a month-stale base answers plausibly and that
+// is worse than not answering at all.
 //
 // A DIRECTORY IS A BASE IF IT CARRIES `kb.json`. The manifest is already the thing that declares
 // the namespace, the planes, the schema fields and the identity rule, so it is also the honest
 // marker: a directory holding one is a base of some version, and a directory holding none is not
 // a base whatever it is named.
 import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 export const BASE_MARKER = 'kb.json';
 export const PROFILE_NAME = 'project-profile.json';
+
+// THE BASE'S IDENTITY, not a machine detail -- which is why it is hardcoded rather than configured.
+// A client base is added beside this one later; it does not replace it.
+export const BASE_REPO = 'https://github.com/VirtoCommerce/vc-knowledge.git';
+
+// ONE CHECKOUT PER MACHINE, at a path no plugin upgrade can move. Not beside the plugin: the plugin
+// cache is version-stamped (`~/.claude/plugins/cache/<market>/<plugin>/<version>/`, and versions sit
+// side by side), so a base parked there would be orphaned and re-downloaded on every upgrade, and it
+// would be a write into a directory the plugin manager owns. One clone per machine is also the point
+// -- N projects holding N diverging copies of the same corpus is the failure this avoids.
+export function managedBaseDir({ env = process.env, home = homedir() } = {}) {
+  return env.KB_HOME ? resolve(env.KB_HOME) : join(home, '.claude', 'vc-knowledge');
+}
 
 export const looksLikeBase = (dir) => Boolean(dir) && existsSync(join(dir, BASE_MARKER));
 
@@ -68,7 +101,7 @@ export function profileBase({ env = process.env, cwd = process.cwd() } = {}) {
   return { dir: isAbsolute(declared) ? declared : resolve(dirname(path), declared), profile: path };
 }
 
-export function baseCandidates({ explicit, env = process.env, cwd = process.cwd() } = {}) {
+export function baseCandidates({ explicit, env = process.env, cwd = process.cwd(), home } = {}) {
   const out = [];
   if (explicit) out.push({ dir: explicit, source: '--base', checked: false, explicit: true });
   if (env.KB_BASE) out.push({ dir: env.KB_BASE, source: 'KB_BASE', checked: true, explicit: true });
@@ -81,6 +114,9 @@ export function baseCandidates({ explicit, env = process.env, cwd = process.cwd(
       explicit: true,
     });
   }
+  // Nobody NAMED this one, so it is not `explicit`: finding it empty is a miss to report, not an
+  // operator's mistake to stop on. Nothing follows it, so the distinction only shapes the message.
+  out.push({ dir: managedBaseDir({ env, home }), source: 'managed checkout', checked: true, explicit: false, managed: true });
   return out;
 }
 
@@ -115,9 +151,6 @@ export function baseNotFoundMessage(opts = {}) {
     '',
     'Looked at:',
   ];
-  if (tried.length === 0) {
-    lines.push(`  (nowhere — no --base, no KB_BASE, and no ${PROFILE_NAME} declaring a knowledgeBase)`);
-  }
   let stoppedAt = null;
   for (const t of tried) {
     const bad = t.checked && !looksLikeBase(t.dir);
@@ -131,15 +164,29 @@ export function baseNotFoundMessage(opts = {}) {
       'than falling through to somewhere you did not ask for. Fix it or unset it.',
     );
   }
+  // THE ORDINARY CAUSE IS A MACHINE THAT HAS NOT FETCHED THE BASE YET, so the first thing offered
+  // is the one command that fixes that, not the three ways to point somewhere else. A message whose
+  // remedy is a list of overrides reads as "you have misconfigured this"; the usual truth is "you
+  // have not got it yet".
+  const managed = tried.find((t) => t.managed);
+  if (managed && !stoppedAt) {
+    lines.push(
+      '',
+      'Fetch it — one clone per machine, and every project on it reads the same corpus:',
+      '  kb sync',
+      '',
+      `It clones ${BASE_REPO} into`,
+      `  ${managed.dir}`,
+    );
+  }
   lines.push(
     '',
-    'Point at one of:',
+    'Or point somewhere else:',
     '  kb <verb> --base <dir>          one invocation',
     '  KB_BASE=<dir>                   this shell, and every hook in it',
-    `  /project-init                   clones the base and records it in ${PROFILE_NAME}`,
+    `  knowledgeBase.path              in ${PROFILE_NAME}, for a base of your own`,
     '',
-    `A base is a directory carrying ${BASE_MARKER}. Clone one:`,
-    '  git clone https://github.com/VirtoCommerce/vc-knowledge',
+    `A base is a directory carrying ${BASE_MARKER}.`,
   );
   return lines.join('\n');
 }
