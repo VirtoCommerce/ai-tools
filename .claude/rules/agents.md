@@ -10,6 +10,8 @@ Project `.mcp.json` (gitignored, per machine): `playwright-chrome` / `playwright
 
 **Unclear product behaviour ⇒ ask VirtoOZ first.** Any agent, any task: when what the platform or the storefront is *supposed* to do is not clear, query VirtoOZ via `/vc-docs` before acting on a guess — the rule and its 3-source caveat live in [`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*.
 
+**But a doc is authoritative for MECHANISM, not SURFACE** — exact UI strings, control types, layout and counts are `{OBSERVED}`, never `{DOC}` (a user guide paraphrases labels by design); a documented rule binds only to the surface the doc names; and docs contradicting an existing case, suite or knowledge file is a trigger to OBSERVE, never a licence to overwrite it. **Delegation teeth, which is this file's business: a dispatch brief must never instruct a subagent to prefer a doc over the artifact it is about to edit** — the artifact may be the only source written from the screen, and the subagent cannot re-check the brief's premise. Full rule, the enforceable quote test and the measured incident (VCST-5959: a doc-first brief put two nonexistent UI labels into a suite that had them right): [`../knowledge/agents/qa/shared-instructions.md`](../knowledge/agents/qa/shared-instructions.md) §What VirtoOZ is authoritative FOR.
+
 ## Browser Automation Rules
 
 - Install browsers: `npx playwright install chromium firefox` (Edge uses the system-installed `msedge` channel).
