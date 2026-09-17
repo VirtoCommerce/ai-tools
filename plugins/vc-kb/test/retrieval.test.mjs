@@ -19,24 +19,35 @@ import { join } from 'node:path';
 import { buildIndex, SEARCH_OPTIONS, tokenize } from '../src/index-build.mjs';
 import { stringifyFrontmatter } from '../src/frontmatter.mjs';
 import { ask } from '../src/resolve.mjs';
-import { DERIVED_ENTRIES } from '../src/planes.mjs';
+import { DERIVED_ENTRIES, CAPTURED_DIR, CAPTURED_INDEX } from '../src/planes.mjs';
 
-// A base holding exactly the entries a case needs, indexed the way `kb extract` indexes them.
+// A base holding exactly the entries a case needs.
+//
+// THE FIXTURES MOVED TO THE WRITTEN PLANE ON 2026-09-16, and the reason is that the defect they were
+// built from can no longer happen. Both cases above are a CONTRACT table crowding out a written
+// entry, and the contract plane left the ranked list that day — it is reached by naming a coordinate
+// now, not by sharing words. So the specific crowding these tests were written against is prevented
+// structurally, which is a stronger guarantee than the floor, and is pinned separately below.
+//
+// What is left for these tests to hold is the floor itself, which still governs written-against-
+// written. Keeping them on the derived plane would have made three passing tests that exercise
+// nothing: every fixture would return no results, and two of the three assert on which result leads.
 function baseWith(entries) {
   const dir = mkdtempSync(join(tmpdir(), 'kb-retrieval-'));
   writeFileSync(join(dir, 'kb.json'), JSON.stringify({ namespace: 'KB', idWidth: 8 }));
   mkdirSync(join(dir, DERIVED_ENTRIES), { recursive: true });
+  mkdirSync(join(dir, CAPTURED_DIR), { recursive: true });
 
   const docs = entries.map(({ id, subject, body }) => {
-    const path = `${DERIVED_ENTRIES}/${id}.md`;
+    const path = `${CAPTURED_DIR}/${id}.md`;
     const question = `What is the contract of ${subject}?`;
     const data = {
       id,
       subject,
-      plane: 'derived-first',
+      plane: 'experiential',
       question,
       status: 'active',
-      refutableBy: 'derivation',
+      refutableBy: 'observation',
       anchors: [{ coordinate: subject }],
       evidence: [{ method: 'extraction', deployment: 'vcptcore_stable', pin: '0000000000000000' }],
     };
@@ -44,7 +55,11 @@ function baseWith(entries) {
     return { id, subject, question, text: body, path };
   });
 
-  writeFileSync(join(dir, 'derived-index.json'), `${JSON.stringify(buildIndex(docs), null, 2)}\n`);
+  // The contract index still has to EXIST: `openBase` reports a missing one as a DEGRADED base,
+  // which is a different answer from a coverage miss and would mask every assertion below. It is
+  // empty, because these cases are about the written plane now.
+  writeFileSync(join(dir, 'derived-index.json'), `${JSON.stringify(buildIndex([]), null, 2)}\n`);
+  writeFileSync(join(dir, CAPTURED_INDEX), `${JSON.stringify(buildIndex(docs), null, 2)}\n`);
   return dir;
 }
 const drop = (dir) => rmSync(dir, { recursive: true, force: true });
@@ -144,4 +159,19 @@ test('typographic punctuation splits, except the em dash', () => {
   assert.deepEqual(tokenize('and…then'), ['and', 'then']);
   // the em dash is not a separator here, and a spaced one is dropped by processTerm instead
   assert.deepEqual(tokenize('one—two'), ['one—two']);
+});
+
+// Verified 2026-09-16 against a copy of the live base, while fixing the flow plane's MISS contract:
+// this question already returns MISS, on the floor alone. The discount-row entry it was reported
+// to return matches `tax` and `orders` and never `calculated`, and two of three is not the floor.
+// Pinned so the floor cannot quietly drop to two and start serving it.
+test('a tax question is not answered by an entry that mentions tax about something else', () => {
+  const dir = baseWith([
+    { id: 'KB-88888888', subject: 'discount-row-withtax-is-never-written', body: 'Is discountAmountWithTax on an order discount row safe to read instead of discountAmount? The discount row discountAmountWithTax is always 0 whatever the store tax configuration; orders on a store with an active 20 percent tax provider still read 0.' },
+    { id: 'KB-99999999', subject: 'gql-type-ordershipmenttype', body: 'OrderShipmentType: price, priceWithTax, total, totalWithTax, tax details for orders.' },
+  ]);
+  const r = ask(dir, 'how is tax calculated on orders', { limit: 3 });
+  assert.equal(r.miss, true);
+  assert.match(r.note, /3 content terms/);
+  drop(dir);
 });

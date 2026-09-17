@@ -15,7 +15,7 @@
 // There is no matching of a question against a body, so there is no relevance guesswork, and a hit
 // is a hit rather than a ranking.
 
-import { coordinateIndex } from './coordinates.mjs';
+import { arrivalIndex } from './coordinates.mjs';
 
 // Coordinates that are a single bare word match too much. `organization` is a real GraphQL type,
 // and on a substring search it fired on 19 of run 03's 319 calls -- every URL with `organizationId`
@@ -26,7 +26,42 @@ import { coordinateIndex } from './coordinates.mjs';
 // (`POST /api/members/search`). Bare type names still match, but only when the text names them
 // with a boundary on both sides -- `CartType` in a GraphQL document body, not `cartTypeId` in a
 // query string.
+// WHAT MAKES A COORDINATE SAFE TO MATCH IN FREE TEXT: a slash, a dot or a space.
+// `GET /api/members/{id}`, `CartType.total`, `POST /api/carts` cannot appear in a sentence by
+// accident; `promotion` can.
+//
+// A compound type name like `OrderDiscountType` is safe too, and `ask` accepts one — but the test
+// for it CANNOT LIVE HERE, because `normalizeAnchor` lowercases every coordinate before it reaches
+// this index, so the internal capital that makes a compound name a name is gone by now. It belongs
+// on the asker's own spelling, and it is in `derivedByCoordinate` in resolve.mjs. Tried here first
+// on 2026-09-16: the rule could never fire, and a rule that cannot fire reads like a live one.
 const isStructured = (coordinate) => /[/.]/.test(coordinate) || coordinate.includes(' ');
+
+// A NAMESPACE IS NOT A PLACE. `POST /api` is a real coordinate -- the derived plane's root entry
+// for the REST contract is anchored on it -- and its path form `/api` is a prefix of 675 of the 700
+// route coordinates in the index, so it fired on every REST call any agent ever made: 4,038 calls
+// replayed on 2026-09-16, and the root entry was the commonest thing "arriving" in eleven of the
+// twenty-two logs, saying nothing each time. A route whose path is a proper prefix of most of the
+// routes in the index is the index's namespace; standing anywhere in it is not arriving at it.
+// `/cart` and `/search` are one segment too and prefix nothing, so they still fire -- they are
+// pages, and three flows and five facts are anchored on them.
+const routePath = (coordinate) => {
+  const lower = coordinate.toLowerCase();
+  const m = lower.match(/^[a-z]+ (\/.+)$/);
+  return m ? m[1] : lower.startsWith('/') ? lower : null;
+};
+const namespaces = new WeakMap();
+function namespacesOf(index) {
+  if (namespaces.has(index)) return namespaces.get(index);
+  const paths = [...index.keys()].map(routePath).filter(Boolean);
+  const out = new Set();
+  for (const p of new Set(paths)) {
+    const under = paths.filter((q) => q !== p && q.startsWith(`${p}/`)).length;
+    if (under > paths.length / 2) out.add(p);
+  }
+  namespaces.set(index, out);
+  return out;
+}
 
 // Word-boundary match, not substring. `organization` must not fire on `organizationId`; the
 // boundary after it is `i`, a word character, so it does not.
@@ -91,18 +126,58 @@ export function textOf(value, depth = 0) {
  * and rebuilding a 3400-coordinate index from 602 files each time would make the agent wait on the
  * base -- which is the one thing that would guarantee this gets turned off.
  */
-export function arrivalsFor(text, index, { limit = 3 } = {}) {
+/**
+ * Coordinates from `index` that a piece of text actually NAMES, most specific first.
+ *
+ * Exported because `ask` needs exactly this rule and must not grow a second one. Structure is
+ * required — a coordinate has to carry a `/`, a `.` or a space — which is the whole defence against
+ * the obvious failure of coordinate lookup: `Promotion` is a GraphQL type name and also an ordinary
+ * English word, and a question containing it is not a question about `PromotionType`.
+ */
+export function structuredMatches(text, index) {
   const hay = String(text ?? '').toLowerCase();
   if (!hay) return [];
   const hits = [];
+  const skip = namespacesOf(index);
   for (const [coordinate, entries] of index) {
     if (!isStructured(coordinate)) continue;
+    const path = routePath(coordinate);
+    if (path && skip.has(path)) continue;
     if (!forms(coordinate).some((f) => mentions(hay, f))) continue;
     hits.push({ coordinate, entries });
   }
   // Longest coordinate first: `POST /api/members/search` says more than `/api/members`, and if only
   // one line is going to be read it should be the specific one.
-  hits.sort((a, b) => b.coordinate.length - a.coordinate.length);
+  return hits.sort((a, b) => b.coordinate.length - a.coordinate.length);
+}
+
+export function arrivalsFor(text, index, { limit = 3 } = {}) {
+  const hits = structuredMatches(text, index);
+  if (!hits.length) return [];
+
+  // WITHIN one coordinate the order used to be whatever order the files were read in, and that was
+  // invisible until a coordinate held more than the hook could show. `/sign-in` holds four entries;
+  // three are shown; which three was decided by filename. Ranked now, and each step has a reason:
+  //
+  //   1  DISPUTED first. An entry somebody has contradicted is the single most important thing to
+  //      say to a reader about to rely on it, and it arrives carrying that label.
+  //   2  then by how many INDEPENDENT parties have seen it -- the corpus's own trust measure, the
+  //      same count `ask` serves, rather than a second notion invented here.
+  //   3  then WRITTEN before DERIVED. A contract entry is regenerable and the reader can always go
+  //      and read the contract; an agent-written observation exists nowhere else.
+  //
+  // Coordinate specificity still decides first, above all of this: `POST /api/members/search` says
+  // more about where you are standing than `/api/members`, and where you are standing is the whole
+  // premise of arriving.
+  const rank = (e) => (e.disputed ? 0 : 1);
+  const written = (e) => (e.plane === 'derived-first' ? 1 : 0);
+  for (const hit of hits) {
+    hit.entries = [...hit.entries].sort(
+      (a, b) => rank(a) - rank(b)
+        || written(a) - written(b)
+        || (b.independent ?? 0) - (a.independent ?? 0),
+    );
+  }
 
   // An entry is named once even when several of its coordinates matched. The agent is being handed
   // something to read, not a relevance report.
@@ -119,4 +194,5 @@ export function arrivalsFor(text, index, { limit = 3 } = {}) {
   return out;
 }
 
-export const buildArrivalIndex = (base) => coordinateIndex(base);
+// Delivery addresses included: this is the one caller that wants them.
+export const buildArrivalIndex = (base) => arrivalIndex(base);

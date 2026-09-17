@@ -7,11 +7,21 @@
 It reads and writes a base: [VirtoCommerce/vc-knowledge](https://github.com/VirtoCommerce/vc-knowledge)
 — 590 derived entries projected out of a running deployment, 74 written by hand, 3 flows.
 
-**This is not yet a plugin.** The layout is plugin-shaped so that packaging is one manifest entry
-rather than a restructure, but there is no `.claude-plugin/plugin.json` here and nothing has been
-added to `.claude-plugin/marketplace.json`. Packaging is VCST-5966, deliberately last: the
-unresolved question is how a customer install obtains an 8 MB knowledge repository, and with no
-real consumer yet any answer to that is a guess.
+**It is a plugin now** — `.claude-plugin/plugin.json` is here and there is a row in
+`.claude-plugin/marketplace.json`. It ships `"defaultEnabled": false`, because a plugin with no base
+is inert and enabling it for everyone would put a tool in the roster that answers nothing.
+
+**No other plugin depends on it yet, and that is on purpose.** A `dependencies` entry resolves
+against the per-plugin `{name}--v{version}` git tag (`docs/release-process.md` §Step 5a), so
+declaring one before `vc-kb--v0.1.0` is pushed would strand every `vc-fix` and `vc-perf` installer
+on an unresolvable range — for a dependency that, today, nothing reads. The dependency arrives with
+the knowledge itself, in phase 4, when a skill in one of those plugins first opens a file in the
+base.
+
+The question packaging was waiting on — how a customer install obtains an 8 MB knowledge repository
+— has an answer now: it does not. `/project-init` clones `VirtoCommerce/vc-knowledge` into the
+project folder and records where it put it, so the base travels as a git checkout on the machine
+rather than as plugin payload.
 
 ## Running it
 
@@ -22,7 +32,13 @@ Zero runtime dependencies, Node ≥ 20, no install step.
 
 ## Where the base is
 
-`--base <dir>` → `KB_BASE` → a `vc-knowledge` checkout sitting beside this repository.
+`--base <dir>` → `KB_BASE` → `knowledgeBase.path` in `project-profile.json`.
+
+**The base is declared, never discovered.** Two earlier versions searched for it — one counted
+three directories up because that is how deep `plugins/vc-kb` sits, the other climbed looking for a
+`vc-knowledge` beside any ancestor — and both could answer out of a corpus nobody had named. The
+search is gone: `/project-init` clones the base into the project and writes down where, so all
+three answers come from a person.
 
 There is no fallback constant. A base that cannot be found is REPORTED and the door exits 2 — it
 never carries on against a directory that is not there, because the answer contract has to keep
@@ -30,17 +46,21 @@ never carries on against a directory that is not there, because the answer contr
 reasoning is at the top of the file.
 
 **A directory named by a person and found not to be a base stops the search.** It does not fall
-through to the sibling. That rule cost a real mistake to learn: the first version fell through,
-and a probe deliberately pointed at a bogus `KB_BASE` answered confidently out of the real corpus.
-`test/base.test.mjs` pins it.
+through to the next candidate. That rule cost a real mistake to learn: the first version fell
+through, and a probe deliberately pointed at a bogus `KB_BASE` answered confidently out of the real
+corpus. `test/base.test.mjs` pins it.
+
+**`kb stat` names the base AND how it was chosen.** Two bases on one machine — a workbench checkout
+and the project's own — is the failure to design against, because reading one while writing the
+other leaves no trace anywhere else.
 
 ## What came across
 
 | | |
 |---|---|
-| `bin/kb.mjs` | the door — 17 verbs |
-| `src/` (23 files) | resolver, write path, extractor. `base.mjs` is new, written for this port |
-| `test/` (14 files) | **171 assertions**, and the only thing that says the port broke nothing |
+| `bin/kb.mjs` | the door — 22 verbs |
+| `src/` (31 modules + `data/`) | resolver, write path, extractor, rules, refutation, provenance, topics. `base.mjs` was written for this port and rewritten for it again |
+| `test/` (26 files + 1 helper) | **293 assertions**, and the only thing that says the port broke nothing |
 | `vendor/minisearch.js` | the index |
 | `vendor/agent-log/` (7 files) | `log-row` (the journal hands question rows to it), `tool-log` (the journal reads its call counts, and two tests drive it), `scrub-scan` / `scrub-apply` (secrets in artifacts at rest), and their 73 assertions |
 | `hooks/arrive.mjs` | **ported, NOT wired** — see below |
@@ -83,12 +103,24 @@ which is capture-time discipline rather than code.
 Wiring a hook that runs on every tool call to buy ~1% is not a trade worth making blind. Re-measure
 after the comparison in VCST-5965, then decide.
 
+**"Unwired" here means there is no `hooks/hooks.json` at all** — the same shape `vc-perf` has, which
+ships no hooks directory. An empty-but-valid hook registration would be the only file in this
+repository asserting one, and a reader finding it would reasonably wonder whether something had been
+lost. The cost is measured too: **254–286 ms per tool call against an 80–84 ms baseline.** To turn it
+on, add a `hooks/hooks.json` registering `PostToolUse` → `node "${CLAUDE_PLUGIN_ROOT}/hooks/arrive.mjs"`;
+the file's own header carries the same instruction.
+
 ## Gates
 
-    node --test plugins/vc-kb/test/*.test.mjs                  # 171
+    node --test plugins/vc-kb/test/*.test.mjs                  # 293
     node plugins/vc-kb/vendor/agent-log/test-log-row.mjs       # 45
     node plugins/vc-kb/vendor/agent-log/test-tool-log.mjs      # 28
     node plugins/vc-kb/bin/kb.mjs validate                     # gates the corpus, needs no deployment
+
+One of the 293 needs a real corpus — it asks what retrieval does across hundreds of entries, which
+no fixture stands in for — and **SKIPS** when no base resolves, because "nothing to measure against"
+and "retrieval regressed" are different results and a red test must only ever mean the second. Give
+it a base with `KB_BASE`, and give it a **COPY**: see below.
 
 `kb check` is the derived plane's byte gate — it regenerates from a live pinned deployment and
 byte-compares. It needs credentials and a reachable environment, so it is not part of the default

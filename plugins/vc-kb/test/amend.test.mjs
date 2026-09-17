@@ -11,6 +11,7 @@
 // a flow's steps are not its identity either.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { asAnotherParty } from './parties.mjs';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -96,7 +97,9 @@ test('amending does not raise the confirmation count', () => {
   amend(dir, id, { step: 3, note: 'a correction', deployment: 'vcptcore_stable' });
   assert.equal(confirmationsOf(loadEntry(dir, id).data), was, 'amending is partly disagreeing, and must not read as agreement');
 
-  confirm(dir, id, { deployment: 'vcptcore_stable' });
+  // Somebody ELSE walks it. The same session confirming its own capture is one party twice, and
+  // `confirmationsOf` has counted parties rather than rows since 2026-09-16.
+  asAnotherParty(() => confirm(dir, id, { deployment: 'vcptcore_stable', note: 'walked the flow again and step 3 checked out on /cart' }));
   assert.equal(confirmationsOf(loadEntry(dir, id).data), was + 1, 'confirming still does exactly what it did');
   drop(dir);
 });

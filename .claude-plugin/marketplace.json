@@ -13,6 +13,11 @@
       "description": "Bug lifecycle for Virto Commerce QA — project setup, bug filing, autonomous fixing, fix verification, online bug monitoring, and self-diagnostics (/vc-self-check). Self-contained plugin (10 agents, 16 skills, 8 commands)."
     },
     {
+      "name": "vc-kb",
+      "source": "./plugins/vc-kb",
+      "description": "The Virto Commerce knowledge base — a CLI (`kb`) that extracts REST + GraphQL contracts from a running deployment and answers questions against them plus the observations agents captured while working. Reads and writes a separate base repository (VirtoCommerce/vc-knowledge) whose location is declared, never discovered. Zero runtime dependencies. Not enabled by default: it is inert without a base."
+    },
+    {
       "name": "vc-perf",
       "source": "./plugins/vc-perf",
       "description": "Three-layer performance loop — BenchmarkDotNet A/B (L1), k6 load harness (L2), dotnet-trace allocation/CPU/DB attribution (L3), machine-readable perf-verdict, optimization PRs. Depends on vc-fix (reuses its onboarding, routing, and backend dev/review agents). Advisory only."

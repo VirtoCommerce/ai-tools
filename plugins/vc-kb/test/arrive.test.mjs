@@ -75,3 +75,23 @@ test('an entry anchored on two matching coordinates is still offered once', () =
   ]);
   assert.equal(arrivalsFor('https://host/company/members/roles', twice).length, 1);
 });
+
+// Found by replaying 4,038 archived calls on 2026-09-16: the derived plane's root entry is anchored
+// on `POST /api`, whose path is a prefix of 675 of 700 routes, so it "arrived" on every REST call
+// any agent ever made and was the commonest arrival in eleven of twenty-two logs. A namespace is
+// not a place.
+test('a route that is the namespace of most of the index does not fire; a one-segment page still does', () => {
+  const wide = new Map([
+    ['POST /api', [{ id: 'KB-ROOT0000', subject: 'rest-api', plane: 'derived-first' }]],
+    ['GET /api/members', [{ id: 'KB-MEMBERS1', subject: 'rest-api-members', plane: 'derived-first' }]],
+    ['POST /api/members/search', [{ id: 'KB-MEMBERS2', subject: 'rest-api-members-search', plane: 'derived-first' }]],
+    ['DELETE /api/carts', [{ id: 'KB-CARTS000', subject: 'rest-api-carts', plane: 'derived-first' }]],
+    ['/cart', [{ id: 'KB-CARTPAGE', subject: 'the storefront cart page', plane: 'experiential' }]],
+  ]);
+  assert.deepEqual(arrivalsFor('curl https://host/api/platform/modules', wide).map((h) => h.id), [],
+    'a call somewhere under /api is not an arrival at the REST contract as a whole');
+  assert.deepEqual(arrivalsFor('curl -X DELETE https://host/api/carts/abc', wide).map((h) => h.id), ['KB-CARTS000'],
+    'the specific route still fires, and the root does not ride along with it');
+  assert.deepEqual(arrivalsFor('https://host/cart', wide).map((h) => h.id), ['KB-CARTPAGE'],
+    '/cart is one segment too, but it prefixes nothing: it is a page, not a namespace');
+});

@@ -15,8 +15,12 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadIndex, tokenize, SEARCH_OPTIONS } from './index-build.mjs';
 import { parseEntry } from './frontmatter.mjs';
-import { CAPTURED_DIR, CAPTURED_INDEX, FLOWS_DIR, FLOWS_INDEX, confirmationsOf, disputesOf, isDisputed, observedOn, readPin } from './capture.mjs';
+import { CAPTURED_DIR, CAPTURED_INDEX, FLOWS_DIR, FLOWS_INDEX, confirmationsOf, disputesOf, isDisputed, observedOn, readPin, evidenceKinds } from './capture.mjs';
 import { DERIVED_INDEX } from './planes.mjs';
+import { sourceDoor, renderSourceDoor } from './source-door.mjs';
+import { coordinateIndex } from './coordinates.mjs';
+import { structuredMatches } from './arrive.mjs';
+import { partiesOf } from './provenance.mjs';
 
 // Function words carry no evidence that a result is about the question. Without excluding them,
 // "how do I bake sourdough bread" returns /api/sitemaps at top trust, because `do` matched
@@ -66,6 +70,41 @@ function contentMatches(hit, queryTerms) {
 
 // The number of exact content terms a hit must carry to be served at all.
 export const relevanceFloor = (queryTerms) => Math.min(3, queryTerms.size);
+
+// Which of those exact content matches landed in a GOAL field -- `subject` or `question` -- rather
+// than somewhere in the body. For a fact this distinction is weak: a fact's body IS its content.
+// For a flow it is the whole question, see `aboutGoal`.
+function goalMatches(hit, queryTerms) {
+  return Object.entries(hit.match)
+    .filter(([t, fields]) => queryTerms.has(t) && fields.some((f) => f === 'subject' || f === 'question'))
+    .map(([t]) => t);
+}
+
+// A FLOW IS SERVED ONLY WHEN ITS GOAL ACCOUNTS FOR MOST OF THE QUESTION.
+//
+// The word-count floor above cannot do this job for a procedure, and the independent review of
+// 2026-09-16 named the consequence as defect D4: `kb how "cancel an order"` returned the
+// order-placement flow, `how "log in to admin"` returned it plus a promotion flow. With three flows
+// in the plane, `how` returned the least-bad of three for almost anything, because a flow's STEPS
+// mention every noun of a journey -- `cancel`, `Admin`, `log in` -- and two words in a body clear a
+// floor of two. The floor measures whether a result is about the question's WORDS. A flow is
+// identified by its GOAL (capture.mjs: `fingerprint`), so the question to ask is whether the goal
+// is what was asked.
+//
+// Strict majority, measured on 2026-09-16 against a copy of the live base: every wrong answer
+// above becomes MISS; "place an order on the storefront", "how do I place an order", "create a
+// promotion with a coupon code", "apply a coupon on the storefront" and each flow's own question
+// still return their flow; and a question that names two flows' vocabulary ("how do I put a coupon
+// on a promotion and apply it to a cart?") now returns one instead of two. The cost is recall on a
+// synonym: `how "checkout"` is a MISS, because no flow's goal says checkout. That is the trade this
+// contract makes on purpose -- a MISS costs a lookup, a confident wrong procedure costs the run.
+//
+// NOT APPLIED TO `ask`. The same rule was measured over the 34 held-out questions three runs
+// asked (measurements/kb-retrieval-2026-09/): a majority rule loses the first-ranked entry on 19
+// rows, `min(2, size)` on 7, and even one goal term on 2 -- and none of them fixes the one `ask`
+// row that motivated trying ("sign in to the Admin platform UI"). A fact's body is its content, so
+// a rule about goal fields is a rule about the wrong thing there.
+export const aboutGoal = (goalTerms, queryTerms) => goalTerms.length > queryTerms.size / 2;
 
 const PROTOCOL =
   'The base is a lens, never ground truth. Reality outranks it. Cite @kb(id) for load-bearing use, ' +
@@ -123,22 +162,61 @@ function experientialTrust(data) {
   const axes = (data.appliesTo ?? []).map((s) => `${s.axis}=${s.value}`);
   const confirmations = confirmationsOf(data);
   const disputes = disputesOf(data);
+  const kinds = evidenceKinds(data);
   if (disputes > 0) {
     return {
       level: 'disputed',
       confirmations,
       disputes,
+      kinds,
       axes,
       reasons: [`${disputes} observation(s) contradict this entry; read them before relying on it`],
     };
   }
+  // A SOURCE READING DOES NOT CONFIRM AN OBSERVATION, or the reverse, so `confirmed` needs two of
+  // one kind and never one of each. Source says what the code does; an observation says what this
+  // deployment did. They can agree while the deployment runs a different build -- which is not a
+  // hypothetical here: two of round two's three arms read `dev` rather than the installed tag. The
+  // two counts are reported side by side rather than blended, because a blended number would be a
+  // weight nobody has measured, and this base has been wrong before about a constant that felt
+  // obviously right. VCST-5975's fourth acceptance is this rule.
+  // INDEPENDENCE, not row count. Two readings by the same author in one sitting are one reading
+  // twice, and counting them as confirmation is the self-confirmation this project keeps catching
+  // itself at -- "a run helped by its own captures is not evidence of anything" is already the rule
+  // the arrival measurement is built on. It was caught here the same way: recording both sides of
+  // the password-hash disagreement, two files read minutes apart by one author, flipped the entry
+  // to `confirmed`.
+  //
+  // A row with no `by` counts as its own author, because the tool cannot tell. That is deliberately
+  // permissive and it is what keeps this from re-grading the corpus: 121 of the 124 evidence rows
+  // written before 2026-09-16 carry no author, so their levels are untouched. The rule only ever
+  // tightens, and only for rows that say who wrote them.
+  // A TRANSCRIBED ROW IS THE ARTEFACT'S OBSERVATION, NOT THE TYPIST'S. Fifteen rows in the live
+  // corpus said `by: round2-arm-B` when no arm ever ran a writing verb -- the author had typed the
+  // witness's name. Three entries stood at `confirmed` on that. `partiesOf` counts `from` (a path
+  // that exists and can be opened) ahead of `by` (who typed it), so one author transcribing three
+  // reports is three parties and one author writing three rows unaided is one.
+  const independent = (wantSource) => {
+    const rows = (data.evidence ?? []).filter((e) => !e.contradicts && ((e.method === 'source') === wantSource));
+    return partiesOf(rows);
+  };
+  const repeated = Math.max(independent(false), independent(true)) > 1;
+  const both = kinds.observation > 0 && kinds.source > 0;
   return {
-    level: confirmations > 1 ? 'confirmed' : 'single-observation',
+    level: repeated ? 'confirmed' : 'single-observation',
     confirmations,
     disputes: 0,
+    kinds,
     axes,
     reasons: [
-      `${confirmations} independent observation(s)`,
+      [
+        kinds.observation ? `${kinds.observation} observation(s)` : null,
+        kinds.source ? `${kinds.source} reading(s) of source at a named tag` : null,
+      ].filter(Boolean).join(' and ') || 'no evidence rows',
+      ...(both && !repeated
+        ? ['an observation and a source reading agree here; that is NOT counted as confirmation — '
+          + 'code says what should happen, an observation says what did, and a second of EITHER kind is what confirms']
+        : []),
       axes.length ? `scoped to ${axes.join(', ')}` : 'no scope axis recorded',
     ],
   };
@@ -181,8 +259,18 @@ function answerFor(base, hit, reference = null) {
       ? { lastConfirmed: confirming.at(-1) ?? null, verificationDue: null }
       // The derived plane has no re-verification clock: it does not go stale, it goes regenerated.
       : { lastConfirmed: null, verificationDue: null },
+    // Provenance names the CHANNEL as well as the place. A row read out of code has no deployment
+    // and no pin, so `observedOn` reports it as `?@?` -- which reads like a missing stamp rather
+    // than a different kind of evidence, and the whole reason `method: source` exists is that the
+    // two must not be indistinguishable.
     provenance: experiential
-      ? `observed @ ${observedOn(data).map((o) => `${o.deployment}${o.platformVersion ? `:${o.platformVersion}` : ''}`).join(', ')}`
+      ? [
+        observedOn(data).some((o) => o.deployment)
+          ? `observed @ ${observedOn(data).filter((o) => o.deployment).map((o) => `${o.deployment}${o.platformVersion ? `:${o.platformVersion}` : ''}`).join(', ')}`
+          : null,
+        ...(data.evidence ?? []).filter((e) => e.method === 'source')
+          .map((e) => `read from source @ ${e.module}:${e.version} ${e.path}`),
+      ].filter(Boolean).join(' · ')
       : `derived @ ${data.evidence?.[0]?.deployment ?? '?'}:${data.evidence?.[0]?.pin ?? '?'}`,
     disputed: disputes.length
       ? { count: disputes.length, notes: disputes.map((d) => ({ note: d.note ?? null, deployment: d.deployment ?? null, at: d.at ?? null })) }
@@ -232,22 +320,26 @@ export function how(base, question, { limit = 2 } = {}) {
   const queryTerms = new Set(
     tokenize(question).map((t) => t.toLowerCase()).filter((t) => t.length > 1 && !FUNCTION_WORDS.has(t)),
   );
-  const raw = opened.flows ? opened.flows.search(question, SEARCH_OPTIONS) : [];
-  const floor = relevanceFloor(queryTerms);
-  const hits = raw
-    .filter((h) => contentMatches(h, queryTerms).length >= floor)
-    .sort((a, b) => b.score - a.score);
+  const { hits, nearGoals, floor } = flowHits(opened, question, queryTerms);
 
   if (!hits.length) {
+    // A flow whose steps mention the words but whose goal is something else is NOT the nearest
+    // answer with a caveat; it is a different procedure. Its goal is named so the reader can see
+    // what was refused and why, and can tell this MISS from an empty plane.
+    const byWords = nearGoals.length
+      ? `${nearGoals.length} flow${nearGoals.length === 1 ? '' : 's'} mention${nearGoals.length === 1 ? 's' : ''} these words in ` +
+        `${nearGoals.length === 1 ? 'its' : 'their'} steps but ${nearGoals.length === 1 ? 'has' : 'have'} a different goal ` +
+        `(${nearGoals.map((g) => `"${g}"`).join('; ')}). A flow is served only when its goal is what you asked. `
+      : `No flow matches ${floor} content term${floor === 1 ? '' : 's'} of this question. `;
     return {
       miss: true,
       question,
       searched: ['flow'],
       results: [],
       degraded: null,
+      nearGoals,
       note: opened.flows
-        ? `No flow matches ${floor} content term${floor === 1 ? '' : 's'} of this question. ` +
-          'If you work one out, record it with `kb capture --flow` so the next run walks it instead of finding it.'
+        ? byWords + 'If you work one out, record it with `kb capture --flow` so the next run walks it instead of finding it.'
         : 'This base holds no flows yet. Record one with `kb capture --flow`.',
     };
   }
@@ -270,11 +362,74 @@ export function flowsMatching(base, question) {
   const queryTerms = new Set(
     tokenize(question).map((t) => t.toLowerCase()).filter((t) => t.length > 1 && !FUNCTION_WORDS.has(t)),
   );
+  return flowHits(opened, question, queryTerms).hits.map((h) => ({ id: h.id, subject: h.subject }));
+}
+
+// The one place a flow is judged against a question. `how` serves what this returns and
+// `flowsMatching` points at it; two copies of the filter is how the pointer would come to name a
+// flow the verb then refuses.
+function flowHits(opened, question, queryTerms) {
+  const raw = opened.flows ? opened.flows.search(question, SEARCH_OPTIONS) : [];
   const floor = relevanceFloor(queryTerms);
-  return opened.flows.search(question, SEARCH_OPTIONS)
-    .filter((h) => contentMatches(h, queryTerms).length >= floor)
-    .sort((a, b) => b.score - a.score)
-    .map((h) => ({ id: h.id, subject: h.subject }));
+  const byWords = raw.filter((h) => contentMatches(h, queryTerms).length >= floor);
+  const hits = byWords
+    .filter((h) => aboutGoal(goalMatches(h, queryTerms), queryTerms))
+    .sort((a, b) => b.score - a.score);
+  const served = new Set(hits.map((h) => h.id));
+  const nearGoals = byWords.filter((h) => !served.has(h.id)).sort((a, b) => b.score - a.score).map((h) => h.subject);
+  return { hits, nearGoals, floor };
+}
+
+// A question only reaches the contract plane by NAMING a coordinate, and this is the cheap guard
+// that decides whether it is worth opening 590 files to find out. A coordinate carries a slash
+// followed by a path character, or a dotted `Type.field`. Most questions carry neither, and for
+// those `ask` never builds the index at all.
+const NAMES_A_COORDINATE = /[/][A-Za-z{]|\b[A-Za-z][A-Za-z0-9]*[.][A-Za-z]|\b[A-Za-z][a-z0-9]+[A-Z][A-Za-z0-9]*\b/;
+
+/**
+ * Contract entries whose coordinate the question actually names.
+ *
+ * This is the whole of what the derived plane does for `ask` since it left the ranked list: it is
+ * an address book, and you reach an address book by knowing the address. The matching rule is the
+ * arrival hook's, imported rather than rewritten, and it requires structure — without that,
+ * `Promotion` in an ordinary sentence would resolve to `PromotionType`, which is the obvious way
+ * coordinate lookup goes wrong and the reason the review warned about it.
+ *
+ * Score is a sentinel: these are not ranked against BM25 scores, they are placed ahead of them.
+ */
+function derivedByCoordinate(base, question) {
+  if (!NAMES_A_COORDINATE.test(String(question ?? ''))) return [];
+  const full = coordinateIndex(base);
+  const derivedOnly = new Map();
+  for (const [coordinate, rows] of full) {
+    const contract = rows.filter((r) => r.plane === 'derived-first');
+    if (contract.length) derivedOnly.set(coordinate, contract);
+  }
+  const seen = new Set();
+  const out = [];
+  const take = (coordinate, entries) => {
+    for (const e of entries ?? []) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      out.push({ id: e.id, path: e.path, subject: e.subject, plane: e.plane, score: Infinity, namedCoordinate: coordinate });
+    }
+  };
+
+  // Routes and dotted fields: the hook's rule, shared.
+  for (const { coordinate, entries } of structuredMatches(question, derivedOnly)) take(coordinate, entries);
+
+  // A BARE TYPE NAME, judged on THE ASKER'S SPELLING and not on the stored coordinate.
+  //
+  // `normalizeAnchor` lowercases everything before it reaches the index, so `OrderDiscountType` is
+  // `orderdiscounttype` there and the internal capital that makes a name a name is gone. It survives
+  // in the question. `OrderDiscountType` and `CartTotalType` are not words anybody writes by
+  // accident; `Promotion` is, and a single capitalised word never qualifies — which is exactly the
+  // failure the review warned about when it suggested coordinate lookup.
+  for (const m of String(question ?? '').matchAll(/\b[A-Za-z][a-z0-9]+[A-Z][A-Za-z0-9]*\b/g)) {
+    const key = m[0].toLowerCase();
+    if (derivedOnly.has(key)) take(key, derivedOnly.get(key));
+  }
+  return out;
 }
 
 export function ask(base, question, { limit = 3 } = {}) {
@@ -286,23 +441,107 @@ export function ask(base, question, { limit = 3 } = {}) {
   const queryTerms = new Set(
     tokenize(question).map((t) => t.toLowerCase()).filter((t) => t.length > 1 && !FUNCTION_WORDS.has(t)),
   );
-  const search = (index) => (index ? index.search(question, SEARCH_OPTIONS) : []);
-  const raw = [...search(opened.derived), ...search(opened.captured)];
-  const floor = relevanceFloor(queryTerms);
-  const hits = raw
-    .filter((h) => contentMatches(h, queryTerms).length >= floor)
-    .sort((a, b) => b.score - a.score);
 
-  if (!hits.length) {
-    // An uncovered question returns an explicit MISS. It does not return the nearest thing with
-    // the caveat filed off, because a plausible invention is the one output that costs more than
-    // silence.
+  // A PROCEDURAL QUESTION BELONGS TO THE OTHER VERB, and `ask` refuses it rather than answering it
+  // with facts that merely share its nouns.
+  //
+  // The plane separation was built so a procedure and a fact never compete in one ranked list. It
+  // was only ever enforced on the CORPUS side -- `ask` never sees a flow -- and that left the other
+  // half open: a procedural QUESTION still got answered, out of the fact planes, by whatever
+  // mentioned the same journey. Measured 2026-09-16 on the two flow questions the base itself
+  // recorded as MISS in its own demand log: "create a percentage-off promotion in the Admin
+  // Marketing module" was answered with the REST route table for /api/marketing/promotions plus two
+  // unrelated experiential entries, and "create a promotion with a coupon code" the same way, while
+  // the flow plane answers both correctly.
+  //
+  // The test is the goal rule `how` already uses, unchanged: a flow is reached only when a majority
+  // of the question's content terms land in its goal. So this cannot fire on a fact question that
+  // merely travels through a flow's pages -- that is measured in kb-flowmiss-2026-09 and is the
+  // whole reason the goal rule exists.
+  //
+  // COST, MEASURED, on the 34 held-out rows of kb-retrieval-2026-09: one anchor, r2.4 -- "how do I
+  // create a percentage discount promotion in the marketing module" -- which is itself a procedure,
+  // is marked NOT-USED by the run that asked it, and is answered by `kb how`. Both blind graders'
+  // off-topic and wanted counts are unchanged. See measurements/kb-missdrift-2026-09/.
+  const procedural = flowsMatching(base, question);
+  if (procedural.length) {
     return {
       miss: true,
       question,
       searched,
       results: [],
       degraded: null,
+      procedural,
+      note: `This asks how to reach a goal, and ${procedural.length === 1 ? 'a procedure' : 'procedures'} `
+        + `for it ${procedural.length === 1 ? 'is' : 'are'} recorded on the flow plane, which \`ask\` cannot serve. `
+        + `Run \`kb how "${question}"\`. Facts are not served here instead, because an entry that shares this `
+        + 'question\'s nouns is not an answer to it.',
+    };
+  }
+  // THE CONTRACT PLANE IS AN ADDRESS BOOK AND NOT A SEARCH CORPUS, as of 2026-09-16.
+  //
+  // It is 88% of the corpus by count and 15% of it has ever been used.
+  //
+  // THIS IS NOT WHAT FIXES THE ADJACENT ANSWERS, and an earlier draft of this comment said it was.
+  // The second review counted them: of the nine adjacent answers the drift measurement names, eight
+  // are WRITTEN entries and one is derived. `ask "sign in to the Admin platform UI"` still returns
+  // three unrelated entries after this change; they are simply all written now. The drift is a
+  // vocabulary problem between written entries, fourteen ranking rules failed on it because BM25
+  // cannot bridge vocabulary, and the thing aimed at it is the catalog in context — not this.
+  //
+  // The second independent review put the reason better than the utilisation number does: free-text
+  // search over the contract solves a problem the reader does not have. An agent asking what fields
+  // `CartTotalType` carries ALREADY KNOWS THE COORDINATE -- introspection or one swagger fetch
+  // answers it authoritatively, and the derived entry is a cached copy of that. What the plane is
+  // uniquely good for is RESOLVING: module and installed version for a MISS, the cross-plane
+  // contradiction check, anchor reachability. All three are keyed lookups.
+  //
+  // So it leaves the ranked list and stays reachable by exact coordinate. Nothing is deleted; the
+  // source door, the gate and `kb check` read it exactly as before.
+  const search = (index) => (index ? index.search(question, SEARCH_OPTIONS) : []);
+  const floor = relevanceFloor(queryTerms);
+  // Kept BEFORE the floor is applied. A MISS has to be able to say "entries matched, and fewer than
+  // three of your content terms" rather than "nothing covers this" — those are different facts and
+  // the reader acts differently on them. Filtering here and reusing the filtered list below lost
+  // that distinction for one commit.
+  const writtenRaw = search(opened.captured);
+  const written = writtenRaw.filter((h) => contentMatches(h, queryTerms).length >= floor);
+
+  // A coordinate NAMED in the question outranks term overlap, and bypasses the relevance floor: a
+  // question that says `Mutations.addItem` has told us what it is about far more precisely than any
+  // count of shared words could. `structuredMatches` is the arrival hook's rule, shared rather than
+  // reimplemented, and it REQUIRES STRUCTURE -- a `/`, a `.` or a space. That is what stops `kb ask
+  // "does a promotion apply"` resolving to `PromotionType` because `Promotion` is both a type name
+  // and an ordinary word.
+  const named = derivedByCoordinate(base, question);
+  const hits = [...named, ...written.sort((a, b) => b.score - a.score)];
+
+  if (!hits.length) {
+    // An uncovered question returns an explicit MISS. It does not return the nearest thing with
+    // the caveat filed off, because a plausible invention is the one output that costs more than
+    // silence.
+    //
+    // What it MAY do is say where the answer lives. The entries that matched but did not clear the
+    // floor are not answers and are not served; their `appliesTo` still names the module this
+    // question sits in and the version of it installed here. See src/source-door.mjs for why that
+    // is worth saying and why it is not a source plane.
+    // The contract plane is still SEARCHED here, and still not served. It left the ranked list on
+    // 2026-09-16; it did not leave the base. A near-miss on a type table is the signal the source
+    // door is built on — its `appliesTo` names the owning module and the version installed here —
+    // so taking the plane out of the near-miss pass as well would have removed the one thing it was
+    // measured to be good for on the same day it stopped being an answer.
+    const raw = [...search(opened.derived), ...writtenRaw];
+    const nearMisses = raw
+      .map((h) => ({ ...h, evidence: contentMatches(h, queryTerms).length }))
+      .filter((h) => h.evidence >= 1)
+      .sort((a, b) => b.score - a.score);
+    return {
+      miss: true,
+      question,
+      searched,
+      results: [],
+      degraded: null,
+      source: sourceDoor(base, nearMisses),
       note: raw.length
         ? `No entry matches ${floor} content term${floor === 1 ? '' : 's'} of this question. ${raw.length} entr${raw.length === 1 ? 'y' : 'ies'} matched fewer than that, or only function words and fuzzy near-misses, which is not evidence of an answer.`
         : 'No entry covers this question.',
@@ -335,6 +574,8 @@ export function renderAnswer(res) {
     } else {
       out.push(`  searched : ${res.searched.join(', ')}`);
       out.push(`  ${res.note}`);
+      for (const p of res.procedural ?? []) out.push(`      @kb(${p.id})  ${p.subject}`);
+      out.push(...renderSourceDoor(res.source ?? []));
     }
     return out.join('\n');
   }

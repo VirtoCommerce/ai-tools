@@ -7,6 +7,12 @@
 .claude/** text eol=lf
 plugins/vc-fix/** text eol=lf
 
+# vc-kb travels between two repositories — it is developed in vc-kb-lab (LF) and ported here — and
+# a port that differs from its source on line endings alone makes every diff unreadable and hides
+# the changes that are real. Pinned to LF for the same reason as the trees above, before the drift
+# rather than after it.
+plugins/vc-kb/** text eol=lf
+
 # Regression suite CSVs must stay CRLF end-to-end: the GraphQL runner's csv-parse
 # (relax_column_count: false) fails on mixed line endings inside multi-line quoted cells
 # (2026-06-10 incident: LF rows appended to CRLF 050b4 broke the whole suite's parse).

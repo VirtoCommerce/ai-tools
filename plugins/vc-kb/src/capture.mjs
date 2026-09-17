@@ -26,12 +26,16 @@ import { join } from 'node:path';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
 import { hash, mintId } from './canonical.mjs';
 import { buildIndex } from './index-build.mjs';
+import { locate, installedVersionOf, knownModules } from './source-door.mjs';
 import { derivedFacts, unreachableAnchors } from './coordinates.mjs';
 import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX, FLOWS_CATALOG, WRITTEN_STORES } from './planes.mjs';
 // Re-exported: normalizeAnchor is half of the identity rule and callers have always found it
 // here. Its home moved to break an import cycle, not its meaning.
 export { normalizeAnchor } from './anchors.mjs';
 import { normalizeAnchor, LOOKS_LIKE_A_LOCAL_PATH, MSYS_REMEDY } from './anchors.mjs';
+import { sessionParty, transcriptionSource, partiesOf, isAttested } from './provenance.mjs';
+import { sectioned } from './topics.mjs';
+import { ruleIdOf, ruleDomainOf, severityOf, byDomain } from './rules.mjs';
 
 // Re-exported: callers have always found these here, and their home moved to planes.mjs so that
 // both planes are named in one place rather than as literals scattered across six modules.
@@ -57,13 +61,50 @@ export function fingerprint({ subject, anchors, appliesTo, plane }) {
   if (plane === 'flow') {
     return hash({ goal: String(subject ?? '').trim().toLowerCase().replace(/\s+/g, ' '), scope }, 16);
   }
+  // A RULE IS ITS ID, and the anchors play no part. Two rules constrain one coordinate routinely --
+  // BL-PRICE-002 and BL-PRICE-003 are both about money on an order -- so hashing coordinates here
+  // would refuse the second rule of every such pair as a duplicate of the first. Scope stays in the
+  // hash, unused today and there for the day somebody records one rule holding differently on two
+  // module versions; with no scope axes it degenerates to the id, which is what identity means here.
+  if (plane === 'normative') {
+    return hash({ rule: ruleIdOf(subject), scope }, 16);
+  }
   const coordinates = [...new Set((anchors ?? []).map((a) => normalizeAnchor(a.coordinate)).filter(Boolean))].sort();
   return hash({ coordinates, scope }, 16);
 }
 
 // --- computed, never declared -----------------------------------------------------------------
 
-export const confirmationsOf = (data) => (data.evidence ?? []).filter((e) => !e.contradicts).length;
+// Injected into `sourceRef` rather than reached for inside it, so a test can drive it with a base
+// that has no derived plane at all.
+const sourceTools = { locate, installedVersionOf, knownModules };
+
+// THE NUMBER IN THE REGISTER MEANS INDEPENDENT PARTIES, BECAUSE THAT IS WHAT THE BRIEF SAYS IT
+// MEANS. It counted rows until 2026-09-16. The catalog handed to round four's arm carried a column
+// headed `confirmations`, and the brief in the same prompt told it: "`confirmations` is how many
+// independent parties have seen it. An entry with two or more has been seen by somebody other than
+// its author." That was false for eight active entries — `KB-BCA7468D` printed 3 where one party
+// had seen it, and three entries printed 1 for a reading of source code that nobody observed at
+// all. The trust LEVEL has used `partiesOf` since the provenance fix, so an entry could print
+// `confirmations: 3` and `single-observation` in the same breath.
+//
+// Source readings are excluded rather than folded in: code says what should happen and an
+// observation says what did, and `evidenceKinds` already reports the two side by side. An entry
+// backed only by source now reads 0, which is the honest answer to "how many parties have seen
+// this" and is why the column exists.
+export const confirmationsOf = (data) =>
+  partiesOf((data.evidence ?? []).filter((e) => !e.contradicts && e.method !== 'source'));
+// DOES ANY ROW SAY WHAT WAS SEEN? Distinct from the count beside it, and the register now prints
+// both, because the licence to act on a `confirmed` entry without re-verifying rests on this one
+// and not on that one. A count says how many parties agreed; it cannot say that any of them wrote
+// down what they saw. `confirm` took no `--note` until 2026-09-16, so most of the corpus's
+// agreement is undescribed — 5 of the 22 licensed entries carry an attested row. That number is not
+// a reason to demote the other 17; it is the number the next run should be raising.
+//
+// Three shapes count: a note on the row, a `from` naming a report a reader can open, or a source
+// reading, which names module, installed version and path and is self-describing.
+export const attestedOf = (data) =>
+  (data.evidence ?? []).some((e) => !e.contradicts && isAttested(e) && (e.note || e.from || e.method === 'source'));
 export const disputesOf = (data) => (data.evidence ?? []).filter((e) => e.contradicts).length;
 export const isDisputed = (data) => disputesOf(data) > 0;
 
@@ -72,6 +113,12 @@ export const isDisputed = (data) => disputesOf(data) > 0;
 export function observedOn(data) {
   const seen = new Map();
   for (const e of data.evidence ?? []) {
+    // A source reading was not observed ANYWHERE, so it does not belong in a list of where
+    // something was seen. Left in, it grouped under the key `null@?` and printed as
+    // "null — 1 confirming", which reads as a broken stamp rather than as a different kind of
+    // evidence -- the exact failure `method: source` exists to prevent. Caught by running the verb
+    // against the live corpus, not by a test, which is the third time that has been the order.
+    if (e.method === 'source') continue;
     const key = `${e.deployment ?? '?'}@${e.platformVersion ?? '?'}`;
     if (!seen.has(key)) seen.set(key, { deployment: e.deployment ?? null, platformVersion: e.platformVersion ?? null, contradicts: 0, confirms: 0 });
     const row = seen.get(key);
@@ -108,6 +155,10 @@ export function readCaptured(base) {
 
 export function readFlows(base) {
   return readStore(base, 'flow');
+}
+
+export function readRules(base) {
+  return readStore(base, 'normative');
 }
 
 // ACTIVE FIRST. A retired entry keeps its fingerprint -- ids are eternal and so are the files --
@@ -181,6 +232,57 @@ export function buildCapturedArtifacts(base, plane = 'experiential') {
   const index = JSON.stringify(buildIndex(docs), null, 2) + '\n';
 
   const flow = plane === 'flow';
+  const normative = plane === 'normative';
+
+  // THE RULES CATALOG IS A REFERENCE, NOT A LIST TO SCAN, and that is the whole difference from the
+  // captured one above. A reader reaches it already knowing they are working on carts, so it is
+  // ordered like an index -- domains alphabetical, rules by id inside one -- rather than
+  // biggest-section-first. It carries the severity the rule's own author assigned, because that is
+  // what decides whether an agent stops the work or files a note, and it carries the same two trust
+  // columns as every other written plane: a rule transcribed off a page has been seen by one party,
+  // and the register must not let a page's own "CONFIRMED 3/3" read as three.
+  if (normative) {
+    const retiredRules = all.filter((e) => e.data.status !== 'active');
+    const HEAD = ['| id | rule | severity | confirmations | attested | disputed |', '|---|---|---|---|---|---|'];
+    const ruleRow = (e) => {
+      const id = ruleIdOf(e.data.subject);
+      const title = String(e.data.subject).slice(String(id ?? '').length).trim() || '—';
+      return `| [\`${id ?? e.data.id}\`](${e.rel}) | ${title}${e.data.status === 'active' ? '' : ' _(retired)_'} `
+        + `| ${severityOf(e.body) ?? '—'} | ${confirmationsOf(e.data)} | ${attestedOf(e.data) ? 'yes' : 'no'} `
+        + `| ${isDisputed(e.data) ? `yes (${disputesOf(e.data)})` : 'no'} |`;
+    };
+    const out = [
+      '# Rules',
+      '',
+      `Constraints written down by people, not observations made by agents. ${live.length} active rule`
+        + `${live.length === 1 ? '' : 's'}${all.length - live.length ? `, ${all.length - live.length} retired` : ''}, `
+        + `in ${byDomain(live).length} domain${byDomain(live).length === 1 ? '' : 's'}.`,
+      '',
+      'A rule is identified by its ID and by nothing else. Two rules about one coordinate are the',
+      'normal case, so the coordinate rule that identifies a fact would refuse half of these.',
+      '',
+      'READ THE TRUST COLUMNS. `confirmations` counts parties that have SEEN this rule hold on a',
+      'deployment, and a rule carried over from a page starts at zero however confident the page was.',
+      '`disputed` means somebody observed the opposite here; those are the rules to read first, and',
+      'a disagreement between a rule and an observation is a finding rather than a mistake.',
+      '',
+      'This catalog is a reference. It is ordered by domain and by id so it can be looked up in, not',
+      'scanned top to bottom: read the domain you are working in, with `kb rules <domain>`.',
+    ];
+    for (const [domain, rows] of byDomain(live)) {
+      out.push('', `## ${domain} — ${rows.length}`, '', ...HEAD);
+      for (const e of rows) out.push(ruleRow(e));
+    }
+    if (retiredRules.length) {
+      out.push('', `## retired — ${retiredRules.length}`, '',
+        'Withdrawn or superseded. Kept so a citation that still names one leads somewhere true.',
+        '', ...HEAD);
+      for (const e of retiredRules.sort((a, b) => a.data.id.localeCompare(b.data.id))) out.push(ruleRow(e));
+    }
+    out.push('');
+    return { index, catalog: out.join('\n'), active: live.length, retired: all.length - live.length };
+  }
+
   const lines = flow
     ? [
       '# Flows',
@@ -206,15 +308,52 @@ export function buildCapturedArtifacts(base, plane = 'experiential') {
       'The confirmation count, the disputed flag and the versions each fact has been seen on are read',
       'out of `evidence[]`. Nothing here declares them.',
       '',
-      '| id | subject | confirmations | disputed | scope |',
-      '|---|---|---|---|---|',
+      'SECTIONS EXIST SO THE LIST STAYS READ. This catalog is meant to be handed to an agent whole,',
+      'and what fails as it grows is the reading, not the context window. Sections are derived from',
+      'subject, question and anchors (`src/topics.mjs`), so a wrong filing is visible here rather than',
+      'hidden in a table. An entry is filed under one section and its other topics are named beside',
+      'it: 27 of 78 touch more than one, so these are tags, not folders.',
+      '',
+      'Within a section: disputed first, then by independent confirmations. A reader who stops early',
+      'should stop on what most parties have seen, and on what somebody disagrees with.',
     ];
-  for (const e of all.sort((a, b) => a.data.id.localeCompare(b.data.id))) {
+
+  const TABLE_HEAD = flow
+    ? ['| id | goal | confirmations | attested | disputed | scope |', '|---|---|---|---|---|---|']
+    : ['| id | subject | confirmations | attested | disputed | scope | also |', '|---|---|---|---|---|---|---|'];
+
+  const row = (e, also = []) => {
     const scope = (e.data.appliesTo ?? []).map((s) => `${s.axis}=${s.value}`).join(' ') || '—';
-    lines.push(
-      `| [\`${e.data.id}\`](${e.rel}) | \`${e.data.subject}\`${e.data.status === 'active' ? '' : ' _(retired)_'} ` +
-        `| ${confirmationsOf(e.data)} | ${isDisputed(e.data) ? `yes (${disputesOf(e.data)})` : 'no'} | ${scope} |`,
-    );
+    const cells = [
+      `[\`${e.data.id}\`](${e.rel})`,
+      `\`${e.data.subject}\`${e.data.status === 'active' ? '' : ' _(retired)_'}`,
+      String(confirmationsOf(e.data)),
+      attestedOf(e.data) ? 'yes' : 'no',
+      isDisputed(e.data) ? `yes (${disputesOf(e.data)})` : 'no',
+      scope,
+    ];
+    if (!flow) cells.push(also.length ? also.join(', ') : '—');
+    return `| ${cells.join(' | ')} |`;
+  };
+
+  if (flow) {
+    // Three procedures do not need sections, and a heading per row would be worse than a table.
+    lines.push('', ...TABLE_HEAD);
+    for (const e of all.sort((a, b) => a.data.id.localeCompare(b.data.id))) lines.push(row(e));
+  } else {
+    // Retired entries are not part of what an agent should scan; they go last, in one block, so the
+    // sections above are exactly the live register.
+    const retiredEntries = all.filter((e) => e.data.status !== 'active');
+    for (const [section, rows] of sectioned(live, { confirmations: confirmationsOf, disputed: isDisputed })) {
+      lines.push('', `## ${section} — ${rows.length}`, '', ...TABLE_HEAD);
+      for (const { entry, also } of rows) lines.push(row(entry, also));
+    }
+    if (retiredEntries.length) {
+      lines.push('', `## retired — ${retiredEntries.length}`, '',
+        'Superseded or withdrawn. Kept so a reader who meets an id somewhere can find out what',
+        'happened to it; not part of the register an agent scans.', '', ...TABLE_HEAD);
+      for (const e of retiredEntries.sort((a, b) => a.data.id.localeCompare(b.data.id))) lines.push(row(e));
+    }
   }
   lines.push('');
   return { index, catalog: lines.join('\n'), active: live.length, retired: all.length - live.length };
@@ -223,6 +362,16 @@ export function buildCapturedArtifacts(base, plane = 'experiential') {
 export function rebuildCapturedArtifacts(base, plane = 'experiential') {
   const built = buildCapturedArtifacts(base, plane);
   const store = storeOf(plane);
+  // AN EMPTY STORE HAS NO INDEX AND NO CATALOG, and writing one is how `kb reindex` came to produce
+  // a corpus its own gate then failed. `validate` says "rules-index.json exists while rules/ holds
+  // no rules" -- correctly, because an index for a store that does not exist is a claim about
+  // nothing -- and `reindex` was creating exactly that on any base without the plane. Latent for
+  // the flow store since the day it shipped; live the moment a third store existed.
+  //
+  // It skips rather than deleting: a store that once held entries and now holds none cannot happen
+  // here (retirement keeps the file), and a verb that removes a file because a directory looks
+  // empty is a worse failure than a stale one the gate already reports.
+  if (!readStore(base, plane).length) return { active: 0, retired: 0, skipped: true };
   writeFileSync(join(base, store.index), built.index);
   writeFileSync(join(base, store.catalog), built.catalog);
   return { active: built.active, retired: built.retired };
@@ -270,6 +419,16 @@ Seven inputs, none of them defaulted. Run "kb capture" with none of them and it 
   --anchor         a coordinate the claim is about -- a route, a Type.field, a file. Repeatable.
   --scope          axis=value. Repeatable. This is what decides whether two records are one fact.
   --deployment     where you observed it
+  --source         <Module.Id>:<path/in/repo>, INSTEAD of --deployment, when you read the claim out
+                   of code rather than off a running system. The version is not part of it: this
+                   base already records which version of each module the deployment runs, and that
+                   tag is what gets stamped and turned into a fetchable URL. A module this base
+                   does not record as installed is refused rather than guessed at.
+
+READ FROM CODE IS NOT OBSERVED, and the corpus keeps them apart. Source says what the code does; an
+observation says what this deployment did. They can agree while the deployment runs a different
+build -- in round two, two of three arms read \`dev\` instead of the installed tag -- so a source
+reading and an observation never confirm each other. A second reading of the SAME kind does.
 
 The VERSION is not an eighth input. When --deployment is the deployment this corpus was projected
 from, the door stamps the pin and the platform version out of derived/pin.json, because they are
@@ -427,15 +586,96 @@ export function stampNotice(stamp) {
   return null;
 }
 
-export function evidenceRow({ deployment, pin, platformVersion, by, at, contradicts, note }) {
+export function evidenceRow({ deployment, pin, platformVersion, by, at, from, contradicts, note, source }) {
+  // A CLAIM READ OUT OF CODE IS NOT A CLAIM READ OFF A RUNNING DEPLOYMENT, and the corpus must be
+  // able to tell them apart. Every one of the 124 evidence rows in this base said
+  // `method: observation`, because that was the only method the door could write -- so a corpus
+  // whose whole contract is that every claim is dated, placed and refutable could not say where
+  // half of what it will hold next came from.
+  //
+  // The two are not interchangeable and must not confirm each other: source says what the code
+  // does, an observation says what this deployment did, and they can agree while the deployment
+  // runs a different build. `evidenceKinds` below is what keeps the counts apart; VCST-5975's
+  // fourth acceptance is exactly that.
+  //
+  // A source row carries a module, the version INSTALLED HERE, and a path. The version is resolved
+  // from the derived plane rather than typed, for the same reason `stampOf` resolves the pin: two
+  // of round two's three arms read `dev`, and a value the base already holds should never be
+  // retyped by hand.
+  if (source) {
+    const row = {
+      method: 'source',
+      module: source.module,
+      version: source.version,
+      path: source.path,
+    };
+    if (source.url) row.url = source.url;
+    row.at = at;
+    if (by) row.by = by;
+    if (from) row.from = from;
+    if (contradicts) row.contradicts = true;
+    if (note) row.note = note;
+    return row;
+  }
   const row = { method: 'observation', deployment };
   if (pin) row.pin = pin;
   if (platformVersion) row.platformVersion = platformVersion;
   row.at = at;
   if (by) row.by = by;
+  if (from) row.from = from;
   if (contradicts) row.contradicts = true;
   if (note) row.note = note;
   return row;
+}
+
+/**
+ * How many rows of each KIND back an entry, and how many contradict it.
+ *
+ * Counted apart rather than summed, because two readings of the same code are a repetition and an
+ * observation beside a source reading is a different kind of support. Nothing here decides what
+ * that is worth -- `experientialTrust` does, and it reports both numbers rather than blending them
+ * into a score nobody has measured.
+ */
+export function evidenceKinds(data) {
+  const out = { observation: 0, source: 0, disputes: 0 };
+  for (const e of data.evidence ?? []) {
+    if (e.contradicts) { out.disputes += 1; continue; }
+    if (e.method === 'source') out.source += 1;
+    else out.observation += 1;
+  }
+  return out;
+}
+
+/**
+ * Parse `--source VirtoCommerce.Orders:src/.../Handler.cs` and resolve the installed version.
+ *
+ * Refuses a module the base does not say is installed. That refusal is the point: a claim about
+ * code the deployment is not running is not evidence about this deployment, and the corpus has no
+ * way to notice later.
+ */
+export function sourceRef(base, raw, { locate, installedVersionOf, knownModules }) {
+  const at = String(raw ?? '').indexOf(':');
+  if (at < 1 || at === String(raw).length - 1) {
+    throw new CaptureRefused(
+      'capture refused: --source must be <Module.Id>:<path/in/repo>, for example '
+        + '`--source VirtoCommerce.Orders:src/VirtoCommerce.OrdersModule.Data/Handlers/'
+        + 'CancelPaymentOrderChangedEventHandler.cs`. The version is not part of it: this base '
+        + 'already knows which version it runs.',
+    );
+  }
+  const module = String(raw).slice(0, at).trim();
+  const path = String(raw).slice(at + 1).trim();
+  const version = installedVersionOf(base, module);
+  if (!version) {
+    const known = knownModules(base);
+    throw new CaptureRefused(
+      `capture refused: this base does not record \`${module}\` as installed, so there is no version `
+        + 'to stamp and the claim would be about code that may not be running here. '
+        + `${known.length} modules are recorded${known.length ? `; the nearest by name: ${known.filter((k) => k.toLowerCase().includes(module.toLowerCase().split('.').pop() ?? '')).slice(0, 3).join(', ') || known.slice(0, 3).join(', ')}` : ''}.`,
+    );
+  }
+  const where = locate(module, version);
+  return { module, version, path, url: where.raw ? `${where.raw}${path}` : null };
 }
 
 /**
@@ -452,8 +692,75 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
   // One door, two written planes. A flow takes the same seven inputs and means two of them slightly
   // differently -- `subject` is the goal, and it alone decides identity -- so it goes through every
   // refusal here rather than round a second door that would drift from this one.
-  const plane = input.flow ? 'flow' : 'experiential';
+  // A BASE THAT DOES NOT EXIST IS NOT AN EMPTY BASE. Without this, `capture` pointed at any path at
+  // all creates the directories it needs and writes the entry there, leaving a corpus-shaped thing
+  // nobody will ever read. It happened on 2026-09-16: exporting MSYS_NO_PATHCONV=1 for a whole shell
+  // stops Git Bash converting a Unix-style `--base /c/...`, Node resolved the literal string against
+  // the drive root, and three entries plus an index and a catalog landed in C:\c\_VIRTO\vc-knowledge.
+  // Every command reported success. The loss was noticed only because a later read of the real base
+  // came up one entry short.
+  //
+  // `kb.json` is the marker because `validate` already treats its absence as "not a base" and
+  // refuses to say anything else about the directory. The same rule that makes `ask` report a
+  // degraded base rather than a coverage MISS applies here, and with more force: a read that is
+  // wrong is visible in its answer, a write that is wrong is silent until somebody goes looking.
+  if (!existsSync(join(base, 'kb.json'))) {
+    throw new CaptureRefused(
+      `capture refused: ${base} holds no kb.json, so it is not a knowledge base. Writing here would `
+        + 'CREATE one silently and the entry would be lost to everyone reading the real corpus. '
+        + 'Check --base: under Git Bash a Unix-style path is converted for you, and exporting '
+        + 'MSYS_NO_PATHCONV=1 for the whole shell turns that off, which is exactly how this was '
+        + 'first hit. Pass a drive-letter path (C:/… on Windows) and it cannot happen.',
+    );
+  }
+
+  const plane = input.rule ? 'normative' : input.flow ? 'flow' : 'experiential';
+
+  // A RULE THAT DOES NOT NAME ITSELF CANNOT BE FILED. Identity on this plane IS the id, so a rule
+  // written without one is indistinguishable from the next rule on the same subject -- and an
+  // import of 216 of them would collapse pairs silently, which is the one failure a bulk write can
+  // produce that nobody would ever notice.
+  if (plane === 'normative' && !ruleIdOf(input.subject)) {
+    throw new CaptureRefused(
+      'capture refused: a rule must lead with its ID. `--subject "BL-CART-003 coupon + sale '
+        + 'interaction"`, not `--subject "coupon + sale interaction"`.\n'
+        + '  The id is what identifies a rule here, what `kb show BL-CART-003` resolves, and what the '
+        + 'citations already in agent prompts and regression suites point at. If this claim has no id '
+        + 'because nobody wrote it as a rule, it is an observation: capture it without --rule.',
+    );
+  }
+  // `deployment` answers "where did you see this". A claim read out of code was not seen ANYWHERE
+  // -- it was read at a tag -- and `--source` answers the same question better, because a module
+  // and a path at an installed version is a coordinate anybody can return to, while a deployment
+  // name is the thing the README already says is not evidence of anything on its own. So one of
+  // the two is required and neither defaults; asking for both would make a writer name a
+  // deployment they did not look at, which is how a plausible value enters a corpus.
+  // WHAT A RULE IS NOT ASKED FOR, and why each one is a decision rather than a relaxation.
+  //
+  //   question   a fact is an answer and a rule is a constraint. The seven-field door asks for the
+  //              question "in the words an asker would use" because that is how a fact is found;
+  //              a rule is found by working in its domain, and the rules catalog carries no
+  //              question column. Asking for one would make every importer invent 216 of them.
+  //   appliesTo  scope is what separates two records of one fact. A rule is separated by its id, so
+  //              scope here is optional and empty is honest: `BL-PRICE-003` holds for the platform,
+  //              and inventing `surface=rest` for it would be a value nobody observed.
+  //   deployment a rule was not observed anywhere -- it was READ. `--from <the page it was read out
+  //              of>` answers the same question better, and `--source` answers it better still.
+  //              One of the three is required; none defaults.
+  //   anchors    a rule is reached by its ID and by its domain, not by a coordinate. Measured on
+  //              the document this plane exists for: of the 216 BL-* invariants in
+  //              `business-logic.md`, 143 name no coordinate anywhere in their Rule, Verify or
+  //              Violation signal, and only 41 name one this base projects. They are not badly
+  //              written -- "money rounds half-up to two decimals" and "the search index lags an
+  //              admin change by 30-60 seconds" are about the platform, not about a place in it.
+  //              An importer made to satisfy this field would have invented 143 coordinates, and a
+  //              gate made to report them would have raised the corpus from 39 notices to 182.
+  //              Where a rule DOES name one it is recorded, because that anchor is what puts the
+  //              rule beside an observation in `writtenNeighbours` and what `kb refute` can check.
+  const NORMATIVE_EXEMPT = new Set(['question', 'appliesTo', 'anchors']);
   const missing = Object.keys(REQUIRED_INPUT).filter((k) => {
+    if (plane === 'normative' && NORMATIVE_EXEMPT.has(k)) return false;
+    if (k === 'deployment' && (input.source || (plane === 'normative' && input.from))) return false;
     const v = input[k];
     return v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
   });
@@ -472,7 +779,9 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     );
   }
 
-  const anchors = input.anchors.map((a) => (typeof a === 'string' ? { coordinate: a } : a));
+  // `?? []` for the same reason as `appliesTo` below: a rule may legitimately name no coordinate
+  // (see NORMATIVE_EXEMPT). Every other plane has already been refused above if this is empty.
+  const anchors = (input.anchors ?? []).map((a) => (typeof a === 'string' ? { coordinate: a } : a));
   // REFUSED, not warned. Everything else the door dislikes about an anchor is a judgement the
   // writer is better placed to make than the tool -- a menu path is honest about where somebody
   // stood, an unprojected surface is not their problem. This one is not a judgement: a path into
@@ -487,12 +796,29 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
       );
     }
   }
-  const appliesTo = input.appliesTo.map((s) => (typeof s === 'string'
+  // `?? []` because a rule may legitimately carry no scope (see NORMATIVE_EXEMPT); every other
+  // plane has already been refused above if this is empty.
+  const appliesTo = (input.appliesTo ?? []).map((s) => (typeof s === 'string'
     ? { axis: s.split('=')[0], value: s.split('=').slice(1).join('=') }
     : s));
   for (const s of appliesTo) {
     if (!s.axis || s.value === undefined || s.value === '') {
       throw new CaptureRefused(`capture refused: scope must be axis=value; got ${JSON.stringify(s)}`);
+    }
+  }
+
+  // Delivery addresses. Normalized like anchors so the same string matches whichever field it was
+  // written in, and deliberately absent from the fingerprint below: identity is (anchors, scope),
+  // and a delivery address that could collide two facts would make the cheapest improvement
+  // available -- saying where a fact is wanted -- into a thing that refuses entries.
+  const arrivesAt = (Array.isArray(input.arrivesAt) ? input.arrivesAt : [input.arrivesAt])
+    .filter(Boolean)
+    .map((a) => (typeof a === 'string' ? { coordinate: a } : a));
+  for (const a of arrivesAt) {
+    if (LOOKS_LIKE_A_LOCAL_PATH.test(String(a.coordinate ?? ''))) {
+      throw new CaptureRefused(
+        `capture refused: arrival coordinate "${a.coordinate}" is a path on this machine. ${MSYS_REMEDY}`,
+      );
     }
   }
 
@@ -529,12 +855,15 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     // agrees with it is not something the text can be asked -- so the writer is.
     throw new CaptureRefused(
       `capture refused: ${existing.data.id} already ${plane === 'flow'
-        ? 'reaches this goal at this scope' : 'holds a fact about these coordinates under this scope'}.\n` +
+        ? 'reaches this goal at this scope'
+        : plane === 'normative'
+          ? `carries the rule ${ruleIdOf(input.subject)}`
+          : 'holds a fact about these coordinates under this scope'}.\n` +
         `  existing subject : ${existing.data.subject}\n` +
-        `  existing question: ${existing.data.question}\n` +
+        (existing.data.question === undefined ? '' : `  existing question: ${existing.data.question}\n`) +
         `  confirmations    : ${confirmationsOf(existing.data)}${isDisputed(existing.data) ? `, disputed (${disputesOf(existing.data)})` : ''}\n` +
         `  Read ${existing.rel}, then say which this is:\n` +
-        `    kb confirm ${existing.data.id} --deployment <env>   (your observation agrees)\n` +
+        `    kb confirm ${existing.data.id} --deployment <env> --note "<what you saw>"   (your observation agrees)\n` +
         `    kb dispute ${existing.data.id} --deployment <env> --note "<what you saw instead>"\n` +
         `  If it is neither, your scope is wider than your claim: capture again with the axis that separates them.`,
       { collidesWith: existing.data.id, fingerprint: fp, path: existing.rel },
@@ -553,7 +882,38 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     );
   }
 
-  const stamp = stampOf(base, input);
+  const source = input.source ? sourceRef(base, input.source, sourceTools) : null;
+  const stamp = source ? { pin: null, platformVersion: null, source: 'read-from-source' } : stampOf(base, input);
+  const firstRow = evidenceRow({
+    deployment: input.deployment,
+    pin: stamp.pin,
+    platformVersion: stamp.platformVersion,
+    by: input.by ?? sessionParty(),
+    from: transcriptionSource(input.from, { root: base }),
+    at: input.at ?? now(),
+    source,
+  });
+
+  // A TRANSCRIBED RULE HAS BEEN SEEN BY NOBODY, and its first row must not say otherwise.
+  //
+  // `partiesOf` counts a `from` artefact as a party, and it is right to: an arm's report IS an
+  // observation, badly recorded. A page of rules is not. `business-logic.md` asserts that tax is
+  // computed after discounts; nobody watched that happen on this deployment by writing the page,
+  // and 216 rules arriving at one party each would put the whole imported plane one confirmation
+  // away from a licence to act on it unverified.
+  //
+  // So the row is kept in full -- it says which page, which commit, which session -- and marked
+  // `attested: false`, which is the flag this base already has for a row that records something
+  // nobody described. It does not vote. The rule reads 0 parties until somebody watches it hold
+  // and says what they saw, which is exactly the bar every other entry here clears.
+  //
+  // Passing `--deployment` or `--source` opts out: then the writer did watch it, or did read the
+  // code that decides it, and the row is evidence of the ordinary kind.
+  if (plane === 'normative' && !input.deployment && !source) {
+    firstRow.attested = false;
+    firstRow.whyNot = `transcribed from ${input.from ?? 'a page'}; nobody has yet watched this rule hold on a deployment`;
+  }
+
   const data = {
     id,
     subject: input.subject,
@@ -563,13 +923,8 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     refutableBy: input.refutableBy,
     appliesTo,
     anchors,
-    evidence: [evidenceRow({
-      deployment: input.deployment,
-      pin: stamp.pin,
-      platformVersion: stamp.platformVersion,
-      by: input.by,
-      at: input.at ?? now(),
-    })],
+    ...(arrivesAt.length ? { arrivesAt } : {}),
+    evidence: [firstRow],
   };
   const body = `\n${String(input.claim).trim()}\n`;
   writeEntry(base, data, body);
@@ -591,6 +946,51 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
 // A repeat capture raises the count on the entry that exists. It never creates a second file, and
 // what it appends is an observation event -- so the count and the version range stay readable off
 // the same list rather than off a counter someone has to remember to increment.
+/**
+ * Say where an entry that already exists should ARRIVE.
+ *
+ * `capture` can write a delivery address, but 78 entries were written before the field existed and
+ * the whole value of it is retrofitting them: `/sign-in` was visited 19 times across the archived
+ * logs with nothing arriving, while four entries that answer sign-in questions sat in the corpus
+ * anchored elsewhere. A field only new entries can use would have taken twelve more runs to matter.
+ *
+ * It writes no evidence row. Saying where a fact is wanted is not a second sighting of it, and a
+ * verb that quietly raised the confirmation count would make the cheapest edit in the tool also the
+ * easiest way to inflate trust. `amend` made the same choice for the same reason.
+ *
+ * A REASON IS REQUIRED, as it is for `reanchor`. A delivery address is a claim about where somebody
+ * will need this, and an unexplained one is indistinguishable from a coordinate pasted into the
+ * wrong entry.
+ */
+export function addArrival(base, id, { at, reason } = {}) {
+  const entry = loadEntry(base, id);
+  if (!entry) throw new CaptureRefused(`no entry ${id}`);
+  if (!at) throw new CaptureRefused('refused: --at is required — the coordinate an agent would be standing on');
+  if (!reason) {
+    throw new CaptureRefused(
+      'refused: --reason is required. A delivery address says somebody will need this fact HERE, '
+      + 'and one without a reason cannot be told from a coordinate pasted into the wrong entry.',
+    );
+  }
+  if (entry.data.status !== 'active') {
+    throw new CaptureRefused(`refused: ${id} is ${entry.data.status}; delivering a withdrawn fact is worse than not delivering it`);
+  }
+  if (LOOKS_LIKE_A_LOCAL_PATH.test(String(at))) {
+    throw new CaptureRefused(`refused: "${at}" is a path on this machine, not a coordinate. ${MSYS_REMEDY}`);
+  }
+  const key = normalizeAnchor(at);
+  if (!key) throw new CaptureRefused(`refused: "${at}" does not normalize to a coordinate`);
+  const already = [...(entry.data.arrivesAt ?? []), ...(entry.data.anchors ?? [])]
+    .some((a) => normalizeAnchor(a?.coordinate) === key);
+  if (already) {
+    throw new CaptureRefused(`refused: ${id} already arrives at "${at}" — as a delivery address or as an anchor, which delivers too`);
+  }
+  entry.data.arrivesAt = [...(entry.data.arrivesAt ?? []), { coordinate: at }];
+  writeEntry(base, entry.data, entry.body);
+  const artifacts = rebuildCapturedArtifacts(base, entry.data.plane);
+  return { id, at, reason, arrivesAt: entry.data.arrivesAt.map((a) => a.coordinate), artifacts };
+}
+
 export function confirm(base, id, input, { now = () => new Date().toISOString() } = {}) {
   const entry = loadEntry(base, id);
   if (!entry) throw new CaptureRefused(`no captured entry ${id}`);
@@ -602,19 +1002,55 @@ export function confirm(base, id, input, { now = () => new Date().toISOString() 
       survivor ? { supersededBy: survivor.data.id } : {},
     );
   }
-  if (!input.deployment) throw new CaptureRefused('confirm refused: --deployment is required — a confirmation with no observation behind it is not a confirmation');
+  // `--source` is the other way to back an existing claim: somebody went and read the code that
+  // decides it. It is NOT a confirmation and the verb says so -- `evidenceKinds` keeps the counts
+  // apart and `experientialTrust` refuses to call one of each `confirmed`. It is recorded on the
+  // entry all the same, because the alternative is a second entry saying the same thing with a
+  // different provenance, which is the duplicate the fingerprint exists to prevent.
+  if (!input.deployment && !input.source) {
+    throw new CaptureRefused(
+      'confirm refused: --deployment is required — a confirmation with no observation behind it is '
+        + 'not a confirmation. If you READ the code that decides this rather than watching it happen, '
+        + 'pass --source <Module.Id>:<path> instead: that is recorded as evidence of a different kind '
+        + 'and does not raise the confirmation count.',
+    );
+  }
 
-  const stamp = stampOf(base, input);
+  const source = input.source ? sourceRef(base, input.source, sourceTools) : null;
+
+  // A CONFIRMATION MUST SAY WHAT WAS SEEN. `dispute` has required this since it was written, on the
+  // grounds that a contradiction nobody described cannot be resolved by anyone; the same argument
+  // applies to agreement and the verb did not make it. Round four's arm confirmed an entry about
+  // order timestamps at the end of a pricing task, in a batch of three one second apart, and the
+  // row was indistinguishable from a sighting — provenance was tool-set and honest, `by` proved who
+  // wrote it, and nothing could show that nothing was observed. The entry read `confirmed` and the
+  // round-five register would have licensed the next agent to act on it unverified.
+  //
+  // `--source` is exempt: a source row already names the module, the installed version and the path
+  // that was read, which is what a note would have said.
+  if (!source && !input.note) {
+    throw new CaptureRefused(
+      'confirm refused: --note is required — say what you saw that agrees with this entry. A row '
+        + 'that records agreement and describes nothing is a sighting nobody can check, and it '
+        + 'counts toward the `confirmed` level that lets the next reader act without re-verifying. '
+        + 'If you read the code rather than watching it happen, pass --source <Module.Id>:<path>.',
+    );
+  }
+
+  const stamp = source ? { pin: null, platformVersion: null, source: 'read-from-source' } : stampOf(base, input);
   entry.data.evidence = [...entry.data.evidence, evidenceRow({
     deployment: input.deployment,
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
-    by: input.by,
+    by: input.by ?? sessionParty(),
+    from: transcriptionSource(input.from, { root: base }),
     at: input.at ?? now(),
+    note: input.note,
+    source,
   })];
   writeEntry(base, entry.data, entry.body);
   rebuildCapturedArtifacts(base, entry.data.plane);
-  return { id, confirmations: confirmationsOf(entry.data), observedOn: observedOn(entry.data), stamp };
+  return { id, confirmations: confirmationsOf(entry.data), kinds: evidenceKinds(entry.data), observedOn: observedOn(entry.data), stamp, source };
 }
 
 // A dispute is an observation that contradicts. It lands ON the entry rather than beside it,
@@ -644,7 +1080,8 @@ export function dispute(base, id, input, { now = () => new Date().toISOString() 
     deployment: input.deployment,
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
-    by: input.by,
+    by: input.by ?? sessionParty(),
+    from: transcriptionSource(input.from, { root: base }),
     at: input.at ?? now(),
     contradicts: true,
     note: input.note,

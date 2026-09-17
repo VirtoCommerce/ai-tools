@@ -77,7 +77,23 @@ kb reindex                 rebuild the captured index and catalog from the entri
 kb stat                    what the corpus currently holds, on both planes
 ```
 
-`--base <path>` points at the base; it defaults to `C:/_VIRTO/vc-knowledge` and honours `KB_BASE`.
+**Where the base is.** Three places, in this order, and a person is behind all three:
+
+```
+--base <dir>                       one invocation
+KB_BASE=<dir>                      this shell, and every hook in it
+knowledgeBase.path                 project-profile.json, written by /project-init
+```
+
+There is no fourth, no default constant and no search. The tool does not look for a `vc-knowledge`
+next to itself or above itself — two earlier versions did, and both could answer confidently out of
+a corpus nobody had named. If none of the three resolves, `kb` says where it looked and exits 2; it
+never carries on against a directory that is not there, because "the base holds nothing about your
+question" and "no base was read at all" are different answers.
+
+`kb stat` names the base it used **and how it was chosen**. Two bases on one machine — a workbench
+checkout and the project's own — is the failure to watch for: reading one while writing the other
+leaves no trace anywhere else.
 
 ## The journal
 
@@ -89,8 +105,8 @@ kb-log-<session>.jsonl    one line per invocation, every verb, the writes includ
 questions-<session>.csv   one row per consultation, added through vendor/agent-log/log-row.mjs
 ```
 
-The CSV is the file the step-0 demand measurement already reads, and `reconcile.mjs` joins it to
-the PostToolUse hook's `tool-log-<session>.jsonl` unchanged. Which is the point: what an agent
+The CSV is the file the step-0 demand measurement already reads. (The joiner that consumed it,
+`reconcile.mjs`, stayed in vc-kb-lab — see `PORT.md`.) Which is the point: what an agent
 consulted, what it did afterwards, and what it never wrote down are the same three questions the
 demand instrument was built to ask, and the base is now one more source it can attribute an answer
 to — `backed_by` gained `KB-DERIVED`, `KB-EXPERIENTIAL` and `KB-MISS`.
@@ -123,17 +139,17 @@ it holds the question text an agent typed and the targets it addressed, so it go
 `scrub-scan.mjs` before any of it is published, and what gets committed is the analysis in
 `measurements/`.
 
-**One run per directory.** `log-row` and `reconcile` both refuse to guess which of several logs in
-a folder belongs to this session, because picking the newest is how a row is filed under another
-session's id. So before starting a run, move the previous one aside:
+**One run per directory.** `log-row` refuses to guess which of several logs in a folder belongs to
+this session, because picking the newest is how a row is filed under another session's id. So
+before starting a run, move the previous one aside:
 
 ```
 mv MEASUREMENT MEASUREMENT-archive/run-07     # then start the session
-node vendor/agent-log/reconcile.mjs MEASUREMENT-archive/run-07
 ```
 
 Forgetting is safe in the direction that matters: the door refuses and says so on stderr, rather
-than attributing this run's questions to the last one.
+than attributing this run's questions to the last one. (The joiner that reads an archived run,
+`reconcile.mjs`, is measurement apparatus and stayed in vc-kb-lab — `PORT.md` says why.)
 
 Secrets are redacted at write time, keyed on the VALUE read from `.env.local` rather than on a
 name like `password` — `PW='...'` has no keyword to key on. Verified against all 32 secret-bearing

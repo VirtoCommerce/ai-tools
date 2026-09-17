@@ -75,6 +75,36 @@ export const FLOWS_DIR = 'flows';
 export const FLOWS_INDEX = 'flows-index.json';
 export const FLOWS_CATALOG = 'flows-catalog.md';
 
+//   rules/              the normative plane. One .md per RULE somebody wrote down.
+//
+// `normative` has been in the closed vocabulary since the schema was written and held zero entries
+// until 2026-09-17. What fills it is the knowledge leaving `plugins/vc-fix/knowledge/`: 216 `BL-*`
+// invariants, each with a Rule, a Verify recipe, a Violation signal and, for 127 of them, a source
+// anchor naming a module file.
+//
+// WHY A PLANE AND NOT A FLAG ON THE EXPERIENTIAL ONE. The three properties that decide a plane in
+// this base -- which store, which gate, which identity rule -- all differ:
+//
+//   identity   a fact is (coordinates, scope); a flow is (goal, scope); a RULE is its ID. Two
+//              rules routinely constrain one coordinate -- BL-PRICE-002 and BL-PRICE-003 are both
+//              about money on an order -- so the anchor rule would refuse the second one, which is
+//              the collision defect this project already worked around once by moving an anchor.
+//   evidence   a fact says what WAS seen; a rule says what MUST hold. A rule is not refuted by one
+//              observation, it is refuted by an observation nobody can explain away -- so a rule
+//              imported from a page is `single-observation` until somebody watches it hold, and it
+//              never starts at `confirmed` however many times its own prose says CONFIRMED.
+//   reading    a fact is read when you stand on its coordinate; a rule is read when you are working
+//              in its DOMAIN. The catalog is sectioned by the rule's own id prefix rather than by
+//              the topic regex, because the domain is the author's filing and not a guess.
+//
+// It is NOT a second corpus. A rule and an observation about the same coordinate are the two halves
+// the base has never been able to hold together: `kb capture` shows the one when you write the
+// other, and where they disagree the disagreement is the finding. Thirteen such disagreements are
+// on record between the shipped rules and what runs walked into on this deployment.
+export const RULES_DIR = 'rules';
+export const RULES_INDEX = 'rules-index.json';
+export const RULES_CATALOG = 'rules-catalog.md';
+
 // Which store a written entry lives in, keyed by its own `plane` field, so nothing has to be told
 // twice. `plane` in this base has always named WHICH STORE AND WHICH GATE rather than where the
 // knowledge came from -- the derived plane is defined by being regenerated and byte-compared, the
@@ -85,6 +115,7 @@ export const FLOWS_CATALOG = 'flows-catalog.md';
 export const WRITTEN_STORES = {
   experiential: { dir: CAPTURED_DIR, index: CAPTURED_INDEX, catalog: CAPTURED_CATALOG },
   flow: { dir: FLOWS_DIR, index: FLOWS_INDEX, catalog: FLOWS_CATALOG },
+  normative: { dir: RULES_DIR, index: RULES_INDEX, catalog: RULES_CATALOG },
 };
 
 // Everything the extractor writes, and therefore everything it is responsible for removing. The

@@ -1,0 +1,444 @@
+{
+ "_comment": "Module id -> the GitHub repository that holds its source. GENERATED, not hand-written: refresh with `node bin/kb.mjs modules --refresh`. This file answers ONE question -- which repository a module lives in -- and deliberately not which version is installed. Installed versions are a property of a DEPLOYMENT and are already recorded per entry by `kb extract`; this file is a property of the ecosystem and is the same everywhere. Measured 2026-09-16: bundle v14 of the registry, the wave whose PlatformVersion matches this deployment, disagrees with the deployment about 2 of 9 module versions (Shipping 3.1000.2 vs 3.1000.1 installed, Catalog 3.1002.10 vs 3.1002.9). A registry names a wave, not a machine.",
+ "source": "https://raw.githubusercontent.com/VirtoCommerce/vc-modules/master/modules_v3.json",
+ "sourceField": "ProjectUrl",
+ "fetchedAt": "2026-09-16",
+ "rows": 107,
+ "known": {
+  "VirtoCommerce.Platform": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-platform",
+   "note": "the platform is not a module and is absent from the module registry; its version comes from the pin"
+  }
+ },
+ "modules": {
+  "VirtoCommerce.AI": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-ai"
+  },
+  "VirtoCommerce.AIDocumentProcessing": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-ai-document-processing"
+  },
+  "VirtoCommerce.AiCategorization": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-ai-categorization"
+  },
+  "VirtoCommerce.AiDocumentParser": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-ai-document-parser"
+  },
+  "VirtoCommerce.AlgoliaSearch": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-algolia-search"
+  },
+  "VirtoCommerce.ApplicationInsights": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-app-insights"
+  },
+  "VirtoCommerce.Assets": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-assets"
+  },
+  "VirtoCommerce.AuditLog": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-audit-log"
+  },
+  "VirtoCommerce.AuthorizeNetPayment": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-authorize-net"
+  },
+  "VirtoCommerce.AvalaraTax": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-avatax"
+  },
+  "VirtoCommerce.AzureAD": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-azure-ad"
+  },
+  "VirtoCommerce.AzureAppConfiguration": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-azure-app-configuration"
+  },
+  "VirtoCommerce.AzureBlobAssets": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-azureblob-assets"
+  },
+  "VirtoCommerce.AzureSearch": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-azure-search"
+  },
+  "VirtoCommerce.BackInStock": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-back-in-stock"
+  },
+  "VirtoCommerce.BackgroundJobs": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-background-jobs"
+  },
+  "VirtoCommerce.BackupRestore": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-backup-restore"
+  },
+  "VirtoCommerce.BuilderIO": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-builder-io"
+  },
+  "VirtoCommerce.BulkActionsModule": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-bulk-actions"
+  },
+  "VirtoCommerce.CITest": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-ci-test"
+  },
+  "VirtoCommerce.Cart": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-cart"
+  },
+  "VirtoCommerce.Catalog": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-catalog"
+  },
+  "VirtoCommerce.CatalogCsvImportModule": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-catalog-csv-export-import"
+  },
+  "VirtoCommerce.CatalogPersonalization": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-catalog-personalization"
+  },
+  "VirtoCommerce.CatalogPublishing": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-catalog-publishing"
+  },
+  "VirtoCommerce.Content": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-content"
+  },
+  "VirtoCommerce.Contracts": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-contract"
+  },
+  "VirtoCommerce.Core": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-core"
+  },
+  "VirtoCommerce.Customer": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-customer"
+  },
+  "VirtoCommerce.CustomerExportImport": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-customer-export-import"
+  },
+  "VirtoCommerce.CustomerReviews": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-customer-review"
+  },
+  "VirtoCommerce.CyberSourcePayment": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-cyber-source"
+  },
+  "VirtoCommerce.Datatrans": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-datatrans"
+  },
+  "VirtoCommerce.DynamicAssociationsModule": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-dynamic-associations"
+  },
+  "VirtoCommerce.ElasticAppSearch": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-elastic-app-search"
+  },
+  "VirtoCommerce.ElasticSearch": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-elastic-search"
+  },
+  "VirtoCommerce.ElasticSearch8": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-elastic-search-8"
+  },
+  "VirtoCommerce.ElasticSearch9": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-elastic-search-9"
+  },
+  "VirtoCommerce.EnvironmentsCompare": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-environments-compare"
+  },
+  "VirtoCommerce.EventBus": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-event-bus"
+  },
+  "VirtoCommerce.ExperienceApi": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-experience-api"
+  },
+  "VirtoCommerce.Export": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-export"
+  },
+  "VirtoCommerce.FileExperienceApi": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-file-experience-api"
+  },
+  "VirtoCommerce.FileSystemAssets": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-filesystem-assets"
+  },
+  "VirtoCommerce.FrontendModules": {
+   "owner": "VirtoCommerce",
+   "repo": "frontend-modules"
+  },
+  "VirtoCommerce.GDPR": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-gdpr"
+  },
+  "VirtoCommerce.GoogleEcommerceAnalytics": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-google-ecommerce-analytics"
+  },
+  "VirtoCommerce.GoogleSSO": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-google-sso"
+  },
+  "VirtoCommerce.Hotjar": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-hotjar"
+  },
+  "VirtoCommerce.ImageTools": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-image-tools"
+  },
+  "VirtoCommerce.Import": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-Import"
+  },
+  "VirtoCommerce.IntentSearch": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-ai-categorization"
+  },
+  "VirtoCommerce.Inventory": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-inventory"
+  },
+  "VirtoCommerce.Loyalty": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-loyalty"
+  },
+  "VirtoCommerce.LuceneSearch": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-lucene-search"
+  },
+  "VirtoCommerce.Marketing": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-marketing"
+  },
+  "VirtoCommerce.MarketingExperienceApi": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-marketing-experience-api"
+  },
+  "VirtoCommerce.Metadata": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-changes-collector"
+  },
+  "VirtoCommerce.ModuleFederation": {
+   "owner": "VirtoCommerce",
+   "repo": "frontend-modules"
+  },
+  "VirtoCommerce.NativePaymentMethods": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-NativePaymentMethods"
+  },
+  "VirtoCommerce.News": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-news"
+  },
+  "VirtoCommerce.Notifications": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-notification"
+  },
+  "VirtoCommerce.OpenIdConnectModule": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-openid-connect"
+  },
+  "VirtoCommerce.OpenSearch": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-open-search"
+  },
+  "VirtoCommerce.OpenTelemetry": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-opentelemetry"
+  },
+  "VirtoCommerce.OrderManagement": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-order-management"
+  },
+  "VirtoCommerce.Orders": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-order"
+  },
+  "VirtoCommerce.PageBuilderModule": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-pagebuilder"
+  },
+  "VirtoCommerce.Pages": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-pages"
+  },
+  "VirtoCommerce.Payment": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-payment"
+  },
+  "VirtoCommerce.PowerBiReports": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-power-bi-reports"
+  },
+  "VirtoCommerce.PriceExportImport": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-price-export-import"
+  },
+  "VirtoCommerce.Pricing": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-pricing"
+  },
+  "VirtoCommerce.ProductSnapshot": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-product-snapshot"
+  },
+  "VirtoCommerce.ProfileExperienceApiModule": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-profile-experience-api"
+  },
+  "VirtoCommerce.PushMessages": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-push-messages"
+  },
+  "VirtoCommerce.Quote": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-quote"
+  },
+  "VirtoCommerce.Return": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-return"
+  },
+  "VirtoCommerce.SalesRep": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-sales-rep"
+  },
+  "VirtoCommerce.Sanity": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-sanity"
+  },
+  "VirtoCommerce.ScalableIndexation": {
+   "owner": "VirtoEnterprise",
+   "repo": "vc-module-scalable-indexation"
+  },
+  "VirtoCommerce.Search": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-search"
+  },
+  "VirtoCommerce.Seo": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-seo"
+  },
+  "VirtoCommerce.SeqLog": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-seq-log"
+  },
+  "VirtoCommerce.ShipStation": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-ShipStation"
+  },
+  "VirtoCommerce.Shipping": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-shipping"
+  },
+  "VirtoCommerce.ShopifyTaxonomy": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-shopify-taxonomy"
+  },
+  "VirtoCommerce.Sitemaps": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-sitemaps"
+  },
+  "VirtoCommerce.Skyflow": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-skyflow"
+  },
+  "VirtoCommerce.SqlQueries": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-sql-queries"
+  },
+  "VirtoCommerce.StateMachine": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-state-machine"
+  },
+  "VirtoCommerce.Store": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-store"
+  },
+  "VirtoCommerce.Subscription": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-subscription"
+  },
+  "VirtoCommerce.SystemOperations": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-system-operations"
+  },
+  "VirtoCommerce.TaskManagement": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-task-management"
+  },
+  "VirtoCommerce.Tax": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-tax"
+  },
+  "VirtoCommerce.UCP": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-ucp"
+  },
+  "VirtoCommerce.WebHooks": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-webhooks"
+  },
+  "VirtoCommerce.WhiteLabeling": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-white-labeling"
+  },
+  "VirtoCommerce.XCMS": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-x-cms"
+  },
+  "VirtoCommerce.XCart": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-x-cart"
+  },
+  "VirtoCommerce.XCatalog": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-x-catalog"
+  },
+  "VirtoCommerce.XFrontend": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-x-frontend"
+  },
+  "VirtoCommerce.XOrder": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-x-order"
+  },
+  "VirtoCommerce.XPickup": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-x-pickup"
+  },
+  "VirtoCommerce.XRecommend": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-x-recommend"
+  },
+  "VirtoCommerce.Xapi": {
+   "owner": "VirtoCommerce",
+   "repo": "vc-module-x-api"
+  }
+ }
+}

@@ -23,6 +23,28 @@ export const FIELD_ORDER = [
   'refutableBy',
   'appliesTo',
   'anchors',
+  // WHERE THE FACT IS NEEDED, which is not where it is ABOUT. `anchors` answers "what is this a
+  // claim concerning" -- it carries the entry's identity, it is what the cross-plane check compares
+  // against the contract, and it is what `reanchor` corrects. That made it serve two masters: the
+  // password-hash finding belongs to `GET /api/members/{id}` by subject, and is needed by somebody
+  // standing on `/sign-in`.
+  //
+  // Measured 2026-09-16 before this field existed: agents landed on `/sign-in` 19 times across the
+  // archived logs and nothing ever arrived, while four entries that answer sign-in questions sat in
+  // the corpus anchored elsewhere.
+  //
+  // WHAT NINE DELIVERY ADDRESSES ACTUALLY BOUGHT: NOTHING MEASURABLE, so far. Raw arrivals over
+  // the 22 archived logs went 295 -> 316, and that is the number this comment used to quote. The
+  // replay's own honesty rule counts only entries that existed BEFORE the run being replayed, and
+  // by that rule the figure is 244 -> 244: every one of the 21 new arrivals is on an entry written
+  // the same afternoon. The second independent review found this. The idea may still be right --
+  // a fact is needed where you meet the symptom, not where it is about -- but nothing has yet been
+  // shown to arrive by delivery address that would not have arrived anyway.
+  //
+  // It is deliberately NOT part of the fingerprint. Identity is (anchors, scope); a delivery address
+  // must never be able to collide two facts, or the cheapest possible improvement -- saying where a
+  // fact is wanted -- would start refusing entries.
+  'arrivesAt',
   'evidence',
 ];
 

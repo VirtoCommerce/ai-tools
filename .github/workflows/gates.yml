@@ -77,6 +77,14 @@ jobs:
         run: npm run suites:executability:check
       - name: scope:validate — critical-ui-scope ↔ suite manifest
         run: npm run scope:validate
+      # vc-kb's own suite. It is the ONLY thing that says the port from vc-kb-lab broke nothing, and
+      # until it ran here it was a comment (see this file's header). One of its assertions needs a
+      # real corpus and SKIPS without one, which is what CI is: "nothing to measure against" and
+      # "retrieval regressed" must not be the same red.
+      - name: kb:test — the knowledge base tool
+        run: npm run kb:test
+      - name: kb:test:logger — the vendored question/tool logger
+        run: npm run kb:test:logger
 
   external:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

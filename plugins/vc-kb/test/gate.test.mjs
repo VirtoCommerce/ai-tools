@@ -188,3 +188,38 @@ test('and the same fact written as two rows passes, which is what the message as
   assert.equal(validate(base).ok, true, problems(base).join('\n'));
   drop(base);
 });
+
+// THE UNTRACKED INDEXES, 2026-09-17. The written stores' retrieval indexes left git, because
+// `kb reindex` rebuilds them from the entries on disk and the door rewrote them on every capture.
+// The gate had to move with them: a fresh clone's normal state is entries with no index, and a
+// check that failed there would be red on every checkout. What must NOT move is the derived index,
+// which only `kb extract` writes and only from a running deployment.
+test('an absent captured index is a notice, because `kb reindex` rebuilds it from the entries', () => {
+  const base = makeBase();
+  capture(base, TOKEN);
+  rmSync(join(base, 'captured-index.json'));
+  const r = validate(base);
+  assert.equal(r.ok, true, r.problems.join('\n'));
+  assert.equal(r.notices.filter((n) => /captured-index\.json is absent/.test(n)).length, 1, r.notices.join('\n'));
+  drop(base);
+});
+
+test('but a captured index that no longer matches the entries still fails, because it is served', () => {
+  const base = makeBase();
+  capture(base, TOKEN);
+  writeFileSync(join(base, 'captured-index.json'), JSON.stringify(buildIndex([]), null, 2) + '\n');
+  assert.equal(complains(base, /captured-index\.json .*stale/).length, 1, problems(base).join('\n'));
+  drop(base);
+});
+
+test('and an absent DERIVED index still fails, because nothing rebuilds it without a deployment', () => {
+  const base = makeBase();
+  capture(base, TOKEN);
+  writeFileSync(join(base, `${DERIVED_ENTRIES}/KB-00000001.md`), [
+    '---', 'id: KB-00000001', 'subject: a-projected-surface', 'plane: derived-first',
+    'question: what does this surface do?', 'status: active', 'refutableBy: derivation', '---', '', 'body', '',
+  ].join('\n'));
+  rmSync(join(base, 'derived-index.json'));
+  assert.equal(complains(base, /derived-index\.json is missing while entries exist/).length, 1, problems(base).join('\n'));
+  drop(base);
+});

@@ -5,8 +5,8 @@
 //
 //   questions-<session>.csv   one row per CONSULTATION (`ask`, `deliver`), added by handing the
 //                             row to vendor/agent-log/log-row.mjs. This is the file the step-0
-//                             measurement already reads, and `reconcile.mjs` joins it to the
-//                             PostToolUse hook's log unchanged.
+//                             measurement already reads. (The joiner that consumed it,
+//                             `reconcile.mjs`, stayed in vc-kb-lab -- see PORT.md.)
 //   kb-log-<session>.jsonl    one line per INVOCATION -- every verb, the writes included.
 //
 // Why hand the row to log-row.mjs instead of writing the CSV here. It already owns the column
@@ -38,6 +38,14 @@ import { fileURLToPath } from 'node:url';
 import { hash } from './canonical.mjs';
 
 const LOG_ROW = fileURLToPath(new URL('../vendor/agent-log/log-row.mjs', import.meta.url));
+
+// THE CSV HALF IS INERT WITHOUT ITS RECORDER, and says so once rather than failing per call.
+// `log-row.mjs` is vendored beside this file, so on a normal install it is always there -- but the
+// vendor directory is exactly the kind of thing a packager trims, and the failure mode without
+// this check is a spawn error per consultation that reads like the journal is broken rather than
+// absent. The verb log is written by this file directly and keeps working either way, which is the
+// half that matters: an invocation is still recorded, only the question row is not.
+const hasRecorder = () => existsSync(LOG_ROW);
 
 // The verbs that CONSULT. Only these produce a question row: the CSV's columns ask what the
 // answer was and whether it held, and a `capture` has no answer -- it IS one.
@@ -166,6 +174,7 @@ function reAskedOf(path, qhash) {
 }
 
 function addQuestionRow({ dir, session, cls, backed, phase, question, method, reAsked }) {
+  if (!hasRecorder()) return { ok: false, reason: `no question recorder at ${LOG_ROW}` };
   const r = spawnSync(
     process.execPath,
     [
@@ -263,7 +272,7 @@ export function record({ cmd, argv, base, exit, outcome }) {
       backed,
       phase,
       question,
-      // `method` exists so reconcile.mjs can ask whether the named lookup appears among the calls
+      // `method` exists so a joiner can ask whether the named lookup appears among the calls
       // in this row's window. It matches on tokens of four characters or more, so the method has
       // to be built from what the hook actually recorded -- the command line -- and from nothing
       // else. The script's own basename is the token that survives both invocation styles

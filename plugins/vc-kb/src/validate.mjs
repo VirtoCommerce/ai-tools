@@ -7,12 +7,17 @@
 // experiential plane is a legitimate state, not a fault.
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { installedVersionOf } from './source-door.mjs';
+import { publishedOperations, contradictions } from './contradiction.mjs';
 import { join } from 'node:path';
 import { parseEntry, FIELD_ORDER } from './frontmatter.mjs';
 import { mintId } from './canonical.mjs';
 import { normalizeAnchor, namespaceOf, LOOKS_LIKE_A_MENU_PATH, LOOKS_LIKE_A_LOCAL_PATH } from './anchors.mjs';
 import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX, FLOWS_CATALOG, fingerprint, buildCapturedArtifacts } from './capture.mjs';
+import { RULES_DIR, RULES_INDEX, RULES_CATALOG } from './planes.mjs';
+import { ruleIdOf } from './rules.mjs';
 import { DERIVED_ENTRIES, DERIVED_INDEX, DERIVED_CATALOG } from './planes.mjs';
+import { catalogBudgetNotice } from './catalog-budget.mjs';
 
 const REQUIRED = ['id', 'subject', 'plane', 'question', 'status', 'refutableBy'];
 
@@ -93,6 +98,7 @@ export function validate(base) {
   const derivedFiles = readPlane(base, DERIVED_ENTRIES);
   const capturedFiles = readPlane(base, CAPTURED_DIR);
   const flowFiles = readPlane(base, FLOWS_DIR);
+  const ruleFiles = readPlane(base, RULES_DIR);
 
   const byId = new Map();
   const statusById = new Map();
@@ -106,10 +112,11 @@ export function validate(base) {
   const anchorsByEntry = new Map();
   const supersededPointers = [];
 
-  for (const { file, rel, abs } of [...derivedFiles, ...capturedFiles, ...flowFiles]) {
+  for (const { file, rel, abs } of [...derivedFiles, ...capturedFiles, ...flowFiles, ...ruleFiles]) {
     const experientialFile = rel.startsWith(`${CAPTURED_DIR}/`);
     const flowFile = rel.startsWith(`${FLOWS_DIR}/`);
-    const writtenFile = experientialFile || flowFile;
+    const ruleFile = rel.startsWith(`${RULES_DIR}/`);
+    const writtenFile = experientialFile || flowFile || ruleFile;
     let parsed;
     try {
       parsed = parseEntry(readFileSync(abs, 'utf8'), rel);
@@ -119,7 +126,14 @@ export function validate(base) {
     }
     const d = parsed.data;
 
-    for (const k of REQUIRED) if (d[k] === undefined) note(`${rel}: missing required field ${k}`);
+    // `question` is exempt on the normative plane, and the gate has to agree with the door or the
+    // corpus fails its own check the moment a rule is written. A fact is an ANSWER and is found by
+    // the question somebody would ask; a rule is a CONSTRAINT and is found by the domain it governs.
+    // See NORMATIVE_EXEMPT in capture.mjs for the whole argument.
+    for (const k of REQUIRED) {
+      if (k === 'question' && d.plane === 'normative') continue;
+      if (d[k] === undefined) note(`${rel}: missing required field ${k}`);
+    }
     for (const k of Object.keys(d)) if (!FIELD_ORDER.includes(k)) note(`${rel}: unknown field ${k}`);
 
     // The namespace check is a PARSE, never a prefix compare: "KB-C-3F9A2C1D".startsWith("KB")
@@ -147,11 +161,24 @@ export function validate(base) {
     // must agree, or the extractor's wipe and the capture door disagree about who owns a file.
     if (experientialFile && d.plane !== 'experiential') note(`${rel}: lives in ${CAPTURED_DIR}/ but declares plane "${d.plane}"`);
     if (flowFile && d.plane !== 'flow') note(`${rel}: lives in ${FLOWS_DIR}/ but declares plane "${d.plane}"`);
-    if (!writtenFile && (d.plane === 'experiential' || d.plane === 'flow')) note(`${rel}: declares a written plane but lives where the extractor wipes`);
+    if (ruleFile && d.plane !== 'normative') note(`${rel}: lives in ${RULES_DIR}/ but declares plane "${d.plane}"`);
+    if (!writtenFile && (d.plane === 'experiential' || d.plane === 'flow' || d.plane === 'normative')) note(`${rel}: declares a written plane but lives where the extractor wipes`);
+    // A rule's ID is its identity, so a rule that has lost it from its subject is unfindable by the
+    // citations that point at it and indistinguishable from the next rule on the same subject. The
+    // door refuses this; the gate catches a file edited by hand afterwards.
+    if (ruleFile && d.subject !== undefined && !ruleIdOf(d.subject)) {
+      note(`${rel}: a rule's subject must lead with its ID (e.g. "BL-CART-003 …"); this one reads "${d.subject}"`);
+    }
 
     // An entry that names no anchor cannot be reached by a coordinate, which is how BOTH planes
     // find things: regeneration diffs the derived plane, consolidation groups the experiential one.
-    if (!(d.anchors?.length > 0)) note(`${rel}: carries no anchors`);
+    //
+    // A RULE IS EXEMPT, and this is the gate half of the door's NORMATIVE_EXEMPT -- the two must
+    // agree or a rule the door admits fails the gate that ships it. A rule is reached by its id and
+    // by its domain: `kb rules BL-CART`, `kb show BL-CART-003`, and the domain index the session
+    // hook injects. 143 of the 216 invariants being imported name no coordinate at all, so this
+    // notice would have tripled the corpus's notice count while reporting the design.
+    if (d.plane !== 'normative' && !(d.anchors?.length > 0)) note(`${rel}: carries no anchors`);
     for (const anchor of d.anchors ?? []) {
       const coordinate = String(anchor?.coordinate ?? '');
       if (LOOKS_LIKE_A_LOCAL_PATH.test(coordinate)) {
@@ -162,19 +189,47 @@ export function validate(base) {
     for (const anchor of d.anchors ?? []) {
       const key = normalizeAnchor(anchor?.coordinate);
       if (!key) continue;
-      if (d.plane === 'experiential' || d.plane === 'flow') {
+      if (d.plane === 'experiential' || d.plane === 'flow' || d.plane === 'normative') {
         if (!anchorsByEntry.has(rel)) anchorsByEntry.set(rel, { id: d.id, anchors: [] });
         anchorsByEntry.get(rel).anchors.push({ raw: String(anchor.coordinate), key });
       } else derivedCoordinates.add(key);
     }
     if (!(d.evidence?.length > 0)) note(`${rel}: carries no evidence`);
+    // A delivery address must still be a coordinate. It is NOT checked for reachability: the whole
+    // point of the field is that a fact can be wanted somewhere the contract does not project, such
+    // as a storefront page, and reporting that as a missing coordinate would be reporting the design.
+    for (const at of d.arrivesAt ?? []) {
+      if (!at || !at.coordinate) note(`${rel}: an arrivesAt row carries no coordinate: ${JSON.stringify(at)}`);
+    }
+    // A CLAIM READ OUT OF CODE HAS TO SAY WHICH CODE. `method: source` without a module, a version
+    // and a path is the same failure as an observation without a deployment: unrefutable, because
+    // nobody can go back to where it came from. The version must be one the base records as
+    // installed -- `kb capture` resolves it rather than accepting it, so a row that disagrees with
+    // the derived plane was either hand-edited or survived a re-extract, and both are worth a flag.
+    for (const e of d.evidence ?? []) {
+      if (e.method !== 'source') continue;
+      const missing = ['module', 'version', 'path'].filter((k) => !e[k]);
+      if (missing.length) note(`${rel}: a source-backed evidence row names no ${missing.join(', ')}`);
+      if (e.deployment) note(`${rel}: a source-backed evidence row carries a deployment (${e.deployment}); source is read from a tag, not from a deployment`);
+      if (e.module && e.version) {
+        const installed = installedVersionOf(base, e.module);
+        if (installed && installed !== e.version) {
+          note(`${rel}: source row cites ${e.module}:${e.version} while this base records ${installed} as installed`);
+        }
+      }
+    }
     if ('costIfMissing' in d) note(`${rel}: costIfMissing must be asked or omitted, never defaulted`);
 
-    if (d.plane === 'experiential' || d.plane === 'flow') {
+    if (d.plane === 'experiential' || d.plane === 'flow' || d.plane === 'normative') {
       // Scope is what decides whether two records are one fact. An entry without it claims to hold
       // everywhere, which is almost never what was observed and is exactly the shape that makes a
       // wrong merge possible.
-      if (!(d.appliesTo?.length > 0)) note(`${rel}: experiential entry records no scope axis`);
+      //
+      // A RULE IS EXEMPT, because for a rule "everywhere" is usually the truth and its identity is
+      // its id rather than its scope. `BL-PRICE-003` says money rounds to two decimals on this
+      // platform; there is no axis that narrows it, and making an importer invent one would put 216
+      // unobserved values into the corpus to satisfy a check.
+      if (d.plane !== 'normative' && !(d.appliesTo?.length > 0)) note(`${rel}: experiential entry records no scope axis`);
       for (const s of d.appliesTo ?? []) {
         if (!s.axis || s.value === undefined || s.value === '') note(`${rel}: appliesTo row is not axis=value: ${JSON.stringify(s)}`);
         else {
@@ -200,7 +255,9 @@ export function validate(base) {
       // check the captured store's own index and catalog, and a flow is correctly absent from both.
       // Widening them was the first thing the flow tests caught -- the gate demanded that
       // captured-index.json carry an entry that lives in flows/.
-      if (d.status === 'active') activeExperiential.push({ rel, data: d });
+      // The BODY travels with it: the cross-plane contradiction check below reads prose, and the
+      // first version of it silently found nothing because this list carried frontmatter only.
+      if (d.status === 'active') activeExperiential.push({ rel, data: d, body: parsed.body });
       if (d.plane === 'experiential') {
         allCapturedIds.add(d.id);
         if (d.status === 'active') activeCapturedIds.add(d.id);
@@ -347,7 +404,22 @@ export function validate(base) {
       else if (!activeCapturedIds.has(id)) note(`${CAPTURED_INDEX} carries ${id}, which is retired`);
     }
   } else if (capturedFiles.length) {
-    note(`${CAPTURED_INDEX} is missing while captured entries exist`);
+    // ABSENT IS A NOTICE; STALE IS STILL A PROBLEM. The written stores' indexes are rebuilt from
+    // the entries on disk by `kb reindex`, and from 2026-09-17 they are untracked — so the normal
+    // state of a fresh clone is "entries, no index", and a gate that failed there would be red on
+    // every checkout and in CI before anybody had done anything wrong. That is the shape of gate
+    // people learn to ignore.
+    //
+    // Nothing is lost by demoting it, because the RETRIEVAL path already refuses: `openBase` and
+    // `openFlows` return `degraded` — "captured-index.json is missing while its corpus holds
+    // entries" — so `kb ask` and `kb how` answer with an infrastructure miss rather than out of
+    // half a corpus. The gate was the second statement of that, and the louder one was the wrong
+    // one to keep.
+    //
+    // The derived index above keeps FAILING, and the asymmetry is the point: nothing rebuilds it
+    // from disk. `kb extract` writes it from a running deployment, so an absent one is damage a
+    // clone cannot repair, not a step somebody has not run yet.
+    notice(`${CAPTURED_INDEX} is absent — rebuilt from the entries on disk by \`kb reindex\`; it is untracked on purpose`);
   }
 
   // REGENERATE AND BYTE-COMPARE, the check `kb check` gives the derived plane and the experiential
@@ -380,7 +452,8 @@ export function validate(base) {
     const built = buildCapturedArtifacts(base, 'flow');
     const indexPath = join(base, FLOWS_INDEX);
     const catalogPath = join(base, FLOWS_CATALOG);
-    if (!existsSync(indexPath)) note(`${FLOWS_INDEX} is missing while flows exist`);
+    // Absent is a notice, stale is a problem — see the captured store above for why.
+    if (!existsSync(indexPath)) notice(`${FLOWS_INDEX} is absent — rebuilt from the files on disk by \`kb reindex\`; it is untracked on purpose`);
     else if (readFileSync(indexPath, 'utf8') !== built.index) {
       note(`${FLOWS_INDEX} is not what the flows on disk build — it is stale; run \`kb reindex\``);
     }
@@ -410,5 +483,68 @@ export function validate(base) {
     note(`${FLOWS_INDEX} exists while ${FLOWS_DIR}/ holds no flows`);
   }
 
-  return { ok: problems.length === 0, entries: derivedFiles.length, captured: capturedFiles.length, flows: flowFiles.length, problems, notices };
+  // THE RULES STORE GETS THE SAME ARTIFACT CHECKS, written as the flow block's sibling rather than
+  // as a third copy of it: rebuild the index and the catalog from the files on disk and byte-compare.
+  // An index that merely MENTIONS the right ids is what a stale one looks like, and the normative
+  // plane is the one most likely to be edited by hand -- 216 entries arriving from a migration is
+  // exactly the situation where somebody fixes a typo in a file and nothing rebuilds.
+  if (ruleFiles.length) {
+    const built = buildCapturedArtifacts(base, 'normative');
+    const indexPath = join(base, RULES_INDEX);
+    const catalogPath = join(base, RULES_CATALOG);
+    // Absent is a notice, stale is a problem — see the captured store above for why.
+    if (!existsSync(indexPath)) notice(`${RULES_INDEX} is absent — rebuilt from the files on disk by \`kb reindex\`; it is untracked on purpose`);
+    else if (readFileSync(indexPath, 'utf8') !== built.index) {
+      note(`${RULES_INDEX} is not what the rules on disk build — it is stale; run \`kb reindex\``);
+    }
+    if (!existsSync(catalogPath)) note(`${RULES_CATALOG} is missing while rules exist`);
+    else {
+      const text = readFileSync(catalogPath, 'utf8');
+      if (text !== built.catalog) note(`${RULES_CATALOG} is not what the rules on disk build — it is stale; run \`kb reindex\``);
+      for (const { file } of ruleFiles) {
+        const id = file.replace(/\.md$/, '');
+        if (!text.includes(id)) note(`${RULES_CATALOG} does not list ${id}`);
+      }
+    }
+  } else if (existsSync(join(base, RULES_INDEX))) {
+    note(`${RULES_INDEX} exists while ${RULES_DIR}/ holds no rules`);
+  }
+
+  // THE PLANES, COMPARED. Everything above checks that entries are well-formed and that indexes
+  // match their contents. Nothing checked that a WRITTEN claim survives the contract sitting beside
+  // it, and the cost of that gap is on the record: "an order cannot be deleted on this platform"
+  // rode through twelve runs, three briefs and a controlled comparison while the derived plane
+  // published `DELETE /api/order/customerOrders` the whole time. See src/contradiction.mjs for what
+  // this looks for, what it cannot see, and why it is a notice rather than a failure.
+  const ops = publishedOperations(base);
+  if (ops.length) {
+    for (const { data, body, rel } of activeExperiential) {
+      // ONE NOTICE PER ENTRY AND COORDINATE, not per sentence. An AMENDMENT quotes the claim it
+      // corrects -- KB-AFB2D3C5 carries both "an order cannot be deleted once placed" and, below
+      // it, "The step said an order cannot be deleted, only cancelled" as part of the correction --
+      // so a per-sentence notice makes every fix generate a permanent second complaint. The entry
+      // is the unit a reader judges anyway.
+      const seen = new Set();
+      for (const c of contradictions(body ?? '', ops)) {
+        if (seen.has(c.coordinate)) continue;
+        seen.add(c.coordinate);
+        notice(`${rel}: ${data.id} says "${c.sentence.slice(0, 110)}" while the contract publishes `
+          + `${c.coordinate}${c.operationId ? ` (${c.operationId})` : ''} — @kb(${c.via}). A published operation is not `
+          + 'proof it works, and it may be permission-gated; check the platform rather than the sentence.');
+      }
+    }
+  }
+
+  // THE CATALOG IS MEANT TO BE HANDED OVER WHOLE, so its size is a property of the design and not
+  // an accident. The gate asks the question so that nobody has to remember to.
+  for (const catalogFile of [CAPTURED_CATALOG, FLOWS_CATALOG]) {
+    const abs = join(base, catalogFile);
+    if (!existsSync(abs)) continue;
+    const text = readFileSync(abs, 'utf8');
+    const rows = text.split(/\r?\n/).filter((l) => /^\| *\[?`?KB-/.test(l)).length;
+    const n = catalogBudgetNotice({ rows, bytes: Buffer.byteLength(text), label: catalogFile });
+    if (n) notice(n);
+  }
+
+  return { ok: problems.length === 0, entries: derivedFiles.length, captured: capturedFiles.length, flows: flowFiles.length, rules: ruleFiles.length, problems, notices };
 }

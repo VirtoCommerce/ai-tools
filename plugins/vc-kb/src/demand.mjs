@@ -110,7 +110,10 @@ export function recordSettled(base, id, { at = new Date().toISOString() } = {}) 
 export function openQuestions(base) {
   const byKey = new Map();
   for (const row of read(base)) {
-    if (row.kind !== 'ask' && row.kind !== 'closed' && row.kind !== 'dropped') continue;
+    // `buried` settles a row exactly as `closed` and `dropped` do: the question has an answer
+    // and the loop is no longer waiting on it. What makes it a different KIND is what it says
+    // about WHY, which is the part the ranking work needs and the other two throw away.
+    if (row.kind !== 'ask' && row.kind !== 'closed' && row.kind !== 'dropped' && row.kind !== 'buried') continue;
     const cur = byKey.get(row.key) ?? { key: row.key, question: row.question, asked: 0, missed: 0, settledBy: null, at: row.at };
     if (row.kind === 'ask') {
       cur.asked += 1;
@@ -118,7 +121,9 @@ export function openQuestions(base) {
       cur.question = row.question ?? cur.question;
       cur.at = row.at ?? cur.at;
     } else {
-      cur.settledBy = row.kind === 'closed' ? (row.id ?? 'a capture') : 'dropped';
+      cur.settledBy = row.kind === 'closed' ? (row.id ?? 'a capture')
+        : row.kind === 'buried' ? `buried under retrieval; ${row.id} answers it`
+          : 'dropped';
       cur.reason = row.reason ?? null;
     }
     byKey.set(row.key, cur);
@@ -157,6 +162,41 @@ export function dropQuestion(base, key, { reason = null, at = new Date().toISOSt
   if (!q) return null;
   append(base, { kind: 'dropped', key: q.key, question: q.question, reason, at });
   return q;
+}
+
+/**
+ * Close a question whose answer the base ALREADY HELD and did not serve.
+ *
+ * The third outcome, and the commonest one. `closeQuestions` records "somebody wrote the answer"
+ * and `dropQuestion` records "there was nothing worth writing"; neither fits the case where the
+ * corpus holds the answer and retrieval buried it under entries that merely share the words. Before
+ * this verb that case had nowhere to go: dropping it says the question was not worth answering,
+ * which is false and deletes the signal, and leaving it open says the base has a gap, which is also
+ * false and sends the next writer to write a duplicate.
+ *
+ * IT IS THE LABELLED DATA THE RANKING PROBLEM HAS NEVER HAD. Fourteen candidate rules were measured
+ * on 2026-09-16 against 34 held-out rows, of which five are rows where a run said the answer was
+ * buried -- and two of those five are still buried, with no way to get more of them except by
+ * waiting for another run to be failed the same way. Every `buried` row is one more, produced by a
+ * reader doing the review the drift forces anyway. `measurements/kb-missdrift-2026-09/` is what
+ * consumes them.
+ */
+export function buriedQuestion(base, key, { id, reason = null, at = new Date().toISOString() } = {}) {
+  if (!id) throw new Error('buried needs the entry that should have been served');
+  const q = openQuestions(base).find((d) => d.key === key || d.key.startsWith(key));
+  if (!q) return null;
+  append(base, { kind: 'buried', key: q.key, question: q.question, id, reason, at });
+  return { ...q, id };
+}
+
+/**
+ * Every question whose answer the corpus held and did not serve, with the entry that should have
+ * been served. This is a held-out set that grows by being used.
+ */
+export function buriedQuestions(base) {
+  const out = [];
+  for (const row of read(base)) if (row.kind === 'buried') out.push({ key: row.key, question: row.question, want: row.id, reason: row.reason ?? null, at: row.at });
+  return out;
 }
 
 /** Experiential entries served and not since confirmed or disputed by anyone. */

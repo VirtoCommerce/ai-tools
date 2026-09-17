@@ -1,0 +1,22 @@
+{
+  "name": "vc-kb",
+  "description": "The Virto Commerce knowledge base tool. `kb` extracts the DERIVED plane (REST + GraphQL contracts) from a running deployment, and resolves questions against that plus a written EXPERIENTIAL plane of observations agents captured while working. A CLI, deliberately not an MCP server: an MCP tool's schema sits in context on every turn, and this one is consulted a handful of times per run. Zero runtime dependencies, Node >= 20, no install step. It reads and writes a base (VirtoCommerce/vc-knowledge) whose location is DECLARED, never discovered: --base, then KB_BASE, then knowledgeBase.path in project-profile.json, which /project-init writes when it clones the base into the project. Ships hooks/arrive.mjs UNWIRED on purpose — see PORT.md.",
+  "version": "0.1.0",
+  "displayName": "Virto Commerce Knowledge Base",
+  "author": {
+    "name": "Virto Commerce",
+    "email": "support@virtocommerce.com"
+  },
+  "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module",
+  "repository": "https://github.com/VirtoCommerce/vc-mcp-testing-module",
+  "license": "TBD-internal",
+  "keywords": [
+    "knowledge-base",
+    "virtocommerce",
+    "graphql",
+    "openapi",
+    "retrieval",
+    "qa"
+  ],
+  "defaultEnabled": false
+}
