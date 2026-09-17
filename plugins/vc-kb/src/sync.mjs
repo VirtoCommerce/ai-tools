@@ -22,7 +22,7 @@
 // only then is moved into place by a single rename. A rename within one directory is atomic on
 // every filesystem this runs on, and the sibling -- rather than the system temp directory -- is
 // what keeps it on one volume, where rename is a rename and not a copy.
-import { existsSync, mkdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 
@@ -101,6 +101,85 @@ export const isCheckout = (dir) => Boolean(dir) && existsSync(join(dir, '.git'))
 const clearStaging = (path) => rmSync(path, { recursive: true, force: true });
 
 /**
+ * The open loop's ledger, which every `kb ask` appends to and git tracks.
+ *
+ * THIS COMBINATION BREAKS THE FETCH, and it breaks it for everybody who uses the tool as intended.
+ * `demand.jsonl` is deliberately IN the corpus — an unanswered question is a fact about the base,
+ * not about whoever asked, so the next agent inherits it. It is equally deliberately APPEND-ONLY:
+ * two agents work against one base at once and a read-modify-write would drop one of their rows.
+ * The consequence nobody had hit yet: one `kb ask` leaves the checkout dirty, and the next
+ * `git pull --ff-only` that carries somebody else's asks refuses with *"your local changes would be
+ * overwritten"*. Reproduced in a sandbox, not reasoned about. Every user reaches it; the only
+ * reason this base has not is that it has one writer.
+ *
+ * Git cannot merge it, because git does not know the format. This tool does, and an append-only log
+ * of independent rows has exactly one correct merge: the union, in order. So the rows written since
+ * the last commit are PARKED, the file is restored to what HEAD says, the fast-forward runs, and
+ * the parked rows are appended to whatever came down — including when the pull fails, which leaves
+ * the checkout exactly as it was found.
+ *
+ * ONLY AN APPEND IS PARKED. If the working copy is not the committed file plus new lines, somebody
+ * edited or truncated it, and this refuses to be clever about that: the pull then fails the way it
+ * always did, with git's own words.
+ */
+export const DEMAND_FILE = 'demand.jsonl';
+/**
+ * Where the parked rows sit for the few milliseconds they are not in the ledger.
+ *
+ * Because the park RESTORES the tracked file, there is a window in which the only copy of those
+ * rows is in this process's memory — and the first sandbox run of this code died in exactly that
+ * window and took a row with it. So they go to disk first. Untracked, so it cannot block the
+ * fast-forward it exists to enable; picked up by the next sync if a run dies mid-flight.
+ *
+ * The residual risk is a duplicated row rather than a lost one — a crash between the append and the
+ * unlink replays it next time — and that is the right way round for a log whose counts are a
+ * signal: one extra "asked" is noise, a missing question is a coverage gap nobody will ever see.
+ */
+export const PARKED_FILE = 'demand.jsonl.parked';
+
+export function parkDemand(dir) {
+  const file = join(dir, DEMAND_FILE);
+  const parked = join(dir, PARKED_FILE);
+  // A LEFTOVER IS ROWS NOBODY PUT BACK. Replayed before anything else is considered.
+  if (existsSync(parked)) return readFileSync(parked, 'utf8') || null;
+  if (!existsSync(file)) return null;
+  const shown = git(['show', `HEAD:${DEMAND_FILE}`], dir);
+  if (shown.status !== 0) return null;                       // untracked — a pull does not mind it
+
+  // COMPARED AS LINES, NOT AS BYTES. `git show` prints the blob with LF while the working copy may
+  // hold CRLF, and either may or may not end with a newline; on bytes, both differences read as
+  // "somebody rewrote the file" and the park silently never happens — the failure this exists to
+  // remove, restored by its own fix.
+  const lines = (s) => String(s ?? '').split('\n').map((l) => (l.endsWith('\r') ? l.slice(0, -1) : l));
+  const committed = lines(shown.stdout);
+  const current = readFileSync(file, 'utf8');
+  const currentLines = lines(current);
+  const head = committed.filter((l, i) => i < committed.length - 1 || l !== '');
+  if (currentLines.length < head.length) return null;
+  for (let i = 0; i < head.length; i += 1) if (currentLines[i] !== head[i]) return null;
+  const extra = currentLines.slice(head.length).filter((l) => l.trim());
+  if (!extra.length) return null;
+
+  const rows = `${extra.join('\n')}\n`;
+  writeFileSync(parked, rows, 'utf8');
+  if (git(['checkout', '--', DEMAND_FILE], dir).status !== 0) {
+    rmSync(parked, { force: true });
+    return null;
+  }
+  return rows;
+}
+
+/** Put the parked rows back on top of whatever the fetch brought down. */
+export function replayDemand(dir, extra) {
+  if (!extra) return 0;
+  const file = join(dir, DEMAND_FILE);
+  const now = existsSync(file) ? readFileSync(file, 'utf8') : '';
+  writeFileSync(file, now && !now.endsWith('\n') ? `${now}\n${extra}` : `${now}${extra}`, 'utf8');
+  rmSync(join(dir, PARKED_FILE), { force: true });
+  return extra.split('\n').filter((l) => l.trim()).length;
+}
+
+/**
  * Fetch the base, or bring an existing checkout up to date.
  *
  * @param {object} opts
@@ -121,7 +200,11 @@ export function sync({ dir = managedBaseDir(), repo = BASE_REPO, ref, depth1 = t
   // away to re-clone would be destroying the very thing this tool exists to accumulate.
   if (isCheckout(dir)) {
     const before = gitOut(['rev-parse', 'HEAD'], dir);
+    const parked = parkDemand(dir);
     const r = git(['pull', '--ff-only'], dir);
+    // Replayed on BOTH paths. On failure this restores the checkout to exactly what it was found
+    // as, which is what "nothing was changed" below promises.
+    const replayed = replayDemand(dir, parked);
     if (r.status !== 0) {
       const said = (r.stderr || r.stdout || '').trim().split('\n').filter(Boolean).pop() ?? '';
       throw new SyncRefused(
@@ -131,7 +214,7 @@ export function sync({ dir = managedBaseDir(), repo = BASE_REPO, ref, depth1 = t
       );
     }
     const after = gitOut(['rev-parse', 'HEAD'], dir);
-    return { action: before === after ? 'current' : 'updated', dir, before, after, age: baseAge(dir), indexed: repairIndexes(dir) };
+    return { action: before === after ? 'current' : 'updated', dir, before, after, age: baseAge(dir), indexed: repairIndexes(dir), replayed };
   }
 
   if (existsSync(dir)) {
@@ -176,14 +259,16 @@ export function sync({ dir = managedBaseDir(), repo = BASE_REPO, ref, depth1 = t
 
 /** One line a person reads: where the base is, how it got there, how old what is in it is. */
 export function renderSync(result) {
-  const { action, dir, age, indexed = [] } = result;
+  const { action, dir, age, indexed = [], replayed = 0 } = result;
   const verb = { cloned: 'cloned', updated: 'updated', current: 'already up to date' }[action] ?? action;
   const when = age ? `  newest fact: ${age.iso.slice(0, 10)} (${age.days}d ago)` : '';
   // Reported rather than done silently: a person who sees `rules-index.json` built here knows why
   // the first fetch took a moment, and knows that a base can arrive without one.
   const built = indexed.length ? `
   built the missing retrieval index: ${indexed.join(', ')}` : '';
-  return `base ${verb} at ${dir}${when}${built}`;
+  const kept = replayed ? `
+  kept ${replayed} unpushed demand row(s) — re-applied on top of what came down` : '';
+  return `base ${verb} at ${dir}${when}${built}${kept}`;
 }
 
 /** Freshness for a readiness line. Never a gate — a stale base answers, it just answers older. */

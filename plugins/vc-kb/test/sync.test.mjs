@@ -5,7 +5,7 @@
 // network, and nothing touches the real base or the real `~/.claude`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -251,6 +251,81 @@ test('a clone whose index was never committed gets one built, and nothing else i
   // An index the checkout DOES carry is left alone, stale or not: repairing one is `kb reindex`.
   writeFileSync(join(dest, 'rules-index.json'), 'stale but present');
   assert.deepEqual(repairIndexes(dest), []);
+
+  rmSync(origin, { recursive: true, force: true });
+  rmSync(home, { recursive: true, force: true });
+});
+
+// ONE `kb ask` USED TO BREAK THE NEXT `kb sync`, for everybody. `demand.jsonl` is tracked on
+// purpose (an unanswered question belongs to the corpus, not to the asker) and appended to on every
+// ask, so the checkout is dirty; the first fast-forward that carries somebody else's asks then
+// refuses with "your local changes would be overwritten". Reproduced in a sandbox before this was
+// written. Git cannot merge the file because git does not know the format; an append-only log of
+// independent rows has exactly one correct merge, and the tool does know that.
+function ledgerRepo() {
+  const dir = originRepo({ extra: { '.gitattributes': '* -text\n', 'demand.jsonl': '{"kind":"ask","key":"a"}\n' } });
+  return dir;
+}
+
+test('a locally appended demand ledger no longer blocks the fetch, and is kept', () => {
+  const origin = ledgerRepo();
+  const home = scratch();
+  const dest = join(home, '.claude', 'vc-knowledge');
+  sync({ dir: dest, repo: origin });
+
+  // Both sides write a row: this machine asks a question, somebody else's asks land upstream.
+  writeFileSync(join(dest, 'demand.jsonl'), '{"kind":"ask","key":"a"}\n{"kind":"ask","key":"mine"}\n');
+  writeFileSync(join(origin, 'demand.jsonl'), '{"kind":"ask","key":"a"}\n{"kind":"ask","key":"theirs"}\n');
+  git(['commit', '--quiet', '-am', 'their ask'], origin);
+
+  const r = sync({ dir: dest, repo: origin });
+  assert.equal(r.action, 'updated');
+  assert.equal(r.replayed, 1);
+  assert.match(renderSync(r), /kept 1 unpushed demand row/);
+
+  const ledger = readFileSync(join(dest, 'demand.jsonl'), 'utf8');
+  assert.match(ledger, /"theirs"/, 'what came down is there');
+  assert.match(ledger, /"mine"/, 'and what was here was not thrown away');
+  assert.ok(ledger.indexOf('"theirs"') < ledger.indexOf('"mine"'), 'the local rows go on top, in order');
+  assert.equal(existsSync(join(dest, 'demand.jsonl.parked')), false, 'the parking file is cleaned up');
+
+  rmSync(origin, { recursive: true, force: true });
+  rmSync(home, { recursive: true, force: true });
+});
+
+// The park RESTORES a tracked file, so between that and the replay the rows exist only in this
+// process. The first sandbox run of this code died in that window and took a row with it.
+test('rows parked by a run that died are replayed by the next fetch', () => {
+  const origin = ledgerRepo();
+  const home = scratch();
+  const dest = join(home, '.claude', 'vc-knowledge');
+  sync({ dir: dest, repo: origin });
+
+  // Exactly what a crash between park and replay leaves behind.
+  writeFileSync(join(dest, 'demand.jsonl.parked'), '{"kind":"ask","key":"orphan"}\n');
+  const r = sync({ dir: dest, repo: origin });
+  assert.equal(r.replayed, 1);
+  assert.match(readFileSync(join(dest, 'demand.jsonl'), 'utf8'), /"orphan"/);
+  assert.equal(existsSync(join(dest, 'demand.jsonl.parked')), false);
+
+  rmSync(origin, { recursive: true, force: true });
+  rmSync(home, { recursive: true, force: true });
+});
+
+// A ledger that is NOT the committed file plus new lines was edited or truncated by somebody, and
+// this refuses to be clever about that: the fetch fails with git's own words, nothing is discarded.
+test('an edited ledger is not parked — the refusal stands, and the file is untouched', () => {
+  const origin = ledgerRepo();
+  const home = scratch();
+  const dest = join(home, '.claude', 'vc-knowledge');
+  sync({ dir: dest, repo: origin });
+
+  writeFileSync(join(dest, 'demand.jsonl'), '{"kind":"ask","key":"REWRITTEN"}\n');
+  writeFileSync(join(origin, 'demand.jsonl'), '{"kind":"ask","key":"a"}\n{"kind":"ask","key":"theirs"}\n');
+  git(['commit', '--quiet', '-am', 'their ask'], origin);
+
+  assert.throws(() => sync({ dir: dest, repo: origin }), SyncRefused);
+  assert.equal(readFileSync(join(dest, 'demand.jsonl'), 'utf8'), '{"kind":"ask","key":"REWRITTEN"}\n');
 
   rmSync(origin, { recursive: true, force: true });
   rmSync(home, { recursive: true, force: true });
