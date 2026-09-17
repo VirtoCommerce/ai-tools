@@ -1,0 +1,119 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+PERS-001,"Tagged Item Round-Trip - PUT Persists Tags, GET Returns Them",Catalog > Personalization > Tagged items,High,,,Admin can authenticate against {{BACK_URL}}; the CatalogPersonalization module is installed; a product exists that carries no tags,adminUrl={{BACK_URL}}; targetProduct=live-discover(POST /api/catalog/search/products -> a product whose tagged item has no tags); group=AGENT-TEST-PERS01-{run},"[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+[SETUP] Resolve targetProduct per Test_Data - a product carrying no tags
+[HTTP] GET /api/personalization/taggeditem/{targetProduct} - record the baseline tags collection
+[ACT] PUT /api/personalization/taggeditem with targetProduct carrying exactly one group name
+[WAIT] The write returns
+[HTTP] GET /api/personalization/taggeditem/{targetProduct} a second time
+[ACT] PUT /api/personalization/taggeditem with an EMPTY tag collection for targetProduct
+[WAIT] The write returns
+[HTTP] GET /api/personalization/taggeditem/{targetProduct} a third time","[STATUS] Both PUT requests return 2xx {SPEC}
+[MATH] After the first PUT tags.length = 1 and the single entry equals the group name that was sent {SPEC}
+[MATH] After the clearing PUT tags.length = 0 - an empty collection is a real removal, not a rejected no-op {SPEC}
+[API] The baseline read and the final read agree, so the case leaves the entity as it found it {OBSERVED}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:LIFECYCLE · Technique:FLOW,Draft
+PERS-002,Tag Count Endpoint Reports Direct And Inherited Separately,Catalog > Personalization > Tagged items,Medium,,,"Admin can authenticate against {{BACK_URL}}; a parent category and a child entity beneath it exist, both initially untagged","adminUrl={{BACK_URL}}; parentCategory=live-discover(a category with at least one child entity); childEntity=live-discover(a child of parentCategory); groupA,groupB=AGENT-TEST-PERS02-{run}-A,-B","[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+[SETUP] Resolve parentCategory plus childEntity per Test_Data, both untagged
+[HTTP] GET /api/personalization/taggeditem/{childEntity}/tags/count in the untagged state
+[ACT] PUT a single group onto childEntity
+[WAIT] The write returns
+[HTTP] GET the count again in the direct-only state
+[ACT] PUT an empty tag collection onto childEntity
+[WAIT] The write returns
+[ACT] PUT a single group onto parentCategory
+[WAIT] The write returns
+[HTTP] GET the count for childEntity in the inherited-only state
+[ACT] PUT a different group directly onto childEntity
+[WAIT] The write returns
+[HTTP] GET the count for childEntity in the mixed state","[MATH] Untagged state: direct = 0 and inherited = 0 {SPEC}
+[MATH] Direct-only state: direct = 1 and inherited = 0 {SPEC}
+[MATH] Inherited-only state: direct = 0 and inherited = 1 - the parent's grant is counted on the child, once {SPEC}
+[MATH] Mixed state: direct = 1 and inherited = 1, so the two groups are never collapsed into one figure {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:RENDER · Technique:EP,Draft
+PERS-003,DownTree - A Product Inherits Its Parent Category's Tags,Catalog > Personalization > Tagged items,High,,,"Admin can authenticate against {{BACK_URL}}; TagsInheritancePolicy is DownTree on this environment (verify before running - under UpTree products compute no inherited tags at all and this case is invalid); a category holding at least one product exists, all untagged",adminUrl={{BACK_URL}}; parentCategory=live-discover(a category holding at least one product); childProduct=live-discover(a product inside parentCategory); group=AGENT-TEST-PERS03-{run},"[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+[SETUP] Read the CatalogPersonalization.TagsInheritancePolicy setting - this case is valid only under DownTree
+[SETUP] Resolve parentCategory plus childProduct per Test_Data, both untagged
+[ACT] PUT exactly one group onto parentCategory
+[WAIT] The write returns
+[HTTP] GET /api/personalization/taggeditem/{childProduct}
+[ACT] PUT an empty tag collection onto parentCategory
+[WAIT] The write returns
+[HTTP] GET /api/personalization/taggeditem/{childProduct} a second time","[API] The product's own tags collection stays EMPTY - inheritance never writes a tag onto the descendant {SPEC}
+[MATH] The product's inheritedTags.length = 1 and its entry equals the group put on the category {SPEC}
+[MATH] After the category tag is cleared the product's inheritedTags.length = 0 {SPEC}
+[API] The setting read in the SETUP step is DownTree; under UpTree a product computes no inherited tags and this case must be reported as not applicable rather than failed {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:SCOPE · Technique:FLOW,Draft
+PERS-004,DownTree - Inheritance Survives A Multi-Level Category Chain,Catalog > Personalization > Tagged items,Medium,,,"Admin can authenticate against {{BACK_URL}}; TagsInheritancePolicy is DownTree; a three-level category chain (root > child > grandchild) exists, all untagged","adminUrl={{BACK_URL}}; rootCategory,midCategory,leafCategory=live-discover(a three-level category chain - REQUIRED discriminator, a two-level chain cannot detect a stop-after-one-level defect); leafProduct=live-discover(a product inside leafCategory); group=AGENT-TEST-PERS04-{run}","[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+[SETUP] Resolve a three-level chain per Test_Data - rootCategory > midCategory > leafCategory - plus leafProduct beneath the leaf, all untagged
+[ACT] PUT exactly one group onto rootCategory only
+[WAIT] The write returns
+[HTTP] GET the tagged item for midCategory
+[HTTP] GET the tagged item for leafCategory
+[HTTP] GET the tagged item for leafProduct
+[ACT] PUT an empty tag collection onto rootCategory
+[WAIT] The write returns","[MATH] midCategory inheritedTags.length = 1 {SPEC}
+[MATH] leafCategory inheritedTags.length = 1 - inheritance does not stop after one level {SPEC}
+[MATH] leafProduct inheritedTags.length = 1, so the chain reaches a product three levels below the grant {SPEC}
+[API] None of the three descendants gained an entry in its OWN tags collection {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:SCOPE · Technique:BVA,Draft
+PERS-005,Removing A Parent's Tag Withdraws The Child's Inherited Access,Catalog > Personalization > Tagged items,High,,,"Admin can authenticate against {{BACK_URL}}; TagsInheritancePolicy is DownTree; a parent category with a child entity exists, the parent tagged with exactly one group",adminUrl={{BACK_URL}}; parentCategory=live-discover(a category with at least one child entity); childEntity=live-discover(a child of parentCategory); group=AGENT-TEST-PERS05-{run},"[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+[SETUP] Resolve parentCategory plus childEntity per Test_Data
+[ACT] PUT exactly one group onto parentCategory
+[WAIT] The write returns
+[HTTP] GET the tagged item for childEntity - record the inherited state
+[ACT] PUT an empty tag collection onto parentCategory
+[WAIT] The write returns
+[HTTP] GET the tagged item for childEntity a second time","[MATH] Before the removal childEntity inheritedTags.length = 1 - the precondition of the case is itself asserted, so a vacuous pass is impossible {SPEC}
+[MATH] After the removal childEntity inheritedTags.length = 0 {SPEC}
+[API] The child's own tags collection is unchanged by both writes - revoking on the parent must not touch a direct grant {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:STALE · Technique:ST,Draft
+PERS-006,A Variation Inherits Through Its Product's Category,Catalog > Personalization > Tagged items,Medium,,,"Admin can authenticate against {{BACK_URL}}; TagsInheritancePolicy is DownTree; a category holding a product that has at least one variation exists, all untagged",adminUrl={{BACK_URL}}; categoryWithVariantProduct=live-discover(a category holding a product with variations.length>=1 - REQUIRED discriminator); group=AGENT-TEST-PERS06-{run},"[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+[SETUP] Resolve categoryWithVariantProduct plus its product plus that product's first variation per Test_Data, all untagged
+[ACT] PUT exactly one group onto the category only
+[WAIT] The write returns
+[HTTP] GET the tagged item for the product
+[HTTP] GET the tagged item for the variation
+[ACT] PUT an empty tag collection onto the category
+[WAIT] The write returns","[MATH] The product's inheritedTags.length = 1 {SPEC}
+[MATH] The variation's inheritedTags.length = 1 - a variation is reached by the same grant as its parent product {SPEC}
+[API] The variation carries no entry in its own tags collection {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:SCOPE · Technique:EP,Draft
+PERS-007,Personalization Search Returns The Tagged Items It Was Asked For,Catalog > Personalization > Tagged items,Medium,,,Admin can authenticate against {{BACK_URL}}; at least two entities are tagged with distinct groups,"adminUrl={{BACK_URL}}; entityA,entityB=live-discover(two distinct untagged catalog entities); groupA,groupB=AGENT-TEST-PERS07-{run}-A,-B","[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+[SETUP] Tag entityA with groupA per Test_Data
+[WAIT] The write returns
+[SETUP] Tag entityB with groupB per Test_Data
+[WAIT] The write returns
+[HTTP] POST /api/personalization/search filtered by groupA
+[HTTP] POST /api/personalization/search filtered by groupB
+[ACT] Clear both tags via PUT with an empty collection
+[WAIT] The writes return","[STATUS] Both search requests return 200 {SPEC}
+[API] The groupA result set contains entityA and does NOT contain entityB {SPEC}
+[API] The groupB result set contains entityB and does NOT contain entityA - the two filters do not leak into each other {SPEC}
+[MATH] Each result set's totalCount = the number of entities this case tagged with that group (1) {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:SCOPE · Technique:EP,Draft
+PERS-008,Tagged-Item Write Is Rejected Without The personalization:update Permission,Catalog > Personalization > Tagged items,High,,,"Admin can manage Security roles; a product exists. Self-contained: this case creates and tears down its OWN restricted role and user, holding platform access but NOT personalization:update","adminUrl={{BACK_URL}}, restrictedUserPwd={{DEFAULT_TEST_PASSWORD}}; restrictedRole=AGENT-TEST-NoPers08-{run} (duplicate of a full-access role, remove ONLY personalization:update, keep platform:access); restrictedUser=AGENT-TEST-nopers08-{run}; targetProduct=live-discover(any product); group=AGENT-TEST-PERS08-{run}","[SETUP] As admin, create restrictedRole holding platform access but NOT the personalization:update permission
+[WAIT] The role save returns
+[SETUP] Create restrictedUser with restrictedUserPwd, assigned only restrictedRole
+[WAIT] The user save returns
+[AUTH] Obtain an access token for restrictedUser (POST /connect/token, password grant)
+[SETUP] Resolve targetProduct per Test_Data, recording its current tags
+[HTTP] PUT /api/personalization/taggeditem as restrictedUser, attempting to set one group on targetProduct
+[AUTH] Obtain an admin token again
+[HTTP] GET /api/personalization/taggeditem/{targetProduct} to read the entity's actual state","[STATUS] The PUT issued without personalization:update returns 401 or 403 {SPEC}
+[API] targetProduct's tags collection is byte-for-byte what it was before the attempt - the status alone is not the assertion, because a 2xx that writes nothing and a 403 are different defects {SPEC}
+[API] The permission personalization:update is present in GET /api/platform/security/permissions, so the gate is a declared contract rather than an assumption {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Delete the restricted user and role; clear any tag the case managed to write; verify by reading the entity back,VCST-5282 · Archetype:SCOPE · Technique:EG,Draft
+PERS-009,With Event-Based Indexation Off A Tag Change Does Not Reach The Index Until A Reindex,Catalog > Personalization > Tagged items,High,,,"Admin can authenticate against {{BACK_URL}}; the current value of CatalogPersonalization.EventBasedIndexation is READ AND RECORDED before the run (it is false on vcptcore-regression and true by module default, so the expected timing differs per environment); a product exists that carries no tags",adminUrl={{BACK_URL}}; targetProduct=live-discover(an untagged product already present in the search index); group=AGENT-TEST-PERS09-{run},"[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+[SETUP] Read and RECORD the current value of CatalogPersonalization.EventBasedIndexation - the expected timing below depends on it
+[SETUP] Resolve targetProduct per Test_Data, untagged and present in the search index
+[ACT] PUT exactly one group onto targetProduct
+[WAIT] The write returns
+[HTTP] Read targetProduct's indexed document and record its user_groups value
+[ACT] Trigger an explicit reindex of targetProduct
+[WAIT] The indexing job reports completion
+[HTTP] Read targetProduct's indexed document a second time
+[ACT] Clear the tag via PUT with an empty collection
+[WAIT] The write returns
+[ACT] Trigger an explicit reindex of targetProduct a second time
+[WAIT] The indexing job reports completion","[API] With EventBasedIndexation false the indexed user_groups value is UNCHANGED immediately after the tag write - the grant is pending, not applied {SPEC}
+[API] With EventBasedIndexation true the same read may already carry the new group; the recorded setting decides which of the two expectations applies, and the case reports which branch it took {SPEC}
+[API] After the explicit reindex the indexed user_groups carries exactly the assigned group {SPEC}
+[API] After the tag is cleared and the entity reindexed, user_groups returns to the default bucket rather than staying on the removed group {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:STALE · Technique:ST,Draft
+PERS-010,An Untagged Entity Is Indexed As Visible To Everyone,Catalog > Personalization > Tagged items,High,,,Admin can authenticate against {{BACK_URL}}; a product that carries no tags and inherits none is indexed,adminUrl={{BACK_URL}}; controlProduct=live-discover(a product with no tags of its own and no tagged ancestor - REQUIRED discriminator),"[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+[SETUP] Resolve controlProduct per Test_Data - a product with no tags of its own, beneath no tagged ancestor
+[HTTP] GET /api/personalization/taggeditem/{controlProduct} to confirm both collections are empty
+[HTTP] Read controlProduct's indexed document and record its user_groups value","[API] controlProduct's tags and inheritedTags are both empty, so it is genuinely unrestricted {SPEC}
+[API] Its indexed user_groups carries the default 'any' bucket rather than an empty value - an entity nobody restricted must remain reachable by anonymous shoppers {SPEC}
+[MATH] The indexed user_groups collection length = 1 for an untagged entity, so the default is a real value and not an accident of an absent field {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:FALLBACK · Technique:EP,Draft
