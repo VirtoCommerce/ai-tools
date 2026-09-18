@@ -65,8 +65,16 @@ const ENUMS = {
    * written once by whoever learned it and can. KB-MISS is a THIRD value rather than an outcome in
    * `held` because the row must carry it at `add` time: a base that was asked and had nothing is a
    * complete result on its own, and a row left unmarked would otherwise be indistinguishable from
-   * a hit whose outcome nobody closed. */
-  backed_by: ["CODE", "LIVE", "DOCS", "INSTRUCTIONS", "ASSUMED", "KB-DERIVED", "KB-EXPERIENTIAL", "KB-MISS"],
+   * a hit whose outcome nobody closed.
+   *
+   * KB-NORMATIVE joined them on 2026-09-18, by the same reasoning that separated the first two:
+   * a THIRD plane that ages differently again. A rule says what SHOULD happen and nobody has
+   * watched it hold here; folding it into KB-DERIVED would file an assertion as a reading of the
+   * contract, and folding it into KB-EXPERIENTIAL would call it an observation. It was in fact
+   * being filed as KB-MISS — the base answered and the log said it had not — until the door
+   * started reporting the plane. Found by driving the two logs end to end: the door named the
+   * value before this enum knew it, and the row was refused rather than written. */
+  backed_by: ["CODE", "LIVE", "DOCS", "INSTRUCTIONS", "ASSUMED", "KB-DERIVED", "KB-EXPERIENTIAL", "KB-NORMATIVE", "KB-MISS"],
   /* A superset across task shapes: a feature investigation uses orient/locate/understand,
    * a defect reproduction uses reproduce/diagnose, a change uses change/restore. THE PROMPT
    * names only the phases that apply to the task at hand — this enum is the guard, not the
