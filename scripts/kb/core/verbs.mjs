@@ -336,6 +336,19 @@ export async function stat(opened, { env = process.env } = {}) {
  * indistinguishable from one that quietly made things worse: a row that vanished is either the
  * drift being fixed or an entry that failed to parse, and only the operator can tell which.
  */
+/**
+ * A base locator that is safe to put in a PUBLIC log.
+ *
+ * A remote base is public by definition and is what a reader of the log actually needs. A LOCAL
+ * base is a path on one machine: useless to every other reader and carrying the operator's home
+ * directory and username, which the secret gate cannot catch because that gate scans for the
+ * VALUES of known credentials, not for personal data. So a local base is reported as a category.
+ */
+export function publicLocator(locator) {
+  const s = String(locator ?? '');
+  return /^https?:\/\//i.test(s) ? s : '(local checkout)';
+}
+
 export async function reindex(opened, { env = process.env, write = true, generated } = {}) {
   if (!opened.reader) return { state: 'no-base', why: opened.why };
   if (typeof opened.reader.listEntries !== 'function') {
@@ -394,7 +407,15 @@ export async function reindex(opened, { env = process.env, write = true, generat
     .filter((r) => before.has(r.id) && (before.get(r.id).trust !== r.trust || before.get(r.id).disputed !== r.disputed))
     .map((r) => ({ id: r.id, was: before.get(r.id).trust, now: r.trust }));
 
-  await log({ kind: 'reindex', base: opened.locator, entries: seen.size, added: added.length,
+  // `base` is CATEGORISED, never logged verbatim. The log is a file in a PUBLIC repository (PLAN
+  // §7), and `reindex` is the one verb that must be pointed at a local checkout -- so the verbatim
+  // locator is a filesystem path carrying the operator's home directory and username. The secret
+  // gate cannot catch it: that is a VALUE scan for credentials read out of `.env.local`, and a
+  // home-directory path is not a credential. Measured: three queued lines read
+  // `C:\Users\<name>\AppData\Local\Temp\dbg-6eY7Sr`. A remote base is public by
+  // definition and stays verbatim, because WHICH base was reindexed is the only part a reader of
+  // the log can use -- one machine's checkout path is not.
+  await log({ kind: 'reindex', base: publicLocator(opened.locator), entries: seen.size, added: added.length,
     removed: removed.length, retrusted: retrusted.length, problems: problems.length }, { env });
 
   return { state: 'answer', written, entries: seen.size, indexed: [...rowsFor.keys()],

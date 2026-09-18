@@ -14,7 +14,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openBase } from '../kb/core/base.mjs';
-import { reindex } from '../kb/core/verbs.mjs';
+import { publicLocator, reindex } from '../kb/core/verbs.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
 
@@ -183,4 +183,27 @@ test('a directory that is not a base is refused before anything is rebuilt', asy
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// ─── what the reindex LOG line may say ────────────────────────────────────────────────────────
+
+test('the logged base is categorised, never a local path — the log is a PUBLIC file', () => {
+  // `reindex` is the one verb that must be pointed at a local checkout, so logging its locator
+  // verbatim publishes a filesystem path carrying the operator's home directory and username. The
+  // secret gate cannot catch that: it is a VALUE scan for credentials read out of `.env.local`,
+  // and a home-directory path is not a credential. Measured: three queued lines read
+  // `C:\Users\<name>\AppData\Local\Temp\dbg-6eY7Sr` before this existed.
+  for (const local of [
+    'C:\Users\somebody\AppData\Local\Temp\dbg-6eY7Sr',
+    'C:/Users/somebody/checkout/v2',
+    '/home/somebody/vc-knowledge/v2',
+    './v2',
+  ]) assert.equal(publicLocator(local), '(local checkout)', local);
+
+  // A remote base is public by definition, and WHICH base was reindexed is the only part of this
+  // field a reader of the log can use.
+  const remote = 'https://raw.githubusercontent.com/VirtoCommerce/vc-knowledge/main/v2';
+  assert.equal(publicLocator(remote), remote);
+  assert.equal(publicLocator('http://localhost:8080/v2'), 'http://localhost:8080/v2');
+  assert.equal(publicLocator(null), '(local checkout)');
 });
