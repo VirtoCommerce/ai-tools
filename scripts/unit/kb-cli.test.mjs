@@ -19,11 +19,20 @@ const CLI = join(REPO, 'scripts', 'kb', 'kb.mjs');
 const TRAP = join(import.meta.dirname, 'fixtures', 'kb-no-network.mjs');
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
 
+// A throwaway queue for the whole file. WITHOUT THIS every invocation that does not opt into
+// `withQueue()` writes to the DEFAULT queue directory -- the developer's real one -- so `npm test`
+// seeds it with synthetic lines, and the sweep (core/push.mjs) then ships them to the PUBLIC base
+// as a log file. Measured: a `clitest0.jsonl` of 73 smoke-test lines was queued for exactly that.
+// An `--import` trap proves this file cannot reach the network; nothing proved it could not reach
+// the operator's own state, which is the same class of escape through a different door.
+const SCRATCH = mkdtempSync(join(tmpdir(), 'kb-cli-default-'));
+process.on('exit', () => { try { rmSync(SCRATCH, { recursive: true, force: true }); } catch { /* best effort */ } });
+
 /** Spawn the CLI for real and return {code, stdout, stderr}. Never throws on a non-zero exit. */
 async function kb(args, { env = {} } = {}) {
   try {
     const { stdout, stderr } = await run(process.execPath, ['--import', `file://${TRAP.replace(/\\/g, '/')}`, CLI, ...args], {
-      env: { ...process.env, KB_BASE: '', CLAUDE_CODE_HOST_SESSION_ID: 'clitest0', ...env },
+      env: { ...process.env, KB_BASE: '', KB_QUEUE_DIR: SCRATCH, CLAUDE_CODE_HOST_SESSION_ID: 'clitest0', ...env },
       cwd: REPO,
     });
     return { code: 0, stdout, stderr };
