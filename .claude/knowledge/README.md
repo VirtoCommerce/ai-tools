@@ -6,11 +6,11 @@ Cross-agent reference files, grouped by **what an agent reaches for the file to 
 | Written | Lives in | What makes it untrue |
 |---|---|---|
 | `.claude/knowledge/…` | THIS repository | a change in **how we run** — our gates, our lanes, our tracker discipline |
-| `knowledge/…` (no prefix) | the KNOWLEDGE BASE, `VirtoCommerce/vc-knowledge`, fetched once per machine by **`kb sync`** into `~/.claude/vc-knowledge` | a change in **the platform** |
+| `knowledge/…` (no prefix) | the KNOWLEDGE BASE, `VirtoCommerce/vc-knowledge`, fetched once per machine by **`npm run kb -- sync`** into `~/.claude/vc-knowledge` | a change in **the platform** |
 
 A `knowledge/…` path is therefore **cited, never linked** — a markdown link to it cannot resolve
 from a checkout, and 92 links that tried were repaired on 2026-09-17. Write it as a backticked path,
-or reach it through the tool: `kb show BL-CART-003`, `npm run bl:extract -- --domain cart`.
+or reach it through the tool: `npm run kb -- show BL-CART-003`, `npm run bl:extract -- --domain cart`.
 
 `ls` each folder for its files — a transcribed inventory here is a second copy that goes stale, and
 the one this file used to carry named four folders that no longer exist in it.
@@ -24,7 +24,7 @@ the one this file used to carry named four folders that no longer exist in it.
 | `execution/` | Running the suite and the pipeline: preflight, tags, lanes, promotion, selection, data resolution, routing, ticket status, tracker ops, reports policy, quality gates, when a change needs a unit test |
 | `diagnostics/` | The self-diagnostics oracle: per-skill expected phases/gates + the S0–S3 rubric |
 
-## In the knowledge base (`kb sync`)
+## In the knowledge base (`npm run kb -- sync`)
 
 | Folder | Answers |
 |--------|---------|
@@ -40,7 +40,7 @@ the one this file used to carry named four folders that no longer exist in it.
 
 - **Reference, don't inline.** Agents cite an ID (`BL-AUTH-005`, `ECL-13.3`, `VC-CART-*`) or a path,
   never paste the body into a report. See [`.claude/rules/reports.md`](../rules/reports.md).
-- **A cited id opens: `kb show BL-CART-003` · `kb show ECL-13.3` · `kb show VC-CART-001`.** A `BL-*`
+- **A cited id opens: `npm run kb -- show BL-CART-003` · `npm run kb -- show ECL-13.3` · `npm run kb -- show VC-CART-001`.** A `BL-*`
   resolves to its RECORD (evidence, confirmations, disputable); the other two to the SECTION of the
   page that carries them, printed as what it is — asserted, with nothing to dispute. Pages say which
   ids are theirs with `citedAs:` in their front matter.
@@ -48,7 +48,7 @@ the one this file used to carry named four folders that no longer exist in it.
   "Familiar Problems" oracle and to seed Bad Neighborhood tours.
 - **`business-logic.md` is GENERATED** from one record per rule in the base's normative plane
   (`npm run bl:render`, byte-compared by `bl:render:check`). **Never hand-edit the page** — edit the
-  rule's record (`kb show <BL-id>` prints its path) and re-render. Procedure, including adding and
+  rule's record (`npm run kb -- show <BL-id>` prints its path) and re-render. Procedure, including adding and
   retiring a rule: [`bl-audit-criteria.md`](../skills/qa-review-oracles/bl-audit-criteria.md) §4.
 - **`graphql-schema.md` is generated** from live introspection via
   `scripts/graphql/refresh-graphql-schema.mjs` — verify field names there before authoring GraphQL.

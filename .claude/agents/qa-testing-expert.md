@@ -19,7 +19,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ## LAYER 1 — BUSINESS LOGIC: Key Interactive Testing Invariants
 
-> **Reference:** `knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** `knowledge/oracles/business-logic.md` — `npm run kb -- rules` counts.
 
 - **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
 - **BL-CART-002** Out-of-stock mid-session: if stock drops to 0 while item is in cart, next refresh must show warning — silent checkout with 0-stock = P0
@@ -72,7 +72,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 | Resource | Reference |
 |----------|-----------|
-| Business invariants (108 rules) | `knowledge/oracles/business-logic.md` |
+| Business invariants | `knowledge/oracles/business-logic.md` |
 | Debugging Signals | `knowledge/execution/debugging-signals.md` — console patterns, network signatures, common false positives |
 | Browser Quirks | `knowledge/automation/browser-quirks.md` — per-browser rendering/behavior differences |
 | Performance Thresholds | `knowledge/execution/performance-thresholds.md` — LCP, CLS, TTI, API response budgets |

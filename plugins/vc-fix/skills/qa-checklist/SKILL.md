@@ -64,10 +64,11 @@ failure history and belongs to exploratory testing, whose job is discovery. The 
 what has bitten us; a session hunts what hasn't yet.
 
 **IDs are a citation contract.** Cite an ID that exists — never invent, renumber, or guess one; a
-dangling ref reads as coverage and is none. Verify by grepping the shipped `knowledge/oracles/` copies:
-the ID must appear there exactly as cited. Both oracles ship **read-only** with this plugin — an item
-needing an invariant or pattern they lack is feedback for VirtoCommerce (`/vc-feedback`), never a local
-edit.
+dangling ref reads as coverage and is none. **The oracles are NOT in this plugin** — they moved to
+the knowledge base, fetched once per machine. Verify with `kb show <ID>`, which opens `BL-*` and
+`ECL-*` alike; grepping for a shipped copy finds an empty directory and reports every ID as absent.
+An item needing an invariant or pattern they lack is feedback for VirtoCommerce (`/vc-feedback`),
+never a local edit.
 
 ## 63 Built-in Domain Checklists
 
@@ -247,7 +248,7 @@ Sections: xCatalog (4), xCart Lifecycle (9), xCart Configurable (2), xCart Wishl
 - Every checklist item must be specific enough to derive at least one test case from it
 - **Every outcome-asserting item cites its `BL-*`; every edge-case/error-path item cites its `ECL-<n>.<m>`** (§Oracle Grounding). Pure UI-presence items may omit both — the same carve-out the enriched-CSV `Business_Rule` column gives
 - **Only `[OBSERVED]` ECL patterns become checklist items.** A `[THEORETICAL]` pattern is an exploratory candidate — route it to exploratory testing, do not spend a release-walk slot on it
-- **Never invent, renumber, or guess an oracle ID.** A citation must resolve in the oracle as written; verify it against the shipped `knowledge/oracles/` copies. Both oracles ship read-only — gaps are `/vc-feedback` reports to VirtoCommerce, never local edits
+- **Never invent, renumber, or guess an oracle ID.** A citation must resolve as written; verify with `kb show <ID>` — the oracles are in the knowledge base, not in this plugin. Gaps are `/vc-feedback` reports to VirtoCommerce, never local edits
 - Use REAL UI labels discovered from exploration (not generic terms)
 - Keep items actionable — start with a verb or UI element name
 - 6-15 items per domain (fewer = incomplete, more = too granular)

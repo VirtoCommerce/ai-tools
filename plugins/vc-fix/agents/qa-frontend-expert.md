@@ -19,7 +19,7 @@ You are a senior Frontend QA agent for the Virto Commerce B2B e-commerce platfor
 
 ## LAYER 1 — BUSINESS LOGIC: Key Storefront Invariants
 
-> **Reference:** `knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** `knowledge/oracles/business-logic.md` — `kb rules` counts.
 
 - **BL-CHK-003** Double-submit prevention: "Place Order" must disable after first click — duplicate orders = P0
 - **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
@@ -57,7 +57,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 | Resource | Reference |
 |----------|-----------|
-| Business invariants (108 rules) | `knowledge/oracles/business-logic.md` |
+| Business invariants | `knowledge/oracles/business-logic.md` |
 | Storefront Sitemap | `knowledge/domain/sitemap.md` — full URL map for navigation |
 | Product Types & Properties | `knowledge/domain/products.md` — types, xAPI fields, configurable sections |
 | Browser Quirks | `knowledge/automation/browser-quirks.md` — per-browser rendering differences |

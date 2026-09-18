@@ -1,0 +1,94 @@
+<mxfile host="app.diagrams.net" agent="Claude Code" version="24.7.17">
+  <diagram id="knowledge-flow" name="Knowledge flow">
+    <mxGraphModel dx="1600" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1240" pageHeight="980" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="Where platform knowledge lives, and how it gets changed" style="text;html=1;align=center;verticalAlign=middle;fontSize=26;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="60" y="18" width="1115" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="sub" value="Two processes: Lena&#39;s, which reads and corrects the oracles, and ours, which ships the tool that reaches her." style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="60" y="54" width="1115" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="h1" value="1 &#183; TWO SEPARATE PLACES &#8212; this is the whole idea" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#1F4E79;" vertex="1" parent="1">
+          <mxGeometry x="60" y="98" width="700" height="26" as="geometry" />
+        </mxCell>
+
+        <mxCell id="repoA" value="&lt;b&gt;THIS REPOSITORY&lt;/b&gt;&lt;br&gt;&lt;i&gt;vc-mcp-testing-module&lt;/i&gt;&lt;br&gt;&lt;br&gt;How &lt;b&gt;we&lt;/b&gt; work: the test suites, the prompts, the agents &#8212; and the small program that reads the base.&lt;br&gt;&lt;br&gt;It goes out of date when &lt;b&gt;we&lt;/b&gt; change how we test." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=14;spacingRight=14;spacingTop=8;fontSize=13;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="60" y="130" width="540" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="repoB" value="&lt;b&gt;THE KNOWLEDGE BASE&lt;/b&gt;&lt;br&gt;&lt;i&gt;vc-knowledge &#8212; a different repository&lt;/i&gt;&lt;br&gt;&lt;br&gt;How the &lt;b&gt;platform&lt;/b&gt; behaves: the business rules, the edge cases, the domain maps. This is what Lena reads.&lt;br&gt;&lt;br&gt;It goes out of date when &lt;b&gt;the product&lt;/b&gt; changes." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=14;spacingRight=14;spacingTop=8;fontSize=13;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="635" y="130" width="540" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cap1" value="They are kept apart because they go stale for different reasons. A path written as &lt;b&gt;knowledge/&#8230;&lt;/b&gt; means the base; &lt;b&gt;.claude/knowledge/&#8230;&lt;/b&gt; means this repository." style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontSize=13;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="60" y="284" width="540" height="52" as="geometry" />
+        </mxCell>
+
+        <mxCell id="h2" value="2 &#183; LENA&#39;S PROCESS &#8212; reading an oracle, and correcting one" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#7F6000;" vertex="1" parent="1">
+          <mxGeometry x="60" y="360" width="700" height="26" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l1" value="&lt;b&gt;1 &#183; Get the base&lt;/b&gt;&lt;br&gt;&lt;br&gt;One command, once per machine. It copies the base onto her laptop.&lt;br&gt;&lt;br&gt;&lt;i&gt;Nothing else works until this is done.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=12;spacingRight=12;spacingTop=8;fontSize=13;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="394" width="215" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="l2" value="&lt;b&gt;2 &#183; Read it&lt;/b&gt;&lt;br&gt;&lt;br&gt;She asks a question in plain words, or opens an id that a test case already points at.&lt;br&gt;&lt;br&gt;&lt;i&gt;The answer says how sure it is.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=12;spacingRight=12;spacingTop=8;fontSize=13;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="285" y="394" width="215" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="l3" value="&lt;b&gt;3 &#183; Check it&lt;/b&gt;&lt;br&gt;&lt;br&gt;Against three sources: the written docs, the running site, and the code.&lt;br&gt;&lt;br&gt;&lt;i&gt;All three must agree before anything changes.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=12;spacingRight=12;spacingTop=8;fontSize=13;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="510" y="394" width="215" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="l4" value="&lt;b&gt;4 &#183; Change the RECORD&lt;/b&gt;&lt;br&gt;&lt;br&gt;Not the page. The big readable page is &lt;b&gt;built&lt;/b&gt; from many small records, and rebuilt every time.&lt;br&gt;&lt;br&gt;&lt;i&gt;Edit the page and the edit is lost.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#D79B00;strokeWidth=3;align=left;verticalAlign=top;spacingLeft=12;spacingRight=12;spacingTop=8;fontSize=13;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="735" y="394" width="215" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="l5" value="&lt;b&gt;5 &#183; Save it to the BASE&lt;/b&gt;&lt;br&gt;&lt;br&gt;The change belongs to the other repository, so that is where it is committed.&lt;br&gt;&lt;br&gt;&lt;i&gt;This repository shows no change at all.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=12;spacingRight=12;spacingTop=8;fontSize=13;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="960" y="394" width="215" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=blockThin;endFill=1;strokeColor=#D6B656;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="l1" target="l2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=blockThin;endFill=1;strokeColor=#D6B656;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="l2" target="l3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=blockThin;endFill=1;strokeColor=#D6B656;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="l3" target="l4"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=blockThin;endFill=1;strokeColor=#D6B656;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="l4" target="l5"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=blockThin;endFill=1;strokeColor=#82B366;strokeWidth=2;exitX=0;exitY=1;entryX=0.27;entryY=0;" edge="1" parent="1" source="repoB" target="l1">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="635" y="348" /><mxPoint x="118" y="348" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="d2" value="the correction goes back" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=blockThin;endFill=1;strokeColor=#82B366;strokeWidth=2;fontSize=12;fontColor=#4C7A2E;exitX=0.7;exitY=0;entryX=0.88;entryY=1;labelBackgroundColor=#FFFFFF;verticalAlign=middle;" edge="1" parent="1" source="l5" target="repoB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gate" value="&lt;b&gt;The safety net.&lt;/b&gt;&amp;nbsp; A check rebuilds the page from the records and compares it letter for letter with the page on disk. A page somebody edited by hand &lt;b&gt;fails the build&lt;/b&gt; &#8212; which is the whole reason step 4 says &lt;i&gt;record&lt;/i&gt; and not &lt;i&gt;page&lt;/i&gt;." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;strokeWidth=2;align=left;verticalAlign=middle;spacingLeft=16;spacingRight=16;fontSize=13;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="592" width="1115" height="66" as="geometry" />
+        </mxCell>
+
+        <mxCell id="h3" value="3 &#183; OUR PROCESS &#8212; getting the tool and the knowledge to a colleague or a customer" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=#4B2D63;" vertex="1" parent="1">
+          <mxGeometry x="60" y="678" width="900" height="26" as="geometry" />
+        </mxCell>
+
+        <mxCell id="o1" value="&lt;b&gt;1 &#183; The tool is built here&lt;/b&gt;&lt;br&gt;&lt;br&gt;One small program that fetches the base, answers questions and writes new facts into it.&lt;br&gt;&lt;br&gt;&lt;i&gt;It holds no knowledge of its own.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=12;spacingRight=12;spacingTop=8;fontSize=13;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="60" y="710" width="263" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="o2" value="&lt;b&gt;2 &#183; Release it&lt;/b&gt;&lt;br&gt;&lt;br&gt;Raise the version number &lt;b&gt;and&lt;/b&gt; publish the matching label.&lt;br&gt;&lt;br&gt;&lt;i&gt;A number without its label means anything depending on it quietly gets the old program.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=12;spacingRight=12;spacingTop=8;fontSize=13;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="344" y="710" width="263" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="o3" value="&lt;b&gt;3 &#183; A customer installs&lt;/b&gt;&lt;br&gt;&lt;br&gt;They install the bug-fixing toolkit. It states that it needs the base tool, which then fetches the base.&lt;br&gt;&lt;br&gt;&lt;i&gt;One install, then one fetch.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=12;spacingRight=12;spacingTop=8;fontSize=13;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="628" y="710" width="263" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="o4" value="&lt;b&gt;4 &#183; The build checks it&lt;/b&gt;&lt;br&gt;&lt;br&gt;Every pipeline fetches the base &lt;b&gt;first&lt;/b&gt;, then runs the checks.&lt;br&gt;&lt;br&gt;&lt;i&gt;A pipeline that skips the fetch reports an empty shelf as a tidy one.&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;strokeWidth=2;align=left;verticalAlign=top;spacingLeft=12;spacingRight=12;spacingTop=8;fontSize=13;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="912" y="710" width="263" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="f1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=blockThin;endFill=1;strokeColor=#9673A6;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="o1" target="o2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="f2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=blockThin;endFill=1;strokeColor=#9673A6;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="o2" target="o3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="f3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=blockThin;endFill=1;strokeColor=#9673A6;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="o3" target="o4"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="cap2" value="The tool travels one way and the knowledge travels the other, and neither is ever copied into the other. That is what replaced twenty duplicated copies of the same files." style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="60" y="900" width="1115" height="30" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

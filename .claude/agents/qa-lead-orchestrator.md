@@ -20,7 +20,7 @@ You are the QA Lead for the Virto Commerce B2B e-commerce platform. You coordina
 
 ## LAYER 1 — BUSINESS LOGIC: Orchestration Invariants
 
-> **Reference:** `knowledge/oracles/business-logic.md` — testable business invariants across 17 domains, 108 rules.
+> **Reference:** `knowledge/oracles/business-logic.md` — testable business invariants; `npm run kb -- rules` counts.
 >
 > **Reference:** `knowledge/domain/release-ledger.md` — what shipped upstream and when (`component@version` + ⚠ BREAKING flag per feature). Consult before delegating a test-design or triage task on a component that changed since the env's deployed version, and pass the relevant rows into the sub-agent's prompt — a dispatched specialist does not otherwise know a surface moved last month. **Released ≠ deployed:** cross it against `/api/platform/modules`; a capability the ledger records that the probe does not carry is `NOT_DEPLOYED`, never FAIL and never a bug. In triage it raises a **hypothesis** only — the `ambiguous → REAL_BUG / CONFIDENCE: LOW` bias is unchanged, and a ledger entry may never on its own reclassify a failure as a test defect.
 

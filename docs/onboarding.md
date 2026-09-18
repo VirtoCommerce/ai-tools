@@ -92,6 +92,21 @@ then prints a **readiness table** confirming access. Re-run `/project-init` for 
 
 > **Self-diagnostics is opt-in.** `/project-init` writes `"selfDiagnostics": true` into `project-profile.json` by default, which enables the passive session-telemetry collector behind `/vc-self-check` (diagnose the plugin's own runs) and `/vc-feedback` (attach a 👍/👎 verdict on a session). It's local-only and never sends anything without the explicit, consent-gated `/vc-self-check deliver` step; set it to `false` (or remove it) to make the collector a full no-op.
 
+## Fetch the knowledge base (once per machine)
+
+The platform knowledge — the `BL-*` invariants, the `ECL-*` edge cases, the domain maps, the API and
+architecture references — is **not in this repository**. It describes the PLATFORM, so it lives in
+`VirtoCommerce/vc-knowledge` and is fetched separately. Several gates read it and **refuse with exit
+2 until you do this**, so it comes before `npm test`, not after it:
+
+```bash
+npm run kb -- sync
+```
+
+One clone per machine, into `~/.claude/vc-knowledge`, shared by every project on it. `npm run kb --
+stat` names the base it resolved and how old the content is. There is deliberately no bare `kb` on
+your PATH; `npx kb` would fetch an unrelated package of that name from the public registry.
+
 ## Verify
 
 ```bash

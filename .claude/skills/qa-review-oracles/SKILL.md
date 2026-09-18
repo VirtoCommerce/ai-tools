@@ -147,7 +147,7 @@ Collect the verdicts from all parallel agents, then apply **serially, one entry 
 - **CONFIRMED / DRIFT / DUPLICATE on an entry that already exists** → **auto-apply whatever its
   value** (the gate governs growth, never correction).
 - **All applied edits:**
-  - **`business-logic.md` is GENERATED — edit the RECORD** (`kb show <BL-id>` prints its path), then `npm run bl:render` once for the run; a page edit is lost and fails `bl:render:check`. ECL is still authored directly. **Both oracles live in the BASE repo** (`vc-knowledge`): commit there and say so, since this repo's diff stays empty. How, incl. adding and retiring: `bl-audit-criteria.md` §4.
+  - **`business-logic.md` is GENERATED — edit the RECORD** (`npm run kb -- show <BL-id>` prints its path), then `npm run bl:render` once for the run; a page edit is lost and fails `bl:render:check`. ECL is still authored directly. **Both oracles live in the BASE repo** (`vc-knowledge`): commit there and say so, since this repo's diff stays empty. How, incl. adding and retiring: `bl-audit-criteria.md` §4.
   - Edit the **entry body only** — never rewrite a meta/summary table as a side effect (BL: the Severity-Tags table, which is scaffold, not a rule; ECL: **Appendix D is its own deliberate edit**, never an incidental one).
   - Stamp `Amended: <date> (auto-applied, triangulated — <BL|ECL>-AUDIT-<date>)` and refresh the `Source:` anchor.
   - For MISSING, assign the next free ID under the correct heading; **never renumber survivors**.

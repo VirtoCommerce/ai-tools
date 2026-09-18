@@ -107,7 +107,7 @@ records the reason; `N/A` means *genuinely undocumentable*, never "no doc found 
 `ECL-<n>.<m>` is a **citation contract**. Test cases across `regression/suites/**` cite these
 numbers in their `Edge_Case_Refs` column, and `npm run ecl:lint` (ECLC-001) is the gate.
 
-**And a cited id OPENS.** `kb show ECL-13.3` prints that section — the library declares
+**And a cited id OPENS.** `npm run kb -- show ECL-13.3` prints that section — the library declares
 `citedAs: ECL` in its front matter, so the prefix says which page a number belongs to. Use it to
 read one section without the 121 KB page, from anywhere, including a machine that has the base and
 none of this repository. `npm run ecl:extract -- --id ECL-13.3` is the other half: the same text
@@ -191,7 +191,7 @@ ECLC-002 is Medium, not High, precisely because reading 2 is common and legitima
 ## 7. Edit-safety rules
 
 - **The edit lands in the BASE repository.** `e-commerce-edge-cases-library.md` is in
-  `VirtoCommerce/vc-knowledge`, checked out at `~/.claude/vc-knowledge` (`kb sync` if it is not
+  `VirtoCommerce/vc-knowledge`, checked out at `~/.claude/vc-knowledge` (`npm run kb -- sync` if it is not
   there) — commit and push it THERE, and say so in the audit report, because this repo's
   `git diff` will be empty and a reader will otherwise read that as "nothing was applied". Unlike
   the `bl` axis, this page is still authored directly: it was not cut into records, so there is no

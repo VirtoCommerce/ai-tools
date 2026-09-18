@@ -2,8 +2,9 @@
 
 How to cut a release of the `vc-qa` plugin. Companion to [`versioning.md`](versioning.md) (the *what*) — this doc is the *how*.
 
-> **Note:** `.claude-plugin/marketplace.json` lists **two** plugins — `vc-fix` (`plugins/vc-fix/`) and
-> `vc-perf` (`plugins/vc-perf/`). `vc-qa` is **not** listed: its full surface now lives under `.claude/`
+> **Note:** `.claude-plugin/marketplace.json` lists `vc-fix` (`plugins/vc-fix/`), `vc-kb`
+> (`plugins/vc-kb/`) and `vc-perf` (`plugins/vc-perf/`) — read the file for the roster rather than
+> this line, which said "two" for as long as there were three. `vc-qa` is **not** listed: its full surface now lives under `.claude/`
 > as project-scoped components, auto-discovered in this repo with no plugin manifest. This process
 > applies per plugin — substitute the plugin being released wherever this doc says `vc-qa`, and note
 > that each plugin versions and tags independently (Step 1, Step 5a).
@@ -57,7 +58,7 @@ These are deterministic — no judgment calls. Anyone with maintainer rights can
 
 **`.claude-plugin/marketplace.json` `"version"` is the CATALOG's version, not a plugin's.** Bump it only when the listing itself changes — a plugin added or removed, a description, source path, or owner edited. It does **not** have to equal any plugin's version.
 
-> **This rule changed when the catalog grew a second plugin.** It used to read "`plugin.json` and `marketplace.json` MUST match", which was true while `vc-fix` was the only listing and the repo *was* the plugin. With `vc-fix` and `vc-perf` versioning independently, one shared number cannot track both — the catalog now versions itself. Current state: catalog `0.9.4`, `vc-fix` `0.9.0`, `vc-perf` `0.2.7`. **That is not drift; do not "fix" it by forcing them equal.**
+> **This rule changed when the catalog grew a second plugin.** It used to read "`plugin.json` and `marketplace.json` MUST match", which was true while `vc-fix` was the only listing and the repo *was* the plugin. With the plugins versioning independently, one shared number cannot track them all — the catalog now versions itself, and the four numbers are expected to differ. **That is not drift; do not "fix" it by forcing them equal.** Read each `plugin.json` for the current figures: the line that used to list them here was stale within weeks, which is the same failure this document warns about two paragraphs down.
 
 **Also update the plugin's own component counts** in its `marketplace.json` description and `plugin.json`, if agents/skills/commands were added or removed — a stale count there is what customers read before installing.
 

@@ -19,7 +19,7 @@ You are a senior Backend QA agent for the Virto Commerce B2B e-commerce platform
 
 ## LAYER 1 — BUSINESS LOGIC: Key Backend Invariants
 
-> **Reference:** `knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** `knowledge/oracles/business-logic.md` — `kb rules` counts.
 
 - **BL-ORD-001** Order state machine guards: can't capture non-authorized payment, can't refund non-captured — invalid transitions must fail gracefully
 - **BL-ORD-002** Cancellation + inventory: full cancellation must restore reserved stock; partial cancellation must NOT adjust inventory

@@ -152,16 +152,23 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 
 Browser lane assignments and the firefox click-capability prerequisites (the lane is click-capable since 2026-09-08; the historical "firefox cannot click" rule is retired): `.claude/rules/agents.md`.
 
-### Knowledge Base (shared agent references in `.claude/knowledge/`)
-- **`api/`** — `api-auth.md`, `graphiql-interaction.md`, `graphql-schema.md`, `graphql-test-cases-runner.md`, `order-creation-matrix.md`, `platform-patterns.md`
-- **`architecture/`** — `vc-frontend-architecture.md`, `vc-module-architecture.md`
-- **`automation/`** — `browser-quirks.md`, `storefront-config-flags.md`, `storefront-selectors.md`
-- **`ba/`** — `virto-doc-style.md`
-- **`diagnostics/`** — `skill-expectations.md`
-- **`domain/`** — `catalog.md`, `mobile-navigation.md`, `products.md`, `sitemap.md`, `store-settings.md`, `white-labeling.md`
-- **`execution/`** — `debugging-signals.md`, `es-call-ab-method.md`, `live-discovery.md`, `module-suite-map.md`, `performance-thresholds.md`, `test-data-authoring.md`, `test-execution-preflight.md`, `test-runner-tags.md`, `ticket-routing.md`, `tracker-ops.md`
-- **`oracles/`** — `business-logic.md` (BL-*), `critical-ui-scope.md`, `e-commerce-edge-cases-library.md` (ECL-*), `vc-bug-catalog.md` (VC-* archetypes)
+### Knowledge — TWO trees, and the prefix says which
+
+**`.claude/knowledge/…` is THIS repository: how WE run.** `ls` it for the roster rather than reading
+one here — the list this section used to carry named eight folders, five of which no longer exist,
+and it survived the migration by being prose that no gate reads. What is there now:
+
 - **`agents/`** — per-team `shared-instructions.md` + `README.md` (a plain reference dir, not scanned as components)
+- **`api/`** — the GraphQL test-case runner grammar
+- **`diagnostics/`** — `skill-expectations.md`, the self-check oracle
+- **`execution/`** — the largest, and the one most steps read: routing, gates, regression, reports, test data
+
+**`knowledge/…` with no prefix is the KNOWLEDGE BASE** — a different repository
+(`VirtoCommerce/vc-knowledge`), fetched with `npm run kb -- sync`. The oracles (`BL-*`, `ECL-*`,
+`VC-*`), the domain maps and the API/architecture references moved there in the 2026-09-17
+migration, because what makes them untrue is a change in the PLATFORM, not in this repo. Open one by
+id — `npm run kb -- show BL-CART-003` — rather than by path; `npm run kb -- rules` lists the domains.
+Full convention, with the table: [`knowledge/README.md`](knowledge/README.md).
 
 Also: `.claude/architecture/TIER.md` (A/B/C/D classification — read before any standardization or
 cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-summary.schema.json`,
@@ -215,7 +222,13 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 
 > Moved verbatim from `.claude/rules/agents.md` on 2026-09-08 (PR 2 of the agentic-system audit): these rules bind only when a task touches the named file, so they load on demand.
 
-**Shared knowledge bases** — `ls .claude/knowledge/` for the current inventory; each file opens with its own scope. Grouped by directory: `api/` (api-auth, graphiql-interaction, graphql-schema, graphql-test-cases-runner, order-creation-matrix, platform-patterns) · `architecture/` (vc-frontend-architecture, vc-module-architecture) · `automation/` (browser-quirks, storefront-config-flags, storefront-selectors) · `ba/` (virto-doc-style) · `diagnostics/` (skill-expectations) · `domain/` (catalog, mobile-navigation, products, release-ledger, sitemap, store-settings, white-labeling) · `execution/` (debugging-signals, live-discovery, module-suite-map, performance-thresholds, test-data-authoring, test-execution-preflight, test-runner-tags, ticket-routing, tracker-ops) · `oracles/` (business-logic, critical-ui-scope, e-commerce-edge-cases-library, vc-bug-catalog).
+**Shared knowledge bases** — `ls .claude/knowledge/` for the current inventory; each file opens with
+its own scope. **Do not read an inventory out of this paragraph.** The list that stood here named
+eight directories and about thirty files; after the 2026-09-17 migration five of those directories
+were gone and twenty-two of the files had moved to the knowledge base, and nothing failed — a list in
+prose is not a path, so `DOC-003` never saw it. The two trees and which prefix means which are in
+[`knowledge/README.md`](knowledge/README.md); `npm run kb -- rules` and `npm run kb -- stat` report
+what the base holds.
 
 **Non-obvious read-before-you-write rules** (these do NOT follow from the filenames):
 - `api/graphql-schema.md` — MUST be consulted before writing or reviewing any GraphQL query/mutation (field names drift; verify against live introspection). **Refreshing it is the CALLER's step, never the reading agent's judgment** — `/qa-test` `1b` item 2d and `/qa-test-lifecycle` Pre-Flight 4 run `npm run schema:refresh` and pass the rev into the brief; an agent handed no rev must treat the snapshot as UNKNOWN age rather than deciding whether it "looks stale", which the file gives it no basis to do. **`schema:refresh` writes this doc ONLY** — the runner's `scripts/.graphql-schema.cache.json` is refreshed by `npm run graphql:fixtures:validate:refresh`, and because `loadSchemaCache` has no age check, the plain `graphql:fixtures:validate` passes clean against an arbitrarily old (and possibly other-env) cache. Single source of truth: `.claude/skills/qa-test/contract-refresh.md`.

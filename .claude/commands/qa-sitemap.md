@@ -116,7 +116,7 @@ The sitemap lives in the knowledge base now, and there is exactly one copy. Unti
 step said to copy it into vc-fix's own knowledge tree and then hand-restore that copy's one
 intentional divergence — a maintained duplicate, kept in step by a person remembering to.
 The duplicate is gone: `knowledge/domain/sitemap.md` is in the base, which vc-fix reads through
-`kb sync`, so a refresh reaches every consumer by being written once.
+`npm run kb -- sync`, so a refresh reaches every consumer by being written once.
 
 `sitemap-snapshot.<env>.json` travels with it, in the base beside the page it snapshots.
 

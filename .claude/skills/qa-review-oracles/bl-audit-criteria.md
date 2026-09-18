@@ -71,7 +71,17 @@ starting point — follow the evidence where it leads.
 | BL-PAY | StorefrontDeveloperGuide | vc-module-payment-*, vc-frontend | Storefront checkout payment |
 | BL-WL | PlatformUserGuide | vc-module-white-labeling, vc-frontend | Storefront branding + Admin |
 | BL-GQL | StorefrontDeveloperGuide, FrontendSourceCode | vc-module-x-* (xAPI) | GraphiQL `/ui/graphiql` (via qa-backend-expert if API-only) |
-| BL-NOTIF, BL-IMPEX, BL-SEO, BL-UI, BL-CROSS | PlatformUserGuide / mixed | matching vc-module-*, vc-frontend | Admin + storefront |
+| BL-SR | B2BExperts, StorefrontUserGuide | vc-module-sales-rep, vc-frontend | Storefront sales-rep surfaces + the embedded Admin app |
+| BL-CR | StorefrontUserGuide, PlatformUserGuide | vc-module-customer-review, vc-frontend | Storefront reviews + Admin moderation |
+| BL-PLAT, BL-STORE | PlatformUserGuide, PlatformDeveloperGuide | vc-platform, vc-module-store | Admin / platform configuration |
+| BL-NOTIF, BL-IMPEX, BL-SEO, BL-UI, BL-A11Y, BL-CROSS | PlatformUserGuide / mixed | matching vc-module-*, vc-frontend | Admin + storefront |
+
+**This table routes the domains it names; it is not the list of domains.** `npm run kb -- rules` prints that,
+with a rule count beside each — run it rather than reading a count off this page. The distinction is
+not pedantry: the table stood at 20 rows while the base held 25 domains, and the five it omitted
+included **the largest one in the corpus** (`BL-SR`, 32 rules, more than `BL-CART` and `BL-ORD`
+together). An auditor reading only this page would have concluded those rules had no sources to
+triangulate against. A domain that is missing here needs a row adding, never a guess at its sources.
 
 For "where is X implemented?" prefer the VirtoOZ `*SourceCode` tools or GitHub MCP
 over the guide tools (per the `/vc-docs` skill).
@@ -103,13 +113,13 @@ gate on somebody else's commit. **The record is the artifact; the page is its pr
 
 | To | Do |
 |---|---|
-| **amend an existing invariant** | `kb show BL-CART-003` prints the record's path (`rules/KB-….md`). Edit its BODY there, leaving the `subject:` line exactly as it is — the `BL-*` id is the citation contract. Then `kb reindex`: the search index carries the rule's text, so `kb ask` keeps serving the old wording until you do. |
-| **add a MISSING one** | `kb capture --rule --subject "BL-<DOMAIN>-<NNN> <title>" --claim "<the whole entry body>" --refutable-by observation --deployment <env>`. Start the claim with the entry's own heading line — the id, the title and the severity tag in backticks, exactly as the page shows it — that line becomes the page's `###` heading. The door refuses a rule with no id, and refuses a second rule on an id the base already holds. |
-| **retire one** — human decision only (§5) | `kb retire <KB-id> --reason …`, then delete that rule's `<!--RULE BL-…-->` line from `oracles/business-logic.scaffold.md`. The render REFUSES until you do, naming the line. That refusal is the point: a withdrawn rule must leave the page loudly, not keep standing in it. |
+| **amend an existing invariant** | `npm run kb -- show BL-CART-003` prints the record's path (`rules/KB-….md`). Edit its BODY there, leaving the `subject:` line exactly as it is — the `BL-*` id is the citation contract. Then `npm run kb -- reindex`: the search index carries the rule's text, so `npm run kb -- ask` keeps serving the old wording until you do. |
+| **add a MISSING one** | `npm run kb -- capture --rule --subject "BL-<DOMAIN>-<NNN> <title>" --claim "<the whole entry body>" --refutable-by observation --deployment <env>`. Start the claim with the entry's own heading line — the id, the title and the severity tag in backticks, exactly as the page shows it — that line becomes the page's `###` heading. The door refuses a rule with no id, and refuses a second rule on an id the base already holds. |
+| **retire one** — human decision only (§5) | `npm run kb -- retire <KB-id> --reason …`, then delete that rule's `<!--RULE BL-…-->` line from `oracles/business-logic.scaffold.md`. The render REFUSES until you do, naming the line. That refusal is the point: a withdrawn rule must leave the page loudly, not keep standing in it. |
 
 Then once, for the whole run: **`npm run bl:render`** — it writes the page, and places a new rule's
 marker under its domain heading by itself. **The change lands in the BASE repository**
-(`VirtoCommerce/vc-knowledge`, checked out at `~/.claude/vc-knowledge` — `kb sync` if it is not
+(`VirtoCommerce/vc-knowledge`, checked out at `~/.claude/vc-knowledge` — `npm run kb -- sync` if it is not
 there): commit and push it THERE, and say so in the audit report, because this repo's `git diff`
 will be empty and a reader will otherwise read that as "nothing was applied".
 
@@ -121,7 +131,7 @@ will be empty and a reader will otherwise read that as "nothing was applied".
 3. **Stamp provenance on every applied entry:**
    - `- **Amended:** <date> (auto-applied, triangulated — BL-AUDIT-<date>)`
    - refresh `- **Source:**` with the `file:line` anchor (+ a docs reference).
-4. **MISSING → next free ID.** `kb rules <domain>` lists what that domain already holds; use
+4. **MISSING → next free ID.** `npm run kb -- rules <domain>` lists what that domain already holds; use
    max + 1, zero-padded to 3 digits. **Never renumber a survivor.**
 5. **Env-agnostic** (`feedback_bl_oracle_env_agnostic`). No env names, URLs, store slugs or route
    patterns anywhere in the entry BODY — including the evidence note. Say "the environment". The

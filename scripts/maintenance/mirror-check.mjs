@@ -123,8 +123,18 @@ export const FORKS = {
   "knowledge/agents/qa/shared-instructions.md": "plugin-scope",
   // Eight more knowledge forks left this table on 2026-09-17 with the same reasoning as the
   // BYTE_IDENTICAL block above: their `.claude/` copy moved into the knowledge base, so there is no
-  // longer a pair to declare a fork BETWEEN. plugins/vc-fix/ keeps its copies until it can declare a
-  // dependency on vc-kb; this is knowing duplication, not an undeclared fork.
+  // longer a pair to declare a fork BETWEEN.
+  //
+  // THE FOUR BELOW ARE NOT WAITING FOR ANYTHING. This comment used to end "plugins/vc-fix/ keeps its
+  // copies until it can declare a dependency on vc-kb", which read as a temporary state with a
+  // trigger. The dependency was declared, and nothing followed — because these are not platform
+  // knowledge and the base is the wrong home for them. Measured 2026-09-18: of the 14 files under
+  // `plugins/vc-fix/knowledge/`, ZERO have a counterpart in the base, and 71 citations inside the
+  // shipped plugin point at them. They describe how the TOOLING works — the runner grammar, the
+  // module→suite map, tracker operations, how to pick a data layer — not how the platform behaves,
+  // and a client install has no `.claude/` to read them from. The duplication is the deliberate one
+  // CLAUDE.md §Project Overview explains (no reliable `${CLAUDE_PLUGIN_ROOT}` for relative paths),
+  // and it is permanent until that changes.
   "knowledge/api/graphql-test-cases-runner.md": "plugin-scope",
 
   "knowledge/execution/live-discovery.md": "plugin-scope",

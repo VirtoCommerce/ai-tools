@@ -101,10 +101,11 @@ it that way — oracles, then the walk.)
    checklist does not cover gets one line of reason. An omission and an oversight must not read the
    same to the next person.
 
-Never invent, renumber, or guess an ID — a dangling citation reads as coverage and is none. Verify by
-grepping the shipped `knowledge/oracles/` copies: the ID must exist there exactly as cited. Both oracles
-ship **read-only** with this plugin — a missing invariant or pattern is feedback for VirtoCommerce
-(`/vc-feedback`), never a local edit or renumber.
+Never invent, renumber, or guess an ID — a dangling citation reads as coverage and is none. Verify
+with `kb show <ID>`, which opens `BL-*` and `ECL-*` alike. **The oracles are not in this plugin**:
+they moved to the knowledge base, so grepping for a shipped copy searches an empty directory and
+answers "no such ID" for every one of them — including the 217 that exist. A missing invariant or
+pattern is feedback for VirtoCommerce (`/vc-feedback`), never a local edit or renumber.
 
 ### Step 3: Map Interactions to Checklist Items
 

@@ -27,7 +27,7 @@ Your prompt is structured as four synergistic layers — business logic (invaria
 
 ## Business Logic Reference
 
-> **Reference:** `knowledge/oracles/business-logic.md` — testable business invariants across 17 domains, 108 rules.
+> **Reference:** `knowledge/oracles/business-logic.md` — testable business invariants; `kb rules` counts.
 
 When a test result is ambiguous, check business-logic.md before classifying. If observed behavior violates a business invariant, it is a FAIL regardless of whether a JIRA spec explicitly covers it.
 

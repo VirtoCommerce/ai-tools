@@ -204,9 +204,9 @@ decision at one date, which is exactly the artifact a computed column belongs in
 ## Application Notes
 
 1. **Promote by value, highest first — and only what clears both axes.** A `low` or `undeclared` proposal is not a queue item for later; it is a proposal that does not belong in the oracle as written. Either raise it (declare the severity, or show the product leans on it) or leave it here.
-2. Assign final IDs from what the domain already holds — `kb rules <domain>` — taking the next free `BL-<DOMAIN>-NNN`.
+2. Assign final IDs from what the domain already holds — `npm run kb -- rules <domain>` — taking the next free `BL-<DOMAIN>-NNN`.
 3. Replace `PROPOSED-` prefix with final ID.
-4. Capture it as a RULE RECORD (`kb capture --rule …`), then `npm run bl:render`. **Never paste it into `business-logic.md`** — that page is generated from the records, so a paste is lost at the next render. Procedure: `/qa-review-oracles`'s `bl-audit-criteria.md` §4.
+4. Capture it as a RULE RECORD (`npm run kb -- capture --rule …`), then `npm run bl:render`. **Never paste it into `business-logic.md`** — that page is generated from the records, so a paste is lost at the next render. Procedure: `/qa-review-oracles`'s `bl-audit-criteria.md` §4.
 5. After the entry lands, re-run any related `/qa-review-tests suite <ID> --verify` so test cases gain their `Business_Rule` mapping.
 ```
 
