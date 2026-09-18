@@ -48,9 +48,25 @@ test('an index `path` cannot reach outside the base', async () => {
 test('a locator with no registered reader REFUSES — it never falls through to another base', () => {
   // PLAN §12 rule 2. A probe pointed at a bogus base once answered confidently out of the real
   // corpus; the only safe response to "I do not know how to read that" is to stop.
-  const { reader, why } = createReader('https://example.invalid/v2');
+  //
+  // The scheme moved in session 2: `https` now HAS an implementation, so the rule is demonstrated
+  // on one that does not. That is not a weaker test -- the rule was never about https, it is about
+  // what `createReader` does when it is handed something it cannot read. Rewriting it to keep
+  // asserting that https is unimplemented would have been asserting the absence of this session.
+  const { reader, why } = createReader('ftp://example.invalid/v2');
   assert.equal(reader, null);
-  assert.match(why, /no reader is registered for "https:\/\/"/);
+  assert.match(why, /no reader is registered for "ftp:\/\/"/);
+  assert.match(why, /have: .*https/, 'and it says which schemes DO have one');
+});
+
+test('https has an implementation now, and it is the one the default base needs', () => {
+  const { reader, why } = createReader('https://example.invalid/v2');
+  assert.equal(why, null);
+  assert.equal(reader.kind, 'http');
+  // Registered in base.mjs rather than here, because `openBase` is the door every caller goes
+  // through -- registering it at one call site would give that caller a working default base and
+  // the next caller a refusal on the same locator.
+  assert.ok(registeredSchemes().includes('https'));
 });
 
 test('a scheme can be registered without touching anything above the seam', async () => {
@@ -98,10 +114,15 @@ test('openBase reports HOW it was chosen, always — `stat` prints both', () => 
   assert.equal(opened.reader.how, opened.how);
 });
 
-test('the declared default needs a reader nobody has registered yet — so it refuses, offline', () => {
-  // This is what keeps session 1 network-free even when nothing is configured: the default base is
-  // an https URL, and with no https reader it cannot be reached, only refused.
+test('the declared default opens through the https reader', () => {
+  // CHANGED IN SESSION 2. This used to assert `reader === null` -- true only while the seam was
+  // empty, which is what kept session 1 network-free even when nothing was configured. The tests
+  // stay offline by a different and better mechanism now: the spawned-CLI trap replaces fetch, so
+  // reaching for the network FAILS LOUDLY instead of being impossible. Opening a reader is not a
+  // network call; nothing is fetched until a read is asked for.
   const opened = openBase({ baseArg: null, env: {} });
-  assert.equal(opened.reader, null);
-  assert.match(opened.why, /no reader is registered/);
+  assert.equal(opened.why, null);
+  assert.equal(opened.reader.kind, 'http');
+  assert.equal(opened.locator, DEFAULT_BASE);
+  assert.equal(opened.how, 'the declared default base');
 });

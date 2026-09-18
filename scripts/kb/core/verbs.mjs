@@ -8,10 +8,14 @@
 // (Git Data API, blobs -> tree -> commit -> ref) is a later session, and the queue is already the
 // durable record it will read.
 
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import { mintId } from './canonical.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, neighbours } from './coordinates.mjs';
 import { findDuplicate, identityKey, refusalMessage } from './identity.mjs';
+import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, normalizeScope, retrievable } from './index-load.mjs';
 import { log, pendingMutations, readQueue, sessionId } from './queue.mjs';
 import { rank } from './rank.mjs';
@@ -28,14 +32,16 @@ import { rank } from './rank.mjs';
 // places to cut.
 export function trustOf(evidence = []) {
   const supporting = evidence.filter((e) => !e.contradicts);
-  const disputes = evidence.filter((e) => e.contradicts);
+  // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
+  // drift check compares one implementation against itself rather than against a second opinion.
+  const { trust: confirmations, disputed } = countEvidence(evidence);
   const parties = new Set(supporting.map((e) => e.by ?? e.deployment ?? 'unknown')).size;
-  const label = disputes.length ? 'DISPUTED'
-    : supporting.length >= 3 ? 'well attested'
-      : supporting.length === 2 ? 'corroborated'
-        : supporting.length === 1 ? 'single observation'
+  const label = disputed ? 'DISPUTED'
+    : confirmations >= 3 ? 'well attested'
+      : confirmations === 2 ? 'corroborated'
+        : confirmations === 1 ? 'single observation'
           : 'unattested';
-  return { label, confirmations: supporting.length, disputed: disputes.length, parties };
+  return { label, confirmations, disputed, parties };
 }
 
 /**
@@ -306,6 +312,93 @@ export async function stat(opened, { env = process.env } = {}) {
     active: retrievable(cat.rows).length,
     schema: cat.manifest.schema ?? null,
   };
+}
+
+// ── reindex ───────────────────────────────────────────────────────────────────────────────────
+//
+// THE REPAIR VERB (PLAN §2). It rebuilds `index.json` from every entry, and it is the only
+// operation that reads the whole corpus. In normal weeks it never runs: the index is written by
+// whoever writes an entry, in the same commit, and nobody else ever. It exists for the two moments
+// when that invariant has already been broken -- a push that half-landed, or somebody editing an
+// entry on GitHub -- and for the three drift messages `ask` and `show` print, which named this verb
+// before it existed.
+//
+// IT IS LOCAL-ONLY, and that is not a limitation being apologised for. `reindex` has to enumerate
+// `entries/` and then WRITE the index; `raw` is a CDN that can do neither, and the API path that
+// could is the push, which is authenticated, rate-limited and a later session's business. The
+// operator repairing a base has a checkout in front of them -- that is what "after a botched push"
+// means -- so this runs against one and says so plainly when handed a URL.
+
+/**
+ * Rebuild every index the manifest declares, from the entries actually present.
+ *
+ * Reports what MOVED rather than just succeeding, because a repair whose output nobody looks at is
+ * indistinguishable from one that quietly made things worse: a row that vanished is either the
+ * drift being fixed or an entry that failed to parse, and only the operator can tell which.
+ */
+export async function reindex(opened, { env = process.env, write = true, generated } = {}) {
+  if (!opened.reader) return { state: 'no-base', why: opened.why };
+  if (typeof opened.reader.listEntries !== 'function') {
+    return {
+      state: 'no-base',
+      why: `reindex rebuilds the index from every entry and writes it back, which ${opened.locator} `
+        + 'cannot do — it is a read-only CDN base. Point it at a checkout: '
+        + 'kb reindex --base <path-to-clone>/v2',
+    };
+  }
+
+  const cat = await catalogue(opened);
+  if (cat.state !== 'ok') return { state: cat.state, why: cat.why };
+
+  const listed = await opened.reader.listEntries();
+  if (!listed.ok) return { state: 'unreachable', why: `could not list entries/: ${listed.detail}` };
+
+  // plane -> index file, inverted from the manifest. An entry whose plane nothing declares has
+  // nowhere to be filed, and silently dropping it is how an index starts lying.
+  const byPlane = new Map(Object.entries(cat.manifest.indexes).map(([plane, file]) => [plane, String(file)]));
+  const rowsFor = new Map([...new Set(byPlane.values())].map((file) => [file, []]));
+
+  const problems = [];
+  const before = new Map(cat.rows.map((r) => [r.id, r]));
+  const seen = new Set();
+
+  for (const path of listed.paths) {
+    const read = await opened.reader.readEntry(path);
+    if (!read.ok) { problems.push({ path, why: `unreadable: ${read.detail}` }); continue; }
+    let data;
+    try { ({ data } = parseEntry(read.text, path)); } catch (err) { problems.push({ path, why: err.message }); continue; }
+
+    // The id is derived from the subject, so a file whose name disagrees with its own frontmatter
+    // is one of two entries wearing one address -- never something to guess about.
+    const expected = entryPath(String(data.id));
+    if (expected !== path) { problems.push({ path, why: `frontmatter id ${data.id} wants ${expected}` }); continue; }
+    if (seen.has(data.id)) { problems.push({ path, why: `duplicate id ${data.id}` }); continue; }
+
+    const file = byPlane.get(String(data.plane ?? 'experiential'));
+    if (!file) { problems.push({ path, why: `plane "${data.plane}" is not in kb.json indexes` }); continue; }
+
+    seen.add(data.id);
+    rowsFor.get(file).push(buildRow(data, path));
+  }
+
+  const written = [];
+  for (const [file, rows] of rowsFor) {
+    const built = buildIndex(rows, generated ? { generated } : {});
+    if (write) await writeFile(join(opened.reader.locator, file), `${JSON.stringify(built, null, 2)}\n`, 'utf8');
+    written.push({ file, count: built.count });
+  }
+
+  const added = [...seen].filter((id) => !before.has(id)).sort();
+  const removed = [...before.keys()].filter((id) => !seen.has(id)).sort();
+  const retrusted = [...rowsFor.values()].flat()
+    .filter((r) => before.has(r.id) && (before.get(r.id).trust !== r.trust || before.get(r.id).disputed !== r.disputed))
+    .map((r) => ({ id: r.id, was: before.get(r.id).trust, now: r.trust }));
+
+  await log({ kind: 'reindex', base: opened.locator, entries: seen.size, added: added.length,
+    removed: removed.length, retrusted: retrusted.length, problems: problems.length }, { env });
+
+  return { state: 'answer', written, entries: seen.size, indexed: [...rowsFor.keys()],
+    added, removed, retrusted, problems, wrote: write };
 }
 
 /**

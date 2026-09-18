@@ -89,15 +89,26 @@ test('a base whose entries cannot be read exits 3 — and never 1', () => withQu
   }
 }));
 
-// ─── the declared default base is an https URL, and it is refused OFFLINE ─────────────────────
+// ─── the declared default base is an https URL, and it is now actually READ ───────────────────
 
-test('with no --base and no KB_BASE, the declared default refuses without touching the network', () => withQueue(async (env) => {
+test('with no --base and no KB_BASE, the declared default is read, and offline that is exit 3', () => withQueue(async (env) => {
+  // THIS TEST CHANGED IN SESSION 2, and the change is the session's point. It used to assert exit 2
+  // and "no reader is registered for https://" -- true only because the seam was empty, so the
+  // declared default could not be read by anything. Now it can: the HTTPS reader is registered at
+  // `openBase`, so under the trap the same command reaches for the network, fails to get there, and
+  // says EXACTLY that. Keeping the old assertion would have meant keeping a test that passed
+  // because a feature was missing.
+  //
+  // What did NOT change, and is the reason the test is still here: `stat` names the base AND how it
+  // was chosen, always. Knowing which base answered is half the question and the other half is why
+  // that one (PLAN §12 rule 3).
   const r = await kb(['stat'], { env });
-  noTrap(r);
-  assert.equal(r.code, 2);
+  assert.equal(r.code, 3);
   assert.match(r.stdout, /raw\.githubusercontent\.com/, 'stat names the base');
   assert.match(r.stdout, /chosen by the declared default base/, 'and how it was chosen');
-  assert.match(r.stdout, /no reader is registered for "https:\/\/"/);
+  assert.match(r.stdout, /reader {4}http/, 'and which implementation is behind it');
+  assert.match(r.stdout, /unreachable/, 'offline, the honest answer is "could not ask"');
+  assert.equal(r.stderr, '', 'and it is not a crash');
 }));
 
 // ─── capture: refused, and every operation leaves exactly one line ────────────────────────────
@@ -172,4 +183,67 @@ test('the network trap is live — a control that WOULD reach the network throws
   ]).then(() => ({ stderr: '', code: 0 }), (e) => ({ stderr: e.stderr ?? '', code: e.code }));
   assert.notEqual(probe.code, 0, 'a real network call must fail under the trap');
   assert.match(probe.stderr, /KB-NETWORK-TRAP: fetch was called/);
+});
+
+// ─── exit 3, and the reason it is a different number from exit 1 ──────────────────────────────
+
+test('a base that cannot be reached exits 3, and the trap is what makes it unreachable', async () => {
+  // THE POINT OF THE WHOLE DESIGN, exercised end to end with no network. Under the trap `fetch`
+  // throws; the HTTPS reader must turn that into `unreachable` rather than letting it escape as a
+  // crash or -- far worse -- collapsing it into "the base holds nothing". Exit 1 here would tell an
+  // agent the base was read and is empty, and it would go write a duplicate of an entry that
+  // already exists.
+  const r = await kb(['ask', 'anything at all'], { env: { KB_BASE: 'https://example.invalid/v2' } });
+  assert.equal(r.code, 3, `expected exit 3, got ${r.code}\n${r.stdout}${r.stderr}`);
+  assert.match(r.stdout, /the base was NOT read/);
+  assert.match(r.stdout, /This is not "nothing is known"/);
+  // The trap message arrives as the DETAIL of a classified failure, not as a stack trace: that is
+  // the difference between a handled unreachable and an unhandled exception.
+  assert.match(r.stdout, /KB-NETWORK-TRAP/);
+  assert.equal(r.stderr, '', 'an unreachable base is not a crash');
+});
+
+test('exit 1 and exit 3 are produced by the same verb on the same question', async () => {
+  // Side by side, because the only thing that distinguishes them is which of the two happened --
+  // and a reader of this file should be able to see that they are not two spellings of one state.
+  // A question with no token in common with any subject or question in the fixture. It has to be
+  // chosen deliberately: v1's ranker has no score floor (PLAN §11 defers that until the log
+  // justifies it), so one shared ordinary word is enough to produce a hit.
+  const QUESTION = 'zzz kangaroo photosynthesis brigade';
+  const miss = await kb(['ask', QUESTION, '--base', FIXTURE]);
+  noTrap(miss);
+  assert.equal(miss.code, 1, `expected a miss, got:
+${miss.stdout}`);
+  assert.match(miss.stdout, /the base was read and holds nothing on this/);
+
+  const down = await kb(['ask', QUESTION], { env: { KB_BASE: 'https://example.invalid/v2' } });
+  assert.equal(down.code, 3);
+  assert.match(down.stdout, /the base was NOT read/);
+});
+
+// ─── reindex, the verb the drift messages name ────────────────────────────────────────────────
+
+test('reindex is a verb the CLI accepts — the drift messages no longer point at nothing', async () => {
+  // Three user-facing messages tell a reader to "run `kb reindex`". Until this session they named
+  // a verb the CLI rejected as unknown, which is worse than no remedy: it spends the reader's
+  // attention and then tells them they typed something wrong.
+  const r = await kb(['reindex', '--base', FIXTURE, '--dry-run']);
+  noTrap(r);
+  assert.equal(r.code, 0);
+  assert.match(r.stdout, /would rebuild index\.json \(6\)/);
+  assert.ok(!/unknown verb/.test(r.stdout));
+});
+
+test('reindex on the read-only network base refuses and names the remedy', async () => {
+  const r = await kb(['reindex'], { env: { KB_BASE: 'https://raw.githubusercontent.com/x/y/main/v2' } });
+  assert.equal(r.code, 2, 'pointing the repair verb at a CDN is a config problem, not a knowledge one');
+  assert.match(r.stdout, /kb reindex --base/);
+  // It must refuse BEFORE it reaches for the network, or an operator with no connection gets a
+  // timeout where they should have got an explanation.
+  noTrap(r);
+});
+
+test('the usage text names reindex', async () => {
+  const r = await kb([]);
+  assert.match(r.stdout, /kb -- reindex/);
 });

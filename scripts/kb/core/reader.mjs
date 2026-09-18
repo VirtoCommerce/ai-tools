@@ -17,7 +17,7 @@
 // which is exactly the failure the fourth exit state exists to prevent. Making the distinction
 // part of the RETURN TYPE means it cannot be lost by accident.
 
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { isAbsolute, normalize, resolve, sep } from 'node:path';
 
 /**
@@ -81,6 +81,23 @@ export function localReader(dir, { how = 'declared' } = {}) {
     readManifest: () => read('kb.json'),
     readIndex: (name) => read(name),
     readEntry: (path) => read(path),
+    // ENUMERATION IS A LOCAL-ONLY CAPABILITY, and deliberately NOT part of the seam every reader
+    // must satisfy. `raw` is a CDN: it serves a file you name and has no directory listing at all,
+    // so an HTTP reader could only fake this through the git tree API -- an authenticated,
+    // rate-limited call on the one path that must never fail. `reindex` is the only caller, it is
+    // an operator repair verb, and it has to WRITE the index it rebuilds, which over `raw` is not
+    // possible either. So callers TEST FOR THE METHOD rather than assuming it, and the absence is
+    // a fact about the base they were given, not a failure (PLAN §2: "reindex is a repair verb,
+    // not a routine one" -- it runs on a checkout).
+    listEntries: async () => {
+      try {
+        const names = await readdir(resolve(root, 'entries'));
+        const paths = names.filter((n) => /^KB-[0-9A-F]{8}\.md$/i.test(n)).sort();
+        return { ok: true, paths: paths.map((n) => `entries/${n}`) };
+      } catch (err) {
+        return { ok: false, reason: reasonFor(err), detail: `${err.code ?? 'EUNKNOWN'} entries/` };
+      }
+    },
   };
 }
 

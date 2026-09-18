@@ -18,7 +18,7 @@
 
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
-import { ask, capture, confirm, dispute, show, stat } from './core/verbs.mjs';
+import { ask, capture, confirm, dispute, reindex, show, stat } from './core/verbs.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
@@ -46,6 +46,7 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- confirm KB-XXXXXXXX --deployment <env> [--note "<what you saw>"]
   npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>"
   npm run kb -- stat [--base <dir>]
+  npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
 
 exit: 0 answered · 1 no coverage (or capture refused as a duplicate) · 2 no base · 3 unreachable
 
@@ -100,6 +101,25 @@ async function main(argv) {
     if (r.state === 'answer') out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
     else out(`index     ${r.state} — ${r.why}`);
     return exitFor(r.state);
+  }
+
+  if (verb === 'reindex') {
+    // The repair verb the drift messages name. It REPORTS what moved rather than only succeeding:
+    // a row that vanished is either the drift being fixed or an entry that stopped parsing, and
+    // only the operator can tell those apart.
+    const r = await reindex(opened, { write: !args.flags['dry-run'] });
+    if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
+    if (r.state !== 'answer') { out(`kb reindex: ${HEADLINE[r.state] ?? r.state}`); if (r.why) out(`  ${r.why}`); return exitFor(r.state); }
+    out(`kb reindex: ${r.wrote ? 'rebuilt' : 'would rebuild'} ${r.written.map((w) => `${w.file} (${w.count})`).join(', ')}`);
+    out(`  ${r.entries} entr(ies) read from ${opened.locator}`);
+    if (r.added.length) out(`  + ${r.added.length} not previously indexed: ${r.added.join(', ')}`);
+    if (r.removed.length) out(`  - ${r.removed.length} indexed but not present: ${r.removed.join(', ')}`);
+    for (const t of r.retrusted) out(`  ~ ${t.id} trust ${t.was} → ${t.now}`);
+    for (const p of r.problems) out(`  ! ${p.path} — ${p.why}`);
+    // A problem is not a crash, and it is not "no coverage" either. The index was rebuilt; some
+    // entries could not be put in it, and the operator has to look. Exit 1 is the "there is work
+    // for you" code, which is exactly what this is.
+    return r.problems.length ? EXIT.NO_COVERAGE : EXIT.ANSWER;
   }
 
   if (verb === 'ask') {

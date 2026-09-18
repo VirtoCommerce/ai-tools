@@ -12,7 +12,15 @@
 //   3. `stat` NAMES THE BASE AND HOW IT WAS CHOSEN. Both, always -- knowing which base answered is
 //      half the question, and the other half is why that one.
 
-import { createReader } from './reader.mjs';
+import { httpReader } from './http-reader.mjs';
+import { createReader, registerReader } from './reader.mjs';
+
+// Registered HERE rather than in the CLI, because every door onto the base -- the CLI, the MCP
+// server, the tests that call the verbs directly -- goes through `openBase`. Registering it at the
+// door instead would give one caller a working default base and the next caller exit 2 on the same
+// locator, which is a difference no user could account for. Importing this module touches no
+// network: it only defines the factory.
+registerReader('https', (locator, opts) => httpReader(locator, opts));
 
 /**
  * The declared default: the `v2/` prefix of the public `VirtoCommerce/vc-knowledge` repo, read
