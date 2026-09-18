@@ -1,15 +1,15 @@
 {
-  "generatedIso": "2026-09-04T11:19:46.619Z",
+  "generatedIso": "2026-09-18T11:29:25.632Z",
   "env": "vcst",
   "frontUrl": "https://vcst-qa-storefront.govirto.com",
   "backUrl": "https://vcst-qa.govirto.com",
   "storeId": "B2B-store",
   "themeVersion": null,
   "platform": {
-    "maxPlatformVersion": "3.1062.0",
+    "maxPlatformVersion": "3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow",
     "moduleCount": 87
   },
-  "storeTotalProducts": 4626,
+  "storeTotalProducts": 4550,
   "navCategories": [
     {
       "slug": "accessories",
@@ -261,7 +261,7 @@
       "head": "17c99c7c8df935670bc4fd4fead0c7078ae0f7ec",
       "headDate": "2026-08-26T10:32:39Z",
       "branch": "dev",
-      "remoteHead": "c4046f560a35fe0b9f260f2ef353129792b45c98",
+      "remoteHead": "324deb7ac45da0b9a96b1b7a30b0c611e4b42ace",
       "behindRemote": true,
       "note": null
     },

@@ -858,7 +858,7 @@
     "name": "AGENT-TEST-SR-CART-ACME"
   },
   "SR_STATS_CART_WEST": {
-    "id": "f9e5b334-e495-446e-a6b7-4e6c4ae575fc",
+    "id": "48179101-3946-4d16-835f-1d15ebd4649d",
     "name": "AGENT-TEST-SR-CART-WEST"
   },
   "LOYALTY_ZERO_USER": {
@@ -905,12 +905,12 @@
     "contactId": "089afd9f-fefc-43cb-9219-8f42b45047c0"
   },
   "SR_ORDER_ACME_WIN_NEW": {
-    "id": "b01333a5-cf93-461c-b709-7818f68a3332",
-    "createdDate": "2026-08-25T14:23:12.1625627Z"
+    "id": "ca493165-1408-4bf3-87ba-3019cec0bec4",
+    "createdDate": "2026-09-18T10:23:57.3488015Z"
   },
   "SR_ORDER_ACME_WIN_PROC": {
-    "id": "04d37a1b-1257-4d74-8002-bc3ce526b345",
-    "createdDate": "2026-08-25T14:23:29.8170837Z"
+    "id": "206682b6-4184-4c51-a5eb-07428289a88c",
+    "createdDate": "2026-09-18T10:24:16.4959849Z"
   },
   "CAT_EMPTY": {
     "id": "ccb46dbd-c966-4159-8093-9c5a2f264603",
@@ -927,8 +927,8 @@
     "url": "/seed-test-fixtures/agent-test-seo-configured-product"
   },
   "SR_ORDER_ACME_ELEC": {
-    "id": "cc3ff3c8-8e02-4b4a-be63-ccb632537b68",
-    "createdDate": "2026-08-26T15:56:48.9650491Z"
+    "id": "2e28e846-88e3-4837-bc90-a82b90734912",
+    "createdDate": "2026-09-18T10:24:30.5455928Z"
   },
   "MSN_ORDERVALUE": {
     "id": "91ec8c28-d73a-4df9-8045-5171cd3a504b",
@@ -1497,5 +1497,113 @@
     "earn_sku": "QA-LOY-PRIO-001",
     "store_mode_at_seed": "Customer",
     "seeded_at": "2026-09-14T10:22:42.746Z"
+  },
+  "SR_REP_DOCS": {
+    "id": "3df3ccbc-fd3b-4422-bb53-6da186f8306f",
+    "user_id": "168063e4-a35c-457f-af4e-f99a202e988a"
+  },
+  "SR_REP_DOCS_WRITER": {
+    "id": "cde12dab-6d79-467c-a945-7048fefad6e6",
+    "user_id": "a15ca448-3bf5-4937-8a28-19e1828e3521"
+  },
+  "SR_DOC_PDF": {
+    "id": "d97e880c-0eda-4a34-8b15-5687b98584b2",
+    "file_id": "bfbd8f79fd3f4084b9160116a6f12902",
+    "url": "/api/files/bfbd8f79fd3f4084b9160116a6f12902"
+  },
+  "SR_DOC_DOCX": {
+    "id": "22ae1d8a-2029-4f55-a703-65fb97d3a2fa",
+    "file_id": "5e63e587a59f4a46955f3c90d5021ac3",
+    "url": "/api/files/5e63e587a59f4a46955f3c90d5021ac3"
+  },
+  "SR_DOC_XLSX": {
+    "id": "cc88a190-8ffc-4aeb-94aa-87958aaaf6f7",
+    "file_id": "074aeaf88b2d4eef8e26742461ed644f",
+    "url": "/api/files/074aeaf88b2d4eef8e26742461ed644f"
+  },
+  "SR_DOC_TXT": {
+    "id": "037f321c-d950-4ccd-b2c9-6c6f8c5f3ab7",
+    "file_id": "179a6787daad4488baf514e18d3f912b",
+    "url": "/api/files/179a6787daad4488baf514e18d3f912b"
+  },
+  "SR_DOC_PNG": {
+    "id": "b4d09afb-d8e1-45c5-a289-e984870382af",
+    "file_id": "c3a386fecc7041cab6c5b62b9ca4fd6d",
+    "url": "/api/files/c3a386fecc7041cab6c5b62b9ca4fd6d"
+  },
+  "SR_DOC_JPG": {
+    "id": "e29e6c5d-18c0-4429-ad95-d1eae2eb732e",
+    "file_id": "fa12819540924ca185f6e6c5da220043",
+    "url": "/api/files/fa12819540924ca185f6e6c5da220043"
+  },
+  "SR_DOC_UNKNOWN_EXT": {
+    "id": "0eee6c97-3007-4655-a12d-ca5c5611e681",
+    "file_id": "66cbdee7a4a2450bbe29a4ab1a18b3db",
+    "url": "/api/files/66cbdee7a4a2450bbe29a4ab1a18b3db"
+  },
+  "SR_DOC_UNICODE": {
+    "id": "7e23304e-9af8-46b2-88ff-2154a9dace26",
+    "file_id": "4b4402467e414a48a2aa584822deb11c",
+    "url": "/api/files/4b4402467e414a48a2aa584822deb11c"
+  },
+  "SR_DOC_LARGE": {
+    "id": "387d0b91-cfe3-4679-a7c6-3b46f275217b",
+    "file_id": "ba02f5eba52c46d6a9bb071e16aeb109",
+    "url": "/api/files/ba02f5eba52c46d6a9bb071e16aeb109"
+  },
+  "SR_DOC_FILLER_01": {
+    "id": "df789a88-2e38-4066-8440-5a2705b11d25",
+    "file_id": "713abad6a0424f43ac239a6bc6ecb5b5",
+    "url": "/api/files/713abad6a0424f43ac239a6bc6ecb5b5"
+  },
+  "SR_DOC_FILLER_02": {
+    "id": "858be15a-d11c-41a6-9a19-a8bc87304913",
+    "file_id": "1c466c3f20bb4ddfb25fc7fe3d0b34c4",
+    "url": "/api/files/1c466c3f20bb4ddfb25fc7fe3d0b34c4"
+  },
+  "SR_DOC_FILLER_03": {
+    "id": "210ad1e1-a0ff-4286-851b-132a862134f8",
+    "file_id": "94b373d3a0484e77bc26d5f0001297ee",
+    "url": "/api/files/94b373d3a0484e77bc26d5f0001297ee"
+  },
+  "SR_DOC_FILLER_04": {
+    "id": "78de74c0-2aa3-441d-b61f-85a44986dc52",
+    "file_id": "585b86aa83084c958d4ec0f26fffb7e1",
+    "url": "/api/files/585b86aa83084c958d4ec0f26fffb7e1"
+  },
+  "SR_DOC_FILLER_05": {
+    "id": "c2d3ac1a-293a-4e36-b127-f53877f6dfe6",
+    "file_id": "24b455ea8cb44a64a588ce6672d0c57f",
+    "url": "/api/files/24b455ea8cb44a64a588ce6672d0c57f"
+  },
+  "SR_DOC_FILLER_06": {
+    "id": "b5c31202-cfcd-4504-b787-3d0b0cba3f80",
+    "file_id": "1e59a2ac34084ff0bb271fd37153af0a",
+    "url": "/api/files/1e59a2ac34084ff0bb271fd37153af0a"
+  },
+  "SR_DOC_FILLER_07": {
+    "id": "9eeca812-707b-4f4d-a1f6-56848e89c881",
+    "file_id": "086c10c9551c400193f5a9ec9f931017",
+    "url": "/api/files/086c10c9551c400193f5a9ec9f931017"
+  },
+  "SR_ROWCAP_ORDER_ACME_NEW": {
+    "id": "a7681963-5c71-4c5e-8099-2a4f4e06c83b",
+    "number": "AGENT-TEST-SRO-ROWCAP-ACME-01"
+  },
+  "SR_ROWCAP_ORDER_ACME_CANCELLED": {
+    "id": "82c45d4a-e306-4593-9266-4956dd81c216",
+    "number": "AGENT-TEST-SRO-ROWCAP-ACME-07"
+  },
+  "SR_ROWCAP_ORDER_TECH_COMPLETED": {
+    "id": "3c13de67-a784-42bb-a612-c3f14d5392ad",
+    "number": "AGENT-TEST-SRO-ROWCAP-TECH-04"
+  },
+  "SR_I18N_SINGULAR_ORDER": {
+    "id": "620db19d-0ca1-4e88-bcde-4fc564003771",
+    "number": "AGENT-TEST-SRO-I18N-ACME3"
+  },
+  "SR_I18N_SINGULAR_CART": {
+    "id": "e37c4c44-23fb-406f-a16f-f8d05a23f408",
+    "name": "AGENT-TEST-SR-CART-I18N-ACME3"
   }
 }

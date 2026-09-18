@@ -4,7 +4,7 @@
 >
 > For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 244 items).
 
-**33 storefront domains + 1 cross-domain checklist | 427 checklist items** — every checked item should map to at least one test case.
+**35 storefront domains + 1 cross-domain checklist | 468 checklist items** — every checked item should map to at least one test case.
 
 > **GraphQL test coverage**: GraphQL xAPI checklist items are maintained in [`graphql-checklist.md`](./graphql-checklist.md), not here. This file focuses on storefront UI/UX behavior.
 
@@ -45,6 +45,8 @@
 | 31 | Browser Compatibility | 7 | E2E-COMPAT | 12 |
 | 32 | B2C Features | 10 | E2E-B2C | 13 |
 | 33 | Subscriptions & Recurring Orders | 10 | E2E-SUB | 14 |
+| 34 | Loyalty & Rewards (Storefront) | 20 | — | 075, 075b, 075c, 083, 083b, 083c, 083d |
+| 35 | Sales Rep Hub (Storefront) | 22 | — | 089, 090, 091, 093, 097 |
 | **BF** | **Bug Fix Verification** | **10** | *cross-domain* | *per bug* |
 
 ---
@@ -554,6 +556,89 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Recurring order generation: Admin job creates child order on next run date with current pricing; failure (e.g. payment decline, out-of-stock) handled per policy
 - [ ] Subscription notifications: email/push when child order is created, when payment fails, when subscription is about to expire
 - [ ] Permissions: only the subscription owner (or org maintainer for org-scoped subs) can pause/cancel/edit; other roles see read-only
+
+---
+
+## 34. Loyalty & Rewards (Storefront)
+> Scope: `/loyalty-catalog`, the mixed cart, `/account/points-history`, `/account/missions`. Applies only when the **Loyalty** module is enabled for the store (`Loyalty.Enable`); the missions surfaces additionally require `Loyalty.Missions.Enable`. Admin authoring (programs, missions) and the mission backend are out of scope — see "Not covered" below. Surface labels below were observed live 2026-09-18; the surface inventory that locates them is `knowledge/domain/loyalty-missions.md`.
+
+**Catalog & cart:**
+- [ ] `/loyalty-catalog`: heading "Loyalty catalog" + result count, left-rail category facets, "Sort by" (Featured), Grid/List toggle, the "Purchased before" / "Show in stock" (pre-checked) / "Available at branches" filters + "Reset filters"; every tile prices in the points currency code (`PTS32`), never `$`. The quantity stepper *is* the add-to-cart control — there is no separate button. Assert after the product grid renders: this route has a real multi-second hydration delay and a first-paint snapshot reads as a blank page
+- [ ] Mixed cart split rendering: cash lines under the vendor group, points lines under their own "Products in PTS" heading with their own "Subtotal:"; Order summary shows the primary block (Subtotal / Discount / Tax / Shipping cost / Total) **plus** a separate "Total in PTS" block (Subtotal / Discount / Total) (BL-LOY-003)
+- [ ] Same product added from both the loyalty catalog and the regular catalog → two separate lines, never merged or quantity-summed (BL-LOY-002)
+- [ ] Coupon via "Discount & coupons" → "Custom code": discount = the stated % of the **cash** subtotal only; stepping the PTS line 1→2→3 with the cash line constant leaves the discount unchanged (BL-LOY-001)
+- [ ] A points line left selected for checkout still contributes nothing to the cart-level discount base, nor to shipping or payment rewards (BL-LOY-004)
+- [ ] Points-only cart (no cash line): validation error, checkout blocked; adding one cash line clears *that specific* error (BL-LOY-010)
+- [ ] Points total above the resolved balance: `LOYALTY_INSUFFICIENT_BALANCE` surfaces **pre-emptively on `/cart`** — "Place order" renders disabled with "Complete all required information to proceed", not a failure at submit (BL-LOY-008)
+- [ ] A points-priced line shows no "earn points" indicator — points-on-points is semantically invalid (BL-LOY-005)
+- [ ] Currency switch via the header "Currency:" control: cash lines convert, the PTS line keeps PTS, item count unchanged, no line lost or duplicated (BL-LOY-006)
+
+**Account surfaces:**
+- [ ] `/account/points-history`: "Balance:" figure, table Operation | Type | Date | Amount, order-earn rows carrying the order number (`CO…`), pagination. Amounts are **unsigned for both Earned and Redeemed by design** — read the Type column, never the sign
+- [ ] A mission-granted ledger row must identify *which* mission granted it; a generic label leaves the grant unattributable from any reachable API (BL-LOY-015)
+- [ ] `/account/missions`: sidebar group "Marketing" → "Missions & challenges"; "Virto Rewards balance" banner with a "Points history" link and a "Redeem your points" panel; cards carry points value, goal-type label (Order value / Order count / Featured SKUs), a Completed badge + "Mission completed" + 100% vs an in-progress percentage + "N days left", a progress line (`$X of $Y spent` / `N of M orders` / `N of M SKUs`) and "Open mission"; 12 cards per page
+- [ ] Mission progress measures the **order total** — shipping and tax included, net of discount (BL-LOY-016) — and a points-priced line contributes nothing to it (BL-LOY-017)
+- [ ] A mission grants at most once per progress owner and a given order contributes at most once, across job retries and progress re-reads (BL-LOY-018); every surface — cart validation, earn, redeem, points history, missions — resolves the same balance owner scope as the store's loyalty balance calculation mode (BL-LOY-020)
+- [ ] A cancelled, rejected or refunded order withdraws its mission contribution and reverses the reward it triggered with a reversing ledger entry (BL-LOY-019)
+
+**Edge cases:**
+- [ ] Points never credited after a completed purchase, and the inverse — two accrual paths posting against one order (concurrent matching programs, or a retried background job). An Earned and a Redeemed legitimately coexist on one order; a second Earned must not (ECL-13.3, BL-LOY-007)
+- [ ] Do **not** author a "redeem an expired point" case — this platform has no expiry mechanism, so that state is unrepresentable. The testable risk is the inverse: a stated expiry policy the platform cannot enforce, and an unbounded balance (ECL-13.3)
+
+**Cross-layer checks:**
+- [ ] Storefront balance equals the balance the GraphQL loyalty query returns for the same owner scope
+- [ ] No console errors or failed network requests on any of the four routes
+- [ ] Admin confirms the mission progress row and the ledger entry the storefront card claims
+
+**Oracle coverage:** BL-* cited: BL-LOY-001, 002, 003, 004, 005, 006, 007, 008, 010, 015, 016, 017, 018, 019, 020 · ECL-* cited: ECL-13.3 (all three rows `[OBSERVED]`; the section holds no `[THEORETICAL]` pattern to route to `/qa-exploratory`).
+**Not covered, deliberately:** BL-LOY-009 (order-layer earn — the server-side twin of BL-LOY-005, not storefront-observable) · BL-LOY-012 (Payment Method mode, a different loyalty mode than Mixed Cart) · BL-LOY-013 (`order.orderTotals` — belongs in `graphql-checklist.md`) · BL-LOY-014 (Admin SPA Line items blade — belongs in `backend-admin-checklists.md`). BL-LOY-011 is reserved and has nothing to cite.
+
+**Related checklists:** Cart/Checkout (#8), Payment (#9), Orders (#10), Catalog (#2), GraphQL xAPI (`graphql-checklist.md`).
+
+---
+
+## 35. Sales Rep Hub (Storefront)
+> Scope: the rep-facing hub (`/company/dashboard`, `/company/my-customers`, `/company/customer-orders`, `/company/documents`) and the buyer-facing directory (`/company/sales-reps`). Applies only when the **SalesRep** module is enabled for the store (`SalesRep.Enabled` — a UI gate, never a security control). Admin-side authoring is **A28** in `backend-admin-checklists.md`. Surface labels observed live 2026-09-18; the surface inventory that locates them is `knowledge/domain/sales-rep.md`.
+
+**Access & shell:**
+- [ ] Route guards: `/company/dashboard` and `/company/my-customers` clear the inherited `requiresOrganization`; a signed-in **non-rep** hitting them is **silently client-redirected** to `/account/dashboard` — no 403, no error toast (BL-SR-011)
+- [ ] Sidebar section "Sales Rep hub" sits above "Purchasing" and is role-dependent: *Sales Representative* → "Dashboard" + "My customers" with a badge equal to the served-org count; *Advanced Sales Representative* → those plus "Document library"; non-rep → the section is absent entirely (BL-SR-011)
+- [ ] The rep is also an ordinary buyer of every org they serve: the header account menu lists all served orgs as selectable "Organizations", and hub order links resolve into the buyer route `/account/orders/{id}`. The switcher block renders **only** when the account holds more than one membership — a single-org rep gets a popover with just their name and Logout
+
+**Dashboard statistics:**
+- [ ] Six stat tiles, exact labels: "Orders in “New” status" · "Active carts" · "Orders placed · WEEK" · "· MTD" · "· YTD" · "My customers". Each resolves from its own async query — four render an em-dash placeholder on first paint and fill in seconds later. Assert after settle; a snapshot taken on load reads the placeholder and is a false negative, not a defect
+- [ ] WEEK and MTD tiles carry a trend sub-line with a direction arrow (e.g. "+100% vs last week", "-81% vs last month"); YTD carries none. The percent is NULL — and the sub-line must not render a bogus number — when the previous baseline is 0, and period bounds are inclusive UTC instants with omitted bounds meaning all-time (BL-SR-001, BL-SR-003)
+- [ ] Statistics are creator + membership scoped: no figure on this page may include another rep's orders or an org this rep does not serve (BL-SR-002). Verify with a second rep fixture, never by inspection of one session
+- [ ] Every money figure resolves to one currency by the documented precedence (`currencyCode` → store default → platform primary) and the response echoes which one (BL-SR-004); cart statistics are currency-scoped with item quantity as the shipped primary metric (BL-SR-006)
+- [ ] Flag-cancelled and prototype orders are excluded from every statistic unconditionally (BL-SR-005); `assignedCustomers` is a period-independent scalar and no period count ever exceeds it (BL-SR-007)
+- [ ] "My recent orders" widget: status chips "All · Cancelled · New · Payment required · Processing", columns "Order # · Customer · Date · Status · Total" with Date and Total sortable, "All orders" link → `/company/customer-orders`, empty state "No orders yet"
+- [ ] "Top sellers" widget: category chips (All categories + live category names), columns "# · Product · Units · Revenue" with Units and Revenue sortable, product links to `/product/{id}`, empty state "No sales in this period"; `take` clamps at 10 rather than erroring, and rows are a line-item snapshot (BL-SR-008)
+
+**Customer surfaces:**
+- [ ] `/company/my-customers`: search "Search by name", columns "Customer" (name + account # + city/state) · "YTD purchases" (+ order count) · "Last year" · "My last order" · "Actions". Sortable are Customer, YTD purchases and My last order — "Last year" is **not**. A zero-order customer renders a dash in My last order, not an error or a blank
+- [ ] Each row's "Send email" (envelope) action opens the Customer Communication modal — the `sendCustomerCommunication` entry point — with a subtitle naming the clicked row's organization
+- [ ] Empty states distinguish "no data" from "nothing matched the filter or search"; a filtered-to-zero table must not render the same string as a rep with no customers (BL-SR-012)
+- [ ] Buyer-facing `/company/sales-reps`: heading "Sales reps", search "Search by name, email or phone", table "Name · Email · Phone" with Name the only sortable column. Read-only — no rep detail page, no way to request a different rep, no indication of which reps hold the Advanced role. The list reflects the **currently active organization**: switching orgs changes it, and a rep viewing their own active org sees themselves as a row
+- [ ] Document library (Advanced role only, `/company/documents`): the "Latest publication" hero is a global pinned slot that ignores the category chips and the search box — a case asserting "filtering by category X shows only X" must read the **grid**, not the page. On a default load the pinned document appears twice (hero + first grid card)
+
+**Localization & persistence:**
+- [ ] Status, money and rule vocabulary localizes by `cultureName`; a raw enum value or i18n key must never reach the screen (BL-SR-013). The build intermittently renders account-sidebar labels as raw keys (e.g. `Sales_rep.navigation.link`) while the hrefs stay correct — a URL-only assertion will not catch it
+- [ ] Layout edits persist only on an explicit Save, are scoped to the signed-in rep, and survive both reload and re-authentication (BL-SR-024); the save is a **full-document replace, never a merge** (BL-SR-016)
+
+**Edge cases:**
+- [ ] Omitting a nullable context argument returns HTTP 200 with a server-chosen default and nothing signalling it. The sharp case here is `storeId` on `customerSalesReps`: without it store scoping is silently off, and the difference is **only observable when a cross-store rep serves the caller's active org** — so the trap is invisible on exactly the fixtures most likely to be picked for a smoke case (ECL-14.1)
+- [ ] Org context and role changes: a role change is baked into the session token at mint time and takes effect at the member's **next sign-in** — a page or session reload rehydrates the cached token and reads the old role (ECL-14.3)
+
+**Cross-layer checks:**
+- [ ] A hub figure reconciles against the same query on `/graphql/sales-rep` for the same rep and period
+- [ ] No console errors or failed network requests on any hub route
+- [ ] Admin's rep detail blade confirms the role and served-org set that the hub's badge and sidebar imply
+
+**Oracle coverage:** BL-* cited: BL-SR-001, 002, 003, 004, 005, 006, 007, 008, 011, 012, 013, 016, 024 · ECL-* cited: ECL-14.1, ECL-14.3 (`[OBSERVED]` rows only).
+**Not covered, deliberately:** BL-SR-009 / BL-SR-010 (filter and sort rule vocabulary — API-level, belongs in `graphql-checklist.md`) · BL-SR-014 (embedded Sales Rep Admin app gating — **A28**) · BL-SR-015, 017–023, 025–032 (layout persistence mechanics, 18 of the 32 `BL-SR-*` — the two storefront-observable without a mutation are covered above; the rest are drag/keyboard/aria interaction detail for a dedicated layout checklist).
+**Over the 6–15 band at 16, deliberately:** this domain spans three personas across two layers and holds 32 invariants; dropping one to fit the band would mean dropping a P0.
+
+**Related checklists:** Multi-Org (#13), Company Members (#12), Orders (#10), Sales Rep Admin (A28), GraphQL xAPI.
 
 ---
 

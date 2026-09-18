@@ -1,0 +1,960 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprint 26-18 Demo — Agentic QA</title>
+<style>
+  :root {
+    --ink:#0d141f; --ink-2:#131c2b; --surface:#f7f9fb; --surface-2:#ffffff; --card:#ffffff;
+    --line:#dbe3ec; --text:#16202e; --text-soft:#4d5c70; --text-faint:#7c8aa0;
+    --accent:#0f9d8f; --accent-ink:#0a6e64; --accent-soft:#e2f4f1;
+    --agent:#5566e0; --agent-soft:#e8eafb;
+    --pass:#1f9d57; --warn:#c98a1a; --crit:#d1495b;
+    --shadow:0 1px 2px rgba(13,20,31,.05), 0 12px 32px -14px rgba(13,20,31,.22);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  /* Deck is committed to a light visual world by request. */
+  :root[data-theme="dark"] {
+    --ink:#05090f; --ink-2:#0a1119; --surface:#0b111a; --surface-2:#0f1824; --card:#111c2a;
+    --line:#243447; --text:#e7edf5; --text-soft:#9fb0c4; --text-faint:#6a7c92;
+    --accent:#3fd0bf; --accent-ink:#7fe6da; --accent-soft:#0f2b2a;
+    --agent:#8b98f2; --agent-soft:#181f3a;
+    --pass:#43c47e; --warn:#e0ab53; --crit:#f0788a;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 40px -18px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; }
+  body {
+    font-family: var(--sans);
+    background: var(--surface);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .deck { height:100vh; width:100vw; position:relative; }
+
+  .slide {
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; justify-content:center;
+    padding: clamp(28px, 6vw, 96px);
+    padding-bottom: 92px;
+    opacity:0; visibility:hidden;
+    transform: translateY(14px);
+    transition: opacity .45s ease, transform .45s ease, visibility .45s;
+    overflow-y:auto;
+  }
+  .slide.active { opacity:1; visibility:visible; transform:none; }
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition:none; transform:none; }
+  }
+  .wrap { width:100%; max-width:1080px; margin:0 auto; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px; letter-spacing:.22em; text-transform:uppercase;
+    color: var(--accent-ink); font-weight:600;
+    display:flex; align-items:center; gap:10px; margin:0 0 22px;
+  }
+  .eyebrow::before { content:""; width:26px; height:2px; background:var(--accent); display:inline-block; }
+  .eyebrow.j { color:var(--agent); }
+  .eyebrow.j::before { background:var(--agent); }
+
+  h1 { font-size: clamp(34px, 6.2vw, 72px); line-height:1.03; letter-spacing:-.03em;
+       font-weight:800; margin:0 0 20px; text-wrap:balance; }
+  h2 { font-size: clamp(26px, 4vw, 46px); line-height:1.06; letter-spacing:-.025em;
+       font-weight:780; margin:0 0 14px; text-wrap:balance; }
+  .lead { font-size: clamp(16px, 2.1vw, 22px); line-height:1.5; color:var(--text-soft);
+          max-width:64ch; margin:0; }
+  p { line-height:1.55; }
+  .mono { font-family: var(--mono); }
+  .cmd {
+    font-family: var(--mono); font-size:.88em; font-weight:600;
+    color: var(--accent-ink); background: var(--accent-soft);
+    padding: 2px 8px; border-radius:6px; white-space:nowrap;
+    border:1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+  .cmd.j { color:var(--agent); background:var(--agent-soft);
+    border-color:color-mix(in srgb, var(--agent) 30%, transparent); }
+
+  /* ---- title slide ---- */
+  .title-grid { display:flex; flex-direction:column; gap:34px; }
+  .thesis { display:flex; gap:14px; flex-wrap:wrap; margin-top:6px; }
+  .thesis .chip {
+    font-family:var(--mono); font-size:13px; font-weight:600; padding:9px 14px; border-radius:999px;
+    border:1px solid var(--line); background:var(--card); color:var(--text);
+  }
+  .thesis .chip b { color:var(--accent-ink); }
+  .kicker { font-family:var(--mono); font-size:13.5px; color:var(--text-soft); letter-spacing:.02em; }
+  .kicker b { color:var(--text); font-weight:700; }
+
+  .metrics { display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line); }
+  .metrics div { padding:14px 26px 14px 0; margin-right:26px; border-right:1px solid var(--line); }
+  .metrics div:last-child { border-right:0; margin-right:0; }
+  .metrics .n { font-family:var(--mono); font-size:24px; font-weight:700; letter-spacing:-.02em;
+    display:block; font-variant-numeric:tabular-nums; }
+  .metrics .k { font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--text-faint); margin-top:4px; display:block; }
+
+  /* ---- section divider ---- */
+  .divider { background:
+      radial-gradient(120% 90% at 100% 0%, var(--accent-soft), transparent 55%),
+      var(--surface); }
+  .divider.j { background:
+      radial-gradient(120% 90% at 100% 0%, var(--agent-soft), transparent 55%),
+      var(--surface); }
+  .divider .part { font-family:var(--mono); font-size:13px; letter-spacing:.24em; text-transform:uppercase;
+     color:var(--text-faint); font-weight:600; margin:0 0 16px; }
+  .divider h1 { max-width:15ch; }
+  .divider .sub { font-size:clamp(16px,2vw,21px); color:var(--text-soft); max-width:58ch; margin:18px 0 0; line-height:1.5; }
+  .rail { display:flex; gap:10px; flex-wrap:wrap; margin-top:30px; }
+  .rail span { font-family:var(--mono); font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:8px;
+     background:var(--card); border:1px solid var(--line); color:var(--text-soft); }
+
+  /* ---- pillar cards ---- */
+  .pillars { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:10px; }
+  .pillar { background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px 24px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+    display:flex; flex-direction:column; }
+  .pillar::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent); }
+  .pillar.jx::before { background:var(--agent); }
+  .pillar.gx::before { background:var(--pass); }
+  .pillar .pk { font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; }
+  .pillar h3 { font-size:20px; letter-spacing:-.02em; margin:8px 0 10px; line-height:1.14; }
+  .pillar p { margin:0; font-size:14.5px; color:var(--text-soft); line-height:1.5; }
+  /* margin-top:auto pins this block to the card floor, so the dashed rules line up
+     across the three cards regardless of how long each paragraph runs. Don't add a
+     margin-top override below this — it would cancel the auto and break the alignment. */
+  .pillar .blind { margin-top:auto; padding-top:12px; border-top:1px dashed var(--line);
+    font-family:var(--mono); font-size:12.5px; color:var(--crit); line-height:1.45; }
+  .pillar .blind b { color:var(--text-faint); font-weight:600; display:block; letter-spacing:.12em;
+    text-transform:uppercase; font-size:10.5px; margin-bottom:4px; }
+
+  /* ---- feature slide layout ---- */
+  .feat { display:grid; grid-template-columns: 1.05fr .95fr; gap:clamp(24px,4vw,56px); align-items:center; }
+  .feat .body ul { margin:18px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:14px; }
+  .feat .body li { position:relative; padding-left:30px; font-size:15.5px; line-height:1.5; color:var(--text); }
+  .feat .body li::before {
+    content:"✓"; position:absolute; left:0; top:-1px; color:var(--accent);
+    font-weight:800; font-family:var(--mono); font-size:15px;
+  }
+  .feat.j .body li::before { color:var(--agent); }
+  .feat .body li b { font-weight:700; }
+  .feat .body li span { color:var(--text-soft); }
+
+  /* terminal panel */
+  .term { background:var(--ink); border:1px solid var(--line); border-radius:14px; overflow:hidden;
+    box-shadow:var(--shadow); font-family:var(--mono); font-size:13.5px; line-height:1.7; }
+  .term .bar { background:var(--ink-2); padding:11px 15px; display:flex; align-items:center; gap:7px;
+    border-bottom:1px solid rgba(255,255,255,.07); }
+  .term .bar i { width:11px; height:11px; border-radius:50%; display:inline-block; }
+  .term .bar i:nth-child(1){ background:#e0788a; }
+  .term .bar i:nth-child(2){ background:#e0ab53; }
+  .term .bar i:nth-child(3){ background:#43c47e; }
+  .term .bar .t { margin-left:8px; color:#7c8aa0; font-size:12px; letter-spacing:.03em; }
+  .term .body2 { padding:18px 18px; color:#c5d2e2; white-space:pre-wrap; }
+  .term .body2 .p { color:#3fd0bf; }
+  .term .body2 .c { color:#e7edf5; font-weight:600; }
+  .term .body2 .g { color:#43c47e; }
+  .term .body2 .w { color:#e0ab53; }
+  .term .body2 .d { color:#6a7c92; }
+  .term .body2 .a { color:#8b98f2; }
+  .term .body2 .r { color:#f0788a; }
+  .term.wide { font-size:13px; }
+
+  .tag-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+  .tag { font-family:var(--mono); font-size:12px; font-weight:600; padding:5px 11px; border-radius:7px;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--text-soft); }
+  .tag.j { color:var(--agent); border-color:color-mix(in srgb,var(--agent) 34%,var(--line)); background:var(--agent-soft); }
+
+  /* proud / grid of 4 */
+  .proud { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:6px; }
+  .proud .p { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px;
+    box-shadow:var(--shadow); }
+  .proud .p .h { display:flex; align-items:center; gap:11px; font-weight:750; font-size:16.5px; letter-spacing:-.01em; }
+  .proud .p .h .m { font-family:var(--mono); color:var(--accent-ink); font-size:13.5px; font-weight:800;
+     background:var(--accent-soft); border-radius:7px; padding:3px 9px; white-space:nowrap; }
+  .proud .p .h .m.j { color:var(--agent); background:var(--agent-soft); }
+  .proud .p p { margin:10px 0 0; font-size:14px; color:var(--text-soft); line-height:1.5; }
+
+  /* ---- pipeline schema: 5 steps × owner / goal / gate, then the outputs ---- */
+  .schema { display:grid; grid-template-columns:4.4rem repeat(5,1fr); gap:9px 10px; margin-top:4px; align-items:stretch; }
+  .schema .rl { font-family:var(--mono); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; display:flex; align-items:center; justify-content:flex-end;
+    padding-right:4px; text-align:right; }
+
+  .schema .st { background:var(--card); border:1px solid var(--line); border-radius:11px;
+    padding:11px 12px 12px; box-shadow:var(--shadow); position:relative; text-align:center; }
+  .schema .st .n { font-family:var(--mono); font-size:12px; font-weight:800; color:#fff;
+    background:var(--agent); width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
+    margin:0 auto 7px; }
+  .schema .st .nm { font-size:14px; font-weight:750; letter-spacing:-.01em; line-height:1.2; }
+  /* connector between step heads */
+  .schema .st::after { content:""; position:absolute; top:22px; right:-10px; width:10px; height:1.5px;
+    background:var(--line); }
+  /* the 6th grid child is the LAST step card (row 1 = row-label + 5 steps). `:last-child`
+     would never match here — the grid's last child is a gate cell, not a step. */
+  .schema .st:nth-child(6)::after { display:none; }
+
+  .schema .cell { background:var(--surface-2); border:1px solid var(--line); border-radius:9px;
+    padding:10px 11px; font-size:12.5px; line-height:1.38; color:var(--text-soft); display:flex;
+    align-items:center; justify-content:center; text-align:center; }
+  .schema .cell.owner { font-family:var(--mono); font-size:11.5px; color:var(--text); font-weight:600; }
+  .schema .cell.goal { color:var(--text); }
+
+  .schema .gate { border-radius:9px; padding:9px 8px; font-family:var(--mono); font-size:11px;
+    font-weight:700; text-align:center; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:3px; letter-spacing:.04em; }
+  .schema .gate.soft { background:var(--surface-2); border:1px dashed var(--line); color:var(--text-faint); }
+  .schema .gate.hard { background:var(--agent); border:1px solid var(--agent); color:#fff; }
+  .schema .gate small { font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:0;
+    opacity:.9; text-transform:none; }
+
+  .ends { margin-top:20px; border:1px solid var(--line); border-left:4px solid var(--pass);
+    border-radius:12px; background:var(--card); box-shadow:var(--shadow); padding:15px 20px;
+    display:grid; grid-template-columns:8.2rem 1fr; gap:16px; align-items:center; }
+  .ends .lb { font-family:var(--mono); font-size:10px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--pass); font-weight:700; line-height:1.4; }
+  .ends .items { display:flex; flex-wrap:wrap; gap:8px; }
+  .ends .items span { font-size:12.5px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:7px; padding:6px 11px; color:var(--text); }
+  .ends .items span b { color:var(--pass); font-weight:700; }
+  .ends .items span.human { border-color:color-mix(in srgb,var(--warn) 50%,var(--line)); background:#fdf7ea; }
+  :root[data-theme="dark"] .ends .items span.human { background:#2a2113; }
+  .ends .items span.human b { color:var(--warn); }
+  @media (max-width:1000px){ .schema { grid-template-columns:3.4rem repeat(5,1fr); gap:6px; }
+    .schema .st .nm { font-size:12px; } .schema .cell { font-size:11px; } }
+
+  /* value rows — the "before / after" of a pipeline change */
+  .value { display:flex; flex-direction:column; gap:0; margin-top:6px;
+    border-top:1px solid var(--line); }
+  .value .row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);
+    gap:10px 30px; padding:17px 0; border-bottom:1px solid var(--line); align-items:baseline; }
+  .value .was { font-size:14.5px; color:var(--text-faint); }
+  .value .was b { display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--text-faint); font-weight:600; margin-bottom:5px; }
+  .value .now { font-size:15.5px; color:var(--text); line-height:1.5; }
+  .value .now b { display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--agent); font-weight:600; margin-bottom:5px; }
+  .value .now em { font-style:normal; font-weight:700; }
+  @media (max-width:860px){ .value .row { grid-template-columns:1fr; gap:4px; } }
+
+  /* gates — two columns of different gate kinds */
+  .gatecols { display:grid; grid-template-columns:1.1fr .9fr; gap:clamp(20px,3.5vw,44px); margin-top:8px; }
+  .gatecol h3 { font-size:17px; letter-spacing:-.01em; margin:0 0 4px; }
+  .gatecol .ch { font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; margin-bottom:12px; display:block; }
+  .gatecol ol, .gatecol ul { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px; }
+  .gatecol li { background:var(--card); border:1px solid var(--line); border-radius:11px;
+    padding:13px 16px; font-size:14.5px; line-height:1.5; box-shadow:var(--shadow); }
+  .gatecol li .gk { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--agent);
+    margin-right:9px; }
+  .gatecol.det li .gk { color:var(--accent-ink); }
+  .gatecol li span { color:var(--text-soft); }
+  @media (max-width:860px){ .gatecols { grid-template-columns:1fr; } }
+
+  .callout { margin-top:26px; padding:18px 22px; border-radius:12px; border:1px dashed color-mix(in srgb,var(--accent) 45%,var(--line));
+     background:var(--accent-soft); color:var(--accent-ink); font-size:15.5px; line-height:1.5; }
+  .callout b { color:var(--accent-ink); }
+  .callout.j { border-color:color-mix(in srgb,var(--agent) 45%,var(--line)); background:var(--agent-soft); color:var(--agent); }
+  .callout.j b { color:var(--agent); }
+
+  /* chrome */
+  .progress { position:fixed; top:0; left:0; height:3px; background:var(--accent); z-index:40; transition:width .45s ease; }
+  .hud { position:fixed; bottom:20px; left:0; right:0; z-index:40; display:flex; justify-content:center;
+    align-items:center; gap:18px; pointer-events:none; }
+  .hud .grp { pointer-events:auto; display:flex; align-items:center; gap:14px;
+    background:color-mix(in srgb,var(--card) 88%, transparent); backdrop-filter:blur(8px);
+    border:1px solid var(--line); border-radius:999px; padding:7px 10px 7px 16px; box-shadow:var(--shadow); }
+  .counter { font-family:var(--mono); font-size:13px; color:var(--text-soft); font-variant-numeric:tabular-nums; }
+  .counter b { color:var(--text); }
+  .dots { display:flex; gap:7px; }
+  .dots button { width:8px; height:8px; border-radius:50%; border:none; background:var(--line); cursor:pointer; padding:0;
+    transition:background .2s, transform .2s; }
+  .dots button.on { background:var(--accent); transform:scale(1.35); }
+  .dots button.sec { background:color-mix(in srgb,var(--agent) 50%, var(--line)); }
+  .dots button.on.sec { background:var(--agent); }
+  .navbtn { width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:var(--surface-2);
+    color:var(--text); cursor:pointer; font-size:15px; display:grid; place-items:center; transition:background .15s,border-color .15s; }
+  .navbtn:hover { border-color:var(--accent); color:var(--accent-ink); }
+  .navbtn:focus-visible, .dots button:focus-visible, .toggle button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  .toggle { position:fixed; top:16px; right:16px; z-index:40; display:flex; gap:8px; }
+  .toggle button { font-family:var(--mono); font-size:12px; font-weight:600; padding:7px 12px; border-radius:8px;
+    border:1px solid var(--line); background:color-mix(in srgb,var(--card) 88%, transparent); color:var(--text-soft);
+    cursor:pointer; backdrop-filter:blur(8px); }
+  .toggle button:hover { color:var(--accent-ink); border-color:var(--accent); }
+
+  .notes { position:fixed; left:0; right:0; bottom:0; z-index:50; transform:translateY(102%);
+    transition:transform .3s ease; background:var(--ink); color:#c5d2e2; border-top:2px solid var(--accent);
+    padding:20px clamp(28px,6vw,96px) 24px; max-height:44vh; overflow-y:auto; box-shadow:0 -18px 40px -18px rgba(0,0,0,.5); }
+  .notes.open { transform:none; }
+  .notes .nh { font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:#3fd0bf;
+    font-weight:700; margin-bottom:10px; }
+  .notes .nb { font-size:14.5px; line-height:1.6; max-width:82ch; }
+  .notes .nb strong { color:#e7edf5; }
+
+  @media (max-width: 860px) {
+    .pillars { grid-template-columns:1fr; }
+    .feat { grid-template-columns:1fr; }
+    .proud { grid-template-columns:1fr; }
+    .slide { padding-bottom:96px; }
+  }
+
+  /* ---- 26-17 additions: figures, axis table, evidence strip ---- */
+
+  /* diagrams inherit the deck tokens; nothing here hardcodes a hue that only
+     works on one ground. Stroke/text default to currentColor via .fig svg. */
+  .fig { margin:0; }
+  .fig svg { display:block; width:100%; max-width:100%; height:auto; color:var(--text-soft); }
+  .fig figcaption { font-family:var(--mono); font-size:11.5px; line-height:1.5; color:var(--text-faint);
+    margin-top:11px; letter-spacing:.01em; }
+  .fig .sv-box { fill:var(--card); stroke:var(--line); }
+  .fig .sv-box-a { fill:var(--accent-soft); stroke:var(--accent); }
+  .fig .sv-box-j { fill:var(--agent-soft); stroke:var(--agent); }
+  .fig .sv-t { fill:var(--text); font-family:var(--sans); font-weight:650; }
+  .fig .sv-s { fill:var(--text-faint); font-family:var(--mono); }
+  .fig .sv-a { stroke:var(--text-faint); fill:none; }
+  .fig .sv-a-hot { stroke:var(--accent); fill:none; }
+  .fig .sv-a-j { stroke:var(--agent); fill:none; }
+  .fig .sv-dead { stroke:var(--crit); fill:none; }
+
+  /* axis contract table */
+  .axes { width:100%; border-collapse:collapse; margin-top:8px; font-size:13.5px; }
+  .axes th { font-family:var(--mono); font-size:10.5px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--text-faint); font-weight:600; text-align:left; padding:0 14px 9px 0;
+    border-bottom:1px solid var(--line); }
+  .axes td { padding:12px 14px 12px 0; border-bottom:1px solid var(--line); vertical-align:top;
+    color:var(--text-soft); line-height:1.45; }
+  .axes td.k { font-family:var(--mono); font-size:12.5px; font-weight:700; color:var(--text); white-space:nowrap; }
+  .axes td.k em { display:block; font-style:normal; font-family:var(--sans); font-size:11px;
+    font-weight:600; color:var(--text-faint); letter-spacing:.04em; margin-top:3px; }
+  .axes td.f { font-family:var(--mono); font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .axes td.f.closed { color:var(--crit); }
+  .axes td.f.open { color:var(--pass); }
+  .axes td.f.sub { color:var(--agent); }
+  .axes tr:last-child td { border-bottom:0; }
+  @media (max-width:860px){ .axes, .axes tbody, .axes tr, .axes td { display:block; }
+    .axes thead { display:none; } .axes tr { padding:12px 0; border-bottom:1px solid var(--line); }
+    .axes td { border:0; padding:2px 0; } }
+
+  /* evidence strip — a measured claim with its source */
+  .ev { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:24px; }
+  .ev .e { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px;
+    box-shadow:var(--shadow); }
+  .ev .e .n { font-family:var(--mono); font-size:26px; font-weight:800; letter-spacing:-.03em;
+    color:var(--crit); display:block; font-variant-numeric:tabular-nums; line-height:1; }
+  .ev .e .n.ok { color:var(--pass); }
+  .ev .e .n.j { color:var(--agent); }
+  .ev .e p { margin:9px 0 0; font-size:13px; line-height:1.45; color:var(--text-soft); }
+  @media (max-width:860px){ .ev { grid-template-columns:repeat(2,1fr); } }
+
+  /* two-column split for a before/after argument that needs prose either side */
+  .split2 { display:grid; grid-template-columns:1fr 1fr; gap:clamp(20px,3.5vw,44px); margin-top:10px;
+    align-items:start; }
+  @media (max-width:860px){ .split2 { grid-template-columns:1fr; } }
+
+  /* ticket ledger */
+  .ledger { display:flex; flex-direction:column; border-top:1px solid var(--line); margin-top:8px; }
+  .ledger .r { display:grid; grid-template-columns:7.5rem 1fr 8.5rem; gap:18px; padding:14px 0;
+    border-bottom:1px solid var(--line); align-items:baseline; }
+  .ledger .r .key { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent-ink); }
+  .ledger .r .what { font-size:14.5px; line-height:1.45; color:var(--text); }
+  .ledger .r .what span { color:var(--text-soft); }
+  .ledger .r .st { font-family:var(--mono); font-size:10.5px; letter-spacing:.13em; text-transform:uppercase;
+    font-weight:700; text-align:right; color:var(--pass); }
+  .ledger .r .st.wip { color:var(--warn); }
+  @media (max-width:860px){ .ledger .r { grid-template-columns:1fr; gap:4px; }
+    .ledger .r .st { text-align:left; } }
+</style>
+
+<div class="progress" id="progress"></div>
+
+<div class="toggle">
+  <button id="themeBtn" title="Toggle light / dark">◐ theme</button>
+  <button id="notesBtn" title="Заметки докладчика (N)">▤ заметки</button>
+</div>
+
+<div class="deck" id="deck">
+<style>
+  /* 26-18 additions — diagram-first slides */
+  .figwide { margin:0 0 18px; }
+  .figwide svg { display:block; width:100%; height:auto; color:var(--text-soft); }
+  .figwide figcaption { font-family:var(--mono); font-size:11.5px; line-height:1.5;
+    color:var(--text-faint); margin-top:10px; }
+  .sv-lab { fill:var(--text-faint); font-family:var(--mono); font-size:10px; letter-spacing:.14em; }
+  .sv-n { fill:var(--text); font-family:var(--mono); font-weight:700; }
+  .sv-bad { fill:color-mix(in srgb,var(--crit) 12%, transparent); stroke:var(--crit); }
+  .sv-good { fill:var(--accent-soft); stroke:var(--accent); }
+  .sv-j2 { fill:var(--agent-soft); stroke:var(--agent); }
+
+  /* compact rule rows beside a figure */
+  .rules { display:flex; flex-direction:column; gap:9px; margin:0; padding:0; list-style:none; }
+  .rules li { display:grid; grid-template-columns:11.5rem 1fr; gap:14px; align-items:baseline;
+    padding:9px 0; border-bottom:1px solid var(--line); }
+  .rules li:last-child { border-bottom:0; }
+  .rules .rk { font-family:var(--mono); font-size:12.5px; font-weight:700; color:var(--accent-ink); }
+  .rules .rk em { display:block; font-style:normal; font-size:10.5px; font-weight:600;
+    color:var(--text-faint); letter-spacing:.1em; text-transform:uppercase; margin-top:3px; }
+  .rules .rv { font-size:13.5px; line-height:1.45; color:var(--text-soft); }
+  .rules .rv b { color:var(--text); }
+  @media (max-width:860px){ .rules li { grid-template-columns:1fr; gap:3px; } }
+
+  .chipset { display:flex; gap:9px; flex-wrap:wrap; margin-top:14px; }
+  .chipset span { font-family:var(--mono); font-size:12px; font-weight:600; padding:6px 12px;
+    border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--text-soft); }
+  .chipset span b { color:var(--accent-ink); }
+
+  .two { display:grid; grid-template-columns:1.25fr .75fr; gap:clamp(20px,3vw,38px); align-items:start; }
+  @media (max-width:980px){ .two { grid-template-columns:1fr; } }
+
+  /* real-artifact excerpt card */
+  .excerpt { background:var(--card); border:1px solid var(--line); border-left:3px solid var(--agent);
+    border-radius:11px; padding:14px 16px; box-shadow:var(--shadow); }
+  .excerpt .ex-h { margin:0 0 9px; font-family:var(--mono); font-size:12px; font-weight:700;
+    color:var(--agent); line-height:1.45; }
+  .excerpt .ex-b { margin:0; font-size:13px; line-height:1.5; color:var(--text-soft); }
+  .excerpt .ex-b b { color:var(--text); }
+  .excerpt .ex-v { margin:10px 0 0; font-family:var(--mono); font-size:10.5px; color:var(--pass);
+    font-weight:700; letter-spacing:.02em; }
+
+  /* two competing ways of doing the same thing */
+  .vs { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .vs > div { border-radius:11px; padding:13px 15px; border:1px solid var(--line);
+    background:var(--card); box-shadow:var(--shadow); }
+  .vs .vs-a { border-color:color-mix(in srgb,var(--crit) 40%,var(--line));
+    background:color-mix(in srgb,var(--crit) 6%, var(--card)); }
+  .vs .vs-b { border-color:var(--accent); background:var(--accent-soft); }
+  .vs .vs-k { margin:0 0 8px; font-family:var(--mono); font-size:10px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--text-faint); font-weight:600; }
+  .vs .vs-c { margin:0 0 9px; font-size:11.5px; line-height:1.4; color:var(--text); word-break:break-word; }
+  .vs .vs-n { margin:0; font-family:var(--mono); font-size:15px; font-weight:700; letter-spacing:-.02em; }
+  .vs .vs-a .vs-n { color:var(--crit); }
+  .vs .vs-b .vs-n { color:var(--accent-ink); }
+  .vs .vs-s { margin:7px 0 0; font-size:12px; line-height:1.45; color:var(--text-soft); }
+  @media (max-width:860px){ .vs { grid-template-columns:1fr; } }
+</style>
+  <!-- 1 · DOMAIN MAPS -->
+  <section class="slide active">
+    <div class="wrap">
+      <p class="eyebrow">Sprint 26-18 · domain maps</p>
+      <h2>A new artifact: what a feature <em>is</em>, written once and cited — not re-derived per ticket.</h2>
+
+      <figure class="fig figwide">
+        <svg viewBox="0 0 1000 312" role="img"
+             aria-label="The schema of a domain map: a dated frontmatter header, eight numbered sections, and a freshness gate.">
+          <!-- frontmatter -->
+          <rect class="sv-good" x="0" y="0" width="1000" height="44" rx="9" stroke-width="1.4"></rect>
+          <text class="sv-lab" x="16" y="19" fill="var(--accent-ink)">FRONTMATTER — WHAT MAKES IT CITABLE AND EXPIRABLE</text>
+          <text class="sv-s" x="16" y="35" font-size="10">domain_slug · rev · generated · stale_after_days · expires_after_days · sources[] · applicability</text>
+
+          <!-- row 1 -->
+          <rect class="sv-box" x="0" y="60" width="238" height="86" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="14" y="80" font-size="11">§0 · Changed since rev N</text>
+          <text class="sv-s" x="14" y="98"  font-size="9">what this pass closed, corrected</text>
+          <text class="sv-s" x="14" y="112" font-size="9">or newly found — so a re-read is</text>
+          <text class="sv-s" x="14" y="126" font-size="9">a diff, not a re-read</text>
+
+          <rect class="sv-box" x="254" y="60" width="238" height="86" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="268" y="80" font-size="11">§1 · Purpose &amp; value chain</text>
+          <text class="sv-s" x="268" y="98"  font-size="9">the links a user actually traverses,</text>
+          <text class="sv-s" x="268" y="112" font-size="9">plus ACTORS — who can really act,</text>
+          <text class="sv-s" x="268" y="126" font-size="9">and who only appears able to.</text>
+
+          <rect class="sv-box" x="508" y="60" width="238" height="86" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="522" y="80" font-size="11">§2 · Surface inventory</text>
+          <text class="sv-s" x="522" y="98"  font-size="9">one subsection PER LAYER: back</text>
+          <text class="sv-s" x="522" y="112" font-size="9">office · storefront · API contract ·</text>
+          <text class="sv-s" x="522" y="126" font-size="9">persistence &amp; jobs · published docs</text>
+
+          <rect class="sv-j2" x="762" y="60" width="238" height="86" rx="9" stroke-width="1.6"></rect>
+          <text class="sv-t" x="776" y="80" font-size="11">§3 · Where the layers DISAGREE</text>
+          <text class="sv-s" x="776" y="98"  font-size="9">the section nothing else in the repo</text>
+          <text class="sv-s" x="776" y="112" font-size="9">holds. Numbered D1…Dn, never</text>
+          <text class="sv-s" x="776" y="126" font-size="9">renumbered, each with a verdict</text>
+
+          <!-- row 2 -->
+          <rect class="sv-box" x="0" y="160" width="238" height="86" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="14" y="180" font-size="11">§4 · Coverage shape</text>
+          <text class="sv-s" x="14" y="198" font-size="9">which suites, how many cases, what</text>
+          <text class="sv-s" x="14" y="212" font-size="9">the obvious selection group MISSES,</text>
+          <text class="sv-s" x="14" y="226" font-size="9">what is over-covered for its risk</text>
+
+          <rect class="sv-box" x="254" y="160" width="238" height="86" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="268" y="180" font-size="11">§5 · Open gaps</text>
+          <text class="sv-s" x="268" y="198" font-size="9">numbered G1…Gn, each carried</text>
+          <text class="sv-s" x="268" y="212" font-size="9">forward until CLOSED with the</text>
+          <text class="sv-s" x="268" y="226" font-size="9">evidence that closed it</text>
+
+          <rect class="sv-box" x="508" y="160" width="238" height="86" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="522" y="180" font-size="11">§6 · Prior-art verdicts</text>
+          <text class="sv-s" x="522" y="198" font-size="9">every earlier analysis doc judged</text>
+          <text class="sv-s" x="522" y="212" font-size="9">current / stale / wrong — so the</text>
+          <text class="sv-s" x="522" y="226" font-size="9">next run stops re-reading them</text>
+
+          <rect class="sv-box" x="762" y="160" width="238" height="86" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="776" y="180" font-size="11">§7 · Amendments</text>
+          <text class="sv-s" x="776" y="198" font-size="9">what a later run changed and why,</text>
+          <text class="sv-s" x="776" y="212" font-size="9">appended — the map is versioned,</text>
+          <text class="sv-s" x="776" y="226" font-size="9">never quietly overwritten</text>
+
+          <!-- gate -->
+          <rect class="sv-good" x="0" y="258" width="1000" height="54" rx="9" stroke-width="1.4"></rect>
+          <text class="sv-lab" x="16" y="275" fill="var(--accent-ink)">FRESHNESS GATE — npm run domain:check</text>
+          <text class="sv-s" x="16" y="291" font-size="9.5">a STALE map <tspan fill="var(--crit)" font-weight="700">FAILS</tspan> — it is read as current and arrives with a written deliverable's authority</text>
+          <text class="sv-s" x="16" y="305" font-size="9.5">a MISSING map <tspan fill="var(--pass)" font-weight="700">PASSES</tspan> — twelve of thirteen domains had none; a hard gate on absence stops every ticket on day one</text>
+        </svg>
+      </figure>
+
+      <div class="two" style="margin-top:4px">
+        <div>
+          <span class="ch" style="font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+            text-transform:uppercase; color:var(--text-faint); font-weight:600; display:block;
+            margin-bottom:10px;">Real excerpt — <span class="mono" style="text-transform:none; letter-spacing:0">.claude/knowledge/domain/loyalty-missions.md</span>, rev 2</span>
+          <div class="excerpt">
+            <p class="ex-h">§3 · D11 — the task brief's premise about deployed org-level loyalty is FALSE;
+              the feature exists only on an open, unmerged PR</p>
+            <p class="ex-b">Commits <span class="mono">99dff59</span> and <span class="mono">bb42ec4</span> are real, but they live on branch
+              <span class="mono">feat/VCST-5024-org-level</span>, backing <b>OPEN PR #17</b>, tip-dated 2026-09-10 — <b>after</b> the
+              deployed build (<span class="mono">cfa5617</span>, 2026-09-08). <span class="mono">git merge-base --is-ancestor</span> returns false.
+              <b>No organization-level accrual code, GraphQL argument, or Admin surface exists on this
+              environment.</b> A domain map built on the brief's premise would have invented a whole
+              surface family that does not exist.</p>
+            <p class="ex-v">CONFIRMED (live <span class="mono">GET /api/platform/modules</span> + <span class="mono">gh</span> + local git ancestry)</p>
+          </div>
+        </div>
+        <div>
+          <div class="callout" style="margin-top:0">
+            That is the argument for the artifact in one row. It is not a summary of documents — it is a
+            set of <b>claims with verdicts</b>, each naming what confirmed it, and it outlives the run
+            that paid for it.
+          </div>
+          <div class="chipset">
+            <span><b>6</b> maps built</span>
+            <span>b2b-organizations <b>724</b></span>
+            <span>mobile-navigation <b>750</b></span>
+            <span>sales-rep <b>619</b></span>
+            <span>loyalty-missions <b>474</b></span>
+            <span>ucp <b>417</b></span>
+          </div>
+          <p style="font-size:12.5px; color:var(--text-faint); line-height:1.5; margin:10px 0 0;
+             font-family:var(--mono);">lines per map · built with <span style="color:var(--accent-ink)">/qa-domain-map &lt;slug&gt;</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · KNOWLEDGE -->
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Sprint 26-18 · knowledge</p>
+      <h2>A domain map is one file in a knowledge base — and where a file sits decides what it costs.</h2>
+
+      <figure class="fig figwide">
+        <svg viewBox="0 0 1000 300" role="img"
+             aria-label="Left: four loading tiers with their measured sizes. Right: the knowledge directory of this project, by area, as a bar chart.">
+          <!-- LEFT: tiers -->
+          <text class="sv-lab" x="0" y="14">FOUR TIERS — WHAT IS PAID, AND WHEN</text>
+
+          <rect class="sv-bad" x="0" y="26" width="470" height="56" rx="9" stroke-width="1.4"></rect>
+          <text class="sv-t" x="16" y="46" font-size="11.5" fill="var(--crit)">ALWAYS LOADED</text>
+          <text class="sv-s" x="16" y="62" font-size="9.5">CLAUDE.md + .claude/rules/*.md</text>
+          <text class="sv-s" x="16" y="75" font-size="9.5">re-paid on EVERY turn and EVERY dispatch</text>
+          <text class="sv-n" x="454" y="52" font-size="17" text-anchor="end" fill="var(--crit)">64,173</text>
+          <text class="sv-s" x="454" y="68" font-size="9" text-anchor="end">chars · cap 80,000</text>
+
+          <rect class="sv-j2" x="0" y="90" width="470" height="56" rx="9" stroke-width="1.4"></rect>
+          <text class="sv-t" x="16" y="110" font-size="11.5" fill="var(--agent)">LOADED WHOLE WHEN REACHED</text>
+          <text class="sv-s" x="16" y="126" font-size="9.5">commands · agents · SKILL.md</text>
+          <text class="sv-s" x="16" y="139" font-size="9.5">cannot be read in part, so each has a body budget</text>
+          <text class="sv-n" x="454" y="116" font-size="17" text-anchor="end" fill="var(--agent)">80</text>
+          <text class="sv-s" x="454" y="132" font-size="9" text-anchor="end">files · ≤19,000 each</text>
+
+          <rect class="sv-good" x="0" y="154" width="470" height="56" rx="9" stroke-width="1.6"></rect>
+          <text class="sv-t" x="16" y="174" font-size="11.5" fill="var(--accent-ink)">ON DEMAND — .claude/knowledge/**</text>
+          <text class="sv-s" x="16" y="190" font-size="9.5">read by the step that needs it, and nothing else</text>
+          <text class="sv-s" x="16" y="203" font-size="9.5">task-conditional rules live here, CITED not restated</text>
+          <text class="sv-n" x="454" y="180" font-size="17" text-anchor="end" fill="var(--accent-ink)">1.84M</text>
+          <text class="sv-s" x="454" y="196" font-size="9" text-anchor="end">chars · 56 files</text>
+
+          <rect class="sv-box" x="0" y="218" width="470" height="56" rx="9" stroke-width="1.2"></rect>
+          <text class="sv-t" x="16" y="238" font-size="11.5">NEVER LOADED — docs/decisions/</text>
+          <text class="sv-s" x="16" y="254" font-size="9.5">measured rationale, post-mortems, retired designs</text>
+          <text class="sv-s" x="16" y="267" font-size="9.5">read by humans deciding whether to change it</text>
+          <text class="sv-n" x="454" y="244" font-size="17" text-anchor="end">168K</text>
+          <text class="sv-s" x="454" y="260" font-size="9" text-anchor="end">chars · 7 files</text>
+
+          <text class="sv-s" x="0" y="292" font-size="9">A rule earns tier 1 only if removing it would break an unrelated task.</text>
+
+          <!-- RIGHT: the real tree -->
+          <text class="sv-lab" x="530" y="14">.claude/knowledge/ IN THIS PROJECT — BY AREA</text>
+
+          <g>
+            <text class="sv-t" x="530" y="42" font-size="10">oracles</text>
+            <rect class="sv-good" x="640" y="32" width="300" height="13" rx="3" stroke-width="1"></rect>
+            <text class="sv-s" x="948" y="42" font-size="9">4 · 659K</text>
+
+            <text class="sv-t" x="530" y="66" font-size="10">domain</text>
+            <rect class="sv-good" x="640" y="56" width="195" height="13" rx="3" stroke-width="1"></rect>
+            <text class="sv-s" x="843" y="66" font-size="9">14 · 428K</text>
+
+            <text class="sv-t" x="530" y="90" font-size="10">execution</text>
+            <rect class="sv-good" x="640" y="80" width="180" height="13" rx="3" stroke-width="1"></rect>
+            <text class="sv-s" x="828" y="90" font-size="9">22 · 394K</text>
+
+            <text class="sv-t" x="530" y="114" font-size="10">api</text>
+            <rect class="sv-box" x="640" y="104" width="47" height="13" rx="3" stroke-width="1"></rect>
+            <text class="sv-s" x="695" y="114" font-size="9">6 · 102K</text>
+
+            <text class="sv-t" x="530" y="138" font-size="10">agents</text>
+            <rect class="sv-box" x="640" y="128" width="44" height="13" rx="3" stroke-width="1"></rect>
+            <text class="sv-s" x="692" y="138" font-size="9">3 teams · 96K</text>
+
+            <text class="sv-t" x="530" y="162" font-size="10">automation</text>
+            <rect class="sv-box" x="640" y="152" width="29" height="13" rx="3" stroke-width="1"></rect>
+            <text class="sv-s" x="677" y="162" font-size="9">3 · 64K</text>
+
+            <text class="sv-t" x="530" y="186" font-size="10">diagnostics</text>
+            <rect class="sv-box" x="640" y="176" width="19" height="13" rx="3" stroke-width="1"></rect>
+            <text class="sv-s" x="667" y="186" font-size="9">1 · 42K</text>
+
+            <text class="sv-t" x="530" y="210" font-size="10">ba</text>
+            <rect class="sv-box" x="640" y="200" width="16" height="13" rx="3" stroke-width="1"></rect>
+            <text class="sv-s" x="664" y="210" font-size="9">1 · 35K</text>
+
+            <text class="sv-t" x="530" y="234" font-size="10">architecture</text>
+            <rect class="sv-box" x="640" y="224" width="8" height="13" rx="3" stroke-width="1"></rect>
+            <text class="sv-s" x="656" y="234" font-size="9">2 · 19K</text>
+          </g>
+
+          <rect class="sv-j2" x="530" y="252" width="470" height="42" rx="9" stroke-width="1.3"></rect>
+          <text class="sv-s" x="546" y="270" font-size="9.5">The two biggest are the ORACLES — the behavioural truth a case is judged against —</text>
+          <text class="sv-s" x="546" y="285" font-size="9.5">and the DOMAIN maps, which did not exist a fortnight ago.</text>
+        </svg>
+      </figure>
+
+      <div class="two" style="margin-top:2px">
+        <div>
+          <span class="ch" style="font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+            text-transform:uppercase; color:var(--text-faint); font-weight:600; display:block;
+            margin-bottom:10px;">Example — the same brief, two ways of naming the oracle</span>
+          <div class="vs">
+            <div class="vs-a">
+              <p class="vs-k">a brief that cites the PATH</p>
+              <p class="vs-c mono">read .claude/knowledge/oracles/business-logic.md</p>
+              <p class="vs-n">217 invariants · ~96,000 tokens</p>
+              <p class="vs-s">paid again inside every agent's own context, to use three of them</p>
+            </div>
+            <div class="vs-b">
+              <p class="vs-k">a brief that carries the SLICE</p>
+              <p class="vs-c mono">npm run bl:extract -- --domain cart</p>
+              <p class="vs-n">15 invariants · ~7,200 tokens</p>
+              <p class="vs-s">the oracle's own markdown by line range — verbatim, never re-rendered, so no second drifting copy exists</p>
+            </div>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:0">
+          The slicer <b>reuses the linter's own parser</b>, so an extract cannot silently drop an invariant
+          the gate can see — and every slice <b>declares itself a SUBSET</b> and lists its ids, so no reader
+          mistakes it for the whole oracle. <span class="mono">ecl:extract</span> does the same for the
+          54-section edge-case library.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Sprint 26-18 · policy &amp; rules</p>
+      <h2>A Markdown image in a Jira comment renders as nothing — and posts <span class="mono" style="font-size:.72em">200 OK</span> while doing it.</h2>
+
+      <figure class="fig figwide">
+        <svg viewBox="0 0 1000 330" role="img"
+             aria-label="The tracker-comment schema: one golden rule, a four-stage pipeline of compose, attach, embed and verify, a hook layer under all four, and the measured verdict per media type.">
+          <defs>
+            <marker id="pa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"></path>
+            </marker>
+          </defs>
+
+          <!-- golden rule -->
+          <rect class="sv-good" x="0" y="0" width="1000" height="44" rx="9" stroke-width="1.6"></rect>
+          <text class="sv-lab" x="16" y="19" fill="var(--accent-ink)">GOLDEN RULE — ONE COMMENT PER TICKET PER RUN. AMEND IT; NEVER APPEND.</text>
+          <text class="sv-s" x="16" y="35" font-size="9.5">the id is recorded at first post · no id ⇒ you have not posted · id recorded ⇒ you may not POST, only PUT · a second one needs the operator to ask</text>
+
+          <!-- pipeline -->
+          <rect class="sv-box" x="0" y="60" width="232" height="104" rx="9" stroke-width="1.3"></rect>
+          <text class="sv-t" x="14" y="80" font-size="11">1 · COMPOSE</text>
+          <text class="sv-s" x="14" y="97"  font-size="8.5">locally — nothing is posted mid-run</text>
+          <text class="sv-s" x="14" y="110" font-size="8.5">Markdown · structured · outcome first</text>
+          <text class="sv-s" x="14" y="123" font-size="8.5">stills carry the VALUES; a GIF only</text>
+          <text class="sv-s" x="14" y="136" font-size="8.5">when the defect IS the transition</text>
+          <text class="sv-s" x="14" y="153" font-size="8.5" fill="var(--accent-ink)">≤1 GIF · ≤8 frames · ≤5 MB · npm run gif</text>
+
+          <line x1="238" y1="112" x2="250" y2="112" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#pa)"></line>
+
+          <rect class="sv-box" x="256" y="60" width="232" height="104" rx="9" stroke-width="1.3"></rect>
+          <text class="sv-t" x="270" y="80" font-size="11">2 · ATTACH</text>
+          <text class="sv-s" x="270" y="97"  font-size="8.5">there is no MCP attachment tool —</text>
+          <text class="sv-s" x="270" y="110" font-size="8.5">REST directly, many files per request</text>
+          <text class="sv-s" x="270" y="127" font-size="8.5" fill="var(--accent-ink)">POST /rest/api/3/issue/&lt;KEY&gt;/attachments</text>
+          <text class="sv-s" x="270" y="146" font-size="8.5">check what landed before retrying —</text>
+          <text class="sv-s" x="270" y="157" font-size="8.5">a blind retry duplicates every file</text>
+
+          <line x1="494" y1="112" x2="506" y2="112" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#pa)"></line>
+
+          <rect class="sv-box" x="512" y="60" width="232" height="104" rx="9" stroke-width="1.3"></rect>
+          <text class="sv-t" x="526" y="80" font-size="11">3 · EMBED</text>
+          <text class="sv-s" x="526" y="97"  font-size="8.5">the v2 WIKI endpoint, not v3 Markdown</text>
+          <text class="sv-s" x="526" y="114" font-size="8.5" fill="var(--accent-ink)">!shot.png|width=700!</text>
+          <text class="sv-s" x="526" y="133" font-size="8.5">Jira resolves the name against the</text>
+          <text class="sv-s" x="526" y="144" font-size="8.5">issue's attachments → a real media node.</text>
+          <text class="sv-s" x="526" y="157" font-size="8.5">The carve-out: the WHOLE body is wiki</text>
+
+          <line x1="750" y1="112" x2="762" y2="112" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#pa)"></line>
+
+          <rect class="sv-j2" x="768" y="60" width="232" height="104" rx="9" stroke-width="1.5"></rect>
+          <text class="sv-t" x="782" y="80" font-size="11">4 · VERIFY</text>
+          <text class="sv-s" x="782" y="97"  font-size="8.5">from the RENDERED body, never the</text>
+          <text class="sv-s" x="782" y="108" font-size="8.5">status code</text>
+          <text class="sv-s" x="782" y="125" font-size="8.5" fill="var(--agent)">GET …/comment/&lt;id&gt;?expand=renderedBody</text>
+          <text class="sv-s" x="782" y="144" font-size="8.5">read the &lt;img&gt; src — it carries the</text>
+          <text class="sv-s" x="782" y="155" font-size="8.5">attachment ID, not the filename</text>
+
+          <!-- hook layer -->
+          <rect class="sv-good" x="0" y="180" width="1000" height="72" rx="9" stroke-width="1.4"></rect>
+          <text class="sv-lab" x="16" y="199" fill="var(--accent-ink)">HOOK LAYER — THE RULE IS NOT ADDRESSED TO JUDGEMENT-IN-THE-MOMENT · ALL THREE FAIL OPEN · 22 TESTS</text>
+
+          <rect class="sv-box" x="16" y="208" width="308" height="36" rx="7" stroke-width="1.1"></rect>
+          <text class="sv-s" x="28" y="223" font-size="8.5" fill="var(--text)">enforce-one-tracker-comment · PreToolUse</text>
+          <text class="sv-s" x="28" y="236" font-size="8.5">blocks the second comment, prints the amend command</text>
+
+          <rect class="sv-box" x="332" y="208" width="308" height="36" rx="7" stroke-width="1.1"></rect>
+          <text class="sv-s" x="344" y="223" font-size="8.5" fill="var(--text)">record-tracker-comment · PostToolUse</text>
+          <text class="sv-s" x="344" y="236" font-size="8.5">records the first id — the guard binds even if bypassed</text>
+
+          <rect class="sv-box" x="648" y="208" width="336" height="36" rx="7" stroke-width="1.1"></rect>
+          <text class="sv-s" x="660" y="223" font-size="8.5" fill="var(--text)">enforce-jira-markdown · PreToolUse</text>
+          <text class="sv-s" x="660" y="236" font-size="8.5">blocks wiki markup on the Markdown (v3) path</text>
+
+          <!-- measured media verdicts -->
+          <text class="sv-lab" x="0" y="278">MEASURED PER MEDIA TYPE — ALL FROM ?expand=renderedBody</text>
+
+          <rect class="sv-good" x="0" y="288" width="490" height="42" rx="8" stroke-width="1.3"></rect>
+          <text class="sv-t" x="14" y="305" font-size="10">.png</text>
+          <text class="sv-s" x="52" y="305" font-size="8.5">&lt;img src=…/attachment/content/&lt;id&gt;&gt;</text>
+          <text class="sv-s" x="14" y="321" font-size="8.5" fill="var(--pass)">inline image</text>
+
+          <rect class="sv-good" x="510" y="288" width="490" height="42" rx="8" stroke-width="1.6"></rect>
+          <text class="sv-t" x="524" y="305" font-size="10">.gif</text>
+          <text class="sv-s" x="558" y="305" font-size="8.5">same shape, and Jira animates it inline</text>
+          <text class="sv-s" x="524" y="321" font-size="8.5" fill="var(--pass)">THE motion-evidence format — travels the identical path</text>
+
+        </svg>
+        <figcaption>Every stage exists because a run failed at it. Stage 2 because the MCP has no attachment
+          tool; stage 3 because <span class="mono">![alt](path)</span> is dropped by the Markdown→ADF conversion
+          with no error — twelve invisible screenshots across two guides; stage 4 because four ADF variants were
+          probed and the only one that <i>posts</i> successfully renders
+          <span class="mono">Can only create thumbnails for attached images</span>.</figcaption>
+      </figure>
+
+      <ul class="rules">
+        <li><span class="rk">VirtoOZ first<em>product behaviour</em></span>
+          <span class="rv">When how the platform is <b>supposed</b> to behave is unclear, query the docs before
+          acting on a guess. Grounding order is repo knowledge → VirtoOZ → live/source, and a released behaviour
+          the docs get wrong is itself a <b>finding</b>, never a licence to guess. A verdict built on guessed
+          behaviour is wrong in the one direction nobody re-checks — it reads as confident.</span></li>
+        <li><span class="rk">BUDGET-004 · DOC-006<em>prompt hygiene</em></span>
+          <span class="rv">Every prompt file capped at <b>19,000 chars</b> on a per-file ratchet — before this a
+          prompt was budgeted by the <i>directory it sat in</i>, so agent definitions re-paid on every dispatch
+          were measured by nothing at all. And a <b>derived count may no longer be transcribed into prose</b>:
+          the always-loaded rules were feeding every agent six wrong numbers.</span></li>
+      </ul>
+    </div>
+  </section>
+<section class="slide">
+    <div class="wrap">
+      <p class="eyebrow">Sprint 26-18 · /qa-test flow</p>
+      <h2>Nothing touched the product until two artifacts it never reads were finished.</h2>
+
+      <figure class="fig figwide">
+        <svg viewBox="0 0 1000 292" role="img"
+             aria-label="Schematic. Before: the first test runs only after case authoring and a verifier gate, and a release sweep runs at the end. After: a probe exits early, a gate releases execution far sooner, case authoring runs in parallel, and the release sweep is gone.">
+          <defs>
+            <marker id="ch" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"></path>
+            </marker>
+          </defs>
+
+          <!-- BEFORE -->
+          <text class="sv-lab" x="0" y="24">BEFORE</text>
+          <rect class="sv-box"  x="0"   y="38" width="104" height="34" rx="8" stroke-width="1.2"></rect>
+          <text class="sv-s"    x="52"  y="59" font-size="9" text-anchor="middle">route · pre-flight</text>
+          <rect class="sv-box"  x="108" y="38" width="120" height="34" rx="8" stroke-width="1.2"></rect>
+          <text class="sv-s"    x="168" y="59" font-size="9" text-anchor="middle">context wave</text>
+          <rect class="sv-box"  x="232" y="38" width="96"  height="34" rx="8" stroke-width="1.2"></rect>
+          <text class="sv-s"    x="280" y="59" font-size="9" text-anchor="middle">fault model</text>
+          <rect class="sv-j2"   x="332" y="38" width="200" height="34" rx="8" stroke-width="1.3"></rect>
+          <text class="sv-t"    x="432" y="59" font-size="10.5" text-anchor="middle">author the case corpus</text>
+          <rect class="sv-box"  x="536" y="38" width="72"  height="34" rx="8" stroke-width="1.2"></rect>
+          <text class="sv-s"    x="572" y="59" font-size="9" text-anchor="middle">verifier</text>
+          <rect class="sv-good" x="612" y="38" width="150" height="34" rx="8" stroke-width="1.6"></rect>
+          <text class="sv-t"    x="687" y="59" font-size="10.5" text-anchor="middle">EXECUTE</text>
+          <rect class="sv-box"  x="766" y="38" width="56"  height="34" rx="8" stroke-width="1.2"></rect>
+          <text class="sv-s"    x="794" y="59" font-size="9" text-anchor="middle">close</text>
+          <rect class="sv-bad"  x="826" y="38" width="174" height="34" rx="8" stroke-width="1.3" stroke-dasharray="5 4"></rect>
+          <text class="sv-t"    x="913" y="53" font-size="10" text-anchor="middle" fill="var(--crit)">release sweep</text>
+          <text class="sv-s"    x="913" y="66" font-size="8.5" text-anchor="middle" fill="var(--crit)">93% of a FAST run's tokens</text>
+
+          <text class="sv-s" x="606" y="88" font-size="9.5" text-anchor="end" fill="var(--crit)">first test — and the first moment a dead environment can be noticed</text>
+
+          <line x1="0" y1="106" x2="1000" y2="106" stroke="var(--line)" stroke-width="1"></line>
+
+          <!-- delta bracket -->
+          <line x1="612" y1="76" x2="612" y2="132" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 4"></line>
+          <line x1="446" y1="156" x2="446" y2="132" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 4"></line>
+          <path d="M446 132 L612 132" stroke="var(--accent)" stroke-width="1.5" marker-start="url(#ch)" marker-end="url(#ch)"></path>
+          <text class="sv-n" x="520" y="122" font-size="10" text-anchor="middle" fill="var(--accent-ink)">time-to-first-test recovered</text>
+
+          <!-- AFTER -->
+          <text class="sv-lab" x="0" y="148">AFTER</text>
+          <rect class="sv-box"  x="0"   y="156" width="104" height="34" rx="8" stroke-width="1.2"></rect>
+          <text class="sv-s"    x="52"  y="177" font-size="9" text-anchor="middle">route · pre-flight</text>
+          <rect class="sv-box"  x="108" y="156" width="120" height="34" rx="8" stroke-width="1.2"></rect>
+          <text class="sv-s"    x="168" y="177" font-size="9" text-anchor="middle">context wave</text>
+          <rect class="sv-j2"   x="232" y="156" width="96"  height="34" rx="8" stroke-width="1.2"></rect>
+          <text class="sv-s"    x="280" y="172" font-size="9" text-anchor="middle">discovery</text>
+          <text class="sv-s"    x="280" y="183" font-size="8" text-anchor="middle">on the product</text>
+          <rect class="sv-box"  x="332" y="156" width="76"  height="34" rx="8" stroke-width="1.2"></rect>
+          <text class="sv-s"    x="370" y="177" font-size="9" text-anchor="middle">checklist</text>
+          <rect class="sv-good" x="412" y="156" width="30"  height="34" rx="8" stroke-width="1.6"></rect>
+          <text class="sv-t"    x="427" y="178" font-size="12" text-anchor="middle" fill="var(--accent-ink)">⊳</text>
+          <rect class="sv-good" x="446" y="156" width="300" height="34" rx="8" stroke-width="1.6"></rect>
+          <text class="sv-t"    x="596" y="177" font-size="10.5" text-anchor="middle">EXECUTE</text>
+          <rect class="sv-box"  x="750" y="156" width="76"  height="34" rx="8" stroke-width="1.2"></rect>
+          <text class="sv-s"    x="788" y="177" font-size="9" text-anchor="middle">close-out</text>
+
+          <rect x="836" y="156" width="164" height="34" rx="8" fill="none" stroke="var(--line)" stroke-width="1.2" stroke-dasharray="3 5"></rect>
+          <text class="sv-s" x="918" y="177" font-size="9" text-anchor="middle">release sweep — deleted</text>
+
+          <text class="sv-s" x="427" y="204" font-size="8.5" text-anchor="middle">gate 3-exec</text>
+
+          <!-- parallel authoring lane -->
+          <rect class="sv-j2" x="446" y="216" width="270" height="30" rx="8" stroke-width="1.3" stroke-dasharray="5 4"></rect>
+          <text class="sv-s" x="581" y="235" font-size="9" text-anchor="middle">author the case corpus — in the background</text>
+          <path d="M716 231 q 40 0 42 -37" stroke="var(--agent)" stroke-width="1.3" fill="none"></path>
+          <text class="sv-s" x="764" y="238" font-size="8.5">join</text>
+
+          <!-- reachability probe -->
+          <rect class="sv-good" x="108" y="216" width="104" height="30" rx="8" stroke-width="1.3"></rect>
+          <text class="sv-s" x="160" y="235" font-size="9" text-anchor="middle">5-min probe</text>
+          <line x1="216" y1="231" x2="248" y2="231" stroke="var(--accent)" stroke-width="1.3" marker-end="url(#ch)"></line>
+          <text class="sv-s" x="256" y="235" font-size="9">BLOCKED ⇒ exit here, not 40 min in</text>
+
+        </svg>
+        <figcaption>Schematic — the bar widths are the shape of the run, not measured wall-clock. The one
+          measured number on it is the release sweep: ~24 runner dispatches, <b>93% of a FAST run's
+          tokens</b>, answering a release question the ticket verdict never depended on.</figcaption>
+      </figure>
+
+      <div class="two">
+        <ul class="rules">
+          <li><span class="rk">a condition, not a step<em>gate 3-exec</em></span>
+            <span class="rv">Execution is released by <b>“the checklist exists and its data resolves”</b> — and
+            authoring runs in the background from that moment. The join back to it is an explicit step, not
+            an assumption.</span></li>
+          <li><span class="rk">discovery moved first<em>observed, not guessed</em></span>
+            <span class="rv">It now feeds a fifth routed output — <b>conditions the acceptance criteria never
+            named</b> — so the artifact that owns the verdict carries what was seen.</span></li>
+          <li><span class="rk">the sweep, deleted<em>narrowed twice, then cut</em></span>
+            <span class="rv">Its criterion ratifies as <span class="mono">not-assessed</span> — never as a pass,
+            and <b>never by substituting a number that answers a different question</b>.</span></li>
+        </ul>
+        <div class="callout" style="margin-top:0">
+          And one defect the restructure exposed: a <b>repaired</b> case could ship without ever running.
+          The post-run set is now every case this run <em>wrote <b>or changed</b></em>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+<div class="hud">
+  <div class="grp">
+    <button class="navbtn" id="prev" aria-label="Previous slide">&lsaquo;</button>
+    <span class="counter"><b id="cur">1</b> / <span id="total">4</span></span>
+    <div class="dots" id="dots"></div>
+    <button class="navbtn" id="next" aria-label="Next slide">&rsaquo;</button>
+  </div>
+</div>
+
+<div class="notes" id="notes" aria-live="polite">
+  <div class="nh" id="notesHead">Заметки докладчика</div>
+  <div class="nb" id="notesBody"></div>
+</div>
+
+<script>
+  // Committed to light by request; the toggle still lets you flip to dark if a room needs it.
+  document.documentElement.setAttribute('data-theme', 'light');
+
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const cur = document.getElementById('cur');
+  const progress = document.getElementById('progress');
+  document.getElementById('total').textContent = slides.length;
+  const SECTION_TWO_START = 2;
+  let i = 0;
+
+  const notes = [
+    "Раньше всё выглядело так. Приходит задача — и мы каждый раз заново перечитываем одни и те же девять документов, больше двух тысяч строк, ради одного небольшого вопроса. А когда работа закончена, всё понимание пропадает вместе с ней, и следующая задача начинает с чистого листа.<br><br>Теперь у каждой крупной темы — заказы, лояльность, организации — есть своя карта. Это один документ, который отвечает: что это за функциональность, кто ею пользуется и где её можно увидеть — в админке, в магазине, в API, в фоновых задачах, в документации. Самый ценный раздел — третий: <b>где эти части противоречат друг другу</b>. Больше нигде в проекте такого списка нет.<br><br>Внизу слайда — настоящая выдержка из карты, прочитайте её вслух. В задаче было написано, что начисление баллов на уровне компании уже работает на стенде. Карта это проверила: кода там нет — он существует только в непринятом пулл-реквесте, который сделали позже, чем собрали сам стенд. Поверь мы задаче на слово, мы бы написали тесты на то, чего не существует.<br><br>И про проверку скажите отдельно. Если карта устарела — сборка падает. Если карты нет совсем — не падает ничего. Так сделано намеренно: карт не было ни у одной темы, и строгая проверка в первый же день остановила бы всю работу. Было ноль карт — стало шесть.",
+
+    "Этот слайд объясняет, где карта лежит и почему это важно для стоимости работы.<br><br>Уровней четыре, и отличаются они тем, <b>когда мы за них платим</b>.<br><br>Первый читается всегда, при каждом обращении к модели, — шестьдесят четыре тысячи знаков при разрешённых восьмидесяти. За место здесь идёт настоящая борьба: сюда попадает только то, без чего ошибётся даже задача, никак с этой темой не связанная.<br><br>Второй — инструкции команд и агентов. Их нельзя прочитать наполовину, поэтому у каждого файла свой предел: девятнадцать тысяч знаков.<br><br>Третий — сама база знаний, почти два миллиона знаков. И она не стоит ничего, пока конкретный шаг работы её не откроет. В этом вся идея.<br><br>Четвёртый — записи о принятых когда-то решениях. Их читают только люди.<br><br>Справа — как эта база выглядит у нас на самом деле. Самые большие части: описания правильного поведения системы, по которым мы решаем, прошёл тест или нет, — и карты, которых две недели назад попросту не было.<br><br>Пример внизу совсем простой. Если дать агенту ссылку на весь свод правил, он прочитает двести семнадцать правил, чтобы воспользоваться тремя. Если дать выдержку — пятнадцать. Выдержка берётся из того же файла слово в слово, поэтому второй копии, которая со временем разойдётся с оригиналом, просто не возникает.",
+
+    "Заголовок — это и есть главная находка. <b>Картинка, вставленная в комментарий Jira обычным способом, не появляется вовсе.</b> Ошибки при этом нет, Jira отвечает, что всё хорошо. Мы потеряли на этом целый круг работы: два готовых руководства ушли с двенадцатью невидимыми скриншотами.<br><br>Дальше идите по схеме слева направо — это четыре шага.<br><br>Сначала комментарий собирается целиком у нас; по ходу работы не публикуется ничего.<br><br>Второй шаг — приложить файлы. Готового инструмента для этого нет, приходится обращаться к Jira напрямую. Здесь предупредите: если непонятно, получилось или нет, и попробовать ещё раз наугад — все файлы приложатся дважды.<br><br>Третий шаг самый неожиданный. Чтобы картинка появилась, приходится пользоваться старым способом публикации комментариев — и тогда весь текст комментария тоже нужно писать по-старому.<br><br>Четвёртый — проверить. Смотреть надо на то, как комментарий выглядит в итоге, а не на ответ «всё хорошо». Наш собственный инструмент сначала проверял неправильно и объявил сбоем две нормально вставленные картинки.<br><br>Полоса снизу — почему всё это держится. <b>Правило не рассчитано на внимательность человека в нужную минуту, потому что именно внимательность и подвела.</b> Его соблюдают автоматические проверки — но сломайся сама проверка, работу она не остановит, и это принципиально.<br><br>И последний ряд. Обычная картинка вставляется. Анимация вставляется и проигрывается — это единственный способ показать что-то в движении. Если спросят про видео: его прикладывать не стоит, на его месте оказывается пустая рамка, и Jira снова отвечает, что всё хорошо. Анимацию стоит прикладывать, только когда сама ошибка — это переход из одного состояния в другое, и она никогда не заменяет обычные скриншоты: из анимации нельзя скопировать число.",
+
+    "Сразу предупредите: это схема, а не замеры времени. Ширина полос показывает порядок работы, а не минуты.<br><br>Верхняя полоса — как было раньше. До самого продукта дело не доходило, пока не написан весь набор тестов и пока его не проверили. То есть самая долгая работа в браузере стояла в очереди за двумя документами, которые ей и не нужны. А если стенд не работает, мы узнавали об этом в конце этого ожидания, а не в начале.<br><br>Нижняя полоса — что изменили. Три вещи.<br><br>Первая: короткая пятиминутная проверка, жив ли стенд. Если нет — останавливаемся сразу, а не через сорок минут.<br><br>Вторая: тестирование начинается не по номеру шага, а как только выполнено условие — есть чек-лист и готовы данные для него. Написание тестов идёт рядом, в фоне.<br><br>Третья: большой финальный прогон убрали совсем. Он отвечал на вопрос, от которого решение по задаче всё равно не зависело, а стоил <b>девяносто три процента</b> всей работы быстрого сценария.<br><br>И честная часть в конце. Когда перестраивали, выяснилось: починенный тест мог уйти дальше, так ни разу и не запустившись. Теперь в финальную проверку попадает каждый тест, который в этой работе написали или изменили."
+  ];
+
+  slides.forEach((_, n) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Go to slide ' + (n+1));
+    if (n >= SECTION_TWO_START) b.classList.add('sec');
+    b.addEventListener('click', () => go(n));
+    dotsWrap.appendChild(b);
+  });
+  const dotBtns = Array.from(dotsWrap.children);
+
+  function go(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    dotBtns.forEach((d, k) => d.classList.toggle('on', k === i));
+    cur.textContent = i + 1;
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+    document.getElementById('notesBody').innerHTML = notes[i] || '';
+    document.getElementById('notesHead').textContent = 'Заметки докладчика · слайд ' + (i+1);
+  }
+  const nextS = () => go(i + 1);
+  const prevS = () => go(i - 1);
+
+  document.getElementById('next').addEventListener('click', nextS);
+  document.getElementById('prev').addEventListener('click', prevS);
+
+  const notesEl = document.getElementById('notes');
+  document.getElementById('notesBtn').addEventListener('click', () => notesEl.classList.toggle('open'));
+
+  const root = document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); nextS(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevS(); }
+    else if (e.key === 'Home') { go(0); }
+    else if (e.key === 'End') { go(slides.length - 1); }
+    else if (e.key.toLowerCase() === 'n') { notesEl.classList.toggle('open'); }
+  });
+
+  go(0);
+</script>

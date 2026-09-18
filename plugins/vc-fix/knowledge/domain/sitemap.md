@@ -5,13 +5,15 @@ applicability_rationale: "Full storefront URL map. Customer's sitemap differs by
 
 # Sitemap: FRONT_URL
 
-**Generated:** September 4, 2026 (rev 8 — deterministic axis; body carried from rev 5, July 20 2026)
+**Generated:** September 18, 2026 (rev 9 — deterministic axis refreshed at the Sprint 26-18 boundary; body carried from rev 5, July 20 2026)
 **Base URL:** FRONT_URL (from `FRONT_URL` env var) — vcst-qa
 **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver.") *(was 2.49.0 in May)*
-**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = 3.1062.0; 87 modules loaded) *(rev 7, 2026-08-24: was 3.1057.0 / 87 modules)*
-**Store total products:** 4,626 *(was 4,520 at rev 7)* · nav categories 53 *(was 49)* · `/products-with-options` subcategories 7
+**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow**; 87 modules loaded) *(rev 8, 2026-09-04: was 3.1062.0 / 87 modules)* — the QA env currently runs a **pre-release build pinned to VCST-5378 (unified buyer flow)**, not a stable line
+**Store total products:** 4,550 *(was 4,626 at rev 8 — a **net decrease of 76**, so catalog fixtures were pruned or re-seeded since 2026-09-04; treat product counts and slugs as drift candidates)* · nav categories 53 *(unchanged)* · `/products-with-options` subcategories 7 *(unchanged)*
 
 > **Note on the version fields:** the storefront footer "Ver." (`2.54.0-pr-2382`) is the **vc-frontend theme** version — earlier revs of this doc mislabeled it "Platform version". The actual VirtoCommerce **platform** runs on the `3.10xx` assembly line (resolved from `/api/platform/modules`).
+
+> **Route-map freshness (rev 9):** the rev-9 crawl reported the local `vc-frontend` checkout as **BEHIND `origin/dev`** (local `17c99c7c` @ 2026-08-26 vs remote `324deb7a`). Routes added upstream since then are therefore **missing** from the route sections below, so rev 9 deliberately refreshed **only** the deterministic axis (platform line, product/category counts) rather than rewriting the route map from a stale source. Pull `vc-frontend` and re-run `npm run sitemap:refresh` before trusting the route lists. Sprint 26-18 lands route-affecting work (VCST-5159 sales-rep-as-plugin, VCST-4386 Skyflow module split), so this is a live risk, not a formality.
 
 ## Overview
 

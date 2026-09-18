@@ -11,6 +11,7 @@ rationale: |
   exposed that rev 1 named the coverage hole (old §6a) but never inventoried the surface itself.
 generated: 2026-09-16
 rev: 2
+amended: 2026-09-18
 stale_after_days: 60
 expires_after_days: 120
 sources:
@@ -24,9 +25,13 @@ sources:
   - config/test-suites.json + regression/suites/** (suite 015 quotes CSV read in full this pass — 116 lines / 32 cases)
   - VirtoOZ StorefrontUserGuide + PlatformUserGuide + B2BExperts, fetched first-hand 2026-09-16 (quote-requests, submit-quotes, purchase-requests, manage-quotes, glossary §Approval workflow, managing-organization-roles) — quotes verbatim in §2/§3/§5
   - .claude/knowledge/automation/storefront-config-flags.md (quote_statuses[] — 8-entry runtime dictionary)
-  - .claude/knowledge/domain/sitemap.md:387-389 (xCatalog/xProfile/xCMS/Quote GraphQL module table) — found stale this pass, see §8
+  - .claude/knowledge/domain/sitemap.md — the GraphQL xAPI module table (xCatalog/xCart/xOrder/xProfile/xCMS/Quote rows) under heading "9. GraphQL xAPI Endpoints"; its **Quote** row found stale this pass, see §8
   - .claude/knowledge/oracles/business-logic.md — BL-B2B-003/004/005, BL-CROSS-006/008 read for orientation, cited not restated
-excludes: Sales Rep (deliberate — a separate later pass, now its own domain map `.claude/knowledge/domain/sales-rep.md` rev 2; see §6 note)
+excludes: >-
+  Sales Rep (deliberate — a separate later pass, now its own domain map
+  `.claude/knowledge/domain/sales-rep.md`; see the §6 note. **Cited by path, never by rev** — a rev
+  pinned in prose here goes stale every time the sibling map is refreshed, which is exactly how this
+  line broke: it named rev 2 after that map had moved to rev 3)
 ---
 
 # B2B / Multi-Organization — domain map
@@ -58,8 +63,9 @@ is retracted; the additions and corrections are:
   reads "Not defined"** — the Quotes module's Admin surface does not visibly carry organization context
   even when the requester unambiguously belongs to one.
 - **New API subsection §4e** — the Quote GraphQL surface (queries `quote`/`quotes`, the cart-side and
-  quote-side mutations), and a correction to our own knowledge: `sitemap.md:389` names `quoteRequest`/
-  `quoteRequests`, which do not exist in the live schema — see §8.
+  quote-side mutations), and a correction to our own knowledge: the **Quote** row of the GraphQL xAPI
+  module table in `sitemap.md` names `quoteRequest`/`quoteRequests`, which do not exist in the live
+  schema — see §8.
 - **D19–D22 (new)** — the quote-status vocabulary's four-way disagreement (storefront doc, admin doc,
   storefront runtime config, and the *live* admin status-switcher itself all differ), the absence of any
   "Convert to Order" control on either surface (contradicting `BL-B2B-003`'s wording), the sidebar
@@ -528,8 +534,9 @@ sort, storeId, userId, currencyCode, cultureName, filter)` · `quoteAttachmentOp
 `updateQuoteAddresses` · `updateQuoteDynamicProperties`.
 
 **Naming — no `quoteRequest`/`quoteRequests` query exists.** The live schema (introspected 2026-09-16)
-uses `quote`/`quotes` throughout; `.claude/knowledge/domain/sitemap.md:389` names `quoteRequest`/
-`quoteRequests` for this module and is **stale** — see §8.
+uses `quote`/`quotes` throughout; the **Quote** row of the GraphQL xAPI module table in
+`.claude/knowledge/domain/sitemap.md` names `quoteRequest`/`quoteRequests` for this module and is
+**stale** — see §8.
 
 **Org scoping — none observed in the schema.** None of the query or mutation signatures above take an
 `organizationId` argument; `quote`/`quotes` take `storeId`/`userId`/`currencyCode`/`cultureName` only.
@@ -595,8 +602,13 @@ The most valuable section. D1–D18 were found in the rev-1 pass; D19–D22 are 
 
 ## §6 — Coverage shape
 
-**Sales Rep is deliberately excluded** from this pass (8 suites, ~387 cases: `050m`, `050m2`, `089`,
-`090`, `091`, `092b`, `093`, `097`) — now covered by `.claude/knowledge/domain/sales-rep.md`.
+**Sales Rep is deliberately excluded** from this pass — the whole of selection group **`sales-rep`** in
+`config/test-suites.json` (`050m`, `050m2`, `089`, `090`, `091`, `092`, `092b`, `093`, `097`), now
+covered by `.claude/knowledge/domain/sales-rep.md`. **For how many cases that is, run
+`npm run suites:lint`** — the number is not transcribed here, because a count copied out of the manifest
+is correct exactly once. (Rev 2 as published listed eight of these nine, omitting `092` *Sales Rep —
+Admin / VC-Shell App*, and carried a transcribed case total that had already rotted. Resolve the group
+from the manifest, never from this sentence.)
 
 **585 org-relevant cases across 35 suites** (555 excluding the all-`Manual` whitelabeling block), plus
 ~20 scattered across ~18 more suites at 1–5 each. Counts are *org-relevant cases*, not suite size.
@@ -669,7 +681,7 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
   cases have never been executed or promoted**. Executable coverage is concentrated in
   `007/031/033/042/050d/082`.
 - `007` holds **16 Sales-Rep-subject cases** (`B2C-LIST-040`…`055`) **not** excluded from `full` the way
-  the eight dedicated rep suites are.
+  the dedicated rep suites of selection group `sales-rep` are.
 
 ---
 
@@ -717,8 +729,42 @@ disagree. **Eleven Admin claims and four storefront claims are wrong** — the o
 | B20 — a pending row reads "Invite sent" as its *status* | **DRIFT** — it is a **Name**-column fallback off the *global* contact status (D11) |
 | C6 — storefront role vocabulary is 3 roles | **DRIFT** — 5 appear in the Members filter |
 | **C28r** — server-side whitelist enforcement is *not implemented* | **PARTLY STALE** — enforced on `changeOrganizationContactRole` via `RoleNotAllowed`; only `PUT /api/organizations` remains unguarded. **`BL-B2B-011` needs an oracle re-audit** |
-| **`sitemap.md:389`** — the xAPI "Quote" module exposes `quoteRequest`/`quoteRequests` | **DRIFT, found this pass.** Live introspection (2026-09-16) and `graphql-schema.md` (refreshed the same day) both show `quote`/`quotes` — no `quoteRequest*` name exists in the schema. `sitemap.md` is the stale document here, not `graphql-schema.md`; the two names likely diverged when the storefront-facing terminology ("quote **request**") was chosen independently of the GraphQL type name ("Quote") |
+| **`sitemap.md`, the GraphQL xAPI module table's Quote row** — the xAPI "Quote" module exposes `quoteRequest`/`quoteRequests` | **DRIFT, found this pass.** Live introspection (2026-09-16) and `graphql-schema.md` (refreshed the same day) both show `quote`/`quotes` — no `quoteRequest*` name exists in the schema. `sitemap.md` is the stale document here, not `graphql-schema.md`; the two names likely diverged when the storefront-facing terminology ("quote **request**") was chosen independently of the GraphQL type name ("Quote") |
 
 Settled from the prior-art open list: **G2.1** (no domain file for this area) `CONFIRMED` — **closed by
 this file**; **G2.3** (no `/company/*` inventory) **closed** by §3a; **G1.5** (all-locked: hidden or empty
 state?) **resolved** in favour of the empty state (`organizations-empty-list`).
+
+---
+
+## §9 — Amendments
+
+*An amendment sets `amended:` and never `generated:` or `rev:` — staleness must keep measuring the last
+full **enumeration**, so a trickle of true corrections can never silence `npm run domain:check`. A
+refresh folds these rows forward and never drops them. No `D*`/`G*` id is renumbered, reworded or
+removed by an amendment: those ids are a citation contract other tickets and cases point at.*
+
+### A1 (2026-09-18) — three corrections, no re-enumeration
+
+Routed from `/qa-domain-map sr --refresh`. **Body-only, no live pass, no new claims** — three statements
+that were already wrong at rev 2 were corrected, and every cross-map line-number citation was
+re-anchored. Nothing was observed or re-derived beyond the two files named below.
+
+| # | What was wrong | Fixed to |
+|---|---|---|
+| 1 | `excludes:` pinned the sibling map at "rev 2" | Cites `.claude/knowledge/domain/sales-rep.md` **by path only**. A rev pinned in prose goes stale on every refresh of the sibling — the shape was the defect, not just the number |
+| 2 | §6 excluded "8 suites, ~387 cases" and omitted **`092`** (*Sales Rep — Admin / VC-Shell App*) | Names selection group **`sales-rep`** and lists all nine ids; the case total is no longer transcribed, because `config/test-suites.json` + `npm run suites:lint` derive it. §6c's "the eight dedicated rep suites" — the same undercount, restated — was corrected with it |
+| 3 | Four citations of `sitemap.md` by **line number** (`:387-389`, `:389` ×3, in `sources:`, §0, §4e and §8) | Re-anchored to *the **Quote** row of the GraphQL xAPI module table* (heading "9. GraphQL xAPI Endpoints"). Each was verified to resolve before being written |
+
+**Why #3 is a class, not a typo.** `sales-rep.md` rev 2 cited *this* file at lines 69, 78, 213, 415 and
+502; this file moved, and by 2026-09-18 all five pointed at unrelated content (78 → a heading, 213 → a
+bare table separator, 415 → a blank line). `npm run context:check` cannot catch it: `DOC-003`/`DOC-003E`
+ratchet dangling **paths**, and a line offset is not a path — so the citation stays green while being
+false, which is the direction that costs a reader rather than an author. `sales-rep.md` rev 3 re-anchored
+its side to `§` sections; this is the same repair in the other direction. **Cite a sibling map, a report
+or a source file by section, heading or stable id (`D15`, `G16`, `BL-*`, a case id) — never by line.**
+
+**Not changed, and why.** Every other `rev 1` / `rev 2` reference in this file points at *this map's own*
+prior revisions (`sources:`, §0, §1, §2, §6), which is a historical record of what this file used to say,
+not a pointer at a sibling that can move — those stay. `sitemap.md`'s own stale **Quote** row is
+`sitemap.md`'s to fix and is left standing as the §8 `DRIFT` verdict that flags it.

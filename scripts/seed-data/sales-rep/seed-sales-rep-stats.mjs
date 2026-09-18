@@ -125,7 +125,7 @@ async function discoverStoreProducts(token, need, { cartable = false } = {}) {
     // catalogId is REQUIRED: OrderLineItem.CatalogId is NOT NULL, so an order create without it
     // 500s at the DB layer ("Cannot insert the value NULL into column 'CatalogId'").
     const d = await gql(token, `{ products(storeId:"${STORE_ID}", cultureName:"en-US", currencyCode:"USD", first: 50, after:"${page * 50}", sort:"code:asc", query:"") {
-        items { id code name catalogId availabilityData { isBuyable isInStock } price { actual { amount } } } } }`);
+        items { id code name catalogId minQuantity availabilityData { isBuyable isInStock } price { actual { amount } } } } }`);
     const items = d?.products?.items || [];
     if (!items.length) break;
     for (const p of items) {
@@ -135,6 +135,10 @@ async function discoverStoreProducts(token, need, { cartable = false } = {}) {
       if (!sku || seenSku.has(sku)) continue;
       seenSku.add(sku);
       if (!p.catalogId) { verbose(`skip ${sku}: no catalogId (OrderLineItem.CatalogId is NOT NULL)`); continue; }
+      // A product whose own minQuantity exceeds 1 is NOT cartable in the sense this flag promises:
+      // addItem answers PRODUCT_MIN_QTY and returns an EMPTY cart (itemsCount=0), which every cart
+      // fixture here then fails on. Read the bound from the product (never transcribed) and drop it.
+      if (cartable && (p.minQuantity ?? 1) > 1) { verbose(`skip ${sku}: minQuantity ${p.minQuantity} > 1 — a cart line below it is rejected with PRODUCT_MIN_QTY`); continue; }
       out.push({ id: p.id, sku, name: String(p.name || sku).replace(/\s+/g, ' ').trim(), catalogId: p.catalogId, price: p.price?.actual?.amount });
       if (out.length >= target) break;
     }

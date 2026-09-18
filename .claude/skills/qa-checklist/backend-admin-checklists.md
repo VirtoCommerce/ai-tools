@@ -4,7 +4,7 @@
 >
 > For storefront-facing checklists, see `domain-checklists.md`.
 
-**27 Admin domains + 2 API domains | 244 checklist items** — every checked item should map to at least one test case.
+**28 Admin domains + 2 API domains | 262 checklist items** — every checked item should map to at least one test case.
 
 ## Summary
 
@@ -37,6 +37,7 @@
 | A25 | Catalog Personalization | VirtoCommerce.CatalogPersonalization | 5 | — |
 | A26 | Catalog Publishing (Channels) | VirtoCommerce.CatalogPublishing | 5 | 40 |
 | A27 | Payment Admin | VirtoCommerce.Payment, AuthorizeNetPayment | 6 | — |
+| A28 | Sales Rep Admin | VirtoCommerce.SalesRep | 18 | 092, 092b |
 | **API1** | **Platform REST API** | **Platform** | **10** | **14** |
 | **API2** | **GraphQL xAPI** | **Xapi, XCart, XCatalog, XCMS, XOrder, XFrontend** | **12** | **15** |
 
@@ -345,6 +346,40 @@
 - [ ] Payment capture: capture authorized payment from order blade
 - [ ] Payment refund: process full or partial refund from order
 - [ ] Payment method test: verify gateway connection with test transaction
+
+---
+
+## A28. Sales Rep Admin
+**Modules:** `VirtoCommerce.SalesRep` (embedded vc-shell app + Documents library) | **Suites:** 092, 092b
+> Storefront-facing rep surfaces are domain **35** in `domain-checklists.md`. Surface labels observed live 2026-09-18; the surface inventory is `knowledge/domain/sales-rep.md`.
+>
+> **Authoring trap in the current fixture data (not a product defect — search behaves correctly):** two legacy contract files begin with a **Cyrillic С (U+0421)**, not a Latin C. Measured: `keyword:"Contract"` → 1 hit, `keyword:"Сontract"` → 2, `keyword:"ontract"` → 3. A search case asserting "all contracts" on the Latin spelling silently checks a third of the corpus and passes. No ECL section covers homoglyph-vs-search today — that is a `/qa-review-oracles` proposal, not a citation to invent.
+
+- [ ] The app has **two addresses**: embedded at `#!/workspace/embedded-app/vc-sales-rep` (rendered in an `<iframe>`) and standalone at `/apps/vc-sales-rep/` with its own hash routes (`#/dashboard`, `#/sales-reps`, `#/documents`, `#/documents/document-details/{id}`). The standalone route presents **its own sign-in screen** — "Microsoft Entra ID" / "Google sign-in" / email+password — separate from the platform login. Brief automation at the standalone route; the iframe route resists click-driven drivers
+- [ ] The platform main menu carries a **"Sales Reps"** entry and **no "Document Library" entry** — the library is the 7th item in the app's own left nav rail: "Dashboard · Sales Reps · Blocked Sales Reps · Not assigned Sales Reps · Organizations · Not assigned Organizations · Documents library". The Dashboard pane is an empty-state card, not a data surface
+- [ ] Access gating: the embedded app gates on customer-member + platform-security permissions, **not** on `sales-rep:access` (BL-SR-014); `sales-rep:access` is not an API authorization check
+- [ ] Sales Reps list blade: toolbar "Refresh · Add · Delete" with Delete inert until a row is checked; search "Search by name or email"; default columns "Name · Email · Organizations · Blocked"; the "Show/Hide Columns" picker (footer "Show All · Reset") exposes "Id · User Id · User Name · Modified Date". The pagination footer ("1–N of N") reconciles with `POST /api/sales-rep/search` `totalCount`
+- [ ] **The Blocked column's status label is inverted**: a rep with `isLocked: true` renders **"Active"** and an unblocked rep renders **"Inactive"** — the label describes the Blocked flag, not account health. The value is an **icon's accessible name, not cell text**, so a text-content assertion finds nothing. Assert against `isLocked` from the REST search and treat the label as the thing under test
+- [ ] **No column exposes the rep's ROLE** at any picker setting, and `POST /api/sales-rep/search` stops at `hasGlobalSalesRepRole` — a boolean that does not distinguish the two rep roles. Only the detail blade's `roleName` or a JWT decode answers "which reps are Advanced", so a test needing an Advanced rep must be told the fixture by name
+- [ ] Rep detail blade: toolbar "Save · Reset" plus **exactly one** of "Block" / "Unblock"; fields Email (login, required) · Password (masked, show-password toggle, placeholder "Leave blank to keep current password") · **Sales Rep role** (required single-select) · Organizations served as Sales Rep (multi-select chips carrying `organizationId` + `organizationName` + `membershipId`) · the standard Contact profile fields
+- [ ] The role picker offers exactly **2** roles and is permission-filtered on `sales-rep:access`, while the platform role catalog holds more — including an undocumented `Sales Rep Documents Manager`. Two decoy roles named **`Sales Rep`** and **`Sales Executive`** grant nothing: assigning one from Security → Roles produces an account with no hub, no served customers and **no error**
+- [ ] Assigning a rep an organization creates an ordinary `OrganizationMembership` — a rep is structurally a **full buyer-member** of every org served, not a read-only viewer. Verify the membership exists on the customer side after the save, because nothing in the Admin UI states this
+- [ ] Documents library blade: toolbar "Refresh · Upload · Delete" with Delete inert until a row is checked; search "Search by file name"; default columns "Name · Category (with its own filter control) · Size · Modified date"; **page size 20**. The picker exposes 11 more columns including **"Is Pinned"**, hidden by default although pinning is the grid's own default sort key
+- [ ] Pin/Unpin lives on the **document detail blade toolbar** ("Save · Reset · Pin|Unpin · Download · Delete"), rendering exactly one of the pair — **there is no row context menu**; a right-click only selects. A pinned row carries a pin glyph left of the Name and sorts first independently of the Modified-date sort
+- [ ] Document detail metadata: "Category" (required, clearable single-select over existing values) alongside "New category" (free-text, helper "New category has priority over selection") — **the free-text field silently wins over the select**; plus Display name (falls back to the file name when empty), Summary, Page count, Preview URL
+- [ ] Documents read and write gate on `sales-rep-documents:{read,write}` — a **separate permission pair** from `customer:*` / `platform:security:*`, named in neither (BL-SR-014). A rep without `…documents:read` gets `Forbidden`, not an empty list
+- [ ] `Stores → <store> → Settings → Sales Rep` exposes a **`General` group only**, holding `SalesRep.Enabled`. The four Statistics cache settings declared in module source (`OrderCacheExpirationMinutes`, `CartCacheExpirationMinutes`, `CustomerCountsCacheExpirationMinutes`, `TopSellerCacheExpirationMinutes`) are **absent at store level** — a stale hub figure has no store-level knob here to rule it out. `SalesRep.Enabled` gates UI only and is never a security control
+- [ ] Blade degradation: a blade that cannot load must surface a clear error rather than failing silently or rendering an empty grid indistinguishable from "no data"; a degraded underlying endpoint must not return 500 in place of a documented empty response (ECL-10.3)
+
+**Cross-layer checks:**
+- [ ] A rep's role and served-org set in the detail blade match what the storefront hub renders (sidebar badge, My customers row count) for that same rep
+- [ ] Grid figures reconcile with `POST /api/sales-rep/search` and `GET /api/sales-rep/documents` rather than being read off the UI alone
+- [ ] The same document's `size` renders "569 Bytes" here and "569 byte" on the storefront hero card — the two layers format the field independently, so a copy assertion must be written per layer
+
+**Oracle coverage:** BL-* cited: BL-SR-014 · ECL-* cited: ECL-10.3 (`[OBSERVED]` rows only).
+**Not covered, deliberately:** the 31 other `BL-SR-*` invariants govern the statistics contract, the scoped GraphQL schema and the storefront layout — domain **35** and `graphql-checklist.md` own those. Admin has exactly one `BL-SR-*` of its own, which is itself a finding: the Admin authoring surface is almost entirely un-invarianted, and several rows above (the inverted Blocked label, the free-text category precedence, the decoy roles) are invariant **candidates** for `/qa-review-oracles`.
+
+**Related checklists:** Sales Rep Hub (#35), Customer Admin (A5), Platform Security & Users (A13), Assets Admin (A11), GraphQL xAPI (API2).
 
 ---
 
