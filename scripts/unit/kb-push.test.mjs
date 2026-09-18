@@ -531,6 +531,22 @@ test('no token is not an error: the queue is kept for the first session that has
   assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), true);
 }));
 
+test('a DRY RUN needs no token: the review comes before the credential, not after it', () => withQueue(async ({ dir, env }) => {
+  // The dry run exists to be read by a person BEFORE a push is approved. Gating it on the WRITE
+  // credential would mean nobody without push access could review what their own session queued —
+  // and the base is public, so every read the plan needs answers unauthenticated.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact' })]);
+  const api = fakeApi(state);
+  await writeQueue(dir, SESSION, [captureLine(makeEntry({ id: 'KB-22222222', subject: 'a new fact', anchors: ['/checkout'] }))]);
+
+  const r = await flush({ env, base: BASE, token: null, api, dryRun: true, now });
+  assert.equal(r.state, 'dry-run', 'a dry run reports a PLAN, never no-token');
+  assert.deepEqual(r.plan.writes.map((w) => w.path).sort(),
+    ['v2/entries/KB-22222222.md', 'v2/index.json', `v2/${logPath(SESSION, AT)}`].sort());
+  assert.equal(api.calls.includes('createBlob'), false, 'and it still sends nothing');
+  assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), true, 'the queue is untouched');
+}));
+
 test('a local base is not a writable one, and says so instead of guessing at a repo', async () => {
   const r = await flush({ env: { KB_QUEUE_DIR: tmpdir() }, base: 'C:/some/checkout/v2', token: 't' });
   assert.equal(r.state, 'no-base');

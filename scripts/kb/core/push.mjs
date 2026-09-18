@@ -353,7 +353,13 @@ export async function flush({
     dropped += gated.dropped.length;
   }
 
-  if (!token) {
+  // A DRY RUN NEEDS NO TOKEN, and this is the one place that distinction earns its keep: the dry
+  // run exists to be READ BY A PERSON BEFORE A PUSH IS APPROVED, and requiring the write credential
+  // to see what would be written puts the credential before the review. The base is public, so
+  // every read the plan needs — the ref, the tree, the current index and the mutated bodies —
+  // answers unauthenticated. It is also exactly the operator the comment below describes: someone
+  // with no write access can still inspect what their session queued.
+  if (!token && !dryRun) {
     // Not a failure and not a retry: a person with no write access is still a full-value reader,
     // and the queue is durable. The first later session with a token pushes it.
     await touchStamp({ env, now });
