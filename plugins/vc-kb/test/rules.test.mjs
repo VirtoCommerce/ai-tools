@@ -474,3 +474,26 @@ test('the rendered answer separates what was SEEN from what is REQUIRED', async 
   assert.match(text, /asserted here, not observed/, 'and the reader is told which is which');
   rmSync(dir, { recursive: true, force: true });
 });
+
+// `deliver` IS THE VERB A CONSUMER ACTUALLY CALLS, and it did not know this plane existed.
+//
+// `ask` grew its rules block when the rules landed; `deliver` kept reading `res.results[0]` for
+// the protocol line and threw `Cannot read properties of undefined` the moment the ranked list
+// was empty. `kb capture` calls `deliver` on the way in, so the throw ate the fact the writer had
+// just typed -- loud for the human, silent for the corpus, and green in this suite for two days.
+// Measured against the live corpus 2026-09-18: three of eight ordinary questions.
+test('deliver serves a rules-only answer instead of throwing, and says it was not observed', async () => {
+  const { deliver } = await import('../src/deliver.mjs');
+  const dir = baseWithRules([
+    { subject: 'BL-PLAT-009 idempotency of the settlement job', body: 'Re-running settlement for one period MUST NOT double-post ledger entries.' },
+  ], []);
+
+  const d = deliver(dir, 'can settlement double-post ledger entries when it is re-run');
+  assert.equal(d.hit, true, 'the base answered; reporting a MISS here would be the lie ask already refuses');
+  assert.match(d.block, /WHAT THE RULES REQUIRE \(1\)/);
+  assert.match(d.block, /NOT observed on this deployment/, 'a consumer pastes this, so the distinction travels with it');
+  assert.match(d.block, /BL-PLAT-009/);
+  assert.equal(d.citations.length, 1, 'a rule it served is a rule it can be held to — it gets a citation');
+  assert.match(d.block, /^-- /m, 'the protocol line still renders with no observation to take it from');
+  rmSync(dir, { recursive: true, force: true });
+});

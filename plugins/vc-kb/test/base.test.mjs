@@ -198,7 +198,13 @@ test('with nothing named, the message names the managed checkout and offers to f
   const msg = baseNotFoundMessage(nowhere);
   assert.ok(msg.includes(managedBaseDir({ env: {}, home: NO_HOME })), 'says where it would go');
   assert.match(msg, /managed checkout/, 'and how that candidate was arrived at');
-  assert.match(msg, /kb sync/, 'and the one command that fixes the ordinary cause');
+  // THE REMEDY HAS TO BE RUNNABLE. This used to assert the literal `kb sync`, which is what every
+  // message said and what nothing on any machine could execute: the plugin package is `private`,
+  // the consuming repository declares no `bin` and no `workspaces`, and `npx kb` fetches an
+  // unrelated package of that name off the public registry. Asserting the string kept the gate
+  // green on an instruction that did nothing.
+  assert.match(msg, /node \S*bin\/kb\.mjs sync/, 'the remedy names a command that can actually be run');
+  assert.doesNotMatch(msg, /^\s*kb sync\s*$/m, 'and never the bare `kb`, which is on nobody’s PATH');
   assert.match(msg, /NOT the same as a base holding nothing/, 'while still keeping the three states apart');
 });
 

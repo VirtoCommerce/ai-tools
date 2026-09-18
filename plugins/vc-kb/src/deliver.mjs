@@ -50,13 +50,37 @@ export function deliver(base, question, { limit = 2 } = {}) {
     lines.push(r.body.trim().split('\n').map((l) => `  ${l}`).join('\n'));
     lines.push('');
   }
-  lines.push(`-- ${res.results[0].protocol}`);
+
+  // A RULE IS NOT AN OBSERVATION, AND A CONSUMER PASTES WHAT IT IS GIVEN.
+  //
+  // `ask` has served the normative plane in a block of its own since the rules landed. `deliver`
+  // did not, and still read `res.results[0]` unconditionally -- so a question that only the rules
+  // answered threw `Cannot read properties of undefined`, and because `kb capture` calls this on
+  // the way in, the fact the writer had just typed went down with it. Measured 2026-09-18: three
+  // of eight ordinary questions, with `npm run kb:test` 323/323 green the whole time.
+  //
+  // Merging them into the ranked list above is the other way to be wrong. A rule says what SHOULD
+  // happen; an observation says what somebody SAW. A consumer that cannot tell them apart will
+  // quote a rule as evidence, and where the two disagree that disagreement is the finding this
+  // plane exists to surface.
+  const rules = res.rules ?? [];
+  if (rules.length) {
+    if (res.results.length) lines.push('');
+    lines.push(`WHAT THE RULES REQUIRE (${rules.length}) — asserted here, NOT observed on this deployment:`);
+    lines.push('');
+    for (const r of rules) {
+      lines.push(`@kb(${r.id}) ${r.subject} — normative, asserted`);
+      lines.push(r.body.trim().split('\n').map((l) => `  ${l}`).join('\n'));
+      lines.push('');
+    }
+  }
+  lines.push(`-- ${(res.results[0] ?? rules[0]).protocol}`);
 
   return {
     hit: true,
     degraded: null,
     question,
-    citations: res.results.map((r) => ({
+    citations: [...res.results, ...rules].map((r) => ({
       id: r.id,
       plane: r.plane,
       trust: r.trust.level,

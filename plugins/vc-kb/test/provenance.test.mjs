@@ -14,7 +14,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-import { sessionParty, transcriptionSource, partiesOf, ProvenanceRefused } from '../src/provenance.mjs';
+import { sessionParty, writerParty, transcriptionSource, partiesOf, ProvenanceRefused } from '../src/provenance.mjs';
+import { asAnotherParty } from './parties.mjs';
 import { capture, loadEntry } from '../src/capture.mjs';
 import { buildIndex } from '../src/index-build.mjs';
 import { DERIVED_ENTRIES } from '../src/planes.mjs';
@@ -45,7 +46,7 @@ const FACT = {
 
 test('the tool stamps the writing session onto a row the writer did not author', () => {
   const dir = makeBase();
-  const r = capture(dir, FACT);
+  const r = asAnotherParty(() => capture(dir, FACT));
   const row = loadEntry(dir, r.id).data.evidence[0];
   assert.match(row.by, /^session:/, 'a row says which session wrote it, and the writer did not choose it');
   drop(dir);
@@ -55,7 +56,7 @@ test('a transcription names an artefact that exists', () => {
   const dir = makeBase();
   const report = join(dir, 'report.md');
   writeFileSync(report, '# arm B\n\nOnly one promotion applied.\n');
-  const r = capture(dir, { ...FACT, from: report });
+  const r = asAnotherParty(() => capture(dir, { ...FACT, from: report }));
   const row = loadEntry(dir, r.id).data.evidence[0];
   assert.equal(row.from, report.split(String.fromCharCode(92)).join('/'));
   assert.match(row.by, /^session:/, 'the transcriber is still recorded — the artefact is WHERE it was read, not WHO read it');
@@ -88,11 +89,34 @@ test('one party writing twice is one party; two artefacts are two', () => {
   ]), 1, 'two people reading the same report are still one observation');
 });
 
-// The 121 rows written before any of this existed must keep their levels, or the corpus re-grades
-// itself the day the rule lands and every measurement taken against it stops comparing.
+// LEGACY ROWS KEEP THE PERMISSIVE READING THEY WERE GRADED UNDER. The rows written before any of
+// this existed must keep their levels, or the corpus re-grades itself the day a rule lands and
+// every measurement taken against it stops comparing.
+//
+// Collapsing them to one party was tried on 2026-09-18 and reverted. The measurement that said it
+// was free covered `captured` and `rules` — 0 of 318 entries moved — and missed the FLOW plane,
+// which is where the authorless rows actually are: 2 of 3 flows crossed the `confirmed` threshold
+// and `flows-catalog.md`, which carries the count and is byte-compared, stopped matching. Re-grading
+// a published corpus is a decision about the corpus, not a tightening of a tool. The hole that
+// change was aimed at is closed at the writing end instead — see `writerParty`.
 test('rows with neither field each count as their own party', () => {
   assert.equal(partiesOf([{ at: 'a' }, { at: 'b' }, { at: 'c' }]), 3);
   assert.equal(partiesOf([{ at: 'a' }, { by: 'session:aaaa' }, { by: 'session:aaaa' }]), 2);
+});
+
+// THE HOLE, CLOSED WHERE IT COSTS NOTHING. `sessionParty` is null outside a Claude Code session —
+// a plain terminal, a CI job, a script — so every row those callers wrote was authorless, and one
+// actor could `capture` then `confirm` their own entry and reach `confirmed`, the licence to act
+// without re-verifying, in two commands. Reproduced 2026-09-18. A machine id is coarser than a
+// session and it is real rather than invented; it errs by counting two people on one machine as
+// one party, never the reverse.
+test('a row written with no session still names a writer, so one actor cannot vouch for itself', () => {
+  assert.equal(sessionParty({}), null, 'the session accessor stays honest — an invented session id is worse than none');
+  const w = writerParty({});
+  assert.match(w, /^machine:[0-9a-f]{8}$/, 'but the WRITER is always named');
+  assert.equal(writerParty({}), w, 'and stably, or capture and confirm would still read as two parties');
+  assert.equal(partiesOf([{ by: w }, { by: w }]), 1, 'which is what closes the hole');
+  assert.equal(writerParty({ KB_SESSION_ID: '09e39416-9083-43d4-b352-859c1de3f08a' }), 'session:09e39416', 'a named session still wins');
 });
 
 test('a session id the writer cannot choose, and no id at all when there is none', () => {
@@ -200,5 +224,34 @@ test('confirm refuses without a note, and says why in terms of what the count bu
   const written = readFileSync(join(dir, 'captured', `${id}.md`), 'utf8');
   assert.match(written, /note: saw the same 200 and the same body/);
 
+  rmSync(dir, { recursive: true, force: true });
+});
+
+// THE BAN IS ON TYPED PROVENANCE, NOT ON THE STRING `--at`.
+//
+// It was written as a global scan of argv and so it also caught `kb arrives <id> --at <coordinate>`
+// — the interface that verb documents in its own help, in two places. The verb was unusable through
+// its advertised flag and answered with a refusal about timestamps and a corpus incident, which
+// names neither the verb nor the real problem. `arrives` writes no evidence row at all, so there is
+// no provenance there to protect. Found 2026-09-18, present since the ban landed.
+test('`kb arrives --at` is a coordinate and is not caught by the typed-provenance ban', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-prov-at-'));
+  let code = 0; let err = '';
+  try {
+    execFileSync(process.execPath, [KB, 'arrives', 'KB-NOSUCH', '--at', 'Query.cart', '--reason', 'x', '--base', dir], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) { code = e.status; err = String(e.stderr ?? ''); }
+  assert.doesNotMatch(err, /refused: the tool writes who wrote a row/, 'the timestamp ban must not fire on a coordinate');
+  assert.doesNotMatch(err, /unknown flag/, 'and the flag is a real one, not a typo');
+  assert.notEqual(code, 0, 'the id is fictional, so it still fails — on the id, which is the honest complaint');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('`--by` stays refused on every verb, `arrives` included', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-prov-by-'));
+  let err = '';
+  try {
+    execFileSync(process.execPath, [KB, 'arrives', 'KB-NOSUCH', '--by', 'somebody', '--base', dir], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) { err = String(e.stderr ?? ''); }
+  assert.match(err, /--by refused/, 'who wrote a row is never the writer’s to type');
   rmSync(dir, { recursive: true, force: true });
 });

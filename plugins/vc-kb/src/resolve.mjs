@@ -195,10 +195,13 @@ function experientialTrust(data) {
   // the password-hash disagreement, two files read minutes apart by one author, flipped the entry
   // to `confirmed`.
   //
-  // A row with no `by` counts as its own author, because the tool cannot tell. That is deliberately
-  // permissive and it is what keeps this from re-grading the corpus: 121 of the 124 evidence rows
-  // written before 2026-09-16 carry no author, so their levels are untouched. The rule only ever
-  // tightens, and only for rows that say who wrote them.
+  // Rows with no `by` USED to count one party each, because the tool cannot tell them apart. That
+  // was deliberately permissive, to avoid re-grading the 121 authorless rows of 124 that predated
+  // the rule. The window closed: 13 of 378 rows are authorless now, and outside a Claude Code
+  // session — a terminal, CI, a script — `sessionParty()` is null, so one actor capturing and then
+  // confirming their own entry wrote two authorless rows and reached `confirmed` in two commands.
+  // They now collapse to ONE party between them (`partiesOf`), which re-grades nothing in the live
+  // base and closes the permissive direction.
   // A TRANSCRIBED ROW IS THE ARTEFACT'S OBSERVATION, NOT THE TYPIST'S. Fifteen rows in the live
   // corpus said `by: round2-arm-B` when no arm ever ran a writing verb -- the author had typed the
   // witness's name. Three entries stood at `confirmed` on that. `partiesOf` counts `from` (a path
@@ -586,7 +589,7 @@ export function ask(base, question, { limit = 3 } = {}) {
 
 // An experiential scope row is already a key/value pair; rendering it as "axis=surface value=graphql"
 // prints the field names instead of the fact.
-const renderScopeRow = (a) => (a.axis !== undefined && a.value !== undefined
+export const renderScopeRow = (a) => (a.axis !== undefined && a.value !== undefined
   ? `${a.axis}=${a.value}`
   : Object.entries(a).map(([k, v]) => `${k}=${v}`).join(' '));
 

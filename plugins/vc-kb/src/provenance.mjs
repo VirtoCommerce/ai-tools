@@ -24,6 +24,8 @@
 
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve as resolvePath } from 'node:path';
+import { hostname, userInfo } from 'node:os';
+import { createHash } from 'node:crypto';
 
 export class ProvenanceRefused extends Error {}
 
@@ -40,6 +42,27 @@ export function sessionParty(env = process.env) {
   const id = env.CLAUDE_CODE_SESSION_ID ?? env.KB_SESSION_ID ?? '';
   if (!id) return null;
   return `session:${id.replace(/-/g, '').slice(0, 8)}`;
+}
+
+/**
+ * Who to stamp on a row when no session names itself.
+ *
+ * `sessionParty` returns null outside a Claude Code session, and it should: an invented session id
+ * is worse than none. But null on the row is what let ONE actor confirm their own entry — a plain
+ * terminal, a CI job or a script writes two authorless rows, `partiesOf` cannot tell them apart,
+ * counts two, and the entry reaches `confirmed`, which is the licence to act without re-verifying.
+ * Reproduced 2026-09-18 in two commands.
+ *
+ * A machine is a coarser identity than a session and it is a REAL one — not invented, just less
+ * precise. It errs in the safe direction: two different people working on one machine read as one
+ * party, never as two. Rows written before this carry no author and keep the permissive reading
+ * they were graded under, so nothing already in the corpus moves.
+ */
+export function writerParty(env = process.env) {
+  const named = sessionParty(env);
+  if (named) return named;
+  const who = `${hostname()}|${userInfo().username}`;
+  return `machine:${createHash('sha256').update(who).digest('hex').slice(0, 8)}`;
 }
 
 /**
@@ -104,6 +127,22 @@ export function partiesOf(rows) {
   // somebody else's, and that is the safe direction: this project has already published three
   // `confirmed` entries that rested on one party.
   const unaided = new Set(rows.filter((r) => r.by && !r.from).map((r) => r.by));
+  // A row with no `by` counts as its own author, because the tool cannot tell. That is deliberately
+  // permissive and it is what keeps this from re-grading the corpus: the rows written before
+  // authorship was recorded carry no author, so their levels are untouched. The rule only ever
+  // tightens, and only for rows that say who wrote them.
+  //
+  // COLLAPSING THEM TO ONE PARTY WAS TRIED ON 2026-09-18 AND REVERTED, which is worth recording
+  // because the first measurement said it was free. It was taken over `captured` and `rules` only:
+  // 0 entries of 318 moved. The FLOW plane was not measured and is where the anonymous rows
+  // actually sit — 2 of the 3 flows crossed the `confirmed` threshold (KB-AFB2D3C5 5→1,
+  // KB-EB228603 3→1), which also breaks the byte-compared `flows-catalog.md` because the catalog
+  // carries the count. Re-grading a published corpus is a decision about the corpus, not a
+  // tightening of a tool.
+  //
+  // The hole it was aimed at is real and is closed at the WRITING end instead, where it costs
+  // nothing: see `writerParty` below. Every new row is signed, so two rows by one actor can be seen
+  // to be one actor. Legacy rows keep the permissive reading they were graded under.
   const named = new Set();
   let anonymous = 0;
   for (const r of rows) {

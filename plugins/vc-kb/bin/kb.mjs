@@ -4,14 +4,14 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { extract, Skipped } from '../src/extract.mjs';
-import { ask, how, flowsMatching, renderAnswer } from '../src/resolve.mjs';
+import { ask, how, flowsMatching, renderAnswer, renderScopeRow } from '../src/resolve.mjs';
 import { deliver } from '../src/deliver.mjs';
 import { parseEntry } from '../src/frontmatter.mjs';
 import { validate } from '../src/validate.mjs';
 import {
   capture, supersede, confirm, dispute, retire,
   reanchor, amend, addArrival, CaptureRefused, rebuildCapturedArtifacts,
-  readCaptured, readRules, confirmationsOf, evidenceKinds, disputesOf, isDisputed, loadEntry, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
+  readCaptured, readRules, confirmationsOf, evidenceKinds, disputesOf, isDisputed, loadEntry, loadDerivedEntry, CAPTURED_DIR, CAPTURE_HELP, stampNotice,
 } from '../src/capture.mjs';
 import { consolidate, renderConsolidation, MergeRefused } from '../src/consolidate.mjs';
 import { plan, renderPlan } from '../src/todo.mjs';
@@ -24,7 +24,7 @@ import {
   unconfirmedUses, loopBanner,
 } from '../src/demand.mjs';
 import { OWNED_ROOTS, OWNED_FILES, DERIVED_ENTRIES } from '../src/planes.mjs';
-import { resolveBase, baseNotFoundMessage, baseProvenance, managedBaseDir } from '../src/base.mjs';
+import { resolveBase, baseNotFoundMessage, baseProvenance, managedBaseDir, invocation } from '../src/base.mjs';
 import { sync, renderSync, ageNotice, SyncRefused } from '../src/sync.mjs';
 
 const HERE = fileURLToPath(new URL('..', import.meta.url));
@@ -127,7 +127,11 @@ silently, because whether two claims about one coordinate agree is not something
 
 const REPEATABLE = new Set(['anchor', 'scope', 'arrivesAt']);
 const FLAGS = {
-  '--env': 'env', '--base': 'base', '--limit': 'limit',
+  // `--dir` is what `kb sync`'s own refusal tells you to pass, and `sync` reads `a.dir` — it was
+  // just never in this table, so the value fell through to the positional list and the sync went
+  // to the managed checkout instead, silently. The advice and the code were both right; the parser
+  // between them had no entry.
+  '--env': 'env', '--base': 'base', '--limit': 'limit', '--dir': 'dir',
   '--subject': 'subject', '--question': 'question', '--claim': 'claim',
   '--anchor': 'anchor', '--arrives-at': 'arrivesAt', '--scope': 'scope', '--refutable-by': 'refutableBy',
   '--deployment': 'deployment', '--pin': 'pin', '--platform-version': 'platformVersion',
@@ -143,6 +147,9 @@ const FLAGS = {
   // name never had, and it is what `partiesOf` counts for independence.
   '--from': 'from',
   '--note': 'note', '--reason': 'reason',
+  // `--at` is a COORDINATE here and only here — `kb arrives <id> --at <coordinate>`. On every other
+  // verb it is refused above as a typed timestamp, which is what it used to mean.
+  '--at': 'at',
   '--superseded-by': 'supersededBy',
   // reanchor. `--now` is the corrected coordinate and never a timestamp: nothing in this CLI takes
   // a clock reading, and the pair reads as a sentence at the point of use -- was X, now Y.
@@ -153,7 +160,7 @@ const FLAGS = {
 };
 
 function args(argv) {
-  const out = { _: [], anchor: [], scope: [], arrivesAt: [] };
+  const out = { _: [], _unknown: [], anchor: [], scope: [], arrivesAt: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--json') out.json = true;
@@ -161,12 +168,21 @@ function args(argv) {
     else if (a === '--rule') out.rule = true;
     else if (a === '--drop') out.drop = true;
     else if (a === '--baseline') out.baseline = true;
+    else if (a === '--all') out.all = true;
     else if (a === '--merge') out.merge = String(argv[++i]).split(/[,\s]+/).filter(Boolean);
     else if (FLAGS[a]) {
       const key = FLAGS[a];
       const value = argv[++i];
       if (REPEATABLE.has(key)) out[key].push(value);
       else out[key] = value;
+    } else if (a.startsWith('--')) {
+      // A MISSPELLED FLAG IS NOT A POSITIONAL ARGUMENT, and treating it as one is how `--dir` and
+      // `--refutableBy` both became no-ops that reported something else's failure. `--refutable-by`
+      // typed with the wrong casing produced `1 required input(s) missing`, which names the field
+      // and not the flag, so the obvious next move is to type the same flag again. Collect them
+      // here rather than throwing: `args` is also called by the journal, which must never fail the
+      // call it is recording.
+      out._unknown.push(a);
     } else out._.push(a);
   }
   if (out.limit !== undefined) out.limit = Number(out.limit);
@@ -227,9 +243,9 @@ function refused(e) {
 //
 // Never throws and never changes an exit code, for the same reason the journal does not: a
 // bookkeeping file that can fail the answer it is bookkeeping about is worse than no file.
-function noteLoop(base, question, miss, served) {
+function noteLoop(base, question, miss, served, degraded = false) {
   try {
-    recordAsk(base, question, { miss });
+    recordAsk(base, question, { miss, degraded });
     recordUses(base, served);
   } catch {
     // deliberately silent
@@ -245,6 +261,38 @@ async function main() {
   // decides whether what it just learned is worth recording at all, and that judgement is the one
   // thing no gate downstream can check -- so its guidance lives with the verb, read at the moment
   // of the decision, rather than in a brief read before the work started.
+  // WHO WROTE A ROW AND WHEN ARE THE TOOL'S TO WRITE, and a writer may not type either.
+  //
+  // This used to sit far below, after `ask`/`how`/`deliver` had already returned, and it banned
+  // `--at` for EVERY verb — including `kb arrives`, whose own help in two places documents
+  // `--at <coordinate>` as its interface. So the verb was unusable through the flag it advertises,
+  // and answered with a refusal about timestamps and a corpus incident. `arrives` writes no
+  // evidence row at all (its own words), so the provenance rule has nothing to protect there: the
+  // ban is what belongs to the writing verbs, not to the string `--at`.
+  for (const banned of cmd === 'arrives' ? ['--by'] : ['--by', '--at']) {
+    if (rest.includes(banned)) {
+      console.error(`${banned} refused: the tool writes who wrote a row and when, and a writer cannot type either.`);
+      console.error('  Fifteen rows in this corpus once said `by: round2-arm-B`, timestamped to that arm run.');
+      console.error('  No arm ever ran a writing verb; the author had typed the witness. Three entries reached');
+      console.error('  `confirmed` on it, and the arrival replay read those rows as help that existed before the run.');
+      console.error('');
+      console.error('  If you are transcribing a claim out of a report, say so: --from <path to the report>.');
+      return 2;
+    }
+  }
+
+  // REFUSE A FLAG THIS TOOL DOES NOT KNOW, rather than quietly filing it as a positional argument.
+  // Swallowing it meant the tool reported the CONSEQUENCE of the flag being ignored instead of the
+  // flag being wrong, and the two send a reader in different directions: `--refutableBy` answered
+  // `1 required input(s) missing` — a complaint about a field the user had in fact supplied.
+  // Checked after `--help` so that asking for help never trips it.
+  if (a._unknown.length && !asksForHelp(process.argv.slice(2))) {
+    console.error(`kb ${cmd ?? ''}: unknown flag ${a._unknown.join(', ')}`);
+    console.error('Flags are spelled in kebab-case: --refutable-by, --superseded-by, --arrives-at.');
+    console.error(`\`kb ${cmd ?? '<verb>'} --help\` lists the ones this verb takes.`);
+    return 2;
+  }
+
   if (asksForHelp(process.argv.slice(2))) {
     console.log(VERB_HELP[cmd] ?? USAGE);
     return 0;
@@ -328,12 +376,26 @@ async function main() {
     // They are not problems -- a corpus with twelve of them is a working corpus that has something
     // in it worth a look -- so they must never be mistaken for the reason a gate went red, and they
     // must not be invisible on the green run, which is every run.
+    // THE TAIL MUST BE REACHABLE. Twenty was a sensible cap and there was no way past it: `--json`
+    // printed nothing at all here, so `… +29` was where 29 notices ended. On a plain clone of the
+    // public base the notice hidden in that tail is the one saying `rules-index.json` is absent and
+    // `kb reindex` rebuilds it — the remedy for the thing the reader is most likely to hit, filed
+    // in the part of the output no flag could reveal. The cap stays for the ordinary run; `--all`
+    // lifts it and the truncation line now says so.
+    const noticeCap = a.all ? Infinity : 20;
     const printNotices = (write) => {
       if (!r.notices?.length) return;
       write(`${r.notices.length} notice(s) — nothing failed; a corpus working as intended with something worth a second look:`);
-      for (const n of r.notices.slice(0, 20)) write(`  · ${n}`);
-      if (r.notices.length > 20) write(`  … +${r.notices.length - 20}`);
+      for (const n of r.notices.slice(0, noticeCap)) write(`  · ${n}`);
+      if (r.notices.length > noticeCap) write(`  … +${r.notices.length - noticeCap} more — \`${invocation()} validate --all\` prints every one`);
     };
+    // `--json` is the machine-readable form every other verb honours, and `validate` accepted the
+    // flag and printed prose anyway. A caller that asked for JSON and got a table gets no signal
+    // that it asked for something unsupported — it gets a parse error somewhere else.
+    if (a.json) {
+      console.log(JSON.stringify({ ok: r.ok, base, derived: r.entries, captured: r.captured, flows: r.flows ?? 0, rules: r.rules ?? 0, problems: r.problems ?? [], notices: r.notices ?? [] }, null, 2));
+      return { code: r.ok ? 0 : 1, outcome: { detail: { ok: r.ok, notices: r.notices?.length ?? 0, derived: r.entries, captured: r.captured } } };
+    }
     if (!r.ok) {
       console.error(`VALIDATE FAILED — ${r.problems.length} problem(s) over ${r.entries} derived, ${r.captured} captured and ${r.rules ?? 0} rule entries`);
       for (const p of r.problems.slice(0, 40)) console.error(`  ${p}`);
@@ -342,6 +404,14 @@ async function main() {
       return { code: 1, outcome: { detail: { ok: false, problems: r.problems.length, notices: r.notices?.length ?? 0, derived: r.entries, captured: r.captured } } };
     }
     console.log(`VALIDATE OK — ${r.entries} derived, ${r.captured} captured, ${r.flows ?? 0} flow(s), ${r.rules ?? 0} rule(s), at ${base}`);
+    // SAY WHAT THIS DID NOT CHECK. `validate` covers the ENTRIES and their indexes; it does not read
+    // the GENERATED PAGES under `knowledge/`, because the renderer that produces them lives in the
+    // consuming repository and not in this tool. A page edited by hand therefore passes here — and
+    // `VALIDATE OK` beside a silently altered oracle is the base reporting health it did not
+    // measure. The gate that DOES catch it is named, because a reader who has just been told OK
+    // will not go looking for a second check they do not know exists.
+    console.log('  not checked here: the generated pages under knowledge/ — this tool holds no renderer.');
+    console.log('  `npm run bl:render:check` rebuilds them from these records and byte-compares.');
     printNotices((m) => console.log(m));
     return { code: 0, outcome: { detail: { ok: true, notices: r.notices?.length ?? 0, derived: r.entries, captured: r.captured } } };
   }
@@ -371,6 +441,11 @@ async function main() {
       const hit = readRules(base).find((e) => ruleIdOf(e.data.subject) === wanted);
       if (hit) entry = hit;
     }
+    // THE DERIVED PLANE, AFTER the written stores and BEFORE the pages. It holds 590 of the base's
+    // ~900 entries and every one of them answered "is not in this base" to the id the catalog
+    // prints, because `loadEntry` walks only the stores the writing verbs may write to. Reading is
+    // not writing: see `loadDerivedEntry`.
+    if (!entry) entry = loadDerivedEntry(base, id);
     // A CITED SECTION OF A PAGE IS ALSO SOMETHING TO OPEN BY ID, and until this the door said "not
     // in this base" about ids the base holds — `ECL-13.3`, cited 3,095 times in the consuming
     // project's suites, and `VC-CART-001`. They are not entries and they do not become entries
@@ -410,12 +485,38 @@ async function main() {
       return 1;
     }
     const d = entry.data;
+    // A WITHDRAWN ENTRY MUST SAY SO IN ITS FIRST LINE, not in its last.
+    //
+    // `status: retired` reached the reader as the word "Retired." at the foot of the body, under a
+    // header reading `[experiential]` and a trust line reading `1 confirmation(s)` — both of which
+    // describe the entry as it stood before it was withdrawn. An agent following one of the
+    // thousands of citations in the suites reads top-down and acts on the claim long before the
+    // last line. Exit stays 0: the entry exists and was served, and the caller asked for it by id.
+    const retired = d.status && d.status !== 'active';
+    if (retired) {
+      console.log(`${d.id}  ${d.subject}`);
+      console.log(`  *** ${String(d.status).toUpperCase()} — this entry no longer holds. Do not act on it. ***`);
+      if (d.supersededBy) console.log(`  superseded by : ${d.supersededBy} — \`${invocation()} show ${d.supersededBy}\``);
+      if (d.reason) console.log(`  reason        : ${d.reason}`);
+      console.log(`  path          : ${entry.rel}`);
+      console.log('');
+      console.log(entry.body.trim());
+      return { code: 0, outcome: { served: [{ id, plane: d.plane ?? 'experiential', status: d.status }], detail: { verb: 'show', retired: true } } };
+    }
     console.log(`${d.id}  ${d.subject}   [${d.plane ?? 'experiential'}]`);
     console.log(`  question   : ${d.question ?? '—'}`);
     console.log(`  trust      : ${confirmationsOf(d)} confirmation(s)${isDisputed(d) ? `, DISPUTED (${disputesOf(d)})` : ''}`);
-    console.log(`  appliesTo  : ${(d.appliesTo ?? []).map((s) => `${s.axis}=${s.value}`).join(' ') || '—'}`);
+    console.log(`  appliesTo  : ${(d.appliesTo ?? []).map(renderScopeRow).join(" | ") || "—"}`);
     console.log(`  refutableBy: ${d.refutableBy ?? '—'}`);
     console.log(`  path       : ${entry.rel}`);
+    // SAY THAT THIS ONE IS REGENERATED. A reader who has just been shown an entry reaches for
+    // `kb dispute` when it looks wrong, and on this plane that is the wrong move twice over: the
+    // verb refuses, and if it did not, `kb extract` would overwrite the row on the next run.
+    if (entry.regenerated) {
+      console.log('  NOTE       : regenerated from the source contract — `kb extract` rewrites this file');
+      console.log('               and `kb validate` byte-compares it, so nothing can be recorded against');
+      console.log('               it here. Watched it NOT hold? That is an observation — `kb capture`.');
+    }
     console.log('');
     console.log(entry.body.trim());
     return { code: 0, outcome: { served: [{ id, plane: entry.data.plane ?? 'experiential' }], detail: { verb: 'show' } } };
@@ -463,14 +564,21 @@ async function main() {
     // the same escape is the one to use when checking something by hand. I have now recorded two of
     // my own probes as somebody's unmet demand, in two consecutive sessions, the second an hour
     // after writing the commit about the first. Use `node -e` against the library, or --base a copy.
-    noteLoop(base, q, res.miss && !res.degraded, servedOf(res.results));
+    noteLoop(base, q, res.miss && !res.degraded, servedOf(res.results), Boolean(res.degraded));
     return {
       code: res.miss ? (res.degraded ? 3 : 1) : 0,
       outcome: {
         question: q,
         miss: res.miss,
         degraded: Boolean(res.degraded),
-        served: servedOf(res.results),
+        // THE RULES ARE SERVED, SO THE JOURNAL HAS TO SEE THEM. `served` was built from
+        // `res.results` alone, and the normative plane does not live there — so a question the
+        // base ANSWERED out of the rules was written to the verb log as `backed_by: KB-MISS`.
+        // Any measurement of "did the agent's questions land" read those as uncovered, which is
+        // the same mistake `deliver` made in code and the demand ledger made in its rows: three
+        // instruments, one blind spot, all three silent. Observations first — the top-ranked entry
+        // decides `backed_by`, and what somebody SAW outranks what a rule requires.
+        served: [...servedOf(res.results), ...servedOf(res.rules)],
         detail: { limit: a.limit ?? 3 },
       },
     };
@@ -489,7 +597,7 @@ async function main() {
     }
     const res = how(base, q, { limit: a.limit ?? 2 });
     console.log(a.json ? JSON.stringify(res, null, 2) : renderAnswer(res));
-    noteLoop(base, q, res.miss && !res.degraded, servedOf(res.results));
+    noteLoop(base, q, res.miss && !res.degraded, servedOf(res.results), Boolean(res.degraded));
     return {
       code: res.miss ? (res.degraded ? 3 : 1) : 0,
       outcome: {
@@ -510,7 +618,7 @@ async function main() {
     }
     const d = deliver(base, q, { limit: a.limit ?? 2 });
     console.log(a.json ? JSON.stringify(d, null, 2) : d.block);
-    noteLoop(base, q, !d.hit && !d.degraded, d.citations ?? []);
+    noteLoop(base, q, !d.hit && !d.degraded, d.citations ?? [], Boolean(d.degraded));
     return {
       code: d.hit ? 0 : (d.degraded ? 3 : 1),
       outcome: {
@@ -523,18 +631,6 @@ async function main() {
         detail: { limit: a.limit ?? 2 },
       },
     };
-  }
-
-  for (const banned of ['--by', '--at']) {
-    if (rest.includes(banned)) {
-      console.error(`${banned} refused: the tool writes who wrote a row and when, and a writer cannot type either.`);
-      console.error('  Fifteen rows in this corpus once said `by: round2-arm-B`, timestamped to that arm run.');
-      console.error('  No arm ever ran a writing verb; the author had typed the witness. Three entries reached');
-      console.error('  `confirmed` on it, and the arrival replay read those rows as help that existed before the run.');
-      console.error('');
-      console.error('  If you are transcribing a claim out of a report, say so: --from <path to the report>.');
-      return 2;
-    }
   }
 
   if (cmd === 'capture') {
@@ -1147,7 +1243,12 @@ main().then((r) => {
   const code = typeof r === 'number' ? r : r.code;
   // The loop, said once per invocation. `demand` is excluded because it has just printed the whole
   // thing, and the help pages because nothing has happened yet.
-  if (cmd && cmd !== 'demand' && !asksForHelp(process.argv.slice(2))) {
+  //
+  // `--json` is excluded too, and this is not cosmetic: the banner is appended to stdout AFTER the
+  // document, so every `--json` run emitted a valid object followed by a sentence, and the whole
+  // stream failed to parse. A caller asking for JSON is a program; a friendly trailer is the one
+  // thing it cannot read past.
+  if (cmd && cmd !== 'demand' && !args(process.argv.slice(3)).json && !asksForHelp(process.argv.slice(2))) {
     try {
       const bannerBase = args(process.argv.slice(3)).base ?? DEFAULT_BASE;
       const banner = bannerBase && loopBanner(bannerBase);

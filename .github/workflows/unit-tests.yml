@@ -57,6 +57,16 @@ jobs:
       # a test failure rather than masquerading as an install failure.
       - name: Install
         run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+      # THE SUITE READS THE KNOWLEDGE BASE. `npm test` covers extract-bl / extract-ecl and the
+      # vocabulary and catalog checks, which since migration phase 4.1 read VirtoCommerce/vc-knowledge
+      # instead of a directory in this checkout. Without this step they fail with their own `kb sync`
+      # remedy and BOTH legs go red — which is exactly how this workflow stood on 65eadb24 while the
+      # change was being reviewed as green, because everyone who ran the suite by hand ran it in a
+      # shell that had already synced. gates.yml has had this step since the migration; this file was
+      # missed, so the one workflow that runs `npm test` was the one workflow that could not pass it.
+      # The base repository is public, so this needs no token.
+      - name: kb sync — fetch the knowledge base the suite reads
+        run: node plugins/vc-kb/bin/kb.mjs sync
       - name: Unit suite
         run: npm test
       # Typecheck is a SEPARATE, narrower gate: ci/tsconfig.json covers ci/*.ts + ci/lib/ +

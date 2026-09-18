@@ -165,3 +165,54 @@ test('the journal records what the writer was shown, not only that a capture hap
   assert.equal(line.cross_plane[0].coordinate, 'query.cart');
   drop(dir); drop(out);
 });
+
+// THE DERIVED PLANE IS READABLE BY ID, AND STILL NOT WRITABLE. Two halves of one rule.
+//
+// 590 of the base's ~900 entries live here, `kb capture` hands their ids out, and until 2026-09-18
+// every one of them answered `is not in <base>. Ids in the catalog are exact; check the line you
+// read it from.` -- blaming the reader for a citation the catalog had just printed. Widening
+// `loadEntry` would have been the wrong fix: `confirm`/`dispute`/`retire`/`reanchor` write back to
+// the file they are handed, and `kb extract` overwrites this one while `validate` byte-compares it.
+test('a derived entry opens by id, and the writing verbs still refuse it — with the real reason', async () => {
+  const { loadDerivedEntry, loadEntry, noWritableEntry, dispute, CaptureRefused } = await import('../src/capture.mjs');
+  const dir = makeBase();
+  putDerived(dir, { id: 'KB-0F2210AE', subject: 'gql-query-cart', coordinates: ['Query.cart'] });
+
+  assert.equal(loadEntry(dir, 'KB-0F2210AE'), null, 'the writable stores do not hold it, and must not claim to');
+  const e = loadDerivedEntry(dir, 'KB-0F2210AE');
+  assert.equal(e.data.subject, 'gql-query-cart', 'but it is readable, which is what `kb show` needs');
+  assert.equal(e.regenerated, true, 'and it says it is regenerated, so the caller can warn before a reader reaches for `kb dispute`');
+
+  assert.throws(
+    () => dispute(dir, 'KB-0F2210AE', { deployment: 'localhost', note: 'saw otherwise' }),
+    (err) => err instanceof CaptureRefused && /DERIVED entry/.test(err.message) && /kb capture/.test(err.message),
+    'the refusal names the plane and the verb that DOES keep the observation',
+  );
+  assert.match(noWritableEntry(dir, 'KB-DEADBEEF'), /^no captured entry/, 'an id that is genuinely absent still reads as absent');
+  drop(dir);
+});
+
+// A WITHDRAWN ENTRY READ AS A LIVE ONE, because the only thing that said otherwise was the last
+// line of the body. `kb show` printed `[experiential]` and `1 confirmation(s)` — both describing
+// the entry as it stood BEFORE it was withdrawn — and an agent following one of the thousands of
+// suite citations reads top-down and acts on the claim long before reaching the foot of the text.
+test('kb show puts a retirement in the first line, not the last', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const KB = fileURLToPath(new URL('../bin/kb.mjs', import.meta.url));
+  const { capture, retire } = await import('../src/capture.mjs');
+
+  const dir = makeBase();
+  const r = capture(dir, {
+    subject: 'a claim that stopped holding', question: 'does it still hold?', claim: 'It did once.',
+    refutableBy: 'observation', anchors: ['GET /api/x'], appliesTo: ['surface=rest'], deployment: 'vcptcore_stable',
+  });
+  retire(dir, r.id, { reason: 'the platform changed under it' });
+
+  const out = execFileSync(process.execPath, [KB, 'show', r.id, '--base', dir], { encoding: 'utf8' });
+  const firstTwo = out.split(String.fromCharCode(10)).slice(0, 2).join(String.fromCharCode(10));
+  assert.match(firstTwo, /RETIRED/, 'a reader must not have to reach the body to learn this');
+  assert.doesNotMatch(firstTwo, /confirmation\(s\)/, 'and must not be shown a trust level the entry no longer carries');
+  assert.match(out, /the platform changed under it/, 'the reason travels with the refusal');
+  drop(dir);
+});

@@ -22,7 +22,7 @@
 // only then is moved into place by a single rename. A rename within one directory is atomic on
 // every filesystem this runs on, and the sibling -- rather than the system temp directory -- is
 // what keeps it on one volume, where rename is a rename and not a copy.
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 
@@ -235,13 +235,22 @@ export function sync({ dir = managedBaseDir(), repo = BASE_REPO, ref, depth1 = t
     return { action: before === after ? 'current' : 'updated', dir, before, after, age: baseAge(dir), indexed: repairIndexes(dir), replayed };
   }
 
-  if (existsSync(dir)) {
+  // AN EMPTY DIRECTORY IS NOT SOMETHING SOMEBODY ASSEMBLED BY HAND.
+  //
+  // The refusal below is right about a directory with contents and was wrong about an empty one,
+  // which is the shape a reader reaches most often: `mkdir` the path you were told to use, then
+  // run the command. Four independent reviewers hit it on their first attempt, and the message
+  // they got warned them about overwriting work that was not there.
+  if (existsSync(dir) && readdirSync(dir).length > 0) {
     throw new SyncRefused(
-      `kb sync refused: ${dir} exists and is not a git checkout.\n`
-      + 'Move it aside or pass --dir. Overwriting a directory somebody assembled by hand is not\n'
-      + 'something this command decides on its own.',
+      `kb sync refused: ${dir} exists, is not empty, and is not a git checkout.\n`
+      + 'Move it aside, or name a different directory with --dir. Overwriting a directory somebody\n'
+      + 'assembled by hand is not something this command decides on its own.',
     );
   }
+  // A directory that exists and is empty is in the way of the staged rename, and removing an empty
+  // directory destroys nothing.
+  if (existsSync(dir)) rmSync(dir, { recursive: true });
 
   const staging = join(dirname(dir), `.${BASE_MARKER.replace(/\W/g, '')}-staging-${process.pid}`);
   mkdirSync(dirname(dir), { recursive: true });

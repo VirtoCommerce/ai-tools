@@ -28,12 +28,12 @@ import { hash, mintId } from './canonical.mjs';
 import { buildIndex } from './index-build.mjs';
 import { locate, installedVersionOf, knownModules } from './source-door.mjs';
 import { derivedFacts, unreachableAnchors } from './coordinates.mjs';
-import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX, FLOWS_CATALOG, WRITTEN_STORES } from './planes.mjs';
+import { CAPTURED_DIR, CAPTURED_INDEX, CAPTURED_CATALOG, FLOWS_DIR, FLOWS_INDEX, FLOWS_CATALOG, WRITTEN_STORES, DERIVED_ENTRIES } from './planes.mjs';
 // Re-exported: normalizeAnchor is half of the identity rule and callers have always found it
 // here. Its home moved to break an import cycle, not its meaning.
 export { normalizeAnchor } from './anchors.mjs';
 import { normalizeAnchor, LOOKS_LIKE_A_LOCAL_PATH, MSYS_REMEDY } from './anchors.mjs';
-import { sessionParty, transcriptionSource, partiesOf, isAttested } from './provenance.mjs';
+import { sessionParty, writerParty, transcriptionSource, partiesOf, isAttested } from './provenance.mjs';
 import { sectioned } from './topics.mjs';
 import { ruleIdOf, ruleDomainOf, severityOf, byDomain } from './rules.mjs';
 
@@ -197,6 +197,38 @@ export function loadEntry(base, id) {
   }
   return null;
 }
+
+// THE DERIVED PLANE IS READABLE, AND DELIBERATELY NOT LOADABLE BY THE WRITING VERBS.
+//
+// `loadEntry` walks WRITTEN_STORES, which is right: `confirm`, `dispute`, `retire` and `reanchor`
+// all write their result back to the file they were handed, and a derived entry is REGENERATED --
+// the next `kb extract` overwrites it and `validate` byte-compares it, so a row written there is
+// destroyed on the next run and fails a gate on somebody else's commit in between.
+//
+// But `kb show` only reads, and until this it inherited the refusal: all 590 derived entries
+// answered `is not in <base>. Ids in the catalog are exact; check the line you read it from.`
+// for an id the base's own catalog had just printed -- and `kb capture` hands these ids out. The
+// message blamed the reader for a correct citation, which is worse than a plain miss: it teaches
+// distrust of the catalog rather than of the tool.
+export function loadDerivedEntry(base, id) {
+  const abs = join(base, DERIVED_ENTRIES, `${id}.md`);
+  if (!existsSync(abs)) return null;
+  const { data, body } = parseEntry(readFileSync(abs, 'utf8'), `${DERIVED_ENTRIES}/${id}.md`);
+  return { file: `${id}.md`, rel: `${DERIVED_ENTRIES}/${id}.md`, data, body, abs, regenerated: true };
+}
+
+// "no captured entry <id>" SENDS A READER LOOKING FOR A TYPO THEY DID NOT MAKE.
+//
+// Now that `kb show` opens the derived plane, a reader arrives at a writing verb holding an id
+// they have just watched work. The id is right; what is wrong is the request. Saying so is the
+// difference between "you mistyped it" and "this plane cannot hold your row, and here is the verb
+// that can" -- and the second one keeps the observation, which is the whole point of asking.
+export const noWritableEntry = (base, id) => (loadDerivedEntry(base, id)
+  ? `${id} is a DERIVED entry, and the derived plane is regenerated: \`kb extract\` rewrites the file and `
+    + '`kb validate` byte-compares it, so a row written here is destroyed on the next run and fails a gate '
+    + 'in between. Watched it NOT hold? Record what you SAW with `kb capture` — an observation that '
+    + 'contradicts a derivation is exactly the finding the two planes exist to surface.'
+  : `no captured entry ${id}`);
 
 // --- writing ----------------------------------------------------------------------------------
 
@@ -888,7 +920,7 @@ export function capture(base, input, { now = () => new Date().toISOString(), ign
     deployment: input.deployment,
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
-    by: input.by ?? sessionParty(),
+    by: input.by ?? writerParty(),
     from: transcriptionSource(input.from, { root: base }),
     at: input.at ?? now(),
     source,
@@ -993,7 +1025,7 @@ export function addArrival(base, id, { at, reason } = {}) {
 
 export function confirm(base, id, input, { now = () => new Date().toISOString() } = {}) {
   const entry = loadEntry(base, id);
-  if (!entry) throw new CaptureRefused(`no captured entry ${id}`);
+  if (!entry) throw new CaptureRefused(noWritableEntry(base, id));
   if (entry.data.status !== 'active') {
     const survivor = survivorOf(base, entry);
     throw new CaptureRefused(
@@ -1042,7 +1074,7 @@ export function confirm(base, id, input, { now = () => new Date().toISOString() 
     deployment: input.deployment,
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
-    by: input.by ?? sessionParty(),
+    by: input.by ?? writerParty(),
     from: transcriptionSource(input.from, { root: base }),
     at: input.at ?? now(),
     note: input.note,
@@ -1059,7 +1091,7 @@ export function confirm(base, id, input, { now = () => new Date().toISOString() 
 // first, silently.
 export function dispute(base, id, input, { now = () => new Date().toISOString() } = {}) {
   const entry = loadEntry(base, id);
-  if (!entry) throw new CaptureRefused(`no captured entry ${id}`);
+  if (!entry) throw new CaptureRefused(noWritableEntry(base, id));
   // A retired entry is served by nothing, so a dispute written onto it is a contradiction recorded
   // where no reader will ever meet it -- quieter than a refusal and worse. `confirm` has always
   // refused here; the two verbs disagreeing about retirement was the asymmetry that let a writer
@@ -1080,7 +1112,7 @@ export function dispute(base, id, input, { now = () => new Date().toISOString() 
     deployment: input.deployment,
     pin: stamp.pin,
     platformVersion: stamp.platformVersion,
-    by: input.by ?? sessionParty(),
+    by: input.by ?? writerParty(),
     from: transcriptionSource(input.from, { root: base }),
     at: input.at ?? now(),
     contradicts: true,
@@ -1094,7 +1126,7 @@ export function dispute(base, id, input, { now = () => new Date().toISOString() 
 
 export function retire(base, id, { reason, supersededBy } = {}) {
   const entry = loadEntry(base, id);
-  if (!entry) throw new CaptureRefused(`no captured entry ${id}`);
+  if (!entry) throw new CaptureRefused(noWritableEntry(base, id));
   if (!reason) throw new CaptureRefused('retire refused: --reason is required — an entry that vanishes without one is indistinguishable from a mistake');
   entry.data.status = 'retired';
   if (supersededBy) {
@@ -1134,7 +1166,7 @@ export function retire(base, id, { reason, supersededBy } = {}) {
  */
 export function reanchor(base, id, { was, now: to, reason, drop = false } = {}) {
   const entry = loadEntry(base, id);
-  if (!entry) throw new CaptureRefused(`no captured entry ${id}`);
+  if (!entry) throw new CaptureRefused(noWritableEntry(base, id));
   if (!was || (!to && !drop)) throw new CaptureRefused('reanchor refused: --was and --now are both required (or --was with --drop)');
   if (!reason) {
     throw new CaptureRefused(
@@ -1344,7 +1376,7 @@ export function amend(base, id, input = {}) {
  */
 export function supersede(base, oldId, input, opts = {}) {
   const old = loadEntry(base, oldId);
-  if (!old) throw new CaptureRefused(`supersede refused: no captured entry ${oldId}`);
+  if (!old) throw new CaptureRefused(`supersede refused: ${noWritableEntry(base, oldId)}`);
   if (old.data.status === 'retired') {
     const survivor = survivorOf(base, old);
     throw new CaptureRefused(

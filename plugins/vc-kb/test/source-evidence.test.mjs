@@ -243,15 +243,22 @@ test('two readings by the same author are one reading twice, and do not confirm'
   drop(dir);
 });
 
+// AUTHORLESS ROWS KEEP COUNTING AS SEPARATE, so nothing already published is re-graded.
+//
+// Making them collapse was tried on 2026-09-18 and reverted: the measurement that said it was free
+// covered `captured` and `rules` and missed the FLOW plane, where 2 of 3 flows crossed the
+// `confirmed` threshold and broke the byte-compared `flows-catalog.md`. The hole that change was
+// aimed at — one unidentified actor confirming its own entry — is closed at the WRITING end
+// instead, by `writerParty`, which costs no existing grade. See `provenance.test.mjs`.
 test('rows written before authorship was recorded keep counting as separate, so nothing is re-graded', () => {
   const dir = makeBase();
   const r = capture(dir, { ...CLAIM, deployment: 'vcptcore_stable' });
   confirm(dir, r.id, { deployment: 'vcptcore_stable', note: 'watched it happen on the stand', at: '2026-09-16T01:00:00Z' });
-  // Strip the author the tool now stamps, leaving the shape the corpus actually holds.
+  // Strip the author the tool now stamps, leaving the shape the legacy corpus actually holds.
   const { abs } = loadEntry(dir, r.id);
   writeFileSync(abs, readFileSync(abs, 'utf8').split(NL).filter((l) => !/^\s+by: /.test(l)).join(NL));
   const t = ask(dir, 'what code cancels an order shipment when the order is cancelled', { limit: 3 }).results[0].trust;
-  assert.equal(t.level, 'confirmed', '121 of 124 rows in the live corpus carry no author; the rule must not touch them');
+  assert.equal(t.level, 'confirmed', 'the rows in the live corpus that carry no author must not move');
   drop(dir);
 });
 

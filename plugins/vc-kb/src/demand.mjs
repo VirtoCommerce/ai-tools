@@ -75,10 +75,22 @@ function append(base, row) {
   }
 }
 
-export function recordAsk(base, question, { miss = false, at = new Date().toISOString() } = {}) {
+/**
+ * A DEGRADED RUN IS NOT AN ANSWER AND NOT A GAP, and the ledger could say only one of those.
+ *
+ * The row carried `miss` alone, and the callers computed it as `res.miss && !res.degraded` — so a
+ * question the base could not be READ for was banked as `miss: false`, which this file counts as
+ * asked-and-answered. On a plain `git clone` of the public base, before `kb reindex`, that is EVERY
+ * rules question: the exact shape the answer contract exists to keep apart, written into the one
+ * record that outlives the session. The exit code distinguished them; the ledger did not.
+ *
+ * Kept as a row rather than dropped, because somebody did ask — but excluded from the tallies,
+ * because it says nothing about coverage either way.
+ */
+export function recordAsk(base, question, { miss = false, degraded = false, at = new Date().toISOString() } = {}) {
   if (!question) return null;
   const key = questionKey(question);
-  append(base, { kind: 'ask', key, question, miss, at });
+  append(base, degraded ? { kind: 'ask', key, question, miss, degraded: true, at } : { kind: 'ask', key, question, miss, at });
   return key;
 }
 
@@ -116,10 +128,15 @@ export function openQuestions(base) {
     if (row.kind !== 'ask' && row.kind !== 'closed' && row.kind !== 'dropped' && row.kind !== 'buried') continue;
     const cur = byKey.get(row.key) ?? { key: row.key, question: row.question, asked: 0, missed: 0, settledBy: null, at: row.at };
     if (row.kind === 'ask') {
-      cur.asked += 1;
-      if (row.miss) cur.missed += 1;
+      // A row written while the base could not be read counts towards neither tally — see
+      // `recordAsk`. It is kept so the question is not lost, and ignored so it cannot be mistaken
+      // for evidence that the corpus did or did not cover it.
+      if (!row.degraded) {
+        cur.asked += 1;
+        if (row.miss) cur.missed += 1;
+        cur.at = row.at ?? cur.at;
+      }
       cur.question = row.question ?? cur.question;
-      cur.at = row.at ?? cur.at;
     } else {
       cur.settledBy = row.kind === 'closed' ? (row.id ?? 'a capture')
         : row.kind === 'buried' ? `buried under retrieval; ${row.id} answers it`

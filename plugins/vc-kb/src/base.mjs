@@ -58,7 +58,8 @@
 // a base whatever it is named.
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 
 export const BASE_MARKER = 'kb.json';
 export const PROFILE_NAME = 'project-profile.json';
@@ -143,6 +144,30 @@ export function baseProvenance(opts = {}) {
 // Said once, in full, naming every place that was looked at. A "base not found" that does not say
 // where it looked sends the reader to guess, and the guess is usually the one directory they have
 // already checked.
+/**
+ * The command that actually starts this tool on THIS machine.
+ *
+ * Every message here said `kb sync`, and `kb` is on nobody's PATH. The plugin package declares the
+ * bin, but it is `private`, the consuming repository has no `workspaces` and no `bin`, and nothing
+ * links it — so `kb` is `command not found`, and `npx kb` resolves to an UNRELATED package of that
+ * name on the public registry. Measured 2026-09-18: the one instruction every gate's remedy gives a
+ * stuck reader did nothing, or something worse than nothing.
+ *
+ * The tool knows where it lives, so it can say. A relative path when the reader is somewhere above
+ * it (the usual case, and short), the absolute path otherwise (correct anywhere).
+ *
+ * Resolved from THIS MODULE, never from `process.argv[1]`. The entry point is the tool only when
+ * the tool was the entry point — under the test runner, or under any script importing this as a
+ * library, argv[1] is somebody else's program, and the remedy would name it. The CLI is this
+ * file's sibling and always has been.
+ */
+export function invocation() {
+  const self = fileURLToPath(new URL('../bin/kb.mjs', import.meta.url));
+  const from = resolve(process.cwd());
+  const inside = self.startsWith(from + sep);
+  return `node ${(inside ? self.slice(from.length + 1) : self).split(sep).join('/')}`;
+}
+
 export function baseNotFoundMessage(opts = {}) {
   const tried = baseCandidates(opts);
   const lines = [
@@ -173,7 +198,7 @@ export function baseNotFoundMessage(opts = {}) {
     lines.push(
       '',
       'Fetch it — one clone per machine, and every project on it reads the same corpus:',
-      '  kb sync',
+      `  ${invocation()} sync`,
       '',
       `It clones ${BASE_REPO} into`,
       `  ${managed.dir}`,
@@ -182,7 +207,7 @@ export function baseNotFoundMessage(opts = {}) {
   lines.push(
     '',
     'Or point somewhere else:',
-    '  kb <verb> --base <dir>          one invocation',
+    `  ${invocation()} <verb> --base <dir>   one invocation`,
     '  KB_BASE=<dir>                   this shell, and every hook in it',
     `  knowledgeBase.path              in ${PROFILE_NAME}, for a base of your own`,
     '',

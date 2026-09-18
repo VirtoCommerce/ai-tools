@@ -144,7 +144,15 @@ export function resolveSession(dir) {
 // and all, is on the verb line, so the mix is never lost.
 export function backedByOf({ miss, served } = {}) {
   if (miss || !served?.length) return 'KB-MISS';
-  return served[0].plane === 'experiential' ? 'KB-EXPERIENTIAL' : 'KB-DERIVED';
+  // The normative plane is a third answer, and it was being filed as the second. Until 2026-09-18
+  // `served` never carried rules at all, so a rules-backed answer reached this function as an empty
+  // list and left it as `KB-MISS` — a measurement of coverage reading the opposite of the truth.
+  // Now that the rules arrive, they need a label of their own: what a rule REQUIRES and what
+  // somebody SAW are the two halves this base exists to hold apart, and a row that calls a rule
+  // `KB-DERIVED` loses exactly that distinction.
+  if (served[0].plane === 'experiential') return 'KB-EXPERIENTIAL';
+  if (served[0].plane === 'normative') return 'KB-NORMATIVE';
+  return 'KB-DERIVED';
 }
 
 const normalizeQuestion = (q) => String(q ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
