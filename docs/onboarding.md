@@ -190,10 +190,33 @@ Install these via Claude Code's MCP settings (`.mcp.json` or `claude_code/settin
   "mcpServers": {
     "playwright-chrome":  { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-chrome.config.json"] },
     "playwright-firefox": { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-firefox.config.json"] },
-    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-edge.config.json"] }
+    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-edge.config.json"] },
+    "kb":                 { "command": "node", "args": ["scripts/kb/mcp.mjs"] }
   }
 }
 ```
+
+**`kb` — the shared knowledge base** (`kb_ask`, `kb_show`, `kb_capture`, `kb_confirm`, `kb_dispute`):
+what has actually been OBSERVED about how the platform behaves, with a trust label and provenance per
+observation. Register it, because **`.mcp.json` is gitignored** — unlike everything under `.claude/`
+this does not travel with a clone, it is per machine, and until you add the block above the base is
+reachable only through the CLI (`npm run kb -- ask "<q>"`, which works on every clone with no setup).
+The command is the tracked `npm run kb:mcp`, spelled as `node scripts/kb/mcp.mjs` so no shell sits in
+the way; it takes no arguments and **no token** — reads are unauthenticated, the base being a public
+repository. **Restart Claude Code afterwards**: MCP servers bind at session start.
+
+**Then allow it once.** In the desktop app you approve the first `kb_ask` call and that is the whole
+setup. Headless (`claude -p`) is different, and it was measured: in a fresh untrusted sandbox a project
+`permissions.allow` entry did **not** take effect while `--allowedTools` did — so pass
+`--allowedTools "mcp__kb"` there rather than relying on settings. For an interactive session that
+should never ask, put `"mcp__kb"` in `permissions.allow` in your own `.claude/settings.local.json`
+(gitignored, per developer) — never in the shared `.claude/settings.json`.
+
+**Writing needs a token; reading never does.** `kb_capture` / `kb_confirm` / `kb_dispute` queue locally
+and go out as one commit when the session ends — there is no push command to remember. With no
+`KB_GITHUB_TOKEN` (or `GITHUB_TOKEN`) that flush reports `no-token` and **keeps the queue**: nothing is
+lost, and the first later session with a token sends it. An unauthenticated teammate is a full-value
+reader and can still record what they found.
 
 **Pin the version — never `@playwright/mcp@latest`.** The pin must match `package.json`'s
 `@playwright/mcp` devDependency and `PLAYWRIGHT_MCP_PACKAGE` in `ci/lib/lane-mcp.ts`; `/project-init`'s
