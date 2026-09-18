@@ -44,7 +44,10 @@ export function exitFor(state) {
 /** What the caller is told, in the words PLAN §3.5 puts in each row. */
 export const HEADLINE = Object.freeze({
   answer: 'answered from the base',
-  miss: 'the base was read and holds nothing on this. Go find out, then `kb capture`.',
+  // BOTH DOORS ARE NAMED, for the same reason the always-loaded line names both (PLAN §5.1): the
+  // MCP server does not reach a clone until somebody registers `.mcp.json`, and the CLI does not
+  // exist inside an MCP client. Naming one of them is a dead end for whichever reader has the other.
+  miss: 'the base was read and holds nothing on this. Go find out, then record it — `kb_capture`, or `npm run kb -- capture`.',
   'no-base': 'no base is configured. This is a config problem, not a knowledge one.',
   unreachable: 'the base was NOT read. This is not "nothing is known" — conclude nothing; retry.',
 });

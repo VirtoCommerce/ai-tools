@@ -20,6 +20,7 @@ import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
 import { flush, sweepIfDue } from './core/push.mjs';
 import { writeToken } from './core/token.mjs';
+import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
 import { ask, capture, confirm, dispute, reindex, show, stat } from './core/verbs.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
@@ -65,28 +66,8 @@ hook and no scheduler: the next session picks it up.`;
 
 const out = (s = '') => process.stdout.write(`${s}\n`);
 
-/** The three things `cat` cannot print, printed (PLAN §3.1 step 4). */
-function printHit(hit) {
-  out('');
-  out(`  ${hit.id}  [${hit.trust.label}]  ${hit.trust.confirmations} confirmation(s)`
-    + `${hit.trust.provisional ? ' per the index, unverified — the body did not arrive' : ''}`
-    + `${hit.trust.disputed ? `, ${hit.trust.disputed} DISPUTED` : ''}`
-    + `${hit.trust.parties > 1 ? `, ${hit.trust.parties} independent parties` : ''}`);
-  out(`  ${hit.subject}`);
-  const matched = [
-    hit.matchedOn.anchors.length ? `anchor ${hit.matchedOn.anchors.join(', ')}` : null,
-    hit.matchedOn.tokens.length ? `words ${hit.matchedOn.tokens.join(' ')}` : null,
-  ].filter(Boolean).join('; ');
-  out(`  matched on: ${matched || '—'}   (score ${hit.score})`);
-  if (hit.indexDrift) out(`  ! ${hit.indexDrift}`);
-  if (hit.unavailable) { out(`  ! ${hit.unavailable}`); return; }
-  for (const p of hit.provenance) {
-    out(`  ${p.contradicts ? 'contradicted' : 'seen'} by ${p.by ?? '?'} on ${p.deployment ?? '?'}`
-      + ` at ${p.at ?? '?'} (${p.method})${p.note ? ` — ${p.note}` : ''}`);
-  }
-  out('');
-  for (const line of String(hit.body ?? '').split('\n')) out(`  | ${line}`);
-}
+/** Every verb's human output comes from `core/render.mjs`, which the MCP server also uses. */
+const emit = (lines) => { for (const line of lines) out(line); };
 
 // ── verbs ─────────────────────────────────────────────────────────────────────────────────────
 
@@ -143,9 +124,7 @@ async function main(argv) {
     if (!question) { out('ask needs a question'); return EXIT.NO_COVERAGE; }
     const r = await ask(question, opened, { top: Number(args.flags.top) || 3 });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
-    out(`kb ask: ${HEADLINE[r.state]}`);
-    if (r.why) out(`  ${r.why}`);
-    for (const hit of r.hits ?? []) printHit(hit);
+    emit(askLines(r));
     return exitFor(r.state);
   }
 
@@ -154,20 +133,8 @@ async function main(argv) {
     if (!id) { out('show needs an id'); return EXIT.NO_COVERAGE; }
     const r = await show(id, opened);
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
-    if (r.state !== 'answer') { out(`kb show: ${HEADLINE[r.state] ?? r.state}`); if (r.why) out(`  ${r.why}`); return exitFor(r.state); }
-    out(`${r.entry.id}  [${r.trust.label}]  ${r.trust.confirmations} confirmation(s)`
-      + `${r.trust.disputed ? `, ${r.trust.disputed} DISPUTED` : ''}   status: ${r.entry.status}`);
-    out(`${r.entry.subject}`);
-    out(`question: ${r.entry.question ?? '—'}`);
-    out(`anchors:  ${(r.entry.anchors ?? []).map((a) => a.coordinate).join(', ')}`);
-    out(`scope:    ${r.row.scope.join(', ')}`);
-    for (const e of r.entry.evidence ?? []) {
-      out(`  ${e.contradicts ? 'contradicted' : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'} at ${e.at ?? '?'}`
-        + `${e.note ? ` — ${e.note}` : ''}`);
-    }
-    out('');
-    out(r.body);
-    return EXIT.ANSWER;
+    emit(showLines(r));
+    return exitFor(r.state);
   }
 
   if (verb === 'capture') {
@@ -176,25 +143,13 @@ async function main(argv) {
       deployment: args.flags.deployment, method: args.flags.method,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
     }, opened);
-    if (json) { out(JSON.stringify(r, null, 2)); }
-    if (r.state === 'invalid') {
-      if (!json) { out(`kb capture: ${r.why}`); for (const p of r.problems ?? []) out(`  ${p.coordinate} — ${p.kind}: ${p.why}`); }
-      return EXIT.NO_COVERAGE;
-    }
-    if (r.state === 'refused') {
-      // A refusal is not a failure -- it is the design working. The ranking missed an entry that
-      // exists, and instead of a duplicate the base gets a confirmation.
-      if (!json) { out('kb capture: REFUSED — the base already holds this fact.'); out(''); out(`  ${r.message.split('\n').join('\n  ')}`); }
-      return EXIT.NO_COVERAGE;
-    }
-    if (r.state !== 'queued') { if (!json) { out(`kb capture: ${HEADLINE[r.state] ?? r.state}`); if (r.why) out(`  ${r.why}`); } return exitFor(r.state); }
-    if (!json) {
-      out(`kb capture: queued ${r.id} — ${r.entry.subject}`);
-      out(`  ${r.queuedTo}`);
-      out('  nothing has been sent; it ships with the next push.');
-      for (const n of r.alsoHere ?? []) out(`  also anchored at ${n.coordinate}: ${n.id} — ${n.subject}`);
-    }
-    return EXIT.ANSWER;
+    if (json) out(JSON.stringify(r, null, 2));
+    else emit(captureLines(r));
+    // A refusal is not a failure -- it is the design working (the ranking missed an entry that
+    // exists, and instead of a duplicate the base gets a confirmation) -- but it is not a queued
+    // capture either, and 0 would say it was.
+    if (r.state === 'invalid' || r.state === 'refused') return EXIT.NO_COVERAGE;
+    return r.state === 'queued' ? EXIT.ANSWER : exitFor(r.state);
   }
 
   if (verb === 'confirm' || verb === 'dispute') {
@@ -202,13 +157,10 @@ async function main(argv) {
     const r = await fn(args._[1], {
       deployment: args.flags.deployment, note: args.flags.note, saw: args.flags.saw, method: args.flags.method,
     }, opened);
-    if (json) { out(JSON.stringify(r, null, 2)); return r.state === 'queued' ? EXIT.ANSWER : r.state === 'invalid' ? EXIT.NO_COVERAGE : exitFor(r.state); }
-    if (r.state === 'invalid') { out(`kb ${verb}: ${r.why}`); return EXIT.NO_COVERAGE; }
-    if (r.state !== 'queued') { out(`kb ${verb}: ${HEADLINE[r.state] ?? r.state}`); if (r.why) out(`  ${r.why}`); return exitFor(r.state); }
-    out(`kb ${verb}: queued on ${r.id} (${r.row.subject})`);
-    out(`  ${r.queuedTo}`);
-    out('  nothing has been sent; it ships with the next push.');
-    return EXIT.ANSWER;
+    if (json) out(JSON.stringify(r, null, 2));
+    else emit(evidenceLines(verb, r));
+    if (r.state === 'invalid') return EXIT.NO_COVERAGE;
+    return r.state === 'queued' ? EXIT.ANSWER : exitFor(r.state);
   }
 
   if (verb === 'push' || verb === 'flush') {
