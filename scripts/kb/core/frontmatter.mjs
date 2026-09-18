@@ -110,6 +110,18 @@ export function stringifyFrontmatter(obj) {
 }
 
 export function parseEntry(text, where = '<entry>') {
+  // CRLF IS NORMALISED AWAY BEFORE ANYTHING ELSE LOOKS AT THE TEXT, because whether this reader
+  // sees one is decided by the READER'S git config, not by the corpus. A clone made with
+  // `core.autocrlf=true` -- the Windows default -- hands every entry back with CRLF, and every
+  // check below is written against `\n`: the opener test fails first, so the file does not
+  // half-parse, it fails entirely. Measured 2026-09-18 on a fresh clone: 90 entries, 90
+  // problems, 0 read, and `kb reindex --base <clone>` proposing to empty the index.
+  //
+  // A `.gitattributes` carrying `* -text` also prevents this and the base no longer ships one,
+  // but that is the weaker guard either way: it protects only clones of THAT repository, while
+  // this protects the reader wherever the bytes came from. Output is unaffected --
+  // `stringifyFrontmatter` still emits `\n` and the byte shape is unchanged.
+  text = String(text).replace(/\r\n/g, '\n');
   if (!text.startsWith('---\n')) throw new Error(`${where}: no frontmatter opener`);
   const end = text.indexOf('\n---\n', 3);
   if (end === -1) throw new Error(`${where}: no frontmatter terminator`);

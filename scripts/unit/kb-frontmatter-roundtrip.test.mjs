@@ -56,3 +56,35 @@ test('the two joins that were actually shipped are both wrong', () => {
   assert.throws(() => parseEntry(dropped), /terminator/,
     'the corrupt form must fail loudly on the next read, which is how it was caught');
 });
+
+// ─── line endings ─────────────────────────────────────────────────────────────────────────────
+
+test('an entry checked out with CRLF parses identically — the reader does not depend on git config', () => {
+  // Whether this reader ever sees a CR is decided by the READER'S git config, not by the corpus:
+  // a clone made with `core.autocrlf=true`, the Windows default, hands back every entry with CRLF.
+  // Every check in parseEntry is written against LF and the opener test runs first, so before this
+  // was handled a CRLF entry did not half-parse -- it failed entirely. Measured 2026-09-18 on a
+  // fresh clone of the base: 90 entries, 90 problems, 0 read, and `kb reindex --base <clone>`
+  // proposing to empty the index of a base that was perfectly intact.
+  const data = {
+    id: 'KB-11111111',
+    subject: 'a fact with a CRLF checkout',
+    plane: 'experiential',
+    question: 'does it parse?',
+    status: 'active',
+    appliesTo: [{ axis: 'surface', value: 'storefront-ui' }],
+    anchors: [{ coordinate: '/company/members' }, { coordinate: 'Query.organizationContacts' }],
+    evidence: [{ method: 'observation', deployment: 'vcst_qa', at: '2026-09-18T00:00:00Z', by: 'session:abcd1234' }],
+  };
+  const lf = `${stringifyFrontmatter(data)}\nThe claim, in prose.\n`;
+  const crlf = lf.replace(/\n/g, '\r\n');
+
+  const a = parseEntry(lf, 'lf.md');
+  const b = parseEntry(crlf, 'crlf.md');
+  assert.deepEqual(b.data, a.data);
+  assert.equal(b.body, a.body, 'and the prose carries no stray CR either');
+
+  // The WRITER is untouched: output stays LF, so the byte shape a push uploads does not move.
+  assert.equal(stringifyFrontmatter(b.data), stringifyFrontmatter(a.data));
+  assert.equal(stringifyFrontmatter(b.data).includes('\r'), false);
+});
