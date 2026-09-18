@@ -35,7 +35,7 @@ came to be documented for weeks after its CSV was deleted.
     those chains and turns a slow pass into a fast cascade of BLOCKED. Computed as connected
     components of the declared graph the suite decomposes into **65 pieces, largest 13**, and those
     components line up with its Section themes — so a themed split is also dependency-closed.
-  - **`[PRE:*]` coverage is the WRONG shardability gate.** `knowledge/execution/test-execution-preflight.md`
+  - **`[PRE:*]` coverage is the WRONG shardability gate.** `.claude/knowledge/execution/test-execution-preflight.md`
     exempts Admin SPA and API suites by design, and 078 carries zero `[PRE:*]` tags across 115
     cases. Gating on it permanently excludes exactly the suites that dominate `smoke`/`critical`.
   - **Bootstrap is replicated as state, never referenced as a case.** `BSM-001/002/011/019` (login,

@@ -440,7 +440,7 @@ Traceability).
 - **[`scripts/test-data/validate-td-refs.ts`](../../../scripts/test-data/validate-td-refs.ts)** — STATIC validation (`npm run td:validate` — every `@td()` resolves + flags hardcoded GUIDs)
 - **[`scripts/seed-data/reconcile-test-data.mjs`](../../../scripts/seed-data/reconcile-test-data.mjs)** — LIVE reconciliation (`TEST_ENV=<env> npm run td:reconcile` — catalog root exists, `.env.{ENV}` roles have accounts, B2B users are org-scoped, no password literals in committed CSVs)
 - **[`scripts/lib/user-roles.mjs`](../../../scripts/lib/user-roles.mjs)** — canonical test-user ROLE → `.env.{ENV}` var registry; consumed by the user seeders + `td:reconcile`
-- **[`knowledge/api/graphql-test-cases-runner.md`](../api/graphql-test-cases-runner.md)** — runner-native CSV grammar where `@td()` and `[GQL-CAPTURE]` are consumed natively
+- **[`.claude/knowledge/api/graphql-test-cases-runner.md`](../api/graphql-test-cases-runner.md)** — runner-native CSV grammar where `@td()` and `[GQL-CAPTURE]` are consumed natively
 - **`knowledge/api/graphql-schema.md`** — schema reference; verify field names before authoring queries that consume `@td()` values or `live-discover` recipes
 
 `scripts/seed-data/` is organized into per-domain subfolders (`catalog/`, `products/`, `b2b/`,

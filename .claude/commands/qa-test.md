@@ -20,7 +20,7 @@ a judgment call a gate does not settle, or when you are about to change how a st
 | Steps 1a–1b — the fetch, the routing branch, the two pre-flight waves | [`skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) |
 | Steps 1r · 1c · 1c-map · 1d — the FULL-only context wave: briefs, returns, what each carries | [`skills/qa-test/context-wave.md`](../skills/qa-test/context-wave.md) |
 | The six derived axes as ONE mechanism (2b–2g) | [`skills/qa-test/axes.md`](../skills/qa-test/axes.md) |
-| Ticket status — who moves it, when, on whose authority | [`knowledge/execution/ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) |
+| Ticket status — who moves it, when, on whose authority | [`.claude/knowledge/execution/ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) |
 | What already exists on this surface (prior BA analysis, models, domain knowledge) | `reports/ba/` + `reports/ba/test-models/` + `knowledge/domain/` |
 | Steps 2–3 — oracles, the four artifacts, scaffold + fan-out, the C1 ticket-regression scope | [`skills/qa-test/authoring.md`](../skills/qa-test/authoring.md) |
 | Step 3x — the discovery lane (exploratory, concurrent with 3a, before authoring) | [`skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) |
@@ -278,7 +278,7 @@ for `feature-test`, the **EFFORT**, then the **SHAPE CLASS** (§5c) off the same
 this command, and on Jira it is also the precondition both closing transitions need. The full state
 machine — the two hops, the confirmation asymmetry, the per-verdict closing table, the `--iterate` rule,
 the Azure behaviour and the mandatory record — is
-[`knowledge/execution/ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md).
+[`.claude/knowledge/execution/ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md).
 **Cite it; do not restate it.**
 
 **It sits HERE, after routing, and not at Step 4 where it used to.** *In testing* means **QA owns this

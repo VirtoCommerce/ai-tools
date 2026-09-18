@@ -11,7 +11,7 @@
 The report policy used to be split across:
 - `.claude/rules/reports.md` — categories + size caps
 - this file — verbosity tiers + screenshot/console/HAR/naming
-- `knowledge/agents/qa/shared-instructions.md` File Output Policy — restating the categories
+- `.claude/knowledge/agents/qa/shared-instructions.md` File Output Policy — restating the categories
 
 That was three places to update, three places to fall out of sync, and three places for an agent to skim past. The canonical policy is now consolidated at [`.claude/rules/reports.md`](../../rules/reports.md). Update only that file.
 

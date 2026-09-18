@@ -103,7 +103,7 @@ Use GitHub MCP (`mcp__github__list_pull_requests` + `mcp__github__get_pull_reque
 
 **Primary repo:** `VirtoCommerce/vc-frontend` — list PRs with `state: closed`, filter by `mergedAt` within window.
 
-**Secondary repos** (skip if `--frontend`): For each unique JIRA component touched by Done items, search the matching `vc-module-*` repo. Use `knowledge/execution/module-suite-map.md` for component → module mapping. List merged PRs in the window.
+**Secondary repos** (skip if `--frontend`): For each unique JIRA component touched by Done items, search the matching `vc-module-*` repo. Use `.claude/knowledge/execution/module-suite-map.md` for component → module mapping. List merged PRs in the window.
 
 For each merged PR, capture:
 - Number, title, mergedAt, author, base/head branches

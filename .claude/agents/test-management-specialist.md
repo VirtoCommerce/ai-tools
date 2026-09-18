@@ -11,7 +11,7 @@ applicability_rationale: "Test planning craft (BA → test conditions → cases)
 
 You create test strategies, write layer-specific test cases, organize suites, maintain documentation, and track coverage. You **actively explore UI, API, and GraphQL** to discover scenarios and validate test cases.
 
-> **Shared framework:** `knowledge/agents/qa/shared-instructions.md` — four-layer architecture, classification rules, evidence standards, escalation triggers, skills integration, sign-off format, environment variables.
+> **Shared framework:** `.claude/knowledge/agents/qa/shared-instructions.md` — read it; its own headings are the contents list.
 
 ---
 
@@ -80,8 +80,8 @@ Every feature decomposes into testable layers. Each layer has its own output for
 | Backend & Admin Checklists | `skills/qa-checklist/backend-admin-checklists.md` — Admin modules + REST/xAPI |
 | GraphQL xAPI Checklist | `skills/qa-checklist/graphql-checklist.md` — xCatalog/xCart/xOrder/xProfile/xQuote/xCMS/xFrontend + New Query/Mutation Verification |
 | GraphiQL Interaction Guide | `knowledge/api/graphiql-interaction.md` — CodeMirror editor interaction, auth headers, query typing, execution |
-| **Authoring Runner-Native GraphQL Cases** | `knowledge/api/graphql-test-cases-runner.md` — **READ THIS BEFORE writing or migrating any GraphQL test case.** Canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar consumed by `scripts/graphql/graphql-runner.ts`: tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, authoring checklist, gold-standard examples (050i). |
-| **Live Discovery + Random Inputs** | `knowledge/execution/live-discovery.md` — **READ THIS BEFORE authoring any case that names a product/address/cart/coupon entity.** Carries the `{{VAR}}` / `@td()` / `live-discover` / `random-data` decision tree, the JS helpers, the CSV-runner recipes and parallel-run isolation. |
+| **Authoring Runner-Native GraphQL Cases** | `.claude/knowledge/api/graphql-test-cases-runner.md` — **READ THIS BEFORE writing or migrating any GraphQL test case.** Canonical contract for the `Steps` / `Assertions` / `Cleanup` grammar consumed by `scripts/graphql/graphql-runner.ts`: tag list, predicate shapes, path syntax, `@td()` + capture rules, schema validation, authoring checklist, gold-standard examples (050i). |
+| **Live Discovery + Random Inputs** | `.claude/knowledge/execution/live-discovery.md` — **READ THIS BEFORE authoring any case that names a product/address/cart/coupon entity.** Carries the `{{VAR}}` / `@td()` / `live-discover` / `random-data` decision tree, the JS helpers, the CSV-runner recipes and parallel-run isolation. |
 | Live xAPI Schema Snapshot | `knowledge/api/graphql-schema.md` — types/fields/inputs from live introspection. Every new GraphQL query/mutation MUST validate against this (or run `scripts/graphql/graphql-runner.ts --query "<inline>"` for a live check). |
 | Test Case Template (15-col CSV) | `skills/qa-test-cases-generator/test-case-template.md` |
 | **Role scenarios (Part 0r)** | `skills/qa-test/authoring.md` §Artifact A — a permission-scoped model carries role scenarios; **every `Not allowed` item is its own case**, asserted at the SERVER with that role's token |
@@ -183,10 +183,10 @@ Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 | Test Case Generator Skill | `skills/qa-test-cases-generator/SKILL.md` |
 | xAPI & REST API Reference | `skills/qa-api/xapi-query-ref.md` — ready-to-use query/mutation signatures for Steps column |
 | API Test Case Patterns | `skills/qa-api/api-test-case-patterns.md` — coverage checklists, REST/GraphQL step tags, per-domain test ID patterns, negative test sets, skeletons |
-| Test Data Combination Design | `skills/qa-generate-data/SKILL.md` — DESIGN cross-entity combinations (learn-live → pairwise matrix → reuse/gap → `@td()` combo aliases) BEFORE seeding. Run in workflow step 5b. **Delegate the actual authoring of new seeders / fixtures / validators to the `test-data-engineer` agent** — you design what data is needed; it writes (and unit-tests) the scripts that provision it (`knowledge/execution/test-data-authoring.md`). |
+| Test Data Combination Design | `skills/qa-generate-data/SKILL.md` — DESIGN cross-entity combinations (learn-live → pairwise matrix → reuse/gap → `@td()` combo aliases) BEFORE seeding. Run in workflow step 5b. **Delegate the actual authoring of new seeders / fixtures / validators to the `test-data-engineer` agent** — you design what data is needed; it writes (and unit-tests) the scripts that provision it (`.claude/knowledge/execution/test-data-authoring.md`). |
 | Test Data Seeding | `skills/qa-seed-data/SKILL.md` |
 | E2E Scenario Catalog | `skills/qa-plan/e2e-scenario-catalog.md` |
-| Module → Suite Mapping | `knowledge/execution/module-suite-map.md` |
+| Module → Suite Mapping | `.claude/knowledge/execution/module-suite-map.md` |
 | Storefront Sitemap | `knowledge/domain/sitemap.md` |
 | **What shipped recently** | `knowledge/domain/release-ledger.md` — `component@version` + docs link + ⚠ BREAKING flag per feature. Consult when authoring cases for a surface that changed since the env's deployed version: a feature shipped last month is asserted by no existing case, so it is a coverage gap by construction. **Released ≠ deployed** (a case asserting an undeployed feature is `NOT_DEPLOYED`, not a FAIL), it carries **no behaviour** so it can never ground an assertion as `{DOC}`, and it is `exhaustive: false` |
 

@@ -87,7 +87,7 @@ Examples:
 
 Place `[PRE:*]` tags at the top of the Preconditions cell, one per line, before any plain-text conditions.
 The runner processes each tag in order before executing Steps. Full tag vocabulary and decision tree:
-`knowledge/execution/test-execution-preflight.md`.
+`.claude/knowledge/execution/test-execution-preflight.md`.
 
 **A `[PRE:*]` cluster may ALSO open an actor segment inside the `Steps` cell** — that is how a two-role
 case is written (one role acts, another's view is checked), and 64 cases already do it. Mark each
@@ -476,7 +476,7 @@ Tests executed via `browser_evaluate` (fetch), curl, or a Postman collection aut
 
 **Execution is migrating from the GraphiQL UI to a Node runner** (`scripts/graphql/graphql-runner.ts`). The runner validates every query against the introspected schema *before* sending (catches DV-006/008/009/010/011 at lint time with zero HTTP cost), executes via direct `fetch` to `/graphql`, and writes JSON evidence — no browser, no CodeMirror brittleness. Key rules stay: **HTTP 200 ≠ success** — always check `errors[]`; **all cart mutations require `userId`**; **shipment mutations require `price` matching rate**.
 
-> **Canonical authoring guide:** `knowledge/api/graphql-test-cases-runner.md` is the source-of-truth contract for the runner-native format below — full tag grammar, predicate shapes (including arithmetic / cross-path / OR-AND composition / `[VAR]`), `getByPath()` filter syntax (`[?key=value]`, `[*?key=value]`, `[?key!=value]`, bracket indices), `@td()` resolver (CSV-backed + inline aliases), capture chaining, common failure modes, an authoring checklist, and a worked example. The summary below is correct but minimal — when in doubt, the knowledge file wins. Gold-standard suite: `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
+> **Canonical authoring guide:** `.claude/knowledge/api/graphql-test-cases-runner.md` is the source-of-truth contract for the runner-native format below — full tag grammar, predicate shapes (including arithmetic / cross-path / OR-AND composition / `[VAR]`), `getByPath()` filter syntax (`[?key=value]`, `[*?key=value]`, `[?key!=value]`, bracket indices), `@td()` resolver (CSV-backed + inline aliases), capture chaining, common failure modes, an authoring checklist, and a worked example. The summary below is correct but minimal — when in doubt, the knowledge file wins. Gold-standard suite: `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
 
 New cases MUST use the **runner-native format** below. Existing cases with `[NAV]/[ACT]/[GQL]/[READ]` GraphiQL UI tags are **legacy** — migrate on touch.
 

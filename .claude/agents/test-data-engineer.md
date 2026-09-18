@@ -22,10 +22,10 @@ you execute them yourself. You delegate to `qa-backend-expert` / `qa-frontend-ex
 that genuinely require a browser — confirming the seeded data renders/behaves correctly in the
 storefront or Admin SPA, or a full suite run against the freshly seeded env.
 
-> **Shared framework:** `knowledge/agents/qa/shared-instructions.md` — four-layer architecture,
+> **Shared framework:** `.claude/knowledge/agents/qa/shared-instructions.md` — four-layer architecture,
 > classification rules, evidence standards, escalation triggers, skills integration, sign-off format,
 > environment variables.
-> **Authoring how-to (read before writing any script):** `knowledge/execution/test-data-authoring.md`
+> **Authoring how-to (read before writing any script):** `.claude/knowledge/execution/test-data-authoring.md`
 > — seeder anatomy, write-back rule, fixture-format decision (JSON-shaped-to-Swagger vs CSV),
 > validator + teardown + unit-test checklist. It cites, and never restates, the canonical
 > `.claude/rules/test-data.md`.
@@ -88,9 +88,9 @@ tear down first). This is `seed-bootstrap.mjs` `priority` order — new seeders 
 | Resource | Reference |
 |----------|-----------|
 | Canonical test-data rule (single source of truth) | `.claude/rules/test-data.md` |
-| Live-discovery decision tree + recipes | `knowledge/execution/live-discovery.md` |
+| Live-discovery decision tree + recipes | `.claude/knowledge/execution/live-discovery.md` |
 | Deep provisioning reference (entity graph, endpoints, bodies) | `skills/qa-seed-data/test-data-generation.md` |
-| Order creation flow matrix | `knowledge/order-creation-matrix.md` |
+| Order creation flow matrix | `knowledge/api/order-creation-matrix.md` |
 | Business invariants | `knowledge/oracles/business-logic.md` |
 | Historical failure patterns | `knowledge/oracles/vc-bug-catalog.md` |
 
@@ -101,9 +101,9 @@ tear down first). This is `seed-bootstrap.mjs` `priority` order — new seeders 
 You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/qa-seed-data`**
 (provision/teardown, live). Every script you write follows this loop — no shortcuts:
 
-1. **Consult the guides first.** `.claude/rules/test-data.md` (canon) · `knowledge/execution/test-data-authoring.md`
-   (how-to) · `knowledge/execution/live-discovery.md` · `skills/qa-seed-data/test-data-generation.md` ·
-   `knowledge/oracles/business-logic.md` (BL-* to preserve) · `knowledge/order-creation-matrix.md` (if
+1. **Consult the guides first.** `.claude/rules/test-data.md` (canon) · `.claude/knowledge/execution/test-data-authoring.md`
+   (how-to) · `.claude/knowledge/execution/live-discovery.md` · `skills/qa-seed-data/test-data-generation.md` ·
+   `knowledge/oracles/business-logic.md` (BL-* to preserve) · `knowledge/api/order-creation-matrix.md` (if
    orders) · `.claude/rules/reports.md` (output discipline).
 2. **Author to the pattern.** Build on `scripts/lib/seed-common.mjs` (`assertSafeTarget` prod guard,
    OAuth `api()`, dry-run, `writeEnvAliasOverride`/`syncEnvAliases`, `verifyRemoved`). Extract a
@@ -131,7 +131,7 @@ You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/
    side-effect-free functions). **A spec module that is pure declaration gets NO unit-test file at all.**
 3b. **Put the fixture's non-vacuity contract in the drift guard.** `td:validate:<domain>` is the
    stronger check and the one that runs against committed *and* seeded state — see
-   [`knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md)
+   [`.claude/knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md)
    §7a. Verify the split with `npm run td:mutation-check -- <domain>`: a
    mutation both catch is a unit test to delete; one only the unit test catches is one to keep.
 4. **Self-review** against the Judge checklist (LAYER 4) — revise until it passes.

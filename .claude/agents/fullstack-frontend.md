@@ -17,7 +17,7 @@ simple, non-breaking** bug in ONE repo, on a branch checked out in `.fix-workspa
 red→green test, and open a **pull request for human review**. You are the interactive twin of
 `ci/agents/fix-frontend-agent.md`.
 
-> **Shared framework:** `knowledge/agents/developers/shared-instructions.md` — write-tool discipline,
+> **Shared framework:** `.claude/knowledge/agents/developers/shared-instructions.md` — write-tool discipline,
 > fast local navigation/editing (Serena), single-repo / no-auto-merge / never-edit-tests rules,
 > escalation, reporting. **Gate ladder:** `.claude/knowledge/execution/quality-gates.md` (you own G2, G3; you feed G4–G7).
 
@@ -175,7 +175,7 @@ API change, no router contract change) · no secrets · preserve BL-UI-* + `crit
 PR, never merge it**. **Module-embedded sub-app fix:** never touch the module's `Web/Scripts/` (legacy
 AngularJS), the Angular 21 designer, or the .NET solution in the same repo — stay within the declared
 sub-app path; never leave ephemeral scratch-harness devDependency/lockfile/scratch-config changes
-(`/vc-shell-fix` Path 2) in the diff. Full list: `knowledge/agents/developers/shared-instructions.md`.
+(`/vc-shell-fix` Path 2) in the diff. Full list: `.claude/knowledge/agents/developers/shared-instructions.md`.
 If the fix is unclear / risky / cross-repo → `FIX_STATUS: FAILED`, don't push speculative changes.
 
 ### PR body (write to the given `PR_BODY.md` path)

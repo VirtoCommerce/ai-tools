@@ -45,7 +45,7 @@ You coordinate three specialist subagents in sequence, then synthesize their fin
 ### Step 0 — Pre-Flight
 
 1. **VirtoOZ MCP first** — ground the target scope against the matching topic-scoped tool (`PlatformUserGuide` / `StorefrontUserGuide` / `PlatformDeveloperGuide` / `VirtoCommerce` for sales). Use Context7 (`/virtocommerce/vc-docs`, `tokens: 8000`) only as fallback. Build understanding of current module architecture and **Virto's published terminology/voice** before analyzing code.
-2. **If the run will produce docs** (scope `docs`, `full`, or anything that reaches `ba-doc-writer`): read `knowledge/ba/virto-doc-style.md` so you can verify each generated doc matches its audience skeleton. The BA team framework is `knowledge/agents/ba/shared-instructions.md`.
+2. **If the run will produce docs** (scope `docs`, `full`, or anything that reaches `ba-doc-writer`): read `knowledge/ba/virto-doc-style.md` so you can verify each generated doc matches its audience skeleton. The BA team framework is `.claude/knowledge/agents/ba/shared-instructions.md`.
 2a. **On `docs release`, read `summary.json` FIRST — before any MCP call.** If
    `release.refusal` is non-null, or `layer` is null, **stop and report the refusal**: there is no
    document to write, and grounding terminology for a note that will not exist is wasted work. A
@@ -104,7 +104,7 @@ Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 
   `publish_target` when `--publish` was given. **Do not pass an `audience`** unless the operator named
   one — it is derived from the layer via §9.1, and an explicit one narrows rather than replaces.
   **`--publish` posts to the tracker, so ASK before posting**; the subagent composes the body and never
-  posts it itself. Mechanics are `knowledge/execution/tracker-ops.md`'s — **§2** for the endpoint, **§5d**
+  posts it itself. Mechanics are `.claude/knowledge/execution/tracker-ops.md`'s — **§2** for the endpoint, **§5d**
   for what a delivery is (the guides in full; split one comment per audience if they do not fit; never a
   repo path in place of content), **§5a** for the body dialect and **§5c** for the screenshot carve-out.
 - If scope is `docs`: run all agents (docs need full context), then `ba-doc-writer` with the requested `audience`. For `sales`, the system analysis is still required — Sales claims must map to observed features (see `ba-doc-writer` Truth guardrail).

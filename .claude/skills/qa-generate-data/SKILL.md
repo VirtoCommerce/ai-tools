@@ -246,7 +246,7 @@ The combination matrix returned inline (step 7) is what those callers consume to
 - Techniques: [`/qa-test-design`](../qa-test-design/SKILL.md) (EP, BVA, decision tables, pairwise)
 - Policy + enforcement: [`.claude/rules/test-data.md`](../../rules/test-data.md)
 - Directory map + seed-gap tables: [`test-data/README.md`](../../../test-data/README.md)
-- Resolver decision tree (`{{VAR}}` vs `@td()` vs live-discover vs random-data): [`knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
+- Resolver decision tree (`{{VAR}}` vs `@td()` vs live-discover vs random-data): [`.claude/knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
 - BL invariants the data must let you observe: `knowledge/oracles/business-logic.md` · historical bad combinations: `knowledge/oracles/vc-bug-catalog.md`
 - Generators: [`scripts/lib/random-data.ts`](../../../scripts/lib/random-data.ts) · discovery: [`scripts/lib/live-discover.ts`](../../../scripts/lib/live-discover.ts)
 - Validators: [`scripts/test-data/validate-td-refs.ts`](../../../scripts/test-data/validate-td-refs.ts) · [`scripts/test-data/audit-aliases.ts`](../../../scripts/test-data/audit-aliases.ts)

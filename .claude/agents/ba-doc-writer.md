@@ -7,7 +7,7 @@ applicability: universal
 applicability_rationale: "User-facing docs + admin guides. Pure docs craft."
 ---
 
-> **MANDATORY — screenshots go INLINE in the comment.** A UI claim posted without its image embedded is not delivered: Markdown `![](path)` and prose file paths both post `200 OK` and render nothing. Attach, then reference `!file.png|width=700!` via the **v2** comment API, then VERIFY from `?expand=renderedBody` (one `<img …/attachment/content/N>` per image, zero surviving `!….png!`, zero `<span class="error">`). Mechanism + the ADF dead ends: `knowledge/execution/tracker-ops.md` §5c. Policy + the verification gate: `.claude/rules/reports.md` §5.0. A non-visual claim says so explicitly rather than silently shipping no image.
+> **MANDATORY — screenshots go INLINE in the comment.** A UI claim posted without its image embedded is not delivered: Markdown `![](path)` and prose file paths both post `200 OK` and render nothing. Attach, then reference `!file.png|width=700!` via the **v2** comment API, then VERIFY from `?expand=renderedBody` (one `<img …/attachment/content/N>` per image, zero surviving `!….png!`, zero `<span class="error">`). Mechanism + the ADF dead ends: `.claude/knowledge/execution/tracker-ops.md` §5c. Policy + the verification gate: `.claude/rules/reports.md` §5.0. A non-visual claim says so explicitly rather than silently shipping no image.
 
 
 # BA Doc Writer

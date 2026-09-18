@@ -11,7 +11,7 @@ Tier-0 collector ([`hooks/session-telemetry.mjs`](../../hooks/session-telemetry.
 VCST-5475/5509) records *what happened* as **spans** and the Tier-1 classifier tags
 each with an **outcome**; this skill *reasons* about the flagged spans on demand and
 produces a verdict per span, judged against the oracle
-([`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md),
+([`.claude/knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md),
 VCST-5476).
 
 **Capture is decoupled from JUDGEMENT (VCST-5509, made real by VCST-5582 H).** Capture is
@@ -88,7 +88,7 @@ asking once. **Sending still needs an explicit "Send".**
   so treat the run as one continuous session (don't read it as "the plugin didn't run").
 
 ### Step 1 — Load the oracle
-Read [`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)
+Read [`.claude/knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)
 — the outcome taxonomy (§1a), the expected-output markers (§1c), the struggle
 sub-signals (§1d), the S0–S3 rubric (§2), the per-skill expectations (§3), and the
 cross-cutting anti-patterns (§4).

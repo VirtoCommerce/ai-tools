@@ -11,7 +11,7 @@ How to write GraphQL queries and mutations into Postman collection requests, plu
 | Reference | Purpose |
 |-----------|---------|
 | `knowledge/api/graphql-schema.md` | **Canonical xAPI schema reference** — queries, mutations, input types, return types from live introspection. **MUST be consulted before writing or reviewing GraphQL.** |
-| [`knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) | Authoring contract for runner-native GraphQL test cases (CSV format consumed by `scripts/graphql/graphql-runner.ts`). Postman collections are an alternative; the runner is preferred for assertion-rich GraphQL test cases. |
+| [`.claude/knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) | Authoring contract for runner-native GraphQL test cases (CSV format consumed by `scripts/graphql/graphql-runner.ts`). Postman collections are an alternative; the runner is preferred for assertion-rich GraphQL test cases. |
 | `knowledge/api/order-creation-matrix.md` | Order/cart/shipment mutation prerequisites — userId, shipment price matching, etc. |
 | `knowledge/api/api-auth.md` | OAuth2 token endpoint and headers — same as REST. |
 

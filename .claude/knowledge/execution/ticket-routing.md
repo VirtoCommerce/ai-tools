@@ -8,7 +8,7 @@ Consumers: `/qa-test` (§1a — the primary router), and, by reference, the comm
 `/qa-verify-fix`, `/qa-fix`, `/qa-hotfix-check`, and `/qa-test-plan` (its type-scoped JQL buckets).
 
 > Tracker-agnostic by construction: it reads a **canonical type** and a **status role**, both normalized
-> off `knowledge/execution/tracker-ops.md`, so it works identically on Jira and Azure Boards. **With no
+> off `.claude/knowledge/execution/tracker-ops.md`, so it works identically on Jira and Azure Boards. **With no
 > `project-profile.json` ⇒ Jira / VCST — the original VC-internal behaviour.**
 
 ---

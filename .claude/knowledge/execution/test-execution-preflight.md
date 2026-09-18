@@ -428,7 +428,7 @@ Do not use these tags in CSVs yet — they have no runner support. Until then, e
 
 ## Cross-References
 
-- `knowledge/execution/test-runner-tags.md` — `[PRE:*]` quick reference and failure-policy summary
+- `.claude/knowledge/execution/test-runner-tags.md` — `[PRE:*]` quick reference and failure-policy summary
 - `skills/qa-test-cases-generator/test-case-template.md` — Preconditions column spec and when to use `[PRE:*]`
 - `agents/test-runner-agent.md` — Phase 2 step 2 triggers this protocol
 - Project memory:

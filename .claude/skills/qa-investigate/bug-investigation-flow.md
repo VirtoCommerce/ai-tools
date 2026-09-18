@@ -168,7 +168,7 @@ makes the handoff to `/qa-fix` precise (Section 8 then confirms the *exact* repo
 | **Admin SPA only** | `module` | `vc-module-<name>` (**same repo** — the Angular Admin UI ships inside the module repo) | Admin UI wrong but data correct in REST. |
 | **Storefront only** (Step 2) | `frontend` | `vc-frontend` | REST + GraphQL + Admin all correct, only the Vue UI is wrong. |
 
-Resolve the **exact** module name via `knowledge/execution/module-suite-map.md` (Module → REST path →
+Resolve the **exact** module name via `.claude/knowledge/execution/module-suite-map.md` (Module → REST path →
 xAPI module) + the `fix-repos.json` `routing[]` hints — then confirm in Section 8 with `search_code`. Carry
 the result into the report's **Fix Routing** block (see `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm
 rather than re-derive. *Determine the layer/module/frontend/platform precisely — never hand off a vague "backend bug".*
@@ -358,7 +358,7 @@ BACKEND?                         FRONTEND?
 | API endpoint path (e.g., `/api/pricing/...`) | Module name maps to path segment → `vc-module-pricing` |
 | GraphQL operation name (e.g., `SearchProducts`) | xAPI module → `vc-module-x-catalog`, `vc-module-x-order`, etc. |
 | Error in `extensions.code` | Search error code string across VirtoCommerce org |
-| Admin SPA section | Check `knowledge/execution/module-suite-map.md` |
+| Admin SPA section | Check `.claude/knowledge/execution/module-suite-map.md` |
 | Feature domain | Consult `module-suite-map.md` or search `org:VirtoCommerce vc-module-*` |
 
 ### Step 2: Search the Code

@@ -308,7 +308,7 @@ drive a browser. Steps, selectors and evidence paths belong to the authored case
 **A two-role scenario is expressible in ONE case today** — a `[PRE:*]` cluster opens an actor segment
 inside `Steps`, and 64 cases already use it. Worked shape, the three rules it carries, and when to prefer
 `[PRE:SWITCH_ORG]` (one account whose role differs per org — no second token, so the permission-claim
-change is directly assertable): [`knowledge/execution/test-execution-preflight.md`](../../knowledge/execution/test-execution-preflight.md)
+change is directly assertable): [`.claude/knowledge/execution/test-execution-preflight.md`](../../knowledge/execution/test-execution-preflight.md)
 §Example 4. Do not split a role boundary into two cases out of a belief that one case cannot hold two
 actors.
 

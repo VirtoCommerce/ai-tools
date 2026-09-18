@@ -123,7 +123,7 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
 | `/qa-monitoring` | Online bug monitoring from App Insights: query → dedup → triage → live repro → report (detect-and-report only; twin of `ci/run-monitor.ts`) | SKILL.md (KQL probes + triage taxonomy + dedup) |
-| `/qa-perf-measure` | Measure backend work per request on a **deployed** env and prove whether a change moved it: dependency calls by type via the App Insights `operation_Id` join, N+1 detection by input-size scaling, paired positive/negative controls so a null result is trustworthy. Counts transfer cross-env; latency does not. Measure-and-report only | SKILL.md + `knowledge/execution/es-call-ab-method.md` (KQL + gotchas, fixture filter, confounds, control pairing, worked examples) |
+| `/qa-perf-measure` | Measure backend work per request on a **deployed** env and prove whether a change moved it: dependency calls by type via the App Insights `operation_Id` join, N+1 detection by input-size scaling, paired positive/negative controls so a null result is trustworthy. Counts transfer cross-env; latency does not. Measure-and-report only | SKILL.md + `.claude/knowledge/execution/es-call-ab-method.md` (KQL + gotchas, fixture filter, confounds, control pairing, worked examples) |
 | `/qa-test-cases-generator` | Generate agent-native CSV test cases from JIRA tickets, features, checklists, or legacy suites | test-case-template.md, test-case-examples.md |
 
 ### Hotfix / Release

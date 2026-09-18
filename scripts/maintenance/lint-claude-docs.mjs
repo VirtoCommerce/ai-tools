@@ -35,6 +35,12 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
+// DOC-007 needs to know where the knowledge base is, and the tool that owns that question lives in
+// this repository. A static import rather than a copy of the resolution order: `--base` / `KB_BASE`
+// / the profile / the managed checkout is four rules with a measured incident behind each, and a
+// second implementation here would be the transcribed constant this gate exists to catch.
+import { resolveBase } from '../../plugins/vc-kb/src/base.mjs';
+
 export const BUDGET = { alwaysLoadedChars: 80_000, longestLineChars: 2_500, skillBodyWarnChars: 19_000, promptBodyChars: 19_000 };
 
 /**
@@ -66,7 +72,7 @@ export const PROMPT_BASELINE_PATH = 'scripts/maintenance/.prompt-size-baseline.j
 //                  it, so `§Effort routing records that the…` missed "## Effort routing, and why…".
 //                  9 were phantom, 9 were genuinely stale citations and were repointed.
 // 0 is the real number for all three, and a ratchet at 0 is the only one that catches the next one.
-export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0 };
+export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 0 };
 
 /** Codes reported for information but never ratcheted — see DOC-003E on `isEphemeralPath`. */
 export const INFORMATIONAL = new Set(['DOC-003E']);
@@ -419,6 +425,32 @@ export function lint(root = '.') {
     const ignoredCache = new Map();
     const ignored = (p) => { if (!ignoredCache.has(p)) ignoredCache.set(p, isGitIgnored(p)); return ignoredCache.get(p); };
 
+    // DOC-007 — A BARE `knowledge/…` PATH NAMES THE BASE, AND NOTHING CHECKED THAT IT WAS THERE.
+    //
+    // CLAUDE.md gives the prefix a precise meaning: `knowledge/…` is the knowledge BASE, a separate
+    // repository; `.claude/knowledge/…` is this one. Neither existing rule could see the first
+    // form, for two independent reasons that were each sensible alone — `PATH_RE` does not list
+    // `knowledge` among its roots, and `isRepoLinkTarget` exempts the prefix outright, on the
+    // ground that the base is cited rather than linked. Between them, a citation that named the
+    // WRONG TREE passed, and so did one that named nothing at all.
+    //
+    // It matters more than a dangling path usually would, because both trees now carry the same
+    // subdirectory names (`knowledge/api/`, `knowledge/execution/`). No filename collides today —
+    // measured 2026-09-18, zero overlap — and the first one that does will resolve to the wrong
+    // repository with nothing to notice it.
+    const KB_PATH_RE = /`(knowledge\/[A-Za-z0-9._/-]+)`/g;
+    let kbBase = null;
+    try { kbBase = resolveBase(); } catch { kbBase = null; }
+    const checkKbPath = (cited, f, line) => {
+      // No base, no check. Reported as a SKIP beside the counts rather than as a zero: a green run
+      // that checked nothing is the failure every other rule here is shaped to avoid.
+      if (!kbBase || isPlaceholderPath(cited)) return;
+      if (fs.existsSync(path.join(kbBase, cited))) return;
+      add('DOC-007', f, line, fs.existsSync(path.join('.claude', cited))
+        ? `names the knowledge BASE but exists only here — write it \`.claude/${cited}\``
+        : `${cited} is in neither the knowledge base nor this repository`);
+    };
+
     for (const f of files) {
       const lines = fs.readFileSync(f, 'utf8').split(/\r?\n/);
       let sectionExempt = false;
@@ -451,6 +483,21 @@ export function lint(root = '.') {
           const cited = m[2].split('#')[0].replace(/\/$/, '');
           if (pathResolves(f, cited) || ignored(cited) || ignored(cited + '/')) continue;
           add(isEphemeralPath(citedFromRoot(f, cited)) ? 'DOC-003E' : 'DOC-003', f, i + 1, `link target does not exist: ${cited}`);
+        }
+        // Both forms a citation of the base takes: a backticked path, and a link target that
+        // `isRepoLinkTarget` deliberately let through. See DOC-007 above.
+        if (!exempt) {
+          for (const m of l.matchAll(KB_PATH_RE)) checkKbPath(m[1], f, i + 1);
+          for (const m of l.matchAll(ANY_LINK_RE)) {
+            if (m[1]) continue;                                   // an image is markup being quoted
+            const t = m[2].split('#')[0].replace(/\/$/, '');
+            // A LINK TARGET RESOLVES AGAINST ITS OWN FILE, and a backticked path against the root.
+            // Checking a link from the root reported `[x](knowledge/README.md)` inside
+            // `.claude/ROUTING.md` as naming the base, when it correctly names the sibling
+            // directory. Try the relative reading first; only a target that resolves NOWHERE here
+            // is a claim about the base.
+            if (t.startsWith('knowledge/') && !pathResolves(f, t)) checkKbPath(t, f, i + 1);
+          }
         }
         for (const m of l.matchAll(SEC_RE)) {
           let t = m[1];

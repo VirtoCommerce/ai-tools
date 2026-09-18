@@ -31,7 +31,7 @@ Shared reference for `test-runner-agent.md`. Consulted on demand — do NOT pre-
 
 `[PRE:*]` tags specify **execution-time state-setup actions** performed via browser UI. They are imperative
 (runner acts) not merely declarative (runner verifies). Full protocol:
-`knowledge/execution/test-execution-preflight.md`.
+`.claude/knowledge/execution/test-execution-preflight.md`.
 
 **They appear in TWO places, and both are sanctioned.** In the `Preconditions` column they establish the
 state a case starts from. **In the `Steps` cell they open a new ACTOR SEGMENT inside one case** — the

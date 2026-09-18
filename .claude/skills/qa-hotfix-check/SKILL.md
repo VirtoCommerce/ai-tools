@@ -86,7 +86,7 @@ not block the other.
 ## Step 2 — deliver (gated write, confirm before `--apply`)
 
 Only for `planned` envs, and only after you've shown the user the per-env plan and they confirm. The
-triple-guarded no-auto-merge culture applies ([`.claude/knowledge/execution/quality-gates.md`](../../knowledge/execution/quality-gates.md)).
+triple-guarded no-auto-merge culture applies ([`quality-gates.md`](../../knowledge/execution/quality-gates.md)).
 
 ```bash
 # module hotfix
@@ -195,7 +195,7 @@ affected module from `module-suite-map.md`.)
 ## Step 4 — record on the JIRA task (English)
 
 Once **every targeted env** is delivered **and** the fix is verified live, comment on the task (English
-per `feedback-jira-comments-in-english`; markdown, not wiki, per `reference-jira-comment-markdown-not-wiki`; clear/brief/outcome-first per `knowledge/execution/tracker-ops.md` §5a **Comment & body style**):
+per `feedback-jira-comments-in-english`; markdown, not wiki, per `reference-jira-comment-markdown-not-wiki`; clear/brief/outcome-first per `.claude/knowledge/execution/tracker-ops.md` §5a **Comment & body style**):
 the per-env table (env · branch · pinned→target · deploy run link) and one line — *"Hotfix verified on
 stable + regression."* If verification was **provider-limited / inconclusive** (Step 3), say so plainly
 (delivered + no-regression, definitive proof pending) — never claim a clean pass. If an env STOPped, say
@@ -303,7 +303,7 @@ the skill-expectations oracle, writes a local `DIAG-*.md`, sends nothing externa
 
 ## Reporting
 
-Tooling output, not one of the five tracked report categories ([`.claude/rules/reports.md`](../../rules/reports.md))
+Tooling output, not one of the five tracked report categories ([`reports.md`](../../rules/reports.md))
 — print the per-env table + delivered versions to the user and the JIRA comment; do **not** create a
 file under `reports/`. A delivery that changes a release decision flows into the normal release report.
 

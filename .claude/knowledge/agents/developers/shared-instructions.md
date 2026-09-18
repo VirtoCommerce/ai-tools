@@ -117,7 +117,7 @@ rest of the fix rather than spending a retry loop on it.
 Before you decide what "correct" means for the code you are about to change, ground the intended behaviour. Order:
 
 1. **This repo's knowledge first** — the oracles (`BL-*` invariants, `ECL-*` edge cases), `knowledge/domain/<slug>.md`, the bug report + its reproduction.
-2. **VirtoOZ next** — `/vc-docs`, topic-scoped tool (the topic→tool table is `knowledge/agents/ba/shared-instructions.md` §Documentation source — VirtoOZ first, always); `PlatformDeveloperGuide` / `StorefrontDeveloperGuide` / the SourceCode tools for API and extensibility questions. Context7 `/virtocommerce/vc-docs` is the fallback only.
+2. **VirtoOZ next** — `/vc-docs`, topic-scoped tool (the topic→tool table is `.claude/knowledge/agents/ba/shared-instructions.md` §Documentation source — VirtoOZ first, always); `PlatformDeveloperGuide` / `StorefrontDeveloperGuide` / the SourceCode tools for API and extensibility questions. Context7 `/virtocommerce/vc-docs` is the fallback only.
 3. **Source last** — the checked-out repo itself.
 
 **Never infer the intended behaviour from the buggy code you are standing in.** A fix built on a guessed product rule turns one bug into a different, quieter bug, and it passes its own reproduction test by construction. Preserving `BL-*` invariants is a Gate-4 review criterion — you cannot preserve an invariant you never read.

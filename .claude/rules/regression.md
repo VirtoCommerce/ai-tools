@@ -7,7 +7,7 @@ Load a prompt template from `vc/shared/docs/prompts/`, execute via MCP browser t
 
 ### 2. CI Regression via Claude Agent SDK
 
-`ci/run-regression.ts` runs suites headless via `@anthropic-ai/claude-agent-sdk` (chrome only, up to 3 in parallel, 90-day `history.json`). The live-progress watcher, run close-out ownership and the `regression:reap` orphan backstop are specified in [`knowledge/execution/regression-pipelines.md`](../knowledge/execution/regression-pipelines.md) — read it before touching `test-run-status.json` or the watcher.
+`ci/run-regression.ts` runs suites headless via `@anthropic-ai/claude-agent-sdk` (chrome only, up to 3 in parallel, 90-day `history.json`). The live-progress watcher, run close-out ownership and the `regression:reap` orphan backstop are specified in [`.claude/knowledge/execution/regression-pipelines.md`](../knowledge/execution/regression-pipelines.md) — read it before touching `test-run-status.json` or the watcher.
 
 ### 3. Autonomous Interactive Regression — REMOVED 2026-08-26
 
@@ -34,7 +34,7 @@ Suites live in `regression/suites/`, organized by module under `Frontend/` and `
 
 ### Suite inventory
 
-Derived, not documented here — `config/test-suites.json` is the source of truth (`npm run suites:lint` prints totals). The suite-authoring RULES — globally unique case IDs, the `…A` / renumber naming convention, **XREF-001** (a dependency may not leave its suite CSV), the `078` split rationale — live in [`knowledge/execution/regression-suites.md`](../knowledge/execution/regression-suites.md). Read it before adding or splitting a suite.
+Derived, not documented here — `config/test-suites.json` is the source of truth (`npm run suites:lint` prints totals). The suite-authoring RULES — globally unique case IDs, the `…A` / renumber naming convention, **XREF-001** (a dependency may not leave its suite CSV), the `078` split rationale — live in [`.claude/knowledge/execution/regression-suites.md`](../knowledge/execution/regression-suites.md). Read it before adding or splitting a suite.
 
 **First: a suite CSV has exactly one author for the duration of a change.** Not one author per file
 forever — one author per *change*: whoever is restructuring, culling or re-pointing a suite owns every
@@ -46,7 +46,7 @@ Why a CSV is not mergeable in practice, the disposition-is-the-artifact argument
 analysis while serialising the write, the re-parse-after-every-write discipline (a mid-write
 unparsable suite takes the manifest gate down for *everyone*), and the cross-session relay rule (a
 fact sent to another session's SUBAGENT is dropped silently — the receiving session must re-issue it
-in its own dispatch brief): [`knowledge/execution/regression-suites.md`](../knowledge/execution/regression-suites.md)
+in its own dispatch brief): [`.claude/knowledge/execution/regression-suites.md`](../knowledge/execution/regression-suites.md)
 §Working concurrently on suites. The measured losses behind all of it:
 [`docs/decisions/regression-history.md`](../../docs/decisions/regression-history.md) §Shared-tree losses.
 
@@ -89,13 +89,13 @@ Each of these is read by the step that needs it and by nothing else. Anchors (`�
 
 | Need | Read |
 |---|---|
-| Per-case lane routing (`suites:lanes` / `suites:machine` / `suites:merge`), the case filter (`suites:filter`), executability + the `EX-*` codes | [`knowledge/execution/regression-lanes.md`](../knowledge/execution/regression-lanes.md) |
-| Post-run promotion `Draft → Automated` (`tc:promote`, the `PR-*` hold codes) — called by `/qa-regression` **6.5** and `/qa-test-lifecycle` **6P**, never automatic | [`knowledge/execution/regression-promotion.md`](../knowledge/execution/regression-promotion.md) |
-| Pre-authoring scaffold (`tc:alloc`, `tc:scaffold --check`, the KEEP gate) | [`knowledge/execution/regression-scaffold.md`](../knowledge/execution/regression-scaffold.md) |
-| Change-scoped selection (`regression:select`), existing-coverage triage (`tc:scope`), post-run triage (`/qa-triage-results`) | [`knowledge/execution/regression-selection.md`](../knowledge/execution/regression-selection.md) |
-| Storefront selectors — generated surface, `selectors:sync` / `selectors:check` | [`knowledge/execution/regression-selectors.md`](../knowledge/execution/regression-selectors.md) |
-| Headless CI runner internals, the App Insights monitoring twin, the suite staleness-audit twin | [`knowledge/execution/regression-pipelines.md`](../knowledge/execution/regression-pipelines.md) |
-| Suite inventory rules (unique IDs, naming, XREF-001) | [`knowledge/execution/regression-suites.md`](../knowledge/execution/regression-suites.md) |
+| Per-case lane routing (`suites:lanes` / `suites:machine` / `suites:merge`), the case filter (`suites:filter`), executability + the `EX-*` codes | [`.claude/knowledge/execution/regression-lanes.md`](../knowledge/execution/regression-lanes.md) |
+| Post-run promotion `Draft → Automated` (`tc:promote`, the `PR-*` hold codes) — called by `/qa-regression` **6.5** and `/qa-test-lifecycle` **6P**, never automatic | [`.claude/knowledge/execution/regression-promotion.md`](../knowledge/execution/regression-promotion.md) |
+| Pre-authoring scaffold (`tc:alloc`, `tc:scaffold --check`, the KEEP gate) | [`.claude/knowledge/execution/regression-scaffold.md`](../knowledge/execution/regression-scaffold.md) |
+| Change-scoped selection (`regression:select`), existing-coverage triage (`tc:scope`), post-run triage (`/qa-triage-results`) | [`.claude/knowledge/execution/regression-selection.md`](../knowledge/execution/regression-selection.md) |
+| Storefront selectors — generated surface, `selectors:sync` / `selectors:check` | [`.claude/knowledge/execution/regression-selectors.md`](../knowledge/execution/regression-selectors.md) |
+| Headless CI runner internals, the App Insights monitoring twin, the suite staleness-audit twin | [`.claude/knowledge/execution/regression-pipelines.md`](../knowledge/execution/regression-pipelines.md) |
+| Suite inventory rules (unique IDs, naming, XREF-001) | [`.claude/knowledge/execution/regression-suites.md`](../knowledge/execution/regression-suites.md) |
 
 ## Prompt Templates
 

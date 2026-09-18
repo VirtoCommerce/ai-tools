@@ -128,7 +128,7 @@ Sources to check:
 
 ### Step 2: Map Changes to Modules and Suites
 
-Use the module-to-suite mapping in `knowledge/execution/module-suite-map.md` to identify which regression suites cover each changed module. If a change spans multiple modules, include all affected suites.
+Use the module-to-suite mapping in `.claude/knowledge/execution/module-suite-map.md` to identify which regression suites cover each changed module. If a change spans multiple modules, include all affected suites.
 
 ### Step 3: Score Risk
 

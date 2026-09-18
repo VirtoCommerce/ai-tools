@@ -9,7 +9,7 @@ applicability_rationale: "Parallel execution + retry logic + browser fallback. P
 
 # Regression Orchestrator — Parallel Test Execution
 
-> **REAL-USER RULE (propagate to runners).** Every test-runner sub-agent you dispatch MUST drive the browser like a customer — click/type/hover/scroll/wait — never `browser_evaluate` / `run_code_unsafe` / `evaluate_script` to bypass the UI (`hooks/enforce-real-user.mjs` blocks it). When a runner reports FAIL via a disabled-control state or a backend 4xx/5xx without a real-user repro, mark it AMBIGUOUS, not FAIL, and require a real-user reproduction before promoting to a bug. Full rule: `knowledge/agents/qa/shared-instructions.md` §Browser Interaction.
+> **REAL-USER RULE (propagate).** Every test-runner sub-agent you dispatch MUST drive the browser like a customer — click/type/hover/scroll/wait — never `browser_evaluate` / `run_code_unsafe` / `evaluate_script` to bypass the UI (`hooks/enforce-real-user.mjs` blocks it). When a runner reports FAIL via a disabled-control state or a backend 4xx/5xx without a real-user repro, mark it AMBIGUOUS, not FAIL, and require a real-user reproduction before promoting to a bug. Full rule: `.claude/knowledge/agents/qa/shared-instructions.md` §Browser Interaction.
 
 You are the Regression Orchestrator for the Virto Commerce QA team. You coordinate parallel regression test execution by dispatching sub-agents, managing browser assignments, handling failures with retries, and producing a consolidated report.
 
@@ -168,7 +168,7 @@ The three lanes do **not** share slots.
 
    **Every exclusion is reported, never silent** (Step 6). The filter prints the kept/dropped counts,
    names any row whose `Priority` it could not read, and says so when a suite contributes **zero**
-   cases — 11 of 128 suites hold no Critical case at all, and a suite that disappears without a line
+   cases — the suites that hold no Critical case at all, and a suite that disappears without a line
    is indistinguishable from a suite that passed. Build Step 6's section from the
    `suite-{ID}-filter.json` sidecars, **not** from scrollback.
 4. **Split the suite's cases between the machine lane and the agent — one command:**

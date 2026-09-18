@@ -145,10 +145,10 @@ Reference files — read on-demand before each testing area, not all upfront:
 | Browser Quirks | `knowledge/automation/browser-quirks.md` |
 | Debugging Signals | `knowledge/execution/debugging-signals.md` |
 | **Domain maps — what a domain IS** | `knowledge/domain/` — one `<slug>.md` per domain. **`ls` it for the roster; never work from a list written elsewhere** |
-| Test Data Generation | `knowledge/test-data-generation.md` |
+| Test Data Generation | `.claude/skills/qa-seed-data/test-data-generation.md` |
 | GraphQL xAPI Schema | `knowledge/api/graphql-schema.md` |
-| **Authoring Runner-Native GraphQL Cases** | `knowledge/api/graphql-test-cases-runner.md` |
-| **Live Test-Data Discovery** | `knowledge/execution/live-discovery.md` |
+| **Authoring Runner-Native GraphQL Cases** | `.claude/knowledge/api/graphql-test-cases-runner.md` |
+| **Live Test-Data Discovery** | `.claude/knowledge/execution/live-discovery.md` |
 
 **Testing a feature? Read its domain map BEFORE anything else you read.** `knowledge/domain/<slug>.md`
 is the feature-scoped, persistent answer to *"what is this thing and where are its surfaces"* — actors,
@@ -172,7 +172,7 @@ narrowness: the ticket names one control, the map names the whole surface that c
 Applies to any question of how the platform or the storefront is **supposed** to behave. Grounding order:
 
 1. **This repo's knowledge first** — the domain map (`knowledge/domain/<slug>.md`), the oracles (`BL-*`, `ECL-*`), `.claude/ROUTING.md` §Knowledge bases. Free, already triangulated, and often already carrying the verbatim doc quote.
-2. **VirtoOZ next** — `/vc-docs`, topic-scoped tool (the topic→tool table is `knowledge/agents/ba/shared-instructions.md` §Documentation source — VirtoOZ first, always). Context7 `/virtocommerce/vc-docs` is the fallback only.
+2. **VirtoOZ next** — `/vc-docs`, topic-scoped tool (the topic→tool table is `.claude/knowledge/agents/ba/shared-instructions.md` §Documentation source — VirtoOZ first, always). Context7 `/virtocommerce/vc-docs` is the fallback only.
 3. **Live / source last** — what the environment actually does.
 
 **Never substitute memory, a plausible inference, or "the code looked like it" for documented behaviour.** A doc claim carried into a report, a case or a verdict is a **verbatim quote with its URL**, or it is not evidence. A PASS, a bug or an assertion built on a guessed product rule is wrong in the one direction nobody re-checks — it reads as confident.
@@ -246,7 +246,7 @@ Pick the right layer for each data role:
 
 **Cardinal rule:** random + live-discover are for inputs and navigation; `@td()` is for assertion targets. Never assert exact prices, titles, IDs, or URL path segments on a discovered or random value — assert shape/range invariants (`isNumber`, `> 0`, currency-formatted).
 
-Full decision tree, JS recipes, and CSV-runner recipes: `knowledge/execution/live-discovery.md`. Cross-skill rule: `.claude/rules/test-data.md`.
+Full decision tree, JS recipes, and CSV-runner recipes: `.claude/knowledge/execution/live-discovery.md`. Cross-skill rule: `.claude/rules/test-data.md`.
 
 ### 2. Validate GraphQL against the live schema
 
@@ -260,7 +260,7 @@ Before authoring or reviewing any query/mutation:
 
 ### 3. Verify selectors & state against the live UI
 
-Storefront selectors, sign-in flow, cart-reset macros, and org-switch primitives are documented in `knowledge/execution/test-execution-preflight.md` and `knowledge/automation/storefront-selectors.md`. Both were verified live on vcst-qa; re-verify (DOM probe + snapshot) before relying on a selector older than the most recent regression run.
+Storefront selectors, sign-in flow, cart-reset macros, and org-switch primitives are documented in `.claude/knowledge/execution/test-execution-preflight.md` and `knowledge/automation/storefront-selectors.md`. Both were verified live on vcst-qa; re-verify (DOM probe + snapshot) before relying on a selector older than the most recent regression run.
 
 ### 4. Verify source data and design intent before filing a bug
 
@@ -345,7 +345,7 @@ Skills are methodology libraries with supporting reference files. Read the suppo
 | Triaging a defect | `/qa-defect` | `defect-lifecycle-workflow.md` |
 | Sign-off | `/qa-evidence` | `sign-off-templates.md` |
 | VC documentation | `/vc-docs` | **VirtoOZ MCP** (primary, 12 topic-scoped tools); Context7 fallback |
-| Module mapping | `knowledge/execution/module-suite-map.md` | direct file reference |
+| Module mapping | `.claude/knowledge/execution/module-suite-map.md` | direct file reference |
 | xAPI queries | `/qa-api ref <module>` | `xapi-query-ref.md` |
 
 ## Environment Variables (read via process.env)
@@ -409,7 +409,7 @@ For full sign-off tables: `skills/qa-evidence/sign-off-templates.md`
 
 See [`.claude/rules/reports.md`](../../../rules/reports.md) — the single source of truth for: allowed report categories (4), hard size caps per type, required sections, bloat patterns to cut, screenshot/console/network/HAR rules, and naming conventions. Do not restate the policy here; update only `reports.md`.
 
-**Tracker comments (bug filing, sign-off, defect transitions).** Anything you post into a tracker field — a Jira/Azure Boards comment or description via `/qa-bug`, `/qa-defect`, or the Sign-Off flow — follows `knowledge/execution/tracker-ops.md` §5a **Comment & body style**: Markdown for Jira (never wiki markup: no `h2.`/`*bold*`/`{code}` — VCST-5212), HTML for Azure Boards; either way **clear, brief, outcome-first, structured** (not a wall of text), with **evidence referenced not inlined** and the same size discipline as `reports.md`. Verify the comment actually renders before moving on.
+**Tracker comments (bug filing, sign-off, defect transitions).** Anything you post into a tracker field — a Jira/Azure Boards comment or description via `/qa-bug`, `/qa-defect`, or the Sign-Off flow — follows `.claude/knowledge/execution/tracker-ops.md` §5a **Comment & body style**: Markdown for Jira (never wiki markup: no `h2.`/`*bold*`/`{code}` — VCST-5212), HTML for Azure Boards; either way **clear, brief, outcome-first, structured** (not a wall of text), with **evidence referenced not inlined** and the same size discipline as `reports.md`. Verify the comment actually renders before moving on.
 
 ## Browser Interaction — Mandatory Real-User Behavior
 

@@ -149,7 +149,7 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
    ordinary change source.
 
 **Module (`module <name>`):**
-1. Match `<name>` against module names in `knowledge/execution/module-suite-map.md`
+1. Match `<name>` against `.claude/knowledge/execution/module-suite-map.md`
 2. Query Context7 (`/virtocommerce/vc-docs`) for the module's latest documentation
 3. If a specific version is known: check GitHub releases via `gh api repos/VirtoCommerce/vc-module-<name>/releases/latest`
 
@@ -229,7 +229,7 @@ Dispatch `test-management-specialist` with the change inventory to assess and up
 
 #### 2a. Map Changes to Cases
 
-Use `knowledge/execution/module-suite-map.md` to route changes to specific test cases:
+Route changes to test cases with `.claude/knowledge/execution/module-suite-map.md`:
 
 1. **Direct mapping** — for each changed module, look up "Must Run" suites
 2. **Dependency mapping** — look up "Should Run" suites (downstream dependencies)

@@ -153,7 +153,7 @@ Per `.claude/rules/test-data.md`:
 | `live-discover` | `scripts/lib/live-discover.ts` or `[GQL-OP]+[GQL-CAPTURE]` | Drifting entities — assert shape, not exact values |
 | `random-data` | `scripts/lib/random-data.ts` | Unique inputs (emails, org names, comments) — `AGENT-TEST-` prefix by default |
 
-The decision tree is in [`knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md) — consult before authoring any case that touches a product, address, cart, coupon, or user entity.
+The decision tree is in [`.claude/knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md) — consult before authoring any case that touches a product, address, cart, coupon, or user entity.
 
 ---
 
@@ -184,7 +184,7 @@ reporting all consume `gap-inventory.json`; none of them re-reads the suites.
    - `knowledge/oracles/business-logic.md` (`BL-*` invariants)
    - `knowledge/oracles/e-commerce-edge-cases-library.md` (`ECL-*`)
    - `knowledge/domain/sitemap.md`
-   - `knowledge/execution/module-suite-map.md`
+   - `.claude/knowledge/execution/module-suite-map.md`
    - `knowledge/api/graphql-schema.md`
    - `knowledge/domain/products.md`, `catalog.md`, `store-settings.md`
    - `skills/qa-plan/e2e-scenario-catalog.md` (105 E2E scenarios)

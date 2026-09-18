@@ -58,7 +58,7 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
    nothing over the member name. **Rule of thumb: a one-line production change carries at most a
    one-line comment.** Judge density against the surrounding file, not in the abstract — if the diff is
    visibly more commented than the code it sits in, it is over-commented. The authoring-side rule is
-   `knowledge/agents/developers/shared-instructions.md` §Minimal diff; this is its Gate-4 enforcement.
+   `knowledge/agents/developers/shared-instructions.md` — the minimal-diff rule runs through that file rather than sitting under a heading of its own; this is its Gate-4 enforcement.
 5. **Minimal & idiomatic** — no refactors, no formatting churn, no dep bumps / `yarn.lock` changes, no
    unrelated files; Vue 3 / `<script setup>` / Composition API / TS idioms match the repo (see
    `skills/vue-fix/vue3-best-practices.md`). No reactivity foot-guns (destructured

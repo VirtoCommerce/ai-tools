@@ -103,7 +103,7 @@ HOTFIX BRANCH (critical production bugs):
 
 QA directly controls these 5 transitions. Each requires a JIRA comment and evidence.
 
-> **Comment format (every transition comment below):** follow `knowledge/execution/tracker-ops.md` §5a
+> **Comment format (every transition comment below):** follow `.claude/knowledge/execution/tracker-ops.md` §5a
 > **Comment & body style** — Markdown (never Jira wiki markup: no `h2.`/`*bold*`/`{code}`), clear, brief,
 > outcome-first, evidence referenced not inlined. The blocks below are illustrative content, not a
 > literal wire format.
@@ -295,7 +295,7 @@ Run 2-3 related checks in the same feature area:
 
 | STR Result | Regression | Side Effects | Decision | JIRA Transition |
 |-----------|-----------|-------------|----------|----------------|
-| Pass 3/3 | All pass | None | **VERIFIED** | → **TESTED**, and STOP — a QA flow never sets `DONE` (`knowledge/execution/ticket-status-transitions.md` §9.5); the human who merges closes it |
+| Pass 3/3 | All pass | None | **VERIFIED** | → **TESTED**, and STOP — a QA flow never sets `DONE` (`.claude/knowledge/execution/ticket-status-transitions.md` §9.5); the human who merges closes it |
 | Pass 3/3 | All pass | None | **VERIFIED (BA/PO)** | TESTED → VERIFY BY BA/PO |
 | Pass 3/3 | 1+ fail | — | **REOPEN** | TESTED → REOPEN (new regression) |
 | Fail any | — | — | **REOPEN** | TESTED → REOPEN (fix incomplete) |

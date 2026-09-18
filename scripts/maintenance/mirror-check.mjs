@@ -77,6 +77,14 @@ export const PATH_REWRITES = [
   [/(?:\.\.\/)*(?:\.\/)?(?:knowledge\/diagnostics\/)?upstream-schema\.md/g, "@UPSTREAM_SCHEMA"],
   [/(?:\.\.\/)*(?:\.\/)?(?:knowledge\/diagnostics\/)?adr-upstream-default-deny\.md/g, "@UPSTREAM_ADR"],
   [/(?:\.\.\/)*(?:\.claude\/)?rules\/([a-z-]+\.md)/g, "@RULES/$1"],
+  // THE SAME SENTENCE HAS TO SPELL THIS PREFIX DIFFERENTLY ON THE TWO SURFACES, and that is not a
+  // fork. In this repository a bare `knowledge/…` means the knowledge BASE, so a citation of OUR
+  // tree must say `.claude/knowledge/…` — DOC-007 now fails the build if it does not. Inside the
+  // plugin the bare form is correct and the prefixed one would be wrong: `plugins/vc-fix/knowledge/`
+  // is the plugin's own tree, it has no `.claude/` to reach, and its 14 files have no counterpart
+  // in the base. Normalising the PREFIX while keeping the tail leaves a genuine difference visible —
+  // two copies citing different files still differ, which is the whole point of the pair check.
+  [/(?:\.\.\/)*(?:\.claude\/)?knowledge\/([A-Za-z0-9._/-]+\.md)/g, "@KNOWLEDGE/$1"],
   [/(?:\.\.\/)*\.claude\//g, "@CLAUDE/"],
   // Strip the `../` prefix entirely rather than tokenising it. The two trees sit at different
   // depths, so `knowledge/foo.md` and `../../knowledge/foo.md` name the SAME target and must
@@ -218,7 +226,12 @@ export const BYTE_IDENTICAL = [
   "skills/dotnet-fix/dotnet10-best-practices.md",
   "skills/dotnet-fix/fix-patterns.md",
   "skills/dotnet-unit-test/xunit-patterns.md",
-  "skills/qa-risk/risk-prioritization-framework.md",
+  // `skills/qa-risk/risk-prioritization-framework.md` LEFT this list on 2026-09-18, and could not
+  // stay: it cites a `knowledge/…` file, and the two surfaces are now required to spell that prefix
+  // differently — `.claude/knowledge/…` here (DOC-007), the bare form inside the plugin, where it
+  // means the plugin's own tree. Byte identity is unreachable for any pair that cites one. The pair
+  // is still gated: PATH_REWRITES normalises the prefix, so it lands in `structural`, where any
+  // CONTENT drift fails exactly as before.
   "skills/vc-self-check/deliver.mjs",
   "skills/vc-self-check/upstream-reduce.mjs",
   "skills/vc-shell-fix/vc-shell-scratch-harness-patterns.md",

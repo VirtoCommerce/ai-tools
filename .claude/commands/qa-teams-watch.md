@@ -199,5 +199,5 @@ the query by itself once Gate 1 moves it to in-progress — no cursor, no shared
 - Never invent a fact absent from the message. Genuinely ambiguous ⇒ do not file; list it
   as needing a human look.
 - Never post into a watched chat. These are live channels with partners in them.
-- Comment and body style follows `knowledge/execution/tracker-ops.md` §2 — Markdown, brief,
+- Comment and body style follows `.claude/knowledge/execution/tracker-ops.md` §2 — Markdown, brief,
   outcome-first.
