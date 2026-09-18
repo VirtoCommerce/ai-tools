@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { cacheDir, httpReader, maxAgeOf, resolveUrl } from '../kb/core/http-reader.mjs';
+import { cacheDir, describeFailure, httpReader, maxAgeOf, resolveUrl } from '../kb/core/http-reader.mjs';
 
 const BASE = 'https://raw.githubusercontent.com/VirtoCommerce/vc-knowledge/main/v2';
 
@@ -272,4 +272,49 @@ test('the cache lives in a scratchpad, never in the repo', () => {
   // `git status` and gets committed by somebody tidying up.
   assert.equal(cacheDir({ KB_CACHE_DIR: 'X' }), 'X');
   assert.ok(cacheDir({}).startsWith(tmpdir()));
+});
+
+// ─── saying WHY it could not be reached ───────────────────────────────────────────────────────
+
+test('the real cause is unwrapped out of the TypeError node fetch wraps it in', async () => {
+  // Node's fetch wraps every transport failure as a bare `TypeError: fetch failed` and puts the
+  // real error in `err.cause`. Reporting the wrapper is an honest `unreachable` and a useless one:
+  // "retry" is good advice, but whether a retry has any chance depends on whether this was a blip
+  // or a hostname that does not exist. Measured live before this existed, the whole detail an
+  // operator got was "TypeError: fetch failed".
+  const wrapped = (code, message) => Object.assign(new TypeError('fetch failed'), {
+    cause: Object.assign(new Error(message), { code }),
+  });
+  assert.match(describeFailure(wrapped('ENOTFOUND', 'getaddrinfo ENOTFOUND host.invalid')), /^ENOTFOUND: /);
+  assert.match(describeFailure(wrapped('ECONNREFUSED', 'connect ECONNREFUSED 127.0.0.1:49999')), /^ECONNREFUSED: /);
+  assert.match(describeFailure(wrapped('CERT_HAS_EXPIRED', 'certificate has expired')), /^CERT_HAS_EXPIRED: /);
+
+  // A timeout is named as one, ahead of any code: it is the failure an agent is most likely to be
+  // able to do something about.
+  assert.match(describeFailure(Object.assign(new Error('aborted'), { name: 'TimeoutError' })), /^timeout: /);
+
+  // An aggregate -- a host with several addresses, all refused -- nests one deeper.
+  const aggregate = Object.assign(new TypeError('fetch failed'), {
+    cause: Object.assign(new AggregateError([], 'all failed'), {
+      errors: [Object.assign(new Error('connect ECONNREFUSED ::1:443'), { code: 'ECONNREFUSED' })],
+    }),
+  });
+  assert.match(describeFailure(aggregate), /^ECONNREFUSED: /);
+});
+
+test('an unwrappable failure still produces a non-empty detail', async () => {
+  // Whatever happens, the caller must be told something: a reason with an empty detail is a state
+  // nobody can act on, and it reads exactly like a bug in the reader.
+  for (const err of [new Error(''), new TypeError('fetch failed'), 'a string', null]) {
+    assert.ok(describeFailure(err).length > 0);
+  }
+});
+
+test('the detail reaches the caller through the reader, not only through the helper', async () => {
+  const { fetchImpl } = transport(Object.assign(new TypeError('fetch failed'), {
+    cause: Object.assign(new Error('getaddrinfo ENOTFOUND nope.invalid'), { code: 'ENOTFOUND' }),
+  }));
+  const r = await httpReader(BASE, { fetchImpl }).readManifest();
+  assert.equal(r.reason, 'unreachable');
+  assert.match(r.detail, /ENOTFOUND/, 'the operator must learn the hostname does not exist');
 });

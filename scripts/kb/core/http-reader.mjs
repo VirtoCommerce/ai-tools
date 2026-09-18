@@ -46,6 +46,30 @@ export function maxAgeOf(header) {
 }
 
 /**
+ * What actually went wrong, in words an agent can act on.
+ *
+ * Node's `fetch` wraps every transport failure as a bare `TypeError: fetch failed` and puts the
+ * real error -- `ENOTFOUND`, `ECONNREFUSED`, `CERT_HAS_EXPIRED`, the timeout -- in `err.cause`.
+ * Reporting the wrapper is technically an honest `unreachable`, and useless: "conclude nothing;
+ * retry" is good advice, but whether a retry has any chance depends entirely on whether this was a
+ * five-second blip or a hostname that does not exist. Measured live against a bad hostname before
+ * this unwrapping existed, the whole detail an operator got was "TypeError: fetch failed".
+ *
+ * The cause is unwrapped up to two levels, because an aggregate error (a host with several
+ * addresses, all refused) nests one deeper.
+ */
+export function describeFailure(err) {
+  if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+    return `timeout: ${String(err.message ?? err).slice(0, 160)}`;
+  }
+  const causes = [err, err?.cause, err?.cause?.cause, ...(err?.cause?.errors ?? [])].filter(Boolean);
+  const coded = causes.find((c) => c.code);
+  const code = coded?.code ?? err?.name ?? 'error';
+  const message = (coded ?? err?.cause ?? err)?.message ?? String(err);
+  return `${code}: ${String(message).slice(0, 160)}`;
+}
+
+/**
  * Resolve a path from `index.json` against the base, refusing anything that escapes it.
  *
  * A path out of the index is DATA, not a trusted input -- in the shipping shape it arrives over the
@@ -104,10 +128,7 @@ export function httpReader(locator, {
     } catch (err) {
       // DNS, refused, aborted, TLS, and the unit-test trap all land here. None of them is "the
       // file is not there", and saying so would be the collapse this whole design prevents.
-      const name = err?.name === 'TimeoutError' || err?.name === 'AbortError'
-        ? 'timeout'
-        : (err?.code ?? err?.name ?? 'error');
-      return { ok: false, reason: 'unreachable', detail: `${name}: ${String(err?.message ?? err).slice(0, 200)}` };
+      return { ok: false, reason: 'unreachable', detail: describeFailure(err) };
     }
     if (res.status === 304) return { ok: false, reason: 'not-modified', detail: '304', res };
     if (MISSING_STATUS.has(res.status)) return { ok: false, reason: 'missing', detail: `HTTP ${res.status} ${url}` };
