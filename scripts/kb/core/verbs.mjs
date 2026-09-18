@@ -356,7 +356,7 @@ export async function reindex(opened, { env = process.env, write = true, generat
       state: 'no-base',
       why: `reindex rebuilds the index from every entry and writes it back, which ${opened.locator} `
         + 'cannot do — it is a read-only CDN base. Point it at a checkout: '
-        + 'kb reindex --base <path-to-clone>/v2',
+        + 'kb reindex --base <path-to-clone>',
     };
   }
 

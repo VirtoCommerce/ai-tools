@@ -514,7 +514,20 @@ async function buildPush({ api, prefix, full, loaded, allLines, counts, session,
   const index = buildIndex([...applied.raw.values()], { generated: at.toISOString() });
 
   const writes = [...applied.files].map(([path, text]) => ({ path: full(path), text }));
-  writes.push({ path: full('index.json'), text: `${JSON.stringify(index, null, 2)}\n` });
+
+  // THE INDEX IS WRITTEN ONLY WHEN A ROW ACTUALLY MOVED. `generated` changes on every push by
+  // construction, so including the index unconditionally makes a log-only push rewrite the one
+  // file everybody reads for a one-line diff that reports nothing -- and it makes "did the index
+  // change?" unanswerable from the history without opening each commit. Measured on the first
+  // ordinary push after the base moved to the repository root: `+1 -1`, `generated` alone.
+  //
+  // Comparing the ROWS rather than the bytes is what makes this safe, and it also gives
+  // `generated` a meaning worth having: when the rows last changed, not when somebody last
+  // pushed anything.
+  const rowsChanged = JSON.stringify(index.entries) !== JSON.stringify(currentIndex.entries ?? [])
+    || index.count !== currentIndex.count
+    || index.schema !== currentIndex.schema;
+  if (rowsChanged) writes.push({ path: full('index.json'), text: `${JSON.stringify(index, null, 2)}\n` });
 
   // Every kept line through toLogLine() — the one place the queue/log distinction lives. The
   // pushing session's own file also carries the flush summary, so the log describes its own

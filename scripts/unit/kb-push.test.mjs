@@ -49,11 +49,12 @@ function makeEntry({
 }
 
 /** A base state: `v2/index.json` plus `v2/entries/*.md`, consistent by construction. */
-function makeBase(entries, { generated = '2026-09-18T09:00:00Z', extra = {} } = {}) {
+function makeBase(entries, { generated = '2026-09-18T09:00:00Z', extra = {}, prefix = 'v2' } = {}) {
+  const at = (p) => (prefix ? `${prefix}/${p}` : p);
   const files = new Map(Object.entries(extra));
-  for (const e of entries) files.set(`v2/${e.path}`, e.text);
+  for (const e of entries) files.set(at(e.path), e.text);
   const index = buildIndex(entries.map((e) => buildRow(e.data, e.path)), { generated });
-  files.set('v2/index.json', `${JSON.stringify(index, null, 2)}\n`);
+  files.set(at('index.json'), `${JSON.stringify(index, null, 2)}\n`);
   return { head: 'c0000000', files };
 }
 
@@ -547,6 +548,31 @@ test('a DRY RUN needs no token: the review comes before the credential, not afte
   assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), true, 'the queue is untouched');
 }));
 
+test('a base at the REPOSITORY ROOT writes root paths — the prefix was only ever in the locator', () => withQueue(async ({ dir, env }) => {
+  // The base lived under a `v2/` prefix while it shared the repository with an older corpus, and was
+  // lifted to the root on 2026-09-18 when that corpus moved to an archive branch. Only the declared
+  // LOCATOR changed: `coordinatesOf()` parses the prefix out, `full()` composes every path through
+  // it, and `outsideBase()` / `expiredLogs()` already took it as a parameter defaulting to empty. An
+  // index row's `path` reads `entries/...` either way, so not one stored byte had to be rewritten.
+  const ROOT = 'https://raw.githubusercontent.com/VirtoCommerce/vc-knowledge/main';
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact' })], { prefix: '' });
+  const api = fakeApi(state);
+  await writeQueue(dir, SESSION, [captureLine(makeEntry({ id: 'KB-22222222', subject: 'a new fact', anchors: ['/checkout'] }))]);
+
+  const r = await flush({ env, base: ROOT, token: 'test-token', api, now, sleep: async () => {} });
+  assert.equal(r.state, 'pushed');
+  assert.deepEqual(r.plan.writes.map((w) => w.path).sort(),
+    ['entries/KB-22222222.md', 'index.json', logPath(SESSION, AT)].sort(),
+    'no prefix, and no leading slash either');
+  assert.equal(JSON.parse(state.files.get('index.json')).count, 2);
+
+  // Containment still names exactly the three paths the base owns, now rooted -- and a stale `v2/`
+  // path is refused rather than quietly written beside the base it used to be.
+  assert.deepEqual(outsideBase(['index.json', 'entries/x.md', 'log/2026-09-18/y.jsonl'], ''), []);
+  assert.deepEqual(outsideBase(['kb.json', 'README.md', 'v2/index.json'], ''),
+    ['kb.json', 'README.md', 'v2/index.json']);
+}));
+
 test('a local base is not a writable one, and says so instead of guessing at a repo', async () => {
   const r = await flush({ env: { KB_QUEUE_DIR: tmpdir() }, base: 'C:/some/checkout/v2', token: 't' });
   assert.equal(r.state, 'no-base');
@@ -630,6 +656,39 @@ test('the gate is shown the exact files, the message and the parent', () => with
   await run(env, fakeApi(state), { gate: async (plan) => { shown = plan; return false; } });
   assert.equal(shown.parent, 'c0000000');
   assert.match(shown.message, /^kb: 1 log \(session f3d05dd3\)$/);
-  assert.deepEqual(shown.writes.map((w) => w.path), ['v2/index.json', `v2/${logPath(SESSION, AT)}`]);
+  // A log-only push carries NO index: see the test below for why that is the rule and not an
+  // accident of this fixture.
+  assert.deepEqual(shown.writes.map((w) => w.path), [`v2/${logPath(SESSION, AT)}`]);
   assert.deepEqual(shown.deletions, []);
+}));
+
+test('a push that moved no row leaves index.json alone — `generated` is not a reason to rewrite it', () => withQueue(async ({ dir, env }) => {
+  // `generated` changes on every push by construction, so writing the index unconditionally makes
+  // a log-only push rewrite the one file everybody reads for a diff that reports nothing, and
+  // makes "did the index change?" unanswerable from the history. Measured on the first ordinary
+  // push after the base moved to the repository root: `+1 -1`, `generated` alone.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact' })]);
+  const before = state.files.get('v2/index.json');
+  const api = fakeApi(state);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'x', matched: [], state: 'miss' }]);
+
+  const r = await run(env, api);
+  assert.equal(r.state, 'pushed');
+  assert.deepEqual(r.plan.writes.map((w) => w.path), [`v2/${logPath(SESSION, AT)}`]);
+  assert.equal(state.files.get('v2/index.json'), before, 'not one byte, including the timestamp');
+}));
+
+test('...but a row that DID move is written, timestamp and all', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact' })]);
+  const before = state.files.get('v2/index.json');
+  const api = fakeApi(state);
+  await writeQueue(dir, SESSION, [confirmLine('KB-11111111', 'entries/KB-11111111.md')]);
+
+  const r = await run(env, api);
+  assert.equal(r.state, 'pushed');
+  assert.ok(r.plan.writes.some((w) => w.path === 'v2/index.json'), 'a trust bump is a row change');
+  const after = JSON.parse(state.files.get('v2/index.json'));
+  assert.notEqual(state.files.get('v2/index.json'), before);
+  assert.equal(after.entries[0].trust, 2);
+  assert.equal(after.generated, AT.toISOString(), 'and THAT is what generated should mean');
 }));

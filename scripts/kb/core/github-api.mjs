@@ -33,10 +33,10 @@ export const FILE_MODE = '100644';
 /**
  * Parse a `raw.githubusercontent.com` base URL into the coordinates a write needs.
  *
- * The base is DECLARED as a read locator (`…/vc-knowledge/main/v2`), and the push must target
- * exactly that base and no other — deriving the repo from it, rather than configuring it a second
- * time, is what makes "you cannot read from one base and write to another" true by construction
- * instead of by discipline.
+ * The base is DECLARED as a read locator (`…/vc-knowledge/main`, optionally with a path prefix),
+ * and the push must target exactly that base and no other — deriving the repo from it, rather than
+ * configuring it a second time, is what makes "you cannot read from one base and write to another"
+ * true by construction instead of by discipline.
  *
  * @returns {{owner,repo,branch,prefix}|null} null when the locator is not a writable base at all
  *          (a local fixture directory, say) — which is a fact about the base, not a failure.

@@ -23,12 +23,17 @@ import { createReader, registerReader } from './reader.mjs';
 registerReader('https', (locator, opts) => httpReader(locator, opts));
 
 /**
- * The declared default: the `v2/` prefix of the public `VirtoCommerce/vc-knowledge` repo, read
- * through `raw` (PLAN §2, §3.1). It is a constant and not a discovery; it is also not reachable by
- * anything in this session, because no `https` reader is registered yet -- which surfaces as a
- * named refusal rather than a silent fallback, per rule 2.
+ * The declared default: the root of the public `VirtoCommerce/vc-knowledge` repo, read through
+ * `raw` (PLAN §2, §3.1). It is a constant and not a discovery.
+ *
+ * It named the `v2/` prefix until 2026-09-18, when that base stopped sharing the repository with
+ * the older corpus it had been kept apart from and was lifted to the root. **Nothing but this line
+ * changed.** The prefix was only ever part of the LOCATOR: `coordinatesOf()` parses it out, every
+ * writer composes paths through `full()`, and `outsideBase()` / `expiredLogs()` take it as a
+ * parameter that already defaulted to empty — so an index row's `path` was always `entries/…`,
+ * relative and prefix-free, and no stored bytes had to be rewritten.
  */
-export const DEFAULT_BASE = 'https://raw.githubusercontent.com/VirtoCommerce/vc-knowledge/main/v2';
+export const DEFAULT_BASE = 'https://raw.githubusercontent.com/VirtoCommerce/vc-knowledge/main';
 
 /**
  * Resolve the base from the precedence chain, most explicit first, and say which link won.
