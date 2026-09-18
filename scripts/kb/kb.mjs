@@ -18,6 +18,8 @@
 
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
+import { flush, sweepIfDue } from './core/push.mjs';
+import { writeToken } from './core/token.mjs';
 import { ask, capture, confirm, dispute, reindex, show, stat } from './core/verbs.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
@@ -47,10 +49,17 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>"
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
+  npm run kb -- push [--dry-run] [--no-sweep]        send the queue to the base as ONE commit
 
 exit: 0 answered · 1 no coverage (or capture refused as a duplicate) · 2 no base · 3 unreachable
 
-capture / confirm / dispute QUEUE their change locally. Nothing is sent by this command.`;
+capture / confirm / dispute QUEUE their change locally. Nothing is sent by those commands.
+\`push\` sends everything queued — this session's lines plus any idle file left by an earlier one —
+as one atomic commit. \`--dry-run\` shows exactly what would be written and sends nothing.
+
+Every invocation also sweeps IDLE queue files left behind by earlier sessions, at most every 30
+minutes, silently and without affecting the exit code. That sweep is why a failed push needs no
+hook and no scheduler: the next session picks it up.`;
 
 // ── printing ──────────────────────────────────────────────────────────────────────────────────
 
@@ -81,6 +90,9 @@ function printHit(hit) {
 
 // ── verbs ─────────────────────────────────────────────────────────────────────────────────────
 
+/** Set by `main` once the base is resolved; read by the post-answer sweep. */
+let sweepBase = null;
+
 async function main(argv) {
   const args = parseArgs(argv);
   const verb = args._[0];
@@ -88,6 +100,10 @@ async function main(argv) {
 
   const json = Boolean(args.flags.json);
   const opened = openBase({ baseArg: args.flags.base ? String(args.flags.base) : null });
+  // The sweep targets THE BASE THIS INVOCATION READ, never the default: a run pointed at a local
+  // fixture must not push fixture-derived lines to the public base, and the cheapest way to
+  // guarantee that is to hand the sweep the same locator the verb used.
+  sweepBase = opened.locator;
 
   if (verb === 'stat') {
     const r = await stat(opened);
@@ -195,13 +211,65 @@ async function main(argv) {
     return EXIT.ANSWER;
   }
 
+  if (verb === 'push' || verb === 'flush') {
+    // The one verb that sends anything. Everything else in this CLI is local.
+    const { token, from } = writeToken();
+    const r = await flush({
+      base: opened.locator,
+      token,
+      dryRun: Boolean(args.flags['dry-run']),
+      sweep: !args.flags['no-sweep'],
+    });
+    if (json) { out(JSON.stringify(r, null, 2)); }
+    else if (r.state === 'pushed') {
+      out(`kb push: ${r.commit.slice(0, 7)} on ${opened.locator}`);
+      out(`  parent ${r.parent.slice(0, 7)}, ${r.attempts} attempt(s), token from ${from}`);
+      for (const w of r.plan.writes) out(`  + ${w.path}  (${w.text.length} B)`);
+      for (const d of r.plan.deletions) out(`  - ${d}  (retention)`);
+      if (r.converted) out(`  ${r.converted} queued capture(s) converted to confirm at push time`);
+      if (r.dropped) out(`  ${r.dropped} line(s) dropped by the secret gate`);
+      for (const p of r.problems ?? []) out(`  ! ${p.id ?? ''} ${p.why}`);
+    } else if (r.state === 'dry-run') {
+      out(`kb push (dry run): would commit on parent ${r.plan.parent.slice(0, 7)}`);
+      out(`  message: ${r.plan.message}`);
+      for (const w of r.plan.writes) out(`  + ${w.path}  (${w.text.length} B)`);
+      for (const d of r.plan.deletions) out(`  - ${d}  (retention)`);
+      if (r.plan.converted) out(`  ${r.plan.converted} queued capture(s) would convert to confirm`);
+      for (const p of r.plan.problems ?? []) out(`  ! ${p.id ?? ''} ${p.why}`);
+      out('  nothing was sent.');
+    } else {
+      out(`kb push: ${r.state} — ${r.why ?? ''}`);
+      if (r.state === 'failed') out('  the queue is intact; the next session sweeps it.');
+    }
+    return r.state === 'pushed' || r.state === 'nothing' || r.state === 'dry-run' ? EXIT.ANSWER
+      : r.state === 'no-base' ? EXIT.NO_BASE
+        : r.state === 'failed' ? EXIT.UNREACHABLE : EXIT.NO_COVERAGE;
+  }
+
   out(`unknown verb: ${verb}`);
   out('');
   out(USAGE);
   return EXIT.NO_BASE;
 }
 
-main(process.argv.slice(2)).then((code) => { process.exitCode = code; }, (err) => {
+/**
+ * The answer is delivered first; the sweep happens after, and cannot change the exit code.
+ *
+ * This is the whole retry mechanism (PLAN §7): a push that failed is picked up by the next `kb`
+ * invocation, with no hook and no `.claude/settings.json` edit — which keeps the riskiest file in
+ * the repo out of this design entirely.
+ */
+async function sweep() {
+  try {
+    if (!sweepBase) return;
+    await sweepIfDue({ base: sweepBase, token: writeToken().token });
+  } catch { /* best effort, always: a sweep that broke an `ask` would be a bad trade */ }
+}
+
+main(process.argv.slice(2)).then(async (code) => {
+  process.exitCode = code;
+  await sweep();
+}, (err) => {
   // A genuine crash is not one of the four states -- it must not be mistaken for any of them, and
   // least of all for "the base holds nothing".
   process.stderr.write(`kb: ${err?.stack ?? err}\n`);
