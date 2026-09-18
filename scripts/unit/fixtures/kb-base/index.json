@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "generated": "2026-09-18T11:10:03Z",
+  "count": 6,
+  "entries": [
+    {
+      "id": "KB-27B4CD10",
+      "path": "entries/KB-27B4CD10.md",
+      "subject": "storefront members Active column reads contact status not account state",
+      "question": "Why does the storefront company members list show a member as Active when their account is locked?",
+      "anchors": [
+        "/company/members",
+        "Query.organizationContacts"
+      ],
+      "scope": [
+        "surface=storefront-ui",
+        "surface=storefront-xapi"
+      ],
+      "plane": "experiential",
+      "status": "active",
+      "trust": 4,
+      "disputed": 0
+    },
+    {
+      "id": "KB-55C8E448",
+      "path": "entries/KB-55C8E448.md",
+      "subject": "cart promotion discount lands on the cart total and never on the line items",
+      "question": "Why does a cart-subtotal promotion show on the order total but not against any product row?",
+      "anchors": [
+        "POST /api/carts",
+        "Mutations.addCouponToCart"
+      ],
+      "scope": [
+        "surface=platform-api"
+      ],
+      "plane": "experiential",
+      "status": "active",
+      "trust": 1,
+      "disputed": 1
+    },
+    {
+      "id": "KB-378EEA52",
+      "path": "entries/KB-378EEA52.md",
+      "subject": "cart subtotal reward is not reflected in per-item placedPrice",
+      "question": "Should a cart-level discount change the placedPrice on each cart line?",
+      "anchors": [
+        "POST /api/carts",
+        "Mutations.addCouponToCart"
+      ],
+      "scope": [
+        "surface=platform-api"
+      ],
+      "plane": "experiential",
+      "status": "active",
+      "trust": 1,
+      "disputed": 0
+    },
+    {
+      "id": "KB-D10625AA",
+      "path": "entries/KB-D10625AA.md",
+      "subject": "admin SPA user groups widget saves an empty list when no group is selected",
+      "question": "What does the Admin SPA send when the User groups widget has nothing selected?",
+      "anchors": [
+        "/api/platform/security/users",
+        "Admin SPA: Contacts > Member detail"
+      ],
+      "scope": [
+        "surface=admin-spa"
+      ],
+      "plane": "experiential",
+      "status": "active",
+      "trust": 1,
+      "disputed": 0
+    },
+    {
+      "id": "KB-06664A3A",
+      "path": "entries/KB-06664A3A.md",
+      "subject": "product price sort uses the indexed price and diverges from the displayed price",
+      "question": "Why is a product list sorted by price not monotonic in the price shown on the card?",
+      "anchors": [
+        "/search",
+        "Query.products"
+      ],
+      "scope": [
+        "surface=storefront-ui"
+      ],
+      "plane": "experiential",
+      "status": "active",
+      "trust": 2,
+      "disputed": 0
+    },
+    {
+      "id": "KB-A31DCF79",
+      "path": "entries/KB-A31DCF79.md",
+      "subject": "storefront cart page shows stale totals until the page is reloaded",
+      "question": "Why do cart totals lag a quantity change on the cart page?",
+      "anchors": [
+        "/cart"
+      ],
+      "scope": [
+        "surface=storefront-ui"
+      ],
+      "plane": "experiential",
+      "status": "retired",
+      "trust": 1,
+      "disputed": 0
+    }
+  ]
+}

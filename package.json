@@ -195,6 +195,7 @@
     "selectors:check": "node scripts/maintenance/sync-storefront-selectors.mjs --check",
     "presets:sync": "node scripts/maintenance/sync-theme-presets.mjs",
     "presets:check": "node scripts/maintenance/sync-theme-presets.mjs --check",
+    "kb": "node scripts/kb/kb.mjs",
     "layout:run": "npx tsx scripts/layout/layout-runner.ts --suite regression/suites/Frontend/cross-cutting/048c-layout-stability.csv",
     "layout:list": "npx tsx scripts/layout/layout-runner.ts --list --suite regression/suites/Frontend/cross-cutting/048c-layout-stability.csv",
     "layout:author": "node scripts/layout/author-reference-suite.mjs",
