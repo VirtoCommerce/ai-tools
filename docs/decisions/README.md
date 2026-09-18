@@ -17,3 +17,10 @@ When a rule accretes a *"measured on YYYY-MM-DD …"* paragraph, the rule stays 
 | `qa-test-evolution.md` | `CLAUDE.md` §Detailed References (the 87 KB design record of `/qa-test`) |
 | `self-diagnostics-design.md` | `CLAUDE.md` §Project Overview |
 | `regression-history.md` | `.claude/rules/regression.md` §3 (the retired autonomous orchestrator) |
+
+**One file here is a PROPOSAL rather than a record.** `kb-layout-proposal.md` argues that the
+`vc-knowledge` base should be re-laid-out, and carries the measurements the argument rests on. It
+describes a layout that **does not exist yet** — the normative one is the base's own `README.md` and
+`plugins/vc-kb/src/planes.mjs`. It stays here rather than in `docs/drafts/` because that directory
+holds drafts of prompts, and because a decision either way will turn this file into the record of
+why.
