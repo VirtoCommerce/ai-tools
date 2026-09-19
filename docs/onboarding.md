@@ -200,7 +200,15 @@ Install these via Claude Code's MCP settings (`.mcp.json` or `claude_code/settin
 what has actually been OBSERVED about how the platform behaves, with a trust label and provenance per
 observation.
 
-**Register it with one command — do not copy the block above by hand:**
+**You do not have to do anything.** A tracked `SessionStart` hook
+(`.claude/hooks/kb-register.mjs`) registers the server on your machine the first time you open the
+project, and the tracked `enabledMcpjsonServers` pre-approves it, so there is no command to run and
+no dialog to accept. **One restart is needed and cannot be avoided** — MCP servers bind *before*
+SessionStart hooks run, measured on Claude Code 2.1.275: the hook writes a correct `.mcp.json`, and
+the session it ran in still has no `kb` tools. So: pull, open the project once, restart, done.
+
+**If you would rather do it explicitly** — or after `/project-init`, which rewrites `.mcp.json`
+wholesale from its template:
 
 ```bash
 npm run kb:install
