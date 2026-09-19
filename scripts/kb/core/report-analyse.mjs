@@ -15,10 +15,65 @@
 // relocated into the report, and it is the reason `unreachable` asks get their own panel row rather
 // than being folded into misses, and the reason a cache-rendered report carries a banner.
 
+import { MIN_COVERAGE, MIN_WORDS } from './rank.mjs';
+
 /** Log kinds this analysis knows about. Anything else is counted and otherwise ignored. */
 export const KNOWN_KINDS = Object.freeze([
   'ask', 'show', 'capture', 'capture-refused', 'confirm', 'dispute', 'flush', 'reindex', 'redacted',
 ]);
+
+// ── the numbers §15 is judged by, DECLARED HERE AND NOT PASSED IN ──────────────────────────────
+//
+// PLAN §15.3: "thresholds, declared BEFORE the run, and not re-cut after". A threshold supplied on
+// the command line is a threshold that can be moved after seeing the result, which is the one thing
+// §13.5 earned the hard way and §15 exists to prevent. They are constants, in the file that
+// computes against them, with their derivation attached.
+//
+// The floor itself is NOT restated here — `MIN_COVERAGE`/`MIN_WORDS` are imported from `rank.mjs`,
+// which is the thing the report is measuring. A transcribed copy would be correct exactly once and
+// would then disagree with the ranker silently, which is the failure this report exists to catch.
+
+/**
+ * A near-miss at or above this coverage is one a HUMAN must read (PLAN §15.3).
+ *
+ * §14.4's derivation put the cut at 0.50 with the nearest surviving BAD hit at 0.45 — one word in
+ * an eleven-token question below the line. So 0.45 is not a second floor; it is the error bar on
+ * the first one. Anything appearing at or above it is either a question the floor wrongly refused,
+ * or an entry phrased so unlike the way people ask that it is invisible — and the log cannot tell
+ * which. A human can.
+ */
+export const NEAR_MISS_REVIEW = 0.45;
+
+/** PLAN §11's existing trigger, reused rather than invented for the occasion (PLAN §15.3). */
+export const UNHELPFUL_MAX = 0.15;
+
+/**
+ * The n below which an ABSENCE proves nothing — the guard against §14.1's mistake.
+ *
+ * "A 0% unhelpful rate over two asks is not a pass." Derived once, from the rule of three: with
+ * zero events observed in n trials, the 95% upper bound on the true rate is ~3/n, so a clean run
+ * only excludes a rate above `UNHELPFUL_MAX` once 3/n ≤ 0.15, i.e. **n ≥ 20**. Below that, "we saw
+ * none" and "the rate is under the trigger" are different statements and the report must not print
+ * the second when it only has the first.
+ *
+ * ONE constant, applied to every row whose verdict is an absence claim — the unhelpful rate, the
+ * absence of an in-band near-miss, and the absence of a capture after a miss. A PRESENCE needs no
+ * such floor: one capture following a miss proves exit 1 is not a dead end, whatever n is.
+ *
+ * It is deliberately strict, and on a small window it will report NOT ENOUGH DATA on all three
+ * rows. That is the correct output, not a failure of the measurement.
+ */
+export const MIN_SAMPLE = 20;
+
+/** The three §15.3 thresholds as one frozen object — what the verdict block judged against. */
+export const THRESHOLDS = Object.freeze({
+  unhelpfulRate: UNHELPFUL_MAX,
+  nearMissReview: NEAR_MISS_REVIEW,
+  capturesAfterMiss: 1,
+  minSample: MIN_SAMPLE,
+  floorCoverage: MIN_COVERAGE,
+  floorWords: MIN_WORDS,
+});
 
 /**
  * Parse one session's JSONL into lines tagged with where they came from.
@@ -113,6 +168,162 @@ export function misses(lines) {
     .map((g) => ({ question: g.question, count: g.count, sessions: g.sessions.size, last: g.last }))
     .sort((a, b) => b.count - a.count || b.sessions - a.sessions || a.question.localeCompare(b.question));
   return { ranked, unreachable, total: ranked.reduce((n, g) => n + g.count, 0) };
+}
+
+// ── Panel 1a — near misses, the floor's own error bar ──────────────────────────────────────────
+
+/**
+ * Every miss that carried a rejected candidate, sorted by coverage DESCENDING.
+ *
+ * WHY THIS PANEL EXISTS AT ALL. Session 6 added `nearMiss` to the log for one stated purpose — *"is
+ * the floor too high — visible immediately, without another replay"* — and then nothing read it.
+ * A field written to a public, append-only log and consumed by nobody is not a measurement; it is
+ * storage. This is the reader.
+ *
+ * WHY THE SORT IS COVERAGE DESCENDING, and not repeat count like panel 1. The top of this list is
+ * the floor's error bar. §14.4 cut at 0.50 with the nearest surviving BAD hit at 0.45, so a row at
+ * or above `NEAR_MISS_REVIEW` is one word from having been returned — exactly the row a reader has
+ * to look at, and exactly the row a count-ranked list would bury under singletons.
+ *
+ * REPEATS STILL MATTER, so they get their own roll-up. A candidate that near-misses on several
+ * different questions is not a coverage problem: it is an entry **phrased differently from how
+ * people ask**, which is fixable by rewriting its subject and is otherwise invisible — never
+ * returned, never counted, never suspected.
+ *
+ * ONE INFERENCE IS MADE AND IT IS LABELLED. The log line carries `{id, score, coverage}` but not
+ * the overlap word count, so which clause of the floor rejected a candidate is not directly
+ * recorded. It is still derivable in one direction: a candidate with no anchor whose coverage
+ * already clears `MIN_COVERAGE` can only have been stopped by `MIN_WORDS`. That is reported as
+ * `rejectedBy: 'words'`; everything else is `'coverage'`, which is the safe way round — the words
+ * case is provable, the coverage case is the default.
+ */
+export function nearMisses(lines, idx) {
+  const rows = [];
+  const byCandidate = new Map();
+  let missTotal = 0;
+  let withoutNearMiss = 0;
+
+  for (const l of lines) {
+    if (l.kind !== 'ask' || l.state !== 'miss') continue;
+    missTotal += 1;
+    const nm = l.nearMiss;
+    const coverage = Number(nm?.coverage);
+    if (!nm || !Number.isFinite(coverage)) {
+      // Nothing scored above zero at all. That is a different fact from "something nearly made it"
+      // and it is counted rather than dropped: a window whose misses all look like this says the
+      // base is nowhere near the subject, which is not a floor problem.
+      withoutNearMiss += 1;
+      continue;
+    }
+    const id = String(nm.id ?? '');
+    const row = {
+      id,
+      subject: idx.subjectOf(id),
+      inIndex: idx.has(id),
+      coverage,
+      score: Number(nm.score ?? 0),
+      question: String(l.q ?? ''),
+      session: l._session,
+      at: String(l.at ?? ''),
+      inBand: coverage >= NEAR_MISS_REVIEW,
+      rejectedBy: coverage >= MIN_COVERAGE ? 'words' : 'coverage',
+    };
+    rows.push(row);
+    const g = byCandidate.get(id)
+      ?? { id, subject: row.subject, count: 0, best: 0, questions: new Set() };
+    g.count += 1;
+    g.best = Math.max(g.best, coverage);
+    g.questions.add(questionKey(l.q));
+    byCandidate.set(id, g);
+  }
+
+  rows.sort((a, b) => b.coverage - a.coverage
+    || b.score - a.score
+    || a.id.localeCompare(b.id));
+
+  const repeats = [...byCandidate.values()]
+    .filter((g) => g.count > 1)
+    .map((g) => ({
+      id: g.id, subject: g.subject, count: g.count, best: g.best, distinctQuestions: g.questions.size,
+    }))
+    .sort((a, b) => b.count - a.count || b.best - a.best || a.id.localeCompare(b.id));
+
+  return {
+    rows,
+    repeats,
+    inBand: rows.filter((r) => r.inBand),
+    missTotal,
+    withoutNearMiss,
+    floor: MIN_COVERAGE,
+    minWords: MIN_WORDS,
+    review: NEAR_MISS_REVIEW,
+  };
+}
+
+// ── Does the loop close? `capture` → the `ask` it followed ─────────────────────────────────────
+
+/**
+ * Captures linked back to the ask before them, via the `after` field (PLAN §14.4, §15.2).
+ *
+ * §15.3's third threshold is *"at least one capture following a miss — otherwise exit 1 is a dead
+ * end and the message is wrong, not the floor"*. `after` holds the preceding ask's `at`, a pointer
+ * into the same session's own file, so the link is exact rather than inferred from ordering.
+ *
+ * THREE NON-LINKS, EACH COUNTED SEPARATELY, because collapsing them would let the number move for
+ * reasons that have nothing to do with the loop:
+ *
+ *   * `unlinked`  — the capture carries no `after` at all. Every capture written before the field
+ *     existed (session 6) looks like this, and a pre-field capture is not evidence that the loop
+ *     failed. It is not evidence that it closed either.
+ *   * `dangling`  — `after` names an `at` no ask in that session's window carries. The ask is
+ *     outside the window, or its file was not read.
+ *   * `after-answer` — linked, but to an ask that was answered. A real link, and not this row's.
+ *
+ * `capture-refused` is tracked alongside but counted apart. A refusal following a miss is the loop
+ * closing on the agent's side and failing at the write — genuinely interesting (the base held the
+ * fact and `ask` did not find it), but it is not a capture, and a gate that accepted it would pass
+ * on an event that wrote nothing.
+ */
+export function captureLoop(lines) {
+  const askAt = new Map();
+  for (const l of lines) {
+    if (l.kind === 'ask' && l.at) askAt.set(`${l._session} ${String(l.at)}`, l);
+  }
+
+  const rows = [];
+  const counts = { afterMiss: 0, afterAnswer: 0, unlinked: 0, dangling: 0, refusedAfterMiss: 0 };
+
+  for (const l of lines) {
+    // A `capture` logged with a `state` and no `id` is a failure to reach the base, not a write.
+    const isCapture = l.kind === 'capture' && Boolean(l.id);
+    const isRefused = l.kind === 'capture-refused';
+    if (!isCapture && !isRefused) continue;
+
+    const ask = l.after ? askAt.get(`${l._session} ${String(l.after)}`) : null;
+    let link;
+    if (!l.after) { link = 'unlinked'; counts.unlinked += 1; } else if (!ask) { link = 'dangling'; counts.dangling += 1; } else if (ask.state === 'miss') {
+      link = 'after-miss';
+      if (isRefused) counts.refusedAfterMiss += 1; else counts.afterMiss += 1;
+    } else {
+      link = 'after-answer';
+      if (isCapture) counts.afterAnswer += 1;
+    }
+
+    rows.push({
+      link,
+      kind: l.kind,
+      id: String(l.id ?? l.dupeOf ?? ''),
+      subject: String(l.subject ?? ''),
+      session: l._session,
+      at: String(l.at ?? ''),
+      askQuestion: ask ? String(ask.q ?? '') : '',
+      askState: ask ? String(ask.state ?? '') : '',
+    });
+  }
+
+  const order = { 'after-miss': 0, 'after-answer': 1, dangling: 2, unlinked: 3 };
+  rows.sort((a, b) => order[a.link] - order[b.link] || b.at.localeCompare(a.at));
+  return { rows, ...counts, captures: rows.filter((r) => r.kind === 'capture').length };
 }
 
 // ── Panel 2 — questions asked ──────────────────────────────────────────────────────────────────
@@ -383,6 +594,137 @@ export function unhelpful(lines, idx) {
   };
 }
 
+// ── The §15 verdict block ──────────────────────────────────────────────────────────────────────
+
+/** The three states. `NOT_ENOUGH_DATA` is a REAL verdict and must never read as a pass. */
+export const PASS = 'PASS';
+export const FAIL = 'FAIL';
+export const NO_DATA = 'NOT ENOUGH DATA';
+
+/**
+ * §15.3's three thresholds, judged against this window — three rows, each with the number it judged.
+ *
+ * THE POINT OF THE `NOT ENOUGH DATA` STATE. §14.1's mistake was a comfortable number with nothing
+ * behind it: zero misses in 39 asks read as perfect coverage and was the absence of a floor. §15
+ * exists because of that, so a row here reports the n it had and refuses to convert an absence into
+ * a pass below `MIN_SAMPLE`. On 18 real asks most of this block will say NOT ENOUGH DATA. That is
+ * the correct output.
+ *
+ * AND WHAT THIS FUNCTION MUST NOT DO, because it is the row that could quietly overreach: it does
+ * **not** judge whether an in-band near-miss was ANSWERABLE. §15.3's second threshold is a
+ * conjunction — a machine-checkable part (coverage ≥ 0.45) and a human part ("turns out, on
+ * reading"). The script owns the first and flags the rows; a reader owns the second. So a window
+ * with rows in the band is reported as NOT ENOUGH DATA *with the rows named*, never as a FAIL: a
+ * FAIL there would be the script claiming a judgement it has no way to make.
+ */
+export function verdict({ unhelpful: u, nearMisses: nm, loop }) {
+  const rows = [];
+
+  // 1 ── unhelpful-answer rate ≤ 15% (PLAN §11's trigger, reused).
+  {
+    const n = u.decidable;
+    const flagged = u.flagged.length;
+    const rate = u.rate;
+    let state;
+    let detail;
+    if (n < MIN_SAMPLE) {
+      state = NO_DATA;
+      detail = `${flagged} unhelpful of ${n} decidable ask(s)`
+        + `${rate == null ? '' : ` = ${(rate * 100).toFixed(1)}%`}`
+        + ` — n=${n}, below the declared minimum of ${MIN_SAMPLE}.`;
+    } else if (rate <= UNHELPFUL_MAX) {
+      state = PASS;
+      detail = `${flagged} unhelpful of ${n} decidable ask(s) = ${(rate * 100).toFixed(1)}%, at or under ${UNHELPFUL_MAX * 100}%.`;
+    } else {
+      state = FAIL;
+      detail = `${flagged} unhelpful of ${n} decidable ask(s) = ${(rate * 100).toFixed(1)}%, over ${UNHELPFUL_MAX * 100}%.`;
+    }
+    rows.push({
+      key: 'unhelpful',
+      threshold: `unhelpful-answer rate ≤ ${UNHELPFUL_MAX * 100}%`,
+      source: "PLAN §11's existing trigger, reused (§15.3)",
+      state,
+      n,
+      value: rate,
+      detail,
+      undecidable: u.undecidable,
+    });
+  }
+
+  // 2 ── no miss whose nearMiss coverage ≥ 0.45 (PLAN §15.3). Flags; never judges answerability.
+  {
+    const n = nm.rows.length;
+    const band = nm.inBand.length;
+    let state;
+    let detail;
+    if (band > 0) {
+      state = NO_DATA;
+      detail = `${band} near-miss row(s) at coverage ≥ ${NEAR_MISS_REVIEW} — a human must read them and`
+        + ' decide whether they were answerable. This script does not judge that'
+        + `${band > 1 ? '. §15.3: one is a signal, two mean the floor is too high' : ''}.`;
+    } else if (n < MIN_SAMPLE) {
+      state = NO_DATA;
+      detail = `no near-miss reached ${NEAR_MISS_REVIEW}, but only ${n} miss(es) carried a candidate at all`
+        + ` — n=${n}, below the declared minimum of ${MIN_SAMPLE}. Too few to call the floor clean.`;
+    } else {
+      state = PASS;
+      detail = `none of ${n} near-miss row(s) reached ${NEAR_MISS_REVIEW}; there is nothing to read.`;
+    }
+    rows.push({
+      key: 'near-miss',
+      threshold: `no miss whose nearMiss coverage ≥ ${NEAR_MISS_REVIEW}`,
+      source: 'PLAN §15.3',
+      state,
+      n,
+      value: nm.rows[0]?.coverage ?? null,
+      detail,
+      needsReading: band,
+    });
+  }
+
+  // 3 ── at least one capture following a miss, via `after` (PLAN §14.4, §15.3).
+  {
+    const n = nm.missTotal;
+    const hit = loop.afterMiss;
+    let state;
+    let detail;
+    const aside = [
+      loop.unlinked ? `${loop.unlinked} capture/refusal(s) carry no \`after\` and cannot be linked` : '',
+      loop.dangling ? `${loop.dangling} point at an ask outside this window` : '',
+      loop.refusedAfterMiss ? `${loop.refusedAfterMiss} REFUSED capture(s) followed a miss — the agent acted, the write was deduped` : '',
+    ].filter(Boolean).join('; ');
+    if (hit >= THRESHOLDS.capturesAfterMiss) {
+      state = PASS;
+      detail = `${hit} capture(s) followed a miss — exit 1 produced knowledge.`;
+    } else if (n < MIN_SAMPLE) {
+      state = NO_DATA;
+      detail = `no capture followed a miss, but only ${n} miss(es) occurred — n=${n}, below the declared`
+        + ` minimum of ${MIN_SAMPLE}. Too few for the absence to mean anything.`;
+    } else {
+      state = FAIL;
+      detail = `no capture followed any of ${n} miss(es) — exit 1 is a dead end, and the message is`
+        + ' wrong, not the floor (§15.3).';
+    }
+    rows.push({
+      key: 'capture-after-miss',
+      threshold: `≥ ${THRESHOLDS.capturesAfterMiss} capture following a miss`,
+      source: 'PLAN §15.3, via the `after` field (§14.4)',
+      state,
+      n,
+      value: hit,
+      detail: aside ? `${detail} (${aside}.)` : detail,
+    });
+  }
+
+  return {
+    thresholds: THRESHOLDS,
+    rows,
+    pass: rows.filter((r) => r.state === PASS).length,
+    fail: rows.filter((r) => r.state === FAIL).length,
+    noData: rows.filter((r) => r.state === NO_DATA).length,
+  };
+}
+
 // ── The whole report ───────────────────────────────────────────────────────────────────────────
 
 /** Counts by kind, so the header can say what the window actually contained. */
@@ -423,6 +765,16 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
   // filter exists to fix.
   const real = lines.filter((l) => l.synthetic !== true);
   const syntheticLines = lines.length - real.length;
+  const panels = {
+    misses: misses(real),
+    nearMisses: nearMisses(real, idx),
+    questions: questions(real),
+    entries: entryUsage(real, idx),
+    evidence: evidence(real, idx),
+    refusals: refusals(real, idx),
+    unhelpful: unhelpful(real, idx),
+    loop: captureLoop(real),
+  };
   return {
     meta: {
       ...meta,
@@ -432,13 +784,9 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
     tally: kindTally(real),
     activity: activity(real),
     sessions: new Set(real.map((l) => l._session).filter(Boolean)).size,
-    panels: {
-      misses: misses(real),
-      questions: questions(real),
-      entries: entryUsage(real, idx),
-      evidence: evidence(real, idx),
-      refusals: refusals(real, idx),
-      unhelpful: unhelpful(real, idx),
-    },
+    panels,
+    // The §15 gate, computed from the panels above rather than from the lines again — one
+    // derivation, so a number in the verdict can never disagree with the panel it came from.
+    verdict: verdict({ unhelpful: panels.unhelpful, nearMisses: panels.nearMisses, loop: panels.loop }),
   };
 }

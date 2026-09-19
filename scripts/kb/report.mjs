@@ -29,10 +29,14 @@ import { renderHtml, renderText } from './core/report-render.mjs';
 
 const USAGE = `kb:report — what agents asked this base, and what it could not answer
 
-  npm run kb:report -- [--days 30] [--base <locator>] [--out <file.html>] [--json] [--no-network]
+  npm run kb:report -- [--days 30] [--sessions a,b,c] [--base <locator>] [--out <file.html>]
+                       [--json] [--no-network]
 
   --days N        window, in day folders under log/ (default ${DEFAULT_DAYS}). Above ${MAX_FILES}
                   files it refuses rather than hanging.
+  --sessions a,b  scope to NAMED SESSIONS instead of a time window — the shape PLAN §15's check
+                  wave needs, because a wave is a set of sessions interleaved with other traffic,
+                  not a date range. Searches the WHOLE log tree, so --days does not apply.
   --base <url>    read a different base. Defaults to KB_BASE, then the declared default.
   --out <file>    where the HTML lands. Defaults to the session scratchpad; never the repo tree.
   --json          print the analysis as JSON instead of writing HTML.
@@ -84,11 +88,14 @@ export async function main(
   const at = new Date();
   const base = resolveBase({ baseArg: typeof flags.base === 'string' ? flags.base : null, env });
   const days = Number(flags.days) > 0 ? Math.floor(Number(flags.days)) : DEFAULT_DAYS;
+  // `--sessions` REPLACES the day window rather than narrowing it; `--days` keeps its default and
+  // its meaning when the flag is absent (PLAN §15.2).
+  const sessions = typeof flags.sessions === 'string' ? flags.sessions : null;
   const cacheDir = reportCacheDir(env);
 
   const got = flags['no-network']
-    ? await collectFromCache({ base: base.locator, days, cacheDir, detail: '--no-network was passed', at })
-    : await collect({ base: base.locator, days, at, cacheDir });
+    ? await collectFromCache({ base: base.locator, days, sessions, cacheDir, detail: '--no-network was passed', at })
+    : await collect({ base: base.locator, days, sessions, at, cacheDir });
 
   if (got.refused) {
     writeErr(`kb:report refused — ${got.meta.why}\n`);

@@ -23,10 +23,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
-  analyse, dayOf, entryUsage, evidence, indexLookup, misses, parseLogFile,
-  questionKey, questions, refusals, sessionOf, unhelpful,
+  FAIL, MIN_SAMPLE, NEAR_MISS_REVIEW, NO_DATA, PASS, THRESHOLDS,
+  analyse, captureLoop, dayOf, entryUsage, evidence, indexLookup, misses, nearMisses, parseLogFile,
+  questionKey, questions, refusals, sessionOf, unhelpful, verdict,
 } from '../kb/core/report-analyse.mjs';
-import { collect, collectFromCache, selectLogPaths, windowDays } from '../kb/core/report-fetch.mjs';
+import {
+  collect, collectFromCache, normalizeSessions, selectLogPaths, windowDays,
+} from '../kb/core/report-fetch.mjs';
 import { renderHtml, renderText } from '../kb/core/report-render.mjs';
 import { main, outputPath } from '../kb/report.mjs';
 
@@ -430,4 +433,360 @@ test('the written HTML is the same string renderHtml produced — no post-proces
     assert.match(html, /^<!doctype html>/i);
     assert.match(html, /the cache is empty/i);
   });
+});
+
+
+// ── the near-miss panel — the field session 6 added and nothing read (PLAN §15.2) ──────────────
+//
+// WHY THESE ARE HERE AT ALL. `nearMiss` went into a public, append-only log for one stated purpose
+// — "is the floor too high, visible immediately, without another replay" — and no reader existed,
+// so the field could have been written wrong for a month with nothing to notice. The tests below
+// are on the DERIVATION (the sort, the band, the repeat roll-up, the rejected-by inference), never
+// on the constants: `NEAR_MISS_REVIEW` is one import away and a test restating 0.45 would be a
+// transcribed constant with a test runner attached.
+
+const IDX = indexLookup(ROWS);
+
+const missLine = (o) => line({ kind: 'ask', state: 'miss', matched: [], ...o });
+
+test('near misses sort by coverage descending — the top of the list is the floor\'s error bar', () => {
+  const p = nearMisses([
+    missLine({ at: '2026-09-19T01:00:00Z', q: 'a b c', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's1' }),
+    missLine({ at: '2026-09-19T02:00:00Z', q: 'd e f', nearMiss: { id: 'KB-FA724D31', score: 4, coverage: 0.45 }, _session: 's1' }),
+    missLine({ at: '2026-09-19T03:00:00Z', q: 'g h i', nearMiss: { id: 'KB-1834ABE5', score: 1, coverage: 0.11 }, _session: 's1' }),
+  ], IDX);
+  assert.deepEqual(p.rows.map((r) => r.coverage), [0.45, 0.2, 0.11]);
+  assert.equal(p.rows[0].subject, 'storefront Delete member detaches the contact and orphans the account');
+});
+
+test('a near miss AT the review line is in the band — the boundary is inclusive, because 0.45 IS the measured row', () => {
+  const at = nearMisses([missLine({ q: 'x', nearMiss: { id: 'KB-C440D4E3', score: 5, coverage: NEAR_MISS_REVIEW }, _session: 's' })], IDX);
+  const under = nearMisses([missLine({ q: 'x', nearMiss: { id: 'KB-C440D4E3', score: 5, coverage: NEAR_MISS_REVIEW - 0.01 }, _session: 's' })], IDX);
+  assert.equal(at.inBand.length, 1, '0.45 is the nearest surviving bad hit from §14.4 — it must be read, not excluded');
+  assert.equal(under.inBand.length, 0);
+});
+
+test('a miss that scored NOTHING is counted apart from one that nearly made it', () => {
+  const p = nearMisses([
+    missLine({ q: 'nothing scored', _session: 's' }),
+    missLine({ q: 'something scored', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.3 }, _session: 's' }),
+  ], IDX);
+  assert.equal(p.missTotal, 2);
+  assert.equal(p.rows.length, 1);
+  assert.equal(p.withoutNearMiss, 1, 'the base being nowhere near the subject is not a floor problem');
+});
+
+test('a candidate that near-misses on several different questions is rolled up as a repeat', () => {
+  const p = nearMisses([
+    missLine({ q: 'the active column on company members', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's1' }),
+    missLine({ q: 'what does the members list show', nearMiss: { id: 'KB-C440D4E3', score: 3, coverage: 0.33 }, _session: 's2' }),
+    missLine({ q: 'unrelated question here', nearMiss: { id: 'KB-FA724D31', score: 1, coverage: 0.1 }, _session: 's2' }),
+  ], IDX);
+  assert.equal(p.repeats.length, 1, 'only the repeated candidate rolls up');
+  assert.equal(p.repeats[0].id, 'KB-C440D4E3');
+  assert.equal(p.repeats[0].count, 2);
+  assert.equal(p.repeats[0].distinctQuestions, 2, 'two DIFFERENT questions — the entry is phrased unlike the way people ask');
+  assert.equal(p.repeats[0].best, 0.33);
+});
+
+test('a candidate whose coverage already cleared the floor was stopped by the WORD count, and says so', () => {
+  const p = nearMisses([
+    missLine({ q: 'cart', nearMiss: { id: 'KB-C440D4E3', score: 1, coverage: 1 }, _session: 's' }),
+    missLine({ q: 'a b c d', nearMiss: { id: 'KB-FA724D31', score: 1, coverage: 0.25 }, _session: 's' }),
+  ], IDX);
+  const byId = Object.fromEntries(p.rows.map((r) => [r.id, r.rejectedBy]));
+  assert.equal(byId['KB-C440D4E3'], 'words', 'coverage 1.00 and still rejected can only be MIN_WORDS');
+  assert.equal(byId['KB-FA724D31'], 'coverage');
+  assert.equal(p.floor, THRESHOLDS.floorCoverage, 'the floor is READ from the ranker, never transcribed');
+});
+
+// ── does the loop close? `capture` → the ask it followed ───────────────────────────────────────
+
+test('a capture linked by `after` to a miss is the loop closing; to an answer it is not', () => {
+  const l = captureLoop([
+    line({ at: '2026-09-19T01:00:00Z', kind: 'ask', state: 'miss', q: 'unanswered', _session: 's' }),
+    line({ at: '2026-09-19T01:05:00Z', kind: 'ask', state: 'answer', q: 'answered', matched: ['KB-C440D4E3'], _session: 's' }),
+    line({ at: '2026-09-19T01:10:00Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', after: '2026-09-19T01:00:00Z', _session: 's' }),
+    line({ at: '2026-09-19T01:11:00Z', kind: 'capture', id: 'KB-316B2DDB', subject: 'y', after: '2026-09-19T01:05:00Z', _session: 's' }),
+  ]);
+  assert.equal(l.afterMiss, 1);
+  assert.equal(l.afterAnswer, 1);
+  assert.equal(l.unlinked, 0);
+});
+
+test('`after` does not cross sessions — the pointer is into the session\'s OWN file', () => {
+  const l = captureLoop([
+    line({ at: '2026-09-19T01:00:00Z', kind: 'ask', state: 'miss', q: 'unanswered', _session: 'other' }),
+    line({ at: '2026-09-19T01:10:00Z', kind: 'capture', id: 'KB-D9B90536', after: '2026-09-19T01:00:00Z', _session: 'mine' }),
+  ]);
+  assert.equal(l.afterMiss, 0);
+  assert.equal(l.dangling, 1, 'same timestamp, different session — not a link');
+});
+
+test('a capture written before the `after` field existed is UNLINKED, not a failed loop', () => {
+  const l = captureLoop([
+    line({ at: '2026-09-19T01:00:00Z', kind: 'ask', state: 'miss', q: 'unanswered', _session: 's' }),
+    line({ at: '2026-09-19T01:10:00Z', kind: 'capture', id: 'KB-D9B90536', _session: 's' }),
+  ]);
+  assert.equal(l.afterMiss, 0);
+  assert.equal(l.unlinked, 1, 'no evidence the loop closed — and none that it did not');
+});
+
+test('a REFUSED capture after a miss is counted apart from a real one', () => {
+  const l = captureLoop([
+    line({ at: '2026-09-19T01:00:00Z', kind: 'ask', state: 'miss', q: 'unanswered', _session: 's' }),
+    line({ at: '2026-09-19T01:10:00Z', kind: 'capture-refused', dupeOf: 'KB-C440D4E3', after: '2026-09-19T01:00:00Z', _session: 's' }),
+  ]);
+  assert.equal(l.refusedAfterMiss, 1);
+  assert.equal(l.afterMiss, 0, 'the agent acted, but nothing was written — a gate must not pass on it');
+});
+
+test('a `capture` line logged with a state and no id is a failure to reach the base, not a write', () => {
+  const l = captureLoop([
+    line({ at: '2026-09-19T01:00:00Z', kind: 'ask', state: 'miss', q: 'q', _session: 's' }),
+    line({ at: '2026-09-19T01:10:00Z', kind: 'capture', subject: 'x', state: 'unreachable', after: '2026-09-19T01:00:00Z', _session: 's' }),
+  ]);
+  assert.equal(l.afterMiss, 0);
+  assert.equal(l.captures, 0);
+});
+
+// ── the §15 verdict block ──────────────────────────────────────────────────────────────────────
+//
+// THE ONE PROPERTY WORTH MORE THAN THE REST: `NOT ENOUGH DATA` must never be reachable by the same
+// path as `PASS`. §14.1's mistake was a comfortable number with nothing behind it — 0 misses in 39
+// asks reading as perfect coverage — and §15 exists because of it.
+
+const emptyUnhelpful = { flagged: [], decidable: 0, undecidable: 0, rate: null };
+const emptyNear = { rows: [], repeats: [], inBand: [], missTotal: 0, withoutNearMiss: 0 };
+const emptyLoop = { rows: [], afterMiss: 0, afterAnswer: 0, unlinked: 0, dangling: 0, refusedAfterMiss: 0, captures: 0 };
+const row = (v, key) => v.rows.find((r) => r.key === key);
+
+test('a 0% unhelpful rate over two asks is NOT ENOUGH DATA, not a pass', () => {
+  const v = verdict({
+    unhelpful: { flagged: [], decidable: 2, undecidable: 0, rate: 0 },
+    nearMisses: emptyNear,
+    loop: emptyLoop,
+  });
+  const r = row(v, 'unhelpful');
+  assert.equal(r.state, NO_DATA);
+  assert.notEqual(r.state, PASS);
+  assert.equal(r.n, 2, 'the n is stated beside the rate, always');
+  assert.match(r.detail, /below the declared minimum/);
+});
+
+test('the same 0% over MIN_SAMPLE asks is a pass — the only thing that changed is n', () => {
+  const v = verdict({
+    unhelpful: { flagged: [], decidable: MIN_SAMPLE, undecidable: 0, rate: 0 },
+    nearMisses: emptyNear,
+    loop: emptyLoop,
+  });
+  assert.equal(row(v, 'unhelpful').state, PASS);
+});
+
+test('a rate over the trigger with enough behind it FAILs', () => {
+  const v = verdict({
+    unhelpful: { flagged: new Array(8).fill(0), decidable: 20, undecidable: 0, rate: 0.4 },
+    nearMisses: emptyNear,
+    loop: emptyLoop,
+  });
+  const r = row(v, 'unhelpful');
+  assert.equal(r.state, FAIL);
+  assert.match(r.detail, /40\.0%/);
+});
+
+test('the same 66.7% on n=3 — the live base\'s own number — is NOT ENOUGH DATA', () => {
+  // PLAN §14.1 said this in prose about this exact figure: "panel 6's 66.7% sits on n=3 ... too
+  // thin". The verdict block has to agree with the plan's own reading of its own data.
+  const v = verdict({
+    unhelpful: { flagged: [0, 0], decidable: 3, undecidable: 0, rate: 2 / 3 },
+    nearMisses: emptyNear,
+    loop: emptyLoop,
+  });
+  assert.equal(row(v, 'unhelpful').state, NO_DATA);
+});
+
+test('an in-band near miss is FLAGGED for a human, never FAILed — the script does not judge answerability', () => {
+  const nm = nearMisses([
+    missLine({ q: 'a b c d', nearMiss: { id: 'KB-C440D4E3', score: 5, coverage: 0.46 }, _session: 's' }),
+  ], IDX);
+  const v = verdict({ unhelpful: emptyUnhelpful, nearMisses: nm, loop: emptyLoop });
+  const r = row(v, 'near-miss');
+  assert.equal(r.state, NO_DATA, 'PASS would be wrong and FAIL would be a judgement it cannot make');
+  assert.notEqual(r.state, FAIL);
+  assert.equal(r.needsReading, 1);
+  assert.match(r.detail, /a human must read them/);
+});
+
+test('two in-band rows quote §15.3\'s escalation; one does not', () => {
+  const one = verdict({
+    unhelpful: emptyUnhelpful,
+    nearMisses: nearMisses([missLine({ q: 'a b', nearMiss: { id: 'KB-C440D4E3', score: 5, coverage: 0.46 }, _session: 's' })], IDX),
+    loop: emptyLoop,
+  });
+  const two = verdict({
+    unhelpful: emptyUnhelpful,
+    nearMisses: nearMisses([
+      missLine({ q: 'a b', nearMiss: { id: 'KB-C440D4E3', score: 5, coverage: 0.46 }, _session: 's' }),
+      missLine({ q: 'c d', nearMiss: { id: 'KB-FA724D31', score: 5, coverage: 0.48 }, _session: 's' }),
+    ], IDX),
+    loop: emptyLoop,
+  });
+  assert.ok(!/one is a signal/.test(row(one, 'near-miss').detail));
+  assert.match(row(two, 'near-miss').detail, /one is a signal, two mean the floor is too high/);
+});
+
+test('no misses at all is NOT ENOUGH DATA on the near-miss row — an absence over nothing proves nothing', () => {
+  const v = verdict({ unhelpful: emptyUnhelpful, nearMisses: emptyNear, loop: emptyLoop });
+  assert.equal(row(v, 'near-miss').state, NO_DATA);
+});
+
+test('ONE capture after a miss passes, whatever n is — a presence needs no minimum', () => {
+  const v = verdict({
+    unhelpful: emptyUnhelpful,
+    nearMisses: { ...emptyNear, missTotal: 1 },
+    loop: { ...emptyLoop, afterMiss: 1 },
+  });
+  const r = row(v, 'capture-after-miss');
+  assert.equal(r.state, PASS);
+  assert.match(r.detail, /exit 1 produced knowledge/);
+});
+
+test('no capture after many misses FAILs; after few it is NOT ENOUGH DATA', () => {
+  const many = verdict({ unhelpful: emptyUnhelpful, nearMisses: { ...emptyNear, missTotal: MIN_SAMPLE }, loop: emptyLoop });
+  const few = verdict({ unhelpful: emptyUnhelpful, nearMisses: { ...emptyNear, missTotal: 3 }, loop: emptyLoop });
+  assert.equal(row(many, 'capture-after-miss').state, FAIL);
+  assert.match(row(many, 'capture-after-miss').detail, /the message is wrong, not the floor/);
+  assert.equal(row(few, 'capture-after-miss').state, NO_DATA);
+});
+
+test('the three thresholds are declared in the module, not passed in', () => {
+  const v = verdict({ unhelpful: emptyUnhelpful, nearMisses: emptyNear, loop: emptyLoop });
+  assert.equal(v.rows.length, 3);
+  assert.equal(v.thresholds.unhelpfulRate, 0.15, "PLAN §11's trigger, reused rather than re-invented");
+  assert.equal(v.thresholds.nearMissReview, NEAR_MISS_REVIEW);
+  assert.equal(v.thresholds.capturesAfterMiss, 1);
+  // The signature takes panels, never thresholds: a threshold that can be supplied is a threshold
+  // that can be moved after seeing the result, which is what PLAN §15.3 forbids.
+  assert.ok(!/threshold/i.test(verdict.toString().split('\n')[0]));
+});
+
+test('analyse() wires the verdict off the SAME panels it renders — one derivation, no second copy', () => {
+  const r = analyse({
+    lines: [
+      missLine({ at: '2026-09-19T01:00:00Z', q: 'a b c d', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.5 }, _session: 's', _path: 'log/2026-09-19/a-s.jsonl' }),
+      line({ at: '2026-09-19T01:10:00Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', after: '2026-09-19T01:00:00Z', _session: 's', _path: 'log/2026-09-19/a-s.jsonl' }),
+    ],
+    rows: ROWS,
+    meta: { days: 30 },
+  });
+  assert.equal(r.panels.nearMisses.rows.length, 1);
+  assert.equal(r.panels.loop.afterMiss, 1);
+  assert.equal(row(r.verdict, 'capture-after-miss').state, PASS);
+  assert.equal(row(r.verdict, 'near-miss').n, r.panels.nearMisses.rows.length);
+});
+
+test('a synthetic miss never reaches the near-miss panel or the verdict', () => {
+  const r = analyse({
+    lines: [missLine({ q: 'benchmark question', nearMiss: { id: 'KB-C440D4E3', score: 9, coverage: 0.49 }, synthetic: true, _session: 's', _path: 'log/2026-09-19/a-s.jsonl' })],
+    rows: ROWS,
+    meta: { days: 30 },
+  });
+  assert.equal(r.panels.nearMisses.rows.length, 0, 'a stopwatch is not demand, in this panel too');
+  assert.equal(row(r.verdict, 'near-miss').n, 0);
+});
+
+// ── session scoping — PLAN §15.2's "a wave is not a time window" ───────────────────────────────
+
+const treeBlob = (path) => ({ type: 'blob', path });
+
+test('--sessions selects across the WHOLE tree, ignoring the day window', () => {
+  const tree = [
+    treeBlob('log/2026-01-01/20260101T000000Z-wave1.jsonl'),
+    treeBlob('log/2026-09-19/20260919T000000Z-other.jsonl'),
+    treeBlob('log/2026-09-19/20260919T010000Z-wave2.jsonl'),
+  ];
+  const at = new Date('2026-09-19T12:00:00Z');
+  assert.deepEqual(
+    selectLogPaths(tree, { days: 1, at, sessions: 'wave1,wave2' }),
+    ['log/2026-01-01/20260101T000000Z-wave1.jsonl', 'log/2026-09-19/20260919T010000Z-wave2.jsonl'],
+    'a January file is inside the named set and outside every window a reader would pass',
+  );
+});
+
+test('without --sessions the day window is untouched — the default does not change', () => {
+  const tree = [
+    treeBlob('log/2026-01-01/20260101T000000Z-wave1.jsonl'),
+    treeBlob('log/2026-09-19/20260919T000000Z-other.jsonl'),
+  ];
+  assert.deepEqual(
+    selectLogPaths(tree, { days: 1, at: new Date('2026-09-19T12:00:00Z') }),
+    ['log/2026-09-19/20260919T000000Z-other.jsonl'],
+  );
+});
+
+test('one session that pushed TWICE matches both of its files', () => {
+  const tree = [
+    treeBlob('log/2026-09-18/20260918T100000Z-s1.jsonl'),
+    treeBlob('log/2026-09-19/20260919T100000Z-s1.jsonl'),
+  ];
+  assert.equal(selectLogPaths(tree, { days: 1, at: new Date('2026-09-19T12:00:00Z'), sessions: ['s1'] }).length, 2);
+});
+
+test('normalizeSessions is IDEMPOTENT — a Set through the string branch matched nothing at all', () => {
+  // Measured, on two real session ids: `collect` normalised once and handed the Set to
+  // `selectLogPaths`, which normalised again; `String(new Set([...]))` is "[object Set]", so the
+  // filter matched zero files and the report rendered a clean, confident, entirely empty page.
+  // That is the "looks like no activity" failure PLAN §8 forbids, reached through a flag.
+  const once = normalizeSessions('a,b');
+  assert.deepEqual([...normalizeSessions(once)], ['a', 'b']);
+  assert.deepEqual([...normalizeSessions(['a', ' b '])], ['a', 'b']);
+  assert.equal(normalizeSessions(''), null, 'an absent flag is not "no sessions"');
+  assert.equal(normalizeSessions(null), null);
+});
+
+// ── the rendered page ──────────────────────────────────────────────────────────────────────────
+
+const renderOf = (lines) => renderHtml(analyse({ lines, rows: ROWS, meta: { days: 30, base: 'b', at: '2026-09-19T00:00:00Z' } }));
+
+test('the verdict block renders NOT ENOUGH DATA in its own style, never the pass style', () => {
+  const html = renderOf([missLine({ q: 'a b c d', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's', _path: 'log/2026-09-19/a-s.jsonl' })]);
+  assert.match(html, /id="verdict"/);
+  assert.match(html, /class="verdict nodata">NOT ENOUGH DATA/);
+  assert.ok(!/class="verdict ok"/.test(html), 'nothing here earned a pass');
+  assert.match(html, /NOT ENOUGH DATA is a real verdict, not a soft pass/);
+});
+
+test('the near-miss panel renders the candidate, its coverage and its id', () => {
+  const html = renderOf([missLine({ q: 'does the storefront pack size rule reject a cart quantity', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's', _path: 'log/2026-09-19/a-s.jsonl' })]);
+  assert.match(html, /id="near-misses"/);
+  assert.match(html, /KB-C440D4E3/);
+  assert.match(html, /0\.20/);
+  assert.match(html, /no product search route under \/api\/catalog\/products/);
+});
+
+test('an empty near-miss panel says WHY, and never "nothing was read" when something was', () => {
+  const html = renderOf([line({ kind: 'ask', state: 'answer', q: 'x', matched: ['KB-C440D4E3'], _session: 's', _path: 'log/2026-09-19/a-s.jsonl' })]);
+  assert.match(html, /No miss in this window carried a rejected candidate/);
+});
+
+test('the terminal summary prints all three verdict rows with their n', () => {
+  const text = renderText(analyse({
+    lines: [missLine({ q: 'a b c d', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's', _path: 'log/2026-09-19/a-s.jsonl' })],
+    rows: ROWS,
+    meta: { days: 30 },
+  }));
+  assert.match(text, /§15 acceptance/);
+  assert.equal((text.match(/NOT ENOUGH DATA/g) ?? []).length, 3);
+  assert.match(text, /\[n=1\]/);
+  assert.match(text, /near misses/);
+});
+
+test('a session-scoped summary never claims a day window it did not use', () => {
+  const text = renderText(analyse({
+    lines: [],
+    rows: ROWS,
+    meta: { days: 30, sessions: ['wave1', 'wave2'], files: 2 },
+  }));
+  assert.match(text, /2 named session\(s\): wave1, wave2/);
+  assert.ok(!/last 30 days/.test(text), 'a figure headed by the wrong scope is a figure nobody can reproduce');
 });

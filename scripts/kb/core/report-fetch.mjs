@@ -64,15 +64,41 @@ export function windowDays(days = DEFAULT_DAYS, at = new Date()) {
  * timestamps instead would drop a file whose lines are all older than the window even though its
  * folder is inside it — and those lines are exactly the ones a late push carries.
  */
-export function selectLogPaths(treeEntries, { days = DEFAULT_DAYS, at = new Date(), prefix = '' } = {}) {
+export function selectLogPaths(treeEntries, {
+  days = DEFAULT_DAYS, at = new Date(), prefix = '', sessions = null,
+} = {}) {
   const head = prefix ? `${prefix}/log/` : 'log/';
   const want = windowDays(days, at);
+  const wanted = normalizeSessions(sessions);
+  const rel = (p) => p.slice(prefix ? prefix.length + 1 : 0);
   return (treeEntries ?? [])
     .filter((e) => e?.type === 'blob' && typeof e.path === 'string' && e.path.startsWith(head))
     .filter((e) => e.path.endsWith('.jsonl'))
     .map((e) => e.path)
-    .filter((p) => want.has(dayOf(p.slice(prefix ? prefix.length + 1 : 0))))
+    // A NAMED SET OF SESSIONS IS NOT A TIME WINDOW, so it replaces the day filter rather than
+    // narrowing inside it (PLAN §15.1: the wave is interleaved with other traffic, and §7's day
+    // folder is the day a file was PUSHED — a session's log can land in a folder outside any
+    // window a reader would think to pass). Selection is on the file's session suffix, which is
+    // exact: `logPath(f.session, at)` keeps a swept file's ORIGINAL session id, so every line in a
+    // file belongs to the session its name carries, and a session that pushed twice matches both.
+    .filter((p) => (wanted ? wanted.has(sessionOf(rel(p))) : want.has(dayOf(rel(p)))))
     .sort();
+}
+
+/**
+ * `--sessions a, b ,c` → a Set, or null when the flag was not given. Empty is null, not "none".
+ *
+ * IT MUST BE IDEMPOTENT. `collect` normalises once and hands the Set down to `selectLogPaths`,
+ * which normalises again — and a Set that falls through to the string branch stringifies to
+ * `"[object Set]"`, so the filter matches nothing and the report renders a clean, confident,
+ * completely empty page. Caught by running it against two real session ids; a `--sessions` flag
+ * that silently returns zero rows is precisely the "looks like no activity" failure §8 forbids.
+ */
+export function normalizeSessions(sessions) {
+  if (sessions == null) return null;
+  const raw = sessions instanceof Set || Array.isArray(sessions) ? [...sessions] : String(sessions).split(',');
+  const list = raw.map((s) => String(s).trim()).filter(Boolean);
+  return list.length ? new Set(list) : null;
 }
 
 async function getJson(url, { fetchImpl, timeoutMs }) {
@@ -146,6 +172,7 @@ async function cacheAll(dir) {
 export async function collect({
   base,
   days = DEFAULT_DAYS,
+  sessions = null,
   at = new Date(),
   fetchImpl = null,
   timeoutMs = Number(process.env.KB_HTTP_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS,
@@ -153,6 +180,7 @@ export async function collect({
   maxFiles = MAX_FILES,
   useCache = true,
 } = {}) {
+  const wanted = normalizeSessions(sessions);
   const coords = coordinatesOf(base);
   if (!coords) {
     return {
@@ -169,11 +197,11 @@ export async function collect({
 
   const tree = await getJson(treeUrl, net);
   if (!tree.ok) {
-    return fromCacheOnly({ base, days, cacheDir, detail: tree.detail, useCache, at });
+    return fromCacheOnly({ base, days, sessions: wanted, cacheDir, detail: tree.detail, useCache, at });
   }
   if (useCache) await cacheWrite(cacheDir, treeUrl, { tree: tree.json?.tree ?? [], truncated: Boolean(tree.json?.truncated) });
 
-  const paths = selectLogPaths(tree.json?.tree ?? [], { days, at, prefix });
+  const paths = selectLogPaths(tree.json?.tree ?? [], { days, at, prefix, sessions: wanted });
   if (paths.length > maxFiles) {
     return {
       ok: false,
@@ -181,8 +209,10 @@ export async function collect({
       lines: [],
       rows: [],
       meta: {
-        base, days, files: paths.length,
-        why: `${paths.length} log files in the last ${days} days exceeds the ${maxFiles}-file bound. Narrow the window with --days N.`,
+        base, days, sessions: wanted ? [...wanted] : null, files: paths.length,
+        why: wanted
+          ? `${paths.length} log files for the named session(s) exceeds the ${maxFiles}-file bound. Name fewer sessions.`
+          : `${paths.length} log files in the last ${days} days exceeds the ${maxFiles}-file bound. Narrow the window with --days N.`,
       },
     };
   }
@@ -219,6 +249,11 @@ export async function collect({
     rows,
     meta: {
       base, days, at: at.toISOString(),
+      // WHAT WAS SCOPED TO, carried so the header can say it. A report headed "last 30 days" that
+      // actually read three named sessions is a number nobody can reproduce, which is the whole
+      // objection PLAN §15.2 raises about measuring a wave with a time window.
+      sessions: wanted ? [...wanted] : null,
+      sessionsMissing: wanted ? [...wanted].filter((s) => !paths.some((p) => sessionOf(prefix ? p.slice(prefix.length + 1) : p) === s)) : [],
       files: paths.length,
       truncated: Boolean(tree.json?.truncated),
       malformed,
@@ -239,7 +274,8 @@ export async function collect({
  * banner names the failure and the timestamp of the newest record held, so a reader can tell a
  * stale report from a current one without checking anything else.
  */
-async function fromCacheOnly({ base, days, cacheDir, detail, useCache, at }) {
+async function fromCacheOnly({ base, days, sessions = null, cacheDir, detail, useCache, at }) {
+  const wanted = normalizeSessions(sessions);
   const cached = useCache ? await cacheAll(cacheDir) : [];
   const rawRoot = String(base).replace(/\/+$/, '');
   const lines = [];
@@ -255,6 +291,10 @@ async function fromCacheOnly({ base, days, cacheDir, detail, useCache, at }) {
       continue;
     }
     if (!rel.endsWith('.jsonl')) continue;
+    // The cache is keyed by URL and holds whatever any earlier run fetched, so the session filter
+    // has to be re-applied here too -- otherwise `--sessions` silently widens the moment the base
+    // goes unreachable, which is the one direction a scoped report must not drift.
+    if (wanted && !wanted.has(sessionOf(rel))) continue;
     files += 1;
     lines.push(...parseLogFile(c.payload?.text ?? '', { path: rel, session: sessionOf(rel) }).lines);
   }
@@ -264,6 +304,8 @@ async function fromCacheOnly({ base, days, cacheDir, detail, useCache, at }) {
     rows,
     meta: {
       base, days, at: at.toISOString(),
+      sessions: wanted ? [...wanted] : null,
+      sessionsMissing: [],
       files,
       fromCache: true,
       failure: detail,

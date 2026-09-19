@@ -55,6 +55,75 @@ function banner(meta) {
     Anything after that timestamp is missing from every panel below.</span></div>`;
 }
 
+/**
+ * The §15 acceptance block, above panel 1 because it is the thing the check wave is judged by.
+ *
+ * `NOT ENOUGH DATA` gets its OWN colour and its own word — it is not a softer PASS. §14.1's
+ * mistake was a comfortable number with nothing behind it, and a verdict block that rendered a
+ * thin absence in the same green as a real one would reproduce it in the one place that exists to
+ * prevent it. Every row prints the n it judged, beside the value.
+ */
+function verdictBlock(v) {
+  if (!v) return '';
+  const cls = { PASS: 'ok', FAIL: 'bad', 'NOT ENOUGH DATA': 'nodata' };
+  const rows = v.rows.map((r) => `<tr>
+    <td><span class="verdict ${esc(cls[r.state] ?? '')}">${esc(r.state)}</span></td>
+    <td><b>${esc(r.threshold)}</b><div class="muted">${esc(r.source)}</div></td>
+    <td><code>n=${esc(r.n)}</code></td>
+    <td>${esc(r.detail)}</td>
+  </tr>`).join('');
+  return `<section id="verdict" class="verdict-block">
+    <h2>§15 acceptance — the three thresholds, declared before the run</h2>
+    <p class="lede">Declared in <code>report-analyse.mjs</code>, not passed in: a threshold supplied
+      on the command line is a threshold that can be moved after seeing the result.
+      <strong>NOT ENOUGH DATA is a real verdict, not a soft pass</strong> — an absence only counts
+      below a rate once there are at least <strong>${esc(v.thresholds.minSample)}</strong> observations
+      behind it (rule of three against the ${esc(v.thresholds.unhelpfulRate * 100)}% trigger).
+      A 0% rate over two asks is not a pass.</p>
+    <table><thead><tr><th>verdict</th><th>threshold</th><th>n</th><th>what was judged</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    <p class="muted">${esc(v.pass)} pass · ${esc(v.fail)} fail · ${esc(v.noData)} not enough data.
+      The near-miss row <strong>flags</strong> candidates for a human to read; it never claims to
+      judge whether they were answerable (PLAN §15.3).</p>
+  </section>`;
+}
+
+function panelNearMisses(p) {
+  const rows = p.rows.map((r) => [
+    `<b class="${r.inBand ? 'bad' : ''}">${esc(r.coverage.toFixed(2))}</b>`,
+    `<code>${esc(r.id)}</code>`,
+    esc(r.subject) || (r.inIndex ? '' : '<span class="muted">not in the index snapshot</span>'),
+    `<span class="q">${esc(r.question)}</span>`,
+    esc(r.score),
+    r.rejectedBy === 'words'
+      ? `<span class="muted">word count (&lt;&nbsp;${esc(p.minWords)}); coverage already cleared the floor</span>`
+      : '<span class="muted">coverage</span>',
+    esc(r.session),
+  ]);
+  const repeats = p.repeats.map((g) => `<code>${esc(g.id)}</code>&nbsp;×${esc(g.count)}`
+    + ` <span class="muted">${esc(g.subject)} — ${esc(g.distinctQuestions)} distinct question(s), best ${esc(g.best.toFixed(2))}</span>`).join(' · ');
+  return `<section id="near-misses">
+    <h2>1a · Near misses — the floor's own error bar</h2>
+    <p class="lede">The best candidate each miss <em>rejected</em>, sorted by coverage descending.
+      The admissibility floor is <code>${esc(p.floor)}</code> coverage (or one anchor, or
+      &lt;&nbsp;${esc(p.minWords)} overlapping words), and the nearest surviving BAD hit in its
+      derivation sat at <strong>0.45</strong> — one word below. So
+      <strong>anything at or above ${esc(p.review)} is a row a human must read</strong>: either the
+      floor refused a question it should have answered, or an entry is phrased so unlike the way
+      people ask that it is invisible. The log cannot tell which.
+      ${p.repeats.length ? '' : '<em>A candidate that near-misses repeatedly is the second case, and is worth rewriting rather than re-cutting the floor.</em>'}</p>
+    <p class="metric">
+      <strong class="${p.inBand.length ? 'bad' : ''}">${esc(p.inBand.length)}</strong> row(s) at
+      coverage ≥ ${esc(p.review)} · <strong>${esc(p.rows.length)}</strong> of
+      <strong>${esc(p.missTotal)}</strong> miss(es) carried a candidate
+      <span class="muted">(${esc(p.withoutNearMiss)} scored nothing at all — not a floor problem)</span>
+    </p>
+    ${repeats ? `<p class="metric">Repeatedly near-missed: ${repeats}</p>` : ''}
+    ${rows.length ? table(['coverage', 'candidate', 'subject', 'the question it missed', 'score', 'stopped by', 'session'], rows)
+    : empty('No miss in this window carried a rejected candidate. Either there were no misses, or nothing in the base scored above zero on them — the metric line above says which.')}
+  </section>`;
+}
+
 function header(report) {
   const m = report.meta;
   const days = m.days;
@@ -73,12 +142,23 @@ function header(report) {
       + `${m.syntheticAsks ? ` (${m.syntheticAsks} of them asks)` : ''} — a benchmark, demo or acceptance run. `
       + 'They are excluded from every panel below: a stopwatch is not demand.');
   }
+  // A report headed "last 30 days" that actually read three named sessions publishes a number
+  // nobody can reproduce -- PLAN §15.2's objection, in the header.
+  if (m.sessionsMissing?.length) {
+    notes.push('<strong>named session(s) with no log file in the base:</strong> '
+      + m.sessionsMissing.map((x) => `<code>${esc(x)}</code>`).join(' ')
+      + ' — they pushed nothing, or their queue has not been swept yet. This is NOT "they asked nothing".');
+  }
   for (const f of m.failures ?? []) notes.push(`could not read <code>${esc(f.path)}</code> — ${esc(f.detail)}`);
 
   return `<header>
     <h1>kb — what agents asked, and what the base could not answer</h1>
     <p class="sub">
-      <code>${esc(m.base)}</code> · last <strong>${esc(days)}</strong> days ·
+      <code>${esc(m.base)}</code> ·
+      ${m.sessions?.length
+    ? `scoped to <strong>${esc(m.sessions.length)}</strong> named session(s) `
+      + `<span class="muted">(${m.sessions.map((x) => `<code>${esc(x)}</code>`).join(' ')})</span>, whole log tree`
+    : `last <strong>${esc(days)}</strong> days`} ·
       <strong>${esc(m.files ?? 0)}</strong> session log file(s) ·
       <strong>${esc(report.sessions)}</strong> session(s) ·
       <strong>${esc(report.panels.questions.totalAsks)}</strong> ask(s) ·
@@ -245,6 +325,12 @@ code{font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;background:#f2
 .state{font-size:11px;padding:1px 6px;border-radius:9px;background:#eef1ef;white-space:nowrap}
 .state.miss{background:#fbe9e9;color:var(--bad)}
 .state.unreachable{background:#f6efe2;color:#8a5a00}
+.verdict-block{border-left:5px solid var(--accent)}
+.verdict{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;white-space:nowrap;
+  padding:2px 8px;border-radius:10px;background:#eef1ef;color:var(--dim)}
+.verdict.ok{background:#e4efe9;color:var(--accent)}
+.verdict.bad{background:#fbe9e9;color:var(--bad)}
+.verdict.nodata{background:#f3efe4;color:#7a6320}
 .banner{background:#fdf3e0;border:1px solid #e2c489;border-left:5px solid #c98a12;
   border-radius:6px;padding:12px 16px;margin:0 0 22px;font-size:13.5px;display:grid;gap:5px}
 .banner.bad{background:#fbeaea;border-color:#e0a9ac;border-left-color:var(--bad)}
@@ -270,7 +356,9 @@ export function renderHtml(report) {
 <body><main>
 ${banner(report.meta)}
 ${header(report)}
+${verdictBlock(report.verdict)}
 ${panelMisses(p.misses)}
+${panelNearMisses(p.nearMisses)}
 ${panelUnhelpful(p.unhelpful)}
 ${panelQuestions(p.questions)}
 ${panelEntries(p.entries)}
@@ -291,12 +379,33 @@ export function renderText(report) {
       ? `! the base could not be read and the cache is empty (${m.failure}) — this is NOT "no activity"`
       : `! the base could not be read (${m.failure}) — rendered from cache, newest record ${when(m.newestCached)}`);
   }
-  out.push(`${m.files ?? 0} log file(s), ${report.sessions} session(s), ${p.questions.totalAsks} ask(s), last ${m.days} days`
+  // THE SCOPE IS PART OF THE NUMBER. A line headed "last 30 days" over a report that actually
+  // read three named sessions is a figure nobody can reproduce -- PLAN §15.2.
+  const scope = m.sessions?.length
+    ? `${m.sessions.length} named session(s): ${m.sessions.join(", ")}`
+    : `last ${m.days} days`;
+  out.push(`${m.files ?? 0} log file(s), ${report.sessions} session(s), ${p.questions.totalAsks} ask(s), ${scope}`
     + (m.synthetic ? `  [+${m.synthetic} synthetic line(s)${m.syntheticAsks ? `, ${m.syntheticAsks} ask(s)` : ''} excluded]` : ''));
   out.push(`  misses         ${p.misses.ranked.length} distinct (${p.misses.total} asks)${p.misses.unreachable ? `, ${p.misses.unreachable} unreachable` : ''}`);
+  out.push(`  near misses    ${p.nearMisses.rows.length} rejected candidate(s); `
+    + `${p.nearMisses.inBand.length} at coverage >= ${p.nearMisses.review}`
+    + `${p.nearMisses.rows.length ? `, top ${p.nearMisses.rows[0].coverage.toFixed(2)}` : ''}`);
   out.push(`  unhelpful      ${p.unhelpful.flagged.length}/${p.unhelpful.decidable} decidable = ${pct(p.unhelpful.rate)} (${p.unhelpful.undecidable} undecidable)`);
   out.push(`  entries served ${p.entries.used.length} of ${p.entries.indexed} indexed; ${p.entries.never.length} never served here`);
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
   out.push(`  refusals       ${p.refusals.total}`);
+  out.push(`  loop           ${p.loop.afterMiss} capture(s) after a miss, ${p.loop.afterAnswer} after an answer`
+    + `${p.loop.unlinked ? `, ${p.loop.unlinked} carrying no after-pointer to link` : ''}`);
+  if (report.verdict) {
+    // The counts above are a summary; the GATE is these three rows, so they print in full. An
+    // operator who never opens the HTML still sees exactly what PLAN §15 will be judged on.
+    out.push('');
+    out.push(`§15 acceptance — ${report.verdict.pass} pass, ${report.verdict.fail} fail, `
+      + `${report.verdict.noData} not enough data`);
+    for (const r of report.verdict.rows) {
+      out.push(`  ${r.state.padEnd(15)} ${r.threshold}  [n=${r.n}]`);
+      out.push(`  ${''.padEnd(15)} ${r.detail}`);
+    }
+  }
   return out.join('\n');
 }
