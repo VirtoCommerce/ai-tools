@@ -413,18 +413,32 @@ export function activity(lines) {
  */
 export function analyse({ lines = [], rows = [], meta = {} } = {}) {
   const idx = indexLookup(rows);
+  // SYNTHETIC LINES ARE EXCLUDED FROM EVERY PANEL AND COUNTED IN THE HEADER (PLAN §14.2).
+  //
+  // A benchmark is not demand. Measured on the first 12 log files: six questions asked five times
+  // each -- 30 of 39 asks -- were one latency run, so panel 2 was ranking a stopwatch and panel 1's
+  // denominator was four times real demand. Filtering here rather than at the writer is deliberate:
+  // the line is still in the base, still readable, still auditable, and the header says how many
+  // were set aside. A measurement that quietly removed its own inputs would be the same defect the
+  // filter exists to fix.
+  const real = lines.filter((l) => l.synthetic !== true);
+  const syntheticLines = lines.length - real.length;
   return {
-    meta,
-    tally: kindTally(lines),
-    activity: activity(lines),
-    sessions: new Set(lines.map((l) => l._session).filter(Boolean)).size,
+    meta: {
+      ...meta,
+      synthetic: syntheticLines,
+      syntheticAsks: lines.filter((l) => l.synthetic === true && l.kind === 'ask').length,
+    },
+    tally: kindTally(real),
+    activity: activity(real),
+    sessions: new Set(real.map((l) => l._session).filter(Boolean)).size,
     panels: {
-      misses: misses(lines),
-      questions: questions(lines),
-      entries: entryUsage(lines, idx),
-      evidence: evidence(lines, idx),
-      refusals: refusals(lines, idx),
-      unhelpful: unhelpful(lines, idx),
+      misses: misses(real),
+      questions: questions(real),
+      entries: entryUsage(real, idx),
+      evidence: evidence(real, idx),
+      refusals: refusals(real, idx),
+      unhelpful: unhelpful(real, idx),
     },
   };
 }

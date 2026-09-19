@@ -66,6 +66,13 @@ function header(report) {
   if (m.truncated) notes.push('the git tree came back <strong>truncated</strong> — some log files may be missing');
   if (m.malformed) notes.push(`<strong>${m.malformed}</strong> log line(s) failed to parse and were dropped`);
   if (m.indexLoaded === false) notes.push('<strong>index.json did not load</strong> — subjects and panel 6 verdicts below are unreliable');
+  // The filter SAYS SO. A report that silently dropped part of its input would be a measurement
+  // you cannot audit, which is the defect the synthetic flag exists to fix, relocated one layer up.
+  if (m.synthetic) {
+    notes.push(`<strong>${m.synthetic}</strong> line(s) in this window are marked <code>synthetic</code>`
+      + `${m.syntheticAsks ? ` (${m.syntheticAsks} of them asks)` : ''} — a benchmark, demo or acceptance run. `
+      + 'They are excluded from every panel below: a stopwatch is not demand.');
+  }
   for (const f of m.failures ?? []) notes.push(`could not read <code>${esc(f.path)}</code> — ${esc(f.detail)}`);
 
   return `<header>
@@ -284,7 +291,8 @@ export function renderText(report) {
       ? `! the base could not be read and the cache is empty (${m.failure}) — this is NOT "no activity"`
       : `! the base could not be read (${m.failure}) — rendered from cache, newest record ${when(m.newestCached)}`);
   }
-  out.push(`${m.files ?? 0} log file(s), ${report.sessions} session(s), ${p.questions.totalAsks} ask(s), last ${m.days} days`);
+  out.push(`${m.files ?? 0} log file(s), ${report.sessions} session(s), ${p.questions.totalAsks} ask(s), last ${m.days} days`
+    + (m.synthetic ? `  [+${m.synthetic} synthetic line(s)${m.syntheticAsks ? `, ${m.syntheticAsks} ask(s)` : ''} excluded]` : ''));
   out.push(`  misses         ${p.misses.ranked.length} distinct (${p.misses.total} asks)${p.misses.unreachable ? `, ${p.misses.unreachable} unreachable` : ''}`);
   out.push(`  unhelpful      ${p.unhelpful.flagged.length}/${p.unhelpful.decidable} decidable = ${pct(p.unhelpful.rate)} (${p.unhelpful.undecidable} undecidable)`);
   out.push(`  entries served ${p.entries.used.length} of ${p.entries.indexed} indexed; ${p.entries.never.length} never served here`);

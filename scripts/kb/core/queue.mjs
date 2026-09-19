@@ -35,6 +35,26 @@ export const LOGGED = Object.freeze([
 export const MUTATIONS = Object.freeze(['capture', 'confirm', 'dispute']);
 
 /**
+ * Is this run a BENCHMARK, a demo or an acceptance test rather than an agent doing work?
+ *
+ * PLAN §14.2, measured on this base's first 12 log files: six questions appear five times each --
+ * 30 of the 39 asks are one latency benchmark, pushed through the same path as real traffic. So
+ * the demand log's top six rows were a stopwatch, and §14.1's own denominator was 39 where real
+ * demand was 9.
+ *
+ * MARKED, NOT DROPPED, and the distinction is the whole design. A benchmark must still exercise
+ * the real queue, the real push and the real flush -- that is what makes it representative, and a
+ * benchmark that writes nowhere measures a path nobody uses. What it must not do is enter the
+ * DEMAND panels. So the line is written exactly as any other and carries one extra field; the
+ * report filters on it and SAYS how many it filtered, so the number is auditable rather than
+ * invisible. A dropped line cannot be checked by anybody; a marked one can.
+ *
+ * It is an env var and not a flag because it has to reach the MCP server, which nobody passes
+ * arguments to: `KB_SYNTHETIC=1` on the harness that spawns the run covers both doors at once.
+ */
+export const isSynthetic = (env = process.env) => /^(1|true|yes|on)$/i.test(String(env.KB_SYNTHETIC ?? '').trim());
+
+/**
  * Session identity is free: `CLAUDE_CODE_HOST_SESSION_ID` is inherited by child processes, so the
  * tool knows its own session without being told. The prior art's measured pain -- one missed
  * prefix drops a question row silently, 25 times out of 25 -- simply does not arise.
@@ -66,7 +86,9 @@ export function queuePath(env = process.env) {
  * instead, so it is visible without being fatal.
  */
 export async function log(record, { env = process.env } = {}) {
-  const line = { at: new Date().toISOString(), ...record };
+  // `synthetic` is stamped LAST and by the single writer, so no verb can forget it and no verb can
+  // fake it: one env var marks every line a benchmark run produces, including its flush.
+  const line = { at: new Date().toISOString(), ...record, ...(isSynthetic(env) ? { synthetic: true } : {}) };
   const path = queuePath(env);
   try {
     await mkdir(queueDir(env), { recursive: true });
