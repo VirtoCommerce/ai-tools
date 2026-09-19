@@ -29,16 +29,28 @@
 // ── WHAT HAPPENS WHEN STDIN CLOSES ───────────────────────────────────────────────────────────
 //
 // The session's queued captures, confirmations and log lines are flushed to the base as ONE atomic
-// commit — no explicit `push`, no hook, no scheduler. A session that learned something banks it by
-// ending. If there is no token the queue is simply kept (`no-token` is a state, not an error) and
-// the first later session with one pushes it.
+// commit — no explicit `push`, no hook. If there is no token the queue is simply kept (`no-token` is
+// a state, not an error) and the first later session with one pushes it.
+//
+// ── AND IT NO LONGER WAITS FOR THAT ──────────────────────────────────────────────────────────
+//
+// This file used to say "a session that learned something banks it by ending", which was true and
+// useless: NOBODY ENDS A SESSION. They stay open for days, and switching away from a tab is not
+// ending one. The evidence sat on one laptop, which is the exact failure this system exists to
+// remove. Two rules now bound it, and the second is the one that makes it a bound:
+//
+//   * `OWN_FLUSH_AFTER_MS` (push.mjs) — on the way out of a request, publish if the oldest queued
+//     line is over five minutes old. This covers a working session, and NOT its tail: it needs a
+//     later request to fire, and a session's captures come at the END of the work with nothing
+//     after them.
+//   * A TIMER in this process, below — the only thing that does not depend on being called again.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { openBase } from './core/base.mjs';
-import { flush, sweepIfDue } from './core/push.mjs';
+import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { ask, capture, confirm, dispute, show, stat } from './core/verbs.mjs';
@@ -396,10 +408,37 @@ export function runStdio({ env = process.env, input = process.stdin, output = pr
     return closing;
   };
 
-  input.on('end', () => { close('stdin closed').then(() => process.exit(0), () => process.exit(0)); });
-  input.on('close', () => { close('stdin closed').then(() => process.exit(0), () => process.exit(0)); });
+  // ── THE CEILING ──────────────────────────────────────────────────────────────────────────────
+  //
+  // `OWN_FLUSH_AFTER_MS` alone was NOT a ceiling, and calling it one was wrong. It is checked on the
+  // way out of a `tools/call`, so it needs a LATER call to fire — and the lines that matter most are
+  // the ones with nothing after them. A session's captures come at the END of the work: on
+  // 2026-09-19 the last capture landed at 10:59:17 and no `kb` call followed it, so under that rule
+  // alone it would have sat on one laptop until the session ended. Nobody ends sessions; that is the
+  // defect the rule was written to close, surviving in the tail.
+  //
+  // A timer in the server process is the only thing that makes the bound real, because the server is
+  // the one thing that outlives a request and does not depend on being called again. `unref()` so it
+  // can never hold the process open by itself, and it is cleared on close so a flush cannot race the
+  // shutdown flush. `ownFlushDue` still gates it, so an idle session does no work and writes nothing.
+  const FLUSH_TICK_MS = 60_000;
+  let ticking = false;
+  const ticker = setInterval(() => {
+    if (ticking || closing) return;
+    ticking = true;
+    ownFlushDue({ env })
+      .then((due) => (due ? server.shutdown() : null))
+      .then((r) => { if (r && r.state !== 'nothing') note(`flush (timer): ${r.state}${r.commit ? ` ${r.commit.slice(0, 7)}` : ''}`); })
+      .catch(() => { /* a timer must never take the session down */ })
+      .finally(() => { ticking = false; });
+  }, FLUSH_TICK_MS);
+  ticker.unref();
+  const stopTicker = () => clearInterval(ticker);
+
+  input.on('end', () => { stopTicker(); close('stdin closed').then(() => process.exit(0), () => process.exit(0)); });
+  input.on('close', () => { stopTicker(); close('stdin closed').then(() => process.exit(0), () => process.exit(0)); });
   for (const signal of ['SIGINT', 'SIGTERM']) {
-    process.on(signal, () => { close(signal).then(() => process.exit(0), () => process.exit(0)); });
+    process.on(signal, () => { stopTicker(); close(signal).then(() => process.exit(0), () => process.exit(0)); });
   }
 
   return { server, close, dispatch };
