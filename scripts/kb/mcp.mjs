@@ -45,8 +45,8 @@
 //     after them.
 //   * A TIMER in this process, below — the only thing that does not depend on being called again.
 
-import { appendFileSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { openBase } from './core/base.mjs';
@@ -296,6 +296,11 @@ export function createServer({ env = process.env, baseArg = null, ttlMs = 300_00
     // "nothing", that is a measurement and §7's note can finally cite one.
     if (env.KB_RAW_DUMP) {
       try {
+        // mkdir first. Without it a missing directory throws, the catch swallows it, and the dump
+        // is a silent no-op — which is how a hook, a harvester and a probe all failed earlier the
+        // same day. A diagnostic that fails quietly is worse than no diagnostic: it reports the
+        // absence of evidence as evidence of absence.
+        mkdirSync(dirname(env.KB_RAW_DUMP), { recursive: true });
         appendFileSync(env.KB_RAW_DUMP, `${JSON.stringify({ at: new Date().toISOString(), message })}\n`, 'utf8');
       } catch { /* a diagnostic must never cost a request */ }
     }
