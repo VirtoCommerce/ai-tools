@@ -37,7 +37,7 @@
  * Contract: reads the hook payload on stdin, exits 0 whatever happens, prints nothing. A harvester
  * that can fail a session is worse than no harvester.
  */
-import { appendFileSync, mkdirSync, openSync, readSync, fstatSync, closeSync, readFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, openSync, readSync, fstatSync, closeSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
 // The CLOSING message is at the end, so a tail would do for it -- but the COORDINATES are the more
@@ -98,8 +98,15 @@ function main() {
   }
   if (!closing && !coords.size) return;
 
+  // ONE FILE PER SESSION, REWRITTEN — not one appended line per Stop.
+  // `Stop` fires at the end of every assistant turn, not once per session, so the first version of
+  // this appended a near-duplicate row on every turn: a five-turn conversation left five rows with
+  // identical coordinates and five different closings, and the corpus would have been dominated by
+  // whichever session talked the most. Rewriting keeps exactly what the name promises — what this
+  // session concluded, as of its latest turn.
   const out = process.env.KB_HARVEST_DIR || join(process.cwd(), '.kb-harvest');
-  const file = join(out, 'conclusions.jsonl');
+  const sid = String(hook.session_id ?? hook.sessionId ?? 'unknown').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || 'unknown';
+  const file = join(out, sid + '.json');
   const row = {
     at: new Date().toISOString(),
     session: String(hook.session_id ?? hook.sessionId ?? '').slice(0, 12) || 'unknown',
@@ -110,7 +117,7 @@ function main() {
   };
   try {
     mkdirSync(dirname(file), { recursive: true });
-    appendFileSync(file, JSON.stringify(row) + '\n', 'utf8');
+    writeFileSync(file, JSON.stringify(row, null, 1) + '\n', 'utf8');
   } catch { /* best effort, always */ }
 }
 
