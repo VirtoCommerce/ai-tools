@@ -17,6 +17,7 @@ import { readQueue } from '../kb/core/queue.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
 import { ask, capture } from '../kb/core/verbs.mjs';
+import { captureLines } from '../kb/core/render.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
 const opened = () => ({ reader: localReader(FIXTURE), locator: FIXTURE, how: 'test', why: null });
@@ -165,5 +166,101 @@ test('a capture with no ask before it says nothing rather than guessing', async 
     assert.equal(r.state, 'queued');
     const [capLine] = await linesOf(env);
     assert.ok(!('after' in capLine), '`after` means FOLLOWED; with nothing before it, there is nothing to say');
+  });
+});
+
+// ── capture: the related hint it surfaced ─────────────────────────────────────────────────────
+
+test('a capture records how many related entries it put in front of the writer', async () => {
+  await withQueue(async (env) => {
+    // The fixture holds two entries about where a cart-level promotion lands (KB-55C8E448,
+    // KB-378EEA52), which is what this fact speaks to.
+    const r = await capture({
+      subject: 'a cart promotion discount is not shown against any product line on the cart page',
+      question: 'does a cart subtotal promotion change the discount on each cart line item',
+      claim: 'Observed: the line items carry no share of the cart-level discount.',
+      deployment: 'vcst_qa',
+      anchors: ['/cart/summary'],
+      scope: ['surface=storefront-ui'],
+    }, opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'queued');
+    assert.ok(r.related.hits.length > 0, 'the fixture holds two entries about cart-level discounts');
+
+    const line = (await linesOf(env)).at(-1);
+    // ONE field, counting what was SURFACED. PLAN §7: a count, not the subjects, and not a second
+    // field for the ones that scored and were not shown.
+    assert.equal(line.related, r.related.hits.length);
+    assert.ok(!('relatedIds' in line) && !('relatedTotal' in line));
+  });
+});
+
+test('a capture the base holds nothing near records related 0 rather than omitting it', async () => {
+  // `0` is the reading that makes the rest of the column mean anything: it says the hint ran and
+  // found nothing, which is a different fact from a line written before the hint existed.
+  await withQueue(async (env) => {
+    const r = await capture({
+      subject: 'the warehouse forklift is repainted every spring',
+      question: 'how often is the forklift repainted',
+      claim: 'Observed: annually.',
+      deployment: 'vcst_qa',
+      anchors: ['/depot/forklifts'],
+      scope: ['surface=platform'],
+    }, opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'queued');
+    assert.equal(r.related.hits.length, 0);
+    assert.equal((await linesOf(env)).at(-1).related, 0);
+  });
+});
+
+test('the hint never blocks the capture — it is computed after the queue write is decided', async () => {
+  await withQueue(async (env) => {
+    const r = await capture({
+      subject: 'a cart promotion discount is not shown against any product line on the cart page',
+      question: 'does a cart subtotal promotion change the discount on each cart line item',
+      claim: 'Observed: the line items carry no share of the cart-level discount.',
+      deployment: 'vcst_qa',
+      anchors: ['/cart/summary'],
+      scope: ['surface=storefront-ui'],
+    }, opened(), { env, via: 'cli' });
+    // Related entries exist AND the capture is queued, with the payload the pusher needs intact.
+    assert.ok(r.related.hits.length > 0);
+    assert.equal(r.state, 'queued');
+    const line = (await linesOf(env)).at(-1);
+    assert.equal(line.kind, 'capture', 'not `capture-refused`');
+    assert.ok(line.payload?.entry, 'and it still carries what the push will send');
+  });
+});
+
+test('both doors say the same thing, because the sentence lives in the renderer', async () => {
+  await withQueue(async (env) => {
+    const r = await capture({
+      subject: 'a cart promotion discount is not shown against any product line on the cart page',
+      question: 'does a cart subtotal promotion change the discount on each cart line item',
+      claim: 'Observed: the line items carry no share of the cart-level discount.',
+      deployment: 'vcst_qa',
+      anchors: ['/cart/summary'],
+      scope: ['surface=storefront-ui'],
+    }, opened(), { env, via: 'cli' });
+    const cli = captureLines(r, { prefix: 'kb capture' });
+    const mcp = captureLines(r, { prefix: 'kb_capture' });
+    const related = (lines) => lines.filter((l) => l.startsWith('  related') || /^ {4}KB-/.test(l));
+    assert.deepEqual(related(cli), related(mcp), 'the two doors differ only in the prefix');
+    assert.ok(related(cli).length > 1);
+    // It must not read as a gate: the capture is already queued by the time these lines exist.
+    assert.match(related(cli)[0], /nothing is blocked/);
+  });
+});
+
+test('a capture with nothing related prints no related block at all', async () => {
+  await withQueue(async (env) => {
+    const r = await capture({
+      subject: 'the warehouse forklift is repainted every spring',
+      question: 'how often is the forklift repainted',
+      claim: 'Observed: annually.',
+      deployment: 'vcst_qa',
+      anchors: ['/depot/forklifts'],
+      scope: ['surface=platform'],
+    }, opened(), { env, via: 'cli' });
+    assert.ok(!captureLines(r).some((l) => l.includes('related')));
   });
 });

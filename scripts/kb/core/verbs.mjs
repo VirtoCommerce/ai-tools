@@ -18,7 +18,7 @@ import { findDuplicate, identityKey, refusalMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, normalizeScope, retrievable } from './index-load.mjs';
 import { log, pendingMutations, readQueue, sessionId } from './queue.mjs';
-import { RANKER, rank } from './rank.mjs';
+import { RANKER, rank, relatedTo } from './rank.mjs';
 
 // ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
 //
@@ -316,18 +316,44 @@ export async function capture(input, opened, { env = process.env, via = null } =
   // the page is still open.
   const alsoHere = neighbours(cat.rows, input.anchors, { exclude: id });
 
+  // And entries this fact may SPEAK TO, which is a different question from where it was observed.
+  //
+  // `alsoHere` above asks who else stood at this coordinate. That was the whole of PLAN §17.4(6)
+  // until 2026-09-19, when it was checked against the pair that motivated it: KB-F78ED1CC's body
+  // says in terms that it CONTRADICTS KB-0C163966, and their normalised anchor sets do not
+  // intersect at all -- not a near miss, no shared coordinate. Measured across the 91-entry base,
+  // the anchor trigger fires on 1 entry and that entry is the wrong one. Anchors record WHERE
+  // SOMEBODY STOOD; a contradiction is about WHAT THEY CONCLUDED, and the two coincide less often
+  // than the design assumed.
+  //
+  // So this is keyed on the words instead (`relatedTo`, which carries the measurement). It is
+  // computed AFTER the queue write decision and feeds nothing into it: a capture is never blocked,
+  // slowed or altered by what comes back, and a base that ranks badly costs the writer a glance.
+  // The neighbours already named above are excluded so one entry is not reported twice.
+  const related = relatedTo(
+    `${input.subject} ${input.question}`,
+    retrievable(cat.rows),
+    { exclude: [id, ...alsoHere.map((n) => n.id)] },
+  );
+
   const written = await log({
     kind: 'capture',
     id,
     subject: input.subject,
     ...(after ? { after } : {}),
+    // ONE field, and it counts what was SURFACED rather than what scored. The question it answers
+    // is whether this hint puts anything in front of a writer at all -- if these are mostly 0 the
+    // floor or the keying is wrong, and that is visible without a second field. It is written on
+    // every queued capture including the zeros: `0` means the hint ran and found nothing, which is
+    // the reading that makes the rest of the column mean anything.
+    related: related.hits.length,
     ...door(via),
     // The PAYLOAD the pusher needs. The public log line is this minus `payload` (see toLogLine):
     // a log line carries ids and subjects only, but the queue must carry what it is queueing.
     payload: { entry, body: String(input.claim).trim(), key: identityKey({ anchors: input.anchors, scope }) },
   }, { env });
 
-  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere };
+  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related };
 }
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────

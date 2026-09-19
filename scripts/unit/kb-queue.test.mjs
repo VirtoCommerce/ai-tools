@@ -118,7 +118,11 @@ test('the PUBLIC log line is the queue line minus the payload', () => withQueue(
   const { lines } = await readQueue({ env });
   const publicLine = toLogLine(lines[0]);
   assert.equal(publicLine.payload, undefined);
-  assert.deepEqual(Object.keys(publicLine).sort(), ['at', 'id', 'kind', 'subject']);
+  // `related` is a COUNT of what the capture surfaced (PLAN §17.4(6)) — the hint's own record
+  // that it ran. It is here in the whitelist rather than tolerated by a loose assertion,
+  // because this list is the thing that makes a new public log field a deliberate act.
+  assert.deepEqual(Object.keys(publicLine).sort(), ['at', 'id', 'kind', 'related', 'subject']);
+  assert.equal(typeof publicLine.related, 'number', 'a count, never the subjects it counted');
   assert.ok(!JSON.stringify(publicLine).includes(CAPTURE.claim), 'no claim prose in the public log');
 }));
 

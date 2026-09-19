@@ -239,3 +239,89 @@ export function rank(question, rows, { top = TOP_N } = {}) {
   const hits = scored.filter((h) => h.admissible).slice(0, top);
   return { hits, nearMiss: hits.length ? null : (scored.find((h) => !h.admissible) ?? null) };
 }
+
+// ── RELATED — the same arithmetic, a different question, its own floor ────────────────────────
+//
+// Everything above answers "does this entry ANSWER the question". This answers "is the writer
+// about to contradict something already in the base" -- asked at `capture`, about a fact that does
+// not exist yet. Three things follow from that and none of them is cosmetic.
+//
+// IT IS SCORED ON `subject` + `question` TOGETHER, and that was measured rather than chosen. The
+// three captures a live session queued on 2026-09-19 were scored against the 91-entry base under
+// each field, and the field is the whole decision -- under one of them the motivating pair is
+// found at rank 1 and under another it is lost at rank 4:
+//
+//   capture        best related entry                      question    subject     subject+question
+//   KB-F78ED1CC    KB-0C163966 (which its body CONTRADICTS) #1 of 45   #4 of 28    #1 of 46
+//   KB-4AE52041    KB-191B1B4C (master product / variants)  #1 of 19   #1 of 16    #1 of 27
+//   KB-50EBEEE9    KB-EF925925 (cart page / Place order)    #5 of 47   absent      #1 of 62
+//
+// `subject` alone loses the motivating pair outright. `question` alone finds it, but only on a
+// TIE -- ranks 1-3 all score 3 at coverage 0.375 and the order between them is the trust/id
+// tiebreak, i.e. arbitrary -- and on KB-50EBEEE9 its top five are a five-way tie in which the one
+// relevant entry sits fifth, below "the amount a payment is for is not the payment's total". Under
+// `subject+question` the right entry is ALONE at the top of all three, one clear point above the
+// field. The subject carries the vocabulary that distinguishes THIS observation (cart, checkout,
+// configurable, master, stepper); the question carries the vocabulary it shares with the corpus.
+// Neither half is sufficient and the concatenation is not a compromise between them.
+//
+// A 13-entry held-out sample (every 7th id, each scored against the other 90) was also run and is
+// reported because it does NOT discriminate -- 69/72/69% of the top 3 share a scope axis,
+// 44/41/38% share an anchor namespace, which is a tie inside the noise of n=13. The reason it
+// cannot discriminate is the reason it is worth recording: a held-out entry's `subject` is a base
+// SUBJECT -- a terse label, 3 to 11 tokens, median 6 -- while the three subjects a live session
+// actually wrote today are 12, 17 and 16 tokens of sentence. The held-out test can only measure
+// the old house style, so the live captures are the evidence and the sample is the control.
+export const MIN_RELATED_WORDS = 3;
+
+/**
+ * The relatedness floor, and why it is NOT `MIN_COVERAGE`.
+ *
+ * §11's floor governs ANSWERS and is derived from a labelled set on which no score cut works --
+ * the worst good hit scores 4 and the worst bad hit scores 5, inverted, so only a coverage cut
+ * separates them. THIS labelled set is inverted the other way, and that is the argument for a
+ * second constant rather than a reuse of the first. Scoring the three live captures and labelling
+ * every hit in their top 8 by whether it shares a mechanism with what is being written:
+ *
+ *   GOOD, must survive   overlap 4 4 4 3 3 3 · 2      coverage 0.286 0.214 0.214 0.200 0.190 0.143 · 0.100
+ *   BAD, must die        overlap 2 2 2 2 2 2 1 1 1    coverage 0.143 0.143 0.143 0.095 0.095 0.095 0.050 …
+ *
+ * ON COVERAGE THE TWO SETS TOUCH: the worst surviving good hit and the worst bad hit are both
+ * 0.143, so NO coverage cut separates them at any value. On overlap they part cleanly at 3 -- nine
+ * bad hits die, six of seven good ones live. The one casualty (KB-4AE52041 x KB-0C163966, overlap
+ * 2) sits inside the bad cluster and cannot be bought back without all nine.
+ *
+ * WHY COVERAGE IS THE WRONG INSTRUMENT HERE, independently of the numbers: coverage is the
+ * fraction of the QUERY's vocabulary an entry accounts for, and the query is now a whole capture.
+ * No existing entry can account for much of a NEW fact's vocabulary -- if one could it would be a
+ * duplicate, which is `identity.mjs`'s business and not this one. So coverage reads mostly how
+ * verbose the capturing agent was, which is a property of the writing and not of the match: the
+ * same objection this file already makes to normalising by the entry. Overlap does not move when
+ * a subject gets longer; it can only rise. Measured over 94 trials, the correlation between query
+ * length and how many entries clear this floor is 0.31, and the median capture surfaces 2.
+ *
+ * MIN_COVERAGE IS UNTOUCHED AND IS NOT CONSULTED HERE. A related hint costs the reader a line; a
+ * missed contradiction sits in the base for months. Those are not the same cost, so they do not
+ * get the same floor -- and an anchor still passes unconditionally, for the reason `admissible`
+ * already gives.
+ */
+export function relatedEnough(hit) {
+  return hit.anchors.length > 0 || hit.overlap.length >= MIN_RELATED_WORDS;
+}
+
+/** How many related entries one capture is allowed to put in front of its writer. */
+export const RELATED_TOP = 3;
+
+/**
+ * Entries the fact being captured may speak to -- shown, never enforced.
+ *
+ * Returns the top few AND how many more cleared the floor, because "3 related" and "3 related, 10
+ * not shown" are different situations for the writer and the capped list cannot tell them apart.
+ *
+ * @returns {{hits: Array, more: number}}
+ */
+export function relatedTo(text, rows, { exclude = [], top = RELATED_TOP } = {}) {
+  const skip = new Set(exclude);
+  const scored = scoreRows(text, rows).filter((h) => !skip.has(h.row.id) && relatedEnough(h));
+  return { hits: scored.slice(0, top), more: Math.max(0, scored.length - top) };
+}

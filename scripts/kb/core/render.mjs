@@ -95,7 +95,29 @@ export function captureLines(r, { prefix = 'kb capture' } = {}) {
     `  ${r.queuedTo}`,
     '  nothing has been sent; it ships with the next push.',
     ...(r.alsoHere ?? []).map((n) => `  also anchored at ${n.coordinate}: ${n.id} — ${n.subject}`),
+    ...relatedLines(r.related),
   ];
+}
+
+/**
+ * Entries the fact just written may speak to — printed LAST, and phrased so it cannot be mistaken
+ * for a gate.
+ *
+ * The capture is already queued by the time these lines exist; nothing here can undo that, and the
+ * wording says so in the first line rather than leaving the reader to infer it from the absence of
+ * a prompt. The sentence is here, in the one renderer both doors go through, so the CLI and the
+ * MCP server cannot drift apart on the one thing this hint has to communicate: that it is advice.
+ *
+ * `more` is printed rather than folded into the list because a capped list cannot distinguish
+ * "three related entries" from "three shown, ten not" — and those ask different things of whoever
+ * is deciding whether to go and read them.
+ */
+function relatedLines(related) {
+  if (!related?.hits?.length) return [];
+  const lines = ['  related — these may be about the same thing; nothing is blocked:'];
+  for (const h of related.hits) lines.push(`    ${h.row.id} — ${h.row.subject}`);
+  if (related.more) lines.push(`    …and ${related.more} more; \`kb ask\` to see them.`);
+  return lines;
 }
 
 export function evidenceLines(verb, r) {

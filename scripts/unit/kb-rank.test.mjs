@@ -5,10 +5,13 @@
 // rule -- `organization`, `/api` -- are tested as the negatives they were measured to be.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ANCHOR_BONUS, anchorHit, rank, scoreRows, tokenize } from '../kb/core/rank.mjs';
+import {
+  ANCHOR_BONUS, MIN_COVERAGE, admissible, anchorHit, rank, relatedEnough, relatedTo, scoreRows, tokenize,
+} from '../kb/core/rank.mjs';
 import { anchorProblems, coordinateIndex, isStructuredCoordinate, neighbours } from '../kb/core/coordinates.mjs';
 import { normalizeRow } from '../kb/core/index-load.mjs';
 import { normalizeAnchor } from '../kb/core/anchors.mjs';
+import { join } from 'node:path';
 
 const row = (o) => normalizeRow({ id: 'KB-TEST0001', path: 'entries/KB-TEST0001.md', subject: '', ...o });
 
@@ -134,4 +137,104 @@ test('anchorProblems catches a menu path and a namespace', () => {
   assert.equal(anchorProblems(['Admin SPA: Contacts > Member detail'])[0].kind, 'menu-path');
   assert.equal(anchorProblems(['/api'])[0].kind, 'unstructured');
   assert.deepEqual(anchorProblems(['/company/members', 'Query.organizationContacts']), []);
+});
+
+// ─── the RELATED hint (PLAN §17.4(6), re-keyed on words) ──────────────────────────────────────
+//
+// These are the measurements, not the constants. `MIN_RELATED_WORDS = 3` is a declaration one file
+// away and a test of it could only fail when somebody changed it on purpose; what is worth pinning
+// is the behaviour it was derived FROM — which field the hint is keyed on, and that its floor is
+// its own rather than §11's.
+
+// The pair that killed the first design, verbatim. KB-F78ED1CC's body says in terms that it
+// CONTRADICTS KB-0C163966, and their normalised anchor sets do not intersect at all — so the
+// anchor trigger originally specified could not reach it, and word scoring must.
+const CAPTURE = {
+  subject: "On vcst-qa a configurable product's PDP has a real Add to cart button, "
+    + 'while simple and variation PDPs add via the quantity stepper.',
+  question: 'what is the add-to-cart control on a storefront product page, and does it differ by product type',
+};
+const CONTRADICTED = row({
+  id: 'KB-0C163966',
+  subject: 'the storefront product page of a configurable product',
+  question: 'what changes on the storefront product page once a product has a configuration',
+  anchors: ['/product/{id}', 'Query.productConfiguration'],
+});
+// Three entries from the same base that scored on the same capture and are about other mechanisms
+// — the ones an overlap floor of 3 was derived to kill.
+const NOISE = [
+  row({ id: 'KB-35A09C64', subject: 'promotion re-evaluation on cart read', question: 'after changing a promotion in the admin, do I have to touch the cart before the storefront shows the new discount?' }),
+  row({ id: 'KB-0B6067F8', subject: 'UserType.lockedState is the storefront-reachable sign-in state', question: 'which field tells the storefront a sign-in is blocked' }),
+  row({ id: 'KB-0C102D97', subject: 'cancelling an order cascades to the payment and never to the shipment', question: 'what does cancelling an order leave behind' }),
+];
+
+test('the hint is keyed on subject AND question — neither half reaches the contradicted entry alone', () => {
+  const rows = [CONTRADICTED, ...NOISE];
+  // MEASURED against the live 91-entry base: scoring the SUBJECT alone puts KB-0C163966 at rank 4
+  // of 28, which the cap of 3 discards; scoring both together puts it first of 46, one clear point
+  // above the field rather than tied with it.
+  assert.equal(relatedTo(CAPTURE.subject, rows).hits.length, 0,
+    'the subject alone does not even clear the floor against this entry');
+  const both = relatedTo(`${CAPTURE.subject} ${CAPTURE.question}`, rows);
+  assert.equal(both.hits[0].row.id, 'KB-0C163966');
+  assert.deepEqual(both.hits.map((h) => h.row.id), ['KB-0C163966'], 'and the other three are noise');
+});
+
+test('the related floor is its own — §11’s answer floor would reject this pair outright', () => {
+  const [hit] = relatedTo(`${CAPTURE.subject} ${CAPTURE.question}`, [CONTRADICTED]).hits;
+  // The whole reason a second threshold exists: a related hint is a different question with a
+  // different cost of error, and this hit is nowhere near the answer floor.
+  assert.ok(hit.coverage < MIN_COVERAGE, `coverage ${hit.coverage} is below the ANSWER floor ${MIN_COVERAGE}`);
+  assert.equal(admissible(hit), false, 'it would never be returned as an answer');
+  assert.equal(relatedEnough(hit), true, 'and it is exactly what a writer needs to see');
+});
+
+test('two shared words is where the noise sits, so three is the floor', () => {
+  // Not a test of the constant: a test that the cut lands between the labelled sets. Every entry
+  // in the measured BAD set shared one or two words with its capture; every GOOD one but a single
+  // boundary case shared three or more.
+  const two = row({ id: 'KB-TWO00001', subject: 'storefront product listing', question: 'what a listing shows' });
+  const three = row({ id: 'KB-THREE001', subject: 'storefront product page control', question: 'what control a product page shows' });
+  const ids = relatedTo('storefront product page control differs by product type', [two, three]).hits.map((h) => h.row.id);
+  assert.deepEqual(ids, ['KB-THREE001']);
+});
+
+test('an anchor the text names passes unconditionally, as it does for an answer', () => {
+  const anchored = row({ id: 'KB-ANCH0001', subject: 'unrelated wording entirely', anchors: ['/company/members'] });
+  const { hits } = relatedTo('a fact about /company/members', [anchored]);
+  assert.deepEqual(hits.map((h) => h.row.id), ['KB-ANCH0001']);
+});
+
+test('at most three are surfaced, and the rest are counted rather than dropped silently', () => {
+  // A capped list cannot distinguish "three related" from "three shown, ten hidden", and those ask
+  // different things of whoever is deciding whether to go and read them.
+  const rows = Array.from({ length: 7 }, (_, i) => row({
+    id: `KB-MANY000${i}`, subject: 'storefront product page control', trust: i,
+  }));
+  const { hits, more } = relatedTo('storefront product page control', rows);
+  assert.equal(hits.length, 3);
+  assert.equal(more, 4);
+});
+
+test('entries already reported by their anchor are not reported a second time', () => {
+  const rows = [row({ id: 'KB-DUPE0001', subject: 'storefront product page control' }),
+    row({ id: 'KB-KEEP0001', subject: 'storefront product page control' })];
+  const { hits, more } = relatedTo('storefront product page control', rows, { exclude: ['KB-DUPE0001'] });
+  assert.deepEqual(hits.map((h) => h.row.id), ['KB-KEEP0001']);
+  assert.equal(more, 0, 'an excluded entry is not counted as hidden either — it was shown, elsewhere');
+});
+
+test('a retired entry is never surfaced as related', async () => {
+  // `capture` passes `retrievable(rows)`, not `rows`. A retired entry is one the base decided to
+  // stop answering from; telling a writer they may be contradicting it would resurrect it through
+  // the one door that has no way to say "this was withdrawn".
+  const { loadIndex, retrievable } = await import('../kb/core/index-load.mjs');
+  const { localReader } = await import('../kb/core/reader.mjs');
+  const cat = await loadIndex(localReader(join(import.meta.dirname, 'fixtures', 'kb-base')));
+  const retired = cat.rows.filter((r) => r.status !== 'active');
+  assert.ok(retired.length, 'the fixture has one, and this test is worthless without it');
+  const text = `${retired[0].subject} ${retired[0].question}`;
+  assert.ok(relatedTo(text, cat.rows).hits.some((h) => h.row.id === retired[0].id),
+    'it scores highly against its own words — so the filter is what keeps it out, not the floor');
+  assert.equal(relatedTo(text, retrievable(cat.rows)).hits.some((h) => h.row.id === retired[0].id), false);
 });
