@@ -72,6 +72,14 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/sweep-stray-screenshots.mjs\""
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/kb-flush.mjs\""
+          }
+        ]
       }
     ]
   },
