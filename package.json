@@ -265,7 +265,8 @@
     "td:test-attribution": "node scripts/maintenance/td-test-attribution.mjs",
     "test:roi-check": "node scripts/maintenance/lint-test-roi.mjs",
     "test:quality": "node scripts/maintenance/test-quality-report.mjs",
-    "tracker:comment": "node scripts/tracker/comment.mjs"
+    "tracker:comment": "node scripts/tracker/comment.mjs",
+    "kb:install": "node scripts/kb/install-mcp.mjs"
   },
   "repository": {
     "type": "git",

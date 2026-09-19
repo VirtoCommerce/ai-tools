@@ -198,12 +198,26 @@ Install these via Claude Code's MCP settings (`.mcp.json` or `claude_code/settin
 
 **`kb` — the shared knowledge base** (`kb_ask`, `kb_show`, `kb_capture`, `kb_confirm`, `kb_dispute`):
 what has actually been OBSERVED about how the platform behaves, with a trust label and provenance per
-observation. Register it, because **`.mcp.json` is gitignored** — unlike everything under `.claude/`
-this does not travel with a clone, it is per machine, and until you add the block above the base is
-reachable only through the CLI (`npm run kb -- ask "<q>"`, which works on every clone with no setup).
-The command is the tracked `npm run kb:mcp`, spelled as `node scripts/kb/mcp.mjs` so no shell sits in
-the way; it takes no arguments and **no token** — reads are unauthenticated, the base being a public
-repository. **Restart Claude Code afterwards**: MCP servers bind at session start.
+observation.
+
+**Register it with one command — do not copy the block above by hand:**
+
+```bash
+npm run kb:install
+```
+
+It merges exactly the `kb` key into whatever `.mcp.json` you already have, creating the file only if
+there is none, leaves every other server and every other key untouched, and is a no-op on a second
+run. It refuses rather than rewrites if your `.mcp.json` does not parse. **Restart Claude Code
+afterwards** — MCP servers bind at session start. **And re-run it after `/project-init`**, which
+rewrites `.mcp.json` wholesale from its template rather than merging into it.
+
+Why a command and not a tracked file: **`.mcp.json` is gitignored** — unlike everything under
+`.claude/` it does not travel with a clone, it is per machine, and `.claude/settings.json` cannot
+declare MCP servers (measured: `mcp_servers: []`). Until it is registered the base is reachable only
+through the CLI (`npm run kb -- ask "<q>"`, which works on every clone with no setup) — and that door
+is measurably not the one agents take. The entry needs **no token**: reads are unauthenticated, the
+base being a public repository.
 
 **Then allow it once.** In the desktop app you approve the first `kb_ask` call and that is the whole
 setup. Headless (`claude -p`) is different, and it was measured: in a fresh untrusted sandbox a project
