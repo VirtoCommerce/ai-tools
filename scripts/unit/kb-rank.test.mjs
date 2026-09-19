@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { ANCHOR_BONUS, anchorHit, rank, scoreRows, tokenize } from '../kb/core/rank.mjs';
 import { anchorProblems, coordinateIndex, isStructuredCoordinate, neighbours } from '../kb/core/coordinates.mjs';
 import { normalizeRow } from '../kb/core/index-load.mjs';
+import { normalizeAnchor } from '../kb/core/anchors.mjs';
 
 const row = (o) => normalizeRow({ id: 'KB-TEST0001', path: 'entries/KB-TEST0001.md', subject: '', ...o });
 
@@ -60,7 +61,16 @@ test('the anchor bonus fires only on a structured coordinate the question names'
 
 test('a verb-prefixed anchor also matches on its path alone', () => {
   // A question says "why does /api/carts return …", not "why does POST /api/carts return …".
-  assert.equal(anchorHit('why does /api/carts return a stale total', 'post /api/carts'), true);
+  //
+  // THE KEY IS FED THROUGH `normalizeAnchor`, not hand-written. The earlier version of this test
+  // passed the literal `'post /api/carts'` -- lowercase, a shape normalizeAnchor cannot emit,
+  // because it UPPERCASES the verb. So the test passed against its own fiction while every real
+  // verb-prefixed anchor in the base (73 of 221) could not fire at all. Building the key the way
+  // the index builds it is the whole guard; asserting the literal is what hid the defect.
+  assert.equal(anchorHit('why does /api/carts return a stale total', normalizeAnchor('POST /api/carts')), true);
+  assert.equal(anchorHit('what does the active column on /company/members reflect', normalizeAnchor('GET /company/members')), true);
+  // And the full form still matches, whatever case the question happens to use.
+  assert.equal(anchorHit('why does post /api/carts return a stale total', normalizeAnchor('POST /api/carts')), true);
 });
 
 test('one anchor hit outranks any plausible token-only score', () => {

@@ -68,11 +68,25 @@ export const ANCHOR_BONUS = 10;
  *
  * A verb-prefixed anchor also matches on its path alone, because a question says "why does
  * /api/carts return …" and not "why does POST /api/carts return …".
+ *
+ * THE COMPARISON IS CASE-FOLDED ON BOTH SIDES, and that is not tidiness -- it was a dead signal.
+ * `normalizeAnchor` lowercases the path and UPPERCASES the verb, so the index stores
+ * `GET /company/members`; the question arrives lowercased; and the fallback below used to read
+ * `/^[a-z]+ (\/.+)$/` against that uppercase verb. So BOTH branches failed and a verb-prefixed
+ * anchor could not fire at all -- 73 of this base's 221 anchors (33%), including `KB-27B4CD10`'s
+ * `GET /company/members`, the most-confirmed entry in the corpus, invisible to its own coordinate
+ * and ranking fourth on the question it was written to answer. The comment above described the
+ * intended behaviour the whole time.
+ *
+ * It survived because the test asserted it against `'post /api/carts'` -- LOWERCASE, a string
+ * `normalizeAnchor` cannot emit. A test that feeds a function a shape the system never produces
+ * verifies the test's own fiction, which is worse than no test: it reports the signal as covered.
  */
 export function anchorHit(questionLower, anchorKey) {
   if (!isStructuredCoordinate(anchorKey)) return false;
-  if (questionLower.includes(anchorKey)) return true;
-  const path = /^[a-z]+ (\/.+)$/.exec(anchorKey)?.[1];
+  const key = String(anchorKey).toLowerCase();
+  if (questionLower.includes(key)) return true;
+  const path = /^[a-z]+ (\/.+)$/.exec(key)?.[1];
   return Boolean(path && isStructuredCoordinate(path) && questionLower.includes(path));
 }
 
