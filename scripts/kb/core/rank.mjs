@@ -86,8 +86,30 @@ export function anchorHit(questionLower, anchorKey) {
   if (!isStructuredCoordinate(anchorKey)) return false;
   const key = String(anchorKey).toLowerCase();
   if (questionLower.includes(key)) return true;
-  const path = /^[a-z]+ (\/.+)$/.exec(key)?.[1];
-  return Boolean(path && isStructuredCoordinate(path) && questionLower.includes(path));
+  const path = /^[a-z]+ (\/.+)$/.exec(key)?.[1] ?? (key.startsWith('/') ? key : null);
+  if (!path) return false;
+  if (isStructuredCoordinate(path) && questionLower.includes(path)) return true;
+  // A `{param}` makes the STORED anchor more specific than the question that needs it, so the
+  // stem is tried too: `GET /api/members/{id}` also fires on `/api/members`.
+  //
+  // Measured 2026-09-19 (PLAN §17.5). 788 distinct coordinates were harvested from 113 open bug
+  // reports, two sprint plans and 147 suite files and matched against this base's 141 anchors:
+  // exact matching covered 3.6%, path matching 27.8% — an 8x gap that is RETRIEVAL loss, not a
+  // content gap. `/api/members` is the second-most-demanded coordinate in the repo at 127
+  // mentions and could not reach the entry anchored `GET /api/members/{id}`, which is about that
+  // very endpoint.
+  //
+  // ONLY the `{param}` tail is dropped — this is not prefix matching. A general prefix would let
+  // `/api` reach everything, which is the failure `isStructuredCoordinate` exists to prevent, and
+  // the stem is re-checked against that guard before it is used.
+  //
+  // NOT done here, and deliberately: splitting a dotted anchor (`LineItemType.listPrice`) on the
+  // dot to match the bare field. The field name is shared vocabulary, not a coordinate —
+  // measured, `storeId` occurs in 88 of these files, `description` in 73, and the anchors whose
+  // tail is a plain word (`cart`, `items`, `total`, `me`) would have fired 1,730 times. The
+  // dotted form exists BECAUSE the field alone is ambiguous.
+  const stem = path.replace(/\/\{[^}]*\}.*$/, '');
+  return Boolean(stem !== path && isStructuredCoordinate(stem) && questionLower.includes(stem));
 }
 
 // ── THE FLOOR — what "no coverage" means, derived rather than chosen ──────────────────────────
