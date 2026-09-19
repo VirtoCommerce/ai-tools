@@ -36,7 +36,7 @@ import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from './index-build.mjs';
 import { normalizeRow } from './index-load.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
-import { MUTATIONS, log, queueDir, queuePath, readQueue, sessionId } from './queue.mjs';
+import { MUTATIONS, isSynthetic, log, queueDir, queuePath, readQueue, sessionId } from './queue.mjs';
 import { toLogLine } from './verbs.mjs';
 
 /** Retention: the same push that writes today's file removes anything older, in the same commit. */
@@ -385,7 +385,7 @@ export async function flush({
   while (attempt < maxAttempts) {
     attempt += 1;
     const at = now();
-    const built = await buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets });
+    const built = await buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, synthetic: isSynthetic(env) });
     if (built.state !== 'ready') { last = built; break; }
 
     if (gate) {
@@ -466,7 +466,7 @@ export async function sweepIfDue({ env = process.env, base = null, token = null,
 }
 
 /** Re-read the base at its current head and compose everything the commit will contain. */
-async function buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets }) {
+async function buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, synthetic = false }) {
   const ref = await api.getRef();
   if (!ref.ok) return { state: 'failed', ...ref };
   const commit = await api.getCommit(ref.sha);
@@ -545,6 +545,13 @@ async function buildPush({ api, prefix, full, loaded, allLines, counts, session,
     ...(dropped ? { redacted: dropped } : {}),
     ...(secrets.count ? {} : { note: 'the secret gate loaded no values — no env file was readable' }),
     ...(applied.problems.length ? { problems: applied.problems.length } : {}),
+    // THE ONE LINE THAT IS NOT WRITTEN THROUGH `log()`, so it needs the mark applied by hand.
+    // Found by running a benchmark and reading what it published: every ask carried
+    // `synthetic: true` and the flush summarising them did not, because this object is built here
+    // rather than by the single writer. The mark belongs to the PUSHING session and this line is
+    // only ever attached to the pushing session's own file (`own ?` below), so one env read is the
+    // right test — a synthetic run sweeping somebody else's real queue does not mark their lines.
+    ...(synthetic ? { synthetic: true } : {}),
   };
 
   let mineSeen = false;

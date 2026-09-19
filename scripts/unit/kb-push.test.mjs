@@ -140,6 +140,10 @@ const confirmLine = (id, path) => ({
 
 const run = (env, api, over = {}) => flush({ env, base: BASE, token: 'test-token', api, now, sleep: async () => {}, ...over });
 
+/** This session's pushed log file, parsed. */
+const logLines = (state) => state.files.get(`v2/${logPath(SESSION, AT)}`)
+  .trim().split('\n').map((l) => JSON.parse(l));
+
 // ─── one atomic commit ────────────────────────────────────────────────────────────────────────
 
 test('a capture and a confirm land as ONE commit, on the head that was read', () => withQueue(async ({ dir, env }) => {
@@ -265,6 +269,29 @@ test('one flush line per push, describing its own delivery', () => withQueue(asy
     { entries: flushes[0].entries, retries: flushes[0].retries, ok: flushes[0].ok, convertedToConfirm: flushes[0].convertedToConfirm },
     { entries: 1, retries: 0, ok: true, convertedToConfirm: 0 },
   );
+}));
+
+test('a synthetic run marks its FLUSH line too, not only its asks', () => withQueue(async ({ dir, env }) => {
+  // THE ONE LINE THAT IS NOT WRITTEN THROUGH `log()`. The flush summary is built in push.mjs, so
+  // the single-writer guarantee that stamps every other line does not reach it. Found by running a
+  // real benchmark and reading what it published: six asks marked `synthetic`, and the flush
+  // describing them unmarked — which would have put a benchmark's delivery into the tally while
+  // its questions stayed out of it. Neither the mechanism's own tests nor a code read caught it;
+  // publishing the output and looking at it did.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'benchmark?', matched: [], state: 'miss', synthetic: true }]);
+  assert.equal((await run({ ...env, KB_SYNTHETIC: '1' }, fakeApi(state))).state, 'pushed');
+
+  const lines = logLines(state);
+  assert.equal(lines.find((l) => l.kind === 'flush').synthetic, true);
+}));
+
+test('an ordinary run’s flush line carries no synthetic field', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  assert.equal((await run(env, fakeApi(state))).state, 'pushed');
+
+  assert.ok(!('synthetic' in logLines(state).find((l) => l.kind === 'flush')));
 }));
 
 test('the log path is date folder, UTC stamp, session id', () => {
