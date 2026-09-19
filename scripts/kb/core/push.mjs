@@ -45,6 +45,25 @@ export const RETENTION_DAYS = 90;
 /** How stale the last flush must be before an ordinary `kb` invocation opportunistically sweeps. */
 export const SWEEP_AFTER_MS = 30 * 60 * 1000;
 
+/**
+ * How old this session's OLDEST unpublished line may get before an ordinary `kb` call publishes it.
+ *
+ * Until 2026-09-19 there was no such rule, and the consequence was worse than it looked. The primary
+ * flush fired when stdin closed, and `sweepIfDue` passed `includeMine: false` — so a session NEVER
+ * published its own lines except by ending. People do not end sessions; they leave them open for
+ * days, and switching away from a tab is not ending one. Worse, the two rules combined into a hole
+ * with no floor: a session in ACTIVE use keeps appending, so its file is never idle for
+ * `SWEEP_AFTER_MS` either, and no other session would sweep it. The more a session used the base,
+ * the less likely its evidence was ever to arrive.
+ *
+ * Five minutes, not thirty: the staleness test on a FOREIGN file guards against reading a torn last
+ * line from a writer we do not control, and none of that applies to our own queue — we are the
+ * writer, and we only ever act between tool calls. So the only thing this interval trades is commit
+ * frequency against how long evidence sits on one laptop, and evidence on one laptop is the failure
+ * mode this whole system exists to remove.
+ */
+export const OWN_FLUSH_AFTER_MS = 5 * 60 * 1000;
+
 /** One immediate retry after a blip; then stop. Three attempts total against a moving ref. */
 export const MAX_ATTEMPTS = 3;
 export const RETRY_DELAY_MS = 2_000;
@@ -452,14 +471,37 @@ export async function flush({
  * and it cannot throw. A sweep that broke an `ask` would have traded the thing the user asked for
  * against bookkeeping.
  */
+/**
+ * Is this session's own queue old enough to publish?
+ *
+ * Measured from the OLDEST line, not the file's mtime: mtime moves on every append, so a session
+ * that keeps asking would keep resetting its own deadline and never publish — which is the defect
+ * this function was added to close, reintroduced one level down.
+ */
+export async function ownFlushDue({ env = process.env, now = () => new Date() } = {}) {
+  try {
+    const { lines } = await readQueue({ env, path: queuePath(env) });
+    if (!lines.length) return false;
+    const oldest = lines.map((l) => Date.parse(l?.at ?? '')).filter((n) => Number.isFinite(n)).sort()[0];
+    if (!Number.isFinite(oldest)) return true; // undatable lines are already anomalous — publish them
+    return now().getTime() - oldest > OWN_FLUSH_AFTER_MS;
+  } catch { return false; }
+}
+
 export async function sweepIfDue({ env = process.env, base = null, token = null, now = () => new Date(), fetchImpl = null } = {}) {
   try {
     if (env.KB_NO_SWEEP) return { state: 'off' };
     if (!coordinatesOf(base)) return { state: 'off', why: 'not a writable base' };
+    const mineDue = await ownFlushDue({ env, now });
     const due = await queueFiles({ env, now, sweep: true, includeMine: false });
-    if (!due.length) return { state: 'nothing' };
-    if (!(await shouldSweep({ env, now }))) return { state: 'too-soon' };
-    return await flush({ env, base, token, now, fetchImpl, includeMine: false, sweep: true });
+    if (!mineDue && !due.length) return { state: 'nothing' };
+    // The stamp paces the OPPORTUNISTIC sweep of other people's files. It must not gate our own
+    // queue: the stamp is touched by every flush, including one that pushed nothing of ours, so
+    // gating on it would reinstate exactly the hole `OWN_FLUSH_AFTER_MS` exists to close. Our own
+    // flush is self-pacing instead — a successful push removes the queue file, so the next one
+    // cannot come due until five minutes after the next line is written.
+    if (!mineDue && !(await shouldSweep({ env, now }))) return { state: 'too-soon' };
+    return await flush({ env, base, token, now, fetchImpl, includeMine: mineDue, sweep: true });
   } catch (err) {
     return { state: 'failed', why: String(err?.message ?? err) };
   }

@@ -18,8 +18,10 @@ import { stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from '../kb/core/index-build.mjs';
 import {
   RETENTION_DAYS, SWEEP_AFTER_MS, appendEvidence, commitMessage, expiredLogs, flush, logPath,
-  outsideBase, queueFiles, shouldSweep,
+  outsideBase, ownFlushDue, queueFiles, shouldSweep,
 } from '../kb/core/push.mjs';
+import { queuePath } from '../kb/core/queue.mjs';
+import { mkdtemp, rm } from 'node:fs/promises';
 
 const BASE = 'https://raw.githubusercontent.com/VirtoCommerce/vc-knowledge/main/v2';
 const SESSION = 'f3d05dd3';
@@ -719,3 +721,31 @@ test('...but a row that DID move is written, timestamp and all', () => withQueue
   assert.equal(after.entries[0].trust, 2);
   assert.equal(after.generated, AT.toISOString(), 'and THAT is what generated should mean');
 }));
+
+// ── the own-queue deadline (PLAN §19) ─────────────────────────────────────────────────────────
+// Until 2026-09-19 a session published its own lines ONLY when stdin closed, and `sweepIfDue`
+// excluded them by construction. Nobody ends a session, and an actively used one was never idle
+// long enough for another session to sweep it either — so the more a session used the base, the
+// less likely its evidence was to arrive at all.
+test('ownFlushDue is decided by the OLDEST line, not the file mtime', async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), 'kb-ownflush-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const env = { KB_QUEUE_DIR: dir, KB_SESSION: 'ownflush' };
+  const path = queuePath(env);
+  const line = (minutesAgo, q) => JSON.stringify({
+    kind: 'ask', at: new Date(Date.now() - minutesAgo * 60_000).toISOString(), q,
+  });
+
+  assert.equal(await ownFlushDue({ env }), false, 'an empty queue is never due');
+
+  await writeFile(path, line(0, 'fresh') + '\n', 'utf8');
+  assert.equal(await ownFlushDue({ env }), false, 'a line written now waits');
+
+  await writeFile(path, line(6, 'old') + '\n', 'utf8');
+  assert.equal(await ownFlushDue({ env }), true, 'a line older than the interval is due');
+
+  // THE ONE THAT MATTERS. Pacing on mtime would let a session that keeps asking keep resetting its
+  // own deadline — the original defect, reintroduced one level down.
+  await writeFile(path, line(6, 'old') + '\n' + line(0, 'fresh') + '\n', 'utf8');
+  assert.equal(await ownFlushDue({ env }), true, 'a fresh append does not postpone an old line');
+});
