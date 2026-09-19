@@ -171,7 +171,7 @@ test('a capture with no ask before it says nothing rather than guessing', async 
 
 // ── capture: the related hint it surfaced ─────────────────────────────────────────────────────
 
-test('a capture records how many related entries it put in front of the writer', async () => {
+test('a capture records WHICH related entries it put in front of the writer', async () => {
   await withQueue(async (env) => {
     // The fixture holds two entries about where a cart-level promotion lands (KB-55C8E448,
     // KB-378EEA52), which is what this fact speaks to.
@@ -187,14 +187,19 @@ test('a capture records how many related entries it put in front of the writer',
     assert.ok(r.related.hits.length > 0, 'the fixture holds two entries about cart-level discounts');
 
     const line = (await linesOf(env)).at(-1);
-    // ONE field, counting what was SURFACED. PLAN §7: a count, not the subjects, and not a second
-    // field for the ones that scored and were not shown.
-    assert.equal(line.related, r.related.hits.length);
-    assert.ok(!('relatedIds' in line) && !('relatedTotal' in line));
+    // ONE field, naming what was SURFACED. PLAN §7: ids, never subjects or prose, and no second
+    // field for a count the list already carries. IDS AND NOT A COUNT because the question that
+    // matters is whether the writer ACTED on what it was shown — a later dispute of an id that
+    // appears here is that chain, and a bare number cannot record it. It shipped as a count and
+    // met real traffic the same day: a session was shown three related entries and then disputed
+    // one, and the log could not say whether the disputed entry was among the three.
+    assert.deepEqual(line.related, r.related.hits.map((h) => h.row.id));
+    assert.ok(line.related.every((id) => /^KB-[0-9A-F]{8}$/.test(id)), 'ids, so a dispute is traceable');
+    assert.ok(!('relatedCount' in line) && !('relatedTotal' in line));
   });
 });
 
-test('a capture the base holds nothing near records related 0 rather than omitting it', async () => {
+test('a capture the base holds nothing near records related [] rather than omitting it', async () => {
   // `0` is the reading that makes the rest of the column mean anything: it says the hint ran and
   // found nothing, which is a different fact from a line written before the hint existed.
   await withQueue(async (env) => {
@@ -208,7 +213,7 @@ test('a capture the base holds nothing near records related 0 rather than omitti
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
     assert.equal(r.related.hits.length, 0);
-    assert.equal((await linesOf(env)).at(-1).related, 0);
+    assert.deepEqual((await linesOf(env)).at(-1).related, []);
   });
 });
 

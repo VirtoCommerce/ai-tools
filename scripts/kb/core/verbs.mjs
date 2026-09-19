@@ -341,12 +341,20 @@ export async function capture(input, opened, { env = process.env, via = null } =
     id,
     subject: input.subject,
     ...(after ? { after } : {}),
-    // ONE field, and it counts what was SURFACED rather than what scored. The question it answers
-    // is whether this hint puts anything in front of a writer at all -- if these are mostly 0 the
-    // floor or the keying is wrong, and that is visible without a second field. It is written on
-    // every queued capture including the zeros: `0` means the hint ran and found nothing, which is
-    // the reading that makes the rest of the column mean anything.
-    related: related.hits.length,
+    // WHAT was surfaced, not how many. It shipped as a count on 2026-09-19 and was too thin within
+    // hours of meeting real traffic: a session was shown three related entries, then DISPUTED one --
+    // the first dispute in this base's history -- and the log could not say whether the entry it
+    // disputed was among the three. The count answered "does the hint put anything in front of a
+    // writer"; it could not answer "did the writer act on what it was shown", which is the only
+    // question that decides whether this feature earns its place.
+    //
+    // Ids, so §7 holds unchanged -- ids and subjects only, never prose. The count is dropped rather
+    // than kept alongside: a length is derivable from the list, and §7's rule against a second copy
+    // of a derivable fact is the same rule that governs the confirmation count in §2.
+    //
+    // An empty array still goes on every queued capture. `[]` means the hint ran and found nothing,
+    // which is what makes the non-empty rows mean anything.
+    related: related.hits.map((h) => h.row.id),
     ...door(via),
     // The PAYLOAD the pusher needs. The public log line is this minus `payload` (see toLogLine):
     // a log line carries ids and subjects only, but the queue must carry what it is queueing.
