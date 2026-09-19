@@ -45,7 +45,7 @@
 //     after them.
 //   * A TIMER in this process, below — the only thing that does not depend on being called again.
 
-import { readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -107,7 +107,9 @@ export const TOOLS = Object.freeze([
     description: 'Record a NEW observation about platform behaviour that you verified yourself on a live deployment, '
       + 'so the next session does not have to re-derive it. Use after kb_ask returned nothing and you then found out. '
       + 'Refused if an entry already covers the same anchors and scope — confirm that one instead. '
-      + 'Queued locally and sent when this session ends; nothing is published mid-session.',
+      + 'Tells you which existing entries sit near what you wrote, so you can dispute one instead of '
+      + 'filing a second, contradicting fact. Queued locally and published shortly after, without you '
+      + 'doing anything.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -126,7 +128,7 @@ export const TOOLS = Object.freeze([
     name: 'kb_confirm',
     description: 'Record that you saw an existing entry hold true on a deployment — its confirmation count is what a later '
       + 'reader weighs the claim by. Use when kb_ask returned an entry and you then observed the same thing yourself. '
-      + 'Queued locally and sent when this session ends.',
+      + 'Queued locally and published shortly after, without you doing anything.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -281,6 +283,22 @@ export function createServer({ env = process.env, baseArg = null, ttlMs = 300_00
   };
 
   async function handle(message) {
+    // WHO CALLED — a question this file has twice declared unanswerable without ever looking.
+    //
+    // PLAN §7 refused to log the caller because `parent_tool_use_id` is not in the MCP request, and
+    // that is true about THAT field. It is not the same statement as "the request carries nothing
+    // identifying", which nobody checked. On 2026-09-19 a run proved subagents use the base — by
+    // ELIMINATION, seven calls in the session's log against zero in the main thread's transcript.
+    // That works once and does not scale.
+    //
+    // So: dump the raw request LOCALLY and read what is actually there. Off unless `KB_RAW_DUMP`
+    // names a file, never published, and never on the response path. If the answer turns out to be
+    // "nothing", that is a measurement and §7's note can finally cite one.
+    if (env.KB_RAW_DUMP) {
+      try {
+        appendFileSync(env.KB_RAW_DUMP, `${JSON.stringify({ at: new Date().toISOString(), message })}\n`, 'utf8');
+      } catch { /* a diagnostic must never cost a request */ }
+    }
     if (!message || typeof message !== 'object' || Array.isArray(message)) {
       return fail(null, RPC.INVALID, 'expected a JSON-RPC object');
     }

@@ -147,9 +147,18 @@ test('a capture points back at the ask it followed — as a pointer, not a copy'
     const capLine = (await linesOf(env)).at(-1);
     assert.equal(capLine.kind, 'capture');
     assert.equal(capLine.after, askLine.at, 'the timestamp of the preceding ask, which is already in this file');
-    // NOT a copy of the question. A second copy of a question is a second thing that can disagree
-    // with the first, and PLAN §7 keeps the log to ids and pointers.
-    assert.ok(!('q' in capLine));
+    // NOT a copy of THE ASK's question. The link back is `after`, a pointer; copying the ask's `q`
+    // onto the capture would be a second thing that can disagree with the first.
+    //
+    // The capture's OWN `question` IS recorded, and it is a different fact: the ask's `q` is what
+    // somebody searched for, this entry's `question` is the retrieval key it will be found by
+    // forever. It duplicates the entry's frontmatter exactly as `subject` already does, which is
+    // what §7's "ids and subjects" has always permitted. Spelled out because this assertion passed
+    // unchanged when `question` was added — the letter held while the intent moved, which is the
+    // failure that hid a dead anchor bonus for two sessions.
+    assert.ok(!('q' in capLine), 'the ask’s question is pointed at, never copied');
+    assert.equal(capLine.question, 'where is tls terminated for the storefront',
+      'the capture’s own retrieval key, which is not the same fact');
   });
 });
 
@@ -267,5 +276,54 @@ test('a capture with nothing related prints no related block at all', async () =
       scope: ['surface=platform'],
     }, opened(), { env, via: 'cli' });
     assert.ok(!captureLines(r).some((l) => l.includes('related')));
+  });
+});
+
+// ── what the agent was SHOWN, and why it matched ──────────────────────────────────────────────
+// Both positional against `matched`, both admitted 2026-09-19 against questions that exist now.
+test('an answer records WHY each hit matched — the coordinate door made measurable', async () => {
+  await withQueue(async (env) => {
+    const r = await ask(ANSWERED, opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'answer');
+    const line = (await linesOf(env)).at(-1);
+
+    assert.equal(line.matchedBy.length, line.matched.length, 'positional against matched');
+    assert.ok(line.matchedBy.every((v) => ['anchor', 'words', 'both'].includes(v)),
+      'a closed vocabulary — never prose, never a free-form reason');
+
+    // The question names `/company/members`, an anchor of the fixture's entry, so at least one hit
+    // must report the coordinate. If this ever reads all-'words', the anchor is dead again — which
+    // is exactly how 73 of 221 anchors stayed invisible for two sessions.
+    assert.ok(line.matchedBy.some((v) => v === 'anchor' || v === 'both'),
+      'a question that literally names an anchor must record that it did');
+  });
+});
+
+test('an answer records the trust label AS SHOWN, because the entry will move', async () => {
+  await withQueue(async (env) => {
+    const r = await ask(ANSWERED, opened(), { env, via: 'cli' });
+    const line = (await linesOf(env)).at(-1);
+    assert.equal(line.trustShown.length, line.matched.length, 'positional against matched');
+    assert.deepEqual(line.trustShown, r.hits.map((h) => h.trust.label),
+      'what the reader was told, not what the entry says today');
+    assert.ok(line.trustShown.every((v) => typeof v === 'string' && v.length < 40));
+  });
+});
+
+test('a capture records the QUESTION as well as the subject', async () => {
+  await withQueue(async (env) => {
+    const r = await capture({
+      subject: 'the depot forklift roster is keyed by yard, not by site',
+      question: 'why does the forklift roster show nothing for a site that has yards',
+      claim: 'Observed on the depot board: the roster query takes a yard id.',
+      deployment: 'vcst_qa',
+      anchors: ['/depot/forklifts'],
+      scope: ['surface=platform'],
+    }, opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'queued');
+    // The subject is the claim; the question is the RETRIEVAL KEY, and only one of them says
+    // anything about how a person would go looking for this.
+    assert.equal((await linesOf(env)).at(-1).question,
+      'why does the forklift roster show nothing for a site that has yards');
   });
 });

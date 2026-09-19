@@ -191,6 +191,26 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
     // separate `score` field. A field for a fact another field already carries is a second copy
     // that can disagree with the first -- the rule PLAN §2 applies to the confirmation count.
     scores: described.map((h) => h.score),
+    // WHY each hit matched, positional against `matched`. A closed vocabulary — never prose.
+    //
+    // This is the field that makes PLAN §17.4(3) measurable from the log instead of from a replay.
+    // The base's strongest signal is the anchor, and it fires on 0 of 91 of the entries' OWN
+    // questions because nobody writes `Mutations.changeOrganizationContactRole` in a sentence —
+    // while firing 3-4 times per session on the URLs an agent types into its tools. The renderer
+    // has always computed this and SHOWN it to the agent ("matched on: anchor …; words …") and
+    // then thrown it away. A month of these answers, from real traffic, whether the coordinate
+    // door is reachable at all by the way people actually ask.
+    matchedBy: described.map((h) => {
+      const byAnchor = h.matchedOn.anchors.length > 0;
+      const byWords = h.matchedOn.tokens.length > 0;
+      return byAnchor && byWords ? 'both' : byAnchor ? 'anchor' : 'words';
+    }),
+    // WHAT THE AGENT WAS TOLD about trust, at the moment it was told. Positional, and not
+    // derivable later: an entry's label moves as evidence accrues, so reading today's entry does
+    // not reconstruct what a reader saw last week. §14.2a is the reason this matters — the label
+    // was overstating independence for ~20% of the corpus, and no log line recorded what any
+    // agent had actually been shown while that was true.
+    trustShown: described.map((h) => h.trust.label),
     opened: opened_.map((h) => h.id),
     state,
     ...(state === 'unreachable' ? { why: described[0]?.unavailable ?? 'no body could be read' } : {}),
@@ -340,6 +360,17 @@ export async function capture(input, opened, { env = process.env, via = null } =
     kind: 'capture',
     id,
     subject: input.subject,
+    // THE QUESTION, not only the subject. The subject is the claim; the question is the RETRIEVAL
+    // KEY, and it is the half that decides whether anyone ever finds this entry again. Session 10
+    // measured why that distinction is load-bearing: a base subject is a 3-11 token label while
+    // the questions live sessions actually write are 12-17 token sentences, so a corpus of
+    // subjects can only describe the old house style. Analysing how agents PHRASE things — the
+    // whole point of the harvester — needs what they wrote here.
+    //
+    // Public without hesitation now that clients READ the base and never write to it: every
+    // question in this log is written by our own sessions about our own QA stands, which is the
+    // same standing `q` on `ask` has always had.
+    question: input.question,
     ...(after ? { after } : {}),
     // WHAT was surfaced, not how many. It shipped as a count on 2026-09-19 and was too thin within
     // hours of meeting real traffic: a session was shown three related entries, then DISPUTED one --
@@ -389,7 +420,20 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     kind,
     id: row.id,
     deployment: input.deployment,
-    ...(kind === 'confirm' ? { trust: row.trust + 1 } : { saw: input.saw }),
+    // A dispute's `saw` used to be HERE, in the public line, and it should not have been. §7 is
+    // "ids and subjects only, never prose", and this was hundreds of characters of free text from
+    // an agent — found 2026-09-19 by reading a published line rather than the rule. Two reasons it
+    // goes, and the second is the one that generalises:
+    //
+    //   * It is a SECOND COPY. The same text is already the evidence item's `note` on the entry
+    //     itself, where it is reviewed as part of the entry. §7's rule against duplicating a
+    //     derivable fact is the rule PLAN §2 applies to the confirmation count.
+    //   * Free prose is the one shape `secret-gate` cannot protect. It scans VALUES — tokens,
+    //     passwords, paths it knows — and a sentence an agent composed is none of those. Session 3
+    //     found operator paths and usernames heading for this log by exactly that route.
+    //
+    // It is still in `payload` (local, never published) and still on the entry. Nothing is lost.
+    ...(kind === 'confirm' ? { trust: row.trust + 1 } : {}),
     ...door(via),
     payload: { id: row.id, path: row.path, item },
   }, { env });
