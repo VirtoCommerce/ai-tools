@@ -93,12 +93,12 @@ test('ranking is deterministic — ties break on trust, then id', () => {
     row({ id: 'KB-AAAA0001', subject: 'cart totals', trust: 1 }),
     row({ id: 'KB-BBBB0002', subject: 'cart totals', trust: 5 }),
   ];
-  assert.deepEqual(rank('cart totals', rows).map((h) => h.row.id), ['KB-BBBB0002', 'KB-AAAA0001', 'KB-CCCC0003']);
+  assert.deepEqual(rank('cart totals', rows).hits.map((h) => h.row.id), ['KB-BBBB0002', 'KB-AAAA0001', 'KB-CCCC0003']);
 });
 
 test('rank returns at most the top 3 (PLAN §3.1 step 3)', () => {
   const rows = Array.from({ length: 9 }, (_, i) => row({ id: `KB-0000000${i}`, subject: 'cart totals lag', trust: i }));
-  assert.equal(rank('cart totals lag', rows).length, 3);
+  assert.equal(rank('cart totals lag', rows).hits.length, 3);
 });
 
 // ─── the coordinate index, built from index rows rather than a directory walk ─────────────────

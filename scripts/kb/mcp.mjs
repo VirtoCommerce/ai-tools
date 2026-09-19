@@ -188,6 +188,14 @@ export function memoizeReader(reader, { ttlMs = 300_000, now = () => Date.now() 
 
 const FAILED = new Set(['no-base', 'unreachable']);
 
+/**
+ * WHICH DOOR THIS IS, stamped on every line this process writes (PLAN §7).
+ *
+ * The counterpart of `kb.mjs`'s `VIA = 'cli'`. PLAN §4 argues both doors are load-bearing; this is
+ * what will turn that argument into a count.
+ */
+const VIA = 'mcp';
+
 const text = (lines, isError = false) => ({
   content: [{ type: 'text', text: lines.join('\n') }],
   ...(isError ? { isError: true } : {}),
@@ -199,13 +207,13 @@ async function callTool(name, args, ctx) {
     case 'kb_ask': {
       const question = String(args?.question ?? '').trim();
       if (!question) return text(['kb_ask needs a question.'], true);
-      const r = await ask(question, opened, { env: ctx.env, top: Number(args?.top) || 3 });
+      const r = await ask(question, opened, { env: ctx.env, top: Number(args?.top) || 3, via: VIA });
       return text(askLines(r, { prefix: 'kb_ask' }), FAILED.has(r.state));
     }
     case 'kb_show': {
       const id = String(args?.id ?? '').trim();
       if (!id) return text(['kb_show needs an entry id.'], true);
-      const r = await show(id, opened, { env: ctx.env });
+      const r = await show(id, opened, { env: ctx.env, via: VIA });
       return text(showLines(r, { prefix: 'kb_show' }), FAILED.has(r.state));
     }
     case 'kb_capture': {
@@ -213,7 +221,7 @@ async function callTool(name, args, ctx) {
         subject: args?.subject, question: args?.question, claim: args?.claim,
         deployment: args?.deployment, method: args?.method,
         anchors: asList(args?.anchors), scope: asList(args?.scope),
-      }, opened, { env: ctx.env });
+      }, opened, { env: ctx.env, via: VIA });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and
       // the text hands back the id to confirm instead.
       return text(captureLines(r, { prefix: 'kb_capture' }), r.state === 'invalid' || FAILED.has(r.state));
@@ -224,7 +232,7 @@ async function callTool(name, args, ctx) {
       const fn = verb === 'confirm' ? confirm : dispute;
       const r = await fn(String(args?.id ?? '').trim(), {
         deployment: args?.deployment, note: args?.note, saw: args?.saw, method: args?.method,
-      }, opened, { env: ctx.env });
+      }, opened, { env: ctx.env, via: VIA });
       return text(evidenceLines(verb, r), r.state === 'invalid' || FAILED.has(r.state));
     }
     default:

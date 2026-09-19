@@ -90,10 +90,89 @@ export function anchorHit(questionLower, anchorKey) {
   return Boolean(path && isStructuredCoordinate(path) && questionLower.includes(path));
 }
 
+// ── THE FLOOR — what "no coverage" means, derived rather than chosen ──────────────────────────
+//
+// Until 2026-09-19 there was no floor: `score > 0`, so ONE SHARED COMMON WORD WAS AN ANSWER. The
+// log measured the consequence -- 39 asks, 39 answers, ZERO misses (PLAN §14.1). That reads as
+// perfect coverage and is the opposite: exit 1 was unreachable, so the base could never say "nobody
+// wrote this down -- go find out", and panel 1, the work queue the whole report was built around,
+// was empty BY CONSTRUCTION. The tool built to stop agents asserting ungrounded behaviour had
+// become a thing that answers confidently about subjects it holds nothing on.
+//
+// HOW THESE TWO NUMBERS WERE DERIVED, because a floor that was merely picked is a hunch with a
+// constant's authority. All 39 logged questions were replayed against the live 91-entry index and
+// cut against the labelled set PLAN §8 panel 6 had already established:
+//
+//   known BAD  the two price-sorting asks -- five entries returned between them, one of them
+//              "storefront Delete member detaches the contact" for a question about price sorting;
+//              the agent then went and captured KB-D9B90536. Anchor overlap with what was
+//              returned: zero.
+//   known GOOD the Active-column asks -> KB-27B4CD10 (four independent confirmations), KB-4B889114.
+//
+// THE RESULT THAT DECIDED THE SHAPE: no threshold on `score` can separate them, at any value. The
+// worst GOOD hit that must survive scores 4 (KB-27B4CD10 on "what does the storefront members
+// Active column reflect?"); the worst BAD hit that must die scores 5 (KB-6D5E2CD1 on "When sorting
+// a product list by price ascending…"). They are INVERTED on magnitude, so an absolute floor buys
+// nothing -- `score >= 5` already loses a four-times-confirmed answer, and only `>= 6` kills all
+// six bad hits, by which point it has lost two good ones.
+//
+// What separates them is not how many words matched but WHAT FRACTION OF THE QUESTION they
+// account for:
+//
+//   the six BAD hits    coverage 0.13 · 0.25 · 0.25 · 0.27 · 0.36 · 0.45
+//   the GOOD word-only  coverage 0.80 · 0.80   (the rest carry an anchor and never reach this test)
+//
+// A cut anywhere in (0.45, 0.80] satisfies the labelled set. Within that band the choice was made
+// by reading all 14 distinct logged questions and their survivors: raising the cut to 0.67 turns
+// three questions that still get a CORRECT answer into misses -- including "what happens on the
+// members list when a contact is deleted", whose answer, KB-FA724D31 "storefront Delete member
+// detaches the contact and orphans the account", is exactly right -- and buys one honest miss in
+// return ("what does the order status reflect after checkout", where the only survivor at 0.5 is
+// about the cart record, not the order status). Three correct answers lost against one unhelpful
+// one removed: the bottom of the band wins.
+//
+// THE MARGIN IS THIN AND IS NOT HIDDEN: the nearest surviving bad hit sits at 0.45, one word in an
+// eleven-token question below the cut. That is why the log now records `scores` and `nearMiss`
+// (PLAN §7) -- so the next reader re-derives this from the log instead of replaying, and sees
+// immediately if misses are piling up just under the line.
+//
+// AND WHY A COUNT FLOOR IS STILL NEEDED ALONGSIDE IT: coverage alone reintroduces the original
+// defect at the short end -- a one-word question matching one word scores coverage 1.00. MIN_WORDS
+// is the guard that keeps "one shared common word is an answer" dead in every question length.
+export const MIN_COVERAGE = 0.5;
+export const MIN_WORDS = 2;
+
+/**
+ * The ranker's identity, written onto every `ask` line (PLAN §7).
+ *
+ * Every line already in the base came from the no-floor ranker. Without a marker, every future
+ * before/after comparison silently mixes two systems and §14.1's numbers stop being reproducible.
+ * Bump it whenever a change here would move which entries are returned.
+ */
+export const RANKER = 'floor-1';
+
+/**
+ * Is this hit good enough to return, or is the honest answer "the base holds nothing on this"?
+ *
+ * AN ANCHOR PASSES UNCONDITIONALLY. It is a different KIND of evidence, not more of the same kind:
+ * a structured coordinate cannot appear in a sentence by accident, so a question that literally
+ * names an entry's coordinate is about that entry however few of its words happen to match. Every
+ * anchored hit in the labelled set is good and no bad hit carries one, which is the measurement
+ * behind leaving this branch unguarded.
+ */
+export function admissible(hit) {
+  if (hit.anchors.length) return true;
+  return hit.overlap.length >= MIN_WORDS && hit.coverage >= MIN_COVERAGE;
+}
+
 /**
  * Score every row against one question.
  *
- * @returns {Array<{row: object, score: number, overlap: string[], anchors: string[]}>} sorted best first
+ * Returns EVERYTHING that scored above zero, admissible or not, because the caller needs the best
+ * REJECTED candidate too: `nearMiss` is what tells a later reader whether the floor is set too
+ * high, and whether some entry is phrased so unlike the way people ask that it can never be found.
+ *
+ * @returns {Array<{row, score, overlap, anchors, coverage, admissible}>} sorted best first
  */
 export function scoreRows(question, rows) {
   const qTokens = tokenize(question);
@@ -104,7 +183,12 @@ export function scoreRows(question, rows) {
     const haystack = new Set(tokenize(`${row.subject} ${row.question}`));
     const overlap = [...qSet].filter((t) => haystack.has(t));
     const anchors = (row.anchorKeys ?? []).filter((key) => anchorHit(qLower, key));
-    return { row, score: overlap.length + anchors.length * ANCHOR_BONUS, overlap, anchors };
+    // Coverage is measured against THE QUESTION's own vocabulary, not the entry's. Normalising by
+    // the entry would reward a short subject for being short, which is a property of the writing
+    // and not of the match.
+    const coverage = qSet.size ? overlap.length / qSet.size : 0;
+    const hit = { row, score: overlap.length + anchors.length * ANCHOR_BONUS, overlap, anchors, coverage };
+    return { ...hit, admissible: admissible(hit) };
   }).filter((hit) => hit.score > 0);
 
   // Ties break on trust, then on id -- so the same question against the same base always returns
@@ -118,6 +202,18 @@ export function scoreRows(question, rows) {
 /** How many bodies one question is allowed to open (PLAN §3.1: the top 1-3). */
 export const TOP_N = 3;
 
+/**
+ * The top hits that CLEAR THE FLOOR, plus the best one that did not.
+ *
+ * `nearMiss` is reported only when nothing was admitted, and that is a deliberate narrowing of
+ * what PLAN §7 asks for. On an answer the best rejected candidate is rank-four noise and a field on
+ * every line for it would be volume with no reader. On a MISS it is the only thing that can tell
+ * you two different facts nothing else records: that the floor is too high (misses that keep
+ * carrying a near-miss just below the cut), and that some entry is phrased so unlike the way people
+ * ask that it is invisible forever -- never returned, never counted, never suspected.
+ */
 export function rank(question, rows, { top = TOP_N } = {}) {
-  return scoreRows(question, rows).slice(0, top);
+  const scored = scoreRows(question, rows);
+  const hits = scored.filter((h) => h.admissible).slice(0, top);
+  return { hits, nearMiss: hits.length ? null : (scored.find((h) => !h.admissible) ?? null) };
 }

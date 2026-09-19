@@ -71,6 +71,16 @@ const emit = (lines) => { for (const line of lines) out(line); };
 
 // ── verbs ─────────────────────────────────────────────────────────────────────────────────────
 
+/**
+ * WHICH DOOR THIS IS, stamped on every line this process writes (PLAN §7).
+ *
+ * PLAN §4 claims the CLI is load-bearing for three things MCP cannot do. That is an argument, not a
+ * measurement, and two doors are twice the surface to keep working -- so the log records which one
+ * was actually used, and a month of lines says whether the CLI is carrying real traffic or has
+ * quietly become test and CI infrastructure only.
+ */
+const VIA = 'cli';
+
 /** Set by `main` once the base is resolved; read by the post-answer sweep. */
 let sweepBase = null;
 
@@ -122,7 +132,7 @@ async function main(argv) {
   if (verb === 'ask') {
     const question = args._.slice(1).join(' ').trim();
     if (!question) { out('ask needs a question'); return EXIT.NO_COVERAGE; }
-    const r = await ask(question, opened, { top: Number(args.flags.top) || 3 });
+    const r = await ask(question, opened, { top: Number(args.flags.top) || 3, via: VIA });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(askLines(r));
     return exitFor(r.state);
@@ -131,7 +141,7 @@ async function main(argv) {
   if (verb === 'show') {
     const id = args._[1];
     if (!id) { out('show needs an id'); return EXIT.NO_COVERAGE; }
-    const r = await show(id, opened);
+    const r = await show(id, opened, { via: VIA });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(showLines(r));
     return exitFor(r.state);
@@ -142,7 +152,7 @@ async function main(argv) {
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
       deployment: args.flags.deployment, method: args.flags.method,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
-    }, opened);
+    }, opened, { via: VIA });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(captureLines(r));
     // A refusal is not a failure -- it is the design working (the ranking missed an entry that
@@ -156,7 +166,7 @@ async function main(argv) {
     const fn = verb === 'confirm' ? confirm : dispute;
     const r = await fn(args._[1], {
       deployment: args.flags.deployment, note: args.flags.note, saw: args.flags.saw, method: args.flags.method,
-    }, opened);
+    }, opened, { via: VIA });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(evidenceLines(verb, r));
     if (r.state === 'invalid') return EXIT.NO_COVERAGE;

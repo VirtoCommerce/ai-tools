@@ -39,6 +39,16 @@ export function hitLines(hit) {
 export function askLines(r, { prefix = 'kb ask' } = {}) {
   const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
   if (r.why) lines.push(`  ${r.why}`);
+  // A MISS SAYS THE BASE WAS RANKED, NOT MERELY THAT IT WAS EMPTY -- and it does NOT hand back the
+  // near-miss id. The near-miss is diagnostic, written to the log for whoever is judging the floor
+  // (PLAN §7); giving it to the agent would put a rejected entry in front of exactly the reader
+  // most likely to use it anyway, which is the confident-wrong-answer this floor exists to stop.
+  // The COUNT is safe and is worth saying: it distinguishes "read, and nothing came close" from
+  // "read, and something came close but did not clear the bar".
+  if (r.state === 'miss' && r.nearMiss) {
+    lines.push(`  the closest candidate scored ${r.nearMiss.score} and did not clear the floor`
+      + ` (it matched ${Math.round(r.nearMiss.coverage * 100)}% of your question's words, and no anchor).`);
+  }
   for (const hit of r.hits ?? []) lines.push(...hitLines(hit));
   return lines;
 }

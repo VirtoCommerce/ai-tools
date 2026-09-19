@@ -18,7 +18,7 @@ import { findDuplicate, identityKey, refusalMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, normalizeScope, retrievable } from './index-load.mjs';
 import { log, pendingMutations, readQueue, sessionId } from './queue.mjs';
-import { rank } from './rank.mjs';
+import { RANKER, rank } from './rank.mjs';
 
 // ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
 //
@@ -84,6 +84,46 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
   };
 }
 
+// ── What a line records about the CALL, and what it deliberately does not ─────────────────────
+//
+// A log field is cheap to add and effectively impossible to remove: the log is public, it is
+// append-only, and old lines can never be backfilled. So the bar is A QUESTION SOMEBODY HAS NOW,
+// not "might be handy one day". Two fields clear it here.
+//
+//   `rank`  the RANKER VERSION, not a position -- the value is a name (`floor-1`) precisely so it
+//           cannot be misread as one. This session is the first ranker change, and every line
+//           already in the base came from the no-floor ranker; without a marker every future
+//           before/after comparison silently mixes two systems (PLAN §14.1). IT GOES ON `ask`
+//           LINES ONLY, because nothing else ranks: a ranker version on a `capture` would be a
+//           field with no question behind it, which is the thing this list exists to refuse.
+//   `via`   which door was used, `mcp` or `cli`. PLAN §4 claims the CLI is load-bearing for three
+//           reasons; a month of these says whether that is true in practice or whether it has
+//           become test and CI infrastructure only, which decides whether two doors are worth
+//           maintaining. This one goes on every line a door writes. Omitted rather than guessed
+//           when the caller did not say: a field that defaults is a field that lies.
+//
+// WHAT MUST NOT BE ADDED HERE, recorded so it is not proposed again:
+//
+//   * ENTRY BODIES OR CLAIM TEXT. PLAN §7: ids and subjects only. Claim prose in a second place is
+//     claim prose that can drift from the entry.
+//   * ANYTHING THE REPORT CAN DERIVE -- re-ask counts, repeat frequency, whether a capture followed
+//     a miss. One file per session makes all of it computable, and a field for a derivable fact is
+//     a second copy that can disagree with the first.
+//   * WHO CALLED IT -- main agent or subagent. Genuinely valuable: it would decide PLAN §5.3's
+//     dispatch-pack question. THE SERVER CANNOT SEE IT. `parent_tool_use_id` lives in the
+//     transcript, not in the MCP request, and there is no proxy for it that is not a guess. It is
+//     written down here as A QUESTION WE CANNOT CURRENTLY ANSWER so that nobody quietly implements
+//     a wrong one and believes it.
+//   * FREE TEXT FROM THE AGENT about why it asked. Unreliable, and the log is public.
+//   * THE DEPLOYMENT on `ask`. `capture` records it, where it is a property of the observation
+//     rather than of the question.
+const DOORS = new Set(['mcp', 'cli']);
+const door = (via) => (DOORS.has(via) ? { via } : {});
+const ranked = (via) => ({ rank: RANKER, ...door(via) });
+
+/** Two decimal places: `nearMiss.coverage` is read by a human, and 0.45454545 is not. */
+const round2 = (n) => Math.round(Number(n) * 100) / 100;
+
 /** Open the base and load the index; every read verb starts here. */
 async function catalogue(opened) {
   if (!opened.reader) return { state: 'no-base', why: opened.why };
@@ -92,18 +132,30 @@ async function catalogue(opened) {
 
 // ── ask ───────────────────────────────────────────────────────────────────────────────────────
 
-export async function ask(question, opened, { env = process.env, top = 3 } = {}) {
+export async function ask(question, opened, { env = process.env, top = 3, via = null } = {}) {
   const started = Date.now();
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why }, { env });
+    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why, ...ranked(via) }, { env });
     return { state: cat.state, why: cat.why, hits: [] };
   }
 
-  const hits = rank(question, retrievable(cat.rows), { top });
+  const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
   if (!hits.length) {
-    await log({ kind: 'ask', q: question, matched: [], state: 'miss', ms: Date.now() - started }, { env });
-    return { state: 'miss', hits: [], rows: cat.rows.length };
+    // THE MISS LINE, which since the floor landed is a line that can actually occur (PLAN §14.1).
+    // It carries the best REJECTED candidate: a miss that keeps naming the same near-miss is
+    // either a floor set too high or an entry phrased unlike the way anyone asks -- and neither
+    // is visible from a bare "matched: []".
+    await log({
+      kind: 'ask',
+      q: question,
+      matched: [],
+      state: 'miss',
+      ...(nearMiss ? { nearMiss: { id: nearMiss.row.id, score: nearMiss.score, coverage: round2(nearMiss.coverage) } } : {}),
+      ms: Date.now() - started,
+      ...ranked(via),
+    }, { env });
+    return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length };
   }
 
   // Bodies in parallel (PLAN §3.1 step 3).
@@ -135,10 +187,15 @@ export async function ask(question, opened, { env = process.env, top = 3 } = {})
     kind: 'ask',
     q: question,
     matched: described.map((h) => h.id),
+    // `scores` is POSITIONAL against `matched`, so the winning score is scores[0] and there is no
+    // separate `score` field. A field for a fact another field already carries is a second copy
+    // that can disagree with the first -- the rule PLAN §2 applies to the confirmation count.
+    scores: described.map((h) => h.score),
     opened: opened_.map((h) => h.id),
     state,
     ...(state === 'unreachable' ? { why: described[0]?.unavailable ?? 'no body could be read' } : {}),
     ms: Date.now() - started,
+    ...ranked(via),
   }, { env });
 
   return { state, hits: described, rows: cat.rows.length };
@@ -146,34 +203,34 @@ export async function ask(question, opened, { env = process.env, top = 3 } = {})
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env } = {}) {
+export async function show(id, opened, { env = process.env, via = null } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'show', id, state: cat.state, why: cat.why }, { env });
+    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...door(via) }, { env });
     return { state: cat.state, why: cat.why };
   }
   // Retired entries are shown. Retrieval will not return one, but a reader holding an id is
   // entitled to see what is behind it -- including that it was retired.
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
   if (!row) {
-    await log({ kind: 'show', id, state: 'miss' }, { env });
+    await log({ kind: 'show', id, state: 'miss', ...door(via) }, { env });
     return { state: 'miss', why: `${id} is not in this base's index` };
   }
   const read = await opened.reader.readEntry(row.path);
   if (!read.ok) {
     // Both a 404 and a timeout leave the caller without the entry, so both are 'conclude
     // nothing'. What differs is the REMEDY, which is why the message is built separately.
-    await log({ kind: 'show', id, state: 'unreachable', why: read.detail }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...door(via) }, { env });
     return { state: 'unreachable', row, why: read.reason === 'missing' ? `${row.path} is not in the base — drift; run \`kb reindex\`` : read.detail };
   }
   let parsed;
   try {
     parsed = parseEntry(read.text, row.path);
   } catch (err) {
-    await log({ kind: 'show', id, state: 'unreachable', why: err.message }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...door(via) }, { env });
     return { state: 'unreachable', row, why: `unparseable entry: ${err.message}` };
   }
-  await log({ kind: 'show', id: row.id, state: 'answer' }, { env });
+  await log({ kind: 'show', id: row.id, state: 'answer', ...door(via) }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
 }
 
@@ -181,7 +238,28 @@ export async function show(id, opened, { env = process.env } = {}) {
 
 const REQUIRED = ['subject', 'question', 'claim', 'deployment'];
 
-export async function capture(input, opened, { env = process.env } = {}) {
+/**
+ * The `ask` this capture FOLLOWED, as a pointer into the session's own log.
+ *
+ * Panel 6 answers "did the agent go and find out anyway?" by comparing the captured entry's
+ * anchors against what each earlier ask matched -- an inference across lines. This records the
+ * link directly, so the panel becomes exact instead of heuristic.
+ *
+ * TWO THINGS IT IS CAREFUL ABOUT. It stores the preceding ask's `at`, which is a POINTER to a line
+ * already in this file, never a copy of the question -- a second copy of a question is a second
+ * thing that can disagree with the first. And the name means what it says: `after` is FOLLOWED,
+ * not CAUSED BY. An agent may capture something unrelated to the last thing it asked, and a field
+ * that claimed causation would be read as evidence of it.
+ */
+async function precedingAsk({ env }) {
+  const { lines } = await readQueue({ env });
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    if (lines[i].kind === 'ask' && lines[i].at) return String(lines[i].at);
+  }
+  return null;
+}
+
+export async function capture(input, opened, { env = process.env, via = null } = {}) {
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
   if (missing.length) return { state: 'invalid', why: `capture needs: ${missing.join(', ')}` };
@@ -191,12 +269,15 @@ export async function capture(input, opened, { env = process.env } = {}) {
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why }, { env });
+    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...door(via) }, { env });
     return { state: cat.state, why: cat.why };
   }
 
   const scope = normalizeScope(input.scope);
   if (!scope.length) return { state: 'invalid', why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)' };
+
+  // Read BEFORE this capture writes its own line, or the lookback finds nothing but itself.
+  const after = await precedingAsk({ env });
 
   // THE DEDUP CHECK. Runs here against the session's index, and AGAIN at push time against the
   // freshly re-read one -- which is what makes it race-free rather than merely likely (PLAN §2).
@@ -204,7 +285,7 @@ export async function capture(input, opened, { env = process.env } = {}) {
   if (dupe) {
     await log({
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
-      why: 'anchors+scope', when: 'call',
+      why: 'anchors+scope', when: 'call', ...(after ? { after } : {}), ...door(via),
     }, { env });
     return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
   }
@@ -239,6 +320,8 @@ export async function capture(input, opened, { env = process.env } = {}) {
     kind: 'capture',
     id,
     subject: input.subject,
+    ...(after ? { after } : {}),
+    ...door(via),
     // The PAYLOAD the pusher needs. The public log line is this minus `payload` (see toLogLine):
     // a log line carries ids and subjects only, but the queue must carry what it is queueing.
     payload: { entry, body: String(input.claim).trim(), key: identityKey({ anchors: input.anchors, scope }) },
@@ -249,10 +332,10 @@ export async function capture(input, opened, { env = process.env } = {}) {
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────
 
-async function appendEvidence(kind, id, input, opened, { env = process.env } = {}) {
+async function appendEvidence(kind, id, input, opened, { env = process.env, via = null } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind, id, state: cat.state, why: cat.why }, { env });
+    await log({ kind, id, state: cat.state, why: cat.why, ...door(via) }, { env });
     return { state: cat.state, why: cat.why };
   }
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
@@ -273,6 +356,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env } = {
     id: row.id,
     deployment: input.deployment,
     ...(kind === 'confirm' ? { trust: row.trust + 1 } : { saw: input.saw }),
+    ...door(via),
     payload: { id: row.id, path: row.path, item },
   }, { env });
 
