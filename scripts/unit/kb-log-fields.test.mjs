@@ -327,3 +327,22 @@ test('a capture records the QUESTION as well as the subject', async () => {
       'why does the forklift roster show nothing for a site that has yards');
   });
 });
+
+// ── `call`: the join key that makes "who asked" a lookup ──────────────────────────────────────
+test('a line records the caller’s tool-use id when the client sends one, and omits it otherwise',
+  async () => {
+    await withQueue(async (env) => {
+      await ask(ANSWERED, opened(), { env, via: 'mcp', call: 'toolu_01Fy89fmgM4sCT11S7dAyshH' });
+      await ask(ANSWERED, opened(), { env, via: 'mcp' });
+      await ask(ANSWERED, opened(), { env, via: 'cli', call: '' });
+      const lines = await linesOf(env);
+
+      // Opaque, no content, and it says nothing by itself — its whole value is that every
+      // `tool_use` in the transcript carries `isSidechain` and `agentName` under this same id.
+      assert.equal(lines[0].call, 'toolu_01Fy89fmgM4sCT11S7dAyshH');
+      // A field that defaults is a field that lies: a client that sends nothing gets no field,
+      // rather than a null that later reads as "the main agent asked".
+      assert.ok(!('call' in lines[1]), 'absent when the client offers nothing');
+      assert.ok(!('call' in lines[2]), 'and an empty string is not an id');
+    });
+  });

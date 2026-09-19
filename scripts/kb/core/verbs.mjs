@@ -109,17 +109,36 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
 //   * ANYTHING THE REPORT CAN DERIVE -- re-ask counts, repeat frequency, whether a capture followed
 //     a miss. One file per session makes all of it computable, and a field for a derivable fact is
 //     a second copy that can disagree with the first.
-//   * WHO CALLED IT -- main agent or subagent. Genuinely valuable: it would decide PLAN §5.3's
-//     dispatch-pack question. THE SERVER CANNOT SEE IT. `parent_tool_use_id` lives in the
-//     transcript, not in the MCP request, and there is no proxy for it that is not a guess. It is
-//     written down here as A QUESTION WE CANNOT CURRENTLY ANSWER so that nobody quietly implements
-//     a wrong one and believes it.
+//   * WHO CALLED IT -- main agent or subagent. STILL not recorded, and still not knowable here:
+//     the server sees a request, never the conversation around it. `parent_tool_use_id` is not in
+//     the request, exactly as this note said.
+//
+//     BUT THE NOTE OVERREACHED, and the correction is the useful half. "The request carries
+//     nothing identifying" was never checked -- it was inferred from one absent field. Dumping a
+//     real request on 2026-09-19 (`KB_RAW_DUMP`) found
+//     `_meta["claudecode/toolUseId"]`, the caller's OWN tool-use id. That is not a proxy for the
+//     answer, which is what this note rightly refused; it is the JOIN KEY to it, because every
+//     `tool_use` in the transcript carries `isSidechain` and `agentName`. So it is recorded as
+//     `call`, and "was that a subagent?" is now a lookup instead of the elimination argument it
+//     took that morning -- seven calls in a session's log against zero in the main thread.
+//
+//     The lesson is worth more than the field: "we cannot see X" and "we never looked" wear the
+//     same clothes, and this file asserted the first for two sessions while meaning the second.
 //   * FREE TEXT FROM THE AGENT about why it asked. Unreliable, and the log is public.
 //   * THE DEPLOYMENT on `ask`. `capture` records it, where it is a property of the observation
 //     rather than of the question.
 const DOORS = new Set(['mcp', 'cli']);
-const door = (via) => (DOORS.has(via) ? { via } : {});
-const ranked = (via) => ({ rank: RANKER, ...door(via) });
+/**
+ * `via` is WHICH DOOR; `call` is WHICH CALL — the caller's own tool-use id, when the client sends
+ * one (see `callIdOf` in mcp.mjs). It is the join key that makes "was this a subagent?" a lookup in
+ * the transcript rather than the elimination argument it took on 2026-09-19. Opaque, no content,
+ * and omitted rather than invented when the client offers nothing.
+ */
+const door = (via, call) => ({
+  ...(DOORS.has(via) ? { via } : {}),
+  ...(typeof call === 'string' && call ? { call } : {}),
+});
+const ranked = (via, call) => ({ rank: RANKER, ...door(via, call) });
 
 /** Two decimal places: `nearMiss.coverage` is read by a human, and 0.45454545 is not. */
 const round2 = (n) => Math.round(Number(n) * 100) / 100;
@@ -132,11 +151,11 @@ async function catalogue(opened) {
 
 // ── ask ───────────────────────────────────────────────────────────────────────────────────────
 
-export async function ask(question, opened, { env = process.env, top = 3, via = null } = {}) {
+export async function ask(question, opened, { env = process.env, top = 3, via = null, call = null } = {}) {
   const started = Date.now();
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why, ...ranked(via) }, { env });
+    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why, ...ranked(via, call) }, { env });
     return { state: cat.state, why: cat.why, hits: [] };
   }
 
@@ -153,7 +172,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
       state: 'miss',
       ...(nearMiss ? { nearMiss: { id: nearMiss.row.id, score: nearMiss.score, coverage: round2(nearMiss.coverage) } } : {}),
       ms: Date.now() - started,
-      ...ranked(via),
+      ...ranked(via, call),
     }, { env });
     return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length };
   }
@@ -215,7 +234,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
     state,
     ...(state === 'unreachable' ? { why: described[0]?.unavailable ?? 'no body could be read' } : {}),
     ms: Date.now() - started,
-    ...ranked(via),
+    ...ranked(via, call),
   }, { env });
 
   return { state, hits: described, rows: cat.rows.length };
@@ -223,34 +242,34 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env, via = null } = {}) {
+export async function show(id, opened, { env = process.env, via = null, call = null } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...door(via) }, { env });
+    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...door(via, call) }, { env });
     return { state: cat.state, why: cat.why };
   }
   // Retired entries are shown. Retrieval will not return one, but a reader holding an id is
   // entitled to see what is behind it -- including that it was retired.
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
   if (!row) {
-    await log({ kind: 'show', id, state: 'miss', ...door(via) }, { env });
+    await log({ kind: 'show', id, state: 'miss', ...door(via, call) }, { env });
     return { state: 'miss', why: `${id} is not in this base's index` };
   }
   const read = await opened.reader.readEntry(row.path);
   if (!read.ok) {
     // Both a 404 and a timeout leave the caller without the entry, so both are 'conclude
     // nothing'. What differs is the REMEDY, which is why the message is built separately.
-    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...door(via) }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...door(via, call) }, { env });
     return { state: 'unreachable', row, why: read.reason === 'missing' ? `${row.path} is not in the base — drift; run \`kb reindex\`` : read.detail };
   }
   let parsed;
   try {
     parsed = parseEntry(read.text, row.path);
   } catch (err) {
-    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...door(via) }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...door(via, call) }, { env });
     return { state: 'unreachable', row, why: `unparseable entry: ${err.message}` };
   }
-  await log({ kind: 'show', id: row.id, state: 'answer', ...door(via) }, { env });
+  await log({ kind: 'show', id: row.id, state: 'answer', ...door(via, call) }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
 }
 
@@ -279,7 +298,7 @@ async function precedingAsk({ env }) {
   return null;
 }
 
-export async function capture(input, opened, { env = process.env, via = null } = {}) {
+export async function capture(input, opened, { env = process.env, via = null, call = null } = {}) {
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
   if (missing.length) return { state: 'invalid', why: `capture needs: ${missing.join(', ')}` };
@@ -289,7 +308,7 @@ export async function capture(input, opened, { env = process.env, via = null } =
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...door(via) }, { env });
+    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...door(via, call) }, { env });
     return { state: cat.state, why: cat.why };
   }
 
@@ -305,7 +324,7 @@ export async function capture(input, opened, { env = process.env, via = null } =
   if (dupe) {
     await log({
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
-      why: 'anchors+scope', when: 'call', ...(after ? { after } : {}), ...door(via),
+      why: 'anchors+scope', when: 'call', ...(after ? { after } : {}), ...door(via, call),
     }, { env });
     return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
   }
@@ -386,7 +405,7 @@ export async function capture(input, opened, { env = process.env, via = null } =
     // An empty array still goes on every queued capture. `[]` means the hint ran and found nothing,
     // which is what makes the non-empty rows mean anything.
     related: related.hits.map((h) => h.row.id),
-    ...door(via),
+    ...door(via, call),
     // The PAYLOAD the pusher needs. The public log line is this minus `payload` (see toLogLine):
     // a log line carries ids and subjects only, but the queue must carry what it is queueing.
     payload: { entry, body: String(input.claim).trim(), key: identityKey({ anchors: input.anchors, scope }) },
@@ -397,10 +416,10 @@ export async function capture(input, opened, { env = process.env, via = null } =
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────
 
-async function appendEvidence(kind, id, input, opened, { env = process.env, via = null } = {}) {
+async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind, id, state: cat.state, why: cat.why, ...door(via) }, { env });
+    await log({ kind, id, state: cat.state, why: cat.why, ...door(via, call) }, { env });
     return { state: cat.state, why: cat.why };
   }
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
@@ -434,7 +453,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     //
     // It is still in `payload` (local, never published) and still on the entry. Nothing is lost.
     ...(kind === 'confirm' ? { trust: row.trust + 1 } : {}),
-    ...door(via),
+    ...door(via, call),
     payload: { id: row.id, path: row.path, item },
   }, { env });
 

@@ -215,19 +215,44 @@ const text = (lines, isError = false) => ({
   ...(isError ? { isError: true } : {}),
 });
 
+/**
+ * The caller's own tool-use id, when the client sends one.
+ *
+ * WHO ASKED — answered by measurement on 2026-09-19, after being twice declared unanswerable.
+ * PLAN §7 refused to log the caller because `parent_tool_use_id` is not in the request. That is
+ * TRUE, and it is not the same statement as "the request carries nothing identifying" — which
+ * nobody had checked. Dumping one real request showed:
+ *
+ *   "_meta": { "claudecode/toolUseId": "toolu_01Fy89…", "progressToken": 2 }
+ *
+ * It does not say whether a subagent called; nothing the server can see does. What it IS is an
+ * exact JOIN KEY into the transcript, where every `tool_use` carries `isSidechain` and
+ * `agentName`. So "who asked" stops being an inference and becomes a lookup. On 2026-09-19
+ * subagent use was established by ELIMINATION — seven calls in a session's log against zero in
+ * the main thread's transcript — which worked once and does not generalise. This does.
+ *
+ * NOT A PROXY, which is what §7 rightly refused: a proxy guesses the answer, this one carries the
+ * key to it. Client-specific (`claudecode/`), and ABSENT rather than guessed for any other client,
+ * because a field that defaults is a field that lies.
+ */
+const callIdOf = (message) => {
+  const id = message?.params?._meta?.['claudecode/toolUseId'];
+  return typeof id === 'string' && id ? id : null;
+};
+
 async function callTool(name, args, ctx) {
   const opened = ctx.opened;
   switch (name) {
     case 'kb_ask': {
       const question = String(args?.question ?? '').trim();
       if (!question) return text(['kb_ask needs a question.'], true);
-      const r = await ask(question, opened, { env: ctx.env, top: Number(args?.top) || 3, via: VIA });
+      const r = await ask(question, opened, { env: ctx.env, top: Number(args?.top) || 3, via: VIA, call: ctx.call });
       return text(askLines(r, { prefix: 'kb_ask' }), FAILED.has(r.state));
     }
     case 'kb_show': {
       const id = String(args?.id ?? '').trim();
       if (!id) return text(['kb_show needs an entry id.'], true);
-      const r = await show(id, opened, { env: ctx.env, via: VIA });
+      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call });
       return text(showLines(r, { prefix: 'kb_show' }), FAILED.has(r.state));
     }
     case 'kb_capture': {
@@ -235,7 +260,7 @@ async function callTool(name, args, ctx) {
         subject: args?.subject, question: args?.question, claim: args?.claim,
         deployment: args?.deployment, method: args?.method,
         anchors: asList(args?.anchors), scope: asList(args?.scope),
-      }, opened, { env: ctx.env, via: VIA });
+      }, opened, { env: ctx.env, via: VIA, call: ctx.call });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and
       // the text hands back the id to confirm instead.
       return text(captureLines(r, { prefix: 'kb_capture' }), r.state === 'invalid' || FAILED.has(r.state));
@@ -246,7 +271,7 @@ async function callTool(name, args, ctx) {
       const fn = verb === 'confirm' ? confirm : dispute;
       const r = await fn(String(args?.id ?? '').trim(), {
         deployment: args?.deployment, note: args?.note, saw: args?.saw, method: args?.method,
-      }, opened, { env: ctx.env, via: VIA });
+      }, opened, { env: ctx.env, via: VIA, call: ctx.call });
       return text(evidenceLines(verb, r), r.state === 'invalid' || FAILED.has(r.state));
     }
     default:
@@ -339,7 +364,7 @@ export function createServer({ env = process.env, baseArg = null, ttlMs = 300_00
         const name = String(message.params?.name ?? '');
         let result;
         try {
-          result = await callTool(name, message.params?.arguments ?? {}, ctx);
+          result = await callTool(name, message.params?.arguments ?? {}, { ...ctx, call: callIdOf(message) });
         } catch (err) {
           // A CRASH IS NOT ONE OF THE FOUR STATES and must never be mistaken for one -- least of
           // all for "the base holds nothing". Reported as a tool error, which the model reads as
