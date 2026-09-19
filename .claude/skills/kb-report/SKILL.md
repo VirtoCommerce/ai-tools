@@ -64,6 +64,23 @@ overlap** — the panel measures it and decides nothing.
   one output this report must not produce.
 - **The header's notes are load-bearing.** A truncated git tree, dropped malformed lines, or an
   `index.json` that failed to load each make specific panels unreliable, and each is printed there.
+- **Synthetic lines are excluded from every panel, and the header says how many.** A benchmark,
+  demo or acceptance run marks itself with `KB_SYNTHETIC=1`, so it still exercises the real queue,
+  server and push without entering the demand panels. This is not cosmetic: before it existed, one
+  latency benchmark supplied **30 of the base's 39 recorded asks**, so panel 3's top six rows were
+  a stopwatch and every other denominator was four times real demand. If you are timing the tool,
+  set the variable; if a header note says a window is mostly synthetic, the panels below describe
+  what is left, not what happened.
+
+## Running a benchmark against the base
+
+```bash
+KB_SYNTHETIC=1 npm run kb -- ask "…"     # or set it on whatever spawns the MCP server
+```
+
+Everything is recorded exactly as it would be otherwise — same lines, same fields, same flush —
+plus `"synthetic": true`. Nothing is suppressed, so the run is still auditable and its latency is
+still in the file; it simply is not counted as somebody wanting to know something.
 
 ## Flags
 
