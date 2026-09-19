@@ -213,10 +213,16 @@ should never ask, put `"mcp__kb"` in `permissions.allow` in your own `.claude/se
 (gitignored, per developer) — never in the shared `.claude/settings.json`.
 
 **Writing needs a token; reading never does.** `kb_capture` / `kb_confirm` / `kb_dispute` queue locally
-and go out as one commit when the session ends — there is no push command to remember. With no
-`KB_GITHUB_TOKEN` (or `GITHUB_TOKEN`) that flush reports `no-token` and **keeps the queue**: nothing is
-lost, and the first later session with a token sends it. An unauthenticated teammate is a full-value
-reader and can still record what they found.
+and go out as one commit **shortly after, on their own** — there is no push command to remember and
+**nothing to close**. Three things publish: the `Stop` hook at the end of a turn, an ordinary `kb`
+call once the oldest queued line is over five minutes old, and a timer in the server for the tail
+that has neither. This paragraph used to say "when the session ends", which was true and useless —
+nobody ends a session, and switching away from a tab is not ending one, so evidence sat on one laptop
+indefinitely. With no `KB_GITHUB_TOKEN` (or `GITHUB_TOKEN`) the flush reports `no-token` and **keeps
+the queue**: nothing is lost, and the first later session with a token sends it. An unauthenticated
+teammate is a full-value reader and can still record what they found — **but note the queue only
+drains on the machine it was written on**, so a reader-only machine accumulates locally until a token
+appears there.
 
 **Pin the version — never `@playwright/mcp@latest`.** The pin must match `package.json`'s
 `@playwright/mcp` devDependency and `PLAYWRIGHT_MCP_PACKAGE` in `ci/lib/lane-mcp.ts`; `/project-init`'s
