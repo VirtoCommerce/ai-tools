@@ -1234,6 +1234,45 @@ export function whiteLabelingSeededEmails() {
   return readCsv(WL_USERS_CSV).map((w) => (w.email || '').trim()).filter(Boolean);
 }
 
+// The b2b org-graph logins: users.csv (org members) + memberships.csv (cross-org). Deliberately
+// EXCLUDES personal and white-labeling accounts, which no b2b seed path creates.
+export function b2bSeededEmails() {
+  const emails = new Set();
+  for (const u of readCsv(USERS_CSV)) if ((u.email || '').trim()) emails.add(u.email.trim());
+  for (const m of readCsv(MEMBERSHIPS_CSV)) if ((m.user_email || '').trim()) emails.add(m.user_email.trim());
+  return [...emails];
+}
+
+export function crossOrgSeededEmails() {
+  const emails = new Set();
+  for (const m of readCsv(MEMBERSHIPS_CSV)) if ((m.user_email || '').trim()) emails.add(m.user_email.trim());
+  return [...emails];
+}
+
+/**
+ * The account set a teardown of `kind` owns — the mirror of what a seed of that same kind creates.
+ *
+ * Before this existed, `runTeardown()` scoped only `wl` and every other kind fell through to
+ * `allSeededEmails()`. So `seed-company-users.mjs b2b --teardown` swept all 91 company-user
+ * accounts — b2b AND personal AND white-labeling — while `seed-company-users.mjs b2b` recreates
+ * only the b2b slice. Pairing them, which is the obvious thing to do, silently deleted the
+ * personal and WL accounts that suites 001/033/040a/041 sign in as, and nothing reported it.
+ *
+ * An unknown kind returns the full set: widening on doubt is the safe direction for a teardown
+ * whose caller then re-seeds, and it preserves the historical `all` behaviour exactly.
+ */
+export function seededEmailsForKind(kind) {
+  switch (kind) {
+    case 'wl': return whiteLabelingSeededEmails();
+    case 'b2b': return b2bSeededEmails();
+    case 'imp': return b2bSeededEmails(); // impersonation fixtures are CSV-native b2b org members
+    case 'cross-org': return crossOrgSeededEmails();
+    case 'personal':
+    case 'loyalty': return personalUsers().map((p) => p.email);
+    default: return allSeededEmails();
+  }
+}
+
 // Delete the white-labeling orgs by name (live lookup — org platform ids live only in
 // aliases.${TEST_ENV}.json now, never in the CSV, so this doesn't trust a possibly-stale cache).
 // This is the SCOPED `wl` teardown's org step. The unified sweep (sweepAgentTestMembers) now removes

@@ -46,6 +46,24 @@ test("recordHar.path is a FILE path ending in .har (B-10, regressed twice)", () 
   }
 });
 
+test("HAR captures request/response bodies, not just headers (VCST triage 2026-09-19)", () => {
+  // `omitContent: true` shipped on all four lanes and made every HAR body-less: a captured GraphQL
+  // document or payload was simply absent, while the .har file existed and looked healthy. Measured
+  // on REG-2026-09-18-1818 — `grep -c salesRepCustomerCounts session.har` returned 0 for a request
+  // that demonstrably occurred. That silently defeats reports.md §8, which directs a report to
+  // reference the HAR for exactly this evidence, so a verifier had to re-capture documents by hand.
+  // `omitContent` is also deprecated; `content` is the supported option (embed | attach | omit).
+  for (const { file, cfg } of LANES) {
+    const har = cfg.browser?.contextOptions?.recordHar;
+    assert.equal(har.omitContent, undefined,
+      `${file}: recordHar.omitContent is deprecated AND body-less — use content: "embed"`);
+    assert.equal(har.content, "embed",
+      `${file}: recordHar.content is "${har.content}" — must be "embed" so bodies land in the .har. ` +
+      `"omit" reproduces the original defect; "attach" writes bodies beside a .zip, which the repo's ` +
+      `*.har globs (regression-triage.ts, bundle-evidence.ts) do not read`);
+  }
+});
+
 test("every lane records video into its own directory (reports-policy.md §5.2)", () => {
   for (const { file, lane, cfg } of LANES) {
     const video = cfg.browser?.contextOptions?.recordVideo;

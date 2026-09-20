@@ -131,6 +131,12 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Cross-ref:** `feedback_storefront_virtual_catalog_link` in MEMORY
 - **Archetype:** `CONVENTION`
 
+### VC-CAT-004 — A GUID-shaped product `code` is real catalog data, not a rendering fault
+- **Pattern:** A few imported products carry a 32-char hex string as their `code`, while the human-readable SKU sits in a separate `original_sku` property. The storefront's SKU row renders `code`, so a GUID-looking SKU is faithful output, not a mis-bound field. Measured 2026-09-18 on vcst-qa: **6 of 4550** products; the next longest code in the catalog is 11 characters.
+- **Detection probe:** Before filing "SKU shows a GUID", read `code` at Platform REST (`/api/catalog/products/{id}`, admin token) **and** at xAPI. If both return the same string, the display is correct — the finding, if any, is what that length does to the layout (VC-UI-006), not the value.
+- **Cross-ref:** VCST-6029 §Not a data bug
+- **Archetype:** `CONVENTION`
+
 ---
 
 ## VC-PROMO — Promotions, Coupons, Pricing
@@ -301,6 +307,26 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Detection probe:** When exploring for layout bugs, use the measure-layout helper. Reference the BL-UI-* IDs in any filed bug.
 - **Cross-ref:** `reference_layout_stability_artifacts` in MEMORY
 - **Archetype:** `CONVENTION`
+
+### VC-UI-006 — A long unbroken value escapes its flex cell and is painted over the next column
+- **Pattern:** A cell styled `display: flex` + `overflow-wrap: break-word` with **no `min-width: 0` and no `overflow: hidden`** cannot contain a long unbroken token. `break-word` does **not** reduce a box's min-content width (only `overflow-wrap: anywhere` / `word-break: break-all` do), the anonymous text flex item's default `min-width: auto` refuses to shrink below it, and `text-overflow: clip` is inert without `overflow: hidden` — so the line is painted outside the box, across the neighbouring column. **Severity scales as the viewport narrows:** at 1920 the two values merely abut (2 px), at 390 the neighbour's value is drawn *wholly inside* the first and neither is recoverable, because no ancestor scrolls.
+- **Detection probe:** Feed one long unbroken token (a 32-char code, a GUID, a separator-free URL) into a table/grid cell and compare the two cells' **text** rects via a `Range` — look for `scrollWidth > clientWidth` **and** intersecting rects, at 1920 **and** at ≤600 px. A desktop-only check reads as PASS at 2 px overlap, which is how this ships. If a sibling element in the same file already carries the guard (`min-w-0 truncate`, or `overflow: hidden` + line-clamp), the omission is a bug rather than a design choice.
+- **History:** VCST-6029 (2026-09-18) — `compare-table.vue` `&__row-value`, shared by all 14 value cells of the compare table, so **any** row breaks identically given a long value; SKU was merely the only row whose data was one. The same file already guards `&__row-label-text` and the product-title cell.
+- **Cross-ref:** `reports/bugs/open/medium/BUG-compare-table-long-value-overlays-adjacent-column-VCST-6029.md`; BL-UI-001..006 via VC-UI-005
+- **Archetype:** `RENDER`
+
+---
+
+## VC-SHELL — vc-shell Admin Framework (Vendor Portal & embedded admin apps)
+
+> **A separate product from the storefront.** `@vc-shell/framework` powers the Vendor Portal and the embedded admin apps (`vc-sales-rep`, the PageBuilder shell, …). Storefront themes, BL-UI invariants and the VC-UI entries above do **not** apply here. A defect in a framework component belongs to `VirtoCommerce/vc-shell`, **not** the module that mounts it — routing to the module is the standard mis-route. See `reference_vc_shell_vendor_portal_testing` in MEMORY.
+
+### VC-SHELL-001 — Async `VcSelect` paging loops forever once a search term is applied
+- **Pattern:** `useSelectDataSource.ts` keeps **two** result stores and mixes them. `displayItems` renders `searchResults ?? cachedItems`, but `hasMore` compares `cachedItems.length` (unfiltered) against a `totalCount` that `executeSearch()` has overwritten with the **filtered** total, and `loadMore()` appends deduplicated results into `cachedItems` — the collection that is *not* being rendered. With a search active the rendered list therefore never grows, so the intersection sentinel stays in view and re-fires `loadMore()` every cycle, while `cachedItems.length` stalls below `totalCount` and `hasMore` stays permanently true — `skip` never advances. Measured: **966 ×** `POST /api/organizations/search` in ~3 min (~5 req/s), all identical (`skip: 39`), a permanent "Loading more…" spinner, **23 of 43 matches unreachable**, and **no console error**. Two harms: the unreachable options cannot be selected at all, and every open picker is a sustained request generator against the Platform API.
+- **Detection probe:** On any async-options picker, search a term matching **more than one page** of results, scroll to the bottom, and watch the network panel: assert (a) the rendered option count grows past the page size, (b) `skip` advances monotonically, (c) the requests stop. Count requests over 30 s — a converging picker issues a handful. **Run the no-search control too:** the same picker pages correctly with no keyword, so only the control proves the defect is in the search path rather than in paging generally.
+- **History:** VCST-6028 (2026-09-18), virtostart — Sales Rep "Served organizations". Owning repo `VirtoCommerce/vc-shell`, `framework/ui/components/molecules/vc-select/composables/useSelectDataSource.ts`. Aggravator: the picker is mounted with **no `debounce`**, so each keystroke fires its own `executeSearch` racing the in-flight `open()`, and whichever resolves last decides `totalCount` — which is how the two stores desynchronise. Debouncing removes the storm but does not fix the loop.
+- **Cross-ref:** `reports/bugs/open/critical-high/BUG-SalesRep-org-picker-search-infinite-loadmore-request-loop.md`
+- **Archetype:** `BOUNDARY` — the termination predicate reads the wrong collection's length, so paging never converges
 
 ---
 

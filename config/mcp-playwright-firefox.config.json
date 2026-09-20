@@ -16,7 +16,7 @@
       "locale": "en-US",
       "recordHar": {
         "path": "./test-results/firefox/har/session.har",
-        "omitContent": true
+        "content": "embed"
       },
       "recordVideo": {
         "dir": "./test-results/firefox/video",

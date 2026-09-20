@@ -11,12 +11,19 @@ Use this as a **probe library**. Pick 3–5 probes per session that match your c
 ## The `UIP-*` sweep — the closed probe set a UI test model must resolve
 
 This file was exploratory-only: nothing in the case-authoring path referenced it, and the result is
-measurable. Across 1 961 Frontend regression cases, "back button" appears in **8**, double-submit in
-**9**, deep-link in **5**, and mid-flow session expiry in **5** — while `reports/bugs/open/` holds a
+measurable. **Count the corpus's own coverage; never quote a figure from here** — the numbers that used to sit
+in this paragraph were stale inside a few sprints, and a stale thinness claim argues for the wrong probe:
+
+```bash
+grep -rho 'UIP-[A-Z]*' regression/suites/Frontend/ | sort | uniq -c | sort -rn
+```
+
+Measured 2026-09-18 — the best-covered probe reaches **7** cases and the thinnest **2**, across **4 219**
+Frontend cases in 64 suites, and two probes have no case at all — while `reports/bugs/open/` holds a
 duplicate-order-on-back bug, a blank page after the session user is deleted, and a token not
 invalidated on impersonation revert. The probes were written; they just never became cases.
 
-So the ten probes below are a **closed vocabulary with stable ids**, swept by `/qa-test` Step 2 the
+So the probes below are a **closed vocabulary with stable ids**, swept by `/qa-test` Step 2 the
 same way archetypes are: for a UI flow each probe is either covered by a scenario row or **waived
 with a reason**. Silence is not a waiver. The `§N.M` sections remain the source of detail — the ids
 point at them, they do not restate them (`.claude/rules/test-data.md` §GOLDEN RULE).
@@ -33,6 +40,8 @@ point at them, they do not restate them (`.claude/rules/test-data.md` §GOLDEN R
 | `UIP-INPUT` | autofill / password manager / paste populates the form | §5.1 · §5.2 | validation skipped because only `onChange` was wired |
 | `UIP-VIEW` | zoom 200–400%, reduced motion, dark mode, print | §5.3 · §5.4 · §5.5 | clipped or unreachable controls at zoom |
 | `UIP-DATA` | data state: empty · exactly one · many · overflowing | `qa-design` §State-Stress Pass | empty state missing; overflow clipped; grid breaks at N=1 |
+| `UIP-PAGE` | async paged list under an active filter, scrolled to the end | §8.1 | paging never converges — frozen offset, request loop, results capped at page 1 |
+| `UIP-EXTREME` | an unbreakable value (32-char code, GUID, URL) in a cell | §9.1 | value painted outside its box over the neighbour; clipped; column blown out |
 
 **Two rules keep the sweep honest.** A probe is *covered* only when a scenario row asserts an
 outcome for it — noting "we should test back button" is not coverage. And a waiver names the reason
@@ -348,6 +357,56 @@ mcp__Chrome_DevTools__list_console_messages
 ```
 
 **Bug class:** Console spam masking real errors; new warnings indicating impending breakage.
+
+---
+
+## 8. Incremental Loading & Pagination
+
+### 8.1 Paged list under an active filter
+
+**Probe:** Open the list — a dropdown with async options, an infinite-scroll grid, a "load more" table. Apply a **search or filter whose match count exceeds one page**. Scroll to the very bottom and keep watching for ~30 s. Assert **three** things, not one:
+
+1. the rendered item count grows **past the page size**;
+2. the request offset (`skip` / `page` / cursor) advances **monotonically**;
+3. the requests **stop** once the last page is in.
+
+Then run the **no-filter control**: same list, no search term, scroll to the bottom. If the control converges and the filtered run does not, the defect is in the search path, not in paging — and without the control you cannot tell those apart.
+
+```
+mcp__Chrome_DevTools__list_network_requests   // count identical calls; read skip / take / keyword
+```
+
+**Bug class:** Unbounded request loop with a frozen offset; results silently capped at the first page, so every match past it is unreachable and unselectable; a permanent "Loading more…" spinner with **no console error** — nothing fails, so nothing is reported. The usual mechanism is a component holding **two** collections (an unfiltered cache and the filtered results) that computes "has more" from the one it is *not* rendering.
+
+**Why the naive check passes it.** Opening the list and reading the first page looks correct: the options are right, the count badge is right, the network tab shows a `200`. Only the *bottom* of a *filtered* list, watched over time, separates "loaded" from "still loading forever".
+
+**Found this way:** VCST-6028 — 966 identical `POST /api/organizations/search` in ~3 min, offset frozen at `skip: 39`, 23 of 43 matching organizations unreachable. See `vc-bug-catalog.md` VC-SHELL-001.
+
+---
+
+## 9. Value Extremes & Content Fitting
+
+### 9.1 An unbreakable value in a fixed-width slot
+
+**Probe:** Put **one value with no break opportunity in it** — a 32-character product code, a GUID, a separator-free URL, a long `snake_case_identifier` — into a table cell, a definition-list value, a chip, a badge or a select option. Then **measure**, at **1920 and again at ≤600px**:
+
+- `scrollWidth > clientWidth` on the containing cell;
+- the **text** rects of this cell and its neighbour (a `Range` over the text node, **not** the element box) — do they **intersect**, and by how many px?
+
+```js
+const r = document.createRange(); r.selectNodeContents(cell.firstChild);
+r.getBoundingClientRect();   // compare against the neighbouring cell's text rect
+```
+
+**A long product *title* is not a substitute.** Titles contain spaces, so they wrap and pass. What defeats `overflow-wrap: break-word` is the absence of any break opportunity: `break-word` does **not** reduce a box's min-content width — only `overflow-wrap: anywhere` / `word-break: break-all` do. This is why `qa-design` §State-Stress's "Multi-item / overflow" row (long titles, long company names) is a neighbouring check that will **not** catch this class.
+
+**Bug class:** The value paints outside its own box and over the adjacent column, so two values become mutually unattributable; or it is clipped with no ellipsis; or it blows the column out and wrecks the row. In a flex or grid cell the mechanism is usually a missing `min-width: 0` (the item's default `min-width: auto` refuses to shrink below min-content) combined with `overflow: visible`, which also makes `text-overflow: clip/ellipsis` inert.
+
+**Two things make it ship.** Severity **scales as the viewport narrows** — a 2px overlap at 1920 reads as a rendering nit, while the same rule at 390px draws one value wholly inside the other with no scrollable ancestor to recover either; so a desktop-only check reports PASS. And it is **data-triggered**, so it is absent until some row happens to hold such a value.
+
+**The tell that it is an omission, not a design choice:** look for a sibling element in the same component that already carries the guard (`min-w-0 truncate`, or `overflow: hidden` + line-clamp). If the author guarded the title but not the value cells, it was missed rather than decided.
+
+**Found this way:** VCST-6029 — the compare table's SKU cell, 2.11px text-rect overlap at 1920 and 1280, **130.11px at 390** (the neighbour's value wholly inside it). See `vc-bug-catalog.md` VC-UI-006; the data-side false-positive guard is VC-CAT-004.
 
 ---
 

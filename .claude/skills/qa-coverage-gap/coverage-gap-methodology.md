@@ -11,15 +11,23 @@ Compare the complete feature inventory (sitemap, API/GraphQL reference, business
 - A `BL-*` invariant has no test case verifying it
 - An `ECL-*` edge case has no test case covering it
 - A user flow from the E2E scenario catalog has no corresponding regression test
-- A test case exists in the **TestRail exports** (`test-suites ( export from Test-rail )/`) but has no counterpart in `regression/suites/` — see §1b
 
-### 1b. TestRail Cross-Reference
-Compare current regression suites against the original TestRail exports to detect migration gaps:
-1. Read TestRail exports from `test-suites ( export from Test-rail )/Frontend/` and `Backend (admin site)/`
-2. For each TestRail test case (by `Title + Section`), check if a corresponding case exists in `regression/suites/`
-3. Flag cases present in TestRail but absent from regression suites as `MIGRATION_GAP`
-4. Flag cases where TestRail steps are richer (more assertions, more edge cases) than the regression version as `SHALLOW_MIGRATION`
-5. Use TestRail original test intent to inform gap generation — preserve the original tester's coverage design
+### 1b. Stale-Row Cross-Reference (replaces the retired TestRail axis)
+The TestRail baseline corpus was migrated into `regression/suites/` and then **deleted from this repo**
+(commit `a8b7112c`, "Delete old test-rail CSV suites"). There is no TestRail export to diff against, so
+the `MIGRATION_GAP` / `SHALLOW_MIGRATION` categories are retired — do not reintroduce them, and do not
+cite `test-suites ( export from Test-rail )/`.
+
+The direction that axis was reaching for is now served by the *opposite* scan: not "what did we lose in
+migration" but "which existing rows does this change make WRONG":
+
+1. `npm run tc:scope -- --domain <d> --observable "<label>" [--oracle BL-*]` — which existing suite rows
+   the change puts at risk, and whether any of them will actually run.
+2. A row that asserts a behaviour the product no longer has is a **`STALE_COVERAGE`** finding, not a gap.
+   Route it to `/qa-review-tests --fix` (the sole owner of citation and row repair) — never author a new
+   case over the top of a stale one, which leaves both.
+3. `/qa-review-tests --triangulate` (Dimension 11) is the deeper form: docs + live + source per row.
+   See [`triangulation-criteria.md`](../qa-review-tests/triangulation-criteria.md).
 
 ### 2. Coverage Depth Assessment
 Even when test cases exist, assess depth:
@@ -46,7 +54,8 @@ Even when test cases exist, assess depth:
 
 **Tie-breakers** (when two gaps are within ±0.5):
 1. Defer to `/qa-risk` 5×5 matrix (likelihood × impact)
-2. Prefer the gap that closes a `MIGRATION_GAP` over one that adds new depth
+2. Prefer the gap that repairs a `STALE_COVERAGE` row over one that adds new depth — a wrong assertion
+   costs a reviewer on every run, a missing one costs nothing until the bug ships
 3. Prefer the gap with a documented `BL-*` invariant over one without
 
 ### 4. Gap Categories
@@ -59,21 +68,18 @@ Even when test cases exist, assess depth:
 | `MISSING_INTEGRATION` | Feature works alone, not tested in flow | Search tested, but not "search → add to cart → checkout" |
 | `MISSING_CROSS_DOMAIN` | No cascade verification | Admin price change not verified on storefront |
 | `MISSING_LAYER` | Layer-specific coverage absent | xAPI mutation has UI test but no GraphQL-runner test |
-| `STALE_COVERAGE` | Tests exist but may be outdated | Test references removed UI element |
-| `MIGRATION_GAP` | Test exists in TestRail export but missing from regression suites | TestRail has "C389061 Registration form > PERSONAL" but no match in `Frontend/auth/032-registration.csv` |
-| `SHALLOW_MIGRATION` | Regression case exists but lost depth vs TestRail original | TestRail has 5 steps with assertions, regression has 2 steps |
+| `STALE_COVERAGE` | Tests exist but assert behaviour the product no longer has | Row asserts a removed UI element or a renamed label. Repair via `/qa-review-tests --fix`; do not author over it |
 
 ## Test Case Generation Rules
 
 ### Format Contract
 Every generated case MUST conform to [`test-case-template.md`](../qa-test-cases-generator/test-case-template.md) — the 15-column enriched CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status).
 
-**For Backend/graphql/* suites (`050a`–`050k`):** authoring contract is [`graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) — runner-native tags only (`[AUTH]/[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP|EXEC|CAPTURE]/[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`). Browser-mode `[GQL]` tags are invalid in these suites.
+**For the `050*` Backend/graphql sub-suites:** authoring contract is [`graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) — runner-native tags only (`[AUTH]/[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP|EXEC|CAPTURE]/[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]`). Browser-mode `[GQL]` tags are invalid in these suites.
 
 ### ID Assignment
-- Use domain prefix + sequential number: `{DOMAIN}-{NNN}`
-- Start numbering after the highest existing ID in the target suite
-- Domain prefixes follow `feature-domain-map.md` (e.g., `CART-`, `CHK-`, `QUOTE-`, `BULK-`, `DASH-`, `CFG-`)
+- Use domain prefix + sequential number: `{DOMAIN}-{NNN}` (e.g. `CART-`, `CHK-`, `QUOTE-`, `BULK-`, `DASH-`, `CFG-`) — take the prefix from the rows already in the target suite.
+- **Case IDs are unique CORPUS-WIDE, not per suite.** Do not number off “the highest existing ID in the target suite” — allocate a disjoint block up front with `npm run tc:alloc -- --prefix <PREFIX> --count <n>` and append with `--check-global-ids`. A cross-suite duplicate silently overwrites the other suite’s per-case results and failure evidence at run time, and surfaces weeks later as a confusing regression report. Enforced corpus-wide by `npm run suites:lint`.
 
 ### Mandatory Column Population
 - **`Business_Rule`** — at least one `BL-*` invariant from `business-logic.md` (the rule being verified). Empty `Business_Rule` is a review failure.
@@ -107,7 +113,7 @@ Each generated case must satisfy:
 - [ ] Preconditions describe user state, data requirements, env requirements
 - [ ] `Failure_Signals` lists observable signals
 - [ ] `Cleanup` populated when entities are created
-- [ ] `Automation_Status` initialized to `pending` (becomes `validated`/`needs-review` after Cycle 3)
+- [ ] `Automation_Status` is `Draft` — and stays `Draft` through Cycle 3. The enforced vocabulary is `Draft | Reviewed | Automated | Manual | Semi-Automated` (`lint-test-cases.ts`, `S-006`); `pending` / `validated` / `needs-review` are not values and fail the lint on every row. Promotion is `/qa-test-lifecycle` 6P or `/qa-regression` 6.5, never this skill.
 - [ ] No semantic duplicate of an existing case in the target suite (matching `Title + Section` OR `Steps + Assertions`)
 
 ## Validation Protocol
@@ -120,17 +126,19 @@ Each generated case must satisfy:
 5. If a step fails:
    - Capture screenshot + console + network HAR per `skills/qa-evidence/evidence-capture-policy.md`
    - Determine whether it's a test-case defect or an app bug
-   - Test-case defect → revise once and re-run; if still failing, mark `Automation_Status = needs-review` with a Failure_Signal note
-   - App bug → mark `Automation_Status = validated` (test correctly caught the bug) and file a bug report
-6. Record outcome in `Automation_Status`.
+   - Test-case defect → revise once and re-run; if still failing, leave it `Draft`, write the observed signal into `Failure_Signals`, and list it in the report
+   - App bug → the case is correct and caught a real regression: leave it `Draft`, ground its assertions `{OBSERVED}`, and file a bug report
+6. Record the outcome as assertion **provenance** (`{OBSERVED}` on the lines actually seen live), not as a status change. `Automation_Status` does not move in this skill.
 
-### GraphQL Runner Validation (Backend/graphql/050a-k)
-1. Execute via `npx tsx scripts/graphql/graphql-runner.ts --case <csv>:<ID>` — never via custom JS scripts (see `feedback_use_canonical_graphql_runner` memory).
+### GraphQL Runner Validation (the `050*` Backend/graphql sub-suites)
+1. Execute via the canonical runner `scripts/graphql/graphql-runner.ts` — **never** a hand-written JS script. Authoring grammar: [`graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md).
 2. The runner performs schema validation, variable substitution, and evidence capture automatically.
 3. Failure recovery: same as browser validation but without screenshots.
 
 ### Static Validation (always)
-- `npx tsx scripts/test-data/validate-td-refs.ts` — every `@td()` reference must resolve. Failure blocks Cycle 3.
+- `npm run td:validate` — every `@td()` reference must resolve, and no case may carry a literal evidence-output path (`DV-024`). Failure blocks Cycle 3.
+- `npm run suites:lint` — manifest sync + corpus-wide unique case IDs.
+- `npm run suites:review` — case lint: column schema, the `S-006` status vocabulary, `GRD-*` assertion grounding.
 - For suites in critical-UI scope: `npm run scope:validate` must exit 0 before Cycle 4 commits.
 
 ### Cleanup
@@ -148,7 +156,7 @@ Per `.claude/rules/test-data.md`:
 
 | Layer | Source | Use for |
 |-------|--------|---------|
-| `{{VAR}}` | `.env` (33 vars) | URLs, credentials, store/culture context |
+| `{{VAR}}` | the layered `.env` loader (`npm run env:check`) | URLs, credentials, store/culture context |
 | `@td(ALIAS.field)` | `test-data/aliases.json` → CSV row | Named entities asserted by name (canonical product, known coupon, fixed org) |
 | `live-discover` | `scripts/lib/live-discover.ts` or `[GQL-OP]+[GQL-CAPTURE]` | Drifting entities — assert shape, not exact values |
 | `random-data` | `scripts/lib/random-data.ts` | Unique inputs (emails, org names, comments) — `AGENT-TEST-` prefix by default |
@@ -179,7 +187,7 @@ reporting all consume `gap-inventory.json`; none of them re-reads the suites.
 **Sources (read in this order):**
 
 1. **Current regression coverage** — every suite CSV referenced in `config/test-suites.json` (`suites[*].file`). Routing fields: `domain`, `layer`, `concern`, `priority`.
-2. **Baseline TestRail exports** — `test-suites ( export from Test-rail )/` (Frontend26-02, frontend-26-01, suites/, Backend (admin site)/, E2E/) — flag `MIGRATION_GAP` / `SHALLOW_MIGRATION` per `coverage-gap-methodology.md` §1b.
+2. **Existing rows the change puts at risk** — `npm run tc:scope -- --domain <d> --observable "<label>"`. Flag `STALE_COVERAGE` per §1b and route repairs to `/qa-review-tests --fix`; never author over a stale row.
 3. **Feature inventory** — all of:
    - `knowledge/oracles/business-logic.md` (`BL-*` invariants)
    - `knowledge/oracles/e-commerce-edge-cases-library.md` (`ECL-*`)
@@ -187,7 +195,7 @@ reporting all consume `gap-inventory.json`; none of them re-reads the suites.
    - `knowledge/execution/module-suite-map.md`
    - `knowledge/api/graphql-schema.md`
    - `knowledge/domain/products.md`, `catalog.md`, `store-settings.md`
-   - `skills/qa-plan/e2e-scenario-catalog.md` (105 E2E scenarios)
+   - `skills/qa-plan/e2e-scenario-catalog.md` (the E2E scenario catalog — its own header derives the count; never quote one)
    - `skills/qa-checklist/domain-checklists.md` (UI/UX)
    - `skills/qa-checklist/backend-admin-checklists.md`
    - `skills/qa-checklist/graphql-checklist.md`
@@ -210,22 +218,22 @@ reporting all consume `gap-inventory.json`; none of them re-reads the suites.
 
 **Output (Definition of Done for Step 1):**
 
-- `reports/coverage/{RUN_ID}/gap-inventory.json` — one record per gap:
+- `reports/coverage/COV-YYYY-MM-DD-HHMM/gap-inventory.json` — one record per gap:
   ```json
   {
     "gapId": "GAP-001",
     "manifestDomain": "purchase-flow",
     "feature": "Cart line-item quantity stepper",
-    "gapCategory": "SHALLOW_HAPPY|MISSING_NEGATIVE|MIGRATION_GAP|...",
+    "gapCategory": "ZERO_COVERAGE|SHALLOW_HAPPY|MISSING_NEGATIVE|MISSING_INTEGRATION|MISSING_CROSS_DOMAIN|MISSING_LAYER|STALE_COVERAGE",
     "priorityScore": 8.4,
     "priority": "P0|P1|P2",
     "applicableLayers": ["storefront","graphql","e2e"],
     "targetSuites": ["028","029","050b1"],
     "businessRules": ["BL-CART-003"],
     "edgeCases": ["ECL-PAY-002"],
-    "context7Findings": "…",
-    "source": "live-coverage|testrail-export|knowledge-file|vc-docs"
+    "docsFindings": "…",
+    "source": "live-coverage|knowledge-file|domain-map|vc-docs"
   }
   ```
-- A short markdown digest at `reports/coverage/{RUN_ID}/gap-analysis.md` (top 20 gaps, totals per priority, per manifest domain, per gap category).
+- A short markdown digest at `reports/coverage/COV-YYYY-MM-DD-HHMM/gap-analysis.md` (top 20 gaps, totals per priority, per manifest domain, per gap category).
 

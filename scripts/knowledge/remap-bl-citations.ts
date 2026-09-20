@@ -34,7 +34,21 @@
  *   - Dry by default; `--apply` writes.
  *   - Touches the `Business_Rule` cell and nothing else — verified cell-by-cell after write.
  *   - Preserves each file's own line endings (075-loyalty.csv is LF-only; the rest are CRLF).
+ *   - Preserves each file's UTF-8 BOM (13 of 143 suites carry one) — see BOM note below.
  *   - Never renumbers, never edits another column, never creates a row.
+ *   - NEVER skips a suite silently. A file this tool cannot read, or whose header it does
+ *     not recognise, is REPORTED as `unreadable`, never folded into a zero count.
+ *
+ * THE BOM INCIDENT (2026-09-19) — why the two rules above are load-bearing.
+ *   `fs.readFileSync(f, "utf8")` does NOT strip a UTF-8 BOM, so the first header cell parsed
+ *   as `"﻿ID"` and `h.indexOf("ID")` returned -1. The `if (ci < 0 || ii < 0) continue;`
+ *   guard then dropped all 13 BOM-carrying suites — SILENTLY. `bl:lint` (which parses through
+ *   `parseSuite`, taught `bom: true` after the same class of bug cost it 3 false BLC-004
+ *   findings) reported BL-CFG-003 cited by 4 cases in 072e; this tool reported
+ *   "0 case(s) in 0 file(s)" for the identical id. Two tools, one corpus, opposite answers —
+ *   and the one that said zero said it with no caveat, so the citations were left baselined
+ *   as un-burnable debt. A zero from a tool that cannot say which files it failed to read is
+ *   not a measurement.
  *
  * USAGE
  *   npm run bl:remap -- --propose BL-L10N-001
@@ -44,6 +58,7 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const ORACLE = ".claude/knowledge/oracles/business-logic.md";
 const SUITES = "regression/suites";
@@ -55,29 +70,92 @@ const val = (n: string): string | null => {
   return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[i + 1] : null;
 };
 
-/* ── CSV, line-ending preserving ─────────────────────────────────────────── */
-function parse(s: string): string[][] {
-  const rows: string[][] = [];
-  let f = "", r: string[] = [], q = false;
+/* ── CSV, line-ending AND quoting preserving ─────────────────────────────── */
+/**
+ * `quoted[i][j]` records whether cell j of row i was written with quotes in the SOURCE.
+ *
+ * Without it, `ser` re-quotes minimally and strips the quotes from every cell that does not
+ * strictly need them — which is most of them, since the corpus quotes every cell. Measured
+ * 2026-09-19 on 072e: changing 14 `Business_Rule` cells rewrote **111 of 111 lines** and
+ * dropped the file by 1,140 bytes, all of it quoting churn in columns this tool promises never
+ * to touch. The post-write verification did not catch it and could not: it compares PARSED
+ * values, which were identical — the right check for correctness, the wrong one for churn.
+ *
+ * Churn is not cosmetic here. A suite CSV has exactly ONE author for the duration of a change
+ * and a conflict in one is never resolved with git (`.claude/rules/regression.md`), so a
+ * whole-file diff for a 14-cell edit is the difference between a reviewable change and an
+ * unmergeable one.
+ */
+export type Parsed = { rows: string[][]; quoted: boolean[][] };
+export function parse(s: string): Parsed {
+  const rows: string[][] = [], quoted: boolean[][] = [];
+  let f = "", r: string[] = [], rq: boolean[] = [], q = false, wasQuoted = false;
+  const endField = () => { r.push(f); rq.push(wasQuoted); f = ""; wasQuoted = false; };
+  const endRow = () => { endField(); rows.push(r); quoted.push(rq); r = []; rq = []; };
   for (let i = 0; i < s.length; i++) {
     const c = s[i];
     if (q) {
       if (c === '"') { if (s[i + 1] === '"') { f += '"'; i++; } else q = false; }
       else f += c;
     } else {
-      if (c === '"') q = true;
-      else if (c === ",") { r.push(f); f = ""; }
-      else if (c === "\r" && s[i + 1] === "\n") { r.push(f); f = ""; rows.push(r); r = []; i++; }
-      else if (c === "\n") { r.push(f); f = ""; rows.push(r); r = []; }
+      if (c === '"') { q = true; wasQuoted = true; }
+      else if (c === ",") endField();
+      else if (c === "\r" && s[i + 1] === "\n") { endRow(); i++; }
+      else if (c === "\n") endRow();
       else f += c;
     }
   }
-  if (f.length || r.length) { r.push(f); rows.push(r); }
-  return rows;
+  if (f.length || r.length) endRow();
+  return { rows, quoted };
 }
 const needsQuote = (v: string) => /[",\r\n]/.test(v);
-const ser = (rows: string[][], nl: string) =>
-  rows.map((r) => r.map((v) => (needsQuote(v) ? '"' + v.replace(/"/g, '""') + '"' : v)).join(",")).join(nl);
+export const ser = (p: Parsed, nl: string) =>
+  p.rows.map((r, i) => r.map((v, j) =>
+    (p.quoted[i]?.[j] || needsQuote(v)) ? '"' + v.replace(/"/g, '""') + '"' : v).join(",")).join(nl);
+
+/**
+ * Read a suite, separating its UTF-8 BOM from its content.
+ *
+ * The BOM must come OFF before parsing (or it glues itself to the first header cell and
+ * every `header.indexOf(…)` on column 0 returns -1) and go back ON before writing (these
+ * files carry it; this tool is not the place to decide they shouldn't).
+ */
+export function readSuite(file: string): { text: string; bom: string } {
+  const raw = fs.readFileSync(file, "utf8");
+  return raw.charCodeAt(0) === 0xfeff ? { text: raw.slice(1), bom: "﻿" } : { text: raw, bom: "" };
+}
+
+/**
+ * Suites this run did not scan, in two classes that must never be printed as one.
+ *
+ *   `legacy`     — the 11-column legacy header (`Expected Result`, no `Business_Rule`).
+ *                  A KNOWN corpus class (`regression-lanes.md` §274 UNROUTABLE), so it carries
+ *                  no BL citation by construction. Counted, named on request, exit 0.
+ *   `unreadable` — anything else: unparsable, or a `Business_Rule` column with no `ID` column.
+ *                  A real anomaly. Named every time, exit 1.
+ *
+ * They are split because a warning that fires on every run is a warning nobody reads, and the
+ * one finding that matters would then arrive wearing the same colour as eleven that don't.
+ */
+const legacy: string[] = [];
+const unreadable: { file: string; why: string }[] = [];
+
+function reportSkips(): void {
+  if (legacy.length) console.log(`(${legacy.length} legacy-header suite(s) carry no Business_Rule column — nothing to cite there${flag("--verbose") ? ": " + legacy.map((f) => path.basename(f)).join(", ") : "; --verbose to name them"})`);
+  if (!unreadable.length) return;
+  console.error(`\n⚠ ${unreadable.length} suite(s) NOT scanned — the counts above exclude them:`);
+  for (const u of unreadable) console.error(`    ${path.relative(process.cwd(), u.file)} — ${u.why}`);
+  console.error("  A citation living only in one of these is invisible to this tool. Fix the file, then re-run.");
+}
+
+/** Classify a header: returns the two column indexes, or records the skip and returns null. */
+function columns(file: string, h: string[]): { ci: number; ii: number } | null {
+  const ci = h.indexOf("Business_Rule"), ii = h.indexOf("ID");
+  if (ci >= 0 && ii >= 0) return { ci, ii };
+  if (ci < 0 && ii >= 0) { legacy.push(file); return null; }
+  unreadable.push({ file, why: ci < 0 ? `header has neither Business_Rule nor ID (got: ${h.slice(0, 5).join(", ")}…)` : `has Business_Rule but no ID column (got: ${h.slice(0, 5).join(", ")}…)` });
+  return null;
+}
 
 function walkCsv(dir: string, out: string[] = []): string[] {
   for (const name of fs.readdirSync(dir)) {
@@ -109,6 +187,10 @@ function citedIn(cell: string): string[] {
 }
 
 /* ── main ────────────────────────────────────────────────────────────────── */
+// Guarded so scripts/unit can import the pure derivations above without the CLI
+// scanning the corpus and calling process.exit() on import (lint-bl.ts does the same).
+const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isCli) {
 const ids = oracleIds();
 const files = walkCsv(SUITES);
 const APPLY = flag("--apply");
@@ -117,9 +199,10 @@ if (flag("--list")) {
   const byId = new Map<string, string[]>();
   for (const file of files) {
     let rows: string[][];
-    try { rows = parse(fs.readFileSync(file, "utf8")); } catch { continue; }
-    const h = rows[0]; const ci = h.indexOf("Business_Rule"), ii = h.indexOf("ID");
-    if (ci < 0 || ii < 0) continue;
+    try { rows = parse(readSuite(file).text).rows; } catch (e) { unreadable.push({ file, why: `unparsable (${(e as Error).message})` }); continue; }
+    const cols = columns(file, rows[0] ?? []);
+    if (!cols) continue;
+    const { ci, ii } = cols;
     for (const r of rows.slice(1)) {
       if (r.length <= ci) continue;
       for (const ref of citedIn(r[ci] ?? "")) {
@@ -131,7 +214,8 @@ if (flag("--list")) {
   const sorted = [...byId.entries()].sort((a, b) => b[1].length - a[1].length);
   console.log(`dangling BL ids: ${sorted.length} · citing cases: ${sorted.reduce((n, [, v]) => n + v.length, 0)}`);
   for (const [id, cases] of sorted) console.log(`  ${id.padEnd(16)}${String(cases.length).padStart(4)}  ${cases.slice(0, 4).join(", ")}${cases.length > 4 ? ", …" : ""}`);
-  process.exit(0);
+  reportSkips();
+  process.exit(unreadable.length ? 1 : 0);
 }
 
 const from = val("--from"), to = val("--to"), propose = val("--propose"), drop = val("--drop");
@@ -158,13 +242,17 @@ if (modes[0] === "remap") {
 
 let touchedFiles = 0, touchedCases = 0;
 for (const file of files) {
-  const raw = fs.readFileSync(file, "utf8");
+  let raw: string, bom: string;
+  try { ({ text: raw, bom } = readSuite(file)); } catch (e) { unreadable.push({ file, why: `unreadable (${(e as Error).message})` }); continue; }
   const nl = raw.includes("\r\n") ? "\r\n" : "\n";
   const trailing = raw.endsWith(nl) ? nl : "";
-  const rows = parse(raw);
+  const parsed = parse(raw);
+  const rows = parsed.rows;
   const before = JSON.stringify(rows);
-  const h = rows[0]; const ci = h.indexOf("Business_Rule"), ii = h.indexOf("ID");
-  if (ci < 0 || ii < 0) continue;
+  const h = rows[0] ?? [];
+  const cols = columns(file, h);
+  if (!cols) continue;
+  const { ci, ii } = cols;
 
   const hits: string[] = [];
   for (const r of rows.slice(1)) {
@@ -182,9 +270,9 @@ for (const file of files) {
   console.log(`  ${path.basename(file).padEnd(46)}${String(hits.length).padStart(3)}  ${hits.slice(0, 6).join(", ")}${hits.length > 6 ? ", …" : ""}`);
 
   if (APPLY) {
-    fs.writeFileSync(file, ser(rows, nl) + trailing);
+    fs.writeFileSync(file, bom + ser(parsed, nl) + trailing);
     // verify: only Business_Rule cells moved
-    const after = parse(fs.readFileSync(file, "utf8"));
+    const after = parse(readSuite(file).text).rows;
     const b = JSON.parse(before) as string[][];
     for (let i = 0; i < b.length; i++)
       for (let j = 0; j < b[i].length; j++)
@@ -199,3 +287,6 @@ const verb = modes[0] === "remap" ? `${target} → ${replacement}` : modes[0] ==
 console.log(`\n${verb}`);
 console.log(`${touchedCases} case(s) in ${touchedFiles} file(s)${APPLY ? " — WRITTEN" : " — dry run, nothing written (add --apply)"}`);
 if (APPLY) console.log("re-gate with: npm run bl:lint && npm run suites:lint && npm run td:validate");
+reportSkips();
+if (unreadable.length) process.exit(1);
+}

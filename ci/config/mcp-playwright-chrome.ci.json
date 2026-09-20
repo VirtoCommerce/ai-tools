@@ -20,7 +20,7 @@
       "timezoneId": "America/New_York",
       "recordHar": {
         "path": "./test-results/chrome/trace.har",
-        "omitContent": true
+        "content": "embed"
       }
     }
   },

@@ -29,134 +29,134 @@
   },
   "WL_ELECTRONICS_PLATFORM_ID": {
     "_inline": true,
-    "id": "23b672d6-c27e-49a9-8741-4489960058d9",
+    "id": "bf8538bd-ecf5-421b-b7c2-b6380c01b324",
     "fields": {
       "id": "id"
     }
   },
   "WL_FASHION_PLATFORM_ID": {
     "_inline": true,
-    "id": "bf48ab7c-fc68-447d-afba-a8b2b302c008",
+    "id": "c3618c26-2e67-4c46-8734-025306201e93",
     "fields": {
       "id": "id"
     }
   },
   "WL_DEFAULT_PLATFORM_ID": {
     "_inline": true,
-    "id": "94f014b8-326f-4606-9dc5-3491e376c696",
+    "id": "90307ef8-c79a-4cc0-b13d-6a77c2c59da5",
     "fields": {
       "id": "id"
     }
   },
   "WL_MENU_ONLY_PLATFORM_ID": {
     "_inline": true,
-    "id": "bab6848b-0023-49cc-a65b-897e252ca2e7",
+    "id": "97b4f509-7e06-438f-b54e-bf87788f4276",
     "fields": {
       "id": "id"
     }
   },
   "WL_FOOTER_ONLY_PLATFORM_ID": {
     "_inline": true,
-    "id": "0cefa0d2-61aa-49a8-9406-eaf0c00de17c",
+    "id": "f0c69434-043b-4732-8ec0-7312732705ea",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_ELECTRONICS_PLATFORM_ID": {
     "_inline": true,
-    "id": "4c18a609-22e3-4f68-a2ea-308877647447",
+    "id": "cd3cf667-6777-4e8d-8c23-1828c68ed7e9",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_FASHION_PLATFORM_ID": {
     "_inline": true,
-    "id": "8c08de10-5923-4f76-996e-cfee21c7131d",
+    "id": "c446cbd1-3ea6-42dc-a669-6a954faa940d",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_DEFAULT_PLATFORM_ID": {
     "_inline": true,
-    "id": "3b9bf870-a6ee-4577-9655-4af21b95b577",
+    "id": "1fce2baa-f002-48bb-a7ca-9c8661f7ed8d",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_MULTI_PLATFORM_ID": {
     "_inline": true,
-    "id": "705845b6-29d5-4581-8116-292b051da2d6",
+    "id": "d75ce476-d744-4cae-90a5-91009a03fb5e",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_MENU_ONLY_PLATFORM_ID": {
     "_inline": true,
-    "id": "27acd245-f08c-46b4-b33b-bd85d08a4a7d",
+    "id": "f745018d-29cd-4faa-aff3-9c9904a626ae",
     "fields": {
       "id": "id"
     }
   },
   "WL_USER_FOOTER_ONLY_PLATFORM_ID": {
     "_inline": true,
-    "id": "5e903d4f-680b-42a0-9ac6-feba3f85c99b",
+    "id": "582843f2-7ad5-4d11-b72c-e780c6c71a65",
     "fields": {
       "id": "id"
     }
   },
   "ACME_ADMIN": {
-    "platform_id": "61ef67a6-3c90-4bb8-a1a4-7a559d55be03"
+    "platform_id": "2d73a81f-7b84-4c6d-9579-fba8c1cc13f0"
   },
   "ACME_BUYER": {
-    "platform_id": "b4f106de-9d0f-4beb-8e88-98f8c4aa3b6f"
+    "platform_id": "599f8cf1-e324-4145-aa00-f4fa475db3cc"
   },
   "ACME_VIEWER": {
-    "platform_id": "b7241e80-1640-43f2-a89b-fac35aca0617"
+    "platform_id": "57919bac-b668-4e8b-93ec-b79834b4b940"
   },
   "ACME_BUYER2": {
-    "platform_id": "63ff72c4-f47f-4eca-b109-283b79999e47"
+    "platform_id": "2f333533-b949-41cb-bac9-08ca83721122"
   },
   "TECHFLOW_ADMIN": {
-    "platform_id": "68fed13a-6946-4bc0-93a0-9dc9c970d4b0"
+    "platform_id": "852c8fcc-9b29-45c3-8328-021a01537659"
   },
   "TECHFLOW_BUYER": {
-    "platform_id": "557dee63-a7ea-4932-9ef2-3635f353e7a2"
+    "platform_id": "2f917069-fea7-4a6a-8d80-0899aa0a0586"
   },
   "BUILDRIGHT_ADMIN": {
-    "platform_id": "7194fb2c-0660-4738-9692-4db20b5cec10"
+    "platform_id": "1702e815-1cb0-4539-bfe2-1bacf9a7e128"
   },
   "ACMEWEST_ADMIN": {
-    "platform_id": "75e7edda-ff40-4ba3-b46f-af952b62a13e"
+    "platform_id": "23237b18-0665-42ef-b1e6-d72662d17a6b"
   },
   "EU_ADMIN": {
-    "platform_id": "589cbeac-61cf-435c-8cb6-1d0eb24cfbaa"
+    "platform_id": "eb81750a-d7b1-4a9f-bb50-08cddcea0193"
   },
   "SUPPORT_AGENT": {
-    "userId": "61ef67a6-3c90-4bb8-a1a4-7a559d55be03"
+    "userId": "2d73a81f-7b84-4c6d-9579-fba8c1cc13f0"
   },
   "NO_IMPERSONATE_OPERATOR": {
-    "userId": "92e91bc6-4748-4b13-80fe-73e474c460f2"
+    "userId": "208b7637-53ed-4ef8-bc25-d05004396307"
   },
   "IMPERSONATE_TARGET": {
-    "userId": "557dee63-a7ea-4932-9ef2-3635f353e7a2"
+    "userId": "2f917069-fea7-4a6a-8d80-0899aa0a0586"
   },
   "IMPERSONATION_ADMIN": {
-    "userId": "8e25e574-18e5-441d-8d52-6512035ac186"
+    "userId": "344bf0ec-910e-40ba-8816-60b0b1c7fd63"
   },
   "OTHER_ORG_USER": {
-    "userId": "7194fb2c-0660-4738-9692-4db20b5cec10"
+    "userId": "1702e815-1cb0-4539-bfe2-1bacf9a7e128"
   },
   "USER_EUR": {
-    "platform_id": "589cbeac-61cf-435c-8cb6-1d0eb24cfbaa"
+    "platform_id": "eb81750a-d7b1-4a9f-bb50-08cddcea0193"
   },
   "IMPERSONATE_TARGET_MANY_ORGS": {
-    "userId": "901c2e29-7449-4253-ba10-b06edbd07439"
+    "userId": "0a8bd753-753b-4816-84ce-3cd631eda96e"
   },
   "IMPERSONATE_TARGET_BLOCKED": {
-    "userId": "7bc13fe1-fd17-4182-a83c-983189dff115"
+    "userId": "7721691a-54c4-4f8d-be3b-a29eee0a33c1"
   },
   "IMPERSONATE_TARGET_INVITED": {
-    "userId": "232c2d6a-fda0-4650-81f9-6dcdd1141f99"
+    "userId": "58fb02d6-a4b9-4294-b162-74edf5cf9822"
   },
   "CFG_LAPTOP": {
     "id": "fecfe693-f555-40aa-bac7-751ee9b5d6c9"
@@ -593,7 +593,7 @@
     "user_id": "281beb5a-b753-48cd-a884-fa429c0ad997"
   },
   "SR_OWNER_ACME": {
-    "id": "c904b3f8-203d-4ce4-aead-2a6661d3a6d3"
+    "id": "5c357a1c-af00-4865-82b0-ac12a41897a0"
   },
   "COMPLETED_ORDER": {
     "id": "51cc5eb9-23d4-47fe-b46d-36e03dc53b2f",
@@ -729,10 +729,10 @@
     "securityAccountId": "e383066c-56dc-4ff2-8e92-3c5a3a1329bd"
   },
   "MULTI_ORG_TF_BR": {
-    "id": "85d1aeea-ee57-4041-9c18-c16431fe23ec",
-    "userId": "5a0acc93-a0b9-4a6d-9904-f3c9a91c0411",
-    "techflow_membership_id": "65f9e33ea90b4bbfbea94ac6a7b2725c",
-    "buildright_membership_id": "4b1a9cd9160245969cdf3c3ce2ceb242"
+    "id": "83637bb5-6c0f-4e8d-b5ea-dff81d69fd38",
+    "userId": "7b2e4258-498a-49c8-b483-92df9da59807",
+    "techflow_membership_id": "a44e7c12-c80c-4314-b8eb-eeca8cf3f19a",
+    "buildright_membership_id": "f60c7a58-233a-458c-b2f4-c01200f53b01"
   },
   "BUYABLE_SIBLING_B2B": {
     "id": "eae298de-0997-44d2-8b35-88e5512dbbe2"
@@ -811,39 +811,39 @@
     "role_id": "AGENT-TEST-Catalog-Read-Only"
   },
   "MULTI_ORG_TF_BR_ALT": {
-    "id": "00c67615-6c74-4d9c-86a2-a524f789d5d0",
-    "userId": "76c999e3-cb45-49d9-b128-880a553706df",
-    "techflow_membership_id": "9fbdf17a-4909-41b7-a5a7-9318c3b9977b",
-    "buildright_membership_id": "a051055a-cc64-4c53-ba7a-556cefae51d7"
+    "id": "bdbfa831-273e-4a99-8c4c-b78e4a2fc095",
+    "userId": "10e89afb-7bdd-4839-a332-fc67f7f41f62",
+    "techflow_membership_id": "a4e709c6-712a-46d3-bc85-ff80cf3f7cac",
+    "buildright_membership_id": "c7d7bf08-5239-4b78-88b9-bd41e84d4596"
   },
   "ORG_TF_ONLY_INVITEE": {
-    "id": "2478ecf7-8758-403b-bd6e-29e6eb8c5918",
-    "userId": "676bcb98-326f-412c-98a1-a5e9f7c3106f",
-    "techflow_membership_id": "f3fa0bfc-9bc9-4934-9e49-c75ec07d7921"
+    "id": "15042700-2fc5-485f-9ce5-9cb0cd489eec",
+    "userId": "2e5c7b95-68b6-4dbf-879b-430810ad4c40",
+    "techflow_membership_id": "88472c89-1696-44c6-b6aa-92e06c1faee1"
   },
   "ORG_TF_ONLY_STATUS": {
-    "id": "99d292cf-5e77-45d0-867f-177104b725d6",
-    "userId": "78ab9180-95d2-42e1-a8f6-813ef5afe537",
-    "techflow_membership_id": "5341de0d-9ae8-4f12-97df-8baa9d1653ee"
+    "id": "1330aead-4419-42be-a412-56dba4c81965",
+    "userId": "8f40b03e-0002-40bf-89d9-014010e34ef7",
+    "techflow_membership_id": "4991e16d-a3cf-4c1a-be3a-3e70b47a0c74"
   },
   "ORG_ASSOC_ONLY_NO_GLOBAL": {
-    "userId": "8e6be1f3-9e3d-44ae-afdb-cc62808288d0",
-    "contactId": "ef12937d-acff-47bd-8da6-722d4f83bfee"
+    "userId": "5b3365b0-7389-42db-b46a-8f53fa17df50",
+    "contactId": "1058e31b-6283-41a3-a576-f9d66e1482e0"
   },
   "ORG_TF_MBR_INVITED": {
-    "id": "99fecdc7-4837-4c54-b87c-dc414d029196",
-    "userId": "396573f8-b196-49bd-b212-60375280395b",
-    "techflow_membership_id": "86fc6337-ace6-4e39-af86-56681175e107"
+    "id": "b03ae73f-2bfc-4c83-8dfa-7d058e8e54a9",
+    "userId": "4349a2f9-0000-4210-aac0-b9500c41ea38",
+    "techflow_membership_id": "a2102fcc-c753-40c8-85e0-59780ab69dec"
   },
   "ORG_TF_MBR_REJECTED": {
-    "id": "97fa0167-76ac-4a98-a9cb-d6555b6ae7a0",
-    "userId": "909646c5-9441-428a-83a9-7079678b6e84",
-    "techflow_membership_id": "a39cf40d-53dd-45d5-8b63-6dcb5ca6cdbf"
+    "id": "772c3505-cf3e-4969-850d-ef975b49cada",
+    "userId": "b8619a21-c856-4fcb-b00b-c1f3428c55ed",
+    "techflow_membership_id": "4ea2fe3b-71ce-4c4b-ba44-5a8e252c505b"
   },
   "ORG_TF_MBR_DELETED": {
-    "id": "fcf45a2e-ab76-4ec1-a052-6a942abbe0b6",
-    "userId": "7bf5e44b-7fbd-4e12-9234-fc921098abbc",
-    "techflow_membership_id": "0016c3c6-a927-4fbe-98f0-978b7033425a"
+    "id": "6290a083-1579-44d6-b731-24766325f06c",
+    "userId": "f64b52b2-ffd5-42c3-a924-e6e0b762d660",
+    "techflow_membership_id": "108f48d7-7a19-4d10-badf-11185fcee61b"
   },
   "SR_REP_LAYOUT": {
     "id": "f7ab0294-bbda-41ca-918b-027d725e3a71",
@@ -854,11 +854,11 @@
     "number": "AGENT-TEST-SRO-STATS-TOPSELLERS"
   },
   "SR_STATS_CART_ACME": {
-    "id": "0fe1d98e-5a32-4a02-bbd1-b76271fa7d01",
+    "id": "54f8d2f6-7c18-41e4-b15c-2578dfeba0e2",
     "name": "AGENT-TEST-SR-CART-ACME"
   },
   "SR_STATS_CART_WEST": {
-    "id": "48179101-3946-4d16-835f-1d15ebd4649d",
+    "id": "c6626374-2688-4d99-9d98-6cb6069561a9",
     "name": "AGENT-TEST-SR-CART-WEST"
   },
   "LOYALTY_ZERO_USER": {
@@ -1378,9 +1378,9 @@
     "customerId": "31c6feef-f7b2-46ae-a965-1b94280e7ef0"
   },
   "ORDER_BUYER_PLACED": {
-    "id": "ebcd0f13-7dca-498d-96a1-1b4d2ec65dac",
-    "createdDate": "2026-09-02T15:52:24.7805952Z",
-    "customerId": "557dee63-a7ea-4932-9ef2-3635f353e7a2"
+    "id": "2d1ff582-9b63-4509-9c5f-ea9ed57cb2c5",
+    "createdDate": "2026-09-19T08:53:08.4636076Z",
+    "customerId": "2f917069-fea7-4a6a-8d80-0899aa0a0586"
   },
   "ORDER_NOT_SERVED": {
     "id": "d0af627e-373a-42db-b156-c6dbab15f40f",
@@ -1605,5 +1605,14 @@
   "SR_I18N_SINGULAR_CART": {
     "id": "e37c4c44-23fb-406f-a16f-f8d05a23f408",
     "name": "AGENT-TEST-SR-CART-I18N-ACME3"
+  },
+  "B2B_STORE_MEMBERSHIP_ROLES": {
+    "pre_state": "[\"Organization employee\"]",
+    "captured_at": "2026-09-18T18:54:32.537Z",
+    "seeded_values": "Organization employee;Purchasing agent;Organization maintainer;Sales Representative;Advanced Sales Representative",
+    "sales_rep_roles": "Sales Representative;Advanced Sales Representative",
+    "seeded_values_json": "[\"Organization employee\",\"Purchasing agent\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\"]",
+    "narrowed_values": "[\"Organization employee\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\"]",
+    "narrowed_omitted_role": "Purchasing agent"
   }
 }

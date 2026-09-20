@@ -1,3 +1,17 @@
+> ## REJECTED — BY DESIGN (2026-09-19)
+> **Not a defect.** Product-owner ruling: a guest placing an order through an `allowCartPayment` card
+> gateway with no cart-side card form and no processor authorization is the **intended** guest path —
+> the order is booked unpaid (`status: "Payment required"`, `isApproved: false`) and payment is settled
+> afterwards. The two `isAuthenticated.value &&` prefixes below are the design, not a hole, and
+> `BL-PAY-001` is stated for the **authenticated** path only.
+>
+> Everything below is retained as the (incorrect) original analysis. **Do not re-file this.** It has been
+> rediscovered at least three times — 2026-07-22 (Authorize.Net `CO260722-00003`), 2026-08-26 (source
+> re-verify), 2026-09-19 (CyberSource `CO260919-00010`, `PAY-GUEST-001`). Suite cases asserting a
+> disabled "Place order" for guests on a card gateway encode the wrong expectation and need repair.
+
+---
+
 # Guest completes an order through a bank-card gateway with ZERO card data (payment guard skipped for guests) `[P0-revenue]`
 
 **Env:** vcst-qa storefront @ Theme 2.54.0-pr-2382 (Edge/Chromium)

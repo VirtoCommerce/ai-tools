@@ -13,7 +13,7 @@
       "locale": "en-US",
       "recordHar": {
         "path": "./test-results/chrome/har/session.har",
-        "omitContent": true
+        "content": "embed"
       },
       "recordVideo": {
         "dir": "./test-results/chrome/video",
