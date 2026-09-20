@@ -73,6 +73,8 @@ Then, in your report:
 For any Virto Commerce concept, terminology, module behavior, API surface, or doc-voice question, query
 **VirtoOZ MCP first** (via the `/vc-docs` skill). Pick the topic-scoped tool:
 
+**One exception, and it is the one that bites a BA hardest: where the question is what the platform ACTUALLY DOES rather than what it is documented to do, ask `kb_ask` first** (`npm run kb -- ask "<q>"` needs no MCP server) — it is the banked result of a live check somebody already ran, on a named deployment. This matters here because **a released behaviour VirtoOZ documents WRONGLY is a finding**, and the base is where that divergence is already recorded if anybody has hit it. Put the coordinate in the question — endpoint, GraphQL operation, page path. Exit 1 = nobody wrote it down: find out, then `kb_capture`. **Contradicts an entry ⇒ `kb_dispute`, matches ⇒ `kb_confirm`** — never a second capture of the same fact. The base is PUBLIC, so no client or customer names. Full rule: [`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
+
 | Tool | Use for |
 |------|---------|
 | `StorefrontUserGuide` | shopper-facing terminology & flows (Customer docs) |

@@ -10,6 +10,7 @@
 | **postman** | API testing - collections, environments, monitors | N/A (uses `--minimal` flag) |
 | **github** | PR review, code search, issue management | N/A (uses `GITHUB_PERSONAL_ACCESS_TOKEN` via `GIT_TOKEN`) |
 | **context7** | Up-to-date library documentation lookup | N/A (HTTP MCP at `mcp.context7.com`, uses `CONTEXT7_API_KEY`) |
+| **kb** | What the platform was **OBSERVED** to do — `kb_ask` / `kb_show` / `kb_capture` / `kb_confirm` / `kb_dispute` against the public `VirtoCommerce/vc-knowledge` base. **The only server here nobody registers by hand:** the tracked `SessionStart` hook `.claude/hooks/kb-register.mjs` merges it into the local `.mcp.json` and `enabledMcpjsonServers` pre-approves it, so it binds after **one** restart (MCP binds *before* SessionStart hooks run — that restart is inherent, not a bug). Reads need **no token**. When to reach for it: [`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context* | N/A (`node scripts/kb/mcp.mjs`; `npm run kb:install` is the manual fallback, `npm run kb -- ask "<q>"` the no-server door) |
 
 Additional MCP servers (configured at user/IDE level, or — depending on your local `.mcp.json` — project-level; `.mcp.json` is gitignored and per-machine, so some of these may appear there too):
 - **Chrome DevTools MCP** - Console logs, network requests, performance tracing, HAR export
