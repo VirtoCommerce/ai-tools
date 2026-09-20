@@ -1,9 +1,9 @@
-# The two mirrored trees must check out with the SAME line endings, or `mirror:check` fails on
-# pairs whose CONTENT is identical. Root cause (measured 2026-09-09): git stores LF for all 427
-# text blobs in both trees, but with core.autocrlf=true a Windows checkout writes CRLF. Agents
-# then rewrite .claude/ files with LF while plugins/vc-fix/ keeps the CRLF it was checked out
-# with — so the trees drift on endings alone, with no commit and no content change. 29 pairs had
-# diverged this way. Pinning both trees to LF makes the checkout match what git already stores.
+# Pin both prompt trees to LF. Measured 2026-09-09: git stores LF for all 427 text blobs in both
+# trees, but with core.autocrlf=true a Windows checkout writes CRLF; agents then rewrite .claude/
+# files with LF while plugins/vc-fix/ keeps the CRLF it was checked out with, so the two drift on
+# line endings alone — no commit, no content change. 29 pairs had diverged that way. Pinning to LF
+# makes the checkout match what git already stores. (The `mirror:check` gate that surfaced this was
+# removed 2026-09-19; the churn it prevented is real regardless, so these rules stay.)
 .claude/** text eol=lf
 plugins/vc-fix/** text eol=lf
 

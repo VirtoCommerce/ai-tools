@@ -1,8 +1,9 @@
 // Unit tests for the Tier 0/1/2 span reconstruction + outcome classification rewrite
 // (VCST-5509) in plugins/vc-fix/hooks/session-telemetry.mjs. This targets plugins/vc-fix/ as
-// the CANONICAL copy; the .claude/ mirror is guaranteed byte-identical (incl. classify()/
-// detectStruggle()) by scripts/unit/mirror-parity.test.mjs, so exercising it here would be
-// redundant.
+// the CANONICAL copy. This used to be justified by scripts/unit/mirror-parity.test.mjs, which
+// held the .claude/ copy byte-identical (incl. classify()/detectStruggle()) — that gate was
+// REMOVED on 2026-09-19, so the .claude/ copy is now untested and may drift from this one
+// without anything noticing. Re-point or duplicate these tests if that copy starts mattering.
 //
 // Drives the ACTUAL hook script as a child process, exactly as Claude Code's hook runner
 // does: one `node session-telemetry.mjs <subcommand>` invocation per hook firing, JSON event

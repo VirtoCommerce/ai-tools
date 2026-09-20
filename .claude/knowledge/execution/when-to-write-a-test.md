@@ -17,7 +17,7 @@ This repo is mostly **not code**. The default answer is therefore *no test*, and
 
 | You changed | Unit test? | What actually gates it |
 |---|---|---|
-| A prompt — `.claude/commands/*.md`, `.claude/agents/*.md`, `**/SKILL.md`, `.claude/rules/*.md`, `CLAUDE.md` | **No** | `npm run context:check` (budgets, dangling paths, `§` anchors), `qa-test:doclint`, `mirror:check` |
+| A prompt — `.claude/commands/*.md`, `.claude/agents/*.md`, `**/SKILL.md`, `.claude/rules/*.md`, `CLAUDE.md` | **No** | `npm run context:check` (budgets, dangling paths, `§` anchors), `qa-test:doclint` |
 | Knowledge / oracles — `.claude/knowledge/**`, `business-logic.md`, `e-commerce-edge-cases-library.md` | **No** | `bl:lint`, `ecl:lint` (citation integrity), `domain:check` |
 | A regression suite CSV, `config/test-suites.json`, a selection group | **No** | `suites:lint`, `suites:executability:check`, `scope:validate` |
 | Declarative fixture data — a CSV row, a JSON fixture, literals in a `*-specs.mjs` | **No** | `td:validate` + `td:validate:<domain>` (the per-domain drift guard) |

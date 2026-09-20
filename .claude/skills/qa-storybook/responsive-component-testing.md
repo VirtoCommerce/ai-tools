@@ -8,14 +8,10 @@
 Test Case: TC_RESPONSIVE_COMPONENT_001
 Title: Test component responsive behavior
 
-Breakpoints to Test (from design system):
-- Mobile: 375px (iPhone standard)
-- Tablet Portrait: 768px (iPad portrait)
-- Tablet Landscape: 1024px (iPad landscape)
-- Desktop Small: 1280px
-- Desktop Large: 1920px
+Viewports to Test: the DERIVED sweep — never a transcribed list.
+See "Where the widths come from" below the template.
 
-For Each Breakpoint:
+For Each Viewport:
 
 1. LAYOUT ADAPTATION
 [] Component layout changes appropriately
@@ -64,6 +60,29 @@ For Each Breakpoint:
 [] Navigation accessible at all sizes
 ```
 
+## Where the widths come from
+
+**Do not hand-list the breakpoints.** They are derived. Sweep `AUDIT_VIEWPORTS_PX` from
+[`scripts/lib/design-tokens.generated.ts`](../../../scripts/lib/design-tokens.generated.ts) — every real
+ui-kit breakpoint edge, just below it, and the fluid midpoints. The named edges themselves are
+`BREAKPOINTS_PX` (`xs` 480 · `sm` 640 · `md` 768 · `lg` 1024 · `xl` 1280 · `2xl` **1500** — the ui-kit's
+`2xl` is *not* Tailwind's 1536 default). Both are regenerated from vc-frontend by `npm run tokens:sync`
+and drift-gated in CI by `npm run tokens:check`.
+
+**Why this file no longer names widths.** It previously transcribed a five-width list
+(375 / 768 / 1024 / 1280 / 1920) under the heading "from design system". That list omitted three real
+breakpoints outright — `xs` 480, `sm` 640 and `2xl` 1500 — while including 375 and 1920, which are device
+widths, not breakpoints. A sweep built from it samples *around* the bands where responsive bugs live and
+still reports every viewport green, which is the silent-failure direction:
+[`.claude/rules/test-data.md`](../../rules/test-data.md) §GOLDEN RULE. The same transcribed list was
+already replaced by this same pointer in the edge-case oracle on 2026-08-27 — see the
+"Overflow only in the fluid band between fixed breakpoints" row in
+[`e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md);
+this skill was missed in that pass.
+
+When a finding is viewport-specific, cite the **width in px**, not a tier name — "overflow at 1500" is
+reproducible, "overflow on desktop" is not.
+
 ## Testing Methods
 
 ```markdown
@@ -71,7 +90,7 @@ For Each Breakpoint:
    [] Open component
    [] Open DevTools
    [] Click device toolbar (responsive mode)
-   [] Test each breakpoint
+   [] Test each viewport in the derived sweep
    [] Rotate device (portrait <-> landscape)
 
 2. Real Device Testing:
@@ -81,7 +100,7 @@ For Each Breakpoint:
    [] Note: Real devices show issues emulators miss!
 
 3. Use playwright for automated responsive screenshots:
-   [] Capture component at each breakpoint
+   [] Capture component at each viewport in the derived sweep
    [] Review screenshots for issues
    [] Compare mobile vs tablet vs desktop layout
 ```

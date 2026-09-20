@@ -20,6 +20,20 @@
 | 9 | Coverage generation report | `reports/coverage/COV-*/` | One consolidated `coverage-generation-report.md` per `/qa-coverage-gap` run (the run's own intermediate `gap-inventory.json`/`batch-*-results.json` are pipeline working data, not narrative report bloat — §2's cap applies to the markdown digest, not those) |
 | 10 | Performance investigation report | `reports/performance/{topic}-investigation-<date>.md` | A standalone performance investigation with findings worth keeping past the session that produced them. Written by **`/qa-perf-measure`** (deployed-env dependency-count / N+1 measurement); ticket-scoped runs may land as a category-6 per-ticket report instead |
 
+**Where artifacts must NOT go.** Two separation rules, previously stated only in the retired
+`skills/qa-evidence/output-paths.md` and easy to lose with it:
+
+- **`reports/` is tracked; `test-results/` is gitignored.** Documentation artifacts (reports, bug
+  files, summaries) go in `reports/`. Raw browser output (HAR, videos, console dumps) goes in
+  `test-results/<lane>/`. **Never write documentation into `test-results/`** — it is pruned and
+  untracked, so the artifact silently disappears — **and never write raw browser dumps into
+  `reports/`**, which is how a 1.4 MB HAR ends up in git.
+- **Never create `reports/<TICKET>/` at the repo root.** A ticket folder is
+  `reports/tickets/<Sprint>/<TICKET>/` (the default, whenever there is sprint context) or
+  `reports/tickets/<TICKET>/` (ad-hoc only — a hotfix or a verification outside any sprint). A
+  root-level `reports/VCST-XXXX/` is matched by no category above, so nothing prunes it and no
+  reader looks in it.
+
 ## 1a. `reports/bugs/open/` is foldered by severity — and the folder is a VIEW, never the source of truth
 
 ```

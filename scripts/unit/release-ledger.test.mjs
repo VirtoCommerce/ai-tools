@@ -5,8 +5,7 @@
 // ONLY thing this repo's CI actually runs. None of the four existing drift guards
 // (tokens:check, selectors:check, sitemap:check, schema:check) is wired into any workflow,
 // and every cron in .github/workflows/ is commented out. So a guard that must really run has
-// to live here — the same reasoning mirror-parity.test.mjs states as "a guard nobody runs is
-// a comment". `npm run releases:check` exists too and calls the same code path, but it needs
+// to live here — a guard nobody runs is a comment. `npm run releases:check` exists too and calls the same code path, but it needs
 // network; these assertions are hermetic so a flaky forum can never redden main.
 //
 // FIXTURE PROVENANCE

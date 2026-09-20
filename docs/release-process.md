@@ -82,12 +82,33 @@ npm install
 npm run env:check
 npm run verify:multi-env
 npm run suites:lint
-npx tsx scripts/test-data/validate-td-refs.ts
-npm run env:check
-node skills/run-vc-mcp-testing-module/driver.mjs
+npm run td:validate
+npm run scope:validate
+npm run td:validate:b2b
+npm run seed:dry-run
+npm run graphql:fixtures:validate
+npm run graphql:lint-labels
 ```
 
-All seven must exit 0. If any don't, fix and re-verify before continuing.
+Every command must exit 0 before continuing, with **one documented exception**:
+`graphql:fixtures:validate` exits **1** when a fixture has drifted from the cached schema — those are
+findings to read, not a crash. Anything else non-zero: fix and re-verify.
+
+**Two prerequisites, or you will hit exits that look like failures and are not:**
+
+- `env:check` and `seed:dry-run` need the secrets in `.env.local` (gitignored). Without
+  `ADMIN_PASSWORD` / `USER_PASSWORD` both exit 1 with `Missing CORE environment variables`. Run
+  `/project-init`, or write them by hand.
+- `graphql:fixtures:validate` needs the GraphQL schema cache, `scripts/.graphql-schema.cache.json`
+  (~1.4 MB, **not** tracked by git). A fresh clone has none and the command exits **2** with
+  `Schema cache missing … Run with --refresh first`. Regenerate with
+  `npm run graphql:fixtures:validate:refresh`, which needs `BACK_URL` pointing at a live platform.
+  Note the exit codes differ on purpose: 1 is drift findings, 2 is no cache to compare against.
+
+> The last six commands were previously run as one aggregate, via a `run-vc-mcp-testing-module`
+> skill removed on 2026-09-19. It wrapped these same `npm run` aliases and added no logic of its
+> own, so the checks are listed directly here instead. The duplicate `npm run env:check` the old
+> block carried is also gone.
 
 ### Step 4 — Open the release PR
 
@@ -106,9 +127,12 @@ PR description template:
 - [x] `npm run env:check` green
 - [x] `npm run verify:multi-env` exits 0
 - [x] `npm run suites:lint` exits 0
-- [x] `npx tsx scripts/test-data/validate-td-refs.ts` exits 0
-- [x] `npm run env:check` green
-- [x] `node skills/run-vc-mcp-testing-module/driver.mjs` 7/7 checks pass
+- [x] `npm run td:validate` exits 0
+- [x] `npm run scope:validate` exits 0
+- [x] `npm run td:validate:b2b` exits 0
+- [x] `npm run seed:dry-run` exits 0
+- [x] `npm run graphql:fixtures:validate` reviewed (exit 1 = drift findings, not a crash)
+- [x] `npm run graphql:lint-labels` exits 0
 
 ### Changelog
 See `CHANGELOG.md` [vX.Y.Z] section.

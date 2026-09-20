@@ -53,7 +53,6 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Review test-case quality / triangulate staleness** | `/qa-review-tests suite <ID> \| file <path> \| diff \| --triangulate \| --fix` | Skill |
 | **Create Postman collections** | `/qa-postman create <purpose> \| env <profile> \| verify <collection>` | Skill |
 | **Look up VC documentation** | `/vc-docs topic \| module \| concept` | Skill |
-| **Build / smoke-test this repo's own tooling** | `/run-vc-mcp-testing-module` | Skill |
 
 > `/qa-sync-tests` was **removed** — the command file is deleted and there is no redirect or alias.
 > Use `/qa-test-lifecycle PR #NNN \| module <name> \| diff` instead.
@@ -120,7 +119,6 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 ### Tooling & Diagnostics
 - `/project-init` — Onboard onto a deployment: tracker + code host + auth per axis, derive client-vs-platform, write `project-profile.json` / `.env.<env>` / `.mcp.json`, verify access
 - `/vc-self-check` — Read this session's telemetry + transcript against `.claude/knowledge/diagnostics/skill-expectations.md`; per-finding verdict + severity; `deliver` contributes a consent-gated GitHub Issue upstream
-- `/run-vc-mcp-testing-module` — Build / launch / smoke-test this repo's own tooling
 
 ### VC Knowledge (Skill — auto-invocable)
 - `/vc-docs` — Documentation lookup. **Primary: VirtoOZ MCP** (12 topic-scoped tools); Context7 `/virtocommerce/vc-docs` is the fallback

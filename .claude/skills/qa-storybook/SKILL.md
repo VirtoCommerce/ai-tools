@@ -24,7 +24,7 @@ Test Storybook components for visual regression, responsive behavior, and state 
 - **play-function-patterns.md** — Canonical interaction-test patterns using `storybook/test` (`expect`, `userEvent`, `fn`, `step`); when `play` is the wrong tool.
 - **how-to-test-storybook.md** — What to test per component (rendering, a11y, interactions, visual, composition, i18n, error boundaries); negative/edge scenarios.
 - **visual-regression-testing.md** — Test case template for visual regression: baselines, state matrix, tool selection (Chromatic default, Playwright fallback), determinism rules.
-- **responsive-component-testing.md** — Responsive testing at 5 breakpoints (375px, 768px, 1024px, 1280px, 1920px): layout adaptation, touch targets, text reflow, image scaling.
+- **responsive-component-testing.md** — Responsive testing across the DERIVED viewport sweep (`AUDIT_VIEWPORTS_PX` from `scripts/lib/design-tokens.generated.ts`, never a transcribed width list): layout adaptation, touch targets, text reflow, image scaling.
 
 ## Execution
 
@@ -42,7 +42,7 @@ Test Storybook components for visual regression, responsive behavior, and state 
 
 4. **For each component, test:**
    - All story variations (default, hover, focus, error, loading, disabled)
-   - 5 responsive breakpoints (mobile 375px → desktop 1920px)
+   - The derived viewport sweep (`AUDIT_VIEWPORTS_PX` — real ui-kit breakpoint edges, just-below, and fluid midpoints; see `responsive-component-testing.md` §Where the widths come from)
    - Compare against existing baselines if present
    - Flag pixel differences > threshold
 
