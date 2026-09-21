@@ -734,6 +734,83 @@ export function kindTally(lines) {
   return Object.fromEntries([...t.entries()].sort((a, b) => b[1] - a[1]));
 }
 
+/**
+ * REACH -- the denominator, and the only panel whose subject is sessions the base never heard from.
+ *
+ * Every other panel here is built from lines the base received, so all of them share one blind
+ * spot: they can count how the base was USED and never how often it was available and skipped. The
+ * `sessions` figure in the header is the sharpest form of it -- distinct sessions APPEARING IN THE
+ * LOG -- so an hour of work with three hundred tool calls and not one question looked exactly like
+ * no work at all. `session` lines (see `reach.mjs`) are what make that case countable.
+ *
+ * TOUCHES, NOT ASKS. A `session` line counts tool calls that went to the base through either door,
+ * which includes `show`, `capture`, `confirm` and `dispute` -- so it is an upper bound on asking
+ * and must not be printed as one. The ask count beside it comes from the ask lines themselves, and
+ * the gap between the two is itself readable: touches far above asks is a session re-reading
+ * entries whose ids it already had.
+ *
+ * `firstTouch` IS THE DIAGNOSIS, which is why the ordinals are carried and not just a count. One
+ * touch at call 3 is a session that oriented itself and then worked blind; one touch at call 290 is
+ * a session that worked blind and then checked. The remedies are opposite, and a ratio cannot tell
+ * them apart.
+ *
+ * SESSIONS WITH NO `session` LINE ARE COUNTED APART AND SAID SO. A machine whose `Stop` hook is not
+ * registered still logs asks, and folding those into the denominator as "0 tool calls" would invent
+ * a ratio out of a missing measurement -- the same discipline `unreachable` gets in the miss panel,
+ * where the base was not read and so the ask says nothing about coverage.
+ */
+export function reach(lines) {
+  const asksBySession = new Map();
+  for (const l of lines) {
+    if (l.kind !== 'ask' || !l._session) continue;
+    asksBySession.set(l._session, (asksBySession.get(l._session) ?? 0) + 1);
+  }
+
+  const rows = [];
+  const seen = new Set();
+  for (const l of lines) {
+    if (l.kind !== 'session') continue;
+    // The line names the session it DESCRIBES; the file it rode in on belongs to whichever session
+    // happened to push it, so reading `_session` here would credit the wrong one.
+    const id = l.session ?? l._session;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const touchAt = Array.isArray(l.touchAt) ? l.touchAt : [];
+    rows.push({
+      session: id,
+      tools: Number(l.tools ?? 0),
+      turns: Number(l.turns ?? 0),
+      touches: touchAt.length,
+      firstTouch: touchAt.length ? touchAt[0] : null,
+      lastTouch: touchAt.length ? touchAt[touchAt.length - 1] : null,
+      asks: asksBySession.get(id) ?? 0,
+      at: l.firstAt ?? l.at ?? '',
+    });
+  }
+
+  const tools = rows.reduce((n, r) => n + r.tools, 0);
+  const touches = rows.reduce((n, r) => n + r.touches, 0);
+  // WORST FIRST, and "worst" is WORK DONE WITHOUT CONSULTING THE BASE -- `tools / (touches + 1)`.
+  //
+  // Not "silent first", which was the obvious rule and is the wrong one: it ranks a four-call
+  // session that asked nothing above a three-hundred-call session that asked once, and only the
+  // second is evidence of anything. Not calls-per-touch either, which divides by zero exactly where
+  // the panel matters most. The +1 is what makes the two comparable on one scale -- a silent
+  // session is charged for all of its work, a session with one touch for half of it -- so a small
+  // silent session falls where it belongs, below a large one and below nothing else.
+  const blind = (r) => r.tools / (r.touches + 1);
+  rows.sort((a, b) => (blind(b) - blind(a)) || a.session.localeCompare(b.session));
+  return {
+    rows,
+    accounted: rows.length,
+    unaccounted: [...asksBySession.keys()].filter((s) => !seen.has(s)).length,
+    tools,
+    touches,
+    silent: rows.filter((r) => r.touches === 0).length,
+    perHundred: tools ? (touches / tools) * 100 : null,
+  };
+}
+
 /** Asks per day — the header's one-line shape of activity. */
 export function activity(lines) {
   const byDay = new Map();
@@ -774,6 +851,7 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
     refusals: refusals(real, idx),
     unhelpful: unhelpful(real, idx),
     loop: captureLoop(real),
+    reach: reach(real),
   };
   return {
     meta: {

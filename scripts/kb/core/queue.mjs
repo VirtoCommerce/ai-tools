@@ -29,6 +29,13 @@ import { tmpdir } from 'node:os';
  *  not an agent using the base, and logging it would put noise in the panel that matters. */
 export const LOGGED = Object.freeze([
   'ask', 'show', 'capture', 'capture-refused', 'confirm', 'dispute', 'flush', 'reindex', 'redacted',
+  // `session` is the DENOMINATOR, and it is the one kind written about a session that may never
+  // have touched the base at all. Every other line here is evidence that the base was used, so a
+  // log made only of them can count uses and can never count opportunities: a session that ran for
+  // an hour and asked nothing looked exactly like no session (`report-analyse.mjs` counted
+  // `sessions` as the distinct sessions APPEARING IN THE LOG). One line per session, carrying
+  // integers and an id — see `reach.mjs` for what is read to produce it, and what is not.
+  'session',
 ]);
 
 /** Lines the pusher must apply to the base, as opposed to lines that only describe what happened. */

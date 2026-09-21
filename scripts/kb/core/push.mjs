@@ -37,6 +37,7 @@ import { buildIndex, buildRow, entryPath } from './index-build.mjs';
 import { normalizeRow } from './index-load.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
 import { MUTATIONS, isSynthetic, log, queueDir, queuePath, readQueue, sessionId } from './queue.mjs';
+import { REACH_IDLE_MS, dropReach, idleReaches, reachLine } from './reach.mjs';
 import { toLogLine } from './verbs.mjs';
 
 /** Retention: the same push that writes today's file removes anything older, in the same commit. */
@@ -349,6 +350,27 @@ export async function flush({
   }
   const prefix = coords.prefix ?? '';
   const full = (p) => (prefix ? `${prefix}/${p}` : p);
+
+  // THE DENOMINATOR JOINS THE QUEUE HERE, so it rides every rule the rest of the queue already
+  // obeys — the secret gate, the retention window, the one-commit discipline, the dry run.
+  //
+  // Into OUR OWN file, carrying the id of the session it describes, rather than into that session's
+  // file. Appending to a foreign queue file would refresh its mtime, and `queueFiles` takes a
+  // foreign file only once it has been idle for `SWEEP_AFTER_MS` — so writing there would postpone
+  // the very line we just decided was ready, every time, by half an hour.
+  //
+  // Only when we are taking our own file at all: under an opportunistic foreign-only sweep
+  // (`includeMine: false`) a line written here would sit unsent, and the next flush would write a
+  // second one beside it.
+  if (includeMine) {
+    for (const state of idleReaches(queueDir(env), { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
+      const written = await log(reachLine(state), { env });
+      // Dropped only once the line is safely appended. A state file removed after a failed write is
+      // a session that silently never existed — the exact hole this whole mechanism was built to
+      // close, reintroduced at the last step.
+      if (written.ok) dropReach(queueDir(env), state.session);
+    }
+  }
 
   const files = await queueFiles({ env, now, sweep, includeMine });
   const loaded = [];

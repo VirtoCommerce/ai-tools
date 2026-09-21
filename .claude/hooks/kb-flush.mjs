@@ -31,6 +31,8 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { REACH_IDLE_MS, advanceReach, idleReaches } from '../../scripts/kb/core/reach.mjs';
+import { sessionId } from '../../scripts/kb/core/queue.mjs';
 
 function queueHasWork(dir) {
   try {
@@ -43,12 +45,40 @@ function queueHasWork(dir) {
 }
 
 function main() {
-  // Read and discard the payload: the hook contract sends one, and leaving it unread can make the
-  // harness see a broken pipe. We need nothing from it — the queue is per machine, not per session.
-  try { readFileSync(0, 'utf8'); } catch { /* no stdin — fine */ }
+  // THE PAYLOAD IS NOW READ, not discarded. It carries `session_id` and `transcript_path`, and
+  // those two are the only way this system can learn how much work a session did — the base sees
+  // only what was asked of it, so without them a session that never asked is indistinguishable from
+  // a session that never ran, and the ratio everybody actually wants has no denominator.
+  // It is still read unconditionally and still never re-emitted: an unread stdin can leave the
+  // harness with a broken pipe, and a malformed payload must not cost the turn.
+  let payload = null;
+  try { payload = JSON.parse(readFileSync(0, 'utf8')); } catch { /* no stdin, or not JSON — fine */ }
 
   const dir = process.env.KB_QUEUE_DIR || join(tmpdir(), 'claude-kb-queue');
-  if (!queueHasWork(dir)) return;
+
+  // THE IDENTITY COMES FROM `sessionId()`, NOT FROM THE PAYLOAD, and the difference is not cosmetic:
+  // they are two different identifiers. The hook payload's `session_id` is the TRANSCRIPT's id
+  // (`52b778cc-…`), while every queue file, every log line and therefore every ask this report joins
+  // against is keyed on `CLAUDE_CODE_HOST_SESSION_ID` (`local_0f…`, truncated to 8). Measured here
+  // before this shipped: keying reach on the payload produces `52b778cc` against asks filed under
+  // `local_0f`, so the join matches NOTHING — every session reports as unaccounted and the panel
+  // silently says "not measured" forever. Only `transcript_path` is taken from the payload.
+  const session = sessionId(process.env);
+
+  // Counting is cheap and unconditional: cursor-based, so each turn reads only the bytes appended
+  // since the last one, and it stores integers — never a name, an argument or a result. `reach.mjs`
+  // carries what is read and what deliberately is not.
+  if (payload?.transcript_path) {
+    try {
+      advanceReach({ dir, session, transcriptPath: payload.transcript_path });
+    } catch { /* accounting must never cost a turn */ }
+  }
+
+  // A SESSION THAT NEVER ASKED STILL HAS TO REACH THE BASE, which is exactly the case the old
+  // early return dropped: no queue work meant no push, so the sessions worth knowing about were the
+  // ones that could never report themselves. A finished session's counters are queue work now.
+  const stale = idleReaches(dir, { session, idleMs: REACH_IDLE_MS }).length > 0;
+  if (!queueHasWork(dir) && !stale) return;
 
   // `$CLAUDE_PROJECT_DIR` is set for hooks; resolving from this file is the fallback that survives
   // being invoked from somewhere else.

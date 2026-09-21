@@ -293,6 +293,38 @@ function panelRefusals(p) {
   </section>`;
 }
 
+function panelReach(p) {
+  const rows = p.rows.map((r) => [
+    esc(r.session),
+    esc(r.tools), esc(r.turns),
+    r.touches ? esc(r.touches) : '<strong class="bad">0</strong>',
+    esc(r.asks),
+    r.firstTouch === null ? '<span class="muted">never</span>' : `call ${esc(r.firstTouch)}`,
+    r.lastTouch === null ? '<span class="muted">never</span>' : `call ${esc(r.lastTouch)}`,
+    `<code>${esc(when(r.at))}</code>`,
+  ]);
+  return `<section id="reach">
+    <h2>7 &middot; Reach &mdash; how much work happened per consultation of the base</h2>
+    <p class="lede">The only panel here whose subject is sessions that never spoke to the base.
+      Every other number on this page is built from lines the base <em>received</em>, so none of them
+      can see a session that ran for an hour and asked nothing &mdash; it looks identical to no
+      session at all. <strong>${esc(p.touches)}</strong> touch(es) across
+      <strong>${esc(p.tools)}</strong> tool call(s) in <strong>${esc(p.accounted)}</strong> accounted
+      session(s) = <strong>${p.perHundred === null ? 'n/a' : `${esc(p.perHundred.toFixed(1))} per 100 calls`}</strong>.</p>
+    <p class="metric"><strong>Touches, not asks.</strong> A touch is any call through either door, so
+      <code>show</code>, <code>capture</code>, <code>confirm</code> and <code>dispute</code> are in
+      it: the figure is an upper bound on asking, and the ask column beside it is the real one.
+      <strong>First touch is the diagnosis</strong> &mdash; one touch at call 3 is a session that
+      oriented itself and then worked blind; one touch at call 290 is the reverse, and the two need
+      opposite remedies.</p>
+    ${p.unaccounted ? `<p class="metric">${esc(p.unaccounted)} session(s) asked but published no
+      <code>session</code> line &mdash; their machine has no <code>Stop</code> hook registered, so
+      their tool calls are unmeasured. They are left OUT of the ratio rather than counted as zero.</p>` : ''}
+    ${rows.length ? table(['session', 'tool calls', 'turns', 'touches', 'asks', 'first touch', 'last touch', 'started'], rows)
+    : empty('No session accounting in this window — no machine here has published a session line yet.')}
+  </section>`;
+}
+
 const CSS = `
 :root{--fg:#1c1c1c;--dim:#6a6a6a;--line:#e0ddd8;--bg:#fbfaf8;--card:#fff;--bad:#a4262c;--accent:#2f5d50}
 *{box-sizing:border-box}
@@ -364,6 +396,7 @@ ${panelQuestions(p.questions)}
 ${panelEntries(p.entries)}
 ${panelEvidence(p.evidence)}
 ${panelRefusals(p.refusals)}
+${panelReach(p.reach)}
 <footer>Read from the base's <code>log/</code> over the network, analysed locally, rendered here.
 Nothing was written to the base and nothing was written into the repository tree.</footer>
 </main></body></html>`;
@@ -394,6 +427,14 @@ export function renderText(report) {
   out.push(`  entries served ${p.entries.used.length} of ${p.entries.indexed} indexed; ${p.entries.never.length} never served here`);
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
   out.push(`  refusals       ${p.refusals.total}`);
+  // THE DENOMINATOR, printed with the panels rather than after them, because it is the line that
+  // decides how to read every other number here. `n/a` and not `0%` when nothing is accounted for:
+  // a machine with no `Stop` hook registered has not measured a reach of zero, it has not measured.
+  out.push(`  reach          ${p.reach.accounted} session(s) accounted, ${p.reach.tools} tool call(s), `
+    + `${p.reach.touches} base touch(es) = `
+    + `${p.reach.perHundred === null ? 'n/a' : `${p.reach.perHundred.toFixed(1)} per 100 calls`}`
+    + `${p.reach.silent ? `, ${p.reach.silent} session(s) never touched the base` : ''}`
+    + `${p.reach.unaccounted ? `, ${p.reach.unaccounted} session(s) unaccounted (no session line)` : ''}`);
   out.push(`  loop           ${p.loop.afterMiss} capture(s) after a miss, ${p.loop.afterAnswer} after an answer`
     + `${p.loop.unlinked ? `, ${p.loop.unlinked} carrying no after-pointer to link` : ''}`);
   if (report.verdict) {

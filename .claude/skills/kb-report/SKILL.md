@@ -34,6 +34,7 @@ Misses first, because **the miss list is the work queue**.
 | 4 | **Entries used / never used** | A never-served entry is either unfindable or worthless. The log **names the candidates; it does not decide which** — and an entry written yesterday cannot have been used last month, so read it against the window. Not a retirement list. |
 | 5 | **Confirmations and disputes** | Where a fact was seen to hold again, and where it did not. **A disputed entry with several confirmations is the single most decision-worthy row in the report.** One dissent against four confirmations is a flag, not a deletion. |
 | 6 | **Refused captures** | Each one is a **ranking miss that did not become a duplicate**: the agent looked, did not find it, went and found out, and only the write caught the duplicate. A rising count is the identity guard working *and* a direct measure of how often `ask` fails to find what the base holds. |
+| 7 | **Reach** | The denominator, and the only panel about sessions the base never heard from. Every other row on the page is built from lines the base RECEIVED, so none of them can see a session that ran for an hour and asked nothing — it looks identical to no session. Read the rate, then read the ordering: **first touch is the diagnosis**, because one touch at call 3 and one at call 290 are opposite failures. Sessions with no `session` line are counted APART, never as a zero — their machine has no `Stop` hook, so their work is unmeasured rather than blind. |
 
 ## Panel 1a — near misses, the floor's own error bar
 
