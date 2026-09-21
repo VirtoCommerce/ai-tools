@@ -18,13 +18,10 @@
         "path": "./test-results/mobile/har/session.har",
         "content": "embed"
       },
-      "recordVideo": {
-        "dir": "./test-results/mobile/video",
-        "size": {
-          "width": 390,
-          "height": 844
-        }
-      }
+      "permissions": [
+        "clipboard-read",
+        "clipboard-write"
+      ]
     }
   },
   "outputDir": "./test-results/mobile",

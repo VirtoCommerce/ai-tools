@@ -18,13 +18,6 @@
         "path": "./test-results/firefox/har/session.har",
         "content": "embed"
       },
-      "recordVideo": {
-        "dir": "./test-results/firefox/video",
-        "size": {
-          "width": 1920,
-          "height": 1080
-        }
-      },
       "deviceScaleFactor": 2
     }
   },
