@@ -12,7 +12,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { readFile, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 
 import { stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from '../kb/core/index-build.mjs';
@@ -21,6 +21,9 @@ import {
   outsideBase, ownFlushDue, queueFiles, readSeq, seqLabel, shouldSweep, unionLines,
 } from '../kb/core/push.mjs';
 import { queuePath } from '../kb/core/queue.mjs';
+// THE READER, IN THE WRITER'S TEST, DELIBERATELY. STEP 3c's whole claim is that the path gained a
+// directory and the PARSER did not change; a claim about two modules cannot be pinned inside one.
+import { dayOf, sessionOf } from '../kb/core/report-analyse.mjs';
 import { mkdtemp, rm } from 'node:fs/promises';
 
 const BASE = 'https://raw.githubusercontent.com/VirtoCommerce/vc-knowledge/main/v2';
@@ -303,8 +306,9 @@ test('an ordinary run’s flush line carries no synthetic field', () => withQueu
   assert.ok(!('synthetic' in logLines(state).find((l) => l.kind === 'flush')));
 }));
 
-test('the log path is date folder, session id, and the push SEQUENCE — no wall clock', () => {
-  assert.equal(logPath('f3d05dd3', new Date('2026-09-18T11:10:03Z'), 3), 'log/2026-09-18/f3d05dd3-0003.jsonl');
+test('the log path is date folder, session FOLDER, session id, and the push SEQUENCE — no wall clock', () => {
+  assert.equal(logPath('f3d05dd3', new Date('2026-09-18T11:10:03Z'), 3),
+    'log/2026-09-18/f3d05dd3/f3d05dd3-0003.jsonl');
   // The session id is not decoration: two sessions can start in the same second, and one session
   // can push twice. Without it, one session's log silently replaces another's.
   assert.notEqual(logPath('aaaaaaaa', AT, 1), logPath('bbbbbbbb', AT, 1));
@@ -315,6 +319,48 @@ test('the log path is date folder, session id, and the push SEQUENCE — no wall
     logPath('f3d05dd3', new Date('2026-09-18T11:10:11Z'), 3), 'eight seconds apart, one path');
   assert.equal(seqLabel(3), '0003');
   assert.equal(seqLabel(10_000), '10000', 'the width is a floor, not a ceiling');
+});
+
+test('the FILE NAME did not change when the folder appeared — which is why no parser did', () => {
+  // The whole safety argument of STEP 3c in one assertion (PLAN §21.11). The directory is additive:
+  // strip it and you have byte-for-byte what STEP 3b published, so `sessionOf()` — which reads the
+  // BASENAME and nothing else — needs no third shape and no change of premise.
+  const nested = logPath('f3d05dd3', new Date('2026-09-18T11:10:03Z'), 3);
+  assert.equal(basename(nested), 'f3d05dd3-0003.jsonl');
+  assert.equal(nested.split('/').slice(0, 3).join('/') + '/' + basename(nested),
+    nested, 'exactly one directory was inserted, in the middle');
+
+  // And the reader gets the same answer off the nested path as off the flat one. This is the
+  // assertion that would fail if anybody later "tidied up" the repetition into `<seq>.jsonl`.
+  assert.equal(sessionOf(nested), 'f3d05dd3');
+  assert.equal(sessionOf('log/2026-09-18/f3d05dd3-0003.jsonl'), 'f3d05dd3');
+  assert.equal(dayOf(nested), '2026-09-18');
+
+  // A file DETACHED from its path still names its session — the second reason the name repeats:
+  // downloaded, attached to a ticket, pasted into a report, it is still self-describing.
+  assert.equal(sessionOf(basename(nested)), 'f3d05dd3');
+});
+
+test('an all-digit session key still parses under the nested path', () => {
+  // STEP 3b's load-bearing case, re-run through the new shape rather than restated: a session key
+  // may be all digits, so a stamped name satisfies the sequenced pattern too and the ORDER the two
+  // are tried in is what keeps it right. Nesting must not disturb that, and it cannot, because the
+  // basename is untouched — but "cannot" is a claim and this is the test of it.
+  assert.equal(sessionOf(logPath('12345678', AT, 2)), '12345678');
+  assert.equal(sessionOf('log/2026-09-21/20260921T090000Z-12345678.jsonl'), '12345678');
+});
+
+test('a session key that cannot be a path segment is refused by containment, not published', () => {
+  // The key is now a DIRECTORY as well as part of a file name, so what it can carry matters more
+  // than it did (PLAN §7.1a's lesson). `shortSession()` already refuses anything outside
+  // [A-Za-z0-9_-], and a swept foreign queue file named `..jsonl` would yield `.` — which the flat
+  // shape published as a strange but legal file name and the nested one now FAILS CLOSED on,
+  // because `outsideBase()` rejects a `.` or `..` segment outright. Stricter, in the safe direction.
+  for (const key of ['.', '..']) {
+    assert.deepEqual(outsideBase([`v2/${logPath(key, AT, 1)}`], 'v2'), [`v2/${logPath(key, AT, 1)}`], key);
+  }
+  // An ordinary key is of course still inside.
+  assert.deepEqual(outsideBase([`v2/${logPath('f3d05dd3', AT, 1)}`], 'v2'), []);
 });
 
 test('a path with no sequence number is REFUSED, not defaulted to the first file', () => {
@@ -752,6 +798,25 @@ test('logs older than 90 days are removed in the SAME commit that writes today\'
 
 test('a folder that is not a date is left alone rather than guessed at', () => {
   assert.deepEqual(expiredLogs(['v2/log/README.md', 'v2/log/not-a-date/x.jsonl'], { at: AT, prefix: 'v2' }), []);
+});
+
+test('retention selects a NESTED path exactly as it selected a flat one', () => {
+  // `expiredLogs` takes the FIRST segment after `log/` and ignores everything below it, so the
+  // session folder STEP 3c inserts should be invisible to it. That reasoning is sound and it is
+  // also the kind of thing that is true until somebody adds a depth assumption for an unrelated
+  // reason, so it is pinned rather than argued: all three published shapes, one window, and the
+  // same verdict on each — the two old days go, today's stays, whatever depth it sits at.
+  const flatStamped = 'v2/log/2026-06-01/20260601T100000Z-aaaaaaaa.jsonl';   // 109 days before AT
+  const flatSeq = 'v2/log/2026-06-02/aaaaaaaa-0001.jsonl';                   // 108 days
+  const nested = 'v2/log/2026-06-03/aaaaaaaa/aaaaaaaa-0001.jsonl';           // 107 days
+  const keptNested = `v2/${logPath('bbbbbbbb', AT, 1)}`;                     // today
+  assert.deepEqual(
+    expiredLogs([flatStamped, flatSeq, nested, keptNested], { at: AT, prefix: 'v2' }),
+    [flatStamped, flatSeq, nested].sort(),
+  );
+  // And the day is still read off the DAY folder, not off however many segments follow it: a
+  // nested path under a fresh day is not expired just because it is one level deeper.
+  assert.deepEqual(expiredLogs([keptNested], { at: AT, prefix: 'v2' }), []);
 });
 
 test('the retention deletion rides in the push', () => withQueue(async ({ dir, env }) => {

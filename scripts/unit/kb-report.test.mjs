@@ -129,6 +129,56 @@ test('BOTH FILE-NAME shapes parse — the timestamp left the name, the published
   assert.equal(sessionOf('log/2026-09-21/handwritten.jsonl'), 'handwritten');
 });
 
+test('THE THIRD PATH SHAPE parses, and it is not a third shape in the parser', () => {
+  // STEP 3c put a session FOLDER in the path (PLAN §21.11). The file name did not change, and this
+  // is the test of that: the parser was not taught the directory and must not need to be. If the
+  // path had become `log/<day>/<session>/<seq>.jsonl` — the cleaner-looking shape that was
+  // deliberately NOT built — these two assertions would read `0003` and `f3d05dd3` respectively.
+  assert.equal(sessionOf('log/2026-09-21/f3d05dd3/f3d05dd3-0003.jsonl'), 'f3d05dd3');
+  assert.equal(dayOf('log/2026-09-21/f3d05dd3/f3d05dd3-0003.jsonl'), '2026-09-21');
+
+  // The all-digit key, at depth. Which pattern wins is still decided by the ORDER, not the depth.
+  assert.equal(sessionOf('log/2026-09-21/12345678/12345678-0002.jsonl'), '12345678');
+  assert.equal(sessionOf('log/2026-09-21/12345678/20260921T090000Z-12345678.jsonl'), '12345678');
+  // A key carrying dashes of its own, at depth.
+  assert.equal(sessionOf('log/2026-09-21/abcd-ef12/abcd-ef12-0007.jsonl'), 'abcd-ef12');
+});
+
+test('ONE SESSION UNDER THREE PATH SHAPES IS ONE SESSION — the acceptance test of STEP 3c', () => {
+  // The real risk of adding a path shape is not that a file fails to parse — that is loud. It is
+  // that the SAME session splits in two because one of its files was read under a different name,
+  // which renders as a clean, confident, wrong page: session counts inflated, per-session panels
+  // halved, a repeated question scattered into singletons. Nothing errors.
+  //
+  // The 30-day retention window after 2026-09-21 genuinely holds all three shapes at once, because
+  // nothing was ever migrated: timestamped-flat (before STEP 3b), sequenced-flat (3b), and
+  // sequenced-nested (3c). So the fixture is built deliberately rather than left to the live smoke.
+  const paths = [
+    'log/2026-09-19/20260919T135705Z-f3d05dd3.jsonl',       // timestamped, flat
+    'log/2026-09-21/f3d05dd3-0001.jsonl',                   // sequenced, flat
+    'log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl',          // sequenced, nested
+    'log/2026-09-21/local_e8/local_e8-0001.jsonl',          // a second session, nested
+  ];
+  const mixed = paths.map((path, i) => line({
+    at: `2026-09-2${i}T09:00:00.000Z`,
+    kind: 'ask',
+    q: 'does price sort use the indexed price field',
+    matched: ['KB-1834ABE5'],
+    state: 'answer',
+    _path: path,
+    _session: sessionOf(path),
+  }));
+  const a = analyse({ lines: mixed, rows: ROWS, meta: { days: 30 } });
+
+  assert.equal(a.sessions, 2, 'three files of one session are ONE session, plus the other one');
+  assert.equal(a.panels.questions.asked[0].sessions, 2, 'the repeat count groups across all three shapes');
+  assert.deepEqual(
+    a.panels.questions.bySession.map((r) => r.session).sort(),
+    ['f3d05dd3', 'local_e8'],
+    'no shape produces a session under a name nobody has',
+  );
+});
+
 test('a window holding both key shapes counts two sessions, not one and a dropped file', () => {
   // The fixture is the mixed window itself: the report groups by session, and the 30 days after the
   // change are the only window that ever holds both.
@@ -362,6 +412,44 @@ test('--sessions selects across both FILE-NAME shapes, and a session\'s pushes s
     ['log/2026-09-21/20260921T081451Z-local_e8.jsonl'],
   );
   assert.equal(selectLogPaths(tree, { days: 30, at: new Date('2026-09-21T12:00:00Z') }).length, 4);
+});
+
+test('selection is DEPTH-AGNOSTIC — the tree walk was not changed and must not need to be', () => {
+  // STEP 3c asked whether `selectLogPaths` had to learn about the session folder. It did not: it
+  // filters on the `log/` prefix and the `.jsonl` suffix and never counts segments, so a file one
+  // level deeper is taken by the same two predicates. That is a claim about code nobody touched,
+  // which is exactly the claim most likely to stop being true later, so it is pinned here.
+  const tree = [
+    { type: 'blob', path: 'log/2026-09-19/20260919T135705Z-f3d05dd3.jsonl' },
+    { type: 'blob', path: 'log/2026-09-21/f3d05dd3-0001.jsonl' },
+    { type: 'blob', path: 'log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl' },
+    { type: 'blob', path: 'log/2026-09-21/local_e8/local_e8-0001.jsonl' },
+    { type: 'tree', path: 'log/2026-09-21/f3d05dd3' },       // the folder itself is not a log file
+    { type: 'blob', path: 'log/2026-09-21/f3d05dd3/README.md' },
+  ];
+  const at = new Date('2026-09-21T12:00:00Z');
+
+  // The day window takes all four blobs and neither the tree node nor the non-jsonl file.
+  assert.deepEqual(selectLogPaths(tree, { days: 30, at }), [
+    'log/2026-09-19/20260919T135705Z-f3d05dd3.jsonl',
+    'log/2026-09-21/f3d05dd3-0001.jsonl',
+    'log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl',
+    'log/2026-09-21/local_e8/local_e8-0001.jsonl',
+  ]);
+
+  // And `--sessions` reaches a nested file under the same name as a flat one: three shapes, one
+  // session, one selection. The counterpart of the analyse-side acceptance test above — a session
+  // that cannot be SELECTED is just as invisible as one that splits.
+  assert.deepEqual(selectLogPaths(tree, { sessions: 'f3d05dd3', at }), [
+    'log/2026-09-19/20260919T135705Z-f3d05dd3.jsonl',
+    'log/2026-09-21/f3d05dd3-0001.jsonl',
+    'log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl',
+  ]);
+
+  // A prefixed base (`v2/`) nests one level further still, and the relative path is what is parsed.
+  const prefixed = [{ type: 'blob', path: 'v2/log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl' }];
+  assert.deepEqual(selectLogPaths(prefixed, { days: 30, at, prefix: 'v2', sessions: 'f3d05dd3' }),
+    ['v2/log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl']);
 });
 
 test('above the file bound it REFUSES and names the flag, rather than hanging or truncating', async () => {

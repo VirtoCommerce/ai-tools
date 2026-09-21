@@ -101,6 +101,20 @@ export const seqLabel = (n) => String(n).padStart(SEQ_WIDTH, '0');
  * The session id stays, and stays first: it is what partitions the log, and `sessionOf()` reads it
  * back off either shape — the timestamped files already published keep their names for the 30 days
  * of the retention window.
+ *
+ * THE SESSION IS ALSO A DIRECTORY, AND ITS NAME IS THEN WRITTEN TWICE. That redundancy is the
+ * point (PLAN §21.11). The obvious shape is `log/<day>/<session>/<seq>.jsonl`, which is cleaner to
+ * look at and costs a THIRD path shape — not a third regex but a change of premise, because
+ * `sessionOf()` reads only the basename, and that function already carries a subtlety STEP 3b had
+ * to find: an all-digit session key satisfies both existing patterns, so the ORDER they are tried
+ * in is what keeps it correct. Teaching it to take the session from a DIRECTORY component instead
+ * puts a second source of truth into the one function that can least afford one.
+ *
+ * Repeating the name keeps the basename byte-identical to what 3b produced, so no parser changes
+ * at all — only the path gains a directory. It also keeps a log file self-describing once it has
+ * been DETACHED from its path: downloaded, attached to a ticket, pasted into a report. The price
+ * is a name written twice and it is visible in every listing; the price of the clean-looking
+ * alternative is invisible and lives in a parser.
  */
 export const logPath = (session, at, seq) => {
   const n = Number(seq);
@@ -110,7 +124,7 @@ export const logPath = (session, at, seq) => {
     // explain — the failure this whole change exists to remove.
     throw new Error(`logPath needs the push sequence number, got ${JSON.stringify(seq)}`);
   }
-  return `log/${dayFolder(at)}/${session}-${seqLabel(n)}.jsonl`;
+  return `log/${dayFolder(at)}/${session}/${session}-${seqLabel(n)}.jsonl`;
 };
 
 /**

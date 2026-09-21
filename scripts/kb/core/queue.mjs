@@ -95,13 +95,17 @@ export const KEY_LEN = 8;
 const MARKER = /^[A-Za-z]+_/;
 
 /**
- * The key becomes a PUBLIC FILE NAME (`log/<day>/<key>-<seq>.jsonl`), so it has to be one.
+ * The key becomes a PUBLIC PATH (`log/<day>/<key>/<key>-<seq>.jsonl`), so it has to be one -- and
+ * since STEP 3c it is a DIRECTORY NAME as well as part of a file name, which widens what "has to be
+ * one" means rather than changing it.
  *
  * The same lesson `publicLocator()` cost us (PLAN 7.1a): ask what a field can CARRY, not only what
  * the scanner can find. A host id is machine-generated and safe today; a key with a separator in it
  * would silently nest the queue file one directory down and write a log path nobody can parse back.
  * An unsafe key is not repaired into something plausible -- it falls through to the honest
- * per-process id.
+ * per-process id. `outsideBase()` is the second line of that defence and it now catches more, not
+ * less: a `.` or `..` key is a rejected SEGMENT under the nested path where the flat one published
+ * it as a merely strange file name.
  */
 const FILENAME_SAFE = /^[A-Za-z0-9_-]+$/;
 
