@@ -123,6 +123,24 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
 //           environment is fixed when the session starts, while the stand is a property of the
 //           observation the question is ABOUT, and one process cannot know the other. So a default
 //           would print this process's guess as the agent's fact. Absent beats plausible.
+//   `topic` WHAT THE WORK WAS -- a short English noun phrase the AGENT formulates and passes with
+//           the call, capped in code at TOPIC_MAX. Reading the published base as an outsider,
+//           nothing said what a window was about: that 2026-09-21 07:22-08:15 concerned a
+//           configurable-product order was inferred from the question TEXTS and nothing else. That
+//           holds at nine asks and not at five hundred. It goes on the LINE and not on the file or
+//           the session, because a file boundary is the push timer and a session covers many
+//           tasks; a window's topics are then COMPUTED from the lines. See `label()` below for why
+//           the cap truncates where `stand()` drops.
+//
+//           AND IT IS HONESTLY PART-DERIVABLE, which is the objection this plan normally accepts:
+//           a human CAN read nine question texts and work out what the run was -- that is exactly
+//           how the 2026-09-21 review did it. It was bought anyway, with the trade stated: the
+//           derivation is a person reading prose and it does not survive volume, and the panel
+//           that would otherwise group the work groups by SESSION, which is not a unit of work.
+//   `run`   WHAT RUN THIS WAS -- the operator's opaque handle (`KB_RUN`), NEVER parsed. Not listed
+//           among the per-verb fields for the same reason as `who`: no verb writes it, `queue.mjs`
+//           stamps every line from the environment. A POINTER where `topic` is a DESCRIPTION, and
+//           the argument for keeping them apart is in `runOf()`.
 //   `who`   WHO WROTE THE LINE — the configured token's GitHub handle. Not listed among the
 //           per-verb fields below because NO VERB WRITES IT: it is stamped by `queue.mjs`'s single
 //           writer, like `synthetic`, so no verb can forget it and no verb can fake it. Reading
@@ -193,7 +211,51 @@ const stand = (deployment) => {
   const d = typeof deployment === 'string' ? deployment.trim() : '';
   return d ? { deployment: d } : {};
 };
-const ranked = ({ via, call, deployment }) => ({ rank: RANKER, ...door(via, call), ...stand(deployment) });
+/**
+ * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
+ *
+ * Reading the published base as an outsider on 2026-09-21, nothing said what the work was about:
+ * that the 07:22-08:15 window concerned a configurable-product order was inferred from the question
+ * texts and from nothing else. `run` (queue.mjs) is the operator's POINTER to a ticket; this is the
+ * DESCRIPTION, and the two are different things that only look alike.
+ *
+ * IT GOES ON THE LINE, and the two obvious alternatives were both checked and are both wrong.
+ * PER FILE is meaningless: a file boundary is set by the push timer, not by anything that happened
+ * in the work -- session `local_e8` left four files for one afternoon, split at 07:55, 08:05, 08:14
+ * and 08:14. PER SESSION is no better: a session covers many tasks, and typing a second prompt
+ * changes the work while the session id does not. A LINE is the only unit that is unambiguously
+ * about one thing, so a window's topics are the set of distinct topics inside it -- COMPUTED, never
+ * declared, the same rule that keeps the confirmation count out of an entry's frontmatter (§2).
+ *
+ * WHY THE AGENT AND NOT THE OPERATOR, and why it is not extracted from the prompt. The operator's
+ * prompt here is routinely RUSSIAN and everything stored in this base is ENGLISH; and a raw prompt
+ * is PROSE, which §7 keeps out of a public log. So a topic has to be FORMULATED, deliberately, by
+ * the only participant that holds both the language and the meaning.
+ *
+ * THE CAP IS IN CODE AND NOT IN THE TOOL DESCRIPTION, because a description is advice and this one
+ * is a §7 boundary. TRUNCATED rather than dropped, which is the one place this field departs from
+ * `stand()`'s "absent beats plausible": `stand()` drops because there is no correct value to record
+ * and a guess would be somebody else's fact, whereas here the agent HAS said what the work was and
+ * the only defect is length. The first `TOPIC_MAX` characters are still the agent's own words, and
+ * truncation is DETERMINISTIC -- the same over-long topic truncates to the same string, so an ask
+ * and its capture still join, which dropping would silently break at exactly the moment the field
+ * was most needed.
+ *
+ * What the cap CANNOT enforce is everything else the description asks for -- English, a noun phrase
+ * rather than a sentence, no client names, no customer data. Those stay advice because no code can
+ * check them, which is a reason to word the description carefully, not a reason to skip the cap.
+ */
+export const TOPIC_MAX = 60;
+const label = (topic) => {
+  const t = typeof topic === 'string' ? topic.trim() : '';
+  return t ? { topic: t.slice(0, TOPIC_MAX).trim() } : {};
+};
+/**
+ * The fields every agent-called verb stamps: which door, which call, what the work was. `reindex`
+ * is deliberately not among them -- it is an operator repair, there is no agent to have a topic.
+ */
+const context = ({ via, call, topic }) => ({ ...door(via, call), ...label(topic) });
+const ranked = ({ via, call, topic, deployment }) => ({ rank: RANKER, ...context({ via, call, topic }), ...stand(deployment) });
 
 /** Two decimal places: `nearMiss.coverage` is read by a human, and 0.45454545 is not. */
 const round2 = (n) => Math.round(Number(n) * 100) / 100;
@@ -206,11 +268,11 @@ async function catalogue(opened) {
 
 // ── ask ───────────────────────────────────────────────────────────────────────────────────────
 
-export async function ask(question, opened, { env = process.env, top = 3, via = null, call = null, deployment = null } = {}) {
+export async function ask(question, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
   const started = Date.now();
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why, ...ranked({ via, call, deployment }) }, { env });
+    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why, ...ranked({ via, call, topic, deployment }) }, { env });
     return { state: cat.state, why: cat.why, hits: [] };
   }
 
@@ -227,7 +289,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
       state: 'miss',
       ...(nearMiss ? { nearMiss: { id: nearMiss.row.id, score: nearMiss.score, coverage: round2(nearMiss.coverage) } } : {}),
       ms: Date.now() - started,
-      ...ranked({ via, call, deployment }),
+      ...ranked({ via, call, topic, deployment }),
     }, { env });
     return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length };
   }
@@ -289,7 +351,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
     state,
     ...(state === 'unreachable' ? { why: described[0]?.unavailable ?? 'no body could be read' } : {}),
     ms: Date.now() - started,
-    ...ranked({ via, call, deployment }),
+    ...ranked({ via, call, topic, deployment }),
   }, { env });
 
   return { state, hits: described, rows: cat.rows.length };
@@ -297,34 +359,34 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env, via = null, call = null } = {}) {
+export async function show(id, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...door(via, call) }, { env });
+    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
   // Retired entries are shown. Retrieval will not return one, but a reader holding an id is
   // entitled to see what is behind it -- including that it was retired.
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
   if (!row) {
-    await log({ kind: 'show', id, state: 'miss', ...door(via, call) }, { env });
+    await log({ kind: 'show', id, state: 'miss', ...context({ via, call, topic }) }, { env });
     return { state: 'miss', why: `${id} is not in this base's index` };
   }
   const read = await opened.reader.readEntry(row.path);
   if (!read.ok) {
     // Both a 404 and a timeout leave the caller without the entry, so both are 'conclude
     // nothing'. What differs is the REMEDY, which is why the message is built separately.
-    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...door(via, call) }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...context({ via, call, topic }) }, { env });
     return { state: 'unreachable', row, why: read.reason === 'missing' ? `${row.path} is not in the base — drift; run \`kb reindex\`` : read.detail };
   }
   let parsed;
   try {
     parsed = parseEntry(read.text, row.path);
   } catch (err) {
-    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...door(via, call) }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...context({ via, call, topic }) }, { env });
     return { state: 'unreachable', row, why: `unparseable entry: ${err.message}` };
   }
-  await log({ kind: 'show', id: row.id, state: 'answer', ...door(via, call) }, { env });
+  await log({ kind: 'show', id: row.id, state: 'answer', ...context({ via, call, topic }) }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
 }
 
@@ -401,7 +463,7 @@ async function openedThisSession({ env }) {
   return out;
 }
 
-export async function capture(input, opened, { env = process.env, via = null, call = null } = {}) {
+export async function capture(input, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
   if (missing.length) return { state: 'invalid', why: `capture needs: ${missing.join(', ')}` };
@@ -411,7 +473,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...door(via, call) }, { env });
+    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
 
@@ -427,7 +489,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
   if (dupe) {
     await log({
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
-      why: 'anchors+scope', when: 'call', ...(after ? { after } : {}), ...door(via, call),
+      why: 'anchors+scope', when: 'call', ...(after ? { after } : {}), ...context({ via, call, topic }),
     }, { env });
     return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
   }
@@ -530,7 +592,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
     // which was true of 5 of the 14 captures in the fortnight this was measured on, and is a
     // different fact from a line written before the field existed.
     read,
-    ...door(via, call),
+    ...context({ via, call, topic }),
     // The PAYLOAD the pusher needs. The public log line is this minus `payload` (see toLogLine):
     // a log line carries ids and subjects only, but the queue must carry what it is queueing.
     payload: { entry, body: String(input.claim).trim(), key: identityKey({ anchors: input.anchors, scope }) },
@@ -541,10 +603,10 @@ export async function capture(input, opened, { env = process.env, via = null, ca
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────
 
-async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null } = {}) {
+async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind, id, state: cat.state, why: cat.why, ...door(via, call) }, { env });
+    await log({ kind, id, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
@@ -578,7 +640,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     //
     // It is still in `payload` (local, never published) and still on the entry. Nothing is lost.
     ...(kind === 'confirm' ? { trust: row.trust + 1 } : {}),
-    ...door(via, call),
+    ...context({ via, call, topic }),
     payload: { id: row.id, path: row.path, item },
   }, { env });
 

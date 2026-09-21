@@ -1130,3 +1130,93 @@ test('ownFlushDue is decided by the OLDEST line, not the file mtime', async (t) 
   await writeFile(path, line(6, 'old') + '\n' + line(0, 'fresh') + '\n', 'utf8');
   assert.equal(await ownFlushDue({ env }), true, 'a fresh append does not postpone an old line');
 });
+
+// --- `run`: the two lines the single writer does not stamp -----------------------------------
+//
+// FOUND BY THE LIVE SMOKE, NOT BY THE UNIT SUITE, which is what the smoke is for. The first file
+// STEP 4 published carried `run` on all seven verb lines and nothing on the `flush` line that
+// summarised them -- and the flush line is the one an outsider reads first, because it is the one
+// that says what was delivered. `flush` is built by hand in push.mjs (it must be: it reports on the
+// very write that is happening), and `session` is about somebody ELSE's session.
+//
+// The two pull in OPPOSITE directions, which is why neither can be left to a default: a `flush`
+// line is about a DELIVERY made by this process and takes the PUSHER's run, while a `session` line
+// is about a session that has ended and takes that session's own. Exactly the split `who` above is
+// pinned against, one field along.
+
+const AS_RUN = (env, root, handle = 'VCST-1234') => ({ ...asWho(env, root), KB_RUN: handle });
+
+test('the flush line carries the PUSHER’s run handle, like the mark and the handle beside it', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  await knowWho(dir, 'octo-pusher');
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
+
+  // Only the flush line is asserted here, and deliberately: the queued `ask` above is a hand-written
+  // FIXTURE that never went through `queue.mjs`'s writer, so it carries whatever this test put in
+  // it. That the writer stamps the verb lines is `kb-log-fields.test.mjs`'s business; this file owns
+  // the one line the writer does not touch.
+  assert.equal(logLines(state).find((l) => l.kind === 'flush').run, 'VCST-1234');
+})));
+
+test('a pusher running under no run handle writes a flush line with none', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
+
+  assert.ok(!('run' in logLines(state).find((l) => l.kind === 'flush')), 'absent, never null');
+})));
+
+test('a swept queue file keeps the run ITS session wrote under, and the pusher does not restamp it', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  // Two different runs in one commit is not a defect; it is the log telling the truth about who did
+  // what. Re-stamping a swept line would rewrite somebody else's record to say it belonged to a
+  // ticket it had nothing to do with.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const foreign = join(dir, 'abcd1234.jsonl');
+  await writeFile(foreign, `${JSON.stringify({ at: '2026-09-18T09:00:00Z', kind: 'ask', q: 'somebody else asked this', matched: [], state: 'miss', run: 'REL-9' })}\n`, 'utf8');
+  const old = new Date(AT.getTime() - SWEEP_AFTER_MS - 60_000);
+  await utimes(foreign, old, old);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+
+  assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
+
+  const theirs = state.files.get(`v2/${logPath('abcd1234', AT, 1)}`).trim().split('\n').map((l) => JSON.parse(l));
+  assert.equal(theirs[0].run, 'REL-9', 'their run, not the pusher’s');
+  assert.equal(logLines(state).find((l) => l.kind === 'flush').run, 'VCST-1234');
+})));
+
+test('a published `session` line carries the run of the session it DESCRIBES', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  // Stamped onto the reach state by that session's own hook while it was still running, and carried
+  // from there — the same route `who` takes, for the same reason: the sweeper may be running under
+  // a different ticket entirely, or none.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const quiet = reachPath(dir, 'quiet003');
+  await writeFile(quiet, JSON.stringify({ session: 'quiet003', cursor: 0, tools: 300, turns: 9, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z', who: 'octo-quiet', run: 'REL-9' }), 'utf8');
+  const old = new Date(AT.getTime() - 60 * 60 * 1000);
+  await utimes(quiet, old, old);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+
+  assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
+
+  const line = logLines(state).find((l) => l.kind === 'session');
+  assert.equal(line.session, 'quiet003');
+  assert.equal(line.run, 'REL-9', 'the run it ran under, not the one that sent it');
+  assert.equal(logLines(state).find((l) => l.kind === 'flush').run, 'VCST-1234', 'and ours is unaffected');
+})));
+
+test('a `session` line for a state that never saw a run handle carries none', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  // NOT filled in from the pusher, which is the whole point: an unknown run is a gap a reader can
+  // see, and a confident wrong one is a gap they cannot.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const quiet = reachPath(dir, 'quiet004');
+  await writeFile(quiet, JSON.stringify({ session: 'quiet004', cursor: 0, tools: 12, turns: 2, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  const old = new Date(AT.getTime() - 60 * 60 * 1000);
+  await utimes(quiet, old, old);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+
+  assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
+
+  const line = logLines(state).find((l) => l.kind === 'session');
+  assert.equal(line.session, 'quiet004');
+  assert.ok(!('run' in line), 'no run beats the pusher’s');
+})));

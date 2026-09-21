@@ -64,6 +64,35 @@ export const MUTATIONS = Object.freeze(['capture', 'confirm', 'dispute']);
 export const isSynthetic = (env = process.env) => /^(1|true|yes|on)$/i.test(String(env.KB_SYNTHETIC ?? '').trim());
 
 /**
+ * WHAT RUN THIS WAS -- an opaque operator-set handle that JOINS this log to something outside it.
+ *
+ * Reading the published base as an outsider on 2026-09-21, nothing said what the work was about.
+ * That the 07:22-08:15 window concerned a configurable-product order was inferred from the question
+ * TEXTS and from nothing else. That works at nine asks and it does not work at five hundred, and
+ * PLAN §15's check wave already wants to scope to a wave of sessions and has to approximate it with
+ * a date range.
+ *
+ * NEVER PARSED, and that is the whole of its contract. `VCST-1234`, `PR#313`, a branch name, a URL
+ * -- whatever the operator wants. This tool does not validate its shape, does not recognise a
+ * ticket, does not normalise a case, does not truncate it. The moment it interprets the value it
+ * has an opinion about what a run is, and the field's entire value is that it has none: it is a
+ * pointer, and only the thing it points AT knows what it means. Trimmed only, because whitespace
+ * is an operator who meant to say nothing and `run: ""` would read as a run whose name is empty.
+ *
+ * AN ENV VAR AND NOT AN ARGUMENT, for the reason `KB_SYNTHETIC` is one: it has to reach the MCP
+ * server, which nobody passes arguments to. `KB_RUN=VCST-1234` on the shell or the harness that
+ * spawns the session covers both doors at once, and covers every line -- including the `flush` and
+ * `session` lines no agent ever calls a verb for.
+ *
+ * IT IS THE OPERATOR'S FIELD AND `topic` IS THE AGENT'S, and conflating the two is what makes this
+ * area feel slippery. A run handle is a POINTER to a ticket or a branch; a topic is a DESCRIPTION
+ * of the work. One is set once for a whole session by the person who knows the ticket number, the
+ * other changes when the work changes and is written by the participant that holds the meaning.
+ * See `topicOf()` in `verbs.mjs` for the other half.
+ */
+export const runOf = (env = process.env) => String(env.KB_RUN ?? '').trim();
+
+/**
  * How many characters of the host id the short key keeps.
  *
  * Eight, unchanged -- what changed is WHICH eight. Exported because the test asserts the width and
@@ -169,16 +198,28 @@ export function queuePath(env = process.env) {
  * there would name the wrong person with complete confidence — the exact failure that ruled out
  * using the commit author in the first place (`who.mjs`). Passing `null` records no identity;
  * passing nothing means "use mine".
+ *
+ * `run` TAKES THE SAME ESCAPE HATCH AND FOR THE SAME ONE CALLER. No verb may set it -- it is the
+ * operator's handle, read straight from the environment, so a verb can neither omit it nor invent
+ * one. The `session` line is the same exception it is for `who`: it describes a session that has
+ * ENDED and is published by whoever sweeps it, possibly under a different `KB_RUN` or none at all,
+ * so the handle is stamped onto the reach state by that session's own hook (`reach.mjs`) and
+ * passed back in here. A swept QUEUE file is not re-stamped either, for the plainer reason that
+ * its lines already carry the run they were written under.
  */
-export async function log(record, { env = process.env, who } = {}) {
-  // Both marks are stamped LAST and by the single writer, so no verb can forget one and no verb
-  // can fake one: `synthetic` because an env var must cover every line a benchmark run produces
-  // including its flush, and `who` because an identity a verb could choose to omit is an identity
-  // that will be omitted.
+export async function log(record, { env = process.env, who, run } = {}) {
+  // All three marks are stamped LAST and by the single writer, so no verb can forget one and no
+  // verb can fake one: `synthetic` because an env var must cover every line a benchmark run
+  // produces including its flush, `run` for the same reason one level up -- a run handle that only
+  // rode on the verbs an agent happens to call would miss the `flush` and `session` lines, which
+  // are exactly the ones an outsider reads first -- and `who` because an identity a verb could
+  // choose to omit is an identity that will be omitted.
   const me = who === undefined ? cachedWho({ dir: queueDir(env), env }) : who;
+  const handle = run === undefined ? runOf(env) : String(run ?? '').trim();
   const line = {
     at: new Date().toISOString(),
     ...record,
+    ...(handle ? { run: handle } : {}),
     ...(me ? { who: me } : {}),
     ...(isSynthetic(env) ? { synthetic: true } : {}),
   };

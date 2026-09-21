@@ -29,14 +29,17 @@ import { renderHtml, renderText } from './core/report-render.mjs';
 
 const USAGE = `kb:report — what agents asked this base, and what it could not answer
 
-  npm run kb:report -- [--days 30] [--sessions a,b,c] [--base <locator>] [--out <file.html>]
-                       [--json] [--no-network]
+  npm run kb:report -- [--days 30] [--sessions a,b,c] [--run <handle>] [--base <locator>]
+                       [--out <file.html>] [--json] [--no-network]
 
   --days N        window, in day folders under log/ (default ${DEFAULT_DAYS}). Above ${MAX_FILES}
                   files it refuses rather than hanging.
   --sessions a,b  scope to NAMED SESSIONS instead of a time window — the shape PLAN §15's check
                   wave needs, because a wave is a set of sessions interleaved with other traffic,
                   not a date range. Searches the WHOLE log tree, so --days does not apply.
+  --run <handle>  scope to one run handle (KB_RUN, exactly as it was stamped -- it is never
+                  parsed). NARROWS the window rather than replacing it, so it composes with
+                  --days and --sessions, and the header says how many lines it set aside.
   --base <url>    read a different base. Defaults to KB_BASE, then the declared default.
   --out <file>    where the HTML lands. Defaults to the session scratchpad; never the repo tree.
   --json          print the analysis as JSON instead of writing HTML.
@@ -102,7 +105,11 @@ export async function main(
     return 2;
   }
 
-  const report = analyse({ lines: got.lines, rows: got.rows, meta: { ...got.meta, how: base.how } });
+  // `run` is a LINE filter and `sessions` is a FILE filter, which is why one reaches `analyse`
+  // through meta and the other reaches `collect`: a run's lines are scattered across whatever files
+  // the push timer happened to cut, so there is no set of paths to fetch.
+  const run = typeof flags.run === 'string' ? flags.run : null;
+  const report = analyse({ lines: got.lines, rows: got.rows, meta: { ...got.meta, how: base.how, run } });
 
   if (flags.json) {
     out(JSON.stringify(report, (_k, v) => (v instanceof Set ? [...v] : v), 1));

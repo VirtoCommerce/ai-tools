@@ -23,7 +23,7 @@ import { queueDir } from './core/queue.mjs';
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
-import { ask, capture, confirm, dispute, reindex, show, stat } from './core/verbs.mjs';
+import { TOPIC_MAX, ask, capture, confirm, dispute, reindex, show, stat } from './core/verbs.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
@@ -43,13 +43,15 @@ function parseArgs(argv) {
 
 const USAGE = `kb — the knowledge base (PLAN v1)
 
-  npm run kb -- ask "<question>" [--deployment <env>] [--base <dir>] [--top 3] [--json]
-  npm run kb -- show KB-XXXXXXXX [--base <dir>] [--json]
+  npm run kb -- ask "<question>" [--deployment <env>] [--topic "<what you're working on>"]
+                                 [--base <dir>] [--top 3] [--json]
+  npm run kb -- show KB-XXXXXXXX [--topic "<...>"] [--base <dir>] [--json]
   npm run kb -- capture --subject "<one line>" --question "<the question it answers>"
                         --claim "<the claim, in prose>" --deployment <env>
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
-  npm run kb -- confirm KB-XXXXXXXX --deployment <env> [--note "<what you saw>"]
-  npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>"
+                        [--topic "<...>"]
+  npm run kb -- confirm KB-XXXXXXXX --deployment <env> [--note "<what you saw>"] [--topic "<...>"]
+  npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
   npm run kb -- push [--dry-run] [--no-sweep]        send the queue to the base as ONE commit
@@ -62,7 +64,13 @@ as one atomic commit. \`--dry-run\` shows exactly what would be written and send
 
 Every invocation also sweeps IDLE queue files left behind by earlier sessions, at most every 30
 minutes, silently and without affecting the exit code. That sweep is why a failed push needs no
-hook and no scheduler: the next session picks it up.`;
+hook and no scheduler: the next session picks it up.
+
+--topic is a short ENGLISH noun phrase for what the work is -- "configurable product checkout" --
+so a window of the log can be read by what it was about rather than by whose session it was. Cut at
+${TOPIC_MAX} characters. KB_RUN=<handle> in the environment stamps every line this session writes
+with an opaque run handle (a ticket, a PR, a branch); it is never parsed, and it is an env var and
+not a flag so that it reaches the MCP server too.`;
 
 // ── printing ──────────────────────────────────────────────────────────────────────────────────
 
@@ -150,7 +158,7 @@ async function main(argv) {
     // `--deployment` is OPTIONAL on ask and is never derived -- see `stand()` in core/verbs.mjs
     // for why this door has no authoritative source to derive it from either.
     const r = await ask(question, opened, {
-      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment,
+      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment, topic: args.flags.topic,
     });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(askLines(r));
@@ -160,7 +168,7 @@ async function main(argv) {
   if (verb === 'show') {
     const id = args._[1];
     if (!id) { out('show needs an id'); return EXIT.NO_COVERAGE; }
-    const r = await show(id, opened, { via: VIA });
+    const r = await show(id, opened, { via: VIA, topic: args.flags.topic });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(showLines(r));
     return exitFor(r.state);
@@ -171,7 +179,7 @@ async function main(argv) {
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
       deployment: args.flags.deployment, method: args.flags.method,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
-    }, opened, { via: VIA });
+    }, opened, { via: VIA, topic: args.flags.topic });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(captureLines(r));
     // A refusal is not a failure -- it is the design working (the ranking missed an entry that
@@ -185,7 +193,7 @@ async function main(argv) {
     const fn = verb === 'confirm' ? confirm : dispute;
     const r = await fn(args._[1], {
       deployment: args.flags.deployment, note: args.flags.note, saw: args.flags.saw, method: args.flags.method,
-    }, opened, { via: VIA });
+    }, opened, { via: VIA, topic: args.flags.topic });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(evidenceLines(verb, r));
     if (r.state === 'invalid') return EXIT.NO_COVERAGE;

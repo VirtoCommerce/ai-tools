@@ -109,7 +109,7 @@ export function countToolUses(chunk, { from = 0 } = {}) {
  * permanently — an undercount that only ever appears in busy sessions, which are the ones this
  * measurement exists for.
  */
-export function advanceReach({ dir, session, transcriptPath, at = new Date(), who = null } = {}) {
+export function advanceReach({ dir, session, transcriptPath, at = new Date(), who = null, run = '' } = {}) {
   if (!dir || !session || !transcriptPath || !existsSync(transcriptPath)) return null;
   const prior = readReach(dir, session) ?? {
     session, cursor: 0, tools: 0, turns: 0, touchAt: [], firstAt: at.toISOString(), lastAt: null,
@@ -157,6 +157,12 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
     // that may be cold on this machine's first ever kb use and warm forever after, and a later
     // turn finding nothing is no reason to forget what an earlier one found.
     ...(who || prior.who ? { who: who || prior.who } : {}),
+    // AND THE RUN HANDLE, by the identical argument one field along. A `session` line is published
+    // by whoever sweeps it, and that sweeper may be running under a different `KB_RUN` — or none —
+    // so stamping the publisher's would name the wrong run with complete confidence, which is the
+    // failure that put `who` here in the first place. Same last-known-value rule: an env var unset
+    // for one turn is not a reason to forget what the session was running as.
+    ...(run || prior.run ? { run: run || prior.run } : {}),
   };
   try { writeFileSync(reachPath(dir, session), JSON.stringify(next), 'utf8'); } catch { return null; }
   return next;

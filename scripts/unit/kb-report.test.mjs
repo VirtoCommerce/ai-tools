@@ -25,7 +25,7 @@ import { join } from 'node:path';
 import {
   FAIL, MIN_SAMPLE, NEAR_MISS_REVIEW, NO_DATA, PASS, THRESHOLDS,
   analyse, captureLoop, dayOf, entryUsage, evidence, indexLookup, misses, nearMisses, parseLogFile,
-  questionKey, questions, refusals, sessionOf, unhelpful, verdict,
+  questionKey, questions, refusals, sessionOf, topics, unhelpful, verdict,
 } from '../kb/core/report-analyse.mjs';
 import {
   collect, collectFromCache, normalizeSessions, selectLogPaths, windowDays,
@@ -974,4 +974,108 @@ test('a session-scoped summary never claims a day window it did not use', () => 
   }));
   assert.match(text, /2 named session\(s\): wave1, wave2/);
   assert.ok(!/last 30 days/.test(text), 'a figure headed by the wrong scope is a figure nobody can reproduce');
+});
+
+// ── panel 8: topics, and scoping a report to one run ──────────────────────────────────────────
+//
+// The gap these close is the one an outsider hit on 2026-09-21: reading the published base, nothing
+// said what the work WAS. The subject of a window had to be inferred from the question texts, which
+// is a person reading prose and does not survive volume.
+//
+// A TOPIC IS COMPUTED HERE AND DECLARED NOWHERE. It sits on the LINE (`label()` in verbs.mjs) —
+// not on the file, whose boundary is the push timer, and not on the session, which covers many
+// tasks — so a window's topics are a set derived from its lines, the same way §2 keeps a
+// confirmation count off an entry's frontmatter.
+
+const TOPICAL = [
+  line({ at: '2026-09-21T08:00:00.000Z', kind: 'ask', q: 'how does the configurator price a variant', matched: ['KB-1834ABE5'], state: 'answer', topic: 'configurable product order', run: 'VCST-1234', _session: 'aa11', _path: 'log/2026-09-21/aa11/aa11-0001.jsonl' }),
+  line({ at: '2026-09-21T08:05:00.000Z', kind: 'ask', q: 'is the gift line added automatically', state: 'miss', topic: 'configurable product order', run: 'VCST-1234', _session: 'aa11', _path: 'log/2026-09-21/aa11/aa11-0001.jsonl' }),
+  line({ at: '2026-09-21T08:09:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', topic: 'configurable product order', run: 'VCST-1234', _session: 'aa11', _path: 'log/2026-09-21/aa11/aa11-0002.jsonl' }),
+  // SAME SESSION, DIFFERENT WORK — the case that makes this panel earn its place, and the exact
+  // case panel 3 cannot see because it groups by session.
+  line({ at: '2026-09-21T09:30:00.000Z', kind: 'ask', q: 'what does the Active column reflect', matched: ['KB-FA724D31'], state: 'answer', topic: 'B2B member roles', run: 'VCST-1234', _session: 'aa11', _path: 'log/2026-09-21/aa11/aa11-0003.jsonl' }),
+  // A DIFFERENT RUN, interleaved in the same window, which is what --run exists to separate.
+  line({ at: '2026-09-21T08:30:00.000Z', kind: 'ask', q: 'where is configurability stored', matched: ['KB-3113CBC1'], state: 'answer', topic: 'B2B member roles', run: 'REL-9', _session: 'bb22', _path: 'log/2026-09-21/bb22/bb22-0001.jsonl' }),
+  // And a line from before the field existed. Not a topic called "unknown".
+  line({ at: '2026-09-21T08:40:00.000Z', kind: 'ask', q: 'anything at all', state: 'miss', _session: 'cc33', _path: 'log/2026-09-21/cc33/cc33-0001.jsonl' }),
+];
+
+test('the topics panel groups a window by what the work was, not by whose session it was', () => {
+  const t = topics(TOPICAL);
+  assert.deepEqual(t.rows.map((r) => r.topic), ['configurable product order', 'B2B member roles']);
+  const [conf, roles] = t.rows;
+  assert.equal(conf.lines, 3);
+  assert.equal(conf.asks, 2);
+  assert.equal(conf.misses, 1, 'a miss under a topic is the row a reader acts on');
+  assert.equal(conf.captures, 1);
+  assert.equal(conf.first, '2026-09-21T08:00:00.000Z');
+  assert.equal(conf.last, '2026-09-21T08:09:00.000Z');
+  // ONE TOPIC SPANNING TWO SESSIONS AND TWO RUNS, which is the join a session-keyed panel cannot
+  // make at all: `aa11` did this work at 09:30 and `bb22` did it at 08:30 under another run.
+  assert.equal(roles.sessions, 2);
+  assert.deepEqual(roles.runs, ['REL-9', 'VCST-1234']);
+});
+
+test('a line with no topic is counted, never bucketed as one', () => {
+  // A bucket called "unknown" would invent a subject nobody wrote. The count is the honest
+  // denominator: it says how much of the window this panel can speak for.
+  const t = topics(TOPICAL);
+  assert.equal(t.untopiced, 1);
+  assert.equal(t.topiced, TOPICAL.length - 1);
+  assert.ok(!t.rows.some((r) => /unknown|none|other/i.test(r.topic)));
+});
+
+test('topic rows are ordered by volume and the order is stable between two runs', () => {
+  const a = topics(TOPICAL).rows.map((r) => r.topic);
+  const b = topics([...TOPICAL].reverse()).rows.map((r) => r.topic);
+  assert.deepEqual(a, b, 'input order must not change the report');
+});
+
+test('--run scopes every panel and the verdict, and says what it set aside', () => {
+  // Filtered inside `analyse` and not at the caller, so the panels and the §15 verdict are computed
+  // from ONE set of lines. A filter applied at the caller is one the second caller forgets.
+  const scoped = analyse({ lines: TOPICAL, rows: ROWS, meta: { days: 30, files: 4, run: 'REL-9' } });
+  assert.equal(scoped.meta.run, 'REL-9');
+  assert.equal(scoped.meta.outOfRun, 5, 'the denominator is printed, not dropped');
+  assert.equal(scoped.panels.questions.totalAsks, 1);
+  assert.deepEqual(scoped.panels.topics.rows.map((r) => r.topic), ['B2B member roles']);
+  assert.equal(scoped.sessions, 1);
+
+  const all = analyse({ lines: TOPICAL, rows: ROWS, meta: { days: 30, files: 4 } });
+  assert.equal(all.meta.run, null);
+  assert.equal(all.meta.outOfRun, 0);
+  assert.equal(all.panels.questions.totalAsks, 5, 'five asks, one capture');
+});
+
+test('a run handle is matched EXACTLY — the report never parses one either', () => {
+  // `runOf()` in queue.mjs records the handle verbatim and refuses to interpret it. A report that
+  // prefix-matched or case-folded would be the tool forming an opinion about what a run is, which
+  // is the one thing this field is defined not to have.
+  for (const q of ['rel-9', 'REL', 'REL-9 ']) {
+    const r = analyse({ lines: TOPICAL, rows: ROWS, meta: { days: 30, run: q } });
+    const expected = q.trim() === 'REL-9' ? 1 : 0;
+    assert.equal(r.panels.questions.totalAsks, expected, `${JSON.stringify(q)}`);
+  }
+});
+
+test('the scope line names the run and the lines it excluded, so the figure is reproducible', () => {
+  // PLAN §15.2: a header reading "last 30 days" over a report that analysed one run is a number
+  // nobody can reproduce. The run NARROWS the window rather than replacing it, so both are printed.
+  const text = renderText(analyse({ lines: TOPICAL, rows: ROWS, meta: { days: 30, files: 4, run: 'VCST-1234' } }));
+  assert.match(text, /last 30 days, run VCST-1234 \[2 line\(s\) outside it excluded\]/);
+  assert.match(text, /topics {9}2 distinct over 4 line\(s\)/);
+  assert.match(text, /top "configurable product order" \(3\)/);
+
+  const unscoped = renderText(analyse({ lines: TOPICAL, rows: ROWS, meta: { days: 30, files: 4 } }));
+  assert.ok(!/run /.test(unscoped.split('\n')[0]), 'no run, no mention of one');
+});
+
+test('the topics panel renders, and an empty one says why it is empty', () => {
+  const html = renderHtml(analyse({ lines: TOPICAL, rows: ROWS, meta: { days: 30, files: 4 } }));
+  assert.match(html, /id="topics"/);
+  assert.match(html, /configurable product order/);
+  assert.match(html, /1 line\(s\) carry no topic/);
+
+  const bare = renderHtml(analyse({ lines: [line({ kind: 'ask', q: 'x', state: 'miss', _session: 's1', _path: 'log/2026-09-21/a-s1.jsonl' })], rows: ROWS, meta: { days: 30, files: 1 } }));
+  assert.match(bare, /nothing has passed one yet/);
 });

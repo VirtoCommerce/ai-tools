@@ -17,7 +17,7 @@ import { readQueue } from '../kb/core/queue.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
-import { ask, capture, show } from '../kb/core/verbs.mjs';
+import { TOPIC_MAX, ask, capture, show } from '../kb/core/verbs.mjs';
 import { captureLines } from '../kb/core/render.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
@@ -536,7 +536,7 @@ const HANDLE = 'octo-tester';
 const TEST_TOKEN = 'ghp_atestonlytokenvaluethatisnotreal01';
 
 /** A queue directory whose identity cache is already warm, as a door would have left it. */
-async function withKnownWho(fn, { handle = HANDLE, token = TEST_TOKEN } = {}) {
+async function withKnownWho(fn, { handle = HANDLE, token = TEST_TOKEN, extraEnv = {} } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'kb-who-line-'));
   // An env root with no env files: `writeToken` resolves through the repo's real `.env.local`
   // otherwise, and then which token these tests run under depends on the machine.
@@ -550,6 +550,7 @@ async function withKnownWho(fn, { handle = HANDLE, token = TEST_TOKEN } = {}) {
       VC_ENV_ROOT: root,
       CLAUDE_CODE_HOST_SESSION_ID: 'testsess',
       ...(token ? { GITHUB_TOKEN: token } : {}),
+      ...extraEnv,
     });
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -644,4 +645,178 @@ test('a lookup is never attempted while logging, even with a transport that expl
   } finally {
     globalThis.fetch = saved;
   }
+});
+
+// ── `run` and `topic`: what the work WAS ──────────────────────────────────────────────────────
+//
+// Reading the published base as an outsider on 2026-09-21, nothing said what the work was about.
+// That the 07:22-08:15 window concerned a configurable-product order was inferred from the question
+// TEXTS and from nothing else — a person reading nine sentences, which does not survive volume.
+//
+// TWO FIELDS AND NOT ONE, because they are different things that only look alike. `run` is the
+// operator's opaque POINTER (a ticket, a PR, a branch) and joins this log to something outside it;
+// `topic` is the agent's short English DESCRIPTION of the work. Conflating them is what makes this
+// area feel slippery, and each is pinned separately below.
+//
+// BOTH GO ON THE LINE. Neither can go on the FILE — a file boundary is set by the push timer, and
+// session `local_e8` left four files for one afternoon — and neither can go on the SESSION, which
+// covers many tasks. A line is the only unit unambiguously about one thing, so a window's topics
+// are COMPUTED from the lines (`topics()` in report-analyse.mjs), never declared.
+
+test('the run handle rides on every line when the env var is set, and on none when it is not', async () => {
+  // Stamped by `queue.mjs`'s single writer, like `who` and `synthetic`: an env var has to cover the
+  // `flush` and `session` lines too, which no agent ever calls a verb for and which are exactly the
+  // lines an outsider reads first.
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli' });
+    await ask(MISSED_COLD, opened(), { env, via: 'cli' });
+    await show('KB-27B4CD10', opened(), { env, via: 'cli' });
+    await capture({
+      subject: 'a fact captured under a run handle',
+      question: 'does the run handle reach a capture line',
+      claim: 'It does.',
+      deployment: 'vcst_qa',
+      anchors: ['/depot/runs'],
+      scope: ['surface=platform'],
+    }, opened(), { env, via: 'cli' });
+    const lines = await linesOf(env);
+    assert.ok(lines.length >= 4);
+    for (const l of lines) assert.equal(l.run, 'VCST-1234', `${l.kind} carries it too`);
+  }, { KB_RUN: 'VCST-1234' });
+
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli' });
+    assert.ok(!('run' in (await linesOf(env))[0]), 'absent, not null and not an empty string');
+  });
+});
+
+test('the run handle is never parsed — a ticket, a PR, a URL and a sentence all survive verbatim', async () => {
+  // THE WHOLE OF ITS CONTRACT. The moment this tool recognises a ticket it has an opinion about
+  // what a run is, and the field's entire value is that it has none: only the thing it points AT
+  // knows what it means. No shape check, no case fold, no length cap — unlike `topic`, which is the
+  // agent's description and is capped for that reason.
+  const handles = ['VCST-1234', 'PR#313', 'https://github.com/VirtoCommerce/vc-knowledge/pull/313',
+    'claude/kb-v1-core', 'sprint 26-18 — configurable products', 'x'.repeat(300)];
+  for (const handle of handles) {
+    // eslint-disable-next-line no-await-in-loop
+    await withQueue(async (env) => {
+      await ask(ANSWERED, opened(), { env, via: 'cli' });
+      assert.equal((await linesOf(env))[0].run, handle);
+    }, { KB_RUN: handle });
+  }
+});
+
+test('a run handle of pure whitespace records nothing — an operator who meant to say nothing', async () => {
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli' });
+    assert.ok(!('run' in (await linesOf(env))[0]));
+  }, { KB_RUN: '   ' });
+});
+
+test('the topic rides on every verb an agent calls, and joins an ask to its capture', async () => {
+  // THE ACCEPTANCE CRITERION, as an assertion: a unit of work is an ask and the capture that
+  // followed it, and the two are only joinable if both lines carry the same handle and the same
+  // topic. Before this field the join key was the SESSION, which is exactly the unit this whole
+  // change exists to say is not one.
+  await withQueue(async (env) => {
+    const TOPIC = 'configurable product checkout';
+    await ask(MISSED_COLD, opened(), { env, via: 'mcp', topic: TOPIC });
+    await capture({
+      subject: 'a fact found after the miss',
+      question: 'what happens to a saved filter on sign-out',
+      claim: 'It is dropped.',
+      deployment: 'vcst_qa',
+      anchors: ['/account/filters'],
+      scope: ['surface=storefront-ui'],
+    }, opened(), { env, via: 'mcp', topic: TOPIC });
+    const [askLine, capLine] = await linesOf(env);
+    assert.equal(askLine.kind, 'ask');
+    assert.equal(capLine.kind, 'capture');
+    assert.equal(askLine.topic, TOPIC);
+    assert.equal(capLine.topic, TOPIC);
+    assert.equal(askLine.run, capLine.run, 'and the run handle joins them too');
+    assert.equal(askLine.run, 'VCST-5678');
+  }, { KB_RUN: 'VCST-5678' });
+});
+
+test('a session can change topic mid-run, and the lines say so', async () => {
+  // The reason a topic is NOT sticky per session. Typing a second prompt changes the work while the
+  // session id does not, so a cached topic would keep labelling new lines with the old work —
+  // confidently and wrongly, which is the failure mode this plan keeps refusing. The agent passes
+  // it per call, so the change is visible in the log rather than smoothed over.
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'mcp', topic: 'B2B member roles' });
+    await ask(MISSED_COLD, opened(), { env, via: 'mcp', topic: 'warehouse fleet' });
+    const lines = await linesOf(env);
+    assert.deepEqual(lines.map((l) => l.topic), ['B2B member roles', 'warehouse fleet']);
+  });
+});
+
+test('no topic means NO FIELD — including the valueless-flag boolean the CLI parser produces', async () => {
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli' });
+    await ask(ANSWERED, opened(), { env, via: 'cli', topic: '' });
+    await ask(ANSWERED, opened(), { env, via: 'cli', topic: '   ' });
+    // `kb.mjs`'s parser gives a valueless flag the boolean `true`, so `--topic --json` would
+    // otherwise publish `topic: "true"` — the same trap `deployment` is pinned against.
+    await ask(ANSWERED, opened(), { env, via: 'cli', topic: true });
+    for (const line of await linesOf(env)) assert.ok(!('topic' in line), 'absent beats invented');
+  });
+});
+
+test('an over-long topic is CUT IN CODE, deterministically, so the join survives it', async () => {
+  // THE CAP IS A §7 BOUNDARY, and §7 boundaries do not live in a tool description — a description
+  // is advice. `TOPIC_MAX` is imported rather than typed here: a transcribed constant is correct
+  // exactly once (`.claude/rules/test-data.md`, GOLDEN RULE).
+  //
+  // TRUNCATED AND NOT DROPPED, which is where this field departs from `stand()`. `stand()` drops
+  // because there is no correct value to record and a guess would be somebody else's fact; here the
+  // agent HAS said what the work was and the only defect is length. Truncation is deterministic, so
+  // two calls passing the same over-long topic still land on the same string and still join —
+  // dropping would break that silently, at the one moment the field was most needed.
+  const LONG = 'a full sentence describing what the agent believes it is doing right now, at length';
+  assert.ok(LONG.length > TOPIC_MAX, 'the fixture must actually exceed the cap');
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', topic: LONG });
+    await ask(MISSED_COLD, opened(), { env, via: 'cli', topic: LONG });
+    const lines = await linesOf(env);
+    for (const l of lines) assert.ok(l.topic.length <= TOPIC_MAX, `cut to ${TOPIC_MAX}`);
+    assert.equal(lines[0].topic, lines[1].topic, 'same input, same output — the join still holds');
+    assert.equal(lines[0].topic, LONG.slice(0, TOPIC_MAX).trim());
+  });
+
+  // And a topic whose cut lands on a space does not publish the trailing one: a key with invisible
+  // characters in it is a key two readers can disagree about.
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', topic: `${'x'.repeat(TOPIC_MAX - 1)} tail` });
+    assert.equal((await linesOf(env))[0].topic, 'x'.repeat(TOPIC_MAX - 1));
+  });
+});
+
+test('both doors put both fields on the line, because both go through one core', async () => {
+  // A divergence here would mean two logs with different shapes, which is the thing having one core
+  // is for — the same assertion `deployment` and `who` are pinned by.
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', topic: 'B2B member roles' });
+    await ask(ANSWERED, opened(), { env, via: 'mcp', call: 'toolu_01Fy89fmgM4sCT11S7dAyshH', topic: 'B2B member roles' });
+    const [cli, mcp] = await linesOf(env);
+    assert.equal(cli.topic, mcp.topic);
+    assert.equal(cli.run, mcp.run);
+    assert.deepEqual(Object.keys(mcp).filter((k) => k !== 'call'), Object.keys(cli));
+  }, { KB_RUN: 'PR#313' });
+});
+
+test('the stamped tail is run then who, and a topic sits among the verb’s own fields', async () => {
+  // KEY ORDER, pinned because it is the one thing two doors can quietly disagree about, and because
+  // the older assertion said only "who is last" — which stops being a statement about ordering the
+  // moment a second stamped field exists. `topic` is a VERB's field and sits among them; `run` and
+  // `who` are stamped afterwards by the single writer, in that order.
+  await withKnownWho(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', topic: 'B2B member roles' });
+    const [line] = await linesOf(env);
+    const keys = Object.keys(line);
+    assert.deepEqual(keys.slice(-2), ['run', 'who']);
+    assert.ok(keys.indexOf('topic') < keys.indexOf('run'), 'a topic is the verb’s business');
+    assert.equal(line.run, 'REL-9');
+  }, { extraEnv: { KB_RUN: 'REL-9' } });
 });

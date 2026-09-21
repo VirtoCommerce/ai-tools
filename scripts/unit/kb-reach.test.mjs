@@ -161,6 +161,25 @@ test('the state records WHO RAN THE SESSION, and keeps the last handle it learne
   assert.ok(!('who' in advanceReach({ dir, session: 'sess0007', transcriptPath: t })));
 }));
 
+test('the state records WHAT RUN the session ran under, by the same argument as the handle', () => withDir((dir) => {
+  // One field along from `who` and for the identical reason: the state is swept and published by
+  // whoever comes next, who may be running under a different `KB_RUN` or none at all. Stamping the
+  // publisher's would name the wrong run with complete confidence — the failure that put `who` here.
+  const t = join(dir, 'transcript.jsonl');
+  writeFileSync(t, turn('Read'));
+  const first = advanceReach({ dir, session: 'sess0008', transcriptPath: t, run: 'VCST-5776' });
+  assert.equal(first.run, 'VCST-5776');
+  assert.equal(readReach(dir, 'sess0008').run, 'VCST-5776');
+
+  // An env var unset for one turn is not a reason to forget what the session was running as.
+  appendFileSync(t, turn('Bash'));
+  assert.equal(advanceReach({ dir, session: 'sess0008', transcriptPath: t }).run, 'VCST-5776');
+
+  // And a session that never saw one carries no key at all.
+  writeFileSync(t, turn('Read'));
+  assert.ok(!('run' in advanceReach({ dir, session: 'sess0009', transcriptPath: t })));
+}));
+
 test('dropping a reach state is what makes a session publish exactly once', () => withDir((dir) => {
   const t = join(dir, 'transcript.jsonl');
   writeFileSync(t, turn('Read'));

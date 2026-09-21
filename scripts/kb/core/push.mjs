@@ -36,7 +36,7 @@ import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from './index-build.mjs';
 import { normalizeRow } from './index-load.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
-import { MUTATIONS, isSynthetic, log, queueDir, queuePath, readQueue, sessionId } from './queue.mjs';
+import { MUTATIONS, isSynthetic, log, queueDir, queuePath, readQueue, runOf, sessionId } from './queue.mjs';
 import { REACH_IDLE_MS, dropReach, idleReaches, reachLine } from './reach.mjs';
 import { toLogLine } from './verbs.mjs';
 import { cachedWho } from './who.mjs';
@@ -474,10 +474,11 @@ export async function flush({
   // second one beside it.
   if (includeMine) {
     for (const state of idleReaches(queueDir(env), { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
-      // `who` comes off the STATE, never off this process: this line describes a session that has
-      // already ended, and we may well be a different person on a different machine. `null` where
-      // the state never learned one — no identity beats the wrong one (`core/who.mjs`).
-      const written = await log(reachLine(state), { env, who: state.who ?? null });
+      // `who` AND `run` come off the STATE, never off this process: this line describes a session
+      // that has already ended, and we may well be a different person on a different machine under
+      // a different run. `null` where the state never learned one — no identity and no run beats
+      // the wrong one (`core/who.mjs`).
+      const written = await log(reachLine(state), { env, who: state.who ?? null, run: state.run ?? null });
       // Dropped only once the line is safely appended. A state file removed after a failed write is
       // a session that silently never existed — the exact hole this whole mechanism was built to
       // close, reintroduced at the last step.
@@ -562,7 +563,7 @@ export async function flush({
   while (attempt < maxAttempts) {
     attempt += 1;
     const at = now();
-    const built = await buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, logTarget, logSeq, synthetic: isSynthetic(env), who: cachedWho({ dir: queueDir(env), env }) });
+    const built = await buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, logTarget, logSeq, synthetic: isSynthetic(env), run: runOf(env), who: cachedWho({ dir: queueDir(env), env }) });
     if (built.state !== 'ready') { last = built; break; }
 
     if (gate) {
@@ -671,7 +672,7 @@ export async function sweepIfDue({ env = process.env, base = null, token = null,
 }
 
 /** Re-read the base at its current head and compose everything the commit will contain. */
-async function buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, logTarget, logSeq, synthetic = false, who = null }) {
+async function buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, logTarget, logSeq, synthetic = false, run = '', who = null }) {
   const ref = await api.getRef();
   if (!ref.ok) return { state: 'failed', ...ref };
   const commit = await api.getCommit(ref.sha);
@@ -757,6 +758,12 @@ async function buildPush({ api, prefix, full, loaded, allLines, counts, session,
     // only ever attached to the pushing session's own file (`own ?` below), so one env read is the
     // right test — a synthetic run sweeping somebody else's real queue does not mark their lines.
     ...(synthetic ? { synthetic: true } : {}),
+    // And `run` by the same argument, found the same way — by reading a published file. A run
+    // handle that rode only on the verbs an agent calls would be absent from the `flush` line,
+    // which is the line an outsider reads FIRST because it is the one that says what was delivered.
+    // Scoped to the PUSHER like `who` beside it: a swept file's lines were written under whatever
+    // run their own session was running as, and this line is about the delivery, not about them.
+    ...(run ? { run } : {}),
     // And `who` for exactly the same reason, with exactly the same scope: this line describes a
     // DELIVERY, the delivery was made by this process, and the pusher is precisely the party a
     // reader of a flush line wants named — including when the file it swept belongs to somebody

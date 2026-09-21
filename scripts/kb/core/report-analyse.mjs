@@ -827,6 +827,47 @@ export function reach(lines) {
   };
 }
 
+/**
+ * WHAT THE WINDOW WAS ABOUT -- the distinct topics inside it, with the shape of each one's traffic.
+ *
+ * COMPUTED, NEVER DECLARED. A topic sits on the LINE (`label()` in verbs.mjs), because the two
+ * units a reader reaches for first are both wrong: a FILE boundary is the push timer, and a SESSION
+ * covers many tasks. So "what was this window about" is a set derived from the lines, the same way
+ * §2 keeps a confirmation count off an entry's frontmatter -- a declared copy of something that
+ * already has a home is the copy that goes stale.
+ *
+ * IT REPLACES NOTHING. Panel 3 groups by session and keeps doing so; this is the grouping that
+ * survives a session covering four tasks, which panel 3 cannot see at all.
+ *
+ * `untopiced` is the honest denominator and it is a COUNT, not a row: lines written before this
+ * field existed, and lines from a session whose agent never passed one, are not a topic called
+ * "unknown" -- rendering them as one would invent a subject nobody wrote. The number says how much
+ * of the window this panel can speak for.
+ */
+export function topics(lines) {
+  const by = new Map();
+  let untopiced = 0;
+  for (const l of lines) {
+    const t = typeof l.topic === 'string' && l.topic ? l.topic : null;
+    if (!t) { untopiced += 1; continue; }
+    const row = by.get(t) ?? { topic: t, lines: 0, asks: 0, misses: 0, captures: 0, sessions: new Set(), runs: new Set(), first: l.at, last: l.at };
+    row.lines += 1;
+    if (l.kind === 'ask') { row.asks += 1; if (l.state === 'miss') row.misses += 1; }
+    if (l.kind === 'capture') row.captures += 1;
+    if (l._session) row.sessions.add(l._session);
+    if (l.run) row.runs.add(l.run);
+    if (String(l.at ?? '') < String(row.first)) row.first = l.at;
+    if (String(l.at ?? '') > String(row.last)) row.last = l.at;
+    by.set(t, row);
+  }
+  const rows = [...by.values()]
+    .map((r) => ({ ...r, sessions: r.sessions.size, runs: [...r.runs].sort() }))
+    // Most lines first: the thing the window was mostly about is the thing a reader wants named.
+    // Ties break on the topic itself so the order is stable between two runs over one window.
+    .sort((a, b) => b.lines - a.lines || a.topic.localeCompare(b.topic));
+  return { rows, untopiced, topiced: lines.length - untopiced };
+}
+
 /** Asks per day — the header's one-line shape of activity. */
 export function activity(lines) {
   const byDay = new Map();
@@ -856,8 +897,16 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
   // the line is still in the base, still readable, still auditable, and the header says how many
   // were set aside. A measurement that quietly removed its own inputs would be the same defect the
   // filter exists to fix.
-  const real = lines.filter((l) => l.synthetic !== true);
-  const syntheticLines = lines.length - real.length;
+  const notSynthetic = lines.filter((l) => l.synthetic !== true);
+  const syntheticLines = lines.length - notSynthetic.length;
+  // SCOPED TO ONE RUN, when the operator named one. Filtered HERE and not in `report.mjs` for the
+  // reason the synthetic filter is here: every panel and the §15 verdict must be computed from the
+  // same set of lines, and a filter applied at the caller is one a second caller forgets. The
+  // comparison is EXACT and the handle is never parsed -- `runOf()` in queue.mjs is the contract,
+  // and a report that pattern-matched run handles would be the tool having an opinion about what a
+  // run is, which is precisely what the field refuses to have.
+  const run = typeof meta.run === 'string' && meta.run.trim() ? meta.run.trim() : null;
+  const real = run ? notSynthetic.filter((l) => l.run === run) : notSynthetic;
   const panels = {
     misses: misses(real),
     nearMisses: nearMisses(real, idx),
@@ -868,12 +917,18 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
     unhelpful: unhelpful(real, idx),
     loop: captureLoop(real),
     reach: reach(real),
+    topics: topics(real),
   };
   return {
     meta: {
       ...meta,
       synthetic: syntheticLines,
       syntheticAsks: lines.filter((l) => l.synthetic === true && l.kind === 'ask').length,
+      // THE SCOPE IS PART OF THE NUMBER (PLAN §15.2): a report headed "last 30 days" that actually
+      // analysed one run is a figure nobody can reproduce. `outOfRun` is what the filter set aside,
+      // printed rather than dropped, for the same reason the synthetic count is.
+      run,
+      outOfRun: run ? notSynthetic.length - real.length : 0,
     },
     tally: kindTally(real),
     activity: activity(real),

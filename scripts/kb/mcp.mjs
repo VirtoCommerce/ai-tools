@@ -54,7 +54,7 @@ import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
 import { queueDir } from './core/queue.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
-import { ask, capture, confirm, dispute, show, stat } from './core/verbs.mjs';
+import { TOPIC_MAX, ask, capture, confirm, dispute, show, stat } from './core/verbs.mjs';
 import { resolveWho } from './core/who.mjs';
 
 /** The newest protocol version this server speaks; older ones are echoed back when a client asks. */
@@ -76,6 +76,34 @@ function serverVersion(env = process.env) {
 
 const str = (description) => ({ type: 'string', description });
 
+/**
+ * WHAT THE WORK IS -- the one field an AGENT has to decide something for, which makes its wording
+ * the whole of its design. This project has exactly one measured lever on agent behaviour: the
+ * words it reads (PLAN §21.1 -- the same prompt, the same two agents, a brief naming the tool and
+ * the question shape produced 5 calls, a brief without it produced 0). So the description names
+ * Written twice, as that section's shape predicted it would have to be. The first draft opened
+ * "What you are working on right now", which is a DESCRIPTION of a field; §21.1's one
+ * observed-to-work instruction is IMPERATIVE, so this one opens with the verb. It then does the
+ * three things that sentence did: it names the SHAPE ("short English noun phrase"), gives
+ * examples, and says what it is NOT (a sentence, the prompt, a translation of one). It also says
+ * when to CHANGE it, because a topic passed once and left alone is the per-session field this
+ * design rejected; and it gives the one reason an agent has to care, in a clause, because a field
+ * with no stated purpose gets the shortest string that satisfies the schema.
+ *
+ * ONE DEFINITION FOR ALL FIVE VERBS, not five copies: the field means the same thing everywhere,
+ * and five copies is five chances for four of them to go stale. The cap comes from `TOPIC_MAX`
+ * rather than being typed in here -- a transcribed constant is correct exactly once
+ * (`.claude/rules/test-data.md`, GOLDEN RULE), and this one would go stale in a tool description,
+ * where nothing would ever fail.
+ */
+const TOPIC = str('Name what you are working on, as a SHORT ENGLISH NOUN PHRASE — '
+  + '"configurable product checkout", "B2B member roles", "order import failures". '
+  + 'Pass the SAME one on every kb call of one piece of work, and change it when the work changes: it '
+  + 'is what lets a later reader see your questions and what you recorded as one piece of work. The '
+  + 'session cannot do that — a session covers many tasks. '
+  + 'Write it yourself, in English: not a sentence, not the prompt you were given, not a translation of it, '
+  + `and no customer or client names in it. Cut at ${TOPIC_MAX} characters.`);
+
 export const TOOLS = Object.freeze([
   {
     name: 'kb_ask',
@@ -94,6 +122,7 @@ export const TOOLS = Object.freeze([
         deployment: str('Which deployment this question is about, if you know — the same string you would pass to '
           + 'kb_capture, e.g. vcst_qa, vcptcore_stable. Omit it rather than guess: an absent stand costs nothing, '
           + 'a wrong one is read as fact by everybody after you.'),
+        topic: TOPIC,
         top: { type: 'integer', minimum: 1, maximum: 5, description: 'How many entries to open. Default 3.' },
       },
       required: ['question'],
@@ -105,7 +134,10 @@ export const TOOLS = Object.freeze([
       + 'Use after kb_ask when a hit is worth reading whole, or when a report, ticket or test case cites an id.',
     inputSchema: {
       type: 'object',
-      properties: { id: str('The entry id, e.g. KB-27B4CD10.') },
+      properties: {
+        id: str('The entry id, e.g. KB-27B4CD10.'),
+        topic: TOPIC,
+      },
       required: ['id'],
     },
   },
@@ -128,6 +160,7 @@ export const TOOLS = Object.freeze([
         anchors: { type: 'array', items: { type: 'string' }, description: 'Structured coordinates the fact lives at: a route (/company/members), an endpoint (POST /api/carts), a GraphQL operation (Query.products). At least one.' },
         scope: { type: 'array', items: { type: 'string' }, description: 'axis=value pairs bounding where the fact applies, e.g. surface=storefront-ui. At least one — without scope a storefront fact gets applied to admin.' },
         method: str('How it was established. Default "observation".'),
+        topic: TOPIC,
       },
       required: ['subject', 'question', 'claim', 'deployment', 'anchors', 'scope'],
     },
@@ -143,6 +176,7 @@ export const TOOLS = Object.freeze([
         id: str('The entry id, e.g. KB-27B4CD10.'),
         deployment: str('Where you observed it.'),
         note: str('Optional: what you saw, if it adds anything the entry does not already say.'),
+        topic: TOPIC,
       },
       required: ['id', 'deployment'],
     },
@@ -158,6 +192,7 @@ export const TOOLS = Object.freeze([
         id: str('The entry id, e.g. KB-27B4CD10.'),
         deployment: str('Where you observed the contradiction.'),
         saw: str('What you saw instead — required, because a bare "it is wrong" is not evidence.'),
+        topic: TOPIC,
       },
       required: ['id', 'deployment', 'saw'],
     },
@@ -256,13 +291,14 @@ async function callTool(name, args, ctx) {
       if (!question) return text(['kb_ask needs a question.'], true);
       const r = await ask(question, opened, {
         env: ctx.env, top: Number(args?.top) || 3, via: VIA, call: ctx.call, deployment: args?.deployment,
+        topic: args?.topic,
       });
       return text(askLines(r, { prefix: 'kb_ask' }), FAILED.has(r.state));
     }
     case 'kb_show': {
       const id = String(args?.id ?? '').trim();
       if (!id) return text(['kb_show needs an entry id.'], true);
-      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call });
+      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
       return text(showLines(r, { prefix: 'kb_show' }), FAILED.has(r.state));
     }
     case 'kb_capture': {
@@ -270,7 +306,7 @@ async function callTool(name, args, ctx) {
         subject: args?.subject, question: args?.question, claim: args?.claim,
         deployment: args?.deployment, method: args?.method,
         anchors: asList(args?.anchors), scope: asList(args?.scope),
-      }, opened, { env: ctx.env, via: VIA, call: ctx.call });
+      }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and
       // the text hands back the id to confirm instead.
       return text(captureLines(r, { prefix: 'kb_capture' }), r.state === 'invalid' || FAILED.has(r.state));
@@ -281,7 +317,7 @@ async function callTool(name, args, ctx) {
       const fn = verb === 'confirm' ? confirm : dispute;
       const r = await fn(String(args?.id ?? '').trim(), {
         deployment: args?.deployment, note: args?.note, saw: args?.saw, method: args?.method,
-      }, opened, { env: ctx.env, via: VIA, call: ctx.call });
+      }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
       return text(evidenceLines(verb, r), r.state === 'invalid' || FAILED.has(r.state));
     }
     default:

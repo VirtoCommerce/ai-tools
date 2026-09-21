@@ -325,6 +325,35 @@ function panelReach(p) {
   </section>`;
 }
 
+function panelTopics(p) {
+  const rows = p.rows.map((r) => [
+    esc(r.topic),
+    esc(r.lines),
+    esc(r.asks),
+    r.misses ? `<strong class="bad">${esc(r.misses)}</strong>` : esc(r.misses),
+    esc(r.captures),
+    esc(r.sessions),
+    r.runs.length ? r.runs.map((x) => `<code>${esc(x)}</code>`).join(' ') : '<span class="muted">—</span>',
+    `<code>${esc(when(r.first))}</code>`,
+    `<code>${esc(when(r.last))}</code>`,
+  ]);
+  return `<section id="topics">
+    <h2>8 &middot; Topics &mdash; what this window was about</h2>
+    <p class="lede">Reading a published log as an outsider, nothing said what the work WAS: the
+      subject of a window had to be inferred from the question texts, which is a person reading
+      prose and does not survive volume. A topic is written by the agent, on the LINE &mdash; not
+      per file, whose boundary is the push timer, and not per session, which covers many tasks
+      &mdash; so what a window was about is <em>computed</em> here rather than declared anywhere.
+      <strong>${esc(p.rows.length)}</strong> distinct topic(s) over
+      <strong>${esc(p.topiced)}</strong> line(s).</p>
+    ${p.untopiced ? `<p class="metric"><strong>${esc(p.untopiced)} line(s) carry no topic</strong>
+      &mdash; written before the field existed, or by an agent that passed none. They are counted
+      here and nowhere else: a bucket called "unknown" would invent a subject nobody wrote.</p>` : ''}
+    ${rows.length ? table(['topic', 'lines', 'asks', 'missed', 'captures', 'sessions', 'run(s)', 'first', 'last'], rows)
+    : empty('No topic on any line in this window — nothing has passed one yet.')}
+  </section>`;
+}
+
 const CSS = `
 :root{--fg:#1c1c1c;--dim:#6a6a6a;--line:#e0ddd8;--bg:#fbfaf8;--card:#fff;--bad:#a4262c;--accent:#2f5d50}
 *{box-sizing:border-box}
@@ -397,6 +426,7 @@ ${panelEntries(p.entries)}
 ${panelEvidence(p.evidence)}
 ${panelRefusals(p.refusals)}
 ${panelReach(p.reach)}
+${panelTopics(p.topics)}
 <footer>Read from the base's <code>log/</code> over the network, analysed locally, rendered here.
 Nothing was written to the base and nothing was written into the repository tree.</footer>
 </main></body></html>`;
@@ -417,7 +447,11 @@ export function renderText(report) {
   const scope = m.sessions?.length
     ? `${m.sessions.length} named session(s): ${m.sessions.join(", ")}`
     : `last ${m.days} days`;
-  out.push(`${m.files ?? 0} log file(s), ${report.sessions} session(s), ${p.questions.totalAsks} ask(s), ${scope}`
+  // A RUN NARROWS whatever window was read; it does not replace it, so it is printed alongside
+  // rather than instead. What it set aside is printed too -- a filter that hides its own denominator
+  // is a number nobody can reproduce.
+  const scoped = m.run ? `${scope}, run ${m.run}${m.outOfRun ? ` [${m.outOfRun} line(s) outside it excluded]` : ''}` : scope;
+  out.push(`${m.files ?? 0} log file(s), ${report.sessions} session(s), ${p.questions.totalAsks} ask(s), ${scoped}`
     + (m.synthetic ? `  [+${m.synthetic} synthetic line(s)${m.syntheticAsks ? `, ${m.syntheticAsks} ask(s)` : ''} excluded]` : ''));
   out.push(`  misses         ${p.misses.ranked.length} distinct (${p.misses.total} asks)${p.misses.unreachable ? `, ${p.misses.unreachable} unreachable` : ''}`);
   out.push(`  near misses    ${p.nearMisses.rows.length} rejected candidate(s); `
@@ -435,6 +469,9 @@ export function renderText(report) {
     + `${p.reach.perHundred === null ? 'n/a' : `${p.reach.perHundred.toFixed(1)} per 100 calls`}`
     + `${p.reach.silent ? `, ${p.reach.silent} session(s) never touched the base` : ''}`
     + `${p.reach.unaccounted ? `, ${p.reach.unaccounted} session(s) unaccounted (no session line)` : ''}`);
+  out.push(`  topics         ${p.topics.rows.length} distinct over ${p.topics.topiced} line(s)`
+    + `${p.topics.untopiced ? `, ${p.topics.untopiced} line(s) carry none` : ''}`
+    + `${p.topics.rows.length ? `; top "${p.topics.rows[0].topic}" (${p.topics.rows[0].lines})` : ''}`);
   out.push(`  loop           ${p.loop.afterMiss} capture(s) after a miss, ${p.loop.afterAnswer} after an answer`
     + `${p.loop.unlinked ? `, ${p.loop.unlinked} carrying no after-pointer to link` : ''}`);
   if (report.verdict) {
