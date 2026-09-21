@@ -662,8 +662,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 53,
-      "estimatedMinutes": 36,
+      "testCount": 73,
+      "estimatedMinutes": 50,
       "agent": "qa-backend-expert",
       "tags": [
         "customer",
@@ -676,7 +676,8 @@
         "customer"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "027",

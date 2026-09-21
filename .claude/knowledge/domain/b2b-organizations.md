@@ -675,7 +675,8 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
   half will not run below that tier.
 - **`requiresModules`** — `026/027/027b` need `customer`, `074` needs `contracts`; absent ⇒ silent skip.
 - **Firefox lane:** with `defaults.firefoxClickOk: false` (the documented rollback), 15 of the 18 core
-  suites are `clickDriven` and get denied the slot, leaving only `026` and `074` eligible.
+  suites are `clickDriven` and get denied the slot. Since 2026-09-21 `026` is `clickDriven` too
+  (it gained the VCST-5547 condition-tree cases), so that rollback would leave only `074` eligible.
 - **The feature's centre of mass is Draft.** `006` (65, 0 Automated), `015` (32, 0 Automated, all one
   fixture — re-confirmed this pass) and 71 blank-status legacy cases in `026`+`074` ⇒ roughly **200
   cases have never been executed or promoted**. Executable coverage is concentrated in
