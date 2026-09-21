@@ -169,11 +169,27 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
 //     `_meta["claudecode/toolUseId"]`, the caller's OWN tool-use id. That is not a proxy for the
 //     answer, which is what this note rightly refused; it is the JOIN KEY to it, because every
 //     `tool_use` in the transcript carries `isSidechain` and `agentName`. So it is recorded as
-//     `call`, and "was that a subagent?" is now a lookup instead of the elimination argument it
-//     took that morning -- seven calls in a session's log against zero in the main thread.
+//     `call`.
 //
-//     The lesson is worth more than the field: "we cannot see X" and "we never looked" wear the
-//     same clothes, and this file asserted the first for two sessions while meaning the second.
+//     AND THEN THE JOIN TURNED OUT NOT TO EXIST, which is the half a reader needs most. Measured
+//     2026-09-21 (PLAN §21.4 item 2, re-confirmed by STEP 5 / §21.17 on fresh traffic): under
+//     `teammateMode: "in-process"` a teammate's turns are never written to the parent transcript,
+//     so a SUBAGENT's `toolUseId` appears there 0 times and there is nothing to look it up in.
+//     `call` still proves "this was not the main thread"; it cannot say who, and no future field
+//     here can either.
+//
+//     THAT QUESTION IS NOW CLOSED BY MEASUREMENT, so it is not reopened by guessing. STEP 5
+//     captured the server's entire input at byte level across four runs, main thread against
+//     subagents of three types, some concurrent: ONE `initialize` per session (the teammates share
+//     the parent's process and its single stdio connection), `_meta` with exactly two keys, a
+//     `progressToken` that is one connection-global counter, and newline-delimited JSON with no
+//     envelope. Nothing separates a subagent -- from the parent or from another subagent. A field
+//     here would hold the same value for every caller, which is worse than a missing one: it reads
+//     as information and is not. The boundary is the mode -- `tmux`/`iterm2` teammates are separate
+//     processes and untested, and unreachable on Windows.
+//
+//     The lesson outlived both corrections: "we cannot see X" and "we never looked" wear the same
+//     clothes, and this file asserted the first for two sessions while meaning the second.
 //   * FREE TEXT FROM THE AGENT about why it asked. Unreliable, and the log is public.
 //   * THE DEPLOYMENT on `ask` -- REVERSED 2026-09-21, and it is now listed above. The refusal
 //     read: "`capture` records it, where it is a property of the observation rather than of the

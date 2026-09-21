@@ -268,11 +268,21 @@ const text = (lines, isError = false) => ({
  *
  *   "_meta": { "claudecode/toolUseId": "toolu_01Fy89…", "progressToken": 2 }
  *
- * It does not say whether a subagent called; nothing the server can see does. What it IS is an
- * exact JOIN KEY into the transcript, where every `tool_use` carries `isSidechain` and
- * `agentName`. So "who asked" stops being an inference and becomes a lookup. On 2026-09-19
- * subagent use was established by ELIMINATION — seven calls in a session's log against zero in
- * the main thread's transcript — which worked once and does not generalise. This does.
+ * It does not say whether a subagent called; nothing the server can see does. It was added as a
+ * JOIN KEY into the transcript, where a `tool_use` carries `isSidechain` and `agentName`.
+ *
+ * THAT JOIN DOES NOT EXIST FOR THE CALLS THAT MATTER, measured 2026-09-21 (PLAN §21.4 item 2,
+ * re-confirmed by STEP 5 / §21.17 on fresh traffic): `teammateMode: "in-process"` writes no
+ * teammate turn to the parent transcript, so a SUBAGENT's id appears there 0 times. The id
+ * stays — per-call unique, and it still proves "this was not the main thread" — but "who asked"
+ * is NOT a lookup.
+ *
+ * AND THE WIDER QUESTION IS CLOSED BY MEASUREMENT, so it is not reopened by guessing. STEP 5
+ * captured this server's entire input at byte level, main thread against subagents of three
+ * types: ONE `initialize` per session (in-process teammates share the parent's process and its
+ * single stdio connection), `_meta` with exactly two keys, a `progressToken` that is one
+ * connection-global counter, and newline-delimited JSON with no envelope. Nothing in a request
+ * distinguishes a subagent, so no field here can. Do not propose one; read §21.17 first.
  *
  * NOT A PROXY, which is what §7 rightly refused: a proxy guesses the answer, this one carries the
  * key to it. Client-specific (`claudecode/`), and ABSENT rather than guessed for any other client,
@@ -363,8 +373,16 @@ export function createServer({ env = process.env, baseArg = null, ttlMs = 300_00
     // That works once and does not scale.
     //
     // So: dump the raw request LOCALLY and read what is actually there. Off unless `KB_RAW_DUMP`
-    // names a file, never published, and never on the response path. If the answer turns out to be
-    // "nothing", that is a measurement and §7's note can finally cite one.
+    // names a file, never published, and never on the response path.
+    //
+    // IT WAS POINTED AT A SUBAGENT'S TRAFFIC ON 2026-09-21 (STEP 5, PLAN §21.17) AND THE ANSWER
+    // WAS "nothing" — so that is now a measurement rather than an inference, and §7 cites it.
+    // Four runs, main thread against three subagent types, some concurrent: one `initialize` per
+    // session, `_meta` with exactly `claudecode/toolUseId` + `progressToken`, and (captured
+    // separately through a tee wrapper, because this dump is post-parse) newline-delimited JSON
+    // with no envelope. Keep the switch: it is how the next such claim gets checked instead of
+    // reasoned. Generating the traffic needs no session restart — a nested `claude -p` spawns its
+    // own server, which inherits the variable.
     if (env.KB_RAW_DUMP) {
       try {
         // mkdir first. Without it a missing directory throws, the catch swallows it, and the dump
