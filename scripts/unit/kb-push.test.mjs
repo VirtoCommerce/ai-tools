@@ -21,6 +21,8 @@ import {
   outsideBase, ownFlushDue, queueFiles, readSeq, seqLabel, shouldSweep, unionLines,
 } from '../kb/core/push.mjs';
 import { queuePath } from '../kb/core/queue.mjs';
+import { reachPath } from '../kb/core/reach.mjs';
+import { fingerprint, whoPath } from '../kb/core/who.mjs';
 // THE READER, IN THE WRITER'S TEST, DELIBERATELY. STEP 3c's whole claim is that the path gained a
 // directory and the PARSER did not change; a claim about two modules cannot be pinned inside one.
 import { dayOf, sessionOf } from '../kb/core/report-analyse.mjs';
@@ -305,6 +307,106 @@ test('an ordinary run’s flush line carries no synthetic field', () => withQueu
 
   assert.ok(!('synthetic' in logLines(state).find((l) => l.kind === 'flush')));
 }));
+
+// --- `who`: the line says who wrote it, and the flush says who DELIVERED it ------------------
+
+const WHO_TOKEN = 'ghp_atestonlytokenvaluethatisnotreal01';
+
+/** Warm the identity cache the way a door would have left it, for THIS test's token. */
+const knowWho = (dir, handle) =>
+  writeFile(whoPath(dir), `${JSON.stringify({ fp: fingerprint(WHO_TOKEN), who: handle, at: AT.toISOString() })}\n`, 'utf8');
+
+/**
+ * An env whose token is the test's own, against an env root with no env files in it.
+ *
+ * Without the root, `writeToken` resolves through the REPO's `.env.local`, which on a developer's
+ * machine holds a real token — and then the cache key these tests write depends on whose machine
+ * is running them.
+ */
+const asWho = (env, root) => ({ ...env, VC_ENV_ROOT: root, GITHUB_TOKEN: WHO_TOKEN });
+
+/** A temporary env root, since every test here needs one and none of them wants to keep it. */
+async function withRoot(fn) {
+  const root = await mkdtemp(join(tmpdir(), 'kb-push-root-'));
+  try { return await fn(root); } finally { await rm(root, { recursive: true, force: true }); }
+}
+
+test('the flush line names the PUSHER — the one line where deliverer and author may differ', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  // Every other line is stamped by `queue.mjs`'s single writer. This one is built in push.mjs, so
+  // it is stamped by hand — exactly like `synthetic`, and found the same way that was: by reading
+  // what a run actually published. A flush describes a DELIVERY, and the deliverer is precisely
+  // who a reader wants named, including when the file it swept belongs to somebody else.
+  await knowWho(dir, 'octo-pusher');
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
+
+  assert.equal(logLines(state).find((l) => l.kind === 'flush').who, 'octo-pusher');
+})));
+
+test('a pusher with no resolved identity writes a flush line with no handle', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
+
+  assert.ok(!('who' in logLines(state).find((l) => l.kind === 'flush')), 'absent, never null');
+})));
+
+test('a swept session line keeps ITS writer, and the pusher does not overwrite it', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  // THE CASE THE WHOLE FIELD EXISTS FOR. A queue left behind by one session is swept by another,
+  // possibly on a different machine under a different person's token — which is why the commit
+  // author cannot answer "who ran this". The handle rides on the line, stamped when it was
+  // WRITTEN, and the sweep must carry it through untouched.
+  await knowWho(dir, 'octo-pusher');
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const foreign = join(dir, 'abcd1234.jsonl');
+  await writeFile(foreign, `${JSON.stringify({ at: '2026-09-18T09:00:00Z', kind: 'ask', q: 'somebody else asked this', matched: [], state: 'miss', who: 'octo-asker' })}\n`, 'utf8');
+  const old = new Date(AT.getTime() - SWEEP_AFTER_MS - 60_000);
+  await utimes(foreign, old, old);
+
+  assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
+
+  const theirs = state.files.get(`v2/${logPath('abcd1234', AT, 1)}`).trim().split('\n').map((l) => JSON.parse(l));
+  assert.equal(theirs[0].who, 'octo-asker', 'the asker, not the pusher');
+  assert.equal(logLines(state).find((l) => l.kind === 'flush').who, 'octo-pusher');
+})));
+
+test('a published `session` line credits the session it DESCRIBES, never the one sweeping it', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  // The reach line is the one kind whose subject is a different session, so the writer's own
+  // handle would name the wrong person with complete confidence — the failure that ruled out the
+  // commit author. The handle comes off the STATE, stamped by that session's own hook.
+  await knowWho(dir, 'octo-pusher');
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const quiet = reachPath(dir, 'quiet001');
+  await writeFile(quiet, JSON.stringify({ session: 'quiet001', cursor: 0, tools: 300, turns: 9, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z', who: 'octo-quiet' }), 'utf8');
+  const old = new Date(AT.getTime() - 60 * 60 * 1000);
+  await utimes(quiet, old, old);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+
+  assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
+
+  const line = logLines(state).find((l) => l.kind === 'session');
+  assert.equal(line.session, 'quiet001');
+  assert.equal(line.who, 'octo-quiet', 'the person who ran it, not the person who sent it');
+})));
+
+test('a `session` line for a state that never learned a handle carries none', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  // And it is NOT filled in from the pusher, which is the whole point: an unknown author is a gap
+  // a reader can see, and a confident wrong one is a gap they cannot.
+  await knowWho(dir, 'octo-pusher');
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const quiet = reachPath(dir, 'quiet002');
+  await writeFile(quiet, JSON.stringify({ session: 'quiet002', cursor: 0, tools: 12, turns: 2, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  const old = new Date(AT.getTime() - 60 * 60 * 1000);
+  await utimes(quiet, old, old);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+
+  assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
+
+  const line = logLines(state).find((l) => l.kind === 'session');
+  assert.equal(line.session, 'quiet002');
+  assert.ok(!('who' in line), 'no identity beats the pusher’s');
+})));
 
 test('the log path is date folder, session FOLDER, session id, and the push SEQUENCE — no wall clock', () => {
   assert.equal(logPath('f3d05dd3', new Date('2026-09-18T11:10:03Z'), 3),

@@ -10,10 +10,11 @@
 // public repository by the next sweep (PLAN §7.1a).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { readQueue } from '../kb/core/queue.mjs';
+import { fingerprint, whoPath } from '../kb/core/who.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
 import { ask, capture, show } from '../kb/core/verbs.mjs';
@@ -514,4 +515,133 @@ test('nothing but an ask carries it — a capture already has its own', async ()
     assert.ok(!('deployment' in line), 'the capture LINE carries none');
     assert.equal(line.payload.entry.evidence[0].deployment, 'vcptcore_stable', 'the ENTRY carries it');
   });
+});
+
+// ── `who`: the line says who wrote it ─────────────────────────────────────────────────────────
+//
+// Reading the published base as an outsider, nothing said who produced a line. The identity WAS
+// already recoverable — it is the commit author — and that is not enough twice over: the report
+// reads log FILES over HTTP and never sees git metadata, and THE PUSHER IS NOT ALWAYS THE ASKER,
+// because a queue left behind by one session is swept by another, possibly on a different machine
+// under a different person's token. So the handle is stamped when the line is WRITTEN.
+//
+// Stamped by `queue.mjs`'s single writer, like `synthetic`: no verb can forget it and no verb can
+// fake it. `core/who.mjs` holds the resolver, the cache rules and the field's one honest limit —
+// it names whose TOKEN is configured, not who is at the keyboard.
+//
+// THE LOOKUP IS NOT ON THIS PATH. `log()` reads a cache off the filesystem and never the network,
+// which is why these tests seed the cache and why the whole suite stays offline.
+
+const HANDLE = 'octo-tester';
+const TEST_TOKEN = 'ghp_atestonlytokenvaluethatisnotreal01';
+
+/** A queue directory whose identity cache is already warm, as a door would have left it. */
+async function withKnownWho(fn, { handle = HANDLE, token = TEST_TOKEN } = {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-who-line-'));
+  // An env root with no env files: `writeToken` resolves through the repo's real `.env.local`
+  // otherwise, and then which token these tests run under depends on the machine.
+  const root = mkdtempSync(join(tmpdir(), 'kb-who-line-root-'));
+  try {
+    if (token) {
+      writeFileSync(whoPath(dir), `${JSON.stringify({ fp: fingerprint(token), who: handle, at: new Date().toISOString() })}\n`, 'utf8');
+    }
+    return await fn({
+      KB_QUEUE_DIR: dir,
+      VC_ENV_ROOT: root,
+      CLAUDE_CODE_HOST_SESSION_ID: 'testsess',
+      ...(token ? { GITHUB_TOKEN: token } : {}),
+    });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+test('every line a session writes carries the handle — ask, miss, show and capture alike', async () => {
+  await withKnownWho(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli' });
+    await ask(MISSED_COLD, opened(), { env, via: 'cli' });
+    await show('KB-27B4CD10', opened(), { env, via: 'cli' });
+    await capture({
+      subject: 'a fact written by somebody the log can name',
+      question: 'who wrote this line',
+      claim: 'Observed: the handle is on it.',
+      deployment: 'vcst_qa',
+      anchors: ['/depot/forklifts'],
+      scope: ['surface=platform'],
+    }, opened(), { env, via: 'cli' });
+
+    const lines = await linesOf(env);
+    assert.equal(lines.length, 4);
+    for (const l of lines) assert.equal(l.who, HANDLE, `${l.kind}/${l.state ?? ''} carries it too`);
+  });
+});
+
+test('a session with NO write token writes no handle and still works end to end', async () => {
+  // Reads are tokenless by design (PLAN §6.4) and a reader writes nothing worth attributing, so
+  // this is the correct answer rather than a degradation. What must not happen is the verb
+  // changing shape around it.
+  await withKnownWho(async (env) => {
+    const answered = await ask(ANSWERED, opened(), { env, via: 'cli' });
+    const missed = await ask(MISSED_COLD, opened(), { env, via: 'cli' });
+    assert.equal(answered.state, 'answer');
+    assert.equal(missed.state, 'miss');
+    for (const l of await linesOf(env)) {
+      assert.ok(!('who' in l), 'absent — never null, never "unknown"');
+      assert.equal(l.kind, 'ask');
+    }
+  }, { token: null });
+});
+
+test('a cache belonging to a DIFFERENT token stamps nobody', async () => {
+  // The shared-machine case. Without the fingerprint check, whoever resolved first on this box
+  // would have their handle published on everyone else's lines — the confident wrong attribution
+  // that ruled out using the commit author in the first place.
+  async function withMismatchedCache() {
+    const dir = mkdtempSync(join(tmpdir(), 'kb-who-mismatch-'));
+    const root = mkdtempSync(join(tmpdir(), 'kb-who-mismatch-root-'));
+    try {
+      writeFileSync(whoPath(dir), `${JSON.stringify({ fp: fingerprint('another-persons-token'), who: 'Not-Me', at: new Date().toISOString() })}\n`, 'utf8');
+      const env = { KB_QUEUE_DIR: dir, VC_ENV_ROOT: root, CLAUDE_CODE_HOST_SESSION_ID: 'testsess', GITHUB_TOKEN: TEST_TOKEN };
+      await ask(ANSWERED, opened(), { env, via: 'cli' });
+      return (await linesOf(env))[0];
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+  assert.ok(!('who' in await withMismatchedCache()), 'no identity beats the wrong one');
+});
+
+test('the handle sits between the verb’s own fields and the synthetic mark, on both doors',
+  async () => {
+    // Key ORDER, because two doors writing differently-shaped lines is the thing having one core
+    // is for — the same assertion `deployment` is pinned by. Stamped last and by the single
+    // writer, so it lands in one place for every kind of line there is.
+    await withKnownWho(async (env) => {
+      await ask(ANSWERED, opened(), { env, via: 'cli' });
+      await ask(ANSWERED, opened(), { env, via: 'mcp', call: 'toolu_01Fy89fmgM4sCT11S7dAyshH' });
+      const [cli, mcp] = await linesOf(env);
+      assert.deepEqual(Object.keys(mcp).filter((k) => k !== 'call'), Object.keys(cli));
+      assert.equal(Object.keys(cli).at(-1), 'who', 'last, because nothing after it is a verb’s business');
+      assert.equal(cli.who, mcp.who);
+    });
+  });
+
+test('a lookup is never attempted while logging, even with a transport that explodes', async () => {
+  // THE GUARANTEE, stated as a test rather than as a comment: `log()` reads a cache off the
+  // filesystem and cannot reach the network at all, so a slow or broken GitHub can cost a line its
+  // handle and can never cost a verb its answer. `kb-no-network.mjs` enforces the same thing for
+  // the spawned doors; this covers the in-process path the unit suite actually uses.
+  const saved = globalThis.fetch;
+  globalThis.fetch = () => { throw new Error('KB-NETWORK-TRAP: fetch was called'); };
+  try {
+    await withKnownWho(async (env) => {
+      const r = await ask(ANSWERED, opened(), { env, via: 'cli' });
+      assert.equal(r.state, 'answer');
+      assert.equal((await linesOf(env))[0].who, HANDLE);
+    });
+  } finally {
+    globalThis.fetch = saved;
+  }
 });

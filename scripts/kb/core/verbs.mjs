@@ -17,7 +17,8 @@ import { anchorProblems, neighbours } from './coordinates.mjs';
 import { findDuplicate, identityKey, refusalMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, normalizeScope, retrievable } from './index-load.mjs';
-import { log, pendingMutations, readQueue, sessionId } from './queue.mjs';
+import { log, pendingMutations, queueDir, readQueue, sessionId } from './queue.mjs';
+import { cachedWho } from './who.mjs';
 import { RANKER, rank, rankNeighbours, relatedTo } from './rank.mjs';
 
 // ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
@@ -122,6 +123,16 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
 //           environment is fixed when the session starts, while the stand is a property of the
 //           observation the question is ABOUT, and one process cannot know the other. So a default
 //           would print this process's guess as the agent's fact. Absent beats plausible.
+//   `who`   WHO WROTE THE LINE — the configured token's GitHub handle. Not listed among the
+//           per-verb fields below because NO VERB WRITES IT: it is stamped by `queue.mjs`'s single
+//           writer, like `synthetic`, so no verb can forget it and no verb can fake it. Reading
+//           the published base as an outsider, nothing said who produced a line; the identity WAS
+//           recoverable from the commit author and that is not enough, because the report reads
+//           log FILES over HTTP and — the real reason — the pusher is not always the asker. The
+//           full argument, the privacy boundary (a handle is an id and is already in every commit
+//           of this public base; an email, a path or a machine name is not) and the trap the field
+//           carries (it names whose TOKEN is configured, not who is at the keyboard) are in
+//           `core/who.mjs`.
 //
 // WHAT MUST NOT BE ADDED HERE, recorded so it is not proposed again:
 //
@@ -592,6 +603,10 @@ export async function stat(opened, { env = process.env } = {}) {
     reader: opened.reader?.kind ?? null,
     readerWhy: opened.why ?? null,
     session: sessionId(env),
+    // WHO this process's lines will be attributed to -- read from the cache, never looked up
+    // here: `stat` is an operator looking at the tool, and it reports state rather than making
+    // any. A door has already resolved it by the time this runs (`resolveWho` in kb.mjs).
+    who: cachedWho({ dir: queueDir(env), env }),
     queue: queue.path,
     queueDepth: queue.lines.length,
     pending: pendingMutations(queue.lines),

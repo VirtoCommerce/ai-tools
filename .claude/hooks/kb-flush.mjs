@@ -33,6 +33,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { REACH_IDLE_MS, advanceReach, idleReaches } from '../../scripts/kb/core/reach.mjs';
 import { sessionId } from '../../scripts/kb/core/queue.mjs';
+import { cachedWho } from '../../scripts/kb/core/who.mjs';
 
 function queueHasWork(dir) {
   try {
@@ -71,7 +72,12 @@ function main() {
   // carries what is read and what deliberately is not.
   if (payload?.transcript_path) {
     try {
-      advanceReach({ dir, session, transcriptPath: payload.transcript_path });
+      // WHO RAN THIS SESSION is stamped here, on the state, and not by whoever later publishes
+      // it: a reach line is swept and pushed by a DIFFERENT session, possibly a different person
+      // on a different machine, so the publisher's handle would name the wrong one (`who.mjs`).
+      // `cachedWho` is filesystem-only and cannot reach the network — this hook runs at the end of
+      // every assistant turn and its whole budget is tens of milliseconds.
+      advanceReach({ dir, session, transcriptPath: payload.transcript_path, who: cachedWho({ dir }) });
     } catch { /* accounting must never cost a turn */ }
   }
 

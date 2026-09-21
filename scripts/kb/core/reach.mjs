@@ -109,7 +109,7 @@ export function countToolUses(chunk, { from = 0 } = {}) {
  * permanently — an undercount that only ever appears in busy sessions, which are the ones this
  * measurement exists for.
  */
-export function advanceReach({ dir, session, transcriptPath, at = new Date() } = {}) {
+export function advanceReach({ dir, session, transcriptPath, at = new Date(), who = null } = {}) {
   if (!dir || !session || !transcriptPath || !existsSync(transcriptPath)) return null;
   const prior = readReach(dir, session) ?? {
     session, cursor: 0, tools: 0, turns: 0, touchAt: [], firstAt: at.toISOString(), lastAt: null,
@@ -145,6 +145,18 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date() } =
     touchAt: [...base.touchAt, ...touchAt],
     firstAt: prior.firstAt ?? at.toISOString(),
     lastAt: at.toISOString(),
+    // WHO RAN THIS SESSION, stamped by the session's own hook and carried to the published line.
+    //
+    // The reach line is the ONE line in this system whose subject is a DIFFERENT session from the
+    // one publishing it: a state file is swept and published by whoever comes next (`push.mjs`),
+    // so the writer's own handle would name the wrong person there. Recording it here, while the
+    // session that owns the state is still running, is the same rule the whole field is built on —
+    // stamp the identity when the line is WRITTEN, not when it is sent.
+    //
+    // The last known value survives a turn that could not read one: the handle comes from a cache
+    // that may be cold on this machine's first ever kb use and warm forever after, and a later
+    // turn finding nothing is no reason to forget what an earlier one found.
+    ...(who || prior.who ? { who: who || prior.who } : {}),
   };
   try { writeFileSync(reachPath(dir, session), JSON.stringify(next), 'utf8'); } catch { return null; }
   return next;

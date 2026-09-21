@@ -25,6 +25,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+import { cachedWho } from './who.mjs';
+
 /** Operations that are logged. `stat` is deliberately absent: an operator looking at the tool is
  *  not an agent using the base, and logging it would put noise in the panel that matters. */
 export const LOGGED = Object.freeze([
@@ -159,11 +161,27 @@ export function queuePath(env = process.env) {
  * Append one line. Never throws: a tool that fails an ASK because it could not write its own log
  * has traded the thing the user wanted for bookkeeping. A failed write is reported on the result
  * instead, so it is visible without being fatal.
+ *
+ * `who` OVERRIDES THE WRITER'S OWN IDENTITY, and exists for exactly one caller. Almost every line
+ * is written by the session it is about, so "who wrote this" and "whose line is this" are the same
+ * person and the default is right. The `session` line is not: it describes a session that has
+ * ENDED and is published by whichever later session sweeps it (`push.mjs`), so stamping the writer
+ * there would name the wrong person with complete confidence — the exact failure that ruled out
+ * using the commit author in the first place (`who.mjs`). Passing `null` records no identity;
+ * passing nothing means "use mine".
  */
-export async function log(record, { env = process.env } = {}) {
-  // `synthetic` is stamped LAST and by the single writer, so no verb can forget it and no verb can
-  // fake it: one env var marks every line a benchmark run produces, including its flush.
-  const line = { at: new Date().toISOString(), ...record, ...(isSynthetic(env) ? { synthetic: true } : {}) };
+export async function log(record, { env = process.env, who } = {}) {
+  // Both marks are stamped LAST and by the single writer, so no verb can forget one and no verb
+  // can fake one: `synthetic` because an env var must cover every line a benchmark run produces
+  // including its flush, and `who` because an identity a verb could choose to omit is an identity
+  // that will be omitted.
+  const me = who === undefined ? cachedWho({ dir: queueDir(env), env }) : who;
+  const line = {
+    at: new Date().toISOString(),
+    ...record,
+    ...(me ? { who: me } : {}),
+    ...(isSynthetic(env) ? { synthetic: true } : {}),
+  };
   const path = queuePath(env);
   try {
     await mkdir(queueDir(env), { recursive: true });

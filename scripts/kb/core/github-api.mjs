@@ -48,6 +48,63 @@ export function coordinatesOf(locator) {
   return { owner: m[1], repo: m[2], branch: m[3], prefix: (m[4] ?? '').replace(/\/+$/, '') };
 }
 
+/** The headers every call sends. One definition, because a request that differs by accident is a
+ *  request that fails for a reason nobody can see in the code. */
+const apiHeaders = (token) => ({
+  accept: 'application/vnd.github+json',
+  'x-github-api-version': '2022-11-28',
+  'user-agent': 'vc-kb/1',
+  ...(token ? { authorization: `Bearer ${token}` } : {}),
+});
+
+/**
+ * WHOSE TOKEN IS THIS — `GET /user`, the one call in this file that is not about a repository.
+ *
+ * It lives here rather than beside its caller so that every byte this system sends to GitHub is
+ * written in one file, under one rule: NEVER THROWS, always returns a result. Its caller
+ * (`core/who.mjs`) stamps the answer on log lines, and a lookup that threw would take an `ask`
+ * down with it — trading the thing the user wanted for bookkeeping.
+ *
+ * `login` and nothing else. The response carries a name, an email, a company and an avatar; a
+ * handle is an id and ids are what PLAN §7 permits in a PUBLIC log, the rest is not.
+ *
+ * A 401/403 is `denied` and is the ordinary answer for a token that is not a user's — a
+ * fine-grained PAT without the profile scope, an App installation token, CI's `GITHUB_TOKEN`.
+ * Nothing is wrong in that case; there is simply no person to name.
+ */
+export async function viewer({
+  token = null,
+  fetchImpl = null,
+  apiBase = 'https://api.github.com',
+  timeoutMs = Number(process.env.KB_HTTP_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS,
+} = {}) {
+  if (!token) return { ok: false, reason: 'denied', detail: 'no token — nothing to identify' };
+  const doFetch = fetchImpl ?? globalThis.fetch;
+  if (typeof doFetch !== 'function') {
+    return { ok: false, reason: 'unreachable', detail: 'no fetch implementation in this runtime' };
+  }
+  let res;
+  try {
+    res = await doFetch(`${String(apiBase).replace(/\/+$/, '')}/user`, {
+      method: 'GET',
+      headers: apiHeaders(token),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (err) {
+    return { ok: false, reason: 'unreachable', detail: `${err?.cause?.code ?? err?.name ?? 'error'}: ${String(err?.message ?? err).slice(0, 160)}` };
+  }
+  let json = null;
+  try { json = JSON.parse(await res.text()); } catch { /* an unreadable body is still a status */ }
+  if (!res.ok) {
+    const reason = res.status === 401 || res.status === 403 ? 'denied' : res.status === 404 ? 'missing' : 'unreachable';
+    return { ok: false, status: res.status, reason, detail: `HTTP ${res.status} GET /user${json?.message ? ` — ${json.message}` : ''}` };
+  }
+  const login = typeof json?.login === 'string' ? json.login.trim() : '';
+  // A 200 with no `login` is not an identity. Reported as such rather than returned as `''`,
+  // which downstream would have to re-check and one day would not.
+  return login ? { ok: true, login } : { ok: false, reason: 'unreachable', detail: 'GET /user answered 200 with no login' };
+}
+
 /** Base64 both ways, explicitly, because the API speaks base64 and JS does not do it implicitly. */
 export const toBase64 = (text) => Buffer.from(text, 'utf8').toString('base64');
 export const fromBase64 = (b64) => Buffer.from(String(b64).replace(/\s+/g, ''), 'base64').toString('utf8');
@@ -72,12 +129,7 @@ export function githubApi({
 } = {}) {
   const root = `${String(apiBase).replace(/\/+$/, '')}/repos/${owner}/${repo}`;
 
-  const headers = () => ({
-    accept: 'application/vnd.github+json',
-    'x-github-api-version': '2022-11-28',
-    'user-agent': 'vc-kb/1',
-    ...(token ? { authorization: `Bearer ${token}` } : {}),
-  });
+  const headers = () => apiHeaders(token);
 
   /** One request, mapped onto a result. The only place in this file that touches the network. */
   const call = async (method, path, body = null) => {

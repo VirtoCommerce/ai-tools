@@ -124,6 +124,18 @@ test('a tripped line is REPLACED by a marker, not removed — a gap with a shape
   assert.equal(JSON.stringify(kept).includes('hunter2-not-really'), false, 'the value is gone');
 });
 
+test('the marker keeps the WRITER of the line it replaced, off the line and not off the process', () => {
+  // A redaction is a hole in one person's record, and a hole whose owner is unknown is one nobody
+  // can go and ask about. It comes off the ORIGINAL line for the same reason everything else about
+  // `who` does: the gate runs inside the PUSH, which routinely handles a session's file that
+  // belongs to somebody else entirely.
+  const bad = { ...line({ q: 'why does login with hunter2-not-really fail' }), who: 'smoke-asker' };
+  const { kept } = gateQueue([bad], new Set(['hunter2-not-really']));
+  assert.equal(kept[0].who, 'smoke-asker');
+  // And a line that never carried one gains nothing — the marker reports, it does not fill in.
+  assert.ok(!('who' in gateQueue([line({ q: 'hunter2-not-really' })], new Set(['hunter2-not-really'])).kept[0]));
+});
+
 test('THE PAYLOAD IS SCANNED TOO — it is what becomes an entry body in the public base', () => {
   const secrets = new Set(['hunter2-not-really']);
   const capture = {

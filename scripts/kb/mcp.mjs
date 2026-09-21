@@ -52,8 +52,10 @@ import { pathToFileURL } from 'node:url';
 import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
+import { queueDir } from './core/queue.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { ask, capture, confirm, dispute, show, stat } from './core/verbs.mjs';
+import { resolveWho } from './core/who.mjs';
 
 /** The newest protocol version this server speaks; older ones are echoed back when a client asks. */
 export const LATEST_PROTOCOL = '2025-06-18';
@@ -421,7 +423,15 @@ export function runStdio({ env = process.env, input = process.stdin, output = pr
   // Responses are sent in the order the requests were HANDLED, not the order they arrive, which
   // JSON-RPC permits (every response carries its id). Handling is serialised anyway: the work is
   // one network read deep and ordering the queue is cheaper than reasoning about interleaving.
-  let chain = Promise.resolve();
+  // WHO THIS SERVER IS, resolved ONCE, and SEEDED INTO THE DISPATCH CHAIN rather than awaited on
+  // the side. The chain already serialises every request, so putting the lookup at its head means
+  // the first tool call waits for it and no later one ever does — without a second synchronisation
+  // mechanism and without a window in which the session's opening lines are unattributed.
+  //
+  // It cannot reject (`resolveWho` returns a result), and the `catch` is belt and braces: a
+  // bookkeeping lookup must never be able to take the dispatch chain down with it.
+  let chain = resolveWho({ env, dir: queueDir(env) })
+    .then((r) => { note(`who ${r.who ?? 'none'} (${r.from})`); }, () => { /* never fatal */ });
   const dispatch = (line) => {
     let message;
     try { message = JSON.parse(line); } catch (err) { send(fail(null, RPC.PARSE, `invalid JSON: ${err.message}`)); return; }

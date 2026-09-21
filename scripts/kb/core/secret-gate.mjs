@@ -128,7 +128,10 @@ export function gateQueue(lines, secrets = new Set()) {
     const hits = scanText(JSON.stringify(line), secrets);
     if (!hits.length) { kept.push(line); continue; }
     dropped.push({ line, hits });
-    kept.push({ at: line.at, kind: 'redacted', why: 'secret-scan', was: line.kind ?? null, hits });
+    // `who` survives with them, off the ORIGINAL line and never off this process: a redaction is a
+    // hole in one person's record, and a hole whose owner is unknown is one nobody can go and ask
+    // about. A swept foreign line keeps its own writer here, as it does everywhere else.
+    kept.push({ at: line.at, kind: 'redacted', why: 'secret-scan', was: line.kind ?? null, hits, ...(line.who ? { who: line.who } : {}) });
   }
   return { kept, dropped };
 }

@@ -140,6 +140,27 @@ test('the published line is integers and one id — no prose can reach it', () =
   }
 });
 
+test('the state records WHO RAN THE SESSION, and keeps the last handle it learned', () => withDir((dir) => {
+  // A reach line is the ONE line whose subject is a DIFFERENT session from the one publishing it:
+  // the state is swept and pushed by whoever comes next, possibly a different person on a
+  // different machine. So the handle is stamped here, by the session's own hook, while that
+  // session is still running — the same rule the whole field is built on.
+  const t = join(dir, 'transcript.jsonl');
+  writeFileSync(t, turn('Read'));
+  const first = advanceReach({ dir, session: 'sess0006', transcriptPath: t, who: 'octo-tester' });
+  assert.equal(first.who, 'octo-tester');
+  assert.equal(readReach(dir, 'sess0006').who, 'octo-tester');
+
+  // A later turn whose cache read came back empty must not ERASE what an earlier turn knew: the
+  // handle comes from a cache that can be cold, and forgetting is strictly worse than keeping.
+  appendFileSync(t, turn('Bash'));
+  assert.equal(advanceReach({ dir, session: 'sess0006', transcriptPath: t }).who, 'octo-tester');
+
+  // And a session that never learned one carries no key at all — never a null, never 'unknown'.
+  writeFileSync(t, turn('Read'));
+  assert.ok(!('who' in advanceReach({ dir, session: 'sess0007', transcriptPath: t })));
+}));
+
 test('dropping a reach state is what makes a session publish exactly once', () => withDir((dir) => {
   const t = join(dir, 'transcript.jsonl');
   writeFileSync(t, turn('Read'));

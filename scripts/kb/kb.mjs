@@ -19,6 +19,8 @@
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
 import { flush, sweepIfDue } from './core/push.mjs';
+import { queueDir } from './core/queue.mjs';
+import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
 import { ask, capture, confirm, dispute, reindex, show, stat } from './core/verbs.mjs';
@@ -89,6 +91,17 @@ async function main(argv) {
   const verb = args._[0];
   if (!verb || args.flags.help) { out(USAGE); return verb ? EXIT.ANSWER : EXIT.NO_BASE; }
 
+  // WHO THIS PROCESS IS, resolved ONCE and before any verb runs, so the first line of a cold
+  // machine carries an identity like every line after it. Everything downstream reads the cache
+  // this fills, synchronously and off the filesystem — the network is touched here or nowhere.
+  //
+  // It is awaited rather than fired and forgotten: a handle that arrives after the lines it was
+  // meant for is a handle nobody can use. The cost is bounded twice over — `WHO_TIMEOUT_MS`, and
+  // a cache shared by every session on the machine, so it is one call per token per week and
+  // nothing at all for the sweeps. A lookup that fails costs the line its `who` and costs the
+  // verb nothing, which is the trade this whole field is written under.
+  await resolveWho({ dir: queueDir() });
+
   const json = Boolean(args.flags.json);
   const opened = openBase({ baseArg: args.flags.base ? String(args.flags.base) : null });
   // The sweep targets THE BASE THIS INVOCATION READ, never the default: a run pointed at a local
@@ -103,6 +116,8 @@ async function main(argv) {
     out(`chosen by ${r.how}`);
     out(`reader    ${r.reader ?? `none — ${r.readerWhy}`}`);
     out(`session   ${r.session}`);
+    // The one place an operator can ask "what will my lines say about me?" before writing any.
+    out(`who       ${r.who ?? 'none — no write token, or the lookup has not succeeded here'}`);
     out(`queue     ${r.queue}  (${r.queueDepth} line(s), ${r.pending} pending change(s)`
       + `${r.malformedQueueLines ? `, ${r.malformedQueueLines} malformed` : ''})`);
     if (r.state === 'answer') out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
