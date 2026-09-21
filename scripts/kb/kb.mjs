@@ -41,7 +41,7 @@ function parseArgs(argv) {
 
 const USAGE = `kb — the knowledge base (PLAN v1)
 
-  npm run kb -- ask "<question>" [--base <dir>] [--top 3] [--json]
+  npm run kb -- ask "<question>" [--deployment <env>] [--base <dir>] [--top 3] [--json]
   npm run kb -- show KB-XXXXXXXX [--base <dir>] [--json]
   npm run kb -- capture --subject "<one line>" --question "<the question it answers>"
                         --claim "<the claim, in prose>" --deployment <env>
@@ -132,7 +132,11 @@ async function main(argv) {
   if (verb === 'ask') {
     const question = args._.slice(1).join(' ').trim();
     if (!question) { out('ask needs a question'); return EXIT.NO_COVERAGE; }
-    const r = await ask(question, opened, { top: Number(args.flags.top) || 3, via: VIA });
+    // `--deployment` is OPTIONAL on ask and is never derived -- see `stand()` in core/verbs.mjs
+    // for why this door has no authoritative source to derive it from either.
+    const r = await ask(question, opened, {
+      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment,
+    });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(askLines(r));
     return exitFor(r.state);

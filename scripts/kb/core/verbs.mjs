@@ -88,7 +88,7 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
 //
 // A log field is cheap to add and effectively impossible to remove: the log is public, it is
 // append-only, and old lines can never be backfilled. So the bar is A QUESTION SOMEBODY HAS NOW,
-// not "might be handy one day". Two fields clear it here.
+// not "might be handy one day". Three fields clear it here.
 //
 //   `rank`  the RANKER VERSION, not a position -- the value is a name (`floor-1`) precisely so it
 //           cannot be misread as one. This session is the first ranker change, and every line
@@ -101,6 +101,27 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
 //           become test and CI infrastructure only, which decides whether two doors are worth
 //           maintaining. This one goes on every line a door writes. Omitted rather than guessed
 //           when the caller did not say: a field that defaults is a field that lies.
+//   `deployment`
+//           WHICH STAND the question was about, when the caller names one. `capture`, `confirm`
+//           and `dispute` have always carried it and `ask` had no such parameter at all, so the
+//           knowledge plane knew which deployment it was talking about and the demand plane did
+//           not. Measured on the published base on 2026-09-21: 148 of 182 observations come from
+//           `vcptcore_stable` and 33 from `vcst_qa`, and the only dispute this base has ever had
+//           (KB-27B4CD10) turned entirely on the difference between those two stands. A demand log
+//           that cannot separate them can show neither fact.
+//
+//           OPTIONAL, AND NEVER DEFAULTED, which is the whole of its safety. There is no source of
+//           truth for a stand's canonical name, and both candidates were checked rather than
+//           assumed. `TEST_ENV` is not set in the process at all (`node -e "process.env.TEST_ENV"`
+//           -> undefined; the MCP server is registered with no `env` block and inherits the
+//           session's), and its loader default `vcst` is not the string the base uses for that
+//           stand -- `vcst_qa`, 33 evidence lines against 1. `BACK_URL`'s host would map both live
+//           stands correctly and is equally absent from the process, and it invents
+//           `qa_admin_leo` for the `leo` env, which is the plausible-looking wrong value this
+//           whole plan keeps catching. The decisive one needs neither measurement: the server's
+//           environment is fixed when the session starts, while the stand is a property of the
+//           observation the question is ABOUT, and one process cannot know the other. So a default
+//           would print this process's guess as the agent's fact. Absent beats plausible.
 //
 // WHAT MUST NOT BE ADDED HERE, recorded so it is not proposed again:
 //
@@ -125,8 +146,11 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
 //     The lesson is worth more than the field: "we cannot see X" and "we never looked" wear the
 //     same clothes, and this file asserted the first for two sessions while meaning the second.
 //   * FREE TEXT FROM THE AGENT about why it asked. Unreliable, and the log is public.
-//   * THE DEPLOYMENT on `ask`. `capture` records it, where it is a property of the observation
-//     rather than of the question.
+//   * THE DEPLOYMENT on `ask` -- REVERSED 2026-09-21, and it is now listed above. The refusal
+//     read: "`capture` records it, where it is a property of the observation rather than of the
+//     question". The premise is true and the conclusion does not follow -- a question is asked
+//     WHILE working on a stand, and the base's only dispute was two stands disagreeing. What the
+//     refusal got right is kept whole: the field is REPORTED, never derived.
 const DOORS = new Set(['mcp', 'cli']);
 /**
  * `via` is WHICH DOOR; `call` is WHICH CALL — the caller's own tool-use id, when the client sends
@@ -138,7 +162,27 @@ const door = (via, call) => ({
   ...(DOORS.has(via) ? { via } : {}),
   ...(typeof call === 'string' && call ? { call } : {}),
 });
-const ranked = (via, call) => ({ rank: RANKER, ...door(via, call) });
+/**
+ * WHICH STAND the question was about, when the caller names one -- and nothing at all when it
+ * does not. Trimmed, because an argument of whitespace is a caller that meant to say nothing, and
+ * `deployment: ""` in the log would read as a stand whose name is the empty string.
+ *
+ * The value is recorded VERBATIM and is never normalised. The base already holds `vcst` once
+ * against `vcst_qa` 33 times, so a normaliser has a real fragmentation to argue for -- and it
+ * would be a transcribed mapping with no source of truth behind it, which is the same defect
+ * wearing a tidier name. What the log needs is what the caller believed; the disagreement is a
+ * finding, not something to iron out on the way in.
+ *
+ * A STRING OR NOTHING, which is not defensive typing. `kb.mjs`'s parser hands a flag given
+ * without a value the boolean `true`, so `kb ask "q" --deployment --json` would otherwise publish
+ * `deployment: "true"` -- a stand name that is not a stand, indistinguishable in the log from one
+ * an agent meant. The typed guard is the same one `door()` puts on `call`, for the same reason.
+ */
+const stand = (deployment) => {
+  const d = typeof deployment === 'string' ? deployment.trim() : '';
+  return d ? { deployment: d } : {};
+};
+const ranked = ({ via, call, deployment }) => ({ rank: RANKER, ...door(via, call), ...stand(deployment) });
 
 /** Two decimal places: `nearMiss.coverage` is read by a human, and 0.45454545 is not. */
 const round2 = (n) => Math.round(Number(n) * 100) / 100;
@@ -151,11 +195,11 @@ async function catalogue(opened) {
 
 // ── ask ───────────────────────────────────────────────────────────────────────────────────────
 
-export async function ask(question, opened, { env = process.env, top = 3, via = null, call = null } = {}) {
+export async function ask(question, opened, { env = process.env, top = 3, via = null, call = null, deployment = null } = {}) {
   const started = Date.now();
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why, ...ranked(via, call) }, { env });
+    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why, ...ranked({ via, call, deployment }) }, { env });
     return { state: cat.state, why: cat.why, hits: [] };
   }
 
@@ -172,7 +216,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
       state: 'miss',
       ...(nearMiss ? { nearMiss: { id: nearMiss.row.id, score: nearMiss.score, coverage: round2(nearMiss.coverage) } } : {}),
       ms: Date.now() - started,
-      ...ranked(via, call),
+      ...ranked({ via, call, deployment }),
     }, { env });
     return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length };
   }
@@ -234,7 +278,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
     state,
     ...(state === 'unreachable' ? { why: described[0]?.unavailable ?? 'no body could be read' } : {}),
     ms: Date.now() - started,
-    ...ranked(via, call),
+    ...ranked({ via, call, deployment }),
   }, { env });
 
   return { state, hits: described, rows: cat.rows.length };

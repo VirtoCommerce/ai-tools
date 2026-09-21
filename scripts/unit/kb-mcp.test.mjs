@@ -397,3 +397,22 @@ test('a local base cannot be pushed to, and the server says so instead of failin
     assert.match(r.stderr, /not a writable base/);
   } finally { q.done(); }
 });
+
+// ─── the optional deployment reaches the line through this door ───────────────────────────────
+//
+// The core is tested in `kb-log-fields.test.mjs`; what is tested HERE is the WIRING, because a
+// typo in `args?.deployment` fails silently — every ask still answers, and the field is simply
+// never there, which is indistinguishable from an agent that did not pass one.
+
+test("kb_ask's optional deployment reaches the log line, and its absence leaves no field", async () => {
+  const q = scratch('ask-deployment');
+  try {
+    const s = fixtureServer(q.dir);
+    await call(s, 'kb_ask', { question: 'what does the Active column on /company/members reflect', deployment: 'vcptcore_stable' });
+    await call(s, 'kb_ask', { question: 'what does the Active column on /company/members reflect' }, 2);
+    const { readQueue } = await import('../kb/core/queue.mjs');
+    const { lines } = await readQueue({ path: join(q.dir, 'mcptest0.jsonl') });
+    assert.equal(lines[0].deployment, 'vcptcore_stable');
+    assert.ok(!('deployment' in lines[1]), 'a field that defaults is a field that lies');
+  } finally { q.done(); }
+});

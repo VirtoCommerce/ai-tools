@@ -82,11 +82,16 @@ export const TOOLS = Object.freeze([
       + 'checked by observation — before grepping, before reasoning it out, before writing the assertion. '
       + 'Returns matching entries with their trust label, confirmation count and per-observation provenance. '
       + 'Says plainly when the base was read and holds nothing (go find out, then kb_capture) and when it could '
-      + 'NOT be read (conclude nothing; retry) — these are different answers and never look alike.',
+      + 'NOT be read (conclude nothing; retry) — these are different answers and never look alike. '
+      + 'Name the deployment you are working against, if you know it: the same behaviour differs between stands, '
+      + 'and an answer weighed on the wrong one is how this base got its only dispute.',
     inputSchema: {
       type: 'object',
       properties: {
         question: str('The behavioural question, in plain words, e.g. "what does the Active column on /company/members reflect".'),
+        deployment: str('Which deployment this question is about, if you know — the same string you would pass to '
+          + 'kb_capture, e.g. vcst_qa, vcptcore_stable. Omit it rather than guess: an absent stand costs nothing, '
+          + 'a wrong one is read as fact by everybody after you.'),
         top: { type: 'integer', minimum: 1, maximum: 5, description: 'How many entries to open. Default 3.' },
       },
       required: ['question'],
@@ -247,7 +252,9 @@ async function callTool(name, args, ctx) {
     case 'kb_ask': {
       const question = String(args?.question ?? '').trim();
       if (!question) return text(['kb_ask needs a question.'], true);
-      const r = await ask(question, opened, { env: ctx.env, top: Number(args?.top) || 3, via: VIA, call: ctx.call });
+      const r = await ask(question, opened, {
+        env: ctx.env, top: Number(args?.top) || 3, via: VIA, call: ctx.call, deployment: args?.deployment,
+      });
       return text(askLines(r, { prefix: 'kb_ask' }), FAILED.has(r.state));
     }
     case 'kb_show': {

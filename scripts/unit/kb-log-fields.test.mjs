@@ -433,3 +433,85 @@ test('a capture by a session that read nothing records read [] rather than omitt
     assert.deepEqual((await linesOf(env)).at(-1).read, []);
   });
 });
+
+// ── `deployment`: which stand the QUESTION was about ──────────────────────────────────────────
+//
+// `capture` / `confirm` / `dispute` have always carried it; `ask` carried nothing, so the demand
+// side of the log could not be read per stand at all. Measured on the published base 2026-09-21
+// (`grep -h "deployment:" entries/*.md | sort | uniq -c`): 148 observations on `vcptcore_stable`,
+// 33 on `vcst_qa`, 1 on `vcst` — a skew and a spelling split that no demand panel could see.
+//
+// BOTH CASES ARE PINNED, and the absent one is the load-bearing half: there is no source of truth
+// for a stand's canonical name (`stand()` in verbs.mjs carries the measurements), so the only safe
+// value for "the caller did not say" is no field — never `null`, never `""`, never a guess.
+
+test('an ask records the deployment the question was about when the caller names one', async () => {
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: 'vcptcore_stable' });
+    await ask(MISSED_COLD, opened(), { env, via: 'mcp', deployment: 'vcst_qa' });
+    const lines = await linesOf(env);
+    // It rides on the ANSWER and on the MISS alike: a miss on a stand is the more interesting of
+    // the two, because "nobody has written this down about THAT stand" is the panel's whole job.
+    assert.equal(lines[0].state, 'answer');
+    assert.equal(lines[0].deployment, 'vcptcore_stable');
+    assert.equal(lines[1].state, 'miss');
+    assert.equal(lines[1].deployment, 'vcst_qa');
+  });
+});
+
+test('an ask with no deployment records NO field — not null, not an empty string', async () => {
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli' });
+    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: '' });
+    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: '   ' });
+    // `kb.mjs`'s parser gives a valueless flag the boolean `true`, and `deployment: "true"` is a
+    // stand name that is not a stand — unreadable later as anything but a real one.
+    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: true });
+    for (const line of await linesOf(env)) {
+      assert.ok(!('deployment' in line), 'absent beats plausible-and-wrong');
+    }
+  });
+});
+
+test('both doors put the same field on the line, because both go through one core', async () => {
+  // A divergence here would mean two logs with different shapes, which is the thing having one
+  // core is for. The CLI reaches `ask()` through `kb.mjs`, MCP through `mcp.mjs`; neither adds a
+  // default, so the only difference between these two lines is the door.
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: 'vcst_qa' });
+    await ask(ANSWERED, opened(), { env, via: 'mcp', call: 'toolu_01Fy89fmgM4sCT11S7dAyshH', deployment: 'vcst_qa' });
+    const [cli, mcp] = await linesOf(env);
+    assert.equal(cli.deployment, mcp.deployment);
+    assert.deepEqual(Object.keys(mcp).filter((k) => k !== 'call'), Object.keys(cli));
+  });
+});
+
+test('the deployment is recorded verbatim — the log reports, it does not normalise', async () => {
+  // The base already holds `vcst` once against `vcst_qa` 33 times. Ironing that out on the way in
+  // would need a mapping with no source of truth behind it, and would hide the one thing worth
+  // knowing: that two callers disagree about what the stand is called.
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: '  vcst  ' });
+    assert.equal((await linesOf(env)).at(-1).deployment, 'vcst', 'trimmed, and otherwise untouched');
+  });
+});
+
+test('nothing but an ask carries it — a capture already has its own', async () => {
+  // `capture` puts the deployment in the ENTRY's evidence, where it is a property of the
+  // observation. A second copy on the capture's log line would be the duplicate-field defect §7
+  // refuses, and the two could disagree.
+  await withQueue(async (env) => {
+    const r = await capture({
+      subject: 'a fact captured while a stand was named on the ask',
+      question: 'does the stand reach the capture line',
+      claim: 'It does not; it reaches the entry.',
+      deployment: 'vcptcore_stable',
+      anchors: ['/depot/stands'],
+      scope: ['surface=platform'],
+    }, opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'queued');
+    const line = (await linesOf(env)).at(-1);
+    assert.ok(!('deployment' in line), 'the capture LINE carries none');
+    assert.equal(line.payload.entry.evidence[0].deployment, 'vcptcore_stable', 'the ENTRY carries it');
+  });
+});

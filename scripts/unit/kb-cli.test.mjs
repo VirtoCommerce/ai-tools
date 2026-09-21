@@ -256,3 +256,20 @@ test('the usage text names reindex', async () => {
   const r = await kb([]);
   assert.match(r.stdout, /kb -- reindex/);
 });
+
+// ─── the optional deployment reaches the line through this door too ───────────────────────────
+//
+// Same wiring argument as the MCP door's twin, plus one this door owns alone: `parseArgs` gives a
+// flag written without a value the boolean `true`, so the third invocation here is the one that
+// would publish `deployment: "true"` if `stand()` took anything but a string.
+
+test('--deployment on ask reaches the line; omitted or valueless, it leaves no field', () => withQueue(async (env) => {
+  await kb(['ask', 'what does the Active column on /company/members reflect', '--deployment', 'vcst_qa', '--base', FIXTURE], { env });
+  await kb(['ask', 'what does the Active column on /company/members reflect', '--base', FIXTURE], { env });
+  await kb(['ask', 'what does the Active column on /company/members reflect', '--deployment', '--base', FIXTURE], { env });
+  const { readQueue } = await import('../kb/core/queue.mjs');
+  const { lines } = await readQueue({ env: { ...env, CLAUDE_CODE_HOST_SESSION_ID: 'clitest0' } });
+  assert.equal(lines[0].deployment, 'vcst_qa');
+  assert.ok(!('deployment' in lines[1]));
+  assert.ok(!('deployment' in lines[2]), 'a valueless flag is not a stand called "true"');
+}));
