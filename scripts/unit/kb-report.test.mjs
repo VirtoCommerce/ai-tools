@@ -103,9 +103,30 @@ test('BOTH session-key shapes parse — nothing published was renamed, so the re
   assert.equal(sessionOf(old), 'local_16');
   assert.equal(sessionOf(now), '165fd553');
   assert.deepEqual([dayOf(old), dayOf(now)], ['2026-09-19', '2026-09-21']);
-  // A host id carrying no marker keeps its dashes, and the split is on the FIRST dash — which is
-  // always the stamp's, because the stamp has none of its own.
+  // A host id carrying no marker keeps its dashes, and the stamped shape is anchored on the stamp
+  // rather than on the first dash, so a key with dashes of its own comes back whole.
   assert.equal(sessionOf('log/2026-09-21/20260921T090000Z-abcd-ef1.jsonl'), 'abcd-ef1');
+});
+
+test('BOTH FILE-NAME shapes parse — the timestamp left the name, the published files did not', () => {
+  // The stamp came out of the file name on 2026-09-21 because it published one queue TWICE
+  // (PLAN §21.7 item 3 / STEP 3b): two processes, two clocks, two files, the first 13 lines
+  // byte-identical. The sequence number they both compute is the same, so they write one path.
+  // NOTHING WAS RENAMED, so the 30-day window holds both shapes and the reader owes both an answer.
+  assert.equal(sessionOf('log/2026-09-21/f3d05dd3-0003.jsonl'), 'f3d05dd3');
+  assert.equal(sessionOf('log/2026-09-21/20260921T081451Z-local_e8.jsonl'), 'local_e8');
+  assert.equal(dayOf('log/2026-09-21/f3d05dd3-0003.jsonl'), '2026-09-21');
+
+  // THE ORDER OF THE TWO TESTS IS LOAD-BEARING, and this is the case that proves it: a session key
+  // may be all digits, so a STAMPED file whose key is `12345678` also satisfies the sequenced shape
+  // and would read back as the stamp — a session id nobody has, silently, for that file only.
+  assert.equal(sessionOf('log/2026-09-21/20260921T090000Z-12345678.jsonl'), '12345678');
+  // And a sequenced file whose key is all digits still reads as the key.
+  assert.equal(sessionOf('log/2026-09-21/12345678-0002.jsonl'), '12345678');
+  // A key carrying dashes, sequenced.
+  assert.equal(sessionOf('log/2026-09-21/abcd-ef12-0007.jsonl'), 'abcd-ef12');
+  // Neither shape: the whole name is the best answer available, which is what it always was.
+  assert.equal(sessionOf('log/2026-09-21/handwritten.jsonl'), 'handwritten');
 });
 
 test('a window holding both key shapes counts two sessions, not one and a dropped file', () => {
@@ -316,6 +337,31 @@ test('--sessions selects across both key shapes in one window', () => {
   );
   // And the plain day window takes both shapes too — the key is not part of the day filter at all.
   assert.equal(selectLogPaths(tree, { days: 30, at: new Date('2026-09-21T12:00:00Z') }).length, 3);
+});
+
+test('--sessions selects across both FILE-NAME shapes, and a session\'s pushes sort in order', () => {
+  // The other mixed window: the stamp left the file name on 2026-09-21 (STEP 3b), so for 30 days
+  // a session can own a timestamped file and a sequenced one at the same time. Both are its own.
+  const tree = [
+    { type: 'blob', path: 'log/2026-09-21/20260921T081451Z-local_e8.jsonl' },
+    { type: 'blob', path: 'log/2026-09-21/f3d05dd3-0002.jsonl' },
+    { type: 'blob', path: 'log/2026-09-21/f3d05dd3-0001.jsonl' },
+    { type: 'blob', path: 'log/2026-09-21/f3d05dd3-0010.jsonl' },
+  ];
+  assert.deepEqual(
+    selectLogPaths(tree, { sessions: 'f3d05dd3', at: new Date('2026-09-21T12:00:00Z') }),
+    [
+      'log/2026-09-21/f3d05dd3-0001.jsonl',
+      'log/2026-09-21/f3d05dd3-0002.jsonl',
+      'log/2026-09-21/f3d05dd3-0010.jsonl',
+    ],
+    'zero-padded, so the tenth push sorts after the second rather than before it',
+  );
+  assert.deepEqual(
+    selectLogPaths(tree, { sessions: 'local_e8', at: new Date('2026-09-21T12:00:00Z') }),
+    ['log/2026-09-21/20260921T081451Z-local_e8.jsonl'],
+  );
+  assert.equal(selectLogPaths(tree, { days: 30, at: new Date('2026-09-21T12:00:00Z') }).length, 4);
 });
 
 test('above the file bound it REFUSES and names the flag, rather than hanging or truncating', async () => {

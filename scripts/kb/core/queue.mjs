@@ -95,7 +95,7 @@ export const KEY_LEN = 8;
 const MARKER = /^[A-Za-z]+_/;
 
 /**
- * The key becomes a PUBLIC FILE NAME (`log/<day>/<stamp>-<key>.jsonl`), so it has to be one.
+ * The key becomes a PUBLIC FILE NAME (`log/<day>/<key>-<seq>.jsonl`), so it has to be one.
  *
  * The same lesson `publicLocator()` cost us (PLAN 7.1a): ask what a field can CARRY, not only what
  * the scanner can find. A host id is machine-generated and safe today; a key with a separator in it

@@ -96,12 +96,28 @@ export function parseLogFile(text, { path = '', session = '' } = {}) {
   return { lines, malformed };
 }
 
-/** `log/2026-09-18/20260918T171217Z-local_26.jsonl` → `local_26`. The session is the group key. */
+/** `<stamp>-<session>` — every file published before 2026-09-21, and readable for 30 days more. */
+const STAMPED = /^\d{8}T\d{6}Z-(.+)$/;
+/** `<session>-<seq>` — the shape since, where the number is the push's sequence within the session. */
+const SEQUENCED = /^(.+)-\d{4,}$/;
+
+/**
+ * `log/2026-09-18/20260918T171217Z-local_26.jsonl` → `local_26`, and
+ * `log/2026-09-21/f3d05dd3-0003.jsonl` → `f3d05dd3`. The session is the group key.
+ *
+ * TWO SHAPES, AND BOTH ARE LIVE. The timestamp left the file name when it turned out to publish one
+ * queue twice (`push.mjs` `logPath`); nothing was renamed, so for the 30 days of the retention
+ * window the window holds both and a parser that understood one of them would drop the other
+ * silently — a clean, confident, half-empty report, which is the one failure §8 forbids.
+ *
+ * ORDER MATTERS AND IS NOT COSMETIC. A session key may be all digits, so `20260918T171217Z-12345678`
+ * satisfies the sequenced shape too and would read back as the STAMP. The stamped test therefore
+ * runs first: only it is anchored on a full UTC stamp, which nothing else can be.
+ */
 export function sessionOf(path) {
   const m = /([^/]+)\.jsonl$/i.exec(String(path ?? ''));
   if (!m) return '';
-  const dash = m[1].indexOf('-');
-  return dash === -1 ? m[1] : m[1].slice(dash + 1);
+  return STAMPED.exec(m[1])?.[1] ?? SEQUENCED.exec(m[1])?.[1] ?? m[1];
 }
 
 /** `log/2026-09-18/…` → `2026-09-18`. Used for the day filter and the sparkline. */
