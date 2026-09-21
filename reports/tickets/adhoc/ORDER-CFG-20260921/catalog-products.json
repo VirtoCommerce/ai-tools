@@ -1,0 +1,1239 @@
+{
+ "base": {
+  "productType": "Physical",
+  "code": "AGENT-TEST-CFG-020",
+  "manufacturerPartNumber": null,
+  "gtin": null,
+  "name": "AGENT-TEST-Config-Phone-Case",
+  "localizedName": {
+   "values": {}
+  },
+  "catalogId": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+  "categoryId": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+  "outline": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+  "path": "Configurable Parents",
+  "titularItemId": null,
+  "mainProductId": null,
+  "isActive": true,
+  "isBuyable": true,
+  "trackInventory": false,
+  "indexingDate": null,
+  "maxQuantity": 0,
+  "minQuantity": 0,
+  "packSize": 1,
+  "startDate": "2026-07-06T16:31:24.3339276Z",
+  "endDate": null,
+  "packageType": null,
+  "weightUnit": null,
+  "weight": null,
+  "measureUnit": null,
+  "height": null,
+  "length": null,
+  "width": null,
+  "enableReview": null,
+  "maxNumberOfDownload": null,
+  "downloadExpiration": null,
+  "downloadType": null,
+  "hasUserAgreement": null,
+  "shippingType": null,
+  "taxType": null,
+  "vendor": "QA",
+  "priority": 0,
+  "outerId": null,
+  "properties": [],
+  "excludedProperties": null,
+  "imgSrc": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020/AGENT-TEST-CFG-020-main.png",
+  "images": [
+   {
+    "binaryData": null,
+    "altText": null,
+    "relativeUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020/AGENT-TEST-CFG-020-main.png",
+    "url": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020/AGENT-TEST-CFG-020-main.png",
+    "description": null,
+    "sortOrder": 0,
+    "typeId": "Image",
+    "group": "images",
+    "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-0",
+    "outerId": null,
+    "languageCode": null,
+    "isInherited": false,
+    "seoObjectType": "Image",
+    "seoInfos": [
+     {
+      "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-0",
+      "semanticUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020/AGENT-TEST-CFG-020-main.png",
+      "outline": null,
+      "pageTitle": null,
+      "metaDescription": null,
+      "imageAltDescription": null,
+      "metaKeywords": null,
+      "storeId": null,
+      "organizationId": null,
+      "objectId": null,
+      "objectType": null,
+      "isActive": true,
+      "languageCode": null,
+      "id": null
+     }
+    ],
+    "id": "b736514e-6333-443a-a01c-ee69785baced"
+   },
+   {
+    "binaryData": null,
+    "altText": null,
+    "relativeUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020/AGENT-TEST-CFG-020-alt-1.png",
+    "url": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020/AGENT-TEST-CFG-020-alt-1.png",
+    "description": null,
+    "sortOrder": 1,
+    "typeId": "Image",
+    "group": "images",
+    "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-1",
+    "outerId": null,
+    "languageCode": null,
+    "isInherited": false,
+    "seoObjectType": "Image",
+    "seoInfos": [
+     {
+      "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-1",
+      "semanticUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020/AGENT-TEST-CFG-020-alt-1.png",
+      "outline": null,
+      "pageTitle": null,
+      "metaDescription": null,
+      "imageAltDescription": null,
+      "metaKeywords": null,
+      "storeId": null,
+      "organizationId": null,
+      "objectId": null,
+      "objectType": null,
+      "isActive": true,
+      "languageCode": null,
+      "id": null
+     }
+    ],
+    "id": "a1a53217-9cf3-46d1-a300-fdc2d4ed85b6"
+   },
+   {
+    "binaryData": null,
+    "altText": null,
+    "relativeUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020/AGENT-TEST-CFG-020-alt-2.png",
+    "url": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020/AGENT-TEST-CFG-020-alt-2.png",
+    "description": null,
+    "sortOrder": 2,
+    "typeId": "Image",
+    "group": "images",
+    "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-2",
+    "outerId": null,
+    "languageCode": null,
+    "isInherited": false,
+    "seoObjectType": "Image",
+    "seoInfos": [
+     {
+      "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-2",
+      "semanticUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020/AGENT-TEST-CFG-020-alt-2.png",
+      "outline": null,
+      "pageTitle": null,
+      "metaDescription": null,
+      "imageAltDescription": null,
+      "metaKeywords": null,
+      "storeId": null,
+      "organizationId": null,
+      "objectId": null,
+      "objectType": null,
+      "isActive": true,
+      "languageCode": null,
+      "id": null
+     }
+    ],
+    "id": "1ca1c471-1dc9-42db-9da5-80279d6d1090"
+   }
+  ],
+  "assets": [],
+  "links": [
+   {
+    "entryId": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+    "listEntryId": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+    "listEntryType": null,
+    "priority": 0,
+    "catalogId": "fc596540864a41bf8ab78734ee7353a3",
+    "categoryId": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+    "targetId": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+    "name": "Configurable Parents",
+    "isAutomatic": false
+   }
+  ],
+  "variations": [],
+  "seoObjectType": "CatalogProduct",
+  "seoInfos": [
+   {
+    "name": null,
+    "semanticUrl": "agent-test-config-phone-case",
+    "outline": null,
+    "pageTitle": "AGENT-TEST-Config-Phone-Case",
+    "metaDescription": "",
+    "imageAltDescription": null,
+    "metaKeywords": null,
+    "storeId": "B2B-store",
+    "organizationId": null,
+    "objectId": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+    "objectType": "CatalogProduct",
+    "isActive": true,
+    "languageCode": "en-US",
+    "id": "b78c2289-6d3a-46b6-9b9d-1b2b748f5c47"
+   }
+  ],
+  "reviews": [
+   {
+    "content": "AGENT-TEST-Config-Phone-Case — QA test fixture (physical). Seeded for automated regression coverage.",
+    "reviewType": "QuickReview",
+    "languageCode": "en-US",
+    "isInherited": false,
+    "id": "12ffb60d-03ba-4b4d-bc8b-258d941084db"
+   },
+   {
+    "content": "<p><strong>AGENT-TEST-Config-Phone-Case</strong> is an AGENT-TEST physical fixture (code <code>AGENT-TEST-CFG-020</code>) used by the Virto Commerce QA suite.</p><p>It exists to exercise catalog, cart, checkout and storefront rendering paths deterministically. Not a real merchandise item.</p>",
+    "reviewType": "FullReview",
+    "languageCode": "en-US",
+    "isInherited": false,
+    "id": "f7c304b8-1920-44fc-82f4-2af6b19f254c"
+   }
+  ],
+  "associations": [],
+  "referencedAssociations": [],
+  "outlines": [
+   {
+    "items": [
+     {
+      "id": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+      "seoObjectType": "Catalog",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "catalog",
+        "outline": null,
+        "pageTitle": "Catalog",
+        "metaDescription": "",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+        "objectType": "Catalog",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "3d4ce5b7-896d-45bb-a7ef-34bc0be89697"
+       }
+      ],
+      "name": "AGENT-TEST-SEED-Configurables",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+      "seoObjectType": "Category",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "cfg-parents",
+        "outline": null,
+        "pageTitle": "Configurable Parents",
+        "metaDescription": "Parent configurable products with selectable options",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+        "objectType": "Category",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "b362e632-cf96-4266-a2ab-203bdf951f30"
+       }
+      ],
+      "name": "Configurable Parents",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+      "seoObjectType": "CatalogProduct",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "agent-test-config-phone-case",
+        "outline": null,
+        "pageTitle": "AGENT-TEST-Config-Phone-Case",
+        "metaDescription": "",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+        "objectType": "CatalogProduct",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "b78c2289-6d3a-46b6-9b9d-1b2b748f5c47"
+       }
+      ],
+      "name": "AGENT-TEST-Config-Phone-Case",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     }
+    ]
+   },
+   {
+    "items": [
+     {
+      "id": "fc596540864a41bf8ab78734ee7353a3",
+      "seoObjectType": "Catalog",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "catalog",
+        "outline": null,
+        "pageTitle": "Catalog",
+        "metaDescription": "catalog-root meta description",
+        "imageAltDescription": null,
+        "metaKeywords": "catalog-root meta descripton",
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "fc596540864a41bf8ab78734ee7353a3",
+        "objectType": "Catalog",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "17638966-7084-4a2a-adb0-0f88064977e8"
+       },
+       {
+        "name": null,
+        "semanticUrl": "catalog-root",
+        "outline": null,
+        "pageTitle": "catalog-root de page title",
+        "metaDescription": "catalog-root de meta description",
+        "imageAltDescription": null,
+        "metaKeywords": "catalog-root de Meta keywords",
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "fc596540864a41bf8ab78734ee7353a3",
+        "objectType": "Catalog",
+        "isActive": true,
+        "languageCode": "de-DE",
+        "id": "6596dc6c-8a8e-429b-ab5b-9122bcf07db8"
+       },
+       {
+        "name": null,
+        "semanticUrl": "catalog-fr",
+        "outline": null,
+        "pageTitle": "Catalog-fr",
+        "metaDescription": null,
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "fc596540864a41bf8ab78734ee7353a3",
+        "objectType": "Catalog",
+        "isActive": true,
+        "languageCode": "fr-FR",
+        "id": "e780c76b-8294-4b60-ba78-1c9ffc142621"
+       }
+      ],
+      "name": "B2B-mixed",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "299d950a-2782-41fe-8ae3-277fb3d0dee2",
+      "seoObjectType": "Category",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "products-with-options",
+        "outline": null,
+        "pageTitle": "Products with options",
+        "metaDescription": null,
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "299d950a-2782-41fe-8ae3-277fb3d0dee2",
+        "objectType": "Category",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "5d638f00-81ee-4663-b8b0-ee10e42cc3f8"
+       }
+      ],
+      "name": "Products with options",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+      "seoObjectType": "Category",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "cfg-parents",
+        "outline": null,
+        "pageTitle": "Configurable Parents",
+        "metaDescription": "Parent configurable products with selectable options",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+        "objectType": "Category",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "b362e632-cf96-4266-a2ab-203bdf951f30"
+       }
+      ],
+      "name": "Configurable Parents",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": true
+     },
+     {
+      "id": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+      "seoObjectType": "CatalogProduct",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "agent-test-config-phone-case",
+        "outline": null,
+        "pageTitle": "AGENT-TEST-Config-Phone-Case",
+        "metaDescription": "",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+        "objectType": "CatalogProduct",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "b78c2289-6d3a-46b6-9b9d-1b2b748f5c47"
+       }
+      ],
+      "name": "AGENT-TEST-Config-Phone-Case",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     }
+    ]
+   },
+   {
+    "items": [
+     {
+      "id": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+      "seoObjectType": "Catalog",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "catalog",
+        "outline": null,
+        "pageTitle": "Catalog",
+        "metaDescription": "",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+        "objectType": "Catalog",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "3d4ce5b7-896d-45bb-a7ef-34bc0be89697"
+       }
+      ],
+      "name": "AGENT-TEST-SEED-Configurables",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+      "seoObjectType": "Category",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "cfg-parents",
+        "outline": null,
+        "pageTitle": "Configurable Parents",
+        "metaDescription": "Parent configurable products with selectable options",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+        "objectType": "Category",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "b362e632-cf96-4266-a2ab-203bdf951f30"
+       }
+      ],
+      "name": "Configurable Parents",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+      "seoObjectType": "CatalogProduct",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "agent-test-config-phone-case",
+        "outline": null,
+        "pageTitle": "AGENT-TEST-Config-Phone-Case",
+        "metaDescription": "",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+        "objectType": "CatalogProduct",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "b78c2289-6d3a-46b6-9b9d-1b2b748f5c47"
+       }
+      ],
+      "name": "AGENT-TEST-Config-Phone-Case",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     }
+    ]
+   },
+   {
+    "items": [
+     {
+      "id": "fc596540864a41bf8ab78734ee7353a3",
+      "seoObjectType": "Catalog",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "catalog",
+        "outline": null,
+        "pageTitle": "Catalog",
+        "metaDescription": "catalog-root meta description",
+        "imageAltDescription": null,
+        "metaKeywords": "catalog-root meta descripton",
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "fc596540864a41bf8ab78734ee7353a3",
+        "objectType": "Catalog",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "17638966-7084-4a2a-adb0-0f88064977e8"
+       },
+       {
+        "name": null,
+        "semanticUrl": "catalog-root",
+        "outline": null,
+        "pageTitle": "catalog-root de page title",
+        "metaDescription": "catalog-root de meta description",
+        "imageAltDescription": null,
+        "metaKeywords": "catalog-root de Meta keywords",
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "fc596540864a41bf8ab78734ee7353a3",
+        "objectType": "Catalog",
+        "isActive": true,
+        "languageCode": "de-DE",
+        "id": "6596dc6c-8a8e-429b-ab5b-9122bcf07db8"
+       },
+       {
+        "name": null,
+        "semanticUrl": "catalog-fr",
+        "outline": null,
+        "pageTitle": "Catalog-fr",
+        "metaDescription": null,
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "fc596540864a41bf8ab78734ee7353a3",
+        "objectType": "Catalog",
+        "isActive": true,
+        "languageCode": "fr-FR",
+        "id": "e780c76b-8294-4b60-ba78-1c9ffc142621"
+       }
+      ],
+      "name": "B2B-mixed",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "299d950a-2782-41fe-8ae3-277fb3d0dee2",
+      "seoObjectType": "Category",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "products-with-options",
+        "outline": null,
+        "pageTitle": "Products with options",
+        "metaDescription": null,
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "299d950a-2782-41fe-8ae3-277fb3d0dee2",
+        "objectType": "Category",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "5d638f00-81ee-4663-b8b0-ee10e42cc3f8"
+       }
+      ],
+      "name": "Products with options",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+      "seoObjectType": "Category",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "cfg-parents",
+        "outline": null,
+        "pageTitle": "Configurable Parents",
+        "metaDescription": "Parent configurable products with selectable options",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "f3bbabb7-904d-4ce6-a5dd-ccdc59b35c94",
+        "objectType": "Category",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "b362e632-cf96-4266-a2ab-203bdf951f30"
+       }
+      ],
+      "name": "Configurable Parents",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": true
+     },
+     {
+      "id": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+      "seoObjectType": "CatalogProduct",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "agent-test-config-phone-case",
+        "outline": null,
+        "pageTitle": "AGENT-TEST-Config-Phone-Case",
+        "metaDescription": "",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f",
+        "objectType": "CatalogProduct",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "b78c2289-6d3a-46b6-9b9d-1b2b748f5c47"
+       }
+      ],
+      "name": "AGENT-TEST-Config-Phone-Case",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     }
+    ]
+   }
+  ],
+  "isInherited": false,
+  "parentCategoryIsActive": true,
+  "relevanceScore": null,
+  "createdDate": "2026-07-06T16:31:24.3349677Z",
+  "modifiedDate": "2026-07-06T16:31:28.5666913Z",
+  "createdBy": "admin",
+  "modifiedBy": "admin",
+  "id": "71385ee0-d17b-44eb-9bd7-6b0190ae1b9f"
+ },
+ "matte": {
+  "productType": "Physical",
+  "code": "AGENT-TEST-CFG-020-OPT-MATTE",
+  "manufacturerPartNumber": null,
+  "gtin": null,
+  "name": "AGENT-TEST-CFG-020-Matte",
+  "localizedName": {
+   "values": {}
+  },
+  "catalogId": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+  "categoryId": "36488697-d2b0-47e7-bb63-2aea3f5d6431",
+  "outline": "36488697-d2b0-47e7-bb63-2aea3f5d6431",
+  "path": "Configurable Options",
+  "titularItemId": null,
+  "mainProductId": null,
+  "isActive": true,
+  "isBuyable": true,
+  "trackInventory": true,
+  "indexingDate": null,
+  "maxQuantity": 0,
+  "minQuantity": 0,
+  "packSize": 1,
+  "startDate": "2026-07-06T16:31:07.3171246Z",
+  "endDate": null,
+  "packageType": null,
+  "weightUnit": null,
+  "weight": null,
+  "measureUnit": null,
+  "height": null,
+  "length": null,
+  "width": null,
+  "enableReview": null,
+  "maxNumberOfDownload": null,
+  "downloadExpiration": null,
+  "downloadType": null,
+  "hasUserAgreement": null,
+  "shippingType": null,
+  "taxType": null,
+  "vendor": "QA",
+  "priority": 0,
+  "outerId": null,
+  "properties": [],
+  "excludedProperties": null,
+  "imgSrc": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-MATTE/AGENT-TEST-CFG-020-OPT-MATTE-main.png",
+  "images": [
+   {
+    "binaryData": null,
+    "altText": null,
+    "relativeUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-MATTE/AGENT-TEST-CFG-020-OPT-MATTE-main.png",
+    "url": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-MATTE/AGENT-TEST-CFG-020-OPT-MATTE-main.png",
+    "description": null,
+    "sortOrder": 0,
+    "typeId": "Image",
+    "group": "images",
+    "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-MATTE-0",
+    "outerId": null,
+    "languageCode": null,
+    "isInherited": false,
+    "seoObjectType": "Image",
+    "seoInfos": [
+     {
+      "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-MATTE-0",
+      "semanticUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-MATTE/AGENT-TEST-CFG-020-OPT-MATTE-main.png",
+      "outline": null,
+      "pageTitle": null,
+      "metaDescription": null,
+      "imageAltDescription": null,
+      "metaKeywords": null,
+      "storeId": null,
+      "organizationId": null,
+      "objectId": null,
+      "objectType": null,
+      "isActive": true,
+      "languageCode": null,
+      "id": null
+     }
+    ],
+    "id": "0efcbcbf-5f71-450f-9eab-c3171cee1bf8"
+   },
+   {
+    "binaryData": null,
+    "altText": null,
+    "relativeUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-MATTE/AGENT-TEST-CFG-020-OPT-MATTE-alt-1.png",
+    "url": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-MATTE/AGENT-TEST-CFG-020-OPT-MATTE-alt-1.png",
+    "description": null,
+    "sortOrder": 1,
+    "typeId": "Image",
+    "group": "images",
+    "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-MATTE-1",
+    "outerId": null,
+    "languageCode": null,
+    "isInherited": false,
+    "seoObjectType": "Image",
+    "seoInfos": [
+     {
+      "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-MATTE-1",
+      "semanticUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-MATTE/AGENT-TEST-CFG-020-OPT-MATTE-alt-1.png",
+      "outline": null,
+      "pageTitle": null,
+      "metaDescription": null,
+      "imageAltDescription": null,
+      "metaKeywords": null,
+      "storeId": null,
+      "organizationId": null,
+      "objectId": null,
+      "objectType": null,
+      "isActive": true,
+      "languageCode": null,
+      "id": null
+     }
+    ],
+    "id": "961ba073-a411-4891-a7e2-081fbf09d058"
+   },
+   {
+    "binaryData": null,
+    "altText": null,
+    "relativeUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-MATTE/AGENT-TEST-CFG-020-OPT-MATTE-alt-2.png",
+    "url": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-MATTE/AGENT-TEST-CFG-020-OPT-MATTE-alt-2.png",
+    "description": null,
+    "sortOrder": 2,
+    "typeId": "Image",
+    "group": "images",
+    "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-MATTE-2",
+    "outerId": null,
+    "languageCode": null,
+    "isInherited": false,
+    "seoObjectType": "Image",
+    "seoInfos": [
+     {
+      "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-MATTE-2",
+      "semanticUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-MATTE/AGENT-TEST-CFG-020-OPT-MATTE-alt-2.png",
+      "outline": null,
+      "pageTitle": null,
+      "metaDescription": null,
+      "imageAltDescription": null,
+      "metaKeywords": null,
+      "storeId": null,
+      "organizationId": null,
+      "objectId": null,
+      "objectType": null,
+      "isActive": true,
+      "languageCode": null,
+      "id": null
+     }
+    ],
+    "id": "7e762116-75f0-460f-aed1-f8ff694ca3fa"
+   }
+  ],
+  "assets": [],
+  "links": [],
+  "variations": [],
+  "seoObjectType": "CatalogProduct",
+  "seoInfos": [
+   {
+    "name": null,
+    "semanticUrl": "agent-test-cfg-020-opt-matte",
+    "outline": null,
+    "pageTitle": "AGENT-TEST-CFG-020-Matte",
+    "metaDescription": "",
+    "imageAltDescription": null,
+    "metaKeywords": null,
+    "storeId": "B2B-store",
+    "organizationId": null,
+    "objectId": "794c4c76-e233-4bc1-9d2c-97a235ff3408",
+    "objectType": "CatalogProduct",
+    "isActive": true,
+    "languageCode": "en-US",
+    "id": "9eb82741-4c44-4e3e-9eb1-cf4da1f79cfb"
+   }
+  ],
+  "reviews": [
+   {
+    "content": "AGENT-TEST-CFG-020-Matte — QA test fixture (physical). Seeded for automated regression coverage.",
+    "reviewType": "QuickReview",
+    "languageCode": "en-US",
+    "isInherited": false,
+    "id": "14a977cb-b26b-4eeb-a454-b90b8d45749a"
+   },
+   {
+    "content": "<p><strong>AGENT-TEST-CFG-020-Matte</strong> is an AGENT-TEST physical fixture (code <code>AGENT-TEST-CFG-020-OPT-MATTE</code>) used by the Virto Commerce QA suite.</p><p>It exists to exercise catalog, cart, checkout and storefront rendering paths deterministically. Not a real merchandise item.</p>",
+    "reviewType": "FullReview",
+    "languageCode": "en-US",
+    "isInherited": false,
+    "id": "7430c212-42c4-4f0a-bdc7-6d17c7e71f66"
+   }
+  ],
+  "associations": [],
+  "referencedAssociations": [],
+  "outlines": [
+   {
+    "items": [
+     {
+      "id": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+      "seoObjectType": "Catalog",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "catalog",
+        "outline": null,
+        "pageTitle": "Catalog",
+        "metaDescription": "",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+        "objectType": "Catalog",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "3d4ce5b7-896d-45bb-a7ef-34bc0be89697"
+       }
+      ],
+      "name": "AGENT-TEST-SEED-Configurables",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "36488697-d2b0-47e7-bb63-2aea3f5d6431",
+      "seoObjectType": "Category",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "cfg-opts",
+        "outline": null,
+        "pageTitle": "Configurable Options",
+        "metaDescription": "Selectable option products for configurable bundles",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "36488697-d2b0-47e7-bb63-2aea3f5d6431",
+        "objectType": "Category",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "872daa84-d4ac-40e3-bd31-1a06a0ae13d7"
+       }
+      ],
+      "name": "Configurable Options",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "794c4c76-e233-4bc1-9d2c-97a235ff3408",
+      "seoObjectType": "CatalogProduct",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "agent-test-cfg-020-opt-matte",
+        "outline": null,
+        "pageTitle": "AGENT-TEST-CFG-020-Matte",
+        "metaDescription": "",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "794c4c76-e233-4bc1-9d2c-97a235ff3408",
+        "objectType": "CatalogProduct",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "9eb82741-4c44-4e3e-9eb1-cf4da1f79cfb"
+       }
+      ],
+      "name": "AGENT-TEST-CFG-020-Matte",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     }
+    ]
+   }
+  ],
+  "isInherited": false,
+  "parentCategoryIsActive": true,
+  "relevanceScore": null,
+  "createdDate": "2026-07-06T16:31:07.3179305Z",
+  "modifiedDate": "2026-07-06T16:31:10.9041786Z",
+  "createdBy": "admin",
+  "modifiedBy": "admin",
+  "id": "794c4c76-e233-4bc1-9d2c-97a235ff3408"
+ },
+ "ring": {
+  "productType": "Physical",
+  "code": "AGENT-TEST-CFG-020-OPT-RING",
+  "manufacturerPartNumber": null,
+  "gtin": null,
+  "name": "AGENT-TEST-CFG-020-Ring",
+  "localizedName": {
+   "values": {}
+  },
+  "catalogId": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+  "categoryId": "36488697-d2b0-47e7-bb63-2aea3f5d6431",
+  "outline": "36488697-d2b0-47e7-bb63-2aea3f5d6431",
+  "path": "Configurable Options",
+  "titularItemId": null,
+  "mainProductId": null,
+  "isActive": true,
+  "isBuyable": true,
+  "trackInventory": true,
+  "indexingDate": null,
+  "maxQuantity": 0,
+  "minQuantity": 0,
+  "packSize": 1,
+  "startDate": "2026-07-06T16:31:16.0249128Z",
+  "endDate": null,
+  "packageType": null,
+  "weightUnit": null,
+  "weight": null,
+  "measureUnit": null,
+  "height": null,
+  "length": null,
+  "width": null,
+  "enableReview": null,
+  "maxNumberOfDownload": null,
+  "downloadExpiration": null,
+  "downloadType": null,
+  "hasUserAgreement": null,
+  "shippingType": null,
+  "taxType": null,
+  "vendor": "QA",
+  "priority": 0,
+  "outerId": null,
+  "properties": [],
+  "excludedProperties": null,
+  "imgSrc": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-RING/AGENT-TEST-CFG-020-OPT-RING-main.png",
+  "images": [
+   {
+    "binaryData": null,
+    "altText": null,
+    "relativeUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-RING/AGENT-TEST-CFG-020-OPT-RING-main.png",
+    "url": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-RING/AGENT-TEST-CFG-020-OPT-RING-main.png",
+    "description": null,
+    "sortOrder": 0,
+    "typeId": "Image",
+    "group": "images",
+    "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-RING-0",
+    "outerId": null,
+    "languageCode": null,
+    "isInherited": false,
+    "seoObjectType": "Image",
+    "seoInfos": [
+     {
+      "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-RING-0",
+      "semanticUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-RING/AGENT-TEST-CFG-020-OPT-RING-main.png",
+      "outline": null,
+      "pageTitle": null,
+      "metaDescription": null,
+      "imageAltDescription": null,
+      "metaKeywords": null,
+      "storeId": null,
+      "organizationId": null,
+      "objectId": null,
+      "objectType": null,
+      "isActive": true,
+      "languageCode": null,
+      "id": null
+     }
+    ],
+    "id": "7978762a-436d-4639-b3b4-bfd06e8b6a01"
+   },
+   {
+    "binaryData": null,
+    "altText": null,
+    "relativeUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-RING/AGENT-TEST-CFG-020-OPT-RING-alt-1.png",
+    "url": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-RING/AGENT-TEST-CFG-020-OPT-RING-alt-1.png",
+    "description": null,
+    "sortOrder": 1,
+    "typeId": "Image",
+    "group": "images",
+    "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-RING-1",
+    "outerId": null,
+    "languageCode": null,
+    "isInherited": false,
+    "seoObjectType": "Image",
+    "seoInfos": [
+     {
+      "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-RING-1",
+      "semanticUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-RING/AGENT-TEST-CFG-020-OPT-RING-alt-1.png",
+      "outline": null,
+      "pageTitle": null,
+      "metaDescription": null,
+      "imageAltDescription": null,
+      "metaKeywords": null,
+      "storeId": null,
+      "organizationId": null,
+      "objectId": null,
+      "objectType": null,
+      "isActive": true,
+      "languageCode": null,
+      "id": null
+     }
+    ],
+    "id": "38e51e99-943f-48ce-a8c4-9c3bd1812d1f"
+   },
+   {
+    "binaryData": null,
+    "altText": null,
+    "relativeUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-RING/AGENT-TEST-CFG-020-OPT-RING-alt-2.png",
+    "url": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-RING/AGENT-TEST-CFG-020-OPT-RING-alt-2.png",
+    "description": null,
+    "sortOrder": 2,
+    "typeId": "Image",
+    "group": "images",
+    "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-RING-2",
+    "outerId": null,
+    "languageCode": null,
+    "isInherited": false,
+    "seoObjectType": "Image",
+    "seoInfos": [
+     {
+      "name": "AGENT-TEST-IMG-AGENT-TEST-CFG-020-OPT-RING-2",
+      "semanticUrl": "https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CFG-020-OPT-RING/AGENT-TEST-CFG-020-OPT-RING-alt-2.png",
+      "outline": null,
+      "pageTitle": null,
+      "metaDescription": null,
+      "imageAltDescription": null,
+      "metaKeywords": null,
+      "storeId": null,
+      "organizationId": null,
+      "objectId": null,
+      "objectType": null,
+      "isActive": true,
+      "languageCode": null,
+      "id": null
+     }
+    ],
+    "id": "bf81542d-cb77-4f29-835a-27742aeddc97"
+   }
+  ],
+  "assets": [],
+  "links": [],
+  "variations": [],
+  "seoObjectType": "CatalogProduct",
+  "seoInfos": [
+   {
+    "name": null,
+    "semanticUrl": "agent-test-cfg-020-opt-ring",
+    "outline": null,
+    "pageTitle": "AGENT-TEST-CFG-020-Ring",
+    "metaDescription": "",
+    "imageAltDescription": null,
+    "metaKeywords": null,
+    "storeId": "B2B-store",
+    "organizationId": null,
+    "objectId": "2e4b334c-55e1-41e5-9a23-1edc90ddf269",
+    "objectType": "CatalogProduct",
+    "isActive": true,
+    "languageCode": "en-US",
+    "id": "8de368cd-7f22-4a3f-9152-251233a4c112"
+   }
+  ],
+  "reviews": [
+   {
+    "content": "AGENT-TEST-CFG-020-Ring — QA test fixture (physical). Seeded for automated regression coverage.",
+    "reviewType": "QuickReview",
+    "languageCode": "en-US",
+    "isInherited": false,
+    "id": "231c28b6-fed5-4738-b488-459409c04a02"
+   },
+   {
+    "content": "<p><strong>AGENT-TEST-CFG-020-Ring</strong> is an AGENT-TEST physical fixture (code <code>AGENT-TEST-CFG-020-OPT-RING</code>) used by the Virto Commerce QA suite.</p><p>It exists to exercise catalog, cart, checkout and storefront rendering paths deterministically. Not a real merchandise item.</p>",
+    "reviewType": "FullReview",
+    "languageCode": "en-US",
+    "isInherited": false,
+    "id": "d6f5e453-7ffe-48e1-a83b-dc88e78d4946"
+   }
+  ],
+  "associations": [],
+  "referencedAssociations": [],
+  "outlines": [
+   {
+    "items": [
+     {
+      "id": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+      "seoObjectType": "Catalog",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "catalog",
+        "outline": null,
+        "pageTitle": "Catalog",
+        "metaDescription": "",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "07fdefcc-a889-4393-9dc3-a93eb185819e",
+        "objectType": "Catalog",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "3d4ce5b7-896d-45bb-a7ef-34bc0be89697"
+       }
+      ],
+      "name": "AGENT-TEST-SEED-Configurables",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "36488697-d2b0-47e7-bb63-2aea3f5d6431",
+      "seoObjectType": "Category",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "cfg-opts",
+        "outline": null,
+        "pageTitle": "Configurable Options",
+        "metaDescription": "Selectable option products for configurable bundles",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "36488697-d2b0-47e7-bb63-2aea3f5d6431",
+        "objectType": "Category",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "872daa84-d4ac-40e3-bd31-1a06a0ae13d7"
+       }
+      ],
+      "name": "Configurable Options",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     },
+     {
+      "id": "2e4b334c-55e1-41e5-9a23-1edc90ddf269",
+      "seoObjectType": "CatalogProduct",
+      "seoInfos": [
+       {
+        "name": null,
+        "semanticUrl": "agent-test-cfg-020-opt-ring",
+        "outline": null,
+        "pageTitle": "AGENT-TEST-CFG-020-Ring",
+        "metaDescription": "",
+        "imageAltDescription": null,
+        "metaKeywords": null,
+        "storeId": "B2B-store",
+        "organizationId": null,
+        "objectId": "2e4b334c-55e1-41e5-9a23-1edc90ddf269",
+        "objectType": "CatalogProduct",
+        "isActive": true,
+        "languageCode": "en-US",
+        "id": "8de368cd-7f22-4a3f-9152-251233a4c112"
+       }
+      ],
+      "name": "AGENT-TEST-CFG-020-Ring",
+      "localizedName": {
+       "values": {}
+      },
+      "hasVirtualParent": false
+     }
+    ]
+   }
+  ],
+  "isInherited": false,
+  "parentCategoryIsActive": true,
+  "relevanceScore": null,
+  "createdDate": "2026-07-06T16:31:16.0254164Z",
+  "modifiedDate": "2026-07-06T16:31:19.7386308Z",
+  "createdBy": "admin",
+  "modifiedBy": "admin",
+  "id": "2e4b334c-55e1-41e5-9a23-1edc90ddf269"
+ }
+}

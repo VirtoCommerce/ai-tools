@@ -114,6 +114,7 @@ Each agent MUST use its own separate browser session. Agents sharing a browser w
 
 ## Agent Delegation
 
+- **A brief that sends a specialist to establish PLATFORM BEHAVIOUR names the knowledge base and the tool id — `mcp__kb__kb_ask`, or `npm run kb -- ask "<q>"` — or the specialist will not use it.** This is measured, not prudent: on 2026-09-20 and 2026-09-21 the *same prompt* dispatched the *same* `qa-frontend-expert` + `qa-backend-expert`; the first run's briefs carried a grounding line naming the tool and produced **2 asks, 1 capture, 2 confirmations**, the second run's did not and produced **zero** — the base was never touched. **The tools are DEFERRED behind `ToolSearch`**, so an unnamed tool costs a specialist a round-trip to discover something it does not know exists, and it will simply work from the live stand instead. Name the id, and give the question shape (put the coordinate — endpoint, GraphQL op, page path — *in* the question). The CLI form needs no search hop at all. Rule itself: [`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*.
 - When delegating to sub-agents/specialist agents, verify the agent has the required tool permissions BEFORE dispatching.
 - If a delegated agent fails with an internal error (e.g., classifyHandoffIfNeeded), immediately fall back to working directly rather than retrying the same broken delegation.
 - For multi-suite regression runs, plan for rate limits: batch in groups of 3 (matching browser pool slots) rather than launching all simultaneously.
