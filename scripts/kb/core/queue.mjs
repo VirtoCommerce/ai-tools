@@ -62,16 +62,80 @@ export const MUTATIONS = Object.freeze(['capture', 'confirm', 'dispute']);
 export const isSynthetic = (env = process.env) => /^(1|true|yes|on)$/i.test(String(env.KB_SYNTHETIC ?? '').trim());
 
 /**
+ * How many characters of the host id the short key keeps.
+ *
+ * Eight, unchanged -- what changed is WHICH eight. Exported because the test asserts the width and
+ * a transcribed `8` there would be a constant with a source of truth one file away.
+ */
+export const KEY_LEN = 8;
+
+/**
+ * A leading `<word>_` on a host session id is a MARKER, not identity.
+ *
+ * THE DEFECT THIS EXISTS TO CLOSE, measured on the published base. `sessionId()` used to slice the
+ * host id to `KEY_LEN` characters flat:
+ *
+ *     CLAUDE_CODE_HOST_SESSION_ID = local_f3d05dd3-25c1-434b-a7ca-4a3d55032484
+ *     sessionId()                 = local_f3
+ *
+ * Six of those eight are the constant `local_`, so a session was identified by TWO HEX CHARACTERS
+ * -- 256 values, for every person, every day, forever. Counted 2026-09-21 over
+ * `VirtoCommerce/vc-knowledge`: 53 log files, 18 distinct ids, 16 of them of the `local_XX` shape,
+ * which by the birthday bound puts the chance that two different sessions already share one at
+ * 0.38. AND A COLLISION IS UNDETECTABLE AFTER THE FACT, because only the truncated id is ever
+ * stored -- "has this already happened?" is not a question the base can answer. It had bitten once
+ * already: `cas-probe.mjs` gave four concurrent processes `cas113496<i>` and all four collapsed to
+ * `cas11349` (PLAN 20.6).
+ *
+ * Matched generically and never as the literal `local_` (`.claude/rules/test-data.md` GOLDEN RULE):
+ * the marker is whatever the host puts in front of the underscore, and hard-coding today's value
+ * would go stale silently the day it changes -- manufacturing a confident wrong key rather than an
+ * error.
+ */
+const MARKER = /^[A-Za-z]+_/;
+
+/**
+ * The key becomes a PUBLIC FILE NAME (`log/<day>/<stamp>-<key>.jsonl`), so it has to be one.
+ *
+ * The same lesson `publicLocator()` cost us (PLAN 7.1a): ask what a field can CARRY, not only what
+ * the scanner can find. A host id is machine-generated and safe today; a key with a separator in it
+ * would silently nest the queue file one directory down and write a log path nobody can parse back.
+ * An unsafe key is not repaired into something plausible -- it falls through to the honest
+ * per-process id.
+ */
+const FILENAME_SAFE = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Host session id -> the short key everything is partitioned by. Pure, so the derivation is what
+ * the test pins.
+ *
+ * STILL A GENUINE PREFIX OF THE REAL ID, never a hash: the key stays recognisable next to the id it
+ * came from and greppable against it. Same width, 4 billion values instead of 256.
+ *
+ * The marker is stripped only when what remains still carries a full key's worth of characters.
+ * `local_ab` strips to `ab`, and answering with two characters is the defect again with extra
+ * steps -- the raw id is no less distinguishing and is stable, so it wins.
+ */
+export function shortSession(hostId) {
+  const id = String(hostId ?? '').trim();
+  const stripped = id.replace(MARKER, '');
+  const key = (stripped.length >= KEY_LEN ? stripped : id).slice(0, KEY_LEN);
+  return FILENAME_SAFE.test(key) ? key : '';
+}
+
+/**
  * Session identity is free: `CLAUDE_CODE_HOST_SESSION_ID` is inherited by child processes, so the
  * tool knows its own session without being told. The prior art's measured pain -- one missed
  * prefix drops a question row silently, 25 times out of 25 -- simply does not arise.
  *
  * The fallback is a per-process id, which is honest: it says "this run", which is the most a
- * process outside a Claude session can truthfully claim.
+ * process outside a Claude session can truthfully claim. It also catches the two ways the env var
+ * can be present and useless -- blank, or unusable as a file name -- because a key that cannot be
+ * a path is worth less than an admission that there was no session.
  */
 export function sessionId(env = process.env) {
-  const id = env.CLAUDE_CODE_HOST_SESSION_ID || env.CLAUDE_SESSION_ID;
-  return id ? String(id).slice(0, 8) : `p${process.pid}`;
+  const raw = env.CLAUDE_CODE_HOST_SESSION_ID || env.CLAUDE_SESSION_ID;
+  return shortSession(raw) || `p${process.pid}`;
 }
 
 /**

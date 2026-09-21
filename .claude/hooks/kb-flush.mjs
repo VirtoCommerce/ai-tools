@@ -59,9 +59,10 @@ function main() {
   // THE IDENTITY COMES FROM `sessionId()`, NOT FROM THE PAYLOAD, and the difference is not cosmetic:
   // they are two different identifiers. The hook payload's `session_id` is the TRANSCRIPT's id
   // (`52b778cc-…`), while every queue file, every log line and therefore every ask this report joins
-  // against is keyed on `CLAUDE_CODE_HOST_SESSION_ID` (`local_0f…`, truncated to 8). Measured here
-  // before this shipped: keying reach on the payload produces `52b778cc` against asks filed under
-  // `local_0f`, so the join matches NOTHING — every session reports as unaccounted and the panel
+  // against is keyed on the short key `sessionId()` derives from `CLAUDE_CODE_HOST_SESSION_ID`
+  // (`f3d05dd3…`, 8 characters of the part that VARIES — see `queue.mjs`). Measured here before
+  // this shipped: keying reach on the payload produces `52b778cc` against asks filed under the
+  // queue key, so the join matches NOTHING — every session reports as unaccounted and the panel
   // silently says "not measured" forever. Only `transcript_path` is taken from the payload.
   const session = sessionId(process.env);
 

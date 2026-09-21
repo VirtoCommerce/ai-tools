@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { LOGGED, MUTATIONS, pendingMutations, queuePath, readQueue, sessionId } from '../kb/core/queue.mjs';
+import { KEY_LEN, LOGGED, MUTATIONS, pendingMutations, queuePath, readQueue, sessionId, shortSession } from '../kb/core/queue.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { ask, capture, confirm, dispute, show, stat, toLogLine } from '../kb/core/verbs.mjs';
 
@@ -47,10 +47,54 @@ test('the session id comes from the inherited env, not from a caller remembering
   assert.match(sessionId({}), /^p\d+$/, 'with no session, the honest answer is "this process"');
 });
 
+test('the short key is taken from the part of the host id that VARIES, not from its marker', () => {
+  // THE DEFECT, measured 2026-09-21 on the published base: a flat slice to KEY_LEN spent six of its
+  // eight characters on the constant `local_`, leaving TWO HEX CHARACTERS — 256 values for every
+  // person, every day. 16 of the base's 18 distinct session ids were of that shape, which by the
+  // birthday bound is a 0.38 chance that two different sessions already share one; and because only
+  // the truncated id is ever stored, a collision cannot be detected after the fact.
+  assert.equal(shortSession('local_f3d05dd3-25c1-434b-a7ca-4a3d55032484'), 'f3d05dd3');
+  // Generic, never the literal `local_` — the marker is whatever the host puts before the
+  // underscore, and a hard-coded one goes stale silently (GOLDEN RULE).
+  assert.equal(shortSession('cloud_9a8b7c6d-1111-2222-3333-444455556666'), '9a8b7c6d');
+  // A PREFIX OF THE REAL ID, not a hash: the key stays greppable against the id it came from.
+  assert.ok('local_f3d05dd3-25c1'.includes(shortSession('local_f3d05dd3-25c1')));
+  // Unmarked ids are already all-varying, so they are left exactly where they were.
+  assert.equal(shortSession('f3d05dd3-25c1-434b'), 'f3d05dd3');
+  assert.equal(shortSession('f3d05dd3abcdef'), 'f3d05dd3');
+});
+
+test('every key is KEY_LEN wide or is the whole id — never a two-character key again', () => {
+  // The width is read from the module, not transcribed: a literal 8 here would be a constant with a
+  // source of truth one file away, correct exactly once (GOLDEN RULE).
+  for (const id of ['local_f3d05dd3-25c1', 'f3d05dd3abcdef', 'cloud_deadbeefcafe']) {
+    assert.equal(shortSession(id).length, KEY_LEN, id);
+  }
+  // Stripping is refused when what remains is SHORTER than a key: `local_ab` would strip to two
+  // characters, which is the defect with extra steps. The raw id is no less distinguishing.
+  assert.equal(shortSession('local_ab'), 'local_ab');
+  assert.equal(shortSession('ab'), 'ab');
+});
+
+test('an id that is absent, blank, or unusable as a file name falls back to the honest process id', () => {
+  // The key becomes a public file name (`log/<day>/<stamp>-<key>.jsonl`). A key carrying a
+  // separator would nest the queue file one directory down and write a path nobody parses back —
+  // so it is not repaired into something plausible, it admits there was no usable session.
+  assert.match(sessionId({}), /^p\d+$/, 'with no session, the honest answer is "this process"');
+  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: '   ' }), /^p\d+$/);
+  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'sess_a/b' }), /^p\d+$/);
+});
+
 test('the queue path is one file per session — two sessions can never collide', () => {
   const a = queuePath({ KB_QUEUE_DIR: 'X', CLAUDE_CODE_HOST_SESSION_ID: 'aaaaaaaa' });
   const b = queuePath({ KB_QUEUE_DIR: 'X', CLAUDE_CODE_HOST_SESSION_ID: 'bbbbbbbb' });
   assert.notEqual(a, b);
+  // And two sessions that differ only PAST the old slice point now get two files. Before this,
+  // both of these were `local_f3` and one session's queue silently became the other's.
+  assert.notEqual(
+    queuePath({ KB_QUEUE_DIR: 'X', CLAUDE_CODE_HOST_SESSION_ID: 'local_f3d05dd3-25c1-434b' }),
+    queuePath({ KB_QUEUE_DIR: 'X', CLAUDE_CODE_HOST_SESSION_ID: 'local_f3a1b2c3-9999-0000' }),
+  );
 });
 
 // ─── one line per operation, outcome included ─────────────────────────────────────────────────

@@ -92,6 +92,40 @@ test('session and day come off the path, which is where §7 put them', () => {
   assert.equal(dayOf('nonsense'), '');
 });
 
+test('BOTH session-key shapes parse — nothing published was renamed, so the reader reads both', () => {
+  // The key gained its entropy on 2026-09-21 (`local_f3` → `f3d05dd3`, PLAN §21.7 item 3 / STEP 3a).
+  // NOTHING WAS MIGRATED: published files keep their names, so for the 30 days of the retention
+  // window the report sees both shapes side by side and a parser that understood only one of them
+  // would drop a third of the base without saying so. The tolerance is part of the same change as
+  // the new key, which is what makes the rollback a plain `git revert`.
+  const old = 'log/2026-09-19/20260919T135705Z-local_16.jsonl';   // a real published path
+  const now = 'log/2026-09-21/20260921T090000Z-165fd553.jsonl';   // the same session, new key
+  assert.equal(sessionOf(old), 'local_16');
+  assert.equal(sessionOf(now), '165fd553');
+  assert.deepEqual([dayOf(old), dayOf(now)], ['2026-09-19', '2026-09-21']);
+  // A host id carrying no marker keeps its dashes, and the split is on the FIRST dash — which is
+  // always the stamp's, because the stamp has none of its own.
+  assert.equal(sessionOf('log/2026-09-21/20260921T090000Z-abcd-ef1.jsonl'), 'abcd-ef1');
+});
+
+test('a window holding both key shapes counts two sessions, not one and a dropped file', () => {
+  // The fixture is the mixed window itself: the report groups by session, and the 30 days after the
+  // change are the only window that ever holds both.
+  const mixed = [
+    line({ at: '2026-09-19T13:57:05.000Z', kind: 'ask', q: 'does price sort use the indexed field', matched: ['KB-1834ABE5'], state: 'answer', _session: sessionOf('log/2026-09-19/20260919T135705Z-local_16.jsonl'), _path: 'log/2026-09-19/20260919T135705Z-local_16.jsonl' }),
+    line({ at: '2026-09-21T09:00:00.000Z', kind: 'ask', q: 'does price sort use the indexed field', matched: ['KB-1834ABE5'], state: 'answer', _session: sessionOf('log/2026-09-21/20260921T090000Z-165fd553.jsonl'), _path: 'log/2026-09-21/20260921T090000Z-165fd553.jsonl' }),
+  ];
+  const a = analyse({ lines: mixed, rows: ROWS, meta: { days: 30 } });
+  assert.equal(a.sessions, 2, 'the old-shape file is a session, not a parse failure');
+  // And the repeated question groups across both shapes rather than splitting into two rows.
+  assert.equal(a.panels.questions.asked[0].sessions, 2);
+  assert.deepEqual(
+    a.panels.questions.bySession.map((r) => r.session).sort(),
+    ['165fd553', 'local_16'],
+    'both shapes reach the per-session panel under their own name',
+  );
+});
+
 test('the question key drops punctuation and case but KEEPS word order', () => {
   assert.equal(questionKey('Does the Active column reflect the account?'), questionKey('does the active column reflect the account'));
   // Two questions with the same words in a different order are different questions.
@@ -265,6 +299,23 @@ test('selection takes only log blobs inside the window, prefix-aware', () => {
   ];
   const got = selectLogPaths(tree, { days: 2, at: new Date('2026-09-19T04:00:00Z') });
   assert.deepEqual(got, ['log/2026-09-19/a-s1.jsonl']);
+});
+
+test('--sessions selects across both key shapes in one window', () => {
+  // The 30 days after 2026-09-21 are a MIXED window: old files keep their `local_XX` names and new
+  // ones carry the widened key. A `--sessions` filter that understood one shape would return a
+  // clean, confident, half-empty page — the "looks like no activity" failure §8 forbids.
+  const tree = [
+    { type: 'blob', path: 'log/2026-09-19/20260919T135705Z-local_16.jsonl' },
+    { type: 'blob', path: 'log/2026-09-21/20260921T090000Z-165fd553.jsonl' },
+    { type: 'blob', path: 'log/2026-09-21/20260921T091500Z-7b2c9e04.jsonl' },
+  ];
+  assert.deepEqual(
+    selectLogPaths(tree, { sessions: 'local_16,165fd553', at: new Date('2026-09-21T12:00:00Z') }),
+    ['log/2026-09-19/20260919T135705Z-local_16.jsonl', 'log/2026-09-21/20260921T090000Z-165fd553.jsonl'],
+  );
+  // And the plain day window takes both shapes too — the key is not part of the day filter at all.
+  assert.equal(selectLogPaths(tree, { days: 30, at: new Date('2026-09-21T12:00:00Z') }).length, 3);
 });
 
 test('above the file bound it REFUSES and names the flag, rather than hanging or truncating', async () => {

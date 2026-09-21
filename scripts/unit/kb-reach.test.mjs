@@ -217,8 +217,9 @@ test('asks are counted from the ask lines, not from touches — touches are an u
 test('the Stop hook keys reach on the QUEUE’s session id, never on the payload’s', () => {
   // TWO DIFFERENT IDENTIFIERS, and nothing fails loudly when they are confused. A Stop hook payload
   // carries the TRANSCRIPT's id (`52b778cc-…`); every queue file, log line and ask is keyed on
-  // `CLAUDE_CODE_HOST_SESSION_ID` truncated to 8 (`local_0f…`). Measured on a live machine before
-  // this shipped: keying reach on the payload files a session line under an id no ask ever used, so
+  // the short key `sessionId()` derives from `CLAUDE_CODE_HOST_SESSION_ID` (`f3d05dd3…`). Measured
+  // on a live machine before this shipped: keying reach on the payload files a session line under
+  // an id no ask ever used, so
   // the join matches nothing, every session reports as unaccounted, and the panel says "not
   // measured" forever — a silent failure of the measurement built to expose a silent failure.
   //
