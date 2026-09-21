@@ -1,0 +1,21 @@
+VCST-5924 — DOM evidence for the "shall be a URL" question
+Captured 2026-09-16, chrome, vcptcore-qa1, buyer test-john.mitchell-20260310@test-agent.com
+
+CART / CHECKOUT surface — accessibility tree of the ID Proof value cell:
+  - cell [ref=f5e637]:
+    - button "vcst5924-charlie.png," [cursor=pointer]
+    - button "vcst5924-alpha.txt"   [cursor=pointer]
+  (compare: the sibling control in the same block IS a link and exposes its href —
+    - link "Edit configuration": /url: /agent-test-req-file-child-20260519?lineItemId=...)
+
+ORDER DETAILS surface — same shape:
+  - cell [ref=f9e928]:
+    - button "vcst5924-alpha.txt,"  [cursor=pointer]
+    - button "vcst5924-charlie.png" [cursor=pointer]
+
+=> role=button, no href exposed. No <a href> anywhere on the file controls.
+
+Behavioural confirmation (real-user actions, no script injection):
+  - plain click        -> file downloads in place (content-disposition: attachment)
+  - Ctrl+click         -> NO new tab; downloads in place  => not an anchor
+  - Enter (keyboard)   -> downloads; control is focusable and keyboard-activatable

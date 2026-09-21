@@ -1,0 +1,534 @@
+{
+  "ticket": "VCST-5097",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "full",
+    "narrow_story_tokens": null,
+    "escalated_reason": null
+  },
+  "layer": "storefront",
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "sales-rep",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "rev": null,
+    "generated": null,
+    "age_days": null,
+    "all_layer_chain": false,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "recommended": false,
+    "built_in_run": false,
+    "build_outcome": "not-attempted",
+    "build_skipped_reason": "already-present",
+    "amended_in_run": false,
+    "amend_outcome": "not-attempted",
+    "amendments": [],
+    "sources": [
+      ".claude/knowledge/domain/sales-rep.md",
+      ".claude/knowledge/domain/mobile-navigation.md"
+    ],
+    "unmapped_surfaces": []
+  },
+  "shape_class": {
+    "value": "ui-kit",
+    "surface_source": [
+      "ticket title carries [UI Kit]",
+      "PR #2402 touches ui-kit primitives"
+    ],
+    "skipped": []
+  },
+  "verdict": "FAIL",
+  "date": "2026-09-17",
+  "timing": {
+    "started_at": null,
+    "finished_at": null,
+    "steps": {
+      "step1": 0,
+      "step2": 0,
+      "step3": 0,
+      "step4": 0,
+      "step5": 0
+    },
+    "time_to_first_test_minutes": null,
+    "first_evidence_minutes": null,
+    "reachability_minutes": null,
+    "agent_dispatches": 6,
+    "regression_predicted_minutes": null,
+    "regression_actual_minutes": 13
+  },
+  "environment": "https://vcptcore-qa1-storefront.govirto.com",
+  "build": {
+    "platform": "UNKNOWN",
+    "theme": "2.58.0-pr-2402-da56-da56daba",
+    "relevant_modules": {},
+    "deployed": {
+      "platform": "UNKNOWN",
+      "relevant_modules": {
+        "vc-theme-b2b-vue": "2.58.0-pr-2402-da56-da56daba"
+      }
+    },
+    "releasedThrough": {
+      "ledger_generated": null,
+      "components": {},
+      "behind": [],
+      "breaking": []
+    }
+  },
+  "release": {
+    "layers": [],
+    "layer_source": [],
+    "layers_conflict": false,
+    "audience": [],
+    "component_versions": {},
+    "platform_version": null,
+    "breaking": false,
+    "breaking_source": null,
+    "user_visible": null,
+    "fragment": null,
+    "refusal": "verdict-not-pass",
+    "aggregated_into": null
+  },
+  "documentation": {
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": [],
+    "comment_posted": false,
+    "refusal": "verdict-not-pass"
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Testing",
+      "to": "Testing",
+      "transition": null,
+      "confirmed": false,
+      "actor": "qa-lead",
+      "skipped": "ticket was already in Testing when the run started"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert",
+    "qa-testing-expert",
+    "ui-ux-expert",
+    "test-management-specialist",
+    "qa-lead-orchestrator",
+    "regression-orchestrator"
+  ],
+  "epic": {
+    "parent": null,
+    "siblings": {
+      "done": [],
+      "in_progress": [],
+      "blocked_dependency": []
+    },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 0,
+    "weak_acs": 0,
+    "gap_acs_added": 0,
+    "impl_coverage": {
+      "satisfied": 0,
+      "drift": 0,
+      "contradicts": 0,
+      "not_found": 0
+    },
+    "conditions_total": 33,
+    "conditions_with_evidence": 32,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": null,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    }
+  },
+  "total_cases": 6,
+  "passed": 3,
+  "failed": 2,
+  "blocked": 1,
+  "iterations": {
+    "enabled": false,
+    "rounds": 1,
+    "max_rounds": 2,
+    "outcome": "passed",
+    "per_round": []
+  },
+  "new_cases_authored": 4,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": []
+  },
+  "regression": {
+    "c1": {
+      "suites": [
+        "014b",
+        "097"
+      ],
+      "ids": [
+        "ORD-075",
+        "ORD-081",
+        "ORD-101",
+        "ORD-102",
+        "ORD-103",
+        "SR-CO-038"
+      ],
+      "run_id": "REG-2026-09-17-0137",
+      "pass_rate": 60.0,
+      "skipped_reason": null
+    }
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_ids": [
+      "REG-2026-09-17-0137"
+    ],
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": "reports/regression/REG-2026-09-17-0137/regression-report.html"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6001",
+      "severity": "Medium",
+      "relationship": "standalone",
+      "parent_or_linked_ticket": "VCST-5097"
+    },
+    {
+      "key": "VCST-6002",
+      "severity": "Medium",
+      "relationship": "standalone",
+      "parent_or_linked_ticket": "VCST-5097"
+    },
+    {
+      "key": "VCST-6003",
+      "severity": "Medium",
+      "relationship": "standalone",
+      "parent_or_linked_ticket": "VCST-5097"
+    },
+    {
+      "key": "VCST-6004",
+      "severity": "High",
+      "relationship": "standalone",
+      "parent_or_linked_ticket": "VCST-5097"
+    },
+    {
+      "key": "VCST-6005",
+      "severity": "Medium",
+      "relationship": "standalone",
+      "parent_or_linked_ticket": "VCST-5097"
+    },
+    {
+      "key": "VCST-6013",
+      "severity": "Medium",
+      "relationship": "standalone",
+      "parent_or_linked_ticket": "VCST-5097"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Out-of-range day cells are visual-only: greyed and dotted but not aria-disabled, still clickable, accessible name indistinguishable from an in-range cell",
+      "report": null
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "End-date calendar opens on the current month rather than the chosen Start month, forcing extra navigation",
+      "report": null
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "Calendar grid wraps row/gridcell in role=application rather than role=grid",
+      "report": null
+    },
+    {
+      "severity": "Low",
+      "provenance": "out-of-scope",
+      "summary": "Sales-rep dark theme: error message renders neutral grey at 10px, so the error signal is carried only by the field borders",
+      "report": null
+    },
+    {
+      "severity": "Low",
+      "provenance": "out-of-scope",
+      "summary": "Sign-in page console error, Unknown variable dynamic import ./virto-provider.vue, confined to /sign-in with no established user-visible impact",
+      "report": null
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "VCST-5868 State A (totalCount>0 with the applied status excluded by the date axis) was NOT re-tested - the seeded orders all share one timestamp, so that grade may be unreachable on this stand; recorded on the ticket",
+      "report": null
+    }
+  ],
+  "discovery": {
+    "ran": false,
+    "skipped_reason": "no separate /qa-exploratory session: all three browser lanes were committed to the checklist and to the parity characterisation, which carried the discovery function (rows 27/28/29)",
+    "lane": null,
+    "minutes": null,
+    "checklist_conditions": [
+      "27",
+      "28",
+      "29"
+    ],
+    "charter_sources": {
+      "matrix_gaps": [],
+      "reverse_edges": [],
+      "hypothesis_rows": [],
+      "ac_drift": [],
+      "rebase_rows": [
+        "ORD-075",
+        "ORD-081"
+      ]
+    },
+    "hypotheses_grounded": 0,
+    "hypotheses_remaining": 0,
+    "model_amendments": 0,
+    "scenarios_new": [],
+    "oracle_proposals": 0,
+    "bugs_surfaced": [
+      "VCST-6001",
+      "VCST-6002",
+      "VCST-6003",
+      "VCST-6004"
+    ],
+    "report": null
+  },
+  "visual": {
+    "surface": "true",
+    "surface_source": [
+      "the ticket is a UI-kit component",
+      "the PR touches storefront filter chrome"
+    ],
+    "ran": true,
+    "skipped_reason": null,
+    "targets": [
+      "Storybook VcDateRangePicker / VcDateRangeInput / VcRangeCalendar",
+      "storefront /account/orders",
+      "sales-rep customer orders"
+    ],
+    "axes": {
+      "a11y": {
+        "ran": true,
+        "verdict": "FAIL",
+        "findings": 4,
+        "skipped_reason": null
+      },
+      "design_system": {
+        "ran": true,
+        "verdict": "PASS",
+        "findings": 0,
+        "skipped_reason": null
+      },
+      "design_spec": {
+        "ran": false,
+        "verdict": null,
+        "confirmed": 0,
+        "drift": 0,
+        "missing": 0,
+        "unspec": 0,
+        "known_divergence": 0,
+        "unresolved": 0,
+        "skipped_reason": "no design link on the ticket"
+      }
+    },
+    "a11y_findings": [
+      {
+        "invariant": "BL-A11Y-002",
+        "severity": "High",
+        "ticket": "VCST-6004",
+        "blocks": false
+      },
+      {
+        "invariant": "BL-UI-006",
+        "severity": "High",
+        "ticket": "VCST-6004",
+        "blocks": false
+      },
+      {
+        "invariant": "BL-UI-004",
+        "severity": "Medium",
+        "ticket": "VCST-6002",
+        "blocks": false
+      },
+      {
+        "invariant": "BL-A11Y-003",
+        "severity": "Medium",
+        "ticket": "VCST-5935",
+        "blocks": false
+      }
+    ],
+    "invariant_failures": [
+      {
+        "invariant": "BL-A11Y-003",
+        "severity": "Medium",
+        "measured": "4.34:1 dark-theme error text against the 4.5:1 of WCAG 1.4.3",
+        "bug": "VCST-5935"
+      },
+      {
+        "invariant": "BL-UI-006",
+        "severity": "High",
+        "measured": "storefront mobile drawer date inputs 92x19 and 112x19 against the 24x24 of WCAG 2.5.8",
+        "bug": "VCST-6004"
+      },
+      {
+        "invariant": "BL-UI-004",
+        "severity": "Medium",
+        "measured": "sales-rep date field scrollWidth 102 vs clientWidth 91, text-overflow clip; observed 09/01/2026 -> 09/01/202 (tail cut) and 09/30/2026 -> 9/30/2026 (head cut)",
+        "bug": "VCST-6002"
+      },
+      {
+        "invariant": "BL-UI-004",
+        "severity": "Medium",
+        "measured": "storefront mobile combined field placeholder renders MM/DD/YYY on both sides; DOM placeholder is MM/DD/YYYY. Both themes, 375px",
+        "bug": "VCST-6013"
+      }
+    ],
+    "advisory": [],
+    "report": null
+  },
+  "contract": {
+    "surface": "false",
+    "surface_source": [
+      "no GraphQL schema change in scope; the filter reuses the existing createddate predicate"
+    ],
+    "schema": {
+      "refreshed": null,
+      "unknown_reason": "axis did not run, contract_surface is false",
+      "queries": 0,
+      "mutations": 0
+    },
+    "fixtures": {
+      "refreshed": null,
+      "validated_against_env": "vcptcore_qa1",
+      "total": 0,
+      "failed": 0,
+      "drift_in_scope": [],
+      "drift_out_of_scope": []
+    }
+  },
+  "coverage_triage": {
+    "surface": "true",
+    "surface_source": [
+      "the ui-kit shape class defaults the coverage axis ON",
+      "the change renames nothing but re-hosts the filter control"
+    ],
+    "scope": {
+      "domains": [
+        "orders"
+      ],
+      "modules": [],
+      "suites_named": [
+        "014",
+        "014b",
+        "017",
+        "017b",
+        "018",
+        "019",
+        "078c",
+        "097"
+      ],
+      "observables": [
+        "date filter",
+        "date range",
+        "start date",
+        "end date",
+        "calendar",
+        "filter popover"
+      ],
+      "oracles": [],
+      "cases_filter": null
+    },
+    "counts": {
+      "suites_scoped": 8,
+      "rows_scanned": 284,
+      "hits": 37,
+      "will_run": 35,
+      "filtered_out": 0,
+      "not_executing": 2,
+      "never_audited": 37
+    },
+    "dispositions": {
+      "confirmed": 35,
+      "repair": 0,
+      "rebase": 2,
+      "superseded": 0
+    },
+    "repaired": [],
+    "rebased_into_c1": [
+      {
+        "case": "ORD-075",
+        "suite": "014b",
+        "run_fate_before": "WILL_RUN"
+      },
+      {
+        "case": "ORD-081",
+        "suite": "014b",
+        "run_fate_before": "WILL_RUN"
+      }
+    ],
+    "superseded_proposals": [],
+    "unscannable": [],
+    "unmatched_observables": []
+  },
+  "test_data": {
+    "surface": true,
+    "surface_source": [
+      "ROUND 3 DERIVED THIS WRONG: it concluded from unseedable createdDate that orders could not be seeded at all. Dates are unseedable; orders are not.",
+      "seed:sales-rep ran on vcptcore_qa1 after round 3 and created 14 orders",
+      "td:validate:sales-rep exit 0; td:validate:sr-orders exit 0; suite 097 resolves 158/158"
+    ],
+    "dispatched": true,
+    "fixtures_covering": [
+      "@td(SR_REP_PRIMARY)",
+      "@td(ORDER_REP_PLACED)",
+      "@td(ORDER_BUYER_PLACED)",
+      "@td(ORDER_NOT_SERVED)",
+      "{{SR_REP_PASSWORD}}"
+    ],
+    "divergence_resolved": false,
+    "td_validate": "green for sales-rep; td:reconcile has 21 pre-existing failures in other domains",
+    "seed_run": {
+      "command": "npm run seed:sales-rep",
+      "env": "vcptcore_qa1",
+      "orders_created": 14,
+      "orders_visible_to_rep": 11,
+      "aliases_written": "test-data/aliases.vcptcore_qa1.json (new, 19 keys, NEEDS COMMITTING)",
+      "cannot_satisfy": "every order carries today's date within ~7s, so rolling-window, recency and per-day arithmetic contracts are not exercised; date-reading checks pass only trivially"
+    }
+  },
+  "business_rules_verified": [
+    "BL-UI-003",
+    "BL-UI-004",
+    "BL-UI-006",
+    "BL-UI-007",
+    "BL-A11Y-002"
+  ],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
+    "correlated_failures": []
+  },
+  "screenshots": "reports/tickets/Sprint26-19/VCST-5097/screenshots/"
+}

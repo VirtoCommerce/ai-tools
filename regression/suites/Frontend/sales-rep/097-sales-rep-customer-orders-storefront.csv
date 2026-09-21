@@ -594,3 +594,17 @@ SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id) with enough order history to
 [SHAPE] TAB_ORDER lists the Filters drawer-trigger, each chip's close control, then the Reset filters control, in the expected order, with no control skipped {OBSERVED}
 [REL] the active-filter chip count after pressing Enter on the focused Reset filters control is exactly 0, down from its pre-Enter count -- the grid re-renders unfiltered, so the control is operable by keyboard alone {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:RENDER · Technique:EG,Draft
+SR-CO-038,Sales Rep Customer-Orders Date Filter — Out-of-Span Value Clamps to the Allowed Range Instead of Stranding,Sales Rep > Customer Orders > Storefront > Date Filter,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+@td(ORG_TECHFLOW.platform_id) has order history; live-discover its earliest and latest order creation dates to determine whether a configured min/max span is exposed on this filter at all (premise per testing-checklist Lane B #16: 0 of 42 day cells carried aria-disabled on the prior build)",@td(ORG_TECHFLOW.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the orders grid has rendered
+[ACT] open the filters drawer
+[ACT] open the created-date calendar control
+[WAIT] calendar popup visible
+[KEY] inspect the day cells for aria-disabled attributes outside any range implied by the customer's order history -- record whether ANY day cell is disabled (bounds premise check)
+[COND: bounds ARE enforced] [ACT] attempt to navigate/type to a date outside the disabled span
+[COND: bounds ARE enforced] [WAIT] short pause
+[COND: bounds NOT enforced] [KEY] record that no min/max is currently passed to this control (premise false, matching the prior build's 0-of-42 finding) and stop","[COND: bounds enforced] [STATE] the grid clamps navigation/typed entry to the nearest in-span date rather than accepting an out-of-span value or leaving the control in a stuck/blank state
+[COND: bounds enforced] [DOM] no day cell outside the configured span is selectable
+[COND: bounds not enforced] [STATE] document the premise result plainly (0 disabled cells = bounds not passed on this build) rather than reporting a false PASS against an unenforced rule","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","grid strands on an out-of-span date with no recovery path, or silently accepts one that later produces a zero-row/confusing result, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5097 · Archetype:CONFIG · Technique:EP,Draft

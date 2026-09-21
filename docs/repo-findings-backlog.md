@@ -192,3 +192,93 @@ These were fixed inline, which is what prompted this file to exist. Kept for the
 |---|---|---|---|
 | B-53 | **`npm run suites:lint` FAILS corpus-wide on an orphan that has nothing to do with the run: `regression/suites/Backend/page-builder/059b-page-builder-shared-components.csv` exists on disk with no `config/test-suites.json` entry.** The file is untracked (`??` in `git status`), so it is somebody's in-flight page-builder work that was left in the tree. `suites:lint` is `sync-test-suites.ts --check` and it is all-or-nothing: one unregistered CSV takes the whole manifest gate down. | Same shape as the measured mid-write-CSV outage recorded in `.claude/rules/regression.md` §Suite inventory — **one author's local state blocks every other author's gate**, tree-wide. Concretely it blocks `/qa-test` Step 3's `A` append and the `3-cases` gate for any ticket in any domain, because both re-lint the corpus. It also cannot be caught in review: the offending file is untracked, so no PR contains it and no CI run sees it. | Two parts. (1) Whoever owns the page-builder suite: register it in the manifest (plus a `selections` reference) or delete it — the lint message already states both options. (2) Durable: `suites:lint` should distinguish an **untracked** orphan from a **tracked** one. A tracked CSV missing a manifest entry is a real corpus defect and must stay a hard FAIL; an untracked one is local scratch state and should be a loud WARN naming the file, so one developer's work-in-progress cannot gate every other session's corpus writes. `git ls-files --error-unmatch <path>` is the whole test. |
 | B-54 | **`test-data/aliases.vcptcore_qa1.json` does not exist, so `npm run td:validate` is red corpus-wide on `vcptcore_qa1` and every configurable-products suite is unrunnable there.** Overlays exist for `vcst`, `vcptcore`, `vcptcore_regression` and `vcptcore_stable` — but not for `qa1`, even though `.env.vcptcore_qa1` is a committed, fully-configured environment that `env:check` passes. Measured: `TEST_ENV=vcst td:validate` → exit 0; `vcptcore` → exit 1; `vcptcore_qa1` → exit 1 with 18 suites FAIL, e.g. `072b-file-text-section-cases.csv: 33/40 resolved`, failing on `@td(CFG_023_SECTIONS.Text)` / `@td(CFG_017_SECTIONS.Text)` — inline aliases whose configuration-section GUIDs live only in the per-env overlay. | `/qa-test`'s `3-exec` gate requires `td:validate` GREEN, so **no `/qa-test` FULL run can clear its own data gate on qa1**, and `/qa-regression` on qa1 cannot run the 7 configurable-products suites at all. The failure is also misleading in the expensive direction: it reads as "the test corpus is broken" rather than "this environment was never seeded into the alias registry". Note the fixtures themselves ARE present on qa1 — 16 configurable products incl. 4 with File sections were found live via `productConfiguration` — so this is purely a missing writeback, not missing data. | Run the configurable-products seeder against qa1 so the seed writes `test-data/aliases.vcptcore_qa1.json` (the writeback model in `.claude/knowledge/execution/test-data-authoring.md` §Seed writeback), or generate the overlay from the products already live there. Durable companion: `td:validate` should say **"no alias overlay exists for TEST_ENV=<env>"** as a single leading diagnostic when `aliases.<env>.json` is absent, instead of emitting N per-suite resolution failures that each look like an independent corpus defect. |
+## Open — 2026-09-16 (found during the VCST-5924 `/qa-test` run on vcptcore-qa1)
+
+| # | Finding | Impact | Suggested fix |
+|---|---|---|---|
+| B-53 | **`test-data/aliases.vcptcore_qa1.json` does not exist, so `npm run td:validate` is red corpus-wide on `vcptcore_qa1` and the configurable-products suites cannot resolve there.** Overlays exist for `vcst`, `vcptcore`, `vcptcore_regression` and `vcptcore_stable` but not for qa1, even though `.env.vcptcore_qa1` is a committed, fully-configured environment that `env:check` passes. Measured: `TEST_ENV=vcst td:validate` exits 0, `vcptcore` exits 1, `vcptcore_qa1` exits 1 with 18 suites FAIL — e.g. `072b-file-text-section-cases.csv: 33/40 resolved`, failing on `@td(CFG_023_SECTIONS.Text)` / `@td(CFG_017_SECTIONS.Text)`, inline aliases whose configuration-section GUIDs live only in the per-env overlay. | `/qa-test`'s `3-exec` gate requires `td:validate` green, so no FULL run can clear its own data gate on qa1, and `/qa-regression` cannot run the 7 configurable-products suites there at all. The failure also misleads in the expensive direction: it reads as "the corpus is broken" rather than "this environment was never seeded into the alias registry". The fixtures themselves ARE present on qa1 — 16 configurable products including 4 with File sections were found live via `productConfiguration` — so this is a missing writeback, not missing data. | Run the configurable-products seeder against qa1 so the seed writes `test-data/aliases.vcptcore_qa1.json` (the writeback model in `.claude/knowledge/execution/test-data-authoring.md` §Seed writeback), or generate the overlay from the products already live there. Durable companion: have `td:validate` emit a single leading diagnostic **"no alias overlay exists for TEST_ENV=&lt;env&gt;"** when `aliases.&lt;env&gt;.json` is absent, instead of N per-suite resolution failures that each look like an independent corpus defect. |
+| B-54 | **A FileExperienceApi upload scope can be missing on an environment with every module version looking correct, and it fails at HTTP 200 behind an optimistic progress bar — so it costs browser sessions before anyone suspects the backend.** On vcptcore-qa1 `POST /api/files/product-configuration` returned `200` with `{succeeded:false, errorCode:"INVALID_SCOPE"}` while the storefront dropzone rendered `100% done`; the required section then never satisfied and Add-to-Cart stayed disabled, which reads as a front-end validation bug. Two agents on two different browser lanes each burned ~30-40 minutes stalled on that surface. A one-line backend probe settled it immediately. Critically, when the environment was fixed, a before/after diff of `GET /api/platform/modules` showed **zero** change — 92 modules both times, no version moved, `VirtoCommerce.Catalog` stayed 3.1042.0 — so scope registration is configuration- or startup-dependent, not version-dependent. | Any env can regress this silently while every version table looks right, and the symptom points at the wrong layer. It also takes out the 9 pre-existing `CFG-FILE-*` cases on that env, which would read as a product regression. | Add the scope probe to `/qa-env-check` for environments that carry configurable products: `POST {BACK_URL}/api/files/product-configuration` with a tiny `.txt` must return `succeeded:true`. Distinguish "this scope missing" from "scope mechanism broken" by also probing a known-registered scope — `quote-attachments` returns 403 when registered-but-gated versus `INVALID_SCOPE` when absent. Separately worth raising upstream: an upload API that reports failure inside a 200 invites exactly the optimistic-UI bug seen here. |
+
+## chrome-devtools-mcp has no per-session profile isolation (found 2026-09-17, VCST-4933 run)
+
+**Symptom.** A `/qa-test` FULL run dispatched the `4v` visual lane (`ui-ux-expert`, Chrome DevTools MCP)
+concurrently with two Playwright execution lanes. Every Chrome DevTools MCP call — `list_pages`,
+`navigate_page`, `new_page` — failed with:
+
+```
+The browser is already running for C:\Users\Aleks\.cache\chrome-devtools-mcp\chrome-profile.
+Use --isolated to run multiple browser instances.
+```
+
+`Get-CimInstance Win32_Process` showed **three** `chrome-devtools-mcp` server processes running
+concurrently, none started with `--isolated`, all pointing at the same default profile directory.
+Chrome's single-instance lock means only one can hold a live browser. Killing the `chrome.exe` tree
+under that profile did not help — it respawned with fresh PIDs within seconds, i.e. actively contended
+by another live session rather than orphaned.
+
+**Why it matters.** The whole visual axis was lost for that run: every axis returned `SKIPPED`, which
+`/qa-test` correctly refuses to read as clean. The three Playwright servers each get their own tracked
+config (`config/mcp-playwright-{chrome,edge,firefox}.config.json`) and therefore their own profile;
+Chrome DevTools MCP has **no equivalent**, so it is the one lane that cannot be run in parallel with
+itself — while `.claude/rules/agents.md` routes `ui-ux-expert` to it by default and simultaneously
+allows up to 3 concurrent browser agents. The two rules are in conflict.
+
+**Fix options (not applied here — needs a decision):**
+1. Invoke the server with `--isolated`, or with an explicit per-agent `--user-data-dir`, in whatever
+   user/IDE-level MCP config registers it. Cheapest, and matches how the Playwright lanes already work.
+2. Give Chrome DevTools MCP a tracked project config alongside the Playwright three, so the profile
+   path is version-controlled rather than defaulted.
+3. If neither, document in `.claude/rules/agents.md` that the Chrome DevTools lane is single-instance
+   per machine and must not be dispatched while another session holds it — and give the visual axis a
+   documented Playwright fallback (NOT firefox, which the same file bars for click/hover-driven work).
+
+Note the interaction with an existing rule: the visual lane may never run on `playwright-firefox`, so
+when chrome and edge are both held by execution agents there is currently **no** legal lane left for it.
+That is the structural half of this finding.
+
+## Two pre-existing gate failures on main (observed 2026-09-17 during the VCST-4933 run)
+
+Both were reproduced on a **clean stashed checkout**, so they are pre-existing on `main` and not caused
+by the VCST-4933 seeding work. `npm test` currently reports **2904/2908**.
+
+1. **`scripts/unit/mirror-parity.test.mjs` — 3 failures, CRLF/LF drift.** The byte-identity check
+    between `plugins/vc-fix/` and `.claude/` fails on line endings for:
+    `agents/qa-backend-expert.md`, `agents/qa-frontend-expert.md`, `knowledge/README.md`,
+    `knowledge/agents/developers/shared-instructions.md`.
+    Byte-identity is CI-enforced by design (`docs/decisions/mirror-parity.md`), so this is the guard
+    doing its job — but on a Windows checkout the drift re-appears through git's autocrlf handling
+    rather than through anyone editing a file. Worth deciding whether the guard should normalise line
+    endings before comparing, or whether these paths need a `.gitattributes` `-text` pin.
+2. **BUDGET-004 — `.claude/skills/qa-local-env/SKILL.md` is 25,604 chars against a baseline of 25,254.**
+    The baseline may only ever shrink, so this is a genuine ratchet breach: the file grew by ~350 chars
+    after its baseline was recorded. Per CLAUDE.md the fix is to **move something down a tier**, never
+    to raise the budget — the skill body should shed detail into a supporting file the step reads only
+    when it needs it.
+
+Neither blocks the VCST-4933 work; both make `npm test` red for everyone, which erodes the signal.
+
+## 2026-09-17 — found during the VCST-5097 `/qa-test` run
+
+- **`suites:merge` clobbers a 100%-browser suite's results.** C1 (`REG-2026-09-17-0137`) ran `suites:merge`
+  on `014b` and `097` out of habit; merge expects `.browser.json`/`.machine.json` fragments, found none, and
+  overwrote both canonical `suite-*-results.json` with `lane_lost` BLOCKED envelopes. The agent restored them
+  from its own output before generating the report, so the run's numbers are real — but a less careful run
+  would have reported a fully blocked suite as fact. **`suites:merge` should refuse (or no-op loudly) when a
+  suite has no machine lane**, instead of writing a destructive envelope.
+- **`reports/tickets/Sprint26-19/VCST-5924/summary.json` fails `summary:validate` with 29 findings against a
+  baseline of 0** — invented keys (`run_state`, `blocker_history`, `mechanism_established_live`,
+  `verdict_basis`, …) and a missing required `regression`. Not from this run; noticed because this run's own
+  summary had to be rebuilt from `.claude/templates/qa-test-summary.schema.json` for the same reason. The
+  schema template is easy to bypass by writing the file freehand — worth a `summary:scaffold` that emits the
+  template pre-filled, so the schema is the starting point rather than a gate discovered afterwards.
+- **Two `/qa-test` runs shared one working tree** (VCST-5097 here, VCST-4933 in a parallel session), mixing
+  `package.json`, `test-data/aliases*.json`, `templates/.env.local.template` and `scripts/seed-data/cms/*`
+  with this run's suite CSVs. Nothing was corrupted — different suites, different files — but the tree cannot
+  be committed as one change. There is no guard that notices two concurrent runs writing shared config.
+- **A lane-reported finding was lost between the lane return and the filing step.** Lane A's bug #1 on the
+  VCST-5097 run (storefront mobile date-range placeholder clipped to `MM/DD/YYY`) was reported by the agent,
+  repeated in the run's chat summary, and then appeared in **neither** `bugs_filed` nor `bugs_not_filed` — so
+  it was not a severity-floor decision, it simply fell out. Filed later as VCST-6013 only because the operator
+  spotted it independently. There is no check that every finding in a lane's return is accounted for in
+  `summary.json` by the close-out. A `5d` gate comparing lane-returned findings against
+  `bugs_filed ∪ bugs_not_filed` would have caught it.

@@ -57,7 +57,8 @@
     "changelog_1_5_48": "Sprint 26-16 gap-closing fixtures. PROD_FRACTIONAL_DISCOUNT + PROD_MIDPOINT_DISCOUNT (VCST-5691 discountPercent): an exact 12.5% ratio and an exact 4-decimal rounding midpoint (0.12345, where AwayFromZero->0.1235 diverges from ToEven->0.1234) - the only two shapes that can detect the defect, since every pre-existing sale/coupon fixture is an integer percent. WISH_TWO_STORE_CUSTOMER (VCST-5705): one customer, two wishlists, two REAL stores, two distinct products; without it CAT-079/CAT-080 pass vacuously on a single-store env, which is the defect itself. INV_VARIATION_STOCKED / INV_VARIATION_MASTER (VCST-5546): a real mainProductId-linked variation with stock DIVERGENT from its master at the store MAIN fulfillment center. The variation seeder additionally writes FC_EAST.id to aliases.<env>.json - it previously resolved to the bare CSV business key 'FFC-001', which is not a platform id on any env, so every @td(FC_EAST.id) in suite 056 was unusable against the API.",
     "changelog_1_5_49": "VCST-5319 Loyalty Missions (VirtoCommerce.Loyalty 3.1006.0-pr-14-1be7) — first fixture set for the Missions feature. 12 aliases: MSN_STORE_SETTINGS (the Loyalty.Missions.Enable gate + the OBSERVED value of the base Loyalty.Enable switch), MSN_PERSKU_PRODUCT_A/_B (two live-discovered catalog products shared by the PerSku pair), and 9 missions — MSN_ORDERVALUE, MSN_ORDERVALUE_ALTCURRENCY, MSN_ORDERCOUNT, MSN_PERSKU_ALL, MSN_PERSKU_ANY, MSN_PUBLISHED_PRIVATE, MSN_ZEROTARGET, MSN_ZEROREWARD, MSN_DRAFT. Source of truth: scripts/seed-data/loyalty/missions-specs.mjs (side-effect-free); seeder seed-loyalty-missions.mjs; drift guard td:validate:missions; unit tests scripts/unit/loyalty-missions-specs.test.mjs. NO GUIDs in this base file — every mission id, product id/sku and the per-env store id live in aliases.<env>.json. THREE API FACTS the fixtures are shaped around, verified live on vcst-qa 2026-08-27 and cross-checked against source: (1) a PerSkuGoal carries NO inline items — the SKU targets are a separate LoyaltyMissionGoalItem entity keyed by missionId, so a mission-only seed produces a permanently uncompletable PerSku mission that passes every existence check; (2) a Published mission is IMMUTABLE (only Published -> Archived) and cannot be un-published, so idempotency is signature-compare-then-delete-and-recreate, never repair-in-place; (3) a mission can be created directly as Published. FOUR BEHAVIOURS worth knowing when authoring cases, all observed live: StartDate > EndDate is ACCEPTED SILENTLY (no validation at save); an unrecognised status string is ACCEPTED (no status vocabulary validation); the immutability refusal comes back as HTTP 500, not 4xx; and GET /api/loyalty-missions/{id} answers 200 + a null body for a missing id rather than 404. Server-side validators that DO exist (all HTTP 400): name required, store required, at least one condition, exactly one goal, at least one reward, and CURRENCY CODE REQUIRED ON AN ORDER-VALUE GOAL. That last one contradicts the DTO: OrderValueGoal.currencyCode is `nullable` in the published Swagger, but null AND \"\" are both rejected 400 — so a currency-agnostic order-value mission is NOT expressible, and the original C19 plan of leaving it null is impossible. The validation is also ASYMMETRIC: presence is enforced, validity is not (\"XYZ\" and lowercase \"usd\" persist verbatim), so a wrong-currency defect cannot surface at save time. Hence the MSN_ORDERVALUE / MSN_ORDERVALUE_ALTCURRENCY pair — identical threshold and reward, differing ONLY in currency — which moves C19 to accrual time where it is answerable. Both resolve their currency from the STORE (defaultCurrency / currencies) at seed time into the per-env overlay; neither commits a literal. NOT validated at save either: a negative goal value, a negative order count, and a negative reward are all accepted. TARGETING is group-only (UserGroupIsCondition.groups: string[]) — there is NO customer-id condition anywhere in the module, so a single-customer mission is not expressible.",
     "changelog_1_5_54": "VCST-5730 Shared Document Library for Sales Reps — 2 new CSV-backed rep aliases (SR_REP_DOCS = Advanced Sales Representative, i.e. sales-rep-documents:read; SR_REP_DOCS_WRITER = Sales Representative + Sales Rep Documents Manager, i.e. :write WITHOUT :read, which is what makes the deployed read-gate disjunction falsifiable) backed by test-data/sales-rep/document-reps.csv, plus 12 inline SR_DOC_* document aliases whose single source of truth is scripts/seed-data/sales-rep/sales-rep-docs-specs.mjs (the file BYTES are part of each fixture and are synthesized there, so a CSV mirror would be a second hand-maintained source). The 12 cover pdf/docx/xlsx/txt/png/jpg + an unknown .vcqa extension, a Cyrillic file name with spaces, a ~3 MB file, a blank display name (the NormalizeName fallback), 3 categories and 2 pinned rows — and 12 is chosen so \"exactly page size\" and \"page size + 1\" are both reachable at a page size of 5 AND of 10. Guard: npm run td:validate:sales-rep-docs.",
-    "changelog_1_5_55": "B2B_STORE_MEMBERSHIP_ROLES — store-level Customer.MembershipRolesWhitelist fixture for B2B-store (settings v2 tenant values). Seeded by seed:membership-roles; guarded by td:validate:b2b. Answers domain-map open question G7."
+    "changelog_1_5_55": "VCST-5732 Sales Rep TASK fixtures: 14 task aliases (SR_TASK_OVERDUE_*/TODAY_*/FUTURE_*/DONE_*) + SR_TASK_GROUPS group-size expectations. Seeded by npm run seed:sales-rep-tasks against the scoped /graphql/sales-rep endpoint as the owning rep; guarded by npm run td:validate:sales-rep-tasks. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks).",
+    "changelog_1_5_56": "B2B_STORE_MEMBERSHIP_ROLES — store-level Customer.MembershipRolesWhitelist fixture for B2B-store (settings v2 tenant values). Seeded by seed:membership-roles; guarded by td:validate:b2b. Answers domain-map open question G7."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -7685,5 +7686,308 @@
     },
     "_comment": "LOYORG-E2E-003 / suite 083e — the three DIVERGENT loyalty balances that make \"a buyer in two companies sees the right company points after switching\" DECIDABLE. Seeder scripts/seed-data/loyalty/seed-multiorg-loyalty-balance.mjs (npm run seed:multiorg-loyalty-balance); spec + divergence rules scripts/seed-data/loyalty/multiorg-balance-specs.mjs; drift guard npm run td:validate:multiorg-balance. EVERY field here is RUNTIME and therefore EMPTY in this committed base — an unseeded env must resolve them to \"\" (a clear miss), never to another env s value. They are written to aliases.<env>.json by the seeder. The account is MULTI_ORG_TF_BR_ALT (the FRONTEND-lane multi-org twin) and the two organization ids are re-recorded here from that alias so a case needs only ONE @td() namespace; the pinned org GUIDs remain owned by MULTI_ORG_TF_BR_ALT and are never edited here.",
     "_notes": "THE GAP IT CLOSES: measured on vcst 2026-09-14, TechFlow, BuildRight and the account own user scope ALL read 0, so the two readings either side of an organization switch agreed trivially and the case own Preconditions instructed it to record inconclusive. It BLOCKED on exactly that in two consecutive runs. WHY ALL THREE MUST DIVERGE (.claude/rules/test-data.md SECOND RULE): three implementations have to produce three DIFFERENT observations — CORRECT (T then B), LEAKING (one pool whatever is active), WRONG FALLBACK (the user own balance). Fund only one organization and a 0 read under the other is indistinguishable from the fallback, which is also 0. The seeder therefore funds all three and REFUSES to record a triple in which any figure is equal to, an exact integer multiple of, the sum of, or the difference of the others — enforced by divergenceProblems() in the spec module and re-checked statically by td:validate:multiorg-balance. MECHANISM: there is NO balance-write API (the operation log is READ-ONLY — no set, no debit), so a balance moves ONLY when a REAL order earns. Attribution comes from order.OrganizationId, which the cart inherits from the organization_id claim on the caller token — verified live, and confirmed in vc-module-loyalty PR #17 LoyaltyProgramHandler. An accrual lands at organization scope ONLY while the store setting Loyalty.LoyaltyBalanceCalculationMode reads \"Organization\"; the platform default (and what the rest of the loyalty corpus assumes) is \"Customer\", so the seeder flips it, earns, and restores it in a finally. store_mode_at_seed records what it found and restored. LIMITS: balances are EARNED, drift upward forever, CANNOT be reset or torn down, and re-seeding earns AGAIN — so every assertion must be a RELATIVE delta against a reading taken immediately before the action, and *_balance_at_seed is a seed-time READING, not a contract. A user-scope read is UserId==x AND OrganizationId==null while an organization read is OrganizationId==x, so the two ledgers are independent and an organization-mode earn does NOT credit the earner own balance. This fixture makes the two pools distinguishable; it concludes nothing about WHICH organization the storefront displays or about token re-minting on a switch."
+  },
+  "SC_MULTI": {
+    "_inline": true,
+    "_comment": "multi-section (3) shared component used on several pages (VCST-4933 scenarios #1/#7/#9/#11/#12/#16/#17). Runtime component_id in aliases.<env>.json. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "name": "AGENT-TEST-SC-Multi-Trio",
+    "store_id": "{{STORE_ID}}"
+  },
+  "SC_SINGLE": {
+    "_inline": true,
+    "_comment": "single-section shared component - the arity boundary partition (#2). Runtime component_id in aliases.<env>.json. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "name": "AGENT-TEST-SC-Single",
+    "store_id": "{{STORE_ID}}"
+  },
+  "SC_UNUSED": {
+    "_inline": true,
+    "_comment": "UNUSED shared component (usage 0) reserved for the delete-SUCCEEDS case (#21). Deletion is TERMINAL - re-run the seeder to recreate. Nothing may reference it. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "name": "AGENT-TEST-SC-Unused-Deletable",
+    "store_id": "{{STORE_ID}}"
+  },
+  "SC_USED": {
+    "_inline": true,
+    "_comment": "USED shared component (usage 1, held by PB_SC_DELETE_HOLDER only) reserved for the delete-BLOCKED case (#22). Deletion is TERMINAL. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "name": "AGENT-TEST-SC-Used-Undeletable",
+    "store_id": "{{STORE_ID}}"
+  },
+  "PB_SC_MASTER": {
+    "_inline": true,
+    "_comment": "master/origin page with 5 adjacent top-level sections ALPHA..ECHO so a 3-section adjacent selection leaves one unselected section on EACH side whose ORDER is checkable (#1/#3). scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "name": "AGENT-TEST-SC-Master",
+    "permalink": "/agent-test-sc-master",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "PB_SC_CONSUMER_A": {
+    "_inline": true,
+    "_comment": "published consumer with ONE linked placement of SC_MULTI between two own sections (#6/#7/#12/#16/#17). scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "name": "AGENT-TEST-SC-Consumer-A",
+    "permalink": "/agent-test-sc-consumer-a",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "PB_SC_CONSUMER_B": {
+    "_inline": true,
+    "_comment": "second published consumer: linked placements of BOTH SC_MULTI and SC_SINGLE (#2/#9/#12). scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "name": "AGENT-TEST-SC-Consumer-B",
+    "permalink": "/agent-test-sc-consumer-b",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "PB_SC_CONSUMER_DRAFT": {
+    "_inline": true,
+    "_comment": "DRAFT consumer holding a linked placement - the Draft-vs-Published pair with PB_SC_CONSUMER_A (#15). Deliberately never published. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "name": "AGENT-TEST-SC-Consumer-Draft",
+    "permalink": "/agent-test-sc-consumer-draft",
+    "culture": "en-US",
+    "expect_status": "Draft"
+  },
+  "PB_SC_DELETE_HOLDER": {
+    "_inline": true,
+    "_comment": "the ONLY page referencing SC_USED - isolates the delete-BLOCKED case (#22). scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "name": "AGENT-TEST-SC-Delete-Holder",
+    "permalink": "/agent-test-sc-delete-holder",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "PB_SC_CONTROL": {
+    "_inline": true,
+    "_comment": "A/B CONTROL: identical block shapes, ZERO shared components. Check any \"does not render\" claim against this page first. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "name": "AGENT-TEST-SC-Control",
+    "permalink": "/agent-test-sc-control",
+    "culture": "en-US",
+    "expect_status": "Published"
+  },
+  "SC_PERM_ALL": {
+    "_inline": true,
+    "_comment": "holds all four builder:shared-components permissions - the positive control (#23 / BSC-1). Back-office Manager account, isAdministrator=false so the permission gate applies. Base page-builder permissions are IDENTICAL across all seven roles; they differ ONLY on builder:shared-components:*. email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{PAGEBUILDER_SC_USER_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id/store_id resolve from aliases.<env>.json. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "email": "AGENT-TEST-sc-all@test.virtocommerce.com",
+    "login": "AGENT-TEST-sc-all@test.virtocommerce.com",
+    "password_var": "PAGEBUILDER_SC_USER_PASSWORD",
+    "role": "AGENT-TEST-PB-SC-sc-all",
+    "user_type": "Manager"
+  },
+  "SC_PERM_READ": {
+    "_inline": true,
+    "_comment": "read only - every mutation must be refused at the SERVER (#24 / BSC-2). Back-office Manager account, isAdministrator=false so the permission gate applies. Base page-builder permissions are IDENTICAL across all seven roles; they differ ONLY on builder:shared-components:*. email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{PAGEBUILDER_SC_USER_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id/store_id resolve from aliases.<env>.json. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "email": "AGENT-TEST-sc-read@test.virtocommerce.com",
+    "login": "AGENT-TEST-sc-read@test.virtocommerce.com",
+    "password_var": "PAGEBUILDER_SC_USER_PASSWORD",
+    "role": "AGENT-TEST-PB-SC-sc-read",
+    "user_type": "Manager"
+  },
+  "SC_PERM_NOCREATE": {
+    "_inline": true,
+    "_comment": "all four minus CREATE (#24). Back-office Manager account, isAdministrator=false so the permission gate applies. Base page-builder permissions are IDENTICAL across all seven roles; they differ ONLY on builder:shared-components:*. email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{PAGEBUILDER_SC_USER_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id/store_id resolve from aliases.<env>.json. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "email": "AGENT-TEST-sc-nocreate@test.virtocommerce.com",
+    "login": "AGENT-TEST-sc-nocreate@test.virtocommerce.com",
+    "password_var": "PAGEBUILDER_SC_USER_PASSWORD",
+    "role": "AGENT-TEST-PB-SC-sc-nocreate",
+    "user_type": "Manager"
+  },
+  "SC_PERM_NOUPDATE": {
+    "_inline": true,
+    "_comment": "all four minus UPDATE (#24). Back-office Manager account, isAdministrator=false so the permission gate applies. Base page-builder permissions are IDENTICAL across all seven roles; they differ ONLY on builder:shared-components:*. email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{PAGEBUILDER_SC_USER_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id/store_id resolve from aliases.<env>.json. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "email": "AGENT-TEST-sc-noupdate@test.virtocommerce.com",
+    "login": "AGENT-TEST-sc-noupdate@test.virtocommerce.com",
+    "password_var": "PAGEBUILDER_SC_USER_PASSWORD",
+    "role": "AGENT-TEST-PB-SC-sc-noupdate",
+    "user_type": "Manager"
+  },
+  "SC_PERM_NODELETE": {
+    "_inline": true,
+    "_comment": "all four minus DELETE (#24). Back-office Manager account, isAdministrator=false so the permission gate applies. Base page-builder permissions are IDENTICAL across all seven roles; they differ ONLY on builder:shared-components:*. email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{PAGEBUILDER_SC_USER_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id/store_id resolve from aliases.<env>.json. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "email": "AGENT-TEST-sc-nodelete@test.virtocommerce.com",
+    "login": "AGENT-TEST-sc-nodelete@test.virtocommerce.com",
+    "password_var": "PAGEBUILDER_SC_USER_PASSWORD",
+    "role": "AGENT-TEST-PB-SC-sc-nodelete",
+    "user_type": "Manager"
+  },
+  "SC_PERM_NOREAD": {
+    "_inline": true,
+    "_comment": "none of the four (#24). Back-office Manager account, isAdministrator=false so the permission gate applies. Base page-builder permissions are IDENTICAL across all seven roles; they differ ONLY on builder:shared-components:*. email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{PAGEBUILDER_SC_USER_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id/store_id resolve from aliases.<env>.json. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "email": "AGENT-TEST-sc-noread@test.virtocommerce.com",
+    "login": "AGENT-TEST-sc-noread@test.virtocommerce.com",
+    "password_var": "PAGEBUILDER_SC_USER_PASSWORD",
+    "role": "AGENT-TEST-PB-SC-sc-noread",
+    "user_type": "Manager"
+  },
+  "SC_PERM_NOSTORE": {
+    "_inline": true,
+    "_comment": "CONTROL: holds all four but user.StoreId does NOT match the store - it must 403 everywhere, which is CORRECT behaviour, not a gating defect (#26 / BSC-3). Back-office Manager account, isAdministrator=false so the permission gate applies. Base page-builder permissions are IDENTICAL across all seven roles; they differ ONLY on builder:shared-components:*. email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{PAGEBUILDER_SC_USER_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id/store_id resolve from aliases.<env>.json. scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs (npm run seed:pb-shared); drift-guard: npm run td:validate:pb-shared; teardown: npm run seed:pb-shared:teardown. Single source of truth: scripts/seed-data/cms/shared-components-specs.mjs; content: test-data/cms/shared-components-content.json.",
+    "email": "AGENT-TEST-sc-nostore@test.virtocommerce.com",
+    "login": "AGENT-TEST-sc-nostore@test.virtocommerce.com",
+    "password_var": "PAGEBUILDER_SC_USER_PASSWORD",
+    "role": "AGENT-TEST-PB-SC-sc-nostore",
+    "user_type": "Manager"
+  },
+  "SR_TASK_OVERDUE_ZULU": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Zulu overdue callback Northwind",
+    "type": "Customer Support",
+    "priority": "High",
+    "due_offset_days": "-5",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-5732 Sales Rep task fixture (OD1). Overdue open task (dueOffsetDays -5). With OD2 the overdue group is the SMALLEST (2) — no other group can be confused with it. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_OVERDUE_MIKE": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Mike overdue price list review",
+    "type": "Pricing and Promotions",
+    "priority": "Low",
+    "due_offset_days": "-1",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-5732 Sales Rep task fixture (OD2). Second overdue open task, a DIFFERENT priority and type from OD1 so the overdue group is not priority- or type-homogeneous. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_TODAY_ALPHA": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Alpha today morning order review",
+    "type": "Order Review",
+    "priority": "High",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-5732 Sales Rep task fixture (TD1). Due TODAY, open, morning hour. One of the three that expire at UTC midnight — see the DECAY note. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_TODAY_SIERRA": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Sierra today midday support ping",
+    "type": "Customer Support",
+    "priority": "Normal",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-5732 Sales Rep task fixture (TD2). Due TODAY, open, midday hour — a same-day time ordering that a date-only sort cannot reproduce. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_TODAY_DELTA": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Delta today evening catalog sync",
+    "type": "Product Catalog Management",
+    "priority": "Low",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-5732 Sales Rep task fixture (TD3). Due TODAY, open, evening hour — the latest same-day slot; with TD1/TD2 the today group is 3, distinct from every other group. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_FUTURE_YANKEE": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Yankee tomorrow registration",
+    "type": "Registration Review",
+    "priority": "Normal",
+    "due_offset_days": "1",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-5732 Sales Rep task fixture (UP1). Future, tomorrow — the nearest future boundary, adjacent to the today group (an off-by-one date predicate lands here). DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_FUTURE_BRAVO": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Bravo in three days processing",
+    "type": "Order Processing",
+    "priority": "High",
+    "due_offset_days": "3",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-5732 Sales Rep task fixture (UP2). Future, +3 days — a mid-range future task on its own calendar day. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_FUTURE_ROMEO": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Romeo in seven days content am",
+    "type": "Content Management",
+    "priority": "Low",
+    "due_offset_days": "7",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-5732 Sales Rep task fixture (UP3). Future, +7 days AM — SHARES its calendar day with UP4 (SR_TASK_FUTURE_CHARLIE). The pair is what makes a multi-task day indicator distinguishable from a single-task one. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_FUTURE_CHARLIE": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Charlie in seven days content pm",
+    "type": "Content Management",
+    "priority": "High",
+    "due_offset_days": "7",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-5732 Sales Rep task fixture (UP4). Future, +7 days PM — the second task on the SHARED calendar day. Name order (Charlie) deliberately disagrees with its due order. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_FUTURE_OSCAR": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Oscar in fourteen days other",
+    "type": "Other",
+    "priority": "Normal",
+    "due_offset_days": "14",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-5732 Sales Rep task fixture (UP5). Future, +14 days — sits beyond the six EMPTY days (+8..+13) that must render with no indicator at all. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_DONE_NOVEMBER": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK November completed past onboard",
+    "type": "Other",
+    "priority": "Normal",
+    "due_offset_days": "-2",
+    "due_date": "",
+    "completed": "true",
+    "_notes": "VCST-5732 Sales Rep task fixture (CP1). COMPLETED and due in the PAST — the ordinary completed case. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_DONE_ECHO": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Echo completed past pricing",
+    "type": "Pricing and Promotions",
+    "priority": "High",
+    "due_offset_days": "-9",
+    "due_date": "",
+    "completed": "true",
+    "_notes": "VCST-5732 Sales Rep task fixture (CP2). COMPLETED and due furthest in the PAST (-9) — the earliest due date in the whole set, so a due-date sort has an unambiguous first row. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_DONE_TANGO": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Tango completed due today",
+    "type": "Order Review",
+    "priority": "Low",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "true",
+    "_notes": "VCST-5732 Sales Rep task fixture (CP3). COMPLETED and due TODAY. Load-bearing: it must NOT appear in \"today's open tasks\". With CP4 it proves completion OUTRANKS the date; a list wired to the date alone leaks it. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_DONE_FOXTROT": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Foxtrot completed due future",
+    "type": "Registration Review",
+    "priority": "High",
+    "due_offset_days": "5",
+    "due_date": "",
+    "completed": "true",
+    "_notes": "VCST-5732 Sales Rep task fixture (CP4). COMPLETED and due in the FUTURE. Load-bearing: it must NOT appear under \"upcoming\". The second half of the both-directions straddle — if both completed tasks sat in the past, \"completed\" and \"past\" would be one partition and undecidable. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_GROUPS": {
+    "_inline": true,
+    "open_overdue": "2",
+    "open_today": "3",
+    "open_future": "5",
+    "completed": "4",
+    "total": "14",
+    "shared_day_offset": "7",
+    "empty_day_offsets": "8,9,10,11,12,13",
+    "seeded_at": "",
+    "decays_at_utc": "",
+    "owner_rep_email": "",
+    "_notes": "VCST-5732 GROUP-SIZE EXPECTATIONS for the Sales Rep task fixture — so no case ever hardcodes a count. All four sizes DIFFER on purpose (overdue=2, today=3, future=5, completed=4): if any two were equal, a filter wired to the wrong predicate would return a plausible number and PASS. shared_day_offset is the one calendar day carrying TWO tasks (multi-task day indicator); empty_day_offsets are the days immediately after it that must carry NONE (empty-day indicator). DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). seeded_at / decays_at_utc / owner_rep_email are written per-env by the seeder and are EMPTY here. Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
   }
 }

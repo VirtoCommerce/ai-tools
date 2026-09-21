@@ -176,3 +176,8 @@ reports/bugs/screenshots/_incoming/
 
 # Tracker comment ledger — one comment per ticket per run (tracker-ops.md §0)
 .tracker-comments.json
+# Session scratch (ad-hoc probes, staged CSV drafts, one-off scripts) — never committed
+.scratch/
+
+# Tracker attachments downloaded as run INPUT (not a report category, reports.md 1) — kept local
+reports/tickets/**/attachments/
