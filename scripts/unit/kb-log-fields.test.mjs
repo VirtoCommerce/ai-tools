@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { readQueue } from '../kb/core/queue.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
-import { ask, capture } from '../kb/core/verbs.mjs';
+import { ask, capture, show } from '../kb/core/verbs.mjs';
 import { captureLines } from '../kb/core/render.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
@@ -346,3 +346,90 @@ test('a line records the caller’s tool-use id when the client sends one, and o
       assert.ok(!('call' in lines[2]), 'and an empty string is not an id');
     });
   });
+
+// ── capture: the entries this session had already opened ──────────────────────────────────────
+
+test('a capture is warned about an entry it read, which the WORD hint cannot reach', async () => {
+  // THE 2026-09-20 REGRESSION, in miniature. A session opened an entry, then wrote a fact whose
+  // vocabulary has nothing in common with it — the real pair shared exactly one token, `order`, for
+  // a coverage of 0.029 against a floor of three words. The word hint is not at fault and is not
+  // fixable here: there is nothing in the text to match on. What the session DID is the signal.
+  await withQueue(async (env) => {
+    await show('KB-D10625AA', opened(), { env, via: 'cli' });
+    const r = await capture({
+      subject: 'the storefront sends a configurable product’s chosen sections as configurationItems',
+      question: 'how does a configured line reach the cart mutation',
+      claim: 'Observed: the mutation carries sectionId per chosen option.',
+      deployment: 'vcst_qa',
+      anchors: ['Mutations.addItemsCart'],
+      scope: ['surface=graphql'],
+    }, opened(), { env, via: 'cli' });
+
+    assert.deepEqual(r.read.map((n) => n.id), ['KB-D10625AA'], 'it was read, so it is surfaced');
+    assert.equal(r.related.hits.some((h) => h.row.id === 'KB-D10625AA'), false,
+      'and the vocabulary hint never had a chance at it — which is the whole point of the new list');
+    assert.deepEqual((await linesOf(env)).at(-1).read, ['KB-D10625AA']);
+  });
+});
+
+test('an entry the session read is NOT repeated as an anchor neighbour or as related', async () => {
+  // The dedup used to run the other way: neighbours were printed first and then excluded from the
+  // related hint. On 2026-09-20 that removed the entry a capture's own body said it contradicted
+  // from the one list framed as a warning, leaving it at row 10 of an unranked 25-line coordinate
+  // dump. Read-in-this-session is the strongest framing available, so it wins and the others defer.
+  await withQueue(async (env) => {
+    await show('KB-55C8E448', opened(), { env, via: 'cli' });
+    const r = await capture({
+      subject: 'a second coupon on the same cart replaces the first rather than stacking',
+      question: 'can two coupons apply to one cart at once',
+      claim: 'Observed: adding a second coupon dropped the first.',
+      deployment: 'vcst_qa',
+      anchors: ['POST /api/carts'],
+      scope: ['surface=rest'],
+    }, opened(), { env, via: 'cli' });
+
+    assert.deepEqual(r.read.map((n) => n.id), ['KB-55C8E448']);
+    const elsewhere = [...r.alsoHere.hits.map((n) => n.id), ...r.related.hits.map((h) => h.row.id)];
+    assert.equal(elsewhere.includes('KB-55C8E448'), false, 'said once, in the strongest place');
+    assert.ok(r.alsoHere.hits.some((n) => n.id === 'KB-378EEA52'),
+      'the OTHER entry at that coordinate is still reported — deferring is not suppressing');
+  });
+});
+
+test('the read list is the whole session, newest first, and never repeats an entry', async () => {
+  // The union over the session rather than the preceding ask alone: measured on the three labelled
+  // contradiction pairs, the session-wide list carries 4 of 4 targets and the preceding ask 2 of 4,
+  // because one of those captures followed an ask that opened nothing.
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli' });          // opens KB-27B4CD10
+    await show('KB-06664A3A', opened(), { env, via: 'cli' });
+    await show('KB-06664A3A', opened(), { env, via: 'cli' });    // read twice, listed once
+    const r = await capture({
+      subject: 'an unrelated observation about background job scheduling',
+      question: 'when does the indexing job run',
+      claim: 'Observed: hourly.',
+      deployment: 'vcst_qa',
+      anchors: ['/api/platform/jobs'],
+      scope: ['surface=rest'],
+    }, opened(), { env, via: 'cli' });
+
+    assert.deepEqual(r.read.map((n) => n.id), ['KB-06664A3A', 'KB-27B4CD10'],
+      'newest first: a contradiction is likelier with what was read a minute ago');
+  });
+});
+
+test('a capture by a session that read nothing records read [] rather than omitting it', async () => {
+  // Same argument as `related: []`. It was true of 5 of the 14 captures in the fortnight this was
+  // measured on, and "wrote without reading anything" is a fact worth being able to count.
+  await withQueue(async (env) => {
+    await capture({
+      subject: 'a first observation in a fresh session',
+      question: 'what happens on a cold start',
+      claim: 'Observed: nothing was read first.',
+      deployment: 'vcst_qa',
+      anchors: ['/api/platform/jobs'],
+      scope: ['surface=rest'],
+    }, opened(), { env, via: 'cli' });
+    assert.deepEqual((await linesOf(env)).at(-1).read, []);
+  });
+});

@@ -6,7 +6,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ANCHOR_BONUS, MIN_COVERAGE, admissible, anchorHit, rank, relatedEnough, relatedTo, scoreRows, tokenize,
+  ANCHOR_BONUS, MIN_COVERAGE, NEIGHBOUR_TOP, admissible, anchorHit, rank, rankNeighbours, relatedEnough, relatedTo,
+  scoreRows, tokenize,
 } from '../kb/core/rank.mjs';
 import { anchorProblems, coordinateIndex, isStructuredCoordinate, neighbours } from '../kb/core/coordinates.mjs';
 import { normalizeRow } from '../kb/core/index-load.mjs';
@@ -237,4 +238,47 @@ test('a retired entry is never surfaced as related', async () => {
   assert.ok(relatedTo(text, cat.rows).hits.some((h) => h.row.id === retired[0].id),
     'it scores highly against its own words — so the filter is what keeps it out, not the floor');
   assert.equal(relatedTo(text, retrievable(cat.rows)).hits.some((h) => h.row.id === retired[0].id), false);
+});
+
+// ─── anchor neighbours: ordered and capped ────────────────────────────────────────────────────
+
+test('anchor neighbours are capped, and what is hidden is counted rather than dropped', () => {
+  // The 2026-09-20 shape: one hot coordinate carrying far more entries than anybody reads. The cap
+  // is the point — 25 unranked lines print BEFORE the two hints built to be read, and bury them.
+  const rows = ['A', 'B', 'C', 'D', 'E'].map((c, i) => row({
+    id: `KB-NEIGH00${i}`, subject: `${c} an entry at the same coordinate`,
+  }));
+  const { hits, more } = rankNeighbours(rows, 'nothing in common with any of them');
+  assert.equal(hits.length, NEIGHBOUR_TOP);
+  assert.equal(more, 2, '"three at this coordinate" and "three of twenty-five" are different facts');
+});
+
+test('neighbours with no word overlap at all still order deterministically, by id', () => {
+  // A capture against a hot coordinate routinely shares nothing with most of its neighbours. They
+  // are still shown — they are anchor matches — and the same capture must print the same list twice.
+  const rows = [row({ id: 'KB-NEIGH00B', subject: 'second' }), row({ id: 'KB-NEIGH00A', subject: 'first' })];
+  assert.deepEqual(rankNeighbours(rows, 'unrelated').hits.map((h) => h.id), ['KB-NEIGH00A', 'KB-NEIGH00B']);
+});
+
+test('a neighbour sharing the capture’s words outranks one that shares none', () => {
+  const near = row({ id: 'KB-NEIGH0Z1', subject: 'storefront cart page totals' });
+  const far = row({ id: 'KB-NEIGH0A1', subject: 'admin widget saves an empty list' });
+  // `far` wins the id tiebreak, so only the score can put `near` first.
+  assert.equal(rankNeighbours([far, near], 'storefront cart page totals').hits[0].id, 'KB-NEIGH0Z1');
+});
+
+test('ranking neighbours does NOT make them a contradiction detector, and the cap says so', () => {
+  // Measured before this existed, on the three contradiction pairs the corpus records in its own
+  // bodies: reordering this list by word score puts the motivating target at rank 12 of 25. Under a
+  // cap of three that is not shown at all — which is honest. The list answers "who else stood here";
+  // `read` in `verbs.mjs` is what answers "are you contradicting something".
+  // The real shape, reproduced: the contradicted entry shares ONE token with the new fact while its
+  // neighbours at the same coordinate share several, because they are phrased in today's house
+  // style and it is not. Score cannot rescue it, and a cap of three is where it disappears.
+  const target = row({ id: 'KB-NEIGH0T1', subject: 'a configured product as an order line item' });
+  const noise = Array.from({ length: 6 }, (_, i) => row({
+    id: `KB-NEIGHN0${i}`, subject: 'graphql order configuration section quantity rollups',
+  }));
+  const text = 'the graphql order configuration exposes section productId sku quantity';
+  assert.equal(rankNeighbours([target, ...noise], text).hits.some((h) => h.id === target.id), false);
 });

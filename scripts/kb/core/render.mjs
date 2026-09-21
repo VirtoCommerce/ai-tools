@@ -94,9 +94,45 @@ export function captureLines(r, { prefix = 'kb capture' } = {}) {
     `${prefix}: queued ${r.id} — ${r.entry.subject}`,
     `  ${r.queuedTo}`,
     '  nothing has been sent; it ships with the next push.',
-    ...(r.alsoHere ?? []).map((n) => `  also anchored at ${n.coordinate}: ${n.id} — ${n.subject}`),
+    ...readLines(r.read),
+    ...neighbourLines(r.alsoHere),
     ...relatedLines(r.related),
   ];
+}
+
+/**
+ * Entries this session already opened — printed FIRST, and the only one of the three lists that
+ * names the thing it is actually worried about.
+ *
+ * The other two say "this may be about the same thing" and leave the reader to work out why they
+ * should care. This one can be specific because the premise is specific: the agent read these,
+ * minutes ago, and is now writing something down. So it asks the question directly, which the
+ * measurement says is the question — of the three contradictions the corpus records in its own
+ * bodies, all three were with an entry the writing session had already opened, and the vocabulary
+ * hint found one of four targets.
+ *
+ * Still a hint and still not a gate: the capture is queued by the time these lines exist, and the
+ * wording says so rather than leaving it to be inferred.
+ */
+function readLines(read) {
+  if (!read?.length) return [];
+  return [
+    '  you opened these earlier in this session — does what you just wrote disagree with any of them?',
+    ...read.map((n) => `    ${n.id} — ${n.subject}`),
+    '    if it does, `kb dispute <id>` says so; nothing here is blocked.',
+  ];
+}
+
+/**
+ * Anchor neighbours, capped. `more` is printed for the reason it is printed on `related`: a capped
+ * list cannot distinguish "three at this coordinate" from "three shown, twenty-two not", and a
+ * coordinate carrying twenty-five entries is itself worth knowing about.
+ */
+function neighbourLines(alsoHere) {
+  if (!alsoHere?.hits?.length) return [];
+  const lines = alsoHere.hits.map((n) => `  also anchored at ${n.coordinate}: ${n.id} — ${n.subject}`);
+  if (alsoHere.more) lines.push(`  …and ${alsoHere.more} more at the same coordinate(s).`);
+  return lines;
 }
 
 /**

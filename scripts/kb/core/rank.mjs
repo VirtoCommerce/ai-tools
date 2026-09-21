@@ -325,3 +325,39 @@ export function relatedTo(text, rows, { exclude = [], top = RELATED_TOP } = {}) 
   const scored = scoreRows(text, rows).filter((h) => !skip.has(h.row.id) && relatedEnough(h));
   return { hits: scored.slice(0, top), more: Math.max(0, scored.length - top) };
 }
+
+/** How many anchor neighbours one capture is allowed to print. */
+export const NEIGHBOUR_TOP = 3;
+
+/**
+ * Anchor neighbours, ORDERED AND CAPPED — a readability fix, and explicitly not a retrieval one.
+ *
+ * `neighbours()` answers "who else stood at this coordinate" and returns them in id order, uncapped.
+ * Measured over the 102-entry base: the median capture has 2 and that is fine, but 23 entries sit
+ * above 10 and the worst has 25, all on one hot coordinate (`GET /api/order/customerorders/{}`).
+ * At that size the list stops being information: the 2026-09-20 capture of KB-133FD544 had its
+ * contradicted entry at row 10 of 25, in id order, and the writer did not see it.
+ *
+ * THE COST IS NOT ONLY THE 25 LINES. They print BEFORE the word-ranked hint and before the
+ * read-this-session hint, so a long coordinate list buries the two lists that were built to be
+ * read. Capping is what gives those lines somewhere to be seen.
+ *
+ * WHAT THIS DOES NOT DO, measured before it was written: it does not surface contradictions.
+ * Ranking these by word score puts the contradicted entry of the motivating pair at rank 12 of 25
+ * — better than 10-of-25-by-id and still nowhere anybody reads. Three reorderings were tried
+ * against the three labelled contradiction pairs in the corpus and the best put the target at 12;
+ * one of them also demoted the single pair the word hint gets right today. A candidate that shares
+ * ONE token with the new fact cannot be reached by reordering, which is why the actual remedy is
+ * `openedThisSession` in `verbs.mjs` and not anything in this file.
+ *
+ * Scored by the same arithmetic as everything else so the order is explicable, and ties break on id
+ * so the same capture against the same base always prints the same list.
+ *
+ * @returns {{hits: Array, more: number}}
+ */
+export function rankNeighbours(rows, text, { top = NEIGHBOUR_TOP } = {}) {
+  const score = new Map(scoreRows(text, rows).map((h) => [h.row.id, h.score]));
+  const ordered = [...rows].sort((a, b) => (score.get(b.id) ?? 0) - (score.get(a.id) ?? 0)
+    || a.id.localeCompare(b.id));
+  return { hits: ordered.slice(0, top), more: Math.max(0, ordered.length - top) };
+}

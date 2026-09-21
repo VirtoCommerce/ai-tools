@@ -18,7 +18,7 @@ import { findDuplicate, identityKey, refusalMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, normalizeScope, retrievable } from './index-load.mjs';
 import { log, pendingMutations, readQueue, sessionId } from './queue.mjs';
-import { RANKER, rank, relatedTo } from './rank.mjs';
+import { RANKER, rank, rankNeighbours, relatedTo } from './rank.mjs';
 
 // ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
 //
@@ -298,6 +298,54 @@ async function precedingAsk({ env }) {
   return null;
 }
 
+/**
+ * Every entry THIS SESSION has already opened and read, newest first.
+ *
+ * THE MEASUREMENT THAT PUT IT HERE. The base's contradiction hint was `relatedTo`, which ranks the
+ * corpus by shared vocabulary. Against the three labelled contradiction pairs the corpus records in
+ * its own bodies ("This CONTRADICTS KB-…", "This refines the DISPUTED entry KB-…"), that hint
+ * surfaced 1 of 4 targets. The motivating miss is not close: KB-133FD544 and the entry its body
+ * says it "directly contradicts" share exactly ONE token — `order` — for a coverage of 0.029
+ * against a floor of three words. No threshold reaches that, and three different reorderings of the
+ * ranked lists were measured before this was written; the best put the target at rank 12 of 25.
+ *
+ * The reason is structural rather than a tuning error. 45% of the corpus's subjects are 8 words or
+ * fewer — the old terse house style — while a capture written today opens with 17 words of
+ * identifiers. Old entries and new facts do not share vocabulary by construction, and the entries
+ * most likely to have gone stale are precisely the old terse ones.
+ *
+ * SO THE SIGNAL IS NOT IN THE TEXT. It is in what the agent just did: it asked, it opened four
+ * bodies, and 67 seconds later it wrote a fact contradicting one of them. Checked against the same
+ * three pairs, "what this session opened before the capture" carries 4 of 4 targets, where the
+ * immediately-preceding ask alone carries 2 of 4 — so the union over the session is the one worth
+ * having, and `precedingAsk`'s single pointer is not enough.
+ *
+ * THE COST IS BOUNDED BY THE SESSION AND NOT BY THE BASE, which is what makes this affordable
+ * where a ranked list is not. Over the 14 captures in a fortnight of logs: median 3 entries, max 5,
+ * and 5 captures where the session had opened nothing at all and this prints nothing.
+ *
+ * `show` counts as an open and so does every `ask` hit whose body arrived: both put the entry's
+ * body in front of the agent, which is the only thing this is asking about. Newest first, because
+ * a contradiction is likelier with what was read a minute ago than with what was read at the start.
+ */
+async function openedThisSession({ env }) {
+  const { lines } = await readQueue({ env });
+  const out = [];
+  const seen = new Set();
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    const l = lines[i];
+    const ids = l.kind === 'ask' ? (l.opened ?? [])
+      : l.kind === 'show' && l.state === 'answer' && l.id ? [l.id]
+        : [];
+    for (const id of ids) {
+      if (typeof id !== 'string' || seen.has(id)) continue;
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  return out;
+}
+
 export async function capture(input, opened, { env = process.env, via = null, call = null } = {}) {
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
@@ -353,7 +401,22 @@ export async function capture(input, opened, { env = process.env, via = null, ca
   // sharing a coordinate are usually two honest facts about one place -- but the writer is the
   // only party who can notice that one of them contradicts a clause in the other, and only while
   // the page is still open.
-  const alsoHere = neighbours(cat.rows, input.anchors, { exclude: id });
+  // WHAT THE WRITER ALREADY READ, and it is computed FIRST because it OUTRANKS both lists below.
+  //
+  // The dedup rule used to run the other way: neighbours were printed, then excluded from the
+  // related hint "so one entry is not reported twice". On 2026-09-20 that rule removed the entry a
+  // capture's own body said it contradicted from the one list framed as a contradiction warning,
+  // leaving it in an unranked 25-line coordinate dump. An entry the agent read minutes ago is the
+  // strongest thing either list can say about it, so it is said once, first, and the weaker framings
+  // do not repeat it. See `openedThisSession` for the measurement.
+  const live = new Set(retrievable(cat.rows).map((r) => r.id));
+  const read = (await openedThisSession({ env })).filter((rid) => rid !== id && live.has(rid));
+  const readRows = read.map((rid) => cat.rows.find((r) => r.id === rid)).filter(Boolean);
+
+  const alsoHere = rankNeighbours(
+    neighbours(cat.rows, input.anchors, { exclude: id }).filter((n) => !read.includes(n.id)),
+    `${input.subject} ${input.question}`,
+  );
 
   // And entries this fact may SPEAK TO, which is a different question from where it was observed.
   //
@@ -372,7 +435,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
   const related = relatedTo(
     `${input.subject} ${input.question}`,
     retrievable(cat.rows),
-    { exclude: [id, ...alsoHere.map((n) => n.id)] },
+    { exclude: [id, ...read, ...alsoHere.hits.map((n) => n.id)] },
   );
 
   const written = await log({
@@ -405,13 +468,20 @@ export async function capture(input, opened, { env = process.env, via = null, ca
     // An empty array still goes on every queued capture. `[]` means the hint ran and found nothing,
     // which is what makes the non-empty rows mean anything.
     related: related.hits.map((h) => h.row.id),
+    // THE ENTRIES THIS CAPTURE WAS WARNED ABOUT, by the same argument that turned `related` from a
+    // count into a list of ids: the question worth answering is not "did the hint fire" but "did
+    // the writer act on what it was shown", and only ids let a later dispute be matched back to the
+    // line that offered it. An empty array still ships — `[]` says the session had opened nothing,
+    // which was true of 5 of the 14 captures in the fortnight this was measured on, and is a
+    // different fact from a line written before the field existed.
+    read,
     ...door(via, call),
     // The PAYLOAD the pusher needs. The public log line is this minus `payload` (see toLogLine):
     // a log line carries ids and subjects only, but the queue must carry what it is queueing.
     payload: { entry, body: String(input.claim).trim(), key: identityKey({ anchors: input.anchors, scope }) },
   }, { env });
 
-  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related };
+  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related, read: readRows };
 }
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────

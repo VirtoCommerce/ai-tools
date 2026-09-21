@@ -121,10 +121,17 @@ test('the PUBLIC log line is the queue line minus the payload', () => withQueue(
   // `related` names the IDS the capture surfaced (PLAN §17.4(6)) — the hint's own record that it
   // ran, and what it showed. It is in this whitelist rather than tolerated by a loose assertion,
   // because this list is the thing that makes a new public log field a deliberate act.
-  assert.deepEqual(Object.keys(publicLine).sort(), ['at', 'id', 'kind', 'question', 'related', 'subject']);
+  // `read` joins it on the same terms: the ids this session had already opened when it wrote, which
+  // is the hint that actually finds contradictions (the word hint carried 1 of 4 targets across the
+  // corpus's three labelled pairs; this one carries 4 of 4). Ids of public entries, no prose, and
+  // the same chain `related` exists for — a later dispute of an id that appears here is the record
+  // that the writer acted on what it was shown.
+  assert.deepEqual(Object.keys(publicLine).sort(), ['at', 'id', 'kind', 'question', 'read', 'related', 'subject']);
   assert.equal(publicLine.question, CAPTURE.question, 'the retrieval key, not only the claim');
-  assert.ok(Array.isArray(publicLine.related), 'ids, so a later dispute of one of them is traceable');
-  assert.ok(publicLine.related.every((v) => /^KB-[0-9A-F]{8}$/.test(v)), 'ids only — never the subjects');
+  for (const field of ['related', 'read']) {
+    assert.ok(Array.isArray(publicLine[field]), `${field}: ids, so a later dispute is traceable`);
+    assert.ok(publicLine[field].every((v) => /^KB-[0-9A-F]{8}$/.test(v)), `${field}: ids only — never subjects`);
+  }
   assert.ok(!JSON.stringify(publicLine).includes(CAPTURE.claim), 'no claim prose in the public log');
 }));
 
