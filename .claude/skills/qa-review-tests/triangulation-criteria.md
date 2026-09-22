@@ -39,6 +39,8 @@ opinion:
 | **Source** | A `file:line` anchor **for every surface that can write the asserted state** (§1c) — not one anchor | GitHub MCP `search_code` / `get_file_contents` (read-only; QA never clones) |
 | **Live** | An `{OBSERVED}` result (screenshot / captured API response) confirming the behavior on the deployed build | `qa-testing-expert` (playwright-firefox), real UI/API only — REAL-USER rule, no `browser_evaluate` / `run_code_unsafe` bypass |
 
+**Ask the observed-behaviour base BEFORE the Live axis, never instead of it.** `mcp__kb__kb_ask`, coordinate in the question, holds what somebody already saw on a **named deployment** with a trust count — and an entry that disagrees with the docs axis is a `CONTRADICTORY` candidate handed to you before you spend a browser lane on it. It is not a fourth axis and it never satisfies Live: confirm a matching entry once you have seen it yourself, `kb_dispute` one that your own observation contradicts, `kb_capture` what the base did not hold ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*).
+
 Any applicable axis with **no** evidence → **UNGROUNDED**. Axes that **disagree** → **CONTRADICTORY**.
 Neither is confirmed; both are reported as proposals and **never** write to the CSV.
 

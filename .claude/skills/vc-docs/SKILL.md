@@ -32,6 +32,13 @@ returned nothing for either. So route the release axis somewhere else FIRST.
 | what shipped · what's new · which version introduced X · since when · is X supported yet · recently added · new in · `3.10NN` / `2.5N` · *что нового* · *релиз* · *в какой версии* | **`.claude/knowledge/domain/release-ledger.md`** §1 (latest per component), §2 (last 6 months in full), §3 (older months index), §4 (component → month) |
 | how does X work · where is it configured · what fields · API shape · deployment | VirtoOZ, per the table below |
 | is it deployed on the env I am testing? | **neither** — `GET {{BACK_URL}}/api/platform/modules`. See `.claude/templates/agent-dispatch.md` § Build Verification |
+| what does it actually DO on the build in front of me · does it really behave the way the guide says | **`mcp__kb__kb_ask`** — what was OBSERVED, on a named deployment, with a trust count ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*) |
+
+**That last row is this skill's own blind spot, stated plainly.** The nine months of releases VirtoOZ
+cannot see are exactly the window in which behaviour was observed and written down by somebody here —
+and a released behaviour the guides document **wrongly** returns a confident answer rather than
+nothing, which is the failure this row exists to catch. Put the coordinate in the question; exit 1
+means nobody has recorded it yet.
 
 The ledger is generated from the monthly community release digests (`npm run releases:refresh`) and
 carries, per feature: title, `component@version`, the GitHub release tag, a docs deep link, and a

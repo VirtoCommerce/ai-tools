@@ -64,6 +64,14 @@ VirtoOZ tool that fits; fall back to Context7 (`/virtocommerce/vc-docs`, `tokens
 returns nothing. **Fold in `ba-system-analyzer` risk areas** as mandatory verification points alongside the
 `BL-*` rules.
 
+**Observed-behaviour query** (`mcp__kb__kb_ask`, coordinate in the question) — **never skipped for the
+same reason**, because `1c`'s reuse does not cover it: what the docs say and what the build was seen
+doing are different sources and only one of them is nine months behind production. An entry grounds an
+assertion as `{OBSERVED}` with a citation instead of `{HYPOTHESIS}`, which is the cheapest thing that
+clears a GRD-001 before a browser lane is spent; exit 1 says the surface is unrecorded, and what this
+run then establishes live is a `kb_capture` ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential
+Rules → *Product context*).
+
 Agent routing table and the dispatch minimums: [`SKILL.md`](SKILL.md) §Agent dispatch.
 
 ---

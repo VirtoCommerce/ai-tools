@@ -51,6 +51,12 @@ returns:
 - **Related flows & integration boundaries** — adjacent features / cross-domain seams (cart ↔ checkout, org ↔ membership, …).
 - **Known pain points / historical failures** — cross-referenced to `vc-bug-catalog.md` (`VC-*`) + prior bugs.
 - **Docs grounding** — VirtoOZ/VC-doc references for how the feature is *supposed* to behave.
+- **Observed grounding** — what `mcp__kb__kb_ask` already held about how it *does* behave, by entry id
+  and deployment, or the literal `none`. The pair is the point: the row above is what is specified, this
+  one is what was seen on a named build, and **a disagreement between them is a finding**, not an error
+  to reconcile. `none` is a real answer — it says the surface is unrecorded, which is what makes the
+  live work this step is about worth a `kb_capture` ([`../../../CLAUDE.md`](../../../CLAUDE.md)
+  §Essential Rules → *Product context*).
 
 **Hand it the contract's REV, not its path.** When `1b` item 2d refreshed, the brief carries
 `graphql-schema.md @ <refresh date> — refreshed this run` plus any fixture drift the gate reported. Without

@@ -9,6 +9,8 @@ disable-model-invocation: true
 
 Keep the QA pipeline's shared oracles grounded in reality. For each in-scope entry, gather evidence from three independent axes — **docs** (VirtoOZ), **live** (playwright), **source code** (GitHub MCP) — assign a verdict, and **auto-apply confirmed changes**. Then reconcile the test-case citations that point at whatever changed. Fans the triangulation out across **up to 3 parallel `ba-system-analyzer` agents** (one browser slot each, each doing its own live axis), then applies confirmed edits from a **single serialized writer** (`qa-testing-expert` is reserved for a sequential deep-dive on a hard live repro). The methodology lives in the [`/qa-review-oracles` skill](../skills/qa-review-oracles/SKILL.md) — this command is the terminal entry.
 
+**Before the live axis, ask what was already observed** — `mcp__kb__kb_ask`, with the coordinate in the question. The base is the banked result of a live check somebody already ran, on a named deployment, and it can hold the very divergence this triangulation exists to find. It does **not** substitute for the live axis: a matching entry is `kb_confirm`ed after you see it yourself, a contradicting one is `kb_dispute`d, and neither is a second capture ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*).
+
 **`/qa-review-bl` is a retained alias for `/qa-review-oracles bl`** (kept because `/qa-test-lifecycle` Phase 4c auto-runs it).
 
 ## Usage
