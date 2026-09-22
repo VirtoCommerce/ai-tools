@@ -91,9 +91,13 @@ single-user) and zero footprint growth. Measure the axis your hypothesis is actu
 
 - **EventPipe is single-consumer per profile session in practice**: stop `dotnet-counters`
   before starting `dotnet-trace` on the same pid, or the trace fails to attach.
-- `dotnet-counters monitor` may hang its teardown for ~minutes after the load stops (ignores
-  SIGINT). Run it in the background with `--duration`, harvest the CSV when the k6 summary is
-  written, then `pkill` the leftover.
+- **Either sidecar may hang its teardown for ~minutes after the load stops.** `dotnet-counters`
+  ignores SIGINT without a controlling terminal, and `dotnet-trace` was measured doing the same as
+  a backgrounded sidecar — where it does not merely linger, it keeps **collecting**, so the capture
+  gains a post-load idle tail that dilutes every share computed from it. `run.sh` now escalates
+  SIGINT → SIGTERM → SIGKILL and renames a force-stopped capture to `*.suspect.nettrace` (no
+  guaranteed footer, may not parse). Driving `collect` by hand needs the same discipline:
+  `--duration` as a cap, harvest when the k6 summary is written, then stop the leftover yourself.
 - The CPU profile is `dotnet-sampled-thread-time`. `--profile cpu-sampling` / `thread-time`
   are `dotnet-trace collect-linux` (kernel perf) profiles and are rejected by plain `collect`.
 - `GCAllocationTick` samples ~1 event per 100KB allocated per heap — magnitudes are
