@@ -1,7 +1,29 @@
 # BUG — UCP handoff restore fails ~50% of the time: session cache is per-pod, not shared
 
-**Ticket:** VCST-5378 (UCP — Authenticated User Flow) · **Severity:** High · **Status:** draft, not filed
+**Ticket:** VCST-5378 (UCP — Authenticated User Flow) · **Severity:** High · **Status:** FIXED, verified 2026-09-22 (never filed as a separate tracker item — reported and fixed directly against the parent story)
 **Env:** vcst-qa · **Date:** 2026-09-17 · **Layer:** cross-layer (vc-module-ucp + deployment)
+
+## Verification — 2026-09-22 (`/qa-test VCST-5378` re-test)
+
+Dev comment on VCST-5378 (2026-09-21) claimed: *"Verified handoff between two nodes, including
+simultaneous requests and restarts. This requires a shared cache and distributed locking configured
+by the host."* Re-measured live against vcst-qa, UCP module redeployed (`3.1006.0-pr-7-9bc9`,
+storefront `2.58.0-pr-2467-89a3`):
+
+- **Anonymous handoff, first-attempt restore: 10/10 = 100%** (up from 17/32 ≈ 53% / 20/41 ≈ 49% on
+  2026-09-17), driven over raw MCP JSON-RPC against the storefront host, fresh never-opened sessions
+  each trial. Correlation ids on the restore calls came from at least two distinct pod prefixes
+  (`0HNOO3BU3E3JN`, `0HNOO3B981HJE`), so this is a genuine cross-pod result, not an artifact of one
+  replica serving every request.
+- **Authenticated handoff, live browser walk: 1/1 success** — signed in as
+  `test-john.mitchell-20260310@test-agent.com` (B2B-store, org AGENT-TEST-Org-AcmeCorp), minted a
+  cart ($1,100.00, Epson WorkForce WF-3640 ×11), `checkout_and_handoff`, opened `continue_url` fresh:
+  landed directly on `/cart/{id}?ucp_handoff=1` with the exact cart, shipping address and total
+  intact — no expired-link toast, no manual retry needed.
+
+**Verdict: FIXED.** Root cause (per-process `IDistributedCache` fallback under two Platform pods) is
+resolved — the fix note says "Redis is optional" but a shared cache + distributed lock is now
+evidently wired on vcst-qa, since the miss this bug documented no longer reproduces at 10/10 and 1/1.
 
 ## Summary
 

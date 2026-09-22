@@ -1,0 +1,51 @@
+{
+  "ticket": "VCST-5681",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-09-22",
+  "environment": "http://localhost (local frontend-only hybrid: PR #2496's own theme build, /graphql+/connect/token proxied to real https://vcst-qa.govirto.com, store B2B-store)",
+  "build": {
+    "platform": "not probed (backend is vcst-qa, unchanged by this fix)",
+    "theme": "vc-theme-b2b-vue-2.58.0-pr-2496-3b02-3b02d64a (theme marker X-VC-Local-Theme: fe-3cdb021fec18; footer version confirmed via a fresh playwright-chrome session too)",
+    "relevant_modules": {},
+    "pr_build": "VirtoCommerce/vc-frontend#2496 head 3b02d64a (OPEN, not merged)",
+    "real_env_deployed_theme": "vc-theme-b2b-vue-2.58.0-pr-2467-89a3-89a38239 (unrelated PR — vcst-qa does NOT yet carry this fix)"
+  },
+  "agent_used": "none (orchestrator drove the browser pane + playwright-chrome inline; user directed local-hybrid verification via the 'localhost' argument)",
+  "account": "SR_REP_PRIMARY (agent-test-sr-primary@example.com)",
+  "str_result": "3/3 formal consecutive pass (Claude Browser pane) + 1 independent confirmation on a fresh playwright-chrome session (screenshot captured) — plus 15 additional ad hoc loads earlier this session (0 raw-key sightings on the fix build; 0/7 on the pre-fix build, already non-deterministic before the fix)",
+  "baseline_reproduction": "from-qa-bug (BUG-SalesRep-DE-raw-i18n-keys-account-sidebar.md + this session's own pre-fix pass on build 2.58.0-pr-2495 — see testing-checklist.md)",
+  "checklist_total": 10,
+  "checklist_passed": 9,
+  "checklist_failed": 0,
+  "checklist_not_run": 1,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "BL-SR-013"
+  ],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested",
+    "hops": [
+      { "from": "In review", "to": "Ready for test", "transition": "Ready to test" },
+      { "from": "Ready for test", "to": "Testing", "transition": "On QA" },
+      { "from": "Testing", "to": "Tested", "transition": "Finish test" }
+    ],
+    "authorized_by": "operator, in chat, 2026-09-22 — explicit 'Transition now anyway' after being told real vcst-qa does not carry the fix",
+    "stopped_at": "Tested (not Done)"
+  },
+  "tracker_note": "Applied on operator's explicit authorization despite verification being against a LOCAL pre-merge build (PR #2496 open/unmerged), not the actual vcst-qa deployment (still running unrelated PR #2467). Comment id 110207 posted with inline evidence screenshot (verified via renderedBody: one real <img> tied to attachment 84721, zero surviving wiki markup, zero error spans).",
+  "caveats": [
+    "Verified against a local frontend-only hybrid, not the real vcst-qa deployment (PR #2496 still open/unmerged there) — ticket is now Tested on this basis by explicit operator instruction.",
+    "The original defect is a non-deterministic Vue-reactivity race; 3/3 + 16 additional clean loads is strong pre-merge evidence, not proof the race is structurally eliminated.",
+    "Buyer-account EN variant (agent-test-multiorg-... on /account/lists) not re-tested this run.",
+    "Recommend a spot re-check once PR #2496 actually merges and deploys to vcst-qa, since Tested here does not mean the real environment was ever observed with the fix."
+  ],
+  "evidence": "reports/tickets/Sprint26-19/VCST-5681/testing-checklist.md",
+  "evidence_screenshot": "reports/tickets/Sprint26-19/VCST-5681/screenshots/VCST-5681-fixed-de-my-customers-sidebar.png",
+  "evidence_artifact": null,
+  "tracker_comment_id": "110207",
+  "artifacts": "reports/tickets/Sprint26-19/VCST-5681/",
+  "next_step": "merge PR #2496 and confirm it deploys to vcst-qa; spot-check the real environment once it does (ticket is already Tested, so this is a confidence check, not a required re-run)"
+}

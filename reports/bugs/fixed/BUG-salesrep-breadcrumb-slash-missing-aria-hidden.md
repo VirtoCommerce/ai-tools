@@ -58,3 +58,12 @@ to escalate, just an implementation that diverges from its own declared spec.
 Above the `/qa-test` 5d severity floor, so filed as a **Sub-task of VCST-5733** (IN-SCOPE). Fixing
 `aria-hidden` alone resolves both halves; raising the slash contrast without it would leave the element
 announced and is the weaker fix.
+
+## Status: FIXED
+
+## Resolution
+- **Ticket:** VCST-5870 (moved to Tested 2026-09-21)
+- **Fixed in:** vc-frontend PR #2491, head `a69ddec8` (open, not yet merged); verified on theme `2.58.0-pr-2491-a69d-a69ddec8`
+- **Verified:** 2026-09-21 by live browser check, STR 3/3 on `/company/my-customers/{org}/orders`; also `/company/customer-orders`, profile and order details. Slashes are hidden via the wrapping `li[aria-hidden]`, not on the span as in the design markup.
+- **Not verified:** dark mode, keyboard focus, mobile width. Baseline RED is this report's own measurements, not re-observed.
+- **Evidence:** `reports/tickets/Sprint26-19/VCST-5870/verification-summary.json`

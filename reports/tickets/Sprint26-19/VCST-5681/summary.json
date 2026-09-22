@@ -1,0 +1,50 @@
+{
+  "ticket": "VCST-5681",
+  "flow": "feature-test",
+  "ticket_type": "Bug",
+  "path": "FAST",
+  "shape_class": null,
+  "verdict": "PRE_MERGE_CHARACTERIZATION",
+  "date": "2026-09-22",
+  "sprint": "Sprint26-19",
+  "environment_pass1": "http://localhost (Docker container, storefront ver. 2.58.0-pr-2495-c828-c828ee92, proxied to https://vcst-qa.govirto.com, store B2B-store)",
+  "environment_pass2": "http://localhost (frontend-only hybrid container, theme vc-theme-b2b-vue-2.58.0-pr-2496-3b02-3b02d64a.zip, marker X-VC-Local-Theme: fe-3cdb021fec18, /graphql+/connect/token proxied to https://vcst-qa.govirto.com, store B2B-store)",
+  "build": {
+    "pr_build": "VirtoCommerce/vc-frontend#2496 (OPEN, not merged)",
+    "relevant_modules": {}
+  },
+  "agent_used": "none (orchestrator drove the browser pane inline)",
+  "account": "SR_REP_PRIMARY (agent-test-sr-primary@example.com)",
+  "str_result_pre_fix": "0/7 raw-key sightings (build 2.58.0-pr-2495)",
+  "str_result_fix_build": "0/10 raw-key sightings (PR #2496 theme)",
+  "checklist_total": 12,
+  "checklist_passed": 12,
+  "checklist_failed": 0,
+  "checklist_not_run": 2,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "bugs_not_filed": [],
+  "business_rules_verified": [
+    "BL-SR-013"
+  ],
+  "caveat": "The reported defect is a non-deterministic Vue-reactivity race (dev's own diagnosis on the linked PR), not a deterministic gap. 10/10 clean loads on the fix build is strong evidence but not proof the race is structurally eliminated rather than just less frequent; a higher-volume automated repro is recommended before treating this as closed.",
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "In review",
+      "to": null,
+      "skipped": "no in-testing transition available from 'In review' (live transitions: Cancelled, On hold, Ready to test, Reopen)",
+      "confirmed": false,
+      "actor": "qa-lead"
+    }
+  ],
+  "tracker_transition": null,
+  "tracker_note": "not posted — pending operator decision",
+  "next_step": "merge + deploy PR #2496, then /vc-fix:qa-verify-fix VCST-5681 against the deployed build",
+  "artifacts": "reports/tickets/Sprint26-19/VCST-5681/",
+  "timing": {
+    "note": "not formally tracked — ad hoc inline characterization, no agent dispatch"
+  }
+}

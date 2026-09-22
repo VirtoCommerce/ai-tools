@@ -1,4 +1,5 @@
 # Account sidebar renders the raw i18n key `Sales_rep.navigation.link` on a direct page load — **P3**
+**Status**: FIXED
 
 ## Status: CONFIRMED
 **Found by:** manual · investigation of the `/account/missions` failure · — none (not case-attributable)
