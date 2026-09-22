@@ -49,7 +49,7 @@ get a full-viewport capture instead, with the emitted code reading `page.screens
 `locator(...).screenshot(...)`. That tell in the tool output is how to spot it. Measured on the same
 toast: full viewport **1920×1080 / 302 KB**, the element **320×96 / 6 KB** — and only the second is
 legible once Jira scales it to `|width=700!`. `fullPage: true` cannot be combined with an element shot.
-- Browser configs set viewport to 1920x1080, HAR capture enabled, isolated contexts, and **video capture that records ALWAYS** (`recordVideo` is a context option; `retain-on-failure` is a test-runner setting and does not exist here). Videos land in `test-results/<lane>/video/*.webm` (gitignored) and are **flushed on `browser_close`, not continuously** — an empty `video/` mid-session is not evidence that capture is off (verified 2026-09-14). The three desktop lanes record at 1920×1080; `playwright-mobile` (registered 2026-09-14) at 390×844 portrait. **`.mcp.json` is gitignored and per-machine** — a checkout missing the `playwright-mobile` entry loads that config not at all, and the tell is that `test-results/mobile/` never appears. When a recording is evidence: `reports-policy.md` §5.2.
+- Browser configs set viewport to 1920x1080, HAR capture enabled, and isolated contexts. No `recordVideo` — motion evidence is a **GIF built from the run's own stills** (`npm run gif`), never a recorded video file; see `reports-policy.md` §5.2. The three desktop lanes render at 1920×1080; `playwright-mobile` (registered 2026-09-14) at 390×844 portrait. **`.mcp.json` is gitignored and per-machine** — a checkout missing the `playwright-mobile` entry loads that config not at all, and the tell is that `test-results/mobile/` never appears.
 
 ## `.mcp.json` Setup
 

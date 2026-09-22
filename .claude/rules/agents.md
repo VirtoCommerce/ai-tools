@@ -18,12 +18,9 @@ Project `.mcp.json` (gitignored, per machine): `playwright-chrome` / `playwright
 - Default to `chromium` (not `chrome`) for Playwright MCP browser launches. WebKit is NOT supported on Windows — fall back to Edge or Chrome immediately without attempting installation.
 - Always verify MCP server config uses correct browser engine names: `chromium`, `firefox`, `webkit` (not `chrome`, `edge`).
 - After any MCP config change, remind the user that a server restart is required before the new config takes effect.
-- Browser configs set viewport to 1920x1080, isolated contexts, HAR capture, and **video capture — which
-  records ALWAYS, not on failure** (`recordVideo` is a browser-context option; `retain-on-failure` is a
-  *test-runner* setting and does not exist here). Videos land in `test-results/<browser>/video/`
-  (gitignored, pruned with the rest of `test-results/`). Added 2026-09-11 — before that the three configs
-  carried **no** video setting at all while this line claimed "video on failure", so a reader who needed a
-  recording found none. **A config change needs an MCP server restart before it takes effect.**
+- Browser configs set viewport to 1920x1080, isolated contexts, and HAR capture. Video recording was
+  removed from all four lane configs 2026-09-21 — do not re-add a `recordVideo` block without also
+  restoring the guard in `scripts/unit/playwright-lane-configs.test.mjs`.
 
 ## QA Team (+ shared-instructions)
 
