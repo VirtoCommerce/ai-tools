@@ -434,6 +434,21 @@ export function commitMessage({ session, captures, confirms, disputes, logs }) {
  *                                 for the first later session that has one (PLAN §6.4)
  * @param {Function|null} opts.gate async (plan) => boolean. The operator's yes before a real push.
  *                                 Returning false leaves the queue exactly as it was.
+ * @param {Function} opts.removeQueueFile  async (path) => void. The removal of one published queue
+ *                                 file. Injectable for ONE reason, and it is worth stating because
+ *                                 a seam that exists only for a test is normally a smell: the rule
+ *                                 `writeSeq` carries — advance the counter only once the queue file
+ *                                 is GONE — is a statement about the ORDER of two effects, and in a
+ *                                 single process no assertion after the fact can see an order.
+ *                                 Both effects have landed by the time `flush` returns, and they
+ *                                 land in the same order whichever way round the code puts them.
+ *                                 The 2026-09-22 review found exactly this (PLAN §22.2): the rule
+ *                                 could be deleted outright and all 468 kb tests stayed green.
+ *                                 Injecting the removal puts an observer BETWEEN the two, which is
+ *                                 the only vantage point from which the order is a fact. The
+ *                                 property is real and concurrent — it is what stops a second
+ *                                 process taking the next number — so the seam buys a rule that is
+ *                                 otherwise pinned by nothing.
  */
 export async function flush({
   env = process.env,
@@ -449,6 +464,7 @@ export async function flush({
   maxAttempts = MAX_ATTEMPTS,
   retryDelayMs = RETRY_DELAY_MS,
   sleep = (ms) => new Promise((r) => { setTimeout(r, ms); }),
+  removeQueueFile = (path) => rm(path, { force: true }),
 } = {}) {
   const session = sessionId(env);
   // The repo coordinates come from the READ locator, always — `injected` replaces the transport and
@@ -575,7 +591,7 @@ export async function flush({
     const landed = await land({ api, plan: built.plan });
     if (landed.ok) {
       await touchStamp({ env, now });
-      for (const f of loaded) { try { await rm(f.path, { force: true }); } catch { /* a queue file we cannot remove would be pushed twice; the log names it either way */ } }
+      for (const f of loaded) { try { await removeQueueFile(f.path); } catch { /* a queue file we cannot remove would be pushed twice; the log names it either way */ } }
       // AFTER THE REMOVAL, never before — `writeSeq` carries the ordering argument. Only for the
       // sessions whose log this push actually wrote, which is why `built.plan.sequence` is read
       // back off the plan rather than the map: a session in the map that contributed no file has

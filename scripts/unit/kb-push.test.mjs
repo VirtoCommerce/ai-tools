@@ -742,6 +742,19 @@ test('the path does NOT move between CAS attempts — and the loser merges into 
   // RULE 1, and it is the easy one to get wrong silently. The sequence is taken once, before the
   // first attempt. Recomputing it after a lost compare-and-swap would see the WINNER'S file already
   // in the tree, take the next number, and write the duplicate this whole change removes.
+  //
+  // THIS TEST DID NOT ACTUALLY PIN THAT UNTIL 2026-09-22 (PLAN §22.2, finding F2). It scripted a
+  // real 422 and asserted the two trees matched — and it would have gone on passing with the rule
+  // deleted, because the number comes off a LOCAL `.seq` file and, inside one process, nothing
+  // moves that file between attempt 1 and attempt 2. A recomputation would have read the same 0 and
+  // reached the same answer. The test was measuring an arithmetic coincidence, not an ordering.
+  //
+  // What was missing is the other process. The winner does not only put its file in the tree, it
+  // also advances the shared counter when its own queue file is gone (`writeSeq`) — and THAT is the
+  // fact a recomputation on attempt 2 would read. So the winner now does both, and the assertion
+  // below has teeth: with the rule intact attempt 2 still writes `-0001`; with the sequence moved
+  // inside the retry loop it reads the advanced counter, takes `-0002`, and writes a second file
+  // holding the same lines, which is the duplicate the base actually suffered.
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
   const theirLine = '{"at":"2026-09-18T11:09:00.000Z","kind":"ask","q":"the winner\'s question","state":"miss"}';
 
@@ -760,9 +773,14 @@ test('the path does NOT move between CAS attempts — and the loser merges into 
   api.createTree = async (arg) => { trees.push(arg); return realTree(arg); };
 
   await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'my question', matched: [], state: 'miss' }]);
-  const r = await run(env, api);
+  // The injected `sleep` is the window between the lost swap and the retry — the winner finishes
+  // its own push there, counter included. It is used as the hook rather than a new seam precisely
+  // because it already sits at the one moment this rule is about.
+  const r = await run(env, api, {
+    sleep: async () => { await writeFile(join(dir, `${SESSION}.seq`), '1\n', 'utf8'); },
+  });
   assert.equal(r.state, 'pushed');
-  assert.equal(r.attempts, 2);
+  assert.equal(r.attempts, 2, 'the retry ran, so the counter really was advanced between attempts');
 
   const logOf = (t) => t.entries.map((e) => e.path).filter((p) => p.startsWith('v2/log/'));
   assert.equal(trees.length, 2);
@@ -773,6 +791,40 @@ test('the path does NOT move between CAS attempts — and the loser merges into 
   const text = state.files.get(`v2/${logPath(SESSION, AT, 1)}`);
   assert.ok(text.startsWith(`${theirLine}\n`), 'the winner\'s line survived the loser\'s write');
   assert.ok(text.includes('my question'), 'and the loser\'s own line is there too');
+}));
+
+test('the counter advances AFTER the queue file is gone, never before', () => withQueue(async ({ dir, env }) => {
+  // RULE 2, and until 2026-09-22 it was pinned by nothing at all (PLAN §22.2, finding F2). The
+  // argument is in `writeSeq`: take A and B publishing one session's queue. B holds the lines, so B
+  // read the queue file before A removed it. If A advanced the counter at the moment it LANDED,
+  // B's counter read could still fall after it, B would take the next number, and the duplicate is
+  // back. Advancing after the removal orders them — B's counter read precedes B's queue read,
+  // precedes A's removal, precedes A's advance — so B cannot see the higher number.
+  //
+  // WHY THIS NEEDS AN INJECTED REMOVAL AND NOT A CLEVERER ASSERTION. It is a claim about the ORDER
+  // of two effects, and by the time `flush` returns both have happened; from outside, the two
+  // orderings are indistinguishable. That is the whole of the defect the review found: the rule
+  // could be deleted and 468 tests stayed green. The observer has to stand BETWEEN them, and a
+  // seam is the only way to put it there. What it watches is real and concurrent, so the seam buys
+  // a property rather than merely exercising a line.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'my question', matched: [], state: 'miss' }]);
+
+  const seenAtRemoval = [];
+  const r = await run(env, fakeApi(state), {
+    removeQueueFile: async (path) => {
+      // Exactly what a concurrent B would read at this instant, off the same shared counter file.
+      seenAtRemoval.push(await readSeq(env, SESSION));
+      await rm(path, { force: true });
+    },
+  });
+
+  assert.equal(r.state, 'pushed');
+  assert.deepEqual(seenAtRemoval, [0], 'a second process reading here still gets this session\'s first number');
+  assert.equal(await readSeq(env, SESSION), 1, 'and it is advanced by the time the push returns');
+  // The removal really is the injected one, so a future refactor that stops calling it fails here
+  // rather than silently losing the observation point.
+  assert.ok(!existsSync(queuePath(env)), 'the queue file is gone');
 }));
 
 test('a FAILED READ of the existing log aborts the push — it never falls through to an overwrite', () => withQueue(async ({ dir, env }) => {
