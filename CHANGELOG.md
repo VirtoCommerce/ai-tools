@@ -8,6 +8,208 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## **BREAKING:** the `.claude/` ↔ `plugins/vc-fix/` mirror check is removed — 2026-09-19
+
+**Removed:** `scripts/maintenance/mirror-check.mjs`, `scripts/unit/mirror-parity.test.mjs`,
+`docs/decisions/mirror-parity.md`, the `mirror:check` npm script and its `gates.yml` CI step.
+
+**What this does and does not do.** It removes the *detection*, not the duplication.
+`plugins/vc-fix/` still ships its own copies of 92 shared paths — it has to, because a client
+installs the plugin into their own project where this repo's `.claude/` does not exist. What is gone
+is the ledger that recorded which of those had forked and why. From now on the two trees drift
+silently.
+
+**What stopped being enforced.** Three claims elsewhere in the repo asserted this gate; all three are
+now corrected rather than left lying:
+
+- `CLAUDE.md` called the self-diagnostics containment files "byte-identical … (CI-enforced)". They
+  must still be changed together — a one-sided drift there is a security regression, not a
+  documentation one — but that is now a **convention, not a gate**. (The count was wrong too:
+  `CLAUDE.md` said four, `unit-tests.yml` said five, the registry listed **six**.)
+- `hooks/enforce-real-user.mjs` (both copies) carried "`npm run mirror:check` holds them
+  byte-identical". Both copies are registered and hooks are AND-gated, so a stale one denies what
+  the fresh one allows — the exact 6-week drift its own MIRROR NOTE records
+  (`REG-2026-09-07-2225`). The note now says plainly that nothing enforces it.
+- `scripts/unit/session-telemetry.test.mjs` tested only the plugin copy *because* parity was
+  guaranteed. **That justification is void: the `.claude/` copy is now untested** and may drift
+  without anything noticing. Recorded in the file rather than quietly inherited.
+
+**Kept deliberately.** The `.gitattributes` `eol=lf` pins for both trees. They were introduced to
+stop a CRLF-vs-LF checkout drift that had diverged 29 pairs with no commit and no content change;
+that churn is real whether or not anything checks parity.
+
+**Left as history:** the 2026-09-07 audit documents and prior CHANGELOG entries still describe the
+gate, correctly, as of their dates.
+
+**Trade-off, stated once.** The removed test caught a real error in this very PR (an identical pair
+turned into a declared fork, tripping the gated-pairs floor) after `context:check`, `mirror:check`
+and `qa-test:doclint` had all passed on the broken change. That class of error is now undetectable.
+This was an explicit owner decision, not an oversight.
+
+---
+
+## `qa-evidence/SKILL.md` was the THIRD copy of the report policy — trimmed to a router — 2026-09-19
+
+Follow-up to retiring `output-paths.md`: converting it revealed that the skill's own `SKILL.md` also
+restated the policy. It carried a mandatory-capture table, a skip-capturing list, a per-bug
+screenshot budget and an output-path table, all duplicating `reports-policy.md` §1 / §5.1 / §7 —
+**and two of its paths were dead**, verified against the live tree: `reports/bugs/api-traces/` does
+not exist (the same fiction dropped from `output-paths.md`), and there is no root `tests/` directory
+for the "test docs" it routed there.
+
+`SKILL.md` is now a router over `reports-policy.md`, 63 lines → 50.
+
+**The skill itself stays, and deleting it was considered and rejected** on four counts:
+`evidence-capture-policy.md` is **Tier-A locked** (`docs/versioning.md`), so removing it is a
+`**BREAKING:**` change, not a cleanup; `plugins/vc-fix/` ships the whole skill and five plugin files
+reference it; 30 path citations point at its files (15 each at the two stubs, which exist precisely
+to hold those); and `sign-off-templates.md` is 178 lines that exist nowhere else —
+`reports-policy.md` mentions sign-off **zero** times.
+
+**One table was kept because it is not a duplicate.** The 3-tier report verbosity (Compact /
+Detailed / Sign-Off) is defined in **no** other file — `reports-policy.md` has 0 mentions — and
+`qa-metrics/quality-metrics-catalog.md` cites it live ("Compact tier per `/qa-evidence`"). Deleting
+it with the rest would have broken a real reference. `SKILL.md` now says it is the source of truth
+for the tiers, and `evidence-capture-policy.md` flags that they did **not** move with the rest of
+the policy, which its own prose had implied.
+
+**A stale number fixed in both trees without forking them.** Both copies of
+`evidence-capture-policy.md` claimed "the 4 allowed report categories"; the root policy defines
+**ten** and `vc-fix` ships **two**, so the line was wrong on both sides and identical only because
+both were wrong the same way. First attempt stated each tree's own count — which turned an
+identical pair into a declared fork and **tripped `scripts/unit/mirror-parity.test.mjs`**
+("the mirror has not silently shrunk": gated pairs may not drop below 40). The guard was right, so
+the count is now de-transcribed instead, the pair is byte-identical again, and gated pairs are back
+at 40.
+
+**`mirror:check`:** `skills/qa-evidence/SKILL.md` reclassified `plugin-frontmatter` → `root-ahead`,
+since the root is now trimmed and the plugin copy still carries the full tables plus its own
+`disable-model-invocation` and tracker-neutral wording. It needs a manual, adaptation-preserving
+re-sync, never an overwrite.
+
+---
+
+## Removed the `run-vc-mcp-testing-module` skill; its checks are now named directly — 2026-09-19
+
+**Removed:** `.claude/skills/run-vc-mcp-testing-module/` (`SKILL.md` + `driver.mjs`). It was the one
+skill in the tree with **zero inbound consumers** — no command, no agent, no sibling skill, no
+script referenced it — and its only documented invocation, in `docs/release-process.md`, pointed at
+`skills/…` rather than `.claude/skills/…` and so had not been runnable since the `.claude/` move.
+
+**No capability lost.** `driver.mjs` was a pure aggregator: eight checks, each a wrapper around an
+existing `npm run` alias, with no logic of its own. `docs/release-process.md` Step 3 now names those
+aliases directly — `td:validate`, `scope:validate`, `td:validate:b2b`, `seed:dry-run`,
+`graphql:fixtures:validate`, `graphql:lint-labels` — alongside the `env:check` / `verify:multi-env`
+/ `suites:lint` it already ran. The duplicate `npm run env:check` that block carried is gone, and
+the stale `7/7 checks pass` (the driver ran 8) is not replaced by another transcribed count.
+
+**Two prerequisites promoted into the checklist**, because deleting the skill removed the only place
+they were written down: `env:check` / `seed:dry-run` need `ADMIN_PASSWORD` + `USER_PASSWORD` from
+the gitignored `.env.local`, and `graphql:fixtures:validate` needs
+`scripts/.graphql-schema.cache.json`, which is untracked — a fresh clone exits **2**
+(`Schema cache missing`), distinct from the exit **1** that means fixture drift.
+
+**Its other "gotchas" were stale and deliberately not carried over.** The skill warned that several
+`npm run` aliases were bash-only and broke on Windows cmd.exe (`> /dev/null` in `schema:check`,
+inline `VAR=val` in the `ci:*` family). Both have since been fixed — `schema:check` carries no
+redirect and every `ci:*` alias uses `cross-env`. Verified 2026-09-19: **no** script in
+`package.json` now contains a bash-ism. A file whose unique content is a warning about a
+fixed problem is worse than no file.
+
+**`INDEX.md` de-transcribed.** Removing the skill made its "**Authoritative** counts" block wrong —
+and checking it showed **five of the six figures already were**: 40 skills · 27 commands · 32
+knowledge files · 126 suites (4,155 cases) against an actual 39 · 23 · 56 · 143 (4,747). Only the
+agent count still held. "Authoritative" is the word that stops a reader verifying, which is what made
+it expensive. The block, the `.claude/` tree comments, the `_meta.totalSuites` note, the
+`Frontend/`+`Backend/` CSV tallies and the §Regression Suites opener now carry the commands that
+derive each number instead (`CLAUDE.md`: counts are never transcribed into prose). The same pass fixed
+two structural claims that described the pre-2026-09-08 layout: agents shown nested in `qa/` `ba/`
+`developers/` subdirectories (discovery is non-recursive — they are flat) and `knowledge/` shown
+under `agents/` (it is top-level).
+
+**Known, not fixed here.** `vc/shared/workshop/` and `vc/shared/docs/presentation/` carry their own
+stale tallies (99 suites, 97 suites, 18 skills, 20 skills, 14 agents). Those are dated workshop and
+slide artifacts, not the live index, and are a separate pass.
+
+**`TIER.md` updated.** Its rule against co-locating scripts inside a skill folder cited
+`run-vc-mcp-testing-module/driver.mjs` as "the lone precedent". That precedent no longer exists, and
+the rule now says so rather than pointing at a deleted path.
+
+---
+
+## `qa-evidence/output-paths.md` retired to a pointer — the second report policy is gone — 2026-09-19
+
+The 2026-09-07 component audit's only MERGE verdict, executed. `skills/qa-evidence/output-paths.md`
+was a **second, diverging copy** of the report policy — the exact failure its sibling
+`evidence-capture-policy.md` had already been converted to a pointer to prevent ("three places to
+update, three places to fall out of sync"). It was missed in that pass and drifted. Measured against
+`knowledge/execution/reports-policy.md`: **0** mentions of the `FAIL` screenshot marker (24 there),
+**0** of `testing-checklist.md` (6), **0** of `design-report.md` (3), **0** of the `--iterate` round
+suffix (2). It also contradicted the policy outright on what `/qa-test` persists — *"only
+`summary.json` persists"* against §6's `summary.json` + `testing-checklist.md` + `screenshots/` (+
+`design-report.md` when the visual lane ran). With 11 referrers, an agent reading it named failure
+screenshots without the `FAIL` marker and never wrote Artifact B — silently, in the direction that
+costs the reviewer.
+
+It is now a pointer at `reports-policy.md`, kept at its original path so all referrers resolve.
+
+**Promoted rather than deleted** (they existed nowhere else) into `reports-policy.md` §1: the
+`reports/` (tracked) vs `test-results/` (gitignored) separation, and the "never create
+`reports/<TICKET>/` at the repo root" guard.
+
+**Dropped as fiction**, each verified against the live tree rather than taken from the page:
+`reports/bugs/api-traces/` and `reports/checklists/` do not exist, and the documented
+`screenshots/desktop/` + `screenshots/mobile/` subfolders are used by **0 of 15** ticket screenshot
+directories — real runs write flat, descriptively-named files. Also dropped: its pointer to
+`reports/README.md`, which is a *fourth* copy of the tree (still open — see below).
+
+**`mirror:check` fork adjudicated.** `skills/qa-evidence/output-paths.md` had been sitting on the
+`undecided` burn-down list ("pick a side, record the real reason, and remove the entry"); it is now
+`plugin-scope`, burn-down **10 → 9**. The PLUGIN copy is deliberately NOT a pointer and must not be
+synced: `vc-fix` ships no `reports-policy.md` (it carries its own two-category
+`.claude/rules/reports.md`), so a client needs the standalone document — and the plugin copy is
+*ahead*, owning the `/qa-bug` `_incoming/<browser>/` → `<bug-slug>/` capture chain that
+`scripts/unit/gen-mcp-evidence.test.mjs` asserts against.
+
+**Still open.** `reports/README.md` (67 lines) is a fourth description of the same tree and still
+documents the nonexistent `api-traces/`. Not touched here — it is outside the audit's `qa-evidence`
+verdict and deserves its own pass.
+
+---
+
+## `/qa-storybook` sweeps the derived viewport set; release-process driver path un-dangled — 2026-09-19
+
+**`responsive-component-testing.md` transcribed its breakpoints.** The file listed five widths
+(375 / 768 / 1024 / 1280 / 1920) under the heading "Breakpoints to Test (from design system)" while the
+real ui-kit declares six edges — `xs` 480, `sm` 640, `md` 768, `lg` 1024, `xl` 1280, `2xl` **1500**. So the
+list omitted 480, 640 and 1500 outright and added 375 and 1920, which are device widths rather than
+breakpoints. A sweep built from it never renders the `2xl` layout and samples *around* the fluid bands
+where responsive bugs live, while still reporting every viewport green — the silent-failure direction the
+GOLDEN RULE (`.claude/rules/test-data.md`) exists to prevent, and the same defect class as the hardcoded
+14-value spacing grid that rule records.
+
+This is not a new finding so much as a missed one: the identical transcribed list was already replaced by
+a pointer to the derived set in `e-commerce-edge-cases-library.md` (row "Overflow only in the fluid band
+between fixed breakpoints") on **2026-08-27**; that pass did not reach this skill. Both the supporting
+file and the two `SKILL.md` lines describing it now point at `AUDIT_VIEWPORTS_PX` / `BREAKPOINTS_PX` in
+`scripts/lib/design-tokens.generated.ts` (regenerated by `npm run tokens:sync`, drift-gated by
+`npm run tokens:check`) and name no widths of their own.
+
+**`docs/release-process.md` cited a path that does not exist.** Step 3 and the release-PR template both
+ran `node skills/run-vc-mcp-testing-module/driver.mjs`. There is no root-level `skills/` directory — the
+skill moved under `.claude/skills/` — so that release-checklist step has not been runnable since the move.
+`context:check` did not catch it because `DOC-003` ratchets paths, and this one sits inside a fenced code
+block. Corrected to `.claude/skills/…`; verified the driver resolves and runs from the new path. The
+checklist's `7/7 checks pass` was stale too (the driver now runs 8), so it is de-transcribed to
+`exits 0 (all checks OK)` rather than re-pinned to a number.
+
+**Known, not fixed here.** The same five-width list still appears in `.claude/agents/qa-testing-expert.md`,
+`.claude/agents/ui-ux-expert.md` and `knowledge/oracles/business-logic.md` (BL-UI-004 content-boundary rule). The
+oracle is `ba-system-analyzer`'s to edit under the 3-source bar (`/qa-review-oracles`), not a drive-by
+change; the two agent prompts are a separate pass.
+
+---
+
 ## `playwright-firefox` verified click-capable, and `@playwright/mcp` is now pinned — 2026-09-11
 
 Re-verified the firefox lane live against vcst-qa: a popover click (`Currency` reached `[expanded]`

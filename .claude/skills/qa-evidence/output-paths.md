@@ -1,65 +1,45 @@
 # Test Artifact Output Paths
 
-**Every artifact MUST be saved to the correct folder. Never mix artifact types across directories.**
+> **This file is a pointer. The policy lives in [`.claude/knowledge/execution/reports-policy.md`](../../knowledge/execution/reports-policy.md)** (reachable as `.claude/rules/reports.md §N` — that stub keeps the section numbers).
+>
+> Read it for: the ten report categories and their paths (§1), where artifacts must NOT go (§1, closing block), severity foldering of `reports/bugs/open/` (§1a), size caps (§2), screenshot rules and per-scope budgets (§5), console/network/HAR evidence (§6), **naming conventions including the `FAIL` marker and `--iterate` round suffix (§7)**, and retention (§9).
+>
+> This stub is kept at its original path so the existing references across commands, skills, agent definitions and historical sprint artifacts continue to resolve.
 
-| Artifact Type | Path | Examples |
-|---------------|------|----------|
-| **Test documentation** (plans, cases, testrail CSVs — NOT execution reports, see below) | `reports/tickets/SprintXX-XX/VCST-XXXX/` | `test-plan.md` (`/qa-plan`), `test-cases.csv` (`/qa-test-cases-generator`), `testrail-import.csv` |
-| **Test screenshots** (evidence captured during test execution) | `reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
-| **`/qa-test` run summary** (AC analysis, checklist, execution + the C1 ticket-regression result) | **Terminal only** — folded into one chat report, never written as separate files (`.claude/rules/reports.md` §1) | n/a — only `summary.json` (duplicate-run marker) + `screenshots/` persist to `reports/tickets/SprintXX-XX/VCST-XXXX/`; new cases persist to `regression/suites/` |
-| **Bug reports — open** (active bugs) | `reports/bugs/open/{critical-high\|medium\|low}/` — foldered by the severity the report DECLARES (`.claude/rules/reports.md` §1a); a `QUESTION-*.md` stays at `open/` root | `open/critical-high/BUG-Checkout-Payment-Overlap-iOS.md` |
-| **Bug reports — fixed** (verified fixes, kept for regression reference) | `reports/bugs/fixed/` | `BUG-Cart-Total-Reset-VCST-4700.md` |
-| **Bug reports — closed** (won't fix, false positive, cannot reproduce) | `reports/bugs/closed/` | `BUG-GA4-add-payment-info.md` |
-| **Bug evidence** (screenshots & API traces for bugs) | `reports/bugs/screenshots/` and `reports/bugs/api-traces/` | `payment-form-broken-ios.png`, `graphql-error-response.json` |
-| **Ticket test evidence** (ad-hoc evidence with no sprint context) | `reports/tickets/VCST-XXXX/` | `test-report.md`, `screenshots/*.png` — use only for hotfix or ad-hoc verification outside a sprint (no `SprintXX-XX/` subfolder) |
-| **Regression reports** (suite-level & consolidated reports) | `reports/regression/` | `frontend-regression-report-2026-02-09.md` |
-| **Full regression runs** (multi-suite reports) | `reports/regression/REG-YYYY-MM-DD-HHMM/` | suite reports, `REGRESSION-REPORT.md` |
-| **Smoke test runs** (`/qa-smoke` Track A + Track B) | `reports/regression/SMOKE-YYYY-MM-DD-HHMM/` | `smoke-report.md`, `suite-01-trackA-results.json`, `suite-01-trackB-results.json`, `trackA-evidence/`, `trackB-evidence/` |
-| **Performance reports** (standalone investigations worth keeping) | `reports/performance/` | `lists-page-performance-report-2026-02-11.md` |
-| **Exploratory session reports** (standalone `/qa-sbtm` / `/qa-exploratory` domain charters — read back for the 24h duplicate-charter check; `/qa-test` no longer runs an exploratory charter) | `reports/exploratory/` | `SBTM-checkout-edge-cases-2026-03-01.md` |
-| **Checklists** (`/qa-checklist` output) | **Terminal only** — no active writer today; `reports/checklists/` is reserved for a future durable checklist artifact | n/a |
-| **BA analysis reports** (system analysis, stories, API audit) | `reports/ba/` | `ba-report-2026-03-04.md`, `checkout-stories.md` |
-| **BA business logic proposals** (draft `PROPOSED-BL-*` invariants from `/ba-analyze`; human-promoted into `business-logic.md`) | `reports/ba/` | `bl-proposals-2026-04-22.md` |
-| **Test lifecycle run summary** (quality pipeline results — includes change-driven sync) | **Terminal only** — presented in the chat response, never written to disk (`.claude/rules/reports.md` §1) | n/a — Phase 5 screenshots only may still land in the gitignored `reports/test-lifecycle/TLC-YYYY-MM-DD-HHMM/` |
-| **Coverage generation reports** (gap analysis results) | `reports/coverage/COV-YYYY-MM-DD-HHMM/` | `coverage-generation-report.md`, `gap-inventory.json` |
-| **BL audit reports** (`/qa-review-bl` triangulation trail) | `reports/knowledge/` | `BL-AUDIT-2026-07-22.md` |
-| **Raw browser artifacts** (console logs, HAR, videos -- gitignored) | `test-results/{browser}/` | `test-results/chrome/console-*.log`, `test-results/firefox/har/` |
+## Why this file is a pointer
 
-## Naming Conventions
+It was a **second, diverging copy** of the report policy — the exact failure its sibling
+[`evidence-capture-policy.md`](evidence-capture-policy.md) was converted to a pointer to prevent
+("three places to update, three places to fall out of sync"). This one was missed in that pass and
+drifted, measured 2026-09-19:
 
-- **Bug reports:** `reports/bugs/open/<severity>/BUG-{Short-Description}.md` (e.g., `open/medium/BUG-Guest-Checkout-Email-Validation.md`) — `<severity>` is `critical-high` (Critical/P0 · High/P1), `medium` (Medium/P2) or `low` (Low/P3), mirroring the severity the report states in its own title tag / `**Severity:**` line. The report is the source of truth; the folder is a view (`.claude/rules/reports.md` §1a)
-- **Bug reports with JIRA ref:** `reports/bugs/open/<severity>/BUG-{Description}-VCST-XXXX.md`
-- **Bug lifecycle:** `open/<severity>/` → (verified fix) → `fixed/` | (false positive/won't fix) → `closed/` — the destination trees are FLAT; a re-grade edits the report first, then moves the file
-- **Reading the tree:** always recurse (`open/**/*.md`). A one-level `open/*.md` glob now matches nothing but the open `QUESTION-*.md`
-- **Ticket evidence:** `reports/tickets/VCST-XXXX/test-report.md`
-- **Screenshots:** `{component-name}-{state}-{viewport}.png` or `{test-case-id}-{description}.png`
-- **`/qa-test` execution results:** terminal-only, no file — folded into its Step 6 chat report; only `summary.json` persists
-- **Regression reports:** `{suite-name}-report.md` or `{area}-regression-report-YYYY-MM-DD.md`
-- **Full regression run directories:** `REG-YYYY-MM-DD-HHMM/` (e.g., `REG-2026-04-20-1000/`)
-- **Smoke run directories:** `SMOKE-YYYY-MM-DD-HHMM/` (e.g., `SMOKE-2026-05-21-1035/`) — Track A/B screenshots go under `trackA-evidence/` and `trackB-evidence/` inside the run folder, not at repo root
-- **Test lifecycle run directories:** `TLC-YYYY-MM-DD-HHMM/`
-- **Test sync run directories:** `SYNC-YYYY-MM-DD-HHMM/`
-- **Coverage generation run directories:** `COV-YYYY-MM-DD-HHMM/`
-- **Exploratory sessions:** `SBTM-{charter}-YYYY-MM-DD.md`
+| | this file (before) | `reports-policy.md` |
+|---|---:|---:|
+| mentions of the `FAIL` screenshot marker | **0** | 24 |
+| mentions of `testing-checklist.md` | **0** | 6 |
+| mentions of `design-report.md` | **0** | 3 |
+| mentions of the `--iterate` round suffix | **0** | 2 |
 
-## Folder Structure Per Ticket
+It also contradicted the policy outright on what `/qa-test` persists — this file said *"only
+`summary.json` persists"*, where `reports-policy.md` §6 requires `summary.json` +
+`testing-checklist.md` + `screenshots/` (+ `design-report.md` when the visual lane ran). An agent
+reading this file named failure screenshots without the `FAIL` marker and never wrote Artifact B.
 
-```
-reports/tickets/SprintXX-XX/VCST-XXXX-feature-name/
-├── summary.json            # /qa-test's only persisted file besides screenshots
-├── test-cases.csv          # only if /qa-test Step 3 or /qa-test-cases-generator authored new cases
-├── test-plan.md            # only if a standalone /qa-plan run targeted this ticket
-├── {check-type}-report.md  # only if a different ticket-scoped skill ran here (/qa-design, /qa-storybook, /qa-verify-fix, ...)
-└── screenshots/
-    ├── desktop/
-    └── mobile/
-```
+Two of its rules existed nowhere else and were promoted into `reports-policy.md` §1 rather than
+deleted: the `reports/` vs `test-results/` separation, and the "never create `reports/<TICKET>/` at
+the repo root" guard.
 
-## Important Rules
+Three of its conventions were **dropped as fiction**, verified against the live tree on 2026-09-19:
+`reports/bugs/api-traces/` (does not exist), `reports/checklists/` (does not exist; it described
+itself as reserved), and `screenshots/desktop/` + `screenshots/mobile/` subfolders (**0 of 15**
+ticket screenshot directories use them — real runs write flat, descriptively-named files).
 
-- `test-results/` is gitignored -- use it only for raw browser output (HAR, videos, console logs)
-- `reports/` is tracked in git -- use it for all documentation artifacts (the top-level `tests/` dir now holds only repo unit tests, not QA evidence)
-- Never save test documentation into `test-results/` and never save raw browser dumps into `reports/`
-- **Never create `reports/VCST-XXXX/` directly** — ticket folders belong under `reports/tickets/SprintXX-XX/VCST-XXXX/` (sprint context) or `reports/tickets/VCST-XXXX/` (ad-hoc, no sprint subfolder)
-- **Default for `/qa-test` runs:** always use `reports/tickets/SprintXX-XX/VCST-XXXX/`; only use `reports/tickets/VCST-XXXX/` (no `SprintXX-XX/` subfolder) for ad-hoc evidence with no sprint context
-- See `reports/README.md` for full naming convention reference
+## Not to be confused with the plugin copy
+
+`plugins/vc-fix/skills/qa-evidence/output-paths.md` is a **different, still-canonical file** and is
+deliberately NOT a pointer. `vc-fix` ships no `knowledge/execution/reports-policy.md` — it carries
+its own two-category `.claude/rules/reports.md` — so a client install needs the standalone document.
+It is also *ahead* of this one: it owns the `/qa-bug` browser-capture chain
+(`reports/bugs/screenshots/_incoming/<browser>/` → `<bug-slug>/`, pinned as the Playwright MCP
+`--output-dir` by `/project-init`'s `gen-mcp.mjs`), which `scripts/unit/gen-mcp-evidence.test.mjs`
+asserts against. Do not sync the two.

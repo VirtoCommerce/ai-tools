@@ -1,0 +1,598 @@
+{
+  "ticket": "VCST-5924",
+  "title": "[Configurable products] File attach enhancements",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "FULL",
+  "shape_class": null,
+  "run_state": "COMPLETE",
+  "verdict": "FAIL",
+  "environment": "vcptcore_qa1",
+  "date": "2026-09-16",
+  "sprint": "Sprint26-19",
+  "note_on_this_file": "An earlier copy of this file, plus the domain map and two backlog entries, were lost when the working tree was cleaned mid-run. This is a rewrite from the run's own context, with the corrections below already folded in.",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "narrow_story_tokens": {
+      "priority": "P2 (Medium) — holds",
+      "layer": "all-layer — FAILS",
+      "domains": "configurable-products x cart x checkout x orders — FAILS",
+      "chain_shape": "adds a new read link (an attached file exposed as a URL) — FAILS",
+      "surface": "named and deployed — holds",
+      "reach": "no linked PR — UNESTABLISHED"
+    },
+    "escalated_reason": "3 of 6 tokens contradicted, 1 unestablished; a Story defaults to FULL"
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "action": "SKIPPED",
+      "reason": "ticket was already in Testing, which is the in-testing status"
+    },
+    {
+      "at": "5f",
+      "action": "TRANSITIONED",
+      "from": "Testing",
+      "to": "Reopen",
+      "via": "transition id 7 \"Need fixes\"",
+      "confirmed": true,
+      "reason": "verdict FAIL"
+    }
+  ],
+  "blocker_history": [
+    {
+      "class": "ENVIRONMENT_DEPLOYMENT",
+      "resolved": true,
+      "was": "On vcptcore-qa1 the file-upload scope 'product-configuration' was not registered in FileExperienceApi. Every upload returned HTTP 200 with succeeded:false / INVALID_SCOPE, so no file could be attached and the ticket was unreachable. The storefront rendered an optimistic '100% done' over the failed request, which read as a validation defect and stalled two browser agents on two different lanes.",
+      "resolved_by": "the operator updating vcptcore-qa1",
+      "verified_by": "POST {FRONT_URL}/api/files/product-configuration (anonymous, multipart) -> HTTP 200 {succeeded:true, scope:'product-configuration', url:'/api/files/<id>'}",
+      "hypothesis_FALSIFIED": "The pre-fix hypothesis was 'VirtoCommerce.Catalog 3.1042.0 -> 3.1044.0'. It is WRONG. After the fix Catalog is STILL 3.1042.0, and a before/after diff of GET /api/platform/modules shows ZERO module-level change: 92 installed both times, no version moved, none added, none removed. Scope registration therefore does NOT track a module version on this platform — it is configuration- or startup-dependent, so it can regress silently on any environment with every version table looking correct. Probe the endpoint, never infer from versions.",
+      "collateral_while_broken": "Also blocked the 9 pre-existing CFG-FILE-* cases in regression/suites/Frontend/configurable-products/072b-file-text-section-cases.csv on this environment."
+    }
+  ],
+  "deployed": {
+    "probe": "GET /api/platform/modules, authenticated — ground truth, not the declared manifest",
+    "VirtoCommerce.XCart": "3.1033.0",
+    "VirtoCommerce.XOrder": "3.1011.0",
+    "VirtoCommerce.Xapi": "3.1021.0",
+    "VirtoCommerce.Cart": "3.1009.0",
+    "VirtoCommerce.Orders": "3.1014.0",
+    "VirtoCommerce.Catalog": "3.1042.0",
+    "VirtoCommerce.FileExperienceApi": "3.1004.0",
+    "storefront": "2.58.0-pr-2485-ee6e-ee6efd90",
+    "installed_module_count": 92
+  },
+  "mechanism_established_live": {
+    "upload": "POST /api/files/product-configuration (FileExperienceApi scope, multipart) -> [{succeeded, scope, name, size, contentType, id, url, publicUrl}]. url is RELATIVE: /api/files/<id>.",
+    "attach": "addItem(command: InputAddItemType) carries configurationSections: [ConfigurationSectionInput{sectionId, type, option, customText, fileUrls}]. fileUrls is a CLIENT-supplied list of strings — the server does not mint the URL inside the configuration mutation.",
+    "read": "files{url,name,size,contentType} on CartConfigurationItemType, OrderConfigurationItemType AND QuoteConfigurationItemType. The ticket names only cart/checkout/order; quote is an unstated fourth surface.",
+    "extension_allowlist": ".doc .rtf .docx .txt .pdf .xls .xlsx .jpg .png .odt — enforced by EXTENSION, not content: the same bytes renamed .txt pass where .csv is rejected with INVALID_EXTENSION. Note .html is NOT allowed, which removes much of the 'open an attacker's page in a new tab' risk.",
+    "disposition": "The file endpoint always returns content-disposition: attachment, even for image/png. Activating the URL DOWNLOADS; it never opens inline.",
+    "access_control": "Layered, and it changes at order placement. UNATTACHED freshly-uploaded file: readable by anyone (allowAnonymousUpload is declared for this scope). ATTACHED TO A CART: anonymous 403, a different buyer 403, the OWNER 200 — correct. ATTACHED TO AN ORDER: the OWNER also gets 403, which is defect F3. An admin token reads it 200 throughout, so the file is intact and servable at every stage.",
+    "storefront_proxy_auth": "The storefront domain is cookie-session based and returns 401 for a bearer token, which is why the link must be verified in a browser rather than by curl.",
+    "constraints_source_of_truth": "GraphQL query fileUploadOptions(scope: String) -> FileUploadScopeOptionsType{scope, maxFileSize, allowedExtensions, allowAnonymousUpload}. For product-configuration: maxFileSize 10000000, the 10-extension allowlist, and allowAnonymousUpload declared — so anonymous upload to this scope is configured behaviour, not an oversight. The storefront dropzone copy renders from this query."
+  },
+  "api_e2e_result": {
+    "outcome": "PASS — the backend chain is correct end to end",
+    "cart_id": "84eed7e4-8e95-40f1-8788-94c626118899",
+    "line_item_id": "ef8a3bd7-2ed6-4607-baa0-53e05769811d",
+    "product": "AGENT-TEST-Req-File-Child-20260519",
+    "section": "ID Proof (File, required)",
+    "files_returned_in_cart": [
+      {
+        "name": "vcst5924-alpha.txt",
+        "size": 28,
+        "contentType": "text/plain",
+        "url": "/api/files/e76f09f87ae441f9b602d8b7319b42fa"
+      },
+      {
+        "name": "vcst5924-charlie.png",
+        "size": 70,
+        "contentType": "image/png",
+        "url": "/api/files/9b76847385434b4d9a7cda6a7d053025"
+      }
+    ],
+    "why_this_fixture_is_discriminating": "The two files diverge on name, size AND contentType, so a swapped or duplicated pairing would be detectable. Equal values on both sides would have made the pairing undecidable (test-data.md SECOND RULE). Multi-file (2 of a maximum 5) is exercised at the same time.",
+    "pairing": "correct — 28B/text-plain with alpha, 70B/image-png with charlie; no mixing"
+  },
+  "contract_surface": {
+    "value": true,
+    "refreshed_live": true
+  },
+  "coverage_surface": {
+    "value": true,
+    "scan": "tc:scope --domain configurable-products — 7 suites, 336 rows",
+    "at_risk": 0,
+    "dispositions": {
+      "CONFIRMED": 0,
+      "REPAIR": 0,
+      "RE_BASE": 0,
+      "SUPERSEDED": 0
+    },
+    "finding": "All three observables matched nothing. The 26 existing CFG-FILE-*/CFG-TEXT-* cases assert UPLOAD only — limits, types, size, validation. Zero rows assert a configuration file's url, preview or download on any surface. The nearest existing archetype is CFG-TEXT-006 'Text Value Preserved Through Full Checkout to Order History'; this ticket needs its file twin.",
+    "note": "Phase 2a had nothing to dispose, so C1's exact set is empty unless the authoring phase runs."
+  },
+  "data_surface": {
+    "value": false,
+    "reason": "Fixtures resolve by live discovery; no seeding was required.",
+    "fixtures_discovered_live": [
+      {
+        "sku": "AGENT-TEST-CFG-026-20260519",
+        "slug": "agent-test-req-file-child-20260519",
+        "file_section": "ID Proof",
+        "required": true,
+        "used_by_this_run": true
+      },
+      {
+        "sku": "AGENT-TEST-CFG-025-20260519",
+        "slug": "agent-test-file-driven-cond-20260519",
+        "file_section": "Design Upload",
+        "required": true
+      },
+      {
+        "sku": "AGENT-TEST-CFG-027-20260519",
+        "slug": "agent-test-two-req-siblings-20260519",
+        "file_section": "File",
+        "required": false
+      },
+      {
+        "sku": "AGENT-TEST-CFG-023-20260519",
+        "slug": "agent-test-wedding-cake-cond-20260519",
+        "file_section": "Image",
+        "required": false
+      }
+    ],
+    "route_correction": "The storefront product route is {FRONT_URL}/<slug>. {FRONT_URL}/product/<slug> returns 404.",
+    "tooling_constraint": "Playwright MCP browser_file_upload refuses paths outside the workspace root, so an upload fixture must live under the repo, not under C:/tmp."
+  },
+  "findings_pending_triage": [
+    {
+      "id": "F1",
+      "claim": "The PDP File dropzone tells the customer 'The files available for upload are in any formats', which is false. The server enforces an extension allowlist and rejects anything outside it with INVALID_EXTENSION.",
+      "evidence": "POST /api/files/product-configuration with vcst5924-bravo.csv -> succeeded:false, errorCode INVALID_EXTENSION, errorMessage 'Allowed file extensions: .doc, .rtf, .docx, .txt, .pdf, .xls, .xlsx, .jpg, .png, .odt'. The identical bytes renamed .txt -> succeeded:true.",
+      "provenance": "PRE-EXISTING — the copy predates this ticket and belongs to the upload surface, not to the preview feature",
+      "proposed_severity": "NOT A DEFECT — retracted",
+      "note": "Matches the domain map's D2/G2: the constraint copy traced to neither Admin nor the schema. The allowlist is now that missing source of truth.",
+      "RETRACTED": true,
+      "retraction_reason": "The 'any formats / 1MB' dropzone copy was an ARTIFACT OF THE BROKEN ENVIRONMENT, not a product defect. The copy is data-driven from the GraphQL query fileUploadOptions(scope:'product-configuration'), which returns maxFileSize 10000000 (rendered as 9.5 MB) and allowedExtensions exactly matching the server allowlist. While the scope was unregistered that query returned nothing and the UI fell back to a generic string, which is what the two pre-fix agents saw. Re-observed live post-fix, the dropzone states the exact allowlist and 9.5 MB. Do not file.",
+      "useful_residue": "Two things worth keeping. (1) The source of truth for the file constraints is fileUploadOptions — this closes the domain map's G2/G6, which recorded the 1MB/5-file numbers as untraceable. (2) A dropzone reading 'any formats' is now a usable DIAGNOSTIC that the scope is unregistered, since the real copy always names the allowlist."
+    },
+    {
+      "id": "F2",
+      "claim": "The ticket asks for a URL 'so I can either open or download the file', but the endpoint always sends content-disposition: attachment — including for image/png. Nothing can ever open inline.",
+      "evidence": "curl -D - on /api/files/<id> as the owner -> 'content-disposition: attachment; filename=vcst5924-alpha.txt'",
+      "provenance": "IN-SCOPE — it is the ticket's own wording that is contradicted",
+      "proposed_severity": "TBD — depends on intent; 1d flagged open-vs-download as the ambiguity most likely to be disputed at sign-off",
+      "note": "Not necessarily a defect. It is the question the author has to answer, now measured rather than speculated."
+    },
+    {
+      "id": "F3",
+      "claim": "The file's read grant is scoped to the CART and is not carried over to the ORDER. Once the cart converts, the owner gets 403 on a URL the order's own GraphQL response still advertises.",
+      "evidence": [
+        "Same buyer, same file id: 200 from the cart (pre-order), 403 after placing order CO260916-00001 — reproduced at the API level independently of the browser",
+        "Admin token reads the same file: 200, 28 bytes, correct content — the file is intact and servable",
+        "A freshly uploaded, unattached file read by the SAME buyer: 200 — the buyer's read path works in general",
+        "order(number).items.configurationItems.files still returns both url/name/size/contentType"
+      ],
+      "provenance": "IN-SCOPE",
+      "proposed_severity": "High",
+      "note": "This is the ticket's requirement 3. Two defects stacked: the backend missing order-scoped grant (the blocker), and the frontend hard-navigating to a full-page 403 instead of surfacing an inline error (separable, Medium)."
+    },
+    {
+      "id": "F4",
+      "claim": "The attachment is not a URL. It renders as a role=button with a JS download handler and no href, so there is no open-in-new-tab, middle-click, copy-link or save-as, on any of the three surfaces.",
+      "evidence": [
+        "a11y tree: button 'vcst5924-charlie.png,' with no /url, while the sibling 'Edit configuration' in the same block IS a real link and does expose its /url",
+        "Ctrl+click downloaded in place instead of opening a tab",
+        "Combined with the always-attachment disposition (F2), 'open' is impossible for every type including image/png"
+      ],
+      "provenance": "IN-SCOPE",
+      "proposed_severity": "Medium"
+    },
+    {
+      "id": "F5",
+      "claim": "Order Details drops the Section column that cart and checkout show, and reorders the rows, so a past order does not say which requirement each attachment satisfied.",
+      "provenance": "IN-SCOPE",
+      "proposed_severity": "Low"
+    },
+    {
+      "id": "F6",
+      "claim": "Separator comma is baked into the control's accessible name: a screen reader announces 'vcst5924-charlie.png,' with the punctuation as part of the filename. The collapsed row also renders a bare trailing comma.",
+      "provenance": "IN-SCOPE",
+      "proposed_severity": "Low"
+    },
+    {
+      "id": "F7",
+      "claim": "The order details page fetches a vendor logo from raw.githubusercontent.com and it fails with ERR_BLOCKED_BY_ORB. A storefront pulling an asset from GitHub raw is both broken and a supply-chain smell.",
+      "provenance": "OUT-OF-SCOPE",
+      "proposed_severity": "Low"
+    },
+    {
+      "id": "F8",
+      "claim": "Attaching MORE than 5 files to a configuration File section silently destroys data: the mutation returns success with no error and the cart keeps only the LAST file, discarding the rest.",
+      "evidence": [
+        "addItem with 5 fileUrls -> 5 stored",
+        "addItem with 6 fileUrls -> HTTP 200, no errors[], cart stores 1 (c6.txt)",
+        "addItem with 7 fileUrls -> HTTP 200, no errors[], cart stores 1 (c7.txt)",
+        "Confirmed by re-reading each cart independently of the mutation response"
+      ],
+      "provenance": "PRE-EXISTING — this is the attach path, which predates the preview feature this ticket adds",
+      "proposed_severity": "Medium",
+      "reachability": "Low through the storefront UI, which enforces 5 client-side; real for any other API consumer (integration, a different storefront, a mobile app). The server exposes no maxFileCount in fileUploadOptions, so the 5 is a client-only rule.",
+      "expected": "Either reject the request with an explicit error naming the limit (as the size check already does with INVALID_SIZE), or store the first 5. Silently keeping one is the worst of the three."
+    },
+    {
+      "id": "F9",
+      "claim": "The order of attached files is not preserved. Five files submitted as c1..c5 came back as c2,c3,c1,c4,c5, and the desktop UI rendered the two-file case in reverse of the submitted order.",
+      "provenance": "PRE-EXISTING",
+      "proposed_severity": "Low"
+    },
+    {
+      "id": "F10",
+      "claim": "A ZERO-BYTE file is accepted by the server on a required File section, while the existing regression case CFG-FILE-003 asserts it is rejected. The validation is presumably client-side only, so the server has no defence in depth.",
+      "provenance": "PRE-EXISTING",
+      "proposed_severity": "Low",
+      "needs": "A UI confirmation that the dropzone still blocks a 0-byte file before concluding whether this is a regression or a by-design split."
+    },
+    {
+      "id": "F11",
+      "claim": "A mobile agent reported a P0 \"cart read path and write path target two different carts\". INVESTIGATED AND RETRACTED — it was MY OWN test residue, not a product defect.",
+      "RETRACTED": true,
+      "proposed_severity": "NOT A DEFECT — retracted",
+      "provenance": "n/a",
+      "retraction_reason": "The cart the storefront rendered was id 58fed74d, which a carts{} query showed to be named 'countprobe7' — one of three NAMED carts I created minutes earlier while testing the file-count limit. Mutations correctly targeted the 'default' cart and persisted everything. The storefront simply picked up one of the extra named carts. A real buyer never creates named carts through the UI, so this is not reachable in the product. The three probe carts have been deleted (removeCart); only 'default' remains.",
+      "lesson": "Creating named carts on a shared fixture account pollutes what the storefront shows to any later session. Use one cart name, or delete named carts immediately."
+    },
+    {
+      "id": "F12",
+      "claim": ".jpeg is rejected by the upload allowlist while .jpg is allowed.",
+      "evidence": "POST /api/files/product-configuration with photo.jpeg -> INVALID_SIZE? no: INVALID_EXTENSION. The declared allowlist is .doc .rtf .docx .txt .pdf .xls .xlsx .jpg .png .odt.",
+      "provenance": "PRE-EXISTING",
+      "proposed_severity": "Medium",
+      "note": ".jpeg is a common photo extension. Allowing .jpg but not .jpeg reads as an oversight in the configured list rather than a deliberate policy."
+    },
+    {
+      "id": "F13",
+      "claim": "An oversized upload is accepted in full before the size check runs, and it can be done anonymously.",
+      "evidence": [
+        "50 MB anonymous -> 52,428,998 bytes sent over 13.8 s, then HTTP 200 with INVALID_SIZE (limit 10,000,000). Same on the storefront proxy and on the backend directly.",
+        "100 MB authenticated -> 100,000,199 bytes sent over 22.6 s, then INVALID_SIZE.",
+        "1 GB -> HTTP 413 from Cloudflare after 1,343,488 bytes — so the edge, not the application, is what bounds this."
+      ],
+      "provenance": "PRE-EXISTING",
+      "proposed_severity": "Medium",
+      "expected": "Reject on Content-Length before reading the body, so a request 5x over the limit costs one round trip rather than 50 MB of ingest.",
+      "mitigation_note": "Bounded above by the Cloudflare body cap, which is why this is Medium and not High."
+    }
+  ],
+  "open_leads": [
+    "Quote is a fourth surface carrying files that the ticket never names (QuoteConfigurationItemFileType). Per VCST-5431 the quote path already drops sectionId/sectionName, so files there deserve their own check. 1d judged quote explicitly OUT of scope for this ticket but a follow-up candidate.",
+    "Cart line identity deliberately strips file sections (withoutFileSections, per the VCST-5735 test model): two configurations differing ONLY by attached file collapse into one line with a silent no-op on the second add. Any case asserting two distinct lines will break on this.",
+    "BL-CART-015 names files explicitly among what must survive a Saved-for-Later round trip, and the saved-for-later template may be a different component from the cart line template.",
+    "The url is RELATIVE (/api/files/<id>), which the ticket's 'shall be URL' does not account for.",
+    "The ticket carries NO acceptance criteria. 1d derived 7 and found 10 gaps."
+  ],
+  "context_wave": {
+    "1c": {
+      "completed": true,
+      "note": "Confirmed live at the PDP that an uploaded file renders as filename + '100% done' + size + Remove, with NO link and no href — the ticket's premise. Lane then hit the Firefox click stall."
+    },
+    "1c_map": {
+      "note": "First build succeeded then was lost with the tree cleanup; rebuild dispatched."
+    },
+    "1d": {
+      "completed": true,
+      "note": "7 derived ACs, 10 gaps, one proposed BL invariant."
+    },
+    "1r": {
+      "note": "BLOCKED on the first attempt by the INVALID_SCOPE defect, since resolved. Superseded by the API E2E above plus the live storefront pass."
+    }
+  },
+  "run_environment_problems": [
+    "playwright-firefox click stall recurred — browser_click times out at 30s while navigate and find still work. The documented rollback trigger in .claude/rules/agents.md. The defaults.firefoxClickOk flag was NOT flipped, because that rule requires checking the MCP server restart first. This run routes around firefox.",
+    "VirtoOZ MCP is not authorized in this session, so terminology could not be grounded against the official documentation.",
+    "The working tree was cleaned mid-run, destroying this file's first copy, the domain map and two backlog entries."
+  ],
+  "test_residue": [
+    "vcptcore-qa1: order CO260916-00001 and the default cart (2 lines) for test-john.mitchell. The three named probe carts countprobe5/6/7 WERE DELETED.",
+    "vcptcore-qa1: ~30 small probe files uploaded to the product-configuration scope during the extension/size/count matrices, most unattached.",
+    "vcst-qa: two tiny probe files from the pre-fix control run, unattached.",
+    "Local fixtures under .scratch/ and .scratch/ext/ (including two 10 MB size-boundary files).",
+    "vcptcore-qa1: quote RFQ260916-00001 (Draft) created by the quote-surface probe, and the default cart was consumed into it."
+  ],
+  "bugs_filed": [
+    "VCST-5995",
+    "VCST-5996",
+    "VCST-5997",
+    "VCST-5998",
+    "VCST-5999",
+    "VCST-6000"
+  ],
+  "bugs_not_filed": [
+    "F5 Order Details drops the Section column (Low)",
+    "F6 separator comma inside the accessible name (Low)",
+    "F9 attached file order not preserved (Low, folded into VCST-5997 as a related note)",
+    "F10 zero-byte file accepted by the server while CFG-FILE-003 expects rejection (Low, needs UI confirmation)",
+    "F7 order page loads a vendor logo from raw.githubusercontent.com and it fails (Low, out of scope)"
+  ],
+  "artifacts": {
+    "testing_checklist": null,
+    "test_model": null,
+    "screenshots": "reports/tickets/Sprint26-19/VCST-5924/screenshots/"
+  },
+  "verdict_basis": "Requirement 3 of the ticket — previewing the attached file on the Order Details page — does not work. The order's GraphQL still returns files{url,name,size,contentType}, but GET /api/files/{id} returns 403 to the file's own owner once the cart becomes an order, so the API advertises a URL the owner is forbidden to fetch. Requirements 1 and 2 render and download, but not via a URL, which is what the ticket asked for.",
+  "order_placed": {
+    "number": "CO260916-00001",
+    "id": "6849be0a-108c-410b-9b31-52c33903783f"
+  },
+  "ac_reconciliation": [
+    {
+      "ac": "AC-1 cart",
+      "verdict": "PASS WITH NOTES",
+      "detail": "Both files render with real filenames under Components list; activation downloads. Not a URL — a role=button with no href."
+    },
+    {
+      "ac": "AC-2 checkout order review",
+      "verdict": "PASS WITH NOTES",
+      "detail": "This theme has NO discrete Order Review step: /checkout redirects to /cart, which is a single-page checkout. Tested in the full pre-submit state; behaviour identical to the cart. Requirement 2 is not addressable as written."
+    },
+    {
+      "ac": "AC-3 order details",
+      "verdict": "FAIL",
+      "detail": "Activating either file navigates the whole page to /403 Access denied. GET /api/files/{id} -> 403 for the owner."
+    },
+    {
+      "ac": "AC-4 cross-surface consistency",
+      "verdict": "PASS WITH NOTES",
+      "detail": "Filenames and pairing consistent across all three. Order Details drops the Section column and reorders rows, so a buyer cannot tell which requirement each attachment satisfied."
+    },
+    {
+      "ac": "AC-5 no-file case",
+      "verdict": "NOT TESTED",
+      "detail": "Needs an optional File section left empty; fixtures exist (CFG-027, CFG-023)."
+    },
+    {
+      "ac": "AC-6 link mechanics / working URL",
+      "verdict": "FAIL",
+      "detail": "Not a URL on any surface, and the underlying URL 403s on order details."
+    },
+    {
+      "ac": "AC-7 multiple files",
+      "verdict": "PASS",
+      "detail": "Two files rendered and correctly paired on every surface; bytes verified after download (28B text, 70B PNG magic)."
+    }
+  ],
+  "not_tested": [
+    "Nothing from the original open list remains. All four items (zero-byte UI confirmation, empty optional section, Saved-for-Later round trip, quote surface) were closed in the follow-up pass."
+  ],
+  "boundary_and_negative_testing": {
+    "extension_matrix": {
+      "method": "POST /api/files/product-configuration, one probe file per extension",
+      "positive_all_pass": [
+        ".doc",
+        ".rtf",
+        ".docx",
+        ".txt",
+        ".pdf",
+        ".xls",
+        ".xlsx",
+        ".jpg",
+        ".png",
+        ".odt"
+      ],
+      "negative_all_rejected": [
+        ".csv",
+        ".exe",
+        ".html",
+        ".svg",
+        ".zip",
+        ".js",
+        ".json"
+      ],
+      "verdict": "PASS — the allowlist is complete and symmetric; every allowed extension is accepted and every probed disallowed one returns INVALID_EXTENSION"
+    },
+    "content_type_derivation": {
+      "finding": "contentType is derived from the EXTENSION, not from the bytes. Plain-text probes were stored as application/pdf, image/png, application/msword etc. purely by filename.",
+      "is_it_a_defect": "NO, as shipped — an HTML payload named .png is served as image/png WITH x-content-type-options: nosniff, content-security-policy (object-src none; form-action self; frame-ancestors self) AND content-disposition: attachment, so the browser will not sniff or execute it.",
+      "caveat_for_VCST-5996": "This defence depends on the attachment disposition and nosniff. If VCST-5996 is fixed by enabling INLINE disposition for previewable types, nosniff must stay and the content type must stop being taken on trust from the filename."
+    },
+    "size_bva": {
+      "declared_max": 10000000,
+      "at_limit_10000000": "ACCEPTED",
+      "over_limit_10000001": "REJECTED INVALID_SIZE, message names the exact limit",
+      "verdict": "PASS — exact and correct boundary"
+    },
+    "file_count": {
+      "ui_claims": "maximum 5 files",
+      "fileUploadOptions_has_maxFileCount": false,
+      "result_5": "accepted, all 5 stored",
+      "result_6": "accepted with NO error, only the LAST file stored",
+      "result_7": "accepted with NO error, only the LAST file stored",
+      "confirmed_by": "independent re-read of carts countprobe5/6/7 via the cart query — 5 files [c2,c3,c1,c4,c5] vs 1 file [c6] vs 1 file [c7]",
+      "verdict": "FAIL — see finding F8"
+    },
+    "zero_byte": {
+      "result": "ACCEPTED by the server, size=0",
+      "conflict": "The existing regression case CFG-FILE-003 is titled \"0-Byte File Rejected on Required Upload Section\", so the rejection is presumably client-side only. Needs a UI confirmation before concluding."
+    }
+  },
+  "mobile": {
+    "viewports": [
+      "390x844 dpr3 isMobile+hasTouch",
+      "768x1024"
+    ],
+    "layout_verdict": "PASS — no truncation, clipping, overflow or horizontal scroll at either width; verified by bounding box over all 105 boxes on the order-details page, not by eye",
+    "responsive_behaviour": "At 390px the configuration table STACKS and its thead is sr-only (1x1); at 768px it reverts to a side-by-side row.",
+    "deltas_vs_desktop": [
+      "Section column missing is WORSE on mobile: with headers hidden at 390px the attachments carry no label at all",
+      "VCST-5995 reproduces identically (tap -> full-screen /403)",
+      "The file control is a 14 CSS px touch target -> VCST-5998"
+    ],
+    "new_positive_fact": "On the PDP the file IS a real link with an href (/api/files/<id>). It degrades to a hrefless role=button only in cart and order details — so the correct pattern already exists in the codebase, which strengthens VCST-5996.",
+    "dropzone_copy_confirmed": "\"...in DOC, RTF, DOCX, TXT, PDF, XLS, XLSX, JPG, PNG, ODT formats. Each file should not exceed 9.5MB. Maximum 5 files allowed.\" — confirms the F1 retraction was correct."
+  },
+  "filed": [
+    {
+      "key": "VCST-5995",
+      "type": "Subtask of VCST-5924",
+      "severity": "High",
+      "finding": "F3",
+      "title": "Buyer gets 403 opening their own configuration file attachment from Order Details"
+    },
+    {
+      "key": "VCST-5996",
+      "type": "Subtask of VCST-5924",
+      "severity": "Medium",
+      "finding": "F2+F4 merged",
+      "title": "File attachment is not a URL and can never be opened inline"
+    },
+    {
+      "key": "VCST-5997",
+      "type": "Bug (standalone, pre-existing)",
+      "severity": "Medium",
+      "finding": "F8+F9",
+      "title": "Attaching more than 5 files silently discards all but the last"
+    },
+    {
+      "key": "VCST-5998",
+      "type": "Bug (standalone, a11y convention)",
+      "severity": "Medium",
+      "finding": "mobile",
+      "title": "File attachment control is a 14px touch target on mobile - fails WCAG 2.2 AA 2.5.8"
+    },
+    {
+      "key": "VCST-5999",
+      "type": "Bug (standalone, out of scope for the story)",
+      "severity": "High",
+      "title": "Quote created from a cart loses configuration file attachments - URLs 404 for everyone including admin"
+    },
+    {
+      "key": "VCST-6000",
+      "type": "Bug (standalone, pre-existing)",
+      "severity": "Medium",
+      "title": "A zero-byte file satisfies a REQUIRED File section - neither layer rejects it"
+    }
+  ],
+  "tracker_comment": {
+    "id": "109663",
+    "posted": true,
+    "verified": "comment body returned in the API response",
+    "language": "English"
+  },
+  "evidence_gap": "Screenshots could not be ATTACHED to the Jira issue - this account API token lacks attachment permission. Stated in the comment rather than silently skipped. Evidence lives locally under the screenshots folder (13 PNGs + dom-evidence.txt).",
+  "follow_up_checks": {
+    "requested_by": "operator, after the first close-out, to close the four items that had been left open",
+    "zero_byte": {
+      "verdict": "DEFECT — filed VCST-6000",
+      "server": "POST /api/files/product-configuration with a 0-byte .txt -> 200 succeeded:true size:0",
+      "ui": "No rejection. Chip renders \"zero.txt (0B)\" with a working Remove button and a link to /api/files/<id>. The REQUIRED section gate goes satisfied and Add to cart loses [disabled].",
+      "consequence": "A required \"ID Proof\" can be discharged with an empty file. Neither layer defends.",
+      "corpus_impact": "CFG-FILE-003 (\"0-Byte File Rejected on Required Upload Section\") does NOT hold — the case needs re-basing once intent is confirmed."
+    },
+    "empty_optional_section": {
+      "verdict": "NO DEFECT",
+      "method": "Configured agent-test-two-req-siblings-20260519 with Bundle Choice=Bundle A, Size, Color; left the optional File section on its None option; added to cart and enumerated the components table rowgroup in the accessibility snapshot.",
+      "result": "The empty File section is omitted from the components list entirely — exactly three rows, no fourth, no cell containing \"File\". No placeholder, no empty control, no broken icon, no null/undefined. Console 0 errors.",
+      "substitution_note": "agent-test-wedding-cake-cond-20260519 was tried first and exposes only Base + Creme live, with no File section, despite productConfiguration returning File:Image for it. Recorded as a layer disagreement, not chased.",
+      "extra": "On agent-test-two-req-siblings the File section is CONDITIONAL — it only appears once Bundle Choice is set to Bundle A."
+    },
+    "saved_for_later_BL_CART_015": {
+      "verdict": "PASS",
+      "method": "API round trip on the real cart, reading files{name,size,contentType} at each leg",
+      "before": "lineItem 6b1f96b0 — vcst5924-alpha.txt(28B,text/plain) + vcst5924-charlie.png(70B,image/png)",
+      "after_move_out": "left the cart; appeared in the saved list (cart dfd32fb9) as lineItem 557bd81c with BOTH files intact",
+      "after_move_back": "returned to the cart as a NEW lineItem f851df7f with BOTH files intact, sizes and content types unchanged",
+      "conclusion": "BL-CART-015 holds for files, including the new-lineItemId-per-leg behaviour the invariant predicts."
+    },
+    "quote_surface": {
+      "verdict": "DEFECT — filed VCST-5999, severity High",
+      "method": "createQuoteFromCart on the file-bearing cart, then fetched every url the quote advertises as owner, anonymous, another buyer and ADMIN",
+      "result": "The quote carries the files with correct name/size/contentType but under NEW ids — the conversion copies rather than references. Every copy 404s for all four callers INCLUDING admin. Control in the same run: the original cart-side ids still return 200 (28B and 70B) to the same admin token, so the endpoint and admin read path are fine. Re-probed after several minutes in case the copy were asynchronous — still 404.",
+      "quote": "RFQ260916-00001, id a3ea8e5e-f496-46f6-a83a-569698bad158, status Draft",
+      "consequence": "Silent data loss on a document the buyer attached, in a flow whose whole purpose is a human reviewing it.",
+      "related": "The quote File configuration item also has name:null, consistent with the known cart-to-quote section-identity drop (VCST-5431)."
+    },
+    "the_pattern_worth_naming": "One attachment, three downstream surfaces, three different outcomes: 200 in the cart, 403 on the order (VCST-5995), 404 on the quote (VCST-5999). Only the cart path was ever whole."
+  },
+  "environment_constraint_found": "On vcptcore-qa1 only ONE buyer account is usable: test-john.mitchell. USER2 authenticates but every mutation is refused with \"password expired\" (the B-50 class); ORG_USER, EUR_USER and MULTI_ORG_USER do not issue a token at all. Any check needing two live buyers is constrained here.",
+  "exhaustive_sweeps_2026_09_17": {
+    "requested_by": "operator — \"negative and positive cases? all file types? count 0 to 20? size 0 to 1 GB?\"",
+    "extensions": {
+      "positive_all_10_pass": [
+        ".doc",
+        ".rtf",
+        ".docx",
+        ".txt",
+        ".pdf",
+        ".xls",
+        ".xlsx",
+        ".jpg",
+        ".png",
+        ".odt"
+      ],
+      "negative_all_rejected": [
+        ".csv",
+        ".exe",
+        ".html",
+        ".svg",
+        ".zip",
+        ".js",
+        ".json",
+        ".jpeg",
+        "(no extension)",
+        "double.txt.exe",
+        "trailingdot.txt."
+      ],
+      "case_insensitive": "UPPER.TXT, UPPER.PDF and Mixed.PdF all ACCEPTED — matching is case-insensitive",
+      "last_extension_wins": "double.txt.exe REJECTED, double.exe.txt ACCEPTED — no bypass via a double extension",
+      "DEFECT_jpeg": ".jpeg is REJECTED while .jpg is allowed. Almost certainly an oversight rather than policy — nobody permits .jpg and deliberately bans .jpeg. See finding F12.",
+      "odd_but_harmless": [
+        "\".txt\" with no basename ACCEPTED",
+        "\"..txt\" ACCEPTED",
+        "a 184-character filename ACCEPTED",
+        "filenames with spaces ACCEPTED"
+      ]
+    },
+    "filename_encoding": {
+      "verdict": "NO DEFECT — an earlier suspicion was RETRACTED",
+      "what_happened": "A curl upload of a Cyrillic filename came back as U+FFFD replacement characters, which looked like server-side corruption.",
+      "how_it_was_settled": "Re-sent with the multipart body constructed by hand so the filename is controlled at the protocol level rather than read off the Windows filesystem. Cyrillic, Chinese and emoji filenames then round-tripped BYTE-IDENTICAL.",
+      "conclusion": "The mojibake was the Git Bash / Windows locale mangling the name before curl ever sent it. Not a product defect. Likewise the trailing-dot case: sent properly it is correctly rejected with INVALID_EXTENSION; the earlier http=000 was curl unable to open a Windows file ending in a dot."
+    },
+    "file_count_0_to_20": {
+      "method": "swept N = 0,1,2,3,4,5,6,7,10,15,20 against ONE cart, re-reading the cart with a separate query after every mutation",
+      "result": {
+        "0": "accepted, NO line created",
+        "1-5": "accepted, all N files stored — correct",
+        "6,7,10,15,20": "accepted with empty errors[], NO line created at all"
+      },
+      "cutoff": "exactly 5 DISTINCT files. Any 5 urls work; any 6 silently fail; SIX DUPLICATES of one url succeed, so de-duplication runs before the limit check.",
+      "CORRECTS_EARLIER_CLAIM": "The first pass concluded \"the server keeps only the last file\". That was WRONG — it used a differently-named cart per N, which confounded the result. VCST-5997 has been corrected."
+    },
+    "size_0_to_1GB": {
+      "0 B": "ACCEPTED (and satisfies a REQUIRED section — VCST-6000)",
+      "1 B": "ACCEPTED",
+      "9,990,000 B": "ACCEPTED",
+      "10,000,000 B": "ACCEPTED — exactly at the declared maximum",
+      "10,000,001 B": "REJECTED INVALID_SIZE, message names the limit",
+      "50 MB": "REJECTED INVALID_SIZE — but the full 52,428,998 bytes were uploaded first, over 13.8 s, ANONYMOUSLY, on both the storefront proxy and the backend directly",
+      "100 MB": "REJECTED INVALID_SIZE — full 100,000,199 bytes uploaded first, 22.6 s",
+      "1 GB": "HTTP 413 Payload Too Large from CLOUDFLARE after only 1,343,488 bytes and 2.7 s — the edge cuts it off early; the request never reaches the application",
+      "DEFECT": "Between the application limit (10 MB) and the Cloudflare cap, an oversized body is ingested in FULL before the size check runs. Reachable without authentication. See finding F13."
+    }
+  },
+  "pending_tracker_writes": {
+    "note": "The Atlassian MCP connector began timing out mid-filing on 2026-09-17. These two are NOT confirmed filed and must be checked before anyone re-files them, to avoid duplicates.",
+    "F12_jpeg": {
+      "state": "UNVERIFIED — first create attempt confirmed NOT created (JQL search returned nothing); a second attempt timed out with no response and could not be verified",
+      "action_when_connector_recovers": "search VCST for a summary containing \"jpeg\" created in the last day; create only if absent",
+      "severity": "Medium"
+    },
+    "F13_oversized_body": {
+      "state": "NOT ATTEMPTED",
+      "severity": "Medium"
+    }
+  },
+  "tracker_write_lesson": "One edit to VCST-5997 returned a timeout yet HAD applied; one create returned a timeout and had NOT. So a timeout from this connector is not evidence either way — always verify by reading back before retrying, or duplicates follow."
+}

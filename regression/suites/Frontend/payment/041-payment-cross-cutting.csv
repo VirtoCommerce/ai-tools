@@ -39,7 +39,7 @@
 [DOM] All payment iframe(s) initialized — fields accept clicks and input
 [NETWORK] Iframe resources load without excessive blocking time","[NETWORK] No failed resource loads for cybersource.com iframe scripts
 [CONSOLE] No timeout errors for iframe initialization","Payment form remains in loading state beyond 2 seconds; iframe fails to initialize requiring page refresh; form fields unresponsive after iframes load","none — no order placed","VCST-3387 TC-PERF-001","Automated"
-"PAY-EDGE-001","Double-Click Place Order Prevention","Edge Cases","High","BL-PAY-003, BL-PAY-005","ECL-1.2, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+"PAY-EDGE-001","Double-Click Place Order Prevention","Edge Cases","High","BL-PAY-003","ECL-1.2, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
 - Cart has at least one item
@@ -53,8 +53,8 @@
 [NAV] Navigate to account order history and verify only one new order appears","[STATE] 'Place Order' button disabled after first click — subsequent clicks have no effect
 [STATE] Only one order created — no duplicate in account order history
 [NETWORK] Only one createOrderFromCart mutation request in DevTools Network","[API] createOrderFromCart GraphQL mutation called exactly once
-[ADMIN] Single new order in admin — no duplicate orders with same cart contents and timestamp","Button remains active after first click (not disabled); two or more createOrderFromCart mutations sent; duplicate order appears in account history or admin","Cancel order(s) via admin — ensure duplicate orders also cancelled if created","VCST-3387 TC-EDGE-020","Automated"
-"PAY-DECLINE-001","Declined Card - Error Message Displayed","Declined Cards","Critical","BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ADMIN] Single new order in admin — no duplicate orders with same cart contents and timestamp","Button remains active after first click (not disabled); two or more createOrderFromCart mutations sent; duplicate order appears in account history or admin","Cancel order(s) via admin — ensure duplicate orders also cancelled if created","VCST-3387 TC-EDGE-020; BL-PAY-005 citation removed 2026-09-19 - that invariant does not exist (only BL-PAY-001/003/004 are defined); BL-PAY-003 retained. NOTE: no promoted invariant states ""a DECLINED payment must not create an order"" - BL-PAY-003 covers the success path only. Oracle gap, candidate for /qa-review-oracles.","Automated"
+"PAY-DECLINE-001","Declined Card - Error Message Displayed","Declined Cards","Critical","BL-PAY-003","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
 - Cart has at least one item
@@ -72,8 +72,8 @@
 [STATE] Payment form fields retain entered values after decline — not cleared
 [NAV] User remains on payment step after decline
 [STATE] No order created — order history unchanged","[API] createOrderFromCart GraphQL mutation errors[] contains decline-related error OR mutation is not called if processor blocks before order creation
-[ADMIN] No new order in admin for this session","No error message shown after decline; generic 'something went wrong' message without explanation; form cleared requiring full re-entry; order created despite decline (BL-PAY-005 violation)","none — no order created","Coverage Gap Analysis","Automated"
-"PAY-DECLINE-002","Declined Card - Retry with Different Card Succeeds","Declined Cards","Critical","BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ADMIN] No new order in admin for this session","No error message shown after decline; generic 'something went wrong' message without explanation; form cleared requiring full re-entry; order created despite decline (BL-PAY-003 violation)","none — no order created","Coverage Gap Analysis; REQ-001; UNVERIFIED coverage - the decline test card (4000000000000002) is a Stripe test PAN copied verbatim across 4 processors in test-cards.csv, all marked unverified, and is NOT a verified CyberSource decline trigger; CyberSource declines on totalAmount or AVS zip 46282 per third-party docs, NOT independently verified by us. PAY-DECLINE-001 and its cascaded PAY-DECLINE-* cases are UNVERIFIED coverage, not confirmed-passing, until a verified trigger replaces the PAN. Card value deliberately NOT changed - substituting one unverified constant for another repeats the defect (REG-2026-09-19-1035 triage).","Automated"
+"PAY-DECLINE-002","Declined Card - Retry with Different Card Succeeds","Declined Cards","Critical","BL-PAY-003","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Logged in as registered user
 - Cart has at least one item
 - Payment in declined state from PAY-DECLINE-001 (decline error visible, no page reload performed)","FRONT_URL={{FRONT_URL}}, USER_EMAIL={{USER_EMAIL}}, USER_PASSWORD={{USER_PASSWORD}}, TEST_CARD_NUMBER={{TEST_CARD_NUMBER}}, TEST_CARD_EXP={{TEST_CARD_EXP}}, TEST_CARD_CVV={{TEST_CARD_CVV}}","[KEY] Begin from declined state — error message visible, user on payment step, no page reload
@@ -89,8 +89,8 @@
 [DOM] Order confirmation displays order number
 [STATE] Only one order created — no duplicate from failed first attempt
 [MATH] Order total matches original cart total","[API] createOrderFromCart GraphQL mutation errors[] is empty on successful retry
-[ADMIN] Single new order in admin — no duplicate entry for this session","Retry attempt triggers page reload losing cart state; second valid card also declined; two orders created (one from declined attempt — BL-PAY-005 violation); form not accepting input after decline","Cancel order via admin","Coverage Gap Analysis","Automated"
-"PAY-DECLINE-003","Declined Card - Network Timeout Recovery","Declined Cards","High","BL-PAY-003, BL-PAY-005","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ADMIN] Single new order in admin — no duplicate entry for this session","Retry attempt triggers page reload losing cart state; second valid card also declined; two orders created (one from declined attempt — BL-PAY-003 violation); form not accepting input after decline","Cancel order via admin","Coverage Gap Analysis; BL-PAY-005 citation removed 2026-09-19 - that invariant does not exist (only BL-PAY-001/003/004 are defined); BL-PAY-003 retained. NOTE: no promoted invariant states ""a DECLINED payment must not create an order"" - BL-PAY-003 covers the success path only. Oracle gap, candidate for /qa-review-oracles.","Automated"
+"PAY-DECLINE-003","Declined Card - Network Timeout Recovery","Declined Cards","High","BL-PAY-003","ECL-9.1, ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Logged in as registered user
 - Cart has at least one item
 - Payment form fully filled with valid test card
@@ -109,8 +109,8 @@
 [NAV] Successful retry after network restored reaches order confirmation
 [STATE] Only one order in history and admin — no duplicate from timeout","[API] Only one createOrderFromCart GraphQL mutation per user action — no automatic retries that could cause duplicates
 [CONSOLE] No internal server error details leaked to console or UI
-[ADMIN] Single order in admin after successful retry","Internal server error message exposed to user; form inaccessible after timeout requiring page refresh; duplicate order created from timeout + retry scenario; timeout produces no user feedback","Cancel order via admin; ensure no duplicate orders","Coverage Gap Analysis","Automated"
-"PAY-DECLINE-004","Declined Card - Double-Click Prevention After Error","Declined Cards","High","BL-PAY-003, BL-PAY-005","ECL-1.2, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ADMIN] Single order in admin after successful retry","Internal server error message exposed to user; form inaccessible after timeout requiring page refresh; duplicate order created from timeout + retry scenario; timeout produces no user feedback","Cancel order via admin; ensure no duplicate orders","Coverage Gap Analysis; BL-PAY-005 citation removed 2026-09-19 - that invariant does not exist (only BL-PAY-001/003/004 are defined); BL-PAY-003 retained. NOTE: no promoted invariant states ""a DECLINED payment must not create an order"" - BL-PAY-003 covers the success path only. Oracle gap, candidate for /qa-review-oracles.","Automated"
+"PAY-DECLINE-004","Declined Card - Double-Click Prevention After Error","Declined Cards","High","BL-PAY-003","ECL-1.2, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Logged in as registered user
 - Cart has at least one item
 - Payment just returned a decline error — user is on payment step with error message visible
@@ -123,8 +123,8 @@
 [ASSERT] No additional orders created beyond what the single payment request would produce","[STATE] 'Place Order' button disabled immediately after first click even following a decline
 [NETWORK] Only one payment/order request per click sequence — no duplicate requests
 [STATE] Button re-enables after response (enabling intentional retry)","[API] Only one createOrderFromCart GraphQL mutation per click sequence visible in DevTools
-[ADMIN] No duplicate orders created from rapid clicking after decline","Button not disabled after click following decline — multiple payment requests sent; multiple duplicate auth requests in Network tab; button requires page reload to re-enable after decline","none — verify no spurious orders; cancel any created via admin","Coverage Gap Analysis","Automated"
-"PAY-DECLINE-005","Declined Card - Cart and Checkout State Preserved","Declined Cards","Critical","BL-PAY-005, BL-PAY-003","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ADMIN] No duplicate orders created from rapid clicking after decline","Button not disabled after click following decline — multiple payment requests sent; multiple duplicate auth requests in Network tab; button requires page reload to re-enable after decline","none — verify no spurious orders; cancel any created via admin","Coverage Gap Analysis; BL-PAY-005 citation removed 2026-09-19 - that invariant does not exist (only BL-PAY-001/003/004 are defined); BL-PAY-003 retained. NOTE: no promoted invariant states ""a DECLINED payment must not create an order"" - BL-PAY-003 covers the success path only. Oracle gap, candidate for /qa-review-oracles.","Automated"
+"PAY-DECLINE-005","Declined Card - Cart and Checkout State Preserved","Declined Cards","Critical","BL-PAY-003","ECL-9.1, ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user
 - Cart has at least one item with specific quantity
@@ -142,13 +142,14 @@
 [STATE] Shipping address preserved after payment decline — user need not re-enter
 [STATE] Shipping method selection preserved after payment decline
 [DOM] Checkout progress indicator shows user still in payment step (not reset to start)","[API] createOrderFromCart GraphQL mutation errors[] confirms no order created
-[ADMIN] No new order in admin for this cart session","Cart cleared after decline — items lost requiring re-add; shipping address reset requiring re-entry; shipping method cleared requiring re-selection; user navigated back to checkout start","none — no order created; verify cart state is clean for next test","Coverage Gap Analysis","Automated"
-"PAY-GUEST-001","Guest Checkout - CyberSource Payment Completes Without Account","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ADMIN] No new order in admin for this cart session","Cart cleared after decline — items lost requiring re-add; shipping address reset requiring re-entry; shipping method cleared requiring re-selection; user navigated back to checkout start","none — no order created; verify cart state is clean for next test","Coverage Gap Analysis; BL-PAY-005 citation removed 2026-09-19 - that invariant does not exist (only BL-PAY-001/003/004 are defined); BL-PAY-003 retained. NOTE: no promoted invariant states ""a DECLINED payment must not create an order"" - BL-PAY-003 covers the success path only. Oracle gap, candidate for /qa-review-oracles.","Automated"
+"PAY-GUEST-001","Guest Checkout - CyberSource Payment Completes Without Account [DEPRECATED - guest card form is by-design absent]","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:RESET_CART]
 - User is NOT logged in (anonymous / guest session)
 - Guest checkout enabled in store settings
 - Cart has at least one item added as guest
-- CyberSource payment processor configured and active","FRONT_URL={{FRONT_URL}}, GUEST_EMAIL=guest-{{TIMESTAMP}}@test.example.com, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Open a fresh incognito/private browser window; navigate to {{FRONT_URL}}
+- CyberSource payment processor configured and active
+- DEPRECATED 2026-09-19: premise invalid. A guest is never shown the cart-inline card form; the guest allowCartPayment path books an unpaid order and settles payment afterwards. By design. Do not execute.","FRONT_URL={{FRONT_URL}}, GUEST_EMAIL=guest-{{TIMESTAMP}}@test.example.com, TEST_CARD_NUMBER=@td(CYBERSOURCE_VISA.number), TEST_CARD_EXP=@td(CYBERSOURCE_VISA.expiry), TEST_CARD_CVV=@td(CYBERSOURCE_VISA.cvv)","[NAV] Open a fresh incognito/private browser window; navigate to {{FRONT_URL}}
 [ASSERT] User is not logged in — no user name or account icon in header
 [ACT] Add at least one product to cart
 [NAV] Navigate to {{FRONT_URL}}/cart
@@ -163,13 +164,14 @@
 [DOM] Order confirmation page shows order number and ordered items
 [STATE] No account registration required to complete payment","[API] createOrderFromCart GraphQL mutation response has no errors[] entries
 [NETWORK] Payment token (not raw card number) sent in request payload for guest session
-[ADMIN] Order appears in admin Orders list with guest email and correct payment method","CyberSource payment form fails to render for guest users; guest is forced to create an account before payment form appears; order confirmation not reached without registration; raw card data in network payload for guest session","none — guest order; no cleanup required unless test order removal is standard practice","ECL-14.1; BL-PAY-003; BL-CHK-005; STALE-BY-DESIGN: CyberSource Microform is NOT offered to guest sessions (user-confirmed by design 2026-06-05, REG-2026-06-05-1752 dismissed BUG_041_001) — expectation wrong; rewrite to assert guest-available payment methods; do NOT file 'form missing for guest' as a bug","Automated"
-"PAY-GUEST-002","Guest Checkout - Payment Validation Same as Authenticated User","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1, ECL-9.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+[ADMIN] Order appears in admin Orders list with guest email and correct payment method","CyberSource payment form fails to render for guest users; guest is forced to create an account before payment form appears; order confirmation not reached without registration; raw card data in network payload for guest session","none — guest order; no cleanup required unless test order removal is standard practice","ECL-14.1; BL-PAY-003; BL-CHK-005; DEPRECATED 2026-09-19 (product-owner ruling): the guest allowCartPayment path is BY DESIGN — no cart card form renders for a guest, and Place order books an unpaid order (status Payment required, isApproved false) with no cart-side processor authorization; payment is settled afterwards. This case asserted the opposite premise and produced a false P0 three times (2026-07-22 CO260722-00003; 2026-08-26 source re-verify; 2026-09-19 CO260919-00010). Do not execute; do NOT file 'form missing for guest' as a bug. See BL-PAY-001 (now scoped authenticated-only) and reports/bugs/rejected/BUG-guest-checkout-card-gateway-no-payment.md. Re-authoring requires a live OBSERVED pass over the methods actually offered to guests. Original steps/assertions preserved for re-activation.","Deprecated"
+"PAY-GUEST-002","Guest Checkout - Payment Validation Same as Authenticated User [DEPRECATED - no guest card form to validate]","Guest Checkout","High","BL-PAY-003, BL-CHK-005","ECL-14.1, ECL-9.1","[PRE:CLEAR_SESSION]
 [PRE:RESET_CART]
 - User is NOT logged in (anonymous / guest session)
 - Guest checkout enabled in store settings
 - Cart has at least one item added as guest
-- CyberSource payment form visible on {{FRONT_URL}}/cart","FRONT_URL={{FRONT_URL}}","[NAV] Open a fresh incognito/private browser window; add product to cart; navigate to {{FRONT_URL}}/cart
+- CyberSource payment form visible on {{FRONT_URL}}/cart
+- DEPRECATED 2026-09-19: premise invalid. There is no guest-visible card form, so there is no guest-side card validation to compare against the authenticated path. By design. Do not execute.","FRONT_URL={{FRONT_URL}}","[NAV] Open a fresh incognito/private browser window; add product to cart; navigate to {{FRONT_URL}}/cart
 [ASSERT] User is not logged in — guest context confirmed
 [WAIT] Wait for CyberSource payment form to render
 [ACT] Leave 'Card Number' field empty; click 'Place Order'
@@ -182,7 +184,7 @@
 [ASSERT] Validation error for missing cardholder name (or form submits — document behavior)","[DOM] Each validation error appears at field level for guest users — not a single generic error
 [STATE] Form does not submit with any invalid guest payment input
 [NAV] Guest user remains on cart page after each validation failure","[API] No createOrderFromCart GraphQL mutation fired for any invalid payment attempt
-[CONSOLE] No JS errors from CyberSource iframe during guest validation flows","Validation skipped for guest users while enforced for authenticated users; generic top-level error replaces field-level errors in guest context; form submits with invalid card in guest session","none — no order created","ECL-14.1; ECL-9.1; BL-PAY-003; BL-CHK-005; STALE-BY-DESIGN: CyberSource Microform is NOT offered to guest sessions (user-confirmed by design 2026-06-05) — validation-parity premise invalid for CyberSource; rewrite against guest-available payment methods","Automated"
+[CONSOLE] No JS errors from CyberSource iframe during guest validation flows","Validation skipped for guest users while enforced for authenticated users; generic top-level error replaces field-level errors in guest context; form submits with invalid card in guest session","none — no order created","ECL-14.1; ECL-9.1; BL-PAY-003; BL-CHK-005; DEPRECATED 2026-09-19 (product-owner ruling): validation-parity between guest and authenticated card entry is not a requirement — a guest gets no cart-inline card form at all, by design, so there is nothing to validate. See BL-PAY-001 (now scoped authenticated-only) and reports/bugs/rejected/BUG-guest-checkout-card-gateway-no-payment.md. Do not execute. Original steps/assertions preserved for re-activation.","Deprecated"
 "PAY-XLAY-001","Cross-Layer - Order Total at Checkout Matches Gateway Charge Amount","Cross-Layer Verification","Medium","BL-CHK-006, BL-PAY-003","ECL-14.6","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Logged in as registered user

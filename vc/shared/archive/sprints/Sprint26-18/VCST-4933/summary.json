@@ -1,0 +1,530 @@
+{
+  "ticket": "VCST-4933",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": null,
+    "narrow_story_tokens": {
+      "priority": false,
+      "layer": false,
+      "domains": false,
+      "chain_shape": false,
+      "surface": true,
+      "reach": true
+    },
+    "escalated_reason": "layer"
+  },
+  "layer": "cross-layer",
+  "domain_map": {
+    "state": "ABSENT",
+    "slug": "page-builder",
+    "path": ".claude/knowledge/domain/page-builder.md",
+    "rev": 1,
+    "generated": "2026-09-17",
+    "age_days": 0,
+    "all_layer_chain": true,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "recommended": false,
+    "built_in_run": true,
+    "build_outcome": "BUILT",
+    "build_skipped_reason": null,
+    "amended_in_run": false,
+    "amend_outcome": "NOTHING_TO_AMEND",
+    "amendments": [],
+    "sources": [
+      "live enumeration of the platform app manifest + REST surface on vcptcore-qa",
+      "vc-module-pagebuilder PR #159 source via public GitHub web view",
+      "regression/suites/Backend/page-builder/{059,060,060b}.csv + 050f-graphql-xcms.csv"
+    ],
+    "unmapped_surfaces": [
+      "domain:check fails DOMAIN-005 — page-builder is not a bl:extract domain token because no BL-CMS-* invariant family exists"
+    ]
+  },
+  "shape_class": {
+    "value": "none",
+    "surface_source": [
+      "PR #159 diff: a feature added to the Page Builder surface, not a token/primitive change",
+      "no design-system or component-library path in the diff"
+    ],
+    "skipped": []
+  },
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-09-17",
+  "environment": "vcptcore-qa",
+  "build": {
+    "platform": "3.1070.0-pr-3115-8265-vcst-5952-82659efa",
+    "theme": "2.58.0-pr-2410-3aa8-3aa8bd1f",
+    "relevant_modules": {
+      "VirtoCommerce.PageBuilderModule": "3.1025.0-pr-159-7361",
+      "VirtoCommerce.Pages": "3.1008.0",
+      "VirtoCommerce.Assets": "3.1006.0"
+    },
+    "deployed": {
+      "platform": "3.1070.0-pr-3115-8265",
+      "relevant_modules": {
+        "VirtoCommerce.PageBuilderModule": "3.1025.0-pr-159-7361",
+        "VirtoCommerce.Pages": "3.1008.0",
+        "VirtoCommerce.Assets": "3.1006.0"
+      }
+    },
+    "releasedThrough": {
+      "ledger_generated": "2026-09-01",
+      "components": {},
+      "behind": [],
+      "breaking": []
+    }
+  },
+  "documentation": {
+    "published": true,
+    "audiences": [
+      "customer",
+      "admin",
+      "developer"
+    ],
+    "files": [
+      "reports/ba/Page Builder (CMS)/shared-components-guide.md",
+      "reports/ba/Page Builder (CMS)/shared-components-customer-guide.md"
+    ],
+    "amended": [],
+    "comment_posted": true,
+    "refusal": null
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Ready for test",
+      "to": null,
+      "transition": null,
+      "confirmed": false,
+      "actor": "qa-lead",
+      "skipped": "no in-testing transition exists on this workflow from 'Ready for test' — the only available transitions were Cancelled, On hold, Need fixes (Reopen) and Finish test (Tested)"
+    },
+    {
+      "hop": "closing",
+      "at": "5f",
+      "from": "Ready for test",
+      "to": "Tested",
+      "transition": "Finish test (id 8)",
+      "confirmed": true,
+      "actor": "qa-lead"
+    }
+  ],
+  "agents_dispatched": [
+    "ba-system-analyzer",
+    "ba-story-writer",
+    "qa-testing-expert",
+    "test-data-engineer",
+    "qa-frontend-expert",
+    "qa-backend-expert",
+    "ui-ux-expert"
+  ],
+  "epic": {
+    "parent": "VCST-4931",
+    "siblings": {
+      "done": [],
+      "in_progress": [],
+      "blocked_dependency": [
+        "VCST-5183",
+        "VCST-5184",
+        "VCST-5185"
+      ]
+    },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 8,
+    "weak_acs": 2,
+    "gap_acs_added": 0,
+    "impl_coverage": {
+      "satisfied": 8,
+      "drift": 0,
+      "contradicts": 0,
+      "not_found": 0
+    },
+    "conditions_total": 27,
+    "conditions_with_evidence": 27,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 100,
+      "dod_total": 10,
+      "dod_met": 6,
+      "dod_pct": 60
+    }
+  },
+  "total_cases": 0,
+  "passed": 0,
+  "failed": 0,
+  "blocked": 0,
+  "iterations": {
+    "enabled": false,
+    "rounds": 1,
+    "max_rounds": 2,
+    "outcome": "passed",
+    "per_round": []
+  },
+  "new_cases_authored": 0,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": []
+  },
+  "regression": {
+    "c1": {
+      "suites": [],
+      "ids": [],
+      "run_id": null,
+      "pass_rate": null,
+      "skipped_reason": "the exact set was empty — Artifact A authored no cases (the corpus step's 2a phase produced no REPAIR and no RE-BASE, because no existing case in 059/060/060b asserts any Shared Components observable), so there was nothing this run wrote or changed to execute"
+    }
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_ids": [],
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": null
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6011",
+      "severity": "High",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-4933"
+    },
+    {
+      "key": "VCST-6012",
+      "severity": "High",
+      "relationship": "standalone",
+      "parent_or_linked_ticket": "VCST-4933"
+    },
+    {
+      "key": "VCST-6009",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-4933"
+    },
+    {
+      "key": "VCST-6010",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent_or_linked_ticket": "VCST-4933"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "VC Shell bare URL dead-ends without ?storeId= — no store picker, no way forward",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "403-vs-404 lets an authenticated back-office user distinguish 'exists in another store' from 'does not exist'",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "PUT /{id} echoes a stale modifiedDate while a follow-up GET shows the committed one",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "refusal bodies inconsistent ({} vs empty), not aligned to refusal kind",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "plural copy renders one fact five ways, incl. the non-localizable 'Used on 3 page(s)'",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "archive-confirm dialog inverts the primary affordance (Cancel filled, Confirm a text link)",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "insert dialog says 'Copy component:' / 'Paste component' for what is an insert",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "DELETE /grouped/{id} returns pageDeleted:false although the page IS deleted",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "'Paste section' is one-shot — the clipboard payload is consumed after a successful paste",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "creating a Shared Component appears to persist the page draft implicitly",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "nesting rejection wording uses 'independent', a term absent from the feature's UI vocabulary — directly implicated in a prior false bug report",
+      "report": "reports/tickets/Sprint26-19/VCST-4933/findings.md"
+    }
+  ],
+  "discovery": {
+    "ran": true,
+    "skipped_reason": null,
+    "lane": "playwright-firefox",
+    "minutes": 45,
+    "checklist_conditions": [],
+    "charter_sources": {
+      "matrix_gaps": [
+        "VC-unused x L7/L8 (unused-component leak)",
+        "VE scoped-full x L7/L8 (permission loss after publish)"
+      ],
+      "reverse_edges": [
+        "no un-propagate / version history",
+        "no re-attach after detach"
+      ],
+      "hypothesis_rows": [
+        "#3/#11 does usage count include the originating/master page"
+      ],
+      "ac_drift": [
+        "AC1 library panel ordering",
+        "AC4 identification + warning affordances"
+      ],
+      "rebase_rows": []
+    },
+    "hypotheses_grounded": 1,
+    "hypotheses_remaining": 0,
+    "model_amendments": 7,
+    "scenarios_new": [
+      {
+        "id": "EXP-01",
+        "fate": "PROMOTE",
+        "case_id": null,
+        "oracle_ref": "NONE"
+      },
+      {
+        "id": "EXP-02",
+        "fate": "PROMOTE",
+        "case_id": null,
+        "oracle_ref": "NONE"
+      },
+      {
+        "id": "EXP-03",
+        "fate": "PROMOTE",
+        "case_id": null,
+        "oracle_ref": "NONE"
+      },
+      {
+        "id": "EXP-04",
+        "fate": "DECLINE",
+        "case_id": null,
+        "oracle_ref": null
+      },
+      {
+        "id": "EXP-05",
+        "fate": "PROMOTE",
+        "case_id": null,
+        "oracle_ref": "NONE"
+      }
+    ],
+    "oracle_proposals": 4,
+    "bugs_surfaced": [],
+    "report": "reports/exploratory/SBTM-VCST-4933-2026-09-17.md"
+  },
+  "visual": {
+    "surface": "true",
+    "surface_source": [
+      "PR #159 adds a VC Shell workspace and Designer affordances",
+      "ticket carries an HTML prototype, a PDF and design PNGs"
+    ],
+    "ran": true,
+    "skipped_reason": null,
+    "targets": [
+      "VC Shell Shared Components workspace (/apps/page-builder-shell/?storeId=B2B-store)",
+      "Angular Designer: Add block panel, section tree, Shared placement row, preview boundary"
+    ],
+    "axes": {
+      "a11y": {
+        "ran": true,
+        "verdict": "FAIL",
+        "findings": 4,
+        "skipped_reason": null
+      },
+      "design_system": {
+        "ran": true,
+        "verdict": "PASS",
+        "findings": 1,
+        "skipped_reason": null
+      },
+      "design_spec": {
+        "ran": false,
+        "verdict": null,
+        "confirmed": 0,
+        "drift": 0,
+        "missing": 0,
+        "unspec": 0,
+        "known_divergence": 0,
+        "unresolved": 0,
+        "skipped_reason": "design spec unobtainable — all 16 ticket attachments failed to fetch (expired tracker API token)"
+      }
+    },
+    "a11y_findings": [
+      {
+        "invariant": "BL-UI-007",
+        "severity": "High",
+        "ticket": "VCST-6012",
+        "blocks": false
+      }
+    ],
+    "invariant_failures": [],
+    "advisory": [
+      {
+        "verdict": "DRIFT",
+        "item": "plural copy for the usage count",
+        "spec": "one consistent plural form",
+        "live": "five variants incl. the non-localizable 'Used on 3 page(s)'"
+      }
+    ],
+    "report": "reports/tickets/Sprint26-19/VCST-4933/design-report.md"
+  },
+  "contract": {
+    "surface": "true",
+    "surface_source": [
+      "storefront delivery is read via GraphQL slugInfo -> pageDocument",
+      "AC7 asserts the delivered document shape"
+    ],
+    "schema": {
+      "refreshed": "2026-09-17",
+      "unknown_reason": null,
+      "queries": 7,
+      "mutations": 0
+    },
+    "fixtures": {
+      "refreshed": null,
+      "validated_against_env": "vcptcore",
+      "total": 0,
+      "failed": 0,
+      "drift_in_scope": [],
+      "drift_out_of_scope": []
+    }
+  },
+  "coverage_triage": {
+    "surface": "true",
+    "surface_source": [
+      "059/060/060b are the page-builder suites; the change adds a new sub-surface to them"
+    ],
+    "scope": {
+      "domains": [
+        "cms"
+      ],
+      "modules": [
+        "VirtoCommerce.PageBuilderModule"
+      ],
+      "suites_named": [
+        "059",
+        "060",
+        "060b"
+      ],
+      "observables": [
+        "shared component",
+        "componentRef",
+        "usage count",
+        "detach",
+        "add block",
+        "designer preview"
+      ],
+      "oracles": [],
+      "cases_filter": null
+    },
+    "counts": {
+      "suites_scoped": 3,
+      "rows_scanned": 178,
+      "hits": 18,
+      "will_run": 18,
+      "filtered_out": 0,
+      "not_executing": 0,
+      "never_audited": 18
+    },
+    "dispositions": {
+      "confirmed": 18,
+      "repair": 0,
+      "rebase": 0,
+      "superseded": 0
+    },
+    "repaired": [],
+    "rebased_into_c1": [],
+    "superseded_proposals": [],
+    "unscannable": [],
+    "unmatched_observables": [
+      "shared component",
+      "componentRef",
+      "usage count",
+      "detach",
+      "designer preview"
+    ]
+  },
+  "test_data": {
+    "surface": true,
+    "surface_source": [
+      "Part 0r role scenarios need 7 permission actors that did not exist on this environment",
+      "the model's Fixture lifecycle requires dedicated components for the two terminal delete cases",
+      "the pre-existing AGENT-TEST-SC-* fixtures are invalid for render assertions (block type 'Text')"
+    ],
+    "dispatched": true,
+    "fixtures_covering": [
+      "@td(SC_MULTI)",
+      "@td(SC_SINGLE)",
+      "@td(SC_UNUSED)",
+      "@td(SC_USED)",
+      "@td(PB_SC_MASTER)",
+      "@td(PB_SC_CONSUMER_A)",
+      "@td(PB_SC_CONSUMER_B)",
+      "@td(PB_SC_CONSUMER_DRAFT)",
+      "@td(PB_SC_DELETE_HOLDER)",
+      "@td(PB_SC_CONTROL)",
+      "@td(SC_PERM_ALL)",
+      "@td(SC_PERM_READ)",
+      "@td(SC_PERM_NOCREATE)",
+      "@td(SC_PERM_NOUPDATE)",
+      "@td(SC_PERM_NODELETE)",
+      "@td(SC_PERM_NOREAD)",
+      "@td(SC_PERM_NOSTORE)"
+    ],
+    "divergence_resolved": true,
+    "td_validate": "green",
+    "seed_run": "npm run seed:pb-shared (TEST_ENV=vcptcore) — 4 components, 6 pages, 7 permission users; teardown proven zero-residue then re-seeded"
+  },
+  "business_rules_verified": [],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
+    "correlated_failures": []
+  },
+  "screenshots": "reports/tickets/Sprint26-19/VCST-4933/screenshots/"
+}

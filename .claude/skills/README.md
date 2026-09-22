@@ -7,7 +7,7 @@
 > live): `ls .claude/skills | wc -l` for the total,
 > `grep -ohE '^description: "?\[[A-Za-z ]+\]' .claude/skills/*/SKILL.md | sort | uniq -c` for the
 > per-category split. Skills without a tag are the root-level ones (`project-init`,
-> `run-vc-mcp-testing-module`, `vc-self-check`) plus `qa-local-env`, which is grouped under Testing but
+> `vc-self-check`) plus `qa-local-env`, which is grouped under Testing but
 > carries no tag of its own. Both `[QA Method]` and `[QA Methodology]` spellings exist in the wild — they
 > are the same category.
 
@@ -56,7 +56,6 @@ skills/
 ├── vc-shell-fix/                    # [Development]  Fix a module-embedded Vue 3 shell sub-app
 │
 ├── project-init/                    # (root-level) Onboard the toolset onto a deployment
-├── run-vc-mcp-testing-module/       # (root-level) Build / launch / smoke-test / health-check this repo
 ├── vc-self-check/                   # (root-level) Self-diagnostician (Tier B) → local DIAG-*.md
 │
 └── README.md                        # This file
@@ -166,7 +165,6 @@ Outside the four QA categories.
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
 | `/project-init` | Onboard the toolset onto a deployment — native-platform vs client; tracker + VCS host; write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json`; verify access. The profile is what routes each `/qa-fix` to the right repo + tracker | scaffold-env.mjs, scaffold-secrets.mjs, write-env.mjs, gen-profile.mjs, discover-repos.mjs, gen-mcp.mjs, verify-access.mjs |
-| `/run-vc-mcp-testing-module` | Build / launch / smoke-test / health-check this tooling repo (env:check, `@td()` resolution, suite-manifest sync, GraphQL fixture validation, seed dry-run) | SKILL.md |
 | `/vc-self-check` | Tier-B self-diagnostician — reads the passive session-telemetry jsonl + transcript + skill-expectations oracle → per-skill verdict into a local `DIAG-*.md`; the consent-gated `deliver` sub-step contributes a scrubbed quality report to VirtoCommerce. Never modifies the install | SKILL.md, deliver.mjs |
 
 ## Agent → Skill Map

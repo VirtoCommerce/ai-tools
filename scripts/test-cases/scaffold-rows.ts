@@ -28,7 +28,7 @@
  * hypothesis is ALREADY WRITTEN by the document that owns them, so they satisfy
  * the gate by construction and cost no judgment:
  *   `state-stress`  qa-design SKILL.md §State-Stress Pass          (7 states)
- *   `uip`           qa-sbtm modern-web-attack-surface.md §UIP-*    (10 probes)
+ *   `uip`           qa-sbtm modern-web-attack-surface.md §UIP-*    (the table)
  *   `toggle`        qa-test-cases-generator SKILL.md §3.5 flags
  *   `date-range`    qa-test-cases-generator SKILL.md §3.5 dates
  * Every one is READ AT RUN TIME from the markdown that owns it, never
@@ -369,6 +369,8 @@ const UIP_ARCHETYPES: Record<string, string> = {
   "UIP-INPUT": "SILENT",
   "UIP-VIEW": "RENDER",
   "UIP-DATA": "BOUNDARY",
+  "UIP-PAGE": "BOUNDARY",
+  "UIP-EXTREME": "RENDER",
 };
 
 export const SWEEP_SOURCES: Record<SweepKind, SweepSource> = {

@@ -13,16 +13,13 @@
       "locale": "en-US",
       "recordHar": {
         "path": "./test-results/chrome/har/session.har",
-        "omitContent": true
+        "content": "embed"
       },
-      "recordVideo": {
-        "dir": "./test-results/chrome/video",
-        "size": {
-          "width": 1920,
-          "height": 1080
-        }
-      },
-      "deviceScaleFactor": 2
+      "deviceScaleFactor": 2,
+      "permissions": [
+        "clipboard-read",
+        "clipboard-write"
+      ]
     }
   },
   "outputDir": "./test-results/chrome",

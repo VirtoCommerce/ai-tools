@@ -20,6 +20,20 @@
 | 9 | Coverage generation report | `reports/coverage/COV-*/` | One consolidated `coverage-generation-report.md` per `/qa-coverage-gap` run (the run's own intermediate `gap-inventory.json`/`batch-*-results.json` are pipeline working data, not narrative report bloat — §2's cap applies to the markdown digest, not those) |
 | 10 | Performance investigation report | `reports/performance/{topic}-investigation-<date>.md` | A standalone performance investigation with findings worth keeping past the session that produced them. Written by **`/qa-perf-measure`** (deployed-env dependency-count / N+1 measurement); ticket-scoped runs may land as a category-6 per-ticket report instead |
 
+**Where artifacts must NOT go.** Two separation rules, previously stated only in the retired
+`skills/qa-evidence/output-paths.md` and easy to lose with it:
+
+- **`reports/` is tracked; `test-results/` is gitignored.** Documentation artifacts (reports, bug
+  files, summaries) go in `reports/`. Raw browser output (HAR, videos, console dumps) goes in
+  `test-results/<lane>/`. **Never write documentation into `test-results/`** — it is pruned and
+  untracked, so the artifact silently disappears — **and never write raw browser dumps into
+  `reports/`**, which is how a 1.4 MB HAR ends up in git.
+- **Never create `reports/<TICKET>/` at the repo root.** A ticket folder is
+  `reports/tickets/<Sprint>/<TICKET>/` (the default, whenever there is sprint context) or
+  `reports/tickets/<TICKET>/` (ad-hoc only — a hotfix or a verification outside any sprint). A
+  root-level `reports/VCST-XXXX/` is matched by no category above, so nothing prunes it and no
+  reader looks in it.
+
 ## 1a. `reports/bugs/open/` is foldered by severity — and the folder is a VIEW, never the source of truth
 
 ```
@@ -253,26 +267,13 @@ three-signal `renderedBody` check in §5.0. Measured 2026-09-14 on VCST-5024 —
 `<img src=…/attachment/content/<id>>`, one ADF `media` node with a 36-char UUID, zero literal `!….gif!`,
 and Jira animates it inline. Cite [`tracker-ops.md`](tracker-ops.md) §5c; do not restate the upload.
 
-**Video is an attachment, not an embed.** Attach a `.webm` when the defect is a timing or animation
-property a few GIF frames genuinely cannot carry — and always alongside the GIF or stills that make the
-claim, never as the claim itself. **Whether `!file.webm!` renders as a playable element inline is
-UNMEASURED**: the probe was not run. Do not write a comment that depends on it until someone measures it,
-the way §5c's four ADF variants were measured.
-
-**Where the frames come from.** The three BOUND lanes record the whole context (`recordVideo` in each
-`config/mcp-playwright-*.config.json` → `test-results/<lane>/video/*.webm`, 1280×720). The file is
-**flushed on `browser_close`, not continuously** (verified 2026-09-14), which is why the directory reads
-empty mid-session: an empty `video/` is not evidence that capture is off. `test-results/` is gitignored,
-so a recording that will be cited must be copied into the ticket's `screenshots/` folder first. **A config
-change needs an MCP server restart before it takes effect.**
-
-> **The `mobile` lane is 390×844 portrait**, and its config is symmetric with the other three
-> (`isMobile`/`hasTouch`, `recordVideo`, a correctly `.har`-suffixed `recordHar`). A `playwright-mobile`
-> server was registered on 2026-09-14 — before that the config existed but nothing loaded it, so it
-> recorded nothing. **`.mcp.json` is gitignored, so this is per-machine**: on a checkout without that
-> entry the config is inert again, and the tell is that `test-results/mobile/` never appears.
-> **Its first recording was still unconfirmed at the time of writing** — MCP servers bind at session
-> start, so the lane cannot be exercised until Claude Code restarts.
+**GIF only — no video attachment.** No lane config records video (`recordVideo` was removed
+2026-09-21: the capture was unreliable in practice — a `test-results/<lane>/video/` directory that
+read empty mid-session was indistinguishable from capture being off, and the file only flushed on
+`browser_close`, which made it useless for a run that was still going). Motion evidence is **built
+from the run's own PNG stills** (below), never from a recorded video file — do not reintroduce
+`recordVideo` or a `.webm` attachment without re-adding the guard in
+`scripts/unit/playwright-lane-configs.test.mjs`.
 
 **A portrait clip needs a portrait canvas.** The defaults assume a landscape frame, so a 390×844 mobile
 still lands in a 960×720 canvas as a 333×720 strip between white bars. Pass

@@ -3,7 +3,7 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-09-17",
+    "generated": "2026-09-18",
     "totalSuites": 143,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
@@ -411,7 +411,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 47,
+      "testCount": 50,
       "estimatedMinutes": 31,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -662,8 +662,8 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 53,
-      "estimatedMinutes": 36,
+      "testCount": 73,
+      "estimatedMinutes": 50,
       "agent": "qa-backend-expert",
       "tags": [
         "customer",
@@ -676,7 +676,8 @@
         "customer"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "027",
@@ -716,7 +717,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 18,
+      "testCount": 20,
       "estimatedMinutes": 27,
       "agent": "qa-backend-expert",
       "tags": [
@@ -738,7 +739,7 @@
       "clickDriven": true,
       "lanes": {
         "machine": 9,
-        "browser": 9,
+        "browser": 11,
         "manual": 0
       }
     },
@@ -3275,7 +3276,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 80,
+      "testCount": 79,
       "estimatedMinutes": 61,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3317,7 +3318,7 @@
         "VirtoCommerce.OpenTelemetry",
         "VirtoCommerce.ApplicationInsights"
       ],
-      "notes": "VCST-5544. Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) — without it every telemetry assertion is unverifiable, not failing. Adaptive sampling on the AI resource (~1-in-8) means a single request may leave no telemetry: repeat >=14x or disable sampling before concluding a signal is absent. 4 cases are Manual (InputCaptureMode matrix + bridge-off + breaking-change communication) and need an ISOLATED stand: the settings bind through a cached IOptions and are read only at startup, so each change is an appsettings edit + platform restart. Excluded from the backend/full selections until /qa-test 5g promotion — 19 cases are still Draft and UCPO-005/014/018 intentionally document defects that are OPEN."
+      "notes": "VCST-5544. Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) — without it every telemetry assertion is unverifiable, not failing. Adaptive sampling on the AI resource (~1-in-8) means a single request may leave no telemetry: repeat >=14x or disable sampling before concluding a signal is absent. 4 cases are Manual (InputCaptureMode matrix + bridge-off + breaking-change communication) and need an ISOLATED stand: the settings bind through a cached IOptions and are read only at startup, so each change is an appsettings edit + platform restart. Excluded from the backend/full selections until /qa-test 5g promotion — 19 cases are still Draft and UCPO-005/014/018 intentionally document defects that are OPEN. RESOLUTION RULES (apply to every case in this suite). <SEARCH_TERM>: live-discover a term that returns >=1 product ON THIS env (POST /api/catalog/search/products; take a word from a returned product name) and never hardcode it — the former literal \"bolt\" returned 0 products on a fashion catalog, so the suite did not port between environments. REST context: every /ucp/v1 call also needs context:{currency:{{CURRENCY_CODE}},language:{{CULTURE_NAME}}}; without it even a valid store returns INVALID_OPERATION, because the MCP path defaults it and REST does not. SPAN TYPE: on an OpenTelemetry-exporter build every internal span exports as type=\"InProc\", so filtering on type in (\"UCP\",\"XAPI\",\"MCP\",\"VirtoCommerce\") returns ZERO rows and reads as a telemetry blackout — discriminate on the span NAME prefix (\"UCP \" / \"XAPI \" / \"VC \") or on customDimensions[\"vc.dependency.system\"]. SAMPLING: measured 2026-09-17 at microsoft.sample_rate=50 (not the ~1-in-8 recorded earlier), dropping to 33/25/20 under bursts — fire >=20 requests paced ~0.7s apart before claiming a signal is absent, and state how many you fired."
     },
     {
       "id": "095",
@@ -3375,7 +3376,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 37,
+      "testCount": 38,
       "estimatedMinutes": 40,
       "agent": "qa-frontend-expert",
       "tags": [

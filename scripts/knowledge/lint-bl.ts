@@ -104,16 +104,26 @@ interface Finding {
  * ratchet caught it on the first run, which is exactly what it is for.
  */
 export const BLC_002_BASELINE: Record<string, number> = {
-  "BL-API-001": 26, "BL-API-002": 7, "BL-API-003": 16, "BL-API-004": 25, "BL-CART-018": 6,
-  "BL-CFG-001": 2, "BL-CFG-003": 8, "BL-CFG-004": 4, "BL-CFG-007": 4, "BL-CFG-008": 5,
-  "BL-CMS-001": 1, "BL-CMS-002": 1, "BL-CMS-003": 1, "BL-CMS-004": 1, "BL-CMS-005": 1,
-  "BL-CMS-006": 1, "BL-CMS-007": 1, "BL-CMS-008": 1, "BL-CMS-009": 1, "BL-CMS-010": 1,
-  "BL-CMS-011": 1, "BL-CR-002": 3, "BL-CR-003": 2, "BL-CR-004": 3, "BL-CR-005": 2,
-  "BL-CR-006": 1, "BL-CR-007": 2, "BL-CR-011": 1, "BL-CR-014": 1, "BL-CR-015": 1,
-  "BL-CROSS-013": 1, "BL-GA4-001": 10, "BL-GA4-002": 5, "BL-GA4-003": 14, "BL-GA4-004": 4,
-  "BL-PAY-002": 4, "BL-PAY-005": 6, "BL-PAY-006": 1, "BL-SEC-001": 6, "BL-SEC-002": 3,
-  "BL-SEC-003": 8, "BL-SEC-004": 6, "BL-SEC-005": 2, "BL-STORE-002": 1, "BL-STORE-003": 3,
-  "BL-STORE-004": 9,
+  // Shrunk 2026-09-19 (REG-2026-09-19-1035 follow-up). 36 entries removed:
+  // BL-GA4-001..004 were PROMOTED into the oracle (Domain 26) and their 33 citations are now real;
+  // the rest were converted to declared forward-references with `npm run bl:remap --propose`,
+  // which lint-bl.ts exempts from BLC-002 by design. Per BLC-002: fix + de-baseline, never widen.
+  // Remaining entries are the BL-SEC-* family, whose citing rows in suite 044 are still unauthored —
+  // relabelling those would hide the debt rather than pay it.
+  "BL-SEC-001": 3, "BL-SEC-002": 1, "BL-SEC-003": 8, "BL-SEC-004": 5,
+  "BL-SEC-005": 2,
+  // BL-CFG-003/004/007/008 REMOVED 2026-09-19 — the tool bug that stranded them is fixed.
+  // They were briefly restored here because `npm run bl:remap --propose` reported "0 case(s) in
+  // 0 file(s)" for all four while THIS lint reported 4/1/4/5 citing cases in 072e. The cause was
+  // in bl:remap, not in the data: it read suites with `readFileSync(f, "utf8")`, which does not
+  // strip a UTF-8 BOM, so the first header cell parsed as "﻿ID", `indexOf("ID")` returned
+  // -1, and its `if (ci < 0 || ii < 0) continue;` guard dropped all 13 BOM-carrying suites
+  // silently. Same class as the bug that taught `parseSuite` `bom: true` (see buildCoverage).
+  // bl:remap now strips/restores the BOM and REPORTS every suite it skips; the 14 citations were
+  // converted by the sanctioned path and both tools now agree id-for-id and case-for-case.
+  // BL-SEC-001 (6→3) and BL-SEC-002 (3→1) are also tightened to their measured counts. The old
+  // numbers predated the 044 authoring pass; the ratchet accepts a shrink silently, so an
+  // entry left above its real count is headroom the next drift can grow into unnoticed.
 };
 
 const find = (rule: string, severity: Severity, id: string, message: string): Finding => ({ rule, severity, id, message });

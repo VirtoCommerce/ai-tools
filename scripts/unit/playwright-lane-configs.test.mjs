@@ -9,8 +9,7 @@
 //
 // The same reasoning covers the other per-lane invariants asserted here: each is silent when wrong.
 // Two lanes sharing a `recordHar.path` or an `outputDir` means one lane quietly overwrites the
-// other's evidence; a missing `recordVideo` means reports-policy.md §5.2 has no frames to build a
-// GIF from; a dropped Firefox occlusion pref makes every click on that lane time out.
+// other's evidence; a dropped Firefox occlusion pref makes every click on that lane time out.
 //
 // These configs are read by the MCP servers at startup, NOT by this repo's code, so nothing else
 // would ever catch a malformed one.
@@ -46,22 +45,29 @@ test("recordHar.path is a FILE path ending in .har (B-10, regressed twice)", () 
   }
 });
 
-test("every lane records video into its own directory (reports-policy.md §5.2)", () => {
-  for (const { file, lane, cfg } of LANES) {
-    const video = cfg.browser?.contextOptions?.recordVideo;
-    assert.ok(video?.dir, `${file}: no recordVideo.dir — §5.2 motion evidence has no frames to draw on`);
-    assert.ok(video.dir.includes(`/${lane}/`), `${file}: recordVideo.dir "${video.dir}" is not lane-scoped`);
-    assert.ok(video.size?.width > 0 && video.size?.height > 0, `${file}: recordVideo.size is not set`);
+test("HAR captures request/response bodies, not just headers (VCST triage 2026-09-19)", () => {
+  // `omitContent: true` shipped on all four lanes and made every HAR body-less: a captured GraphQL
+  // document or payload was simply absent, while the .har file existed and looked healthy. Measured
+  // on REG-2026-09-18-1818 — `grep -c salesRepCustomerCounts session.har` returned 0 for a request
+  // that demonstrably occurred. That silently defeats reports.md §8, which directs a report to
+  // reference the HAR for exactly this evidence, so a verifier had to re-capture documents by hand.
+  // `omitContent` is also deprecated; `content` is the supported option (embed | attach | omit).
+  for (const { file, cfg } of LANES) {
+    const har = cfg.browser?.contextOptions?.recordHar;
+    assert.equal(har.omitContent, undefined,
+      `${file}: recordHar.omitContent is deprecated AND body-less — use content: "embed"`);
+    assert.equal(har.content, "embed",
+      `${file}: recordHar.content is "${har.content}" — must be "embed" so bodies land in the .har. ` +
+      `"omit" reproduces the original defect; "attach" writes bodies beside a .zip, which the repo's ` +
+      `*.har globs (regression-triage.ts, bundle-evidence.ts) do not read`);
   }
 });
 
 test("lane artifact paths never collide", () => {
-  for (const key of ["outputDir", "har", "video"]) {
+  for (const key of ["outputDir", "har"]) {
     const seen = new Map();
     for (const { file, cfg } of LANES) {
-      const value = key === "outputDir" ? cfg.outputDir
-        : key === "har" ? cfg.browser?.contextOptions?.recordHar?.path
-          : cfg.browser?.contextOptions?.recordVideo?.dir;
+      const value = key === "outputDir" ? cfg.outputDir : cfg.browser?.contextOptions?.recordHar?.path;
       assert.ok(!seen.has(value),
         `${file} shares ${key} "${value}" with ${seen.get(value)} — one lane would overwrite the other's evidence`);
       seen.set(value, file);

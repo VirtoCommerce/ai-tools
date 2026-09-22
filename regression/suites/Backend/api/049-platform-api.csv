@@ -1,12 +1,12 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-API-001,Catalog API - Get Products List,API > Catalog,Critical,BL-API-001; BL-API-002; BL-API-004,ECL-2.1,Admin credentials available; BACK_URL accessible,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
+API-001,Catalog API - Get Products List,API > Catalog,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-002; PROPOSED-BL-API-004,ECL-2.1,Admin credentials available; BACK_URL accessible,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with admin Bearer token and JSON body {""take"":20,""skip"":0}
 [WAIT] Wait for 200 response","[STATE] Response status is 200 OK
 [FORMAT] Response contains items array
 [FORMAT] Each item object has id, name, code fields
 [FORMAT] Response includes totalCount pagination metadata
 [FORMAT] Optional aggregations array present",[API] HTTP response status 200; [NETWORK] Response time under 1000ms; [CONSOLE] No JavaScript errors in console,Non-200 status code; Missing items array in response; Absent totalCount field; 401 Unauthorized if token missing,none,Platform API; smoke-baseline,Automated
-API-002,Catalog API - Get Product by ID,API > Catalog,Critical,BL-API-001; BL-API-004,ECL-2.1,At least one product exists in catalog,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
+API-002,Catalog API - Get Product by ID,API > Catalog,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-004,ECL-2.1,At least one product exists in catalog,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with body {""take"":1,""skip"":0}
 [CAPTURE] Extract first product id from items[0].id
 [HTTP] GET {{BACK_URL}}/api/catalog/products/{id} with the extracted ID and admin Bearer token
@@ -14,7 +14,7 @@ API-002,Catalog API - Get Product by ID,API > Catalog,Critical,BL-API-001; BL-AP
 [FORMAT] Product contains reviews, images, variations fields
 [FORMAT] SEO info object populated
 [FORMAT] Category assignments array present",[API] HTTP response status 200; [NETWORK] Response payload size reasonable (under 500KB); [CONSOLE] No errors,Non-200 status; Missing required detail fields; Empty or null SEO info,none,Platform API; smoke-baseline,Automated
-API-003,Catalog API - Search Products,API > Catalog,Critical,BL-API-001; BL-API-002; BL-API-004,ECL-2.1; ECL-8.1,Products exist in catalog index,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; nomatch_phrase=zzznonexistentproductxyz,"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
+API-003,Catalog API - Search Products,API > Catalog,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-002; PROPOSED-BL-API-004,ECL-2.1; ECL-8.1,Products exist in catalog index,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; nomatch_phrase=zzznonexistentproductxyz,"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with body {""take"":1,""skip"":0}
 [CAPTURE] Derive a search term from the first word of items[0].name
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with body {""searchPhrase"":""<derived term>"",""take"":20,""skip"":0}
@@ -26,13 +26,13 @@ API-003,Catalog API - Search Products,API > Catalog,Critical,BL-API-001; BL-API-
 [MATH] totalCount=0 for no-match search
 [MATH] totalCount >= 1 for the derived-term search
 [FORMAT] Response structure (items[], totalCount) consistent across both calls",[API] HTTP status 200 for both requests; [CONSOLE] No errors,Status other than 200; searchPhrase match returns empty items; No-match phrase returns items; totalCount not zero for no-match phrase,none,Platform API; smoke-baseline,Automated
-API-004,Pricing API - Get Product Prices,API > Pricing,Critical,BL-API-001; BL-API-004,ECL-2.1,Products with prices configured,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; store_id={{STORE_ID}},"[ACT] POST {{BACK_URL}}/api/pricing/evaluate with product IDs array
+API-004,Pricing API - Get Product Prices,API > Pricing,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-004,ECL-2.1,Products with prices configured,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; store_id={{STORE_ID}},"[ACT] POST {{BACK_URL}}/api/pricing/evaluate with product IDs array
 [WAIT] Wait for 200 response","[FORMAT] Price objects returned for each product ID
 [FORMAT] ListPrice field present and numeric
 [FORMAT] SalePrice field present and numeric
 [FORMAT] Currency code matches store configuration
 [FORMAT] Price tiers array included if tier pricing configured",[API] HTTP status 200; [NETWORK] Response includes all requested product IDs; [ADMIN] Prices match values set in Admin pricing module,Missing ListPrice or SalePrice; Currency code mismatch; 404 for valid product IDs,none,Platform API; smoke-baseline,Automated
-API-005,Pricing API - Price Calculation with Quantity,API > Pricing,High,BL-API-001; BL-API-004,ECL-2.1,Tier pricing configured for test products,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; qty_1=1; qty_10=10; qty_100=100,"[ACT] POST {{BACK_URL}}/api/pricing/evaluate with productId={{TEST_SKU}}, quantity=1
+API-005,Pricing API - Price Calculation with Quantity,API > Pricing,High,PROPOSED-BL-API-001; PROPOSED-BL-API-004,ECL-2.1,Tier pricing configured for test products,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; qty_1=1; qty_10=10; qty_100=100,"[ACT] POST {{BACK_URL}}/api/pricing/evaluate with productId={{TEST_SKU}}, quantity=1
 [CAPTURE] Record per-unit price at qty=1
 [ACT] POST with quantity=10
 [CAPTURE] Record per-unit price at qty=10
@@ -40,13 +40,13 @@ API-005,Pricing API - Price Calculation with Quantity,API > Pricing,High,BL-API-
 [MATH] Per-unit price at qty=100 is less than or equal to qty=10
 [FORMAT] Price breakdown shows tier details
 [STATE] Price breakdown includes a tier identifier or quantity threshold for each tier boundary",[API] HTTP status 200 for all three requests; [NETWORK] All three requests complete; [ADMIN] Tier thresholds match Admin pricing configuration,Tier pricing not applied; Higher quantity has higher per-unit price; No tier detail in breakdown,none,Platform API; smoke-baseline,Automated
-API-006,Inventory API - Check Product Availability,API > Inventory,Critical,BL-API-001; BL-API-004,ECL-2.1,Products with inventory configured,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}},"[HTTP] GET {{BACK_URL}}/api/inventory/products/{id} with admin token
+API-006,Inventory API - Check Product Availability,API > Inventory,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-004,ECL-2.1,Products with inventory configured,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}},"[HTTP] GET {{BACK_URL}}/api/inventory/products/{id} with admin token
 [WAIT] Wait for response","[FORMAT] Response includes inStockQuantity numeric field
 [FORMAT] fulfillmentCenter object present with id and name
 [FORMAT] allowPreorder boolean flag present
 [FORMAT] allowBackorder boolean flag present
 [STATE] In-stock status consistent with inStockQuantity value",[API] HTTP status 200; [NETWORK] Response time under 300ms; [ADMIN] Stock quantity matches Admin inventory module value,Response time over 300ms; Missing inStockQuantity; Missing fulfillmentCenter; 404 for valid product,none,Platform API; smoke-baseline,Automated
-API-007,Inventory API - Reserve Stock,API > Inventory,High,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Product with available stock,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; order_qty=1,"[HTTP] GET {{BACK_URL}}/api/inventory/products/{id} to record initial inStockQuantity
+API-007,Inventory API - Reserve Stock,API > Inventory,High,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Product with available stock,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; test_sku={{TEST_SKU}}; order_qty=1,"[HTTP] GET {{BACK_URL}}/api/inventory/products/{id} to record initial inStockQuantity
 [CAPTURE] Record initial inStockQuantity
 [ACT] Place an order for {{TEST_SKU}} (create cart, add item, checkout) to consume stock — no /reserve endpoint exists on the Inventory module
 [WAIT] Wait for order creation confirmation
@@ -57,7 +57,7 @@ API-007,Inventory API - Reserve Stock,API > Inventory,High,BL-API-001; BL-API-00
 [MATH] inStockQuantity after order = inStockQuantity before order - ordered quantity
 [STATE] PATCH inventory adjustment returns 200/204
 [MATH] inStockQuantity after PATCH restore = inStockQuantity before order",[API] HTTP status 200/201 for order creation; 200/204 for PATCH adjustment; [NETWORK] Both requests complete without timeout; [ADMIN] Inventory module reflects the order-driven decrease and PATCH restore,Order creation fails with 4xx/5xx; inStockQuantity does not decrease after order; Stock not restored after PATCH adjustment,delete created order via API,Platform API; smoke-baseline,Automated
-API-008,Orders API - Get Orders List,API > Orders,Critical,BL-API-001; BL-API-002; BL-API-004,ECL-2.1,Orders exist in the system,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[HTTP] POST {{BACK_URL}}/api/order/customerOrders/search with admin Bearer token, body {""take"":20,""skip"":0}
+API-008,Orders API - Get Orders List,API > Orders,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-002; PROPOSED-BL-API-004,ECL-2.1,Orders exist in the system,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[HTTP] POST {{BACK_URL}}/api/order/customerOrders/search with admin Bearer token, body {""take"":20,""skip"":0}
 [WAIT] Wait for 200 response
 [ASSERT] Verify response structure
 [ASSERT] Check pagination
@@ -66,7 +66,7 @@ API-008,Orders API - Get Orders List,API > Orders,Critical,BL-API-001; BL-API-00
 [STATE] Pagination works: skip/take params respected
 [MATH] returned items.length = totalCount when take >= totalCount (no further pages)
 [STATE] Status filter returns only matching orders",[API] HTTP status 200; [NETWORK] Response includes expected pagination metadata; [ADMIN] Orders visible in Admin order management panel,Non-200 status; Missing order fields; Pagination params ignored; Status filter returns incorrect orders,none,Platform API; smoke-baseline,Automated
-API-009,Orders API - Get Order by ID,API > Orders,Critical,BL-API-001; BL-API-004,ECL-2.1,At least one order exists,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[NAV] GET {{BACK_URL}}/api/order/customerOrders
+API-009,Orders API - Get Order by ID,API > Orders,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-004,ECL-2.1,At least one order exists,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[NAV] GET {{BACK_URL}}/api/order/customerOrders
 [WAIT] Wait for list
 [ACT] Extract first order ID from response
 [NAV] GET {{BACK_URL}}/api/order/customerOrders/{id}
@@ -75,7 +75,7 @@ API-009,Orders API - Get Order by ID,API > Orders,Critical,BL-API-001; BL-API-00
 [FORMAT] Payment method info present
 [MATH] Order total = sum(lineItems) + shipping - discounts
 [FORMAT] createdDate and modifiedDate timestamps populated",[API] HTTP status 200; [NETWORK] Response includes complete order object; [ADMIN] Order details match Admin view of same order,Missing lineItems; Order total math mismatch; Null timestamps; Missing shipping or payment info,none,Platform API; smoke-baseline,Automated
-API-010,Orders API - Create Order,API > Orders,Critical,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Products available; user authenticated,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}},"[ACT] POST {{BACK_URL}}/api/carts to create cart
+API-010,Orders API - Create Order,API > Orders,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Products available; user authenticated,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}},"[ACT] POST {{BACK_URL}}/api/carts to create cart
 [WAIT] Wait for cart ID
 [ACT] POST to add product {{TEST_SKU}} to cart
 [WAIT] Wait for response
@@ -86,7 +86,7 @@ API-010,Orders API - Create Order,API > Orders,Critical,BL-API-001; BL-API-003; 
 [STATE] Cart lineItems array includes the added SKU with quantity=1 after the add-item call
 [STATE] Cart shipping address, shipping method, and payment method are all set after the PUT calls
 [FORMAT] Cart is valid/ready for checkout (isValid=true or equivalent readiness flag)",[API] HTTP 201 for cart; 200 for cart update calls; [NETWORK] All API calls succeed; [ADMIN] Cart-driven order creation covered separately by xAPI/checkout suites — no cart-to-order conversion endpoint exists on the platform REST API,Cart creation fails; Product not added; Address/shipping/payment PUT calls fail; Cart not marked ready for checkout,delete created cart via API,Platform API; smoke-baseline,Automated
-API-011,Customer API - Get Customer Profile,API > Customer,High,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Test user account exists; Admin credentials available (customer:read permission required — /api/members is permission-gated not self-scoped),admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; user_email={{USER_EMAIL}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials ({{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}}), context-free (no storeId/organization_id), to obtain Bearer token
+API-011,Customer API - Get Customer Profile,API > Customer,High,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Test user account exists; Admin credentials available (customer:read permission required — /api/members is permission-gated not self-scoped),admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; user_email={{USER_EMAIL}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials ({{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}}), context-free (no storeId/organization_id), to obtain Bearer token
 [WAIT] Receive access token
 [HTTP] POST {{BACK_URL}}/api/members/search with admin Bearer token, body {""memberType"":""Contact"",""keyword"":""{{USER_EMAIL}}""} to look up the test user's member id
 [CAPTURE] Extract userId from search results
@@ -96,7 +96,7 @@ API-011,Customer API - Get Customer Profile,API > Customer,High,BL-API-001; BL-A
 [FORMAT] Addresses collection present
 [FORMAT] Organizations array present if B2B user
 [STATE] Returned email matches {{USER_EMAIL}} (the looked-up member)",[API] HTTP status 200; [NETWORK] Response size reasonable; [ADMIN] Profile data matches Admin customer view,Non-200 status despite admin customer:read permission; Missing email or name; Empty addresses for user with configured address; member lookup returns no results,none,Platform API; smoke-baseline,Automated
-API-012,Customer API - Update Customer Profile,API > Customer,High,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Disposable AGENT-TEST- member account exists (not a live/shared member),admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; agent_test_member_email=AGENT-TEST-api012@test.virtocommerce.com; original_first_name=Test; updated_first_name=UpdatedTest,"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials ({{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}}), context-free (no storeId/organization_id), to obtain Bearer token
+API-012,Customer API - Update Customer Profile,API > Customer,High,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Disposable AGENT-TEST- member account exists (not a live/shared member),admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; agent_test_member_email=AGENT-TEST-api012@test.virtocommerce.com; original_first_name=Test; updated_first_name=UpdatedTest,"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials ({{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}}), context-free (no storeId/organization_id), to obtain Bearer token
 [SETUP] Ensure a disposable AGENT-TEST- member exists (create via POST {{BACK_URL}}/api/members if not present)
 [HTTP] GET {{BACK_URL}}/api/members/{agentTestMemberId} with admin Bearer token to fetch the full member document
 [CAPTURE] Record current firstName and the full member object
@@ -108,14 +108,14 @@ API-012,Customer API - Update Customer Profile,API > Customer,High,BL-API-001; B
 [FORMAT] Subsequent GET returns firstName='UpdatedTest'
 [STATE] Other profile fields unchanged after update (full document round-trip preserved them)
 [FORMAT] modifiedDate timestamp updated after PUT",[API] HTTP 200/204 for PUT; [NETWORK] GET after PUT returns updated value; [ADMIN] Admin customer view reflects updated name,PUT returns 4xx; GET after PUT still shows old name; Other fields modified; modifiedDate not updated,PUT the full original member document to restore firstName (already done in Steps); delete the disposable AGENT-TEST- member via API,Platform API; smoke-baseline,Automated
-API-013,Customer API - Create Organization,API > Customer,High,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Admin credentials available,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; org_name=TestOrg_API013,"[ACT] POST {{BACK_URL}}/api/organizations with name='TestOrg_API013', description, addresses
+API-013,Customer API - Create Organization,API > Customer,High,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Admin credentials available,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; org_name=TestOrg_API013,"[ACT] POST {{BACK_URL}}/api/organizations with name='TestOrg_API013', description, addresses
 [WAIT] Wait for 200/201 response
 [ASSERT] Verify organization created with ID
 [NAV] GET {{BACK_URL}}/api/members/organizations","[STATE] POST returns 200 or 201
 [FORMAT] Created org has generated non-empty id
 [STATE] Org retrievable via GET /api/members/organizations list
 [FORMAT] Org contains provided name and description",[API] HTTP 200/201 for POST; [NETWORK] GET list includes new org; [ADMIN] Organization appears in Admin B2B organizations panel,POST returns 4xx; Created org has no ID; Org not retrievable after creation,delete created organization via API,Platform API; smoke-baseline,Automated
-API-014,Authentication API - Login,API > Auth,Critical,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Valid user credentials available,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}},"[ACT] POST {{BACK_URL}}/connect/token with grant_type=password, username={{USER_EMAIL}}, password={{USER_PASSWORD}}
+API-014,Authentication API - Login,API > Auth,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Valid user credentials available,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}},"[ACT] POST {{BACK_URL}}/connect/token with grant_type=password, username={{USER_EMAIL}}, password={{USER_PASSWORD}}
 [WAIT] Wait for token response
 [ASSERT] Verify token fields
 [ASSERT] Check expiration
@@ -123,7 +123,7 @@ API-014,Authentication API - Login,API > Auth,Critical,BL-API-001; BL-API-003; B
 [FORMAT] token_type equals 'Bearer'
 [MATH] expires_in >= 1 (positive integer)
 [STATE] Authenticated GET request using returned token returns 200",[API] HTTP 200 for token endpoint; [NETWORK] Token usable in Authorization header; [CONSOLE] No auth errors in console,Non-200 for valid credentials; Missing access_token; token_type not Bearer; Token rejected on authenticated request,none,Platform API; smoke-baseline,Automated
-API-015,Authentication API - Invalid Credentials,API > Auth,Critical,BL-API-001; BL-API-003,ECL-2.1,Valid URL accessible,base_url={{BACK_URL}}; wrong_password=WrongPass123!; nonexistent_email=nouser@invalid.test,"[ACT] POST {{BACK_URL}}/connect/token with valid email + wrong password
+API-015,Authentication API - Invalid Credentials,API > Auth,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-003,ECL-2.1,Valid URL accessible,base_url={{BACK_URL}}; wrong_password=WrongPass123!; nonexistent_email=nouser@invalid.test,"[ACT] POST {{BACK_URL}}/connect/token with valid email + wrong password
 [WAIT] Wait for error response
 [ASSERT] Verify error status and body
 [ACT] POST {{BACK_URL}}/connect/token with nonexistent email
@@ -131,7 +131,7 @@ API-015,Authentication API - Invalid Credentials,API > Auth,Critical,BL-API-001;
 [STATE] Error message does not reveal whether user exists (anti-enumeration)
 [STATE] No access_token in error response
 [FORMAT] Response body does not contain stack traces or internal error details",[API] HTTP 400 for both invalid attempts; [NETWORK] No tokens issued; [CONSOLE] No server errors leaked to response,Status 200 returned for invalid credentials; access_token present in error response; Stack trace exposed in response body; User existence revealed in error message,none,Platform API; smoke-baseline,Automated
-API-016,Authentication API - Token Refresh,API > Auth,High,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Valid refresh token obtained from login,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}},"[ACT] POST {{BACK_URL}}/connect/token with password grant to obtain refresh_token
+API-016,Authentication API - Token Refresh,API > Auth,High,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Valid refresh token obtained from login,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}},"[ACT] POST {{BACK_URL}}/connect/token with password grant to obtain refresh_token
 [WAIT] Record access_token and refresh_token
 [ACT] POST {{BACK_URL}}/connect/token with grant_type=refresh_token, refresh_token=<recorded refresh_token>
 [WAIT] Wait for new token response
@@ -140,14 +140,14 @@ API-016,Authentication API - Token Refresh,API > Auth,High,BL-API-001; BL-API-00
 [FORMAT] New refresh_token issued
 [STATE] Authenticated request with new access_token returns 200
 [STATE] Old access_token may still work until its expiry window",[API] HTTP 200 for refresh POST; [NETWORK] New token accepted on subsequent authenticated request; [CONSOLE] No auth errors,Refresh POST returns 4xx; No new access_token returned; New token rejected on authenticated request,none,Platform API; smoke-baseline,Automated
-API-017,Store API - Get Store Settings,API > Store,High,BL-API-001; BL-API-004,ECL-2.1,STORE_ID configured; admin auth available,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; store_id={{STORE_ID}},"[NAV] GET {{BACK_URL}}/api/stores/{{STORE_ID}} with admin Bearer token
+API-017,Store API - Get Store Settings,API > Store,High,PROPOSED-BL-API-001; PROPOSED-BL-API-004,ECL-2.1,STORE_ID configured; admin auth available,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; store_id={{STORE_ID}},"[NAV] GET {{BACK_URL}}/api/stores/{{STORE_ID}} with admin Bearer token
 [WAIT] Wait for 200 response","[FORMAT] Store data returned with id, name, url
 [FORMAT] defaultCurrency field set
 [FORMAT] currencies array lists available currencies
 [FORMAT] defaultLanguage field set
 [FORMAT] languages array lists available languages
 [FORMAT] seoInfo object populated",[API] HTTP status 200; [NETWORK] Response includes all store config fields; [ADMIN] Store settings match Admin Store management view,Non-200 status; Missing defaultCurrency or defaultLanguage; Empty currencies or languages arrays,none,Platform API; smoke-baseline,Automated
-API-018,Catalog API - Create Product,API > Catalog,High,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Admin credentials available; catalog exists,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; product_name=TestProduct_API018; product_code=TEST-API018,"[ACT] POST {{BACK_URL}}/api/catalog/products with name='TestProduct_API018', code='TEST-API018', categoryId
+API-018,Catalog API - Create Product,API > Catalog,High,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Admin credentials available; catalog exists,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; product_name=TestProduct_API018; product_code=TEST-API018,"[ACT] POST {{BACK_URL}}/api/catalog/products with name='TestProduct_API018', code='TEST-API018', categoryId
 [WAIT] Wait for 200/201 response
 [ASSERT] Verify product created
 [NAV] GET {{BACK_URL}}/api/catalog/products/{newId}
@@ -157,7 +157,7 @@ API-018,Catalog API - Create Product,API > Catalog,High,BL-API-001; BL-API-003; 
 [STATE] Product retrievable by new ID via GET
 [STATE] Product appears in category product list
 [STATE] DELETE for cleanup returns 200/204",[API] HTTP 200/201 for POST; [NETWORK] GET by new ID succeeds; [ADMIN] Product appears in Admin catalog,POST returns 4xx; Created product has no id; Product not retrievable after creation; Cleanup DELETE fails,delete created product via API,Platform API; smoke-baseline,Automated
-API-019,Catalog API - Update Product,API > Catalog,High,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Admin credentials available; catalog with at least one category exists,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; product_code=AGENT-TEST-API019; updated_name=AGENT-TEST Product API019 Edited,"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
+API-019,Catalog API - Update Product,API > Catalog,High,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Admin credentials available; catalog with at least one category exists,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; product_code=AGENT-TEST-API019; updated_name=AGENT-TEST Product API019 Edited,"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with body {""take"":1,""skip"":0}
 [CAPTURE] Extract catalogId and categoryId from items[0]
 [HTTP] POST {{BACK_URL}}/api/catalog/products with body {""name"":""AGENT-TEST Product API019"",""code"":""AGENT-TEST-API019"",""catalogId"":""<discovered>"",""categoryId"":""<discovered>"",""variations"":null}
@@ -174,7 +174,7 @@ API-019,Catalog API - Update Product,API > Catalog,High,BL-API-001; BL-API-003; 
 [STATE] Sending variations:null on save does not error (mirrors Admin UI save)
 [FORMAT] modifiedDate updated after save
 [STATE] Cleanup DELETE returns 200/204",[API] HTTP 200 for POST save; PUT /api/catalog/products returns 405; [NETWORK] GET after save reflects new values; [ADMIN] Updated product name visible in Admin catalog,Save POST returns 4xx/405; PUT used as the save verb; GET still shows old name after save; 500 when variations:null included; modifiedDate not updated,delete created product via DELETE {{BACK_URL}}/api/catalog/products?ids={id},Platform API; smoke-baseline,Automated
-API-020,Cart API - Create and Manage Cart,API > Cart,Critical,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Products available; user authenticated,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}},"[ACT] POST {{BACK_URL}}/api/carts to create new cart
+API-020,Cart API - Create and Manage Cart,API > Cart,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Products available; user authenticated,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}},"[ACT] POST {{BACK_URL}}/api/carts to create new cart
 [WAIT] Receive cart ID
 [ACT] POST to add {{TEST_SKU}} item to cart
 [WAIT] Wait for response
@@ -193,7 +193,7 @@ API-020,Cart API - Create and Manage Cart,API > Cart,Critical,BL-API-001; BL-API
 [MATH] total = subtotal + tax (subtotal = sum of line totals)
 [STATE] Item removal reduces cart to empty
 [STATE] Cart DELETE returns 200/204",[API] HTTP 200 for cart create; 200 for item operations including the query-param quantity-update PUT; [NETWORK] Totals consistent across requests; [ADMIN] Cart visible in Admin if needed,Cart creation fails; Item price incorrect; Quantity does not change after query-param PUT (silent no-op from sending quantity as a JSON body instead); Totals math incorrect; Item removal fails; Cart delete fails,delete created cart via API,Platform API; smoke-baseline,Automated
-API-021,Cart API - Apply Coupon,API > Cart,High,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Cart with items; valid coupon code configured,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}}; coupon_code=@td(COUPON_10PCT.code),"[ACT] Create cart
+API-021,Cart API - Apply Coupon,API > Cart,High,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Cart with items; valid coupon code configured,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}}; coupon_code=@td(COUPON_10PCT.code),"[ACT] Create cart
 [WAIT] Wait for cart ID
 [ACT] Add item {{TEST_SKU}} to cart
 [WAIT] Confirm items added
@@ -208,7 +208,7 @@ API-021,Cart API - Apply Coupon,API > Cart,High,BL-API-001; BL-API-003; BL-API-0
 [STATE] Coupon removal returns 200/204
 [STATE] Cart coupons[] no longer contains the code after removal
 [MATH] totals after coupon removal = pre-coupon totals (exact match)",[API] HTTP 200/201/204 for coupon operations; [NETWORK] Coupon code present in POST/GET cart responses; [ADMIN] Coupon usage count incremented in Admin promotions,Coupon POST returns 4xx; coupon code absent from cart.coupons[] after apply; Coupon removal fails; Totals not restored after removal,delete created cart via API,Platform API; smoke-baseline,Automated
-API-022,Shipping API - Get Shipping Methods,API > Shipping,High,BL-API-001; BL-API-004,ECL-2.1,Cart with items and shipping address set,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}},"[ACT] Create cart
+API-022,Shipping API - Get Shipping Methods,API > Shipping,High,PROPOSED-BL-API-001; PROPOSED-BL-API-004,ECL-2.1,Cart with items and shipping address set,user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}}; test_sku={{TEST_SKU}},"[ACT] Create cart
 [WAIT] Wait for cart ID
 [ACT] Add item {{TEST_SKU}} to cart
 [WAIT] Wait for response
@@ -218,7 +218,7 @@ API-022,Shipping API - Get Shipping Methods,API > Shipping,High,BL-API-001; BL-A
 [FORMAT] Each rate has optionName, rate, currency fields
 [FORMAT] Each rate has a nested shippingMethod object with code and name
 [STATE] At least one shipping rate returned",[API] HTTP status 200; [NETWORK] Methods list non-empty; [ADMIN] Available methods match Admin shipping configuration,Empty shipping rates array; Missing optionName or rate on methods; 4xx error; Missing nested shippingMethod object,delete created cart via API,Platform API; smoke-baseline,Automated
-API-023,API Error Handling - 404 Not Found,API > Errors,High,BL-API-001; BL-API-004,ECL-2.1,API accessible with admin auth,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[NAV] GET {{BACK_URL}}/api/catalog/products/nonexistent-id-xyz with admin token
+API-023,API Error Handling - 404 Not Found,API > Errors,High,PROPOSED-BL-API-001; PROPOSED-BL-API-004,ECL-2.1,API accessible with admin auth,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[NAV] GET {{BACK_URL}}/api/catalog/products/nonexistent-id-xyz with admin token
 [ASSERT] Verify 404 error response structure
 [NAV] GET {{BACK_URL}}/api/order/customerOrders/nonexistent-id-xyz
 [ASSERT] Verify 404 error
@@ -229,7 +229,7 @@ API-023,API Error Handling - 404 Not Found,API > Errors,High,BL-API-001; BL-API-
 [STATE] Unknown endpoint returns 404
 [FORMAT] No stack traces in any error response
 [FORMAT] Error messages are human-readable",[API] HTTP 404 for all three requests; [NETWORK] No 500 errors triggered; [CONSOLE] No unhandled server errors,500 Internal Server Error returned instead of 404; Stack trace exposed in response; No error body returned; Error reveals internal file paths,none,Platform API; smoke-baseline,Automated
-API-024,API Error Handling - Validation Errors,API > Errors,High,BL-API-001; BL-API-004,ECL-2.1; ECL-8.1,API accessible with admin auth,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[ACT] POST {{BACK_URL}}/api/catalog/products with empty JSON body {}
+API-024,API Error Handling - Validation Errors,API > Errors,High,PROPOSED-BL-API-001; PROPOSED-BL-API-004,ECL-2.1; ECL-8.1,API accessible with admin auth,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[ACT] POST {{BACK_URL}}/api/catalog/products with empty JSON body {}
 [ASSERT] Verify 400 response
 [ACT] POST with missing required fields (no name, no code)
 [ASSERT] Verify validation error details
@@ -237,12 +237,12 @@ API-024,API Error Handling - Validation Errors,API > Errors,High,BL-API-001; BL-
 [FORMAT] Validation error response lists specific invalid field names
 [FORMAT] Error messages are descriptive and actionable
 [STATE] No 500 errors returned for any validation scenario",[API] HTTP 400 for all three requests; [NETWORK] No 500 errors; [CONSOLE] No server exception logs,500 returned for validation issues; Generic 'Bad Request' with no field details; No validation error body; Stack trace in response,none,Platform API; smoke-baseline,Automated
-API-025,API Rate Limiting and Headers,API > Security,Critical,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,API accessible with admin auth,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},[ACT] Send 10 rapid sequential GET requests to {{BACK_URL}}/api/catalog/products,"[FORMAT] Rate limit headers present if rate limiting is configured (X-RateLimit-Limit, X-RateLimit-Remaining)
+API-025,API Rate Limiting and Headers,API > Security,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,API accessible with admin auth,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},[ACT] Send 10 rapid sequential GET requests to {{BACK_URL}}/api/catalog/products,"[FORMAT] Rate limit headers present if rate limiting is configured (X-RateLimit-Limit, X-RateLimit-Remaining)
 [FORMAT] CORS Access-Control-Allow-Origin restricted to expected origins only
 [FORMAT] X-Content-Type-Options: nosniff present
 [STATE] Server version not disclosed in Server or X-Powered-By headers
 [FORMAT] Content-Type header is set to application/json on all 10 responses",[API] HTTP 200 for all 10 requests (unless rate limit triggered); [NETWORK] Response headers captured for all 10 requests; [CONSOLE] No server errors from rapid requests,Server version string in response headers; CORS allows wildcard (*) origin; X-Content-Type-Options absent; 500 errors under rapid load,none,Platform API; smoke-baseline,Automated
-API-026,Platform Modules API - Get Installed Modules,API > Platform,Critical,BL-API-001; BL-API-003; BL-API-004,ECL-2.1,Admin credentials available; platform running,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[NAV] GET {{BACK_URL}}/api/platform/modules with admin Bearer token
+API-026,Platform Modules API - Get Installed Modules,API > Platform,Critical,PROPOSED-BL-API-001; PROPOSED-BL-API-003; PROPOSED-BL-API-004,ECL-2.1,Admin credentials available; platform running,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[NAV] GET {{BACK_URL}}/api/platform/modules with admin Bearer token
 [WAIT] Wait for 200 response
 [ASSERT] Verify modules list structure
 [ASSERT] Verify required core modules present
@@ -252,7 +252,7 @@ API-026,Platform Modules API - Get Installed Modules,API > Platform,Critical,BL-
 [STATE] Core modules (VirtoCommerce.Catalog, VirtoCommerce.Orders, VirtoCommerce.Customer) present and isInstalled=true
 [STATE] GET /health returns 200 with healthy status
 [FORMAT] Health response includes Modules, Cache, SQL Server statuses",[API] HTTP 200 for modules endpoint; [NETWORK] Response includes all core modules; [ADMIN] Module list matches Admin Platform > Modules view; [CONSOLE] No errors,Non-200 status for modules endpoint; Core modules absent or isInstalled=false; Health endpoint returns degraded/unhealthy; 401 Unauthorized for admin token,none,Platform API; smoke-baseline,Automated
-API-027,Pagination Edge Case - Page Zero Request,API > Pagination,High,BL-API-002,ECL-3.1,Admin credentials available; products exist in catalog,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; store_id={{STORE_ID}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
+API-027,Pagination Edge Case - Page Zero Request,API > Pagination,High,PROPOSED-BL-API-002,ECL-3.1,Admin credentials available; products exist in catalog,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; store_id={{STORE_ID}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with admin Bearer token, body {""skip"":0,""take"":0}
 [ASSERT] Verify response status and behavior for take=0
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with body {""skip"":-1,""take"":10}
@@ -262,7 +262,7 @@ API-027,Pagination Edge Case - Page Zero Request,API > Pagination,High,BL-API-00
 [STATE] Negative skip value returns 400 validation error or defaults to 0 — not 500
 [STATE] Baseline request with skip=0 take=10 returns valid product list for comparison
 [FORMAT] totalCount field is accurate in all responses",[API] No 500 errors for edge case pagination values; [NETWORK] Response time under 5000ms for all pagination requests (aligned with the Failure_Signals threshold below — a 1000ms bar false-failed on a live 1292ms baseline skip=0/take=10 request); [CONSOLE] No unhandled exceptions in server logs,500 Internal Server Error for skip=0 take=0; stack trace in response for negative skip; unhandled exception for edge case pagination; response time over 5000ms for edge case params,none,"Platform API; smoke-baseline; Corrected: relaxed the 1000ms network-latency bar to 5000ms — too strict against observed baseline latency, would keep the case red independent of the pagination product bug (2026-08-25)",Draft
-API-028,Pagination Edge Case - Beyond Total Pages,API > Pagination,High,BL-API-002,ECL-3.1,Admin credentials available; products exist in catalog,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
+API-028,Pagination Edge Case - Beyond Total Pages,API > Pagination,High,PROPOSED-BL-API-002,ECL-3.1,Admin credentials available; products exist in catalog,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with admin Bearer token, body {""skip"":0,""take"":10}
 [CAPTURE] Record totalCount from response
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with body {""skip"":999999,""take"":10}
@@ -272,7 +272,7 @@ API-028,Pagination Edge Case - Beyond Total Pages,API > Pagination,High,BL-API-0
 [MATH] totalCount = actual total product count (unaffected by skip value)
 [FORMAT] Response structure identical to normal paginated response
 [STATE] Orders endpoint behaves consistently with catalog endpoint for beyond-range skip",[API] HTTP 200 for all beyond-range requests; [NETWORK] Response time under 1000ms — no expensive full-scan; [CONSOLE] No server errors or warnings for beyond-range pagination,404 or 500 for skip beyond total; null instead of empty array; totalCount changes based on skip value; response time over 5000ms indicating full table scan; inconsistent behavior across endpoints,none,Platform API; smoke-baseline,Draft
-API-029,Pagination Edge Case - Negative Skip and Take Values,API > Pagination,High,BL-API-002,ECL-3.1,Admin credentials available,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
+API-029,Pagination Edge Case - Negative Skip and Take Values,API > Pagination,High,PROPOSED-BL-API-002,ECL-3.1,Admin credentials available,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with admin Bearer token, body {""skip"":-10,""take"":10}
 [ASSERT] Verify server handles negative skip gracefully
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with body {""skip"":0,""take"":-5}
@@ -284,7 +284,7 @@ API-029,Pagination Edge Case - Negative Skip and Take Values,API > Pagination,Hi
 [STATE] Both negative returns 400 or safe defaults — not 500
 [STATE] Non-numeric values return 400 Bad Request with clear validation message
 [FORMAT] Error responses contain meaningful validation messages — no stack traces",[API] No 500 errors for any negative or invalid pagination params; [NETWORK] All responses return within 1000ms; [CONSOLE] No unhandled exceptions in server response,500 Internal Server Error for negative values; stack trace exposed in error response; SQL error from negative offset; unhandled format exception for non-numeric values; server crash or timeout,none,Platform API; smoke-baseline,Draft
-API-030,Large Batch Request - Pagination Limit Enforcement,API > Pagination,High,BL-API-002,ECL-3.1,Admin credentials available; catalog has products,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
+API-030,Large Batch Request - Pagination Limit Enforcement,API > Pagination,High,PROPOSED-BL-API-002,ECL-3.1,Admin credentials available; catalog has products,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with admin Bearer token, body {""skip"":0,""take"":1000}
 [ASSERT] Verify response behavior for large take value
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with body {""skip"":0,""take"":10000}
@@ -428,7 +428,7 @@ API-042,Non-/api Path Auth Challenge Still Redirects (Prefix Boundary Negative C
 [HEADER] Location header is present and non-empty {SPEC}",none,HTTP 401 returned instead of 302 (the /api prefix check overreached beyond its intended scope); Location header missing or empty,none,VCST-5618 | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 API-043,AJAX (X-Requested-With) Request to Non-/api Path Still Returns 401 Directly,API > Platform > Security > Auth Challenge,Critical,BL-AUTH-014,,SignalR push-notifications hub reachable at {{BACK_URL}}/pushNotificationHub; request context has NO admin session cookie and NO Authorization header,back_url={{BACK_URL}},"[HTTP] curl -i --no-location POST {{BACK_URL}}/pushNotificationHub/negotiate with header X-Requested-With: XMLHttpRequest, NO Authorization header, NO session cookie","[STATUS] POST /pushNotificationHub/negotiate with X-Requested-With: XMLHttpRequest (unauthenticated, non-/api path) returns HTTP 401 — self-identified AJAX requests are covered by the same fix regardless of path prefix {SPEC}
 [HEADER] 401 response carries no Location header {SPEC}",none,HTTP 302 returned despite the X-Requested-With header (AJAX-detection regression); response body is HTML (login page) instead of a 401 challenge,none,VCST-5618 | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
-API-044,Catalog API - Create Product With Duplicate Code Rejected,API > Catalog,High,BL-API-003,ECL-8.1,Admin credentials available; catalog exists,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; product_code=AGENT-TEST-API044-DUP,"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
+API-044,Catalog API - Create Product With Duplicate Code Rejected,API > Catalog,High,PROPOSED-BL-API-003,ECL-8.1,Admin credentials available; catalog exists,admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; product_code=AGENT-TEST-API044-DUP,"[AUTH] POST {{BACK_URL}}/connect/token with admin credentials to obtain Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/search/products with body {""take"":1,""skip"":0}
 [CAPTURE] Extract catalogId and categoryId from items[0]
 [HTTP] POST {{BACK_URL}}/api/catalog/products with body {""name"":""AGENT-TEST Product API044"",""code"":""AGENT-TEST-API044-DUP"",""catalogId"":""<discovered>"",""categoryId"":""<discovered>""}
@@ -439,7 +439,7 @@ API-044,Catalog API - Create Product With Duplicate Code Rejected,API > Catalog,
 [STATE] Second POST reusing the same code returns 400/409 — not 200/201
 [BODY] Second-POST error response identifies the code/SKU field as the conflict, not a stack trace
 [STATE] Only one product exists under the reused code (a search by that code returns exactly one product)",[API] HTTP 400/409 for the duplicate-code POST; [NETWORK] No 5xx error,Second POST returns 200/201 (duplicate code silently accepted); 500 Internal Server Error; two products exist under the same code,delete created product(s) via DELETE {{BACK_URL}}/api/catalog/products?ids={id},smoke-baseline,Draft
-API-045,Orders API - Create Order From Empty Cart Rejected (xAPI createOrderFromCart — no REST cart-to-order endpoint exists; see API-010),API > Orders,High,BL-API-003,ECL-3.1,"User authenticated. NOTE: the platform REST API has no cart-to-order conversion endpoint at all (established by API-010 in this same suite — POST {{BACK_URL}}/api/order/customerOrders is the admin order-CRUD create, which has no notion of a cart and will happily create an empty draft order regardless of cart state). This case therefore drives the real cart-to-order path, xAPI createOrderFromCart, instead.",user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with user credentials to obtain a user Bearer token
+API-045,Orders API - Create Order From Empty Cart Rejected (xAPI createOrderFromCart — no REST cart-to-order endpoint exists; see API-010),API > Orders,High,PROPOSED-BL-API-003,ECL-3.1,"User authenticated. NOTE: the platform REST API has no cart-to-order conversion endpoint at all (established by API-010 in this same suite — POST {{BACK_URL}}/api/order/customerOrders is the admin order-CRUD create, which has no notion of a cart and will happily create an empty draft order regardless of cart state). This case therefore drives the real cart-to-order path, xAPI createOrderFromCart, instead.",user_email={{USER_EMAIL}}; user_password={{USER_PASSWORD}},"[AUTH] POST {{BACK_URL}}/connect/token with user credentials to obtain a user Bearer token
 [GQL] POST {{BACK_URL}}/graphql — query { me { id } } — capture the authenticated userId
 [GQL] POST {{BACK_URL}}/graphql — mutation { clearCart(command: { storeId: ""{{STORE_ID}}"" userId: ""<userId>"" }) { id } } — guarantee the cart holds no items
 [GQL] POST {{BACK_URL}}/graphql — query { cart(storeId: ""{{STORE_ID}}"" currencyCode: ""{{CURRENCY_CODE}}"" userId: ""<userId>"") { id itemsCount } } — capture the empty cart's id; confirm itemsCount = 0

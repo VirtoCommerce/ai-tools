@@ -1,0 +1,91 @@
+{
+  "_meta": {
+    "description": "Content-block fixtures for the VCST-4933 Page Builder SHARED COMPONENTS test-data set (master page, linked-placement consumer pages, Draft consumer, A/B control page, and the four shared components). JSON-shaped to the two live API bodies: POST /api/page-builder-shared-components { storeId, name, content:{settings,content[]} } and POST /api/page-builder-pages/grouped/{groupId}/content { settings, content[] }. Applied by scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs; block ids are assigned deterministically at build time (never platform GUIDs).",
+    "block_types": "ONLY the LOWERCASE rendering block types this theme has renderers for: title {heading,title,subtitle} | text {text}. A capitalised \"Text\" block is accepted by the REST API and renders BLANK on the storefront (measured 2026-09-16 on /agent-test-q5-plain: 6 x \"Text\" -> empty content area, zero console errors, very nearly mis-filed as a Critical product bug). The types here are copied from a page PROVEN to render: /qa-homepage-spring-sale.",
+    "placement_marker": "{ \"ref\": \"<COMPONENT_ALIAS>\" } inside a page's content[] is a SEED-TIME marker, not an API shape. buildPageContentBody() replaces it with the real linked placement: a top-level item with EXACTLY three keys {id,type:\"componentRef\",componentRef:<runtime component id>}. A type:\"section\" item merely carrying a componentRef property is an ordinary section and is inert.",
+    "divergence": ".claude/rules/test-data.md SECOND RULE. Every section text is DISTINCT so a drop/reorder/partial-expansion is observable: master ALPHA..ECHO (5, so a 3-adjacent selection leaves one unselected section on EACH side), shared trio ONE/TWO/THREE, per-page own TOP/BOTTOM texts that name their own page. Equal texts on two sides of a distinction under test would make the case vacuous.",
+    "source": "Block shapes transcribed from the live delivered content of /qa-homepage-spring-sale (vcptcore-qa, 2026-09-16)."
+  },
+
+  "components": {
+    "SC_MULTI": {
+      "settings": {},
+      "content": [
+        { "type": "title", "heading": "h2", "title": "AGENT-TEST Shared Trio ONE", "subtitle": null },
+        { "type": "text", "text": "AGENT-TEST shared trio section TWO - the middle section of the multi-section shared component." },
+        { "type": "text", "text": "AGENT-TEST shared trio section THREE - the last section of the multi-section shared component." }
+      ]
+    },
+    "SC_SINGLE": {
+      "settings": {},
+      "content": [
+        { "type": "text", "text": "AGENT-TEST shared single section SOLO - the only section of the single-section shared component." }
+      ]
+    },
+    "SC_UNUSED": {
+      "settings": {},
+      "content": [
+        { "type": "text", "text": "AGENT-TEST unused shared component - reserved for the delete-SUCCEEDS case (usage 0). Nothing may reference this." }
+      ]
+    },
+    "SC_USED": {
+      "settings": {},
+      "content": [
+        { "type": "text", "text": "AGENT-TEST used shared component - reserved for the delete-BLOCKED case (usage 1, held by the delete-holder page only)." }
+      ]
+    }
+  },
+
+  "pages": {
+    "PB_SC_MASTER": {
+      "settings": { "header": "AGENT-TEST Shared Components Master", "hideBreadcrumbs": false },
+      "content": [
+        { "type": "title", "heading": "h2", "title": "AGENT-TEST Master ALPHA", "subtitle": "first of five - stays UNSELECTED, before the selection" },
+        { "type": "text", "text": "AGENT-TEST master section BRAVO - second of five, first of the three adjacent sections to select." },
+        { "type": "text", "text": "AGENT-TEST master section CHARLIE - third of five, middle of the three adjacent sections to select." },
+        { "type": "text", "text": "AGENT-TEST master section DELTA - fourth of five, last of the three adjacent sections to select." },
+        { "type": "title", "heading": "h2", "title": "AGENT-TEST Master ECHO", "subtitle": "fifth of five - stays UNSELECTED, after the selection" }
+      ]
+    },
+    "PB_SC_CONSUMER_A": {
+      "settings": { "header": "AGENT-TEST Shared Components Consumer A", "hideBreadcrumbs": false },
+      "content": [
+        { "type": "text", "text": "AGENT-TEST consumer A own section TOP - belongs to page A only, must never change when the shared original is edited." },
+        { "ref": "SC_MULTI" },
+        { "type": "text", "text": "AGENT-TEST consumer A own section BOTTOM - belongs to page A only." }
+      ]
+    },
+    "PB_SC_CONSUMER_B": {
+      "settings": { "header": "AGENT-TEST Shared Components Consumer B", "hideBreadcrumbs": false },
+      "content": [
+        { "type": "text", "text": "AGENT-TEST consumer B own section TOP - belongs to page B only." },
+        { "ref": "SC_MULTI" },
+        { "ref": "SC_SINGLE" },
+        { "type": "text", "text": "AGENT-TEST consumer B own section BOTTOM - belongs to page B only." }
+      ]
+    },
+    "PB_SC_CONSUMER_DRAFT": {
+      "settings": { "header": "AGENT-TEST Shared Components Draft Consumer", "hideBreadcrumbs": false },
+      "content": [
+        { "type": "text", "text": "AGENT-TEST draft consumer own section TOP - this page is deliberately DRAFT (never published)." },
+        { "ref": "SC_MULTI" },
+        { "type": "text", "text": "AGENT-TEST draft consumer own section BOTTOM." }
+      ]
+    },
+    "PB_SC_DELETE_HOLDER": {
+      "settings": { "header": "AGENT-TEST Shared Components Delete Holder", "hideBreadcrumbs": false },
+      "content": [
+        { "type": "text", "text": "AGENT-TEST delete-holder own section TOP - the ONLY page referencing the delete-BLOCKED component." },
+        { "ref": "SC_USED" }
+      ]
+    },
+    "PB_SC_CONTROL": {
+      "settings": { "header": "AGENT-TEST Shared Components Control", "hideBreadcrumbs": false },
+      "content": [
+        { "type": "text", "text": "AGENT-TEST control page own section TOP - same block shapes as the consumer pages, ZERO shared components." },
+        { "type": "title", "heading": "h2", "title": "AGENT-TEST Control MIDDLE", "subtitle": "no componentRef anywhere on this page" },
+        { "type": "text", "text": "AGENT-TEST control page own section BOTTOM - if THIS page renders and a consumer page does not, the defect is in shared-component delivery, not in the fixture." }
+      ]
+    }
+  }
+}

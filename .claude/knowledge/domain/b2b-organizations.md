@@ -675,7 +675,8 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
   half will not run below that tier.
 - **`requiresModules`** — `026/027/027b` need `customer`, `074` needs `contracts`; absent ⇒ silent skip.
 - **Firefox lane:** with `defaults.firefoxClickOk: false` (the documented rollback), 15 of the 18 core
-  suites are `clickDriven` and get denied the slot, leaving only `026` and `074` eligible.
+  suites are `clickDriven` and get denied the slot. Since 2026-09-21 `026` is `clickDriven` too
+  (it gained the VCST-5547 condition-tree cases), so that rollback would leave only `074` eligible.
 - **The feature's centre of mass is Draft.** `006` (65, 0 Automated), `015` (32, 0 Automated, all one
   fixture — re-confirmed this pass) and 71 blank-status legacy cases in `026`+`074` ⇒ roughly **200
   cases have never been executed or promoted**. Executable coverage is concentrated in
@@ -693,7 +694,7 @@ org/contact CRUD suite — 53/53!), **`050d`**, `050h`, `021`, `020`, `017`, `06
 | **G2** | Mobile switcher at source-level detail | **PARTLY CLOSED** by the VCST-5317 run (found live, no lock handling); component internals still source-only |
 | **G3** | `Blocked` status badge, live | **OPEN.** No locked membership among readable fixtures |
 | **G6** | **D6 (gate ≠ list), live** | **OPEN.** The 12-org fixture has 12 *Approved* orgs. Needs 1 Approved + ≥1 Invited/Locked |
-| **G7** | Per-store whitelist override read path | **OPEN.** `GET /api/platform/settings/Store/B2B-store` → 404; client path is `settingsV2.getTenantValues({tenantType:'Store', tenantId})` |
+| **G7** | Per-store whitelist override read path | **ANSWERED 2026-09-18** (measured live on vcst + read from source; seeder `scripts/seed-data/b2b/set-membership-roles-whitelist.mjs`, mechanism in `membership-roles-whitelist-specs.mjs`). The v1 path 404s because store-scoped values are a **v2 tenant** resource: `GET /api/platform/settings/v2/tenant/Store/{storeId}/values` returns a **flat `{ settingName: value }`** map (106 keys for `B2B-store`), where a dictionary setting's value is the **array of SELECTED entries**. `POST` to the same path is a **partial MERGE** — only supplied keys move (measured: a single-key POST left all 106 intact) — and it does **NOT** validate against the pool (an out-of-pool role name was accepted and persisted). The **POOL** is a separate resource: `GET /api/platform/settings/v2/tenant/Store/schema` → `allowedValues`, which for `Customer.MembershipRolesWhitelist` is the hardcoded C# literal in `vc-module-customer` `ModuleConstants.cs`, not per-store state. **Field-name inversion — the likeliest way to write the wrong field:** legacy v1 `GET /api/platform/settings` reports the SELECTED set in `allowedValues` (which is what BL-B2B-011 records); v2 reports it as the `value`. Same underlying data, opposite field names. **And EMPTY differs at store scope:** `rolesPickerService.js` applies the store override only `if (storeValues.length)`, so an empty store value SKIPS the override and falls back to the **global** whitelist — two hops, not "all roles". Clearing a store key to empty is a third behavioural state, not a neutral reset. |
 | **G8** | Contract ↔ organization assignment; org price lists | **PARTLY CLOSED** — no contract/pricing widget on the Company blade. Assignment from the Contracts module's own blades still OPEN |
 | **G9** | `White labeling` / `Assets` / `Icon` org-widget contents | **OPEN** — enumerated, not opened |
 | **G11** | Which module registers **Orders** + **White labeling** onto the Company blade | **OPEN.** The literal-string search was a **false negative** against live |

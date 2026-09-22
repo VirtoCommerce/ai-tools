@@ -35,6 +35,29 @@ test("the committed template still has the fields this module rewrites", () => {
   assert.ok(browser.contextOptions, "template lost `browser.contextOptions`");
 });
 
+test("the CI template captures HAR bodies, and every derived lane inherits that", () => {
+  // The interactive lanes shipped `omitContent: true`, making every HAR body-less while the file
+  // still existed and looked healthy (REG-2026-09-18-1818: a GraphQL document that demonstrably
+  // went over the wire was simply absent from the archive). This template carried the same defect,
+  // and because every CI lane is derived from it, one bad field silently disabled body capture for
+  // the whole headless pool. `omitContent` is deprecated; `content` is the supported option.
+  const contextOptions = (template.browser as Record<string, unknown>)
+    .contextOptions as Record<string, unknown>;
+  const recordHar = contextOptions.recordHar as Record<string, unknown>;
+  assert.equal(recordHar.omitContent, undefined,
+    "CI template: recordHar.omitContent is deprecated AND body-less — use content: \"embed\"");
+  assert.equal(recordHar.content, "embed",
+    `CI template: recordHar.content is "${recordHar.content}" — must be "embed" so bodies land in the .har`);
+
+  for (const laneId of ["1", "2", "3"]) {
+    const lane = laneConfigFor(template, laneId);
+    const laneHar = ((lane.browser as Record<string, unknown>)
+      .contextOptions as Record<string, unknown>).recordHar as Record<string, unknown>;
+    assert.equal(laneHar.content, "embed",
+      `lane ${laneId}: recordHar.content did not survive derivation — bodies would be dropped in CI`);
+  }
+});
+
 // ---- isolation ---------------------------------------------------------------------
 
 test("two lanes get different outputDir and different HAR paths", () => {

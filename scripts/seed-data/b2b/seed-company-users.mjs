@@ -38,7 +38,7 @@ import {
   setFlags, authenticate, ensureMemberIndex, parseCsv,
   seedOrgs, seedContacts, relinkUsersToContacts, ensureRoles, provisionContactLogins, seedMemberships,
   personalUsers, ensurePersonalAccount, adminUsers, ensureAdminAccount, seedWhiteLabelingUsers,
-  deleteUserByEmail, sweepAgentTestMembers, allSeededEmails, whiteLabelingSeededEmails,
+  deleteUserByEmail, sweepAgentTestMembers, allSeededEmails, whiteLabelingSeededEmails, seededEmailsForKind,
   deleteWhiteLabelingOrgs, clearWhiteLabelingAliases, getApi,
 } from '../../lib/user-provision.mjs';
 import { writeEnvAliasOverride } from '../../lib/seed-common.mjs';
@@ -169,9 +169,13 @@ async function seedPersonal(loyaltyOnly = false) {
 // nothing needs to survive teardown for id-stability. A full teardown therefore leaves zero
 // AGENT-TEST orgs behind — the VCST-5406 "one teardown, no orphan gap" goal, now including orgs.
 async function runTeardown() {
-  const scoped = kind === 'wl';
-  const emails = scoped ? whiteLabelingSeededEmails() : allSeededEmails();
-  console.log(`\n  Teardown${scoped ? ' (white-labeling only)' : ''}: ${emails.length} account(s)...`);
+  // A teardown of `kind` removes exactly what a seed of that same kind creates. `all` keeps the
+  // historical full sweep; every other kind is narrowed, because the pairing a caller actually
+  // reaches for — `<kind> --teardown` then `<kind>` seed — used to delete far more than it
+  // restored (see seededEmailsForKind in user-provision.mjs).
+  const scoped = kind !== 'all';
+  const emails = seededEmailsForKind(kind);
+  console.log(`\n  Teardown${scoped ? ` (${kind} only)` : ''}: ${emails.length} account(s)...`);
   let accounts = 0, contacts = 0;
   for (const email of emails) {
     const r = await deleteUserByEmail(email);
@@ -179,10 +183,18 @@ async function runTeardown() {
     if (r.contact) contacts++;
   }
   console.log(`  Teardown: ${accounts} account(s) + ${contacts} contact(s)`);
-  if (scoped) {
+  if (kind === 'wl') {
     const orgs = await deleteWhiteLabelingOrgs();
     const clearedAliases = clearWhiteLabelingAliases();
     console.log(`\n✅ White-labeling teardown complete — ${accounts} accounts, ${contacts} contacts, ${orgs} orgs removed${clearedAliases ? `, ${clearedAliases} stale alias(es) cleared` : ''}\n`);
+    return;
+  }
+  if (scoped) {
+    // sweepAgentTestMembers() is a GLOBAL AGENT-TEST-* member/org sweep — it does not respect a
+    // kind, so running it here would delete the very accounts a scoped teardown promised to leave
+    // alone. A scoped teardown removes its own accounts and stops; the unified sweep is `all`.
+    console.log(`\n✅ ${kind} teardown complete — ${accounts} accounts, ${contacts} contacts removed`);
+    console.log(`   (scoped: the global AGENT-TEST member/org sweep belongs to \`all\` and was NOT run)\n`);
     return;
   }
   const members = await sweepAgentTestMembers();

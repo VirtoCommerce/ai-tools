@@ -73,12 +73,20 @@ export const REQUIRED_FIELDS = Object.freeze([
 export const REQUIRED_FIELD_NAMES = Object.freeze(REQUIRED_FIELDS.map((f) => f.field));
 
 /**
- * INFORMATIONAL — the destructive PUT nulls this too, and it is worth SEEING, but a null
- * `secureUrl` does not break the storefront (B2B-store served correctly with it null), so it is
- * reported and never gated. Promoting it to REQUIRED would make the guard red on a healthy env,
- * which is how a gate gets ignored.
+ * INFORMATIONAL — the destructive PUT nulls these too, and they are worth SEEING, but neither
+ * breaks the STOREFRONT, so both are reported and never gated. Promoting one to REQUIRED would
+ * make the guard red on a healthy env, which is how a gate gets ignored.
+ *
+ * - `secureUrl` — B2B-store served correctly with it null. Nothing on the invite path reads it.
+ * - `email` — does not break the storefront either, but it is NOT cosmetic: vc-module-customer's
+ *   `InviteCustomerService.GetStoreAsync()` refuses EVERY invite with `StoreNotConfigured` when
+ *   `store.Email` is null/empty, and `SendNotificationAsync` sets `notification.From = store.Email`.
+ *   Added 2026-09-19 after BUG_008_006 on vcst-qa, where a null email silently blocked the whole
+ *   member-invite feature and this guard said nothing. It stays INFORMATIONAL rather than REQUIRED
+ *   because this module's REQUIRED contract is explicitly "breaks the storefront" — widening that
+ *   is a separate decision about the guard's scope, not a bug fix.
  */
-export const INFORMATIONAL_FIELDS = Object.freeze(['secureUrl']);
+export const INFORMATIONAL_FIELDS = Object.freeze(['secureUrl', 'email']);
 
 /** Finding codes — a closed vocabulary, so a hold is attributable rather than narrated. */
 export const CODES = Object.freeze({

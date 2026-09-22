@@ -8,6 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   __setApi, statusFlags, ensureSecurityAccount, ensurePersonalAccount, allSeededEmails, resolvePassword,
+  seededEmailsForKind, whiteLabelingSeededEmails,
 } from '../../scripts/lib/user-provision.mjs';
 
 function makeApiMock() {
@@ -87,4 +88,56 @@ test('allSeededEmails covers b2b/users.csv + memberships.csv + personal (no tear
   // personal (agent pool)
   assert.ok(emails.some(e => /^qa-agent-slot\d@/.test(e)), 'includes personal accounts');
   assert.equal(new Set(emails).size, emails.length, 'deduped');
+});
+
+// seededEmailsForKind — a teardown of `kind` must remove exactly what a seed of that kind creates.
+//
+// The defect this pins: runTeardown() scoped only `wl`, so `seed-company-users.mjs b2b --teardown`
+// swept all 91 company-user accounts while the paired `b2b` seed recreates ~28. Running the two
+// together (the obvious thing to do) deleted the personal and white-labeling accounts that suites
+// 001/033/040a/041 sign in as, and reported nothing.
+const lower = (a) => a.map((e) => e.toLowerCase());
+
+test('seededEmailsForKind: all is unchanged, and every other kind is a strict subset', () => {
+  const all = new Set(lower(allSeededEmails()));
+  assert.deepEqual(seededEmailsForKind('all'), allSeededEmails(), '`all` must keep the historical full sweep');
+
+  for (const kind of ['b2b', 'personal', 'wl', 'cross-org', 'imp', 'loyalty']) {
+    const scoped = lower(seededEmailsForKind(kind));
+    assert.ok(scoped.length > 0, `${kind} resolves to a non-empty set`);
+    assert.ok(scoped.length < all.size, `${kind} must be NARROWER than all (got ${scoped.length}/${all.size})`);
+    for (const e of scoped) assert.ok(all.has(e), `${kind} email ${e} is not in allSeededEmails() — teardown would orphan it`);
+  }
+});
+
+test('seededEmailsForKind: b2b, personal and wl partition the full set — no account is unowned', () => {
+  // If a kind-scoped teardown existed that left some account owned by NO kind, that account could
+  // never be torn down except by `all` — the mirror of the bug, and just as silent.
+  const union = new Set([
+    ...lower(seededEmailsForKind('b2b')),
+    ...lower(seededEmailsForKind('personal')),
+    ...lower(seededEmailsForKind('wl')),
+  ]);
+  const all = lower(allSeededEmails());
+  for (const e of all) assert.ok(union.has(e), `${e} belongs to no kind — it would survive every scoped teardown`);
+  assert.equal(union.size, new Set(all).size, 'the three kinds exactly cover allSeededEmails()');
+});
+
+test('seededEmailsForKind: the scopes do not bleed into each other', () => {
+  const b2b = new Set(lower(seededEmailsForKind('b2b')));
+  const personal = new Set(lower(seededEmailsForKind('personal')));
+  const wl = new Set(lower(seededEmailsForKind('wl')));
+
+  assert.deepEqual(lower(seededEmailsForKind('wl')), lower(whiteLabelingSeededEmails()), 'wl keeps its existing meaning');
+  for (const e of wl) assert.ok(!b2b.has(e), `wl account ${e} must not be swept by a b2b teardown`);
+  for (const e of personal) assert.ok(!b2b.has(e), `personal account ${e} must not be swept by a b2b teardown`);
+  // cross-org logins are org members, so they belong to the b2b slice.
+  for (const e of lower(seededEmailsForKind('cross-org'))) assert.ok(b2b.has(e), `cross-org ${e} should be inside b2b`);
+});
+
+test('seededEmailsForKind: an unknown kind widens to all rather than silently deleting nothing', () => {
+  // Widening is the safe direction here: the caller re-seeds afterwards, and a teardown that
+  // quietly removed NOTHING would look identical to one that worked.
+  assert.deepEqual(seededEmailsForKind('not-a-kind'), allSeededEmails());
+  assert.deepEqual(seededEmailsForKind(undefined), allSeededEmails());
 });

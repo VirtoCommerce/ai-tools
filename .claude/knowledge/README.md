@@ -11,8 +11,8 @@ written here were stale within weeks (`.claude/rules/test-data.md` GOLDEN RULE).
 traps in each — live in [`.claude/ROUTING.md`](../ROUTING.md) §Knowledge bases.
 
 Paths here are cited throughout `.claude/`, `ci/`, `scripts/` and the validators, so moving a file
-means updating its references plus `scripts/maintenance/audit-agents-knowledge.ts`,
-`scripts/maintenance/detect-vcst-isms.ts` and `scripts/maintenance/mirror-check.mjs`.
+means updating its references plus `scripts/maintenance/audit-agents-knowledge.ts` and
+`scripts/maintenance/detect-vcst-isms.ts`.
 
 ## Folders
 
@@ -58,8 +58,8 @@ means updating its references plus `scripts/maintenance/audit-agents-knowledge.t
   `scripts/maintenance/audit-agents-knowledge.ts` (which is a WRITER: it edits frontmatter in place).
 - **Cross-file links use relative paths** (e.g. an `oracles/` file links a selector as
   `../automation/storefront-selectors.md`).
-- **`plugins/vc-fix/knowledge/` is a separate, plugin-scoped copy**, not a symlink. `npm run
-  mirror:check` enforces byte-parity for shared paths and lists the declared forks — this README is
-  one of them (`plugin-scope`: the plugin ships no suites, seeders or `qa-*` roster), so the two
-  differ on purpose. Editing a file that exists in both trees means editing both unless
-  `scripts/maintenance/mirror-check.mjs` `FORKS` says otherwise.
+- **`plugins/vc-fix/knowledge/` is a separate, plugin-scoped copy**, not a symlink. Many pairs
+  differ on purpose — this README among them, since the plugin ships no suites, seeders or `qa-*`
+  roster. **Editing a file that exists in both trees means deciding, by hand, whether the change
+  belongs in both.** There is no longer a checker: `mirror:check` was removed 2026-09-19, so drift
+  between the trees is now invisible until someone reads both copies.

@@ -282,3 +282,301 @@ Role_1 assigned to User_1",,"1. Login as User_1
 [SCHEMA] if addresses[] non-empty: each address has city, countryCode, line1 fields
 [BODY] no Internal Server Error or null-reference error in response","[DB] Address data accessible via REST after IAddressService/IAddressSearchService refactor in PR #293
 [CONSOLE] no 500 or exception in platform application logs","GET returns 500; addresses field missing from contact JSON; address items have null required fields; regression in address data access","none","Promoted from VCST-4710-ADM-002 / TLC-2026-04-23-1230 / BA report 2026-04-23; PR #293 IAddressService regression check; Renumbered from CUST-064 to CUST-151 on 2026-07-29 (VCST-5281 sync) to resolve a global ID collision with 027-customer-orgs-invites.csv CUST-064 (Multi-Org Contact Hierarchy, VCST-5028)","ready"
+"CUST-152","Show customers — journey: select a user group in a Promotion condition, open the filtered member list","Customer > Condition Tree > Show customers by user group","Critical","BL-PLAT-001","ECL-14.1","Admin logged in to Backend; at least one Promotion exists (or can be created as an unsaved draft) whose condition tree can be opened without saving; the Customer module is active; the live Customer.MemberGroups dictionary contains at least one group with >=1 member.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) → capture access_token as $TOKEN
+[SETUP] open a Promotion, add (or open) a ""User group is"" condition, and read the full option list of its multi-select — this list IS the live Customer.MemberGroups dictionary → capture as $GROUPS
+[SETUP] for each name in $GROUPS, POST {{BACK_URL}}/api/members/search {""groups"":[""<name>""],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN, record totalCount → build map $COUNTS
+[SETUP] select $GROUP_ONE = the name in $COUNTS with the smallest nonzero totalCount (BLOCKED if every group is 0 — the environment has no populated group to exercise)
+[ACT] in the condition, select ONLY $GROUP_ONE
+[WAIT] the 'Show customers' link becomes visible next to the selector
+[ACT] click 'Show customers'
+[WAIT] a new blade opens","[BLADE] a member-list blade opens as a NEW blade appended to the stack, not replacing the condition-tree blade {OBSERVED}
+[GRID] the blade's row count == $COUNTS[$GROUP_ONE] {OBSERVED}
+[GRID] every rendered row's identity belongs to $GROUP_ONE's own membership (spot-check at least one row against a direct /api/members/search?groups=[$GROUP_ONE] response) {SPEC}","[API] the click issues POST {{BACK_URL}}/api/members/search with body containing groups:[$GROUP_ONE], rootMembersOnly:false, memberId:null, deepSearch:false
+[CONSOLE] no TypeError or unhandled JS error during the click→blade sequence
+[NETWORK] the members/search request returns HTTP 200, no 4xx/5xx","click produces no visible change for >5s (silent no-op — the unregistered-callback risk this case exists to catch), blade opens but the grid stays loading indefinitely, console TypeError referencing conditionUserGroupsService, 4xx/5xx on /api/members/search","None — read-only; discard any unsaved condition-tree edit by reloading. Close the member-list blade first.",VCST-5547 · Archetype:SILENT · Technique:FLOW | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-153","Show customers — the list contains only the group's members, not the full member database","Customer > Condition Tree > Show customers by user group","Critical","","ECL-14.1","Admin logged in; the live Customer.MemberGroups dictionary contains at least one group whose member count is materially smaller than the platform's unfiltered member count (self-contained — this case performs its own discovery, same apparatus as CUST-152).","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) → capture access_token as $TOKEN
+[SETUP] open a Promotion, add (or open) a ""User group is"" condition, and read the full option list of its multi-select — this list IS the live Customer.MemberGroups dictionary → capture as $GROUPS
+[SETUP] for each name in $GROUPS, POST {{BACK_URL}}/api/members/search {""groups"":[""<name>""],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN, record totalCount → build map $COUNTS
+[SETUP] POST {{BACK_URL}}/api/members/search {""groups"":[],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN (no group filter) → capture totalCount as $TOTAL_UNFILTERED
+[SETUP] select $GROUP_SMALL = the name in $COUNTS with the smallest nonzero totalCount (BLOCKED if $TOTAL_UNFILTERED is not strictly greater than $COUNTS[$GROUP_SMALL] — the environment cannot discriminate this case)
+[ACT] in a Promotion's condition tree, select ONLY $GROUP_SMALL in a ""User group is"" condition
+[ACT] click 'Show customers'
+[WAIT] the blade opens","[GRID] blade row count == $COUNTS[$GROUP_SMALL] exactly {OBSERVED}
+[GRID] blade row count != $TOTAL_UNFILTERED {OBSERVED}
+[GRID] no rendered row belongs to a member outside $GROUP_SMALL, cross-checked against a direct /api/members/search?groups=[$GROUP_SMALL] response {SPEC}","[API] the blade's own request body carries groups:[$GROUP_SMALL], never an empty/omitted groups field
+[NETWORK] no 4xx/5xx","blade row count equals $TOTAL_UNFILTERED (the groups criterion was dropped server-side), grid shows a member known not to belong to $GROUP_SMALL, the request body sent by the blade omits the groups field entirely","None — read-only; discard any unsaved condition-tree edit by reloading.",VCST-5547 · Archetype:SILENT · Technique:EP | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-154","Show customers — two selected groups return the union of both, not the intersection","Customer > Condition Tree > Show customers by user group","High","","ECL-13.1","Admin logged in; the live group dictionary contains at least two DISJOINT groups (no member in common), each with >=1 member (self-contained discovery, extends CUST-152's apparatus with a disjointness check).","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) → capture access_token as $TOKEN
+[SETUP] open a Promotion, add (or open) a ""User group is"" condition, and read the full option list of its multi-select — this list IS the live Customer.MemberGroups dictionary → capture as $GROUPS
+[SETUP] for each name in $GROUPS, POST {{BACK_URL}}/api/members/search {""groups"":[""<name>""],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN, record totalCount → build map $COUNTS
+[SETUP] shortlist every group in $COUNTS with 1 <= totalCount <= 50 (a fetchable page); for each shortlisted pair, GET the member id list (take = totalCount) for both and compare — select the first pair with an EMPTY intersection as ($GROUP_A, $GROUP_B) (BLOCKED if no disjoint pair exists among the shortlisted groups)
+[ACT] in a Promotion's condition tree, select $GROUP_A in a ""User group is"" condition
+[ACT] additionally select $GROUP_B in the same condition
+[WAIT] both $GROUP_A and $GROUP_B show as selected
+[ACT] click 'Show customers'
+[WAIT] the blade opens","[GRID] row count > 0 — rules out an AND/intersection reading collapsing a disjoint pair to zero {OBSERVED}
+[MATH] the blade header's count badge == $COUNTS[$GROUP_A] + $COUNTS[$GROUP_B] exactly (not the smaller of the two, not zero). The badge is the TOTAL, so it is the union oracle; the rendered row count only has to equal min(that total, the grid's own page size), which is what stops a pair whose union overflows one page from reading as a miscount {OBSERVED}","[API] the request body carries groups:[$GROUP_A,$GROUP_B]","count badge == 0 despite both groups individually non-empty (AND-collapse), or the badge equals only one group's own count (the second group silently ignored)","None — read-only; discard any unsaved condition-tree edit by reloading.",VCST-5547 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-155","Show customers — a user group with zero members shows a defined empty state, not a blank or stalled grid","Customer > Condition Tree > Show customers by user group","Medium","BL-UI-001","ECL-7.1","Admin logged in; the live group dictionary contains at least one group whose /api/members/search totalCount == 0 (self-contained discovery).","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) → capture access_token as $TOKEN
+[SETUP] open a Promotion, add (or open) a ""User group is"" condition, and read the full option list of its multi-select — this list IS the live Customer.MemberGroups dictionary → capture as $GROUPS
+[SETUP] for each name in $GROUPS, POST {{BACK_URL}}/api/members/search {""groups"":[""<name>""],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN, record totalCount → build map $COUNTS
+[SETUP] select $GROUP_EMPTY = the name in $COUNTS with totalCount == 0 (BLOCKED if none exists)
+[ACT] in a Promotion's condition tree, select ONLY $GROUP_EMPTY in a ""User group is"" condition
+[ACT] click 'Show customers'
+[WAIT] observe the blade body","[GRID] the blade shows a defined empty-state (e.g. an explicit 'no data' message), not an indefinite spinner or a blank panel {OBSERVED}
+[STATE] no JS error is thrown while rendering the empty result set {OBSERVED}
+[DOM] the header count badge is ABSENT for a zero-member group — it disappears rather than rendering '0'; that is the defined empty state, not a defect {OBSERVED}","[NETWORK] members/search returns HTTP 200 with items:[] (not an error)","spinner visible >5s, blank panel with no message at all, console error thrown while rendering an empty array","None — read-only; discard any unsaved condition-tree edit by reloading.",VCST-5547 · Archetype:FALLBACK · Technique:EP | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-156","Show customers — organizations appear alongside contacts because rootMembersOnly is passed false","Customer > Condition Tree > Show customers by user group","High","","ECL-13.1","Admin logged in; the live group dictionary contains at least one group whose membership includes BOTH an Organization and a Contact (self-contained discovery).","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) → capture access_token as $TOKEN
+[SETUP] open a Promotion, add (or open) a ""User group is"" condition, and read the full option list of its multi-select — this list IS the live Customer.MemberGroups dictionary → capture as $GROUPS
+[SETUP] for each name in $GROUPS, POST {{BACK_URL}}/api/members/search {""groups"":[""<name>""],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN, record totalCount → build map $COUNTS
+[SETUP] for each name in $COUNTS with totalCount >= 2, POST /api/members/search {""groups"":[""<name>""],""rootMembersOnly"":false,""take"":<totalCount>} and inspect each returned item's memberType - the SAME flag the count probe used, or org-nested contacts are invisible and the case BLOCKS on a false ""no mixed group exists""; select $GROUP_MIXED = the first group whose members include both Organization and Contact (BLOCKED if none found)
+[ACT] in a Promotion's condition tree, select ONLY $GROUP_MIXED in a ""User group is"" condition
+[ACT] click 'Show customers'
+[WAIT] the blade opens","[GRID] at least one rendered row has memberType Organization and at least one has memberType Contact {OBSERVED}
+[STATE] the ticket's own text describes this blade as 'a filtered list of contacts'; record the Organization rows as SPEC-vs-OBSERVED drift, not necessarily a hard fail, unless the ticket is read as requiring exclusion {SPEC}
+[DOM] each row's memberType is conveyed by an icon carrying a title tooltip and by nothing else — there is no text label column; this is the pre-existing member-list rendering shared with the root Contacts list (BL-A11Y-002 gap, recorded, not a fail of this blade) {OBSERVED}","[API] the search request body carries rootMembersOnly:false","Organization rows are silently filtered out client-side while the raw response still returns them (masking the drift), memberType is indistinguishable without hovering","None — read-only; discard any unsaved condition-tree edit by reloading.",VCST-5547 · Archetype:SCOPE · Technique:EG | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-157","Show customers — an unsaved condition-tree edit survives opening and closing the blade","Customer > Condition Tree > Show customers by user group","Medium","BL-UI-003","ECL-7.1","Admin logged in; able to open a Promotion and make an in-progress edit (a distinguishable unsaved description marker plus an unsaved 'User group is' condition) without saving.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open a Promotion
+[ACT] type a distinguishable unsaved description marker string into the promotion's description field
+[ACT] add an unsaved ""User group is"" condition with any one available group selected
+[WAIT] both the marker text and the condition are visible, unsaved
+[ACT] click 'Show customers'
+[WAIT] the member-list blade opens
+[ACT] close the member-list blade via its own close/X control
+[WAIT] the underlying Promotion blade is visible again","[STATE] the unsaved description marker text is still present in the Promotion editor after the member-list blade is opened and closed {OBSERVED}
+[STATE] the unsaved 'User group is' condition (with its selected group) is still present and still unsaved {OBSERVED}
+[REL] the blade-stack depth immediately after closing the member-list blade equals the blade-stack depth immediately before clicking 'Show customers' (no net blade added or removed, so no duplicate Promotion blade and no stack reset) {OBSERVED}","[CONSOLE] no error during the open/close sequence","the Promotion blade is gone or reset after the member-list blade closes, the marker text or the condition is missing, a second Promotion blade appears","None — read-only. Discard the unsaved description marker and condition by navigating away without saving (or reloading).",VCST-5547 · Archetype:LIFECYCLE · Technique:ST | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-158","Show customers — read-only blade suppresses add, delete, invite and the organization membership commands","Customer > Condition Tree > Show customers by user group","High","BL-B2B-005","ECL-14.1","Admin logged in; the live group dictionary contains at least one group with >=1 member so the grid is non-empty (self-contained discovery).","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) → capture access_token as $TOKEN
+[SETUP] open a Promotion, add (or open) a ""User group is"" condition, and read the full option list of its multi-select — this list IS the live Customer.MemberGroups dictionary → capture as $GROUPS
+[SETUP] for each name in $GROUPS, POST {{BACK_URL}}/api/members/search {""groups"":[""<name>""],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN, record totalCount → build map $COUNTS
+[SETUP] select $GROUP_ANY = any name in $COUNTS with totalCount >= 1
+[ACT] in a Promotion's condition tree, select ONLY $GROUP_ANY in a ""User group is"" condition
+[ACT] click 'Show customers'
+[WAIT] the blade opens with its toolbar rendered","[GRID] the toolbar excludes ALL of: Add, Delete, Invite, Lock, Unlock, Change role, and any organization-membership command {SPEC}
+[GRID] Refresh (a read-only-safe command) remains available {SPEC}","[CONSOLE] no error rendering the toolbar","any of Add/Delete/Invite/Lock/Unlock/Change role visible or enabled in the toolbar, the toolbar offers more controls than a read-only set (Refresh plus any externally-registered command)","None — read-only; discard any unsaved condition-tree edit by reloading.",VCST-5547 · Archetype:SCOPE · Technique:DT | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-159","Show customers - the read-only blade offers no row-level Delete; Manage remains the accepted path to the member record","Customer > Condition Tree > Show customers by user group","High","BL-B2B-005","ECL-14.1","Admin logged in; the live group dictionary contains at least one group with >=1 member so at least one row is rendered (self-contained discovery).","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) → capture access_token as $TOKEN
+[SETUP] open a Promotion, add (or open) a ""User group is"" condition, and read the full option list of its multi-select — this list IS the live Customer.MemberGroups dictionary → capture as $GROUPS
+[SETUP] for each name in $GROUPS, POST {{BACK_URL}}/api/members/search {""groups"":[""<name>""],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN, record totalCount → build map $COUNTS
+[SETUP] select $GROUP_ANY = any name in $COUNTS with totalCount >= 1
+[ACT] in a Promotion's condition tree, select ONLY $GROUP_ANY in a ""User group is"" condition
+[ACT] click 'Show customers'
+[WAIT] the blade opens with at least one row
+[ACT] open the row-level context menu (or equivalent per-row action control) on the first row
+[WAIT] the row menu renders and its full item list is readable
+[ACT] record EVERY item the menu offers
+[ACT] click 'Manage'
+[WAIT] the member record opens with its own Save/Reset toolbar","[GRID] enumerate the row-level action control: record whether a menu opens and list EVERY item it offers {OBSERVED}  <- recording this is mandatory; an absent menu must be reported as absent, never left blank
+[GRID] Delete is NOT among the items offered {SPEC}
+[GRID] 'Manage' IS offered and opens the member record - the read-only mode suppresses the LIST's own mutating commands (Add / Delete / Invite), not navigation to a member; the stricter containment reading was raised and explicitly withdrawn by the product owner on 2026-09-15 {SPEC}","[CONSOLE] no error attempting to open the row context menu","Delete is offered on a row; or an offered item (e.g. Manage) opens a member blade carrying Save/Reset, editable fields, or removable group chips; or the enumeration in assertion 1 is not recorded at all - read-only containment is escapable or unverified","None — read-only; discard any unsaved condition-tree edit by reloading.","VCST-5547 | BUG-VCST-5547-readonly-mode-escapable.md | assertions rewritten 2026-09-14 after the 5b verifier showed the prior wording was vacuously satisfiable by the menu's total absence, so it could not discriminate the two implementations it exists to tell apart | Promoted: REG-2026-09-17-2013 (2026-09-17)",Automated
+"CUST-160","Show customers — Import and Export remain on the read-only blade because they are registered externally","Customer > Condition Tree > Show customers by user group","High","BL-B2B-005","ECL-14.1","Admin logged in; a Promotion's condition tree with a ""User group is"" condition can be opened (any group selection, member count immaterial).","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open a Promotion's condition tree, add a ""User group is"" condition, select any one available group
+[ACT] click 'Show customers'
+[WAIT] the blade opens with its toolbar rendered","[GRID] the toolbar includes 'Import' {OBSERVED}
+[GRID] the toolbar includes 'Export' {OBSERVED}
+[REL] Import and Export appear with the same label and the same enabled state on this group-filtered blade as on the unfiltered root Contacts blade's own toolbar (their registration does not distinguish the two) {OBSERVED}","[CONSOLE] no error rendering the toolbar","Import/Export absent (would mean this gap has since been fixed — re-verify against the ticket rather than treating as a defect here), or present but visibly disabled inconsistently with the root Contacts list","None — read-only. Do NOT click Import or Export in this case (Export is CUST-161's own scenario); close the blade without action.",VCST-5547 · Archetype:SCOPE · Technique:EG | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-161","Show customers — Export from the group-filtered blade must not export the entire member database","Customer > Condition Tree > Show customers by user group","Critical","BL-B2B-005","ECL-14.1","Admin logged in; the live group dictionary contains at least one group whose member count is materially smaller than the platform's unfiltered total (self-contained discovery, same apparatus as CUST-153).","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) → capture access_token as $TOKEN
+[SETUP] open a Promotion, add (or open) a ""User group is"" condition, and read the full option list of its multi-select — this list IS the live Customer.MemberGroups dictionary → capture as $GROUPS
+[SETUP] for each name in $GROUPS, POST {{BACK_URL}}/api/members/search {""groups"":[""<name>""],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN, record totalCount → build map $COUNTS
+[SETUP] POST {{BACK_URL}}/api/members/search {""groups"":[],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN → capture totalCount as $TOTAL_UNFILTERED
+[SETUP] select $GROUP_SMALL = the name in $COUNTS with the smallest nonzero totalCount (BLOCKED if $TOTAL_UNFILTERED is not strictly greater than $COUNTS[$GROUP_SMALL])
+[ACT] in a Promotion's condition tree, select ONLY $GROUP_SMALL in a ""User group is"" condition
+[ACT] click 'Show customers'
+[WAIT] the blade opens showing $COUNTS[$GROUP_SMALL] rows
+[ACT] click 'Export' in the toolbar
+[WAIT] capture the outgoing export request payload and, if surfaced by the UI, the reported/exported record count","[NETWORK] the outgoing export request body does not include a groups (or equivalent) field constraining it to $GROUP_SMALL (the export handler is documented to compose {keyword, objectIds:[], organizationId} only) {DOC}
+[COUNT] verify whether the exported/reported record count equals $COUNTS[$GROUP_SMALL] (correct, scoped) or equals $TOTAL_UNFILTERED (the defect) {HYPOTHESIS}","[API] compare the export request's implied scope against the grid's own /api/members/search request from the same blade","the export request carries no group/member-id constraint at all, the exported count matches $TOTAL_UNFILTERED rather than $COUNTS[$GROUP_SMALL], the export silently includes members never shown on screen","Read-only observation of the request; if a file was actually produced, discard it — do not distribute. No persisted platform state changes.","VCST-5547 · Archetype:SILENT · Technique:EG","Draft"
+"CUST-162","Show customers — the link is present in a Loyalty mission user-group condition","Customer > Condition Tree > Show customers by user group","High","","ECL-14.1","Admin logged in; can open a Loyalty Mission's condition/reward tree and add or open a ""User group is"" condition.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open Loyalty > Missions > open (or start) a mission's condition tree
+[ACT] add (or open) a ""User group is"" condition
+[WAIT] the condition's multi-select renders
+[ACT] select any one available group in it
+[WAIT] the selection is applied and the selector area re-renders
+[ACT] click 'Show customers' if the link is present
+[WAIT] observe the result","[DOM] a 'Show customers' text link is rendered next to the group multi-select, same label and position as in the Promotions host {OBSERVED}
+[COUNT] the opened blade's toolbar command count <= 2 beyond Refresh (bounds it to the read-only/externally-registered Import+Export set already enumerated in CUST-158/CUST-160, never the full write-capable root member-list toolbar) {SPEC}","[CONSOLE] no error","the link is absent in this host despite an identical UserGroupIsCondition template, a differently-labelled 'Any User Group' condition sits adjacent with no link and is easy to confuse with this one","None — read-only; discard any unsaved condition-tree edit by reloading.",VCST-5547 · Archetype:PARITY · Technique:EP | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-163","Show customers — the link is present in a Loyalty program user-group condition","Customer > Condition Tree > Show customers by user group","Medium","","ECL-14.1","Admin logged in; can open a Loyalty Program's condition/reward tree and add or open a ""User group is"" condition.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open Loyalty > Programs > open (or start) a program's condition/reward tree
+[ACT] add (or open) a ""User group is"" condition
+[WAIT] the condition's multi-select renders
+[ACT] select any one available group in it
+[WAIT] the selection is applied and the selector area re-renders
+[ACT] click 'Show customers' if the link is present
+[WAIT] observe the result","[DOM] a 'Show customers' text link RENDERS in a Loyalty Program user-group condition, with the same label and position as in Promotions and Loyalty Mission - LoyaltyProgramConditionAndRewardTreePrototype exposes the same UserGroupIsCondition and inherits the same Core template, so a host-specific absence is a parity defect {OBSERVED}
+[COUNT] the opened blade's toolbar offers at most 2 commands beyond Refresh (the read-only / externally-registered Import+Export set already enumerated in CUST-158 and CUST-160, never the full write-capable root member-list toolbar) {SPEC}","[CONSOLE] no error","the link is absent despite the source exposing the same condition type — a per-host parity gap the ticket does not name, or present but opening a blade with a writable (non-read-only) toolbar","None — read-only; discard any unsaved condition-tree edit by reloading.",VCST-5547 · Archetype:PARITY · Technique:EP | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-164","Show customers — the link is present in a Dynamic Content publishing user-group condition","Customer > Condition Tree > Show customers by user group","Medium","","ECL-14.1","Admin logged in; can open a Dynamic Content publishing condition tree and add or open a ""User group is"" condition.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open Marketing > Dynamic content > a publishing condition tree
+[ACT] add (or open) a ""User group is"" condition
+[WAIT] the condition's multi-select renders
+[ACT] select any one available group in it
+[WAIT] the selection is applied and the selector area re-renders
+[ACT] click 'Show customers' if the link is present
+[WAIT] observe the result","[DOM] a 'Show customers' text link RENDERS in a Dynamic Content publishing user-group condition - DynamicContentConditionTreePrototype exposes UserGroupIsCondition alongside UserGroupsContainsCondition, and only the former carries the link {OBSERVED}
+[COUNT] the opened blade's toolbar offers at most 2 commands beyond Refresh (the read-only / externally-registered Import+Export set already enumerated in CUST-158 and CUST-160, never the full write-capable root member-list toolbar) {SPEC}","[CONSOLE] no error","the link is absent despite the source exposing the same condition type in this untested host, or present but opening a blade with a writable (non-read-only) toolbar","None — read-only; discard any unsaved condition-tree edit by reloading.",VCST-5547 · Archetype:PARITY · Technique:EP | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-165","Show customers — Pricelist assignment offers no user-group condition that carries the link","Customer > Condition Tree > Show customers by user group","High","","ECL-14.1","Admin logged in; can open a Pricelist assignment's eligible-shoppers condition tree.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open Pricing > Price lists > open a price list's Assignment > eligible-shoppers condition tree
+[WAIT] the full list of condition categories and items renders","[DOM] the tree offers a 'User group contains' (free-text) condition but no 'User group is' (multi-select) condition {OBSERVED}
+[DOM] no 'Show customers' link exists anywhere in this tree {OBSERVED}
+[STATE] this is the requirement gap the ticket's own Context implies should be closed (Pricelist assignment is named as a host); record as a requirement gap against THIS build's current (unchanged) behavior, not a regression {SPEC}","[CONSOLE] no error","a 'User group is' condition or a Show-customers link unexpectedly appears — would mean the gap has since been closed; verify against the ticket before treating this as a regression","None — read-only; discard any unsaved condition-tree edit by reloading.",VCST-5547 · Archetype:PARITY · Technique:EG | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-166","Show customers — the link and blade respect the viewer's customer permissions","Customer > Condition Tree > Show customers by user group","High","BL-PLAT-001, BL-B2B-005","ECL-4.1","Admin can manage Security roles. A restricted role duplicating a full Marketing-capable baseline role, minus ONLY the customer:read permission (no other customer:* permission removed), is required so the restricted user keeps base platform access and can still reach a Promotion's condition tree. The duplicated role MUST retain every permission the condition tree itself depends on — measured live 2026-09-17: platform:module:access plus the marketing, shipping and order dictionaries (shipping:* and order:access / order:read). Without them the Promotion-conditions tree renders EMPTY and the case blocks on a role misconfiguration instead of exercising the behaviour under test. There is no platform:access permission on this build, so do not look for one. Only customer:read is removed and every other customer:* stays, which is what makes a 403 attributable to customer:read alone. Self-contained: this case creates and tears down its own restricted role/user, independent of any other case.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}, restricted_role=AGENT-TEST-NoCustRead166-{run}, restricted_user=AGENT-TEST-nocustread166-{run}, restricted_pwd={{DEFAULT_TEST_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[ACT] duplicate a full Marketing-capable baseline role as restricted_role
+[ACT] open restricted_role's permission set
+[ACT] remove ONLY the customer:read permission from restricted_role's permission list
+[WAIT] restricted_role's permission list updates, still showing marketing:* and base platform permissions unchanged
+[ACT] create restricted_user
+[ACT] assign only restricted_role to restricted_user
+[NAV] in a fresh browser context, log in as restricted_user
+[WAIT] restricted_user reaches the Admin manager with no access-denied error
+[ASSERT] gate — restricted_user can open Marketing > Promotions; if not, STOP and record BLOCKED (test-role misconfiguration), do not proceed to the leak check
+[NAV] open a promotion's condition tree
+[ASSERT] gate — the tree RENDERS for restricted_user ('Customers matching ...' and 'Add user group' are both present); if it renders empty, the role is missing a tree dependency (platform:module:access, marketing:*, shipping:*, order:access / order:read) - restore it and retry, that is a role misconfiguration and not the behaviour under test
+[ACT] add a ""User group is"" condition
+[WAIT] the condition's multi-select renders
+[ACT] select any one available group in it
+[ACT] click 'Show customers'
+[WAIT] observe the result","[STATE] the 'Show customers' link renders regardless of the viewer's permissions — Core renders it unconditionally {DOC}
+[STATUS] the /api/members/search request this click issues returns 403 for a viewer lacking customer:read, and no member row is rendered — the server refuses, so no member data reaches an unentitled viewer {OBSERVED}
+[STATE] the members-search access issued from this entry point should be gated by the same customer:read permission as every other Customer-module surface (BL-PLAT-001, BL-B2B-005) {BL}","[NETWORK] record the HTTP status of the members/search call issued for restricted_user","restricted_user sees member names/emails through this screen despite lacking customer:read, or restricted_user is denied base platform access entirely (a test-role misconfiguration — rebuild the role, not a product defect)","Delete restricted_user and restricted_role via Admin (self-contained fixture, not shared with any other case). Read-only otherwise.",VCST-5547 · Archetype:SCOPE · Technique:EG | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-167","Show customers — the blade keeps the standard member-list header; the filtered set is conveyed by the count badge","Customer > Condition Tree > Show customers by user group","Medium","BL-UI-001","ECL-7.1","Admin logged in; a Promotion's condition tree with a ""User group is"" condition can be opened, with a group whose live totalCount is >= 1 selected - a zero-member group is excluded on purpose, because CUST-155 certifies the badge is ABSENT in that state.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open a Promotion's condition tree, add a ""User group is"" condition, select any one available group
+[ACT] click 'Show customers'
+[WAIT] the blade opens","[DOM] the blade header's count badge shows the FILTERED member count - equal to the selected group's totalCount from POST /api/members/search and not the unfiltered member total the root Contacts blade's own badge shows - so the badge, not the title, is what distinguishes the two blades {OBSERVED}
+[DOM] the blade's title-bar text is byte-identical to the unfiltered root Contacts/member-list blade's own title, with no group name in title or subtitle — naming the group there was proposed and explicitly set aside by the product owner on 2026-09-15, so this case guards the accepted behaviour {OBSERVED}","[CONSOLE] no error","the count badge is absent for a non-empty group, or it shows the unfiltered member total instead of the selected group's own count - the badge is the only thing distinguishing this blade from the root list, so losing it is the defect this case exists to catch","None — read-only; discard any unsaved condition-tree edit by reloading.",VCST-5547 · Archetype:FALLBACK · Technique:EG | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-168","Show customers — browser Back after opening the filtered member-list blade over an unsaved condition-tree edit","Customer > Condition Tree > Show customers by user group","High","","ECL-7.1","Admin logged in; a Promotion has an unsaved condition-tree edit in progress (an in-progress description marker plus an added, unsaved 'User group is' condition with any one group selected) and the member-list blade can be opened from it.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open a Promotion, make an unsaved description marker edit, add an unsaved ""User group is"" condition with any one group selected
+[ACT] click 'Show customers'
+[WAIT] the member-list blade opens (now the top blade in the stack)
+[ACT] use the browser's native Back navigation (not the blade's own close control)
+[WAIT] observe what the browser and the Admin SPA do","[STATE] browser Back navigates the whole Admin SPA away to the previous hash route and the unsaved condition-tree edit is discarded — it does NOT behave like the in-app blade close confirmed in CUST-157. This is pre-existing Admin SPA history behaviour, outside this feature's scope; this row records it so a change becomes visible, and a change here is a signal to re-review rather than automatically a defect {OBSERVED}
+[REL] the blade-stack depth immediately after browser Back does NOT equal the depth immediately before the 'Show customers' click — the whole stack is left behind with the route, unlike the in-app close path CUST-157 covers {OBSERVED}
+[STATE] no browser-native beforeunload/leave-confirmation prompt appears — the unsaved edit is discarded silently {OBSERVED}","[CONSOLE] no error during the Back navigation","the unsaved description marker or condition is gone after Back with no warning shown, the Admin SPA reloads to its landing page","None — read-only. If the unsaved edit was lost, no state was persisted; if still open, navigate away without saving.",VCST-5547 · Archetype:REPLAY · Technique:EG | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+"CUST-169","Show customers — a failed /api/members/search on click shows a scoped error, not an infinite spinner or a whole-SPA crash","Customer > Condition Tree > Show customers by user group","High","","ECL-14.1","Admin logged in; a Promotion's condition tree has a ""User group is"" condition with a group selected; the agent can force the /api/members/search request this click issues to fail (block it, delay it past a reasonable timeout, or force a 500/malformed-JSON response) via the browser's network-condition/interception controls.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open a Promotion's condition tree, select a ""User group is"" condition with any one group
+[ACT] arm a network interception so the NEXT /api/members/search request matching this blade's groups-filtered body fails (500, abort, or times out)
+[ACT] click 'Show customers'
+[WAIT] observe the blade's behavior after the forced failure","[STATE] verify whether the blade shows a scoped error/notification rather than an indefinite spinner {HYPOTHESIS}
+[REL] verify whether the rest of the Admin SPA (main menu, any other open blade) remains exactly as interactive after the forced failure as it was immediately before triggering it — no cascading unresponsiveness {HYPOTHESIS}","[NETWORK] the forced failure is visible on the intercepted request (status/timeout as armed)
+[CONSOLE] no unhandled promise rejection that breaks the wider SPA","spinner remains indefinitely with no timeout or error surfaced, the whole Admin SPA becomes unresponsive, an unhandled exception appears in console","None — read-only. Remove the network interception; discard any unsaved condition-tree edit by navigating away without saving.","VCST-5547 · Archetype:FALLBACK · Technique:EG","Draft"
+"CUST-170","Show customers — the link and the filtered blade remain reachable at high browser zoom, dark mode, and print","Customer > Condition Tree > Show customers by user group","High","","ECL-15.1","Admin logged in; a Promotion's condition tree with a ""User group is"" condition and a group selected, so the link is visible. Baseline viewport 1920x1080 - every reflow size below is derived from it, so a lane running at another baseline must recompute them. Playwright MCP cannot set Chrome's own zoom level; WCAG 2.2 SC 1.4.10 measures reflow by CSS viewport, so 200% and 400% are exercised as 960x540 and 480x270 and a runner must never claim it set browser zoom.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open the condition tree with a group selected so the 'Show customers' link is visible
+[ACT] resize the viewport to 960x540 - the reflow equivalent of 200% zoom
+[WAIT] the page settles at 960x540
+[ACT] resize the viewport to 480x270 - the 400% equivalent
+[WAIT] the page settles at 480x270
+[ACT] resize the viewport to 320x1080 - SC 1.4.10's own 320 CSS px target, which isolates the width axis from the height axis
+[WAIT] the page settles at 320x1080
+[ACT] restore the viewport to 1920x1080
+[ACT] emulate prefers-color-scheme dark
+[ACT] emulate prefers-reduced-motion reduce
+[ACT] click 'Show customers'
+[WAIT] the blade opens under the dark / reduced-motion overrides
+[ACT] clear the colour-scheme override
+[ACT] clear the reduced-motion override
+[ACT] emulate the print media type on the opened member-list blade
+[WAIT] the grid re-renders under print media
+[ACT] clear the media override
+[ACT] restore the viewport to 1920x1080","[DOM] the 'Show customers' link stays within the visible viewport and clickable at BOTH reflow equivalents (960x540 and 480x270) — not clipped by a fixed-position or overflow:hidden ancestor, and not covered by the blade's own fixed footer {DOC} WCAG 2.2 SC 1.4.10 Reflow
+[REL] the link's offset inside its own container is IDENTICAL at 1920x1080, 960x540, 480x270 and 320x1080 - measure it once at the baseline and compare every smaller size against THAT measurement, never against a transcribed number - so any clipping comes from an ancestor losing height rather than from the link shifting {OBSERVED}
+[DOM] under prefers-color-scheme dark the member grid's row text keeps the same computed colour and background as at default (the Admin SPA ships NO dark theme, so the light palette is the accepted result, not a miss) and its contrast ratio stays above 4.5:1; under prefers-reduced-motion reduce the 'Show customers' link still opens the 'Companies and contacts' blade and its grid renders at least one row, so no affordance depends on a transition completing {OBSERVED}
+[DOM] under the print media type the member-list grid shows readable row text for at least the first visible row, not a blank or clipped page {OBSERVED}  <- this is CSS print-media emulation into the viewport; Chrome's paginated print dialog (page breaks, headers/footers) is not reachable from a Playwright lane and is out of scope for this row","[CONSOLE] no error triggered purely by zoom/theme/print changes","link or blade content clipped/unreachable at any tested zoom level, illegible contrast in dark mode, blank print preview","None — read-only. Reset zoom/theme/print state; discard any unsaved condition-tree edit.","VCST-5547 · Archetype:RENDER · Technique:EG","Draft"
+"CUST-171","Show customers — grid rendering across the member-count shapes reachable live on this environment (empty, exactly one, the largest available group)","Customer > Condition Tree > Show customers by user group","High","","ECL-13.1","Admin logged in; the live Customer.MemberGroups dictionary contains, at minimum, one group with totalCount==0 and one with totalCount==1 (self-contained discovery, same apparatus as CUST-152/153/155). An 'overflowing/paginated' shape is NOT guaranteed reachable on this environment — if no live group's count meets or exceeds one grid page, that slice is recorded as a coverage gap here rather than fabricated.","back_url={{BACK_URL}}, admin_user={{ADMIN_EMAIL}}, admin_pass={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) → capture access_token as $TOKEN
+[SETUP] open a Promotion, add (or open) a ""User group is"" condition, and read the full option list of its multi-select — this list IS the live Customer.MemberGroups dictionary → capture as $GROUPS
+[SETUP] for each name in $GROUPS, POST {{BACK_URL}}/api/members/search {""groups"":[""<name>""],""rootMembersOnly"":false,""memberId"":null,""deepSearch"":false,""skip"":0,""take"":0} with Authorization: Bearer $TOKEN, record totalCount → build map $COUNTS
+[SETUP] select $GROUP_EMPTY (totalCount==0), $GROUP_ONE (totalCount==1), and $GROUP_MAX (the largest totalCount found in $COUNTS); read the grid's own pager control to record its page size as $PAGE_SIZE
+[ACT] open a condition tree, select ONLY $GROUP_EMPTY, click 'Show customers'
+[WAIT] the blade opens showing $GROUP_EMPTY's result
+[ACT] close the blade without saving
+[ACT] open a condition tree, select ONLY $GROUP_ONE, click 'Show customers'
+[WAIT] the blade opens showing $GROUP_ONE's result
+[ACT] close the blade without saving
+[ACT] open a condition tree, select ONLY $GROUP_MAX, click 'Show customers'
+[WAIT] the blade opens showing $GROUP_MAX's result
+[ACT] close the blade without saving","[GRID] $GROUP_EMPTY renders the defined empty state confirmed in CUST-155 — no crash, no indefinite spinner {OBSERVED}
+[GRID] $GROUP_ONE renders exactly one row {OBSERVED}
+[GRID] $GROUP_MAX renders exactly min($COUNTS[$GROUP_MAX], $PAGE_SIZE) rows on the first page, and the pager reports $COUNTS[$GROUP_MAX] in total - $PAGE_SIZE is read from the grid's own pager in setup, so a group larger than one page does not read as a miscount {OBSERVED}","[NETWORK] no 4xx/5xx across the three opens","any of the three shapes crashes the grid or hangs, $GROUP_MAX's row count does not match its own /api/members/search totalCount","None — read-only. Close each blade without saving between iterations.",VCST-5547 · Archetype:BOUNDARY · Technique:EG | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated

@@ -65,7 +65,9 @@ const ALLOWED_PATTERNS = [
   // whatever the fresh one allows. Patching one side left the other 6 weeks behind and
   // silently blocked the very case the allowlist entry was added for — measured on
   // suite 001 CAT-049 in run REG-2026-09-07-2225. Any change here must land in both
-  // files, in the same commit; `npm run mirror:check` holds them byte-identical.
+  // files, in the same commit. NOTHING ENFORCES THIS ANY MORE: `mirror:check` held the two
+  // copies byte-identical until it was removed on 2026-09-19, so a one-sided patch now drifts
+  // silently — exactly the failure the measured incident above describes.
   /meta\[property=['"](?:og|twitter):[a-z:_-]+['"]\]/i, // og:/twitter: card tags
   // Explicit opt-in for UI-FIX / DEBUG DOM experiments. A layout/CSS fix often
   // can't be proven without trying the corrected DOM/CSS live (e.g. move a node,

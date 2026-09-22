@@ -1,5 +1,5 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-SR-CO-001,[JOURNEY] Customer profile to All orders to filtered list to open own order and back,Sales Rep > Customer Orders > Storefront,Critical,"BL-SR-002, BL-SR-011",ECL-14.3,"[PRE:CLEAR_SESSION]
+"SR-CO-001","[JOURNEY] Customer profile to All orders to filtered list to open own order and back","Sales Rep > Customer Orders > Storefront","Critical","BL-SR-002, BL-SR-011","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id) (TechFlow). Fixtures pinned live for this run: @td(ORDER_REP_PLACED.number) (TechFlow, placed by this rep), @td(ORDER_BUYER_PLACED.number) (TechFlow, placed by a buyer -- same org, different author), @td(ORDER_NOT_SERVED.number) (Acme-EU -- an org the rep does NOT serve, must never appear). The two TechFlow orders differ ONLY in who placed them, so a scope failure cannot be explained away by org-scoping instead of authorship.","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id), frontUrl={{FRONT_URL}}","--- SCREEN: Customer Profile -> All Orders Entry Point ---
 [NAV] {{FRONT_URL}}/company/my-customers
@@ -43,10 +43,10 @@ SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id) (TechFlow). Fixtures pinned 
 [STATE] both @td(ORDER_REP_PLACED.number) and @td(ORDER_BUYER_PLACED.number) are present in the rendered set before any filter is applied -- the buyer-placed order proves scope is membership-based, not creator-based {BL}
 [REL] where a Customer column is rendered, every value in it reads @td(ORG_TECHFLOW.name) -- no other customer leaks into this scoped view {BL}
 [STATE] applying the status filter, then sorting, then paging to page 2 never re-admits @td(ORDER_NOT_SERVED.number) and never widens the scope back to the cross-customer route (URL still carries @td(ORG_TECHFLOW.platform_id)) {BL}
-[NAV] opening @td(ORDER_REP_PLACED.number) lands on /account/orders/<id> with Pay now and Reorder both enabled {SPEC}
+[NAV] opening @td(ORDER_REP_PLACED.number) lands on /account/orders/<id> with Pay now enabled {SPEC}
 [NAV] opening @td(ORDER_BUYER_PLACED.number) does NOT land on /account/orders/<id> -- it opens the hub's read-only order page, whose only enabled action is Print {SPEC}
 [NAV] clicking the breadcrumb's customer segment returns to @td(ORG_TECHFLOW.name)'s profile URL, with its Orders context still active, not the profile's bare default landing state {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SCOPE · Technique:FLOW,Draft
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","none","VCST-5733 · Archetype:SCOPE · Technique:FLOW","Draft"
 SR-CO-002,Breadcrumb on the customer-scoped route retains the customer segment,Sales Rep > Customer Orders > Storefront,High,PROPOSED-BL-SR-SCOPE,ECL-14.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id).","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
@@ -54,15 +54,15 @@ SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id).","rep=@td(SR_REP_PRIMARY.em
 [KEY] record the ordered list of breadcrumb link texts","[STATE] the breadcrumb segment list is Account, Sales Rep hub, My customers, @td(ORG_TECHFLOW.name), Orders, in that order {SPEC}
 [DOM] the @td(ORG_TECHFLOW.name) breadcrumb segment renders as an <a>/role=""link"" element, not a <span>/plain-text node, inside the breadcrumb nav {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:PARITY · Technique:EG | Promoted: REG-2026-09-02-2055 (2026-09-02),Automated
-SR-CO-003,Breadcrumb on the cross-customer route does NOT name any single customer,Sales Rep > Customer Orders > Storefront,Medium,,ECL-14.3,"[PRE:CLEAR_SESSION]
+"SR-CO-003","Breadcrumb on the cross-customer route does NOT name any single customer","Sales Rep > Customer Orders > Storefront","Medium","","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-SR_REP_PRIMARY serves more than one organization, including @td(ORG_TECHFLOW.platform_id) and @td(ORG_ACME.platform_id).",rep=@td(SR_REP_PRIMARY.email),"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+SR_REP_PRIMARY serves more than one organization, including @td(ORG_TECHFLOW.platform_id) and @td(ORG_ACME.platform_id).","rep=@td(SR_REP_PRIMARY.email)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
 [WAIT] the customer-scoped orders grid has rendered
 [NAV] {{FRONT_URL}}/company/customer-orders
 [WAIT] the cross-customer orders grid has rendered
 [KEY] record the ordered list of breadcrumb link texts on the cross-customer route","[STATE] the cross-customer route's breadcrumb contains no organization-name segment -- neither @td(ORG_TECHFLOW.name) (the previously visited customer) nor any other served customer's name {SPEC}
-[REL] the cross-customer route's breadcrumb segment count is exactly one less than the customer-scoped route's (no customer segment), every other segment equal {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:PARITY · Technique:EG,Draft
+[REL] the cross-customer route breadcrumb contains no customer-name segment and no ""My customers"" segment; its last segment reads ""Orders"" {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","none","VCST-5733 · Archetype:PARITY · Technique:EG","Draft"
 SR-CO-004,Breadcrumb customer segment returns to that customer profile,Sales Rep > Customer Orders > Storefront,High,PROPOSED-BL-SR-SCOPE,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id).","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
@@ -137,14 +137,14 @@ SR-CO-008,Created-date range includes orders on both boundary days in the rep lo
 [STATE] the order created on D_LAST is present in the filtered results {BL}
 [MATH] RENDERED_ROW_COUNT = TOTAL_ORDERS_IN_WINDOW -- none excluded purely because its creation timestamp falls on a range boundary day {BL}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-09-02-2055 (2026-09-02),Automated
-SR-CO-009,"A rep serving zero customers sees the no-data empty state, distinct from a zero-match state",Sales Rep > Customer Orders > Storefront,Medium,BL-SR-012,ECL-14.3,"[PRE:CLEAR_SESSION]
+"SR-CO-009","A rep serving zero customers sees the no-data empty state, distinct from a zero-match state","Sales Rep > Customer Orders > Storefront","Medium","BL-SR-012","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]
-SR_REP_NOCUSTOMERS serves zero customer organizations.",rep=@td(SR_REP_NOCUSTOMERS.email),"[NAV] {{FRONT_URL}}/company/customer-orders
+SR_REP_NOCUSTOMERS serves zero customer organizations.","rep=@td(SR_REP_NOCUSTOMERS.email)","[NAV] {{FRONT_URL}}/company/customer-orders
 [WAIT] the page settles out of its loading state
-[KEY] record the rendered heading and body text, and whether a clear-filter control is offered","[DOM] the empty-state heading/body communicates that the rep serves no customers -- not a generic ""no results match your filters"" message {BL}
+[KEY] record the rendered heading and body text, and whether a clear-filter control is offered","[DOM] the empty-state heading/body text is present and reads distinctly from the generic zero-match phrasing (e.g. ""No orders yet"" rather than ""no results match your filters"") {OBSERVED}
 [DOM] no ""Clear filters""/""Reset"" button or link element is present anywhere in the empty-state region, since no filter was ever applied {BL}
 [STATE] no infinite spinner or blank page is shown in place of the empty state {BL}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:FALLBACK · Technique:EP,Draft
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","none","VCST-5733 · Archetype:FALLBACK · Technique:EP","Draft"
 SR-CO-010,Opening an order the rep did NOT place lands on a read-only page with no payment or reorder action,Sales Rep > Customer Orders > Storefront,Critical,BL-SR-002,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 @td(ORDER_BUYER_PLACED.number) was placed by a buyer in @td(ORG_TECHFLOW.platform_id), a customer SR_REP_PRIMARY serves.","rep=@td(SR_REP_PRIMARY.email), buyerOrder=@td(ORDER_BUYER_PLACED.number)","[NAV] {{FRONT_URL}}/company/customer-orders
@@ -157,15 +157,15 @@ SR-CO-010,Opening an order the rep did NOT place lands on a read-only page with 
 [STATE] the Reorder control is never present, enabled, or clickable anywhere on the page {BL}
 [STATE] Print is the only enabled action control on the page {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:SCOPE · Technique:ST | Promoted: REG-2026-09-02-2055 (2026-09-02),Automated
-SR-CO-011,Opening an order the rep DID place lands on the buyer page with its actions intact,Sales Rep > Customer Orders > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+"SR-CO-011","Opening an order the rep DID place lands on the buyer page with its actions intact","Sales Rep > Customer Orders > Storefront","Medium","","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 @td(ORDER_REP_PLACED.number) was placed by SR_REP_PRIMARY in @td(ORG_TECHFLOW.platform_id).","rep=@td(SR_REP_PRIMARY.email), ownOrder=@td(ORDER_REP_PLACED.number)","[NAV] {{FRONT_URL}}/company/customer-orders
 [WAIT] the grid has rendered
 [ACT] open the row for @td(ORDER_REP_PLACED.number)
 [WAIT] navigation settles on the order's destination page
 [KEY] record the destination URL and every enabled action control","[NAV] the destination URL is the buyer-facing route /account/orders/<id>, not the hub's read-only route {SPEC}
-[STATE] Pay now and Reorder are both present and enabled, exactly as for the buyer who could have placed this order {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:PARITY · Technique:ST,Draft
+[STATE] Pay now is present and enabled, exactly as for the buyer who could have placed this order {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","none","VCST-5733 · Archetype:PARITY · Technique:ST; EVIDENCE-GAP: no own trace/screenshot on run REG-2026-09-19-1035 (payload reused SR-CO-001)","Draft"
 SR-CO-012,A typed buyer-page URL for a served customer order the rep did not place is refused,Sales Rep > Customer Orders > Storefront,Critical,BL-SR-002,ECL-14.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 @td(ORDER_BUYER_PLACED.id) belongs to a customer SR_REP_PRIMARY serves but was placed by a buyer, not the rep -- the rep is neither the order's own customer, an org member, nor an administrator.","rep=@td(SR_REP_PRIMARY.email), buyerOrder=@td(ORDER_BUYER_PLACED.id)","[NAV] {{FRONT_URL}}/account/orders/@td(ORDER_BUYER_PLACED.id)
@@ -594,3 +594,17 @@ SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id) with enough order history to
 [SHAPE] TAB_ORDER lists the Filters drawer-trigger, each chip's close control, then the Reset filters control, in the expected order, with no control skipped {OBSERVED}
 [REL] the active-filter chip count after pressing Enter on the focused Reset filters control is exactly 0, down from its pre-Enter count -- the grid re-renders unfiltered, so the control is operable by keyboard alone {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5733 · Archetype:RENDER · Technique:EG,Draft
+SR-CO-038,Sales Rep Customer-Orders Date Filter — Out-of-Span Value Clamps to the Allowed Range Instead of Stranding,Sales Rep > Customer Orders > Storefront > Date Filter,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+@td(ORG_TECHFLOW.platform_id) has order history; live-discover its earliest and latest order creation dates to determine whether a configured min/max span is exposed on this filter at all (premise per testing-checklist Lane B #16: 0 of 42 day cells carried aria-disabled on the prior build)",@td(ORG_TECHFLOW.platform_id),"[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the orders grid has rendered
+[ACT] open the filters drawer
+[ACT] open the created-date calendar control
+[WAIT] calendar popup visible
+[KEY] inspect the day cells for aria-disabled attributes outside any range implied by the customer's order history -- record whether ANY day cell is disabled (bounds premise check)
+[COND: bounds ARE enforced] [ACT] attempt to navigate/type to a date outside the disabled span
+[COND: bounds ARE enforced] [WAIT] short pause
+[COND: bounds NOT enforced] [KEY] record that no min/max is currently passed to this control (premise false, matching the prior build's 0-of-42 finding) and stop","[COND: bounds enforced] [STATE] the grid clamps navigation/typed entry to the nearest in-span date rather than accepting an out-of-span value or leaving the control in a stuck/blank state
+[COND: bounds enforced] [DOM] no day cell outside the configured span is selectable
+[COND: bounds not enforced] [STATE] document the premise result plainly (0 disabled cells = bounds not passed on this build) rather than reporting a false PASS against an unenforced rule","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","grid strands on an out-of-span date with no recovery path, or silently accepts one that later produces a zero-row/confusing result, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5097 · Archetype:CONFIG · Technique:EP,Draft

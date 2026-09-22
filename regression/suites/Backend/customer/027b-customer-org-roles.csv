@@ -63,7 +63,7 @@ Body: [{""name"": ""Customer.OrganizationRolesWhitelist"", ""value"": null, ""al
 [BLADE] AFTER_NARROW_OPTIONS shows EXACTLY ONE option: 'Organization employee' is now absent, only 'Organization maintainer' remains
 [STATE] No implicit 'none'/wildcard entry is present that would silently allow assigning any role","[API] GET {{BACK_URL}}/api/platform/settings/Customer.OrganizationRolesWhitelist -- allowedValues == [""Organization maintainer""] (length 1) after the narrowing POST","AFTER_NARROW_OPTIONS still shows 2 options post cache-reset+reload (single-role boundary not honored); AFTER_NARROW_OPTIONS shows zero options (over-restriction, distinct from the empty-whitelist case in ORGROLE-003)","[AUTH role=ADMIN_DEFAULT]
 [REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; customer#304; Story EPIC-5239-01 AC-4","Semi-Automated"
-"ORGROLE-003","Organization whitelist EMPTY = no restriction -- picker shows ALL platform roles (by design, source-grounded)","Org Roles > Organization Whitelist > Adversarial","High","BL-B2B-011","","Admin logged into {{BACK_URL}}. EXPECTATION CORRECTED 2026-07-15 (was: empty whitelist must lock out to zero options -- that assumption came from ba-report-2026-07-09.md Open Question #2 and was NEVER source-verified). SOURCE OF TRUTH: vc-module-customer Scripts/services/rolesPickerService.js applies the whitelist filter ONLY inside `if (whitelist.length) { ...filter... }` -- when the whitelist is EMPTY the filter block is skipped and the full roles list is returned. So an empty Organization whitelist means NO RESTRICTION -> the org-level 'Roles' picker (organization-detail.js, whitelistSettingId 'Customer.OrganizationRolesWhitelist') offers ALL platform roles. This is BY DESIGN, not a fallback bug. Confirmed live 2026-07-15 during VCST-5441 verification (Platform 3.1044.0-pr-3076-3479): empty whitelist -> all ~42 roles; a 2-entry whitelist -> picker narrows to exactly those (ORGROLE-001/002). ORGROLE-001/002 already prove the filter IS active when the whitelist is non-empty, so this case only pins the empty = no-restriction direction as a regression guard. Use CDP (not a synthetic click) to open the select2 picker, and a cache-reset + full page reload after writing the empty whitelist, per the interaction-method correction in ORGROLE-001. Throwaway AGENT-TEST organization created in Steps.","back_url={{BACK_URL}}","[AUTH role=ADMIN_DEFAULT]
+"ORGROLE-003","Organization whitelist EMPTY = no restriction -- picker shows ALL platform roles (by design, source-grounded)","Org Roles > Organization Whitelist > Adversarial","High","BL-B2B-011","","Admin logged into {{BACK_URL}}. EXPECTATION CORRECTED 2026-07-15 (was: empty whitelist must lock out to zero options -- that assumption came from ba-report-2026-07-09.md Open Question #2 and was NEVER source-verified). SOURCE OF TRUTH: vc-module-customer Scripts/services/rolesPickerService.js applies the whitelist filter ONLY inside `if (whitelist.length) { ...filter... }` -- when the whitelist is EMPTY the filter block is skipped and the full roles list is returned. So an empty Organization whitelist means NO RESTRICTION -> the org-level 'Roles' picker (organization-detail.js, whitelistSettingId 'Customer.OrganizationRolesWhitelist') offers ALL platform roles. This is BY DESIGN, not a fallback bug. Confirmed live 2026-07-15 during VCST-5441 verification (Platform 3.1044.0-pr-3076-3479): empty whitelist -> all ~42 roles; a 2-entry whitelist -> picker narrows to exactly those (ORGROLE-001/002). ORGROLE-001/002 already prove the filter IS active when the whitelist is non-empty, so this case only pins the empty = no-restriction direction as a regression guard. Use CDP (not a synthetic click) to open the select2 picker, and a cache-reset + full page reload after writing the empty whitelist, per the interaction-method correction in ORGROLE-001. Throwaway AGENT-TEST organization created in Steps. SCOPE NOTE (BL-B2B-011, amended 2026-09-19): this case exercises the GLOBAL tenant scope only, via the legacy v1 `/api/platform/settings` surface where the selected whitelist set is read/written through `allowedValues` -- on that surface empty-whitelist-means-all-roles is fully determined, not a coincidence of environment state. It does NOT generalize to STORE tenant scope: at STORE scope an empty override is skipped and the picker falls through to whatever the GLOBAL whitelist currently holds -- a second hop that only reads as 'all roles' because GLOBAL happens to be empty here (see ORGROLE-020, which reads the GLOBAL value live rather than assuming it).","back_url={{BACK_URL}}","[AUTH role=ADMIN_DEFAULT]
 [REST-OP clear_org_whitelist]
 POST {{BACK_URL}}/api/platform/settings
 Content-Type: application/json
@@ -276,7 +276,7 @@ Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organi
 [REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole008@yopmail.com]
 [REST DELETE /api/members?ids={{MEMBER_ID}}]
 [REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; customer#304; Story EPIC-5239-01 DoD","Draft"
-"ORGROLE-018","Membership whitelist EMPTY = no restriction -- per-member role editor shows ALL platform roles (by design, source-grounded)","Org Roles > Membership Whitelist > Adversarial","High","BL-B2B-011","","Admin logged into {{BACK_URL}}. Membership-level twin of ORGROLE-003 (previously NO case covered the empty Membership whitelist). SOURCE OF TRUTH: the per-member role editor (vc-module-customer Scripts/blades/organization-membership-detail.js) builds its options through the SAME virtoCommerce.customerModule.rolesPickerService as the org-level picker, with whitelistSettingId 'Customer.MembershipRolesWhitelist'. That service filters ONLY inside `if (whitelist.length) { ...filter... }` -- so an EMPTY Membership whitelist skips the filter and the editor offers ALL platform roles (NO restriction), by design, not a fallback bug. This is the same mechanism confirmed live for the org-level picker on 2026-07-15 during VCST-5441 verification (Platform 3.1044.0-pr-3076-3479); ORGROLE-006/008 prove the Membership filter narrows the editor once the whitelist is non-empty. Status Draft -- source-grounded, the empty Membership direction not independently re-verified live this session. Use CDP (not a synthetic click) to open the select2, cache-reset + full page reload after writing the empty whitelist. Throwaway AGENT-TEST org + member + membership created in Steps.","back_url={{BACK_URL}}; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
+"ORGROLE-018","Membership whitelist EMPTY = no restriction -- per-member role editor shows ALL platform roles (by design, source-grounded)","Org Roles > Membership Whitelist > Adversarial","High","BL-B2B-011","","Admin logged into {{BACK_URL}}. Membership-level twin of ORGROLE-003 (previously NO case covered the empty Membership whitelist). SOURCE OF TRUTH: the per-member role editor (vc-module-customer Scripts/blades/organization-membership-detail.js) builds its options through the SAME virtoCommerce.customerModule.rolesPickerService as the org-level picker, with whitelistSettingId 'Customer.MembershipRolesWhitelist'. That service filters ONLY inside `if (whitelist.length) { ...filter... }` -- so an EMPTY Membership whitelist skips the filter and the editor offers ALL platform roles (NO restriction), by design, not a fallback bug. This is the same mechanism confirmed live for the org-level picker on 2026-07-15 during VCST-5441 verification (Platform 3.1044.0-pr-3076-3479); ORGROLE-006/008 prove the Membership filter narrows the editor once the whitelist is non-empty. Status Draft -- source-grounded, the empty Membership direction not independently re-verified live this session. Use CDP (not a synthetic click) to open the select2, cache-reset + full page reload after writing the empty whitelist. Throwaway AGENT-TEST org + member + membership created in Steps. SCOPE NOTE (BL-B2B-011, amended 2026-09-19): this case exercises the GLOBAL tenant scope only, via the legacy v1 `/api/platform/settings` surface (`allowedValues` carries the selected set on that surface) -- empty-whitelist-means-all-roles is fully determined at GLOBAL scope, not a coincidence. It does NOT generalize to STORE tenant scope, where an empty override is skipped and the picker falls through to whatever GLOBAL currently holds instead of meaning all roles outright (see ORGROLE-019/ORGROLE-020, the STORE-scope override and fallback twins, which read the GLOBAL value live rather than assuming it).","back_url={{BACK_URL}}; password={{DEFAULT_TEST_PASSWORD}}","[AUTH role=ADMIN_DEFAULT]
 [REST-OP clear_membership_wl]
 POST {{BACK_URL}}/api/platform/settings
 Content-Type: application/json
@@ -731,3 +731,137 @@ query($id: String!) {
 [REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole017@yopmail.com]
 [REST DELETE /api/members?ids={{MEMBER_ID}}]
 [REST DELETE /api/members?ids={{ORG_ID}}]","VCST-5239; testing-checklist.md AC13; live-verified 2026-07-09","Draft"
+ORGROLE-019,"STORE-scope Membership whitelist override narrows the picker regardless of GLOBAL, proven by removing a currently-visible role",Org Roles > Membership Whitelist > Store Scope Override,High,BL-B2B-011,,"Admin logged into {{BACK_URL}}. STORE-scope twin of ORGROLE-001, exercising the override half of BL-B2B-011's 2026-09-19 amendment. At STORE tenant scope the whitelist is read/written through the v2 tenant-values surface (GET/POST /api/platform/settings/v2/tenant/Store/{storeId}/values), where a dictionary setting's SELECTED set is the `value` field of a flat {settingName: value} map -- inverted from the legacy v1 `allowedValues` field the GLOBAL-scope cases in this suite use (ORGROLE-001/003/004/etc). Source of truth: scripts/seed-data/b2b/membership-roles-whitelist-specs.mjs + set-membership-roles-whitelist.mjs (npm run seed:membership-roles); confirmed live on vcst 2026-09-19 that the fixture alias @td(B2B_STORE_MEMBERSHIP_ROLES.seeded_values) -- Organization employee, Purchasing agent, Organization maintainer, Sales Representative, Advanced Sales Representative (the module's 3 hardcoded pool roles per ModuleConstants.cs plus 2 live-resolved sales-rep roles) -- is already applied to {{STORE_ID}}'s Customer.MembershipRolesWhitelist, and that @td(B2B_STORE_MEMBERSHIP_ROLES.narrowed_omitted_role) ('Purchasing agent') is the single pool role the narrowed variant deliberately omits -- confirmed live on vcst 2026-09-19 via POST /api/platform/security/roles/search {keyword:"""", take:20} returning 20 of 60 roles with 'Purchasing agent' at position 19, i.e. inside the picker's default un-keyworded page, so its disappearance is genuine filtering, not a paging artifact ('Organization employee' and 'Organization maintainer' are both outside that page). The seeder re-checks this property live on every apply and aborts if the role drifts out of the window, so this case no longer has to assume it. This case narrows the STORE value to @td(B2B_STORE_MEMBERSHIP_ROLES.narrowed_values) -- the seeded set minus narrowed_omitted_role -- and asserts the disappearance of @td(B2B_STORE_MEMBERSHIP_ROLES.narrowed_omitted_role), so the case and the fixture can never disagree about which role is the evidence. PICKER PAGING (live-measured 2026-09-18): the Admin SPA roles picker fetches a fixed un-keyworded page of 20 (rolesPickerService.js roles.search({take:20})); this case falsifies via a role that is visible WITHOUT typing a keyword, so its disappearance after narrowing is not confounded by paging (constraint: falsify by removing a currently-visible role, never by adding one that may not be applicable). REFRESH REQUIREMENT: Settings -> Reset cache + a FULL page reload after every settings write, or the picker serves the previous value. Use CDP (not a synthetic click) to open the select2, per the interaction-method correction in ORGROLE-001. Throwaway AGENT-TEST org + member + membership created in Steps.",back_url={{BACK_URL}}; store_id={{STORE_ID}}; password={{DEFAULT_TEST_PASSWORD}}; global_control_role=Organization maintainer,"[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_global_control]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization maintainer""], ""isDictionary"": true}]
+[REST-EXEC set_global_control]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-019-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole019"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-orgrole019@yopmail.com"", ""email"": ""AGENT-TEST-orgrole019@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""{{STORE_ID}}"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgrole019@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-019"", ""roles"": [{""roleId"": ""org-employee"", ""roleName"": ""Organization employee""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[NAV] Navigate to {{BACK_URL}} Customer module > Contacts via CDP; full page reload with cache disabled/ignored (cache-reset) so the seeded STORE value and the just-written GLOBAL control are both current
+[ACT] Open the AGENT-TEST-OrgRole019 contact blade; via CDP, click into the Organization memberships widget's role editor select2 for the membership row to open its dropdown (un-keyworded)
+[ASSERT] Read the rendered role options -- record as BASELINE_OPTIONS
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP narrow_store]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Customer.MembershipRolesWhitelist"": @td(B2B_STORE_MEMBERSHIP_ROLES.narrowed_values)}
+[REST-EXEC narrow_store]
+[NAV] Full page reload with cache disabled/ignored
+[ACT] Reopen the AGENT-TEST-OrgRole019 contact blade; via CDP, reopen the role editor select2 for the same membership row (un-keyworded)
+[ASSERT] Read the rendered role options again -- record as AFTER_NARROW_OPTIONS","[ERRORS label=create_org] errors[] empty {OBSERVED}
+[BLADE] BASELINE_OPTIONS includes 'Purchasing agent' {OBSERVED} -- proves the picker is governed by the STORE-scope override (@td(B2B_STORE_MEMBERSHIP_ROLES.seeded_values)), NOT by the GLOBAL control value just written ([Organization maintainer] alone would not include it) -- store wins regardless of global {BL}
+[BLADE] BASELINE_OPTIONS also includes 'Sales Representative' {OBSERVED} -- a role outside the module's hardcoded pool, present only via the STORE override; confirms the picker reads the live STORE tenant value, not the descriptor pool's AllowedValues literal {BL}
+[BLADE] AFTER_NARROW_OPTIONS does NOT include @td(B2B_STORE_MEMBERSHIP_ROLES.narrowed_omitted_role) {OBSERVED} -- narrowing the STORE value to @td(B2B_STORE_MEMBERSHIP_ROLES.narrowed_values) removed a role that was genuinely visible in BASELINE_OPTIONS, not one added speculatively {BL}
+[BLADE] AFTER_NARROW_OPTIONS does not equal the GLOBAL control set ([Organization maintainer] only) either -- e.g. 'Organization employee' remains present {OBSERVED} -- confirms the picker keeps reading the STORE value throughout and never falls back to GLOBAL while STORE is non-empty, even a single-entry STORE value {BL}","[API] GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values -- the ""Customer.MembershipRolesWhitelist"" key equals @td(B2B_STORE_MEMBERSHIP_ROLES.pre_state) after narrow_store, confirming AFTER_NARROW_OPTIONS reflects the persisted STORE value rather than a stale cache",BASELINE_OPTIONS omits 'Purchasing agent' or 'Sales Representative' after a genuine cache-reset+reload (picker wrongly following the GLOBAL control value or the module's hardcoded pool instead of the STORE override -- the exact field-inversion violation BL-B2B-011's 2026-09-19 amendment describes); AFTER_NARROW_OPTIONS still contains 'Purchasing agent' (STORE-scope write not honored / stale cache); AFTER_NARROW_OPTIONS equals the GLOBAL control set alone (picker wrongly fell back to GLOBAL while STORE is still non-empty); a synthetic click that fails to open the select2 dropdown misread as a genuine narrowed result,"[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore_store]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Customer.MembershipRolesWhitelist"": @td(B2B_STORE_MEMBERSHIP_ROLES.seeded_values_json)}
+[REST-EXEC restore_store]
+[REST-OP restore_global]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [], ""isDictionary"": true}]
+[REST-EXEC restore_global]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole019@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]",VCST-5239; customer#304; BL-B2B-011 (amended 2026-09-19); Archetype:CONFIG; Technique:DT,Draft
+ORGROLE-020,Empty STORE-scope Membership whitelist falls through to the live GLOBAL whitelist -- never asserted as unconditional 'all roles',Org Roles > Membership Whitelist > Store Scope Fallback,High,BL-B2B-011,,"Admin logged into {{BACK_URL}}. STORE-scope twin of ORGROLE-018, exercising the fallback half of BL-B2B-011's 2026-09-19 amendment. rolesPickerService.js gates the STORE override with `if (storeValues.length)` -- an empty/absent STORE value is falsy-length, so the override is SKIPPED and the picker falls through to the GLOBAL whitelist, a SECOND hop. On vcst this reads as 'all roles' only because GLOBAL happens to be empty ([]) at rest (see ORGROLE-018's SCOPE NOTE); a deployment with a non-empty GLOBAL whitelist would narrow instead. Per BL-B2B-011's own Violation signal, a case that asserts 'empty STORE ⇒ all roles' without independently confirming GLOBAL is also empty records a coincidence, not the mechanism -- this case therefore WRITES GLOBAL to a KNOWN, deliberately non-empty control set and READS IT BACK live in the same run (EXPECTED_GLOBAL) rather than assuming any ambient state, then asserts the picker against that captured value. Control set chosen for a three-way divergence against the B2B_STORE_MEMBERSHIP_ROLES fixture: 'Purchasing agent' (inside the picker's default un-keyworded page of 20, live-measured 2026-09-18) and 'Organization maintainer' (outside it, requires a keyword) are both in EXPECTED_GLOBAL; 'Advanced Sales Representative' (@td(B2B_STORE_MEMBERSHIP_ROLES.sales_rep_roles), STORE-fixture-only) and 'Organization employee' (module pool, STORE-fixture-only) are both NOT in EXPECTED_GLOBAL, so their absence rules out both 'still serving the stale STORE fixture' and 'empty STORE means unconditional all-roles'. Source of truth: same v1/v2 field-inversion mechanism as ORGROLE-019 -- see that case's Preconditions. REFRESH REQUIREMENT: Settings -> Reset cache + full page reload after every write. Use CDP (not a synthetic click) to open the select2. Throwaway AGENT-TEST org + member + membership created in Steps. Cleanup restores STORE to the full seeded_values set via @td(B2B_STORE_MEMBERSHIP_ROLES.seeded_values_json) and GLOBAL to empty (this suite's established neutral resting state, per ORGROLE-005).","back_url={{BACK_URL}}; store_id={{STORE_ID}}; password={{DEFAULT_TEST_PASSWORD}}; global_control_roles=Organization maintainer,Purchasing agent","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_global_control]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [""Organization maintainer"", ""Purchasing agent""], ""isDictionary"": true}]
+[REST-EXEC set_global_control]
+[REST-OP read_global]
+GET {{BACK_URL}}/api/platform/settings/Customer.MembershipRolesWhitelist
+[REST-EXEC read_global]
+[REST-CAPTURE read_global.body.allowedValues → EXPECTED_GLOBAL]
+[REST-OP clear_store]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Customer.MembershipRolesWhitelist"": []}
+[REST-EXEC clear_store]
+[GQL-OP create_org]
+mutation CreateOrganization($input: InputCreateOrganizationType!) {
+  createOrganization(command: $input) { id name }
+}
+[GQL-VARS create_org] {""input"": {""name"": ""AGENT-TEST-OrgRole-020-{{TIMESTAMP}}""}}
+[GQL-EXEC create_org]
+[GQL-CAPTURE create_org.data.createOrganization.id → ORG_ID]
+[REST-OP create_member]
+POST {{BACK_URL}}/api/members
+Content-Type: application/json
+Body: {""firstName"": ""AGENT-TEST"", ""lastName"": ""OrgRole020"", ""memberType"": ""Contact""}
+[REST-EXEC create_member]
+[REST-CAPTURE create_member.body.id → MEMBER_ID]
+[REST-OP create_account]
+POST {{BACK_URL}}/api/platform/security/users/create
+Content-Type: application/json
+Body: {""userName"": ""AGENT-TEST-orgrole020@yopmail.com"", ""email"": ""AGENT-TEST-orgrole020@yopmail.com"", ""userType"": ""Customer"", ""storeId"": ""{{STORE_ID}}"", ""memberId"": ""{{MEMBER_ID}}"", ""emailConfirmed"": true, ""password"": ""{{DEFAULT_TEST_PASSWORD}}""}
+[REST-EXEC create_account]
+[REST-OP get_user_id]
+GET {{BACK_URL}}/api/platform/security/users/AGENT-TEST-orgrole020@yopmail.com
+[REST-EXEC get_user_id]
+[REST-CAPTURE get_user_id.body.id → USER_ID]
+[REST-OP create_membership]
+POST {{BACK_URL}}/api/customer/organization-memberships
+Content-Type: application/json
+Body: {""userId"": ""{{USER_ID}}"", ""organizationId"": ""{{ORG_ID}}"", ""organizationName"": ""AGENT-TEST-OrgRole-020"", ""roles"": [{""roleId"": ""org-manager"", ""roleName"": ""Organization manager""}]}
+[REST-EXEC create_membership]
+[REST-CAPTURE create_membership.body.id → MEMBERSHIP_ID]
+[NAV] Navigate to {{BACK_URL}} Customer module > Contacts via CDP; full page reload with cache disabled/ignored (cache-reset) so the empty STORE value and the just-written GLOBAL control are both current
+[ACT] Open the AGENT-TEST-OrgRole020 contact blade; via CDP, click into the Organization memberships widget's role editor select2 for the membership row to open its dropdown (un-keyworded)
+[ASSERT] Read the rendered role options -- record as BASELINE_UNKEYWORDED_OPTIONS
+[ACT] Via CDP, type keyword 'maintainer' into the select2 search box
+[ASSERT] Read the filtered options -- record as KEYWORD_MAINTAINER_OPTIONS
+[ACT] Clear the keyword; via CDP, type keyword 'employee' into the select2 search box
+[ASSERT] Read the filtered options -- record as KEYWORD_EMPLOYEE_OPTIONS","[ERRORS label=create_org] errors[] empty {OBSERVED}
+[BLADE] EXPECTED_GLOBAL == {Organization maintainer, Purchasing agent} {OBSERVED} -- read back live from read_global in this same run, never assumed {BL}
+[BLADE] BASELINE_UNKEYWORDED_OPTIONS includes 'Purchasing agent' {OBSERVED} -- a member of EXPECTED_GLOBAL, confirming the picker fell through to GLOBAL rather than showing zero options {BL}
+[BLADE] BASELINE_UNKEYWORDED_OPTIONS does NOT include 'Advanced Sales Representative' {OBSERVED} -- part of the STORE fixture (@td(B2B_STORE_MEMBERSHIP_ROLES.sales_rep_roles)) but not of EXPECTED_GLOBAL; its absence rules out the picker still serving the stale STORE fixture value {BL}
+[BLADE] KEYWORD_MAINTAINER_OPTIONS includes 'Organization maintainer' {OBSERVED} -- the second EXPECTED_GLOBAL entry, confirmed present once the picker's default-page paging is accounted for via keyword {BL}
+[BLADE] KEYWORD_EMPLOYEE_OPTIONS does NOT include 'Organization employee' {OBSERVED} -- absent from EXPECTED_GLOBAL; its absence even WITH a keyword bringing it into scope rules out paging as the explanation and isolates a genuine filter result, not an unconditional 'empty STORE = all roles' fallback {BL}","[API] GET {{BACK_URL}}/api/platform/settings/Customer.MembershipRolesWhitelist -- allowedValues == EXPECTED_GLOBAL, captured in the same run and used as the assertion target, never a hardcoded 'all roles' assumption, per BL-B2B-011's 2026-09-19 amendment
+[API] GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values -- ""Customer.MembershipRolesWhitelist"" == [] (falsy-length), confirming the STORE override was genuinely empty/skipped, not merely absent from the response","BASELINE_UNKEYWORDED_OPTIONS shows ZERO options (wrongly treats STORE-empty + GLOBAL-non-empty as a lockout); BASELINE_UNKEYWORDED_OPTIONS shows the full ~60-role platform list (wrongly treats STORE-empty as unconditional no-restriction, ignoring the non-empty GLOBAL value -- the exact violation signal BL-B2B-011's amendment names: asserting empty-STORE-means-all-roles without confirming GLOBAL is also empty); 'Advanced Sales Representative' or 'Organization employee' is offered at any point (picker serving a stale STORE value, or genuinely unfiltered, instead of falling through to GLOBAL); KEYWORD_MAINTAINER_OPTIONS omits 'Organization maintainer' (GLOBAL fallback not honored / stale cache); a synthetic click that fails to open the select2 dropdown misread as a genuine result","[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore_store]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Customer.MembershipRolesWhitelist"": @td(B2B_STORE_MEMBERSHIP_ROLES.seeded_values_json)}
+[REST-EXEC restore_store]
+[REST-OP restore_global]
+POST {{BACK_URL}}/api/platform/settings
+Content-Type: application/json
+Body: [{""name"": ""Customer.MembershipRolesWhitelist"", ""value"": null, ""allowedValues"": [], ""isDictionary"": true}]
+[REST-EXEC restore_global]
+[REST DELETE /api/customer/organization-memberships?ids={{MEMBERSHIP_ID}}]
+[REST DELETE /api/platform/security/users?names=AGENT-TEST-orgrole020@yopmail.com]
+[REST DELETE /api/members?ids={{MEMBER_ID}}]
+[REST DELETE /api/members?ids={{ORG_ID}}]",VCST-5239; customer#304; BL-B2B-011 (amended 2026-09-19); Archetype:FALLBACK; Technique:DT,Draft
