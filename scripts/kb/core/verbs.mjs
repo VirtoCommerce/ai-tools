@@ -36,13 +36,33 @@ export function trustOf(evidence = []) {
   // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
   // drift check compares one implementation against itself rather than against a second opinion.
   const { trust: confirmations, disputed } = countEvidence(evidence);
-  const parties = new Set(supporting.map((e) => e.by ?? e.deployment ?? 'unknown')).size;
+  // WHO SAW IT, AND ONLY WHO — never a deployment standing in for a person.
+  //
+  // THE DEFECT THIS CLOSES, and the reason it survived four days of green gates. The line used to
+  // read `e.by ?? e.deployment ?? 'unknown'`, which puts TWO KINDS OF IDENTIFIER in one Set: an
+  // evidence item with no observer contributed a STAND as though it were a party. PLAN §14.2a
+  // diagnosed exactly that, quoted this exact line, and then recorded itself as FIXED — and the
+  // code was never touched. Found 2026-09-22 by an independent review that mutated the line and
+  // watched all 483 kb tests stay green, because the only test of this function feeds evidence that
+  // always carries a `by`, so the fallback branch never ran.
+  //
+  // Measured on the live 109-entry base before the repair: 14 entries displayed more parties than
+  // they had named observers, and 7 of those displayed "1 independent party" with ZERO named
+  // observers — an entirely anonymous claim reading exactly like one a named session stood behind.
+  // It was wrong in the FLATTERING direction, on the number an agent uses to decide whether to
+  // re-verify, which is the direction nobody re-checks.
+  //
+  // `anonymous` is SURFACED rather than folded in, which is the other half of §14.2a's stated fix:
+  // "an observation nobody is named for" is a real and reportable state, and silently dropping those
+  // items would trade an overstatement for an understatement rather than for the truth.
+  const parties = new Set(supporting.filter((e) => e.by).map((e) => e.by)).size;
+  const anonymous = supporting.filter((e) => !e.by).length;
   const label = disputed ? 'DISPUTED'
     : confirmations >= 3 ? 'well attested'
       : confirmations === 2 ? 'corroborated'
         : confirmations === 1 ? 'single observation'
           : 'unattested';
-  return { label, confirmations, disputed, parties };
+  return { label, confirmations, disputed, parties, anonymous };
 }
 
 /**
@@ -57,7 +77,7 @@ export function trustOf(evidence = []) {
 function describeHit(hit, parsed, { unavailable = null } = {}) {
   const evidence = parsed?.data?.evidence ?? [];
   const trust = unavailable
-    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, parties: 0, provisional: true }
+    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, parties: 0, anonymous: 0, provisional: true }
     : trustOf(evidence);
   return {
     id: hit.row.id,

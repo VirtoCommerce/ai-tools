@@ -18,7 +18,14 @@ export function hitLines(hit) {
   lines.push(`  ${hit.id}  [${hit.trust.label}]  ${hit.trust.confirmations} confirmation(s)`
     + `${hit.trust.provisional ? ' per the index, unverified — the body did not arrive' : ''}`
     + `${hit.trust.disputed ? `, ${hit.trust.disputed} DISPUTED` : ''}`
-    + `${hit.trust.parties > 1 ? `, ${hit.trust.parties} independent parties` : ''}`);
+    + `${hit.trust.parties > 1 ? `, ${hit.trust.parties} independent parties` : ''}`
+    // ANONYMOUS EVIDENCE IS SAID, not folded into the party count and not silently dropped. Until
+    // 2026-09-22 an item with no observer was counted as a party by way of its DEPLOYMENT, so 14 of
+    // 109 live entries overstated their independence and 7 read as "one identified observer" where
+    // nobody was identified at all. Naming it is what turns "we do not know who saw this" from an
+    // invisible state into a readable one — and a reader deciding whether to re-verify a claim is
+    // exactly who needs it.
+    + `${hit.trust.anonymous ? `, ${hit.trust.anonymous} anonymous` : ''}`);
   lines.push(`  ${hit.subject}`);
   const matched = [
     hit.matchedOn.anchors.length ? `anchor ${hit.matchedOn.anchors.join(', ')}` : null,

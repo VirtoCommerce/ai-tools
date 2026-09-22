@@ -14,6 +14,7 @@ import { readFile, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
+import { mintId } from '../kb/core/canonical.mjs';
 import { stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from '../kb/core/index-build.mjs';
 import {
@@ -531,6 +532,47 @@ test('an id collision converts too — writing the blob would REPLACE somebody e
   const refused = state.files.get(`v2/${logPath(SESSION, AT, 1)}`).trim().split('\n')
     .map((l) => JSON.parse(l)).find((l) => l.kind === 'capture-refused');
   assert.equal(refused.why, 'id-collision');
+}));
+
+test('an id collision between DIFFERENT subjects is refused, never merged', () => withQueue(async ({ dir, env }) => {
+  // THE DEFECT, found 2026-09-22 by an independent review. The test above is right about the case it
+  // covers - one id, the SAME subject - and the code generalised it to every collision on the
+  // strength of a comment that read: "the id is minted from the subject, so two entries with this id
+  // have the same subject verbatim." True of a hash, FALSE of a TRUNCATED one: `mintId` cuts sha256
+  // to 32 bits. Nothing compared the subjects.
+  //
+  // The pair below is REAL, brute-forced by the review and re-derived here rather than transcribed -
+  // the assertion proves the collision instead of assuming it, so a change to `mintId` fails loudly
+  // here rather than making this test silently vacuous.
+  const A = 'cart splits the quantity for a B2B user #148';
+  const B = 'promotion reorders the quantity silently #156';
+  assert.equal(mintId(A), mintId(B), 'the fixture must be a genuine collision, or this test proves nothing');
+  const id = mintId(A);
+
+  const theirs = makeEntry({ id, subject: A, anchors: ['/theirs'], body: 'THEIR PROSE' });
+  const state = makeBase([theirs]);
+  const mine = makeEntry({ id, subject: B, anchors: ['/mine'], scope: ['surface=platform'], body: 'MY PROSE' });
+  await writeQueue(dir, SESSION, [captureLine(mine, 'MY PROSE')]);
+
+  const r = await run(env, fakeApi(state));
+
+  // NOTHING WAS CONFIRMED. Before the repair this appended B's evidence item to A, took A's trust
+  // from 1 to 2, and wrote B's prose nowhere - a fact lost, an unrelated entry credited with an
+  // observation nobody made about it, and the trust label inflated by it.
+  assert.equal(r.converted, 0, 'a different fact is not a confirmation of this one');
+  const entry = state.files.get(`v2/entries/${id}.md`);
+  assert.ok(entry.includes('THEIR PROSE'), 'the incumbent is untouched');
+  assert.ok(!entry.includes('MY PROSE'), 'and is not overwritten either');
+  assert.equal((entry.match(/method:/g) ?? []).length, 1, 'no evidence item was appended to it');
+
+  // AND THE REFUSAL IS LEGIBLE. The old line was indistinguishable from an ordinary duplicate
+  // refusal, so the only trace was a `subject` that did not match the entry it named and nothing
+  // looked for that. This one names its own reason and both subjects.
+  const refused = state.files.get(`v2/${logPath(SESSION, AT, 1)}`).trim().split('\n')
+    .map((l) => JSON.parse(l)).find((l) => l.kind === 'capture-refused');
+  assert.equal(refused.why, 'id-collision-different-subject');
+  assert.ok(refused.note.includes(A), 'the refusal names the subject already holding the id');
+  assert.ok(r.plan.problems.some((x) => x.id === id), 'and it surfaces as a problem, not only as a log line');
 }));
 
 test('two captures of one fact in ONE session: the second converts against the first', () => withQueue(async ({ dir, env }) => {

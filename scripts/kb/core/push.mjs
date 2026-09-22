@@ -331,12 +331,32 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
 
       // THE PUSH-TIME DEDUP RE-RUN (PLAN §2 "Identity"). Same function, same test, fresh rows.
       const dupe = findDuplicate(working, { anchors, scope });
-      // An id collision is the same fact by the strongest signal there is — the id is minted from
-      // the subject, so two entries with this id have the same subject verbatim. Writing the blob
-      // would REPLACE somebody else's entry, prose and evidence and all, which no amount of dedup
-      // subtlety is worth risking.
-      const collision = !dupe && working.some((r) => r.id === entry.id);
-      const target = dupe?.row ?? (collision ? working.find((r) => r.id === entry.id) : null);
+      // AN ID COLLISION IS NOT EVIDENCE OF THE SAME FACT, and this comment used to say it was.
+      //
+      // The old text read: "the id is minted from the subject, so two entries with this id have the
+      // same subject verbatim." That is true of a hash and FALSE of a TRUNCATED one — `mintId` cuts
+      // sha256 to 32 bits — and the code never compared the subjects to find out. An independent
+      // review brute-forced two unrelated subjects onto one id in seconds and drove this path with
+      // them: the newcomer's evidence item was appended to the INCUMBENT'S `evidence[]`, that
+      // entry's trust went 1 → 2, and the newcomer's claim was written nowhere. A fact lost, an
+      // unrelated entry confirmed by an observation about something else, and the only trace a
+      // `capture-refused` line whose `subject` does not match the entry it names.
+      //
+      // At 109 entries the birthday probability is ~1.4e-6 and this will not happen this year. It is
+      // guarded anyway, because the failure is exactly the one the base exists to prevent, the guard
+      // is two comparisons, and TWO COMMENTS USED TO TELL THE NEXT READER IT COULD NOT HAPPEN —
+      // which is the expensive half: a wrong reassurance outlives the code it describes.
+      //
+      // So a collision is only treated as a duplicate when the SUBJECTS actually agree. When they do
+      // not, nothing is written and nothing is confirmed: the capture is refused with its own
+      // reason, which is a state a human can see and act on, where a silent merge is not.
+      const idClash = !dupe && working.find((r) => r.id === entry.id);
+      const sameSubject = idClash && String(idClash.subject ?? '').trim() === String(entry.subject ?? '').trim();
+      const target = dupe?.row ?? (sameSubject ? idClash : null);
+      // A TRUE HASH COLLISION — one id, two different subjects. Refused, never merged and never
+      // overwritten, and said out loud: the remedy is a human renaming one subject, which is cheap,
+      // and the alternative is losing a claim to arithmetic.
+      const hashClash = Boolean(idClash) && !sameSubject;
 
       if (target) {
         const item = { ...(entry.evidence?.[0] ?? { method: 'observation', at: at.toISOString() }) };
@@ -351,6 +371,25 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
           ...(ok ? {} : { note: 'the duplicate could not be confirmed either' }),
         });
         if (ok) converted += 1;
+        continue;
+      }
+
+      if (hashClash) {
+        // NOTHING IS WRITTEN AND NOTHING IS CONFIRMED. The incumbent keeps its file; this claim
+        // keeps its queue line, so it is not lost and can be re-captured under a reworded subject.
+        // The refusal names BOTH subjects, because the one thing a reader needs here is the evidence
+        // that these are two different facts wearing one address.
+        extraLog.push({
+          at: at.toISOString(),
+          kind: 'capture-refused',
+          dupeOf: idClash.id,
+          subject: entry.subject,
+          why: 'id-collision-different-subject',
+          when: 'push',
+          note: `${entry.id} is already held by a DIFFERENT subject (${JSON.stringify(idClash.subject)}); `
+            + 'nothing was merged and nothing was confirmed — reword this subject and capture again',
+        });
+        problems.push({ id: entry.id, why: `id collision with a different subject — the capture was refused, not merged` });
         continue;
       }
 

@@ -114,4 +114,44 @@ test('independent parties are counted, not raw evidence rows', () => {
   const t = trustOf([{ by: 'session:a' }, { by: 'session:a' }, { by: 'session:b' }]);
   assert.equal(t.confirmations, 3);
   assert.equal(t.parties, 2);
+  assert.equal(t.anonymous, 0);
+});
+
+test('a DEPLOYMENT is never promoted to an observer, and anonymity is reported as itself', () => {
+  // THE TEST THAT SHOULD HAVE EXISTED, and whose absence let a defect be recorded as FIXED for four
+  // days of green gates. `trustOf` used to read `e.by ?? e.deployment ?? 'unknown'`, putting two
+  // kinds of identifier in one Set, so an item with no observer contributed a STAND as a party.
+  // PLAN 14.2a diagnosed it, quoted the line, and marked itself fixed; the code was never touched.
+  //
+  // It survived because the only test of this function fed evidence that ALWAYS carries a `by`, so
+  // the fallback branch never ran. An independent review found it by mutating the line and watching
+  // all 483 kb tests stay green - 14.4's finding 14 in a new costume: a test asserting a shape the
+  // system never produces reports the signal as covered. So this feeds the shape it never produced.
+  const mixed = trustOf([
+    { by: 'session:a', deployment: 'vcptcore_stable' },
+    { deployment: 'vcptcore_stable' },
+  ]);
+  assert.equal(mixed.confirmations, 2, 'both are still confirmations - this is about WHO, not how many');
+  assert.equal(mixed.parties, 1, 'one named observer; the stand is not a second person');
+  assert.equal(mixed.anonymous, 1, 'and the unnamed one is reported rather than hidden');
+
+  // THE WORST LIVE SHAPE, 7 of 109 entries on the day this landed: an entirely anonymous claim that
+  // rendered as one identified observer. "Nobody knows who saw this" must not read like "somebody
+  // did" - it is the flattering direction, on the number a reader uses to decide whether to
+  // re-verify.
+  const nobody = trustOf([{ deployment: 'vcst_qa' }]);
+  assert.equal(nobody.parties, 0);
+  assert.equal(nobody.anonymous, 1);
+
+  // Two anonymous items on ONE stand used to COLLAPSE to a single party, so the same data shape
+  // inflated or deflated depending on how the deployments happened to fall. Neither now.
+  const two = trustOf([{ deployment: 'vcst_qa' }, { deployment: 'vcst_qa' }]);
+  assert.equal(two.parties, 0);
+  assert.equal(two.anonymous, 2);
+
+  // A CONTRADICTING item is not a supporting party, anonymous or not - that half was always right
+  // and is pinned here so the repair cannot quietly take it away.
+  const disputed = trustOf([{ by: 'session:a' }, { deployment: 'vcst_qa', contradicts: true }]);
+  assert.equal(disputed.parties, 1);
+  assert.equal(disputed.anonymous, 0);
 });

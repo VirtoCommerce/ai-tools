@@ -42,8 +42,20 @@ export function slug(text) {
 // independent captures of one fact to COLLIDE, not to avoid each other.
 //
 // Hashing the subject gives that for free: same subject, same id, on any machine, in any order,
-// with no shared state and nothing to merge. Different subjects get different ids, and a genuine
-// hash collision is a hard error at build time rather than a silent merge of two facts.
+// with no shared state and nothing to merge.
+//
+// THE ID IS 32 BITS, AND THIS COMMENT USED TO PROMISE MORE THAN THAT BUYS. It read: "a genuine hash
+// collision is a hard error at build time rather than a silent merge of two facts." There is no
+// build step here, and nothing checked. An independent review brute-forced two unrelated subjects
+// onto one id in seconds and drove the push with them: the newcomer's evidence was appended to the
+// INCUMBENT's entry and its claim was written nowhere.
+//
+// The birthday probability is ~1.4e-6 at 109 entries and ~0.3% at 5,000, so widening the id is not
+// worth the churn of re-addressing a live corpus. What was worth fixing is the ASSURANCE: `push.mjs`
+// now compares the two subjects and REFUSES a collision between different ones instead of merging
+// them. A reassuring comment outlives the code it describes, so this one says what is actually
+// guaranteed — same subject, same id; different subjects with one id are caught at push, not
+// impossible.
 export function mintId(subject, namespace = 'KB') {
   return `${namespace}-${hash(subject, 8).toUpperCase()}`;
 }
