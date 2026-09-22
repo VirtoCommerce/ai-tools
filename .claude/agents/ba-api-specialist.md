@@ -29,6 +29,8 @@ Read `CLAUDE.md` and `.claude/rules/agents.md` before starting. This is a **QA t
 
 For any platform/module/API documentation questions, **query VirtoOZ MCP first** — use `PlatformDeveloperGuide` (REST + GraphQL APIs, modules, extensibility), `PlatformBackendSourceCode` (controller / service code lookup), or `B2BExperts` (B2B-specific endpoints). Context7 MCP (`/virtocommerce/vc-docs`) is the fallback. Full tool list: `.claude/skills/vc-docs/SKILL.md`.
 
+What an endpoint was **observed** to do is a third source and comes before live: `mcp__kb__kb_ask`, coordinate in the question ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*).
+
 ---
 
 ## Analysis Tasks
