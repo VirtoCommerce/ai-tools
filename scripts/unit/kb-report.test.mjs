@@ -23,7 +23,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
-  FAIL, MIN_SAMPLE, NEAR_MISS_REVIEW, NO_DATA, PASS, THRESHOLDS,
+  FAIL, INCONCLUSIVE, MIN_SAMPLE, NEAR_MISS_REVIEW, NEEDS_READING, NO_DATA, PASS, THRESHOLDS,
   analyse, captureLoop, dayOf, entryUsage, evidence, indexLookup, misses, nearMisses, parseLogFile,
   questionKey, questions, refusals, sessionOf, topics, unhelpful, verdict,
 } from '../kb/core/report-analyse.mjs';
@@ -845,15 +845,38 @@ test('a rate over the trigger with enough behind it FAILs', () => {
   assert.match(r.detail, /40\.0%/);
 });
 
-test('the same 66.7% on n=3 — the live base\'s own number — is NOT ENOUGH DATA', () => {
-  // PLAN §14.1 said this in prose about this exact figure: "panel 6's 66.7% sits on n=3 ... too
-  // thin". The verdict block has to agree with the plan's own reading of its own data.
+test('a rate OVER the trigger on a thin sample is its own state, not "not enough data"', () => {
+  // THIS TEST USED TO CERTIFY THE DEFECT. It asserted NOT ENOUGH DATA for 66.7% against a 15%
+  // trigger, on the grounds that PLAN §14.1 called n=3 "too thin" — which is true and is not the
+  // same statement. "Too thin to settle" and "we saw nothing" are opposite states of knowledge, and
+  // they were sharing a word, so the headline counted this row beside genuinely empty ones and read
+  // `fail 0`. Found 2026-09-22 on the live base at 42.9% against the same trigger.
+  //
+  // The sample floor is KEPT — with 3 of 7 the lower confidence bound sits near 12% and "not
+  // conclusive" is a fair reading. What is not fair is reporting a presence as an absence.
   const v = verdict({
     unhelpful: { flagged: [0, 0], decidable: 3, undecidable: 0, rate: 2 / 3 },
     nearMisses: emptyNear,
     loop: emptyLoop,
   });
+  const r = row(v, 'unhelpful');
+  assert.equal(r.state, INCONCLUSIVE);
+  assert.notEqual(r.state, NO_DATA, 'the whole defect was these two sharing a word');
+  assert.notEqual(r.state, PASS, 'and it is certainly not a pass');
+  assert.match(r.detail, /OVER the 15% trigger/);
+  assert.equal(v.inconclusive, 1, 'and the headline counts it apart, where a reader will see it');
+});
+
+test('a rate UNDER the trigger on a thin sample is still NOT ENOUGH DATA', () => {
+  // The other side of the same line, pinned so the repair cannot swallow the honest case: nothing
+  // was observed past the trigger, so there is nothing to act on and the old state is right.
+  const v = verdict({
+    unhelpful: { flagged: [], decidable: 3, undecidable: 0, rate: 0 },
+    nearMisses: emptyNear,
+    loop: emptyLoop,
+  });
   assert.equal(row(v, 'unhelpful').state, NO_DATA);
+  assert.equal(v.inconclusive, 0);
 });
 
 test('an in-band near miss is FLAGGED for a human, never FAILed — the script does not judge answerability', () => {
@@ -862,8 +885,14 @@ test('an in-band near miss is FLAGGED for a human, never FAILed — the script d
   ], IDX);
   const v = verdict({ unhelpful: emptyUnhelpful, nearMisses: nm, loop: emptyLoop });
   const r = row(v, 'near-miss');
-  assert.equal(r.state, NO_DATA, 'PASS would be wrong and FAIL would be a judgement it cannot make');
+  // NEEDS READING, not NOT ENOUGH DATA. A candidate in the review band is the one case where there
+  // IS data and it is the operator's to read; §15.3 calls one such a signal. A signal filed under
+  // "we have no data" is a signal nobody acts on — which is what happened to the first one this base
+  // ever produced (KB-27B4CD10 at coverage 0.47, and nothing in PLAN.md records anyone reading it).
+  assert.equal(r.state, NEEDS_READING, 'PASS would be wrong and FAIL would be a judgement it cannot make');
   assert.notEqual(r.state, FAIL);
+  assert.notEqual(r.state, NO_DATA);
+  assert.equal(v.needsReading, 1, 'and it is counted in the headline rather than absorbed by it');
   assert.equal(r.needsReading, 1);
   assert.match(r.detail, /a human must read them/);
 });

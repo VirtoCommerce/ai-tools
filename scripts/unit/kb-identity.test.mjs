@@ -113,8 +113,48 @@ test('a dispute flags but never retires — the label changes, the entry does no
 test('independent parties are counted, not raw evidence rows', () => {
   const t = trustOf([{ by: 'session:a' }, { by: 'session:a' }, { by: 'session:b' }]);
   assert.equal(t.confirmations, 3);
-  assert.equal(t.parties, 2);
+  assert.equal(t.sessions, 2);
   assert.equal(t.anonymous, 0);
+});
+
+test('SESSIONS and OPERATORS are counted apart - one person three times is not three opinions', () => {
+  // THE DEFECT THE OPERATOR FOUND, and it was larger than the review's. `by` holds `session:<key>`
+  // and has never held a person, yet the number was rendered to agents as "N independent parties".
+  // Measured on the live base that day: 31 distinct `by` values across the corpus and ALL 125
+  // commits by one author, so the flagship entry's "5 independent parties" meant one person, five
+  // times. The word promised independence of JUDGEMENT and delivered independence of RUN.
+  //
+  // Both numbers are real and they are different questions, so both are reported and neither is
+  // called by the other's name.
+  const onePerson = trustOf([
+    { by: 'session:aaa', who: 'Dan-BV' },
+    { by: 'session:bbb', who: 'Dan-BV' },
+    { by: 'session:ccc', who: 'Dan-BV' },
+  ]);
+  assert.equal(onePerson.confirmations, 3);
+  assert.equal(onePerson.sessions, 3, 'three genuine re-derivations - that much is true');
+  assert.equal(onePerson.operators, 1, 'and exactly one judgement behind all of them');
+
+  const twoPeople = trustOf([
+    { by: 'session:aaa', who: 'Dan-BV' },
+    { by: 'session:bbb', who: 'someone-else' },
+  ]);
+  assert.equal(twoPeople.sessions, 2);
+  assert.equal(twoPeople.operators, 2, 'this is what the old wording pretended every entry had');
+
+  // EVIDENCE WRITTEN BEFORE THE FIELD EXISTED IS UNATTRIBUTED, NOT UNMANNED. Reporting `0
+  // operators` for the whole pre-existing corpus would be this defect inverted - a confident
+  // understatement where the honest answer is "not recorded".
+  const legacy = trustOf([{ by: 'session:aaa' }, { by: 'session:bbb' }]);
+  assert.equal(legacy.sessions, 2);
+  assert.equal(legacy.operators, null, 'null is "not recorded", which is not a number');
+  assert.equal(legacy.operatorsUnknown, 2);
+
+  // A MIXED entry - the shape every live entry will have for a while - says both halves.
+  const mixed = trustOf([{ by: 'session:aaa', who: 'Dan-BV' }, { by: 'session:bbb' }]);
+  assert.equal(mixed.sessions, 2);
+  assert.equal(mixed.operators, 1);
+  assert.equal(mixed.operatorsUnknown, 1, 'and does not pretend the older item had no operator');
 });
 
 test('a DEPLOYMENT is never promoted to an observer, and anonymity is reported as itself', () => {
@@ -132,7 +172,7 @@ test('a DEPLOYMENT is never promoted to an observer, and anonymity is reported a
     { deployment: 'vcptcore_stable' },
   ]);
   assert.equal(mixed.confirmations, 2, 'both are still confirmations - this is about WHO, not how many');
-  assert.equal(mixed.parties, 1, 'one named observer; the stand is not a second person');
+  assert.equal(mixed.sessions, 1, 'one named observer; the stand is not a second person');
   assert.equal(mixed.anonymous, 1, 'and the unnamed one is reported rather than hidden');
 
   // THE WORST LIVE SHAPE, 7 of 109 entries on the day this landed: an entirely anonymous claim that
@@ -140,18 +180,18 @@ test('a DEPLOYMENT is never promoted to an observer, and anonymity is reported a
   // did" - it is the flattering direction, on the number a reader uses to decide whether to
   // re-verify.
   const nobody = trustOf([{ deployment: 'vcst_qa' }]);
-  assert.equal(nobody.parties, 0);
+  assert.equal(nobody.sessions, 0);
   assert.equal(nobody.anonymous, 1);
 
   // Two anonymous items on ONE stand used to COLLAPSE to a single party, so the same data shape
   // inflated or deflated depending on how the deployments happened to fall. Neither now.
   const two = trustOf([{ deployment: 'vcst_qa' }, { deployment: 'vcst_qa' }]);
-  assert.equal(two.parties, 0);
+  assert.equal(two.sessions, 0);
   assert.equal(two.anonymous, 2);
 
   // A CONTRADICTING item is not a supporting party, anonymous or not - that half was always right
   // and is pinned here so the repair cannot quietly take it away.
   const disputed = trustOf([{ by: 'session:a' }, { deployment: 'vcst_qa', contradicts: true }]);
-  assert.equal(disputed.parties, 1);
+  assert.equal(disputed.sessions, 1);
   assert.equal(disputed.anonymous, 0);
 });

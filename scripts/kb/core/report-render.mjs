@@ -65,7 +65,9 @@ function banner(meta) {
  */
 function verdictBlock(v) {
   if (!v) return '';
-  const cls = { PASS: 'ok', FAIL: 'bad', 'NOT ENOUGH DATA': 'nodata' };
+  // An over-the-line reading is styled like a FAIL, not like an absence: it is the one state a
+  // scanning reader most needs to notice, and the whole defect was that it looked like silence.
+  const cls = { PASS: 'ok', FAIL: 'bad', 'OVER THE LINE, SAMPLE TOO THIN': 'bad', 'NEEDS READING': 'bad', 'NOT ENOUGH DATA': 'nodata' };
   const rows = v.rows.map((r) => `<tr>
     <td><span class="verdict ${esc(cls[r.state] ?? '')}">${esc(r.state)}</span></td>
     <td><b>${esc(r.threshold)}</b><div class="muted">${esc(r.source)}</div></td>
@@ -82,7 +84,13 @@ function verdictBlock(v) {
       A 0% rate over two asks is not a pass.</p>
     <table><thead><tr><th>verdict</th><th>threshold</th><th>n</th><th>what was judged</th></tr></thead>
       <tbody>${rows}</tbody></table>
-    <p class="muted">${esc(v.pass)} pass · ${esc(v.fail)} fail · ${esc(v.noData)} not enough data.
+    <p class="metric">${esc(v.pass)} pass · ${esc(v.fail)} fail${
+      v.inconclusive ? ` · <strong class="bad">${esc(v.inconclusive)} over the line</strong>` : ''}${
+      v.needsReading ? ` · <strong class="bad">${esc(v.needsReading)} needs reading</strong>` : ''} · ${esc(v.noData)} not enough data.</p>
+    <p class="muted">A row that is <strong>over the line</strong> has real data past the trigger and a
+      sample too thin to call it settled — it is the opposite of "not enough data", and until
+      2026-09-22 the two shared one word, so a 42.9% reading against a 15% trigger reported as
+      <code>noData</code> and the headline read <code>fail 0</code>.
       The near-miss row <strong>flags</strong> candidates for a human to read; it never claims to
       judge whether they were answerable (PLAN §15.3).</p>
   </section>`;
@@ -482,8 +490,14 @@ export function renderText(report) {
     // The counts above are a summary; the GATE is these three rows, so they print in full. An
     // operator who never opens the HTML still sees exactly what PLAN §15 will be judged on.
     out.push('');
-    out.push(`§15 acceptance — ${report.verdict.pass} pass, ${report.verdict.fail} fail, `
-      + `${report.verdict.noData} not enough data`);
+    // THE ONE LINE MOST READERS TAKE IN. It used to read "1 pass, 0 fail, 2 not enough data" over a
+    // 42.9% unhelpful rate against a 15% trigger, because an over-the-line reading with a thin
+    // sample shared a word with "we saw nothing". Both new states are named here first, before the
+    // comfortable ones, for the same reason.
+    out.push(`§15 acceptance — ${report.verdict.pass} pass, ${report.verdict.fail} fail`
+      + `${report.verdict.inconclusive ? `, ${report.verdict.inconclusive} OVER THE LINE` : ''}`
+      + `${report.verdict.needsReading ? `, ${report.verdict.needsReading} needs reading` : ''}`
+      + `, ${report.verdict.noData} not enough data`);
     for (const r of report.verdict.rows) {
       out.push(`  ${r.state.padEnd(15)} ${r.threshold}  [n=${r.n}]`);
       out.push(`  ${''.padEnd(15)} ${r.detail}`);

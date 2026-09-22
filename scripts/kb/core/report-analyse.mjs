@@ -667,6 +667,29 @@ export function unhelpful(lines, idx) {
 export const PASS = 'PASS';
 export const FAIL = 'FAIL';
 export const NO_DATA = 'NOT ENOUGH DATA';
+/**
+ * OVER THE LINE, UNDER THE SAMPLE — and it is a THIRD thing, not a soft NOT ENOUGH DATA.
+ *
+ * The defect this closes: the unhelpful row printed `NOT ENOUGH DATA` while its own detail string
+ * read *"3 unhelpful of 7 decidable = 42.9%"* against a declared trigger of 15%. The number was
+ * right and the headline was `pass 1 — fail 0 — noData 2`, which a reader scanning for a go/no-go
+ * reads as "nothing failed". The instrument this project built so it could not grade itself
+ * generously was rounding its own worst reading up to silence.
+ *
+ * NOT_ENOUGH_DATA means *we did not see enough to say*. This means *what we saw is over the line and
+ * the sample is too thin to call it settled* — the two are opposite states of knowledge and they
+ * were sharing a word. The sample floor is kept, because with 3 of 7 the lower confidence bound sits
+ * near 12% and "not conclusive" is a fair reading; what is not fair is reporting a presence as an
+ * absence of information.
+ */
+export const INCONCLUSIVE = 'OVER THE LINE, SAMPLE TOO THIN';
+/**
+ * A row a machine cannot judge and a human must read. Same argument: the near-miss row set NO_DATA
+ * whenever a candidate sat in the review band — which is the one case where there IS data and it is
+ * the operator's to read. §15.3 says "one such is a signal, two mean the floor is too high", and a
+ * signal reported as an absence is a signal nobody acts on.
+ */
+export const NEEDS_READING = 'NEEDS READING';
 
 /**
  * §15.3's three thresholds, judged against this window — three rows, each with the number it judged.
@@ -694,7 +717,15 @@ export function verdict({ unhelpful: u, nearMisses: nm, loop }) {
     const rate = u.rate;
     let state;
     let detail;
-    if (n < MIN_SAMPLE) {
+    if (n < MIN_SAMPLE && rate != null && rate > UNHELPFUL_MAX) {
+      // THE CASE THAT USED TO DISAPPEAR. Over the trigger, under the sample: a presence, reported as
+      // one. The old branch called this NOT ENOUGH DATA and the headline counted it beside rows that
+      // genuinely had nothing behind them.
+      state = INCONCLUSIVE;
+      detail = `${flagged} unhelpful of ${n} decidable ask(s) = ${(rate * 100).toFixed(1)}%, `
+        + `OVER the ${UNHELPFUL_MAX * 100}% trigger — but n=${n}, below the declared minimum of `
+        + `${MIN_SAMPLE}, so this is a reading to act on, not a verdict to quote.`;
+    } else if (n < MIN_SAMPLE) {
       state = NO_DATA;
       detail = `${flagged} unhelpful of ${n} decidable ask(s)`
         + `${rate == null ? '' : ` = ${(rate * 100).toFixed(1)}%`}`
@@ -725,7 +756,8 @@ export function verdict({ unhelpful: u, nearMisses: nm, loop }) {
     let state;
     let detail;
     if (band > 0) {
-      state = NO_DATA;
+      // A candidate in the review band is DATA the operator has to read, not an absence of it.
+      state = NEEDS_READING;
       detail = `${band} near-miss row(s) at coverage ≥ ${NEAR_MISS_REVIEW} — a human must read them and`
         + ' decide whether they were answerable. This script does not judge that'
         + `${band > 1 ? '. §15.3: one is a signal, two mean the floor is too high' : ''}.`;
@@ -789,6 +821,11 @@ export function verdict({ unhelpful: u, nearMisses: nm, loop }) {
     pass: rows.filter((r) => r.state === PASS).length,
     fail: rows.filter((r) => r.state === FAIL).length,
     noData: rows.filter((r) => r.state === NO_DATA).length,
+    // COUNTED SEPARATELY, so the headline cannot absorb them. A reader who takes in one line of this
+    // report takes in that line; if "over the line" and "nothing to say" arrive under one word, the
+    // line is worse than no line.
+    inconclusive: rows.filter((r) => r.state === INCONCLUSIVE).length,
+    needsReading: rows.filter((r) => r.state === NEEDS_READING).length,
   };
 }
 

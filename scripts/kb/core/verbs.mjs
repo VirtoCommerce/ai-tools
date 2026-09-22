@@ -55,14 +55,37 @@ export function trustOf(evidence = []) {
   // `anonymous` is SURFACED rather than folded in, which is the other half of §14.2a's stated fix:
   // "an observation nobody is named for" is a real and reportable state, and silently dropping those
   // items would trade an overstatement for an understatement rather than for the truth.
-  const parties = new Set(supporting.filter((e) => e.by).map((e) => e.by)).size;
+  //
+  // AND THE FIELD IS CALLED `sessions`, NOT `parties`, WHICH IS THE LARGER HALF OF THIS REPAIR.
+  //
+  // `by` holds `session:<key>` — it has never held a person. So the number this function computes
+  // has always been DISTINCT SESSIONS, and it was being rendered to agents as "N independent
+  // parties". Measured on the live base the day this was noticed: 31 distinct `by` values across the
+  // corpus, and **all 125 commits in the base are by one author**, with every session the log can
+  // name resolving to one operator. So "5 independent parties" on the flagship entry meant ONE
+  // PERSON, FIVE TIMES.
+  //
+  // It is not nothing — two sessions are two independent RUNS: separate context, separate agents,
+  // possibly a different build and stand, and the second did not copy the first, it re-derived. That
+  // is real independence of OBSERVATION. What it is not is independence of JUDGEMENT: one person,
+  // one habit of looking, one blind spot. The word "independent" promised the second and delivered
+  // the first, so the word goes and the number stays.
+  //
+  // `operators` is the number that will eventually mean what "parties" pretended to, and it is
+  // reported as UNKNOWN rather than as zero where the evidence predates the field: an item written
+  // before operators were recorded cannot be assigned to one, and counting it as "no operator" would
+  // repeat this whole defect in the opposite direction.
+  const sessions = new Set(supporting.filter((e) => e.by).map((e) => e.by)).size;
   const anonymous = supporting.filter((e) => !e.by).length;
+  const named = supporting.filter((e) => e.who).map((e) => e.who);
+  const operators = named.length ? new Set(named).size : null;
+  const operatorsUnknown = supporting.filter((e) => e.by && !e.who).length;
   const label = disputed ? 'DISPUTED'
     : confirmations >= 3 ? 'well attested'
       : confirmations === 2 ? 'corroborated'
         : confirmations === 1 ? 'single observation'
           : 'unattested';
-  return { label, confirmations, disputed, parties, anonymous };
+  return { label, confirmations, disputed, sessions, anonymous, operators, operatorsUnknown };
 }
 
 /**
@@ -77,7 +100,7 @@ export function trustOf(evidence = []) {
 function describeHit(hit, parsed, { unavailable = null } = {}) {
   const evidence = parsed?.data?.evidence ?? [];
   const trust = unavailable
-    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, parties: 0, anonymous: 0, provisional: true }
+    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
     : trustOf(evidence);
   return {
     id: hit.row.id,
@@ -93,6 +116,7 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
       deployment: e.deployment ?? null,
       at: e.at ?? null,
       by: e.by ?? null,
+      who: e.who ?? null,
       contradicts: Boolean(e.contradicts),
       note: e.note ?? null,
     })),
@@ -605,6 +629,13 @@ export async function capture(input, opened, { env = process.env, via = null, ca
       deployment: input.deployment,
       at: new Date().toISOString(),
       by: `session:${sessionId(env)}`,
+      // THE OPERATOR, beside the session, because `by` is a SESSION and was being counted as a
+      // person. Without this the base can never distinguish "three people saw it" from "one person
+      // saw it three times" — and on 2026-09-22 every one of the base's 125 commits was one author,
+      // so the second is what every multi-session entry actually meant. Omitted rather than guessed
+      // when the token has not resolved; the handle is already in every log line and every commit of
+      // this public base, so it crosses no boundary the log has not crossed (`core/who.mjs`).
+      ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
     }],
   };
 
@@ -713,6 +744,9 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     deployment: input.deployment,
     at: new Date().toISOString(),
     by: `session:${sessionId(env)}`,
+    // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a
+    // second opinion, and until this field existed nothing could tell the two apart.
+    ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
     ...(kind === 'dispute' ? { contradicts: true, note: input.saw } : input.note ? { note: input.note } : {}),
   };
 

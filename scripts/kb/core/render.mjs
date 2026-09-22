@@ -18,7 +18,16 @@ export function hitLines(hit) {
   lines.push(`  ${hit.id}  [${hit.trust.label}]  ${hit.trust.confirmations} confirmation(s)`
     + `${hit.trust.provisional ? ' per the index, unverified — the body did not arrive' : ''}`
     + `${hit.trust.disputed ? `, ${hit.trust.disputed} DISPUTED` : ''}`
-    + `${hit.trust.parties > 1 ? `, ${hit.trust.parties} independent parties` : ''}`
+    // SESSIONS, NOT "INDEPENDENT PARTIES". `by` holds a session key and never held a person, so the
+    // old wording promised independence of JUDGEMENT and delivered independence of RUN. Measured the
+    // day it was noticed: all 125 commits in the base are one author, so every "5 independent
+    // parties" meant one person five times. Two sessions ARE two genuine re-derivations — that is
+    // worth saying — but only under their own name.
+    + `${hit.trust.sessions > 1 ? `, ${hit.trust.sessions} sessions` : ''}`
+    // And the number that will eventually mean what the old wording pretended to. Absent until the
+    // evidence carries it, rather than reported as zero: an item written before operators were
+    // recorded cannot be assigned to one, and "0 operators" would be the same defect inverted.
+    + `${hit.trust.operators != null ? `, ${hit.trust.operators} operator(s)${hit.trust.operatorsUnknown ? ` + ${hit.trust.operatorsUnknown} unattributed` : ''}` : ''}`
     // ANONYMOUS EVIDENCE IS SAID, not folded into the party count and not silently dropped. Until
     // 2026-09-22 an item with no observer was counted as a party by way of its DEPLOYMENT, so 14 of
     // 109 live entries overstated their independence and 7 read as "one identified observer" where
