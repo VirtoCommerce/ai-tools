@@ -49,6 +49,16 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
     lines.push(`  the closest candidate scored ${r.nearMiss.score} and did not clear the floor`
       + ` (it matched ${Math.round(r.nearMiss.coverage * 100)}% of your question's words, and no anchor).`);
   }
+  // AND WHAT THIS SESSION ITSELF WROTE AND HAS NOT PUSHED. Unlike the near-miss above, this is safe
+  // to hand back, because it is not a rejected entry somebody else wrote — it is the reader's own
+  // work, and the reader is the one party who can judge it. Named as a DRAFT and kept out of the
+  // hit list: it carries no trust, no confirmations and no provenance a second person could check,
+  // and the state stays `miss` because the base really does hold nothing yet.
+  if (r.state === 'miss' && (r.queued ?? []).length) {
+    lines.push(`  you captured this yourself earlier in THIS session and it is not published yet —`
+      + ` it is not in the base and nobody else can see it:`);
+    for (const q of r.queued) lines.push(`    ${q.id}  ${q.subject}${q.at ? `  (queued ${q.at})` : ''}`);
+  }
   for (const hit of r.hits ?? []) lines.push(...hitLines(hit));
   return lines;
 }

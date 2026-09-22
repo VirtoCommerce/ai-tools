@@ -296,6 +296,46 @@ async function catalogue(opened) {
 
 // ── ask ───────────────────────────────────────────────────────────────────────────────────────
 
+/**
+ * What THIS SESSION has captured and not yet published, ranked against the question that just missed.
+ *
+ * THE HOLE IT CLOSES, found by an audit session and confirmed in the code (PLAN §22.11). `ask` reads
+ * the INDEX and nothing else, so a capture is invisible to it until the queue is pushed AND the
+ * index rebuilt — which is minutes away at best and an hour at worst. Within one session an agent
+ * could therefore miss a fact it had written itself, and the published log has an instance: a
+ * capture at 08:02:27 and a miss on the same fact at 08:09:22, seven minutes apart, one session.
+ *
+ * IT IS A NOTE, NEVER A HIT, and that boundary is the whole of its safety. A queued entry has no
+ * trust, no confirmations, no provenance anybody else can check and no id anyone else can resolve —
+ * it is one session's unreviewed draft. Returning it among `hits` would let an agent cite, as
+ * established, something that exists only in a temp directory on one laptop. So it rides on its own
+ * field, the state stays `miss`, and the exit code stays 1: the base really does hold nothing, which
+ * is the fact the agent has to act on.
+ *
+ * ON THE MISS PATH ONLY. An answered ask already has real entries in front of the agent and a draft
+ * beside them would compete with reviewed knowledge for attention — and the cost of reading the
+ * queue would be paid on every ask to serve the rarest case.
+ *
+ * RANKED BY THE SAME FUNCTION, over rows built by the same `buildRow` the index uses. A second
+ * matching implementation here would be a second ranker that drifts from the first, and the floor is
+ * the point: a draft that does not clear it is no more relevant than an entry that does not.
+ */
+async function queuedHere(question, { env }) {
+  const { lines } = await readQueue({ env });
+  const rows = [];
+  for (const l of lines) {
+    if (l.kind !== 'capture' || !l.payload?.entry) continue;
+    try { rows.push({ ...buildRow(l.payload.entry, entryPath(String(l.payload.entry.id))), at: l.at ?? null }); } catch { /* a queue line we cannot read is not worth failing an ask over */ }
+  }
+  if (!rows.length) return [];
+  return rank(question, rows, { top: 2 }).hits.map((h) => ({
+    id: h.row.id,
+    subject: h.row.subject,
+    at: h.row.at,
+    score: h.score,
+  }));
+}
+
 export async function ask(question, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
   const started = Date.now();
   const cat = await catalogue(opened);
@@ -306,6 +346,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
 
   const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
   if (!hits.length) {
+    const queued = await queuedHere(question, { env });
     // THE MISS LINE, which since the floor landed is a line that can actually occur (PLAN §14.1).
     // It carries the best REJECTED candidate: a miss that keeps naming the same near-miss is
     // either a floor set too high or an entry phrased unlike the way anyone asks -- and neither
@@ -318,8 +359,13 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
       ...(nearMiss ? { nearMiss: { id: nearMiss.row.id, score: nearMiss.score, coverage: round2(nearMiss.coverage) } } : {}),
       ms: Date.now() - started,
       ...ranked({ via, call, topic, deployment }),
+      // WHAT THIS SESSION ALREADY WROTE AND HAS NOT PUSHED, by id. On the LINE as well as in the
+      // result, because the panel that matters most here is a later reader's: a miss that names an
+      // unpublished draft of its own answer is a push-latency event, not a coverage gap, and a log
+      // that cannot tell the two apart over-states the hole in the corpus.
+      ...(queued.length ? { queued: queued.map((q) => q.id) } : {}),
     }, { env });
-    return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length };
+    return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length, queued };
   }
 
   // Bodies in parallel (PLAN §3.1 step 3).

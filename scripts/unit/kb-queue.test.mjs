@@ -133,6 +133,69 @@ test('the queue path is one file per session — two sessions can never collide'
   );
 });
 
+// ─── a session cannot miss what it just wrote ─────────────────────────────────────────────────
+
+test('a MISS names this session\u2019s own unpublished capture \u2014 as a draft, never as a hit', async () => {
+  // THE HOLE (PLAN §22.11). `ask` reads the INDEX and nothing else, so a capture is invisible to it
+  // until the queue is pushed AND the index rebuilt. Within one session an agent could therefore
+  // miss a fact it had written itself; the published log holds an instance seven minutes apart.
+  await withQueue(async (dir, env) => {
+    const r0 = await ask('why does the shipping method reset when going back a step', opened(), { env, via: 'cli' });
+    assert.equal(r0.state, 'miss', 'the fixture base does not hold this');
+    assert.deepEqual(r0.queued, [], 'and nothing is queued yet either');
+
+    const cap = await capture(CAPTURE, opened(), { env, via: 'cli' });
+    assert.equal(cap.state, 'queued');
+
+    const r1 = await ask('why does the shipping method reset when going back a step', opened(), { env, via: 'cli' });
+    // STILL A MISS, and that is the point rather than a shortcoming: the base really does hold
+    // nothing, nobody else can see the draft, and an exit code that said otherwise would be a lie
+    // about a public corpus.
+    assert.equal(r1.state, 'miss');
+    assert.deepEqual(r1.hits, [], 'a draft carries no trust and no provenance, so it is never a hit');
+    assert.equal(r1.queued.length, 1);
+    assert.equal(r1.queued[0].id, cap.id);
+    assert.ok(r1.queued[0].subject.includes('shipping'));
+  });
+});
+
+test('the draft note rides the LOG line too, so a miss is not mistaken for a coverage gap', async () => {
+  // A later reader counting misses would otherwise read a push-latency event as a hole in the
+  // corpus. Ids only — §7 is ids and subjects, and the subject is already on the capture line.
+  await withQueue(async (dir, env) => {
+    const cap = await capture(CAPTURE, opened(), { env, via: 'cli' });
+    await ask('why does the shipping method reset when going back a step', opened(), { env, via: 'cli' });
+    const line = (await readQueue({ env })).lines.at(-1);
+    assert.equal(line.kind, 'ask');
+    assert.equal(line.state, 'miss');
+    assert.deepEqual(line.queued, [cap.id]);
+  });
+});
+
+test('an ANSWERED ask never carries a draft \u2014 the queue is read on the miss path only', async () => {
+  // A draft beside reviewed entries would compete with them for attention, and reading the queue on
+  // every ask would pay for the rarest case on the commonest path.
+  await withQueue(async (dir, env) => {
+    await capture(CAPTURE, opened(), { env, via: 'cli' });
+    const r = await ask('what does the Active column on /company/members reflect', opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'answer');
+    assert.equal(r.queued, undefined);
+    const line = (await readQueue({ env })).lines.at(-1);
+    assert.ok(!('queued' in line));
+  });
+});
+
+test('a queued capture that does NOT clear the floor is not offered either', async () => {
+  // The same floor, by the same function, over rows built by the same `buildRow` the index uses. A
+  // draft that is irrelevant to the question is no more useful than an entry that is.
+  await withQueue(async (dir, env) => {
+    await capture(CAPTURE, opened(), { env, via: 'cli' });
+    const r = await ask('what colour is the warehouse forklift', opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'miss');
+    assert.deepEqual(r.queued, []);
+  });
+});
+
 // ─── one line per operation, outcome included ─────────────────────────────────────────────────
 
 test('an ANSWER, a MISS and an UNREACHABLE each write exactly one line, and say which', () => withQueue(async (dir, env) => {
