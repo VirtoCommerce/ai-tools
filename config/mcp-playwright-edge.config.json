@@ -14,14 +14,7 @@
       "locale": "en-US",
       "recordHar": {
         "path": "./test-results/edge/har/session.har",
-        "omitContent": true
-      },
-      "recordVideo": {
-        "dir": "./test-results/edge/video",
-        "size": {
-          "width": 1920,
-          "height": 1080
-        }
+        "content": "embed"
       },
       "deviceScaleFactor": 2
     }

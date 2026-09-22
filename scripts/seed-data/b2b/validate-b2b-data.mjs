@@ -45,6 +45,15 @@ import {
   findAliasDeclarationProblems, findStatusProblems, rowCreatesMembership, statusCoverage,
   ALIAS_COLUMN, STATUS_COLUMN, MANUALLY_SELECTABLE_STATUSES, STATUS_SOURCE_REF,
 } from './membership-alias-specs.mjs';
+import {
+  findAliasProblems as findWhitelistAliasProblems,
+  findDecidabilityProblems as findWhitelistDecidabilityProblems,
+  findOverlayProblems as findWhitelistOverlayProblems,
+  ALIAS as WL_ALIAS, SETTING_NAME as WL_SETTING_NAME, ORG_ROLE_NAMES as WL_ORG_ROLE_NAMES,
+  DESCRIPTOR_POOL as WL_DESCRIPTOR_POOL, DECLARED_GRANTING_ROLES as WL_DECLARED_GRANTING_ROLES,
+  SALES_REP_GRANT_PERMISSION as WL_GRANT_PERMISSION, NARROWED_OMITTED_ROLE as WL_NARROWED_OMITTED_ROLE,
+  NARROWED_OMITTED_ROLE_EVIDENCE as WL_NARROWED_EVIDENCE,
+} from './membership-roles-whitelist-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const B2B = join(ROOT, 'test-data', 'b2b');
@@ -378,6 +387,59 @@ console.log(`\n[9] ${STATUS_COLUMN} (OrganizationMembership.Status) across every
 
   if (!missingColumn && !problems.length) {
     ok(`${totalDeclared}/${totalCreating} membership-creating row(s) declare a CONCRETE ${STATUS_COLUMN} — no seeded membership inherits its status by omission. Legal set: ${MANUALLY_SELECTABLE_STATUSES.join(', ')} (${STATUS_SOURCE_REF})`);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// [10] STORE-LEVEL MEMBERSHIP-ROLES WHITELIST (Customer.MembershipRolesWhitelist on tenant Store).
+//
+// STATIC half only — this guard has no network, so it grades the COMMITTED declaration: the alias
+// contract, the overlay split (live state must NOT be committed), and the SECOND-RULE divergence
+// that the authored org-role half must preserve. The LIVE half — that every entry matches a real
+// role, and that the sales-rep set resolves non-empty — is enforced by the seeder itself, because
+// "all sales-rep roles" is resolved by permission at seed time and a static file cannot see it.
+// ---------------------------------------------------------------------------------------------
+console.log('\n[10] Store membership-roles whitelist (Customer.MembershipRolesWhitelist)');
+{
+  const aliasesPath = join(ROOT, 'test-data', 'aliases.json');
+  if (!existsSync(aliasesPath)) {
+    fail('test-data/aliases.json is missing — the whitelist fixture has no @td() handle');
+  } else {
+    const aliases = JSON.parse(readFileSync(aliasesPath, 'utf8'));
+    for (const p of findWhitelistAliasProblems(aliases)) fail(p);
+
+    // The SECOND-RULE divergence, graded on the AUTHORED half. The sales-rep half is live-resolved,
+    // so pass it as "declared" here purely to assert the guard's own contract holds for the org half:
+    // every authored org role must sit INSIDE the module's hardcoded pool, or the inside/outside
+    // split that makes the three candidate implementations distinguishable stops being a split.
+    const poolProblems = findWhitelistDecidabilityProblems({
+      orgRoleNames: WL_ORG_ROLE_NAMES,
+      salesRepRoleNames: WL_DECLARED_GRANTING_ROLES, // stand-in for the live set; see the note above
+      pool: WL_DESCRIPTOR_POOL,
+    });
+    for (const p of poolProblems) fail(`whitelist: ${p}`);
+
+    // A committed pre_state would make teardown restore ANOTHER env's whitelist onto this one.
+    for (const envFile of ['aliases.vcst.json', 'aliases.vcptcore.json', 'aliases.virtostart.json']) {
+      const p = join(ROOT, 'test-data', envFile);
+      if (!existsSync(p)) continue;
+      const ov = JSON.parse(readFileSync(p, 'utf8'))[WL_ALIAS];
+      if (!ov) continue;
+      const seeded = String(ov.seeded_values || '').trim();
+      const pre = String(ov.pre_state || '').trim();
+      const narrowed = String(ov.narrowed_values || '').trim();
+      console.log(`    · ${envFile}: seeded_values=${seeded ? `[${seeded}]` : '(none)'} narrowed_values=${narrowed || '(none)'} pre_state=${pre || '(none)'}`);
+      // The overlay's own contract: JSON-array shape, display/JSON agreement, and — the one nothing
+      // else can see — that narrowed_values has not drifted into equality with the seeded set.
+      for (const p of findWhitelistOverlayProblems(ov, envFile)) fail(p);
+      if (seeded && !pre) {
+        warn(`${envFile}: ${WL_ALIAS} has seeded_values but NO pre_state — \`npm run seed:membership-roles:teardown\` will REFUSE on that env (it will not guess, because an empty store value means "fall back to the GLOBAL whitelist", not "all roles"). Restore that store's original whitelist by hand.`);
+      }
+    }
+    if (!problems.length) {
+      ok(`${WL_ALIAS} registered: setting=${WL_SETTING_NAME}, tenant=Store, ${WL_ORG_ROLE_NAMES.length} authored org role(s) all inside the module pool; runtime fields empty in the committed base (sales-rep half is live-resolved by "${WL_GRANT_PERMISSION}" at seed time)`);
+      ok(`${WL_ALIAS} narrowed variant: omits "${WL_NARROWED_OMITTED_ROLE}" (a pool role, and one of the authored org roles). ${WL_NARROWED_EVIDENCE} The in-default-page property is re-checked LIVE by the seeder on every apply — a role that drifts out of the page turns the narrowing evidence into a paging artifact.`);
+    }
   }
 }
 

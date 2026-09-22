@@ -4,9 +4,22 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**. Tests are 
 natural language prompts via MCP servers (Playwright, Chrome DevTools, Atlassian, …) — LLM-powered
 browser automation with AI agents, **not** traditional `.spec.js` files.
 
-> **Authoritative counts** (verified 2026-09-08): 17 agents · 40 skills · 27 commands ·
-> 32 knowledge files · 126 regression suites (4,155 cases). Single sources of truth:
-> [`config/test-suites.json`](config/test-suites.json) for suites, [`.claude/rules/`](.claude/rules/) for everything else.
+> **Counts are derived, never transcribed** (`CLAUDE.md` §Where the rules live). This block used to
+> print them under the heading "Authoritative counts" — and on 2026-09-19 **five of its six figures
+> were wrong**, the skills and commands totals by 1 and 4, the knowledge and suite totals by 24 and
+> 17. "Authoritative" is the one word that stops a reader checking, which is what made it expensive.
+> Do not restore the numbers; run them:
+>
+> ```bash
+> ls .claude/agents/*.md | wc -l          # agents
+> ls -d .claude/skills/*/ | wc -l         # skills
+> ls .claude/commands/*.md | wc -l        # commands
+> find .claude/knowledge -name '*.md' | wc -l
+> npm run suites:lint                      # suites + cases, from the manifest
+> ```
+>
+> Single sources of truth: [`config/test-suites.json`](config/test-suites.json) for suites,
+> [`.claude/rules/`](.claude/rules/) for everything else.
 
 ## Quick Navigation
 
@@ -36,19 +49,20 @@ vc-mcp-testing-module/
 ├── config.js                       # Layered env loader (TEST_ENV-keyed)
 │
 ├── .claude/
-│   ├── agents/                     # 17 agents — qa/ (9) + ba/ (4) + developers/ (4), each w/ shared-instructions.md
-│   │   └── knowledge/              # 32 shared reference files (business-logic, graphql-schema, sitemap, …)
-│   ├── skills/                     # 40 skills (1 vc-knowledge, 12 testing, 18 qa-methodology, 6 development, 3 root-level)
-│   ├── commands/                   # 27 slash commands
+│   ├── agents/                     # FLAT — discovery is non-recursive, so no qa/ ba/ developers/ subdirs
+│   ├── skills/                     # one dir each, skills/<name>/SKILL.md
+│   ├── knowledge/                  # shared reference files (business-logic, graphql-schema, sitemap, …)
+│   │                               #   incl. knowledge/agents/{qa,ba,developers}/shared-instructions.md
+│   ├── commands/                   # slash commands
 │   └── rules/                      # agents, regression, test-data, reports — the always-loaded tier; the rest moved to knowledge/execution/ (2026-09-08)
 │
 ├── config/                         # MCP browser configs + test-suites.json manifest
 │   ├── mcp-playwright-{chrome,firefox,edge}.config.json
-│   └── test-suites.json            # Regression orchestration manifest (_meta.totalSuites: 126)
+│   └── test-suites.json            # Regression orchestration manifest (its `_meta` carries the live totals)
 │
 ├── regression/suites/
-│   ├── Frontend/                   # 56 CSVs in 17 module dirs
-│   └── Backend/                    # 67 CSVs in 33 module dirs
+│   ├── Frontend/                   # module-aligned CSVs — `npm run suites:lint` prints the totals
+│   └── Backend/                    # ditto; never transcribe a suite or case count
 │
 ├── test-data/                      # aliases.json registry + CSV fixtures (orgs, addresses, users, products, payment, …)
 ├── reports/                        # bugs/, regression/, monitoring/, ba/, tickets/, …
@@ -82,8 +96,11 @@ Theme preset: **Coffee**. Communication: **Microsoft Teams**.
 
 ## Regression Suites
 
-126 suites (4,155 cases, 37 selections) in enriched agent-native CSV format, organized into module-aligned
-subdirectories under `Frontend/` and `Backend/`. Per-module breakdown:
+Enriched agent-native CSV format, organized into module-aligned subdirectories under `Frontend/` and
+`Backend/`. **Suite, case and selection counts are derived — `npm run suites:lint` prints them.** (The
+figures once written here, 126 suites / 4,155 cases / 37 selections, were stale by 17 / 592 / 1 when
+checked on 2026-09-19; `.claude/rules/regression.md` carries the same warning, and `DOC-006` fails a
+build that reintroduces a count there.) Per-module breakdown:
 [regression/suites/README.md](regression/suites/README.md). Authoritative definitions and selection
 groups: [config/test-suites.json](config/test-suites.json).
 
@@ -121,8 +138,8 @@ developer + one reviewer per repo kind. Gate ladder: [.claude/knowledge/executio
 
 ## Commands & Skills
 
-- **27 slash commands** — [commands/](.claude/commands), reference: each file's frontmatter (the `/` menu).
-- **40 skills** — one level each under [skills/](.claude/skills) (`skills/<name>/SKILL.md`); see [skills/README.md](.claude/skills/README.md).
+- **Slash commands** — [commands/](.claude/commands), reference: each file's frontmatter (the `/` menu). Count: `ls .claude/commands/*.md | wc -l`.
+- **Skills** — one level each under [skills/](.claude/skills) (`skills/<name>/SKILL.md`); see [skills/README.md](.claude/skills/README.md), which derives the per-category split. Count: `ls -d .claude/skills/*/ | wc -l`.
 
 ## MCP Servers
 

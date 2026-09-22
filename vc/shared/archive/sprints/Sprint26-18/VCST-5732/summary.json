@@ -1,0 +1,384 @@
+{
+  "ticket": "VCST-5732",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "FULL",
+  "shape_class": {
+    "value": "none",
+    "surface_source": [
+      "1a diff read: a feature ON the Sales Rep hub surface, not the surface itself; no design-system, token-layer or component-primitive change"
+    ],
+    "skipped": []
+  },
+  "layer": "both",
+  "verdict": "FAIL",
+  "date": "2026-09-17",
+  "timing": {
+    "time_to_first_test_minutes": 42,
+    "reachability_minutes": null,
+    "total_minutes": 95
+  },
+  "environment": "vcptcore_qa1",
+  "build": {
+    "deployed": {
+      "VirtoCommerce.SalesRep": "3.1009.0-pr-16-e348",
+      "VirtoCommerce.TaskManagement": "3.1005.0",
+      "storefront_theme": "2.58.0-pr-2464-595d-595d3244"
+    },
+    "declared": "UNKNOWN — both GitHub tokens in .env.local return 401, so vc-deploy-dev could not be read. The live GET /api/platform/modules probe above is ground truth and was not substituted by a declared value.",
+    "probe_confirmed_at": "2026-09-17T13:33Z"
+  },
+  "release": {
+    "ledger_delta": "NOT_READ — GitHub token expired; release-ledger.md not reconciled this run. Recorded as a gap, not as 'no change'."
+  },
+  "documentation": {
+    "5h": "NOT RUN — the operator declined separate tracker items, and 5h publishes documentation as its own comment. Skipped deliberately, not omitted.",
+    "pending_5d_queue": [
+      {
+        "id": "BUG-1",
+        "severity": "High",
+        "title": "A title-only edit silently destroys a task's time-of-day and cannot be undone through the UI",
+        "provenance": "IN-SCOPE",
+        "repo": "vc-frontend"
+      },
+      {
+        "id": "BUG-2",
+        "severity": "Medium",
+        "title": "The 'All' chip counts the selected day while its three siblings count globally, so 'All 0' renders beside 'Upcoming 10'",
+        "provenance": "IN-SCOPE",
+        "repo": "vc-frontend"
+      },
+      {
+        "id": "BUG-3",
+        "severity": "Medium",
+        "title": "Calendar day markers are one per status, not one per task — a 2-task day is indistinguishable from a 1-task day",
+        "provenance": "IN-SCOPE",
+        "repo": "vc-frontend"
+      },
+      {
+        "id": "BUG-4",
+        "severity": "Medium",
+        "title": "The dashboard widget states '6 tasks' and renders 5 rows, with no overflow affordance",
+        "provenance": "IN-SCOPE",
+        "repo": "vc-frontend"
+      },
+      {
+        "id": "BUG-5",
+        "severity": "Medium",
+        "title": "Selecting a date and selecting a status chip silently discard each other, in both directions",
+        "provenance": "IN-SCOPE",
+        "repo": "vc-frontend"
+      },
+      {
+        "id": "BUG-A11Y-1",
+        "severity": "High",
+        "title": "The Notes textarea's aria-labelledby points at its own id, so its accessible name resolves to the placeholder 'Enter a value'",
+        "provenance": "IN-SCOPE",
+        "relationship": "standalone + related (BL-A11Y on a feature ticket does not fail 5c)",
+        "repo": "vc-frontend"
+      },
+      {
+        "id": "BUG-A11Y-2",
+        "severity": "Medium",
+        "title": "Nine further WCAG 2.2 AA failures on the Tasks surface (required-field marking, selected-date state, live-region silence, marker count equivalence, three contrast failures, role=application on the shared vc-calendar table, empty th, roving tabindex)",
+        "provenance": "IN-SCOPE",
+        "relationship": "standalone + related",
+        "repo": "vc-frontend (A9 is platform-level, shared UI kit)"
+      }
+    ],
+    "verdict_basis": "One High defect (a title-only edit silently destroys a task's time-of-day and is irreversible through the UI) plus four Medium defects; and two of the nine acceptance criteria cannot be certified as written — the five declared task groups do not exist (only four do) and the calendar's task indicators do not carry task density as the mockups specify. The build matches the DESIGN on the grouping point, so that AC gap is a story-vs-design conflict needing a product decision, not a build defect. Every core mechanism — create, complete, reopen, delete, group, calendar, layout-block integration, per-rep isolation — works.",
+    "oracle_gaps": [
+      "No BL-* invariant exists for task classification (the overdue/today/upcoming/completed predicates and the rule that completion outranks date). This run established those semantics live and they are currently recorded nowhere. Proposed for /qa-review-oracles.",
+      "No VC-* bug-catalog entry exists for the Sales Rep or Task domains — a greenfield surface with no historical defect corpus, so the archetype sweep carried no probes in.",
+      "VirtoOZ carries no Sales Rep Tasks page, so no {DOC} oracle was available. The two ticket mockups were the only {SPEC}."
+    ],
+    "5d": "DECLINED_BY_OPERATOR (final) — no tracker item filed for any finding. The operator declined both bug sub-tasks and a separate ticket for the uncertifiable ACs. All 28 findings live in comment 109884 and in this run folder; nothing is individually trackable or closable.",
+    "5e": "POSTED — comment id 109884 on VCST-5732, created 2026-09-18T03:38+03:00, AMENDED 03:42 to append the AC-reconciliation paragraph at the operator decision. Verified from renderedBody both times (final: 12,429 chars, 2 tables / 22 rows, 8 headings, the accountId mention resolved, all prior content intact) — never from the HTTP status. Scope: the 28-item defect list plus the AC paragraph; the FAIL verdict and the full AC table were deliberately left out at the operator request.",
+    "ac_reconciliation": "RAISED in comment 109884 (appended 2026-09-18 03:42): the five declared groups vs the four that exist. Stated explicitly as a story-text-vs-design conflict needing the reporter decision, NOT as a defect, and Oleg Zhuk is mentioned by accountId. Raised three times and declined twice before the operator approved appending it."
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Testing",
+      "to": "Testing",
+      "result": "SKIPPED",
+      "reason": "Ticket was already in the in-testing status when the run started; the opening hop was a no-op."
+    },
+    {
+      "at": "5f",
+      "result": "DECLINED_BY_OPERATOR",
+      "reason": "Operator chose to leave the ticket in Testing. A REOPEN would push back a story whose two uncertifiable ACs are a story-vs-design conflict, not a code defect; that needs the story author first."
+    }
+  ],
+  "agents_dispatched": [
+    {
+      "step": "1c",
+      "agent": "ba-system-analyzer",
+      "lane": "playwright-edge",
+      "outcome": "returned"
+    },
+    {
+      "step": "3a",
+      "agent": "test-data-engineer",
+      "lane": "browserless",
+      "outcome": "returned"
+    },
+    {
+      "step": "4a",
+      "agent": "qa-frontend-expert",
+      "lane": "playwright-chrome",
+      "outcome": "returned"
+    },
+    {
+      "step": "4v",
+      "agent": "ui-ux-expert",
+      "lane": "chrome-devtools-mcp",
+      "outcome": "returned"
+    }
+  ],
+  "epic": {
+    "parent": "VCST-5142 — Sales Rep Hub (In progress)",
+    "siblings": {
+      "done": [],
+      "in_progress": [],
+      "blocked_dependency": []
+    },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "total": 9,
+    "met": 7,
+    "not_certifiable": 2,
+    "detail": [
+      {
+        "ac": "Dashboard contains a Tasks widget",
+        "verdict": "MET",
+        "evidence": "'Tasks & due dates' in the dashboard right rail; matches design-81444.png"
+      },
+      {
+        "ac": "User can create a task",
+        "verdict": "MET",
+        "evidence": "B5 — created, listed, calendar cell marked, counts moved, no reload"
+      },
+      {
+        "ac": "User can specify Title / Description / Due Date / Priority",
+        "verdict": "MET",
+        "evidence": "B1 — all present (Description is labelled 'Notes'); all five priority values round-trip. Due Date is date-only, which the AC does not contradict"
+      },
+      {
+        "ac": "User can view active tasks",
+        "verdict": "MET",
+        "evidence": "Upcoming/All chips; 8 open tasks listed correctly"
+      },
+      {
+        "ac": "User can mark tasks as completed",
+        "verdict": "MET",
+        "evidence": "B6 — complete and reopen both work, counts follow exactly and return to baseline"
+      },
+      {
+        "ac": "User can open task details",
+        "verdict": "MET",
+        "evidence": "B7 — opens the Edit modal; the mockups show no separate read-only detail view either, so build and design agree"
+      },
+      {
+        "ac": "Tasks are grouped by status: My Today's tasks / Active / Upcoming / Overdue / Completed",
+        "verdict": "NOT_CERTIFIABLE",
+        "evidence": "Only four groups exist — All / Upcoming / Overdue / Completed. No 'My Today's tasks', no 'Active', in the UI, in salesRepTaskFilterRules, or in the mockups. Today's open tasks are labelled 'Upcoming'. The DESIGN agrees with the build, so the AC text is the outlier. Needs a product decision, not a bug."
+      },
+      {
+        "ac": "Calendar integration displays task indicators on dates",
+        "verdict": "PARTIAL",
+        "evidence": "Indicators exist and are correct per status, but are one-per-status not one-per-task, so a 2-task day is byte-identical to a 1-task day (BUG-4). The mockups show one dot per task."
+      },
+      {
+        "ac": "Click on the date displays tasks for a specific date",
+        "verdict": "MET",
+        "evidence": "B8 — the day panel updates correctly; a separate defect is that the click silently discards an active chip filter (BUG-5)"
+      }
+    ]
+  },
+  "total_cases": 13,
+  "passed": 8,
+  "failed": 5,
+  "blocked": 0,
+  "iterations": {
+    "rounds": 1,
+    "outcome": "single run — --iterate was not passed",
+    "per_round": []
+  },
+  "new_cases_authored": 0,
+  "promotion": {
+    "invoked": false,
+    "promoted": [],
+    "held": [],
+    "note": "Nothing to promote — no cases were authored this run. The Tasks surface has ZERO regression coverage; routed to /qa-test-lifecycle."
+  },
+  "regression": {
+    "c1": "SKIPPED — the exact set is empty. Artifact A authored no new Draft cases, and its 2a triage phase produced no REPAIR and no RE-BASE ids: tc:scope found no existing case in regression/suites/**/sales-rep/** that mentions tasks at all (grep for 'task' across all seven sales-rep suites returns 0 hits). An omitted C1 must not read as a passing one — there was nothing to run.",
+    "run_id": null,
+    "existing_coverage": "NONE — suites 089/090/091/092/092b/093/097 and 050m carry no task case."
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_ids": [],
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": null
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Breadcrumb from the mockup ('Home / My account / Sales Rep Hub / Calendar') is absent",
+      "report": null
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Six lower-order mockup drifts: week starts Sunday with 3-letter labels, uppercase abbreviated day heading, task titles as blue links, all four chip counts brand-red, missing calendar card title, dot size 4px in grid vs 6px in legend",
+      "report": null
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "The Type field's Clear button drops 'type' from the payload instead of sending null; it works only because updateSalesRepTask is a full replace, so it would silently stop working if that ever became a partial update",
+      "report": null
+    },
+    {
+      "severity": "Medium",
+      "provenance": "out-of-scope",
+      "summary": "Uncaught 'Unknown variable dynamic import: ./virto-provider.vue' on /sign-in during identity-provider setup — storefront chrome, pre-existing, observed by two independent lanes; does not block sign-in",
+      "report": null
+    },
+    {
+      "severity": "Medium",
+      "provenance": "out-of-scope",
+      "summary": "axe-core critical button-name violation on the storefront header's account-menu button at <=768px — storefront chrome, not this feature",
+      "report": null
+    }
+  ],
+  "discovery": null,
+  "visual": {
+    "ran": true,
+    "lane": "ui-ux-expert on Chrome DevTools MCP",
+    "mode": "mockup diff, NOT a token diff — no Claude Design / DesignSync project exists for this feature, so no token-level expectation was derived",
+    "axes": {
+      "vs_DESIGN": "FAIL — 2 substantive deviations (BUG-2 chip scope, BUG-3 marker density), 1 missing region (breadcrumb), 6 low-order drifts",
+      "wcag_2_2_AA": "FAIL — 11 failures (1 High, 4 Medium-High, 4 Medium, 2 Low)",
+      "design_system_consistency": "FAIL (minor) — dot token 4px vs 6px; uppercase transform on the day heading only",
+      "responsive": "PASS — 390 / 768 / 1440 all clean; no horizontal overflow, no clipped day numbers",
+      "ux_heuristics": "FAIL — Nielsen #1 Visibility of system status breaks twice",
+      "dragging_movements_2_5_7": "SKIPPED — the drag surface only instantiates in layout-edit mode, which a read-only lane may not enter. Needs a re-run by a write-cleared lane.",
+      "screen_reader_output": "SKIPPED — no NVDA/JAWS/VoiceOver in the MCP toolkit; three findings are derived from the accessibility tree, not heard",
+      "sc_3_2_6_3_3_7_3_3_8": "SKIPPED — not applicable to this surface"
+    },
+    "methodological_note": "axe-core returned ZERO violations on all three scanned states while 11 genuine AA failures were present; nine came from the manual layer and two from Lighthouse. A green axe run on this feature is not evidence of conformance — the Notes label is the illustrative case, because a non-empty but WRONG accessible name satisfies both automated tools."
+  },
+  "contract": {
+    "contract_surface": true,
+    "refreshed": false,
+    "reason": "schema:refresh targets the default /graphql endpoint; this feature lives on the scoped /graphql/sales-rep, which the repo's graphql-schema.md does not cover. Introspected live instead and recorded inline.",
+    "scoped_endpoint": "/graphql/sales-rep — 26 queries / 6 mutations",
+    "task_operations": {
+      "queries": [
+        "salesRepTasks",
+        "salesRepTask",
+        "salesRepTaskTypes",
+        "salesRepTaskFilterRules",
+        "salesRepTaskSortRules"
+      ],
+      "mutations": [
+        "createSalesRepTask",
+        "updateSalesRepTask",
+        "deleteSalesRepTask",
+        "changeSalesRepTaskStatus"
+      ]
+    },
+    "established_facts": [
+      "priority is server-validated against exactly five values (Lowest/Low/Normal/High/Highest), case-insensitive, normalised on store; Urgent/Critical/Medium are rejected",
+      "type is NOT server-validated — an arbitrary string persists",
+      "name and dueDate are required on create; dueDate is NOT required on update, so update can reach a null-dueDate state that create forbids",
+      "updateSalesRepTask is a full replace, not a partial update: omitted fields are nulled and priority resets to Normal. NOT reachable from the UI — the edit form sends all five fields (verified from the captured request body)",
+      "an open task returns completed:null, not false; an explicitly reopened one returns false — a tri-state where two values mean 'not done'",
+      "isActive is the inverse of completed",
+      "an unknown filter or sort token returns HTTP 200 with totalCount 0 and no error — the same silent-empty shape BL-SR-020 already records for this module on other free-form string arguments",
+      "server filter semantics: overdue = open AND due < today; upcoming = open AND due >= today (so it INCLUDES today); completed = completed"
+    ]
+  },
+  "coverage_triage": {
+    "ran": true,
+    "hits": 0,
+    "detail": "tc:scope found no existing case referencing tasks anywhere in regression/suites. Nothing to dispose: no CONFIRMED, no REPAIR, no RE-BASE, no SUPERSEDED. unscannable[]: none. unmatchedObservables[]: 'task', 'calendar', 'due date' — all three matched zero rows, which is the finding, not a scan failure."
+  },
+  "test_data": {
+    "data_surface": true,
+    "seeder": "seed:sales-rep-tasks (authored this run — scripts/seed-data/sales-rep/{sales-rep-tasks-specs,seed-sales-rep-tasks,validate-sales-rep-tasks-data}.mjs + scripts/unit/seed-sales-rep-tasks.test.mjs)",
+    "aliases": 15,
+    "fixture": "14 tasks, group sizes 2 overdue / 3 today / 5 future / 4 completed — all four deliberately different so a mis-wired filter cannot return a plausible number",
+    "td_validate": "PASS",
+    "decay_warning": "Due dates are wall-clock relative. The 'due today' group expires at the next UTC midnight, at which point 2/3/5/4 silently becomes 5/0/5/4. Any suite asserting group membership must re-seed first.",
+    "isolation": "per REP ACCOUNT — confirmed live: a second rep reads totalCount 0 and cannot read, update, complete or delete these ids.",
+    "incident": "The 3a seeder ran a teardown-and-reseed at ~13:57:36 UTC while the 4a execution lane was already live against the fixture, replacing all 14 rows with new ids. This was an orchestrator scheduling error — the never-parallelise rule forbids it. 4a timestamped the disruption from a partial-fixture chip reading (Overdue 1 / Completed 2 between two readings of 2 / 4) and re-verified every count-, membership- and marker-dependent item at 14:19-14:20 against the restored fixture. B3, B4, B8 and B13 all reproduced identically. No finding in this report rests on a pre-reseed observation alone.",
+    "left_state": "RE-SEEDED after the run — fixture restored to 2/3/5/4. AGENT-TEST-TASK Alpha had been left with an EDITED title, a cleared type and a destroyed 07:00 time (the last of which is BUG-1 and is not restorable through the UI at all)."
+  },
+  "business_rules_verified": [
+    {
+      "id": "BL-SR-002",
+      "verdict": "HOLDS",
+      "evidence": "anonymous call to salesRepTasks returns a structured Unauthorized error, not a silently-empty success"
+    },
+    {
+      "id": "BL-SR-020",
+      "verdict": "EXTENDS",
+      "evidence": "the free-form-string silent-empty shape this invariant records now also applies to the new filter and sort arguments — an unknown token returns 200 with totalCount 0. Proposed as an amendment to the invariant's scope, not a new defect."
+    },
+    {
+      "id": "BL-SR-024",
+      "verdict": "HOLDS",
+      "evidence": "layout drag/hide were draft-only until Save"
+    },
+    {
+      "id": "BL-SR-025",
+      "verdict": "HOLDS",
+      "evidence": "restoring the hidden Tasks block appended it, per the registry rule"
+    },
+    {
+      "id": "BL-SR-031",
+      "verdict": "HOLDS",
+      "evidence": "with the Tasks block hidden and saved, a full reload fired NO task queries"
+    },
+    {
+      "id": "BL-A11Y-001..004",
+      "verdict": "VIOLATED",
+      "evidence": "11 WCAG 2.2 AA failures — filed standalone at their own severity; per triage.md they do not fail the functional verdict"
+    }
+  ],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
+    "correlated_failures": []
+  },
+  "screenshots": "reports/tickets/Sprint26-19/VCST-5732/screenshots/ — 37 files, including the two ticket mockups (design-81444.png, design-81445.png), the 4a per-item evidence (B0-B11) and the 4v visual/a11y captures (live-*.png)",
+  "domain_map": {
+    "state": "PRESENT_BUT_INCOMPLETE",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "rev": 2,
+    "generated": "2026-09-10",
+    "all_layer_confirmed_at": "1e",
+    "note": "The map predates this feature by five days and does not enumerate the Tasks surface. It is also now WRONG in two places, not merely incomplete: it asserts the rep sidebar holds 'exactly Dashboard and My customers' and that there is 'No Document library entry anywhere in the sidebar for this role', while live it holds four entries including Calendar and Document library. Gap G2 (Document-library route never observed) is closed: the route is /company/documents. Routed to 5h-map."
+  }
+}

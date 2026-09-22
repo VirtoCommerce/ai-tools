@@ -42,6 +42,9 @@ const healthy = () => ({
   languages: ['pl-PL', 'de-DE', 'en-GB', 'en-US', 'ru-RU', 'es-ES'],
   url: 'https://vcst-qa-storefront.govirto.com',
   secureUrl: 'https://vcst-qa-storefront.govirto.com',
+  // Added 2026-09-19: a store with a null email is NOT healthy — vc-module-customer refuses every
+  // invite with `StoreNotConfigured`. The live record carried this value when BUG_008_006 was fixed.
+  email: 'noreply@mail.com',
   settings: [{ name: 'Loyalty.Missions.Enable', valueType: 'Boolean', value: true }],
 });
 
@@ -68,12 +71,26 @@ test('§0 the three required fields are exactly the ones that break the storefro
 });
 
 test('§0 secureUrl is INFORMATIONAL, never gated — B2B-store served correctly with it null', () => {
-  assert.deepEqual([...INFORMATIONAL_FIELDS], ['secureUrl']);
+  assert.deepEqual([...INFORMATIONAL_FIELDS], ['secureUrl', 'email']);
   assert.ok(!REQUIRED_FIELD_NAMES.includes('secureUrl'));
   const a = auditStore({ ...healthy(), secureUrl: null }, { gated: true, orderCount: 50 });
   assert.equal(a.missingRequired.length, 0);
   assert.equal(a.findings.filter((f) => f.severity === 'fail').length, 0, 'a null secureUrl must never gate');
   assert.deepEqual(codesOf(a.findings), [CODES.INFO_MISSING]);
+});
+
+test('§0 a null store email is SEEN but never gates — it breaks invites, not the storefront', () => {
+  // BUG_008_006 (vcst-qa, 2026-09-19): store.Email was null, vc-module-customer refused every
+  // invite with `StoreNotConfigured`, and this guard was silent because email was not tracked at
+  // all. Seeing it is the point; gating on it is NOT — the storefront serves fine without it, and
+  // a guard that reddens a healthy env is a guard people learn to skip.
+  assert.ok(!REQUIRED_FIELD_NAMES.includes('email'), 'email must not gate — REQUIRED means "breaks the storefront"');
+  const a = auditStore({ ...healthy(), email: null }, { gated: true, orderCount: 50 });
+  assert.equal(a.missingRequired.length, 0, 'a null email is not a required-field failure');
+  assert.equal(a.findings.filter((f) => f.severity === 'fail').length, 0, 'a null email must never gate');
+  assert.deepEqual(codesOf(a.findings), [CODES.INFO_MISSING]);
+  // And a healthy store stays quiet — the guard must not report an email that is present.
+  assert.equal(auditStore(healthy(), { gated: true, orderCount: 50 }).findings.length, 0);
 });
 
 /* ── §1 It SEES the 2026-08-27 wreckage ────────────────────────────────────── */

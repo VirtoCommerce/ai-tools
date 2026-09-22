@@ -829,6 +829,14 @@ export async function ensureStore(api, { storeId = STORE_ID, catalogId = null, e
   const currencies = row ? csvList(row.available_currencies) : [];
   if (!currencies.length) currencies.push(row?.default_currency || 'USD');
   const desiredUrl = process.env.FRONT_URL || row?.store_url || undefined;
+  // Store.Email is LOAD-BEARING, not cosmetic: vc-module-customer's InviteCustomerService.GetStoreAsync()
+  // refuses the whole invite with `StoreNotConfigured` when EITHER Url or Email is null/empty
+  //   `if (string.IsNullOrEmpty(store.Url) || string.IsNullOrEmpty(store.Email))`
+  // and SendNotificationAsync sets `notification.From = store.Email`. Neither SecureUrl nor AdminEmail
+  // is read on that path, so only these two are provisioned here. Before this, the create body carried
+  // no email at all and stores.csv had no column for one, so a store created from scratch was born in
+  // the StoreNotConfigured state and no fixture data could repair it (found via BUG_008_006 on vcst-qa).
+  const desiredEmail = row?.store_email || undefined;
 
   const store = existing !== undefined
     ? existing
@@ -844,6 +852,9 @@ export async function ensureStore(api, { storeId = STORE_ID, catalogId = null, e
     let changed = false;
     if (catalogId && store.catalog !== catalogId) { store.catalog = catalogId; changed = true; }
     if (desiredUrl && store.url !== desiredUrl) { store.url = desiredUrl; changed = true; }
+    // Reconciled the same way as url, so an env whose email was nulled (e.g. by a partial body sent to
+    // this whole-entity PUT — see the 2026-08-27 incident) is REPAIRED by a re-seed, not just preserved.
+    if (desiredEmail && store.email !== desiredEmail) { store.email = desiredEmail; changed = true; }
     if (await applyFulfillmentCenters(api, store)) changed = true;
     if (changed && !DRY_RUN) {
       try {
@@ -872,6 +883,7 @@ export async function ensureStore(api, { storeId = STORE_ID, catalogId = null, e
     defaultCurrency: row?.default_currency || 'USD',
     currencies,
     ...(desiredUrl ? { url: desiredUrl } : {}),
+    ...(desiredEmail ? { email: desiredEmail } : {}),
     ...(row ? { settings: storeSettingsFromRow(row) } : {}),
     ...(catalogId ? { catalog: catalogId } : {}),
   };

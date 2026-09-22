@@ -1,30 +1,60 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"SEC-PCI-001","Card Number Iframe Isolation","PCI Compliance > Iframe","Critical","BL-SEC-002",,"[PRE:CLEAR_SESSION]
+"SEC-PCI-001","Card Number Iframe Isolation","PCI Compliance > Iframe","Critical","","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 - CyberSource payment form displayed
-- Browser DevTools open",,,,,,,,
-"SEC-PCI-002","CVV Iframe Isolation","PCI Compliance > Iframe","Critical","BL-SEC-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- CyberSource payment form displayed",,,,,,,,
-"SEC-PCI-003","CVV Visual Masking","PCI Compliance > Display","High","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- CyberSource form ready",,,,,,,,
-"SEC-PCI-004","No Card Data in Network Requests","PCI Compliance > Network","Critical","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+- Browser DevTools open","front_url={{FRONT_URL}}, card_number=@td(CYBERSOURCE_VISA.number)","[NAV] {{FRONT_URL}}/cart - confirm the CyberSource card-payment form is displayed
+[WAIT] the Card Number field finishes loading (CyberSource Flex Microform mounts into #cardNumber-container)
+[KEY] inspect #cardNumber-container and record whether its rendered child is an <iframe> (per vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue number.load(...)) or a plain <input> owned by the storefront page
+[ACT] click into the Card Number iframe field and type @td(CYBERSOURCE_VISA.number)
+[KEY] capture the storefront page own DOM/JS state after typing, excluding the iframe internal cross-origin document","[DOM] #cardNumber-container only rendered child is an <iframe> element - the field is not a same-origin <input> in the storefront page own DOM
+[STATE] the typed card number does not appear anywhere in the storefront page own DOM outside the iframe (no attribute, hidden input or text node carries the digits)
+[CONSOLE] no cross-origin/SecurityError is thrown when the SDK initializes or the page interacts with the container","[NETWORK] no request fired by the storefront page own JS (outside the iframe) carries the typed card number","Card Number field renders as a plain <input> in the storefront page own DOM (no iframe); the typed card number is readable from the parent page DOM or JS scope; console throws a cross-origin/SecurityError on field init","none - no order created","PCI-DSS SAQ A client-side field isolation. Grounded in vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue (#cardNumber-container, number.load(...), CyberSource Flex Microform), source fetched live 2026-09-19. Business_Rule cleared: BL-SEC-00N does not exist (no BL-SEC-* family in the oracle) and no promoted invariant covers this behaviour - oracle gap, candidate for /qa-review-oracles.","Draft"
+"SEC-PCI-002","CVV Iframe Isolation","PCI Compliance > Iframe","Critical","","","[PRE:SIGNIN_AS:USER_DEFAULT]
+- CyberSource payment form displayed","front_url={{FRONT_URL}}, cvv=@td(CYBERSOURCE_VISA.cvv)","[NAV] {{FRONT_URL}}/cart - confirm the CyberSource card-payment form is displayed
+[WAIT] the Security Code/CVV field finishes loading (CyberSource Flex Microform mounts into #securityCode-container)
+[KEY] inspect #securityCode-container and record whether its rendered child is an <iframe> (per vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue securityCode.load(...)) or a plain <input>
+[ACT] click into the CVV iframe field and type @td(CYBERSOURCE_VISA.cvv)
+[KEY] capture the storefront page own DOM/JS state after typing, excluding the iframe internal cross-origin document","[DOM] #securityCode-container only rendered child is an <iframe> element - the CVV field is not a same-origin <input> in the storefront page own DOM
+[STATE] the typed CVV does not appear anywhere in the storefront page own DOM outside the iframe
+[CONSOLE] no cross-origin/SecurityError is thrown when the SDK initializes or the page interacts with the container","[NETWORK] no request fired by the storefront page own JS (outside the iframe) carries the typed CVV","CVV field renders as a plain <input> in the storefront page own DOM (no iframe); the typed CVV is readable from the parent page DOM or JS scope; console throws a cross-origin/SecurityError on field init","none - no order created","PCI-DSS SAQ A client-side field isolation. Grounded in vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue (#securityCode-container, securityCode.load(...)), source fetched live 2026-09-19. Business_Rule cleared: BL-SEC-00N does not exist (no BL-SEC-* family in the oracle) and no promoted invariant covers this behaviour - oracle gap, candidate for /qa-review-oracles.","Draft"
+"SEC-PCI-003","CVV Visual Masking","PCI Compliance > Display","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
+- CyberSource form ready","front_url={{FRONT_URL}}, cvv=@td(CYBERSOURCE_VISA.cvv)","[NAV] {{FRONT_URL}}/cart - confirm the CyberSource card-payment form is displayed
+[WAIT] the CVV field (#securityCode-container) finishes loading
+[ACT] click into the CVV iframe field and type @td(CYBERSOURCE_VISA.cvv) one digit at a time
+[WAIT] the field rendered content settles after each digit","[DOM] each typed CVV digit renders as a mask character (dot/bullet), never as the plain digit, inside the CVV iframe field - consistent with the SDK masked-placeholder convention (securityCode createField placeholder) and the prior confirmed finding that CVV masking is by design
+[STATE] no plaintext CVV digit is visible in a screenshot or DOM snapshot of the field at any point while typing","[CONSOLE] no TypeError or JS errors from the microform field","Typed CVV digits render as plaintext (unmasked) in the field at any point","none - no order created","Grounded in vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue (securityCode field placeholder, maxLength 4) and the prior confirmed QA finding that CyberSource CVV masking is BY DESIGN (a previous report of unmasked CVV was rejected). Business_Rule cleared: BL-SEC-00N does not exist (no BL-SEC-* family in the oracle) and no promoted invariant covers this behaviour - oracle gap, candidate for /qa-review-oracles. NOTE: the masking behaviour lives inside CyberSource own iframe (third-party SDK), so the first live run should re-observe and upgrade this provenance.","Draft"
+"SEC-PCI-004","No Card Data in Network Requests","PCI Compliance > Network","Critical","BL-PAY-003","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - DevTools Network tab open
-- CyberSource payment form filled",,,,,,,,
+- CyberSource payment form filled","front_url={{FRONT_URL}}, card_number=@td(CYBERSOURCE_VISA.number), cvv=@td(CYBERSOURCE_VISA.cvv), expiry=@td(CYBERSOURCE_VISA.expiry), cardholder=@td(CYBERSOURCE_VISA.cardholder)","[NAV] {{FRONT_URL}}/cart - confirm the CyberSource card-payment form is displayed
+[ACT] fill the Card Number iframe field with @td(CYBERSOURCE_VISA.number), Cardholder Name with @td(CYBERSOURCE_VISA.cardholder), the expiry fields with @td(CYBERSOURCE_VISA.expiry) and the CVV iframe field with @td(CYBERSOURCE_VISA.cvv)
+[ACT] submit payment
+[WAIT] the authorizePayment GraphQL response is received
+[CAPTURE] every network request fired during this flow, including the createToken call to CyberSource and the authorizePayment mutation to {{BACK_URL}}","[NETWORK] no request body, from any request the storefront page itself fires to {{BACK_URL}}, contains the raw card number or CVV
+[BODY] the authorizePayment GraphQL mutation parameters array carries only the opaque token entry - no cardNumber/cvv/expiry field
+[STATUS] authorizePayment returns its documented success shape with no 4xx/5xx","[API] any order created references only a processor transaction id, never a raw PAN
+[CONSOLE] no JS error logs the raw card data","Raw card number or CVV appears in any request body captured during the flow; authorizePayment parameters carry a raw card field instead of an opaque token","Cancel/void the order via admin if one was created","VCST-4576 (payment security family). Grounded in vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue (createToken() then authorizePayment with a token-only parameters array), source fetched live 2026-09-19. Business_Rule corrected from the nonexistent BL-SEC-001 to BL-PAY-003 (business-logic.md:1473) - PARTIAL-FIT: cites only its ""raw PAN never appears in storefront network payloads (SDK tokenization)"" clause; the invariant primary subject is order/transaction creation.","Draft"
 "SEC-PCI-005","No Card Data in Browser Storage","PCI Compliance > Storage","Critical","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - Payment form interaction complete",,,,,,,,
-"SEC-PCI-006","HTTPS Enforcement","PCI Compliance > Transport","Critical","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- Payment page loaded",,,,,,,,
+"SEC-PCI-006","HTTPS Enforcement","PCI Compliance > Transport","Critical","","","[PRE:SIGNIN_AS:USER_DEFAULT]
+- Payment page loaded","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart - confirm the CyberSource card-payment form is displayed
+[WAIT] the dynamically-injected CyberSource client script finishes loading (useDynamicScript())
+[KEY] inspect the injected <script> tag whose src points at the CyberSource client library and record its integrity and crossorigin attributes
+[CAPTURE] every network request made while the payment form is active","[STATE] {{FRONT_URL}} itself, the injected CyberSource script src and every payment-related network request use https - no mixed-content request
+[DOM] the injected CyberSource script tag carries a non-empty integrity attribute and crossorigin=anonymous whenever the initializeCartPayment/initializePayment response supplies clientLibraryIntegrity - Subresource Integrity is enforced
+[CONSOLE] no mixed-content or SRI-mismatch warning or error","[NETWORK] no plain-http request observed for any payment-related resource","Any payment-related request or the CyberSource script itself loads over http; the injected script tag has no integrity/crossorigin attributes when the mutation response supplied clientLibraryIntegrity; console shows an SRI or mixed-content warning","none","Grounded in vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue useDynamicScript() (integrity + crossOrigin anonymous set from publicParameters.clientLibraryIntegrity), source fetched live 2026-09-19. Business_Rule cleared: BL-SEC-00N does not exist (no BL-SEC-* family in the oracle) and no promoted invariant covers this behaviour - oracle gap, candidate for /qa-review-oracles. A platform-wide HTTPS/SRI invariant would belong under a new BL-SEC or BL-PLAT family, not fabricated here.","Draft"
 "SEC-PCI-007","JWT Token Authentication","PCI Compliance > Auth","High","BL-SEC-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - CyberSource payment selected",,,,,,,,
 "SEC-AUTH-001","Session Token Security","Authentication > Tokens","High","BL-SEC-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - User logged in
 - DevTools open",,,,,,,,
-"SEC-AUTH-002","Logout Token Revocation","Authentication > Logout","High","BL-SEC-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-- User logged in
+"SEC-AUTH-002","Logout Token Revocation","Authentication > Logout","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
+User is logged in to the storefront","front_url={{FRONT_URL}}","[ACT] Log out from the storefront
 [WAIT] Wait for logout to complete and redirect to home or /sign-in
-[ASSERT] Verify a token revocation request was sent to {{BACK_URL}}/connect/revocation or equivalent
-[ACT] Attempt to use the captured old token in a direct API request to {{BACK_URL}}
-[ASSERT] Verify old token is rejected (401 Unauthorized)""",,,,,,,,
+[KEY] Capture the token-revocation request fired on logout and the now-revoked storefront access token
+[ACT] Reuse the captured (revoked) storefront token as the Authorization header on an authenticated storefront GraphQL query against {{FRONT_URL}}/graphql
+[WAIT] Receive the GraphQL response","[NETWORK] a token-revocation request is sent on logout
+[STATUS] the reused (revoked) storefront token is rejected by the GraphQL endpoint (401, or a GraphQL errors[] entry carrying an authentication code) rather than returning the authenticated payload","[CONSOLE] no TypeError or JS errors
+[NETWORK] no unexpected 5xx","Revoked token still returns authenticated GraphQL data; no revocation request observed on logout; 500 instead of 401/errors[]","none","Row re-split 2026-09-19 (REG-2026-09-19-1035): a stray trailing quote had swallowed Steps/Assertions into Preconditions, leaving 0 assertions and 0 Failure_Signals. Retargeted at {{FRONT_URL}}/graphql because the captured token is storefront-issued (iss=...-storefront, role=__customer), so asserting it against the platform BACK_URL endpoint was the wrong audience. Business_Rule cleared: BL-SEC-004 does not exist (there are no BL-SEC-* entries at all) and no promoted invariant covers storefront logout revocation - oracle gap, candidate for /qa-review-oracles.",""
 "SEC-AUTH-003","Account Lockout Protection","Authentication > Brute Force","High","BL-SEC-004","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Dedicated lockout-test user exists (LOCKOUT_TEST_EMAIL) isolated from agent pool slot accounts",,,,,,,,
 "SEC-INPUT-001","XSS Prevention - Search","Input Validation > XSS","High","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
@@ -90,31 +120,36 @@
 [BODY] Response contains id and login fields matching the authenticated user","[API] No 4xx/5xx on either request
 [CONSOLE] No server errors","POST /connect/token returns non-200; access_token absent; GET /api/platform/security/currentuser returns 401 for valid active token","none","VCST-4576","Draft"
 "SEC-PAT-002","Persistent Access Token — Revoked Token Returns 401 (State Transition: Active → Revoked)","Security > Token Validation > State: Revoked","Critical","BL-AUTH-005, BL-AUTH-006","ECL-3.1, ECL-4.3","[PRE:CLEAR_SESSION]
-- Platform has Authorization__EnablePersistentStorageTokenValidation=true configured
 - Admin credentials available
-- Two contexts/tokens can be obtained independently","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[HTTP] POST {{BACK_URL}}/connect/token credentials to obtain Token A (access_token + refresh_token)
+- Two contexts/tokens can be obtained independently
+- The actual value of Authorization__EnablePersistentStorageTokenValidation is VERIFIED LIVE in Steps, never assumed","back_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[HTTP] GET {{BACK_URL}}/api/platform/settings?names=Authorization.EnablePersistentStorageTokenValidation and record PERSISTENT_VALIDATION_ENABLED
+[HTTP] POST {{BACK_URL}}/connect/token credentials to obtain Token A (access_token + refresh_token)
 [WAIT] Receive Token A
 [HTTP] POST {{BACK_URL}}/connect/token again with same credentials to obtain Token B
 [WAIT] Receive Token B (separate authorization entry)
-[HTTP] POST {{BACK_URL}}/connect/revocation with token=<Token A refresh_token>, token_type_hint=refresh_token, Authorization: Bearer <Token A access_token>
+[HTTP] POST {{BACK_URL}}/revoke/token with token=<Token A refresh_token>, token_type_hint=refresh_token, Authorization: Bearer <Token A access_token>
 [WAIT] Revocation completes (HTTP 200)
-[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Authorization: Bearer <Token A access_token>
-[WAIT] Receive response (expect 401)
-[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Authorization: Bearer <Token B access_token>
-[WAIT] Receive response (expect 200)","[STATUS] POST /connect/revocation returns HTTP 200
-[STATUS] GET /api/platform/security/currentuser with revoked Token A returns HTTP 401 (not 200)
-[BODY] 401 response does not leak user data or internal paths
-[STATUS] GET /api/platform/security/currentuser with active Token B returns HTTP 200 (revocation is scoped)","[API] Token A rejected after revocation; Token B unaffected
-[NETWORK] No 5xx errors on any request","POST /connect/revocation returns non-200; revoked Token A still returns 200 (bug: persistent validation not active); Token B also rejected after Token A revocation (over-broad invalidation); 500 errors","Obtain new token and use to clean up any test state","VCST-4576","Draft"
+[HTTP] GET {{BACK_URL}}/api/platform/security/users with Authorization: Bearer <Token A access_token>
+[WAIT] Receive response
+[HTTP] GET {{BACK_URL}}/api/platform/security/users with Authorization: Bearer <Token B access_token>
+[WAIT] Receive response (expect 200)","[STATUS] POST /revoke/token returns HTTP 200
+[STATUS] IF PERSISTENT_VALIDATION_ENABLED=true: GET /api/platform/security/users with revoked Token A returns HTTP 401; IF false: Token A remains valid until its documented TTL elapses - assert that TTL behaviour, NOT a 401
+[BODY] the 401 response (when asserted) does not leak user data or internal paths
+[STATUS] GET /api/platform/security/users with active Token B returns HTTP 200 (revocation is scoped to Token A only)","[API] Token A rejected after revocation; Token B unaffected
+[NETWORK] No 5xx errors on any request","POST /revoke/token returns non-200; PERSISTENT_VALIDATION_ENABLED=true but revoked Token A still authorizes (real defect); PERSISTENT_VALIDATION_ENABLED=false but Token A is rejected before its TTL elapses (real defect); Token B also rejected after Token A revocation (over-broad invalidation); 500 errors","Obtain new token and use to clean up any test state","VCST-4576; Corrected 2026-09-19 (REG-2026-09-19-1035): /connect/revocation does not exist - its 404 is a non-endpoint, not a defect - replaced with /revoke/token. The 401 check also moved off /currentuser, which is [Authorize]+[AllowAnonymous] and can never 401. The precondition required EnablePersistentStorageTokenValidation=true but never verified it; it is now read live and the assertion branches on it (platform default is false - see BUG_032_057, config-gated by design).","Draft"
 "SEC-PAT-003","Persistent Access Token — Never-Issued Token Returns 401","Security > Token Validation > Boundary: Never-Issued","High","BL-AUTH-005, BL-AUTH-006","ECL-4.3","[PRE:CLEAR_SESSION]
 - Platform accessible
-- Authorization__EnablePersistentStorageTokenValidation=true configured","back_url={{BACK_URL}}","[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlIn0.invalidsignature
+- Authorization__EnablePersistentStorageTokenValidation=true configured","back_url={{BACK_URL}}","[HTTP] GET {{BACK_URL}}/api/platform/security/users with Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmYWtlIn0.invalidsignature
 [WAIT] Receive response (expect 401)
-[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with Authorization: Bearer AAAA.BBBB.CCCC
-[WAIT] Receive response (expect 401)","[STATUS] Both requests return HTTP 401
-[BODY] No user data in either response
-[BODY] No internal paths or stack traces in error response","[API] No 500 returned for malformed tokens
-[NETWORK] Both requests fail with 401, not 200","200 returned for a fabricated/unsigned token; 500 Internal Server Error instead of 401; user data visible in error response body","none","VCST-4576","Draft"
+[HTTP] GET {{BACK_URL}}/api/platform/security/users with Authorization: Bearer AAAA.BBBB.CCCC
+[WAIT] Receive response (expect 401)
+[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with no Authorization header
+[WAIT] Receive response (expect 200, anonymous-allowed by design)","[STATUS] Both /api/platform/security/users requests (fabricated and malformed tokens) return HTTP 401
+[BODY] No user data in either 401 response
+[BODY] No internal paths or stack traces in either error response
+[STATUS] /api/platform/security/currentuser with no Authorization header returns HTTP 200 BY DESIGN ([Authorize]+[AllowAnonymous], vc-platform SecurityController.cs:259-263) - an anonymous-contract check, never a 401 expectation
+[BODY] the anonymous 200 response body is empty and leaks no user data","[API] No 500 returned for malformed tokens against /api/platform/security/users
+[NETWORK] Both /users requests fail with 401, not 200","200 returned by /api/platform/security/users for a fabricated/unsigned token; 500 Internal Server Error instead of 401; user data visible in error response body; the currentuser anonymous 200 response leaks user data (breaks the anonymous contract)","none","VCST-4576; Corrected 2026-09-19 (REG-2026-09-19-1035): the 401 assertions targeted /api/platform/security/currentuser, which is [Authorize]+[AllowAnonymous] in vc-platform source and therefore can NEVER return 401 for any input - an unfalsifiable oracle. Re-pointed at the permission-gated /users endpoint; the anonymous contract is now asserted separately.","Draft"
 "SEC-AUTH-004","Session Invalidation After Password Change — Other Devices Logged Out","Security > Session Management > Password Change","Critical","BL-AUTH-003","ECL-3.1, ECL-4.3","[PRE:CLEAR_SESSION]
 - Authorization__EnablePersistentStorageTokenValidation=true configured (enables OpenIddict DB-based revocation)
 - User account available (use agent pool slot 1 for Device A context, slot 2 for Device B context)

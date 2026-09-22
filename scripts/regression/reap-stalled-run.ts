@@ -183,6 +183,41 @@ export function markRunStalled(reportsRoot: string, runId: string, reason: strin
   return true;
 }
 
+/**
+ * Inverse of `markRunStalled` — un-marks a run that has started producing artifacts again.
+ *
+ * A `stalled` flag is an INFERENCE from silence, and silence has two causes that are
+ * indistinguishable from the outside: the orchestrator died, or it is alive and blocked
+ * (an API rate limit, a paused approval, a long external wait). Measured on
+ * REG-2026-09-18-1818: the orchestrator was rate-limited, the watcher's 45-min idle rule
+ * marked the run `stalled`, and the run then resumed and completed four more suites — by
+ * which point every downstream consumer had already been told it was dead.
+ *
+ * Fresh artifacts are positive evidence the inference was wrong, so the flag is reversible.
+ * Only a `stalled` run can be cleared: `completed` is terminal and is never reopened here.
+ * `stalledAt`/`stalledReason` are preserved as `lastStallAt`/`lastStallReason` so the
+ * episode stays auditable rather than being erased.
+ */
+export function clearRunStall(reportsRoot: string, runId: string, nowIso: string): boolean {
+  const fresh = loadStatus(reportsRoot);
+  if (!fresh || String(fresh.runId ?? "") !== runId) return false;
+  if (String(fresh.status ?? "").toLowerCase() !== "stalled") return false;
+
+  const { stalledAt, stalledReason, finishedAt, ...rest } = fresh as RunStatusFile & {
+    stalledAt?: string;
+    stalledReason?: string;
+  };
+  const updated: RunStatusFile = {
+    ...rest,
+    status: "in_progress",
+    resumedAt: nowIso,
+    lastStallAt: stalledAt ?? null,
+    lastStallReason: stalledReason ?? null,
+  } as RunStatusFile;
+  writeFileSync(join(reportsRoot, "test-run-status.json"), JSON.stringify(updated, null, 2) + "\n", "utf-8");
+  return true;
+}
+
 // --- CLI -------------------------------------------------------------------
 
 interface CliArgs {

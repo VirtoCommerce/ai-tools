@@ -5,8 +5,6 @@
 # this repo's own code. So every guarantee the repo documents as enforced was in fact enforced only
 # when a human remembered to run the suite locally:
 #
-#   - `scripts/unit/mirror-parity.test.mjs`, which CLAUDE.md calls "CI-enforced" byte-identity for
-#     the five self-diagnostics containment files. A drift on one surface would have shipped.
 #   - the secret-hygiene guards added by VCST-5774 — the checks that keep a credential literal out
 #     of a generated .mcp.json. A regression there is silent by construction.
 #

@@ -779,3 +779,52 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/orders
 [STATE] orders list shows only orders from the specified single day (inclusive boundary)
 [STATE] orders from other dates are absent from the filtered list","[CONSOLE] no JS errors on same-day filter application
 [NETWORK] GetOrders request fires with both date params set to the same date value",Apply button disabled for Start = End (boundary incorrectly rejected); error message shown for same-day range; filtered list shows orders from other dates (inclusive boundary not honored),Clear date filter after test,VCST-4892,Draft
+ORD-101,Date Range Picker (Mobile Combined) — Backward Selection Paints Band With Inward-Facing End Caps,Orders > Date Filter,High,BL-UI-003,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; browser viewport resized to 375x812 (mobile, combined field layout); Filters popover available on /account/orders",,"[NAV] Navigate to {{FRONT_URL}}/account/orders with viewport set to 375x812 (mobile breakpoint)
+[WAIT] orders list rendered
+[ACT] click Filters button to open the Filters popover
+[WAIT] popover visible with the combined (single-field) Created date control
+[ACT] tap the combined date field to open the calendar
+[WAIT] calendar popup visible
+[KEY] pick a LATER day cell first (e.g. the 20th visible day in the open month) -- this becomes the pending range anchor
+[WAIT] short pause for the range highlight to update
+[ACT] pick an EARLIER day cell in the same month (e.g. the 5th visible day) -- completing the range in reverse click order
+[WAIT] range band renders across the intervening day cells
+[KEY] read the computed border-radius (or classlist) of the two boundary day cells and of at least one intervening day cell
+[ACT] click Apply
+[WAIT] filtered results rendered","[DOM] a continuous range-band background is visible across every day cell between the two picked dates, regardless of click order
+[DOM] the earlier-dated boundary cell's end cap is rounded toward the range interior and the later-dated boundary cell's end cap is rounded the opposite way -- caps face INWARD toward each other, never outward
+[REL] the resulting filtered order list is identical to picking the same two dates in forward (earlier-then-later) order -- click order does not change the applied range
+[DOM] no day cell inside the selected range is absent from the continuous range-band background (every intervening cell is present in the band)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql, range band missing or discontinuous between the two picked dates, end caps rounded outward instead of inward",none,VCST-5097 · Archetype:RENDER · Technique:ST,Draft
+ORD-102,Date Range Picker (Mobile Combined Field) — Focusing Start Then End Shows Exactly One Focus Ring,Orders > Date Filter,Medium,BL-UI-007,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; browser viewport resized to 375x812 (mobile, combined field layout); Filters popover available on /account/orders",,"[NAV] Navigate to {{FRONT_URL}}/account/orders with viewport set to 375x812 (mobile breakpoint)
+[WAIT] orders list rendered
+[ACT] click Filters button to open the Filters popover
+[WAIT] popover visible with the combined (single-field) Created date control
+[ACT] press Tab until focus lands on the combined date field's Start segment
+[WAIT] focus settles
+[KEY] read every element between the focused Start segment and the field's outer container that carries a visible focus outline or box-shadow ring (computed style, not just class presence)
+[ACT] press Tab again to move focus to the End segment
+[WAIT] focus settles
+[KEY] read the same focus-ring inventory for the End segment","[DOM] exactly one visible focus ring is present when the Start segment is focused -- on the field's outer container, not simultaneously on an inner segment
+[DOM] exactly one visible focus ring is present when the End segment is focused -- same container-level rule
+[STATE] no two focusable elements inside the combined field show a computed outline/box-shadow ring at the same time
+[DOM] the single visible ring meets BL-UI-007's >=3:1 contrast requirement against its background","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql, two concentric focus rings visible at once (nested ring), ring contrast <3:1",none,VCST-5097 · Archetype:RENDER · Technique:EG,Draft
+ORD-103,Order Date Filter — Reversed-Range Validation Message Reserves Its Own Space at Narrow (Mobile) Field Width,Orders > Date Filter,High,BL-UI-003,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders; test is run at BOTH 375x812 (mobile, combined field) and 1920x1080 (desktop, split fields)",,"[NAV] Navigate to {{FRONT_URL}}/account/orders with viewport set to 375x812 (the narrowest supported viewport)
+[WAIT] orders list rendered
+[ACT] click Filters button to open the Filters popover
+[WAIT] popover visible with the combined Created date field
+[KEY] record the rendered WIDTH of the combined Created date field itself (not the viewport) and report it -- this is what decides whether the run reached a clamping width at all
+[KEY] record the bounding-rect top offset (topBefore) of the element immediately following the date field inside the popover
+[ACT] type a later date into aria-label='Start date'
+[ACT] type an earlier date into aria-label='End date' to trigger the inline validation message
+[WAIT] validation message renders
+[KEY] record the bounding-rect top offset (topAfter) of the same following element
+[ACT] repeat the same sequence at viewport 1920x1080 (desktop, split Start/End fields)","[STATE] topDelta (topAfter - topBefore) = 0 at 375px -- the validation message does not push the following element down (BL-UI-003)
+[STATE] topDelta = 0 at 1920px as well -- the invariant holds at both widths, not only the comfortable one
+[DOM] the inline validation message is visible in a pre-reserved slot beneath the date field, not inserted into normal document flow at that moment
+[STATE] RECORD ONLY (never a failure): the field width measured above. The storefront field sits in a page layout and measures far wider than the ~122px at which the historical Storybook regression reproduced, so a topDelta of 0 here does NOT stand in for that narrow-width case -- Storybook condition #25 owns it","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql, topDelta != 0 at either viewport; field width not recorded at all (the row then proves nothing about width reach)",none,VCST-5097 · Archetype:RENDER · Technique:BVA,Draft

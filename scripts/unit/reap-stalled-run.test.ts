@@ -19,6 +19,7 @@ import {
   classifyRun,
   gatherActivity,
   markRunStalled,
+  clearRunStall,
   loadStatus,
   DEFAULT_IDLE_LIMIT_MS,
   NON_EVIDENCE_BASENAMES,
@@ -143,4 +144,51 @@ test("a run that changed underneath the reaper is left alone — the orchestrato
   writeFileSync(join(root, "test-run-status.json"), JSON.stringify({ runId: "REG-newer", status: "in_progress" }));
   assert.equal(markRunStalled(root, RUN, "r", "2026-08-06T12:00:00Z"), false);
   assert.equal(loadStatus(root)!.status, "in_progress");
+});
+
+/**
+ * `stalled` is an INFERENCE from silence, and silence has two causes that look identical
+ * from outside: the orchestrator died, or it is alive and blocked. Measured on
+ * REG-2026-09-18-1818 — the run was rate-limited, the watcher's idle rule marked it
+ * stalled, and it then resumed and completed four more suites. Fresh artifacts are
+ * positive evidence the inference was wrong, so the flag has to be reversible.
+ */
+test("a stalled run that produces artifacts again can be un-stalled", () => {
+  const root = scratch();
+  writeFileSync(join(root, "test-run-status.json"), JSON.stringify({
+    runId: RUN, status: "in_progress", selection: "002", suites: [{ id: "002", status: "running" }],
+  }));
+
+  assert.equal(markRunStalled(root, RUN, "no progress for 45 min", "2026-08-06T12:00:00Z"), true);
+  assert.equal(loadStatus(root)!.status, "stalled");
+
+  assert.equal(clearRunStall(root, RUN, "2026-08-06T12:30:00Z"), true);
+  const after = loadStatus(root)!;
+  assert.equal(after.status, "in_progress", "a resumed run must be watchable again");
+  assert.equal(after.resumedAt, "2026-08-06T12:30:00Z");
+  assert.equal(after.selection, "002", "unrelated fields survive the reversal");
+  assert.deepEqual(after.suites, [{ id: "002", status: "running" }]);
+  // The episode stays auditable — the stall is demoted, never erased.
+  assert.equal(after.lastStallAt, "2026-08-06T12:00:00Z");
+  assert.equal(after.lastStallReason, "no progress for 45 min");
+  assert.equal(after.stalledAt, undefined, "the live stall marker is gone");
+  assert.equal(after.stalledReason, undefined);
+});
+
+test("clearing a stall never reopens a completed run, nor touches a different run", () => {
+  const root = scratch();
+
+  // `completed` is terminal — the orchestrator said so, and it outranks any inference.
+  writeFileSync(join(root, "test-run-status.json"), JSON.stringify({ runId: RUN, status: "completed" }));
+  assert.equal(clearRunStall(root, RUN, "2026-08-06T12:30:00Z"), false);
+  assert.equal(loadStatus(root)!.status, "completed");
+
+  // An in_progress run is already watchable; there is nothing to reverse.
+  writeFileSync(join(root, "test-run-status.json"), JSON.stringify({ runId: RUN, status: "in_progress" }));
+  assert.equal(clearRunStall(root, RUN, "2026-08-06T12:30:00Z"), false);
+
+  // A newer run owns the file now — un-stalling by the old id would corrupt its state.
+  writeFileSync(join(root, "test-run-status.json"), JSON.stringify({ runId: "REG-newer", status: "stalled" }));
+  assert.equal(clearRunStall(root, RUN, "2026-08-06T12:30:00Z"), false);
+  assert.equal(loadStatus(root)!.status, "stalled");
 });

@@ -234,7 +234,7 @@ What it emits:
 (modern-web-attack-surface §`UIP-*`) · `toggle` and `date-range` (§3.5 above). Declare them in the plan's
 `sweeps[]` with the surface being swept; waiving an item needs a reason, because a silent omission is
 what makes a sweep unreportable. This is the cheapest coverage in the pipeline and it is where the corpus
-is measurably thinnest (8 · 5 · 11 · 5 · 5 `UIP-*` cases across 1,961 Frontend cases).
+is measurably thinnest — count it per probe there, never quote a figure.
 
 `--id-block` comes from `tc:alloc`, which scans the corpus **once**; the scaffolder refuses to spill past
 the block it was given. That is what makes concurrent per-surface batches safe — see `/qa-test` Step 3b.

@@ -216,5 +216,174 @@
   "SR_STATS_CART_WEST": {
     "id": "efffa544-0ce8-4294-bf25-11dc2980ac08",
     "name": "AGENT-TEST-SR-CART-WEST"
+  },
+  "SR_DOC_PDF": {
+    "id": "7e6eb5e6-7840-4654-a62f-7cdfe765ab09",
+    "file_id": "f0d098fb653d4f86a3a03f3ed1494519",
+    "url": "/api/files/f0d098fb653d4f86a3a03f3ed1494519"
+  },
+  "SR_DOC_DOCX": {
+    "id": "19388306-ab03-43b2-975d-04be1085da67",
+    "file_id": "e4163c77b69f4db99c4152e030bcb55c",
+    "url": "/api/files/e4163c77b69f4db99c4152e030bcb55c"
+  },
+  "SR_DOC_XLSX": {
+    "id": "a8611b66-8bef-4b41-922a-4d34e8f73d0e",
+    "file_id": "1b0fe8fb93974580a9da125f141d12e3",
+    "url": "/api/files/1b0fe8fb93974580a9da125f141d12e3"
+  },
+  "SR_DOC_TXT": {
+    "id": "f21012f5-34e6-42b3-a6fc-e510d0ae1a9a",
+    "file_id": "8166fcb8d8ee4d88bbe197fa4ade59d7",
+    "url": "/api/files/8166fcb8d8ee4d88bbe197fa4ade59d7"
+  },
+  "SR_DOC_PNG": {
+    "id": "468cb8ef-78a1-4e92-8606-b6d8d604eb16",
+    "file_id": "5a8c530db6f2459eb22dfec73f01a1f9",
+    "url": "/api/files/5a8c530db6f2459eb22dfec73f01a1f9"
+  },
+  "SR_DOC_JPG": {
+    "id": "884a8ada-f0fd-4898-9be4-f2b7e250373c",
+    "file_id": "5e1a2d3ea085410ba61b898638a890db",
+    "url": "/api/files/5e1a2d3ea085410ba61b898638a890db"
+  },
+  "SR_DOC_UNKNOWN_EXT": {
+    "id": "ea07bc9c-7b03-4aeb-bfb4-e04848583352",
+    "file_id": "2659391d6dfb41b5b6c4e2a6af08cc2a",
+    "url": "/api/files/2659391d6dfb41b5b6c4e2a6af08cc2a"
+  },
+  "SR_DOC_UNICODE": {
+    "id": "bf098225-9c01-4926-8941-f4c071fa1380",
+    "file_id": "cb2d7eab232844d1a872b9bd7c56c45e",
+    "url": "/api/files/cb2d7eab232844d1a872b9bd7c56c45e"
+  },
+  "SR_DOC_LARGE": {
+    "id": "b73797ff-c14d-4150-a1aa-46a79ddebe01",
+    "file_id": "1abe14e7b1304a468381cca2efcbe239",
+    "url": "/api/files/1abe14e7b1304a468381cca2efcbe239"
+  },
+  "SR_DOC_FILLER_01": {
+    "id": "d6545936-5784-4bb2-af39-59cb17956257",
+    "file_id": "4a89de632e104959a3705fa16d6aed0a",
+    "url": "/api/files/4a89de632e104959a3705fa16d6aed0a"
+  },
+  "SR_DOC_FILLER_02": {
+    "id": "b3d331d4-7183-40d9-94a2-23f33ee3edd6",
+    "file_id": "051ac27b116144509d403b11097be838",
+    "url": "/api/files/051ac27b116144509d403b11097be838"
+  },
+  "SR_DOC_FILLER_03": {
+    "id": "4b036916-4378-4cc9-9722-68b713ca00df",
+    "file_id": "a497cc54a2544762bd6dfad182d511c8",
+    "url": "/api/files/a497cc54a2544762bd6dfad182d511c8"
+  },
+  "SR_DOC_FILLER_04": {
+    "id": "0ef7a31a-d05e-4215-9ff6-e56dd583ff1b",
+    "file_id": "28f2a8fe429f4c899a0bfa3f7726e65d",
+    "url": "/api/files/28f2a8fe429f4c899a0bfa3f7726e65d"
+  },
+  "SR_DOC_FILLER_05": {
+    "id": "c4275753-c80c-4c73-8c15-d8fc6504cbfd",
+    "file_id": "d730e8c4dba74faeb3e6c5ceb2cc64f1",
+    "url": "/api/files/d730e8c4dba74faeb3e6c5ceb2cc64f1"
+  },
+  "SR_DOC_FILLER_06": {
+    "id": "d82ddd79-b771-4c85-9924-45a32e198167",
+    "file_id": "aecb5f5efffd46bb9a67db338a725f19",
+    "url": "/api/files/aecb5f5efffd46bb9a67db338a725f19"
+  },
+  "SR_DOC_FILLER_07": {
+    "id": "81ea3bef-13c4-4137-aeb9-1c6a7c1c73dd",
+    "file_id": "c1da6354a5984804aa14f04dab0aeeea",
+    "url": "/api/files/c1da6354a5984804aa14f04dab0aeeea"
+  },
+  "WL_ELECTRONICS_PLATFORM_ID": {
+    "_inline": true,
+    "id": "17a775b3-664a-4c41-9e54-f99796f5e1c3",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_FASHION_PLATFORM_ID": {
+    "_inline": true,
+    "id": "5e8a4c50-94ba-4c6d-971d-1267a817be15",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_DEFAULT_PLATFORM_ID": {
+    "_inline": true,
+    "id": "00efebc1-6821-4927-a21d-23aafd7499b0",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_MENU_ONLY_PLATFORM_ID": {
+    "_inline": true,
+    "id": "489bb4ad-53ac-4b85-a589-c2baed21b753",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_FOOTER_ONLY_PLATFORM_ID": {
+    "_inline": true,
+    "id": "a13a3eeb-38df-48ec-a95d-2162d77a7963",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_USER_ELECTRONICS_PLATFORM_ID": {
+    "_inline": true,
+    "id": "398502cc-fc10-4bde-9152-ed954ad0ca04",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_USER_FASHION_PLATFORM_ID": {
+    "_inline": true,
+    "id": "68c83532-9723-4368-8448-31e3e484b066",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_USER_DEFAULT_PLATFORM_ID": {
+    "_inline": true,
+    "id": "5c53ada2-70ae-4d95-aa0e-1188fc145944",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_USER_MULTI_PLATFORM_ID": {
+    "_inline": true,
+    "id": "59591c2d-d848-4f8b-b346-bbf979533a37",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_USER_MENU_ONLY_PLATFORM_ID": {
+    "_inline": true,
+    "id": "17442716-2329-4141-9e43-c59c3a4a5755",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "WL_USER_FOOTER_ONLY_PLATFORM_ID": {
+    "_inline": true,
+    "id": "246c7cf3-42bf-4f2c-9f69-01d20d230fa7",
+    "fields": {
+      "id": "id"
+    }
+  },
+  "COMPLETED_ORDER": {
+    "id": "0ea28bdb-105f-4de9-b14e-51e813c11d0c",
+    "number": "AGENT-TEST-ORD-COMPLETED"
+  },
+  "SHIPPED_ORDER": {
+    "id": "54ca5774-22d9-4ac4-aa7a-a6669fe90408",
+    "number": "AGENT-TEST-ORD-SHIPPED"
+  },
+  "PROCESSING_ORDER": {
+    "id": "fcf1ea4d-6df9-48b4-889c-e80efcf4f8f0",
+    "number": "AGENT-TEST-ORD-PROCESSING"
   }
 }

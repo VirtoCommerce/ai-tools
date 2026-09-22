@@ -23,7 +23,7 @@ import { join, resolve, extname, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { parse as parseCsv } from "csv-parse/sync";
-import { markRunStalled, DEFAULT_IDLE_LIMIT_MS } from "./reap-stalled-run.ts";
+import { markRunStalled, clearRunStall, DEFAULT_IDLE_LIMIT_MS } from "./reap-stalled-run.ts";
 
 type Verdict = "PASS" | "FAIL" | "SKIPPED" | "BLOCKED" | "PENDING" | "EMPTY" | "UNKNOWN";
 
@@ -1932,12 +1932,32 @@ async function main(): Promise<void> {
       casesRecorded: result.casesRecorded,
       evaluatedCases: result.evaluatedCases,
     });
+    const movedSinceLastTick = lastSignature !== "" && signature !== lastSignature;
     if (signature !== lastSignature) {
       lastSignature = signature;
       lastProgressAt = Date.now();
     }
 
-    if (result.suitesWithResults > 0 && !inProgress) {
+    // A `stalled` flag is an inference from silence, and this watcher is usually what made
+    // it. Fresh artifacts are positive evidence the inference was wrong — a rate-limited
+    // orchestrator looks exactly like a dead one until it resumes. So reverse the flag and
+    // keep watching rather than settling on a run that is visibly still working.
+    // (REG-2026-09-18-1818: marked stalled at 22:07Z, then produced four more suites.)
+    const isStalled = String(result.status?.status ?? "").toLowerCase() === "stalled";
+    if (isStalled && movedSinceLastTick && result.status?.runId === result.runId) {
+      try {
+        if (clearRunStall(reportsRoot, result.runId, new Date().toISOString())) {
+          console.log(`[watch] ${result.runId} produced new artifacts while marked "stalled" — flag cleared, resuming watch.`);
+          continue; // re-render against the corrected status before deciding anything
+        }
+      } catch (e) {
+        console.error(`[watch] could not clear stall on ${result.runId}: ${(e as Error).message}`);
+      }
+    }
+
+    // Settle only on a TERMINAL status. `stalled` is not terminal: the run may resume, and
+    // exiting here is what left a resumed run with no live dashboard at all.
+    if (result.suitesWithResults > 0 && !inProgress && !isStalled) {
       // Not in progress + results present → nothing left to watch. renderOnce already
       // emitted the final static render (live=false → no refresh meta).
       console.log(`[watch] ${result.runId} settled — final report: ${result.outPath}`);
