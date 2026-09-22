@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { KEY_LEN, LOGGED, MUTATIONS, pendingMutations, queuePath, readQueue, sessionId, shortSession } from '../kb/core/queue.mjs';
+import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, pendingMutations, queuePath, readQueue, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { ask, capture, confirm, dispute, show, stat, toLogLine } from '../kb/core/verbs.mjs';
 
@@ -83,6 +83,42 @@ test('an id that is absent, blank, or unusable as a file name falls back to the 
   assert.match(sessionId({}), /^p\d+$/, 'with no session, the honest answer is "this process"');
   assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: '   ' }), /^p\d+$/);
   assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'sess_a/b' }), /^p\d+$/);
+});
+
+test('an unsafe character PAST the cut still refuses the id — the guard runs before the slice', () => {
+  // F3 (PLAN §22.3), found 2026-09-22 by mutation testing. The safety check used to run on the
+  // ALREADY-CUT key, so it only ever inspected the first KEY_LEN characters: an id whose unsafe
+  // character sat past that boundary was CUT INTO SAFETY and published. `local_ab.cd` came back
+  // `local_ab` — a key that looks exactly like a real one, that no host id in the base is a prefix
+  // of, and that silently merges every id sharing those eight characters. Wrong in the one
+  // direction nobody re-checks, because it reads as correct.
+  //
+  // Both halves are asserted, because "returns empty" alone would also pass an implementation that
+  // refused everything: an id that is safe all the way through still answers.
+  assert.equal(shortSession('local_ab.cd'), '', 'a dot past the cut is still a dot');
+  assert.equal(shortSession('sessionx/etc/passwd'), '', 'and so is a separator past the cut');
+  assert.equal(shortSession('local_f3d05dd3-25c1-434b'), 'f3d05dd3', 'safe ids are untouched');
+  // The fallback is the same honest one every other unusable id takes.
+  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_ab.cd' }), /^p\d+$/);
+});
+
+test('an over-long run handle is BOUNDED before it reaches the public log', () => {
+  // F1 (PLAN §22.3). `run` is read straight out of the environment, so nothing between the shell
+  // and a public append-only file had a view on its size — a `KB_RUN` set from a pasted command or
+  // an accidentally-expanded variable published whatever it held, once, forever (§7: ids and
+  // subjects only, never prose). The bound is imported, never transcribed (GOLDEN RULE).
+  const LONG = `VCST-1234 ${'x'.repeat(RUN_MAX * 2)}`;
+  assert.ok(LONG.length > RUN_MAX, 'the fixture must actually exceed the bound');
+  assert.equal(runOf({ KB_RUN: LONG }).length, RUN_MAX);
+  assert.equal(runOf({ KB_RUN: LONG }), LONG.slice(0, RUN_MAX).trim());
+  // Deterministic, so every line of one session still carries the same handle and still joins.
+  assert.equal(runOf({ KB_RUN: LONG }), runOf({ KB_RUN: LONG }));
+  // A BOUND, NOT A VALIDATOR: every shape this field is actually for passes through untouched.
+  for (const handle of ['VCST-1234', 'PR#313', 'claude/kb-v1-core', 'https://github.com/VirtoCommerce/vc-knowledge/pull/313']) {
+    assert.equal(runOf({ KB_RUN: handle }), handle, handle);
+  }
+  assert.equal(runOf({ KB_RUN: '   ' }), '', 'whitespace is an operator who meant to say nothing');
+  assert.equal(runOf({}), '');
 });
 
 test('the queue path is one file per session — two sessions can never collide', () => {

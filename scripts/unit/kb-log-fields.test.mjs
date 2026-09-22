@@ -13,11 +13,11 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { readQueue } from '../kb/core/queue.mjs';
+import { RUN_MAX, readQueue } from '../kb/core/queue.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
-import { TOPIC_MAX, ask, capture, show } from '../kb/core/verbs.mjs';
+import { DEPLOYMENT_MAX, TOPIC_MAX, ask, capture, confirm, show } from '../kb/core/verbs.mjs';
 import { captureLines } from '../kb/core/render.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
@@ -41,6 +41,8 @@ const ANSWERED = 'what does the Active column on /company/members reflect';
 const MISSED_NEAR = 'which kubernetes ingress annotation terminates tls for the storefront gateway';
 // And one it scores nothing on at all.
 const MISSED_COLD = 'what colour is the warehouse forklift';
+// An entry the fixture actually holds, for the verbs that take an id.
+const EXISTING_ID = 'KB-27B4CD10';
 
 // ── The floor's own fields ────────────────────────────────────────────────────────────────────
 
@@ -487,6 +489,52 @@ test('both doors put the same field on the line, because both go through one cor
   });
 });
 
+test('an over-long deployment is BOUNDED — "verbatim" is about normalising, not about length', async () => {
+  // F1 (PLAN §22.3). The field is caller-supplied and lands in a PUBLIC, APPEND-ONLY log where a
+  // line cannot be edited or withdrawn, and nothing between the tool call and the file had a view
+  // on its size — so an agent that put a paragraph here published a paragraph, against §7's "ids
+  // and subjects only, never prose". The bound is imported, never transcribed (GOLDEN RULE).
+  //
+  // "Verbatim" survives intact, because it was always a promise about NORMALISING: no case-fold,
+  // no mapping `vcst` onto `vcst_qa`, no opinion about what a stand is called. The test below this
+  // one is the one that pins that, and it is unchanged.
+  const LONG = `vcst_qa ${'x'.repeat(DEPLOYMENT_MAX * 3)}`;
+  assert.ok(LONG.length > DEPLOYMENT_MAX, 'the fixture must actually exceed the bound');
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: LONG });
+    await ask(MISSED_COLD, opened(), { env, via: 'cli', deployment: LONG });
+    const lines = await linesOf(env);
+    for (const l of lines) assert.equal(l.deployment.length, DEPLOYMENT_MAX);
+    // Deterministic, so an ask and the confirm that follows it still join on the same stand.
+    assert.equal(lines[0].deployment, lines[1].deployment);
+  });
+
+  // A BOUND, NOT A VALIDATOR: it is set far clear of every stand name this base has ever held —
+  // the longest, `vcptcore_stable`, is 15 characters — so a real value is never touched.
+  await withQueue(async (env) => {
+    for (const stand of ['vcst_qa', 'vcptcore_stable', 'vcptcore_qa1', 'virtostart']) {
+      await ask(ANSWERED, opened(), { env, via: 'cli', deployment: stand });
+    }
+    const lines = await linesOf(env);
+    assert.deepEqual(lines.map((l) => l.deployment), ['vcst_qa', 'vcptcore_stable', 'vcptcore_qa1', 'virtostart']);
+  });
+});
+
+test('the cap is a property of the FIELD, so confirm writes the same bounded deployment ask does', async () => {
+  // One public log, one `deployment` key, two verbs writing it — a bound only one of them applies
+  // is a bound the log does not have. `confirm` used to put `input.deployment` on the line
+  // directly, bypassing the very function that holds the rule.
+  const LONG = `vcst_qa ${'x'.repeat(DEPLOYMENT_MAX * 3)}`;
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: LONG });
+    await confirm(EXISTING_ID, { deployment: LONG }, opened(), { env, via: 'cli' });
+    const [asked, confirmed] = await linesOf(env);
+    assert.equal(confirmed.kind, 'confirm');
+    assert.equal(confirmed.deployment.length, DEPLOYMENT_MAX);
+    assert.equal(confirmed.deployment, asked.deployment, 'both doors, one rule');
+  });
+});
+
 test('the deployment is recorded verbatim — the log reports, it does not normalise', async () => {
   // The base already holds `vcst` once against `vcst_qa` 33 times. Ironing that out on the way in
   // would need a mapping with no source of truth behind it, and would hide the one thing worth
@@ -693,11 +741,18 @@ test('the run handle rides on every line when the env var is set, and on none wh
 test('the run handle is never parsed — a ticket, a PR, a URL and a sentence all survive verbatim', async () => {
   // THE WHOLE OF ITS CONTRACT. The moment this tool recognises a ticket it has an opinion about
   // what a run is, and the field's entire value is that it has none: only the thing it points AT
-  // knows what it means. No shape check, no case fold, no length cap — unlike `topic`, which is the
-  // agent's description and is capped for that reason.
+  // knows what it means. No shape check, no case fold.
+  //
+  // IT USED TO ASSERT NO LENGTH BOUND EITHER, with `'x'.repeat(300)` in the list below, and that
+  // was the promise F1 struck out (PLAN §22.3): the handle is read straight out of the environment
+  // into a PUBLIC, APPEND-ONLY file, so "we never truncate" meant a `KB_RUN` holding a pasted
+  // command or an expanded variable published whatever it held, once, forever. Not-parsing and
+  // not-bounding are different promises, and only the first one was ever worth making. `RUN_MAX` is
+  // set clear of every shape this field is FOR — which is what the list below still pins.
   const handles = ['VCST-1234', 'PR#313', 'https://github.com/VirtoCommerce/vc-knowledge/pull/313',
-    'claude/kb-v1-core', 'sprint 26-18 — configurable products', 'x'.repeat(300)];
+    'claude/kb-v1-core', 'sprint 26-18 — configurable products'];
   for (const handle of handles) {
+    assert.ok(handle.length <= RUN_MAX, `${handle} must fit the bound, or the bound is set wrong`);
     // eslint-disable-next-line no-await-in-loop
     await withQueue(async (env) => {
       await ask(ANSWERED, opened(), { env, via: 'cli' });

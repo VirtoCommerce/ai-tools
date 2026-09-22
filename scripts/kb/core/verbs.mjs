@@ -222,10 +222,22 @@ const door = (via, call) => ({
  * without a value the boolean `true`, so `kb ask "q" --deployment --json` would otherwise publish
  * `deployment: "true"` -- a stand name that is not a stand, indistinguishable in the log from one
  * an agent meant. The typed guard is the same one `door()` puts on `call`, for the same reason.
+ *
+ * AND BOUNDED, which the first version was not. "Verbatim" is a promise about not NORMALISING --
+ * not to case-fold, not to map `vcst` onto `vcst_qa`, not to have an opinion about what a stand is
+ * called -- and it was wrongly read as a promise not to bound the length either. The value is
+ * caller-supplied, it lands in a PUBLIC, APPEND-ONLY log, and nothing between the tool call and the
+ * file had a view on its size, so an agent that put a paragraph here published a paragraph (§7: ids
+ * and subjects only, never prose). `DEPLOYMENT_MAX` is set far clear of every stand name this base
+ * has ever held -- the longest, `vcptcore_stable`, is 15 characters -- so a real value is never
+ * touched and the cap is only ever felt by something that was not a stand name. Truncated rather
+ * than dropped, by `label()`'s argument below: the caller did name a stand and the only defect is
+ * length, and the cut is deterministic so an ask and its confirm still join.
  */
+export const DEPLOYMENT_MAX = 40;
 const stand = (deployment) => {
   const d = typeof deployment === 'string' ? deployment.trim() : '';
-  return d ? { deployment: d } : {};
+  return d ? { deployment: d.slice(0, DEPLOYMENT_MAX).trim() } : {};
 };
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
@@ -641,7 +653,11 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   const written = await log({
     kind,
     id: row.id,
-    deployment: input.deployment,
+    // Through `stand()` rather than straight from the input, so the cap is a property of the FIELD
+    // and not of one verb: `ask` and `confirm` write the same `deployment` key into the same public
+    // log, and a bound that only one of them applies is a bound the log does not have. The guard
+    // above has already rejected an empty value, so the drop half of `stand()` never fires here.
+    ...stand(input.deployment),
     // A dispute's `saw` used to be HERE, in the public line, and it should not have been. §7 is
     // "ids and subjects only, never prose", and this was hundreds of characters of free text from
     // an agent — found 2026-09-19 by reading a published line rather than the rule. Two reasons it

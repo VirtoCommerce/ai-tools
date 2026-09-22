@@ -74,10 +74,25 @@ export const isSynthetic = (env = process.env) => /^(1|true|yes|on)$/i.test(Stri
  *
  * NEVER PARSED, and that is the whole of its contract. `VCST-1234`, `PR#313`, a branch name, a URL
  * -- whatever the operator wants. This tool does not validate its shape, does not recognise a
- * ticket, does not normalise a case, does not truncate it. The moment it interprets the value it
- * has an opinion about what a run is, and the field's entire value is that it has none: it is a
- * pointer, and only the thing it points AT knows what it means. Trimmed only, because whitespace
- * is an operator who meant to say nothing and `run: ""` would read as a run whose name is empty.
+ * ticket and does not normalise a case. The moment it interprets the value it has an opinion about
+ * what a run is, and the field's entire value is that it has none: it is a pointer, and only the
+ * thing it points AT knows what it means. Trimmed, because whitespace is an operator who meant to
+ * say nothing and `run: ""` would read as a run whose name is empty.
+ *
+ * BOUNDED, THOUGH -- and the earlier "does not truncate it" was wrong to promise otherwise. This
+ * lands in a PUBLIC, APPEND-ONLY log where a line cannot be edited or withdrawn, and it is read
+ * straight out of the environment, so nothing between the shell and the file has an opinion about
+ * its size. An unbounded field on that path is not a pointer, it is an aperture: `KB_RUN` set from
+ * a pasted command, a CI job's whole context block or an accidentally-expanded variable publishes
+ * whatever it held, once, forever. §7's rule is ids and subjects only, never prose, and a length
+ * bound is the only half of that a machine can enforce.
+ *
+ * A BOUND, NOT A VALIDATOR, which is why it is generous. `RUN_MAX` is set well clear of every shape
+ * this field is FOR -- a ticket key, a PR ref, a branch name, a GitHub URL -- so a real handle is
+ * never touched and the cap is only ever felt by a value that was not a handle. Truncated rather
+ * than dropped, for `label()`'s reason in `verbs.mjs`: the operator did name a run, the only defect
+ * is length, and the cut is deterministic, so every line of one session still carries the same
+ * string and still joins.
  *
  * AN ENV VAR AND NOT AN ARGUMENT, for the reason `KB_SYNTHETIC` is one: it has to reach the MCP
  * server, which nobody passes arguments to. `KB_RUN=VCST-1234` on the shell or the harness that
@@ -90,7 +105,8 @@ export const isSynthetic = (env = process.env) => /^(1|true|yes|on)$/i.test(Stri
  * other changes when the work changes and is written by the participant that holds the meaning.
  * See `topicOf()` in `verbs.mjs` for the other half.
  */
-export const runOf = (env = process.env) => String(env.KB_RUN ?? '').trim();
+export const RUN_MAX = 120;
+export const runOf = (env = process.env) => String(env.KB_RUN ?? '').trim().slice(0, RUN_MAX).trim();
 
 /**
  * How many characters of the host id the short key keeps.
@@ -150,12 +166,20 @@ const FILENAME_SAFE = /^[A-Za-z0-9_-]+$/;
  * The marker is stripped only when what remains still carries a full key's worth of characters.
  * `local_ab` strips to `ab`, and answering with two characters is the defect again with extra
  * steps -- the raw id is no less distinguishing and is stable, so it wins.
+ *
+ * THE SAFETY CHECK RUNS ON THE WHOLE ID, BEFORE THE CUT, and the order is the entire point. Tested
+ * after the slice, the check only ever saw the first `KEY_LEN` characters -- so an id whose unsafe
+ * character sat past that boundary was CUT INTO SAFETY and published: `local_ab.cd` became
+ * `local_ab`, a plausible-looking key that no id in the base is a prefix of, which is the exact
+ * shape of wrongness this whole file is written against. Found 2026-09-22 by the independent review
+ * (PLAN §22.3). Checking first makes the guard mean what it says: an id this tool cannot represent
+ * is REFUSED, and `sessionId()` falls through to the honest per-process id.
  */
 export function shortSession(hostId) {
   const id = String(hostId ?? '').trim();
   const stripped = id.replace(MARKER, '');
-  const key = (stripped.length >= KEY_LEN ? stripped : id).slice(0, KEY_LEN);
-  return FILENAME_SAFE.test(key) ? key : '';
+  const source = stripped.length >= KEY_LEN ? stripped : id;
+  return FILENAME_SAFE.test(source) ? source.slice(0, KEY_LEN) : '';
 }
 
 /**
@@ -215,7 +239,11 @@ export async function log(record, { env = process.env, who, run } = {}) {
   // are exactly the ones an outsider reads first -- and `who` because an identity a verb could
   // choose to omit is an identity that will be omitted.
   const me = who === undefined ? cachedWho({ dir: queueDir(env), env }) : who;
-  const handle = run === undefined ? runOf(env) : String(run ?? '').trim();
+  // The passed-in handle takes the SAME bound as the environment one. It arrives from the reach
+  // state a hook wrote, which is this process's own file rather than an argument a caller chose --
+  // but it originated as `KB_RUN` in some earlier session, and a bound that one of two doors skips
+  // is a bound the log does not have.
+  const handle = run === undefined ? runOf(env) : String(run ?? '').trim().slice(0, RUN_MAX).trim();
   const line = {
     at: new Date().toISOString(),
     ...record,
