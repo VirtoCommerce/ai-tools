@@ -202,16 +202,20 @@ function panelUnhelpful(p) {
     <h2>2 · Unhelpful answers — the misses the miss list cannot see</h2>
     <p class="lede">A miss is honest: the base says it holds nothing. This is the opposite —
       <code>state: "answer"</code>, ids returned, and not one of them any use. An ask is
-      <strong>unhelpful</strong> when the same session later captures a fact whose anchors appear in
-      <strong>none</strong> of that ask's matched rows. The base answered; the agent went and found
-      out anyway.</p>
+      <strong>unhelpful</strong> when the capture that NAMES IT — through its own <code>after</code>
+      pointer — declares anchors appearing in <strong>none</strong> of that ask's matched rows. The
+      base answered; the agent went and found out anyway.</p>
     <p class="metric">
       <strong>${esc(p.flagged.length)}</strong> unhelpful of <strong>${esc(p.decidable)}</strong> decidable
       = <strong class="${p.rate != null && p.rate > 0.15 ? 'bad' : ''}">${esc(pct(p.rate))}</strong>
       <span class="muted">(${esc(p.undecidable)} undecidable — the entry or the matched rows are not in the index snapshot)</span>
     </p>
-    <p class="muted">The denominator is asks that were <em>followed by a capture in the same session</em>, not
-      all asks: an ask nobody captured against is not evidence either way. PLAN §11 gates
+    <p class="muted">The denominator is pairs a capture <em>pointed at</em>, not all asks and not
+      every later capture: until 2026-09-22 this paired every answered ask with every subsequent
+      capture in the session, which counted a capture about one thing as evidence against a question
+      about another. ${p.unprompted} capture(s) here had no ask before them and are not evidence
+      about any ask; ${p.afterMiss} followed a MISS, which is the loop working and is panel 5's.
+      PLAN §11 gates
       "ranking beyond token overlap" on a rate above ~15% — this panel measures it and decides nothing.</p>
     ${rows.length ? table(['verdict', 'question', 'what the base returned', 'what the agent captured instead', 'session'], rows)
     : empty('No ask in this window was followed by a capture in the same session, so there is nothing to judge. That is not a 0% rate — it is no measurement.')}
@@ -457,7 +461,7 @@ export function renderText(report) {
   out.push(`  near misses    ${p.nearMisses.rows.length} rejected candidate(s); `
     + `${p.nearMisses.inBand.length} at coverage >= ${p.nearMisses.review}`
     + `${p.nearMisses.rows.length ? `, top ${p.nearMisses.rows[0].coverage.toFixed(2)}` : ''}`);
-  out.push(`  unhelpful      ${p.unhelpful.flagged.length}/${p.unhelpful.decidable} decidable = ${pct(p.unhelpful.rate)} (${p.unhelpful.undecidable} undecidable)`);
+  out.push(`  unhelpful      ${p.unhelpful.flagged.length}/${p.unhelpful.decidable} decidable = ${pct(p.unhelpful.rate)} (${p.unhelpful.undecidable} undecidable, ${p.unhelpful.unprompted} unprompted, ${p.unhelpful.afterMiss} after a miss)`);
   out.push(`  entries served ${p.entries.used.length} of ${p.entries.indexed} indexed; ${p.entries.never.length} never served here`);
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
   out.push(`  refusals       ${p.refusals.total}`);

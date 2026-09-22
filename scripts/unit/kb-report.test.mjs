@@ -223,22 +223,86 @@ test('misses rank by repeat count and NEVER include an unreachable ask', () => {
 
 // ── panel 6 — unhelpful answers ───────────────────────────────────────────────────────────────
 
-test('PANEL 6: the published price-sorting case is flagged unhelpful, both asks', () => {
+test('PANEL 6: a capture with NO pointer is evidence about NOTHING - including the real 2026-09-18 case', () => {
+  // THE FIXTURE IS A REAL PUBLISHED WINDOW and it is kept exactly as it was published, because what
+  // changed is the arithmetic, not the data. Two asks about price sorting, one capture, and the
+  // capture carries no `after`: the field did not exist yet on 2026-09-18 (checked against
+  // `vc-knowledge` log/2026-09-18 - absent on both captures that day).
+  //
+  // The old rule called this 2 unhelpful of 2 decidable, a 100% rate. It reached that by pairing the
+  // one capture with BOTH asks, which is the N*M cross product PLAN 22.11 records: no test that the
+  // capture was about either question, and the denominator inflated by the same fault.
+  //
+  // The honest answer is that this window measures nothing. Which ask a capture answered cannot be
+  // recovered once it was not recorded, so the whole pre-`after` history leaves this panel - 13 of
+  // the 21 captures in the published log the day this landed. A metric with no history beats one
+  // with a wrong one, because only the second gets quoted.
   const u = unhelpful(PRICE_SORT, indexLookup(ROWS));
-  assert.equal(u.decidable, 2);
-  assert.equal(u.flagged.length, 2, 'both asks preceded the capture and neither shared an anchor with it');
-  assert.equal(u.undecidable, 0);
+  assert.equal(u.decidable, 0);
+  assert.equal(u.flagged.length, 0);
+  assert.equal(u.unprompted, 1, 'the capture named no ask, so it is not evidence about either of them');
+  assert.equal(u.rate, null, 'no pair is not a 0% rate and is not a 100% one - it is no measurement');
+});
+
+test('PANEL 6: the SAME window, with the pointer the capture would carry today', () => {
+  // The same three lines, plus the one field `capture` has written since. Now exactly ONE pair
+  // exists, and it is the ask the agent itself said it was following.
+  const withPointer = [
+    PRICE_SORT[0],
+    PRICE_SORT[1],
+    { ...PRICE_SORT[2], after: '2026-09-18T16:56:46.113Z' },
+  ];
+  const u = unhelpful(withPointer, indexLookup(ROWS));
+  assert.equal(u.decidable, 1, 'one capture, one ask - never both asks');
+  assert.equal(u.flagged.length, 1);
   assert.equal(u.rate, 1);
-  const orphan = u.flagged.find((r) => r.matched.includes('KB-FA724D31'));
-  assert.ok(orphan, 'the ask that returned the orphaned-account entry for a price-sorting question');
-  assert.deepEqual(orphan.overlap, []);
-  assert.deepEqual(orphan.captureAnchors, ['query.products']);
+  const [row] = u.flagged;
+  assert.ok(row.matched.includes('KB-FA724D31'), 'the ask it pointed at, which returned the orphaned-account entry');
+  assert.deepEqual(row.overlap, []);
+  assert.deepEqual(row.captureAnchors, ['query.products']);
+});
+
+test('PANEL 6: a capture that names ask A is not evidence about ask B', () => {
+  // THE MUTATION THIS PANEL EXISTED WITHOUT. Ask A is answered by an entry the capture then extends
+  // (anchors overlap - helpful); ask B is answered by something unrelated. Under the old timestamp
+  // pairing the capture was counted against BOTH, so B was flagged unhelpful on the strength of an
+  // answer to a different question. Restore that rule and this test fails.
+  const lines = [
+    line({ at: '2026-09-18T10:00:00.000Z', kind: 'ask', q: 'A', matched: ['KB-D9B90536'], state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T10:05:00.000Z', kind: 'ask', q: 'B', matched: ['KB-FA724D31'], state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T11:00:00.000Z', kind: 'capture', id: 'KB-316B2DDB', subject: 'about A', after: '2026-09-18T10:00:00.000Z', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+  ];
+  const u = unhelpful(lines, indexLookup(ROWS));
+  assert.equal(u.decidable, 1, 'one capture names one ask - ask B is untouched by it');
+  assert.equal(u.flagged.length, 0, 'and the ask it DID name was helpful');
+  assert.ok(!u.rows.some((r) => r.question === 'B'), 'ask B must not appear in this panel at all');
+});
+
+test('PANEL 6: a pointer at a MISS is the loop working, counted apart from the rate', () => {
+  const lines = [
+    line({ at: '2026-09-18T10:00:00.000Z', kind: 'ask', q: 'nothing known', matched: [], state: 'miss', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T11:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', after: '2026-09-18T10:00:00.000Z', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+  ];
+  const u = unhelpful(lines, indexLookup(ROWS));
+  assert.equal(u.decidable, 0, 'the base did not answer, so there is no answer to call unhelpful');
+  assert.equal(u.afterMiss, 1, 'counted, so it is visible rather than silently dropped');
+  assert.equal(u.rate, null);
+});
+
+test('PANEL 6: a pointer at an ask OUTSIDE the window is undecidable, never a verdict', () => {
+  const lines = [
+    line({ at: '2026-09-18T11:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', after: '2026-09-17T09:00:00.000Z', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+  ];
+  const u = unhelpful(lines, indexLookup(ROWS));
+  assert.equal(u.decidable, 0);
+  assert.equal(u.undecidable, 1);
+  assert.match(u.rows[0].why, /not in the window/);
 });
 
 test('PANEL 6: an ask that DID cover the capture is helpful, not flagged', () => {
   const lines = [
     line({ at: '2026-09-18T18:25:17.213Z', kind: 'ask', q: 'what does xAPI do with an unknown storeId', matched: ['KB-D9B90536'], state: 'answer', _session: 'kbs4demo', _path: 'log/2026-09-18/a-kbs4demo.jsonl' }),
-    line({ at: '2026-09-18T18:25:17.221Z', kind: 'capture', id: 'KB-316B2DDB', subject: 'invalid storeId', _session: 'kbs4demo', _path: 'log/2026-09-18/a-kbs4demo.jsonl' }),
+    line({ at: '2026-09-18T18:25:17.221Z', kind: 'capture', id: 'KB-316B2DDB', subject: 'invalid storeId', after: '2026-09-18T18:25:17.213Z', _session: 'kbs4demo', _path: 'log/2026-09-18/a-kbs4demo.jsonl' }),
   ];
   const u = unhelpful(lines, indexLookup(ROWS));
   assert.equal(u.flagged.length, 0);
@@ -267,7 +331,7 @@ test('PANEL 6: a capture in ANOTHER session is not evidence about this one', () 
 test('PANEL 6: an unknown captured entry is UNDECIDABLE, never unhelpful', () => {
   const lines = [
     line({ at: '2026-09-18T12:00:00.000Z', kind: 'ask', q: 'anything', matched: ['KB-FA724D31'], state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ at: '2026-09-18T13:00:00.000Z', kind: 'capture', id: 'KB-NOTYET01', subject: 'pushed after the snapshot', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T13:00:00.000Z', kind: 'capture', id: 'KB-NOTYET01', subject: 'pushed after the snapshot', after: '2026-09-18T12:00:00.000Z', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
   ];
   const u = unhelpful(lines, indexLookup(ROWS));
   assert.equal(u.flagged.length, 0);
@@ -558,8 +622,10 @@ test('an empty panel says WHY it is empty — "no rows" and "nothing happened" a
 test('the text summary reports the unhelpful rate and the undecidable count separately', () => {
   const report = analyse({ lines: PRICE_SORT, rows: ROWS, meta: { base: 'b', days: 30, files: 1, at: '2026-09-19T04:00:00Z' } });
   const text = renderText(report);
-  assert.match(text, /unhelpful\s+2\/2 decidable = 100%/);
-  assert.match(text, /\(0 undecidable\)/);
+  // The real pre-`after` window measures nothing, and the summary must SAY so rather than print a
+  // comfortable 0% - the same discipline every other row in this report already follows.
+  assert.match(text, /unhelpful\s+0\/0 decidable/);
+  assert.match(text, /1 unprompted/);
 });
 
 test('the index failing to load is SAID, not silently an empty index', () => {

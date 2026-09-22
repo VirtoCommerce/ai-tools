@@ -518,19 +518,39 @@ export function refusals(lines, idx) {
  * session later `capture`s a fact whose anchors appear in NONE of that ask's `matched` rows.* The
  * base answered; the agent went and found out anyway.
  *
- * Three judgement calls, each stated because each could silently inflate the rate:
+ * THE PAIRING IS THE CAPTURE'S OWN `after` POINTER, AND FOR TWO YEARS OF THIS FILE'S LIFE IT WAS
+ * NOT (fixed 2026-09-22). The rule used to be "same session, and later by timestamp", which pairs
+ * EVERY answered ask with EVERY subsequent capture — an N×M cross product with no test that the two
+ * are about the same thing. A session that asked about configurable products at 10:00 and captured
+ * something about `capturedDate` at 11:00 produced an `unhelpful` row against the 10:00 ask, and
+ * the same fault inflated the denominator, so the rate could not be read in either direction. It
+ * was found by an independent audit session and confirmed here (PLAN §22.11).
  *
- *   1. SAME SESSION, AND LATER. A capture before the ask says nothing about that ask. The `at`
- *      ordering is used, not file order, because a queue file is appended by several verbs.
- *   2. THE CAPTURE'S ANCHORS MUST BE KNOWN. A capture whose entry is not in the index we fetched —
+ * The remedy needed no new field. `capture` has always written `after` — the `at` of the ask it
+ * followed — and `precedingAsk()` in `verbs.mjs` says in terms what it is for: *"Panel 6 answers
+ * 'did the agent go and find out anyway?' … This records the link directly, so the panel becomes
+ * exact instead of heuristic."* The panel never read it. The local variable that shadowed the name
+ * is how it stayed invisible.
+ *
+ * Four judgement calls, each stated because each could silently inflate the rate:
+ *
+ *   1. ONLY A CAPTURE THAT NAMES ITS ASK IS PAIRED. `after` is a pointer to a line in the same
+ *      session's own log, so the match is exact rather than temporal. A capture with NO `after`
+ *      had no ask before it in its session: it is `unprompted`, counted and reported, and it is not
+ *      evidence about any ask. Measured on the whole published log the day this landed: 8 of 21
+ *      captures carry the pointer, so 13 were being paired against asks they had nothing to do with.
+ *   2. AN `after` POINTING AT A MISS IS THE LOOP WORKING, not an unhelpful answer. The base said it
+ *      held nothing, the agent went and found out, and that is `captureLoop`'s panel. Counted here
+ *      as `afterMiss` so the number is visible rather than silently dropped.
+ *   3. THE CAPTURE'S ANCHORS MUST BE KNOWN. A capture whose entry is not in the index we fetched —
  *      queued but not yet pushed, or pushed after the index snapshot — is UNDECIDABLE, and is
  *      reported as such rather than counted either way. Counting it as unhelpful would make the
  *      rate a function of push timing.
- *   3. AN ASK WITH NO `matched` IS NOT UNHELPFUL. That is a miss, and it is panel 1's.
+ *   4. AN ASK WITH NO `matched` IS NOT UNHELPFUL. That is a miss, and it is panel 1's.
  *
- * The rate is over DECIDABLE asks that were followed by a decidable capture — not over all asks.
- * An ask nobody captured against is not evidence either way, and putting it in the denominator
- * would let the rate fall simply because the base got quieter.
+ * The rate is over DECIDABLE pairs — not over all asks. An ask nobody captured against is not
+ * evidence either way, and putting it in the denominator would let the rate fall simply because the
+ * base got quieter.
  */
 export function unhelpful(lines, idx) {
   const bySession = new Map();
@@ -544,57 +564,82 @@ export function unhelpful(lines, idx) {
   const rows = [];
   let decidable = 0;
   let undecidable = 0;
+  let unprompted = 0;
+  let afterMiss = 0;
 
   for (const [session, events] of bySession) {
-    const ordered = [...events].sort((a, b) => String(a.at ?? '').localeCompare(String(b.at ?? '')));
-    const asks = ordered.filter((e) => e.kind === 'ask' && e.state === 'answer' && (e.matched ?? []).length);
-    const captures = ordered.filter((e) => e.kind === 'capture' && e.id);
-    if (!asks.length || !captures.length) continue;
+    // Asks indexed by their OWN `at`, which is what a capture's `after` points at. Exact, so no
+    // ordering or windowing is involved: either the capture names a line in this set or it does not.
+    const askAt = new Map();
+    for (const e of events) if (e.kind === 'ask' && e.at) askAt.set(String(e.at), e);
 
-    for (const ask of asks) {
-      const after = captures.filter((c) => String(c.at ?? '') > String(ask.at ?? ''));
-      if (!after.length) continue;
+    for (const cap of events) {
+      if (cap.kind !== 'capture' || !cap.id) continue;
+
+      // NO POINTER, NO PAIR. A capture written with no ask before it in its session is not evidence
+      // about any ask, and the old rule's whole error was treating it as evidence about all of them.
+      if (!cap.after) { unprompted += 1; continue; }
+
+      const ask = askAt.get(String(cap.after));
+      if (!ask) {
+        // The pointer names a line outside this window — the report reads day folders, and a
+        // session can straddle one. Reported, never guessed at.
+        undecidable += 1;
+        rows.push({
+          verdict: 'undecidable',
+          session,
+          question: '',
+          matched: [],
+          captureId: String(cap.id),
+          captureSubject: String(cap.subject ?? idx.subjectOf(cap.id)),
+          captureAnchors: [...idx.anchorsOf(cap.id)],
+          overlap: [],
+          why: 'the ask this capture points at is not in the window',
+        });
+        continue;
+      }
+
+      // The base said it held nothing and the agent went and found out. That is the loop working,
+      // and it belongs to `captureLoop`, not here.
+      if (ask.state !== 'answer' || !(ask.matched ?? []).length) { afterMiss += 1; continue; }
 
       const pool = new Set();
       for (const id of ask.matched ?? []) for (const a of idx.anchorsOf(id)) pool.add(a);
-
       // An ask whose OWN matched rows are not in the index cannot be judged either — the pool
       // would be empty for a reason that has nothing to do with the ranker.
       const matchedKnown = (ask.matched ?? []).filter((id) => idx.has(id)).length;
 
-      for (const cap of after) {
-        const capAnchors = idx.anchorsOf(cap.id);
-        if (!idx.has(cap.id) || capAnchors.size === 0 || matchedKnown === 0) {
-          undecidable += 1;
-          rows.push({
-            verdict: 'undecidable',
-            session,
-            question: String(ask.q ?? ''),
-            matched: (ask.matched ?? []).map(String),
-            captureId: String(cap.id),
-            captureSubject: String(cap.subject ?? idx.subjectOf(cap.id)),
-            captureAnchors: [...capAnchors],
-            overlap: [],
-            why: !idx.has(cap.id) ? 'the captured entry is not in the index snapshot'
-              : capAnchors.size === 0 ? 'the captured entry declares no anchors'
-                : 'none of the matched ids are in the index snapshot',
-          });
-          continue;
-        }
-        decidable += 1;
-        const overlap = [...capAnchors].filter((a) => pool.has(a));
+      const capAnchors = idx.anchorsOf(cap.id);
+      if (!idx.has(cap.id) || capAnchors.size === 0 || matchedKnown === 0) {
+        undecidable += 1;
         rows.push({
-          verdict: overlap.length ? 'helpful' : 'unhelpful',
+          verdict: 'undecidable',
           session,
           question: String(ask.q ?? ''),
           matched: (ask.matched ?? []).map(String),
-          matchedSubjects: (ask.matched ?? []).map((id) => ({ id: String(id), subject: idx.subjectOf(id) })),
           captureId: String(cap.id),
           captureSubject: String(cap.subject ?? idx.subjectOf(cap.id)),
           captureAnchors: [...capAnchors],
-          overlap,
+          overlap: [],
+          why: !idx.has(cap.id) ? 'the captured entry is not in the index snapshot'
+            : capAnchors.size === 0 ? 'the captured entry declares no anchors'
+              : 'none of the matched ids are in the index snapshot',
         });
+        continue;
       }
+      decidable += 1;
+      const overlap = [...capAnchors].filter((a) => pool.has(a));
+      rows.push({
+        verdict: overlap.length ? 'helpful' : 'unhelpful',
+        session,
+        question: String(ask.q ?? ''),
+        matched: (ask.matched ?? []).map(String),
+        matchedSubjects: (ask.matched ?? []).map((id) => ({ id: String(id), subject: idx.subjectOf(id) })),
+        captureId: String(cap.id),
+        captureSubject: String(cap.subject ?? idx.subjectOf(cap.id)),
+        captureAnchors: [...capAnchors],
+        overlap,
+      });
     }
   }
 
@@ -604,6 +649,12 @@ export function unhelpful(lines, idx) {
     flagged,
     decidable,
     undecidable,
+    // Both are REPORTED rather than folded into the rate, for the reason the rate exists: a number
+    // whose inputs are invisible cannot be argued with. `unprompted` says how many captures were
+    // written with no ask before them — the class the old pairing silently counted as evidence —
+    // and `afterMiss` how many followed a miss, which is the loop working rather than a bad answer.
+    unprompted,
+    afterMiss,
     // §11 gates "ranking beyond token overlap" on a rate above ~15%. It is reported, never acted on
     // here: this function measures, and the decision is a human's.
     rate: decidable ? flagged.length / decidable : null,
@@ -775,7 +826,25 @@ export function kindTally(lines) {
  * a ratio out of a missing measurement -- the same discipline `unreachable` gets in the miss panel,
  * where the base was not read and so the ask says nothing about coverage.
  */
-export function reach(lines) {
+/**
+ * `since` — THE WINDOW, and this panel is the one place it has to be applied by hand.
+ *
+ * Every other panel is windowed for free, because `--days N` selects DAY FOLDERS under `log/` and an
+ * `ask` line is written into its own session's file on the day it happened. A `session` line is not:
+ * it describes a session that has ENDED and is published by whichever LATER session sweeps it
+ * (`push.mjs`), so a line about a 09-18 session routinely rides in a 09-22 file. Measured the day
+ * this landed: `2ca7d89e-0001.jsonl` carries the `session` lines for `35b6f0e1` and `798dcffa`,
+ * neither of which is `2ca7d89e`.
+ *
+ * So filtering by file date does not filter these rows at all, and the symptom is a reach figure
+ * that does not move when the window narrows — which is how an audit session found it (PLAN §22.11).
+ * The row already carries `firstAt`, the session's OWN time. Nothing read it. Now this does.
+ *
+ * `null` means no window — `--sessions` replaces the day range rather than narrowing it, and a row
+ * with no `firstAt` is kept rather than guessed at, because dropping it would under-count silently
+ * in the one panel whose whole job is counting what did NOT happen.
+ */
+export function reach(lines, { since = null } = {}) {
   const asksBySession = new Map();
   for (const l of lines) {
     if (l.kind !== 'ask' || !l._session) continue;
@@ -790,6 +859,8 @@ export function reach(lines) {
     // happened to push it, so reading `_session` here would credit the wrong one.
     const id = l.session ?? l._session;
     if (!id || seen.has(id)) continue;
+    const began = String(l.firstAt ?? l.at ?? '');
+    if (since && began && began < since) continue;
     seen.add(id);
     const touchAt = Array.isArray(l.touchAt) ? l.touchAt : [];
     rows.push({
@@ -887,6 +958,24 @@ export function activity(lines) {
  * failed to parse. It is not decoration: a report that cannot say where its data came from is a
  * report whose numbers cannot be acted on.
  */
+/**
+ * The earliest instant the day-folder window covers, or `null` when there is no window.
+ *
+ * `collect()` fetches `days` folders ENDING on `at`, so the earliest one starts `days - 1` days
+ * before `at`'s day — computed the same way `dayFolder` cuts, in UTC, so this agrees with the
+ * folder names rather than with a local clock. `--sessions` replaces the range instead of narrowing
+ * it, which is the one case that must answer `null` rather than a date.
+ */
+export function windowStart(meta = {}) {
+  if (Array.isArray(meta.sessions) && meta.sessions.length) return null;
+  const days = Number(meta.days);
+  if (!Number.isInteger(days) || days < 1 || !meta.at) return null;
+  const end = new Date(meta.at);
+  if (Number.isNaN(end.getTime())) return null;
+  const start = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()) - (days - 1) * 86_400_000;
+  return new Date(start).toISOString();
+}
+
 export function analyse({ lines = [], rows = [], meta = {} } = {}) {
   const idx = indexLookup(rows);
   // SYNTHETIC LINES ARE EXCLUDED FROM EVERY PANEL AND COUNTED IN THE HEADER (PLAN §14.2).
@@ -916,7 +1005,10 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
     refusals: refusals(real, idx),
     unhelpful: unhelpful(real, idx),
     loop: captureLoop(real),
-    reach: reach(real),
+    // THE ONE PANEL THAT NEEDS THE WINDOW HANDED TO IT — see `reach()` for why a `session` line is
+    // not where its file's date says it is. `--sessions` replaces the day range, so there is no
+    // window to apply; a missing `days` or `at` means the same.
+    reach: reach(real, { since: windowStart(meta) }),
     topics: topics(real),
   };
   return {

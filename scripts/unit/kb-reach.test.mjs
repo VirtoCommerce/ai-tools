@@ -193,6 +193,38 @@ test('dropping a reach state is what makes a session publish exactly once', () =
 
 const sessionLine = (session, tools, touchAt) => ({ kind: 'session', session, tools, turns: 1, touchAt, _session: 'pusher' });
 
+test('the WINDOW is the session own start, not the date of the file it rode out in', () => {
+  // THE DEFECT THIS CLOSES (PLAN 22.11). Every other panel is windowed for free: `--days N` selects
+  // day folders and an `ask` is written into its own session file on the day it happened. A
+  // `session` line is not - it describes a session that has ENDED and is published by whichever
+  // LATER session sweeps it, so a line about an old session rides out in a file dated today.
+  // Measured on the real base: `2ca7d89e-0001.jsonl` carries the `session` lines for `35b6f0e1` and
+  // `798dcffa`, neither of which is `2ca7d89e`.
+  //
+  // So filtering by file date did not filter these rows at all, and the symptom was a reach figure
+  // that did not move when the window narrowed. That is how an audit session found it: identical
+  // numbers over two windows are not stability, they are an unapplied filter.
+  const lines = [
+    { ...sessionLine('older001', 300, []), firstAt: '2026-09-18T10:00:00.000Z' },
+    { ...sessionLine('inside01', 40, [3]), firstAt: '2026-09-22T09:00:00.000Z' },
+  ];
+  const wide = reach(lines);
+  assert.deepEqual(wide.rows.map((r) => r.session).sort(), ['inside01', 'older001'], 'no window, both rows');
+
+  const narrow = reach(lines, { since: '2026-09-21T00:00:00.000Z' });
+  assert.deepEqual(narrow.rows.map((r) => r.session), ['inside01'], 'the old session is outside the window');
+  assert.equal(narrow.silent, 0, 'and it does not go on counting against the silent tally either');
+  // The figure MOVES, which is the whole point: 340 calls / 1 touch against 40 / 1.
+  assert.notEqual(wide.perHundred, narrow.perHundred);
+});
+
+test('a session line with NO firstAt is KEPT, never dropped by the window', () => {
+  // Dropping it would under-count silently in the one panel whose entire job is counting what did
+  // NOT happen - the same direction of error `unreachable` and `NOT ENOUGH DATA` exist to refuse.
+  const r = reach([sessionLine('noStamp1', 120, [])], { since: '2026-09-21T00:00:00.000Z' });
+  assert.deepEqual(r.rows.map((x) => x.session), ['noStamp1']);
+});
+
 test('the panel credits the session a line DESCRIBES, not the one that pushed it', () => {
   // A stopped session's line rides out in whatever session happens to flush next. Reading `_session`
   // would file every silent session's work under the one machine that was still running.
