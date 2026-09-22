@@ -17,7 +17,7 @@ import { RUN_MAX, readQueue } from '../kb/core/queue.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
-import { DEPLOYMENT_MAX, TOPIC_MAX, ask, capture, confirm, show } from '../kb/core/verbs.mjs';
+import { DEPLOYMENT_MAX, NOTE_MAX, TOPIC_MAX, ask, capture, confirm, dispute, show } from '../kb/core/verbs.mjs';
 import { captureLines } from '../kb/core/render.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
@@ -486,6 +486,41 @@ test('both doors put the same field on the line, because both go through one cor
     const [cli, mcp] = await linesOf(env);
     assert.equal(cli.deployment, mcp.deployment);
     assert.deepEqual(Object.keys(mcp).filter((k) => k !== 'call'), Object.keys(cli));
+  });
+});
+
+test('an evidence NOTE is bounded too - the one prose field every agent actually reads', async () => {
+  // THE INCONSISTENCY THIS CLOSES (review 3, F6). `topic` is capped at 60, `run` at 120 and
+  // `deployment` at 40 - all three LOG fields no agent reads back. `note` is the opposite on every
+  // axis: printed IN FULL, to every agent, on every hit, on every ask, from a public repo, forever,
+  // and it had no bound at all. Measured payload before this: 2,661 B per ask on average, worst
+  // single ask 11,610 B.
+  //
+  // The slope is what makes it a bound rather than a watch: every confirmation may add a note, and
+  // confirming is the behaviour the whole design is built to encourage. The mechanism that makes an
+  // entry trustworthy is the mechanism that makes it expensive.
+  //
+  // Driven through `dispute` rather than through the helper, because the bound is a property of what
+  // reaches the ENTRY: a test of a private function would not notice a caller that stopped using it.
+  await withQueue(async (env) => {
+    const LONG = 'x'.repeat(NOTE_MAX * 2);
+    const r = await dispute(EXISTING_ID, { deployment: 'vcst_qa', saw: LONG }, opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'queued');
+    assert.ok(r.item.note.length < LONG.length, 'it is bounded');
+
+    // THE MARKER IS LOAD-BEARING HERE WHERE IT IS NOT FOR A TOPIC. A reader must be able to tell a
+    // note that ENDS from one that was CUT, or the last clause of an argument reads as the whole.
+    assert.match(r.item.note, /\[cut at \d+ chars\]$/);
+  });
+
+  // AND IT IS SET CLEAR OF EVERY REAL NOTE. The review proposed 1,500; measured over all 45 notes in
+  // the live base, three exceed that and the longest is 2,547 - the dispute notes on KB-4D082C89,
+  // which carry the whole argument of a contradiction and are exactly the prose this base is for.
+  assert.ok(NOTE_MAX > 2_547, 'a bound that cuts the best writing in the corpus is the wrong bound');
+  await withQueue(async (env) => {
+    const real = 'y'.repeat(2_547);
+    const r = await dispute(EXISTING_ID, { deployment: 'vcst_qa', saw: real }, opened(), { env, via: 'cli' });
+    assert.equal(r.item.note, real, 'the longest note the base actually holds is untouched');
   });
 });
 

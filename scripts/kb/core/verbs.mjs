@@ -318,6 +318,42 @@ const stand = (deployment) => {
  * check them, which is a reason to word the description carefully, not a reason to skip the cap.
  */
 export const TOPIC_MAX = 60;
+/**
+ * HOW LONG AN EVIDENCE NOTE MAY BE — the bound this surface was missing, and the inconsistency is
+ * the argument.
+ *
+ * `topic` is capped at 60 characters, `run` at 120 and `deployment` at 40. All three are LOG fields
+ * that no agent ever reads back. `note` is the opposite on every axis: it is printed IN FULL, to
+ * every agent, on every hit, on every ask, out of a public repo, forever — and it had no bound at
+ * all. Review 3 measured the consequence (§22.18): mean answer payload 2,661 B per ask, worst
+ * single ask 11,610 B (~2,900 tokens), and `KB-4D082C89` carrying 4,956 B of notes against a 3,643 B
+ * body.
+ *
+ * THE SHAPE OF THE SLOPE IS WHAT MAKES THIS WORTH A BOUND RATHER THAN A WATCH. A well-attested entry
+ * costs 2.1x a single-observation one to read, because every confirmation may add a note. The
+ * design's central incentive is to confirm — §6.2 calls it "the cheapest and most valuable signal
+ * there is" — so THE MECHANISM THAT MAKES AN ENTRY TRUSTWORTHY IS THE MECHANISM THAT MAKES IT
+ * EXPENSIVE, and nothing measured it. The first symptom would have been an orchestrator's context
+ * budget, not a report panel.
+ *
+ * THE NUMBER IS MEASURED, AND THE REVIEW'S SUGGESTION WAS CHECKED RATHER THAN TAKEN. It proposed
+ * 1,500 on the grounds that "the notes I read would survive it untouched"; counted over all 45 notes
+ * in the live base, three exceed 1,500 and the longest is 2,547 — and they are the dispute notes on
+ * `KB-4D082C89`, which carry the whole argument of a contradiction and are exactly the prose this
+ * base is for. A bound that cuts the best writing in the corpus is the wrong bound. 4,000 sits clear
+ * of every real note, so it changes nothing that exists and bounds only what nothing else would.
+ * Truncated with a marker
+ * rather than dropped, for `label()`'s reason — the observer did write it down and the only defect
+ * is length — and the marker matters here where it does not for a topic: a reader must be able to
+ * tell a note that ENDS from a note that was CUT, or the last clause of an argument reads as the
+ * whole of it.
+ */
+export const NOTE_MAX = 4_000;
+const trimNote = (text) => {
+  const t = typeof text === 'string' ? text.trim() : '';
+  if (!t) return '';
+  return t.length <= NOTE_MAX ? t : `${t.slice(0, NOTE_MAX).trim()}… [cut at ${NOTE_MAX} chars]`;
+};
 const label = (topic) => {
   const t = typeof topic === 'string' ? topic.trim() : '';
   return t ? { topic: t.slice(0, TOPIC_MAX).trim() } : {};
@@ -747,7 +783,10 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a
     // second opinion, and until this field existed nothing could tell the two apart.
     ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
-    ...(kind === 'dispute' ? { contradicts: true, note: input.saw } : input.note ? { note: input.note } : {}),
+    // BOUNDED, unlike every other prose field on this path used to be. See NOTE_MAX.
+    ...(kind === 'dispute'
+      ? { contradicts: true, note: trimNote(input.saw) }
+      : trimNote(input.note) ? { note: trimNote(input.note) } : {}),
   };
 
   const written = await log({

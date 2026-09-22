@@ -7,6 +7,8 @@
 // be dropped in behind the same four methods.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createReader, localReader, registerReader, registeredSchemes } from '../kb/core/reader.mjs';
 import { DEFAULT_BASE, openBase, resolveBase } from '../kb/core/base.mjs';
@@ -32,6 +34,43 @@ test('the two failure reasons are distinct values, not two spellings of one', as
   const res = await r.readManifest();
   assert.equal(res.ok, false);
   assert.equal(res.reason, 'missing', 'a directory that is not there is MISSING, not unreachable');
+});
+
+test('a read that FAILED for any other reason is UNREACHABLE, never "missing"', async () => {
+  // THE SEAM'S OWN STATED INVARIANT, and until 2026-09-22 nothing pinned it. `reader.mjs` opens with
+  // "a reader NEVER THROWS for a 'could not read' condition, and it never returns an empty result
+  // for one either ... Making the distinction part of the RETURN TYPE means it cannot be lost by
+  // accident." Review 3 replaced `reasonFor`'s entire body with `return 'missing'` - collapsing
+  // every failure into "the base answered and it is not there" - and all 483 kb tests passed.
+  //
+  // WHY THAT MATTERS MORE THAN IT LOOKS. This one word is where exit 1 and exit 3 come from, and
+  // CLAUDE.md states the consequence in terms: "Confusing 1 with 3 is how an agent invents a fact."
+  // Exit 1 says nobody wrote it down, so go and find out; exit 3 says we could not ask. An
+  // unreachable base reported as empty sends an agent to establish, and then capture, something the
+  // base may already hold - which is the duplicate-knowledge failure this project exists to remove.
+  //
+  // A permission error is the cheapest real non-ENOENT failure to arrange, and it is arranged
+  // through the reader's own door rather than by calling `reasonFor` directly: the invariant is
+  // about what the SEAM returns, and a test of the private helper would not notice a caller that
+  // stopped using it.
+  const dir = mkdtempSync(join(tmpdir(), 'kb-seam-eacces-'));
+  try {
+    const file = join(dir, 'entries', 'KB-11111111.md');
+    mkdirSync(join(dir, 'entries'), { recursive: true });
+    writeFileSync(file, 'x', 'utf8');
+    // A DIRECTORY where a file is expected: reading it yields EISDIR on every platform this runs on,
+    // which is a genuine "could not read" that is emphatically not "not there".
+    rmSync(file);
+    mkdirSync(file);
+
+    const res = await localReader(dir).readEntry('entries/KB-11111111.md');
+    assert.equal(res.ok, false);
+    assert.equal(res.reason, 'unreachable', 'the entry IS there - we could not read it, which is a different fact');
+    assert.notEqual(res.reason, 'missing', 'collapsing these two is how exit 3 becomes exit 1');
+    assert.ok(res.detail, 'and the reason a human needs is carried, not swallowed');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('an index `path` cannot reach outside the base', async () => {
