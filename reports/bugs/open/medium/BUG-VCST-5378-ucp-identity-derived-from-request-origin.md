@@ -84,3 +84,34 @@ Graded **Medium**, not High: the working path exists, is configured, and is in d
 this does not block the story. It is graded no lower because the failure is silent, self-consistent and
 authoritative-looking — the failure mode most likely to cost an integrator a day, on the exact flow this
 ticket delivers.
+
+## Re-test — 2026-09-22 (`/qa-test VCST-5378` re-test) — STILL REPRODUCES, dev fix claim not confirmed
+
+Dev comment on VCST-5378 (2026-09-21) claimed: *"F2: Added `UCP:PublicOrigin` so discovery and OAuth
+use the same public URL. It must match the resource allowed for the OAuth client."* Re-tested live
+against vcst-qa (UCP module redeployed `3.1006.0-pr-7-9bc9`), and **the exact defect reproduces
+byte-for-byte**:
+
+1. **`tools/call get_store_capabilities` on the platform host** (`https://vcst-qa.govirto.com/ucp/mcp`,
+   no auth) still returns `storefront_origin: "https://vcst-qa.govirto.com"` (itself, computed from
+   request origin) while `stores["B2B-store"].url` in the **same payload** is
+   `"https://vcst-qa-storefront.govirto.com"` — the identical self-contradiction as D2/F2 on
+   2026-09-17, unchanged.
+2. **`endpoints.handoff_url_template`** on the platform host still resolves to
+   `"https://vcst-qa.govirto.com/checkout?ucp_session={token}"` — still the platform host, which does
+   not serve storefront checkout.
+3. **Token minting for the platform-host resource still fails.** `POST /connect/token` with
+   `resource=https://vcst-qa.govirto.com/ucp/mcp` → `400 invalid_target` (identical to the original
+   finding). The same request with `resource=https://vcst-qa-storefront.govirto.com/ucp/mcp` succeeds
+   (`200`, `aud`/`iss` both storefront). Tested with the environment's admin credentials, not the
+   registered "Claude Desktop QA" OAuth app specifically, so this confirms the **platform-side
+   `resource` validation and discovery advertisement**, which is the part `UCP:PublicOrigin` was
+   supposed to fix; it does not by itself re-confirm the one registered client's own `rsrc:` grant.
+
+**Verdict: NOT FIXED.** Either `UCP:PublicOrigin` was not set on vcst-qa's deployed config, the fix
+only reaches a different code path (e.g. the bare `/.well-known/ucp` manifest, which was already
+request-origin-scoped and unaffected either way), or the fix did not ship in this build. The dev's own
+fix note names the exact right mechanism; what's missing is confirmation it's actually wired for this
+environment. **Recommend: re-open with the developer, and this time validate by re-running steps 1–3
+above post-fix, not by code review alone** — this repo's rule (`.claude/rules/agents.md` §Product
+context) is to observe before crediting a fix.

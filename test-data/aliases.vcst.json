@@ -1614,5 +1614,111 @@
     "seeded_values_json": "[\"Organization employee\",\"Purchasing agent\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\"]",
     "narrowed_values": "[\"Organization employee\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\"]",
     "narrowed_omitted_role": "Purchasing agent"
+  },
+  "SC_MULTI": {
+    "_inline": true,
+    "component_id": "4a99cb8ee6a343808e3ef56e19717070",
+    "name": "AGENT-TEST-SC-Multi-Trio"
+  },
+  "SC_SINGLE": {
+    "_inline": true,
+    "component_id": "dc7e0762763e47f5b3c58a0b68d9e210",
+    "name": "AGENT-TEST-SC-Single"
+  },
+  "SC_UNUSED": {
+    "_inline": true,
+    "component_id": "f44f8f56876842879549769a6c0558bf",
+    "name": "AGENT-TEST-SC-Unused-Deletable"
+  },
+  "SC_USED": {
+    "_inline": true,
+    "component_id": "ed1688094c1d405096a0f73427447ac5",
+    "name": "AGENT-TEST-SC-Used-Undeletable"
+  },
+  "PB_SC_MASTER": {
+    "_inline": true,
+    "group_id": "53b829d2-502e-42ef-9b92-60aab5048eff",
+    "permalink": "/agent-test-sc-master"
+  },
+  "PB_SC_CONSUMER_A": {
+    "_inline": true,
+    "group_id": "d946ed13-4c11-480d-9250-3c1393a289c8",
+    "permalink": "/agent-test-sc-consumer-a"
+  },
+  "PB_SC_CONSUMER_B": {
+    "_inline": true,
+    "group_id": "b177440a-1aa0-44ea-9f1f-91f4139b609f",
+    "permalink": "/agent-test-sc-consumer-b"
+  },
+  "PB_SC_CONSUMER_DRAFT": {
+    "_inline": true,
+    "group_id": "bf643663-93b1-4736-8374-c66dbb5d5182",
+    "permalink": "/agent-test-sc-consumer-draft"
+  },
+  "PB_SC_DELETE_HOLDER": {
+    "_inline": true,
+    "group_id": "7d88e789-fefe-4d1c-bbac-644fbb0305fe",
+    "permalink": "/agent-test-sc-delete-holder"
+  },
+  "PB_SC_CONTROL": {
+    "_inline": true,
+    "group_id": "f39f5f30-48f9-41e5-8609-82688ca2ca1a",
+    "permalink": "/agent-test-sc-control"
+  },
+  "SC_PERM_ALL": {
+    "_inline": true,
+    "platform_id": "c473ef91-8b91-4548-93e8-cc08a152defd",
+    "user_id": "c473ef91-8b91-4548-93e8-cc08a152defd",
+    "role_id": "AGENT-TEST-PB-SC-sc-all",
+    "email": "AGENT-TEST-sc-all@test.virtocommerce.com",
+    "store_id": "B2B-store"
+  },
+  "SC_PERM_READ": {
+    "_inline": true,
+    "platform_id": "60c559da-dc41-46ce-aaf2-776f5e296324",
+    "user_id": "60c559da-dc41-46ce-aaf2-776f5e296324",
+    "role_id": "AGENT-TEST-PB-SC-sc-read",
+    "email": "AGENT-TEST-sc-read@test.virtocommerce.com",
+    "store_id": "B2B-store"
+  },
+  "SC_PERM_NOCREATE": {
+    "_inline": true,
+    "platform_id": "9fb29885-1fb8-45ea-8f7a-9ec02df4af42",
+    "user_id": "9fb29885-1fb8-45ea-8f7a-9ec02df4af42",
+    "role_id": "AGENT-TEST-PB-SC-sc-nocreate",
+    "email": "AGENT-TEST-sc-nocreate@test.virtocommerce.com",
+    "store_id": "B2B-store"
+  },
+  "SC_PERM_NOUPDATE": {
+    "_inline": true,
+    "platform_id": "a2698807-36ab-467e-a998-f930ee94d8c0",
+    "user_id": "a2698807-36ab-467e-a998-f930ee94d8c0",
+    "role_id": "AGENT-TEST-PB-SC-sc-noupdate",
+    "email": "AGENT-TEST-sc-noupdate@test.virtocommerce.com",
+    "store_id": "B2B-store"
+  },
+  "SC_PERM_NODELETE": {
+    "_inline": true,
+    "platform_id": "05bc16f0-1e39-49d4-8682-dd00fadc73b6",
+    "user_id": "05bc16f0-1e39-49d4-8682-dd00fadc73b6",
+    "role_id": "AGENT-TEST-PB-SC-sc-nodelete",
+    "email": "AGENT-TEST-sc-nodelete@test.virtocommerce.com",
+    "store_id": "B2B-store"
+  },
+  "SC_PERM_NOREAD": {
+    "_inline": true,
+    "platform_id": "19124d92-533a-4577-929a-89c10dda81b8",
+    "user_id": "19124d92-533a-4577-929a-89c10dda81b8",
+    "role_id": "AGENT-TEST-PB-SC-sc-noread",
+    "email": "AGENT-TEST-sc-noread@test.virtocommerce.com",
+    "store_id": "B2B-store"
+  },
+  "SC_PERM_NOSTORE": {
+    "_inline": true,
+    "platform_id": "7b6b5c24-2f38-41c0-a060-59f0d383f46d",
+    "user_id": "7b6b5c24-2f38-41c0-a060-59f0d383f46d",
+    "role_id": "AGENT-TEST-PB-SC-sc-nostore",
+    "email": "AGENT-TEST-sc-nostore@test.virtocommerce.com",
+    "store_id": "Electronics"
   }
 }

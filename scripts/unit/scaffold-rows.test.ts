@@ -280,6 +280,24 @@ test("an explicit sweep archetype overrides the per-probe map", () => {
   assert.equal(r.cases[0].archetype, "RENDER");
 });
 
+// B-40: a long `surface` used to eat into the title budget shared with `scenario`, so two rows
+// with different scenarios but the same long surface collapsed onto one truncated title — the
+// KEEP gate then rejected the second as a duplicate with no hint the surface was the cause.
+test("B-40: a long surface does not swallow the scenario suffix into a colliding title", () => {
+  const longSurface = "Loyalty.LoyaltyBalanceCalculationMode Customer vs Organization across every read and spend site";
+  const rows: SweepRow[] = [
+    { key: "1", scenario: "Points calculation mode A", defect: "d" },
+    { key: "2", scenario: "Points calculation mode B", defect: "d" },
+  ];
+  const { cases, errors } = expandSweep({ kind: "toggle", surface: longSurface }, rows, "admin");
+  assert.deepEqual(errors, []);
+  assert.equal(cases.length, 2);
+  assert.notEqual(cases[0].title, cases[1].title);
+  assert.ok(cases[0].title.endsWith("Points calculation mode A"), cases[0].title);
+  assert.ok(cases[1].title.endsWith("Points calculation mode B"), cases[1].title);
+  for (const c of cases) assert.ok(c.title.length <= 110, c.title);
+});
+
 /* ------------------------------------------------------------------ *
  * Markdown parsing
  * ------------------------------------------------------------------ */

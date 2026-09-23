@@ -336,6 +336,19 @@ Four rules:
   "isolated". The unqualified form is what let this ship.
 - **Two suites consuming one disposable fixture set must be serialised with a re-seed between them**
   (`seed → 075d → seed → 083d`), or each given its own accounts. Order-of-execution is not a plan.
+  **"Own accounts" isolates a user-scoped fixture; it does NOT isolate a pooled balance.** Under
+  `Loyalty.LoyaltyBalanceCalculationMode = Organization`, an order placed by *any* member moves the
+  *same* organization balance, so two lanes holding entirely distinct accounts in one organization
+  collide exactly as hard as two lanes sharing one account — the unit of isolation is the
+  ORGANIZATION, not the account. Measured 2026-09-11 (VCST-5024): the `ORG_LOY_*` fixture set gave
+  the backend and frontend lanes distinct member accounts in one organization with no lane split,
+  isolated only by a hand-written instruction in the dispatch brief that one lane alone could write.
+  It held this time — the two lanes' independent readings reconciled exactly where they overlapped —
+  but by convention and careful agents, not by mechanism; a second order from either lane would have
+  silently corrupted both lanes' relative-delta assertions with no error anywhere. Give each lane
+  needing an org-pooled fixture its own AGENT-TEST organization, the same way `MULTI_ORG_TF_BR` /
+  `MULTI_ORG_TF_BR_ALT` already split a user-scoped B2B fixture per lane
+  (`scripts/seed-data/b2b/membership-lock-specs.mjs`).
 - **Verify the recorded baseline against live in pre-flight.** The `*_at_seed` fields are already
   written into `aliases.<env>.json` and **nothing reads them back**. The sibling gate already exists
   in shape — `td:reconcile` check **[11]** probes overlay *GUID* liveness ("does the entity still

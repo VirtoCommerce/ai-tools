@@ -1,0 +1,71 @@
+{
+  "ticket": "VCST-5870",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-09-21",
+  "environment": "http://localhost (local container serving PR head theme; /graphql and /connect/token proxied to https://vcst-qa.govirto.com, store B2B-store)",
+  "build": {
+    "platform": "not probed (backend is vcst-qa, unchanged by this fix)",
+    "theme": "vc-theme-b2b-vue-2.58.0-pr-2491-a69d-a69ddec8 (theme marker X-VC-Local-Theme: fe-a8d8e3439029)",
+    "relevant_modules": {},
+    "pr_build": "VirtoCommerce/vc-frontend#2491 head a69ddec8df30fd8983933fc00478640fed49d6e9 (OPEN, not merged)"
+  },
+  "agent_used": "none (orchestrator drove the browser pane inline; user declined agent dispatch)",
+  "account": "SALES_REP fixture (vcst); signed in by the operator",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-bug-report (BUG-salesrep-breadcrumb-slash-missing-aria-hidden.md: vcst-qa @ theme 2.57.0-pr-2444-5946-59465f5e); not re-observed live",
+  "checks": {
+    "orders_route_my_customers": "PASS 3/3 - 5/5 slashes hidden via li[aria-hidden=true]",
+    "customer_orders_route": "PASS - 3/3 slashes hidden",
+    "customer_profile": "PASS - 4/4 slashes hidden",
+    "order_details": "PASS - 6/6 slashes hidden",
+    "hub_crumb_link": "PASS - href /company/dashboard, click lands on Dashboard",
+    "orders_filter_date_dash": "PASS - separator not aria-hidden (content)",
+    "control_catalog": "PASS - unchanged, slash hidden",
+    "control_pdp": "PASS - unchanged, 5/5 slashes hidden",
+    "design_markup": "OBSERVED - aria-hidden is on the wrapping li, not the span as in the design markup; equivalent for assistive tech",
+    "design_tokens": "margin 0 8px matches; colour neutral-500 rgb(115,115,115) vs spec neutral-400 (deliberate, PR commit 2)",
+    "contrast_light": "4.74:1 (pre-fix 2.52:1 per bug report); informational, slash is aria-hidden",
+    "contrast_dark": "NOT MEASURED - dark is preset-driven (html.dark), needs a shared store preset change; local class toggle gave no valid ratio",
+    "keyboard_focus_on_slash": "NOT RUN",
+    "mobile_width": "NOT RUN",
+    "console": "93 errors, none breadcrumb-related: ws://localhost/graphql WebSocket failures, ServiceWorker registration, ERR_NAME_NOT_RESOLVED; suspected local-proxy artefacts, not compared against vcst-qa"
+  },
+  "checklist_total": 15,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "checklist_not_run": 3,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "BL-A11Y-001",
+    "BL-A11Y-002",
+    "BL-A11Y-003",
+    "BL-A11Y-004 (slash decorative-and-hidden; contrast N/A while hidden - not individually enumerated)"
+  ],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested",
+    "hops": [
+      {
+        "from": "Ready for test",
+        "to": "Testing",
+        "transition": "On QA"
+      },
+      {
+        "from": "Testing",
+        "to": "Tested",
+        "transition": "Finish test"
+      }
+    ],
+    "authorized_by": "operator, in chat, 2026-09-21",
+    "stopped_at": "Tested (not Done)"
+  },
+  "tracker_note": "QA comment posted (id 110096) then moved to Tested on operator instruction. Not moved to Done.",
+  "evidence": null,
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-5870/",
+  "checklist_observed": 3,
+  "checklist_noted": 1,
+  "tracker_comment_id": "110096"
+}

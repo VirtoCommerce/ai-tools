@@ -1,0 +1,511 @@
+{
+  "ticket": "VCST-5869",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "full",
+    "narrow_story_tokens": null,
+    "escalated_reason": "reach"
+  },
+  "layer": "storefront",
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "sr",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "rev": 3,
+    "generated": "2026-09-18",
+    "age_days": 3,
+    "all_layer_chain": false,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "recommended": false,
+    "built_in_run": false,
+    "build_outcome": "not-attempted",
+    "build_skipped_reason": "already-present",
+    "amended_in_run": false,
+    "amend_outcome": "not-attempted",
+    "amendments": [],
+    "sources": [
+      "reports/ba/test-models/VCST-5869-2026-09-21.md"
+    ],
+    "unmapped_surfaces": [
+      "the customer-orders page body (toolbar, search, FILTERS trigger, chip row, table)",
+      "the FILTERS panel and its controls",
+      "/account/orders desktop + mobile filters (buyer domain, adjacent surface)"
+    ]
+  },
+  "shape_class": {
+    "value": "ui-kit",
+    "surface_source": [
+      "diff under client-app/ui-kit/components/molecules/popover/**, .../select/**, composables/useCalendarPopover.ts",
+      "reach exceeds the diff: shared VcPopover/VcSelect consumed by every popover in the storefront (mega-menu, tooltips, header menus, date pickers, checkout/address selects)"
+    ],
+    "skipped": [
+      "Artifact A authoring",
+      "3-cases gate",
+      "4c/C1 regression run"
+    ]
+  },
+  "derived_oracle": null,
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-09-21",
+  "timing": {
+    "started_at": "2026-09-21T15:00:00Z",
+    "finished_at": "2026-09-21T20:15:00Z",
+    "steps": {
+      "step1": 45,
+      "step2": 10,
+      "step3": 35,
+      "step4": 120,
+      "step5": 25
+    },
+    "time_to_first_test_minutes": 95,
+    "first_evidence_minutes": 140,
+    "reachability_minutes": 3,
+    "agent_dispatches": 6,
+    "regression_predicted_minutes": null,
+    "regression_actual_minutes": null
+  },
+  "environment": "http://localhost (local nginx, vc-frontend PR #2486 theme, proxied to https://vcst-qa.govirto.com)",
+  "build": {
+    "platform": "3.1071.0-pr-3108-016f",
+    "theme": "2.58.0-pr-2486-4348-43488a7a",
+    "relevant_modules": {},
+    "deployed": {
+      "platform": "3.1071.0-pr-3108-016f",
+      "relevant_modules": {}
+    },
+    "releasedThrough": {
+      "ledger_generated": null,
+      "components": {},
+      "behind": [],
+      "breaking": []
+    }
+  },
+  "release": {
+    "layers": [],
+    "layer_source": [],
+    "layers_conflict": false,
+    "audience": [],
+    "component_versions": {},
+    "platform_version": null,
+    "breaking": false,
+    "breaking_source": null,
+    "user_visible": null,
+    "fragment": null,
+    "refusal": null,
+    "aggregated_into": null
+  },
+  "documentation": {
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": [],
+    "comment_posted": false,
+    "refusal": null
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "confirmed": false,
+      "actor": "qa-lead"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test",
+      "confirmed": true,
+      "actor": "qa-lead"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert",
+    "ui-ux-expert",
+    "test-management-specialist",
+    "qa-testing-expert (3x)",
+    "ba-system-analyzer (1c)",
+    "qa-frontend-expert (1r)"
+  ],
+  "epic": {
+    "parent": null,
+    "siblings": {
+      "done": [],
+      "in_progress": [],
+      "blocked_dependency": []
+    },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 6,
+    "weak_acs": 1,
+    "gap_acs_added": 4,
+    "impl_coverage": {
+      "satisfied": 5,
+      "drift": 1,
+      "contradicts": 0,
+      "not_found": 0
+    },
+    "conditions_total": 22,
+    "conditions_with_evidence": 20,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 91,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    }
+  },
+  "total_cases": 25,
+  "passed": 18,
+  "failed": 3,
+  "blocked": 1,
+  "iterations": {
+    "enabled": false,
+    "rounds": 1,
+    "max_rounds": 2,
+    "outcome": "passed",
+    "per_round": []
+  },
+  "new_cases_authored": 0,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": []
+  },
+  "regression": {
+    "c1": {
+      "suites": [],
+      "ids": [],
+      "run_id": null,
+      "pass_rate": null,
+      "skipped_reason": "ui-kit shape class: Artifact A authors no cases and disposes no REPAIR/RE-BASE (2a found 0/0/1-confirmed-not-rebased) — no exact set exists to run"
+    }
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_ids": [],
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": null
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "2nd click on an open non-autocomplete VcSelect does not close it (APG select-only combobox expects toggle)",
+      "report": null
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "ArrowDown on the date-range input does not open its calendar, though the PR's own description claims ArrowDown/Enter support here (works for VcSelect, not the date input)",
+      "report": null
+    }
+  ],
+  "discovery": {
+    "ran": true,
+    "skipped_reason": null,
+    "lane": "playwright-edge",
+    "minutes": 30,
+    "checklist_conditions": [
+      {
+        "observed": "the </640px /account/orders drawer reproduces the ticket's original defect verbatim (no role, no name, Escape inert, focus lost)"
+      },
+      {
+        "observed": "click on a non-autocomplete VcSelect opens but never toggles closed"
+      }
+    ],
+    "charter_sources": {
+      "matrix_gaps": [
+        "V1c mobile drawer <640px — covered, defect confirmed",
+        "sales-rep panel at 375px — covered, later retracted by direct re-check"
+      ],
+      "reverse_edges": [
+        "aria-expanded true->false on Apply force-close — covered, clean",
+        "focus not stolen during loading — covered, clean"
+      ],
+      "hypothesis_rows": [
+        "S9 held Escape — NOT REACHED (tooling)",
+        "S12 VcSelect click toggle — grounded to OBSERVED",
+        "S19 Escape inside a modal dialog — NOT REACHED",
+        "S20 disable-while-open outside Apply — partially observed"
+      ],
+      "ac_drift": [
+        "C3 aria-modal — covered, facts recorded, verdict deferred to 5-verdict"
+      ],
+      "rebase_rows": []
+    },
+    "hypotheses_grounded": 1,
+    "hypotheses_remaining": 3,
+    "model_amendments": 7,
+    "scenarios_new": [
+      {
+        "id": "EXP-01",
+        "fate": "DECLINE",
+        "case_id": null,
+        "oracle_ref": "BL-UI-004"
+      },
+      {
+        "id": "EXP-02",
+        "fate": "DECLINE",
+        "case_id": null,
+        "oracle_ref": "BL-A11Y-001"
+      },
+      {
+        "id": "EXP-03",
+        "fate": "DECLINE",
+        "case_id": null,
+        "oracle_ref": "NONE"
+      },
+      {
+        "id": "EXP-04",
+        "fate": "DECLINE",
+        "case_id": null,
+        "oracle_ref": "BL-A11Y-004"
+      },
+      {
+        "id": "EXP-05",
+        "fate": "DECLINE",
+        "case_id": null,
+        "oracle_ref": "NONE"
+      },
+      {
+        "id": "EXP-06",
+        "fate": "DECLINE",
+        "case_id": null,
+        "oracle_ref": "NONE"
+      }
+    ],
+    "oracle_proposals": 3,
+    "bugs_surfaced": [
+      "mobile drawer defect (K-14)",
+      "375px panel position (retracted)",
+      "VcSelect listbox APG gaps (K-12)"
+    ],
+    "report": "reports/exploratory/SBTM-VCST-5869-2026-09-21.md"
+  },
+  "visual": {
+    "surface": "true",
+    "surface_source": [
+      "ticket is [a11y]; diff under client-app/ui-kit/**"
+    ],
+    "ran": true,
+    "skipped_reason": null,
+    "targets": [
+      "/company/customer-orders FILTERS panel",
+      "/account/orders desktop filters panel"
+    ],
+    "axes": {
+      "a11y": {
+        "ran": true,
+        "verdict": "PASS",
+        "findings": 0,
+        "skipped_reason": null
+      },
+      "design_system": {
+        "ran": true,
+        "verdict": "NOT_APPLICABLE",
+        "findings": 0,
+        "skipped_reason": "diff carries no colour/token change"
+      },
+      "design_spec": {
+        "ran": false,
+        "verdict": null,
+        "confirmed": 0,
+        "drift": 0,
+        "missing": 0,
+        "unspec": 0,
+        "known_divergence": 0,
+        "unresolved": 0,
+        "skipped_reason": "no Prototype link on the ticket"
+      }
+    },
+    "a11y_findings": [
+      {
+        "invariant": "BL-A11Y-001",
+        "severity": "High",
+        "ticket": "VCST-6004 (related, comment-only)",
+        "blocks": false
+      },
+      {
+        "invariant": "BL-A11Y-004",
+        "severity": "Medium",
+        "ticket": "TBD (pending operator decision)",
+        "blocks": false
+      },
+      {
+        "invariant": "BL-A11Y-004",
+        "severity": "Medium",
+        "ticket": "TBD (pending operator decision)",
+        "blocks": false
+      }
+    ],
+    "invariant_failures": [],
+    "advisory": [],
+    "report": "reports/tickets/Sprint26-19/VCST-5869/design-report.md"
+  },
+  "contract": {
+    "surface": "false",
+    "surface_source": [
+      "no GraphQL/xAPI change in the diff"
+    ],
+    "schema": {
+      "refreshed": null,
+      "unknown_reason": null,
+      "queries": 0,
+      "mutations": 0
+    },
+    "fixtures": {
+      "refreshed": null,
+      "validated_against_env": null,
+      "total": 0,
+      "failed": 0,
+      "drift_in_scope": [],
+      "drift_out_of_scope": []
+    }
+  },
+  "coverage_triage": {
+    "surface": "true",
+    "surface_source": [
+      "shared VcPopover/VcSelect/date-picker reach — domainless change, corpus-wide pass paired per ui-kit-class §5c"
+    ],
+    "scope": {
+      "domains": [
+        "sales-rep",
+        "orders"
+      ],
+      "modules": [],
+      "suites_named": [],
+      "observables": [
+        "Escape",
+        "aria-haspopup",
+        "Filters",
+        "focus",
+        "role=\"dialog\"",
+        "aria-expanded"
+      ],
+      "oracles": [],
+      "cases_filter": null
+    },
+    "counts": {
+      "suites_scoped": 143,
+      "rows_scanned": 4497,
+      "hits": 359,
+      "will_run": 263,
+      "filtered_out": 0,
+      "not_executing": 96,
+      "never_audited": 359
+    },
+    "dispositions": {
+      "confirmed": 359,
+      "repair": 0,
+      "rebase": 0,
+      "superseded": 0
+    },
+    "repaired": [],
+    "rebased_into_c1": [],
+    "superseded_proposals": [],
+    "unscannable": [
+      {
+        "suite": "056",
+        "reason": "legacy header"
+      },
+      {
+        "suite": "061",
+        "reason": "legacy header"
+      },
+      {
+        "suite": "062",
+        "reason": "legacy header"
+      },
+      {
+        "suite": "063",
+        "reason": "legacy header"
+      },
+      {
+        "suite": "064",
+        "reason": "legacy header"
+      },
+      {
+        "suite": "065",
+        "reason": "legacy header"
+      },
+      {
+        "suite": "066",
+        "reason": "legacy header"
+      },
+      {
+        "suite": "069",
+        "reason": "legacy header"
+      },
+      {
+        "suite": "073",
+        "reason": "legacy header"
+      },
+      {
+        "suite": "074",
+        "reason": "legacy header"
+      },
+      {
+        "suite": "076",
+        "reason": "legacy header"
+      }
+    ],
+    "unmatched_observables": []
+  },
+  "test_data": {
+    "surface": false,
+    "surface_source": [
+      "existing rep fixture (SR_REP_PRIMARY, 15 pages of served-customer orders) covers every planned condition",
+      "no chain link needs a divergence beyond what the fixture already provides"
+    ],
+    "dispatched": false,
+    "fixtures_covering": [
+      "@td(SR_REP_PRIMARY.email)",
+      "{{SALES_REP_EMAIL}}"
+    ],
+    "divergence_resolved": true,
+    "td_validate": "green",
+    "seed_run": null
+  },
+  "business_rules_verified": [
+    "BL-A11Y-001",
+    "BL-A11Y-002",
+    "BL-A11Y-004",
+    "BL-UI-004"
+  ],
+  "appinsights": {
+    "checked": true,
+    "layers": [
+      "frontend",
+      "backend"
+    ],
+    "window_minutes": 120,
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 1,
+      "dismissed": 2
+    },
+    "correlated_failures": [
+      "storefront: 1x ResizeObserver loop warning — benign, unrelated",
+      "backend: 18x GET /graphql 400 + 2x Authorization/Exchange 400 — matches the local-nginx websocket/session noise agents already flagged, env-only",
+      "backend: 1x 500 on POST graphql/GetOrganizationAddresses — needs_review, no code in this diff touches organization addresses, not chased this run"
+    ]
+  },
+  "screenshots": "reports/tickets/Sprint26-19/VCST-5869/screenshots/"
+}
