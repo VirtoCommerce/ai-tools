@@ -131,7 +131,7 @@ Use the **Agent tool** with `subagent_type: ui-ux-expert`. Browser: `Chrome DevT
 
 **Phase B — Storefront audit (always runs):**
 
-For **component targets**, Phase B uses an **explorer approach** — components render in multiple contexts (cart, catalog, account, modal, etc.), and a component can pass on one page while failing on another. Single-location auditing misses page-specific layout bugs (e.g., parent overrides, real-data overflow, sticky-header conflicts). The explorer flow enumerates 2-3 representative contexts and audits the component in each.
+For **component targets**, Phase B uses an **explorer approach** — components render in multiple contexts (cart, catalog, account, modal, etc.), and a component can pass on one page while failing on another. The explorer flow enumerates 2-3 representative contexts and audits the component in each.
 
 For **page or flow targets**, the page IS the context — skip the explorer enumeration and audit the page directly (the viewport sweep + invariant audits ARE the exploration at that level).
 
@@ -196,7 +196,6 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
    - **Stable PASS** — invariant passes in every context. No issue.
    - **Stable FAIL** — invariant fails in every context. Component-level bug; fix at the component.
    - **Context-specific FAIL** — invariant fails in only some contexts. Integration bug; the *failing context* is where to fix (parent layout, page-level CSS, real data overflow).
-   - This classification is the unique value of the explorer approach — it tells the user WHERE to fix, not just WHAT.
 
 - Output: `reports/tickets/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storefront/{context-slug}/` per context — screenshots only for FAIL.
 
