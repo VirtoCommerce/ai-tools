@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { RUN_MAX, readQueue } from '../kb/core/queue.mjs';
+import { RUN_MAX, metaPath, queuePath, readQueue } from '../kb/core/queue.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
@@ -178,6 +178,50 @@ test('a capture with no ask before it says nothing rather than guessing', async 
     assert.equal(r.state, 'queued');
     const [capLine] = await linesOf(env);
     assert.ok(!('after' in capLine), '`after` means FOLLOWED; with nothing before it, there is nothing to say');
+  });
+});
+
+test('`after` SURVIVES A FLUSH — the pointer is kept where the flush cannot reach it', async () => {
+  // PLAN §23.5: 12 of 21 published captures carried no `after`, exactly the ones in a session's
+  // second push, because the pointer was found by scanning the local queue and the flush deletes
+  // that file every five minutes. The flush is simulated the only way it matters here: the queue
+  // file is gone and nothing else is.
+  await withQueue(async (env) => {
+    await ask(MISSED_NEAR, opened(), { env, via: 'cli' });
+    const askLine = (await linesOf(env)).at(-1);
+    rmSync(queuePath(env), { force: true });
+
+    const r = await capture({
+      subject: 'a fact written one flush after the ask it followed',
+      question: 'does the pointer outlive the queue file',
+      claim: 'It must.',
+      deployment: 'vcst_qa',
+      anchors: ['/company/after-a-flush'],
+      scope: ['surface=platform'],
+    }, opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'queued');
+    const [capLine] = await linesOf(env);
+    assert.equal(capLine.after, askLine.at, 'the ask before the flush, not nothing');
+  });
+});
+
+test('`after` takes the LATER of queue and sidecar, so a stale sidecar cannot point backwards', async () => {
+  await withQueue(async (env) => {
+    await ask(MISSED_NEAR, opened(), { env, via: 'cli' });
+    await ask(ANSWERED, opened(), { env, via: 'cli' });
+    const latest = (await linesOf(env)).at(-1);
+    // A sidecar that failed to advance on the second ask still names the first.
+    writeFileSync(metaPath(env), JSON.stringify({ lastAskAt: '2000-01-01T00:00:00.000Z' }), 'utf8');
+
+    await capture({
+      subject: 'a fact written after two asks',
+      question: 'which ask does the pointer name',
+      claim: 'The later one.',
+      deployment: 'vcst_qa',
+      anchors: ['/company/two-asks'],
+      scope: ['surface=platform'],
+    }, opened(), { env, via: 'cli' });
+    assert.equal((await linesOf(env)).at(-1).after, latest.at);
   });
 });
 

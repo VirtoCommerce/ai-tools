@@ -20,7 +20,7 @@
 // run over this file BEFORE the push, plus the fact that these questions are about a public
 // product. Extending the base to client deployments must re-decide it first (PLAN §7, §11).
 
-import { appendFile, mkdir, readFile } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -255,10 +255,46 @@ export async function log(record, { env = process.env, who, run } = {}) {
   try {
     await mkdir(queueDir(env), { recursive: true });
     await appendFile(path, `${JSON.stringify(line)}\n`, 'utf8');
-    return { ok: true, path, line };
   } catch (err) {
     return { ok: false, path, line, why: `${err.code ?? 'EUNKNOWN'}: ${err.message}` };
   }
+  if (line.kind === 'ask') await noteAsk(env, line.at);
+  return { ok: true, path, line };
+}
+
+// ── the session's sidecar: what must outlive a flush ──────────────────────────────────────────
+
+/**
+ * `<session>.meta.json`, beside the queue. NOT a `.jsonl`, so `queueFiles()` and the flush hook
+ * step over it, and the flush — which deletes the queue file — never touches it.
+ *
+ * It exists for ONE field today, and that is the only reason it exists (PLAN §23.5). A capture's
+ * `after` points at the ask it followed, and it used to be found by scanning the LOCAL QUEUE — which
+ * the flush empties every five minutes. So a capture made more than a flush after its ask carried no
+ * pointer: measured over the published log, 12 of 21 captures since the field existed, exactly the
+ * ones in a session's second push. Since `af62443a` the `unhelpful` panel pairs ONLY via `after`,
+ * so each of those was counted `unprompted` when it was nothing of the kind.
+ */
+export const metaPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.meta.json`);
+
+/** The sidecar, or `{}`. A torn or missing file is an absent pointer, never a failed verb. */
+export async function readMeta(env = process.env, session = sessionId(env)) {
+  try {
+    const j = JSON.parse(await readFile(metaPath(env, session), 'utf8'));
+    return j && typeof j === 'object' && !Array.isArray(j) ? j : {};
+  } catch { return {}; }
+}
+
+/**
+ * Record the `at` of the ask just written. Best effort in the strict sense: a sidecar that could not
+ * be written costs a later capture its pointer — which is what happened on every flush before this —
+ * and must never cost the ask.
+ */
+async function noteAsk(env, at) {
+  try {
+    const meta = await readMeta(env);
+    await writeFile(metaPath(env), JSON.stringify({ ...meta, lastAskAt: String(at) }), 'utf8');
+  } catch { /* the pointer is lost, the ask is not */ }
 }
 
 /** Read this session's queue back -- used by `stat` for the depth, and by the pusher later. */

@@ -17,7 +17,7 @@ import { anchorProblems, neighbours } from './coordinates.mjs';
 import { findDuplicate, identityKey, refusalMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, normalizeScope, retrievable } from './index-load.mjs';
-import { log, pendingMutations, queueDir, readQueue, sessionId } from './queue.mjs';
+import { log, pendingMutations, queueDir, readMeta, readQueue, sessionId } from './queue.mjs';
 import { cachedWho } from './who.mjs';
 import { RANKER, rank, rankNeighbours, relatedTo } from './rank.mjs';
 
@@ -560,13 +560,23 @@ const REQUIRED = ['subject', 'question', 'claim', 'deployment'];
  * thing that can disagree with the first. And the name means what it says: `after` is FOLLOWED,
  * not CAUSED BY. An agent may capture something unrelated to the last thing it asked, and a field
  * that claimed causation would be read as evidence of it.
+ *
+ * TWO PLACES, AND THE LATER ONE WINS. The queue holds every ask since the last flush; the sidecar
+ * (`readMeta`) holds the last ask's `at` ACROSS flushes, which is the case the queue alone got wrong
+ * for 12 of 21 captures (PLAN §23.5). Both are ISO strings from the one writer, so the later is the
+ * lexicographically greater — and taking the later means a sidecar that failed to update cannot
+ * point a capture at an older ask than the queue already knows about.
  */
 async function precedingAsk({ env }) {
+  let fromQueue = null;
   const { lines } = await readQueue({ env });
   for (let i = lines.length - 1; i >= 0; i -= 1) {
-    if (lines[i].kind === 'ask' && lines[i].at) return String(lines[i].at);
+    if (lines[i].kind === 'ask' && lines[i].at) { fromQueue = String(lines[i].at); break; }
   }
-  return null;
+  const { lastAskAt } = await readMeta(env);
+  const fromMeta = typeof lastAskAt === 'string' && lastAskAt ? lastAskAt : null;
+  if (!fromQueue || !fromMeta) return fromQueue ?? fromMeta;
+  return fromMeta > fromQueue ? fromMeta : fromQueue;
 }
 
 /**
