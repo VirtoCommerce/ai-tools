@@ -203,6 +203,7 @@
     "kb": "node scripts/kb/kb.mjs",
     "kb:mcp": "node scripts/kb/mcp.mjs",
     "kb:report": "node scripts/kb/report.mjs",
+    "kb:migrate-log": "node scripts/kb/migrate-log-layout.mjs",
     "layout:run": "npx tsx scripts/layout/layout-runner.ts --suite regression/suites/Frontend/cross-cutting/048c-layout-stability.csv",
     "layout:list": "npx tsx scripts/layout/layout-runner.ts --list --suite regression/suites/Frontend/cross-cutting/048c-layout-stability.csv",
     "layout:author": "node scripts/layout/author-reference-suite.mjs",
