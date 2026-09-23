@@ -19,7 +19,21 @@
 // the duplicate into a confirmation. The two files are one design: this one is allowed to be dumb
 // precisely because that one exists.
 
-import { isStructuredCoordinate } from './coordinates.mjs';
+import { isSingleSegmentPath, isStructuredCoordinate, namespaceRoots } from './coordinates.mjs';
+
+// A one-segment path is matched on boundaries: `/cart` must not fire inside `/api/carts`,
+// `/api/cart` or `/cartesian`. A deeper segment may follow (`/cart/items`).
+function mentionsSingleSegment(questionLower, path) {
+  let from = 0;
+  for (;;) {
+    const at = questionLower.indexOf(path, from);
+    if (at < 0) return false;
+    const before = at === 0 ? '' : questionLower[at - 1];
+    const after = questionLower[at + path.length] ?? '';
+    if (!/[a-z0-9_./-]/.test(before) && !/[a-z0-9_-]/.test(after)) return true;
+    from = at + 1;
+  }
+}
 
 /**
  * Words that carry no retrieval signal. Kept short on purpose: every word removed here is a word
@@ -82,11 +96,12 @@ export const ANCHOR_BONUS = 10;
  * `normalizeAnchor` cannot emit. A test that feeds a function a shape the system never produces
  * verifies the test's own fiction, which is worse than no test: it reports the signal as covered.
  */
-export function anchorHit(questionLower, anchorKey) {
-  if (!isStructuredCoordinate(anchorKey)) return false;
+export function anchorHit(questionLower, anchorKey, { namespaces } = {}) {
+  if (!isStructuredCoordinate(anchorKey, { namespaces })) return false;
   const key = String(anchorKey).toLowerCase();
-  if (questionLower.includes(key)) return true;
   const path = /^[a-z]+ (\/.+)$/.exec(key)?.[1] ?? (key.startsWith('/') ? key : null);
+  if (path && isSingleSegmentPath(path)) return mentionsSingleSegment(questionLower, path);
+  if (questionLower.includes(key)) return true;
   if (!path) return false;
   if (isStructuredCoordinate(path) && questionLower.includes(path)) return true;
   // A `{param}` makes the STORED anchor more specific than the question that needs it, so the
@@ -200,11 +215,12 @@ export function scoreRows(question, rows) {
   const qTokens = tokenize(question);
   const qSet = new Set(qTokens);
   const qLower = String(question ?? '').toLowerCase();
+  const namespaces = namespaceRoots(rows);
 
   const scored = rows.map((row) => {
     const haystack = new Set(tokenize(`${row.subject} ${row.question}`));
     const overlap = [...qSet].filter((t) => haystack.has(t));
-    const anchors = (row.anchorKeys ?? []).filter((key) => anchorHit(qLower, key));
+    const anchors = (row.anchorKeys ?? []).filter((key) => anchorHit(qLower, key, { namespaces }));
     // Coverage is measured against THE QUESTION's own vocabulary, not the entry's. Normalising by
     // the entry would reward a short subject for being short, which is a property of the writing
     // and not of the match.

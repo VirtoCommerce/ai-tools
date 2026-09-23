@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 import { mintId } from './canonical.mjs';
 import { parseEntry } from './frontmatter.mjs';
-import { anchorProblems, neighbours } from './coordinates.mjs';
+import { anchorProblems, isSingleSegmentPath, namespaceRoots, neighbours } from './coordinates.mjs';
 import { findDuplicate, identityKey, refusalMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, normalizeScope, retrievable } from './index-load.mjs';
@@ -632,7 +632,10 @@ export async function capture(input, opened, { env = process.env, via = null, ca
   if (!input.anchors?.length) missing.push('anchor');
   if (missing.length) return { state: 'invalid', why: `capture needs: ${missing.join(', ')}` };
 
-  const problems = anchorProblems(input.anchors);
+  // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
+  // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
+  const problems = anchorProblems(input.anchors)
+    .filter((p) => !(p.kind === 'unstructured' && isSingleSegmentPath(p.coordinate)));
   if (problems.length) return { state: 'invalid', why: 'unusable anchor(s)', problems };
 
   const cat = await catalogue(opened);
@@ -640,6 +643,8 @@ export async function capture(input, opened, { env = process.env, via = null, ca
     await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
+  const late = anchorProblems(input.anchors, { namespaces: namespaceRoots(cat.rows) });
+  if (late.length) return { state: 'invalid', why: 'unusable anchor(s)', problems: late };
 
   const scope = normalizeScope(input.scope);
   if (!scope.length) return { state: 'invalid', why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)' };

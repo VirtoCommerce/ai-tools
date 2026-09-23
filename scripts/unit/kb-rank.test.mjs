@@ -9,7 +9,7 @@ import {
   ANCHOR_BONUS, MIN_COVERAGE, NEIGHBOUR_TOP, admissible, anchorHit, rank, rankNeighbours, relatedEnough, relatedTo,
   scoreRows, tokenize,
 } from '../kb/core/rank.mjs';
-import { anchorProblems, coordinateIndex, isStructuredCoordinate, neighbours } from '../kb/core/coordinates.mjs';
+import { anchorProblems, coordinateIndex, isStructuredCoordinate, namespaceRoots, neighbours } from '../kb/core/coordinates.mjs';
 import { normalizeRow } from '../kb/core/index-load.mjs';
 import { normalizeAnchor } from '../kb/core/anchors.mjs';
 import { join } from 'node:path';
@@ -37,6 +37,55 @@ test('a coordinate needs two path segments — a namespace is not a place', () =
   // agent ever made.
   assert.equal(isStructuredCoordinate('/api'), false);
   assert.equal(isStructuredCoordinate('/cart'), false);
+});
+
+// A one-segment route is a PAGE or a NAMESPACE, and only the corpus can tell which. Measured
+// 2026-09-23 (SMOKE-2026-09-23-0733): refusing every one-segment path made KB-50EBEEE9 — the whole
+// checkout lives on /cart — unreachable by `/cart CyberSource … Place order`, the question it answers.
+const routed = (id, anchors) => row({ id, path: `entries/${id}.md`, anchors });
+const CORPUS = [
+  routed('KB-00000001', ['POST /api/carts']),
+  routed('KB-00000002', ['/api/platform/security/users']),
+  routed('KB-00000003', ['/account/orders/{orderId}']),
+];
+
+test('the corpus decides which one-segment roots are namespaces: two distinct deeper anchors make one', () => {
+  const ns = namespaceRoots(CORPUS);
+  assert.equal(ns.has('api'), true, '/api roots two distinct deeper anchors');
+  assert.equal(ns.has('account'), false, 'one deeper anchor is not yet a namespace');
+  assert.equal(ns.has('cart'), false);
+});
+
+test('a one-segment page is a coordinate once the corpus is known; a namespace still is not', () => {
+  const namespaces = namespaceRoots(CORPUS);
+  assert.equal(isStructuredCoordinate('/cart', { namespaces }), true);
+  assert.equal(isStructuredCoordinate('/api', { namespaces }), false);
+  assert.equal(isStructuredCoordinate('/{category}', { namespaces }), false, 'a bare template is no page');
+  assert.equal(isStructuredCoordinate('/cart'), false, 'without the corpus the conservative answer stands');
+  assert.deepEqual(anchorProblems(['/cart'], { namespaces }), []);
+  assert.equal(anchorProblems(['/api'], { namespaces })[0].kind, 'unstructured');
+});
+
+test('a one-segment anchor fires only on its own boundaries', () => {
+  const namespaces = namespaceRoots(CORPUS);
+  const hit = (q) => anchorHit(q.toLowerCase(), '/cart', { namespaces });
+  assert.equal(hit('/cart CyberSource form — how does Place order gate?'), true);
+  assert.equal(hit('on the /cart page'), true);
+  assert.equal(hit('what does /cart/items return'), true);
+  assert.equal(hit('POST /api/carts totals'), false);
+  assert.equal(hit('GET /api/cart'), false);
+  assert.equal(hit('the /cartesian grid'), false);
+});
+
+test('ranking reaches an entry anchored at a one-segment page, and still not one anchored at a namespace', () => {
+  const page = row({ id: 'KB-0000000A', path: 'entries/KB-0000000A.md', subject: 'checkout location', anchors: ['/cart'] });
+  const ns = row({ id: 'KB-0000000B', path: 'entries/KB-0000000B.md', subject: 'rest plane', anchors: ['/api'] });
+  const scored = scoreRows('/cart CyberSource inline form — how does Place order gate?', [...CORPUS, page, ns]);
+  const byId = Object.fromEntries(scored.map((h) => [h.row.id, h]));
+  assert.deepEqual(byId['KB-0000000A'].anchors, ['/cart']);
+  assert.equal(byId['KB-0000000B'], undefined);
+  const apiQ = scoreRows('POST /api/carts rest plane', [...CORPUS, ns]);
+  assert.equal(apiQ.find((h) => h.row.id === 'KB-0000000B')?.anchors.length ?? 0, 0);
 });
 
 test('a bare type name is not a coordinate; a dotted one is', () => {

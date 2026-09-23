@@ -309,6 +309,15 @@ test('capture refuses an unusable anchor before it reaches the base', () => with
   assert.equal(r.problems[0].kind, 'local-path');
 }));
 
+test('capture judges a one-segment anchor against the corpus: a page is accepted, a namespace refused', () => withQueue(async (dir, env) => {
+  // The fixture roots two distinct deeper anchors under /api and none under /bulk-order.
+  const page = await capture({ ...CAPTURE, anchors: ['/bulk-order'] }, opened(), { env });
+  assert.notEqual(page.state, 'invalid', JSON.stringify(page.problems ?? page.why));
+  const ns = await capture({ ...CAPTURE, anchors: ['/api'] }, opened(), { env });
+  assert.equal(ns.state, 'invalid');
+  assert.equal(ns.problems[0].kind, 'unstructured');
+}));
+
 test('capture refuses with no scope — without it a storefront fact gets applied to admin', () => withQueue(async (dir, env) => {
   const r = await capture({ ...CAPTURE, scope: [] }, opened(), { env });
   assert.equal(r.state, 'invalid');

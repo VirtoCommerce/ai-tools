@@ -26,13 +26,54 @@
 import { LOOKS_LIKE_A_LOCAL_PATH, LOOKS_LIKE_A_MENU_PATH, MSYS_REMEDY, namespaceOf, normalizeAnchor } from './anchors.mjs';
 
 /**
+ * The one-segment roots the CORPUS uses as namespaces: a root under which two or more distinct
+ * deeper anchors live. `/api` is one (it roots most REST anchors); `/cart` is not — it is the page
+ * the storefront's whole checkout happens on, and refusing it made KB-50EBEEE9 unreachable by the
+ * one question that needed it (SMOKE-2026-09-23-0733: `/cart CyberSource … Place order` missed an
+ * entry about exactly that). Derived from the rows, never listed: a hardcoded list of storefront
+ * routes would be correct once and stale at the next theme release.
+ *
+ * @returns {Set<string>} lowercased root segments, without the slash
+ */
+export function namespaceRoots(rows) {
+  const deeper = new Map();
+  for (const row of rows ?? []) {
+    for (const key of row.anchorKeys ?? []) {
+      const path = routeOf(key);
+      if (!path) continue;
+      const segs = path.split('/').filter(Boolean);
+      if (segs.length < 2) continue;
+      const root = segs[0].toLowerCase();
+      if (!deeper.has(root)) deeper.set(root, new Set());
+      deeper.get(root).add(path.toLowerCase());
+    }
+  }
+  return new Set([...deeper].filter(([, paths]) => paths.size >= 2).map(([root]) => root));
+}
+
+// The route of a coordinate, with any leading HTTP verb dropped; null when it is not a route.
+function routeOf(raw) {
+  const s = String(raw ?? '').trim();
+  const path = /^[A-Za-z]+\s+(\S+)$/.exec(s)?.[1] ?? s;
+  return path.startsWith('/') ? path : null;
+}
+
+/** A one-segment path such as `/cart` — a page or a namespace, which only the corpus can tell. */
+export function isSingleSegmentPath(raw) {
+  const path = routeOf(raw);
+  return Boolean(path) && path.split('/').filter(Boolean).length === 1;
+}
+
+/**
  * Is this coordinate specific enough to be matched inside a sentence?
  *
  * The shape test (`/`, `.` or a space) is necessary and not sufficient: `/api` passes it and is
- * still a namespace rather than a place. So a path must carry at least two segments, which is the
- * same threshold `namespaceOf` uses when it names a family.
+ * still a namespace rather than a place. So a path carries at least two segments — or ONE, when the
+ * caller passes the corpus's `namespaces` (see `namespaceRoots`) and the segment is not among them.
+ * Without `namespaces` a one-segment path is refused, which is the conservative answer when the
+ * corpus is not at hand.
  */
-export function isStructuredCoordinate(raw) {
+export function isStructuredCoordinate(raw, { namespaces } = {}) {
   const s = String(raw ?? '').trim();
   if (!s) return false;
   if (!/[/. ]/.test(s)) return false;
@@ -40,8 +81,12 @@ export function isStructuredCoordinate(raw) {
   const verbed = /^[A-Za-z]+\s+(\S+)$/.exec(s);
   const path = verbed ? verbed[1] : s;
   if (path.startsWith('/')) {
-    // "/company/members" -> 2 segments, a place. "/api" -> 1, a namespace.
-    return path.split('/').filter(Boolean).length >= 2;
+    // "/company/members" -> 2 segments, a place. "/api" -> 1, a namespace. "/cart" -> 1, a page,
+    // unless the corpus roots deeper anchors under it.
+    const segs = path.split('/').filter(Boolean);
+    if (segs.length >= 2) return true;
+    if (segs.length !== 1 || !namespaces || /[{}]/.test(segs[0])) return false;
+    return !namespaces.has(segs[0].toLowerCase());
   }
   // "Query.organizationContacts" -- a dotted coordinate needs something on both sides of the dot.
   if (path.includes('.')) return /[A-Za-z0-9]\.[A-Za-z0-9]/.test(path);
@@ -100,7 +145,7 @@ export function neighbours(rows, anchors, { exclude = null } = {}) {
  *
  * @returns {Array<{coordinate: string, kind: 'local-path'|'menu-path'|'unstructured', why: string}>}
  */
-export function anchorProblems(anchors) {
+export function anchorProblems(anchors, { namespaces } = {}) {
   const out = [];
   for (const anchor of anchors ?? []) {
     const raw = String(typeof anchor === 'string' ? anchor : anchor?.coordinate ?? '').trim();
@@ -118,12 +163,13 @@ export function anchorProblems(anchors) {
       });
       continue;
     }
-    if (!isStructuredCoordinate(normalizeAnchor(raw))) {
+    if (!isStructuredCoordinate(normalizeAnchor(raw), { namespaces })) {
       out.push({
         coordinate: raw,
         kind: 'unstructured',
         why: 'too coarse to match in free text — a coordinate needs two path segments '
-          + '(/company/members, not /api) or a dotted type (Query.organizationContacts).',
+          + '(/company/members, not /api), a one-segment page the base does not use as a namespace '
+          + '(/cart), or a dotted type (Query.organizationContacts).',
       });
     }
   }
