@@ -20,7 +20,7 @@ applicability_rationale: "vcst's module → suite mapping. Customer's mapping di
 | **Quotes** | 015 | — | Quotes (top-level menu) → quote list + quote detail blade; Status dictionary via the Status ✏️ ("Quote statuses") | `/api/quote/*` (`QuoteModuleController`) | `QuoteType` (unified `/graphql`) |
 | **Payment** | 039, 040a, 040b, 040c, 041 | — | Orders → Payments | `/api/payments/` | — |
 | **BOPIS/Shipping** | 036, 037, 038 | 065 | Shipping → Methods, BOPIS | `/api/shipping/` | — |
-| **Authentication** | 031, 032, 033 | — | Settings → Security, OAuth | `/connect/token` | — |
+| **Authentication** | 031, 032, 033 | 101 | Settings → Security, OAuth; Security → Sign-in log | `/connect/token` | — |
 | **B2B Features** | 006-010 | — | — (wishlists, variations, orgs) | — | — |
 | **Configurable Products** | 072, 072b, 072c | 052 | Catalog → Configurable Products | — | — |
 | **White Labeling** | 070, 071 | 067 | Settings → Branding, Themes | — | — |

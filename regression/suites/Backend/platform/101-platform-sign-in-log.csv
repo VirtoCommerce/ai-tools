@@ -1,0 +1,253 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SIL-001,Back office sign-in is recorded as a successful Password attempt,Platform > Sign-in Log > Recording,Critical,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),admin={{ADMIN_EMAIL}}; password={{ADMIN_PASSWORD}},"[HTTP] POST {{BACK_URL}}/api/platform/security/login with userName={{ADMIN_EMAIL}} and the correct password
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[STATUS] login response status is 200 with succeeded=true {OBSERVED}
+[BODY] a record exists for the user with signInType=""Password"", succeeded=true and failureReason empty {OBSERVED}
+[BODY] the record carries createdDate, ipAddress, host and userAgent {OBSERVED}",[API] POST /api/platform/security/sign-in-log/search returns the record within the poll window,no record after 90s; succeeded=false on a correct password; signInType other than Password,none,VCST-5898,Draft
+SIL-002,Wrong password is recorded as InvalidPassword,Platform > Sign-in Log > Recording,Critical,,ECL-4.2,state from SIL-001,admin={{ADMIN_EMAIL}}; password=deliberately-wrong,"[HTTP] POST {{BACK_URL}}/api/platform/security/login with userName={{ADMIN_EMAIL}} and a deliberately wrong password
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[BODY] a record exists for the user with succeeded=false and failureReason=""InvalidPassword"" {OBSERVED}
+[BODY] the record carries no password value in any field {OBSERVED}",[API] the failed attempt is queryable through the search endpoint with succeeded=false,failure not recorded; failureReason empty or set to a different value,none,VCST-5898,Draft
+SIL-003,Attempt against an unknown user name is recorded with the name as typed and no user id,Platform > Sign-in Log > Recording,Critical,,ECL-4.2,state from SIL-001,unknown_user=AGENT-TEST-sil003-no-such-user@example.com (never created — the point of the case),"[HTTP] POST {{BACK_URL}}/api/platform/security/login with an unknown userName
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[BODY] a record exists with failureReason=""UserNotFound"" {OBSERVED}
+[BODY] userId is null — the account does not exist, so there is nothing to attribute the row to {OBSERVED}
+[BODY] userName is preserved exactly as it was typed {OBSERVED}
+[BODY] storeId, memberId and organizationId are empty on this row {SPEC}",[API] the row is findable by keyword on the typed user name,row missing; userName normalised or truncated; a user id invented for an account that does not exist,none,VCST-5898,Draft
+SIL-004,Locked-out account records LockedOut rather than InvalidPassword,Platform > Sign-in Log > Recording,High,BL-AUTH-003,ECL-4.2,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),test_user=AGENT-TEST-sil004-lockout@example.com (created by this case); password={{DEFAULT_TEST_PASSWORD}},"[HTTP] POST {{BACK_URL}}/api/platform/security/users/create for AGENT-TEST-sil004-lockout@example.com
+[WAIT] the account to be created
+[ACT] submit wrong-password sign-ins until the account locks (lockout threshold of the environment)
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[BODY] the first failures are recorded with failureReason=""InvalidPassword"" {OBSERVED}
+[BODY] once the account is locked, subsequent attempts are recorded with failureReason=""LockedOut"" {OBSERVED}
+[BODY] the transition happens once — there is no attempt recorded with both reasons {OBSERVED}",[API] the account shows as locked through GET /api/platform/security/users/{userName},every attempt recorded as InvalidPassword after the lock; no LockedOut row at all,delete the throwaway account,VCST-5898,Draft
+SIL-005,Sign-out is recorded as a Logout entry,Platform > Sign-in Log > Recording,High,,,state from SIL-001 (an authenticated back-office session),admin={{ADMIN_EMAIL}},"[HTTP] GET {{BACK_URL}}/api/platform/security/logout with the session cookie from the sign-in
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[BODY] a record exists for the user with signInType=""Logout"" and succeeded=true {OBSERVED}
+[BODY] its createdDate is later than the sign-in record it closes {OBSERVED}",[API] the Logout row is returned by the type filter for Sign out,sign-out not recorded; recorded as Password instead of Logout,none,VCST-5898,Draft
+SIL-006,Token endpoint password grant is recorded,Platform > Sign-in Log > Recording,Critical,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),admin={{ADMIN_EMAIL}}; password={{ADMIN_PASSWORD}},"[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN_EMAIL}} password={{ADMIN_PASSWORD}} scope=offline_access
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[STATUS] token response status is 200 and carries an access_token {OBSERVED}
+[BODY] a record exists with signInType=""Password"", succeeded=true {OBSERVED}","[API] the record is returned by a search restricted to signInTypes=[""Password""]",token issued but nothing recorded; the row attributed to the wrong user,none,VCST-5898,Draft
+SIL-007,An ordinary refresh writes no record,Platform > Sign-in Log > Recording,High,,,state from SIL-006 (a refresh_token issued to a non-impersonated session),refresh_token=live-discover from the SIL-006 token response,"[ACT] capture the current UTC time as T0
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=refresh_token with the refresh token of the ordinary session
+[WAIT] 60s — longer than the writer flush interval, so a row would have landed if one were written
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with keyword set to the refreshing account and startDate=T0","[STATUS] refresh response status is 200 {OBSERVED}
+[BODY] the search returns no rows for that account after T0 — token rotation is deliberately not recorded {SPEC}
+[BODY] the scope is the account plus a time window, so a sign-in by another suite running in parallel cannot satisfy or break this assertion {SPEC}",[API] the account-scoped window is what makes this assertion safe on a shared stand,"the count grows after an ordinary refresh, which would flood the log on every rotation",none,VCST-5898,Draft
+SIL-008,One record per attempt — no duplicates and no gaps,Platform > Sign-in Log > Recording,Critical,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),test_user=AGENT-TEST-sil008-count@example.com (created by this case); password={{DEFAULT_TEST_PASSWORD}},"[HTTP] POST {{BACK_URL}}/api/platform/security/users/create for AGENT-TEST-sil008-count@example.com
+[WAIT] the account to be created
+[ACT] sign in once successfully as that account
+[ACT] sign out
+[ACT] submit three wrong-password attempts for the same account
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with keyword set to AGENT-TEST-sil008-count","[BODY] the number of records equals the number of attempts performed, exactly {OBSERVED}
+[BODY] no two records share the same createdDate and type for a single attempt {OBSERVED}
+[BODY] the records appear in the order the attempts were made {OBSERVED}",[API] the count is read after the poll window so a mid-flush read cannot be mistaken for a missing row,fewer records than attempts (loss); more records than attempts (duplication),delete the throwaway account,VCST-5898,Draft
+SIL-010,Login on behalf records the customer with the operator who started the session,Platform > Sign-in Log > Login on Behalf,Critical,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the operator holds platform:security:loginOnBehalf,operator={{ADMIN_EMAIL}}; customer={{USER_EMAIL}}; customer_id=live-discover via POST /api/platform/security/users/search,"[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN_EMAIL}} password={{ADMIN_PASSWORD}} scope=offline_access
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=impersonate user_id=<customer id> with the operator access token as Bearer
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[STATUS] impersonate response status is 200 and carries an access_token for the customer {OBSERVED}
+[BODY] a record exists with signInType=""Impersonation"" and succeeded=true {OBSERVED}
+[BODY] userName is the CUSTOMER and operatorUserName is the OPERATOR — the two are not interchangeable {SPEC}
+[BODY] operatorUserId is populated {OBSERVED}",[API] the record is returned by the type filter for On behalf,the grant fails; user and operator inverted; the attempt not recorded at all,revert the impersonation,VCST-5898,Draft
+SIL-011,Reverting to the operator records an ImpersonationRevert for the customer being left,Platform > Sign-in Log > Login on Behalf,Critical,BL-AUTH-011,,state from SIL-010 (an active impersonated session),operator={{ADMIN_EMAIL}}; customer={{USER_EMAIL}},"[HTTP] POST {{BACK_URL}}/connect/token grant_type=impersonate with NO user_id, using the impersonated access token as Bearer
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[STATUS] response status is 200 and returns a token for the operator {OBSERVED}
+[BODY] a record exists with signInType=""ImpersonationRevert"" {OBSERVED}
+[BODY] userName is the customer being LEFT and operatorUserName is the real operator {SPEC}","[API] the revert row is returned by the type filter for On behalf revert, not by the On behalf filter",no revert row; user and operator inverted on the revert row,none,VCST-5898,Draft
+SIL-012,Refreshing an impersonated session records the extension and keeps the operator,Platform > Sign-in Log > Login on Behalf,High,,,state from SIL-010 (an active impersonated session with a refresh token),refresh_token=live-discover from the impersonate response,"[HTTP] POST {{BACK_URL}}/connect/token grant_type=refresh_token with the IMPERSONATED refresh token
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[STATUS] response status is 200 {OBSERVED}
+[BODY] one additional Impersonation record exists for the refresh {SPEC}
+[BODY] operatorUserName on that record is still the original operator — rotation does not lose the attribution {OBSERVED}","[API] contrast with SIL-007: an ordinary refresh adds nothing, an impersonated refresh adds exactly one row",no row for the extension; the operator lost after rotation,revert the impersonation,VCST-5898,Draft
+SIL-013,Unauthenticated call to the impersonate grant is refused and recorded as Forbidden,Platform > Sign-in Log > Login on Behalf,Critical,BL-AUTH-014,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),customer_id=live-discover via POST /api/platform/security/users/search,"[HTTP] POST {{BACK_URL}}/connect/token grant_type=impersonate user_id=<customer id> with NO Authorization header
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[STATUS] response status is 401 {OBSERVED}
+[BODY] a record exists with signInType=""Impersonation"", succeeded=false and failureReason=""Forbidden"" {OBSERVED}
+[BODY] operatorUserName is empty — there is no operator to name on an unauthenticated probe {SPEC}",[API] the probe is visible in the log even though it was refused,a token issued without authentication; the refused probe leaving no trace,none,VCST-5898,Draft
+SIL-014,Impersonating a user id that does not exist is recorded as UserNotFound,Platform > Sign-in Log > Login on Behalf,High,,ECL-4.3,state from SIL-010 (an operator access token),bad_user_id=AGENT-TEST-no-such-user-id,"[HTTP] POST {{BACK_URL}}/connect/token grant_type=impersonate user_id=<non-existent id> with the operator token as Bearer
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[STATUS] response status is 400 {OBSERVED}
+[BODY] a record exists with failureReason=""UserNotFound"" and signInType=""Impersonation"" {OBSERVED}
+[BODY] userId falls back to the id that was attempted, so the probe is traceable {SPEC}",[API] the operator who attempted it is named on the row,no record for the failed attempt; the attempted id discarded,none,VCST-5898,Draft
+SIL-015,Active Sessions marks an impersonated session with its operator,Platform > Sign-in Log > Login on Behalf,High,BL-AUTH-009,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the operator holds platform:security:loginOnBehalf,operator={{ADMIN_EMAIL}}; customer={{USER_EMAIL}}; customer_id=live-discover via POST /api/platform/security/users/search,"[HTTP] POST {{BACK_URL}}/connect/token grant_type=impersonate user_id=<customer id> with the operator token as Bearer
+[WAIT] the impersonated token to be issued
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=refresh_token with the impersonated refresh token, so the session carries a recorded sessionId
+[WAIT] 60s for the audit row to flush
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/{customer id}/sessions/search take=50
+[ACT] locate the session whose sessionGroupId matches the sessionId of the Impersonation record","[BODY] that session carries isImpersonated=true {OBSERVED}
+[BODY] operatorUserName on the session is the operator who opened it {OBSERVED}
+[BODY] an ordinary, non-impersonated session of the same user carries isImpersonated=false {OBSERVED}","[API] the join runs through the audit record sessionId, so a session can be traced back to the log entry that opened it",an impersonated session indistinguishable from an ordinary one; the operator column empty on a flagged session,terminate the impersonated session,VCST-5898,Draft
+SIL-016,Terminating an impersonated session stops it being refreshable,Platform > Sign-in Log > Login on Behalf,High,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the operator holds platform:security:loginOnBehalf,operator={{ADMIN_EMAIL}}; customer_id=live-discover; session_id=live-discover from the sessions search,"[HTTP] POST {{BACK_URL}}/connect/token grant_type=impersonate user_id=<customer id> with the operator token as Bearer
+[WAIT] the impersonated token to be issued
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=refresh_token with the impersonated refresh token
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/{customer id}/sessions/search take=50 to locate that session
+[HTTP] DELETE {{BACK_URL}}/api/platform/security/users/{customer id}/sessions/{session id}
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=refresh_token with the refresh token of the terminated session","[STATUS] the terminate call returns 204 {OBSERVED}
+[STATUS] the refresh afterwards is refused with 400 — the session is gone {OBSERVED}
+[BODY] the session no longer appears in the sessions search for that user {OBSERVED}",[API] the already-issued access token remains valid until it expires; only the session is killed,refresh still succeeds after terminate; the session still listed as active,none,VCST-5898,Draft
+SIL-020,Turning recording off stops ordinary sign-ins being recorded,Platform > Sign-in Log > Settings & Permissions,High,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),setting=VirtoCommerce.Platform.Security.SignInLogEnabled,"[HTTP] POST {{BACK_URL}}/api/platform/settings to set Record sign-in attempts = false
+[WAIT] 90s for the settings cache to settle — a sign-in immediately after the change can still be recorded
+[ACT] perform one successful ordinary sign-in
+[ACT] perform one failed ordinary sign-in
+[WAIT] 60s, longer than the writer flush interval","[BODY] no new Password records appear for the window {SPEC}
+[BODY] records written before the change are untouched — the switch stops recording, it does not erase history {SPEC}","[API] stats returns recordingEnabled=false, which is what the blade banner is driven from",attempts still recorded with the switch off; existing records deleted,restore Record sign-in attempts = On,VCST-5898,Draft
+SIL-021,Login on behalf is recorded even when recording is turned off,Platform > Sign-in Log > Settings & Permissions,Critical,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the operator holds platform:security:loginOnBehalf,operator={{ADMIN_EMAIL}}; customer={{USER_EMAIL}}; customer_id=live-discover,"[HTTP] POST {{BACK_URL}}/api/platform/settings to set Record sign-in attempts = false
+[WAIT] 90s for the settings cache to settle
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=impersonate user_id=<customer id> with the operator token as Bearer
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[BODY] an Impersonation record IS written while recording is off {SPEC}
+[BODY] it carries the same operator and customer attribution as with recording on {OBSERVED}",[API] the on-behalf trail cannot be silenced by a settings change — that is the point of the exception,the impersonation missing from the log while the switch is off; the row written but stripped of its operator attribution,restore Record sign-in attempts = On; revert the impersonation,VCST-5898,Draft
+SIL-022,Turning recording back on resumes recording,Platform > Sign-in Log > Settings & Permissions,High,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),setting=VirtoCommerce.Platform.Security.SignInLogEnabled,"[HTTP] POST {{BACK_URL}}/api/platform/settings to set Record sign-in attempts = false
+[WAIT] 90s for the settings cache to settle
+[HTTP] POST {{BACK_URL}}/api/platform/settings to set Record sign-in attempts = true
+[WAIT] 90s for the settings cache to settle
+[ACT] perform one successful sign-in
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[BODY] the new sign-in is recorded {OBSERVED}
+[BODY] stats returns recordingEnabled=true {OBSERVED}",[API] no restart is required for the switch to take effect,recording does not resume; a restart needed before rows appear again,none,VCST-5898,Draft
+SIL-023,Reading the log requires its own permission,Platform > Sign-in Log > Settings & Permissions,Critical,BL-AUTH-005,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),"restricted_user=AGENT-TEST-sil023-noperm@example.com (created by this case, no sign-in-log permission); password={{DEFAULT_TEST_PASSWORD}}","[HTTP] POST {{BACK_URL}}/api/platform/security/users/create for AGENT-TEST-sil023-noperm@example.com without platform:security:sign_in_log:read
+[WAIT] the account to be created
+[HTTP] POST {{BACK_URL}}/connect/token for the restricted account
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with that token
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/stats with that token","[STATUS] the search endpoint answers 403 {OBSERVED}
+[STATUS] the stats endpoint answers 403 {OBSERVED}
+[BODY] no record data is returned in either response {OBSERVED}","[API] both endpoints are gated, not just the list one","either endpoint returning data to an account without the permission; a 200 with an empty result instead of a 403, which hides the gate rather than enforcing it",delete the throwaway account,VCST-5898,Draft
+SIL-024,Sign In Log settings are present with their documented defaults,Platform > Sign-in Log > Settings & Permissions,Medium,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),group=Platform|Sign In Log,"[HTTP] GET {{BACK_URL}}/api/platform/settings/VirtoCommerce.Platform.Security.SignInLogEnabled
+[HTTP] GET {{BACK_URL}}/api/platform/settings/VirtoCommerce.Platform.Security.SignInLogRetentionDays
+[HTTP] GET {{BACK_URL}}/api/platform/settings/VirtoCommerce.Platform.Security.EnableSignInLogCleanupJob
+[HTTP] GET {{BACK_URL}}/api/platform/settings/VirtoCommerce.Platform.Security.CronSignInLogCleanupJob","[BODY] Record sign-in attempts is Boolean with default true {SPEC}
+[BODY] Keep records for (days) is Integer with default 30 {SPEC}
+[BODY] Clean up old sign-in records is Boolean with default true {SPEC}
+[BODY] the cleanup cron is a Cron setting with default ""0 1 */1 * *"" {SPEC}
+[BODY] all four report groupName ""Platform|Sign In Log"" {OBSERVED}",[API] the four settings are what the Settings blade renders under Platform > Sign In Log,"a setting missing, renamed, or shipping a different default than documented",none,VCST-5898,Draft
+SIL-025,Retention keeps recent records and removes older ones,Platform > Sign-in Log > Settings & Permissions,Medium,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); records older than the retention window exist; the environment can be left alone for a cleanup run,retention=VirtoCommerce.Platform.Security.SignInLogRetentionDays,"[ACT] set Keep records for (days) to 1
+[ACT] leave the cleanup job switched on
+[ACT] wait for the scheduled cleanup run, or trigger it
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search over a range that spans both sides of the cut-off","[BODY] records older than the retention window are gone {SPEC}
+[BODY] records inside the window survive {SPEC}
+[BODY] with retention set to 0 or less, nothing is deleted at all {SPEC}","[API] deletion is done by the scheduled job, not on read",recent records deleted; nothing deleted at all with a positive retention; everything deleted when retention is 0,restore the original retention value,VCST-5898,Manual
+SIL-026,Sign In Log settings render and save from the Settings blade,Platform > Sign-in Log > Settings & Permissions,High,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); signed into the back office as an administrator,setting=VirtoCommerce.Platform.Security.SignInLogRetentionDays,"[NAV] open {{BACK_URL}}
+[ACT] open Settings
+[ACT] select the ""Platform > Sign In Log"" group
+[WAIT] the group to render
+[ACT] change ""Keep records for (days)"" to a different value
+[WAIT] the field to accept the value
+[ACT] click Save
+[WAIT] the save to complete
+[ACT] reopen the group","[DOM] the group is titled ""Platform > Sign In Log"" {OBSERVED}
+[DOM] controls ""Cron for the sign-in log cleanup job"", ""Clean up old sign-in records"", ""Record sign-in attempts"", ""Keep records for (days)"" are present {SPEC}
+[DOM] the cron field shows a human-readable ""Runs:"" line for the expression it holds {OBSERVED}
+[STATE] the changed retention value survives reopening the group {OBSERVED}","[API] GET /api/platform/settings/VirtoCommerce.Platform.Security.SignInLogRetentionDays returns the saved value
+[CONSOLE] no errors while the group renders or saves",a setting missing from the group; a saved value that reverts on reopen; the cron field showing no schedule preview,restore the original retention value,VCST-5898,Draft
+SIL-027,Disabling the cleanup job keeps records past the retention window,Platform > Sign-in Log > Settings & Permissions,Medium,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); records older than the retention window exist; the environment can be left alone across a scheduled run,setting=VirtoCommerce.Platform.Security.EnableSignInLogCleanupJob,"[ACT] set ""Keep records for (days)"" to 1
+[WAIT] the value to save
+[ACT] switch ""Clean up old sign-in records"" off
+[WAIT] the value to save
+[ACT] wait past the scheduled cleanup time
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search over a range that includes records older than a day","[BODY] records older than the retention window are still returned — retention alone deletes nothing while the job is off {SPEC}
+[BODY] the count of those records is unchanged across the scheduled run {SPEC}",[API] deletion is the job's responsibility; the retention value only tells it what to delete,old records disappearing with the job switched off; the switch having no effect on the job at all,restore the original retention value and switch the cleanup job back on,VCST-5898,Manual
+SIL-028,A changed cleanup cron is honoured after a restart,Platform > Sign-in Log > Settings & Permissions,Medium,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the platform can be restarted,setting=VirtoCommerce.Platform.Security.CronSignInLogCleanupJob,"[ACT] change ""Cron for the sign-in log cleanup job"" to a different schedule
+[WAIT] the value to save
+[ACT] restart the platform
+[WAIT] the platform to come back up
+[ACT] reopen the ""Platform > Sign In Log"" group","[DOM] the ""Cron for the sign-in log cleanup job"" field holds the new expression after the restart {OBSERVED}
+[DOM] the ""Runs:"" preview describes the new schedule rather than the old one {SPEC}
+[STATE] the cleanup job next runs at the new time, not the previous one {SPEC}",[API] the setting value survives the restart,the cron reverting to its default after a restart; the job still running on the old schedule,restore the original cron expression,VCST-5898,Manual
+SIL-030,Outcome filter partitions the set exactly,Platform > Sign-in Log > Search & Statistics,High,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the log holds both successful and failed records,back_url={{BACK_URL}},"[ACT] capture the current UTC time as T_END — every search below pins endDate=T_END, so rows written mid-case cannot change the answer
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with endDate=T_END and no outcome filter, capture totalCount
+[HTTP] the same search with succeeded=true
+[HTTP] the same search with succeeded=false","[BODY] every row in the succeeded=true result has succeeded=true {OBSERVED}
+[BODY] every row in the succeeded=false result has succeeded=false {OBSERVED}
+[BODY] the two counts add up to the total for the same closed window — no row falls outside the partition {SPEC}",[API] the same three numbers back the Sign-ins and Failed attempts tiles,the two filtered counts not summing to the total; a row appearing under both,none,VCST-5898,Draft
+SIL-031,"On behalf and On behalf revert are separate, non-overlapping filters",Platform > Sign-in Log > Search & Statistics,Critical,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the log holds both grant and revert records,back_url={{BACK_URL}},"[HTTP] search with signInTypes=[""Impersonation""]
+[HTTP] search with signInTypes=[""ImpersonationRevert""]
+[HTTP] search with signInTypes=[""Impersonation"",""ImpersonationRevert""]","[BODY] the On behalf filter returns grants only — no revert rows {SPEC}
+[BODY] the On behalf revert filter returns reverts only {SPEC}
+[BODY] asking for both types returns the sum of the two, so a caller that wants the whole picture still can {OBSERVED}","[API] the two are separate options in the blade filter, and the dashboard tile uses the grant one",revert rows leaking into the On behalf result; the combined query returning fewer rows than the parts,none,VCST-5898,Draft
+SIL-032,Failure reason filter returns only the requested reason,Platform > Sign-in Log > Search & Statistics,Medium,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the log holds failures of more than one reason,back_url={{BACK_URL}},"[HTTP] search with failureReasons=[""InvalidPassword""]","[BODY] every returned row carries failureReason=""InvalidPassword"" {OBSERVED}
+[BODY] no successful row is returned {OBSERVED}",[API] the same filter is what the failure-reason breakdown drills into,rows of other reasons returned; successful rows in a failure-filtered result,none,VCST-5898,Draft
+SIL-033,IP address filter returns only records from that address,Platform > Sign-in Log > Search & Statistics,Medium,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),ip=live-discover from any record in the log,[HTTP] search with ipAddress set to an address taken from an existing record,"[BODY] every returned row carries that exact ipAddress {OBSERVED}
+[BODY] the count matches the top-IP breakdown entry for that address when the same period and outcome are applied {SPEC}",[API] this is the drill-down behind Top IPs by failed attempts,rows from other addresses returned; the count disagreeing with the breakdown,none,VCST-5898,Draft
+SIL-034,"Store filter distinguishes all, with a store and without one",Platform > Sign-in Log > Search & Statistics,High,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the log holds records both with and without a store,store={{STORE_ID}},"[ACT] capture the current UTC time as T_END — every search below pins endDate=T_END, so a parallel suite cannot move the counts mid-case
+[HTTP] search with endDate=T_END and no store filter, capture totalCount
+[HTTP] the same search with withoutStore=true
+[HTTP] the same search with withoutStore=false
+[HTTP] the same search with storeId={{STORE_ID}}","[BODY] withoutStore=true returns only rows whose storeId is empty {SPEC}
+[BODY] withoutStore=false returns only rows that belong to a store {SPEC}
+[BODY] the two add up to the total for the same closed window {SPEC}
+[BODY] filtering by a named store returns only that store's rows {OBSERVED}",[API] back-office sign-ins and unknown-user attempts are the rows with no store — they stay findable,rows without a store unreachable through any filter value; the tri-state counts not summing to the total,none,VCST-5898,Draft
+SIL-035,Exact user name filter matches what the Top accounts panel counted,Platform > Sign-in Log > Search & Statistics,Critical,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); at least one account has several failed attempts and shares a substring with other accounts,back_url={{BACK_URL}},"[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/stats and read the topFailedUserNames entry for the chosen account
+[HTTP] search with userName set to that exact account and succeeded=false","[BODY] the search totalCount equals the count the panel reported {SPEC}
+[BODY] every returned row has that exact userName — accounts that merely contain it as a substring are not returned {SPEC}
+[BODY] rows where the account is only the OPERATOR of an on-behalf session are not returned {SPEC}","[API] contrast with the keyword search, which is a substring match across user name, operator and IP and is deliberately wider",the drill-down returning more rows than the number that was clicked; rows where the account is only the operator counted as its own failures,none,VCST-5898,Draft
+SIL-036,"Keyword search covers user name, operator name and IP address",Platform > Sign-in Log > Search & Statistics,High,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the log holds on-behalf records,operator={{ADMIN_EMAIL}},"[HTTP] search with keyword set to an operator name
+[HTTP] search with keyword set to an IP address
+[HTTP] search with keyword set to a user name","[BODY] searching an operator name returns on-behalf rows whose userName is a different account {SPEC}
+[BODY] searching an IP returns the rows from that address {OBSERVED}
+[BODY] searching a user name returns that account's rows {OBSERVED}","[API] this is what makes ""every session this operator opened"" answerable from one box","operator name not matched, so assisted sessions are unfindable by the person who opened them",none,VCST-5898,Draft
+SIL-037,Default order is newest first and paging does not repeat rows,Platform > Sign-in Log > Search & Statistics,Medium,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the log holds more records than one page,back_url={{BACK_URL}},"[HTTP] search take=5 skip=0
+[HTTP] search take=5 skip=5","[BODY] createdDate descends through the first page {OBSERVED}
+[BODY] the second page returns a different set of ids — no overlap with the first {OBSERVED}
+[BODY] totalCount is the same on both calls {OBSERVED}","[API] the grid opens on this order, so a newly written record is visible without sorting",oldest first by default; the same rows repeating across pages,none,VCST-5898,Draft
+SIL-038,"Date range returns only records inside it, including today",Platform > Sign-in Log > Search & Statistics,Medium,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),back_url={{BACK_URL}},"[HTTP] search with startDate set to a point a few minutes in the past
+[HTTP] search with a custom range whose end bound is today","[BODY] every returned record falls inside the requested range {OBSERVED}
+[BODY] a range that ends today includes records written after midnight — the end bound is inclusive of the day {SPEC}",[API] the same bounds drive the dashboard period selector,records outside the range returned; today's records excluded by a range that names today,none,VCST-5898,Draft
+SIL-040,The On behalf tile counts exactly what its drill-down returns,Platform > Sign-in Log > Search & Statistics,Critical,,,"Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the log holds successful grants, at least one revert and at least one denied impersonation",back_url={{BACK_URL}},"[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/stats, read impersonationCount
+[HTTP] search with signInTypes=[""Impersonation""] and succeeded=true over the same period","[BODY] impersonationCount equals the search totalCount {SPEC}
+[BODY] revert records are excluded from both — a revert ends a session rather than opening one {SPEC}
+[BODY] denied impersonation attempts are excluded from both — they open nothing {SPEC}","[API] the tile opens this exact list, so the number a user clicks and the list they land on have to agree",the tile and its own drill-down disagreeing by the revert rows; a denied impersonation counted as a session that was opened,none,VCST-5898,Draft
+SIL-041,"Statistics return the tiles, the comparison window and all four breakdowns",Platform > Sign-in Log > Search & Statistics,High,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); the log holds records across more than one period,back_url={{BACK_URL}},[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/stats with a 24-hour window,"[BODY] totalCount, failedCount, distinctUserCount and impersonationCount are returned {OBSERVED}
+[BODY] the matching previous-period counters are returned and use the same counting rule as the current ones {SPEC}
+[BODY] topFailedIpAddresses, topFailedUserNames, failureReasonBreakdown and signInsByStore are returned {OBSERVED}
+[BODY] the timeline is returned with a granularity that follows the requested period {OBSERVED}
+[BODY] a quiet stretch appears as zero-valued buckets rather than missing points {SPEC}",[API] every dashboard element is served from this one call,a breakdown missing; previous-period counters computed by a different rule than the current ones; gaps collapsed instead of zeroed,none,VCST-5898,Draft
+SIL-050,Sign-in log opens from Security and renders the dashboard,Platform > Sign-in Log > Back Office UI,Critical,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); signed into the back office with platform:security:sign_in_log:read,back_url={{BACK_URL}},"[NAV] open {{BACK_URL}}
+[ACT] sign in to the back office
+[ACT] open Security > Sign-in log
+[WAIT] the dashboard blade to render","[DOM] the ""Sign-in log"" entry is present in the Security section {OBSERVED}
+[DOM] the panel titled ""ATTEMPTS OVER TIME"" is present, together with tiles labelled ""SIGN-INS"", ""FAILED ATTEMPTS"", ""USERS SIGNED IN"", ""ON BEHALF"" {OBSERVED}
+[DOM] panels ""TOP IPS BY FAILED ATTEMPTS"", ""TOP ACCOUNTS BY FAILED ATTEMPTS"", ""FAILURE REASONS"", ""SIGN-INS BY STORE"" are present {OBSERVED}
+[DOM] a numeric count plus a previous-period delta is present on each of the four tiles {OBSERVED}","[CONSOLE] no Angular errors while the blade opens
+[NETWORK] the stats call returns 200",the menu entry missing; a blade that opens empty for a period that has records,none,VCST-5898,Draft
+SIL-051,Top accounts drill-down opens the list filtered to that account,Platform > Sign-in Log > Back Office UI,Critical,,,state from SIL-050; the Top accounts panel shows at least one account,back_url={{BACK_URL}},"[ACT] note the count shown against an account in Top accounts by failed attempts
+[ACT] click that row
+[WAIT] the list blade to open","[DOM] the badge on the ""Sign-in log"" list blade equals the count shown against that account in ""TOP ACCOUNTS BY FAILED ATTEMPTS"" {SPEC}
+[DOM] every row belongs to that account — accounts that merely contain the same substring are absent {SPEC}
+[DOM] the ""Search keyword..."" box is empty, because the drill-down applies a user filter and not a text search {SPEC}","[NETWORK] the search call carries the exact user name, not a keyword",a list longer than the number clicked; unrelated accounts in the result,none,VCST-5898,Draft
+SIL-052,On behalf tile drill-down opens a list of the same size as the tile,Platform > Sign-in Log > Back Office UI,Critical,,,state from SIL-050; the On behalf tile shows a non-zero count,back_url={{BACK_URL}},"[ACT] note the number on the On behalf tile
+[ACT] click the tile
+[WAIT] the list blade to open","[DOM] the badge on the ""Sign-in log"" list blade equals the number on the ""ON BEHALF"" tile {SPEC}
+[DOM] every row shows Type ""Impersonation"" with outcome ""Success"" — no ""ImpersonationRevert"" row, no failed row {SPEC}
+[DOM] the filter panel shows Outcome ""Success"" together with Type ""On behalf"" {OBSERVED}",[NETWORK] the search call is scoped to successful Impersonation records,the list and the tile disagreeing; reverts appearing in a list opened from the grant tile,none,VCST-5898,Draft
+SIL-053,An assisted session is visually distinct from a customer signing in themselves,Platform > Sign-in Log > Back Office UI,High,,,state from SIL-050; the log holds on-behalf records,back_url={{BACK_URL}},"[ACT] open the record list
+[ACT] locate an on-behalf row","[DOM] the row renders the operator, then the ""On behalf of"" marker, then the customer {SPEC}
+[DOM] an ordinary sign-in row shows the user alone, with no ""On behalf of"" marker {OBSERVED}
+[DOM] the ""Outcome"" column and the ""Type"" column are populated on every row {OBSERVED}",[CONSOLE] no rendering errors on the grid,an assisted session rendered identically to an ordinary one; the customer shown where the operator belongs,none,VCST-5898,Draft
+SIL-054,The record card is read-only and carries the full detail,Platform > Sign-in Log > Back Office UI,High,,,state from SIL-053,back_url={{BACK_URL}},"[ACT] click an on-behalf row in the list
+[WAIT] the record card to open","[DOM] the card shows ""Success"" and ""On behalf"" as badges {OBSERVED}
+[DOM] fields ""Date"", ""User"", ""Operator"", ""Operator ID"", ""User ID"", ""Member ID"", ""IP address"", ""Host"", ""User agent"", ""Store"" are present {OBSERVED}
+[DOM] no editable input is present on the card — every value renders as read-only text {SPEC}
+[DOM] no separate ""Outcome"" field duplicates the badge {OBSERVED}",[NETWORK] no write request is issued from the card,an editable audit record; the host or the operator missing from the card,none,VCST-5898,Draft
+SIL-055,The account page carries a sign-in log widget scoped to that user,Platform > Sign-in Log > Back Office UI,High,,,state from SIL-050; the chosen account has recorded attempts,user={{ADMIN_EMAIL}},"[ACT] open Security > Users
+[ACT] select an account with recorded attempts
+[ACT] locate the ""Sign-in log"" widget
+[ACT] open the widget","[DOM] the widget shows a count of that account's attempts {OBSERVED}
+[DOM] opening it shows only that account's activity {SPEC}
+[DOM] the ""Active sessions"" widget is present beside it, listing the sessions that are live now {OBSERVED}",[NETWORK] the widget request is scoped by user id,the widget showing global activity instead of the account's; a count that disagrees with the list it opens,none,VCST-5898,Draft
+SIL-056,The type filter offers grant and revert as separate options,Platform > Sign-in Log > Back Office UI,Medium,,,state from SIL-050,back_url={{BACK_URL}},"[ACT] open the record list
+[ACT] open the filter panel
+[ACT] expand the Type list","[DOM] the Type list offers ""All"", ""Password"", ""External provider"", ""On behalf"", ""On behalf revert"", ""Sign out"" {SPEC}
+[DOM] choosing ""On behalf"" returns grants only; choosing ""On behalf revert"" returns reverts only {SPEC}
+[DOM] the period selector offers ""30 min"", ""1 hour"", ""6 hours"", ""24 hours"", ""7 days"", ""30 days"", ""All time"", ""Custom"" {OBSERVED}",[NETWORK] each choice maps to the corresponding signInTypes value,grant and revert collapsed into one option; a filter value that returns a different set than its label promises,none,VCST-5898,Draft
+SIL-057,The blade explains itself when recording is off,Platform > Sign-in Log > Back Office UI,Medium,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); signed into the back office,setting=VirtoCommerce.Platform.Security.SignInLogEnabled,"[HTTP] POST {{BACK_URL}}/api/platform/settings to set Record sign-in attempts = false
+[WAIT] 90s for the settings cache to settle
+[ACT] open Security > Sign-in log","[DOM] a banner is present stating that new attempts are not being recorded, naming ""Settings › Platform › Sign In Log"" {SPEC}
+[DOM] the banner also states that ""Login on behalf is always recorded"" {SPEC}
+[DOM] records written before the switch was turned off are still present in the list {OBSERVED}","[NETWORK] stats returns recordingEnabled=false, which is what the banner is driven from",an empty blade with no explanation; a banner that stays after recording is turned back on,restore Record sign-in attempts = On,VCST-5898,Draft
+SIL-060,Over-length values are truncated without losing the rest of the batch,Platform > Sign-in Log > Data Quality,High,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),long_user_agent=900 characters; long_user_name=400 characters,"[HTTP] send a sign-in attempt with a user-agent header well over the stored length
+[HTTP] send a sign-in attempt with a user name well over the stored length
+[ACT] perform one ordinary attempt in the same window
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)","[BODY] the over-length user agent is stored truncated rather than failing the write {SPEC}
+[BODY] the over-length user name is stored truncated {SPEC}
+[BODY] the ordinary attempt in the same batch is recorded too — one bad value does not discard its neighbours {SPEC}",[API] the total count grows by the number of attempts made,the whole batch lost because of one over-length value; a write that throws instead of truncating,none,VCST-5898,Draft
+SIL-061,No password value ever reaches the log,Platform > Sign-in Log > Data Quality,Critical,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); attempts with both correct and wrong passwords exist,password={{ADMIN_PASSWORD}},"[HTTP] search over a window covering successful and failed attempts, take a large page
+[ACT] scan every field of every returned record for the password values used","[BODY] no field of any record contains a password, in any form {SPEC}
+[BODY] this holds for failed attempts as well, where the wrong password was supplied by the caller {SPEC}","[API] the audit surface is readable by anyone holding the read permission, so a leaked secret here would be a disclosure","a password appearing in any column, including free-text ones",none,VCST-5898,Draft
+SIL-062,Deleting a user keeps their audit records,Platform > Sign-in Log > Data Quality,High,,,Sign-in log available on {{BACK_URL}} (Security > Sign-in log); recording enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On),test_user=AGENT-TEST-sil062-deleted@example.com (created by this case); password={{DEFAULT_TEST_PASSWORD}},"[HTTP] POST {{BACK_URL}}/api/platform/security/users/create for AGENT-TEST-sil062-deleted@example.com
+[WAIT] the account to be created
+[ACT] sign in once successfully as that account
+[ACT] sign in once with a wrong password for the same account
+[WAIT] poll POST {{BACK_URL}}/api/platform/security/sign-in-log/search until the expected row appears, up to 90s (the writer is buffered — a single immediate read is not evidence of absence)
+[HTTP] DELETE {{BACK_URL}}/api/platform/security/users?names=<throwaway user name>
+[HTTP] search by keyword on the throwaway user name","[BODY] the account is gone from the user search {OBSERVED}
+[BODY] its audit records are still returned, with the same count as before the deletion {SPEC}
+[BODY] the records keep the userId of the deleted account, so the history stays attributable {SPEC}",[API] an audit trail that disappears with the account it describes is not an audit trail,records deleted together with the account; userId cleared on the surviving rows,none — the account is deleted by the test itself,VCST-5898,Draft

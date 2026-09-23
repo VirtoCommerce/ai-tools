@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-09-18",
-    "totalSuites": 143,
+    "totalSuites": 144,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -3465,6 +3465,31 @@
       "envRiskGate": "staging",
       "customerApplicability": "reference",
       "clickDriven": true
+    },
+    {
+      "id": "101",
+      "name": "Platform — Sign-in Log",
+      "file": "regression/suites/Backend/platform/101-platform-sign-in-log.csv",
+      "domain": "platform-config",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 46,
+      "estimatedMinutes": 90,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "platform",
+        "security",
+        "sign-in-log",
+        "audit",
+        "impersonation",
+        "api",
+        "admin"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5898. The sign-in audit log ships in the platform itself, not a module — the suite needs no requiresModules entry, only a platform build that carries /api/platform/security/sign-in-log. Two execution constraints the cases state for themselves: records are written through a buffered writer, so every \"row appears\" assertion polls instead of reading once; and the Record sign-in attempts switch is read through the settings cache, so a sign-in immediately after toggling it can still be recorded — the settings cases wait for the cache to settle. SIL-025 (retention), SIL-027 (cleanup job off) and SIL-028 (cron after restart) are Manual: they need a cleanup run, a controlled clock, or a platform restart on a stand nobody else is using. Not covered here and deliberately so: SSO against a real identity provider (needs a configured IdP), migrations on PostgreSql and MySql, reverse-proxy Host resolution with and without forwarded headers, and the load profile of the buffered writer — the last belongs on the loadtest stand, with and without recording.",
+      "clickDriven": true
     }
   ],
   "selections": {
@@ -3537,14 +3562,16 @@
         "031",
         "032",
         "033",
-        "082"
+        "082",
+        "101"
       ]
     },
     "platform": {
       "include": [
         "020",
         "021",
-        "063"
+        "063",
+        "101"
       ]
     },
     "marketing": {
