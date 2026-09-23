@@ -19,7 +19,7 @@ import { stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from '../kb/core/index-build.mjs';
 import {
   RETENTION_DAYS, SWEEP_AFTER_MS, appendEvidence, commitMessage, expiredLogs, flush, logPath,
-  outsideBase, ownFlushDue, queueFiles, readSeq, seqLabel, shouldSweep, unionLines,
+  logTargetOf, outsideBase, ownFlushDue, queueFiles, shouldSweep, unionLines,
 } from '../kb/core/push.mjs';
 import { queuePath } from '../kb/core/queue.mjs';
 import { reachPath } from '../kb/core/reach.mjs';
@@ -156,8 +156,16 @@ const confirmLine = (id, path) => ({
 const run = (env, api, over = {}) => flush({ env, base: BASE, token: 'test-token', api, now, sleep: async () => {}, ...over });
 
 /** This session's pushed log file, parsed. */
-const logLines = (state) => state.files.get(`v2/${logPath(SESSION, AT, 1)}`)
+const logLines = (state) => state.files.get(`v2/${logPath(SESSION, AT)}`)
   .trim().split('\n').map((l) => JSON.parse(l));
+
+/** Every log file the base holds for ONE session, whatever its date, parsed and concatenated. */
+const linesOfSession = (state, session) => [...state.files]
+  .filter(([path]) => path.startsWith('v2/log/') && sessionOf(path) === session)
+  .flatMap(([, text]) => text.trim().split('\n').map((l) => JSON.parse(l)));
+
+/** The published `session` line describing `id`, read from THAT session's file — where it now lives. */
+const sessionLine = (state, id) => linesOfSession(state, id).find((l) => l.kind === 'session' && l.session === id);
 
 // ─── one atomic commit ────────────────────────────────────────────────────────────────────────
 
@@ -193,7 +201,7 @@ test('a capture and a confirm land as ONE commit, on the head that was read', ()
     'v2/entries/KB-11111111.md',
     'v2/entries/KB-22222222.md',
     'v2/index.json',
-    `v2/${logPath(SESSION, AT, 1)}`,
+    `v2/${logPath(SESSION, AT)}`,
   ].sort());
 }));
 
@@ -264,7 +272,7 @@ test('no pushed log line carries a payload — and the claim is in the ENTRY, no
   await writeQueue(dir, SESSION, [captureLine(fresh, 'THE-CLAIM-PROSE')]);
   assert.equal((await run(env, api)).state, 'pushed');
 
-  const log = state.files.get(`v2/${logPath(SESSION, AT, 1)}`);
+  const log = state.files.get(`v2/${logPath(SESSION, AT)}`);
   const lines = log.trim().split('\n').map((l) => JSON.parse(l));
   for (const l of lines) assert.ok(!('payload' in l), `${l.kind} carried a payload into the public log`);
   assert.ok(!log.includes('THE-CLAIM-PROSE'), 'the prose does not reach the log');
@@ -277,7 +285,7 @@ test('one flush line per push, describing its own delivery', () => withQueue(asy
   await writeQueue(dir, SESSION, [captureLine(fresh)]);
   assert.equal((await run(env, fakeApi(state))).state, 'pushed');
 
-  const lines = state.files.get(`v2/${logPath(SESSION, AT, 1)}`).trim().split('\n').map((l) => JSON.parse(l));
+  const lines = state.files.get(`v2/${logPath(SESSION, AT)}`).trim().split('\n').map((l) => JSON.parse(l));
   const flushes = lines.filter((l) => l.kind === 'flush');
   assert.equal(flushes.length, 1);
   assert.deepEqual(
@@ -367,7 +375,7 @@ test('a swept session line keeps ITS writer, and the pusher does not overwrite i
 
   assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
 
-  const theirs = state.files.get(`v2/${logPath('abcd1234', AT, 1)}`).trim().split('\n').map((l) => JSON.parse(l));
+  const theirs = state.files.get(`v2/${logPath('abcd1234', AT)}`).trim().split('\n').map((l) => JSON.parse(l));
   assert.equal(theirs[0].who, 'octo-asker', 'the asker, not the pusher');
   assert.equal(logLines(state).find((l) => l.kind === 'flush').who, 'octo-pusher');
 })));
@@ -386,9 +394,12 @@ test('a published `session` line credits the session it DESCRIBES, never the one
 
   assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
 
-  const line = logLines(state).find((l) => l.kind === 'session');
+  const line = sessionLine(state, 'quiet001');
   assert.equal(line.session, 'quiet001');
   assert.equal(line.who, 'octo-quiet', 'the person who ran it, not the person who sent it');
+  // AND IT IS FILED UNDER THAT SESSION, not the sweeper's — which is where an operator opening a
+  // regression run's log found an unrelated session's counters (STEP 8).
+  assert.ok(!logLines(state).some((l) => l.kind === 'session'), "the sweeper's file holds no foreign counters");
 })));
 
 test('a `session` line for a state that never learned a handle carries none', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
@@ -404,76 +415,88 @@ test('a `session` line for a state that never learned a handle carries none', ()
 
   assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
 
-  const line = logLines(state).find((l) => l.kind === 'session');
+  const line = sessionLine(state, 'quiet002');
   assert.equal(line.session, 'quiet002');
   assert.ok(!('who' in line), 'no identity beats the pusher’s');
 })));
 
-test('the log path is date folder, session FOLDER, session id, and the push SEQUENCE — no wall clock', () => {
-  assert.equal(logPath('f3d05dd3', new Date('2026-09-18T11:10:03Z'), 3),
-    'log/2026-09-18/f3d05dd3/f3d05dd3-0003.jsonl');
-  // The session id is not decoration: two sessions can start in the same second, and one session
-  // can push twice. Without it, one session's log silently replaces another's.
-  assert.notEqual(logPath('aaaaaaaa', AT, 1), logPath('bbbbbbbb', AT, 1));
-  // AND THE TIME OF DAY IS NOT IN IT. Two processes publishing one queue do not share a clock, so
-  // a stamp made them two files holding the same lines; they DO compute the same sequence number,
-  // so they now compute the same path.
-  assert.equal(logPath('f3d05dd3', new Date('2026-09-18T11:10:03Z'), 3),
-    logPath('f3d05dd3', new Date('2026-09-18T11:10:11Z'), 3), 'eight seconds apart, one path');
-  assert.equal(seqLabel(3), '0003');
-  assert.equal(seqLabel(10_000), '10000', 'the width is a floor, not a ceiling');
+test('the log path is the DATE and the session, flat under log/ — no time of day, no counter', () => {
+  assert.equal(logPath('f3d05dd3', new Date('2026-09-18T11:10:03Z')), 'log/20260918-f3d05dd3.jsonl');
+  // The session id is not decoration: two sessions work on the same day. Without it, one session's
+  // log silently merges into another's.
+  assert.notEqual(logPath('aaaaaaaa', AT), logPath('bbbbbbbb', AT));
+  // AND THE TIME OF DAY IS NOT IN IT. Two processes publishing one queue do not share a clock, so a
+  // stamp made them two files holding the same lines (PLAN §21.7 item 3); a date is the same for
+  // both, so they compute the same path with no counter to agree on.
+  assert.equal(logPath('f3d05dd3', new Date('2026-09-18T00:00:01Z')),
+    logPath('f3d05dd3', new Date('2026-09-18T23:59:59Z')), 'one path for the whole UTC day');
+  assert.notEqual(logPath('f3d05dd3', new Date('2026-09-18T23:59:59Z')),
+    logPath('f3d05dd3', new Date('2026-09-19T00:00:00Z')), 'and a new one at UTC midnight');
 });
 
-test('the FILE NAME did not change when the folder appeared — which is why no parser did', () => {
-  // The whole safety argument of STEP 3c in one assertion (PLAN §21.11). The directory is additive:
-  // strip it and you have byte-for-byte what STEP 3b published, so `sessionOf()` — which reads the
-  // BASENAME and nothing else — needs no third shape and no change of premise.
-  const nested = logPath('f3d05dd3', new Date('2026-09-18T11:10:03Z'), 3);
-  assert.equal(basename(nested), 'f3d05dd3-0003.jsonl');
-  assert.equal(nested.split('/').slice(0, 3).join('/') + '/' + basename(nested),
-    nested, 'exactly one directory was inserted, in the middle');
-
-  // And the reader gets the same answer off the nested path as off the flat one. This is the
-  // assertion that would fail if anybody later "tidied up" the repetition into `<seq>.jsonl`.
-  assert.equal(sessionOf(nested), 'f3d05dd3');
-  assert.equal(sessionOf('log/2026-09-18/f3d05dd3-0003.jsonl'), 'f3d05dd3');
-  assert.equal(dayOf(nested), '2026-09-18');
-
-  // A file DETACHED from its path still names its session — the second reason the name repeats:
-  // downloaded, attached to a ticket, pasted into a report, it is still self-describing.
-  assert.equal(sessionOf(basename(nested)), 'f3d05dd3');
+test('a path with no valid date is REFUSED, not defaulted to the push clock', () => {
+  // A default here would move lines between days with nobody having decided they should; the
+  // fallback for an undatable line is `logTargetOf`'s decision, made once and visibly.
+  for (const bad of [undefined, null, 0, 'today', new Date('nonsense')]) {
+    assert.throws(() => logPath('f3d05dd3', bad), /valid date/, String(bad));
+  }
 });
 
-test('an all-digit session key still parses under the nested path', () => {
-  // STEP 3b's load-bearing case, re-run through the new shape rather than restated: a session key
-  // may be all digits, so a stamped name satisfies the sequenced pattern too and the ORDER the two
-  // are tried in is what keeps it right. Nesting must not disturb that, and it cannot, because the
-  // basename is untouched — but "cannot" is a claim and this is the test of it.
-  assert.equal(sessionOf(logPath('12345678', AT, 2)), '12345678');
+test('the reader gets session and date back off the new name — and off both old ones', () => {
+  // Three shapes coexist until the migration folds the two old ones away. Pinned HERE, beside the
+  // writer, because the claim is about two modules agreeing and cannot be pinned inside one.
+  const p = logPath('f3d05dd3', new Date('2026-09-18T11:10:03Z'));
+  assert.equal(sessionOf(p), 'f3d05dd3');
+  assert.equal(dayOf(p), '2026-09-18');
+  assert.equal(sessionOf(`v2/${p}`), 'f3d05dd3', 'and under a prefix');
+  assert.equal(sessionOf('log/2026-09-18/f3d05dd3/f3d05dd3-0003.jsonl'), 'f3d05dd3');
+  assert.equal(sessionOf('log/2026-09-18/20260918T111003Z-local_26.jsonl'), 'local_26');
+});
+
+test('an all-digit session key parses under every shape, including the one a name alone cannot tell apart', () => {
+  // `12345678-0002.jsonl` is "session 12345678, push 2" in the sequenced shape and would read as
+  // "date 12345678, session 0002" to the new pattern. The new shape is recognised by DEPTH — directly
+  // under log/ — so the old nested file keeps its reading. Remove the depth test and this fails.
+  assert.equal(sessionOf(logPath('12345678', AT)), '12345678');
+  assert.equal(sessionOf('log/2026-09-21/12345678-0002.jsonl'), '12345678');
+  assert.equal(sessionOf('log/2026-09-21/12345678/12345678-0002.jsonl'), '12345678');
   assert.equal(sessionOf('log/2026-09-21/20260921T090000Z-12345678.jsonl'), '12345678');
 });
 
-test('a session key that cannot be a path segment is refused by containment, not published', () => {
-  // The key is now a DIRECTORY as well as part of a file name, so what it can carry matters more
-  // than it did (PLAN §7.1a's lesson). `shortSession()` already refuses anything outside
-  // [A-Za-z0-9_-], and a swept foreign queue file named `..jsonl` would yield `.` — which the flat
-  // shape published as a strange but legal file name and the nested one now FAILS CLOSED on,
-  // because `outsideBase()` rejects a `.` or `..` segment outright. Stricter, in the safe direction.
-  for (const key of ['.', '..']) {
-    assert.deepEqual(outsideBase([`v2/${logPath(key, AT, 1)}`], 'v2'), [`v2/${logPath(key, AT, 1)}`], key);
+test('each line is routed by ITS OWN date, and a `session` line to the session it describes', () => {
+  const fallback = new Date('2026-09-20T12:00:00Z');
+  const own = { session: 'f3d05dd3', fallback };
+  assert.equal(logTargetOf({ at: '2026-09-18T23:59:00Z', kind: 'ask' }, own), 'log/20260918-f3d05dd3.jsonl');
+  assert.equal(logTargetOf({ at: '2026-09-19T00:01:00Z', kind: 'ask' }, own), 'log/20260919-f3d05dd3.jsonl');
+  // No usable `at` → the fallback's date, never a throw: the line has to land somewhere.
+  assert.equal(logTargetOf({ kind: 'ask' }, own), 'log/20260920-f3d05dd3.jsonl');
+  assert.equal(logTargetOf({ at: 'garbage', kind: 'ask' }, own), 'log/20260920-f3d05dd3.jsonl');
+  // The swept counter line goes to ITS session's file, not the sweeper's.
+  assert.equal(logTargetOf({ at: '2026-09-18T10:00:00Z', kind: 'session', session: 'quiet001' }, own),
+    'log/20260918-quiet001.jsonl');
+  // ...unless the id could not be a file name, when it stays where it arrived.
+  for (const bad of ['..', 'a/b', '', 42]) {
+    assert.equal(logTargetOf({ at: '2026-09-18T10:00:00Z', kind: 'session', session: bad }, own),
+      'log/20260918-f3d05dd3.jsonl', String(bad));
   }
-  // An ordinary key is of course still inside.
-  assert.deepEqual(outsideBase([`v2/${logPath('f3d05dd3', AT, 1)}`], 'v2'), []);
+  // Only a `session` line is re-routed; a `session` FIELD on another kind means nothing here.
+  assert.equal(logTargetOf({ at: '2026-09-18T10:00:00Z', kind: 'ask', session: 'quiet001' }, own),
+    'log/20260918-f3d05dd3.jsonl');
 });
 
-test('a path with no sequence number is REFUSED, not defaulted to the first file', () => {
-  // A default would union a push's lines into the session's FIRST file, which surfaces as a log
-  // file nobody can explain — the failure mode this whole change exists to remove, reintroduced
-  // through the convenience of a fallback.
-  for (const bad of [undefined, null, 0, -1, 1.5, 'three']) {
-    assert.throws(() => logPath('f3d05dd3', AT, bad), /sequence number/, String(bad));
+test('a foreign queue file whose name cannot be a session key is not swept', () => withQueue(async ({ dir, env }) => {
+  // Under the nested layout `outsideBase()` refused a `.`/`..` session segment on the way out. A
+  // flat name has no such segment — `log/20260918-..jsonl` is inside the base — so the refusal moved
+  // to the way in, and this is its test.
+  for (const name of ['..jsonl', 'a.b.jsonl']) {
+    const p = join(dir, name);
+    await writeFile(p, `${JSON.stringify({ at: '2026-09-18T09:00:00Z', kind: 'ask', q: 'x', matched: [], state: 'miss' })}\n`, 'utf8');
+    const old = new Date(AT.getTime() - SWEEP_AFTER_MS - 60_000);
+    await utimes(p, old, old);
   }
-});
+  const taken = await queueFiles({ env, now, sweep: true, includeMine: false });
+  assert.deepEqual(taken, []);
+}));
 
 // ─── the push-time dedup re-run ───────────────────────────────────────────────────────────────
 
@@ -496,7 +519,7 @@ test('a capture whose fact arrived in the base since it was queued becomes a CON
   assert.equal(index.count, 1);
   assert.equal(index.entries[0].trust, 2, 'the base got MORE trustworthy out of a retrieval failure');
 
-  const lines = state.files.get(`v2/${logPath(SESSION, AT, 1)}`).trim().split('\n').map((l) => JSON.parse(l));
+  const lines = state.files.get(`v2/${logPath(SESSION, AT)}`).trim().split('\n').map((l) => JSON.parse(l));
   const refused = lines.find((l) => l.kind === 'capture-refused');
   assert.deepEqual(
     { dupeOf: refused.dupeOf, why: refused.why, when: refused.when },
@@ -529,7 +552,7 @@ test('an id collision converts too — writing the blob would REPLACE somebody e
   const entry = state.files.get('v2/entries/KB-AAAAAAAA.md');
   assert.ok(entry.includes('THEIR PROSE'), 'their prose survived');
   assert.ok(!entry.includes('MY PROSE'));
-  const refused = state.files.get(`v2/${logPath(SESSION, AT, 1)}`).trim().split('\n')
+  const refused = state.files.get(`v2/${logPath(SESSION, AT)}`).trim().split('\n')
     .map((l) => JSON.parse(l)).find((l) => l.kind === 'capture-refused');
   assert.equal(refused.why, 'id-collision');
 }));
@@ -568,7 +591,7 @@ test('an id collision between DIFFERENT subjects is refused, never merged', () =
   // AND THE REFUSAL IS LEGIBLE. The old line was indistinguishable from an ordinary duplicate
   // refusal, so the only trace was a `subject` that did not match the entry it named and nothing
   // looked for that. This one names its own reason and both subjects.
-  const refused = state.files.get(`v2/${logPath(SESSION, AT, 1)}`).trim().split('\n')
+  const refused = state.files.get(`v2/${logPath(SESSION, AT)}`).trim().split('\n')
     .map((l) => JSON.parse(l)).find((l) => l.kind === 'capture-refused');
   assert.equal(refused.why, 'id-collision-different-subject');
   assert.ok(refused.note.includes(A), 'the refusal names the subject already holding the id');
@@ -684,10 +707,12 @@ test('a non-conflict failure does not retry — it is not a compare-and-swap los
 // its copy. Nothing was lost and every count over that window is inflated, with no way to notice
 // short of diffing two files by hand.
 //
-// The whole fix is that the path stops carrying a wall clock. Two processes publishing one queue
-// do not share a clock; they do share a counter, so they compute one path — and a path written
-// twice is MERGED. These tests are about the three ways that can go wrong: the number moving
-// between attempts, the merge losing a line, and the read the merge depends on failing.
+// The fix is that the path carries no wall-clock TIME and no per-push state: one file per session
+// per UTC day, named from the lines' own dates. Two processes holding one queue compute the same
+// paths, and a path written twice is MERGED. From 2026-09-21 to 2026-09-23 the same property was
+// bought with a per-session push counter (`.seq`) and two ordering rules, each pinned by a test
+// (PLAN §22.2); with no counter there is nothing left to order, and those tests went with it. What
+// they guarded is pinned below as the end state instead: two concurrent publishers, one file.
 
 test('unionLines merges, never overwrites — overlapping, nested, and in order', () => {
   const a = ['{"n":1}', '{"n":2}', '{"n":3}'];
@@ -709,10 +734,11 @@ test('unionLines merges, never overwrites — overlapping, nested, and in order'
   assert.equal(unionLines('', []), '');
 });
 
+const logFiles = (state) => [...state.files.keys()].filter((p) => p.startsWith('v2/log/')).sort();
+
 test('two pushes of ONE queue write ONE file, and the second merges into it', () => withQueue(async ({ dir, env }) => {
-  // The published incident, reproduced. Process B loaded the queue before A removed it, so B's view
-  // of this machine is the one restored here: the queue file as it was, and a counter A had not yet
-  // advanced — `writeSeq` runs after the removal precisely so that ordering holds.
+  // The published incident, reproduced sequentially: B loaded the queue before A removed it, so B's
+  // view of this machine is the queue file as it was.
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
   const queued = [
     { at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'first question', matched: [], state: 'miss' },
@@ -720,21 +746,17 @@ test('two pushes of ONE queue write ONE file, and the second merges into it', ()
     { at: '2026-09-18T10:04:00Z', kind: 'ask', q: 'third question', matched: [], state: 'miss' },
   ];
   await writeQueue(dir, SESSION, queued);
-
   assert.equal((await run(env, fakeApi(state))).state, 'pushed');
-  assert.equal(await readSeq(env, SESSION), 1, 'the counter advanced once the queue was gone');
 
   await writeQueue(dir, SESSION, queued);                   // B's copy, loaded before A removed it
-  await rm(join(dir, `${SESSION}.seq`), { force: true });   // and B's counter read, taken before A's write
   // Eight seconds later, which is the interval the base actually recorded — and under the old
   // naming that alone was enough to make a second file.
   const later = new Date(AT.getTime() + 8_000);
   assert.equal((await run(env, fakeApi(state), { now: () => later })).state, 'pushed');
 
-  const logs = [...state.files.keys()].filter((p) => p.startsWith('v2/log/'));
-  assert.deepEqual(logs, [`v2/${logPath(SESSION, AT, 1)}`], 'ONE file — the timestamp is what made it two');
+  assert.deepEqual(logFiles(state), [`v2/${logPath(SESSION, AT)}`], 'ONE file — the timestamp is what made it two');
 
-  const lines = state.files.get(logs[0]).trim().split('\n').map((l) => JSON.parse(l));
+  const lines = state.files.get(`v2/${logPath(SESSION, AT)}`).trim().split('\n').map((l) => JSON.parse(l));
   assert.deepEqual(lines.filter((l) => l.kind === 'ask').map((l) => l.q),
     ['first question', 'second question', 'third question'],
     'each question counted ONCE — the inflation is what made that window unreadable');
@@ -744,138 +766,94 @@ test('two pushes of ONE queue write ONE file, and the second merges into it', ()
   assert.equal(lines.filter((l) => l.kind === 'flush').length, 2);
 }));
 
-test('a session pushing TWICE over its life gets 0001 then 0002 — the number is not frozen', () => withQueue(async ({ dir, env }) => {
+test('two CONCURRENT publishers of one session\'s queue converge on one file', () => withQueue(async ({ dir, env }) => {
+  // What `.seq`'s two ordering rules existed to guarantee, pinned as the END STATE rather than as an
+  // order of effects — there is no longer an order to observe. Both processes hold the queue before
+  // either lands; both build a commit against the same head; the ref is a real compare-and-swap, so
+  // one wins and the other loses, re-reads the head (which now holds the winner's file) and writes
+  // to THE SAME PATH, where `unionLines` merges it. A layout that put any per-push fact into the
+  // path — a time, a counter recomputed on retry — fails here with two files.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [
+    { at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'first question', matched: [], state: 'miss' },
+    { at: '2026-09-18T10:03:00Z', kind: 'ask', q: 'second question', matched: [], state: 'miss' },
+  ]);
+
+  const casApi = () => {
+    const api = fakeApi(state);
+    const land = api.updateRef;
+    // A REAL compare-and-swap: the commit must be built on the head as it is NOW.
+    api.updateRef = async (arg) => (api.lastCommit.parents[0] === state.head
+      ? land(arg)
+      : { ok: false, status: 422, reason: 'conflict', detail: 'ref moved' });
+    return api;
+  };
+  // Neither may land until BOTH have built a commit on the head they read, which is the interleaving
+  // the base actually suffered: two holders of one queue, neither aware of the other.
+  let built = 0;
+  let release;
+  const bothBuilt = new Promise((r) => { release = r; });
+  const gate = async () => { built += 1; if (built === 2) release(); await bothBuilt; return true; };
+
+  const [a, b] = await Promise.all([
+    run(env, casApi(), { gate }),
+    run(env, casApi(), { gate }),
+  ]);
+
+  assert.deepEqual([a.state, b.state], ['pushed', 'pushed']);
+  assert.deepEqual([a.attempts, b.attempts].sort(), [1, 2], 'one won the swap, the other lost it and retried');
+  assert.deepEqual(logFiles(state), [`v2/${logPath(SESSION, AT)}`], 'one file, not one per publisher');
+
+  const lines = state.files.get(`v2/${logPath(SESSION, AT)}`).trim().split('\n').map((l) => JSON.parse(l));
+  assert.deepEqual(lines.filter((l) => l.kind === 'ask').map((l) => l.q), ['first question', 'second question']);
+  assert.equal(lines.filter((l) => l.kind === 'flush').length, 2, 'both deliveries are on record');
+}));
+
+test('a session pushing twice in one day APPENDS to one file; its next day is a new file', () => withQueue(async ({ dir, env }) => {
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
   await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'one', matched: [], state: 'miss' }]);
   assert.equal((await run(env, fakeApi(state))).state, 'pushed');
   await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:20:00Z', kind: 'ask', q: 'two', matched: [], state: 'miss' }]);
   assert.equal((await run(env, fakeApi(state))).state, 'pushed');
 
-  assert.deepEqual(
-    [...state.files.keys()].filter((p) => p.startsWith('v2/log/')).sort(),
-    [`v2/${logPath(SESSION, AT, 1)}`, `v2/${logPath(SESSION, AT, 2)}`],
-    'two genuine publications are two files, and they sort in the order they happened',
-  );
-  assert.equal(await readSeq(env, SESSION), 2);
+  assert.deepEqual(logFiles(state), [`v2/${logPath(SESSION, AT)}`], 'the second push appended');
+  assert.deepEqual(logLines(state).filter((l) => l.kind === 'ask').map((l) => l.q), ['one', 'two'], 'in the order they happened');
+
+  const tomorrow = new Date('2026-09-19T09:00:00Z');
+  await writeQueue(dir, SESSION, [{ at: '2026-09-19T08:59:00Z', kind: 'ask', q: 'three', matched: [], state: 'miss' }]);
+  assert.equal((await run(env, fakeApi(state), { now: () => tomorrow })).state, 'pushed');
+  assert.deepEqual(logFiles(state), [`v2/${logPath(SESSION, AT)}`, `v2/${logPath(SESSION, tomorrow)}`]);
 }));
 
-test('a FAILED push does not advance the number — nothing was published', () => withQueue(async ({ dir, env }) => {
-  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact' })]);
-  const api = fakeApi(state, { onUpdateRef: () => ({ ok: false, status: 500, reason: 'unreachable', detail: 'HTTP 500' }) });
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'x', matched: [], state: 'miss' }]);
-  assert.equal((await run(env, api)).state, 'failed');
-  assert.equal(await readSeq(env, SESSION), 0, 'the next attempt is still this session\'s first');
-}));
-
-test('readSeq resolves every uncertainty DOWNWARDS — missing, blank or nonsense is 0', () => withQueue(async ({ dir, env }) => {
-  // Under-counting writes a path that already exists and is merged into; over-counting writes a
-  // second file holding the same lines, which is the defect. So the asymmetry is deliberate and
-  // pinned: nothing here may ever guess high.
-  assert.equal(await readSeq(env, SESSION), 0, 'no file at all');
-  for (const junk of ['', '   ', 'seven', '-3', '{"n":2}']) {
-    await writeFile(join(dir, `${SESSION}.seq`), junk, 'utf8');
-    assert.equal(await readSeq(env, SESSION), 0, JSON.stringify(junk));
-  }
-  await writeFile(join(dir, `${SESSION}.seq`), '4\n', 'utf8');
-  assert.equal(await readSeq(env, SESSION), 4);
-}));
-
-test('the path does NOT move between CAS attempts — and the loser merges into the winner\'s file', () => withQueue(async ({ dir, env }) => {
-  // RULE 1, and it is the easy one to get wrong silently. The sequence is taken once, before the
-  // first attempt. Recomputing it after a lost compare-and-swap would see the WINNER'S file already
-  // in the tree, take the next number, and write the duplicate this whole change removes.
-  //
-  // THIS TEST DID NOT ACTUALLY PIN THAT UNTIL 2026-09-22 (PLAN §22.2, finding F2). It scripted a
-  // real 422 and asserted the two trees matched — and it would have gone on passing with the rule
-  // deleted, because the number comes off a LOCAL `.seq` file and, inside one process, nothing
-  // moves that file between attempt 1 and attempt 2. A recomputation would have read the same 0 and
-  // reached the same answer. The test was measuring an arithmetic coincidence, not an ordering.
-  //
-  // What was missing is the other process. The winner does not only put its file in the tree, it
-  // also advances the shared counter when its own queue file is gone (`writeSeq`) — and THAT is the
-  // fact a recomputation on attempt 2 would read. So the winner now does both, and the assertion
-  // below has teeth: with the rule intact attempt 2 still writes `-0001`; with the sequence moved
-  // inside the retry loop it reads the advanced counter, takes `-0002`, and writes a second file
-  // holding the same lines, which is the duplicate the base actually suffered.
+test('a flush that straddles midnight writes each line under ITS OWN date, not the push clock', () => withQueue(async ({ dir, env }) => {
+  // The date in a name is a fact about the CONTENTS. A queue holding 23:58 and 00:03 lines, pushed
+  // at 00:05, is two files — and the flush summary, written at 00:05, rides in the second.
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
-  const theirLine = '{"at":"2026-09-18T11:09:00.000Z","kind":"ask","q":"the winner\'s question","state":"miss"}';
-
-  const api = fakeApi(state, {
-    onUpdateRef: (attempt, s) => {
-      if (attempt > 1) return null;
-      // The other process publishes THE SAME SESSION'S queue and wins the swap — which is exactly
-      // what happened in the base, and the only reason nothing was lost there was luck.
-      s.files.set(`v2/${logPath(SESSION, AT, 1)}`, `${theirLine}\n`);
-      s.head = 'c0000001';
-      return { ok: false, status: 422, reason: 'conflict', detail: 'ref moved' };
-    },
-  });
-  const trees = [];
-  const realTree = api.createTree;
-  api.createTree = async (arg) => { trees.push(arg); return realTree(arg); };
-
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'my question', matched: [], state: 'miss' }]);
-  // The injected `sleep` is the window between the lost swap and the retry — the winner finishes
-  // its own push there, counter included. It is used as the hook rather than a new seam precisely
-  // because it already sits at the one moment this rule is about.
-  const r = await run(env, api, {
-    sleep: async () => { await writeFile(join(dir, `${SESSION}.seq`), '1\n', 'utf8'); },
-  });
+  await writeQueue(dir, SESSION, [
+    { at: '2026-09-18T23:58:00Z', kind: 'ask', q: 'late', matched: [], state: 'miss' },
+    { at: '2026-09-19T00:03:00Z', kind: 'ask', q: 'early', matched: [], state: 'miss' },
+  ]);
+  const pushAt = new Date('2026-09-19T00:05:00Z');
+  const r = await run(env, fakeApi(state), { now: () => pushAt });
   assert.equal(r.state, 'pushed');
-  assert.equal(r.attempts, 2, 'the retry ran, so the counter really was advanced between attempts');
 
-  const logOf = (t) => t.entries.map((e) => e.path).filter((p) => p.startsWith('v2/log/'));
-  assert.equal(trees.length, 2);
-  assert.deepEqual(logOf(trees[0]), logOf(trees[1]), 'the retry wrote to the SAME path, not the next one');
-  assert.deepEqual(logOf(trees[1]), [`v2/${logPath(SESSION, AT, 1)}`]);
-
-  // And re-reading the head is what makes writing to that same path safe.
-  const text = state.files.get(`v2/${logPath(SESSION, AT, 1)}`);
-  assert.ok(text.startsWith(`${theirLine}\n`), 'the winner\'s line survived the loser\'s write');
-  assert.ok(text.includes('my question'), 'and the loser\'s own line is there too');
-}));
-
-test('the counter advances AFTER the queue file is gone, never before', () => withQueue(async ({ dir, env }) => {
-  // RULE 2, and until 2026-09-22 it was pinned by nothing at all (PLAN §22.2, finding F2). The
-  // argument is in `writeSeq`: take A and B publishing one session's queue. B holds the lines, so B
-  // read the queue file before A removed it. If A advanced the counter at the moment it LANDED,
-  // B's counter read could still fall after it, B would take the next number, and the duplicate is
-  // back. Advancing after the removal orders them — B's counter read precedes B's queue read,
-  // precedes A's removal, precedes A's advance — so B cannot see the higher number.
-  //
-  // WHY THIS NEEDS AN INJECTED REMOVAL AND NOT A CLEVERER ASSERTION. It is a claim about the ORDER
-  // of two effects, and by the time `flush` returns both have happened; from outside, the two
-  // orderings are indistinguishable. That is the whole of the defect the review found: the rule
-  // could be deleted and 468 tests stayed green. The observer has to stand BETWEEN them, and a
-  // seam is the only way to put it there. What it watches is real and concurrent, so the seam buys
-  // a property rather than merely exercising a line.
-  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'my question', matched: [], state: 'miss' }]);
-
-  const seenAtRemoval = [];
-  const r = await run(env, fakeApi(state), {
-    removeQueueFile: async (path) => {
-      // Exactly what a concurrent B would read at this instant, off the same shared counter file.
-      seenAtRemoval.push(await readSeq(env, SESSION));
-      await rm(path, { force: true });
-    },
-  });
-
-  assert.equal(r.state, 'pushed');
-  assert.deepEqual(seenAtRemoval, [0], 'a second process reading here still gets this session\'s first number');
-  assert.equal(await readSeq(env, SESSION), 1, 'and it is advanced by the time the push returns');
-  // The removal really is the injected one, so a future refactor that stops calling it fails here
-  // rather than silently losing the observation point.
-  assert.ok(!existsSync(queuePath(env)), 'the queue file is gone');
+  const day1 = `v2/${logPath(SESSION, new Date('2026-09-18T12:00:00Z'))}`;
+  const day2 = `v2/${logPath(SESSION, pushAt)}`;
+  assert.deepEqual(logFiles(state), [day1, day2]);
+  const parse = (p) => state.files.get(p).trim().split('\n').map((l) => JSON.parse(l));
+  assert.deepEqual(parse(day1).map((l) => l.q ?? l.kind), ['late']);
+  assert.deepEqual(parse(day2).map((l) => l.q ?? l.kind), ['early', 'flush']);
+  assert.match(r.plan.message, /2 logs/, 'the commit message counts FILES written');
 }));
 
 test('a FAILED READ of the existing log aborts the push — it never falls through to an overwrite', () => withQueue(async ({ dir, env }) => {
-  // THE ONE NEW WAY THIS CHANGE COULD LOSE DATA, so it gets a scripted transport rather than a
+  // THE ONE WAY THE MERGE COULD LOSE DATA, so it gets a scripted transport rather than a
   // neighbouring test's side effect: reading the current content is what makes the merge a merge,
   // and code that treats a failed read as "no file there" writes a subset over a superset. The rule
   // is NO FILE → CREATE, READ FAILED → ABORT; the queue survives and the next push retries, which
-  // is what every other failure in push.mjs already does.
-  const existingPath = `v2/${logPath(SESSION, AT, 1)}`;
+  // is what every other failure in push.mjs already does. With one file per session per day this is
+  // the ordinary path for every push after the day's first, not the rare one.
+  const existingPath = `v2/${logPath(SESSION, AT)}`;
   const existing = '{"at":"2026-09-18T11:00:00.000Z","kind":"ask","q":"already published","state":"miss"}\n';
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })], {
     extra: { [existingPath]: existing },
@@ -897,13 +875,11 @@ test('a FAILED READ of the existing log aborts the push — it never falls throu
   const queue = (await readFile(join(dir, `${SESSION}.jsonl`), 'utf8')).trim().split('\n').map((l) => JSON.parse(l));
   assert.equal(queue[0].q, 'mine');
   assert.deepEqual({ kind: queue.at(-1).kind, ok: queue.at(-1).ok }, { kind: 'flush', ok: false });
-  assert.equal(await readSeq(env, SESSION), 0, 'and the number is unspent');
 }));
 
-test('a swept foreign queue is numbered under ITS OWN session, not the pusher\'s', () => withQueue(async ({ dir, env }) => {
-  // A swept file keeps its original session id, which is what makes `--sessions` exact (§15.1). The
-  // sequence has to follow it there: numbering a foreign log under the pusher's counter would make
-  // two sessions share a path and one of them would be merged into the other's file.
+test('a swept foreign queue is filed under ITS OWN session, not the pusher\'s', () => withQueue(async ({ dir, env }) => {
+  // A swept file keeps its original session id, which is what makes `--sessions` exact (§15.1).
+  // Filing it under the pusher would merge two sessions into one file.
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact' })]);
   await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'mine', matched: [], state: 'miss' }]);
   await writeQueue(dir, 'stale002', [{ at: '2026-09-18T09:00:00Z', kind: 'ask', q: 'theirs', matched: [], state: 'miss' }]);
@@ -912,14 +888,9 @@ test('a swept foreign queue is numbered under ITS OWN session, not the pusher\'s
   await utimes(join(dir, 'stale002.jsonl'), old, old);
 
   assert.equal((await run(env, fakeApi(state))).state, 'pushed');
-  assert.deepEqual(
-    [...state.files.keys()].filter((p) => p.startsWith('v2/log/')).sort(),
-    [`v2/${logPath(SESSION, AT, 1)}`, `v2/${logPath('stale002', AT, 1)}`].sort(),
-  );
-  assert.equal(await readSeq(env, 'stale002'), 1, 'the swept session\'s own count advanced');
+  assert.deepEqual(logFiles(state), [`v2/${logPath(SESSION, AT)}`, `v2/${logPath('stale002', AT)}`].sort());
+  assert.deepEqual(linesOfSession(state, 'stale002').map((l) => l.q), ['theirs'], 'and it holds only its own lines');
 }));
-
-// ─── the secret gate, in the push ─────────────────────────────────────────────────────────────
 
 test('a line carrying a real .env.local value is dropped, the push still happens, and the value never leaves', () => withQueue(async ({ dir, env }) => {
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
@@ -941,7 +912,7 @@ test('a line carrying a real .env.local value is dropped, the push still happens
   }
   assert.equal(state.files.has('v2/entries/KB-33333333.md'), false, 'the mutation is not applied either');
 
-  const lines = state.files.get(`v2/${logPath(SESSION, AT, 1)}`).trim().split('\n').map((l) => JSON.parse(l));
+  const lines = state.files.get(`v2/${logPath(SESSION, AT)}`).trim().split('\n').map((l) => JSON.parse(l));
   assert.deepEqual(lines.filter((l) => l.kind === 'redacted').map((l) => l.why), ['secret-scan']);
   assert.ok(lines.some((l) => l.kind === 'ask'), 'the clean line went');
   assert.equal(JSON.parse(state.files.get('v2/index.json')).entries[0].trust, 2, 'the clean confirm applied');
@@ -1005,7 +976,7 @@ test('retention selects a NESTED path exactly as it selected a flat one', () => 
   const flatStamped = 'v2/log/2026-06-01/20260601T100000Z-aaaaaaaa.jsonl';   // 109 days before AT
   const flatSeq = 'v2/log/2026-06-02/aaaaaaaa-0001.jsonl';                   // 108 days
   const nested = 'v2/log/2026-06-03/aaaaaaaa/aaaaaaaa-0001.jsonl';           // 107 days
-  const keptNested = `v2/${logPath('bbbbbbbb', AT, 1)}`;                     // today
+  const keptNested = 'v2/log/2026-09-18/bbbbbbbb/bbbbbbbb-0001.jsonl';       // today
   assert.deepEqual(
     expiredLogs([flatStamped, flatSeq, nested, keptNested], { at: AT, prefix: 'v2' }),
     [flatStamped, flatSeq, nested].sort(),
@@ -1013,6 +984,14 @@ test('retention selects a NESTED path exactly as it selected a flat one', () => 
   // And the day is still read off the DAY folder, not off however many segments follow it: a
   // nested path under a fresh day is not expired just because it is one level deeper.
   assert.deepEqual(expiredLogs([keptNested], { at: AT, prefix: 'v2' }), []);
+});
+
+test('retention reads the date off the NAME of a current file, and leaves a non-date name alone', () => {
+  const expired = `v2/${logPath('aaaaaaaa', new Date('2026-06-01T10:00:00Z'))}`;  // 109 days before AT
+  const kept = `v2/${logPath('bbbbbbbb', AT)}`;                                   // today
+  assert.deepEqual(expiredLogs([expired, kept], { at: AT, prefix: 'v2' }), [expired]);
+  // Eight digits that are not a date, or a name with no date at all, are not guessed at.
+  assert.deepEqual(expiredLogs(['v2/log/99999999-x.jsonl', 'v2/log/handwritten.jsonl', 'v2/log/20260601-x.txt'], { at: AT, prefix: 'v2' }), []);
 });
 
 test('the retention deletion rides in the push', () => withQueue(async ({ dir, env }) => {
@@ -1047,7 +1026,7 @@ test('a DRY RUN needs no token: the review comes before the credential, not afte
   const r = await flush({ env, base: BASE, token: null, api, dryRun: true, now });
   assert.equal(r.state, 'dry-run', 'a dry run reports a PLAN, never no-token');
   assert.deepEqual(r.plan.writes.map((w) => w.path).sort(),
-    ['v2/entries/KB-22222222.md', 'v2/index.json', `v2/${logPath(SESSION, AT, 1)}`].sort());
+    ['v2/entries/KB-22222222.md', 'v2/index.json', `v2/${logPath(SESSION, AT)}`].sort());
   assert.equal(api.calls.includes('createBlob'), false, 'and it still sends nothing');
   assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), true, 'the queue is untouched');
 }));
@@ -1066,7 +1045,7 @@ test('a base at the REPOSITORY ROOT writes root paths — the prefix was only ev
   const r = await flush({ env, base: ROOT, token: 'test-token', api, now, sleep: async () => {} });
   assert.equal(r.state, 'pushed');
   assert.deepEqual(r.plan.writes.map((w) => w.path).sort(),
-    ['entries/KB-22222222.md', 'index.json', logPath(SESSION, AT, 1)].sort(),
+    ['entries/KB-22222222.md', 'index.json', logPath(SESSION, AT)].sort(),
     'no prefix, and no leading slash either');
   assert.equal(JSON.parse(state.files.get('index.json')).count, 2);
 
@@ -1138,7 +1117,7 @@ test('a dry run sends nothing and shows everything', () => withQueue(async ({ di
   const r = await run(env, api, { dryRun: true });
   assert.equal(r.state, 'dry-run');
   assert.deepEqual(r.plan.writes.map((w) => w.path).sort(),
-    ['v2/entries/KB-22222222.md', 'v2/index.json', `v2/${logPath(SESSION, AT, 1)}`].sort());
+    ['v2/entries/KB-22222222.md', 'v2/index.json', `v2/${logPath(SESSION, AT)}`].sort());
   assert.equal(api.calls.includes('createBlob'), false);
   assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), true, 'and the queue is untouched');
 }));
@@ -1162,7 +1141,7 @@ test('the gate is shown the exact files, the message and the parent', () => with
   assert.match(shown.message, /^kb: 1 log \(session f3d05dd3\)$/);
   // A log-only push carries NO index: see the test below for why that is the rule and not an
   // accident of this fixture.
-  assert.deepEqual(shown.writes.map((w) => w.path), [`v2/${logPath(SESSION, AT, 1)}`]);
+  assert.deepEqual(shown.writes.map((w) => w.path), [`v2/${logPath(SESSION, AT)}`]);
   assert.deepEqual(shown.deletions, []);
 }));
 
@@ -1178,7 +1157,7 @@ test('a push that moved no row leaves index.json alone — `generated` is not a 
 
   const r = await run(env, api);
   assert.equal(r.state, 'pushed');
-  assert.deepEqual(r.plan.writes.map((w) => w.path), [`v2/${logPath(SESSION, AT, 1)}`]);
+  assert.deepEqual(r.plan.writes.map((w) => w.path), [`v2/${logPath(SESSION, AT)}`]);
   assert.equal(state.files.get('v2/index.json'), before, 'not one byte, including the timestamp');
 }));
 
@@ -1274,7 +1253,7 @@ test('a swept queue file keeps the run ITS session wrote under, and the pusher d
 
   assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
 
-  const theirs = state.files.get(`v2/${logPath('abcd1234', AT, 1)}`).trim().split('\n').map((l) => JSON.parse(l));
+  const theirs = state.files.get(`v2/${logPath('abcd1234', AT)}`).trim().split('\n').map((l) => JSON.parse(l));
   assert.equal(theirs[0].run, 'REL-9', 'their run, not the pusher’s');
   assert.equal(logLines(state).find((l) => l.kind === 'flush').run, 'VCST-1234');
 })));
@@ -1292,7 +1271,7 @@ test('a published `session` line carries the run of the session it DESCRIBES', (
 
   assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
 
-  const line = logLines(state).find((l) => l.kind === 'session');
+  const line = sessionLine(state, 'quiet003');
   assert.equal(line.session, 'quiet003');
   assert.equal(line.run, 'REL-9', 'the run it ran under, not the one that sent it');
   assert.equal(logLines(state).find((l) => l.kind === 'flush').run, 'VCST-1234', 'and ours is unaffected');
@@ -1310,7 +1289,7 @@ test('a `session` line for a state that never saw a run handle carries none', ()
 
   assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
 
-  const line = logLines(state).find((l) => l.kind === 'session');
+  const line = sessionLine(state, 'quiet004');
   assert.equal(line.session, 'quiet004');
   assert.ok(!('run' in line), 'no run beats the pusher’s');
 })));

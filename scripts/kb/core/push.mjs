@@ -27,7 +27,7 @@
 // log line never does. `toLogLine()` in `verbs.mjs` is the ONE place that distinction lives, and
 // every line is mapped through it on the way into the log blob.
 
-import { readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { coordinatesOf, githubApi } from './github-api.mjs';
@@ -72,61 +72,69 @@ export const RETRY_DELAY_MS = 2_000;
 
 const pad = (n) => String(n).padStart(2, '0');
 
-/** `2026-09-18` — the log's date folder, so "the last 30 days" is one tree read. */
-export const dayFolder = (d) => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+/** `20260918` — the date half of a log file's name. UTC, so two machines agree on it. */
+export const dateStamp = (d) => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}`;
 
 /** `20260918T111003Z` — sorts lexicographically, which is why it is not the ISO string. */
-export const stamp = (d) => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}`
+export const stamp = (d) => `${dateStamp(d)}`
   + `T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
 
-/** `0003`. Zero-padded so a session's files sort in the order they were pushed. */
-export const SEQ_WIDTH = 4;
-export const seqLabel = (n) => String(n).padStart(SEQ_WIDTH, '0');
+/**
+ * Where one session's lines for one UTC day land: `log/<YYYYMMDD>-<session>.jsonl`.
+ *
+ * ONE FILE PER SESSION PER DAY, APPENDED TO RATHER THAN ADDED BESIDE (PLAN §23). Until 2026-09-23 a
+ * file was one PUSH — `log/<day>/<session>/<session>-<seq>.jsonl` — and the measurement that retired
+ * it was 95 files for 34 sessions, 915 B each: a session's whole log is a couple of kilobytes, and
+ * the report's 200-file bound was being spent on push boundaries nobody reads.
+ *
+ * DATE, NOT TIME, and that is what lets this carry no state. A full timestamp would have to be
+ * remembered per (session, day) to stay the same across pushes; a date is computable from the line
+ * itself. So two processes publishing one queue — the incident the old sequence number existed to
+ * contain (PLAN §21.7 item 3) — hold the same lines, compute the same paths, and `unionLines`
+ * merges them. The counter, its file and the two ordering rules that guarded it are gone because
+ * the state they guarded is no longer reachable, not because it stopped mattering.
+ *
+ * DATE FIRST, so a listing of `log/` is chronological and `--days N` is a prefix test on a name.
+ * FLAT, with no day folder: the date is already in the name, and a folder holding it a second time
+ * is a second place for the two to disagree.
+ */
+export const logPath = (session, at) => {
+  if (!(at instanceof Date) || !Number.isFinite(at.getTime())) {
+    // Not defaulted to the push clock here. The caller decides what an undatable line falls back to
+    // (`logTargetOf`); a path function that quietly picked "now" would move lines between days with
+    // nobody having decided that it should.
+    throw new Error(`logPath needs a valid date, got ${JSON.stringify(at)}`);
+  }
+  return `log/${dateStamp(at)}-${session}.jsonl`;
+};
+
+/** A session key that can be a file name. The same shape `shortSession()` refuses to go outside. */
+const SESSION_SAFE = /^[A-Za-z0-9_-]+$/;
 
 /**
- * Where a session's log lands: date folder, session id, and the push's SEQUENCE NUMBER.
+ * Which file ONE line belongs in. Pure — the writer and the one-time migration both route through it.
  *
- * THE TIMESTAMP USED TO BE HERE AND IT PUBLISHED THE SAME QUEUE TWICE. Observed in the base
- * (PLAN §21.7 item 3): `log/2026-09-21/20260921T081451Z-local_e8.jsonl` and `…081459Z-…`, eight
- * seconds apart, THE FIRST 13 LINES BYTE-IDENTICAL. Two processes loaded one queue — three things
- * start a push, so this is not rare — the first committed and removed the queue file, the second
- * was already holding its copy and committed it too. Nothing was lost, and every count over that
- * window is inflated with no way to notice short of diffing two files by hand.
+ * THE DATE IS THE LINE'S OWN `at`, NOT THE PUSH CLOCK. A flush that straddles midnight writes two
+ * paths, which costs nothing because the push already builds a path → content map — and it is what
+ * makes the date in a file's name a fact about its CONTENTS rather than about when somebody pushed.
+ * A line with no usable `at` falls back to `fallback` (the push clock, or for the migration the old
+ * day folder), because it has to land somewhere and the moment it was sent is the best remaining
+ * evidence of when it was written.
  *
- * A WALL CLOCK CANNOT FIX THAT, because the two processes do not share one. A number counted
- * within the session can: both compute the SAME number, so they write THE SAME PATH — and a path
- * written twice is merged (`unionLines`), not doubled. That is why this is a removal rather than a
- * detector: a content digest or a push id would have left both files in the base and made every
- * reader responsible for filtering one of them out.
- *
- * The session id stays, and stays first: it is what partitions the log, and `sessionOf()` reads it
- * back off either shape — the timestamped files already published keep their names for the 30 days
- * of the retention window.
- *
- * THE SESSION IS ALSO A DIRECTORY, AND ITS NAME IS THEN WRITTEN TWICE. That redundancy is the
- * point (PLAN §21.11). The obvious shape is `log/<day>/<session>/<seq>.jsonl`, which is cleaner to
- * look at and costs a THIRD path shape — not a third regex but a change of premise, because
- * `sessionOf()` reads only the basename, and that function already carries a subtlety STEP 3b had
- * to find: an all-digit session key satisfies both existing patterns, so the ORDER they are tried
- * in is what keeps it correct. Teaching it to take the session from a DIRECTORY component instead
- * puts a second source of truth into the one function that can least afford one.
- *
- * Repeating the name keeps the basename byte-identical to what 3b produced, so no parser changes
- * at all — only the path gains a directory. It also keeps a log file self-describing once it has
- * been DETACHED from its path: downloaded, attached to a ticket, pasted into a report. The price
- * is a name written twice and it is visible in every listing; the price of the clean-looking
- * alternative is invisible and lives in a parser.
+ * A `session` LINE GOES TO THE SESSION IT DESCRIBES. It is the one line published by somebody other
+ * than its subject — a finished session's counters are swept by whoever comes next (`reach.mjs`) —
+ * and filing it under the sweeper put an unrelated session's counters into a regression run's log,
+ * where an operator found them. A file now holds only its own session's lines. The id is used only
+ * when it could be a file name; otherwise the line stays with the file it arrived in rather than
+ * becoming a path nobody can parse back.
  */
-export const logPath = (session, at, seq) => {
-  const n = Number(seq);
-  if (!Number.isInteger(n) || n < 1) {
-    // Not defaulted to 1. A caller that has not decided which push this is would silently union
-    // its lines into the session's FIRST file, and the way that surfaces is a log file nobody can
-    // explain — the failure this whole change exists to remove.
-    throw new Error(`logPath needs the push sequence number, got ${JSON.stringify(seq)}`);
-  }
-  return `log/${dayFolder(at)}/${session}/${session}-${seqLabel(n)}.jsonl`;
-};
+export function logTargetOf(line, { session, fallback }) {
+  const described = line?.kind === 'session' && typeof line.session === 'string' && SESSION_SAFE.test(line.session)
+    ? line.session
+    : session;
+  const t = Date.parse(String(line?.at ?? ''));
+  return logPath(described, Number.isFinite(t) ? new Date(t) : fallback);
+}
 
 /**
  * Merge a log file that is being written twice — existing lines first, then whatever is new.
@@ -140,7 +148,8 @@ export const logPath = (session, at, seq) => {
  *
  * Union and never overwrite, because the two writers do not hold the same lines: the one that
  * loaded the queue earlier holds a PREFIX of what the later one holds, and whichever of them
- * commits last would otherwise clobber a superset with a subset.
+ * commits last would otherwise clobber a superset with a subset. With one file per session per day
+ * this is no longer the rare path: every push after a session's first of the day lands here.
  */
 export function unionLines(existingText, freshLines) {
   const seen = new Set();
@@ -154,50 +163,6 @@ export function unionLines(existingText, freshLines) {
   for (const l of String(existingText ?? '').split('\n')) take(l);
   for (const l of freshLines) take(l);
   return out.length ? `${out.join('\n')}\n` : '';
-}
-
-// ── the push sequence, counted per session on this machine ────────────────────────────────────
-
-/**
- * Where the count lives. Beside the queue it describes, in the SHARED queue directory — which is
- * the whole point: two processes publishing one session's queue are two processes reading one
- * counter. A per-session scratchpad would give each of them their own and reinstate the duplicate.
- *
- * `.seq`, so `queueFiles()`'s `.jsonl` filter steps over it.
- */
-const seqFile = (env, session) => join(queueDir(env), `${session}.seq`);
-
-/**
- * How many pushes this session has already published. Missing, unreadable or nonsense reads as 0.
- *
- * UNDER-COUNTING IS SAFE AND OVER-COUNTING IS THE DEFECT, and that asymmetry is what the whole
- * mechanism is arranged around. A count that is too low writes a path that already exists, and
- * `unionLines` merges into it — untidy, never lossy. A count that is too high writes a second file
- * holding the same lines, which is exactly the bug. So every uncertainty here resolves downwards.
- */
-export async function readSeq(env, session) {
-  try {
-    const text = await readFile(seqFile(env, session), 'utf8');
-    const n = Number.parseInt(String(text).trim(), 10);
-    return Number.isInteger(n) && n >= 0 ? n : 0;
-  } catch { return 0; }
-}
-
-/**
- * Record the number this push used — AFTER the queue files are gone, never before.
- *
- * The ordering is the correctness argument, so it is written down rather than left to the call
- * site's shape. Take A and B publishing one queue. B holds the lines, so B read the queue file
- * before A removed it. If A advanced the counter at the moment it LANDED, B's counter read could
- * still fall after it and B would take the next number — the duplicate, back again. Advancing it
- * after the removal orders the two: B's counter read precedes B's queue read, which precedes A's
- * removal, which precedes A's advance. B cannot see the higher number.
- *
- * Best effort: a counter that fails to advance costs a union on the next push, which is the safe
- * direction. It must never cost the push itself, which has already landed.
- */
-async function writeSeq(env, session, n) {
-  try { await writeFile(seqFile(env, session), `${n}\n`, 'utf8'); } catch { /* under-counting is safe */ }
 }
 
 // ── the queue side ────────────────────────────────────────────────────────────────────────────
@@ -245,10 +210,16 @@ export async function queueFiles({
     if (!name.endsWith('.jsonl')) continue;
     const path = join(queueDir(env), name);
     if (path === mine) continue;
+    const foreign = name.replace(/\.jsonl$/, '');
+    // A name that cannot be a session key is not swept. Its key would become part of a PUBLIC file
+    // name, and under the nested layout `outsideBase()` refused a `.` or `..` segment on the way out;
+    // in a flat name there is no segment to refuse, so the check has to happen here, on the way in.
+    // Left on disk, not deleted: it is not ours to discard, only not ours to publish.
+    if (!SESSION_SAFE.test(foreign)) continue;
     try {
       const s = await stat(path);
       if (now().getTime() - s.mtimeMs <= SWEEP_AFTER_MS) continue;
-      out.push({ path, session: name.replace(/\.jsonl$/, ''), mine: false });
+      out.push({ path, session: foreign, mine: false });
     } catch { /* vanished between readdir and stat — nothing to sweep */ }
   }
   return out;
@@ -407,16 +378,26 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
   return { files, rows: working, raw, extraLog, problems, converted };
 }
 
-/** Log files whose date folder is older than the retention window. Same push, same commit. */
+/**
+ * Log files whose DATE is older than the retention window. Same push, same commit.
+ *
+ * Two places the date can be, and both are read until the one-time migration folds the old one away:
+ * the day FOLDER of every file published before 2026-09-23 (`log/2026-09-18/…`), and the date at the
+ * front of the NAME since (`log/20260918-f3d05dd3.jsonl`). Anything that is neither is left alone
+ * rather than guessed at.
+ */
 export function expiredLogs(paths, { at = new Date(), days = RETENTION_DAYS, prefix = '' } = {}) {
   const cut = at.getTime() - days * 24 * 60 * 60 * 1000;
   const head = prefix ? `${prefix}/log/` : 'log/';
   const out = [];
   for (const p of paths) {
     if (!p.startsWith(head)) continue;
-    const day = p.slice(head.length).split('/')[0];
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
-    const t = Date.parse(`${day}T00:00:00Z`);
+    const rest = p.slice(head.length);
+    const folder = /^(\d{4})-(\d{2})-(\d{2})\//.exec(rest);
+    const named = /^(\d{4})(\d{2})(\d{2})-[^/]+\.jsonl$/.exec(rest);
+    const m = folder ?? named;
+    if (!m) continue;
+    const t = Date.parse(`${m[1]}-${m[2]}-${m[3]}T00:00:00Z`);
     if (Number.isFinite(t) && t < cut) out.push(p);
   }
   return out.sort();
@@ -473,21 +454,6 @@ export function commitMessage({ session, captures, confirms, disputes, logs }) {
  *                                 for the first later session that has one (PLAN §6.4)
  * @param {Function|null} opts.gate async (plan) => boolean. The operator's yes before a real push.
  *                                 Returning false leaves the queue exactly as it was.
- * @param {Function} opts.removeQueueFile  async (path) => void. The removal of one published queue
- *                                 file. Injectable for ONE reason, and it is worth stating because
- *                                 a seam that exists only for a test is normally a smell: the rule
- *                                 `writeSeq` carries — advance the counter only once the queue file
- *                                 is GONE — is a statement about the ORDER of two effects, and in a
- *                                 single process no assertion after the fact can see an order.
- *                                 Both effects have landed by the time `flush` returns, and they
- *                                 land in the same order whichever way round the code puts them.
- *                                 The 2026-09-22 review found exactly this (PLAN §22.2): the rule
- *                                 could be deleted outright and all 468 kb tests stayed green.
- *                                 Injecting the removal puts an observer BETWEEN the two, which is
- *                                 the only vantage point from which the order is a fact. The
- *                                 property is real and concurrent — it is what stops a second
- *                                 process taking the next number — so the seam buys a rule that is
- *                                 otherwise pinned by nothing.
  */
 export async function flush({
   env = process.env,
@@ -503,7 +469,6 @@ export async function flush({
   maxAttempts = MAX_ATTEMPTS,
   retryDelayMs = RETRY_DELAY_MS,
   sleep = (ms) => new Promise((r) => { setTimeout(r, ms); }),
-  removeQueueFile = (path) => rm(path, { force: true }),
 } = {}) {
   const session = sessionId(env);
   // The repo coordinates come from the READ locator, always — `injected` replaces the transport and
@@ -542,28 +507,6 @@ export async function flush({
   }
 
   const files = await queueFiles({ env, now, sweep, includeMine });
-
-  // THE SEQUENCE NUMBERS ARE TAKEN HERE — ONCE, BEFORE THE QUEUE IS READ, AND BEFORE THE FIRST
-  // ATTEMPT. Both halves of that are load-bearing.
-  //
-  //   * Before the queue is read, because that is what orders this process against a concurrent
-  //     one: whoever holds the lines read them before the other removed the file, so a counter
-  //     read taken earlier still cannot have seen the other's advance (`writeSeq`).
-  //   * Before the first attempt, and reused across CAS retries, because recomputing after a lost
-  //     compare-and-swap would see the WINNER'S file already in the tree, take the next number, and
-  //     write the duplicate this whole change removes. The loser must re-read the head and write to
-  //     THE SAME PATH — where `unionLines` merges it in.
-  //
-  // Our own session is always in the map even when we are not taking our own queue: a foreign-only
-  // sweep still writes a flush line, and it needs a file of its own to land in.
-  const logSeq = new Map();
-  const logAt = now();
-  for (const s of [...files.map((f) => f.session), session]) {
-    if (!logSeq.has(s)) logSeq.set(s, (await readSeq(env, s)) + 1);
-  }
-  // The DAY is pinned with the number, for the same reason: `dayFolder` is read off a clock, and a
-  // retry that crosses midnight would otherwise move the file rather than merge into it.
-  const logTarget = new Map([...logSeq].map(([s, n]) => [s, logPath(s, logAt, n)]));
 
   const loaded = [];
   for (const f of files) {
@@ -618,7 +561,7 @@ export async function flush({
   while (attempt < maxAttempts) {
     attempt += 1;
     const at = now();
-    const built = await buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, logTarget, logSeq, synthetic: isSynthetic(env), run: runOf(env), who: cachedWho({ dir: queueDir(env), env }) });
+    const built = await buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, synthetic: isSynthetic(env), run: runOf(env), who: cachedWho({ dir: queueDir(env), env }) });
     if (built.state !== 'ready') { last = built; break; }
 
     if (gate) {
@@ -630,12 +573,10 @@ export async function flush({
     const landed = await land({ api, plan: built.plan });
     if (landed.ok) {
       await touchStamp({ env, now });
-      for (const f of loaded) { try { await removeQueueFile(f.path); } catch { /* a queue file we cannot remove would be pushed twice; the log names it either way */ } }
-      // AFTER THE REMOVAL, never before — `writeSeq` carries the ordering argument. Only for the
-      // sessions whose log this push actually wrote, which is why `built.plan.sequence` is read
-      // back off the plan rather than the map: a session in the map that contributed no file has
-      // published nothing and its next push is still its first.
-      for (const [s, n] of Object.entries(built.plan.sequence)) await writeSeq(env, s, n);
+      // A queue file that cannot be removed is published again by the next push — into the SAME
+      // paths, where `unionLines` merges it rather than doubling it. That is the whole reason no
+      // ordering rule has to be kept here any more.
+      for (const f of loaded) { try { await rm(f.path, { force: true }); } catch { /* merged, not doubled, next time */ } }
       return {
         state: 'pushed',
         session,
@@ -727,7 +668,7 @@ export async function sweepIfDue({ env = process.env, base = null, token = null,
 }
 
 /** Re-read the base at its current head and compose everything the commit will contain. */
-async function buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, logTarget, logSeq, synthetic = false, run = '', who = null }) {
+async function buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, synthetic = false, run = '', who = null }) {
   const ref = await api.getRef();
   if (!ref.ok) return { state: 'failed', ...ref };
   const commit = await api.getCommit(ref.sha);
@@ -844,20 +785,24 @@ async function buildPush({ api, prefix, full, loaded, allLines, counts, session,
     text: unionLines(await read(relative), lines.map((l) => JSON.stringify(l))),
   });
 
-  let mineSeen = false;
+  // EVERY LINE IS ROUTED ON ITS OWN, by `logTargetOf`: its date, and — for a `session` line — the
+  // session it describes. So one queue file can feed several log files (a flush across midnight, a
+  // swept counter line), and several queue files can feed one. The push's own summary lines belong to
+  // the pushing session, which is why they are routed under `session` even when the only queue
+  // taken was somebody else's.
+  const byPath = new Map();
+  const route = (line, owner) => {
+    const path = logTargetOf(line, { session: owner, fallback: at });
+    if (!byPath.has(path)) byPath.set(path, []);
+    byPath.get(path).push(line);
+  };
+  for (const f of loaded) for (const l of f.lines) route(toLogLine(l), f.session);
+  for (const l of [...applied.extraLog, flushLine]) route(l, session);
+
   const logs = [];
-  const sequence = {};
   try {
-    for (const f of loaded) {
-      const own = f.session === session;
-      mineSeen ||= own;
-      const lines = [...f.lines.map(toLogLine), ...(own ? [...applied.extraLog, flushLine] : [])];
-      logs.push(await logBlob(logTarget.get(f.session), lines));
-      sequence[f.session] = logSeq.get(f.session);
-    }
-    if (!mineSeen) {
-      logs.push(await logBlob(logTarget.get(session), [...applied.extraLog, flushLine]));
-      sequence[session] = logSeq.get(session);
+    for (const [path, lines] of [...byPath].sort(([a], [b]) => a.localeCompare(b))) {
+      logs.push(await logBlob(path, lines));
     }
   } catch (err) {
     return { state: 'failed', reason: 'unreachable', detail: err.message };
@@ -883,7 +828,6 @@ async function buildPush({ api, prefix, full, loaded, allLines, counts, session,
       message: commitMessage({ session, ...counts, logs: logs.length }),
       writes,
       deletions,
-      sequence,
       converted: applied.converted,
       problems: applied.problems,
       swept,

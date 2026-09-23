@@ -53,7 +53,7 @@
 // THE CACHE LIVES IN THE QUEUE DIRECTORY, which is shared across sessions on one machine and is
 // never in the working tree (PLAN §7). So the first session to resolve a handle pays for every
 // session after it, including the sweeps, and nothing lands in `git status`. It is not a `.jsonl`
-// file, so `queueFiles()`'s filter steps over it exactly as it does over `.seq` and `.last-flush`.
+// file, so `queueFiles()`'s filter steps over it exactly as it does over `.last-flush`.
 
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';

@@ -102,10 +102,11 @@ const STAMPED = /^\d{8}T\d{6}Z-(.+)$/;
 const SEQUENCED = /^(.+)-\d{4,}$/;
 
 /**
- * `log/2026-09-18/20260918T171217Z-local_26.jsonl` → `local_26`, and
- * `log/2026-09-21/f3d05dd3-0003.jsonl` → `f3d05dd3`. The session is the group key.
+ * `log/20260923-f3d05dd3.jsonl` → `f3d05dd3` (the shape since 2026-09-23, one file per session per
+ * day), and the two older ones below it: `log/2026-09-18/20260918T171217Z-local_26.jsonl` →
+ * `local_26`, `log/2026-09-21/f3d05dd3-0003.jsonl` → `f3d05dd3`. The session is the group key.
  *
- * TWO SHAPES, AND BOTH ARE LIVE. The timestamp left the file name when it turned out to publish one
+ * THE TWO OLDER SHAPES, AND BOTH WERE LIVE UNTIL THE LAYOUT MIGRATION. The timestamp left the file name when it turned out to publish one
  * queue twice (`push.mjs` `logPath`); nothing was renamed, so for the 30 days of the retention
  * window the window holds both and a parser that understood one of them would drop the other
  * silently — a clean, confident, half-empty report, which is the one failure §8 forbids.
@@ -115,14 +116,29 @@ const SEQUENCED = /^(.+)-\d{4,}$/;
  * runs first: only it is anchored on a full UTC stamp, which nothing else can be.
  */
 export function sessionOf(path) {
-  const m = /([^/]+)\.jsonl$/i.exec(String(path ?? ''));
+  const p = String(path ?? '');
+  // THE CURRENT SHAPE, `log/20260923-f3d05dd3.jsonl`, and it is recognised by WHERE the file sits
+  // rather than by its name alone. A name cannot carry it: `12345678-0002` — an all-digit session
+  // key in the sequenced shape — reads as "date 12345678, session 0002" to any pattern that takes
+  // eight digits and a dash. Every older file sits under a day folder and every current one directly
+  // under `log/`, so the depth is exact where the name is ambiguous.
+  const flat = /(?:^|\/)log\/(\d{8})-([^/]+)\.jsonl$/i.exec(p);
+  if (flat) return flat[2];
+  const m = /([^/]+)\.jsonl$/i.exec(p);
   if (!m) return '';
   return STAMPED.exec(m[1])?.[1] ?? SEQUENCED.exec(m[1])?.[1] ?? m[1];
 }
 
-/** `log/2026-09-18/…` → `2026-09-18`. Used for the day filter and the sparkline. */
+/**
+ * `log/20260918-f3d05dd3.jsonl` and `log/2026-09-18/…` both → `2026-09-18`. Used for the day filter
+ * and the sparkline. The date in a current name is the date of the LINES inside it (`logTargetOf`
+ * in push.mjs), where the old day folder was the day of the push.
+ */
 export function dayOf(path) {
-  return /log\/(\d{4}-\d{2}-\d{2})\//.exec(String(path ?? ''))?.[1] ?? '';
+  const p = String(path ?? '');
+  const flat = /(?:^|\/)log\/(\d{4})(\d{2})(\d{2})-[^/]+\.jsonl$/.exec(p);
+  if (flat) return `${flat[1]}-${flat[2]}-${flat[3]}`;
+  return /log\/(\d{4}-\d{2}-\d{2})\//.exec(p)?.[1] ?? '';
 }
 
 /**

@@ -77,7 +77,7 @@ test('every key is KEY_LEN wide or is the whole id — never a two-character key
 });
 
 test('an id that is absent, blank, or unusable as a file name falls back to the honest process id', () => {
-  // The key becomes a public file name (`log/<day>/<key>-<seq>.jsonl`). A key carrying a
+  // The key becomes a public file name (`log/<YYYYMMDD>-<key>.jsonl`). A key carrying a
   // separator would nest the queue file one directory down and write a path nobody parses back —
   // so it is not repaired into something plausible, it admits there was no usable session.
   assert.match(sessionId({}), /^p\d+$/, 'with no session, the honest answer is "this process"');

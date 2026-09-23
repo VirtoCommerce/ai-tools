@@ -162,7 +162,7 @@ still in the file; it simply is not counted as somebody wanting to know somethin
 
 | flag | |
 |---|---|
-| `--days N` | window, in `log/YYYY-MM-DD/` day folders. Default 30. Above **200 files it refuses** and says so rather than hanging — narrow the window. |
+| `--days N` | window, by the date in each log path (`log/YYYYMMDD-<session>.jsonl`; older files by their `log/YYYY-MM-DD/` folder). Default 30. Above **200 files it refuses** and says so rather than hanging — narrow the window. |
 | `--sessions a,b,c` | scope to named sessions across the **whole** log tree. Replaces `--days`, which keeps its default and its meaning when this flag is absent. The shape §15's check wave needs. |
 | `--base <url>` | read another base. Defaults to `KB_BASE`, then the declared default. |
 | `--out <file>` | where the HTML lands. Never put it in the repository tree. |

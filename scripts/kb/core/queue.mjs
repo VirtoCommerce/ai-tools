@@ -142,9 +142,9 @@ export const KEY_LEN = 8;
 const MARKER = /^[A-Za-z]+_/;
 
 /**
- * The key becomes a PUBLIC PATH (`log/<day>/<key>/<key>-<seq>.jsonl`), so it has to be one -- and
- * since STEP 3c it is a DIRECTORY NAME as well as part of a file name, which widens what "has to be
- * one" means rather than changing it.
+ * The key becomes a PUBLIC PATH (`log/<YYYYMMDD>-<key>.jsonl`), so it has to be one. (Between STEP
+ * 3c and 2026-09-23 it was a directory name too; the rule below was written for that and still
+ * holds for the flat name.)
  *
  * The same lesson `publicLocator()` cost us (PLAN 7.1a): ask what a field can CARRY, not only what
  * the scanner can find. A host id is machine-generated and safe today; a key with a separator in it

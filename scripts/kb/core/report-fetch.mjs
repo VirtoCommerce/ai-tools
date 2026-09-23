@@ -45,7 +45,7 @@ export function reportCacheDir(env = process.env) {
 
 const cacheKey = (url) => createHash('sha256').update(String(url)).digest('hex').slice(0, 16);
 
-/** The `YYYY-MM-DD` day folders inside the window, inclusive of today. */
+/** The `YYYY-MM-DD` dates inside the window, inclusive of today — what `dayOf()` is compared with. */
 export function windowDays(days = DEFAULT_DAYS, at = new Date()) {
   const out = new Set();
   const ms = 24 * 60 * 60 * 1000;
@@ -58,11 +58,11 @@ export function windowDays(days = DEFAULT_DAYS, at = new Date()) {
 /**
  * Which tree blobs are session logs inside the window.
  *
- * Selection is on the DAY FOLDER, not on the file's timestamp: the folder is what §7 named the
- * window for ("date folder → 'last 30 days' is one tree read"), and a log pushed at 04:38 UTC
- * carrying lines from the previous evening lives under the day it was pushed. Filtering on line
- * timestamps instead would drop a file whose lines are all older than the window even though its
- * folder is inside it — and those lines are exactly the ones a late push carries.
+ * Selection is on the DATE IN THE PATH (`dayOf`), which is one tree read and no line parsing. Since
+ * 2026-09-23 that date is the date of the LINES in the file (`logTargetOf` in push.mjs), so a late
+ * push of yesterday's lines lands in yesterday's file and the window selects it by what it holds.
+ * An older file carries a day folder instead, which was the day it was PUSHED — the one-time layout
+ * migration regroups those by their lines' own dates.
  */
 export function selectLogPaths(treeEntries, {
   days = DEFAULT_DAYS, at = new Date(), prefix = '', sessions = null,
@@ -76,11 +76,11 @@ export function selectLogPaths(treeEntries, {
     .filter((e) => e.path.endsWith('.jsonl'))
     .map((e) => e.path)
     // A NAMED SET OF SESSIONS IS NOT A TIME WINDOW, so it replaces the day filter rather than
-    // narrowing inside it (PLAN §15.1: the wave is interleaved with other traffic, and §7's day
-    // folder is the day a file was PUSHED — a session's log can land in a folder outside any
-    // window a reader would think to pass). Selection is on the file's session suffix, which is
-    // exact: `logPath(f.session, at)` keeps a swept file's ORIGINAL session id, so every line in a
-    // file belongs to the session its name carries, and a session that pushed twice matches both.
+    // narrowing inside it (PLAN §15.1: the wave is interleaved with other traffic, and a session
+    // can run across days). Selection is on the file's session, which is exact: every line in a
+    // file belongs to the session its name carries — including a swept `session` line, which is
+    // routed to the session it DESCRIBES (`logTargetOf`) — and a session active on two days matches
+    // both of its files.
     .filter((p) => (wanted ? wanted.has(sessionOf(rel(p))) : want.has(dayOf(rel(p)))))
     .sort();
 }

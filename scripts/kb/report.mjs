@@ -32,7 +32,7 @@ const USAGE = `kb:report — what agents asked this base, and what it could not 
   npm run kb:report -- [--days 30] [--sessions a,b,c] [--run <handle>] [--base <locator>]
                        [--out <file.html>] [--json] [--no-network]
 
-  --days N        window, in day folders under log/ (default ${DEFAULT_DAYS}). Above ${MAX_FILES}
+  --days N        window, by the date in each log path (default ${DEFAULT_DAYS}). Above ${MAX_FILES}
                   files it refuses rather than hanging.
   --sessions a,b  scope to NAMED SESSIONS instead of a time window — the shape PLAN §15's check
                   wave needs, because a wave is a set of sessions interleaved with other traffic,
