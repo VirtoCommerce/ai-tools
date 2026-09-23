@@ -271,6 +271,10 @@ test('askAbout: the most shared words win, ties go to the later ask, below the f
     'a structured coordinate named verbatim is enough on its own');
   assert.equal(askAbout([{ at: 'A', q: 'storefront /cart layout' }], { text: 'an unrelated sentence', anchors: ['/cart'] }), null,
     'a one-segment page sits in half the questions, so it names nothing by itself');
+  // Found by a live smoke: a capture refused for an anchor of `/` was paired with an unrelated answer,
+  // because `/` is a substring of every question that names a page.
+  assert.equal(askAbout([{ at: 'A', q: 'what does the Active column on /company/members reflect' }], { text: 'an unrelated sentence', anchors: ['/'] }), null,
+    'a coordinate the door would reject names nothing');
 });
 
 // ── capture: turned away at the door (PLAN §23.11) ────────────────────────────────────────────

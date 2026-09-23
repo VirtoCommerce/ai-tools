@@ -591,10 +591,12 @@ const REQUIRED = ['subject', 'question', 'claim', 'deployment'];
  */
 export function askAbout(asks, { text, anchors = [] }) {
   const mine = new Set(tokenize(text));
-  // A one-segment page (`/cart`) sits in half the storefront's questions, so it names nothing on its
-  // own here; it still counts as the words it contributes.
+  // Only a coordinate the door would ACCEPT names an ask. A one-segment page (`/cart`) sits in half the
+  // storefront's questions, and a rejected one names everything: `/` is a substring of every question
+  // that mentions a page, which is how a live smoke on 2026-09-23 paired a `capture-invalid` with an
+  // unrelated answer. Either still counts as the words it contributes.
   const coords = anchors.map((a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim())
-    .filter((c) => c && !isSingleSegmentPath(c)).map((c) => c.toLowerCase());
+    .filter((c) => c && !isSingleSegmentPath(c) && !anchorProblems([c]).length).map((c) => c.toLowerCase());
   let best = null;
   for (const a of asks) {
     const q = String(a.q ?? '');
