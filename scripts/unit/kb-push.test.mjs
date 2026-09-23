@@ -442,25 +442,23 @@ test('a path with no valid date is REFUSED, not defaulted to the push clock', ()
   }
 });
 
-test('the reader gets session and date back off the new name — and off both old ones', () => {
-  // Three shapes coexist until the migration folds the two old ones away. Pinned HERE, beside the
-  // writer, because the claim is about two modules agreeing and cannot be pinned inside one.
+test('the reader gets session and date back off the name the WRITER produces', () => {
+  // Pinned HERE, beside the writer, because the claim is about two modules agreeing — `logPath`
+  // producing a name and `sessionOf`/`dayOf` reading it back — and cannot be pinned inside one.
   const p = logPath('f3d05dd3', new Date('2026-09-18T11:10:03Z'));
   assert.equal(sessionOf(p), 'f3d05dd3');
   assert.equal(dayOf(p), '2026-09-18');
   assert.equal(sessionOf(`v2/${p}`), 'f3d05dd3', 'and under a prefix');
-  assert.equal(sessionOf('log/2026-09-18/f3d05dd3/f3d05dd3-0003.jsonl'), 'f3d05dd3');
-  assert.equal(sessionOf('log/2026-09-18/20260918T111003Z-local_26.jsonl'), 'local_26');
+  // Since the migration the report reads ONLY what the writer writes; old shapes are refused.
+  assert.equal(sessionOf('log/2026-09-18/f3d05dd3/f3d05dd3-0003.jsonl'), '');
 });
 
-test('an all-digit session key parses under every shape, including the one a name alone cannot tell apart', () => {
-  // `12345678-0002.jsonl` is "session 12345678, push 2" in the sequenced shape and would read as
-  // "date 12345678, session 0002" to the new pattern. The new shape is recognised by DEPTH — directly
-  // under log/ — so the old nested file keeps its reading. Remove the depth test and this fails.
-  assert.equal(sessionOf(logPath('12345678', AT)), '12345678');
-  assert.equal(sessionOf('log/2026-09-21/12345678-0002.jsonl'), '12345678');
-  assert.equal(sessionOf('log/2026-09-21/12345678/12345678-0002.jsonl'), '12345678');
-  assert.equal(sessionOf('log/2026-09-21/20260921T090000Z-12345678.jsonl'), '12345678');
+test('an all-digit session key round-trips, and is never read as a date', () => {
+  // `12345678` is a legal session key and eight digits is also the shape of a date. The writer's
+  // name puts the date FIRST and the reader anchors on depth, so the round trip is exact.
+  const p = logPath('12345678', AT);
+  assert.equal(sessionOf(p), '12345678');
+  assert.equal(dayOf(p), `${AT.getUTCFullYear()}-${String(AT.getUTCMonth() + 1).padStart(2, '0')}-${String(AT.getUTCDate()).padStart(2, '0')}`);
 });
 
 test('each line is routed by ITS OWN date, and a `session` line to the session it describes', () => {

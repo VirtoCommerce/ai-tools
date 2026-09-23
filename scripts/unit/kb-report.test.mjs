@@ -50,9 +50,9 @@ const line = (o) => ({ at: '2026-09-18T10:00:00.000Z', ...o });
 
 /** The published price-sorting instance, reduced to the two log lines that make it. */
 const PRICE_SORT = [
-  line({ at: '2026-09-18T16:56:29.399Z', kind: 'ask', q: 'Does product price sorting use the indexed price field?', matched: ['KB-1834ABE5', 'KB-3113CBC1', 'KB-C440D4E3'], opened: ['KB-1834ABE5', 'KB-3113CBC1', 'KB-C440D4E3'], state: 'answer', ms: 2076, _session: 'local_26', _path: 'log/2026-09-18/a-local_26.jsonl' }),
-  line({ at: '2026-09-18T16:56:46.113Z', kind: 'ask', q: 'When sorting by price ascending, indexed price or displayed price?', matched: ['KB-1834ABE5', 'KB-FA724D31'], opened: ['KB-1834ABE5', 'KB-FA724D31'], state: 'answer', ms: 2147, _session: 'local_26', _path: 'log/2026-09-18/a-local_26.jsonl' }),
-  line({ at: '2026-09-18T17:00:37.019Z', kind: 'capture', id: 'KB-D9B90536', subject: 'xAPI accepts a malformed products sort argument', _session: 'local_26', _path: 'log/2026-09-18/a-local_26.jsonl' }),
+  line({ at: '2026-09-18T16:56:29.399Z', kind: 'ask', q: 'Does product price sorting use the indexed price field?', matched: ['KB-1834ABE5', 'KB-3113CBC1', 'KB-C440D4E3'], opened: ['KB-1834ABE5', 'KB-3113CBC1', 'KB-C440D4E3'], state: 'answer', ms: 2076, _session: 'local_26', _path: 'log/20260918-a-local_26.jsonl' }),
+  line({ at: '2026-09-18T16:56:46.113Z', kind: 'ask', q: 'When sorting by price ascending, indexed price or displayed price?', matched: ['KB-1834ABE5', 'KB-FA724D31'], opened: ['KB-1834ABE5', 'KB-FA724D31'], state: 'answer', ms: 2147, _session: 'local_26', _path: 'log/20260918-a-local_26.jsonl' }),
+  line({ at: '2026-09-18T17:00:37.019Z', kind: 'capture', id: 'KB-D9B90536', subject: 'xAPI accepts a malformed products sort argument', _session: 'local_26', _path: 'log/20260918-a-local_26.jsonl' }),
 ];
 
 /**
@@ -72,7 +72,7 @@ async function withTmp(fn) {
 test('a torn log line costs one line, not the whole report', () => {
   const { lines, malformed } = parseLogFile(
     '{"kind":"ask","q":"a"}\n{"kind":"ask","q":"b"\n{"kind":"show","id":"KB-1"}\n\n',
-    { path: 'log/2026-09-18/20260918T101010Z-s1.jsonl' },
+    { path: 'log/20260918-s1.jsonl' },
   );
   assert.equal(lines.length, 2);
   assert.equal(malformed, 1);
@@ -86,81 +86,64 @@ test('a line without a `kind` is malformed, not a line of an unknown kind', () =
 });
 
 test('session and day come off the path, which is where §7 put them', () => {
-  assert.equal(sessionOf('log/2026-09-18/20260918T171217Z-local_26.jsonl'), 'local_26');
-  assert.equal(dayOf('log/2026-09-18/20260918T171217Z-local_26.jsonl'), '2026-09-18');
+  assert.equal(sessionOf('log/20260918-local_26.jsonl'), 'local_26');
+  assert.equal(dayOf('log/20260918-local_26.jsonl'), '2026-09-18');
   assert.equal(sessionOf('nonsense'), '');
   assert.equal(dayOf('nonsense'), '');
 });
 
-test('BOTH session-key shapes parse — nothing published was renamed, so the reader reads both', () => {
-  // The key gained its entropy on 2026-09-21 (`local_f3` → `f3d05dd3`, PLAN §21.7 item 3 / STEP 3a).
-  // NOTHING WAS MIGRATED: published files keep their names, so for the 30 days of the retention
-  // window the report sees both shapes side by side and a parser that understood only one of them
-  // would drop a third of the base without saying so. The tolerance is part of the same change as
-  // the new key, which is what makes the rollback a plain `git revert`.
-  const old = 'log/2026-09-19/20260919T135705Z-local_16.jsonl';   // a real published path
-  const now = 'log/2026-09-21/20260921T090000Z-165fd553.jsonl';   // the same session, new key
-  assert.equal(sessionOf(old), 'local_16');
-  assert.equal(sessionOf(now), '165fd553');
-  assert.deepEqual([dayOf(old), dayOf(now)], ['2026-09-19', '2026-09-21']);
-  // A host id carrying no marker keeps its dashes, and the stamped shape is anchored on the stamp
-  // rather than on the first dash, so a key with dashes of its own comes back whole.
-  assert.equal(sessionOf('log/2026-09-21/20260921T090000Z-abcd-ef1.jsonl'), 'abcd-ef1');
+test('ONE file shape since the migration — and an OLD one is refused, never guessed at', () => {
+  // Until `2317a7a` three file shapes coexisted and the parser tried them in a load-bearing order.
+  // The migration folded every file in the base into `log/<YYYYMMDD>-<session>.jsonl` and verified
+  // it (99 -> 51 files, line multiset byte-identical, zero old-shape files left), so the report now
+  // reads exactly one. An old-shape path yields '' rather than a plausible session: a report that
+  // quietly attributed an unrecognised file would be the confident half-empty result §8 forbids.
+  // Reading an old shape is `migrate-log-layout.mjs`'s job, which keeps its own copy of that reader.
+  for (const old of [
+    'log/2026-09-18/20260918T171217Z-local_26.jsonl',   // timestamped-flat, to 2026-09-21
+    'log/2026-09-21/f3d05dd3-0003.jsonl',               // sequenced-flat, STEP 3b
+    'log/2026-09-21/f3d05dd3/f3d05dd3-0003.jsonl',      // sequenced-nested, STEP 3c
+  ]) {
+    assert.equal(sessionOf(old), '', old);
+    assert.equal(dayOf(old), '', old);
+  }
 });
 
-test('BOTH FILE-NAME shapes parse — the timestamp left the name, the published files did not', () => {
-  // The stamp came out of the file name on 2026-09-21 because it published one queue TWICE
-  // (PLAN §21.7 item 3 / STEP 3b): two processes, two clocks, two files, the first 13 lines
-  // byte-identical. The sequence number they both compute is the same, so they write one path.
-  // NOTHING WAS RENAMED, so the 30-day window holds both shapes and the reader owes both an answer.
-  assert.equal(sessionOf('log/2026-09-21/f3d05dd3-0003.jsonl'), 'f3d05dd3');
-  assert.equal(sessionOf('log/2026-09-21/20260921T081451Z-local_e8.jsonl'), 'local_e8');
-  assert.equal(dayOf('log/2026-09-21/f3d05dd3-0003.jsonl'), '2026-09-21');
-
-  // THE ORDER OF THE TWO TESTS IS LOAD-BEARING, and this is the case that proves it: a session key
-  // may be all digits, so a STAMPED file whose key is `12345678` also satisfies the sequenced shape
-  // and would read back as the stamp — a session id nobody has, silently, for that file only.
-  assert.equal(sessionOf('log/2026-09-21/20260921T090000Z-12345678.jsonl'), '12345678');
-  // And a sequenced file whose key is all digits still reads as the key.
-  assert.equal(sessionOf('log/2026-09-21/12345678-0002.jsonl'), '12345678');
-  // A key carrying dashes, sequenced.
-  assert.equal(sessionOf('log/2026-09-21/abcd-ef12-0007.jsonl'), 'abcd-ef12');
-  // Neither shape: the whole name is the best answer available, which is what it always was.
-  assert.equal(sessionOf('log/2026-09-21/handwritten.jsonl'), 'handwritten');
+test('BOTH session-KEY shapes still parse — the key and the file name are different things', () => {
+  // The migration changed FILE shapes, not keys. The key gained its entropy on 2026-09-21
+  // (`local_16` -> `165fd553`, STEP 3a) and the pre-3a keys are still in the base, now inside
+  // current-shape files. So both keys must come back whole, and they are two sessions to the report
+  // even where they may be one real session under two keys — which the report cannot know, because
+  // only the truncated key was ever stored.
+  assert.equal(sessionOf('log/20260919-local_16.jsonl'), 'local_16');
+  assert.equal(sessionOf('log/20260921-165fd553.jsonl'), '165fd553');
+  // A key carrying dashes of its own comes back whole: the date is anchored on eight digits.
+  assert.equal(sessionOf('log/20260921-abcd-ef1.jsonl'), 'abcd-ef1');
 });
 
-test('THE THIRD PATH SHAPE parses, and it is not a third shape in the parser', () => {
-  // STEP 3c put a session FOLDER in the path (PLAN §21.11). The file name did not change, and this
-  // is the test of that: the parser was not taught the directory and must not need to be. If the
-  // path had become `log/<day>/<session>/<seq>.jsonl` — the cleaner-looking shape that was
-  // deliberately NOT built — these two assertions would read `0003` and `f3d05dd3` respectively.
-  assert.equal(sessionOf('log/2026-09-21/f3d05dd3/f3d05dd3-0003.jsonl'), 'f3d05dd3');
-  assert.equal(dayOf('log/2026-09-21/f3d05dd3/f3d05dd3-0003.jsonl'), '2026-09-21');
-
-  // The all-digit key, at depth. Which pattern wins is still decided by the ORDER, not the depth.
-  assert.equal(sessionOf('log/2026-09-21/12345678/12345678-0002.jsonl'), '12345678');
-  assert.equal(sessionOf('log/2026-09-21/12345678/20260921T090000Z-12345678.jsonl'), '12345678');
-  // A key carrying dashes of its own, at depth.
-  assert.equal(sessionOf('log/2026-09-21/abcd-ef12/abcd-ef12-0007.jsonl'), 'abcd-ef12');
+test('an all-digit key parses, and an OLD all-digit file is not misread as a date', () => {
+  // THE TRAP THE DEPTH RULE EXISTS FOR. `12345678-0002` is "session 12345678, push 2" in the old
+  // sequenced shape and "date 12345678, session 0002" to any pattern taking eight digits and a dash.
+  // The current shape is recognised by sitting DIRECTLY under log/, so a stray old file under a day
+  // folder is refused rather than read as a session called `0002` on a day called 12345678.
+  assert.equal(sessionOf('log/20260921-12345678.jsonl'), '12345678');
+  assert.equal(dayOf('log/20260921-12345678.jsonl'), '2026-09-21');
+  assert.equal(sessionOf('log/2026-09-21/12345678-0002.jsonl'), '', 'refused, not misread');
 });
 
-test('ONE SESSION UNDER THREE PATH SHAPES IS ONE SESSION — the acceptance test of STEP 3c', () => {
-  // The real risk of adding a path shape is not that a file fails to parse — that is loud. It is
-  // that the SAME session splits in two because one of its files was read under a different name,
-  // which renders as a clean, confident, wrong page: session counts inflated, per-session panels
-  // halved, a repeated question scattered into singletons. Nothing errors.
-  //
-  // The 30-day retention window after 2026-09-21 genuinely holds all three shapes at once, because
-  // nothing was ever migrated: timestamped-flat (before STEP 3b), sequenced-flat (3b), and
-  // sequenced-nested (3c). So the fixture is built deliberately rather than left to the live smoke.
+test('ONE SESSION OVER SEVERAL DAYS IS ONE SESSION', () => {
+  // The risk the three-shape acceptance test guarded — a session splitting in two because its files
+  // were read under different names — takes a new form under one file per session PER DAY: a
+  // session that spans days has several files, and they must count as one. This session itself
+  // spanned three days when the layout landed, and five in the base did.
   const paths = [
-    'log/2026-09-19/20260919T135705Z-f3d05dd3.jsonl',       // timestamped, flat
-    'log/2026-09-21/f3d05dd3-0001.jsonl',                   // sequenced, flat
-    'log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl',          // sequenced, nested
-    'log/2026-09-21/local_e8/local_e8-0001.jsonl',          // a second session, nested
+    'log/20260921-f3d05dd3.jsonl',
+    'log/20260922-f3d05dd3.jsonl',
+    'log/20260923-f3d05dd3.jsonl',
+    'log/20260922-local_e8.jsonl',   // a second session, one day
   ];
   const mixed = paths.map((path, i) => line({
-    at: `2026-09-2${i}T09:00:00.000Z`,
+    at: `2026-09-2${i + 1}T09:00:00.000Z`,
     kind: 'ask',
     q: 'does price sort use the indexed price field',
     matched: ['KB-1834ABE5'],
@@ -169,32 +152,20 @@ test('ONE SESSION UNDER THREE PATH SHAPES IS ONE SESSION — the acceptance test
     _session: sessionOf(path),
   }));
   const a = analyse({ lines: mixed, rows: ROWS, meta: { days: 30 } });
-
-  assert.equal(a.sessions, 2, 'three files of one session are ONE session, plus the other one');
-  assert.equal(a.panels.questions.asked[0].sessions, 2, 'the repeat count groups across all three shapes');
-  assert.deepEqual(
-    a.panels.questions.bySession.map((r) => r.session).sort(),
-    ['f3d05dd3', 'local_e8'],
-    'no shape produces a session under a name nobody has',
-  );
+  assert.equal(a.sessions, 2, 'three day-files of one session are ONE session, plus the other one');
+  assert.equal(a.panels.questions.asked[0].sessions, 2, 'the repeat count groups across the days');
+  assert.deepEqual(a.panels.questions.bySession.map((r) => r.session).sort(), ['f3d05dd3', 'local_e8']);
 });
 
-test('a window holding both key shapes counts two sessions, not one and a dropped file', () => {
-  // The fixture is the mixed window itself: the report groups by session, and the 30 days after the
-  // change are the only window that ever holds both.
+test('a window holding both KEY shapes counts two sessions, not one and a dropped file', () => {
   const mixed = [
-    line({ at: '2026-09-19T13:57:05.000Z', kind: 'ask', q: 'does price sort use the indexed field', matched: ['KB-1834ABE5'], state: 'answer', _session: sessionOf('log/2026-09-19/20260919T135705Z-local_16.jsonl'), _path: 'log/2026-09-19/20260919T135705Z-local_16.jsonl' }),
-    line({ at: '2026-09-21T09:00:00.000Z', kind: 'ask', q: 'does price sort use the indexed field', matched: ['KB-1834ABE5'], state: 'answer', _session: sessionOf('log/2026-09-21/20260921T090000Z-165fd553.jsonl'), _path: 'log/2026-09-21/20260921T090000Z-165fd553.jsonl' }),
+    line({ at: '2026-09-19T13:57:05.000Z', kind: 'ask', q: 'does price sort use the indexed field', matched: ['KB-1834ABE5'], state: 'answer', _session: sessionOf('log/20260919-local_16.jsonl'), _path: 'log/20260919-local_16.jsonl' }),
+    line({ at: '2026-09-21T09:00:00.000Z', kind: 'ask', q: 'does price sort use the indexed field', matched: ['KB-1834ABE5'], state: 'answer', _session: sessionOf('log/20260921-165fd553.jsonl'), _path: 'log/20260921-165fd553.jsonl' }),
   ];
   const a = analyse({ lines: mixed, rows: ROWS, meta: { days: 30 } });
-  assert.equal(a.sessions, 2, 'the old-shape file is a session, not a parse failure');
-  // And the repeated question groups across both shapes rather than splitting into two rows.
+  assert.equal(a.sessions, 2, 'the old-KEY file is a session, not a parse failure');
   assert.equal(a.panels.questions.asked[0].sessions, 2);
-  assert.deepEqual(
-    a.panels.questions.bySession.map((r) => r.session).sort(),
-    ['165fd553', 'local_16'],
-    'both shapes reach the per-session panel under their own name',
-  );
+  assert.deepEqual(a.panels.questions.bySession.map((r) => r.session).sort(), ['165fd553', 'local_16']);
 });
 
 test('the question key drops punctuation and case but KEEPS word order', () => {
@@ -207,10 +178,10 @@ test('the question key drops punctuation and case but KEEPS word order', () => {
 
 test('misses rank by repeat count and NEVER include an unreachable ask', () => {
   const lines = [
-    line({ kind: 'ask', q: 'how does X work', state: 'miss', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ kind: 'ask', q: 'How does X work?', state: 'miss', _session: 's2', _path: 'log/2026-09-18/a-s2.jsonl' }),
-    line({ kind: 'ask', q: 'what about Y', state: 'miss', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ kind: 'ask', q: 'unreachable one', state: 'unreachable', why: 'ETIMEDOUT', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ kind: 'ask', q: 'how does X work', state: 'miss', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ kind: 'ask', q: 'How does X work?', state: 'miss', _session: 's2', _path: 'log/20260918-a-s2.jsonl' }),
+    line({ kind: 'ask', q: 'what about Y', state: 'miss', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ kind: 'ask', q: 'unreachable one', state: 'unreachable', why: 'ETIMEDOUT', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
   ];
   const m = misses(lines);
   assert.equal(m.ranked.length, 2);
@@ -268,9 +239,9 @@ test('PANEL 6: a capture that names ask A is not evidence about ask B', () => {
   // pairing the capture was counted against BOTH, so B was flagged unhelpful on the strength of an
   // answer to a different question. Restore that rule and this test fails.
   const lines = [
-    line({ at: '2026-09-18T10:00:00.000Z', kind: 'ask', q: 'A', matched: ['KB-D9B90536'], state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ at: '2026-09-18T10:05:00.000Z', kind: 'ask', q: 'B', matched: ['KB-FA724D31'], state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ at: '2026-09-18T11:00:00.000Z', kind: 'capture', id: 'KB-316B2DDB', subject: 'about A', after: '2026-09-18T10:00:00.000Z', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T10:00:00.000Z', kind: 'ask', q: 'A', matched: ['KB-D9B90536'], state: 'answer', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ at: '2026-09-18T10:05:00.000Z', kind: 'ask', q: 'B', matched: ['KB-FA724D31'], state: 'answer', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ at: '2026-09-18T11:00:00.000Z', kind: 'capture', id: 'KB-316B2DDB', subject: 'about A', after: '2026-09-18T10:00:00.000Z', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
   ];
   const u = unhelpful(lines, indexLookup(ROWS));
   assert.equal(u.decidable, 1, 'one capture names one ask - ask B is untouched by it');
@@ -280,8 +251,8 @@ test('PANEL 6: a capture that names ask A is not evidence about ask B', () => {
 
 test('PANEL 6: a pointer at a MISS is the loop working, counted apart from the rate', () => {
   const lines = [
-    line({ at: '2026-09-18T10:00:00.000Z', kind: 'ask', q: 'nothing known', matched: [], state: 'miss', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ at: '2026-09-18T11:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', after: '2026-09-18T10:00:00.000Z', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T10:00:00.000Z', kind: 'ask', q: 'nothing known', matched: [], state: 'miss', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ at: '2026-09-18T11:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', after: '2026-09-18T10:00:00.000Z', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
   ];
   const u = unhelpful(lines, indexLookup(ROWS));
   assert.equal(u.decidable, 0, 'the base did not answer, so there is no answer to call unhelpful');
@@ -291,7 +262,7 @@ test('PANEL 6: a pointer at a MISS is the loop working, counted apart from the r
 
 test('PANEL 6: a pointer at an ask OUTSIDE the window is undecidable, never a verdict', () => {
   const lines = [
-    line({ at: '2026-09-18T11:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', after: '2026-09-17T09:00:00.000Z', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T11:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', after: '2026-09-17T09:00:00.000Z', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
   ];
   const u = unhelpful(lines, indexLookup(ROWS));
   assert.equal(u.decidable, 0);
@@ -301,8 +272,8 @@ test('PANEL 6: a pointer at an ask OUTSIDE the window is undecidable, never a ve
 
 test('PANEL 6: an ask that DID cover the capture is helpful, not flagged', () => {
   const lines = [
-    line({ at: '2026-09-18T18:25:17.213Z', kind: 'ask', q: 'what does xAPI do with an unknown storeId', matched: ['KB-D9B90536'], state: 'answer', _session: 'kbs4demo', _path: 'log/2026-09-18/a-kbs4demo.jsonl' }),
-    line({ at: '2026-09-18T18:25:17.221Z', kind: 'capture', id: 'KB-316B2DDB', subject: 'invalid storeId', after: '2026-09-18T18:25:17.213Z', _session: 'kbs4demo', _path: 'log/2026-09-18/a-kbs4demo.jsonl' }),
+    line({ at: '2026-09-18T18:25:17.213Z', kind: 'ask', q: 'what does xAPI do with an unknown storeId', matched: ['KB-D9B90536'], state: 'answer', _session: 'kbs4demo', _path: 'log/20260918-a-kbs4demo.jsonl' }),
+    line({ at: '2026-09-18T18:25:17.221Z', kind: 'capture', id: 'KB-316B2DDB', subject: 'invalid storeId', after: '2026-09-18T18:25:17.213Z', _session: 'kbs4demo', _path: 'log/20260918-a-kbs4demo.jsonl' }),
   ];
   const u = unhelpful(lines, indexLookup(ROWS));
   assert.equal(u.flagged.length, 0);
@@ -312,8 +283,8 @@ test('PANEL 6: an ask that DID cover the capture is helpful, not flagged', () =>
 
 test('PANEL 6: a capture BEFORE the ask says nothing about that ask', () => {
   const lines = [
-    line({ at: '2026-09-18T12:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ at: '2026-09-18T13:00:00.000Z', kind: 'ask', q: 'anything', matched: ['KB-FA724D31'], state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T12:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ at: '2026-09-18T13:00:00.000Z', kind: 'ask', q: 'anything', matched: ['KB-FA724D31'], state: 'answer', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
   ];
   const u = unhelpful(lines, indexLookup(ROWS));
   assert.equal(u.decidable, 0);
@@ -322,16 +293,16 @@ test('PANEL 6: a capture BEFORE the ask says nothing about that ask', () => {
 
 test('PANEL 6: a capture in ANOTHER session is not evidence about this one', () => {
   const lines = [
-    line({ at: '2026-09-18T12:00:00.000Z', kind: 'ask', q: 'anything', matched: ['KB-FA724D31'], state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ at: '2026-09-18T13:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', _session: 's2', _path: 'log/2026-09-18/a-s2.jsonl' }),
+    line({ at: '2026-09-18T12:00:00.000Z', kind: 'ask', q: 'anything', matched: ['KB-FA724D31'], state: 'answer', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ at: '2026-09-18T13:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', _session: 's2', _path: 'log/20260918-a-s2.jsonl' }),
   ];
   assert.equal(unhelpful(lines, indexLookup(ROWS)).decidable, 0);
 });
 
 test('PANEL 6: an unknown captured entry is UNDECIDABLE, never unhelpful', () => {
   const lines = [
-    line({ at: '2026-09-18T12:00:00.000Z', kind: 'ask', q: 'anything', matched: ['KB-FA724D31'], state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ at: '2026-09-18T13:00:00.000Z', kind: 'capture', id: 'KB-NOTYET01', subject: 'pushed after the snapshot', after: '2026-09-18T12:00:00.000Z', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T12:00:00.000Z', kind: 'ask', q: 'anything', matched: ['KB-FA724D31'], state: 'answer', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ at: '2026-09-18T13:00:00.000Z', kind: 'capture', id: 'KB-NOTYET01', subject: 'pushed after the snapshot', after: '2026-09-18T12:00:00.000Z', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
   ];
   const u = unhelpful(lines, indexLookup(ROWS));
   assert.equal(u.flagged.length, 0);
@@ -341,8 +312,8 @@ test('PANEL 6: an unknown captured entry is UNDECIDABLE, never unhelpful', () =>
 
 test('PANEL 6: a MISS followed by a capture is panel 1s business, not this panel s', () => {
   const lines = [
-    line({ at: '2026-09-18T12:00:00.000Z', kind: 'ask', q: 'nothing known', matched: [], state: 'miss', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ at: '2026-09-18T13:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T12:00:00.000Z', kind: 'ask', q: 'nothing known', matched: [], state: 'miss', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ at: '2026-09-18T13:00:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
   ];
   const u = unhelpful(lines, indexLookup(ROWS));
   assert.equal(u.decidable, 0, 'a miss is honest — it is not an unhelpful answer');
@@ -354,8 +325,8 @@ test('PANEL 6: anchor comparison is case- and whitespace-insensitive', () => {
     { id: 'KB-BBBB0002', subject: 'b', anchors: ['query.products'] },
   ];
   const lines = [
-    line({ at: '2026-09-18T12:00:00.000Z', kind: 'ask', q: 'q', matched: ['KB-AAAA0001'], state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ at: '2026-09-18T13:00:00.000Z', kind: 'capture', id: 'KB-BBBB0002', subject: 'b', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ at: '2026-09-18T12:00:00.000Z', kind: 'ask', q: 'q', matched: ['KB-AAAA0001'], state: 'answer', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ at: '2026-09-18T13:00:00.000Z', kind: 'capture', id: 'KB-BBBB0002', subject: 'b', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
   ];
   const u = unhelpful(lines, indexLookup(rows));
   assert.equal(u.flagged.length, 0, 'the same anchor spelled differently is the same place');
@@ -365,8 +336,8 @@ test('PANEL 6: anchor comparison is case- and whitespace-insensitive', () => {
 
 test('questions count every ask, answered or not, and carry the outcome breakdown', () => {
   const lines = [
-    line({ kind: 'ask', q: 'same thing', matched: ['KB-D9B90536'], state: 'answer', ms: 100, _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ kind: 'ask', q: 'Same thing!', state: 'miss', _session: 's2', _path: 'log/2026-09-18/a-s2.jsonl' }),
+    line({ kind: 'ask', q: 'same thing', matched: ['KB-D9B90536'], state: 'answer', ms: 100, _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ kind: 'ask', q: 'Same thing!', state: 'miss', _session: 's2', _path: 'log/20260918-a-s2.jsonl' }),
   ];
   const q = questions(lines);
   assert.equal(q.totalAsks, 2);
@@ -378,8 +349,8 @@ test('questions count every ask, answered or not, and carry the outcome breakdow
 
 test('entry usage separates matched, opened and shown, and lists the never-served', () => {
   const lines = [
-    line({ kind: 'ask', q: 'x', matched: ['KB-D9B90536', 'KB-FA724D31'], opened: ['KB-D9B90536'], state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ kind: 'show', id: 'KB-D9B90536', state: 'answer', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ kind: 'ask', q: 'x', matched: ['KB-D9B90536', 'KB-FA724D31'], opened: ['KB-D9B90536'], state: 'answer', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ kind: 'show', id: 'KB-D9B90536', state: 'answer', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
   ];
   const e = entryUsage(lines, indexLookup(ROWS));
   const top = e.used.find((r) => r.id === 'KB-D9B90536');
@@ -391,10 +362,10 @@ test('entry usage separates matched, opened and shown, and lists the never-serve
 
 test('a contested entry — confirmed AND disputed — sorts to the top', () => {
   const lines = [
-    line({ kind: 'confirm', id: 'KB-C440D4E3', deployment: 'vcst_qa', trust: 3, _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ kind: 'confirm', id: 'KB-C440D4E3', deployment: 'vcptcore', trust: 4, _session: 's2', _path: 'log/2026-09-18/a-s2.jsonl' }),
-    line({ kind: 'dispute', id: 'KB-C440D4E3', deployment: 'virtostart', saw: 'it returned 200', _session: 's3', _path: 'log/2026-09-18/a-s3.jsonl' }),
-    line({ kind: 'confirm', id: 'KB-D9B90536', deployment: 'vcst_qa', trust: 2, _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
+    line({ kind: 'confirm', id: 'KB-C440D4E3', deployment: 'vcst_qa', trust: 3, _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ kind: 'confirm', id: 'KB-C440D4E3', deployment: 'vcptcore', trust: 4, _session: 's2', _path: 'log/20260918-a-s2.jsonl' }),
+    line({ kind: 'dispute', id: 'KB-C440D4E3', deployment: 'virtostart', saw: 'it returned 200', _session: 's3', _path: 'log/20260918-a-s3.jsonl' }),
+    line({ kind: 'confirm', id: 'KB-D9B90536', deployment: 'vcst_qa', trust: 2, _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
   ];
   const e = evidence(lines, indexLookup(ROWS));
   assert.equal(e.rows[0].id, 'KB-C440D4E3');
@@ -407,8 +378,8 @@ test('a contested entry — confirmed AND disputed — sorts to the top', () => 
 
 test('refused captures name what was re-discovered, and how often', () => {
   const lines = [
-    line({ at: '2026-09-18T10:00:00Z', kind: 'capture-refused', dupeOf: 'KB-D9B90536', subject: 'sort arg ignored', why: 'anchors+scope', when: 'call', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' }),
-    line({ at: '2026-09-18T11:00:00Z', kind: 'capture-refused', dupeOf: 'KB-D9B90536', subject: 'sort argument silently accepted', why: 'anchors+scope', when: 'push', _session: 's2', _path: 'log/2026-09-18/a-s2.jsonl' }),
+    line({ at: '2026-09-18T10:00:00Z', kind: 'capture-refused', dupeOf: 'KB-D9B90536', subject: 'sort arg ignored', why: 'anchors+scope', when: 'call', _session: 's1', _path: 'log/20260918-a-s1.jsonl' }),
+    line({ at: '2026-09-18T11:00:00Z', kind: 'capture-refused', dupeOf: 'KB-D9B90536', subject: 'sort argument silently accepted', why: 'anchors+scope', when: 'push', _session: 's2', _path: 'log/20260918-a-s2.jsonl' }),
   ];
   const r = refusals(lines, indexLookup(ROWS));
   assert.equal(r.total, 2);
@@ -426,14 +397,14 @@ test('the window is day folders, inclusive of today', () => {
 
 test('selection takes only log blobs inside the window, prefix-aware', () => {
   const tree = [
-    { type: 'blob', path: 'log/2026-09-19/a-s1.jsonl' },
-    { type: 'blob', path: 'log/2026-09-01/old-s2.jsonl' },
+    { type: 'blob', path: 'log/20260919-a-s1.jsonl' },
+    { type: 'blob', path: 'log/20260901-old-s2.jsonl' },
     { type: 'blob', path: 'log/2026-09-19/README.md' },
     { type: 'tree', path: 'log/2026-09-19' },
     { type: 'blob', path: 'entries/KB-D9B90536.md' },
   ];
   const got = selectLogPaths(tree, { days: 2, at: new Date('2026-09-19T04:00:00Z') });
-  assert.deepEqual(got, ['log/2026-09-19/a-s1.jsonl']);
+  assert.deepEqual(got, ['log/20260919-a-s1.jsonl']);
 });
 
 test('--sessions selects across both key shapes in one window', () => {
@@ -441,83 +412,91 @@ test('--sessions selects across both key shapes in one window', () => {
   // ones carry the widened key. A `--sessions` filter that understood one shape would return a
   // clean, confident, half-empty page — the "looks like no activity" failure §8 forbids.
   const tree = [
-    { type: 'blob', path: 'log/2026-09-19/20260919T135705Z-local_16.jsonl' },
-    { type: 'blob', path: 'log/2026-09-21/20260921T090000Z-165fd553.jsonl' },
-    { type: 'blob', path: 'log/2026-09-21/20260921T091500Z-7b2c9e04.jsonl' },
+    { type: 'blob', path: 'log/20260919-local_16.jsonl' },
+    { type: 'blob', path: 'log/20260921-165fd553.jsonl' },
+    { type: 'blob', path: 'log/20260921-7b2c9e04.jsonl' },
   ];
   assert.deepEqual(
     selectLogPaths(tree, { sessions: 'local_16,165fd553', at: new Date('2026-09-21T12:00:00Z') }),
-    ['log/2026-09-19/20260919T135705Z-local_16.jsonl', 'log/2026-09-21/20260921T090000Z-165fd553.jsonl'],
+    ['log/20260919-local_16.jsonl', 'log/20260921-165fd553.jsonl'],
   );
   // And the plain day window takes both shapes too — the key is not part of the day filter at all.
   assert.equal(selectLogPaths(tree, { days: 30, at: new Date('2026-09-21T12:00:00Z') }).length, 3);
 });
 
-test('--sessions selects across both FILE-NAME shapes, and a session\'s pushes sort in order', () => {
-  // The other mixed window: the stamp left the file name on 2026-09-21 (STEP 3b), so for 30 days
-  // a session can own a timestamped file and a sequenced one at the same time. Both are its own.
+test('--sessions takes a session\'s day-files in DATE order, and only that session\'s', () => {
+  // REWRITTEN, NOT MIGRATED. This test pinned two things that no longer exist: a session owning a
+  // timestamped file and a sequenced one at once, and the zero-padding that made the tenth PUSH sort
+  // after the second. There are no push numbers now. Migrating its fixtures by the migration's rule
+  // collapsed three distinct files onto one path — three blobs at one address, which no git tree can
+  // hold — and it still passed, asserting nothing.
+  //
+  // THE ANALOGUE THAT IS TRUE NOW: a session's files are one per DAY, the date comes first in the
+  // name, so a plain lexical sort is chronological. The fixture is deliberately given OUT of order,
+  // so a selection that merely preserved input order would fail here.
   const tree = [
-    { type: 'blob', path: 'log/2026-09-21/20260921T081451Z-local_e8.jsonl' },
-    { type: 'blob', path: 'log/2026-09-21/f3d05dd3-0002.jsonl' },
-    { type: 'blob', path: 'log/2026-09-21/f3d05dd3-0001.jsonl' },
-    { type: 'blob', path: 'log/2026-09-21/f3d05dd3-0010.jsonl' },
+    { type: 'blob', path: 'log/20260921-local_e8.jsonl' },
+    { type: 'blob', path: 'log/20260923-f3d05dd3.jsonl' },
+    { type: 'blob', path: 'log/20260921-f3d05dd3.jsonl' },
+    { type: 'blob', path: 'log/20260922-f3d05dd3.jsonl' },
   ];
+  const at = new Date('2026-09-23T12:00:00Z');
   assert.deepEqual(
-    selectLogPaths(tree, { sessions: 'f3d05dd3', at: new Date('2026-09-21T12:00:00Z') }),
-    [
-      'log/2026-09-21/f3d05dd3-0001.jsonl',
-      'log/2026-09-21/f3d05dd3-0002.jsonl',
-      'log/2026-09-21/f3d05dd3-0010.jsonl',
-    ],
-    'zero-padded, so the tenth push sorts after the second rather than before it',
+    selectLogPaths(tree, { sessions: 'f3d05dd3', at }),
+    ['log/20260921-f3d05dd3.jsonl', 'log/20260922-f3d05dd3.jsonl', 'log/20260923-f3d05dd3.jsonl'],
+    'date-first names sort chronologically, whatever order the tree listed them in',
   );
   assert.deepEqual(
-    selectLogPaths(tree, { sessions: 'local_e8', at: new Date('2026-09-21T12:00:00Z') }),
-    ['log/2026-09-21/20260921T081451Z-local_e8.jsonl'],
+    selectLogPaths(tree, { sessions: 'local_e8', at }),
+    ['log/20260921-local_e8.jsonl'],
+    'and a filter on one session never reaches another',
   );
-  assert.equal(selectLogPaths(tree, { days: 30, at: new Date('2026-09-21T12:00:00Z') }).length, 4);
 });
 
-test('selection is DEPTH-AGNOSTIC — the tree walk was not changed and must not need to be', () => {
-  // STEP 3c asked whether `selectLogPaths` had to learn about the session folder. It did not: it
-  // filters on the `log/` prefix and the `.jsonl` suffix and never counts segments, so a file one
-  // level deeper is taken by the same two predicates. That is a claim about code nobody touched,
-  // which is exactly the claim most likely to stop being true later, so it is pinned here.
+test('selection takes the CURRENT shape only — a leftover nested file is not a session', () => {
+  // THIS TEST WAS REWRITTEN, NOT MIGRATED, and the reason is worth keeping. It used to pin that
+  // `selectLogPaths` was DEPTH-AGNOSTIC across three coexisting path shapes. Moving its fixtures by
+  // the migration's rule collapsed two DIFFERENT old paths (sequenced-flat and sequenced-nested) onto
+  // ONE new path, leaving a tree with two blobs at one address — a state no git tree can hold. It
+  // still passed. A passing test over an impossible fixture asserts nothing, so it was replaced by
+  // the claim that is true now.
+  //
+  // THE CLAIM NOW: since the migration there is one shape, directly under `log/`, and depth is what
+  // distinguishes it. A stray file at the old depth — a stale checkout still writing the old layout,
+  // or a hand-made file — must not be selected, because `sessionOf`/`dayOf` refuse it and a file
+  // selected but unattributed would inflate the line count with lines belonging to nobody.
   const tree = [
-    { type: 'blob', path: 'log/2026-09-19/20260919T135705Z-f3d05dd3.jsonl' },
-    { type: 'blob', path: 'log/2026-09-21/f3d05dd3-0001.jsonl' },
-    { type: 'blob', path: 'log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl' },
-    { type: 'blob', path: 'log/2026-09-21/local_e8/local_e8-0001.jsonl' },
-    { type: 'tree', path: 'log/2026-09-21/f3d05dd3' },       // the folder itself is not a log file
-    { type: 'blob', path: 'log/2026-09-21/f3d05dd3/README.md' },
+    { type: 'blob', path: 'log/20260919-f3d05dd3.jsonl' },
+    { type: 'blob', path: 'log/20260921-f3d05dd3.jsonl' },
+    { type: 'blob', path: 'log/20260921-local_e8.jsonl' },
+    { type: 'blob', path: 'log/2026-09-21/f3d05dd3/f3d05dd3-0003.jsonl' },   // old nested shape
+    { type: 'blob', path: 'log/2026-09-21/20260921T081451Z-local_e8.jsonl' }, // old stamped shape
+    { type: 'tree', path: 'log/2026-09-21' },                                  // a folder, not a file
+    { type: 'blob', path: 'log/README.md' },                                   // not a log file
   ];
   const at = new Date('2026-09-21T12:00:00Z');
 
-  // The day window takes all four blobs and neither the tree node nor the non-jsonl file.
+  // The day window takes the three current-shape files and nothing else.
   assert.deepEqual(selectLogPaths(tree, { days: 30, at }), [
-    'log/2026-09-19/20260919T135705Z-f3d05dd3.jsonl',
-    'log/2026-09-21/f3d05dd3-0001.jsonl',
-    'log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl',
-    'log/2026-09-21/local_e8/local_e8-0001.jsonl',
+    'log/20260919-f3d05dd3.jsonl',
+    'log/20260921-f3d05dd3.jsonl',
+    'log/20260921-local_e8.jsonl',
   ]);
 
-  // And `--sessions` reaches a nested file under the same name as a flat one: three shapes, one
-  // session, one selection. The counterpart of the analyse-side acceptance test above — a session
-  // that cannot be SELECTED is just as invisible as one that splits.
+  // And `--sessions` takes every DAY-file of one session — a session that spans days is one
+  // session with several files — and not the old-shape file bearing the same key.
   assert.deepEqual(selectLogPaths(tree, { sessions: 'f3d05dd3', at }), [
-    'log/2026-09-19/20260919T135705Z-f3d05dd3.jsonl',
-    'log/2026-09-21/f3d05dd3-0001.jsonl',
-    'log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl',
+    'log/20260919-f3d05dd3.jsonl',
+    'log/20260921-f3d05dd3.jsonl',
   ]);
 
-  // A prefixed base (`v2/`) nests one level further still, and the relative path is what is parsed.
-  const prefixed = [{ type: 'blob', path: 'v2/log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl' }];
-  assert.deepEqual(selectLogPaths(prefixed, { days: 30, at, prefix: 'v2', sessions: 'f3d05dd3' }),
-    ['v2/log/2026-09-21/f3d05dd3/f3d05dd3-0002.jsonl']);
+  // A prefixed base (`v2/`) is read relative to its prefix.
+  const prefixed = [{ type: 'blob', path: 'v2/log/20260921-f3d05dd3.jsonl' }];
+  assert.deepEqual(selectLogPaths(prefixed, { days: 30, at, prefix: 'v2' }), ['v2/log/20260921-f3d05dd3.jsonl']);
 });
 
 test('above the file bound it REFUSES and names the flag, rather than hanging or truncating', async () => {
-  const tree = Array.from({ length: 5 }, (_, i) => ({ type: 'blob', path: `log/2026-09-19/f${i}-s${i}.jsonl` }));
+  const tree = Array.from({ length: 5 }, (_, i) => ({ type: 'blob', path: `log/20260919-f${i}-s${i}.jsonl` }));
   const fetchImpl = async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ tree, truncated: false }) });
   const got = await withTmp((dir) => collect({
     base: 'https://raw.githubusercontent.com/VirtoCommerce/vc-knowledge/main',
@@ -539,7 +518,7 @@ test('a base that is not enumerable refuses rather than reporting zero activity'
 test('an unreachable base renders FROM CACHE, behind a banner, never as an empty report', async () => {
   await withTmp(async (dir) => {
     const base = 'https://raw.githubusercontent.com/VirtoCommerce/vc-knowledge/main';
-    const tree = [{ type: 'blob', path: 'log/2026-09-19/a-local_26.jsonl' }];
+    const tree = [{ type: 'blob', path: 'log/20260919-a-local_26.jsonl' }];
     const log = PRICE_SORT.map(({ _session, _path, ...l }) => JSON.stringify(l)).join('\n');
     const index = JSON.stringify({ entries: ROWS });
 
@@ -606,7 +585,7 @@ test('the HTML is self-contained: no script, no external stylesheet, no network 
 });
 
 test('rendering escapes a question rather than letting it become markup', () => {
-  const lines = [line({ kind: 'ask', q: '<img src=x onerror="alert(1)">', state: 'miss', _session: 's1', _path: 'log/2026-09-18/a-s1.jsonl' })];
+  const lines = [line({ kind: 'ask', q: '<img src=x onerror="alert(1)">', state: 'miss', _session: 's1', _path: 'log/20260918-a-s1.jsonl' })];
   const html = renderHtml(analyse({ lines, rows: ROWS, meta: { base: 'b', days: 30, at: '2026-09-19T04:00:00Z' } }));
   assert.doesNotMatch(html, /<img src=x/);
   assert.match(html, /&lt;img src=x/);
@@ -953,8 +932,8 @@ test('the three thresholds are declared in the module, not passed in', () => {
 test('analyse() wires the verdict off the SAME panels it renders — one derivation, no second copy', () => {
   const r = analyse({
     lines: [
-      missLine({ at: '2026-09-19T01:00:00Z', q: 'a b c d', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.5 }, _session: 's', _path: 'log/2026-09-19/a-s.jsonl' }),
-      line({ at: '2026-09-19T01:10:00Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', after: '2026-09-19T01:00:00Z', _session: 's', _path: 'log/2026-09-19/a-s.jsonl' }),
+      missLine({ at: '2026-09-19T01:00:00Z', q: 'a b c d', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.5 }, _session: 's', _path: 'log/20260919-a-s.jsonl' }),
+      line({ at: '2026-09-19T01:10:00Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', after: '2026-09-19T01:00:00Z', _session: 's', _path: 'log/20260919-a-s.jsonl' }),
     ],
     rows: ROWS,
     meta: { days: 30 },
@@ -967,7 +946,7 @@ test('analyse() wires the verdict off the SAME panels it renders — one derivat
 
 test('a synthetic miss never reaches the near-miss panel or the verdict', () => {
   const r = analyse({
-    lines: [missLine({ q: 'benchmark question', nearMiss: { id: 'KB-C440D4E3', score: 9, coverage: 0.49 }, synthetic: true, _session: 's', _path: 'log/2026-09-19/a-s.jsonl' })],
+    lines: [missLine({ q: 'benchmark question', nearMiss: { id: 'KB-C440D4E3', score: 9, coverage: 0.49 }, synthetic: true, _session: 's', _path: 'log/20260919-a-s.jsonl' })],
     rows: ROWS,
     meta: { days: 30 },
   });
@@ -981,33 +960,35 @@ const treeBlob = (path) => ({ type: 'blob', path });
 
 test('--sessions selects across the WHOLE tree, ignoring the day window', () => {
   const tree = [
-    treeBlob('log/2026-01-01/20260101T000000Z-wave1.jsonl'),
-    treeBlob('log/2026-09-19/20260919T000000Z-other.jsonl'),
-    treeBlob('log/2026-09-19/20260919T010000Z-wave2.jsonl'),
+    treeBlob('log/20260101-wave1.jsonl'),
+    treeBlob('log/20260919-other.jsonl'),
+    treeBlob('log/20260919-wave2.jsonl'),
   ];
   const at = new Date('2026-09-19T12:00:00Z');
   assert.deepEqual(
     selectLogPaths(tree, { days: 1, at, sessions: 'wave1,wave2' }),
-    ['log/2026-01-01/20260101T000000Z-wave1.jsonl', 'log/2026-09-19/20260919T010000Z-wave2.jsonl'],
+    ['log/20260101-wave1.jsonl', 'log/20260919-wave2.jsonl'],
     'a January file is inside the named set and outside every window a reader would pass',
   );
 });
 
 test('without --sessions the day window is untouched — the default does not change', () => {
   const tree = [
-    treeBlob('log/2026-01-01/20260101T000000Z-wave1.jsonl'),
-    treeBlob('log/2026-09-19/20260919T000000Z-other.jsonl'),
+    treeBlob('log/20260101-wave1.jsonl'),
+    treeBlob('log/20260919-other.jsonl'),
   ];
   assert.deepEqual(
     selectLogPaths(tree, { days: 1, at: new Date('2026-09-19T12:00:00Z') }),
-    ['log/2026-09-19/20260919T000000Z-other.jsonl'],
+    ['log/20260919-other.jsonl'],
   );
 });
 
-test('one session that pushed TWICE matches both of its files', () => {
+test('one session over TWO DAYS matches both of its day-files', () => {
+  // Renamed with the layout: a session never has two files on one day now, so two files mean two
+  // days, and `--sessions` must reach both regardless of the day window.
   const tree = [
-    treeBlob('log/2026-09-18/20260918T100000Z-s1.jsonl'),
-    treeBlob('log/2026-09-19/20260919T100000Z-s1.jsonl'),
+    treeBlob('log/20260918-s1.jsonl'),
+    treeBlob('log/20260919-s1.jsonl'),
   ];
   assert.equal(selectLogPaths(tree, { days: 1, at: new Date('2026-09-19T12:00:00Z'), sessions: ['s1'] }).length, 2);
 });
@@ -1029,7 +1010,7 @@ test('normalizeSessions is IDEMPOTENT — a Set through the string branch matche
 const renderOf = (lines) => renderHtml(analyse({ lines, rows: ROWS, meta: { days: 30, base: 'b', at: '2026-09-19T00:00:00Z' } }));
 
 test('the verdict block renders NOT ENOUGH DATA in its own style, never the pass style', () => {
-  const html = renderOf([missLine({ q: 'a b c d', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's', _path: 'log/2026-09-19/a-s.jsonl' })]);
+  const html = renderOf([missLine({ q: 'a b c d', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's', _path: 'log/20260919-a-s.jsonl' })]);
   assert.match(html, /id="verdict"/);
   assert.match(html, /class="verdict nodata">NOT ENOUGH DATA/);
   assert.ok(!/class="verdict ok"/.test(html), 'nothing here earned a pass');
@@ -1037,7 +1018,7 @@ test('the verdict block renders NOT ENOUGH DATA in its own style, never the pass
 });
 
 test('the near-miss panel renders the candidate, its coverage and its id', () => {
-  const html = renderOf([missLine({ q: 'does the storefront pack size rule reject a cart quantity', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's', _path: 'log/2026-09-19/a-s.jsonl' })]);
+  const html = renderOf([missLine({ q: 'does the storefront pack size rule reject a cart quantity', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's', _path: 'log/20260919-a-s.jsonl' })]);
   assert.match(html, /id="near-misses"/);
   assert.match(html, /KB-C440D4E3/);
   assert.match(html, /0\.20/);
@@ -1045,13 +1026,13 @@ test('the near-miss panel renders the candidate, its coverage and its id', () =>
 });
 
 test('an empty near-miss panel says WHY, and never "nothing was read" when something was', () => {
-  const html = renderOf([line({ kind: 'ask', state: 'answer', q: 'x', matched: ['KB-C440D4E3'], _session: 's', _path: 'log/2026-09-19/a-s.jsonl' })]);
+  const html = renderOf([line({ kind: 'ask', state: 'answer', q: 'x', matched: ['KB-C440D4E3'], _session: 's', _path: 'log/20260919-a-s.jsonl' })]);
   assert.match(html, /No miss in this window carried a rejected candidate/);
 });
 
 test('the terminal summary prints all three verdict rows with their n', () => {
   const text = renderText(analyse({
-    lines: [missLine({ q: 'a b c d', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's', _path: 'log/2026-09-19/a-s.jsonl' })],
+    lines: [missLine({ q: 'a b c d', nearMiss: { id: 'KB-C440D4E3', score: 2, coverage: 0.2 }, _session: 's', _path: 'log/20260919-a-s.jsonl' })],
     rows: ROWS,
     meta: { days: 30 },
   }));
@@ -1083,16 +1064,16 @@ test('a session-scoped summary never claims a day window it did not use', () => 
 // confirmation count off an entry's frontmatter.
 
 const TOPICAL = [
-  line({ at: '2026-09-21T08:00:00.000Z', kind: 'ask', q: 'how does the configurator price a variant', matched: ['KB-1834ABE5'], state: 'answer', topic: 'configurable product order', run: 'VCST-1234', _session: 'aa11', _path: 'log/2026-09-21/aa11/aa11-0001.jsonl' }),
-  line({ at: '2026-09-21T08:05:00.000Z', kind: 'ask', q: 'is the gift line added automatically', state: 'miss', topic: 'configurable product order', run: 'VCST-1234', _session: 'aa11', _path: 'log/2026-09-21/aa11/aa11-0001.jsonl' }),
-  line({ at: '2026-09-21T08:09:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', topic: 'configurable product order', run: 'VCST-1234', _session: 'aa11', _path: 'log/2026-09-21/aa11/aa11-0002.jsonl' }),
+  line({ at: '2026-09-21T08:00:00.000Z', kind: 'ask', q: 'how does the configurator price a variant', matched: ['KB-1834ABE5'], state: 'answer', topic: 'configurable product order', run: 'VCST-1234', _session: 'aa11', _path: 'log/20260921-aa11.jsonl' }),
+  line({ at: '2026-09-21T08:05:00.000Z', kind: 'ask', q: 'is the gift line added automatically', state: 'miss', topic: 'configurable product order', run: 'VCST-1234', _session: 'aa11', _path: 'log/20260921-aa11.jsonl' }),
+  line({ at: '2026-09-21T08:09:00.000Z', kind: 'capture', id: 'KB-D9B90536', subject: 'x', topic: 'configurable product order', run: 'VCST-1234', _session: 'aa11', _path: 'log/20260921-aa11.jsonl' }),
   // SAME SESSION, DIFFERENT WORK — the case that makes this panel earn its place, and the exact
   // case panel 3 cannot see because it groups by session.
-  line({ at: '2026-09-21T09:30:00.000Z', kind: 'ask', q: 'what does the Active column reflect', matched: ['KB-FA724D31'], state: 'answer', topic: 'B2B member roles', run: 'VCST-1234', _session: 'aa11', _path: 'log/2026-09-21/aa11/aa11-0003.jsonl' }),
+  line({ at: '2026-09-21T09:30:00.000Z', kind: 'ask', q: 'what does the Active column reflect', matched: ['KB-FA724D31'], state: 'answer', topic: 'B2B member roles', run: 'VCST-1234', _session: 'aa11', _path: 'log/20260921-aa11.jsonl' }),
   // A DIFFERENT RUN, interleaved in the same window, which is what --run exists to separate.
-  line({ at: '2026-09-21T08:30:00.000Z', kind: 'ask', q: 'where is configurability stored', matched: ['KB-3113CBC1'], state: 'answer', topic: 'B2B member roles', run: 'REL-9', _session: 'bb22', _path: 'log/2026-09-21/bb22/bb22-0001.jsonl' }),
+  line({ at: '2026-09-21T08:30:00.000Z', kind: 'ask', q: 'where is configurability stored', matched: ['KB-3113CBC1'], state: 'answer', topic: 'B2B member roles', run: 'REL-9', _session: 'bb22', _path: 'log/20260921-bb22.jsonl' }),
   // And a line from before the field existed. Not a topic called "unknown".
-  line({ at: '2026-09-21T08:40:00.000Z', kind: 'ask', q: 'anything at all', state: 'miss', _session: 'cc33', _path: 'log/2026-09-21/cc33/cc33-0001.jsonl' }),
+  line({ at: '2026-09-21T08:40:00.000Z', kind: 'ask', q: 'anything at all', state: 'miss', _session: 'cc33', _path: 'log/20260921-cc33.jsonl' }),
 ];
 
 test('the topics panel groups a window by what the work was, not by whose session it was', () => {
@@ -1171,6 +1152,6 @@ test('the topics panel renders, and an empty one says why it is empty', () => {
   assert.match(html, /configurable product order/);
   assert.match(html, /1 line\(s\) carry no topic/);
 
-  const bare = renderHtml(analyse({ lines: [line({ kind: 'ask', q: 'x', state: 'miss', _session: 's1', _path: 'log/2026-09-21/a-s1.jsonl' })], rows: ROWS, meta: { days: 30, files: 1 } }));
+  const bare = renderHtml(analyse({ lines: [line({ kind: 'ask', q: 'x', state: 'miss', _session: 's1', _path: 'log/20260921-a-s1.jsonl' })], rows: ROWS, meta: { days: 30, files: 1 } }));
   assert.match(bare, /nothing has passed one yet/);
 });

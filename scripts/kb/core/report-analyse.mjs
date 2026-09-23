@@ -96,49 +96,40 @@ export function parseLogFile(text, { path = '', session = '' } = {}) {
   return { lines, malformed };
 }
 
-/** `<stamp>-<session>` — every file published before 2026-09-21, and readable for 30 days more. */
-const STAMPED = /^\d{8}T\d{6}Z-(.+)$/;
-/** `<session>-<seq>` — the shape since, where the number is the push's sequence within the session. */
-const SEQUENCED = /^(.+)-\d{4,}$/;
-
 /**
- * `log/20260923-f3d05dd3.jsonl` → `f3d05dd3` (the shape since 2026-09-23, one file per session per
- * day), and the two older ones below it: `log/2026-09-18/20260918T171217Z-local_26.jsonl` →
- * `local_26`, `log/2026-09-21/f3d05dd3-0003.jsonl` → `f3d05dd3`. The session is the group key.
+ * `log/20260923-f3d05dd3.jsonl` → `f3d05dd3`. The session is the group key.
  *
- * THE TWO OLDER SHAPES, AND BOTH WERE LIVE UNTIL THE LAYOUT MIGRATION. The timestamp left the file name when it turned out to publish one
- * queue twice (`push.mjs` `logPath`); nothing was renamed, so for the 30 days of the retention
- * window the window holds both and a parser that understood one of them would drop the other
- * silently — a clean, confident, half-empty report, which is the one failure §8 forbids.
+ * ONE SHAPE, AND THAT IS NEW AS OF THE LAYOUT MIGRATION (`2317a7a`, PLAN §23). Until then this
+ * function carried two older ones — `<stamp>-<session>` under a day folder, and
+ * `<session>/<session>-<seq>` under one — and tried them in a load-bearing ORDER, because an
+ * all-digit session key satisfied both and only the stamp was anchored. The migration folded every
+ * file in the base into the current shape and verified it (99 → 51 files, the line multiset
+ * byte-identical, zero old-shape files left), so both patterns and the ordering hazard that came
+ * with them are gone.
  *
- * ORDER MATTERS AND IS NOT COSMETIC. A session key may be all digits, so `20260918T171217Z-12345678`
- * satisfies the sequenced shape too and would read back as the STAMP. The stamped test therefore
- * runs first: only it is anchored on a full UTC stamp, which nothing else can be.
+ * WHAT STILL READS THE OLD SHAPES, AND WHY NOT HERE: `migrate-log-layout.mjs` keeps its own copy
+ * (`oldShape`), deliberately. It is the one tool that must be able to read a file written by a stale
+ * checkout still on the old layout; the report has no such duty, and a report that silently guessed
+ * at an unrecognised name would be the confident half-empty result §8 forbids. An unrecognised
+ * path therefore yields `''` and is not attributed to any session.
+ *
+ * RECOGNISED BY WHERE THE FILE SITS, not by its name alone. A name cannot carry it:
+ * `12345678-0002` — an all-digit key — reads as "date 12345678, session 0002" to any pattern
+ * that takes eight digits and a dash. Every current file sits directly under `log/`, so the depth is
+ * exact where the name is ambiguous.
  */
 export function sessionOf(path) {
-  const p = String(path ?? '');
-  // THE CURRENT SHAPE, `log/20260923-f3d05dd3.jsonl`, and it is recognised by WHERE the file sits
-  // rather than by its name alone. A name cannot carry it: `12345678-0002` — an all-digit session
-  // key in the sequenced shape — reads as "date 12345678, session 0002" to any pattern that takes
-  // eight digits and a dash. Every older file sits under a day folder and every current one directly
-  // under `log/`, so the depth is exact where the name is ambiguous.
-  const flat = /(?:^|\/)log\/(\d{8})-([^/]+)\.jsonl$/i.exec(p);
-  if (flat) return flat[2];
-  const m = /([^/]+)\.jsonl$/i.exec(p);
-  if (!m) return '';
-  return STAMPED.exec(m[1])?.[1] ?? SEQUENCED.exec(m[1])?.[1] ?? m[1];
+  return /(?:^|\/)log\/\d{8}-([^/]+)\.jsonl$/i.exec(String(path ?? ''))?.[1] ?? '';
 }
 
 /**
- * `log/20260918-f3d05dd3.jsonl` and `log/2026-09-18/…` both → `2026-09-18`. Used for the day filter
- * and the sparkline. The date in a current name is the date of the LINES inside it (`logTargetOf`
- * in push.mjs), where the old day folder was the day of the push.
+ * `log/20260918-f3d05dd3.jsonl` → `2026-09-18`. Used for the day filter and the sparkline. The
+ * date is the date of the LINES inside the file (`logTargetOf` in push.mjs), where the old day
+ * folder was the day of the push — which is why ten lines changed day in the migration.
  */
 export function dayOf(path) {
-  const p = String(path ?? '');
-  const flat = /(?:^|\/)log\/(\d{4})(\d{2})(\d{2})-[^/]+\.jsonl$/.exec(p);
-  if (flat) return `${flat[1]}-${flat[2]}-${flat[3]}`;
-  return /log\/(\d{4}-\d{2}-\d{2})\//.exec(p)?.[1] ?? '';
+  const m = /(?:^|\/)log\/(\d{4})(\d{2})(\d{2})-[^/]+\.jsonl$/.exec(String(path ?? ''));
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
 }
 
 /**
