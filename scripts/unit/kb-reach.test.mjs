@@ -14,7 +14,7 @@ import { mkdtempSync, rmSync, writeFileSync, appendFileSync, utimesSync, readFil
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  REACH_IDLE_MS, advanceReach, countToolUses, dropReach, idleReaches, readReach, reachLine, reachPath,
+  REACH_IDLE_MS, advanceReach, countToolUses, dropReach, idleReaches, promptsIn, readReach, reachLine, reachPath,
 } from '../kb/core/reach.mjs';
 import { reach } from '../kb/core/report-analyse.mjs';
 import { LOGGED } from '../kb/core/queue.mjs';
@@ -188,6 +188,88 @@ test('dropping a reach state is what makes a session publish exactly once', () =
   assert.equal(readReach(dir, 'sess0005'), null);
   dropReach(dir, 'sess0005');   // idempotent: a failed push retries, and must not throw here
 }));
+
+// ─── the three discontinuities, recorded (PLAN §23.6) ─────────────────────────────────────────
+
+const prompt = (text) => `${JSON.stringify({ type: 'user', message: { role: 'user', content: text } })}\n`;
+const queued = (dir, session) => {
+  try {
+    return readFileSync(join(dir, `${session}.jsonl`), 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  } catch { return []; }
+};
+const restarts = (dir, session) => queued(dir, session).filter((l) => l.kind === 'restart');
+
+test('an ordinary first turn and every ordinary later turn record NO restart', () => withDir((dir) => {
+  const t = join(dir, 'transcript.jsonl');
+  writeFileSync(t, prompt('first') + turn('Read'));
+  advanceReach({ dir, session: 'calm0001', transcriptPath: t });
+  appendFileSync(t, prompt('second') + turn('Bash'));
+  advanceReach({ dir, session: 'calm0001', transcriptPath: t });
+  assert.deepEqual(restarts(dir, 'calm0001'), []);
+}));
+
+test('a transcript that SHRANK is recorded as replaced — the observed event, not a guessed cause', () => withDir((dir) => {
+  const t = join(dir, 'transcript.jsonl');
+  writeFileSync(t, prompt('p') + turn('Read', 'Bash', 'Edit'));
+  advanceReach({ dir, session: 'shrk0001', transcriptPath: t, run: 'VCST-1', who: 'octo' });
+  writeFileSync(t, turn('Read'));
+  advanceReach({ dir, session: 'shrk0001', transcriptPath: t });
+  const [line] = restarts(dir, 'shrk0001');
+  assert.deepEqual({ why: line.why, priorTools: line.priorTools, run: line.run, who: line.who },
+    { why: 'transcript-replaced', priorTools: 3, run: 'VCST-1', who: 'octo' });
+  assert.ok(LOGGED.includes(line.kind), '`restart` is a declared kind');
+}));
+
+test('a state DROPPED after publication, then resumed, is recorded as dropped — and only once', () => withDir((dir) => {
+  // The measured case: a live session harvested after 30 idle minutes, which then resumed and
+  // reported `turns: 1` against ~1860 tools.
+  const t = join(dir, 'transcript.jsonl');
+  writeFileSync(t, prompt('p1') + turn('Read'));
+  advanceReach({ dir, session: 'drop0001', transcriptPath: t });
+  appendFileSync(t, prompt('p2') + turn('Bash'));
+  advanceReach({ dir, session: 'drop0001', transcriptPath: t });
+  dropReach(dir, 'drop0001');                     // what push.mjs does once the `session` line is out
+  appendFileSync(t, prompt('p3') + turn('Edit'));
+  advanceReach({ dir, session: 'drop0001', transcriptPath: t });
+  advanceReach({ dir, session: 'drop0001', transcriptPath: t });
+  assert.deepEqual(restarts(dir, 'drop0001').map((l) => l.why), ['state-dropped'],
+    'dropped, not absent — the drop left word of itself');
+
+  // And the word is CONSUMED: a later loss that no drop explains is absent, not "dropped" again.
+  rmSync(reachPath(dir, 'drop0001'), { force: true });   // a wiped scratchpad, not a publication
+  appendFileSync(t, prompt('p4') + turn('Read'));
+  advanceReach({ dir, session: 'drop0001', transcriptPath: t });
+  assert.deepEqual(restarts(dir, 'drop0001').map((l) => l.why), ['state-dropped', 'state-absent']);
+}));
+
+test('a state ABSENT with a transcript already several prompts long is recorded as absent', () => withDir((dir) => {
+  const t = join(dir, 'transcript.jsonl');
+  writeFileSync(t, prompt('p1') + turn('Read') + prompt('p2') + turn('Bash'));
+  advanceReach({ dir, session: 'gone0001', transcriptPath: t, synthetic: true });
+  const [line] = restarts(dir, 'gone0001');
+  assert.equal(line.why, 'state-absent');
+  assert.equal(line.synthetic, true, 'and it carries the benchmark mark like every other line');
+  assert.ok(!('priorTools' in line), 'there was no prior state to count');
+}));
+
+test('the restart line carries labels and counts, never transcript text', () => withDir((dir) => {
+  const t = join(dir, 'transcript.jsonl');
+  const secretish = 'a prompt that must never reach the log';
+  writeFileSync(t, prompt(secretish) + turn('Read') + prompt(secretish) + turn('Bash'));
+  advanceReach({ dir, session: 'prose001', transcriptPath: t });
+  const text = readFileSync(join(dir, 'prose001.jsonl'), 'utf8');
+  assert.ok(!text.includes(secretish));
+  assert.deepEqual(Object.keys(restarts(dir, 'prose001')[0]).sort(), ['at', 'kind', 'why']);
+}));
+
+test('a compaction summary, a tool result and a meta record are not prompts', () => {
+  const chunk = prompt('real')
+    + `${JSON.stringify({ type: 'user', isCompactSummary: true, message: { content: 'This session is being continued…' } })}\n`
+    + `${JSON.stringify({ type: 'user', isMeta: true, message: { content: 'caveat' } })}\n`
+    + `${JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', content: 'x' }] } })}\n`
+    + `${JSON.stringify({ type: 'user', message: { content: [{ type: 'text', text: 'also real' }] } })}\n`;
+  assert.equal(promptsIn(chunk), 2);
+});
 
 // ─── the panel ────────────────────────────────────────────────────────────────────────────────
 

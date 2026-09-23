@@ -24,7 +24,7 @@
 // assistant turn. Re-reading a growing transcript on each turn is O(file) per turn and O(file²) per
 // session; reading only the bytes appended since the last run is what makes this affordable enough
 // to be on by default.
-import { existsSync, readFileSync, writeFileSync, readdirSync, statSync, rmSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, writeFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** The MCP door. Every kb tool is namespaced, so one prefix covers ask/show/capture/confirm/dispute. */
@@ -109,9 +109,10 @@ export function countToolUses(chunk, { from = 0 } = {}) {
  * permanently — an undercount that only ever appears in busy sessions, which are the ones this
  * measurement exists for.
  */
-export function advanceReach({ dir, session, transcriptPath, at = new Date(), who = null, run = '' } = {}) {
+export function advanceReach({ dir, session, transcriptPath, at = new Date(), who = null, run = '', synthetic = false } = {}) {
   if (!dir || !session || !transcriptPath || !existsSync(transcriptPath)) return null;
-  const prior = readReach(dir, session) ?? {
+  const held = readReach(dir, session);
+  const prior = held ?? {
     session, cursor: 0, tools: 0, turns: 0, touchAt: [], firstAt: at.toISOString(), lastAt: null,
   };
 
@@ -136,6 +137,27 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   const lastNewline = chunk.lastIndexOf('\n');
   const consumed = lastNewline === -1 ? 0 : lastNewline + 1;
   const { tools, touchAt } = countToolUses(chunk.slice(0, consumed), { from: base.tools });
+
+  // WHICH DISCONTINUITY, if any — recorded, because each of the three used to be a silent restart
+  // and one of them cost two messages of explanation (PLAN §23.6: `turns` 63 → 1, `tools` steady).
+  // Named by what was OBSERVED, never by a guessed cause: a shrinking transcript is "replaced",
+  // not "compacted".
+  const dropped = !held && consumeTombstone(dir, session);
+  const why = restarted ? 'transcript-replaced'
+    : dropped ? 'state-dropped'
+      : !held && promptsIn(chunk.slice(0, consumed)) > 1 ? 'state-absent'
+        : null;
+  if (why) {
+    appendRestart(dir, session, {
+      at: at.toISOString(),
+      kind: 'restart',
+      why,
+      ...(restarted ? { priorTools: prior.tools } : {}),
+      ...(run || prior.run ? { run: run || prior.run } : {}),
+      ...(who || prior.who ? { who: who || prior.who } : {}),
+      ...(synthetic ? { synthetic: true } : {}),
+    });
+  }
 
   const next = {
     session,
@@ -205,6 +227,58 @@ export const reachLine = (state) => ({
   lastAt: state.lastAt,
 });
 
+/**
+ * Drop a published state — and leave a TOMBSTONE saying so.
+ *
+ * The tombstone is what tells the second of §23.6's three discontinuities apart from the third. A
+ * session harvested after 30 idle minutes may resume; its next turn finds no state and would read
+ * exactly like a scratchpad that was wiped. "Dropped after publication, by design" and "gone for no
+ * known reason" are different findings, so the drop is what records which one happened.
+ */
 export function dropReach(dir, session) {
   try { rmSync(reachPath(dir, session), { force: true }); } catch { /* already gone */ }
+  try { writeFileSync(tombstonePath(dir, session), '', 'utf8'); } catch { /* costs a label, not a count */ }
+}
+
+/** `<session>.reach.dropped` — not `.reach.json`, so `idleReaches` steps over it. */
+export const tombstonePath = (dir, session) => join(dir, `${session}.reach.dropped`);
+
+function consumeTombstone(dir, session) {
+  const p = tombstonePath(dir, session);
+  if (!existsSync(p)) return false;
+  try { rmSync(p, { force: true }); } catch { /* still true: the drop happened */ }
+  return true;
+}
+
+/**
+ * How many PROMPTS a slab of transcript holds — a person's turn, not a tool result, a meta record or
+ * a compaction summary. Only its count leaves this function, never the text.
+ *
+ * It is how "state absent" is told apart from "first turn": the hook fires at the end of every turn,
+ * so a session's first reading holds one prompt. A first reading holding several means a state
+ * should have existed and does not.
+ */
+export function promptsIn(chunk) {
+  let n = 0;
+  for (const line of String(chunk).split('\n')) {
+    if (!line.trim()) continue;
+    let rec;
+    try { rec = JSON.parse(line); } catch { continue; }
+    if (rec?.type !== 'user' || rec.isMeta || rec.isCompactSummary) continue;
+    const c = rec.message?.content;
+    if (typeof c === 'string' || (Array.isArray(c) && c.some((b) => b?.type === 'text'))) n += 1;
+  }
+  return n;
+}
+
+/**
+ * The `restart` line, appended to the session's own queue file SYNCHRONOUSLY.
+ *
+ * Not through `log()` in queue.mjs, which is async: the caller is the `Stop` hook, which exits the
+ * moment `main()` returns, so an unawaited append can be lost. The line takes the same shape `log()`
+ * gives every line — `at` first, then the record, then `run`, `who`, `synthetic` — and the pusher
+ * maps it through `toLogLine` like any other. Cannot throw: a lost label must never cost a turn.
+ */
+function appendRestart(dir, session, line) {
+  try { appendFileSync(join(dir, `${session}.jsonl`), `${JSON.stringify(line)}\n`, 'utf8'); } catch { /* best effort */ }
 }

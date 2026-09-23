@@ -38,6 +38,10 @@ export const LOGGED = Object.freeze([
   // `sessions` as the distinct sessions APPEARING IN THE LOG). One line per session, carrying
   // integers and an id — see `reach.mjs` for what is read to produce it, and what is not.
   'session',
+  // `restart` names a COUNTER DISCONTINUITY in the reach state -- the transcript was replaced, the
+  // state was dropped after publication, or it was absent for no known reason (PLAN §23.6). Written
+  // by the Stop hook through `reach.mjs`, never by a verb.
+  'restart',
 ]);
 
 /** Lines the pusher must apply to the base, as opposed to lines that only describe what happened. */
