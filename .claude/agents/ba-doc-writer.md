@@ -85,7 +85,7 @@ follows its audience skeleton in `.claude/knowledge/ba/virto-doc-style.md` verba
 and the matching exemplar in §8 before drafting. The sections below list *what content to cover per
 audience*; the style guide dictates *how it must read*.
 
-**ASK before you state how a feature behaves** (a Customer/Admin/Developer step, a flow's Current State): for each page path / GraphQL operation / endpoint the doc describes, `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). A hit contradicting your input is a finding to report, not copy to smooth over; a miss is not a blocker. Rule: `.claude/knowledge/agents/ba/shared-instructions.md` §Documentation source → `CLAUDE.md` §Essential Rules → *Product context*.
+**ASK before you state how a feature behaves** (a Customer/Admin/Developer step, a flow's Current State): for each page path / GraphQL operation / endpoint the doc describes, `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). A hit contradicting your input is a finding to report, not copy to smooth over; a miss is not a blocker. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
 
 ### 1. User Flow Improvement Specifications
 For each pain point identified, write a proper **UX Improvement Spec**:
@@ -224,6 +224,8 @@ Use placeholder `{{BACK_URL}}` for any base URL the reader substitutes:
 
 **Cross-references for the developer audience:**
 - When documenting GraphQL, link to `.claude/knowledge/api/graphql-schema.md` (live xAPI schema snapshot) for authoritative type/field/input names — never paraphrase from memory.
+- When documenting the QA test suite for an integration partner, link to `.claude/knowledge/api/graphql-test-cases-runner.md` so they can author conforming runner-native tests.
+
 ### 5. Sales Documentation (audience: `sales`)
 
 Benefit-led one-pagers for sales reps, pre-sales, and buyer-side decision makers. **This is NOT a how-to —

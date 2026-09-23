@@ -260,7 +260,8 @@ Produce, for the feature under analysis:
    entitlement: what cancels, refunds, expires or revokes it? Search the module for the reverse
    operation (`cancel`/`revert`/`refund`/`rollback`/`unearn`/`deduct`) and for a status gate on the
    forward path. **"No reversal path exists" is a first-class finding**, worth more than any number of
-   render observations — and it is invisible unless someone asks.5. **The guard the sibling path has and this one does not.** When a module gains a second path that does
+   render observations — and it is invisible unless someone asks.
+5. **The guard the sibling path has and this one does not.** When a module gains a second path that does
    the same class of work as an existing one (a second accrual path, a second pricing path, a second
    permission check), diff them: a guard present in one and absent in the other is a defect hypothesis
    with a citation, and it is the highest-yield thing this analysis produces.
