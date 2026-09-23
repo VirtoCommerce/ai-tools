@@ -233,6 +233,33 @@ test('the panel credits the session a line DESCRIBES, not the one that pushed it
   assert.equal(row.tools, 300);
 });
 
+test('a session published TWICE — idle, then resumed — is one row, and it is the fuller line', () => {
+  // PLAN §23.7. A session quiet for 30 minutes is harvested as finished, resumes, and is published
+  // again with more work. First-wins kept the stale counters. Measured shape: `turns` fell 63 → 1
+  // when the dropped state was rebuilt, while `tools` kept rising — so `tools` decides, not order.
+  const stale = { ...sessionLine('resumed1', 1860, [5]), turns: 63, firstAt: '2026-09-22T08:00:00.000Z', lastAt: '2026-09-22T10:00:00.000Z' };
+  const fuller = { ...sessionLine('resumed1', 1930, [5, 1900]), turns: 1, firstAt: '2026-09-22T12:30:00.000Z', lastAt: '2026-09-22T12:40:00.000Z' };
+  for (const order of [[stale, fuller], [fuller, stale]]) {
+    const r = reach(order);
+    assert.equal(r.accounted, 1, 'one session, one row');
+    assert.equal(r.rows[0].tools, 1930, 'whichever order the files were read in');
+    assert.equal(r.rows[0].touches, 2);
+    // And its START is the earliest one seen: the rebuilt state's `firstAt` is when the state was
+    // rebuilt, not when the session began.
+    assert.equal(r.rows[0].at, '2026-09-22T08:00:00.000Z');
+  }
+  // Windowed on that earliest start, so a window opening between the two starts drops the session
+  // it did not contain the beginning of — consistently with every other session.
+  assert.equal(reach([stale, fuller], { since: '2026-09-22T09:00:00.000Z' }).accounted, 0);
+});
+
+test('two session lines with equal tools resolve to the LATER one', () => {
+  const a = { ...sessionLine('tie00001', 50, [1]), lastAt: '2026-09-22T10:00:00.000Z' };
+  const b = { ...sessionLine('tie00001', 50, [1, 2]), lastAt: '2026-09-22T11:00:00.000Z' };
+  assert.equal(reach([a, b]).rows[0].touches, 2);
+  assert.equal(reach([b, a]).rows[0].touches, 2);
+});
+
 test('the session that did the most work WITHOUT consulting the base sorts first', () => {
   const r = reach([
     sessionLine('busy0001', 300, []),

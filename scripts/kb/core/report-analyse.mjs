@@ -904,15 +904,35 @@ export function reach(lines, { since = null } = {}) {
     asksBySession.set(l._session, (asksBySession.get(l._session) ?? 0) + 1);
   }
 
-  const rows = [];
-  const seen = new Set();
+  // ONE ROW PER SESSION, AND IT IS THE FULLEST LINE, NOT THE FIRST (PLAN §23.7). Idleness is the only
+  // end-of-session signal this system has, so a session quiet for `REACH_IDLE_MS` is published as
+  // finished — and then it RESUMES, and is published again with more tool calls. First-wins kept the
+  // stale counters and dropped the real ones. Highest `tools` wins, ties to the later `lastAt`:
+  // `tools` never falls across a resumption, because a resumed state re-reads the transcript from
+  // the start, so the larger count is the one that saw more of the session.
+  //
+  // The session's START is the EARLIEST `firstAt` across its lines, not the chosen line's: a state
+  // dropped after publication is rebuilt with a fresh `firstAt`, and windowing on that would move a
+  // session that began inside the window out of it.
+  const best = new Map();
   for (const l of lines) {
     if (l.kind !== 'session') continue;
-    // The line names the session it DESCRIBES; the file it rode in on belongs to whichever session
-    // happened to push it, so reading `_session` here would credit the wrong one.
+    // The line names the session it DESCRIBES, which since 2026-09-23 is also the file it lives in;
+    // an older file belongs to whichever session pushed it, so `l.session` is still read first.
     const id = l.session ?? l._session;
-    if (!id || seen.has(id)) continue;
+    if (!id) continue;
     const began = String(l.firstAt ?? l.at ?? '');
+    const prior = best.get(id);
+    const tools = Number(l.tools ?? 0);
+    const fuller = !prior || tools > prior.tools
+      || (tools === prior.tools && String(l.lastAt ?? l.at ?? '') > String(prior.line.lastAt ?? prior.line.at ?? ''));
+    const start = prior && prior.began && (!began || prior.began < began) ? prior.began : began;
+    best.set(id, fuller ? { line: l, tools, began: start } : { ...prior, began: start });
+  }
+
+  const rows = [];
+  const seen = new Set();
+  for (const [id, { line: l, began }] of best) {
     if (since && began && began < since) continue;
     seen.add(id);
     const touchAt = Array.isArray(l.touchAt) ? l.touchAt : [];
@@ -924,7 +944,7 @@ export function reach(lines, { since = null } = {}) {
       firstTouch: touchAt.length ? touchAt[0] : null,
       lastTouch: touchAt.length ? touchAt[touchAt.length - 1] : null,
       asks: asksBySession.get(id) ?? 0,
-      at: l.firstAt ?? l.at ?? '',
+      at: began || '',
     });
   }
 
