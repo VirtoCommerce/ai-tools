@@ -40,6 +40,7 @@ import { MUTATIONS, isSynthetic, log, queueDir, queuePath, readQueue, runOf, ses
 import { REACH_IDLE_MS, dropReach, idleReaches, reachLine } from './reach.mjs';
 import { toLogLine } from './verbs.mjs';
 import { cachedWho } from './who.mjs';
+import { stampCallersFromTranscripts } from './caller.mjs';
 
 /** Retention: the same push that writes today's file removes anything older, in the same commit. */
 export const RETENTION_DAYS = 90;
@@ -517,6 +518,10 @@ export async function flush({
     await touchStamp({ env, now });
     return { state: 'nothing', session, why: 'the queue is empty' };
   }
+
+  // WHO CALLED, derived from this machine's transcripts before anything leaves it (`core/caller.mjs`).
+  // Before the secret gate, so the stamped line is the one the gate judges.
+  for (const f of loaded) f.lines = stampCallersFromTranscripts(f.lines, { env });
 
   // THE SECRET GATE, before anything leaves the machine. Over the whole line, payload included:
   // the payload is what becomes an entry body in the public base.

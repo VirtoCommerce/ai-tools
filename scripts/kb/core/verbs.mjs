@@ -234,6 +234,13 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
 //
 //     The lesson outlived both corrections: "we cannot see X" and "we never looked" wear the same
 //     clothes, and this file asserted the first for two sessions while meaning the second.
+//
+//     AND IT APPLIED A THIRD TIME, 2026-09-23. The SERVER still cannot tell callers apart — true,
+//     and unchanged. But the join was only ever tried against the PARENT transcript: Claude Code
+//     writes each subagent's turns to `<session>/subagents/agent-*.jsonl` beside a `.meta.json`
+//     naming its `agentType`, and 12 of 12 logged `call` ids resolved there. So the caller is now
+//     DERIVED at push time, on the machine that holds the transcripts, and stamped as `agent`
+//     (`core/caller.mjs`) — from a closed vocabulary, never from the agent's own say-so.
 //   * FREE TEXT FROM THE AGENT about why it asked. Unreliable, and the log is public.
 //   * THE DEPLOYMENT on `ask` -- REVERSED 2026-09-21, and it is now listed above. The refusal
 //     read: "`capture` records it, where it is a property of the observation rather than of the

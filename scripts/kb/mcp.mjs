@@ -284,6 +284,10 @@ const text = (lines, isError = false) => ({
  * connection-global counter, and newline-delimited JSON with no envelope. Nothing in a request
  * distinguishes a subagent, so no field here can. Do not propose one; read §21.17 first.
  *
+ * The id IS a working join key after all — to the SUBAGENT's own transcript, not the parent's
+ * (`<session>/subagents/agent-*.jsonl` + `.meta.json`; 12 of 12 resolved on 2026-09-23). That
+ * lookup happens at push time in `core/caller.mjs`, which stamps `agent`; nothing changes here.
+ *
  * NOT A PROXY, which is what §7 rightly refused: a proxy guesses the answer, this one carries the
  * key to it. Client-specific (`claudecode/`), and ABSENT rather than guessed for any other client,
  * because a field that defaults is a field that lies.
