@@ -170,7 +170,7 @@ Critical-level domains drive priority of suite execution and dictate whether `qa
 
 ### Step 6 — Generate Plan Sections
 
-Delegate Sections 5.2 (Coverage Gaps), **5.3 (Exploratory Charters)** and 6 (New Test Cases per Ticket) to `test-management-specialist`. The orchestrator (you) writes Sections 1, 2, 3, 4, 7-13 and integrates the specialist's output. 5.3 is delegated with 5.2 deliberately: the two share an input (the checklist gap-diff, Step 6c) and splitting them across writers is how a gap ends up in neither.
+Delegate Sections 5.2 (Coverage Gaps), **5.3 (Exploratory Charters)** and 6 (New Test Cases per Ticket) to `test-management-specialist`. The orchestrator (you) writes Sections 1, 2, 3, 4, 7-13 and integrates the specialist's output. 5.2 and 5.3 share one input (the Step 6c gap-diff), so one writer owns both — split, a gap ends up in neither.
 
 #### 6a. Orchestrator-written sections
 
@@ -246,7 +246,7 @@ suites. Route every uncovered item to exactly one destination:
 | Specific and assertable ("PDP shows tier price at qty ≥ MOQ") | §5.2 as a `GAP-NN` row | a `Draft` case → permanent coverage |
 | State-shaped / interaction-shaped / "depends on…" | §5.3 as a charter **candidate scenario** | a 30-min probe this sprint |
 
-This is what makes the checklist pay for itself: drawn once per domain, feeding both outputs. Do **not**
+Drawn once per domain, it feeds both outputs. Do **not**
 schedule a separate checklist *run* — a checklist walk produces no fingerprint, no `history.json` row,
 no flakiness signal and no promotion path, so its findings do not compound.
 
@@ -363,7 +363,7 @@ Next: review the plan, then either:
 - **Never assert exact prices, IDs, SKUs, order numbers** in the plan — refer to test data files / `@td(ALIAS.field)` resolver per `feedback_flexible_test_cases.md`.
 - **Read URLs from `config.js` / `.env`** — never hardcode `vcst-qa.virtocommerce.com` in the plan body; use `{FRONT_URL}` / `{BACK_URL}`.
 - **No fabricated suite IDs.** Every suite in Section 5.1 must exist in `config/test-suites.json`. If a domain has no existing suite, list it in 5.2 (Coverage Gap) and propose a target suite.
-- **Charters are DERIVED, never invented.** Section 5.3 is a filter over Sections 3 + 5.2 per `.claude/skills/qa-sbtm/sprint-charter-selection.md` — never a domain absent from §3, never a suite absent from §5.1. Same discipline as the no-fabricated-suite-IDs rule above, and for the same reason: an agent asked to name plausible things names plausible things.
+- **Charters are DERIVED, never invented.** Section 5.3 is a filter over Sections 3 + 5.2 per `.claude/skills/qa-sbtm/sprint-charter-selection.md` — never a domain absent from §3, never a suite absent from §5.1. Same discipline as the no-fabricated-suite-IDs rule above.
 - **High risk is not the charter qualifier — oracle fuzziness is.** A domain can score 20 in §3 and still be a pure D1 (one assertable value or contract). Route it to §6 as a test case: a precise oracle makes a case cheaper *and* permanent, whereas a charter buys a one-off verdict.
 - **Cap Section 5.3 at 5 charters** and always write the "Not chartered (and why)" line. A charter nobody runs makes the plan look covered; a silently dropped Critical domain is indistinguishable from one correctly ruled out.
 - **A charter may run on any of the three lanes**, firefox included since 2026-09-08 (`.claude/rules/agents.md`, confirmed 6×). chrome or edge only.

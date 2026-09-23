@@ -125,7 +125,7 @@ Default rule is "one scenario per case". For Storefront UI features where behavi
 
 ### UI Exploration Protocol (MANDATORY before writing test cases)
 
-**SBTM Charter (REQUIRED first):** Run `/qa-sbtm <feature>` to create a time-boxed exploratory session. This surfaces unknown unknowns, uncovers undocumented behaviors, and generates scenario seeds before structured test case writing begins. Findings from the SBTM session feed directly into the layer exploration below.
+**SBTM Charter (REQUIRED first):** Run `/qa-sbtm <feature>` — a time-boxed session whose findings and scenario seeds feed the layer exploration below.
 
 For each feature area, explore per layer:
 1. **Storefront**: Navigate, snapshot real labels, walk happy path, test invalid/empty/boundary data, check console/network
@@ -195,9 +195,7 @@ Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 **You are either THE author of a suite change or you are not writing to that CSV.** Before your first
 edit to a `regression/suites/**.csv`, check `git status`/`git diff` on it: **already modified ⇒ someone
 else is mid-change** — do not overwrite, do not revert, report the conflict and hand back a staged rows
-CSV + your disposition table instead. Two writers on one CSV is not a merge problem, it is a lost-work
-problem: the safe writers all read-modify-write the whole file, and a restructure's reasoning (this case
-culled *because* that journey crosses its link) does not survive being split between two authors.
+CSV + your disposition table instead.
 `config/test-suites.json` is shared state for the same reason — `suites:sync` rewrites every suite's
 counts, so agree who runs it rather than both running it. Full rule, with the measured cost:
 `.claude/rules/regression.md` §Suite inventory.

@@ -19,7 +19,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ## LAYER 1 — BUSINESS LOGIC: Key Interactive Testing Invariants
 
-> **Reference:** `knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** `knowledge/oracles/business-logic.md`.
 
 - **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
 - **BL-CART-002** Out-of-stock mid-session: if stock drops to 0 while item is in cart, next refresh must show warning — silent checkout with 0-stock = P0
@@ -43,7 +43,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ### Design Spec Verification
 
-> Primary source is a **Claude Design** project read via `DesignSync` — protocol in [`skills/qa-design/claude-design-verification.md`](../skills/qa-design/claude-design-verification.md), differ in [`scripts/lib/verify-design-spec.ts`](../../scripts/lib/verify-design-spec.ts). Figma is a manual screenshot reference only (its MCP exposes just `authenticate`/`complete_authentication`, and Starter caps MCP at ~6 calls/month).
+> Primary source is a **Claude Design** project read via `DesignSync` — protocol in [`skills/qa-design/claude-design-verification.md`](../skills/qa-design/claude-design-verification.md), differ in [`scripts/lib/verify-design-spec.ts`](../../scripts/lib/verify-design-spec.ts). Figma is a manual screenshot reference only (its MCP is auth-only here, ~6 calls/month on Starter).
 
 **Always compare:** spacing, colors (hex), typography (family, weight, size, line height), icons, component states (hover, focus, disabled, loading, error), responsive breakpoints (375px, 768px, 1024px, 1280px, 1920px).
 
@@ -56,7 +56,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 ### Payment Testing
 
 Key providers: Skyflow, CyberSource, Authorize.Net, Datatrance. CyberSource shows form on cart page. All others → Place Order → `/checkout/payment` redirect.
-Test cards in `.env`: Skyflow (`SKYFLOW_VISA/MASTERCARD/EXPIRY/CVV`), Datatrance (card + `DATATRANCE_OTP` for 3DS).
+Test cards: §Additional Environment Variables.
 Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 ### Key Testing Domains (priority order)
@@ -72,14 +72,14 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 | Resource | Reference |
 |----------|-----------|
-| Business invariants (108 rules) | `knowledge/oracles/business-logic.md` |
+| Business invariants | `knowledge/oracles/business-logic.md` |
 | Debugging Signals | `knowledge/execution/debugging-signals.md` — console patterns, network signatures, common false positives |
 | Browser Quirks | `knowledge/automation/browser-quirks.md` — per-browser rendering/behavior differences |
 | Performance Thresholds | `knowledge/execution/performance-thresholds.md` — LCP, CLS, TTI, API response budgets |
 | Platform Patterns | `knowledge/api/platform-patterns.md` — known desync, cache, reindex behaviors |
 | Product Types & Properties | `knowledge/domain/products.md` — product types, xAPI fields, configurable sections |
 | Storefront Sitemap | `knowledge/domain/sitemap.md` — full URL map for navigation |
-| **What shipped recently** | `knowledge/domain/release-ledger.md` — `component@version` + docs link + ⚠ BREAKING flag per feature, back ~2 years. Read it before designing a test for, or triaging a failure in, a surface that changed since the env's deployed version; VirtoOZ cannot answer this (its release corpus stops ~9 months back). **Released ≠ deployed** — a capability it records that `/api/platform/modules` does not carry is `NOT_DEPLOYED`, never FAIL. It carries no behaviour, so it can raise a hypothesis but never settle a verdict or ground a `{DOC}` assertion; and it is `exhaustive: false`, so a miss means escalate, not "does not exist" |
+| **What shipped recently** | `knowledge/domain/release-ledger.md` — `component@version` + docs link + ⚠ BREAKING per feature, ~2 years back (VirtoOZ's release corpus stops ~9 months back). Read it before testing or triaging a surface changed since the env's deployed version. **Released ≠ deployed** — recorded but absent from `/api/platform/modules` = `NOT_DEPLOYED`, never FAIL. It carries no behaviour: it raises a hypothesis, never settles a verdict or grounds a `{DOC}` assertion; `exhaustive: false`, so a miss means escalate, not "does not exist" |
 | Payment Matrix | `knowledge/api/order-creation-matrix.md` — 15 payment × shipping combinations |
 | Edge Cases Library | `knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
 
@@ -164,8 +164,8 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 | Design spec comparison | `/qa-design <target> --design <project>` | `claude-design-verification.md`, `design-system-consistency.md` |
 | API verification | `/qa-api ref <module>` | `xapi-query-ref.md` |
 | GraphQL interaction (GraphiQL UI) | — | `knowledge/api/graphiql-interaction.md` |
-| **Runner-native GraphQL test cases** | — | **`knowledge/api/graphql-test-cases-runner.md`** — read this before writing, reviewing, or migrating any GraphQL test case. Defines the `Steps`/`Assertions`/`Cleanup` grammar that `scripts/graphql/graphql-runner.ts` consumes. |
-| **Live discovery + random inputs** | — | **`knowledge/execution/live-discovery.md`** — decision tree (`{{VAR}}` / `@td()` / `live-discover` / `random-data`), JS recipes (`scripts/lib/live-discover.ts`, `random-data.ts`), CSV-runner recipes (`[GQL-OP]+[GQL-CAPTURE]`), parallel-run isolation via agent user pool, `AGENT-TEST-` cleanup prefix. Consult before authoring any test that resolves a product/address/cart/coupon entity at runtime. |
+| **Runner-native GraphQL test cases** | — | **`knowledge/api/graphql-test-cases-runner.md`** — read before writing, reviewing or migrating any GraphQL case: the `Steps`/`Assertions`/`Cleanup` grammar `scripts/graphql/graphql-runner.ts` consumes. |
+| **Live discovery + random inputs** | — | **`knowledge/execution/live-discovery.md`** — decision tree (`{{VAR}}` / `@td()` / `live-discover` / `random-data`), JS + CSV-runner recipes, agent-user-pool isolation, `AGENT-TEST-` cleanup prefix. Consult before authoring any test that resolves an entity at runtime. |
 | Live xAPI schema | — | `knowledge/api/graphql-schema.md` |
 | VC documentation | `/vc-docs` | Context7 MCP |
 
@@ -190,20 +190,17 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 - **Browser**: navigate, click, type, hover, scroll, select, keys, evaluate JS
 - **Viewport**: mobile (375px), tablet (768px), desktop (1920px)
-- **Browsers**: `playwright-firefox` (primary — click-capable again since 2026-09-08, provided the MCP server was restarted after the occlusion pref landed in `config/mcp-playwright-firefox.config.json`; `.claude/rules/agents.md` §Parallel Execution), `playwright-chrome`, `playwright-edge`
+- **Browsers**: `playwright-firefox` (primary — click-capable once the MCP server was restarted after the occlusion pref landed in `config/mcp-playwright-firefox.config.json`; `.claude/rules/agents.md` §Parallel Execution), `playwright-chrome`, `playwright-edge`
 - **Storefront** (`FRONT_URL`) + **Admin SPA** (`BACK_URL`)
 - **NOT available**: WebKit on Windows — use Edge as fallback
 
 ### MCP Servers
 
+Playwright, Postman, `DesignSync`, Figma: §Observation Space / §Action Space.
+
 | Server | Use |
 |--------|-----|
-| `playwright-firefox` (primary) | Browser automation, E2E testing — clicking included |
-| `playwright-chrome` / `playwright-edge` | Cross-browser validation |
 | Chrome DevTools MCP | Deep debugging, performance traces, HAR export |
-| Postman MCP | API testing, GraphQL verification |
-| `DesignSync` (built-in) | Claude Design spec source for the `vs. DESIGN` axis |
-| Figma MCP | Design comparison — fallback only |
 | Atlassian MCP | JIRA tickets, bug filing |
 | GitHub MCP | PRs, code search |
 | context7 MCP | VC documentation lookup |
@@ -212,8 +209,8 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 | Area | Reference File |
 |------|---------------|
-| Frontend suites | `regression/suites/Frontend/**/*.csv` (40 suites in module subdirectories) |
-| Backend suites | `regression/suites/Backend/**/*.csv` (38 suites in module subdirectories) |
+| Frontend suites | `regression/suites/Frontend/**/*.csv` |
+| Backend suites | `regression/suites/Backend/**/*.csv` |
 | E2E Scenario Catalog | `skills/qa-plan/e2e-scenario-catalog.md` |
 | Evidence Capture Policy | `skills/qa-evidence/evidence-capture-policy.md` |
 | Bug Investigation Flow | `skills/qa-investigate/bug-investigation-flow.md` |
