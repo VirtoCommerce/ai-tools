@@ -45,9 +45,9 @@ browser slot. Run autonomously through setup → execute → teardown → JSON r
 **Consult on demand only** — do NOT pre-read:
 
 - `knowledge/execution/test-runner-tags.md` — CSV columns, browser-mode step/assertion/cross-layer tags, variable substitution, agent user pool, common failure signals, result statuses.
-- `knowledge/api/graphql-test-cases-runner.md` — canonical authoring contract for the **runner-native GraphQL** Fast Path below: `[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]/[REST-OP]/[REST-EXEC]/[REST-CAPTURE]/[REST]` step grammar, `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]` assertion grammar, `getByPath` filter syntax, schema validation, capture chaining, gold-standard examples (050i). Read this before debugging "why didn't my GraphQL case run?" or filing a "runner bug".
+- `knowledge/api/graphql-test-cases-runner.md` — the authoring contract of the **runner-native GraphQL** Fast Path below: `[GQL-*]`/`[REST-*]` step and `[ERRORS]/[DATA]/[NULL]/[COUNT]/[VAR]` assertion grammar, `getByPath`, capture chaining, gold-standard examples (050i). Read it before debugging "why didn't my GraphQL case run?" or filing a "runner bug".
 - `knowledge/api/graphql-schema.md` — live xAPI schema snapshot to cross-check field/type names when a `[GQL-EXEC]` returns DV-006…DV-011.
-- `knowledge/execution/live-discovery.md` — runtime data-resolution policy: when a step needs "any product / current catalog root / first address / any active coupon", do NOT hardcode — use `[GQL-OP]+[GQL-CAPTURE]` (CSV runner) or import from `scripts/lib/live-discover.ts` (interactive). For unique inputs not asserted against, use `scripts/lib/random-data.ts` (`AGENT-TEST-` prefix → `/qa-seed-data teardown` sweeps them). Consult before claiming a BLOCKED verdict is "fixture drift" — discovery may resolve it without re-seeding.
+- `knowledge/execution/live-discovery.md` — runtime data resolution: a step needing "any product / catalog root / first address / active coupon" is never hardcoded — `[GQL-OP]+[GQL-CAPTURE]` (CSV runner) or `scripts/lib/live-discover.ts` (interactive); unasserted unique inputs from `scripts/lib/random-data.ts` (`AGENT-TEST-` prefix, swept by `/qa-seed-data teardown`). Consult before calling a BLOCKED "fixture drift" — discovery may resolve it without a re-seed.
 
 For BL-* / ECL-* IDs, look up the specific ID in `knowledge/oracles/business-logic.md` or `knowledge/oracles/e-commerce-edge-cases-library.md` ONLY if meaning is ambiguous.
 
@@ -93,7 +93,7 @@ writers claiming one case, which the merge step refuses outright.
 4. Navigate to `{{ENVIRONMENT_URL}}` on `{{BROWSER_SERVER}}`. Confirm load.
 5. Authenticate using slot credentials (personal or B2B, per suite type). Verify success.
 6. Record `startedAt` (ISO 8601). HAR capture is automatic (Rules §2).
-7. **Seed the live results file — ONCE.** Write `{{OUTPUT_FILE}}` with the full Phase 5 envelope, `completedAt: ""`, and every planned case pre-listed as `{ "id": "<ID>", "title": "<Title>", "status": "PENDING" }`. This is the only time you write this file before Phase 5. Per-case updates go to the append-only JSONL instead — see **Live incremental results** below.
+7. **Seed the live results file — ONCE.** Write `{{OUTPUT_FILE}}` with the full Phase 5 envelope, `completedAt: ""`, and every planned case pre-listed as `{ "id": "<ID>", "title": "<Title>", "status": "PENDING" }`. Never again before Phase 5 — per-case updates go to the append-only JSONL (**Live incremental results** below).
 
 If environment unreachable or auth fails → write all tests `BLOCKED`, populate `errors[]`, exit.
 
@@ -103,7 +103,7 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
 2. **Preconditions**: Read the `Preconditions` column.
    - If `[PRE:*]` tags are present: consult `knowledge/execution/test-execution-preflight.md`, execute each tag via browser UI in listed order before verifying plain-text conditions. `[PRE:*]` failure → mark test `BLOCKED` immediately. Two exceptions, and they point opposite ways: `[PRE:RESET_CART]`'s **UI emptying** steps are best-effort (warn and proceed), but its **competing-cart guard** (`npm run carts:check -- --email <login>`, exit 1) MUST `BLOCK` — an account holding two shopping carts resolves reads and writes to different carts, so any checkout verdict from it is untrustworthy.
    - Then verify plain-text preconditions; unmet → `BLOCKED`.
-3. **Arm Failure_Signals monitoring** + common signals (see knowledge file). **Continuous observation (shared-instructions §Always-On Bug Detection):** beyond this case's assertions, watch every layer on every screen you touch — console exceptions, network 4xx/5xx, GraphQL `errors[]` inside 200, visual breaks, broken state. An incidental defect surfaced while running this case is recorded even if the case itself PASSes (no timed discovery pass in bulk regression — just the always-on reflex).
+3. **Arm Failure_Signals monitoring** + common signals (see knowledge file). **Continuous observation (shared-instructions §Always-On Bug Detection):** beyond this case's assertions, watch every layer on every screen you touch — console exceptions, network 4xx/5xx, GraphQL `errors[]` inside 200, visual breaks, broken state. An incidental defect is recorded even when the case PASSes (Phase 3; no timed discovery pass in bulk regression — the always-on reflex).
 4. **Execute Steps** by tag. Inline `[ASSERT]` = checkpoint (fail immediately).
 5. **Evaluate Assertions** — all must pass. BL-* violation = FAIL even if DOM passed.
 6. **Cross-Layer Checks** — GraphQL mutations MUST have empty `errors[]`.
@@ -117,7 +117,7 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
         - Also record `failedAssertion`, page `url` at failure, and `capturedAt` (ISO).
         - **Redact secrets** before writing: replace any `Authorization` header, bearer token, password, or PAN with `<redacted>` (these traces are gitignored, but the repo is public — never persist a live token).
    - **PASS / BLOCKED / SKIPPED / AMBIGUOUS** → no screenshot, no trace (HAR covers PASS traffic; the others are not real failures).
-9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED. **On a deviation, ask before you classify it** — a FAIL, BLOCKED, unexpected result or step-3 incidental observation: `npm run kb -- ask "<coordinate> <what you saw>"` (MCP: `mcp__kb__kb_ask`). A hit recording it as known behaviour is cited in `notes` and its id kept for Phase 5; a miss is not a blocker and does not stop the next deviation being asked. Rule: `CLAUDE.md` §Essential Rules → *Product context*. Then **append ONE line** to `reports/regression/{{RUN_ID}}/suite-{{SUITE_ID}}-cases.jsonl`:
+9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED. **On a deviation (FAIL, BLOCKED, unexpected result, step-3 incidental), ask before you classify it:** `npm run kb -- ask "<coordinate> <what you saw>"` (MCP: `mcp__kb__kb_ask`). Cite a hit in `notes`, keep its id for Phase 5; a miss blocks nothing. Rule: `CLAUDE.md` §Essential Rules → *Product context*. Then **append ONE line** to `reports/regression/{{RUN_ID}}/suite-{{SUITE_ID}}-cases.jsonl`:
 
    ```
    {"id":"CART-002","title":"Add to Cart - From Category List","status":"PASS","durationMs":41230,"notes":"","evidence":[],"trace":""}
@@ -147,7 +147,7 @@ completion. Rules:
 
 For each FAIL record a preliminary entry with `confirmed: false`. A separate `qa-testing-expert` investigation confirms defects — never escalate yourself. Transient signals (index lag, stale data, cold start) are NOT auto-confirmed.
 
-**Incidental defects (out-of-scope-bug rule).** If continuous observation (Phase 2 step 3) surfaced a real defect that is **outside the assertions of the case that PASSed** — e.g. a 5xx, a GraphQL `errors[]`, an unhandled JS exception, or a visible layout break unrelated to the case — record it as an extra preliminary `bugs[]` entry with `confirmed: false`, set `testCaseId` to the case that surfaced it, and add `"incidental": true` plus a one-line `notes` of what you saw. Do not change that case's PASS verdict. Skip known-transient signals and disabled-control / API-only / by-design non-bugs per the Live-Verification Policy.
+**Incidental defects (out-of-scope-bug rule).** A real defect continuous observation (Phase 2 step 3) surfaced **outside the assertions of a case that PASSed** — a 5xx, a GraphQL `errors[]`, an unhandled JS exception, an unrelated layout break — is an extra preliminary `bugs[]` entry: `confirmed: false`, `testCaseId` = the case that surfaced it, `"incidental": true`, and a one-line `notes` of what you saw. The case stays PASS. Skip known-transient signals and disabled-control / API-only / by-design non-bugs per the Live-Verification Policy.
 
 ## Phase 4: Teardown
 
@@ -156,13 +156,13 @@ For each FAIL record a preliminary entry with `confirmed: false`. A separate `qa
    - Inside the popup, click the **Logout** button (selector: `data-test-id="sign-out-button"`).
    - Verify redirect to home or `/sign-in`.
    - **NEVER** do `browser_navigate('/sign-out')`, `/logout`, or hunt for a header-level logout icon — they do not exist.
-   - Any test Step that says "sign out", "log out", "Click logout button", or similar MUST be executed via this popup sequence. If a Step literally says "Navigate to /sign-out" or "Click logout in header", flag it but still execute via the popup sequence.
+   - Any Step saying "sign out", "log out", "Click logout button" or similar runs this popup sequence — even one that literally says "Navigate to /sign-out" or "Click logout in header", which you also flag.
 2. `browser_close` — finalizes HAR.
 3. Record `completedAt`.
 
 ## Phase 5: Write Results
 
-1. **Bank what the run established** — each platform behaviour your results state or you noticed, even on a PASS (bar: `authoring-standard.md` §5.3): matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ ask once more, then `kb capture` (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List every id in `kb`.
+1. **Bank what the run established**, even on a PASS (bar: `authoring-standard.md` §5.3): matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, nothing held ⇒ ask once more, then `kb capture --deployment {TEST_ENV}`. Public base: nothing client-specific; ids in `kb`.
 2. JSON to `{{OUTPUT_FILE}}`:
 
 ```json

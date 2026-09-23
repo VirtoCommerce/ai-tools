@@ -257,9 +257,9 @@ Run the three lanes concurrently — a fastpath suite must never wait on a brows
   `{{SUITE_BATCH}}` (one row per suite: `SUITE_ID | SUITE_NAME | SUITE_CSV_PATH | OUTPUT_FILE`, using
   the resolved paths from above), `{{BROWSER_SERVER}}`, `{{LANE_ID}}` (the slot index — this is what
   selects the credential slot, see below), `{{ENVIRONMENT_URL}}`, `{{BACKEND_URL}}`. Keep the prompt
-  lean — no extra prose, no knowledge pre-loading, no inline CSV. **One line is always added:** the
-  scripted-variant `Observed behaviour` line (`../templates/agent-dispatch.md` §Agent Prompt Structure,
-  worded as in `../commands/qa-smoke.md`'s track briefs). **Every suite in a batch shares one
+  lean — no extra prose, no knowledge pre-loading, no inline CSV. **Always add one line:** the
+  scripted-variant `Observed behaviour` line (`../templates/agent-dispatch.md` §Agent Prompt Structure;
+  wording as in `../commands/qa-smoke.md`'s track briefs). **Every suite in a batch shares one
   `{{LANE_ID}}`**, which is correct: they run sequentially on one slot, so they cannot contend for
   the account.
 - **`{{OUTPUT_FILE}}` is a FRAGMENT for any suite with a machine part**:
@@ -378,7 +378,7 @@ did NOT run, because a scoped run's silence is otherwise unreadable:
 ## Suite Results
 | Suite | Name | Browser | Tests | Pass | Fail | Rate | Attempts |
 ## New in base
-| KB id | Suite | Captured / disputed (`kb` of each results file) |
+| KB id | Suite | Captured/disputed (`kb` of each results file) |
 ## Bugs Found
 | Bug ID | Suite | Severity | Title | Test Case |
 ## Retry Log
