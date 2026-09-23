@@ -89,7 +89,11 @@ test("full: continuous refill + LPT beats the fixed-batch barrier by a wide marg
   // the margin exists to absorb. The real regression detectors are the two RELATIVE assertions
   // above (pool < barrier, and pool <= 75% of barrier) — those hold whatever the corpus size, and
   // an absolute ceiling can only ever track it.
-  assert.ok(pool <= 1100, `expected <= 1100 min at P=3, got ${pool}`);
+  // Recalibrated again 2026-09-23 at 135 `full` suites: the packed makespan is 1115 against a
+  // theoretical floor of total/3 = 1114, so the 1100 ceiling had dropped BELOW the floor and was
+  // unsatisfiable by any scheduler, optimal or not. Growth, not a regression — same absorption the
+  // margin exists for.
+  assert.ok(pool <= 1275, `expected <= 1275 min at P=3, got ${pool}`);
   assert.ok(barrier >= 1300, `expected the barrier to be >= 1300 min, got ${barrier}`);
 });
 

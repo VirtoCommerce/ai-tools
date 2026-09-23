@@ -4,7 +4,7 @@
 >
 > For Admin SPA and Platform API checklists, see `backend-admin-checklists.md` (27 Admin domains + 2 API domains | 244 items).
 
-**35 storefront domains + 1 cross-domain checklist | 468 checklist items** — every checked item should map to at least one test case.
+**36 storefront domains + 1 cross-domain checklist | 510 checklist items** — every checked item should map to at least one test case.
 
 > **GraphQL test coverage**: GraphQL xAPI checklist items are maintained in [`graphql-checklist.md`](./graphql-checklist.md), not here. This file focuses on storefront UI/UX behavior.
 
@@ -47,6 +47,7 @@
 | 33 | Subscriptions & Recurring Orders | 10 | E2E-SUB | 14 |
 | 34 | Loyalty & Rewards (Storefront) | 20 | — | 075, 075b, 075c, 083, 083b, 083c, 083d |
 | 35 | Sales Rep Hub (Storefront) | 22 | — | 089, 090, 091, 093, 097 |
+| 36 | UCP — Agentic Commerce (MCP) | 42 | — | 094 (telemetry only — 0 chain coverage) |
 | **BF** | **Bug Fix Verification** | **10** | *cross-domain* | *per bug* |
 
 ---
@@ -639,6 +640,76 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 **Over the 6–15 band at 16, deliberately:** this domain spans three personas across two layers and holds 32 invariants; dropping one to fit the band would mean dropping a P0.
 
 **Related checklists:** Multi-Org (#13), Company Members (#12), Orders (#10), Sales Rep Admin (A28), GraphQL xAPI.
+
+---
+
+## 36. UCP — Agentic Commerce (MCP)
+
+> Scope: the Universal Commerce Protocol adapter — an AI agent shopping over MCP at `/ucp/mcp`, then handing the buyer a `continue_url` that resumes in the ordinary storefront checkout. Three surfaces in ONE chain: the MCP/REST API (18 tools), the Platform OAuth leg, and the storefront restore leg. **Deliberately over the 6–15 band** for that reason — dropping a surface drops the link where the defects have actually been. Surface inventory: `knowledge/domain/ucp.md`. Labels and shapes observed live 2026-09-22 on the unmerged PR heads (vc-module-ucp#7 / vc-platform#3108 / vc-frontend#2467).
+>
+> **⚠ This domain has ZERO invariants of its own.** `business-logic.md` Domain 25 (`BL-UCP`) is declared and **deliberately empty**; no `ECL` section mentions UCP or MCP; `vc-bug-catalog` has 0 UCP entries; VirtoOZ carries no UCP page (`ucp.md` D8). Every citation below is therefore a **delegated** invariant from a neighbouring domain — none of which knows the handoff exists — or an `[OBSERVED]` ECL pattern whose shape transfers. Items with no honest citation carry none rather than a minted `BL-UCP-*`. Promotion candidates for `/qa-review-oracles`: handoff single-use + TTL · `organization_id` derives only from the Platform token · anonymous-plus-organization ⇒ 403.
+
+**Discovery (L1):**
+- [ ] `GET /.well-known/ucp` and `get_store_capabilities` return the **same** MCP endpoint, and it is the host that can actually complete OAuth — check from **both** the Platform host and the storefront host, which answered differently until 2026-09-22
+- [ ] `storefront_origin`, `endpoints.handoff_url_template` and `auth.authorization_server` name one origin, and it matches the host that mints `continue_url`
+- [ ] The tool count agrees across all three surfaces that publish one — `tools/list`, `get_store_capabilities.mcp_tools`, `initialize.instructions` (observed 2026-09-22: 18 / 17 / 16, `logout_buyer` and `link_buyer_identity` dropped from the narrower two)
+- [ ] `payment_handlers` has the same shape and contents in the discovery manifest as in `get_store_capabilities` (observed: `{}` empty object vs a populated array of 3)
+- [ ] Every operation claiming `status: available` answers, and no advertised header is inert (`X-Agent-Api-Key` is advertised and read by nothing)
+
+**Identity linking (L2):**
+- [ ] `link_buyer_identity` without a token returns **401** plus `WWW-Authenticate: Bearer` carrying `resource_metadata`, and that URL resolves to metadata naming a **grantable** resource (RFC 9728)
+- [ ] The resource named in the challenge can actually mint a token — an OAuth app holds a matching `rsrc:` permission. A challenge pointing at an ungrantable resource is a dead end that looks correct at every hop
+- [ ] After linking, `buyer_id` is the **Platform user id** and `organization_id` comes **only** from the token; no payload field or tool argument may override either (BL-AUTH-015)
+- [ ] Legacy `X-Buyer-User-Id` / `X-Buyer-Organization-Id` headers are rejected **403** and are no longer advertised in `headers.buyer_context`
+- [ ] `logout_buyer` revokes the authorization **and its refresh tokens across other sessions** — confirm that blast radius before trusting it
+- [ ] Ordinary public shopping needs no login: anonymous requests stay anonymous (BL-CHK-001)
+
+**Catalog & cart (L3/L4):**
+- [ ] `search_products` returns real catalog content, not only `AGENT-TEST-*` fixtures — use a **live-discovered** term, never a hardcoded one
+- [ ] An anonymous `create_cart` mints a buyer id matching `ucp-anonymous-<32 hex>`, reusable for continuation
+- [ ] `update_cart` takes the **complete desired line-item state, not a delta**; the same product added twice raises quantity rather than creating a second line (BL-CART-007)
+- [ ] `create_cart` under an authenticated token: know whether it returns the buyer's **existing default cart and adds to it** — a retry after a timeout then doubles quantities, and the buyer lands at checkout with items the agent never discussed
+- [ ] `list_carts` is buyer-scoped — one buyer never sees another's carts, and an org's cart never leaks across orgs (BL-CART-005, BL-B2B-001)
+- [ ] Org-assigned price lists override the store default for that org's members (BL-B2B-002). **Requires a fixture whose org price differs from list price** — where it does not, this item is undecidable, not passing
+- [ ] Stock changing between assembly and resume surfaces as a conflict, not a silent sale (BL-CART-002, ECL-6.1)
+
+**Anonymous → authenticated merge (L4b — IRREVERSIBLE):**
+- [ ] Replaying the saved anonymous `buyer_id` under an authenticated token merges via XCart `mergeCart`: items carried at the **same total**, source cart consumed, no orphan (BL-CART-008)
+- [ ] Replaying **another** buyer's anonymous id is refused **403** — assert at the server with that buyer's own token, never by an absent button
+- [ ] Running the merge twice is an idempotent no-op, not duplicated lines (ECL-5.1)
+
+**Checkout & handoff mint (L5/L6):**
+- [ ] `checkout.id == cart_id`, and checkout totals match the cart they were composed from
+- [ ] Walk **both** handoff paths — one-step `checkout_and_handoff` and two-step `create_checkout` → `handoff_checkout`. They return different envelope shapes, so a client reading one path uniformly gets `undefined` from the other
+- [ ] The `status` wording does not tell every buyer their order needs approval. **The platform has no native per-order spending limit and no auto-approval status; approval is quote-based** (BL-B2B-004) — so an "approval required" reading is wrong at the platform level, not merely UCP's
+- [ ] `expires_at` is mint + the configured TTL, and the issued `continue_url` host matches the advertised `handoff_url_template`
+- [ ] `get_payment_handlers` reflects what the store can actually do, and unavailable handlers carry a reason
+
+**Storefront restore (L7 — where the buyer actually lands):**
+- [ ] **A fresh, never-opened `continue_url` succeeds on the FIRST attempt.** Measure over **≥10** fresh links and report `N/10` — a single success is not a measurement (this flow ran at ~49–53% for weeks)
+- [ ] The **authenticated** path is measured separately from the anonymous one: restore is attempted anonymously first and retried on **401 only**, so it needs **two** successful cache lookups and degrades worse under partitioning
+- [ ] The buyer lands on `/cart/{cartId}?ucp_handoff=1` with the right line items, totals, addresses and **organization context**
+- [ ] A restored link is **single-use** (replay ⇒ 400); a *failed* restore does **not** consume it — which is what makes the anonymous-first retry legal
+- [ ] 400 / 401 / 403 are distinct branches, and the buyer-facing banner does not conflate "expired", "already used" and "this replica doesn't hold it" into one sentence (ECL-1.2)
+- [ ] A different buyer restoring this handoff is refused **403** — verify the check is per-**user**, not merely per-org, using a second buyer inside the same organization
+- [ ] An expired session is distinguishable from a cache miss and from an unknown token — all three returned an identical 400 as of 2026-09-22
+- [ ] An unknown/forged token returns 400 and exposes no cart. The token is **opaque** — no cart id, user id or signature to tamper with, so a "modify the signature" test is not runnable against this mechanism
+- [ ] Sign-in required mid-restore preserves the handoff and resumes after login, and the raw `ucp_session` never appears in the `returnUrl` (BL-AUTH-001, ECL-1.2)
+
+**Error contract (the caller is an LLM, so this is a first-class surface):**
+- [ ] A missing required argument returns a structured `invalid_request` **naming the field** — never an unhandled error with only a trace id — including **nested** fields (`line_items[].product_id is required.`) (BL-AUTH-017)
+- [ ] An unknown `store_id` returns a **store** error, not a misattributed currency error (BL-AUTH-017)
+- [ ] An MCP tool failure returns a `tools/call` `isError` result carrying a usable Trace ID, not a JSON-RPC protocol error (ECL-14.1)
+
+**Cross-layer checks:**
+- [ ] Back office confirms the cart/checkout the agent built persisted, with the right owner and org
+- [ ] No console errors on the handoff landing or on `/oauth/authorize`
+- [ ] App Insights correlates one handoff end to end — `SetHandoffSession` → `GetHandoffSession` → `RemoveHandoffSession` for the same `vc.ucp.handoff.key_hash`, across replicas
+- [ ] No raw `ucp_session` token appears in any telemetry dimension, log or trace
+
+**Not covered here, deliberately:** order attribution (no tool writes it and no field is identified — a product question, not a test) · payment and order placement (UCP owns nothing past the handoff — Cart/Checkout #8, Payment #9) · approval-rule enforcement (BL-B2B-004: no such platform gate — B2B Quotes & RFQ #20) · concurrency of the single-use guarantee (needs a parallel-request harness — `/qa-exploratory`) · all `[THEORETICAL]` ECL patterns (charter material by rule).
+
+**Related checklists:** Cart/Checkout (#8), Anonymous Flow (#17), Cart Merge (#18), Multi-Org (#13), Auth (#1), GraphQL xAPI.
 
 ---
 

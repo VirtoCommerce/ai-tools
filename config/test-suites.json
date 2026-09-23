@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-09-18",
-    "totalSuites": 144,
+    "generated": "2026-09-23",
+    "totalSuites": 145,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -3490,6 +3490,37 @@
       "customerApplicability": "reference",
       "notes": "VCST-5898. The sign-in audit log ships in the platform itself, not a module — the suite needs no requiresModules entry, only a platform build that carries /api/platform/security/sign-in-log. Two execution constraints the cases state for themselves: records are written through a buffered writer, so every \"row appears\" assertion polls instead of reading once; and the Record sign-in attempts switch is read through the settings cache, so a sign-in immediately after toggling it can still be recorded — the settings cases wait for the cache to settle. SIL-025 (retention), SIL-027 (cleanup job off) and SIL-028 (cron after restart) are Manual: they need a cleanup run, a controlled clock, or a platform restart on a stand nobody else is using. Not covered here and deliberately so: SSO against a real identity provider (needs a configured IdP), migrations on PostgreSql and MySql, reverse-proxy Host resolution with and without forwarded headers, and the load profile of the buffered writer — the last belongs on the loadtest stand, with and without recording.",
       "clickDriven": true
+    },
+    {
+      "id": "102",
+      "name": "UCP Agentic Commerce",
+      "file": "regression/suites/Backend/ucp/102-ucp-agentic-commerce.csv",
+      "domain": "ucp",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 36,
+      "estimatedMinutes": 90,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "ucp",
+        "mcp",
+        "handoff",
+        "agentic-commerce",
+        "oauth",
+        "b2b"
+      ],
+      "customerApplicability": "universal",
+      "requiresModules": [
+        "VirtoCommerce.UCP"
+      ],
+      "notes": "VCST-5378. First value-chain suite for UCP — 094 is telemetry-only and touches none of the chain (domain map .claude/knowledge/domain/ucp.md, test model reports/ba/test-models/VCST-5378-2026-09-22.md). 36 cases. MACHINE LANE, REG-2026-09-23-M6: 31 pass / 0 fail / 1 blocked over the 32 machine-classified cases (the 4 browser-lane cases run separately). The one blocked is UCPA-021 BY DESIGN — see below. Excluded from the backend/full selections until /qa-test lifecycle promotion, same as 094. Case-id prefix UCPA- (094 owns UCPO-). BL-UCP is declared and deliberately EMPTY (business-logic.md Domain 25) — cases cite only delegated invariants (BL-AUTH-*, BL-B2B-*, BL-CART-*, BL-CHK-*) or carry no Business_Rule at all; never cite a BL-UCP-* id. RESOLUTION RULES. MCP endpoint is {{FRONT_URL}}/ucp/mcp — STOREFRONT host only; the Platform host cannot mint a token whose audience matches (domain map amendment 2026-09-17). Token recipe: POST {{FRONT_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}} (camelCase — store_id fails), username, password, resource={{FRONT_URL}}/ucp/mcp. <SEARCH_TERM>: live-discover per the same rule as suite 094 — never hardcode a query string. UCPA-004/008 (authenticated B2C, org-free) are BLOCKED pending a data-prep pass: no B2C-store fixture account exists yet (test model Part 0r) — do not substitute an org-scoped account. UCPA-016/017 (assortment scoping / contract pricing) are the FIRST decidable pass on this domain: @td(UCP_CONTRACT_PRODUCT), @td(UCP_CONTRACT_CONTROL_PRODUCT), @td(UCP_ORG_ONLY_PRODUCT) and @td(UCP_CONTRACT_BUYER) were seeded 2026-09-22 (scripts/seed-data/pricing/seed-org-contract-pricing.mjs) specifically to close the FIXTURE-GAP that made these UNDECIDABLE before. Ground truth as of 2026-09-22 (re-verify before treating any of these as stale): anonymous-handoff first-attempt restore 17/17; expired/consumed/forged handoff tokens return IDENTICAL 400 payloads (code/message/empty details) — a case cannot assert 'expired' as distinguishable from the other two causes; UCPA-013's guest-checkout-disabled config variant is BLOCKED pending an isolated stand (same reasoning as 094's 4 Manual cases). MACHINE-LANE RUN NOTE (2026-09-23). Run it as `npm run suites:lanes -- 102 --run-id <id>` then `npm run suites:machine -- 102 --run-id <id>`. UCPA-021 observes the 15-minute handoff-token TTL and therefore asks for [WAIT seconds=960]; the runner REFUSES any wait over GQL_MAX_WAIT_SECONDS (default 300) rather than truncating it, so in a normal batch that case reports BLOCKED, which is the honest outcome — capped at 300 s it used to assert the expired-token 400, which an UNEXPIRED token also returns, and so scored PASS in 314 s without ever crossing its boundary. To actually exercise it: GQL_MAX_WAIT_SECONDS=1000, ~16 minutes of wall-clock, outside the batch. AUTHORING NOTE: every MCP response is enveloped and the envelope differs per tool (create_cart -> body.cart, create_checkout -> body.checkout.cart, handoff_checkout -> body.result.checkout, any failure -> a flat body.is_error/code/status_code/message). 7 of the 10 non-passing cases in the previous run were nothing but a wrong envelope level, so confirm every path by running the case once with UCP_DEBUG=1 rather than by reading it (.claude/knowledge/api/graphql-test-cases-runner.md, THE ENVELOPE RULE).",
+      "clickDriven": true,
+      "lanes": {
+        "machine": 32,
+        "browser": 4,
+        "manual": 0
+      }
     }
   ],
   "selections": {
@@ -3631,7 +3662,8 @@
         "050m2",
         "092",
         "092b",
-        "094"
+        "094",
+        "102"
       ]
     },
     "sprint": {

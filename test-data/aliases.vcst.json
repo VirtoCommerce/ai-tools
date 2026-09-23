@@ -1720,5 +1720,37 @@
     "role_id": "AGENT-TEST-PB-SC-sc-nostore",
     "email": "AGENT-TEST-sc-nostore@test.virtocommerce.com",
     "store_id": "Electronics"
+  },
+  "UCP_ORG_CONTRACT": {
+    "id": "83a0331d-1def-4593-b053-018ad1b4027c",
+    "org_platform_id": "105c2c4e-23be-4258-8691-568a0ff190be",
+    "pricelist_id": "25cffc97-3399-4572-a3ed-643b137c5cdb",
+    "priority_pricelist_id": "73c8c4a1-1bcd-490e-9f7d-4b03d4ac1b73",
+    "base_assignment_id": "f2b38300-58d3-4a5b-9698-84c771dcf793",
+    "priority_assignment_id": "c7a640db-16a3-44f4-8181-b92ff9e11652"
+  },
+  "UCP_CONTRACT_PRODUCT": {
+    "id": "216e787f-3de2-4ffd-9ce8-4c2eff7234e8",
+    "catalog_id": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "anonymous_price_at_seed": "29.99",
+    "contract_price_at_seed": "11.11",
+    "b2c_consumer_price_at_seed": "29.99"
+  },
+  "UCP_CONTRACT_CONTROL_PRODUCT": {
+    "id": "28fb666d-1813-49fb-991e-0321d7793a72",
+    "catalog_id": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "price_at_seed": "3.49"
+  },
+  "UCP_CONTRACT_BUYER": {
+    "id": "92d0758c-5bd9-4269-9a68-45a853acf132",
+    "contact_id": "c43f1d7b-fe54-44da-935a-32ef50bf96d5"
+  },
+  "UCP_ORG_ONLY_PRODUCT": {
+    "id": "c4b8ba31-e1cb-4333-a8ab-3e8a03b7fccb",
+    "catalog_id": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
+    "tagged_item_id": "5a9d6a6f-8b61-4d27-9bd6-e86c84332477",
+    "pricelist_id": "4c15db2f-9d28-4918-a215-9af837ac986d",
+    "anonymous_visible_at_seed": "false",
+    "contract_visible_at_seed": "true"
   }
 }

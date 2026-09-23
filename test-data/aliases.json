@@ -2139,6 +2139,59 @@
     "notes": "Tier-priced fixture (list $29.99 minQty=1, sale $26.99 minQty=10, sale $23.99 minQty=20 — applied at create time from standard-specs.mjs SPEC_OVERLAYS['PROD-104']; stock=200). Seeded by scripts/seed-data/products/seed-standard-products.mjs; resolved by business key (code/SKU QA-TIER-001) — NO runtime GUID committed here (ids live in aliases.<env>.json). NAVIGATE VIA @td(PROD_TIER_PRICED.url), composed as {{FRONT_URL}}@td(PROD_TIER_PRICED.url); /product/<sku> does not resolve. Unblocks CART-078. Env var TIER_PRICED_SKU must equal this sku (enforced by td:validate:standard).",
     "_status": "seeded-20260519"
   },
+  "UCP_ORG_CONTRACT": {
+    "_inline": true,
+    "name": "AGENT-TEST-UCP-Acme-Contract",
+    "code": "contract-agent-test-ucp-acme-contract",
+    "group": "contract-agent-test-ucp-acme-contract",
+    "org_alias": "ORG_ACME",
+    "status": "Active",
+    "currency": "USD",
+    "id": "",
+    "_notes": "The B2B contract that makes @td(ORG_ACME) pay a different price from an anonymous shopper. Before it existed, QA-TIER-001 read 29.99 in BOTH contexts (measured live 2026-09-22), so every contract-pricing case was a vacuous pass — test-data.md SECOND RULE. VirtoCommerce.Contracts derives two group-conditioned pricelist assignments from this contract (Base prio 10000 / Priority prio 10001), both matching the user group \"contract-agent-test-ucp-acme-contract\" which equals this code. RETRACTED 2026-09-22 — an earlier revision of this note claimed, as a measured LIMITATION, that the group on the ORGANISATION moves the Platform pricing engine but NOT the storefront, i.e. that xAPI reads user groups off the CONTACT only. That is FALSE and was refuted by direct re-measurement: AcmeCorp carries the contract group, @td(ACME_ADMIN) and @td(ACME_BUYER) both carry contact groups:[], and BOTH read the contract price 11.11 through UCP search_products while anonymous reads 29.99. The ORG-level binding does reach the storefront. The likeliest cause of the original reading is search-index lag between binding the org and reading it back. CONSEQUENCE, and it is the one that matters: the org group is NOT inert for other suites — every AcmeCorp buyer now reads the contract ladder for QA-TIER-001. That is tolerable only because the contract ladder SHADOWS every anonymous tier break (11.11/9.99/8.88 at the same 1/10/20 thresholds), so a suite asserting a relative tier reduction still passes; a suite asserting an absolute 29.99 would not. @td(UCP_CONTRACT_BUYER) remains a useful dedicated contact, but as a second axis, not because the org binding fails. VCST-5378 story 2 contract-pricing fixture. Seeded by `npm run seed:org-contract`; drift-guarded by `npm run td:validate:org-contract`; proven live by `npm run seed:org-contract:verify`. Runtime GUIDs live in aliases.<env>.json ONLY (DV-021)."
+  },
+  "UCP_CONTRACT_PRODUCT": {
+    "_inline": true,
+    "sku": "QA-TIER-001",
+    "currency": "USD",
+    "anonymous_price": "29.99",
+    "contract_price": "11.11",
+    "price_delta": "18.88",
+    "contract_group": "contract-agent-test-ucp-acme-contract",
+    "id": "",
+    "_notes": "The SAME product as @td(PROD_TIER_PRICED) (QA-TIER-001) — the existing tier fixture EXTENDED, not replaced. Anonymous ladder comes from standard-specs SPEC_OVERLAYS['PROD-104']; the contract ladder shadows every one of its breaks so the contract wins above each threshold too: qty 1+ 29.99→11.11 (Δ18.88); qty 10+ 26.99→9.99 (Δ17); qty 20+ 23.99→8.88 (Δ15.11). Assert the DELTA by alias, never by a literal. The three contract amounts are repdigits about a third of list — far outside any tax, rounding or FX artifact. VCST-5378 story 2 contract-pricing fixture. Seeded by `npm run seed:org-contract`; drift-guarded by `npm run td:validate:org-contract`; proven live by `npm run seed:org-contract:verify`. Runtime GUIDs live in aliases.<env>.json ONLY (DV-021). UCP returns money as {amount,currency,formatted_amount} with amount in MINOR units (2999 = $29.99), so an assertion against the major-unit field silently fails on every comparison. The *_minor fields exist for assertions; the major-unit fields stay for prose and for the storefront DOM, which renders $29.99. Derived from the same seed spec - td:validate:org-contract guards the family.",
+    "anonymous_price_minor": "2999",
+    "contract_price_minor": "1111",
+    "price_delta_minor": "1888"
+  },
+  "UCP_CONTRACT_CONTROL_PRODUCT": {
+    "_inline": true,
+    "sku": "QA-SUBFIVE-001",
+    "id": "",
+    "_notes": "The CONTROL half of the fixture: same catalog, same standard pricelist, deliberately NOT in the contract. Its assertion is an EQUALITY across the two contexts, so it declares no price of its own and cannot rot. Without it a blanket \"this buyer gets everything cheaper\" defect reads exactly like working contract pricing. VCST-5378 story 2 contract-pricing fixture. Seeded by `npm run seed:org-contract`; drift-guarded by `npm run td:validate:org-contract`; proven live by `npm run seed:org-contract:verify`. Runtime GUIDs live in aliases.<env>.json ONLY (DV-021)."
+  },
+  "UCP_ORG_ONLY_PRODUCT": {
+    "_inline": true,
+    "sku": "QA-ORGONLY-001",
+    "name": "AGENT-TEST-UCP-Org-Only-Product",
+    "price": "44.44",
+    "currency": "USD",
+    "slug": "agent-test-ucp-org-only-product",
+    "url": "/seed-test-fixtures/agent-test-ucp-org-only-product",
+    "tag": "contract-agent-test-ucp-acme-contract",
+    "id": "",
+    "_notes": "ASSORTMENT-SCOPING half of the VCST-5378 story-2 fixture: a product served to a session carrying the contract group \"contract-agent-test-ucp-acme-contract\" and WITHHELD from an anonymous one. Mechanism is VirtoCommerce.CatalogPersonalization (a tagged item, group vocabulary shared with contract codes), NOT a catalog or store change — nothing store-level was touched and no pre-existing product was tagged. Proven live 2026-09-22 on vcst: anonymous xAPI search totalCount 0 and product(id:) null; contract buyer search returns it at 44.44. THE fixture property is the tag — an untagged product is visible to everyone and the \"invisible anonymously\" half then asserts nothing, so both the seeder and td:validate:org-contract reject an empty tag list. Priced from the UNCONDITIONED AGENT-TEST-UCP-Assortment-USD pricelist on purpose: a group-conditioned one would make the anonymous half fail for \"no price\" instead of \"out of assortment\". Distinct from @td(PROD_ORG_EXCLUDED), which is absent from the store catalog and therefore invisible to EVERYONE. NAVIGATE VIA {{FRONT_URL}}@td(UCP_ORG_ONLY_PRODUCT.url). Seeded by npm run seed:org-contract; drift-guarded by npm run td:validate:org-contract. Runtime GUIDs live in aliases.<env>.json ONLY (DV-021).",
+    "price_minor": "4444"
+  },
+  "UCP_CONTRACT_BUYER": {
+    "_inline": true,
+    "email": "test-ucp-contract-buyer@test-agent.com",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "group": "contract-agent-test-ucp-acme-contract",
+    "org_alias": "ORG_ACME",
+    "id": "",
+    "_notes": "A DEDICATED contract buyer inside @td(ORG_ACME) — not an existing AcmeCorp user. Giving the contract group to a shared buyer would change what every suite that signs in as them reads for QA-TIER-001 (CART-078 asserts its 29.99/26.99/23.99 ladder). Sign in with the STOREFRONT password grant including the storeId form field — omitting it answers 400 user_cannot_login_in_store, which reads like a disabled account. Password resolves from .env.local; never a literal. VCST-5378 story 2 contract-pricing fixture. Seeded by `npm run seed:org-contract`; drift-guarded by `npm run td:validate:org-contract`; proven live by `npm run seed:org-contract:verify`. Runtime GUIDs live in aliases.<env>.json ONLY (DV-021)."
+  },
   "PROD_MULTI_CURRENCY": {
     "file": "products/test-products",
     "filter": {

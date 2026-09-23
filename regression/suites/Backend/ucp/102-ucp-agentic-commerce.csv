@@ -1,0 +1,1125 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+UCPA-001,"UCP journey — B2B org buyer discovers, links, shops, checks out, and lands on their own cart",UCP > Journey > B2B E2E,Critical,"BL-B2B-001, BL-B2B-002, BL-CART-005, BL-CHK-001",,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email) in @td(ORG_ACME.platform_id). This is the ONE case in the suite that must pass end to end for the feature to be considered working — every other case refines one link of it. Cleanup deliberately omits logout_buyer here: this case’s role is a shared fixture also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, store={{STORE_ID}}, org=@td(ORG_ACME.platform_id), <SEARCH_TERM> (live-discover, never hardcode)","--- API ---
+[HTTP] GET {{FRONT_URL}}/.well-known/ucp
+[CAPTURE] discovery.mcp_endpoint
+[AUTH] POST {{FRONT_URL}}/connect/token grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username=@td(ACME_ADMIN.email), password={{B2B_USER_PASSWORD}}, resource={{FRONT_URL}}/ucp/mcp
+[CAPTURE] access_token
+[MCP] tools/call name=link_buyer_identity arguments={store_id:{{STORE_ID}}} (Authorization: Bearer access_token)
+[CAPTURE] link_result.buyer_id, link_result.organization_id
+[MCP] tools/call name=search_products arguments={store_id:{{STORE_ID}},query:""<SEARCH_TERM>"",limit:5} (Authorization: Bearer access_token)
+[CAPTURE] first_product.product_id, first_product.price
+[MCP] tools/call name=create_cart arguments={store_id:{{STORE_ID}},line_items:[{product_id:first_product.product_id,quantity:1}]} (Authorization: Bearer access_token)
+[CAPTURE] cart.id, cart.total
+[MCP] tools/call name=checkout_and_handoff arguments={store_id:{{STORE_ID}},cart_id:cart.id,shipping_address:{first_name:""QA"",last_name:""Agent"",line1:""1 Test Way"",city:""Seattle"",region:""WA"",postal_code:""98101"",country_code:""USA""}} (Authorization: Bearer access_token)
+[CAPTURE] handoff.continue_url, handoff.checkout.id, handoff.checkout.total
+--- STOREFRONT ---
+[NAV] handoff.continue_url
+[WAIT] page settles on a /cart/{id}?ucp_handoff=1 URL","[BODY] link_buyer_identity returns 200; link_result.buyer_id equals the Platform user's platform_id for @td(ACME_ADMIN.email); link_result.organization_id equals @td(ORG_ACME.platform_id) {SPEC}
+[MATH] cart.total equals first_product.price x 1 (2 decimal places) {BL}
+[BODY] handoff.checkout.id equals cart.id {SPEC}
+[NAV] browser URL matches /cart/{cart.id}\?ucp_handoff=1 after opening continue_url {OBSERVED}
+[REL] the storefront cart's line items and total equal cart.id / cart.total captured from the MCP leg {SPEC}
+[DOM] the storefront cart shows organization context consistent with @td(ORG_ACME.platform_id) (org-scoped view, not an anonymous one) {SPEC}","[ADMIN] the cart/checkout persisted with owner=@td(ACME_ADMIN.email) and org=@td(ORG_ACME.platform_id), confirmed via Platform REST GET on the cart id
+[CONSOLE] no JS errors on the /cart landing page
+[NETWORK] no 4xx/5xx on the /cart page load itself; the restore call may show one expected 401 from the anonymous-first attempt before the authenticated retry succeeds (documented client strategy, same pattern as UCPA-015 — not a failure signal)","401/403 on any MCP call in the API leg, empty or zero-total cart on arrival, wrong or missing organization context on the storefront, restore requiring more than one attempt (see UCPA-015 which measures this separately)",[TEARDOWN] remove the created cart via Admin or DELETE /api/carts/{cart.id} if not already consumed by checkout; sign out the storefront session,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-002,"Discovery parity — both hosts serve the SAME UCP manifest and the SAME protected-resource metadata, and the resource they name answers JSON-RPC",UCP > Discovery > Host Parity,High,,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). No auth needed (discovery is anonymous). SHAPE, re-derived live 2026-09-23: /.well-known/ucp returns {ucp:{version,status,services,capabilities,payment_handlers}} and carries NO resource / authorization_server / storefront_origin / handoff_url_template — the earlier form of this case asserted four fields that have never existed on this build and failed on all four. resource + authorization_servers[] live in /.well-known/oauth-protected-resource/ucp/mcp (RFC 9728); storefront_origin lives on the get_store_capabilities TOOL, not on any manifest. Both documents are byte-identical across the two hosts on this build.","platform_host={{BACK_URL}}, storefront_host={{FRONT_URL}}","[REST-OP plat1]
+GET {{BACK_URL}}/.well-known/ucp
+[REST-EXEC plat1]
+[REST-CAPTURE plat1.ucp.version → PLAT_UCP_VERSION]
+[REST-OP sf1]
+GET {{FRONT_URL}}/.well-known/ucp
+[REST-EXEC sf1]
+[REST-OP plat_prm]
+GET {{BACK_URL}}/.well-known/oauth-protected-resource/ucp/mcp
+[REST-EXEC plat_prm]
+[REST-CAPTURE plat_prm.resource → PLAT_RESOURCE]
+[REST-CAPTURE plat_prm.authorization_servers.0 → PLAT_AS]
+[REST-OP sf_prm]
+GET {{FRONT_URL}}/.well-known/oauth-protected-resource/ucp/mcp
+[REST-EXEC sf_prm]
+[MCP-OP caps1]
+get_store_capabilities
+{ ""store_id"": ""{{STORE_ID}}"" }
+[MCP-EXEC caps1]
+[REST-OP mcp_init]
+POST {{FRONT_URL}}/ucp/mcp
+Content-Type: application/json
+Body: {""jsonrpc"":""2.0"",""id"":1,""method"":""initialize"",""params"":{""protocolVersion"":""2025-06-18"",""capabilities"":{},""clientInfo"":{""name"":""qa-runner"",""version"":""1.0""}}}
+[REST-EXEC mcp_init]
+[REST-OP mcp_tlist]
+POST {{FRONT_URL}}/ucp/mcp
+Content-Type: application/json
+Body: {""jsonrpc"":""2.0"",""id"":2,""method"":""tools/list"",""params"":{}}
+[REST-EXEC mcp_tlist]","[ERRORS label=plat1] HTTP 200 {OBSERVED}
+[ERRORS label=sf1] HTTP 200 {OBSERVED}
+[DATA label=sf1] body.ucp.version = {{PLAT_UCP_VERSION}} {OBSERVED} -- both hosts serve the same manifest version; a split here is the 2026-09-17 origin drift (domain map D2) reproducing
+[DATA label=sf1] body.ucp.status = success {OBSERVED}
+[ERRORS label=plat_prm] HTTP 200 {OBSERVED} -- the Platform host publishes RFC 9728 metadata for the UCP resource even though the resource itself lives on the storefront
+[ERRORS label=sf_prm] HTTP 200 {OBSERVED}
+[DATA label=sf_prm] body.resource = {{PLAT_RESOURCE}} {OBSERVED} -- the two hosts name the SAME resource; this is the actual D2 no-drift proof
+[DATA label=sf_prm] body.authorization_servers.0 = {{PLAT_AS}} {OBSERVED} -- and the same authorization server
+[DATA label=sf_prm] body.resource = {{FRONT_URL}}/ucp/mcp {OBSERVED} -- and the resource they agree on is the storefront endpoint this suite actually mints tokens against, not the Platform host
+[DATA label=caps1] body.storefront_origin = {{FRONT_URL}} {OBSERVED} -- the get_store_capabilities tool (the only surface that carries storefront_origin) agrees with the host serving it
+[ERRORS label=mcp_init] HTTP 200 {OBSERVED} -- the resource the metadata names actually answers a real JSON-RPC initialize call
+[ERRORS label=mcp_tlist] HTTP 200 {OBSERVED} -- and a real tools/list call, on that same host",[NETWORK] no 4xx/5xx on any of the four discovery calls,"The two hosts disagree on ucp.version, resource or authorization_servers[0] (D2 regression); the named resource does not answer initialize; storefront_origin names a host other than the one serving it",None (read-only),VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22) | Rewritten 2026-09-23 against the live manifest shape,Automated
+UCPA-003,Anonymous shopping — search_products and create_cart succeed with no Authorization header,UCP > Identity > Anonymous,High,BL-CHK-001,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case.",<SEARCH_TERM> (live-discover),"[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 3 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]","[ERRORS label=search1] HTTP 200 {SPEC} -- ordinary anonymous shopping is not gated behind link_buyer_identity (architecture comment: no token means anonymous)
+[ERRORS label=cart1] HTTP 200 {SPEC}
+[DATA label=cart1] body.cart.buyer_id matches /^ucp-anonymous-[0-9a-f]{32}$/ {SPEC}",[NETWORK] no 401 on either call,401 returned for search_products or create_cart with no token (over-gating the anonymous path),[TEARDOWN] none — anonymous cart has no owner to sweep beyond normal fixture hygiene,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-004,Authenticated B2C buyer — link_buyer_identity returns the Platform user id with no organization invented,UCP > Identity > B2C,High,BL-AUTH-015,,"Uses the LOY_PERSONAL_NOORG alias — a PERSONAL (org-free) consumer account. vcst has no separate B2C store; the B2C persona is defined by the ABSENCE of an organization claim, not by a different storefront. Verified live 2026-09-23: link_buyer_identity returns linked:true with a buyer_id and NO organization_id field. json carries no B2C-store (org-free) buyer account for UCP (test model VCST-5378 Part 0r). (the ACME_ADMIN / ACME_BUYER aliases) — an org claim being present is exactly what this case must rule OUT, and a B2B token cannot demonstrate its absence. Routed to a future /qa-generate-data pass (3a). vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case.","role=<B2C fixture, not yet seeded>, store={{STORE_ID}}","[AUTH role=LOY_PERSONAL_NOORG]
+[MCP-OP link1]
+link_buyer_identity
+{}
+[MCP-EXEC link1]","[ERRORS label=link1] HTTP 200 {SPEC}
+[DATA label=link1] body.organization_id is null {SPEC} -- architecture comment: identity only from ClaimsPrincipal
+[NULL label=link1] body.organization_id {SPEC} -- no organization is invented for a buyer who has none",,organization_id populated for a buyer with no org claim (identity fabrication),"[TEARDOWN] none until the fixture exists
+[MCP-OP logout]
+logout_buyer
+{}
+[MCP-EXEC logout]",VCST-5378 | Promoted: REG-2026-09-23-M7 (2026-09-23),Automated
+UCPA-005,Authenticated B2B org buyer — organization_id in the MCP session comes only from the token,UCP > Identity > B2B,High,"BL-AUTH-015, BL-B2B-001",,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email) in @td(ORG_ACME.platform_id). Cleanup deliberately omits logout_buyer here: this case’s role is a shared fixture also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, org=@td(ORG_ACME.platform_id)","[AUTH role=ACME_ADMIN]
+[MCP-OP link1]
+link_buyer_identity
+{ ""store_id"": ""{{STORE_ID}}"" }
+[MCP-EXEC link1]
+[MCP-OP link2]
+link_buyer_identity
+{ ""store_id"": ""{{STORE_ID}}"", ""organization_id"": ""00000000-0000-0000-0000-000000000000"" }
+[MCP-EXEC link2]","[ERRORS label=link1] HTTP 200 {SPEC}
+[DATA label=link1] body.buyer_id = @td(ACME_ADMIN.platform_id) {SPEC}
+[DATA label=link1] body.organization_id = @td(ORG_ACME.platform_id) {SPEC}
+[ERRORS label=link2] HTTP 200 {BL}
+[DATA label=link2] body.organization_id = @td(ORG_ACME.platform_id) {BL} -- the forged argument's organization_id is IGNORED; only the token sets identity (BL-AUTH-015)",,organization_id in either response differs from @td(ORG_ACME.platform_id); the forged argument value is honored,None (read-only),VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-006,"Discovery on the ordinary catalog — search_products returns real content, not only AGENT-TEST fixtures",UCP > Catalog > Search,Medium,,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case.","<SEARCH_TERM> (live-discover: POST /api/catalog/search/products, take a word from a returned product name on THIS env)","[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 5 }
+[MCP-EXEC search1]","[COUNT label=search1] body.products.length >= 1 {OBSERVED} -- the live catalog answers a live-discovered term (never a hardcoded one)
+[EVIDENCE] the discovered term's own product is real catalog content, distinct from the AGENT-TEST-* seeded fixtures -- not independently re-provable via the current array-filter grammar (no ""does-not-start-with"" quantified-array predicate exists), narrowed from a per-result check to this round-trip form",,"0 results for a live-discovered term (env-drift; the term must be re-discovered, never assumed)",None (read-only),VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-007,Anonymous cart — synthetic buyer_id matches the documented shape and is reusable for continuation,UCP > Cart > Anonymous,Medium,,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case.",<SEARCH_TERM> (live-discover),"[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-CAPTURE cart1.cart.buyer_id → ANON_BUYER_ID]
+[MCP-OP get1]
+get_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{ANON_BUYER_ID}}"" }
+[MCP-EXEC get1]","[DATA label=cart1] body.cart.buyer_id matches /^ucp-anonymous-[0-9a-f]{32}$/ {SPEC}
+[ERRORS label=get1] HTTP 200 {SPEC}
+[DATA label=get1] body.cart.id = {{CART_ID}} {SPEC} -- the second get_cart call, replaying the same synthetic id, resolves the SAME cart",,buyer_id not matching the documented shape; replay with the same synthetic id failing to resolve the same cart,"[TEARDOWN] none — anonymous cart, no owner to sweep",VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-008,"Authenticated B2C buyer — cart is attributed to the Platform user, not left anonymous or org-scoped",UCP > Cart > B2C,High,BL-CART-005,,"Uses the LOY_PERSONAL_NOORG alias — a PERSONAL (org-free) consumer account. vcst has no separate B2C store; the B2C persona is defined by the ABSENCE of an organization claim, not by a different storefront. Verified live 2026-09-23: link_buyer_identity returns linked:true with a buyer_id and NO organization_id field. vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case.","role=<B2C fixture, not yet seeded>","[AUTH role=LOY_PERSONAL_NOORG]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[ERRORS label=cart1] HTTP 200 {SPEC}
+[DATA label=cart1] body.cart.buyer_id = {{LINKED_BUYER_ID}} {SPEC}
+[NULL label=cart1] body.cart.organization_id {SPEC}",,cart attributed to organization_id when the buyer has none,"[TEARDOWN] none until the fixture exists
+[MCP-OP logout]
+logout_buyer
+{}
+[MCP-EXEC logout]",VCST-5378 | Promoted: REG-2026-09-23-M7 (2026-09-23),Automated
+UCPA-009,Authenticated B2B org buyer — cart is attributed to both the buyer and the organization,UCP > Cart > B2B,High,"BL-CART-005, BL-B2B-001",,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email) in @td(ORG_ACME.platform_id). Cleanup deliberately omits logout_buyer here: this case’s role is a shared fixture also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, org=@td(ORG_ACME.platform_id), <SEARCH_TERM> (live-discover)","[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[DATA label=cart1] body.cart.buyer_id = @td(ACME_ADMIN.platform_id) {SPEC}
+[DATA label=cart1] body.cart.organization_id = @td(ORG_ACME.platform_id) {SPEC}",[ADMIN] the cart is visible under the correct owner + org via Platform REST GET,"cart missing organization_id, or organization_id not matching the token's org",[TEARDOWN] delete the cart,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-010,Checkout snapshot — create_checkout totals agree with the cart it was composed from,UCP > Checkout > Data Integrity,Medium,"BL-CART-002, BL-CHK-001",,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email). THE CART IS CLEARED FIRST and cleared again on teardown. Two reasons, both measured 2026-09-23: create_cart UPSERTS into the authenticated buyer's existing default cart rather than opening a fresh one (proved by UCPA-028), so without the clear this case reads a cart nobody in this suite composed — observed total 1203699 against an arithmetic expectation of 88700, and the P1 line climbing 8 -> 14 -> 16 across consecutive runs of this very case, i.e. the case was polluting a SHARED fixture account every time it ran. The reset is done with update_cart, not create_cart: create_cart UPSERTS (it raises the quantity of a line already present), whereas update_cart takes the COMPLETE DESIRED STATE of the named cart, so passing exactly one line at quantity 2 makes the cart exactly that regardless of what it held before. Two steps are needed because update_cart requires cart_id (400 invalid_request without it) and no tool returns the default cart id on its own, while create_cart refuses an empty line_items[] (400, ""line_items must contain at least one item"") — so the bootstrap create_cart resolves the buyer to their one cart and yields its id, and the update_cart that follows sets the state this case asserts on. SINGLE LINE, not two: the second product this case used to add ({{TERM2}}'s SKU) carries a minimum order quantity of 2 and has under 2 in stock on vcst-qa, so create_cart drops the line with a recoverable PRODUCT_MIN_QTY_NOT_AVAILABLE and reports ucp.status success anyway (the same silent-drop shape UCPA-025 owns) — an unconstrained live-discover of ""the first two products"" is exactly the fixture the SECOND RULE warns about, because it is not constrained on orderability, the one dimension this case is sensitive to. Cleanup deliberately omits logout_buyer: this role is a shared fixture also used by other suites, and logout_buyer revokes ALL of a buyer's Platform OAuth sessions (""including other sessions,"" per its own tool description).","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover), qty=2","[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover1]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover1]
+[GQL-CAPTURE discover1.data.products.items.0.code → TERM1]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{TERM1}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → P1_ID]
+[MCP-CAPTURE search1.products.0.price.amount → P1_PRICE]
+[MCP-OP bootstrap]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{P1_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC bootstrap]
+[MCP-CAPTURE bootstrap.cart.id → CART_ID]
+[MCP-OP cart1]
+update_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""line_items"": [{ ""product_id"": ""{{P1_ID}}"", ""quantity"": 2 }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.totals.total.amount → CART_TOTAL]
+[MCP-OP co1]
+create_checkout
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"" }
+[MCP-EXEC co1]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[COUNT label=cart1] body.cart.line_items.length = 1 {BL} -- and exactly the line this case composed, nothing carried over
+[DATA label=cart1] body.cart.line_items[?product_id={{P1_ID}}].quantity = 2 {BL}
+[DATA label=cart1] body.cart.line_items[?product_id={{P1_ID}}].unit_price.amount = {{P1_PRICE}} {BL} -- the line carries the unit price search_products advertised for it
+[DATA label=cart1] body.cart.line_items[?product_id={{P1_ID}}].line_total.amount = {{P1_PRICE}} * 2 {BL} -- line_total is unit_price x quantity, not a separately-sourced number
+[DATA label=cart1] body.cart.totals.total.amount = {{P1_PRICE}} * 2 {BL} -- and the cart total is that one line, the cart having been emptied first
+[DATA label=co1] body.checkout.cart.totals.total.amount = {{CART_TOTAL}} {BL} -- the checkout snapshot must not drift from the cart it snapshots (delegated BL-CART-002/BL-CHK-001). NOTE the path: create_checkout WRAPS the cart, so the totals are at checkout.cart.totals, not checkout.totals — the earlier form of this case asserted checkout.totals.total.amount and read undefined
+[DATA label=co1] body.checkout.cart_id = {{CART_ID}} {OBSERVED} -- and it snapshots the cart this case actually composed",[ADMIN] the persisted cart (Platform REST GET on cart.id) shows the same total and line-item quantities as cart.total/checkout.total captured via MCP — confirms the checkout snapshot isn't just a response-body artifact,"checkout.cart.total differs from cart.total with no line-item change between the two calls; the clear step leaving line_items non-empty (update_cart no longer taking complete desired state); line_total drifting from unit_price x quantity","[TEARDOWN] none needed for correctness — the case RESETS at the start (update_cart sets the complete desired state), so it is idempotent across runs and leaves the shared fixture's cart holding exactly the one line it asserted on, never an accumulating pile. Do NOT add a logout_buyer: it revokes ALL of this shared role's Platform sessions",VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22) | Rewritten 2026-09-23: cart-state independence + real checkout envelope path,Automated
+UCPA-011,Handoff mint — the issued continue_url host matches the advertised handoff_url_template host,UCP > Handoff > Config Parity,High,,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email). Cleanup deliberately omits logout_buyer here: this case’s role is a shared fixture also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover)","[MCP-OP caps1]
+get_store_capabilities
+{ ""store_id"": ""{{STORE_ID}}"" }
+[MCP-EXEC caps1]
+[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-OP cah1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah1]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[DATA label=cah1] body.continue_url matches /^{{FRONT_URL}}\// {OBSERVED} -- the issued continue_url is minted on the SAME host the capabilities/manifest endpoints advertise; confirmed live 2026-09-22 that the 2026-09-17 origin drift (domain map D2) no longer reproduces
+[EVIDENCE] handoff.continue_url's expires_at is mint time plus the configured 15-minute TTL -- not independently re-verified by THIS case (no date-arithmetic predicate exists in the current DATA grammar); UCPA-021 exercises the TTL boundary directly and is the case that would catch a TTL regression",,continue_url host disagreeing with the advertised template (D2 regression),[TEARDOWN] restore or let the fresh handoff expire; delete the cart,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-012,"Anonymous handoff — a fresh, never-opened continue_url succeeds on the FIRST attempt, measured over >=10 links",UCP > Handoff > Restore Reliability > Anonymous,Critical,,ECL-6.1,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. This case fires >=10 independent mint+restore cycles; each token is used exactly once (DISPOSABLE FIXTURES rule 2 — a restore consumes the token, so it can never be reused for a second measurement).","<SEARCH_TERM> (live-discover), N=10 (minimum trial count)","[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+--- TRIAL 1 ---
+[MCP-OP cart_1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_1]
+[MCP-CAPTURE cart_1.cart.id → CART_ID_1]
+[MCP-CAPTURE cart_1.cart.buyer_id → BUYER_ID_1]
+[MCP-OP cah_1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_1}}"", ""buyer_id"": ""{{BUYER_ID_1}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_1]
+[MCP-CAPTURE cah_1.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_1]
+[REST-OP restore_1]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_1}}""}
+[REST-EXEC restore_1]
+--- TRIAL 2 ---
+[MCP-OP cart_2]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_2]
+[MCP-CAPTURE cart_2.cart.id → CART_ID_2]
+[MCP-CAPTURE cart_2.cart.buyer_id → BUYER_ID_2]
+[MCP-OP cah_2]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_2}}"", ""buyer_id"": ""{{BUYER_ID_2}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_2]
+[MCP-CAPTURE cah_2.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_2]
+[REST-OP restore_2]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_2}}""}
+[REST-EXEC restore_2]
+--- TRIAL 3 ---
+[MCP-OP cart_3]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_3]
+[MCP-CAPTURE cart_3.cart.id → CART_ID_3]
+[MCP-CAPTURE cart_3.cart.buyer_id → BUYER_ID_3]
+[MCP-OP cah_3]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_3}}"", ""buyer_id"": ""{{BUYER_ID_3}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_3]
+[MCP-CAPTURE cah_3.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_3]
+[REST-OP restore_3]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_3}}""}
+[REST-EXEC restore_3]
+--- TRIAL 4 ---
+[MCP-OP cart_4]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_4]
+[MCP-CAPTURE cart_4.cart.id → CART_ID_4]
+[MCP-CAPTURE cart_4.cart.buyer_id → BUYER_ID_4]
+[MCP-OP cah_4]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_4}}"", ""buyer_id"": ""{{BUYER_ID_4}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_4]
+[MCP-CAPTURE cah_4.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_4]
+[REST-OP restore_4]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_4}}""}
+[REST-EXEC restore_4]
+--- TRIAL 5 ---
+[MCP-OP cart_5]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_5]
+[MCP-CAPTURE cart_5.cart.id → CART_ID_5]
+[MCP-CAPTURE cart_5.cart.buyer_id → BUYER_ID_5]
+[MCP-OP cah_5]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_5}}"", ""buyer_id"": ""{{BUYER_ID_5}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_5]
+[MCP-CAPTURE cah_5.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_5]
+[REST-OP restore_5]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_5}}""}
+[REST-EXEC restore_5]
+--- TRIAL 6 ---
+[MCP-OP cart_6]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_6]
+[MCP-CAPTURE cart_6.cart.id → CART_ID_6]
+[MCP-CAPTURE cart_6.cart.buyer_id → BUYER_ID_6]
+[MCP-OP cah_6]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_6}}"", ""buyer_id"": ""{{BUYER_ID_6}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_6]
+[MCP-CAPTURE cah_6.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_6]
+[REST-OP restore_6]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_6}}""}
+[REST-EXEC restore_6]
+--- TRIAL 7 ---
+[MCP-OP cart_7]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_7]
+[MCP-CAPTURE cart_7.cart.id → CART_ID_7]
+[MCP-CAPTURE cart_7.cart.buyer_id → BUYER_ID_7]
+[MCP-OP cah_7]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_7}}"", ""buyer_id"": ""{{BUYER_ID_7}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_7]
+[MCP-CAPTURE cah_7.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_7]
+[REST-OP restore_7]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_7}}""}
+[REST-EXEC restore_7]
+--- TRIAL 8 ---
+[MCP-OP cart_8]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_8]
+[MCP-CAPTURE cart_8.cart.id → CART_ID_8]
+[MCP-CAPTURE cart_8.cart.buyer_id → BUYER_ID_8]
+[MCP-OP cah_8]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_8}}"", ""buyer_id"": ""{{BUYER_ID_8}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_8]
+[MCP-CAPTURE cah_8.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_8]
+[REST-OP restore_8]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_8}}""}
+[REST-EXEC restore_8]
+--- TRIAL 9 ---
+[MCP-OP cart_9]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_9]
+[MCP-CAPTURE cart_9.cart.id → CART_ID_9]
+[MCP-CAPTURE cart_9.cart.buyer_id → BUYER_ID_9]
+[MCP-OP cah_9]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_9}}"", ""buyer_id"": ""{{BUYER_ID_9}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_9]
+[MCP-CAPTURE cah_9.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_9]
+[REST-OP restore_9]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_9}}""}
+[REST-EXEC restore_9]
+--- TRIAL 10 ---
+[MCP-OP cart_10]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_10]
+[MCP-CAPTURE cart_10.cart.id → CART_ID_10]
+[MCP-CAPTURE cart_10.cart.buyer_id → BUYER_ID_10]
+[MCP-OP cah_10]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_10}}"", ""buyer_id"": ""{{BUYER_ID_10}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_10]
+[MCP-CAPTURE cah_10.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_10]
+[REST-OP restore_10]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_10}}""}
+[REST-EXEC restore_10]","[ERRORS label=restore_1] HTTP 200 {OBSERVED} -- trial 1/10 on a fresh, never-opened token (ground truth measured 2026-09-22 was 17/17)
+[ERRORS label=restore_2] HTTP 200 {OBSERVED} -- trial 2/10 on a fresh, never-opened token
+[ERRORS label=restore_3] HTTP 200 {OBSERVED} -- trial 3/10 on a fresh, never-opened token
+[ERRORS label=restore_4] HTTP 200 {OBSERVED} -- trial 4/10 on a fresh, never-opened token
+[ERRORS label=restore_5] HTTP 200 {OBSERVED} -- trial 5/10 on a fresh, never-opened token
+[ERRORS label=restore_6] HTTP 200 {OBSERVED} -- trial 6/10 on a fresh, never-opened token
+[ERRORS label=restore_7] HTTP 200 {OBSERVED} -- trial 7/10 on a fresh, never-opened token
+[ERRORS label=restore_8] HTTP 200 {OBSERVED} -- trial 8/10 on a fresh, never-opened token
+[ERRORS label=restore_9] HTTP 200 {OBSERVED} -- trial 9/10 on a fresh, never-opened token
+[ERRORS label=restore_10] HTTP 200 {OBSERVED} -- trial 10/10 on a fresh, never-opened token",[NETWORK] no 5xx (server-side error) on any of the 10 create_cart/checkout_and_handoff/restore calls — a transient 5xx would corrupt the measured rate rather than reflect the restore mechanism under test,any restore_i.status != 200 on the FIRST attempt for a fresh token (domain map D3 cross-pod cache-miss regression),[TEARDOWN] none — each cart/handoff is single-use and consumed by its own restore,VCST-5378 | Promoted: REG-2026-09-22-2051 (2026-09-22),Automated
+UCPA-013,Anonymous handoff with guest checkout DISABLED on the store — restore preserves the link as returnUrl and resumes after sign-in,UCP > Handoff > Guest Checkout Gate,Medium,BL-AUTH-001,ECL-1.2,"BLOCKED pending an isolated stand: flipping the store's guest-checkout setting is a live env change this run must not make while other suites run concurrently against {{STORE_ID}} (SBTM VCST-5378 2026-09-22, NOT REACHED). Needs its own store/config variant or a dedicated maintenance window, mirroring 094's 4 Manual observability cases. vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case.","<SEARCH_TERM> (live-discover), store variant with guest checkout disabled","[MCP] tools/call name=create_cart arguments={line_items:[{product_id:<live-discovered>,quantity:1}]} (no auth)
+[CAPTURE] cart.id
+[MCP] tools/call name=checkout_and_handoff arguments={cart_id:cart.id,shipping_address:{first_name:""QA"",last_name:""Agent"",line1:""1 Test Way"",city:""Seattle"",region:""WA"",postal_code:""98101"",country_code:""USA""}} (no auth)
+[CAPTURE] handoff.continue_url
+[NAV] handoff.continue_url (on the guest-checkout-disabled store)","[NAV] the browser is redirected to sign-in with the original handoff preserved as returnUrl {SPEC}
+[NAV] after completing sign-in, the browser resumes on the original /cart/{id}?ucp_handoff=1 destination rather than a generic landing page {SPEC}",,handoff dropped silently instead of preserved through sign-in (lost-continuation),[TEARDOWN] restore the store's guest-checkout setting if changed for this run,VCST-5378,Draft
+UCPA-014,"Anonymous-to-authenticated merge — replaying the saved anonymous buyer_id under an authenticated token merges via mergeCart, and a second replay is an idempotent no-op",UCP > Cart > Anonymous-to-Authenticated Merge,High,BL-CART-008,ECL-5.1,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email). Per DISPOSABLE FIXTURES rule 1: the anonymous cart is TERMINAL once merged (deleteAfterMerge) — this case needs its OWN fresh anonymous cart, never a shared one. Cleanup deliberately omits logout_buyer here: this case’s role is a shared fixture also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover)","[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP anon_cart]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC anon_cart]
+[MCP-CAPTURE anon_cart.cart.id → ANON_CART_ID]
+[MCP-CAPTURE anon_cart.cart.buyer_id → ANON_BUYER_ID]
+[MCP-CAPTURE anon_cart.cart.totals.total.amount → ANON_TOTAL]
+[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[MCP-OP merged]
+update_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{ANON_CART_ID}}"", ""buyer_id"": ""{{ANON_BUYER_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC merged]
+[MCP-OP probe]
+get_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{ANON_CART_ID}}"" }
+[MCP-EXEC probe]
+[MCP-OP replay]
+update_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{ANON_CART_ID}}"", ""buyer_id"": ""{{ANON_BUYER_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC replay]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[DATA label=merged] body.cart.buyer_id = @td(ACME_ADMIN.platform_id) {SPEC} -- the buyer now owns the cart, not the synthetic anonymous id
+[DATA label=merged] body.cart.totals.total.amount = {{ANON_TOTAL}} {SPEC} -- items carried at the same total, no duplication
+[DATA label=probe] body.code = cart_not_found {SPEC} -- the anonymous source cart no longer resolves (deleteAfterMerge); UCP's own declared error-code vocabulary names this case
+[DATA label=replay] body.cart.totals.total.amount = {{ANON_TOTAL}} {SPEC} -- the replayed merge is an idempotent no-op, not a duplication","[ADMIN] exactly one persisted cart remains for this buyer with the merged line, confirmed via Platform REST",line items duplicated after the second replay; total changed by the merge; the anonymous source cart still independently resolves after merge,[TEARDOWN] delete the merged cart,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-015,"Authenticated handoff — a fresh, never-opened continue_url succeeds on the FIRST attempt for a signed-in buyer, measured over >=5 links",UCP > Handoff > Restore Reliability > Authenticated,Critical,,ECL-6.1,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email). Each of the 5 trials needs its OWN freshly minted token (DISPOSABLE FIXTURES rule 1). NOT remeasured by the 2026-09-22 exploratory pass — this run's own measurement is the first for this rate. Cleanup deliberately omits logout_buyer here: this case’s role is a shared fixture also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover), N=5 (minimum trial count)","[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+--- TRIAL 1 ---
+[MCP-OP search_1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search_1]
+[MCP-CAPTURE search_1.products.0.id → PRODUCT_ID_1]
+[MCP-OP cart_1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID_1}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_1]
+[MCP-CAPTURE cart_1.cart.id → CART_ID_1]
+[MCP-OP cah_1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_1}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_1]
+[MCP-CAPTURE cah_1.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_1]
+[REST-OP restore_1]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_1}}""}
+[REST-EXEC restore_1]
+--- TRIAL 2 ---
+[MCP-OP search_2]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search_2]
+[MCP-CAPTURE search_2.products.0.id → PRODUCT_ID_2]
+[MCP-OP cart_2]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID_2}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_2]
+[MCP-CAPTURE cart_2.cart.id → CART_ID_2]
+[MCP-OP cah_2]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_2}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_2]
+[MCP-CAPTURE cah_2.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_2]
+[REST-OP restore_2]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_2}}""}
+[REST-EXEC restore_2]
+--- TRIAL 3 ---
+[MCP-OP search_3]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search_3]
+[MCP-CAPTURE search_3.products.0.id → PRODUCT_ID_3]
+[MCP-OP cart_3]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID_3}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_3]
+[MCP-CAPTURE cart_3.cart.id → CART_ID_3]
+[MCP-OP cah_3]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_3}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_3]
+[MCP-CAPTURE cah_3.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_3]
+[REST-OP restore_3]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_3}}""}
+[REST-EXEC restore_3]
+--- TRIAL 4 ---
+[MCP-OP search_4]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search_4]
+[MCP-CAPTURE search_4.products.0.id → PRODUCT_ID_4]
+[MCP-OP cart_4]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID_4}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_4]
+[MCP-CAPTURE cart_4.cart.id → CART_ID_4]
+[MCP-OP cah_4]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_4}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_4]
+[MCP-CAPTURE cah_4.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_4]
+[REST-OP restore_4]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_4}}""}
+[REST-EXEC restore_4]
+--- TRIAL 5 ---
+[MCP-OP search_5]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search_5]
+[MCP-CAPTURE search_5.products.0.id → PRODUCT_ID_5]
+[MCP-OP cart_5]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID_5}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart_5]
+[MCP-CAPTURE cart_5.cart.id → CART_ID_5]
+[MCP-OP cah_5]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID_5}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_5]
+[MCP-CAPTURE cah_5.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION_5]
+[REST-OP restore_5]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION_5}}""}
+[REST-EXEC restore_5]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[ERRORS label=restore_1] HTTP 200 {SPEC} -- trial 1/5 on a fresh token for a signed-in buyer, sent WITH the bearer directly (see report: the documented anonymous-first/authenticated-retry client dance is not authorable here because [AUTH] is sticky for the rest of the case)
+[ERRORS label=restore_2] HTTP 200 {SPEC} -- trial 2/5 on a fresh token for a signed-in buyer, sent WITH the bearer directly (see report: the documented anonymous-first/authenticated-retry client dance is not authorable here because [AUTH] is sticky for the rest of the case)
+[ERRORS label=restore_3] HTTP 200 {SPEC} -- trial 3/5 on a fresh token for a signed-in buyer, sent WITH the bearer directly (see report: the documented anonymous-first/authenticated-retry client dance is not authorable here because [AUTH] is sticky for the rest of the case)
+[ERRORS label=restore_4] HTTP 200 {SPEC} -- trial 4/5 on a fresh token for a signed-in buyer, sent WITH the bearer directly (see report: the documented anonymous-first/authenticated-retry client dance is not authorable here because [AUTH] is sticky for the rest of the case)
+[ERRORS label=restore_5] HTTP 200 {SPEC} -- trial 5/5 on a fresh token for a signed-in buyer, sent WITH the bearer directly (see report: the documented anonymous-first/authenticated-retry client dance is not authorable here because [AUTH] is sticky for the rest of the case)
+[EVIDENCE] the authenticated path needs at least as many underlying cache lookups as the anonymous-only path (two hits: anonymous attempt + authenticated retry), so it is measured SEPARATELY from UCPA-012, never averaged with it -- not independently scoreable via the current grammar (no cache-lookup-count signal is exposed to the client)",,any trial failing both the anonymous attempt and the authenticated retry for a fresh token,[TEARDOWN] delete each trial's cart,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-016,"Org-scoped assortment — a contract-group product is invisible anonymously and visible to the contract buyer, while a control product stays equally visible",UCP > Catalog > Assortment Scoping,High,BL-B2B-001,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: @td(UCP_ORG_ONLY_PRODUCT.sku) (assortment-scoped) + @td(UCP_CONTRACT_CONTROL_PRODUCT.sku) (control, in the same catalog, not scoped). Buyer: @td(UCP_CONTRACT_BUYER.email) — the DEDICATED contract-group contact, not the ACME_ADMIN/ACME_BUYER aliases, which carry the group via the ORGANISATION rather than on their own contact (UCP_ORG_CONTRACT._notes); this case uses the dedicated contract contact as a second axis, not because org binding fails.","scoped_sku=@td(UCP_ORG_ONLY_PRODUCT.sku), control_sku=@td(UCP_CONTRACT_CONTROL_PRODUCT.sku), buyer_email=@td(UCP_CONTRACT_BUYER.email), buyer_password={{B2B_USER_PASSWORD}}","[MCP-OP anon_scoped]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{scoped_sku}}"", ""limit"": 5 }
+[MCP-EXEC anon_scoped]
+[MCP-OP anon_control]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{control_sku}}"", ""limit"": 5 }
+[MCP-EXEC anon_control]
+[AUTH role=UCP_CONTRACT_BUYER]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[MCP-OP buyer_scoped]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{scoped_sku}}"", ""limit"": 5 }
+[MCP-EXEC buyer_scoped]
+[MCP-OP buyer_control]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{control_sku}}"", ""limit"": 5 }
+[MCP-EXEC buyer_control]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[COUNT label=anon_scoped] body.products.length = 0 {OBSERVED} -- the assortment-scoped product is invisible anonymously (proven live via seed-org-contract:verify)
+[COUNT label=buyer_scoped] body.products.length >= 1 {OBSERVED} -- the same product IS visible to the contract buyer
+[COUNT label=anon_control] body.products.length >= 1 {SPEC}
+[COUNT label=buyer_control] body.products.length >= 1 {SPEC} -- the control is equally visible in both contexts, proving the scoped product's absence is the assortment rule and not a general catalog/auth fault (SECOND RULE control)",,"the scoped product visible anonymously (scoping not enforced), OR the control product invisible in either context (fixture/catalog fault masquerading as a scoping bug)","Read-only test data (no cart/order created); close the session:
+[MCP-OP logout]
+logout_buyer
+{}
+[MCP-EXEC logout]",VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-017,"Contract pricing — the contract buyer sees the negotiated price and delta, while a control product prices identically in both contexts",UCP > Catalog > Contract Pricing,High,BL-B2B-002,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: @td(UCP_CONTRACT_PRODUCT.sku) (anonymous_price @td(UCP_CONTRACT_PRODUCT.anonymous_price_minor) / contract_price @td(UCP_CONTRACT_PRODUCT.contract_price_minor) / price_delta @td(UCP_CONTRACT_PRODUCT.price_delta_minor)) + @td(UCP_CONTRACT_CONTROL_PRODUCT.sku) (control, same catalog, not in the contract). Buyer: @td(UCP_CONTRACT_BUYER.email).","product_sku=@td(UCP_CONTRACT_PRODUCT.sku), control_sku=@td(UCP_CONTRACT_CONTROL_PRODUCT.sku), buyer_email=@td(UCP_CONTRACT_BUYER.email), buyer_password={{B2B_USER_PASSWORD}}","[MCP-OP anon_price]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{product_sku}}"", ""limit"": 1 }
+[MCP-EXEC anon_price]
+[MCP-CAPTURE anon_price.products.0.price.amount → ANON_PRICE]
+[MCP-OP anon_control_price]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{control_sku}}"", ""limit"": 1 }
+[MCP-EXEC anon_control_price]
+[MCP-CAPTURE anon_control_price.products.0.price.amount → ANON_CONTROL_PRICE]
+[AUTH role=UCP_CONTRACT_BUYER]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[MCP-OP buyer_price]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{product_sku}}"", ""limit"": 1 }
+[MCP-EXEC buyer_price]
+[MCP-OP buyer_control_price]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{control_sku}}"", ""limit"": 1 }
+[MCP-EXEC buyer_control_price]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[DATA label=anon_price] body.products.0.price.amount = @td(UCP_CONTRACT_PRODUCT.anonymous_price_minor) {OBSERVED}
+[DATA label=buyer_price] body.products.0.price.amount = @td(UCP_CONTRACT_PRODUCT.contract_price_minor) {OBSERVED} -- proven live
+[DATA label=buyer_price] {{ANON_PRICE}} - body.products.0.price.amount = @td(UCP_CONTRACT_PRODUCT.price_delta_minor) {BL} -- assert the DELTA by alias, never a literal
+[DATA label=buyer_control_price] body.products.0.price.amount = {{ANON_CONTROL_PRICE}} {SPEC} -- the control prices IDENTICALLY in both contexts, proving the delta above is the contract and not a general anonymous-vs-authenticated discount (SECOND RULE control)",,"buyer_price equal to anon_price (vacuous — the historical FIXTURE-GAP state before this fixture existed), OR the control product pricing differently between contexts","Read-only test data (no cart/order created); close the session:
+[MCP-OP logout]
+logout_buyer
+{}
+[MCP-EXEC logout]",VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-018,"Org context survives the handoff — the storefront resumes the buyer's organization, not an anonymous or wrong-org view",UCP > Handoff > Org Context Propagation,High,BL-B2B-001,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(UCP_CONTRACT_BUYER.email) (a real contract-priced product makes the org context observable, not merely asserted).","buyer_email=@td(UCP_CONTRACT_BUYER.email), buyer_password={{B2B_USER_PASSWORD}}, product_sku=@td(UCP_CONTRACT_PRODUCT.sku)","--- API ---
+[AUTH] POST {{FRONT_URL}}/connect/token grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username=@td(UCP_CONTRACT_BUYER.email), password={{B2B_USER_PASSWORD}}, resource={{FRONT_URL}}/ucp/mcp
+[CAPTURE] access_token
+[MCP] tools/call name=link_buyer_identity arguments={} (Authorization: Bearer access_token)
+[CAPTURE] link_result.buyer_id, link_result.organization_id
+[MCP] tools/call name=search_products arguments={store_id:{{STORE_ID}},query:@td(UCP_CONTRACT_PRODUCT.sku),limit:1} (Authorization: Bearer access_token)
+[CAPTURE] product.product_id
+[MCP] tools/call name=create_cart arguments={store_id:{{STORE_ID}},line_items:[{product_id:product.product_id,quantity:1}]} (Authorization: Bearer access_token)
+[CAPTURE] cart.id
+[MCP] tools/call name=checkout_and_handoff arguments={store_id:{{STORE_ID}},cart_id:cart.id,shipping_address:{first_name:""QA"",last_name:""Agent"",line1:""1 Test Way"",city:""Seattle"",region:""WA"",postal_code:""98101"",country_code:""USA""}} (Authorization: Bearer access_token)
+[CAPTURE] handoff.continue_url
+--- STOREFRONT ---
+[NAV] handoff.continue_url
+[WAIT] page settles on /cart/{cart.id}?ucp_handoff=1","[BODY] link_buyer_identity returns 200; link_result.buyer_id equals the Platform user's platform_id for @td(UCP_CONTRACT_BUYER.email) {SPEC}
+[DOM] the storefront cart line for product.product_id prices at @td(UCP_CONTRACT_PRODUCT.contract_price_minor), not @td(UCP_CONTRACT_PRODUCT.anonymous_price_minor) {SPEC} -- the org/contract context is intact after the handoff","[NETWORK] no 4xx/5xx on the /cart page load itself; the restore call may show one expected 401 from the anonymous-first attempt before the authenticated retry succeeds (documented client strategy, same pattern as UCPA-015 — not a failure signal)
+[CONSOLE] no JS errors on landing",the storefront cart shows the anonymous price for a contract-priced line (org context lost across the handoff — domain map G2),[TEARDOWN] delete the cart if not consumed; [MCP] tools/call name=logout_buyer arguments={} (Authorization: Bearer access_token) to close the MCP session,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-019,Cross-buyer restore — another buyer in the SAME organization is refused 403 buyer_context_mismatch,UCP > Handoff > Authorization,High,BL-AUTH-015,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Roles: @td(ACME_ADMIN.email) mints, @td(ACME_BUYER.email) attempts restore — both members of @td(ORG_ACME.platform_id), which is what makes the refusal discriminating (a cross-ORG pair could pass for the wrong reason). Cleanup deliberately omits logout_buyer here: this case’s roles (ACME_ADMIN, ACME_BUYER) are shared fixtures also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","minter_email=@td(ACME_ADMIN.email), minter_password={{B2B_USER_PASSWORD}}, restorer_email=@td(ACME_BUYER.email), restorer_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover)","[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-OP cah1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah1]
+[MCP-CAPTURE cah1.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION]
+[AUTH role=ACME_BUYER]
+[REST-OP restore1]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION}}""}
+[REST-EXEC restore1]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[ERRORS label=restore1] HTTP 403 {SPEC}
+[DATA label=restore1] body.code = buyer_context_mismatch {SPEC}",,200 returned for a different buyer's own bearer (identity spoofing across the handoff),[TEARDOWN] delete the cart,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-020,Handoff single-use — a restored link cannot be replayed; the second attempt returns 400,UCP > Handoff > State Transition,High,,ECL-1.2,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email). Cleanup deliberately omits logout_buyer here: this case’s role is a shared fixture also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover)","[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-OP cah1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah1]
+[MCP-CAPTURE cah1.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION]
+[REST-OP restore1]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION}}""}
+[REST-EXEC restore1]
+[REST-OP restore2]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION}}""}
+[REST-EXEC restore2]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[ERRORS label=restore1] HTTP 200 {SPEC}
+[ERRORS label=restore2] HTTP 400 {SPEC}
+[DATA label=restore2] body.code = invalid_request {OBSERVED} -- the removed cache entry reads as ""invalid or expired"", not as a distinct ""already used"" code",,the replay returns 200 and reopens the cart (single-use guarantee broken),[TEARDOWN] delete the cart,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-021,"Handoff TTL expiry — a token past its 15-minute TTL is rejected 400, with the SAME payload shape as any other invalid session",UCP > Handoff > Observability,Medium,,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. THIS CASE NEEDS A RAISED WAIT CEILING: it observes the 15-minute handoff-token TTL, so it asks for [WAIT seconds=960] and the runner refuses any wait over GQL_MAX_WAIT_SECONDS (default 300) rather than truncating it — run it as GQL_MAX_WAIT_SECONDS=1000. The refusal is deliberate and replaced a silent truncation: capped at 300 s the case asserted the expired-token 400, which an UNEXPIRED token returns too, so it scored PASS in 314 s while never crossing the boundary it exists to test (measured 2026-09-23). Budget ~16 minutes of wall-clock; it does not belong in the default batch. PROVEN 2026-09-23 at GQL_MAX_WAIT_SECONDS=1000: PASS 5/5 after the full 960 s — the minted token, valid when the wait began, returns 400 invalid_request ""ucp_session is invalid or expired."" once the TTL has elapsed. CAVEAT ON DISCRIMINATING POWER, unchanged and recorded in the suite notes: an expired, a consumed and a FORGED ucp_session return byte-identical 400 payloads, so this case can only show that a once-valid token stops working, never that the TTL specifically is what stopped it. What the 960 s buys is that the token under test was genuinely live at mint — at the old truncated 300 s the assertion was scoring a still-valid token, which made the PASS vacuous rather than merely narrow. Role: @td(ACME_ADMIN.email). This case's core step is a real >=16-minute wait (TTL floor 15 min) — plan its runtime accordingly; it is not a fast case. Cleanup deliberately omits logout_buyer here: this case’s role is a shared fixture also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover)","[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-OP cah1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah1]
+[MCP-CAPTURE cah1.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION]
+[WAIT seconds=960]
+[REST-OP restore1]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION}}""}
+[REST-EXEC restore1]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[ERRORS label=restore1] HTTP 400 {SPEC} -- TTL enforced, mint + 15 min
+[DATA label=restore1] body.code = invalid_request {OBSERVED}
+[DATA label=restore1] body.message = ""ucp_session is invalid or expired."" {OBSERVED}
+[EVIDENCE] this payload (code/message/empty details) is CURRENTLY not distinguishable from a forged/unknown-token 400 (UCPA-022) -- recorded as an observation, not asserted as a defect of THIS case; the open gap is tracked separately as domain map G4, and a reviewer should not read this line as a required-to-fail condition",,"a 400 body carrying no code/message/details at all (envelope regression) — NOT the cause-indistinguishability itself, which is G4's known state",[TEARDOWN] delete the cart if still present,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-022,Handoff tamper — an unknown or forged token is rejected 400 and exposes no cart data,UCP > Handoff > Tamper Resistance,High,,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. The token is a 256-bit opaque bearer key (domain map §1) — it carries no cart id, user id or signature to modify, so this case tests an UNKNOWN token, not a bit-flipped one (the real mechanism; the prior-art scenario TS-16 as written tests a signature that does not exist).","forged_token=<43 random base64url characters, generated fresh, never a real minted value>","[REST-OP restore1]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""sglIkdD8BvIXZ4N7rCpD4R0hl2mjNgkTG5fhHEdTCJI""}
+[REST-EXEC restore1]","[ERRORS label=restore1] HTTP 400 {SPEC}
+[DATA label=restore1] body.code = invalid_request {SPEC}
+[NULL label=restore1] body.cart_id {SPEC} -- no cart id anywhere in the payload
+[NULL label=restore1] body.buyer_id {SPEC} -- no buyer id anywhere in the payload
+[NULL label=restore1] body.line_items {SPEC} -- no line-item data anywhere in the payload (no cart exposed)",,200 returned for a token that was never minted; any cart/buyer data present in the 400 body,None (read-only),VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-023,Argument validation — a missing required field (including nested) and an unknown store_id each return a structured invalid_request naming the field,UCP > Error Contract > Argument Validation,Medium,BL-AUTH-017,ECL-14.1,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case.","<SEARCH_TERM> (live-discover, not used — negative-input case)","[MCP-OP missing_field]
+create_cart
+{ ""line_items"": [{}], ""store_id"": ""{{STORE_ID}}"" }
+[MCP-EXEC missing_field]
+[MCP-OP missing_nested]
+create_cart
+{ ""line_items"": [{ ""quantity"": 1 }], ""store_id"": ""{{STORE_ID}}"" }
+[MCP-EXEC missing_nested]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP unknown_store]
+search_products
+{ ""query"": ""{{SEARCH_TERM}}"", ""store_id"": ""NO-SUCH-STORE-XYZ"" }
+[MCP-EXEC unknown_store]","[ERRORS label=missing_field] HTTP 400 {BL}
+[DATA label=missing_field] body.code = invalid_request {OBSERVED}
+[DATA label=missing_field] body.message matches /^line_items\[\]\.product_id is required\.$/ {OBSERVED}
+[ERRORS label=missing_nested] HTTP 400 {BL}
+[DATA label=missing_nested] body.code = invalid_request {OBSERVED}
+[DATA label=missing_nested] body.message matches /^line_items\[\]\.product_id is required\.$/ {OBSERVED}
+[ERRORS label=unknown_store] HTTP 400 {BL} -- a STORE-scoped error, not a misattributed currency or generic error",,an unhandled 500 with only a trace id for any of the three malformed calls; the nested-field case passing validation and reaching a downstream failure instead,None (read-only),VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-024,Cross-identity restore — a signed-in buyer opening an ANONYMOUS handoff is refused 403 buyer_context_mismatch,UCP > Handoff > Cross-Identity Restore,High,,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email). Re-verified 2026-09-22 (originally SBTM finding O3, which observed a permissive 200 with the cart unattributed): reproduced 3x across two runs, the product now refuses cross-identity redemption of an anonymous handoff with 403 buyer_context_mismatch — this is the SAFE, confirmed behavior, not the open question the original SBTM pass recorded.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover)","[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-CAPTURE cart1.cart.buyer_id → ANON_BUYER_ID]
+[MCP-OP cah1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{ANON_BUYER_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah1]
+[MCP-CAPTURE cah1.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION]
+[AUTH role=ACME_ADMIN]
+[REST-OP restore1]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION}}""}
+[REST-EXEC restore1]","[ERRORS label=restore1] HTTP 403 {OBSERVED} -- an authenticated buyer cannot redeem another identity's anonymous handoff; reproduced 3x across two runs, safer than originally observed, not a regression
+[DATA label=restore1] body.code = buyer_context_mismatch {OBSERVED} -- the same refusal code as the same-org cross-buyer case (UCPA-019)","[NETWORK] no 5xx on the create_cart/checkout_and_handoff calls or the cross-identity restore call — only a clean 403, never a server error","restore.status != 403, or a body whose code is not buyer_context_mismatch (regression back to the permissive 200-with-unattributed-cart behavior originally observed 2026-09-22 — re-verify before filing)",[TEARDOWN] delete anon_cart.id,VCST-5378 | Promoted: REG-2026-09-22-2051 (2026-09-22),Automated
+UCPA-025,"NET-NEW (SBTM O7) — create_cart reports overall success while silently dropping a line: a configurable SKU needing configuration, and an all-zero product_id",UCP > Cart > Silent Line Failure,High,,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: the configurable product CFG-020 (test-data/products/configurable-products.csv), which search_products reports as product_type Physical — the failure is not foreseeable from the catalog listing (SBTM O7). The product GUID is LIVE-DISCOVERED by name through search_products and never transcribed: the fixture CSV row for CFG-020 has an EMPTY product_id_guid column and carries the GUID only inside its free-text notes column, where no @td() resolver can reach it — the earlier form of this case resolved @td(products/configurable-products, product_id=CFG-020, product_id_guid) to the empty string and sent product_id:"" (GOLDEN RULE: a value with a source of truth is read from it, and the platform is that source here).","cfg_sku=AGENT-TEST-Config-Phone-Case, zero_id=00000000-0000-0000-0000-000000000000","[MCP-OP find_cfg]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{cfg_sku}}"", ""limit"": 1 }
+[MCP-EXEC find_cfg]
+[MCP-CAPTURE find_cfg.products.0.id → cfg_product_id]
+[MCP-OP cfg1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{cfg_product_id}}"", ""quantity"": 1 }] }
+[MCP-EXEC cfg1]
+[MCP-OP zero1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{zero_id}}"", ""quantity"": 1 }] }
+[MCP-EXEC zero1]","[COUNT label=find_cfg] body.products.length = 1 {OBSERVED} -- the fixture is discoverable by name
+[DATA label=find_cfg] body.products.0.product_type = Physical {OBSERVED} -- search reports the configurable parent as Physical, so the caller cannot foresee from the listing that the line will be dropped (SBTM O7)
+[DATA label=cfg1] body.ucp.status = success {OBSERVED}
+[COUNT label=cfg1] body.cart.line_items.length = 0 {OBSERVED}
+[COUNT label=cfg1] body.messages[*?code=CONFIGURATION_SECTION_REQUIRED].length > 0 {OBSERVED} -- the failure is reported ONLY in messages[], not in the top-level status
+[DATA label=zero1] body.ucp.status = success {OBSERVED}
+[COUNT label=zero1] body.cart.line_items.length = 0 {OBSERVED}
+[COUNT label=zero1] body.messages[*?code=CART_PRODUCT_UNAVAILABLE].length > 0 {OBSERVED} -- the caller now DOES get a machine-readable signal that the line was dropped, but the top-level status still misreports success while a requested line silently vanished",,"zero_result.messages[] reverting to empty (regression back to the fully-silent behavior this case originally found), or cfg_result losing its CONFIGURATION_SECTION_REQUIRED entry — either call's top-level status becoming non-""success"" instead would be a further improvement, not a failure; re-verify before filing",None (read-only),VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-026,"NET-NEW (SBTM O1) — no tool revokes a minted handoff; logout_buyer does not invalidate an outstanding one, and no revoke-shaped route exists",UCP > Handoff > Revocation (Absent),Medium,,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email). Documents an ABSENCE in the product (domain map reverse edges, G1's sibling): there is no revoke/cancel API at all. Cleanup adds no further logout_buyer call: the case’s own MCP-OP logout1 step already closes this session (that closure is the behavior under test), and ACME_ADMIN is additionally a shared fixture used by other suites in the corpus — a second logout here would be both redundant and risky for a concurrently-running sibling suite.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover)","[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-OP cah1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah1]
+[MCP-CAPTURE cah1.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION]
+[MCP-OP logout1]
+logout_buyer
+{}
+[MCP-EXEC logout1]
+[REST-OP delete_probe]
+DELETE {{FRONT_URL}}/ucp/v1/internal/handoff/{{UCP_SESSION}}
+[REST-EXEC delete_probe]
+[REST-OP restore1]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION}}""}
+[REST-EXEC restore1]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[DATA label=logout1] body.logged_out = true {OBSERVED} -- logout_buyer reports success, confirmed live 2026-09-22
+[ERRORS label=delete_probe] HTTP 404 {OBSERVED} -- no revoke route exists, confirmed live 2026-09-22
+[ERRORS label=restore1] HTTP 200 {OBSERVED} -- a handoff minted before logout_buyer remains fully redeemable after it, confirmed live 2026-09-22 (domain map reverse edges: no revoke/cancel API exists)",,a restore returning anything other than 200 after logout_buyer (behavior changed — a revoke mechanism may have shipped; re-verify before treating as a regression),[TEARDOWN] delete the cart,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-027,"NET-NEW (SBTM O6) — create_checkout, handoff_checkout and checkout_and_handoff each return continue_url at a DIFFERENT response path",UCP > Checkout > Envelope Contract,Medium,,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email). A client reading one path uniformly gets undefined from the other two tools (domain map D6). Cleanup deliberately omits logout_buyer here: this case’s role is a shared fixture also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover, 3 distinct carts — one per tool)","[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart_a]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }], ""cart_name"": ""envelope_test_a"" }
+[MCP-EXEC cart_a]
+[MCP-CAPTURE cart_a.cart.id → CART_A_ID]
+[MCP-OP create_checkout_a]
+create_checkout
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_A_ID}}"" }
+[MCP-EXEC create_checkout_a]
+[MCP-OP cart_b]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }], ""cart_name"": ""envelope_test_b"" }
+[MCP-EXEC cart_b]
+[MCP-CAPTURE cart_b.cart.id → CART_B_ID]
+[MCP-OP create_checkout_b]
+create_checkout
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_B_ID}}"" }
+[MCP-EXEC create_checkout_b]
+[MCP-CAPTURE create_checkout_b.checkout.id → CHECKOUT_B_ID]
+[MCP-OP handoff_checkout_b]
+handoff_checkout
+{ ""store_id"": ""{{STORE_ID}}"", ""checkout_id"": ""{{CHECKOUT_B_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC handoff_checkout_b]
+[MCP-OP cart_c]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }], ""cart_name"": ""envelope_test_c"" }
+[MCP-EXEC cart_c]
+[MCP-CAPTURE cart_c.cart.id → CART_C_ID]
+[MCP-OP cah_c]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_C_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah_c]
+[MCP-CAPTURE cah_c.handoff.checkout.continue_url → CAH_NESTED_URL]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[NULL label=create_checkout_a] body.continue_url {OBSERVED}
+[NULL label=create_checkout_a] body.checkout.continue_url {OBSERVED}
+[DATA label=handoff_checkout_b] body.result.checkout.continue_url is non-null {OBSERVED} -- double-wrapped shape
+[DATA label=cah_c] body.continue_url is non-null {OBSERVED} -- the only tool with a top-level continue_url
+[DATA label=cah_c] body.handoff.checkout.continue_url is non-null {OBSERVED}
+[DATA label=cah_c] body.continue_url = {{CAH_NESTED_URL}} {OBSERVED} -- the top-level and the nested continue_url are the SAME url, so the two paths are aliases rather than two different handoffs. Compared through a CAPTURE, not a path-on-the-right assertion: the MCP family scores a `body.x = body.y` RHS as a literal string, so that form is a guaranteed false red
+[EVIDENCE] a client that reads response.checkout.continue_url uniformly across all three tools gets undefined from ALL THREE, not just two -- narrative synthesis of the four checks above (cross-label comparison, not independently scoreable as one predicate)",,any of the three envelope shapes changing without this case being updated (contract drift),"[TEARDOWN] delete cart_a, cart_b, cart_c",VCST-5378 | Promoted: REG-2026-09-22-2051 (2026-09-22),Automated
+UCPA-028,NET-NEW (SBTM O12) — authenticated create_cart upserts into the buyer's existing default cart and is NOT idempotent: a second identical call raises quantity rather than creating a fresh cart,UCP > Cart > Upsert Semantics,High,BL-CART-007,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email). Cart-sensitive — verify or reset the buyer's default cart state before this case per DISPOSABLE FIXTURES rule 4 (an authenticated fixture account's default cart is SHARED mutable state across every case/lane that signs in as it). Machine conversion note: the [PRE:RESET_CART] step is browser-only grammar and is dropped here -- the case's own assertion is a DELTA (second_call.quantity - first_call.quantity), which holds regardless of whatever quantity the shared default cart already carries, so no pre-reset is required for correctness. Cleanup still empties the cart afterward. The same sharing means Cleanup omits logout_buyer too: it would revoke ALL of ACME_ADMIN’s sessions (""including other sessions""), not just this one, risking a concurrently-running sibling case or suite.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover)","[AUTH role=ACME_ADMIN]
+[MCP-OP link]
+link_buyer_identity
+{}
+[MCP-EXEC link]
+[MCP-CAPTURE link.buyer_id → LINKED_BUYER_ID]
+[GQL-OP discover]
+query { products(storeId: ""{{STORE_ID}}"", first: 1) { items { code } } }
+[GQL-EXEC discover]
+[GQL-CAPTURE discover.data.products.items.0.code → SEARCH_TERM]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{SEARCH_TERM}}"", ""limit"": 1 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP first_call]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC first_call]
+[MCP-CAPTURE first_call.cart.id → FIRST_CART_ID]
+[MCP-CAPTURE first_call.cart.line_items[?product_id={{PRODUCT_ID}}].quantity → FIRST_QTY]
+[MCP-OP second_call]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC second_call]","[ERRORS label=link] HTTP 200 {SPEC}
+[DATA label=link] body.linked = true {OBSERVED}
+[DATA label=second_call] body.cart.id = {{FIRST_CART_ID}} {OBSERVED} -- the ""new"" cart is the SAME cart (BL-CART-007: update_cart/create_cart operate on the complete desired state of one cart per buyer, not a fresh one per call)
+[DATA label=second_call] body.cart.line_items[?product_id={{PRODUCT_ID}}].quantity = {{FIRST_QTY}} + 1 {OBSERVED} -- NOT equal to first_call's quantity; the second call is not a no-op",,second_call.cart_id differing from first_call.cart_id (behavior changed — a fresh-cart-per-call semantic may have shipped; re-verify before treating as a regression),[TEARDOWN] reset the buyer's default cart to empty (remove the line added by this case) so the shared fixture is not left dirty for the next case/lane,VCST-5378 | Promoted: REG-2026-09-22-1901 (2026-09-22),Automated
+UCPA-029,"NET-NEW (SBTM O14) — a successful restore hands the buyer line items only: the agent's shipping_address does not carry over, the buyer's own saved address remains, and Place Order stays disabled until the buyer finishes shipping + payment",UCP > Handoff > Successful Arrival Shape,Medium,BL-CHK-001,,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Role: @td(ACME_ADMIN.email). Documents the correct/expected BOUNDARY of the handoff: it hands off line items, not a ready-to-pay checkout — nothing in the corpus asserted this shape before 2026-09-22 (SBTM O14). Cleanup deliberately omits logout_buyer here: this case’s role is a shared fixture also used by other suites in the corpus, and logout_buyer revokes ALL of a buyer’s Platform OAuth sessions (""including other sessions,"" per its own tool description) — calling it risks silently breaking a concurrently-running sibling suite’s live session.","role_email=@td(ACME_ADMIN.email), role_password={{B2B_USER_PASSWORD}}, <SEARCH_TERM> (live-discover), agent_shipping_address={first_name:""QA"",last_name:""Agent"",line1:""123 Market St"",city:""Los Angeles"",region:""CA"",postal_code:""90012"",country_code:""USA""} (deliberately DIFFERENT from the buyer's own saved address, so carry-over would be observable if it happened)","--- API ---
+[AUTH] acquire a bearer for @td(ACME_ADMIN.email)
+[MCP] tools/call name=link_buyer_identity arguments={} (Authorization: Bearer access_token)
+[CAPTURE] link_result.buyer_id, link_result.organization_id
+[MCP] tools/call name=search_products arguments={store_id:{{STORE_ID}},query:""<SEARCH_TERM>"",limit:1} (Authorization: Bearer access_token)
+[CAPTURE] product.product_id
+[MCP] tools/call name=create_cart arguments={store_id:{{STORE_ID}},line_items:[{product_id:product.product_id,quantity:1}]} (Authorization: Bearer access_token)
+[CAPTURE] cart.id
+[MCP] tools/call name=checkout_and_handoff arguments={store_id:{{STORE_ID}},cart_id:cart.id,shipping_address:agent_shipping_address} (Authorization: Bearer access_token)
+[CAPTURE] handoff.continue_url
+--- STOREFRONT ---
+[NAV] handoff.continue_url
+[WAIT] page settles on /cart/{cart.id}?ucp_handoff=1","[BODY] link_buyer_identity returns 200; link_result.buyer_id equals the Platform user's platform_id for @td(ACME_ADMIN.email) {SPEC}
+[REL] the storefront cart's line items match cart.id from the API leg (the item is present) {SPEC}
+[DOM] the storefront's shipping address field shows the BUYER's own saved address, not agent_shipping_address (""123 Market St, Los Angeles"") {OBSERVED} -- the agent's address does not carry over
+[DOM] delivery method and payment method are unselected, and 'Place order' is DISABLED {OBSERVED} -- the handoff lands as line items to finish, not a ready-to-pay checkout -- BL-CHK-001: checkout requires shipping + payment before placement","[NETWORK] no 4xx/5xx on the /cart page load itself; the restore call may show one expected 401 from the anonymous-first attempt before the authenticated retry succeeds (documented client strategy, same pattern as UCPA-015 — not a failure signal)",'Place order' enabled with delivery/payment still unselected (checkout invariant violated); the agent's shipping_address silently applied to the buyer's saved profile,[TEARDOWN] delete the cart if not consumed,VCST-5378,Draft
+UCPA-030,search_products availability contract — is_buyable/is_available/is_in_stock/available_quantity present with correct types on a deterministic low-stock fixture,UCP > Catalog > Availability Contract,Medium,,ECL-2.1,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: @td(PROD_LOW_STOCK.sku) (AGENT-TEST-Low-Stock-Fixture, near-limit stock on the store MAIN fulfillment center — never hardcode the number, it drifts on re-seed; see suite's stock top-up note).",sku=@td(PROD_LOW_STOCK.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-CAPTURE search1.products.0.availability.available_quantity → AVAILABLE_QTY]","[ERRORS label=search1] HTTP 200 {SPEC}
+[COUNT label=search1] body.products.length >= 1 {OBSERVED}
+[DATA label=search1] body.products.0.availability.is_buyable is non-null {OBSERVED} -- boolean field present
+[DATA label=search1] body.products.0.availability.is_available is non-null {OBSERVED} -- boolean field present
+[DATA label=search1] body.products.0.availability.is_in_stock is non-null {OBSERVED} -- boolean field present
+[DATA label=search1] body.products.0.availability.is_buyable = true {OBSERVED} -- confirmed live 2026-09-23: this fixture is buyable at its current (nonzero) stock
+[DATA label=search1] body.products.0.availability.available_quantity > 0 {OBSERVED} -- never assert the exact number, it drifts on re-seed
+[COUNT label=search1] body.products.0.availability.available_quantity >= 1 {OBSERVED} -- COUNT accepts a bare numeric path; confirms it resolves as a NUMBER, not a numeric string",,any of the four availability fields missing or null; available_quantity not numeric (e.g. returned as a string),None (read-only),VCST-5378 · Archetype:FALLBACK · Technique:EP | Promoted: REG-2026-09-23-M7 (2026-09-23),Automated
+UCPA-031,"create_cart at exactly available_quantity succeeds — the line is present and its quantity matches the captured stock, not just the envelope",UCP > Cart > Stock Boundary,High,,ECL-2.1,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: @td(PROD_LOW_STOCK.sku). Anonymous cart — no [AUTH]. The quantity requested is the value CAPTURED from search_products this run, never a transcribed constant (GOLDEN RULE, .claude/rules/test-data.md) — so this case keeps passing after the fixture is topped up or re-seeded to a different stock level.",sku=@td(PROD_LOW_STOCK.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-CAPTURE search1.products.0.availability.available_quantity → AVAILABLE_QTY]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": {{AVAILABLE_QTY}} }] }
+[MCP-EXEC cart1]","[ERRORS label=cart1] HTTP 200 {SPEC}
+[DATA label=cart1] body.ucp.status = success {OBSERVED}
+[COUNT label=cart1] body.cart.line_items.length = 1 {OBSERVED} -- the line IS present, not merely a success envelope
+[DATA label=cart1] body.cart.line_items[?product_id={{PRODUCT_ID}}].quantity = {{AVAILABLE_QTY}} {OBSERVED} -- persisted quantity equals the requested (=available) amount exactly
+[COUNT label=cart1] body.cart.messages.length = 0 {OBSERVED} -- no cart-level refusal at the boundary itself
+[COUNT label=cart1] body.cart.line_items.0.messages.length = 0 {OBSERVED} -- no line-level warning either, at exactly the limit",,line_items empty despite HTTP 200 + status=success (the exact vacuous-pass shape §4.1 warns about); persisted quantity differing from the requested amount; a message present at the boundary itself (premature refusal one unit early),"[TEARDOWN] none — anonymous cart, no owner to sweep",VCST-5378 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-09-23-M7 (2026-09-23),Automated
+UCPA-032,"create_cart one unit over available_quantity — envelope reports success while the cart stays EMPTY; the refusal lives only in messages[], never in isError or line_items",UCP > Cart > Stock Boundary,Critical,,ECL-2.1,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: @td(PROD_LOW_STOCK.sku). The requested quantity is DERIVED from the captured available_quantity at runtime (string-concatenation of the captured digits with themselves, e.g. a captured ""5"" becomes the request ""55"") rather than computed by +1 — the runner's Steps grammar has no arithmetic operator for building a request body (knowledge/api/graphql-test-cases-runner.md §3, MCP-OP bodies are substituteEnv(substituteVars(...)) only), so a true captured-value-plus-one quantity cannot be constructed without a hardcoded margin. This is still comfortably inside the low-stock fixture's own near-limit range (never an absurd sentinel — that is UCPA-033's job) and is NEVER equal to or below the captured value, so it reliably reproduces the SAME single-line-entry refusal path the ground truth measured at captured+1. Verified live 2026-09-23 that this derived quantity and a literal captured-value+1 hit the identical refusal shape (both single, untouched line entries against an empty cart).",sku=@td(PROD_LOW_STOCK.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-CAPTURE search1.products.0.availability.available_quantity → AVAILABLE_QTY]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": {{AVAILABLE_QTY}}{{AVAILABLE_QTY}} }] }
+[MCP-EXEC cart1]","[ERRORS label=cart1] HTTP 200 {OBSERVED} -- transport succeeded; this alone proves nothing about the product (§4.1)
+[DATA label=cart1] body.ucp.status = success {OBSERVED} -- the FIRST half of the trap: the envelope itself claims success
+[COUNT label=cart1] body.cart.line_items.length = 0 {OBSERVED} -- the SECOND half: nothing was actually added
+[COUNT label=cart1] body.messages[*?code=PRODUCT_FFC_QTY].length > 0 {OBSERVED} -- the THIRD half: the refusal exists, but ONLY here
+[DATA label=cart1] body.messages[?code=PRODUCT_FFC_QTY].content matches /Available quantity is \d+/ {OBSERVED} -- names the real numeric limit, not a generic refusal",,a case that asserts only HTTP 200 or only isError=false here would pass on a create_cart that added nothing — that IS this case's whole point (§4.1); line_items non-empty (stock enforcement silently dropped); messages[] reverting to empty (regression to the fully-silent behavior UCPA-025 already found on a different tool),"[TEARDOWN] none — refused add, no cart state to sweep",VCST-5378 · Archetype:SILENT · Technique:BVA | Promoted: REG-2026-09-23-M7 (2026-09-23),Automated
+UCPA-033,"create_cart at an absurd quantity (99999) hits the IDENTICAL refusal shape as one unit over stock — proving PRODUCT_FFC_QTY is a stock rule, not an integer-overflow artifact",UCP > Cart > Stock Boundary,Medium,,ECL-2.1,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: @td(PROD_LOW_STOCK.sku). 99999 is a fixed sentinel by design (BVA ""absurd"" input, not a value derived from the fixture's own stock) — pairs with UCPA-032's near-limit derived quantity to show the SAME code path fires at both a minimal and a wild excess.",sku=@td(PROD_LOW_STOCK.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 99999 }] }
+[MCP-EXEC cart1]","[ERRORS label=cart1] HTTP 200 {OBSERVED}
+[DATA label=cart1] body.ucp.status = success {OBSERVED}
+[COUNT label=cart1] body.cart.line_items.length = 0 {OBSERVED}
+[COUNT label=cart1] body.messages[*?code=PRODUCT_FFC_QTY].length > 0 {OBSERVED} -- same code, same shape as UCPA-032's near-limit excess",,a 5xx or a distinct overflow-shaped error instead of the same PRODUCT_FFC_QTY refusal (would indicate the check is bounded by an integer limit rather than the actual stock level),"[TEARDOWN] none — refused add, no cart state to sweep",VCST-5378 · Archetype:BOUNDARY · Technique:EG | Promoted: REG-2026-09-23-M7 (2026-09-23),Automated
+UCPA-034,"create_cart with quantity 0 or -1 is a DIFFERENT refusal shape than an over-stock request — structured invalid_request naming the field, not a stock message",UCP > Error Contract > Argument Validation,High,BL-AUTH-017,ECL-14.1,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: @td(PROD_LOW_STOCK.sku) (any in-catalog product_id would do here — the low-stock fixture is reused for suite economy, not because stock matters to this contract). Contrasts deliberately with UCPA-032/033: same tool, same HTTP 200 transport, but a STRUCTURED 400-shaped business error instead of a stock message — the point being that these are two distinct refusal families the caller must distinguish.",sku=@td(PROD_LOW_STOCK.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart_zero]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 0 }] }
+[MCP-EXEC cart_zero]
+[MCP-OP cart_neg]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": -1 }] }
+[MCP-EXEC cart_neg]","[ERRORS label=cart_zero] HTTP 400 {OBSERVED} -- the tool's OWN status_code, not the transport's (§4.1: MCP surfaces this via executeMcpOp, not the raw 200)
+[DATA label=cart_zero] body.is_error = true {OBSERVED}
+[DATA label=cart_zero] body.code = invalid_request {OBSERVED}
+[DATA label=cart_zero] body.message matches /quantity/i {OBSERVED} -- names the offending field, distinct from UCPA-032/033's stock-shaped message
+[ERRORS label=cart_neg] HTTP 400 {OBSERVED}
+[DATA label=cart_neg] body.is_error = true {OBSERVED}
+[DATA label=cart_neg] body.code = invalid_request {OBSERVED}
+[DATA label=cart_neg] body.message matches /quantity/i {OBSERVED}",,"an unhandled 500 with only a trace id for either malformed call; a stock-shaped message (PRODUCT_FFC_QTY) instead of invalid_request — would mean the two refusal families collapsed into one, losing the distinction a caller needs to act correctly",None (read-only),VCST-5378 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-09-23-M7 (2026-09-23),Automated
+UCPA-035,"NET-NEW — stock enforcement is per REQUESTED LINE ENTRY, not per consolidated cart total: splitting the same over-stock quantity across two line entries (or two sequential calls) for the same product bypasses the hard refusal entirely",UCP > Cart > Stock Enforcement Gap,High,BL-CART-002,ECL-2.1,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: @td(PROD_LOW_STOCK.sku). Anonymous cart. Verified live 2026-09-23, twice independently: (a) ONE create_cart call with TWO line_items entries for the SAME product_id whose quantities sum to captured+1, and (b) TWO SEQUENTIAL create_cart calls passing the same buyer_id (the documented upsert-add semantics, BL-CART-007 / UCPA-028) that raise the SAME line to captured+1 — BOTH land on a DIFFERENT, softer code path than UCPA-032's single untouched line entry: the line is CREATED/RAISED to the over-stock quantity, the top-level envelope AND cart-level messages[] stay EMPTY, and the only signal is a LINE-level PRODUCT_QTY_CHANGED message with severity=recoverable. This is the exact operation-level-vs-line-level split the runner doc already documents for xCart (graphql-test-cases-runner.md §4.1) — UCP inherits it. Framed as OBSERVED, not asserted-wrong: no documented spec says composition must be rejected identically to a single over-limit entry, and BL-CART-002 is cited as the AT-RISK invariant this composition path could undermine at checkout, not as a confirmed violation (checkout-time enforcement of this line's isValid state is out of this case's scope — see Failure_Signals).",sku=@td(PROD_LOW_STOCK.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-CAPTURE search1.products.0.availability.available_quantity → AVAILABLE_QTY]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": {{AVAILABLE_QTY}} }, { ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]","[ERRORS label=cart1] HTTP 200 {OBSERVED}
+[DATA label=cart1] body.ucp.status = success {OBSERVED}
+[COUNT label=cart1] body.cart.line_items.length = 1 {OBSERVED} -- consolidated into ONE line, not refused, not left as two
+[DATA label=cart1] body.cart.line_items.0.quantity = {{AVAILABLE_QTY}} + 1 {OBSERVED} -- the persisted quantity genuinely EXCEEDS available stock
+[COUNT label=cart1] body.cart.line_items.0.messages[*?code=PRODUCT_QTY_CHANGED].length > 0 {OBSERVED} -- the ONLY signal this happened, and it lives on the LINE's own messages[], one level deeper than UCPA-032's cart/top-level signal
+[COUNT label=cart1] body.cart.messages.length = 0 {OBSERVED} -- cart-level messages stay empty
+[COUNT label=cart1] body.messages.length = 0 {OBSERVED} -- top-level messages stay empty too — UCPA-032's operation-level signal is ABSENT on this path","[EVIDENCE] whether this line's over-stock quantity actually blocks Place Order at checkout (BL-CART-002's own enforcement point) is NOT covered by this case or anywhere else in this suite — checkout_and_handoff's own status is a hardcoded 'requires_escalation'/'incomplete' constant per the domain map (D-checkout-status), not a computed validity check, so this is a genuine coverage gap worth a dedicated case once a reachable checkout-completion path exists on the machine lane","line_items.0.messages[] reverting to empty with no signal at all (silent overselling with NO warning anywhere, worse than today); the top-level or cart-level messages[] gaining PRODUCT_FFC_QTY here too (behavior converging with UCPA-032 — re-verify as a product change, not a regression, before filing)","[TEARDOWN] none — anonymous cart, no owner to sweep",VCST-5378 · Archetype:PARITY · Technique:EG | Promoted: REG-2026-09-23-M7 (2026-09-23),Automated
+UCPA-036,TS-17 (reachable half) — a cart built at exactly available stock hands off cleanly; the stock-depleted-before-restore half is NOT authored here (see Cross_Layer_Checks) because it needs a real consuming order or an Admin inventory PATCH against the SAME shared low-stock fixture other suites/lanes depend on,UCP > Handoff > Stock Conflict (TS-17),Medium,BL-CART-002,ECL-2.2,"vcst-qa on the build pinned in this suite's manifest notes (config/test-suites.json, suite 102) — UCP 3.1006.0-pr-7-612c / Platform 3.1072.0-pr-3108-b6ef / storefront 2.59.0-pr-2467-1951. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: @td(PROD_LOW_STOCK.sku), the SAME fixture test-model scenario TS-17 (vc/shared/archive/sprints/Sprint26-18/VCST-5378/UCP Authenticated User Flow — Test Scenarios (VCST-5378).md) names for exactly this purpose. Anonymous flow: checkout_and_handoff's anonymous continuation requires buyer_id explicitly (verified live 2026-09-23 — omitting it returns invalid_request 'buyer_id is required for anonymous continuation', an ambient-context-arg trap distinct from the store_id one the suite notes already cover) — capture it from create_cart's own response, never assume it threads implicitly.",sku=@td(PROD_LOW_STOCK.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-CAPTURE search1.products.0.availability.available_quantity → AVAILABLE_QTY]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": {{AVAILABLE_QTY}} }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-CAPTURE cart1.cart.buyer_id → BUYER_ID]
+[MCP-OP cah1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah1]
+[MCP-CAPTURE cah1.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION]","[ERRORS label=cart1] HTTP 200 {OBSERVED}
+[COUNT label=cart1] body.cart.line_items.length = 1 {OBSERVED} -- full available stock reserved into ONE line, cleanly, before any depletion
+[ERRORS label=cah1] HTTP 200 {SPEC}
+[DATA label=cah1] body.ok = true {OBSERVED}
+[DATA label=cah1] body.continue_url matches /ucp_session=[A-Za-z0-9_-]+$/ {OBSERVED} -- a non-empty, correctly-shaped session token was minted -- the earlier [MCP-CAPTURE] would already fail loudly (§3.5) if this were null","[EVIDENCE] TS-17's full scenario (drive live stock below the cart's already-reserved quantity via a separate consuming order, THEN open continue_url, THEN confirm the storefront surfaces the conflict) is deliberately NOT automated here. Two reasons, both load-bearing: (1) QA-LOW-001 is a SHARED disposable fixture other suites/lanes read concurrently (test-data/aliases.json note: 'must NOT go OOS — top up if it drops') — mutating its live stock mid-case, even with a Cleanup restore, risks a concurrently-running lane reading a transiently-wrong stock level; a dedicated single-purpose low-stock fixture would be needed first. (2) 'a separate consuming order' means a completed storefront checkout+payment journey, which is a UI flow this machine-lane grammar cannot drive (no [MCP-*]/[REST-*] tag places a real paid order). Routed as a manual/SBTM follow-up against TS-17 rather than faked with an unverified assertion (per the vs. ORACLE judge: an assertion built on an assumed-not-observed effect is worse than an honest gap).","cart1 or cah1 failing at exactly available stock (would mean even the UNCONTESTED reachable half is broken, and TS-17's full scenario is moot until this half is fixed)","[TEARDOWN] none — anonymous cart, no owner to sweep",VCST-5378 · Archetype:LIFECYCLE · Technique:FLOW | Promoted: REG-2026-09-23-M7 (2026-09-23),Automated

@@ -13,7 +13,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "fs";
 import { parseOracle } from "../knowledge/lint-bl.ts";
-import { BL_PATH, renderMarkdown, selectSlices, sliceOracle, type Slice } from "../knowledge/extract-bl.ts";
+import {
+  BL_PATH,
+  listDomains,
+  matchDomainToken,
+  renderMarkdown,
+  selectSlices,
+  sliceOracle,
+  type Slice,
+} from "../knowledge/extract-bl.ts";
 
 const text = readFileSync(BL_PATH, "utf-8");
 const slices = sliceOracle(text);
@@ -197,4 +205,81 @@ test("the same oracle in LF and CRLF selects the same ids", () => {
   const lf = sliceOracle(CRLF.replace(/\r\n/g, "\n")).map((s) => s.id);
   const crlf = sliceOracle(CRLF).map((s) => s.id);
   assert.deepEqual(crlf, lf, "line endings must not change which invariants an extract contains");
+});
+
+// --- declared vs populated, added 2026-09-23 --------------------------------------------------
+//
+// `--list` was built from SLICES, so a domain the oracle declares but has not filled in yet did not
+// appear at all, and `--domain <its token>` exited 2 with "matched no invariant" — which reads as an
+// unknown token. `/qa-domain-map` Step 0 validates a slug against that listing and STOPs on unknown,
+// so the gate refused a legitimate refresh of the UCP map: Domain 25 is declared, holds zero
+// invariants by design (the map's own G5), and `ucp` was the one heading of 27 that `--list` omitted.
+//
+// The asymmetry is the point. An oracle gap and a typo are different facts with different fixes, and
+// the domains with no invariants yet are exactly the ones a map is most needed for — so the
+// validator failed hardest where it mattered most. These tests pin BOTH directions: an empty domain
+// is listed and accepted as a slug, AND `--domain` still refuses to emit an empty extract.
+
+test("listDomains returns every DECLARED heading, including one holding no invariant", () => {
+  const declared = listDomains(text);
+  const headings = text
+    .split("\n")
+    .map((l) => (l.endsWith("\r") ? l.slice(0, -1) : l))
+    .filter((l) => /^##\s+Domain\s+\S+\s*:/.test(l));
+  assert.equal(
+    declared.length,
+    headings.length,
+    "a declared domain must never be dropped just because nothing sits under it"
+  );
+});
+
+test("a declared-but-empty domain reports n = 0 rather than going missing", () => {
+  const ucp = listDomains(text).find((d) => d.token === "ucp");
+  assert.ok(ucp, "Domain 25 (BL-UCP) is declared in the oracle and must be listed");
+  assert.equal(ucp.n, 0, "it deliberately holds no invariant yet — that is the case under test");
+  assert.equal(ucp.domainPrefix, "BL-UCP");
+});
+
+test("every populated domain's count agrees with the slices — the listing did not change meaning", () => {
+  for (const d of listDomains(text)) {
+    const mine = slices.filter((s) => s.domain === d.domain);
+    assert.equal(d.n, mine.length, d.domain);
+  }
+  assert.equal(
+    listDomains(text).reduce((a, d) => a + d.n, 0),
+    slices.length,
+    "the per-domain counts must still sum to the whole oracle"
+  );
+});
+
+test("slug validation accepts an empty domain; an unknown token still resolves to nothing", () => {
+  const declared = listDomains(text);
+  assert.equal(matchDomainToken(declared, "ucp").length, 1, "declared-but-empty is a VALID slug");
+  assert.equal(matchDomainToken(declared, "cart").length, 1);
+  assert.equal(matchDomainToken(declared, "wibble").length, 0, "a genuine typo must still fail");
+  assert.equal(matchDomainToken(declared, "").length, 0);
+});
+
+test("--domain still extracts NOTHING for an empty domain — the refusal is unchanged", () => {
+  // The listing got more permissive; the extractor must not. An agent handed zero invariants
+  // reports "no rule applies", which is a false clean — that is why the exit-2 refusal exists, and
+  // widening the slug validator must not quietly turn it into an empty success.
+  assert.equal(selectSlices(slices, { domains: ["ucp"] }).length, 0);
+});
+
+test("one precedence rule serves both callers: heading match mirrors slice match", () => {
+  // `matchDomainToken` is shared by --has-domain (over headings) and --domain (over slices), so a
+  // token can never be valid to one and unknown to the other. Two copies of the rule is how a
+  // validator comes to reject what the extractor accepts.
+  const declared = listDomains(text);
+  for (const token of ["cart", "loy", "pricing", "b2b", "a11y"]) {
+    const viaHeading = matchDomainToken(declared, token);
+    const viaSlices = selectSlices(slices, { domains: [token] });
+    assert.equal(viaHeading.length, 1, `heading match for "${token}"`);
+    assert.ok(viaSlices.length > 0, `slice match for "${token}"`);
+    assert.ok(
+      viaSlices.every((s) => s.domain === viaHeading[0].domain),
+      `"${token}" must resolve to the SAME domain on both paths, got ${viaHeading[0].domain}`
+    );
+  }
 });

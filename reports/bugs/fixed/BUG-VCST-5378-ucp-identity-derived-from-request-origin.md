@@ -115,3 +115,44 @@ fix note names the exact right mechanism; what's missing is confirmation it's ac
 environment. **Recommend: re-open with the developer, and this time validate by re-running steps 1–3
 above post-fix, not by code review alone** — this repo's rule (`.claude/rules/agents.md` §Product
 context) is to observe before crediting a fix.
+
+---
+
+## Resolution — FIXED, verified 2026-09-22
+
+**Build:** UCP `3.1006.0-pr-7-612c` · Platform `3.1072.0-pr-3108-b6ef` · storefront `2.59.0-pr-2467-1951`.
+**Fix:** vc-module-ucp#7 adds `IUcpPublicOriginResolver` / `UcpPublicOriginResolver`, resolving
+`UCP:PublicOrigin` -> the store's `SecureUrl`/`Url` -> request origin. `UcpProfileService.GetProfile`
+now feeds ONE resolved origin into the discovery MCP url, `Auth.AuthorizationServer` and the
+protected-resource-metadata url, and `UcpMcpBuyerAuthenticationMiddleware.HasExpectedAudience` reads the
+same resolver — so discovery, the challenge and audience validation can no longer disagree.
+
+Every row of the table above, re-measured on the **platform** host:
+
+| Row | Was | Now |
+|---|---|---|
+| `/.well-known/ucp` service endpoint | itself | **storefront** |
+| protected-resource `resource` | itself | **storefront** |
+| `authorization_servers` | itself | **storefront** |
+| `get_store_capabilities.storefront_origin` | itself, contradicting `stores[].url` | **storefront — agrees** |
+| `endpoints.handoff_url_template` | platform host | **storefront** |
+| authenticated flow | **`400 invalid_target`** dead end | **completes, `200`** |
+
+**The chain was walked end to end starting from the platform host**, as an agent following discovery
+would: manifest -> `link_buyer_identity` 401 challenge -> protected-resource metadata -> AS metadata ->
+token at the advertised `token_endpoint` for the advertised `resource` (200, `aud` = the MCP url,
+`iss` = storefront) -> `link_buyer_identity` with that token -> **200**, `linked:true`, correct
+`buyer_id` and `organization_id`. No host mixing, no manual correction.
+
+`POST /connect/token?resource=<platform>/ucp/mcp` still returns `400 invalid_target`. **That is no longer
+the defect** — nothing advertises that resource any more, so an agent never asks for it, and refusing an
+unregistered resource is correct OAuth behaviour.
+
+**Correction of record.** A QA comment on 2026-09-22 at 11:09 reported F2 as *"NOT FIXED — reproduces
+unchanged"* and recommended re-opening it. That was measured on UCP `pr-7-9bc9`; the environment moved to
+`pr-7-612c` afterwards. The 11:09 verdict was correct for the build it saw and is wrong for the deployed one.
+
+**Not closed by this:** the module is still unmerged, and `UCP:PublicOrigin` is not set as a Platform
+Setting on this environment (only `UCP.Enabled`), so the origin currently resolves from the store URL.
+A deployment whose store `Url`/`SecureUrl` is unset or wrong would fall through to request origin and
+could reproduce the original symptom.

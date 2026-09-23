@@ -32,7 +32,13 @@
  *   npm run bl:extract -- --severity P0-revenue,P0-security
  *   npm run bl:extract -- --domain cart --json       # {invariants:[{id,title,severity,markdown}], …}
  *   npm run bl:extract -- --list                     # domains + counts + bytes, to choose a scope
+ *   npm run bl:extract -- --has-domain ucp           # slug VALIDATION: exit 0 declared, 2 unknown
  *   npm run bl:extract -- --domain cart --stats      # what the slice costs vs the whole file
+ *
+ * `--list` and `--has-domain` report what the oracle DECLARES; `--domain` reports what it CONTAINS.
+ * A domain can be declared and still hold no invariant, and the two questions must not be answered
+ * by the same exit code — `--has-domain` accepts it, `--domain` still refuses to emit an empty
+ * extract. See `listDomains` for the measured incident behind that split.
  *
  * Filters combine as a UNION (--domain cart --id BL-PRICE-001 gives cart plus that one). Ordering
  * always follows the oracle, so two runs with the same filters produce byte-identical output.
@@ -134,6 +140,63 @@ export function sliceOracle(text: string): Slice[] {
   return out;
 }
 
+/** A `## Domain N: Name (BL-X)` heading, whether or not any invariant sits under it. */
+export interface DomainInfo {
+  /** The heading text with `## ` stripped, e.g. `Domain 25: Agentic Commerce / UCP (BL-UCP)`. */
+  domain: string;
+  /** The id prefix the heading declares, e.g. `BL-UCP`. Empty when the heading names none. */
+  domainPrefix: string;
+  /** The `--domain` token, e.g. `ucp`. Empty when the heading declares no prefix. */
+  token: string;
+  /** Invariants found under it. **Zero is legal** — see below. */
+  n: number;
+  chars: number;
+}
+
+/**
+ * Every domain the oracle DECLARES, including the ones that hold no invariant yet.
+ *
+ * WHY THIS IS SEPARATE FROM `sliceOracle`. A slice only exists where an entry exists, so a domain
+ * whose section is declared but still empty was invisible to everything downstream — it never
+ * appeared in `--list`, and `--domain <its token>` exited 2 with "matched no invariant", which reads
+ * as *unknown token*. Those are different facts and only one of them is a typo.
+ *
+ * Measured 2026-09-23: `## Domain 25: Agentic Commerce / UCP (BL-UCP)` is declared at
+ * `business-logic.md` and deliberately holds zero invariants (the UCP domain map's own G5 records
+ * that no `BL-UCP-*` has been written yet). `--list` printed 26 of the file's 27 domain headings and
+ * `ucp` was the missing one, so `/qa-domain-map`'s Step 0 — *"validate the slug against
+ * `npm run bl:extract -- --list`; unknown ⇒ STOP"* — would have refused a legitimate refresh. The
+ * gate therefore failed hardest on exactly the domains that most need a map: the ones with no oracle
+ * yet. An emptiness that is a GAP must never be reported as a NAME ERROR.
+ */
+export function listDomains(text: string): DomainInfo[] {
+  const slices = sliceOracle(text);
+  const counts = new Map<string, { n: number; chars: number }>();
+  for (const s of slices) {
+    const cur = counts.get(s.domain) ?? { n: 0, chars: 0 };
+    counts.set(s.domain, { n: cur.n + 1, chars: cur.chars + s.markdown.length });
+  }
+  const out: DomainInfo[] = [];
+  const seen = new Set<string>();
+  for (const raw of text.split("\n")) {
+    const line = raw.endsWith("\r") ? raw.slice(0, -1) : raw;
+    if (!DOMAIN_RE.test(line)) continue;
+    const domain = line.replace(/^##\s+/, "").trim();
+    if (seen.has(domain)) continue;
+    seen.add(domain);
+    const prefix = domain.match(/\(BL-([A-Z0-9]+)\)/)?.[1] ?? "";
+    const c = counts.get(domain) ?? { n: 0, chars: 0 };
+    out.push({
+      domain,
+      domainPrefix: prefix ? `BL-${prefix}` : "",
+      token: prefix.toLowerCase(),
+      n: c.n,
+      chars: c.chars,
+    });
+  }
+  return out;
+}
+
 export interface Filters {
   domains?: readonly string[];
   ids?: readonly string[];
@@ -157,14 +220,29 @@ const empty = (f: Filters) => !f.domains?.length && !f.ids?.length && !f.severit
  * `BL-PRICING` prefix and must still find "Domain 1: Pricing & Discounts (BL-PRICE)". Whole-word, so
  * `cat` cannot match "Catalog" by accident.
  */
-function resolveDomainToken(slices: readonly Slice[], token: string): Slice[] {
+export function matchDomainToken<T extends { domain: string; domainPrefix: string }>(
+  items: readonly T[],
+  token: string
+): T[] {
   const t = token.trim().toLowerCase();
   if (!t) return [];
   const wanted = t.startsWith("bl-") ? t : `bl-${t}`;
-  const byPrefix = slices.filter((s) => s.domainPrefix.toLowerCase() === wanted);
+  const byPrefix = items.filter((s) => s.domainPrefix.toLowerCase() === wanted);
   if (byPrefix.length) return byPrefix;
   const word = new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-  return slices.filter((s) => word.test(s.domain));
+  return items.filter((s) => word.test(s.domain));
+}
+
+/**
+ * Resolve a token to its SLICES (what `--domain` extracts).
+ *
+ * Thin wrapper over `matchDomainToken`: the precedence rule is declared once so that "is this a
+ * valid domain token" (`--has-domain`, over headings) and "which invariants does it mean"
+ * (`--domain`, over slices) can never answer differently. Two copies of this rule is how a validator
+ * comes to reject a token the extractor accepts.
+ */
+function resolveDomainToken(slices: readonly Slice[], token: string): Slice[] {
+  return matchDomainToken(slices, token);
 }
 
 export function selectSlices(slices: readonly Slice[], f: Filters): Slice[] {
@@ -221,18 +299,44 @@ function main(): void {
   const text = readFileSync(file, "utf-8");
   const slices = sliceOracle(text);
 
-  if (argv.includes("--list")) {
-    const byDomain = new Map<string, { n: number; bytes: number }>();
-    for (const s of slices) {
-      const cur = byDomain.get(s.domain) ?? { n: 0, bytes: 0 };
-      byDomain.set(s.domain, { n: cur.n + 1, bytes: cur.bytes + s.markdown.length });
+  const domains = listDomains(text);
+
+  // `--has-domain <token>` — slug VALIDATION, for callers that must tell an unknown name from a
+  // declared-but-empty one. `/qa-domain-map` Step 0 is the caller this exists for: it validates a
+  // slug before a build or refresh, and an oracle section with no invariants yet is the normal state
+  // of a domain nobody has mapped. Exit 0 = declared (n may be 0), exit 2 = no such domain.
+  const has = listArg(argv, "has-domain");
+  if (has.length) {
+    let ok = true;
+    for (const token of has) {
+      const hit = matchDomainToken(domains, token)[0];
+      if (!hit) {
+        console.error(`bl:extract: "${token}" is not a domain in ${file}. Run --list for the tokens.`);
+        ok = false;
+        continue;
+      }
+      console.log(`${hit.token}\t${hit.n}\t${hit.domain}`);
     }
-    console.log(`${slices.length} invariants in ${file} (${text.length.toLocaleString()} chars)\n`);
+    process.exit(ok ? 0 : 2);
+  }
+
+  if (argv.includes("--list")) {
+    // EVERY declared heading, including the empty ones — see `listDomains`. Printing only the
+    // domains that happen to hold an invariant made this listing unusable as the answer to "is this
+    // a real domain slug", which is one of the two things callers ask it.
+    console.log(`${slices.length} invariants in ${file} (${text.length.toLocaleString()} chars)`);
+    console.log(`${domains.length} domains declared, ${domains.filter((d) => d.n === 0).length} of them holding none yet\n`);
     console.log("domain                                                    n     chars  --domain token");
     console.log("--------------------------------------------------------|----|--------|---------------");
-    for (const [domain, v] of byDomain) {
-      const token = domain.match(/\(BL-([A-Z0-9]+)\)/)?.[1]?.toLowerCase() ?? "";
-      console.log(`${domain.slice(0, 56).padEnd(56)} | ${String(v.n).padStart(2)} | ${String(v.bytes).padStart(6)} | ${token}`);
+    for (const d of domains) {
+      const n = d.n === 0 ? " —" : String(d.n).padStart(2);
+      const chars = d.n === 0 ? "     —" : String(d.chars).padStart(6);
+      console.log(`${d.domain.slice(0, 56).padEnd(56)} | ${n} | ${chars} | ${d.token}`);
+    }
+    if (domains.some((d) => d.n === 0)) {
+      console.log("\n— = the domain is DECLARED and holds no invariant yet. It is a real slug (a map may be");
+      console.log("    filed under it, and --has-domain accepts it); it is a GAP for /qa-review-oracles to");
+      console.log("    close, not a typo. --domain on it still exits 2 rather than emit an empty extract.");
     }
     process.exit(0);
   }
@@ -251,9 +355,25 @@ function main(): void {
 
   if (selected.length === 0) {
     console.error(`bl:extract: ${scope} matched no invariant in ${file}.`);
-    console.error("Run with --list to see the domains and their tokens. Refusing to emit an empty");
-    console.error("extract: an agent handed zero invariants reports 'no rule applies', which is a");
-    console.error("false clean, not a missing filter.");
+    // Say WHICH of the two cases this is. The refusal itself is unchanged and correct — an agent
+    // handed zero invariants reports "no rule applies", which is a false clean. But a token that
+    // names a declared-but-empty domain is not a mistake the caller can fix by retyping it, and
+    // telling them to check --list for the token sent them looking for a typo that was not there.
+    const declaredEmpty = (filters.domains ?? [])
+      .map((t) => matchDomainToken(domains, t)[0])
+      .filter((d): d is DomainInfo => !!d && d.n === 0);
+    if (declaredEmpty.length) {
+      for (const d of declaredEmpty) {
+        console.error(`  "${d.token}" IS a real domain — ${d.domain} — declared with zero invariants.`);
+      }
+      console.error("That is a GAP in the oracle, not a bad token: nothing has been promoted for this");
+      console.error("domain yet. Use --has-domain to validate a slug (it accepts an empty domain), and");
+      console.error("/qa-review-oracles to propose the first invariants. Do not invent a BL-* id here.");
+    } else {
+      console.error("Run with --list to see the domains and their tokens. Refusing to emit an empty");
+      console.error("extract: an agent handed zero invariants reports 'no rule applies', which is a");
+      console.error("false clean, not a missing filter.");
+    }
     process.exit(2);
   }
 

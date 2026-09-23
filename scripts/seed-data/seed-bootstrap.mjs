@@ -67,6 +67,9 @@ const TEARDOWN_STEPS = [
   { name: 'loyalty-fixtures', script: 'loyalty/seed-loyalty-fixtures.mjs', args: ['--teardown'] },
   { name: 'promotions', script: 'promotions/seed-promotions.mjs', args: ['--teardown'] },
   { name: 'b2b-addresses', script: 'b2b/seed-b2b-addresses.mjs', args: ['--teardown'] },
+  // Contract pricing before the org graph: the contract binds the AcmeCorp organisation and owns a
+  // buyer contact inside it, so it must release both before company-users deletes them.
+  { name: 'org-contract', script: 'pricing/seed-org-contract-pricing.mjs', args: ['--teardown'] },
   { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['--teardown'] },
   { name: 'bopis', script: 'bopis/seed-bopis.mjs', args: ['--teardown'] },
   // Variation family + its per-FFC stock records — before the fulfillment centers they sit on.
@@ -128,6 +131,10 @@ const STEPS = [
   { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
   // Org addresses beyond the single inline default baked into orgBody() — needs the org graph (100) first.
   { name: 'b2b-addresses', script: 'b2b/seed-b2b-addresses.mjs', required: false, priority: 105 },
+  // VCST-5378 contract pricing. Needs the products (40) AND the org graph (100): it prices an
+  // existing product for an existing organisation and creates its own dedicated buyer inside it.
+  // Optional — it needs VirtoCommerce.Contracts deployed.
+  { name: 'org-contract', script: 'pricing/seed-org-contract-pricing.mjs', required: false, priority: 106 },
   { name: 'promotions', script: 'promotions/seed-promotions.mjs', required: false, priority: 110 },
   // The 1-PTS divisor fixture (LOY_SKU_PTS_UNIT) that balance-relative loyalty tests depend on. Runs
   // just BEFORE the loyalty programs (120) and is OPTIONAL (warns if the loyalty module/PTS currency

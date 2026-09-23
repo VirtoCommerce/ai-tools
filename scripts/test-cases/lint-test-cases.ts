@@ -499,8 +499,14 @@ function capturedVars(row: Row): Set<string> {
 // headers, `Body: {...}` on their own lines — see graphql-test-cases-runner.md §3.7) is
 // NOT single-tag-per-line, so judging it against STEP_TAG_RE manufactured a false D-001
 // on every continuation line (found authoring VCST-5319 suite 075d, e.g. MSN-001/002/006).
+// [MCP-OP] added 2026-09-23. An MCP-only case (no GQL/REST op) fell to the ELSE branch of the
+// Determinism check, which is the UI/Admin rule D-001 — "every non-blank step line must carry a
+// tag". An [MCP-OP] block is deliberately multi-line (tool name, then a JSON argument object), so
+// EVERY body line tripped it: 8 green suite-102 cases were held at Draft by tc:promote PR-008 over
+// a Critical finding about grammar they use correctly. The runner branch delegates to
+// validateStepBlocks, which now pair-checks the MCP family too.
 function isRunnerGraphql(row: Row): boolean {
-  return /\[GQL-OP\b|\[REST-OP\b/i.test(row.Steps);
+  return /\[GQL-OP\b|\[REST-OP\b|\[MCP-OP\b/i.test(row.Steps);
 }
 
 export function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Finding[] {

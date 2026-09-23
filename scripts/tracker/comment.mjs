@@ -28,6 +28,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { wikiMarkupRefusal } from "../lib/jira-body-format.mjs";
+import { markdownToAdf } from "./markdown-to-adf.mjs";
 
 // config.js loads the layered .env files — and process.exit(1)s when the repo's CORE
 // vars (ADMIN_PASSWORD, USER_PASSWORD, …) are missing. Only a real Jira call needs that
@@ -229,6 +230,12 @@ if (!useWiki) {
 }
 const API = useWiki ? "2" : "3";
 
+// v2 takes a WIKI-markup STRING; v3 takes ADF and REFUSES a string
+// (`400 {"errors":{"comment":"Comment body is not valid!"}}`). The Atlassian MCP converts on POST,
+// which is why posting worked and `--amend` did not — measured 2026-09-22 on VCST-5378, and it
+// broke the one path tracker-ops.md §0 routes every correction through.
+const wireBody = useWiki ? body : markdownToAdf(body);
+
 const existing = ledger[a.ticket];
 const thisRun = runId(a);
 
@@ -276,7 +283,7 @@ async function reportRender(id) {
 
 if (a.mode === "amend") {
   if (a.dryRun) { console.log(`\n  [dry-run] PUT (api v${API}) comment ${a.id} on ${a.ticket} (${body.length} chars)\n`); process.exit(0); }
-  await jira("PUT", `/rest/api/${API}/issue/${a.ticket}/comment/${a.id}`, { body });
+  await jira("PUT", `/rest/api/${API}/issue/${a.ticket}/comment/${a.id}`, { body: wireBody });
   ledger[a.ticket] = { ...(existing ?? {}), comment_id: String(a.id), run_id: thisRun, amended_at: new Date().toISOString() };
   writeLedger(ledger);
   console.log(`\n  ✓ amended comment ${a.id} on ${a.ticket} (api v${API}) — no new notification thread`);
@@ -287,7 +294,7 @@ if (a.mode === "amend") {
 
 // post
 if (a.dryRun) { console.log(`\n  [dry-run] POST (api v${API}) comment on ${a.ticket} (${body.length} chars)${a.forceNew ? ` — force-new: ${a.forceNew}` : ""}\n`); process.exit(0); }
-const created = await jira("POST", `/rest/api/${API}/issue/${a.ticket}/comment`, { body });
+const created = await jira("POST", `/rest/api/${API}/issue/${a.ticket}/comment`, { body: wireBody });
 ledger[a.ticket] = {
   comment_id: String(created.id), run_id: thisRun, posted_at: new Date().toISOString(),
   ...(a.forceNew ? { force_new_reason: a.forceNew } : {}),
