@@ -1,6 +1,6 @@
 # BUG — `organizationOrders` returns a locked organization's full order history while `organization(id:)` refuses it
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **Severity:** Medium-High · **Priority:** Medium · **Found:** 2026-09-09 · **Filed as:** VCST-5932 (Subtask of VCST-5317)
 **Provenance (revised 2026-09-09 after source investigation):** the defective check is **PRE-EXISTING in `vc-module-x-order`** and was always membership-only. PR #145 did not touch it — it made it **REACHABLE**, by surfacing a locked organization id the client can pass. In-scope for VCST-5317 as the exposure vector; the **fix lands in a different repo than first routed**.
@@ -95,3 +95,14 @@ Platform `3.1064.0` · `ProfileExperienceApiModule 3.1018.0-pr-145-4fe6` · `Cus
 - `organizationContracts` is **undecidable** on this fixture (0 = 0) and needs a seeded contract before it means anything.
 - `currentOrganizationAddresses` is **not addressable by org id** — it reads the token's current org only — so it cannot exhibit this class.
 - The consumer sweep covered what a **storefront customer principal** can reach. A source-level sweep of every reader of `contact.organizations` / `organizationsIds` was **not** done; the blast radius beyond these four is unenumerated.
+
+## Blocked 2026-09-23
+
+`/qa-verify-fix VCST-5933`: the fix (vc-module-x-order#52, build `3.1013.0-pr-52-a3c9`) is not deployed. vcst-qa runs XOrder `3.1012.0` (manifest + live `/api/platform/modules`). Verification deferred, no transition. Tracker comment 110322.
+
+## Resolution
+
+- **Fixed in:** `VirtoCommerce.XOrder 3.1013.0-pr-52-a3c9` (vc-module-x-order#52, PR still open at verification time)
+- **Tracker:** VCST-5933 → Tested (2026-09-23)
+- **Verified:** 2026-09-23 on vcst-qa by `/qa-verify-fix`: the Newman lock-divergence collection passed 3/3 (+1 capture run), `organizationOrders(locked)` now `Forbidden`, agreeing with `organization(id:)`. Storefront Orders page shows 403 while locked (3/3 cycles) and recovers on unlock.
+- **Evidence:** `reports/tickets/Sprint26-19/VCST-5933/evidence.html`

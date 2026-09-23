@@ -1,0 +1,144 @@
+{
+  "ticket": "VCST-5676",
+  "ticket_type": "Bug",
+  "flow": "feature-test",
+  "path": "FAST",
+  "path_route": {
+    "at_1a": "FAST",
+    "confirmed_1b": "FAST",
+    "reason": "Bug in To do = not-fixed role; ticket-routing.md: reproduce/characterize live"
+  },
+  "layer": "UNRESOLVED",
+  "shape_class": {
+    "value": "standard",
+    "surface_source": [
+      "no PR; component bug, not a token/primitive change"
+    ]
+  },
+  "domain_map": {
+    "state": "ABSENT",
+    "note": "no .claude/knowledge/domain map for vc-shell; FAST recommends /qa-domain-map and proceeds"
+  },
+  "verdict": "PARTLY REPRODUCED",
+  "date": "2026-09-23",
+  "environment": "https://vc-shell-storybook.govirto.com/iframe.html?id=data-display-vcscheduler--editing-flow&viewMode=story",
+  "timing": {
+    "test_window_start": "2026-09-23T15:34:55Z",
+    "test_window_end": "2026-09-23T15:44:00Z",
+    "time_to_first_test_minutes": null,
+    "reachability_minutes": null
+  },
+  "build": {
+    "declared": "vc-shell main 9977ed633",
+    "deployed": "iframe.html last-modified 2026-09-23T14:34:33Z, bundle assets/iframe-BHhSTguc.js, framework v2.6.0 console banner",
+    "component_history": [
+      "694fdf620 #258",
+      "30279bf52 #289",
+      "ffaac427c #364"
+    ]
+  },
+  "epic": null,
+  "ac_analysis": {
+    "findings": [
+      {
+        "id": "F1",
+        "result": "REPRODUCED",
+        "summary": "Modal editor double-press Save creates 2 identical events (4/4, Chromium + Firefox); quick-create popover does not duplicate",
+        "provenance": "IN-SCOPE",
+        "severity": "Medium",
+        "oracle": "{SPEC} onEditorSave / ECL-7.3 pattern",
+        "evidence": [
+          "vcst-5676-c7-modal-dblsave-duplicate.png",
+          "vcst-5676-c7-modal-before-dblsave.png",
+          "vcst-5676-c7-modal-after-dblsave.png",
+          "vcst-5676-c7-modal-dblsave-duplicate.gif",
+          "vcst-5676-c11-firefox-dblsave-duplicate.png"
+        ]
+      },
+      {
+        "id": "F2",
+        "result": "NOT REPRODUCED",
+        "summary": "Editor stays open after save and ignores Escape/Cancel: no real-user path reaches it"
+      }
+    ]
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "To do",
+      "to": null,
+      "skipped": true,
+      "reason": "no in-testing transition exists from To do (only Cancelled / On hold / Take to development); not-fixed Bug"
+    }
+  ],
+  "agents_dispatched": [
+    {
+      "agent": "qa-testing-expert",
+      "lane": "playwright-chrome + playwright-firefox (sequential)",
+      "scope": "Artifact B conditions 1-12"
+    }
+  ],
+  "test_data": {
+    "data_surface": false,
+    "note": "EditingFlow starts with events: [] in memory, reset per page load"
+  },
+  "contract": {
+    "contract_surface": false,
+    "surface_source": [
+      "no GraphQL/xAPI involvement"
+    ]
+  },
+  "coverage_triage": {
+    "coverage_surface": false,
+    "note": "no config/test-suites.json suite covers vc-shell; not run (FAST, no --coverage)"
+  },
+  "discovery": null,
+  "visual": {
+    "visual_surface": true,
+    "ran": false,
+    "note": "derived true (Vue component), FAST without --visual"
+  },
+  "new_cases_authored": 0,
+  "regression": {
+    "c1": "SKIPPED - exact set empty (FAST authors nothing, no 2a)"
+  },
+  "promotion": null,
+  "iterations": null,
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "summary": "Focus not returned to the opening cell after the popover/modal closes",
+      "severity": "Low",
+      "reason": "incidental a11y, not verified against WCAG in full; below filing floor"
+    },
+    {
+      "summary": "Modal accessible name is 'New event Close' plus a duplicate 'New event' h3",
+      "severity": "Low",
+      "reason": "incidental a11y; below filing floor"
+    }
+  ],
+  "appinsights": {
+    "skipped": true,
+    "reason": "Storybook is a static build with no backend telemetry"
+  },
+  "screenshots": "reports/tickets/Sprint26-19/VCST-5676/screenshots/",
+  "tracker": {
+    "comment_posted": true,
+    "comment_id": "110326",
+    "attachments": [
+      "84859",
+      "84860",
+      "84861",
+      "84862"
+    ],
+    "rendered_check": "4 img, 0 literal, 0 error"
+  },
+  "derived_oracle": {
+    "layer_note": "vc-shell framework (separate product) - no layer token fits"
+  },
+  "total_cases": 12,
+  "passed": 11,
+  "failed": 1,
+  "blocked": 0
+}

@@ -1,0 +1,236 @@
+{
+ "_redaction": "token responses withheld; JWTs and password values removed",
+ "collection": "15325423-6f1ed820-46ab-4426-b9a9-6368933b1a69",
+ "at": "2026-09-23T15:03:07.608Z",
+ "stats": {
+  "total": 28,
+  "pending": 0,
+  "failed": 0
+ },
+ "steps": [
+  {
+   "name": "1. SETUP — admin auth (context-free, no storeId)",
+   "status": 200,
+   "response": "<withheld: token endpoint>",
+   "assertions": [
+    {
+     "a": "200 — admin token issued",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "1a. SETUP — resolve the buyer's user id from the email (never a stored GUID)",
+   "status": 200,
+   "response": "{\"storeId\":\"B2B-store\",\"memberId\":\"83637bb5-6c0f-4e8d-b5ea-dff81d69fd38\",\"isAdministrator\":false,\"photoUrl\":null,\"userType\":\"Customer\",\"status\":\"Approved\",\"password\":null,\"createdDate\":\"2026-09-19T08:31:26.5436942Z\",\"modifiedDate\":\"2026-09-23T14:59:23.3739175Z\",\"createdBy\":\"admin\",\"modifiedBy\":\"http:anonymous\",\"roles\":[],\"userRoles\":null,\"logins\":[],\"passwordExpired\":false,\"lastPasswordChangedDate\":null,\"lastPasswordChangeRequestDate\":null,\"lastLoginDate\":\"2026-09-23T14:59:23.3614486Z\",\"id\":\"7b2e4258-498a-49c8-b483-92df9da59807\",\"userName\":\"agent-test-multiorg-20260615@yopmail.com\",\"normalizedUserName\":\"AGENT-TEST-MULTIORG-20260615@YOPMAIL.COM\",\"email\":\"agent-test-multiorg-20260615@yopmail.com\",\"normalizedEmail\":\"AGENT-TEST-MULTIORG-20260615@YOPMAIL.COM\",\"emailConfirmed\":true,\"passwordHash\":null,\"securityStamp\":null,\"concurrencyStamp\":\"e48ca6a2-f9db-4f3e-98d3-3b39e1101c6f\",\"phoneNumber\":null,\"phoneNumberConfirmed\":false,\"twoFactorEnabled\":false,\"lockoutEnd\":null,\"lockoutEnabled\":true,\"accessFailedCount\":0}",
+   "assertions": [
+    {
+     "a": "200 — buyer account found by email",
+     "ok": true
+    },
+    {
+     "a": "the account is the configured buyer, and has an id",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "2. SETUP — find the membership id (discovered, not hardcoded)",
+   "status": 200,
+   "response": "{\"totalCount\":1,\"results\":[{\"userId\":\"7b2e4258-498a-49c8-b483-92df9da59807\",\"organizationId\":\"96f109a7-9010-4691-b6a1-bef25cca3d04\",\"organizationName\":\"AGENT-TEST-Org-TechFlow-20260310\",\"isLocked\":false,\"lockoutEnd\":null,\"status\":\"Approved\",\"isCurrentlyLocked\":false,\"roles\":[{\"membershipId\":\"a44e7c12-c80c-4314-b8eb-eeca8cf3f19a\",\"roleId\":\"org-maintainer\",\"roleName\":\"Organization maintainer\",\"id\":\"e52f0f30-cc53-4161-8bb3-54bf01dc2b3e\"}],\"createdDate\":\"2026-09-19T08:31:27.9793292Z\",\"modifiedDate\":\"2026-09-23T14:59:25.5475981Z\",\"createdBy\":\"admin\",\"modifiedBy\":\"admin\",\"id\":\"a44e7c12-c80c-4314-b8eb-eeca8cf3f19a\"}]}",
+   "assertions": [
+    {
+     "a": "200 — membership search succeeded",
+     "ok": true
+    },
+    {
+     "a": "exactly one membership for (user, locked org)",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "2a. BASELINE — buyer auth BEFORE the lock",
+   "status": 200,
+   "response": "<withheld: token endpoint>",
+   "assertions": [
+    {
+     "a": "200 — pre-lock buyer token issued",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "2b. BASELINE — organizationOrders(locked org) is SERVED before the lock",
+   "status": 200,
+   "response": "{\"data\":{\"organizationOrders\":{\"totalCount\":96}}}",
+   "assertions": [
+    {
+     "a": "HTTP 200",
+     "ok": true
+    },
+    {
+     "a": "BASELINE: the locked org is readable BEFORE the lock, with at least one order",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "3. SETUP — LOCK the membership (V2: permanent, non-active org)",
+   "status": 200,
+   "response": "{\"userId\":\"7b2e4258-498a-49c8-b483-92df9da59807\",\"organizationId\":\"96f109a7-9010-4691-b6a1-bef25cca3d04\",\"organizationName\":\"AGENT-TEST-Org-TechFlow-20260310\",\"isLocked\":true,\"lockoutEnd\":null,\"status\":\"Approved\",\"isCurrentlyLocked\":true,\"roles\":[{\"membershipId\":\"a44e7c12-c80c-4314-b8eb-eeca8cf3f19a\",\"roleId\":\"org-maintainer\",\"roleName\":\"Organization maintainer\",\"id\":\"e52f0f30-cc53-4161-8bb3-54bf01dc2b3e\"}],\"createdDate\":\"2026-09-19T08:31:27.9793292Z\",\"modifiedDate\":\"2026-09-23T14:59:25.5475981Z\",\"createdBy\":\"admin\",\"modifiedBy\":\"admin\",\"id\":\"a44e7c12-c80c-4314-b8eb-eeca8cf3f19a\"}",
+   "assertions": [
+    {
+     "a": "lock call accepted (status only — not proof)",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "4. SETUP — READ BACK and prove it is locked",
+   "status": 200,
+   "response": "{\"userId\":\"7b2e4258-498a-49c8-b483-92df9da59807\",\"organizationId\":\"96f109a7-9010-4691-b6a1-bef25cca3d04\",\"organizationName\":\"AGENT-TEST-Org-TechFlow-20260310\",\"isLocked\":true,\"lockoutEnd\":null,\"status\":\"Approved\",\"isCurrentlyLocked\":true,\"roles\":[{\"membershipId\":\"a44e7c12-c80c-4314-b8eb-eeca8cf3f19a\",\"roleId\":\"org-maintainer\",\"roleName\":\"Organization maintainer\",\"id\":\"e52f0f30-cc53-4161-8bb3-54bf01dc2b3e\"}],\"createdDate\":\"2026-09-19T08:31:27.9793292Z\",\"modifiedDate\":\"2026-09-23T15:03:03.0461445Z\",\"createdBy\":\"admin\",\"modifiedBy\":\"admin\",\"id\":\"a44e7c12-c80c-4314-b8eb-eeca8cf3f19a\"}",
+   "assertions": [
+    {
+     "a": "200",
+     "ok": true
+    },
+    {
+     "a": "READ-BACK: membership is now currently locked",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "5. Buyer auth — AFTER the lock, and with NO organization_id",
+   "status": 200,
+   "response": "<withheld: token endpoint>",
+   "assertions": [
+    {
+     "a": "200 — buyer token issued",
+     "ok": true
+    },
+    {
+     "a": "the buyer token is NOT scoped to the locked org — so nothing below can be explained by its scope",
+     "ok": true
+    },
+    {
+     "a": "the token resolved to the unlocked org (BL-AUTH-015 step 5: first accessible org)",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "6. Buyer view — the flag is true, and set up the non-member control",
+   "status": 200,
+   "response": "{\"data\":{\"me\":{\"contact\":{\"organizationsIds\":[\"96f109a7-9010-4691-b6a1-bef25cca3d04\",\"23525b44-f0d0-43a4-b45e-b162080a4d29\"],\"organizations\":{\"totalCount\":2,\"items\":[{\"id\":\"23525b44-f0d0-43a4-b45e-b162080a4d29\",\"name\":\"AGENT-TEST-Org-BuildRight-20260310\",\"isLockedForCurrentUser\":false},{\"id\":\"96f109a7-9010-4691-b6a1-bef25cca3d04\",\"name\":\"AGENT-TEST-Org-TechFlow-20260310\",\"isLockedForCurrentUser\":true}]}}}}}",
+   "assertions": [
+    {
+     "a": "200, no GraphQL errors",
+     "ok": true
+    },
+    {
+     "a": "the buyer sees the locked org flagged, and the control org not flagged",
+     "ok": true
+    },
+    {
+     "a": "nonMemberOrgId is genuinely NOT a membership of this caller",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "7. CONTROL A — organization(id: locked) is REFUSED",
+   "status": 200,
+   "response": "{\"errors\":[{\"message\":\"Access denied.\",\"locations\":[{\"line\":1,\"column\":23}],\"path\":[\"organization\"],\"extensions\":{\"code\":\"Forbidden\",\"codes\":[\"Forbidden\"]}}],\"data\":{\"organization\":null}}",
+   "assertions": [
+    {
+     "a": "HTTP 200 (GraphQL reports errors inside a 200)",
+     "ok": true
+    },
+    {
+     "a": "organization(id: locked) is Forbidden and returns no data",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "8. THE DEFECT — organizationOrders(locked) must agree with request 7",
+   "status": 200,
+   "response": "{\"errors\":[{\"message\":\"Access denied.\",\"locations\":[{\"line\":1,\"column\":26}],\"path\":[\"organizationOrders\"],\"extensions\":{\"code\":\"Forbidden\",\"codes\":[\"Forbidden\"]}}],\"data\":{\"organizationOrders\":null}}",
+   "assertions": [
+    {
+     "a": "HTTP 200",
+     "ok": true
+    },
+    {
+     "a": "VCST-5933: organizationOrders must agree with organization(id:) for the same locked org",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "9. CONTROL B — organization(id: unlocked) is SERVED",
+   "status": 200,
+   "response": "{\"data\":{\"organization\":{\"id\":\"23525b44-f0d0-43a4-b45e-b162080a4d29\",\"name\":\"AGENT-TEST-Org-BuildRight-20260310\"}}}",
+   "assertions": [
+    {
+     "a": "organization(id: unlocked) returns data — so request 7 was not a blanket denial",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "10. CONTROL C — organizationOrders(unlocked) returns a DIFFERENT count",
+   "status": 200,
+   "response": "{\"data\":{\"organizationOrders\":{\"totalCount\":15,\"items\":[{\"id\":\"1924a583-eee8-4498-b69b-19d084fd7265\",\"number\":\"CO260818-00004\",\"status\":\"New\"},{\"id\":\"108dd75d-665a-45c3-93ab-e7ddb0f71c83\",\"number\":\"AGENT-TEST-SRO-TZ-VCST-2104-003\",\"status\":\"New\"},{\"id\":\"f3ae633f-205c-4f38-8f73-9ee456fbdaf7\",\"number\":\"CO260810-00009\",\"status\":\"New\"},{\"id\":\"a4f14679-367a-4494-bc09-7d781725315f\",\"number\":\"CO260810-00008\",\"status\":\"New\"},{\"id\":\"8d616c1a-44a7-4740-b963-ce214346caad\",\"number\":\"CO260810-00006\",\"status\":\"Processing\"}]}}}",
+   "assertions": [
+    {
+     "a": "organizationOrders(unlocked) is served",
+     "ok": true
+    },
+    {
+     "a": "the two orgs return DIFFERENT counts — the organizationId argument is really honoured",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "11. CONTROL D — organizationOrders(NON-MEMBER org) IS refused",
+   "status": 200,
+   "response": "{\"errors\":[{\"message\":\"Access denied.\",\"locations\":[{\"line\":1,\"column\":26}],\"path\":[\"organizationOrders\"],\"extensions\":{\"code\":\"Forbidden\",\"codes\":[\"Forbidden\"]}}],\"data\":{\"organizationOrders\":null}}",
+   "assertions": [
+    {
+     "a": "a NON-MEMBER org IS refused — so organizationOrders gates on membership, not nothing",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "12. CLEANUP — UNLOCK the membership",
+   "status": 200,
+   "response": "{\"userId\":\"7b2e4258-498a-49c8-b483-92df9da59807\",\"organizationId\":\"96f109a7-9010-4691-b6a1-bef25cca3d04\",\"organizationName\":\"AGENT-TEST-Org-TechFlow-20260310\",\"isLocked\":false,\"lockoutEnd\":null,\"status\":\"Approved\",\"isCurrentlyLocked\":false,\"roles\":[{\"membershipId\":\"a44e7c12-c80c-4314-b8eb-eeca8cf3f19a\",\"roleId\":\"org-maintainer\",\"roleName\":\"Organization maintainer\",\"id\":\"e52f0f30-cc53-4161-8bb3-54bf01dc2b3e\"}],\"createdDate\":\"2026-09-19T08:31:27.9793292Z\",\"modifiedDate\":\"2026-09-23T15:03:03.0461445Z\",\"createdBy\":\"admin\",\"modifiedBy\":\"admin\",\"id\":\"a44e7c12-c80c-4314-b8eb-eeca8cf3f19a\"}",
+   "assertions": [
+    {
+     "a": "unlock call accepted (status only — request 13 is the proof)",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "13. CLEANUP — READ BACK and prove the fixture is at rest (V1)",
+   "status": 200,
+   "response": "{\"userId\":\"7b2e4258-498a-49c8-b483-92df9da59807\",\"organizationId\":\"96f109a7-9010-4691-b6a1-bef25cca3d04\",\"organizationName\":\"AGENT-TEST-Org-TechFlow-20260310\",\"isLocked\":false,\"lockoutEnd\":null,\"status\":\"Approved\",\"isCurrentlyLocked\":false,\"roles\":[{\"membershipId\":\"a44e7c12-c80c-4314-b8eb-eeca8cf3f19a\",\"roleId\":\"org-maintainer\",\"roleName\":\"Organization maintainer\",\"id\":\"e52f0f30-cc53-4161-8bb3-54bf01dc2b3e\"}],\"createdDate\":\"2026-09-19T08:31:27.9793292Z\",\"modifiedDate\":\"2026-09-23T15:03:07.1837799Z\",\"createdBy\":\"admin\",\"modifiedBy\":\"admin\",\"id\":\"a44e7c12-c80c-4314-b8eb-eeca8cf3f19a\"}",
+   "assertions": [
+    {
+     "a": "200",
+     "ok": true
+    },
+    {
+     "a": "TEARDOWN VERIFIED: membership is back to unlocked (V1)",
+     "ok": true
+    }
+   ]
+  }
+ ]
+}
