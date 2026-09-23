@@ -268,7 +268,9 @@ Reclassify each case:
 
 **For STALE cases:**
 1. Read current test case from suite CSV
-2. Query Context7 for correct current behavior
+2. Query Context7 for correct current behavior, **and ask the base before changing an expected result** —
+   `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`); an entry that contradicts the change
+   routes it to 4a-bis. Rule: [`CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*.
 3. Update Steps and Assertions to match new behavior
 4. Preserve: case ID, Title (update if feature name changed), Section, Priority, Business_Rule, Edge_Case_Refs
 5. **Leave `Automation_Status` alone.** The legal values are exactly `Draft` | `Reviewed` | `Automated` |
@@ -552,16 +554,12 @@ when there is no `promotionSource`. **Never runs** under `--ci` or `--report-onl
 
 **Precondition, stated precisely — 6P does NOT require an APPROVED pipeline verdict.** It requires the
 **G10 re-derivation in step 1 to come back clean for the cases being promoted**, plus the step-2 approval.
-The distinction matters because `--promote-only` skips Phases 2–5 and therefore produces no
-APPROVED/NEEDS-FIXES verdict at all: gating 6P on that verdict would make the manual promotion command
-(`/qa-test-lifecycle VCST-XXXX --promote-only`) a silent no-op. On a **full** run the pipeline verdict
+(`--promote-only` skips Phases 2–5 and so produces no verdict to gate on.) On a **full** run the pipeline verdict
 still applies as a second condition — NEEDS FIXES / BLOCKED means the suites in scope are not in a state to
 receive new cases, so do not promote into them.
 
-The problem this closes: `/qa-test` authors ticket cases into `reports/tickets/{SPRINT}/VCST-XXXX/test-cases.csv`,
-and **nothing in the manifest-driven runner reads `reports/tickets/**`** — a case left there executes once,
-in the run that wrote it, and never again. Promotion is the only path from a ticket-scoped case to
-regression coverage, and this command is its only owner (`/qa-test` prepares, never promotes).
+**Nothing in the manifest-driven runner reads `reports/tickets/**`**, so promotion is the only path from a
+ticket-scoped case to regression coverage, and this command is its only owner (`/qa-test` prepares, never promotes).
 
 **1 — Re-derive eligibility independently (do NOT trust the hand-off).** `summary.json`'s
 `promotion.eligible[]` says where the previous run got to; it is **not** an approval. Re-derive from the
@@ -612,11 +610,8 @@ suite, and that is exactly the collision that overwrites the other suite's per-c
 rejects a colliding **incoming** ID. On a collision, **re-ID the incoming case** — never renumber the
 existing one, never reuse a retired ID.
 
-> It is opt-in rather than on-by-default because the committed corpus already carries **~224 IDs that
-> appear in more than one suite** (legacy debt — e.g. `CAT-001` sits in both `051-catalog-admin-products`
-> and `001-catalog-navigation`). Checking the corpus against itself would fail every append on
-> pre-existing debt instead of on the caller's own rows. Cleaning that debt is a separate task; 6P's job
-> is only to stop **adding** to it.
+> It is opt-in because the corpus already carries **~224 IDs in more than one suite** (legacy debt, e.g.
+> `CAT-001`); checking the corpus against itself would fail every append on that debt. 6P only stops **adding** to it.
 
 The `Automation_Status` flip `Draft → Reviewed` happens **in the rows being appended** — that flip *is* the
 promotion. Stamp `References` with `Promoted: VCST-XXXX → <suite id> (YYYY-MM-DD)`, appending; never
@@ -912,6 +907,7 @@ Input:
     - skills/qa-coverage-gap/feature-domain-map.md
     - knowledge/api/graphql-schema.md (for GraphQL scopes)
   - context7: query `/virtocommerce/vc-docs` for domain-specific module behavior
+  - observedBehaviour: the `Observed behaviour` line (`agent-dispatch.md` §Agent Prompt Structure) — never packed answers
 
 Output: structured JSON with:
   - syncResults: [{caseId, classification, action, before, after}]
@@ -940,6 +936,7 @@ Input:
   - timeoutPerPage: 60s
   - totalBudget: 5min
   - evidence: follow `skills/qa-evidence/evidence-capture-policy.md`
+  - observedBehaviour: the `Observed behaviour` line (`agent-dispatch.md` §Agent Prompt Structure)
 
 Output: per-case verification:
   - VERIFIED: page loads, elements found, flow reachable

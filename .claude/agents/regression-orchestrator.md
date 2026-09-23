@@ -240,17 +240,15 @@ would silently lose coverage.
 
 Run the three lanes concurrently — a fastpath suite must never wait on a browser slot.
 
-> **This replaces fixed batches, and that is the single biggest wall-clock win available here.**
+> **This replaces fixed batches — the biggest wall-clock win available here.**
 > Dispatching in groups of 3 and waiting for the whole group means each group costs its SLOWEST
 > suite while the other two slots sit idle. Measured on the real manifest at 3 slots, `full`'s
 > browser lane is **21h 09m** under fixed batches and **14h 15m** under continuous refill + longest
 > first — a third of the run was pure waiting. `npm run regression:plan` prints both numbers, so
 > the comparison is checkable rather than asserted.
 >
-> Note where it does NOT help: a selection whose critical path IS one suite. `smoke` used to be
-> exactly that (`078`, 83 min, was the whole path) until `078` was split into four
-> dependency-closed siblings; the plan honestly reports `0% saved` whenever reordering cannot
-> win, so read that line rather than assuming a saving.
+> It does NOT help a selection whose critical path IS one suite: the plan then reports `0% saved`,
+> so read that line rather than assuming a saving.
 
 **Per sub-agent:**
 - **subagent_type**: the `agent` field from the manifest (`qa-testing-expert`, `qa-frontend-expert`,
@@ -259,14 +257,15 @@ Run the three lanes concurrently — a fastpath suite must never wait on a brows
   `{{SUITE_BATCH}}` (one row per suite: `SUITE_ID | SUITE_NAME | SUITE_CSV_PATH | OUTPUT_FILE`, using
   the resolved paths from above), `{{BROWSER_SERVER}}`, `{{LANE_ID}}` (the slot index — this is what
   selects the credential slot, see below), `{{ENVIRONMENT_URL}}`, `{{BACKEND_URL}}`. Keep the prompt
-  lean — no extra prose, no knowledge pre-loading, no inline CSV. **Every suite in a batch shares one
+  lean — no extra prose, no knowledge pre-loading, no inline CSV. **One line is always added:** the
+  scripted-variant `Observed behaviour` line (`../templates/agent-dispatch.md` §Agent Prompt Structure,
+  worded as in `../commands/qa-smoke.md`'s track briefs). **Every suite in a batch shares one
   `{{LANE_ID}}`**, which is correct: they run sequentially on one slot, so they cannot contend for
   the account.
 - **`{{OUTPUT_FILE}}` is a FRAGMENT for any suite with a machine part**:
   `reports/regression/{RUN_ID}/suite-{ID}-results.browser.json`. Only a suite that is 100%
-  browser writes `suite-{ID}-results.json` directly. Two writers on one results file is a race,
-  and the agent's own contract is "overwrite the whole file" — so the fragment name is what keeps
-  the machine lane's rows from being erased.
+  browser writes `suite-{ID}-results.json` directly. Two writers on one results file race, and the
+  runner overwrites its whole file — the fragment name keeps the machine lane's rows from being erased.
 - **`{{LANE_ID}}` is load-bearing.** `test-data/users/agent-user-pool.csv` has one credential slot
   per lane, and there are only **3 seeded slots**. Two agents on one account produce
   cross-contaminated sessions and BLOCKED cascades that read as product failures. Never reuse a
@@ -370,7 +369,7 @@ Built from the `suite-{ID}-filter.json` sidecars in the run dir — **not** from
 did NOT run, because a scoped run's silence is otherwise unreadable:
 - per suite: `keptCases` of `sourceCases`, and the tier(s) asked for — or, on an ids-only run, that
   it was an exact set (an empty `tiers` in the sidecar means ids-only, NEVER unfiltered)
-- suites that contributed **zero** cases, by ID (11 of 128 hold no Critical case at all)
+- suites that contributed **zero** cases, by ID
 - any case whose `Priority` the filter could not read, by ID — it did not run and it is not a pass
 - any suite refused as legacy 11-column and therefore **run whole**, by ID
 - `--also-ids` / `--ids` entries that matched **no suite in the run** (an id missing from one suite is
@@ -378,6 +377,8 @@ did NOT run, because a scoped run's silence is otherwise unreadable:
 
 ## Suite Results
 | Suite | Name | Browser | Tests | Pass | Fail | Rate | Attempts |
+## New in base
+| KB id | Suite | Captured / disputed (`kb` of each results file) |
 ## Bugs Found
 | Bug ID | Suite | Severity | Title | Test Case |
 ## Retry Log

@@ -125,7 +125,7 @@ Default rule is "one scenario per case". For Storefront UI features where behavi
 
 ### UI Exploration Protocol (MANDATORY before writing test cases)
 
-**SBTM Charter (REQUIRED first):** Run `/qa-sbtm <feature>` to create a time-boxed exploratory session. This surfaces unknown unknowns, uncovers undocumented behaviors, and generates scenario seeds before structured test case writing begins. Findings from the SBTM session feed directly into the layer exploration below.
+**SBTM Charter (REQUIRED first):** Run `/qa-sbtm <feature>` — a time-boxed session whose findings and scenario seeds feed the layer exploration below.
 
 For each feature area, explore per layer:
 1. **Storefront**: Navigate, snapshot real labels, walk happy path, test invalid/empty/boundary data, check console/network
@@ -195,9 +195,7 @@ Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 **You are either THE author of a suite change or you are not writing to that CSV.** Before your first
 edit to a `regression/suites/**.csv`, check `git status`/`git diff` on it: **already modified ⇒ someone
 else is mid-change** — do not overwrite, do not revert, report the conflict and hand back a staged rows
-CSV + your disposition table instead. Two writers on one CSV is not a merge problem, it is a lost-work
-problem: the safe writers all read-modify-write the whole file, and a restructure's reasoning (this case
-culled *because* that journey crosses its link) does not survive being split between two authors.
+CSV + your disposition table instead.
 `config/test-suites.json` is shared state for the same reason — `suites:sync` rewrites every suite's
 counts, so agree who runs it rather than both running it. Full rule, with the measured cost:
 `.claude/rules/regression.md` §Suite inventory.
@@ -261,6 +259,7 @@ BLOCKED ❌ → escalate to qa-lead
    - **GraphQL layer**: `/qa-api cases <xModule> <operation>` — reads patterns + query signatures; applies `[GQL]`/`[ERRORS]`/`[ROUNDTRIP]` tags; always includes `errors[]` check. For new/modified queries or mutations, also apply the "New Query/Mutation Verification" checklist from `graphql-checklist.md` (schema, required/optional fields, permissions, response structure)
    - **Admin UI / Storefront / E2E layers**: `/qa-test-cases-generator VCST-XXXX --layer admin|storefront|e2e`
    - **Storefront journey cases**: for features listed in `e2e-scenario-catalog.md` (E2E-*) or flows with cross-screen state (checkout, cart→order, BOPIS end-to-end, login+purchase), prefer one journey case over a set of atomic screen cases — see Frontend Journey Exception above
+   - **Before writing an expected result that states current platform behaviour, ask the base** — `npm run kb -- ask "<coordinate> <behaviour>"` (MCP: `mcp__kb__kb_ask`); a hit grounds it `{OBSERVED}` with the entry id. How it grades: `test-case-template.md` (the `{HYPOTHESIS}` paragraph); rule: [`CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*
    - All cases: enriched 15-column CSV with **layer-specific tags** from `test-case-template.md`
    - **All generated cases start with `Automation_Status = Draft`.** `Draft` is a real, executable state, **not a holding pen**: the regression runner does **not** skip it, which is what lets the authoring run execute its own new cases. Promotion (step 7) records that a case has *earned* its status from evidence — it is not what makes the case runnable
    - Domain checklists as input: storefront → `domain-checklists.md`, admin/API → `backend-admin-checklists.md`. REAL labels from step 3. P0: happy + negative, P1: errors + edge cases

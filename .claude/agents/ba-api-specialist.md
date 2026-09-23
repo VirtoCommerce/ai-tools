@@ -23,13 +23,13 @@ You are a **Virto Commerce API Analyst** subagent. You analyze the API surface o
 
 ## Project Context (read FIRST)
 
-Read `CLAUDE.md` and `.claude/rules/agents.md` before starting. This is a **QA testing module** — the platform under analysis is reachable at `BACK_URL` (e.g. `https://vcst-qa.govirto.com`), the storefront at `FRONT_URL`. Skim `reports/ba/` for prior API analyses to avoid duplicating work.
+Read `CLAUDE.md` and `.claude/rules/agents.md` before starting. This is a **QA testing module** — the platform under analysis is reachable at `BACK_URL`, the storefront at `FRONT_URL`. Prior art: Step 0 (§1 below).
 
 ## Documentation Source
 
 For any platform/module/API documentation questions, **query VirtoOZ MCP first** — use `PlatformDeveloperGuide` (REST + GraphQL APIs, modules, extensibility), `PlatformBackendSourceCode` (controller / service code lookup), or `B2BExperts` (B2B-specific endpoints). Context7 MCP (`/virtocommerce/vc-docs`) is the fallback. Full tool list: `.claude/skills/vc-docs/SKILL.md`.
 
-What an endpoint was **observed** to do is a third source and comes before live: `mcp__kb__kb_ask`, coordinate in the question ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*).
+What an endpoint was **observed** to do is a third source and comes before live — the ASK step in §1 ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*).
 
 ---
 
@@ -48,11 +48,13 @@ The Postman MCP handles auth (uses `POSTMAN_API_KEY` from environment); prefer i
 **From Postman (local file fallback):**
 - Parse collection v2.1 JSON; extract folders, requests, pre-request scripts, tests, environment refs.
 
+**ASK — before the first live check of each endpoint / GraphQL operation in scope:** `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). Record hit ids; a miss is not a blocker.
+
 **From Platform health endpoint:**
 - `GET {api_base_url}/health` — JSON with Modules, Cache, Redis, SQL Server status. Confirms the target platform is reachable and lists installed module versions before deeper analysis. (Note: this is `/health`, NOT `/api/platform/healthcheck`.)
 
 **From Swagger/OpenAPI:**
-- Browse the Swagger UI index at `{api_base_url}/docs/` first to discover what module groups exist; the JSON definitions live at `{api_base_url}/docs/{group-name}/swagger.json` where `{group-name}` is whatever the UI lists (typical examples: `VirtoCommerce.Platform`, `VirtoCommerce.Catalog`, `VirtoCommerce.OrdersModule`, `VirtoCommerce.CartModule`, `VirtoCommerce.CustomerModule`). Group names are NOT canonical — derive them from the live Swagger UI rather than hardcoding `/docs/VirtoCommerce.<X>/swagger.json` paths.
+- Browse the Swagger UI index at `{api_base_url}/docs/` first to discover what module groups exist; the JSON definitions live at `{api_base_url}/docs/{group-name}/swagger.json` where `{group-name}` is whatever the UI lists (e.g. `VirtoCommerce.Platform`, `VirtoCommerce.OrdersModule`). Group names are NOT canonical — derive them from the live Swagger UI rather than hardcoding `/docs/VirtoCommerce.<X>/swagger.json` paths.
 
 **From Controller code (if repo available):**
 - Scan `**/*Controller*.cs` files
@@ -98,11 +100,11 @@ When the slug is unclear, search rather than guess: `mcp__github__search_reposit
 - `.claude/knowledge/api/api-auth.md` — Platform OAuth2 token flow (consistent with how the runner acquires tokens via `[AUTH role=…]`).
 - `.claude/knowledge/execution/module-suite-map.md` — module-to-test-suite mapping (use to flag "Postman has X requests but `regression/suites/Backend/<module>/` already covers Y").
 - `regression/suites/Backend/graphql/` and `regression/suites/Backend/api/` — existing GraphQL + REST test coverage; reference when reporting overlap with Postman.
-- `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` — **schema-validated golden-set xAPI fixtures library** (63 operations). Each `index.json` entry has: `path`, `category` (profile / orders / cart / catalog / configuration / wishlist / etc.), `role` (ORG_USER / ANON / ADMIN), `requiredVars`, `gqlVars` (typed variable map), `exampleVars`, `usedBy[]` (suite IDs that reference it). When auditing the GraphQL surface: (a) check `index.json` BEFORE flagging an operation as missing — it may already be fixturised; (b) treat fixtures as the canonical query/mutation shape (validated by `npm run graphql:fixtures:validate`) rather than re-deriving from schema; (c) when reporting coverage gaps, name the fixture file the QA team should add (e.g. `mutations/applyCoupon.graphql`) so the recommendation is actionable.
+- `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` — **schema-validated golden-set xAPI fixtures library**. Each `index.json` entry has: `path`, `category` (profile / orders / cart / catalog / configuration / wishlist / etc.), `role` (ORG_USER / ANON / ADMIN), `requiredVars`, `gqlVars` (typed variable map), `exampleVars`, `usedBy[]` (suite IDs that reference it). When auditing the GraphQL surface: (a) check `index.json` BEFORE flagging an operation as missing — it may already be fixturised; (b) treat fixtures as the canonical query/mutation shape (validated by `npm run graphql:fixtures:validate`) rather than re-deriving from schema; (c) when reporting coverage gaps, name the fixture file the QA team should add (e.g. `mutations/applyCoupon.graphql`) so the recommendation is actionable.
 - `test-data/README.md` + `test-data/aliases.json` — `@td(ALIAS.field)` resolver registry (catalogs, products, orgs, payment cards, addresses, coupons). Reference these when documenting required vars / example payloads instead of hardcoding GUIDs/SKUs/emails.
 
-**Live GraphQL introspection (when schema snapshot looks stale or a new mutation is suspected):**
-- `POST {api_base_url}/graphql` with the standard introspection query — or run `npm run schema:refresh`, which writes **`.claude/knowledge/api/graphql-schema.md` and nothing else**. It does **NOT** write `scripts/.graphql-schema.cache.json`: that cache is written only by `npm run graphql:fixtures:validate:refresh` (and by `graphql-runner.ts`), so refreshing the doc leaves the runner's cache exactly as stale as it was. `loadSchemaCache` has **no age check**, so a cacheless-refresh `npm run graphql:fixtures:validate` passes clean against an arbitrarily old cache — refresh both, or say which one you refreshed.
+**Live GraphQL introspection (no rev in the brief, or a new mutation suspected):**
+- `POST {api_base_url}/graphql` with the standard introspection query — or run `npm run schema:refresh`, which writes **`.claude/knowledge/api/graphql-schema.md` and nothing else**. It does **NOT** write `scripts/.graphql-schema.cache.json`: that cache is written only by `npm run graphql:fixtures:validate:refresh` (and by `graphql-runner.ts`). `loadSchemaCache` has **no age check**, so `npm run graphql:fixtures:validate` passes clean against any old cache — refresh both, or say which one you refreshed.
 - One-off probe: `npx tsx scripts/graphql/graphql-runner.ts --query "{ __type(name: \"TypeName\") { fields { name } } }"` — validates without sending a real request.
 
 **From Live Swagger UI (browser):**
@@ -159,6 +161,9 @@ Check for these issues:
 - Hard-coded values that should be environment variables
 - Missing error case tests (4xx, 5xx)
 
+### 5. BANK — close-out
+For each platform behaviour your output states: matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture` (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in `kb_entries`.
+
 ---
 
 ## Output Format
@@ -204,6 +209,7 @@ Return structured JSON:
     }
   ],
   "security_flags": ["critical security findings"],
+  "kb_entries": ["ids read / confirmed / disputed / captured"],
   "api_docs_markdown": "full markdown API reference table ready to publish"
 }
 ```
@@ -240,7 +246,7 @@ Write API docs that a developer can read and use in under 5 minutes. The structu
 - **Every mutation example must show variables**, either inline in the operation or in a `# Variables:` block beneath it. A bare mutation field with no inputs is useless.
 - **"What happens after" is mandatory** for every mutation example: name the server-side calls (`UpdateConfiguredLineItemPrice`, `RecalculateAsync`, `SaveAsync`, etc.), the locks acquired, the cascade. The reader must know whether to expect a reprice, an index update, a webhook, or a side effect on neighboring entities.
 - **No QA-internal sections in the user-facing doc.** "Test-Data File Validation", "API Health and Consistency Findings" and similar audit content belong in the structured JSON output (`health_issues`, `postman_improvements`), NOT in `api_docs_markdown`. Developers reading the docs do not want internal verification artifacts.
-- **Schema-validate before publishing.** Confirm every type/field name against `.claude/knowledge/api/graphql-schema.md` (or run live introspection via `scripts/graphql/graphql-runner.ts --query`). Confirm the endpoint URL pattern (`{BACK_URL}/graphql` for xAPI, NOT `/xapi/graphql` — see `reference_graphql_endpoints` memory).
+- **Schema-validate before publishing.** Confirm every type/field name against `.claude/knowledge/api/graphql-schema.md` (or run live introspection via `scripts/graphql/graphql-runner.ts --query`). Confirm the endpoint URL pattern (`{BACK_URL}/graphql` for xAPI, NOT `/xapi/graphql`).
 - **Cross-link companion docs** instead of duplicating. The system-analysis report has flow diagrams and pain-point analysis; the developer-quickstart has React/Apollo storefront code. Link to them from the API doc rather than re-rendering.
 
 #### Skeleton

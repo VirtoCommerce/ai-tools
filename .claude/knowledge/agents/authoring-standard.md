@@ -119,6 +119,19 @@ Mechanic, ask one question: *does its output state how the platform behaves?* If
    - the base held nothing → `capture`, with `--deployment <env>`.
    
    Never capture a second copy of something the base already holds.
+   **The write step also covers what the run noticed on the side**, not only what its verdicts
+   state: a case that PASSes can still show something new about the platform. The bar is one
+   question — *would the next run otherwise have to find this out again?*
+
+   | Worth banking | Not worth banking |
+   |---|---|
+   | behaviour that differs from the CSV's expectation or from the docs | the verdict, or the CSV's expected result restated |
+   | a non-obvious precondition or gate (a control stays disabled until X) | timings, counts, test-data ids |
+   | which API call or GraphQL mutation a UI action actually sends | selectors, layout, copy |
+   | state that persists across actions (a cart restored after an org switch) | anything the base already holds — ask before every capture |
+   | a deployment- or configuration-specific quirk | anything client-specific |
+
+   No quota: a target number of captures produces noise, not knowledge.
 6. **Record the entry ids** that were read, confirmed, disputed or captured in the component's own
    output. That record is how a verifier or orchestrator can see the step ran.
 7. **The base is public.** Nothing client-specific, credentialed or customer-named goes into a
@@ -169,46 +182,18 @@ The dispatch-brief line lives in [`agent-dispatch.md`](../../templates/agent-dis
 
 ## 7. Compliance debt — §5 not yet carried (shrink-only)
 
-§5 was introduced on 2026-09-23. The first wave added it wherever a file had budget headroom:
-- the `agent-dispatch.md` brief line;
-- the `qa-smoke` track briefs;
-- `qa-frontend-expert` and `qa-backend-expert` (preamble converted into ASK / BANK steps);
-- `test-data-engineer`, `fullstack-backend`, `fullstack-frontend`;
-- the `qa-investigate`, `qa-sbtm` and `qa-postman` skills and the `qa-triage-results` command;
-- the trigger in the three `shared-instructions.md`.
+§5 was introduced on 2026-09-23 and carried into every Observer, Dispatcher and Judge in scope in
+two waves the same day: first where a file had budget headroom, then — with prose tightened in
+the same file (§3) — the files at their BUDGET-004 baseline. **No prompt file in scope is known to
+be out of compliance.** A row goes here only when a review finds one; delete it in the change that
+fixes it. A new component is born compliant (§6) and never gets a row.
 
-**The rows below still do not comply.** Delete a row in the change that fixes it. Never add a row
-for a new component: a new component is born compliant (§6).
-
-**Wave 2 — Observers and Dispatchers at their BUDGET-004 baseline.** Each needs a byte trade in the
-same file (§3), so the cut is proposed and reviewed before the edit.
-
-| File | Class | Where the step goes |
-|---|---|---|
-| `.claude/agents/test-runner-agent.md` | Observer | Phase 1 read step, Phase 5 write step. Highest leverage: every regression and smoke track runs this protocol |
-| `.claude/agents/qa-testing-expert.md` | Observer | EXECUTE (read), close-out (write) |
-| `.claude/agents/ba-system-analyzer.md` | Observer | live-exploration step (read), report step (write) |
-| `.claude/agents/ui-ux-expert.md` | Observer | EXECUTE (read), close-out (write) |
-| `.claude/agents/ba-api-specialist.md` | Observer | read step present; add the write step |
-| `.claude/agents/regression-orchestrator.md` | Dispatcher | the runner brief (reuse the template line) |
-| `.claude/commands/qa-regression.md` | Dispatcher | the runner brief |
-| `.claude/agents/qa-lead-orchestrator.md` | Dispatcher + Judge | specialist briefs; Verifier Mode read step |
-| `.claude/commands/qa-exploratory.md` | Dispatcher + Observer | session brief; debrief write step |
-
-**Wave 2b — Judges and Dispatchers at baseline, lower leverage.**
-`ba-doc-writer`, `ba-story-writer`, `test-management-specialist` (read step before asserting
-behaviour); the `ba-analyze`, `qa-test-lifecycle`, `qa-design` and `qa-test-plan` commands (their
-inline briefs).
-
-**Headroom exists, not yet done** (Observers): the `qa-seed-data` command, the `qa-generate-data`
-and `qa-perf-measure` skills. `qa-seed-data/SKILL.md` is at baseline.
-
-**Wave 3 — enforcement, not prose.** A `SubagentStop` hook reads the subagent transcript. When it
-finds at least N live-observation calls (browser, GraphQL, REST) and zero `kb` calls, it blocks
+**Enforcement, not prose — undecided.** A `SubagentStop` hook reads the subagent transcript. When
+it finds at least N live-observation calls (browser, GraphQL, REST) and zero `kb` calls, it blocks
 completion **once** with a reason. The precedent is `hooks/enforce-real-user.mjs`, and the cost
 argument is in the `kb-harvest.mjs` header: this hook blocks only when the step was skipped, never
-on every turn. It is code, so it ships with a unit test on the detection logic. Undecided — it
-needs its own go-ahead.
+on every turn. It is code, so it ships with a unit test on the detection logic. It needs its own
+go-ahead.
 
 **Classified, deliberately not changed.** `qa-sitemap` is a Mechanic: `knowledge/domain/sitemap.md`
 is the store for what it crawls. The `plugins/vc-fix/` agents and skills are out of scope for now,

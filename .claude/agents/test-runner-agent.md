@@ -64,8 +64,7 @@ row in it through Phase 1-5.
 Three consequences, all of which used to be your job and are not any more:
 
 - **Do not invoke `graphql-runner.ts`, and do not lint the suite.** The machine lane owns runner
-  execution and its exit-code mapping (`scripts/regression/machine-lane.ts`). That mapping is
-  deterministic, so it lives in code rather than being re-derived from a table each run.
+  execution and its deterministic exit-code mapping (`scripts/regression/machine-lane.ts`).
 - **Do not compute suite totals.** Your results file is a FRAGMENT
   (`suite-{{SUITE_ID}}-results.browser.json`); `npm run suites:merge` recomputes every count from
   the rows of both lanes and writes the canonical `suite-{{SUITE_ID}}-results.json`. Summing your
@@ -85,21 +84,15 @@ writers claiming one case, which the merge step refuses outright.
    (fall back to matching `server_name` = `{{BROWSER_SERVER}}` when the caller passes no lane id).
    Store that row's credentials.
 
-   **Why `slot` and not `server_name`.** The pool has one row per slot and binds each to a browser
-   only as a convention — `server_name` is advisory. Keying on the browser silently breaks the
-   moment two lanes share one browser (which is exactly the headless CI case: every lane is
-   Chromium), because both lanes would then take the SAME account. Two agents on one account
-   produce cross-contaminated sessions and BLOCKED cascades that read as product failures — the
-   class `scripts/seed-data/validate-credentials.mjs` exists to catch.
-
-   **There are only 3 seeded slots** (plus `personal`). That, not the scheduler, is why
-   concurrency is capped at 3: raising it requires seeding new accounts first
-   (`npm run seed:company-users`) and adding their rows. Never reuse a slot across two
-   concurrent lanes to get more parallelism.
+   **Why `slot`:** `server_name` is advisory — two lanes on one browser (headless CI: all
+   Chromium) would take the SAME account, and one account under two agents yields BLOCKED cascades
+   that read as product failures (`scripts/seed-data/validate-credentials.mjs` catches the class).
+   **Only 3 seeded slots** (plus `personal`) cap concurrency at 3; more needs new accounts
+   (`npm run seed:company-users`) + rows. Never reuse a slot across two concurrent lanes.
 3. Substitute `{{VAR}}` placeholders in `Test_Data`/`Steps`/`Assertions`/`Cross_Layer_Checks` using slot creds + env vars.
 4. Navigate to `{{ENVIRONMENT_URL}}` on `{{BROWSER_SERVER}}`. Confirm load.
 5. Authenticate using slot credentials (personal or B2B, per suite type). Verify success.
-6. Record `startedAt` (ISO 8601). HAR capture is automatic — never disable.
+6. Record `startedAt` (ISO 8601). HAR capture is automatic (Rules §2).
 7. **Seed the live results file — ONCE.** Write `{{OUTPUT_FILE}}` with the full Phase 5 envelope, `completedAt: ""`, and every planned case pre-listed as `{ "id": "<ID>", "title": "<Title>", "status": "PENDING" }`. This is the only time you write this file before Phase 5. Per-case updates go to the append-only JSONL instead — see **Live incremental results** below.
 
 If environment unreachable or auth fails → write all tests `BLOCKED`, populate `errors[]`, exit.
@@ -124,7 +117,7 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
         - Also record `failedAssertion`, page `url` at failure, and `capturedAt` (ISO).
         - **Redact secrets** before writing: replace any `Authorization` header, bearer token, password, or PAN with `<redacted>` (these traces are gitignored, but the repo is public — never persist a live token).
    - **PASS / BLOCKED / SKIPPED / AMBIGUOUS** → no screenshot, no trace (HAR covers PASS traffic; the others are not real failures).
-9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED — then **append ONE line** to `reports/regression/{{RUN_ID}}/suite-{{SUITE_ID}}-cases.jsonl`:
+9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED. **On a deviation, ask before you classify it** — a FAIL, BLOCKED, unexpected result or step-3 incidental observation: `npm run kb -- ask "<coordinate> <what you saw>"` (MCP: `mcp__kb__kb_ask`). A hit recording it as known behaviour is cited in `notes` and its id kept for Phase 5; a miss is not a blocker and does not stop the next deviation being asked. Rule: `CLAUDE.md` §Essential Rules → *Product context*. Then **append ONE line** to `reports/regression/{{RUN_ID}}/suite-{{SUITE_ID}}-cases.jsonl`:
 
    ```
    {"id":"CART-002","title":"Add to Cart - From Category List","status":"PASS","durationMs":41230,"notes":"","evidence":[],"trace":""}
@@ -148,12 +141,7 @@ completion. Rules:
   recomputed **from the case rows** (not tallied as you went). The reporter folds the JSONL over the
   pre-seeded envelope while `completedAt` is `""`, so the dashboard is live either way.
 - Both writes are plain `Write`/append — **not** browser actions, so they do not trip the real-user hook.
-
-> **Why append instead of rewriting.** The old contract said to overwrite the whole envelope after
-> every case because it was "cheap and idempotent". Idempotent yes; cheap no — the payload grows
-> with each case, so writing it N times is **O(n²)**. Suite `050m` has 119 cases: ~7,000 case-entry
-> writes for one suite, ≈285k output tokens spent on bookkeeping rather than on testing. Appending
-> is O(n) and the dashboard behaves identically.
+- Never rewrite the envelope per case: that is O(n²) (why: `knowledge/execution/regression-pipelines.md`).
 
 ## Phase 3: Bug Entries (preliminary only)
 
@@ -174,7 +162,8 @@ For each FAIL record a preliminary entry with `confirmed: false`. A separate `qa
 
 ## Phase 5: Write Results
 
-JSON to `{{OUTPUT_FILE}}`:
+1. **Bank what the run established** — each platform behaviour your results state or you noticed, even on a PASS (bar: `authoring-standard.md` §5.3): matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ ask once more, then `kb capture` (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List every id in `kb`.
+2. JSON to `{{OUTPUT_FILE}}`:
 
 ```json
 {
@@ -214,7 +203,8 @@ JSON to `{{OUTPUT_FILE}}`:
       "confirmed": false
     }
   ],
-  "errors": []
+  "errors": [],
+  "kb": { "asked": [], "confirmed": [], "disputed": [], "captured": [] }
 }
 ```
 

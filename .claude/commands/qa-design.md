@@ -131,7 +131,7 @@ Use the **Agent tool** with `subagent_type: ui-ux-expert`. Browser: `Chrome DevT
 
 **Phase B — Storefront audit (always runs):**
 
-For **component targets**, Phase B uses an **explorer approach** — components render in multiple contexts (cart, catalog, account, modal, etc.), and a component can pass on one page while failing on another. Single-location auditing misses page-specific layout bugs (e.g., parent overrides, real-data overflow, sticky-header conflicts). The explorer flow enumerates 2-3 representative contexts and audits the component in each.
+For **component targets**, Phase B uses an **explorer approach** — components render in multiple contexts (cart, catalog, account, modal, etc.), and a component can pass on one page while failing on another. The explorer flow enumerates 2-3 representative contexts and audits the component in each.
 
 For **page or flow targets**, the page IS the context — skip the explorer enumeration and audit the page directly (the viewport sweep + invariant audits ARE the exploration at that level).
 
@@ -196,7 +196,6 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
    - **Stable PASS** — invariant passes in every context. No issue.
    - **Stable FAIL** — invariant fails in every context. Component-level bug; fix at the component.
    - **Context-specific FAIL** — invariant fails in only some contexts. Integration bug; the *failing context* is where to fix (parent layout, page-level CSS, real data overflow).
-   - This classification is the unique value of the explorer approach — it tells the user WHERE to fix, not just WHAT.
 
 - Output: `reports/tickets/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storefront/{context-slug}/` per context — screenshots only for FAIL.
 
@@ -228,6 +227,7 @@ Runs alongside Phase B against the same live contexts, per the [`/qa-design` ski
   - [/qa-design skill](../skills/qa-design/SKILL.md) — methodology (live-token extraction, audit order, Findings → Filings tree).
 - Audit at three viewports: 375 / 768 / 1280 (skip a viewport only if the target is verifiably desktop-only).
 - Evidence capture per [evidence-capture-policy.md](../skills/qa-evidence/evidence-capture-policy.md) — screenshots for FAIL states only.
+- The brief carries its `Observed behaviour` line ([agent-dispatch.md](../templates/agent-dispatch.md) §Agent Prompt Structure) — for platform behaviour (e.g. a conditional mount's precondition), not token or geometry values.
 
 ---
 

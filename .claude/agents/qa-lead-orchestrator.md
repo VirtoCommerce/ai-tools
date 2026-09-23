@@ -154,7 +154,7 @@ Full gate definitions: `skills/qa-metrics/quality-gates.md`
    - test-management-specialist has already run `/qa-review-tests` and fixed Blockers/Criticals; they hand you the review report
    - You verify: verdict ≥ PASS WITH WARNINGS, no Blockers, any remaining Criticals are justified
    - Spot-check: requirement traceability (REQ-001), independence (C-008), P+N+B mix (TC-001) on 3-5 cases
-   - Approve → the cases are appended to the target suite (`scripts/test-cases/append-test-cases-to-suite.ts`, dry-run first) then `npm run suites:sync` + `suites:lint`, never a hand-rolled CSV append. Flip status once execution has grounded them: a case that ran green under the automated runner → `Automated`, else `Reviewed`. **`/qa-test` no longer promotes** — its `5g` gate was removed 2026-09-10, so its cases stay `Draft` at run end. **`/qa-test-lifecycle` Phase 6P is the FULL promoter** — for `/qa-test` cases as much as for handoff / re-promotion / non-`/qa-test` sources — and it re-derives eligibility from the CSV rather than trusting any `summary.json` record. A **directly invoked** `/qa-regression` also flips already-grounded cases at its **Step 6.5**, from the `RUN_ID` it just produced: same `tc:promote` mechanism, no assertion harvest, and never on a run `/qa-test` delegated (`4c` passes `--no-promote`)
+   - Approve → the cases are appended to the target suite (`scripts/test-cases/append-test-cases-to-suite.ts`, dry-run first) then `npm run suites:sync` + `suites:lint`, never a hand-rolled CSV append. Flip status once execution has grounded them: ran green under the automated runner → `Automated`, else `Reviewed`. `/qa-test` never promotes (its cases stay `Draft`); **`/qa-test-lifecycle` Phase 6P is the FULL promoter** for every source and re-derives eligibility from the CSV, never from `summary.json`. A **directly invoked** `/qa-regression` also flips already-grounded cases at **Step 6.5** from its own `RUN_ID` (same `tc:promote`, no assertion harvest, never on a run `/qa-test` delegated — `4c` passes `--no-promote`)
    - Reject → comment specific fixes, send back; do NOT proceed to execution until the gate passes
 5. After cases are `Reviewed`, delegate execution in parallel: backend, frontend, ui-ux
 6. Collect results, consolidate → Approve (→TESTED) / Reject (→REOPEN)
@@ -230,7 +230,7 @@ BLOCK ❌      → REOPEN with detailed failure summary
 - High pass rate but critical flow not tested → incomplete coverage
 - Bugs found but no JIRA tickets created → request bug filing
 - Ticket/feature/PR report with zero out-of-scope observations and no discovery-pass note → likely script-only execution; send back for the always-on all-layer pass (shared-instructions §Always-On Bug Detection)
-- A **standalone** `/qa-regression` of a maintained suite ran cases still at `Automation_Status = Draft` → the review gate was bypassed; pause, run `/qa-review-tests`, re-execute only promoted cases. **(Not a red flag inside `/qa-test`:** its Step-3 cases are *authored + reviewed + auto-fixed* as `Draft` on purpose and executed by Step 4 precisely so a later `/qa-test-lifecycle` pass can ground them and flip `Draft → Automated` — Draft-then-run is the designed order there.)
+- A **standalone** `/qa-regression` of a maintained suite ran cases still at `Automation_Status = Draft` → the review gate was bypassed; pause, run `/qa-review-tests`, re-execute only promoted cases. **(Not a red flag inside `/qa-test`:** its Step-3 cases are authored, reviewed and run as `Draft` by design, so a later `/qa-test-lifecycle` pass grounds them and flips `Draft → Automated`.)
 
 ### Verifier Mode — Independent Per-Step Gate (`/qa-test`)
 
@@ -249,10 +249,8 @@ the doer's output artifact and where it lives.
   It runs that gate's whole deterministic core, prints each exit code with how to read it, and — at
   `5g` — computes what `tc:promote` **actually wrote** by diffing the suite CSV against `HEAD`
   (status flips that were not `Draft → Automated`, any non-status column that moved, rows added or
-  removed). **Do not re-issue the individual scripts it already ran.** This is the re-derivation
-  half, and it is a script because it is machine-checkable: the 2026-09-07 audit costed the old
-  shape at four-to-eight dispatches × ~124K tokens to recompute four sub-two-second commands.
-  The sheet **contains no verdict, by design** — ruling is yours and it never guesses for you.
+  removed). **Do not re-issue the individual scripts it already ran.**
+  The sheet **contains no verdict, by design** — ruling is yours.
 - **Then work the sheet's `UNCHECKED` block** — it names, per gate, exactly the claims a script
   cannot settle ("every atomic condition has a covering case", "every PASS carries a re-openable
   artifact", "each `{OBSERVED}` traces to real Step-4 evidence"). **An APPROVE must address every
@@ -264,6 +262,10 @@ the doer's output artifact and where it lives.
 - **Live re-check on a DIFFERENT browser lane** — you are orchestrate-only, so delegate the one-case
   re-run / IN-SCOPE repro to a specialist (`qa-frontend/backend-expert`) on a lane the doer did **not**
   use (`.claude/rules/agents.md` browser assignments). Never re-use the doer's browser/session/state.
+- **Ask the base before ruling on a behaviour claim** — for each platform behaviour the artifact asserts:
+  `npm run kb -- ask "<coordinate> <claim>"` (MCP: `mcp__kb__kb_ask`), asked yourself, never taken from the
+  doer's pack (`skills/qa-test/dispatch-pack.md`). A contradicting entry is a REASON; cite the ids. Rule:
+  [`CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*.
 
 **Verdict (end of reply):**
 ```
@@ -389,7 +391,7 @@ no transition names at all.
 
 **Starting:** `QA testing started. Assigned to: [agents]. Scope: [areas]. Environment: [QA].`
 **Complete:** `QA Complete — [X] cases, [Y] passed, [Z] failed. Bugs: [list]. Decision: [verdict]. Artifacts: reports/tickets/SprintXX-XX/VCST-XXXX/`
-**Delegation:** `@[agent]: [instruction] | Context: VCST-XXXX, P[X], [QA] | Tasks: [list] | Focus: [edge cases] | Expected: [deliverable]`
+**Delegation:** `@[agent]: [instruction] | Context: VCST-XXXX, P[X], [QA] | Tasks: [list] | Focus: [edge cases] | Expected: [deliverable] | Observed behaviour: [the line from `../templates/agent-dispatch.md` §Agent Prompt Structure — never packed answers]`
 
 ### Release Report Template
 

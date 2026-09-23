@@ -32,7 +32,7 @@ If `existing_story` is present (or `mode: "review"`), run **Mode B** (jump to th
 
 ## Project Context (read FIRST)
 
-Read `CLAUDE.md`, `.claude/rules/agents.md`, and the most recent `vc/shared/docs/Sprint plans/sprint-XX-XX-summary.json` for active sprint scope. Skim `reports/ba/` for prior stories on the same feature to avoid contradicting earlier ACs. Knowledge files to consult before writing ACs/test scenarios:
+Read `CLAUDE.md`, `.claude/rules/agents.md`, and the most recent `vc/shared/docs/Sprint plans/sprint-XX-XX-summary.json` for active sprint scope. Knowledge files to consult before writing ACs/test scenarios:
 
 - `.claude/knowledge/oracles/business-logic.md` — `BL-DOMAIN-NNN` invariants. Map every story to ≥1 `BL-*` ID; if a story exposes a NEW invariant not in the catalog, surface it as a `proposed_bl` entry rather than inventing one silently.
 - `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` — `ECL-*` edge case patterns. Use these IDs in negative ACs and the test-scenario matrix so the QA team can cross-reference.
@@ -42,7 +42,7 @@ Read `CLAUDE.md`, `.claude/rules/agents.md`, and the most recent `vc/shared/docs
 - `.claude/knowledge/api/graphql-schema.md` — authoritative xAPI field/argument names; reference exact names in Technical Notes, never paraphrase.
 - `.claude/knowledge/api/graphql-test-cases-runner.md` — runner-native test format; AC for GraphQL behavior must be falsifiable as `[ERRORS]` / `[DATA]` / `[COUNT]` predicates.
 - `test-data/aliases.json` + `test-data/README.md` — `@td(ALIAS.field)` resolver registry. Use these aliases (e.g. `@td(STORE_PRIMARY.id)`, `@td(CYBERSOURCE_VISA.number)`, `@td(ACME_ADMIN.email)`, `@td(CFG_LAPTOP.id)`) in ACs and test scenarios instead of hardcoding GUIDs/SKUs/emails/prices/coupon codes.
-- `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` — golden-set xAPI fixtures (63 ops). When a story touches a GraphQL operation that already has a fixture (`me`, `currentOrganizationAddresses`, `addItem`, `createOrderFromCart`, etc.), reference the fixture name in Technical Notes so QA reuses it rather than authoring a new one. If the story introduces a new mutation/query, call out in Technical Notes that the QA team will need to add `test-data/graphql/{queries|mutations}/<opName>.graphql` and an `index.json` entry.
+- `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` — golden-set xAPI fixtures. When a story touches a GraphQL operation that already has a fixture (`me`, `currentOrganizationAddresses`, `addItem`, `createOrderFromCart`, etc.), reference the fixture name in Technical Notes so QA reuses it rather than authoring a new one. If the story introduces a new mutation/query, call out in Technical Notes that the QA team will need to add `test-data/graphql/{queries|mutations}/<opName>.graphql` and an `index.json` entry.
 
 **Documentation source** — for platform/feature/B2B background, query **VirtoOZ MCP** first (`B2BExperts` for B2B stories, `PlatformUserGuide` / `StorefrontUserGuide` for shopper/admin flows, `PlatformDeveloperGuide` for technical-notes accuracy). Context7 MCP is the fallback. Full tool list: `.claude/skills/vc-docs/SKILL.md`. Always cite an authoritative doc source in Technical Notes when a story references platform behavior — do not paraphrase from memory.
 
@@ -104,6 +104,8 @@ So that [measurable business benefit or user outcome].
 
 Write **3–8 criteria** per story. Use strict Given/When/Then format.
 
+**ASK before an AC states current behaviour** (a `Given`, the Background, a Mode B coverage verdict): for each page path / GraphQL operation / endpoint it names, `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). Cite hit ids; a miss is not a blocker. Rule: `.claude/knowledge/agents/ba/shared-instructions.md` §Documentation source → `CLAUDE.md` §Essential Rules → *Product context*.
+
 ```
 ✅ AC-1: [Happy path — the primary success scenario]
 Given [the user is in a specific state or context]
@@ -155,7 +157,7 @@ Standard DoD that every story must meet — customize per project:
 - [ ] Integration/E2E test added for primary happy path; GraphQL operations covered by runner-native test in `regression/suites/Backend/graphql/`
 - [ ] Code reviewed and approved by 1+ team member
 - [ ] No new console errors or warnings introduced
-- [ ] Accessibility: keyboard navigable, ARIA labels present (Coffee and Red are the WCAG-gated themes — see memory `feedback_a11y_gated_themes.md`)
+- [ ] Accessibility: keyboard navigable, ARIA labels present (Coffee and Red are the WCAG-gated themes)
 - [ ] Localization: all strings use i18n keys, no hardcoded text
 - [ ] Documentation updated (if user-facing feature)
 - [ ] BA sign-off on acceptance criteria; BL-* mapping recorded in story header
@@ -210,7 +212,7 @@ Security considerations:
 
 When the story touches **GraphQL xAPI** queries/mutations:
 - Reference exact field/argument names from `.claude/knowledge/api/graphql-schema.md` (live introspection snapshot) — not paraphrased names
-- Note that QA will write tests against this story in **runner-native format** (`scripts/graphql/graphql-runner.ts`) — see `.claude/knowledge/api/graphql-test-cases-runner.md`. Acceptance Criteria for GraphQL behavior should be falsifiable against `errors[]`, response field paths, or counts so the test author can map them directly to `[ERRORS]` / `[DATA]` / `[COUNT]` assertions without rewriting.
+- Note that QA will write tests against this story in **runner-native format** (`scripts/graphql/graphql-runner.ts`) — see `.claude/knowledge/api/graphql-test-cases-runner.md`. Acceptance Criteria for GraphQL behavior should be falsifiable against `errors[]`, response field paths, or counts (`[ERRORS]` / `[DATA]` / `[COUNT]`).
 
 ### 10. Test Scenarios
 Complement ACs with a test scenario matrix:
@@ -225,7 +227,7 @@ Complement ACs with a test scenario matrix:
 | GraphQL mutation success | Valid input | `errors[] empty`, expected field values | GraphQL (runner-native) |
 | GraphQL mutation invalid input | Missing required field | `errors[] non-empty` with descriptive message | GraphQL (runner-native) |
 
-**Test type "GraphQL (runner-native)"** denotes a test the QA team will execute via `scripts/graphql/graphql-runner.ts` using the contract in `.claude/knowledge/api/graphql-test-cases-runner.md`. When the story includes GraphQL xAPI changes, prefer this test type over generic "Integration" for any scenario that exercises a query/mutation directly — it's faster, schema-validated, and produces structured evidence.
+**Test type "GraphQL (runner-native)"** denotes a test the QA team will execute via `scripts/graphql/graphql-runner.ts` using the contract in `.claude/knowledge/api/graphql-test-cases-runner.md`. When the story includes GraphQL xAPI changes, prefer this test type over generic "Integration" for any scenario that exercises a query/mutation directly.
 
 ---
 
@@ -318,7 +320,7 @@ Before finalizing, check for these anti-patterns:
 | Gold plating | ACs with 20+ items | Split the story |
 | Passive voice in ACs | "The data should be saved" | "The system saves the data" |
 | **No BL-* mapping** | Story header has empty `Business_Rule` for a non-trivial feature | Map ≥1 invariant from `business-logic.md`, or surface a `proposed_bl` if the rule is genuinely new |
-| **Hardcoded env-dependent values** | AC quotes a literal SKU, GUID, price, or URL host | Reference `{{TEST_SKU}}`, `@td(ALIAS.field)`, or assert structural invariants — see memory `feedback_flexible_test_cases.md` |
+| **Hardcoded env-dependent values** | AC quotes a literal SKU, GUID, price, or URL host | Reference `{{TEST_SKU}}`, `@td(ALIAS.field)`, or assert structural invariants |
 | **GraphQL AC not falsifiable** | "the API returns the right data" | Specify path + predicate: "`data.cart.subTotal.amount > 0`" or "`errors[]` is empty" so it maps to runner `[DATA]/[ERRORS]` |
 
 ---
@@ -381,7 +383,7 @@ This table is the spine: QA maps each condition to a test case, and a PASS verdi
 ### Review-mode rules
 - **Do not invent business rules.** A gap-AC must map to an existing `BL-*`/`ECL-*`, or be surfaced as `proposed_bl` (never silently minted) — same rule as Mode A.
 - **Advisory, not blocking.** You report weak ACs, gaps, and implementation drift; you never decide to stop a test. The orchestrator folds gap-ACs into scope and keeps testing.
-- **Diff is a hypothesis, live is truth.** A NOT-FOUND/DRIFT from the static `pr_diff` is a *suspicion* to verify live — never a confirmed defect on its own. Only a `live_behavior` CONTRADICTS is filing-grade. (Mirrors the project rule: never report an API/diff-only signal as a confirmed defect.)
+- **Diff is a hypothesis, live is truth.** A NOT-FOUND/DRIFT from the static `pr_diff` is a *suspicion* to verify live — never a confirmed defect on its own. Only a `live_behavior` CONTRADICTS is filing-grade.
 - **Real-user phrasing** on every rewritten and gap AC (per the REAL-USER rule above).
 - **No external writes.** Return the review; never comment on JIRA or edit the ticket unless explicitly asked.
 
