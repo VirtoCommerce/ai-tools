@@ -206,7 +206,10 @@ test('kb_capture missing a required field is an error the caller can fix, not a 
     const r = await call(fixtureServer(q.dir), 'kb_capture', { subject: 'half a capture' });
     assert.equal(r.result.isError, true);
     assert.match(callText(r), /capture needs/);
-    assert.ok(!existsSync(join(q.dir, 'mcptest0.jsonl')), 'nothing was queued');
+    // Nothing was queued FOR THE BASE. The refusal itself is logged (`capture-invalid`, PLAN §23.11),
+    // because a door the agents keep bouncing off is what the log exists to show.
+    const lines = readFileSync(join(q.dir, 'mcptest0.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
+    assert.deepEqual(lines.map((l) => l.kind), ['capture-invalid'], 'nothing was queued');
   } finally { q.done(); }
 });
 

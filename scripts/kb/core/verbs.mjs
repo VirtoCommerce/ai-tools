@@ -17,9 +17,9 @@ import { anchorProblems, isSingleSegmentPath, namespaceRoots, neighbours } from 
 import { findDuplicate, identityKey, refusalMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, normalizeScope, retrievable } from './index-load.mjs';
-import { log, pendingMutations, queueDir, readMeta, readQueue, sessionId } from './queue.mjs';
+import { log, metaAsks, pendingMutations, queueDir, readMeta, readQueue, sessionId } from './queue.mjs';
 import { cachedWho } from './who.mjs';
-import { RANKER, rank, rankNeighbours, relatedTo } from './rank.mjs';
+import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
 
 // ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
 //
@@ -556,35 +556,74 @@ export async function show(id, opened, { env = process.env, via = null, call = n
 const REQUIRED = ['subject', 'question', 'claim', 'deployment'];
 
 /**
- * The `ask` this capture FOLLOWED, as a pointer into the session's own log.
+ * The `ask` this capture is ABOUT, as a pointer into the session's own log — or nothing.
  *
- * Panel 6 answers "did the agent go and find out anyway?" by comparing the captured entry's
- * anchors against what each earlier ask matched -- an inference across lines. This records the
- * link directly, so the panel becomes exact instead of heuristic.
+ * Panel 6 answers "did the agent go and find out anyway?" and the unhelpful panel "was the answer
+ * any use?" by following this pointer, so it has to name the RIGHT ask. It stores that ask's `at`:
+ * a POINTER to a line already in this session's log, never a copy of the question — a second copy
+ * of a question is a second thing that can disagree with the first.
  *
- * TWO THINGS IT IS CAREFUL ABOUT. It stores the preceding ask's `at`, which is a POINTER to a line
- * already in this file, never a copy of the question -- a second copy of a question is a second
- * thing that can disagree with the first. And the name means what it says: `after` is FOLLOWED,
- * not CAUSED BY. An agent may capture something unrelated to the last thing it asked, and a field
- * that claimed causation would be read as evidence of it.
+ * IT USED TO NAME THE LAST ASK, AND THAT WAS WRONG IN BOTH DIRECTIONS (PLAN §23.11). Run `cdb27d99`
+ * wrote three captures inside one minute, after one answered ask; all three pointed at it. Measured
+ * by the words each capture shares with each of the session's four asks:
  *
- * TWO PLACES, AND THE LATER ONE WINS. The queue holds every ask since the last flush; the sidecar
- * (`readMeta`) holds the last ask's `at` ACROSS flushes, which is the case the queue alone got wrong
- * for 12 of 21 captures (PLAN §23.5). Both are ISO strings from the one writer, so the later is the
- * lexicographically greater — and taking the later means a sidecar that failed to update cannot
- * point a capture at an older ask than the queue already knows about.
+ *   KB-D54F3AAB (CFG_* 404s)          the MISS 50 min earlier: 10 · the last ask: 1
+ *   KB-7F535D52 (CyberSource flakes)  the last ask: 13 · the nearest other: 7
+ *   KB-8BE777BB (org switch header)   at most 2, against any ask
+ *
+ * So the report read "0 captures after a miss" on the run whose loop had closed exactly as designed,
+ * and charged one answer with three captures, two of them about something else. The pointer now
+ * goes to the ask the capture shares the most with — ties to the later — and ONLY if that clears
+ * the floor `relatedTo` already uses for "speaks to the same thing" (`MIN_RELATED_WORDS`, derived
+ * in `rank.mjs`), or the ask names one of the capture's own anchors verbatim — a structured
+ * coordinate cannot appear in a question by accident, which is the anchor bonus's own argument. Below the floor there is no
+ * pointer: a capture that followed no question is `unprompted`, which is a true reading, and a
+ * pointer to the nearest unrelated ask is a false one.
+ *
+ * ANY ASK OF THE SESSION, not only this agent's. The CFG capture above was written by a subagent
+ * about a miss its ORCHESTRATOR hit and handed down in the brief — one session, one loop.
+ *
+ * Pure, and exported, because it is the part with a wrong answer.
+ *
+ * @param {Array<{at: string, q: string}>} asks  the session's asks, any order
+ * @param {{text: string, anchors?: Array<string|{coordinate: string}>}} capture
+ * @returns {string|null} the chosen ask's `at`
  */
-async function precedingAsk({ env }) {
-  let fromQueue = null;
-  const { lines } = await readQueue({ env });
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    if (lines[i].kind === 'ask' && lines[i].at) { fromQueue = String(lines[i].at); break; }
+export function askAbout(asks, { text, anchors = [] }) {
+  const mine = new Set(tokenize(text));
+  // A one-segment page (`/cart`) sits in half the storefront's questions, so it names nothing on its
+  // own here; it still counts as the words it contributes.
+  const coords = anchors.map((a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim())
+    .filter((c) => c && !isSingleSegmentPath(c)).map((c) => c.toLowerCase());
+  let best = null;
+  for (const a of asks) {
+    const q = String(a.q ?? '');
+    const shared = new Set(tokenize(q).filter((t) => mine.has(t))).size;
+    const named = coords.some((c) => q.toLowerCase().includes(c));
+    if (!named && shared < MIN_RELATED_WORDS) continue;
+    const score = (named ? 1_000 : 0) + shared;
+    if (!best || score > best.score || (score === best.score && String(a.at) > best.at)) best = { score, at: String(a.at) };
   }
-  const { lastAskAt } = await readMeta(env);
-  const fromMeta = typeof lastAskAt === 'string' && lastAskAt ? lastAskAt : null;
-  if (!fromQueue || !fromMeta) return fromQueue ?? fromMeta;
-  return fromMeta > fromQueue ? fromMeta : fromQueue;
+  return best ? best.at : null;
 }
+
+/**
+ * The session's asks, from BOTH places they live: the queue holds every ask since the last flush,
+ * the sidecar (`readMeta`) holds them ACROSS flushes — the case the queue alone got wrong for 12 of
+ * 21 captures (PLAN §23.5). Joined on `at`, which the one writer makes unique.
+ */
+async function sessionAsks({ env }) {
+  const byAt = new Map();
+  for (const a of metaAsks(await readMeta(env))) byAt.set(a.at, { at: a.at, q: String(a.q ?? '') });
+  const { lines } = await readQueue({ env });
+  for (const l of lines) if (l.kind === 'ask' && l.at) byAt.set(String(l.at), { at: String(l.at), q: String(l.q ?? '') });
+  return [...byAt.values()];
+}
+
+const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env }), {
+  text: `${input.subject ?? ''} ${input.question ?? ''}`,
+  anchors: input.anchors ?? [],
+});
 
 /**
  * Every entry THIS SESSION has already opened and read, newest first.
@@ -634,16 +673,42 @@ async function openedThisSession({ env }) {
   return out;
 }
 
+/**
+ * A capture the base TURNED AWAY at the door, logged — `capture-invalid`.
+ *
+ * Until 2026-09-23 these returned without a line, so the log could not see them at all: run
+ * `cdb27d99` had one refused for an anchor of `/`, retried it correctly nine seconds later, and the
+ * report printed "refusals 0" (PLAN §23.11). A door the agents keep bouncing off is exactly what
+ * this log exists to show, and the retry that followed is only legible beside the refusal.
+ *
+ * THE KINDS OF PROBLEM, NEVER THE COORDINATES. A rejected anchor is by definition one nobody vetted,
+ * and one rejection kind is `local-path` — a Windows path an MSYS shell mangled out of `/cart`,
+ * which names a directory on the writer's machine. The kind says what went wrong; the text that
+ * went wrong stays on the laptop. `subject` travels, as it does on every capture line.
+ */
+async function refuseAtDoor(result, input, { env, via, call, topic }) {
+  await log({
+    kind: 'capture-invalid',
+    subject: String(input.subject ?? '').trim(),
+    why: result.why,
+    ...(result.problems?.length ? { problems: [...new Set(result.problems.map((p) => p.kind))] } : {}),
+    ...(await precedingAsk({ env, input }).then((after) => (after ? { after } : {}))),
+    ...context({ via, call, topic }),
+  }, { env });
+  return result;
+}
+
 export async function capture(input, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
+  const door = { env, via, call, topic };
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
-  if (missing.length) return { state: 'invalid', why: `capture needs: ${missing.join(', ')}` };
+  if (missing.length) return refuseAtDoor({ state: 'invalid', why: `capture needs: ${missing.join(', ')}` }, input, door);
 
   // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
   // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
   const problems = anchorProblems(input.anchors)
     .filter((p) => !(p.kind === 'unstructured' && isSingleSegmentPath(p.coordinate)));
-  if (problems.length) return { state: 'invalid', why: 'unusable anchor(s)', problems };
+  if (problems.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems }, input, door);
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
@@ -651,13 +716,13 @@ export async function capture(input, opened, { env = process.env, via = null, ca
     return { state: cat.state, why: cat.why };
   }
   const late = anchorProblems(input.anchors, { namespaces: namespaceRoots(cat.rows) });
-  if (late.length) return { state: 'invalid', why: 'unusable anchor(s)', problems: late };
+  if (late.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, door);
 
   const scope = normalizeScope(input.scope);
-  if (!scope.length) return { state: 'invalid', why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)' };
+  if (!scope.length) return refuseAtDoor({ state: 'invalid', why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)' }, input, door);
 
   // Read BEFORE this capture writes its own line, or the lookback finds nothing but itself.
-  const after = await precedingAsk({ env });
+  const after = await precedingAsk({ env, input });
 
   // THE DEDUP CHECK. Runs here against the session's index, and AGAIN at push time against the
   // freshly re-read one -- which is what makes it race-free rather than merely likely (PLAN §2).

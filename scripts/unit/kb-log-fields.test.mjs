@@ -17,7 +17,7 @@ import { RUN_MAX, metaPath, queuePath, readQueue } from '../kb/core/queue.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
-import { DEPLOYMENT_MAX, NOTE_MAX, TOPIC_MAX, ask, capture, confirm, dispute, show } from '../kb/core/verbs.mjs';
+import { DEPLOYMENT_MAX, NOTE_MAX, TOPIC_MAX, ask, askAbout, capture, confirm, dispute, show } from '../kb/core/verbs.mjs';
 import { captureLines } from '../kb/core/render.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
@@ -192,8 +192,8 @@ test('`after` SURVIVES A FLUSH — the pointer is kept where the flush cannot re
     rmSync(queuePath(env), { force: true });
 
     const r = await capture({
-      subject: 'a fact written one flush after the ask it followed',
-      question: 'does the pointer outlive the queue file',
+      subject: 'the storefront gateway ingress terminates tls, found one flush after the ask',
+      question: 'which ingress terminates tls for the storefront gateway',
       claim: 'It must.',
       deployment: 'vcst_qa',
       anchors: ['/company/after-a-flush'],
@@ -205,23 +205,109 @@ test('`after` SURVIVES A FLUSH — the pointer is kept where the flush cannot re
   });
 });
 
-test('`after` takes the LATER of queue and sidecar, so a stale sidecar cannot point backwards', async () => {
+test('`after` names the ask the capture is ABOUT — not merely the last one (PLAN §23.11)', async () => {
+  // Run `cdb27d99`: three captures inside a minute of one answered ask, all pointed at it. One was
+  // about it; one answered a MISS fifty minutes earlier; one followed no question at all.
   await withQueue(async (env) => {
     await ask(MISSED_NEAR, opened(), { env, via: 'cli' });
+    const theMiss = (await linesOf(env)).at(-1);
     await ask(ANSWERED, opened(), { env, via: 'cli' });
-    const latest = (await linesOf(env)).at(-1);
-    // A sidecar that failed to advance on the second ask still names the first.
-    writeFileSync(metaPath(env), JSON.stringify({ lastAskAt: '2000-01-01T00:00:00.000Z' }), 'utf8');
 
     await capture({
-      subject: 'a fact written after two asks',
-      question: 'which ask does the pointer name',
-      claim: 'The later one.',
+      subject: 'the storefront gateway ingress terminates tls, not the app',
+      question: 'which ingress annotation terminates tls for the storefront gateway',
+      claim: 'Observed.',
       deployment: 'vcst_qa',
-      anchors: ['/company/two-asks'],
+      anchors: ['/company/gateway-tls'],
       scope: ['surface=platform'],
     }, opened(), { env, via: 'cli' });
-    assert.equal((await linesOf(env)).at(-1).after, latest.at);
+    assert.equal((await linesOf(env)).at(-1).after, theMiss.at, 'the earlier miss it answers, not the later ask');
+
+    await capture({
+      subject: 'a saved cart survives a sign-out',
+      question: 'does a saved cart survive a sign-out',
+      claim: 'It does.',
+      deployment: 'vcst_qa',
+      anchors: ['/cart/saved-lists'],
+      scope: ['surface=storefront-ui'],
+    }, opened(), { env, via: 'cli' });
+    assert.ok(!('after' in (await linesOf(env)).at(-1)),
+      'about nothing that was asked: unprompted is the true reading, a pointer to the nearest ask a false one');
+  });
+});
+
+test('the asks survive a flush in the sidecar, words and all — the queue alone forgets them', async () => {
+  await withQueue(async (env) => {
+    await ask(MISSED_NEAR, opened(), { env, via: 'cli' });
+    const theMiss = (await linesOf(env)).at(-1);
+    await ask(ANSWERED, opened(), { env, via: 'cli' });
+    rmSync(queuePath(env), { force: true });
+    await capture({
+      subject: 'the storefront gateway ingress terminates tls',
+      question: 'where does the storefront gateway terminate tls',
+      claim: 'At the ingress.',
+      deployment: 'vcst_qa',
+      anchors: ['/company/gateway-tls2'],
+      scope: ['surface=platform'],
+    }, opened(), { env, via: 'cli' });
+    assert.equal((await linesOf(env)).at(-1).after, theMiss.at);
+  });
+});
+
+test('askAbout: the most shared words win, ties go to the later ask, below the floor there is none', () => {
+  // The run that motivated it, replayed from its public log lines (`log/20260923-cdb27d99.jsonl`).
+  const asks = [
+    { at: 'T1', q: 'storefront /checkout place order — what is the expected order status after card authorization on virtostart, and does a CyberSource Decision Manager held-for-review note block order creation?' },
+    { at: 'T2', q: 'storefront configurable product page — are CFG_LAPTOP / CFG_RING configurable product URLs present on virtostart, or do they 404?' },
+    { at: 'T3', q: "storefront homepage / — does the virtostart demo homepage render a 'Popular categories' section with category tiles, or a 'Daily Deals' product carousel?" },
+    { at: 'T4', q: 'storefront /cart Bank card (CyberSource) authorizePayment — is the sandbox outcome deterministic, or can the same card sometimes authorize to Processing and sometimes be held for review as Payment required?' },
+  ];
+  assert.equal(askAbout(asks, { text: 'On virtostart the seeded configurable-product fixtures CFG_LAPTOP and CFG_RING do not exist — both /products-with-options/cfg-parents/* URLs return the storefront 404 page. Do the @td(CFG_LAPTOP.url) / @td(CFG_RING.url) configurable-product URLs resolve on the virtostart demo storefront?' }), 'T2');
+  assert.equal(askAbout(asks, { text: "CyberSource sandbox authorization on the storefront cart is non-deterministic between runs on one build: the same card and amount can authorize cleanly to Processing, or be held for review and leave the order at Payment required. Does a CyberSource card order on /cart always end up held for review at 'Payment required', or can it authorize straight through to Processing?" }), 'T4');
+  assert.equal(askAbout(asks, { text: 'Switching organization from the storefront account menu BLANKS the header account control instead of relabelling it; the new org name only appears after a full page reload. After a multi-org buyer switches organization from the account menu, does the header show the new organization name?' }), null);
+
+  assert.equal(askAbout([{ at: 'A', q: 'tls ingress gateway' }, { at: 'B', q: 'tls ingress gateway' }], { text: 'gateway ingress tls' }), 'B', 'a tie goes to the later');
+  assert.equal(askAbout([{ at: 'A', q: 'what does POST /api/carts/merge return' }], { text: 'an unrelated sentence', anchors: ['POST /api/carts/merge'] }), 'A',
+    'a structured coordinate named verbatim is enough on its own');
+  assert.equal(askAbout([{ at: 'A', q: 'storefront /cart layout' }], { text: 'an unrelated sentence', anchors: ['/cart'] }), null,
+    'a one-segment page sits in half the questions, so it names nothing by itself');
+});
+
+// ── capture: turned away at the door (PLAN §23.11) ────────────────────────────────────────────
+
+test('a capture refused AT THE DOOR is logged — kinds of problem, never the rejected text', async () => {
+  // Run `cdb27d99` had one refused for an anchor of `/`, retried it nine seconds later, and the
+  // report printed "refusals 0". A rejected anchor is one nobody vetted; `local-path` is a directory
+  // on the writer's machine, so it must not ride into a public log.
+  await withQueue(async (env) => {
+    const r = await capture({
+      subject: 'a fact with a mangled anchor',
+      question: 'does the door log what it turned away',
+      claim: 'It does now.',
+      deployment: 'vcst_qa',
+      anchors: ['C:/Program Files/Git/cart', '/'],
+      scope: ['surface=storefront-ui'],
+    }, opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'invalid');
+    const lines = await linesOf(env);
+    assert.equal(lines.length, 1, 'one line, and it is not a capture');
+    const [l] = lines;
+    assert.equal(l.kind, 'capture-invalid');
+    assert.equal(l.subject, 'a fact with a mangled anchor');
+    assert.deepEqual(l.problems.sort(), ['local-path', 'unstructured']);
+    assert.ok(!JSON.stringify(l).includes('Program Files'), 'the rejected coordinate stays on the laptop');
+    assert.ok(!('payload' in l) && !('id' in l), 'nothing was queued for the base');
+  });
+});
+
+test('a capture missing a field is turned away and logged the same way', async () => {
+  await withQueue(async (env) => {
+    const r = await capture({ subject: 'half a capture' }, opened(), { env, via: 'cli' });
+    assert.equal(r.state, 'invalid');
+    const [l] = await linesOf(env);
+    assert.equal(l.kind, 'capture-invalid');
+    assert.match(l.why, /capture needs/);
+    assert.ok(!('problems' in l), 'no anchor was judged, so no problem kinds');
   });
 });
 

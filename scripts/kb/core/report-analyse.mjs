@@ -19,7 +19,7 @@ import { MIN_COVERAGE, MIN_WORDS } from './rank.mjs';
 
 /** Log kinds this analysis knows about. Anything else is counted and otherwise ignored. */
 export const KNOWN_KINDS = Object.freeze([
-  'ask', 'show', 'capture', 'capture-refused', 'confirm', 'dispute', 'flush', 'reindex', 'redacted',
+  'ask', 'show', 'capture', 'capture-refused', 'capture-invalid', 'confirm', 'dispute', 'flush', 'reindex', 'redacted',
 ]);
 
 // ── the numbers §15 is judged by, DECLARED HERE AND NOT PASSED IN ──────────────────────────────
@@ -488,6 +488,20 @@ export function evidence(lines, idx) {
 export function refusals(lines, idx) {
   const rows = [];
   const byTarget = new Map();
+  // TURNED AWAY AT THE DOOR (`capture-invalid`) — a different failure from a duplicate, counted
+  // apart: nothing the base holds was re-discovered, the WRITE was malformed. `retried` says whether
+  // the same session later got a capture with that subject through, which separates "the door's
+  // message worked" from "the agent gave up and the fact was lost".
+  const landed = new Set(lines.filter((l) => l.kind === 'capture' && l.id)
+    .map((l) => `${l._session} ${String(l.subject ?? '')}`));
+  const atDoor = lines.filter((l) => l.kind === 'capture-invalid').map((l) => ({
+    subject: String(l.subject ?? ''),
+    why: String(l.why ?? ''),
+    problems: Array.isArray(l.problems) ? l.problems.map(String) : [],
+    retried: landed.has(`${l._session} ${String(l.subject ?? '')}`),
+    session: l._session,
+    at: String(l.at ?? ''),
+  })).sort((a, b) => b.at.localeCompare(a.at));
   for (const l of lines) {
     if (l.kind !== 'capture-refused') continue;
     const target = String(l.dupeOf ?? '');
@@ -506,6 +520,8 @@ export function refusals(lines, idx) {
   return {
     rows,
     total: rows.length,
+    atDoor,
+    atDoorRetried: atDoor.filter((r) => r.retried).length,
     repeatTargets: [...byTarget.entries()].filter(([, n]) => n > 1)
       .map(([id, n]) => ({ id, subject: idx.subjectOf(id), count: n }))
       .sort((a, b) => b.count - a.count),
@@ -914,7 +930,9 @@ export function reach(lines, { since = null } = {}) {
     if (!id) continue;
     const began = String(l.firstAt ?? l.at ?? '');
     const prior = best.get(id);
-    const tools = Number(l.tools ?? 0);
+    // The WHOLE session's work, subagents included (PLAN §23.11) — which is also what "fuller" must
+    // compare, or a resumed parent with fewer own calls would lose to a stale line.
+    const tools = Number(l.tools ?? 0) + Number(l.agentTools ?? 0);
     const fuller = !prior || tools > prior.tools
       || (tools === prior.tools && String(l.lastAt ?? l.at ?? '') > String(prior.line.lastAt ?? prior.line.at ?? ''));
     const start = prior && prior.began && (!began || prior.began < began) ? prior.began : began;
@@ -927,11 +945,19 @@ export function reach(lines, { since = null } = {}) {
     if (since && began && began < since) continue;
     seen.add(id);
     const touchAt = Array.isArray(l.touchAt) ? l.touchAt : [];
+    const agentTools = Number(l.agentTools ?? 0);
+    const agentTouches = Number(l.agentTouches ?? 0);
     rows.push({
       session: id,
-      tools: Number(l.tools ?? 0),
+      // Totals over the session; the subagents' share beside them. A line from before 2026-09-23
+      // carries no `agent*` fields and reads as the parent alone — which is what it measured.
+      tools: Number(l.tools ?? 0) + agentTools,
       turns: Number(l.turns ?? 0),
-      touches: touchAt.length,
+      touches: touchAt.length + agentTouches,
+      agents: Number(l.agents ?? 0),
+      agentTools,
+      agentTouches,
+      // Ordinals into the PARENT's transcript, so they describe the parent only.
       firstTouch: touchAt.length ? touchAt[0] : null,
       lastTouch: touchAt.length ? touchAt[touchAt.length - 1] : null,
       asks: asksBySession.get(id) ?? 0,
@@ -957,6 +983,8 @@ export function reach(lines, { since = null } = {}) {
     unaccounted: [...asksBySession.keys()].filter((s) => !seen.has(s)).length,
     tools,
     touches,
+    agentTools: rows.reduce((n, r) => n + r.agentTools, 0),
+    agentTouches: rows.reduce((n, r) => n + r.agentTouches, 0),
     silent: rows.filter((r) => r.touches === 0).length,
     perHundred: tools ? (touches / tools) * 100 : null,
   };

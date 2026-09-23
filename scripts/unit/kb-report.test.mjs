@@ -388,6 +388,24 @@ test('refused captures name what was re-discovered, and how often', () => {
   assert.equal(r.rows[0].at, '2026-09-18T11:00:00Z', 'newest first');
 });
 
+test('a capture turned away AT THE DOOR is counted apart from a duplicate, with whether it landed', () => {
+  // PLAN §23.11: run `cdb27d99` bounced one capture off an anchor of `/`, retried it nine seconds
+  // later, and the report said "refusals 0". Not a duplicate — the write was malformed — so it is
+  // not in `total`, and `retried` separates "the door's message worked" from "the fact was lost".
+  const lines = [
+    line({ at: '2026-09-23T10:13:13Z', kind: 'capture-invalid', subject: 'org switch blanks the header', why: 'unusable anchor(s)', problems: ['unstructured'], _session: 's1', _path: 'log/20260923-s1.jsonl' }),
+    line({ at: '2026-09-23T10:13:23Z', kind: 'capture', id: 'KB-8BE777BB', subject: 'org switch blanks the header', _session: 's1', _path: 'log/20260923-s1.jsonl' }),
+    line({ at: '2026-09-23T10:20:00Z', kind: 'capture-invalid', subject: 'never retried', why: 'capture needs: scope', _session: 's1', _path: 'log/20260923-s1.jsonl' }),
+    // The same subject landing in ANOTHER session is not this refusal's retry.
+    line({ at: '2026-09-23T10:30:00Z', kind: 'capture', id: 'KB-00000001', subject: 'never retried', _session: 's2', _path: 'log/20260923-s2.jsonl' }),
+  ];
+  const r = refusals(lines, indexLookup(ROWS));
+  assert.equal(r.total, 0, 'no duplicate was refused');
+  assert.deepEqual(r.atDoor.map((x) => [x.subject, x.retried]), [['never retried', false], ['org switch blanks the header', true]]);
+  assert.equal(r.atDoorRetried, 1);
+  assert.deepEqual(r.atDoor[1].problems, ['unstructured']);
+});
+
 // ── the window and the bound ──────────────────────────────────────────────────────────────────
 
 test('the window is day folders, inclusive of today', () => {

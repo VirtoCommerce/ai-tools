@@ -31,6 +31,10 @@ import { cachedWho } from './who.mjs';
  *  not an agent using the base, and logging it would put noise in the panel that matters. */
 export const LOGGED = Object.freeze([
   'ask', 'show', 'capture', 'capture-refused', 'confirm', 'dispute', 'flush', 'reindex', 'redacted',
+  // `capture-invalid` is a capture the base turned away AT THE DOOR — a missing field, an unusable
+  // anchor, no scope — as opposed to `capture-refused`, a well-formed capture deduplicated against
+  // an entry the base already holds. Unlogged until 2026-09-23 (PLAN §23.11); see `refuseAtDoor`.
+  'capture-invalid',
   // `session` is the DENOMINATOR, and it is the one kind written about a session that may never
   // have touched the base at all. Every other line here is evidence that the base was used, so a
   // log made only of them can count uses and can never count opportunities: a session that ran for
@@ -262,7 +266,7 @@ export async function log(record, { env = process.env, who, run } = {}) {
   } catch (err) {
     return { ok: false, path, line, why: `${err.code ?? 'EUNKNOWN'}: ${err.message}` };
   }
-  if (line.kind === 'ask') await noteAsk(env, line.at);
+  if (line.kind === 'ask') await noteAsk(env, line.at, line.q);
   return { ok: true, path, line };
 }
 
@@ -273,11 +277,18 @@ export async function log(record, { env = process.env, who, run } = {}) {
  * step over it, and the flush — which deletes the queue file — never touches it.
  *
  * It exists for ONE field today, and that is the only reason it exists (PLAN §23.5). A capture's
- * `after` points at the ask it followed, and it used to be found by scanning the LOCAL QUEUE — which
+ * `after` points at the ask it is about, and it used to be found by scanning the LOCAL QUEUE — which
  * the flush empties every five minutes. So a capture made more than a flush after its ask carried no
  * pointer: measured over the published log, 12 of 21 captures since the field existed, exactly the
  * ones in a session's second push. Since `af62443a` the `unhelpful` panel pairs ONLY via `after`,
  * so each of those was counted `unprompted` when it was nothing of the kind.
+ *
+ * It holds the session's ASKS, `at` and `q`, and not only the last `at` — because the last ask is
+ * the wrong one to point at (PLAN §23.11). Run `cdb27d99` (2026-09-23) wrote three captures within
+ * a minute of one answered ask, and all three pointed at it: one was about that ask, one answered an
+ * orchestrator's MISS fifty minutes earlier, and one followed no ask at all. Choosing among asks
+ * needs their words, and the words are gone from the queue once it is flushed. They never leave
+ * this machine from here: the sidecar is local, and the same `q` is already on the ask's own line.
  */
 export const metaPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.meta.json`);
 
@@ -290,14 +301,26 @@ export async function readMeta(env = process.env, session = sessionId(env)) {
 }
 
 /**
- * Record the `at` of the ask just written. Best effort in the strict sense: a sidecar that could not
- * be written costs a later capture its pointer — which is what happened on every flush before this —
- * and must never cost the ask.
+ * How many of the session's asks the sidecar remembers. A capture is about something asked in the
+ * same stretch of work; the busiest session in the published log asked 34 times in a day, so this
+ * bound is a ceiling on the file, not a window anybody's evidence falls out of.
  */
-async function noteAsk(env, at) {
+export const ASK_MEMORY = 100;
+
+/** The asks the sidecar holds, oldest first, as `{at, q}`. A torn or pre-2026-09-23 sidecar is `[]`. */
+export const metaAsks = (meta) => (Array.isArray(meta?.asks) ? meta.asks : [])
+  .filter((a) => a && typeof a.at === 'string' && a.at);
+
+/**
+ * Record the ask just written. Best effort in the strict sense: a sidecar that could not be written
+ * costs a later capture its pointer — which is what happened on every flush before this — and must
+ * never cost the ask.
+ */
+async function noteAsk(env, at, q) {
   try {
     const meta = await readMeta(env);
-    await writeFile(metaPath(env), JSON.stringify({ ...meta, lastAskAt: String(at) }), 'utf8');
+    const asks = [...metaAsks(meta), { at: String(at), q: String(q ?? '') }].slice(-ASK_MEMORY);
+    await writeFile(metaPath(env), JSON.stringify({ ...meta, asks }), 'utf8');
   } catch { /* the pointer is lost, the ask is not */ }
 }
 

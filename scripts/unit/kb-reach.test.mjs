@@ -10,7 +10,7 @@
 // prompts and tool arguments into the repo, which is the one thing `reach.mjs` exists not to touch.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync, appendFileSync, utimesSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, appendFileSync, utimesSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -124,8 +124,84 @@ test('a live session’s counters are never taken — only a stopped one’s', (
 
   const old = new Date(Date.now() - REACH_IDLE_MS - 60_000);
   utimesSync(reachPath(dir, 'other001'), old, old);
+  utimesSync(t, old, old);
   assert.deepEqual(idleReaches(dir, { session: 'mineeeee', idleMs: REACH_IDLE_MS }).map((r) => r.session), ['other001'],
     'idleness is the only end-of-session signal this system has');
+}));
+
+// ─── subagents (PLAN §23.11) ──────────────────────────────────────────────────────────────────
+
+/** A parent transcript and its `<id>/subagents/` directory, laid out as the harness writes them. */
+function withSession(dir) {
+  const t = join(dir, 'parent01.jsonl');
+  const sub = join(dir, 'parent01', 'subagents');
+  mkdirSync(sub, { recursive: true });
+  return { t, agent: (name) => join(sub, `agent-${name}.jsonl`) };
+}
+
+test('a subagent’s calls and touches are counted — its work never reaches the parent’s transcript', () => withDir((dir) => {
+  // Run `cdb27d99`: parent 22 calls, its subagent 456 with 10 of the run's 12 base calls, and the
+  // published line said 22 tools, 2 touches. Counted apart, so the parent's ordinals keep meaning.
+  const { t, agent } = withSession(dir);
+  writeFileSync(t, turn('Read', 'mcp__kb__kb_ask', 'Agent'));
+  writeFileSync(agent('a1'), turn('Bash', 'mcp__kb__kb_capture', 'Read'));
+  writeFileSync(agent('b2'), turn(bash('npm run kb -- ask "x"')));
+  const first = advanceReach({ dir, session: 'sess0010', transcriptPath: t });
+  assert.deepEqual([first.tools, first.touchAt], [3, [2]], 'the parent’s own ordinals are untouched');
+  assert.deepEqual(reachLine(first), {
+    ...reachLine({ ...first, subagents: {} }), agents: 2, agentTools: 4, agentTouches: 2,
+  });
+
+  appendFileSync(agent('a1'), turn('mcp__kb__kb_confirm'));
+  const second = advanceReach({ dir, session: 'sess0010', transcriptPath: t });
+  assert.equal(reachLine(second).agentTools, 5, 'incremental per file: the first four are not re-counted');
+  assert.equal(reachLine(second).agentTouches, 3);
+}));
+
+test('a session with no subagents publishes zeros, which says it had none', () => withDir((dir) => {
+  const t = join(dir, 'solo0001.jsonl');
+  writeFileSync(t, turn('Read'));
+  const line = reachLine(advanceReach({ dir, session: 'sess0011', transcriptPath: t }));
+  assert.deepEqual([line.agents, line.agentTools, line.agentTouches], [0, 0, 0]);
+}));
+
+test('a parent WAITING on a working subagent is not harvested as finished', () => withDir((dir) => {
+  // Run `cdb27d99` sat 45 minutes behind one subagent, fired no Stop hook, and was published at 22
+  // calls as if it had ended — then resumed into a `restart` line. The transcripts are the activity.
+  const { t, agent } = withSession(dir);
+  writeFileSync(t, turn('Agent'));
+  writeFileSync(agent('a1'), turn('Read'));
+  advanceReach({ dir, session: 'waiting1', transcriptPath: t });
+  const old = new Date(Date.now() - REACH_IDLE_MS - 60_000);
+  utimesSync(reachPath(dir, 'waiting1'), old, old);
+  utimesSync(t, old, old);
+  assert.deepEqual(idleReaches(dir, { idleMs: REACH_IDLE_MS }), [], 'the subagent wrote a moment ago');
+
+  utimesSync(agent('a1'), old, old);
+  assert.deepEqual(idleReaches(dir, { idleMs: REACH_IDLE_MS }).map((r) => r.session), ['waiting1'],
+    'and once everything has stopped, it is finished');
+}));
+
+test('firstAt is the transcript’s own first timestamp, not the moment the hook first ran', () => withDir((dir) => {
+  // Run `cdb27d99` began 09:20:49; its line said 09:26:55 — the end of the first turn.
+  const t = join(dir, 'transcript.jsonl');
+  writeFileSync(t, `${JSON.stringify({ type: 'user', timestamp: '2026-09-23T09:20:49.421Z', message: { content: 'go' } })}\n${turn('Read')}`);
+  const s = advanceReach({ dir, session: 'sess0012', transcriptPath: t, at: new Date('2026-09-23T09:26:55.819Z') });
+  assert.equal(s.firstAt, '2026-09-23T09:20:49.421Z');
+  // A transcript that carries no stamp still gets one — the hook's clock is a worse start, not none.
+  const bare = join(dir, 'bare.jsonl');
+  writeFileSync(bare, turn('Read'));
+  assert.equal(advanceReach({ dir, session: 'sess0013', transcriptPath: bare, at: new Date('2026-09-23T10:00:00.000Z') }).firstAt,
+    '2026-09-23T10:00:00.000Z');
+}));
+
+test('the local transcript path never reaches the published line', () => withDir((dir) => {
+  const { t, agent } = withSession(dir);
+  writeFileSync(t, turn('Read'));
+  writeFileSync(agent('a1'), turn('Read'));
+  const state = advanceReach({ dir, session: 'sess0014', transcriptPath: t });
+  assert.equal(state.transcriptPath, t, 'the state keeps it, for the idleness check');
+  assert.ok(!JSON.stringify(reachLine(state)).includes('parent01'), 'no path and no file name leaves the machine');
 }));
 
 test('the published line is integers and one id — no prose can reach it', () => {
@@ -333,6 +409,18 @@ test('a session published TWICE — idle, then resumed — is one row, and it is
   // Windowed on that earliest start, so a window opening between the two starts drops the session
   // it did not contain the beginning of — consistently with every other session.
   assert.equal(reach([stale, fuller], { since: '2026-09-22T09:00:00.000Z' }).accounted, 0);
+});
+
+test('the panel adds the subagents’ work to the session, and says how much of it was theirs', () => {
+  const line = { ...sessionLine('cdb27d99', 22, [12, 13]), agents: 1, agentTools: 456, agentTouches: 10 };
+  const r = reach([line]);
+  assert.deepEqual([r.tools, r.touches, r.agentTools, r.agentTouches], [478, 12, 456, 10]);
+  assert.deepEqual([r.rows[0].firstTouch, r.rows[0].lastTouch], [12, 13], 'ordinals stay the parent’s');
+  // "Fuller" compares the WHOLE session: a resumed parent with fewer own calls but its subagents'
+  // work counted must beat a stale line that saw less.
+  const stale = { ...sessionLine('cdb27d99', 22, [12, 13]), agents: 0, agentTools: 0, agentTouches: 0 };
+  assert.equal(reach([line, stale]).rows[0].tools, 478);
+  assert.equal(reach([stale, line]).rows[0].tools, 478);
 });
 
 test('two session lines with equal tools resolve to the LATER one', () => {

@@ -25,7 +25,7 @@
 // session; reading only the bytes appended since the last run is what makes this affordable enough
 // to be on by default.
 import { appendFileSync, existsSync, readFileSync, writeFileSync, readdirSync, statSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 /** The MCP door. Every kb tool is namespaced, so one prefix covers ask/show/capture/confirm/dispute. */
 const MCP_DOOR = /^mcp__kb__/;
@@ -51,6 +51,83 @@ const CLI_DOOR = /\bkb\.mjs\b|\bnpm run kb\b|\bkb:(ask|report|install)\b/;
  * milliseconds. This module imports `node:fs` and `node:path` and nothing else, on purpose.
  */
 export const REACH_IDLE_MS = 30 * 60 * 1000;
+
+/**
+ * Where a session's SUBAGENTS write: `<transcript dir>/<transcript id>/subagents/agent-*.jsonl`.
+ *
+ * WHY THIS IS READ AT ALL (PLAN §23.11). `teammateMode: "in-process"` gives every subagent its own
+ * transcript, and not one of its tool calls reaches the parent's. Run `cdb27d99` (2026-09-23): the
+ * parent made 22 calls, its one subagent made 456 — including 10 of the run's 12 base calls — and
+ * the published `session` line said 22 tools, 2 touches, "9.1 per 100 calls". The panel was
+ * measuring the orchestrator and calling it the session.
+ */
+export function subagentFiles(transcriptPath) {
+  if (!transcriptPath) return [];
+  const dir = join(dirname(transcriptPath), basename(transcriptPath, '.jsonl'), 'subagents');
+  let names;
+  try { names = readdirSync(dir); } catch { return []; }
+  return names.filter((n) => n.endsWith('.jsonl')).sort().map((n) => join(dir, n));
+}
+
+/**
+ * The first `timestamp` a slab of transcript carries — the session's real start.
+ *
+ * `firstAt` used to be the moment the hook first RAN, which is the end of the first turn: run
+ * `cdb27d99` started at 09:20:49 and its line said 09:26:55, six minutes of work outside the
+ * session's own window.
+ */
+export function firstStamp(chunk) {
+  for (const line of String(chunk).split('\n')) {
+    if (!line.includes('"timestamp"')) continue;
+    try {
+      const t = JSON.parse(line)?.timestamp;
+      if (typeof t === 'string' && t) return t;
+    } catch { /* torn */ }
+  }
+  return null;
+}
+
+/**
+ * Advance the counters over every subagent transcript, each on its own cursor — the parent's rules
+ * one level down: whole lines only, a file that SHRANK is recounted from zero.
+ *
+ * The subagents' calls are kept APART from the parent's `tools`/`touchAt`, not folded in: those are
+ * ordinals INTO THE PARENT's transcript, and an ordinal that meant "call 300 of the orchestrator"
+ * cannot also mean "call 300 of somebody else".
+ */
+function advanceSubagents(prior, transcriptPath) {
+  const held = prior && typeof prior === 'object' ? prior : {};
+  const next = {};
+  for (const file of subagentFiles(transcriptPath)) {
+    const name = basename(file);
+    const was = held[name] ?? { cursor: 0, tools: 0, touches: 0 };
+    let size;
+    try { size = statSync(file).size; } catch { next[name] = was; continue; }
+    const base = size < was.cursor ? { cursor: 0, tools: 0, touches: 0 } : was;
+    let chunk = '';
+    if (size > base.cursor) {
+      try { chunk = readFileSync(file).subarray(base.cursor, size).toString('utf8'); } catch { next[name] = base; continue; }
+    }
+    const cut = chunk.lastIndexOf('\n') + 1;
+    const counted = countToolUses(chunk.slice(0, cut));
+    next[name] = {
+      cursor: base.cursor + Buffer.byteLength(chunk.slice(0, cut), 'utf8'),
+      tools: base.tools + counted.tools,
+      touches: base.touches + counted.touchAt.length,
+    };
+  }
+  return next;
+}
+
+/** The totals the published line carries: integers, never a file name. */
+export function subagentTotals(subagents) {
+  const all = Object.values(subagents ?? {});
+  return {
+    agents: all.length,
+    agentTools: all.reduce((n, a) => n + Number(a.tools ?? 0), 0),
+    agentTouches: all.reduce((n, a) => n + Number(a.touches ?? 0), 0),
+  };
+}
 
 /** The reach state for one session. Lives beside the queue, never in the working tree. */
 export const reachPath = (dir, session) => join(dir, `${session}.reach.json`);
@@ -113,7 +190,7 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   if (!dir || !session || !transcriptPath || !existsSync(transcriptPath)) return null;
   const held = readReach(dir, session);
   const prior = held ?? {
-    session, cursor: 0, tools: 0, turns: 0, touchAt: [], firstAt: at.toISOString(), lastAt: null,
+    session, cursor: 0, tools: 0, turns: 0, touchAt: [], firstAt: null, lastAt: null,
   };
 
   let size;
@@ -165,8 +242,12 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
     tools,
     turns: prior.turns + 1,
     touchAt: [...base.touchAt, ...touchAt],
-    firstAt: prior.firstAt ?? at.toISOString(),
+    firstAt: prior.firstAt ?? (from === 0 ? firstStamp(chunk) : null) ?? at.toISOString(),
     lastAt: at.toISOString(),
+    subagents: advanceSubagents(restarted ? null : prior.subagents, transcriptPath),
+    // LOCAL ONLY — `reachLine` never copies it. Kept so `idleReaches` can see that a session whose
+    // own turns have stopped is still WORKING through a subagent (PLAN §23.11).
+    transcriptPath,
     // WHO RAN THIS SESSION, stamped by the session's own hook and carried to the published line.
     //
     // The reach line is the ONE line in this system whose subject is a DIFFERENT session from the
@@ -211,18 +292,39 @@ export function idleReaches(dir, { session = null, now = Date.now(), idleMs = 0 
       if (now - statSync(join(dir, name)).mtimeMs < idleMs) continue;
     } catch { continue; }
     const state = readReach(dir, owner);
-    if (state) out.push(state);
+    if (!state) continue;
+    // A PARENT IS NOT IDLE WHILE ITS SUBAGENT WORKS. The state file moves only when the parent's own
+    // `Stop` hook fires, and a parent waiting on a background subagent fires none: run `cdb27d99`
+    // sat 45 minutes behind one, was harvested as FINISHED at 22 calls, and resumed to a `restart`
+    // line. The transcripts are the activity; the state file is only its last reading.
+    if (stillWriting(state.transcriptPath, { now, idleMs })) continue;
+    out.push(state);
   }
   return out.sort((a, b) => a.session.localeCompare(b.session));
 }
 
-/** The publishable line for one reach state. Integers and one id — no prose, by construction. */
+function stillWriting(transcriptPath, { now, idleMs }) {
+  if (!transcriptPath) return false;
+  for (const f of [transcriptPath, ...subagentFiles(transcriptPath)]) {
+    try { if (now - statSync(f).mtimeMs < idleMs) return true; } catch { /* gone is not writing */ }
+  }
+  return false;
+}
+
+/**
+ * The publishable line for one reach state. Integers and one id — no prose, by construction.
+ *
+ * `tools`/`touchAt` stay the PARENT's, ordinals into its own transcript; the subagents ride beside
+ * them as three counts, so a reader can add them and can still tell an orchestrator that consulted
+ * the base from one that delegated the consulting.
+ */
 export const reachLine = (state) => ({
   kind: 'session',
   session: state.session,
   tools: state.tools,
   turns: state.turns,
   touchAt: state.touchAt,
+  ...subagentTotals(state.subagents),
   firstAt: state.firstAt,
   lastAt: state.lastAt,
 });

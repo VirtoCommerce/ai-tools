@@ -302,6 +302,14 @@ function panelRefusals(p) {
     ${p.repeatTargets.length ? `<p class="metric">Repeatedly re-discovered: ${p.repeatTargets.map((t) => `<code>${esc(t.id)}</code>&nbsp;×${esc(t.count)} <span class="muted">${esc(t.subject)}</span>`).join(' · ')}</p>` : ''}
     ${rows.length ? table(['what was written', 'refused against', 'why', 'caught at', 'session', 'when'], rows)
     : empty('No capture was refused as a duplicate in this window.')}
+    <p class="metric"><strong>Turned away at the door:</strong> ${esc(p.atDoor.length)} capture(s)
+      the base rejected as malformed &mdash; a missing field, an unusable anchor, no scope &mdash;
+      ${esc(p.atDoorRetried)} of them retried and landed. Not a duplicate: nothing was re-discovered,
+      the write itself was wrong.</p>
+    ${p.atDoor.length ? table(['what was written', 'why', 'problem kind', 'retried', 'session', 'when'], p.atDoor.map((r) => [
+    `<span class="q">${esc(r.subject)}</span>`, esc(r.why), esc(r.problems.join(', ')),
+    r.retried ? 'yes' : '<strong class="bad">no</strong>', esc(r.session), `<code>${esc(when(r.at))}</code>`,
+  ])) : ''}
   </section>`;
 }
 
@@ -310,6 +318,7 @@ function panelReach(p) {
     esc(r.session),
     esc(r.tools), esc(r.turns),
     r.touches ? esc(r.touches) : '<strong class="bad">0</strong>',
+    r.agents ? `${esc(r.agents)} &middot; ${esc(r.agentTools)} calls &middot; ${esc(r.agentTouches)} touches` : '<span class="muted">none</span>',
     esc(r.asks),
     r.firstTouch === null ? '<span class="muted">never</span>' : `call ${esc(r.firstTouch)}`,
     r.lastTouch === null ? '<span class="muted">never</span>' : `call ${esc(r.lastTouch)}`,
@@ -326,13 +335,15 @@ function panelReach(p) {
     <p class="metric"><strong>Touches, not asks.</strong> A touch is any call through either door, so
       <code>show</code>, <code>capture</code>, <code>confirm</code> and <code>dispute</code> are in
       it: the figure is an upper bound on asking, and the ask column beside it is the real one.
+      Calls and touches include the session&rsquo;s <strong>subagents</strong>, whose work never
+      reaches the parent&rsquo;s transcript; first and last touch are the parent&rsquo;s own.
       <strong>First touch is the diagnosis</strong> &mdash; one touch at call 3 is a session that
       oriented itself and then worked blind; one touch at call 290 is the reverse, and the two need
       opposite remedies.</p>
     ${p.unaccounted ? `<p class="metric">${esc(p.unaccounted)} session(s) asked but published no
       <code>session</code> line &mdash; their machine has no <code>Stop</code> hook registered, so
       their tool calls are unmeasured. They are left OUT of the ratio rather than counted as zero.</p>` : ''}
-    ${rows.length ? table(['session', 'tool calls', 'turns', 'touches', 'asks', 'first touch', 'last touch', 'started'], rows)
+    ${rows.length ? table(['session', 'tool calls', 'turns', 'touches', 'of which subagents', 'asks', 'first touch', 'last touch', 'started'], rows)
     : empty('No session accounting in this window — no machine here has published a session line yet.')}
   </section>`;
 }
@@ -472,13 +483,15 @@ export function renderText(report) {
   out.push(`  unhelpful      ${p.unhelpful.flagged.length}/${p.unhelpful.decidable} decidable = ${pct(p.unhelpful.rate)} (${p.unhelpful.undecidable} undecidable, ${p.unhelpful.unprompted} unprompted, ${p.unhelpful.afterMiss} after a miss)`);
   out.push(`  entries served ${p.entries.used.length} of ${p.entries.indexed} indexed; ${p.entries.never.length} never served here`);
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
-  out.push(`  refusals       ${p.refusals.total}`);
+  out.push(`  refusals       ${p.refusals.total} as duplicate, ${p.refusals.atDoor.length} turned away at the door`
+    + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`);
   // THE DENOMINATOR, printed with the panels rather than after them, because it is the line that
   // decides how to read every other number here. `n/a` and not `0%` when nothing is accounted for:
   // a machine with no `Stop` hook registered has not measured a reach of zero, it has not measured.
   out.push(`  reach          ${p.reach.accounted} session(s) accounted, ${p.reach.tools} tool call(s), `
     + `${p.reach.touches} base touch(es) = `
     + `${p.reach.perHundred === null ? 'n/a' : `${p.reach.perHundred.toFixed(1)} per 100 calls`}`
+    + `${p.reach.agentTools ? ` (subagents: ${p.reach.agentTools} call(s), ${p.reach.agentTouches} touch(es))` : ''}`
     + `${p.reach.silent ? `, ${p.reach.silent} session(s) never touched the base` : ''}`
     + `${p.reach.unaccounted ? `, ${p.reach.unaccounted} session(s) unaccounted (no session line)` : ''}`);
   out.push(`  topics         ${p.topics.rows.length} distinct over ${p.topics.topiced} line(s)`
