@@ -79,6 +79,8 @@ See [collections-and-requests.md](collections-and-requests.md). Every collection
 ### Step 5 — Add Requests
 Resolve fixture values via [test-data-fixtures.md](test-data-fixtures.md) (`@td()` resolver, [`test-data/aliases.json`](../../../test-data/aliases.json)). For GraphQL bodies, verify field names against [`graphql-schema.md`](../../knowledge/api/graphql-schema.md) **before** writing — see [graphql-authoring.md](graphql-authoring.md).
 
+Before writing a request's test script, **ask the base what the endpoint was OBSERVED doing** — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`), with the endpoint path or GraphQL operation name as the coordinate — so an assertion is not built on a guessed default ([`authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5).
+
 Every request must have URL using `{{baseUrl}}`, proper headers, and a test script with at least a status-code assertion.
 
 ### Step 6 — Verify the Collection

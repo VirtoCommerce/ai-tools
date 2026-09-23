@@ -70,7 +70,9 @@ Invoke the development skills:
 
 **Workflow (mirrors `ci/agents/fix-backend-agent.md`):**
 1. **Understand the bug** — read the ticket JSON + `/qa-bug` report (STR, expected/actual, owning
-   layer, RCA). Confirm root cause, not symptom.
+   layer, RCA). **Ask the base what the failing surface was OBSERVED doing** — `npm run kb -- ask
+   "<endpoint | GraphQL op | page path> <question>"` (MCP: `mcp__kb__kb_ask`); a matching entry is the
+   deployed half of the bug report ([developers shared-instructions](../knowledge/agents/developers/shared-instructions.md)). Confirm root cause, not symptom.
 2. **Checkout** — the repo is resolved + cloned via `ci/lib/repo-router.ts` `checkoutForFix` into
    `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there; absolute paths.
 3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see

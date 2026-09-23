@@ -69,6 +69,7 @@ Follow the test-runner-agent protocol in agents/test-runner-agent.md.
 Execute every case in the CSV as a customer journey (currently 34 — SMK-001 through SMK-034; read the file, don't assume a count), including the Cross_Layer_Checks column on each case.
 For every case, record PASS/FAIL/SKIP against the matching item in SMOKE-CHECKLIST.md, and the matching UI-vs-backend parity item in SMOKE-CROSS-LAYER-CHECKLIST.md.
 Continuous observation (test-runner-agent §Always-On reflex): beyond the smoke cases, watch every layer during the journey — record any incidental defect (console exception, 5xx, GraphQL errors[] inside 200, visual break) as a preliminary bug (confirmed:false, "incidental":true) even when the case PASSes; do not change the case verdict.
+Observed behaviour (agent-dispatch.md §Agent Prompt Structure): for each page path / GraphQL operation the CSV touches that DEVIATES (FAIL, BLOCKED, unexpected result, incidental observation), and before every capture, ask the base yourself — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). At close-out, for each platform behaviour you report: matched ⇒ `kb confirm`, contradicted ⇒ `kb dispute`, nothing held ⇒ `kb capture` (`--deployment {TEST_ENV}`, nothing client-specific). List the entry ids in the output file.
 Capture evidence on failures. Write structured JSON results (per SMK-ID, plus a checklist section/item rollup) to the output file.
 ```
 
@@ -92,6 +93,7 @@ The pure REST/GraphQL API cases in 078 (the excluded list at the top of the chec
 Prioritize the Critical-priority cases (checklist §1–12) first — a failure there is a NO-GO; High/Medium failures are GO-WITH-RISK per the checklist's own GO/NO-GO table.
 For every executed case, record PASS/FAIL/SKIP against the matching item in ADMIN-SMOKE-CHECKLIST.md. If Track A data is available, verify created contacts/orders appear in Admin.
 Continuous observation (test-runner-agent §Always-On reflex): beyond the smoke cases, watch every layer — record any incidental defect (Angular blade exception, 5xx, GraphQL errors[] inside 200, schema/data mismatch) as a preliminary bug (confirmed:false, "incidental":true) even when the case PASSes; do not change the case verdict.
+Observed behaviour (agent-dispatch.md §Agent Prompt Structure): for each page path / GraphQL operation / endpoint / Admin blade the CSV touches that DEVIATES (FAIL, BLOCKED, unexpected result, incidental observation), and before every capture, ask the base yourself — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). At close-out, for each platform behaviour you report: matched ⇒ `kb confirm`, contradicted ⇒ `kb dispute`, nothing held ⇒ `kb capture` (`--deployment {TEST_ENV}`, nothing client-specific). List the entry ids in the output file.
 Capture evidence on failures. Write structured JSON results (per BSM-ID, plus a checklist section/item rollup) to the output file.
 ```
 

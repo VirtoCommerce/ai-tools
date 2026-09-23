@@ -22,6 +22,13 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 **Output:** {OUTPUT_PATH}
 
+**Observed behaviour:** before your first live check of each page path / GraphQL operation / endpoint
+in scope, ask the base yourself — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`).
+On a scripted suite run, ask instead on each deviation (FAIL, BLOCKED, unexpected result, incidental
+observation) and before every capture.
+At close-out, for each platform behaviour you report: matched ⇒ `kb confirm`, contradicted ⇒
+`kb dispute`, nothing held ⇒ `kb capture` (`--deployment {TEST_ENV}`). List the entry ids in your output.
+
 **Evidence policy:** Follow `skills/qa-evidence/evidence-capture-policy.md`
 - Screenshots: failures + final state of critical flows only
 - Console: capture errors, skip noise
@@ -30,6 +37,11 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 {TASK_SPECIFIC_INSTRUCTIONS}
 ```
+
+**The `Observed behaviour` line is not optional** and is never replaced by packed answers — the
+recipient asks for its own surface ([`../skills/qa-test/dispatch-pack.md`](../skills/qa-test/dispatch-pack.md)).
+Omit it only for a Mechanic dispatch (release plumbing, diff review) per
+[`../knowledge/agents/authoring-standard.md`](../knowledge/agents/authoring-standard.md) §5.2.
 
 ## Browser Assignment & Fallback Chain
 

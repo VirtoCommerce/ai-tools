@@ -226,7 +226,7 @@ Phases 2–4: See `~/.claude/plans/functional-singing-cosmos.md`.
 
 ## How to use this file
 
-- **Adding a new agent/skill/command?** Decide its tier *first*. If it's A, treat it as the org-wide methodology standard (frozen v1.0 — breaking changes forbidden post-launch). If it's B, design so customer env can drive it. If it's C, it's storefront-domain — fine, but make sure no specific catalog ID / org / user / theme value is hardcoded (route through `aliases.json`).
+- **Adding a new agent/skill/command?** Follow [`../knowledge/agents/authoring-standard.md`](../knowledge/agents/authoring-standard.md) (placement, budget, mandatory citations, the `kb` step). Decide its tier *first*. If it's A, treat it as the org-wide methodology standard (frozen v1.0 — breaking changes forbidden post-launch). If it's B, design so customer env can drive it. If it's C, it's storefront-domain — fine, but make sure no specific catalog ID / org / user / theme value is hardcoded (route through `aliases.json`).
 - **Reviewing a PR that touches a Tier A file?** Higher bar — every customer using the plugin gets this change.
 - **Refactoring a Tier B file?** Look for vcst-qa-specific values that should become env vars or `aliases.json` entries.
 - **Adding customer-variable behavior to a Tier A/B file?** Stop. Either parameterize via env, or push to a Tier C file the customer can override.

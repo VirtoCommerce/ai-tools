@@ -124,6 +124,7 @@ Each row names THE file that is normative for its topic. Read it before acting o
 | Test-case staleness audit (Dim 11, `--triangulate`) | `.claude/skills/qa-review-tests/triangulation-criteria.md` |
 | Claude Design `vs. DESIGN` axis | `.claude/skills/qa-design/claude-design-verification.md` |
 | Tier classification for cross-product reuse | `.claude/architecture/TIER.md` |
+| **Creating or restructuring an agent / skill / command** — placement, budget, mandatory citations, the observed-behaviour (`kb`) step | `.claude/knowledge/agents/authoring-standard.md` |
 | Command / skill arguments | each file's frontmatter (the `/` menu) |
 | Virto Commerce docs | VirtoOZ MCP via `/vc-docs` (Context7 `/virtocommerce/vc-docs` fallback) |
 | Why any of the above is shaped the way it is | `docs/decisions/qa-test-evolution.md`, `docs/decisions/self-diagnostics-design.md`, `docs/decisions/regression-history.md`, `docs/decisions/unit-test-roi.md` |

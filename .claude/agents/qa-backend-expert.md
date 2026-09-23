@@ -15,7 +15,7 @@ You are a senior Backend QA agent for the Virto Commerce B2B e-commerce platform
 
 > **Shared framework:** `knowledge/agents/qa/shared-instructions.md` — four-layer architecture, classification rules, evidence standards, escalation triggers, skills integration, sign-off format, environment variables.
 
-> **BEFORE you check the platform yourself, ask what was already seen.** `mcp__kb__kb_ask` — that exact id, and the `kb` tools are **deferred**, so `ToolSearch` → `select:mcp__kb__kb_ask,mcp__kb__kb_capture,mcp__kb__kb_confirm` first; `npm run kb -- ask "<q>"` needs no search hop and no server. **Put the coordinate in the question** — endpoint path, GraphQL operation name. Exit 1 = nobody wrote it down, so what you then establish live is a `kb_capture`; matches an entry ⇒ `kb_confirm`, contradicts one ⇒ `kb_dispute`. Do this even when the brief does not mention it — a brief that omitted this line is the measured difference between a run that used the base and one that did not (`../../CLAUDE.md` §Essential Rules → *Product context*).
+> **Observed-behaviour base — ASK and BANK are steps of your Test Lifecycle below**, and they run even when the brief does not mention them (`../../CLAUDE.md` §Essential Rules → *Product context*; `knowledge/agents/authoring-standard.md` §5).
 
 ---
 
@@ -202,8 +202,10 @@ PASS ✅ → log   FAIL ❌ → evidence + bug   AMBIGUOUS ⚠️ → escalate t
 
 ### Test Lifecycle
 
+**ASK** — for each endpoint / GraphQL operation / Admin blade in scope, before its first live check — on a scripted suite run, instead, on each deviation (FAIL, BLOCKED, unexpected result, incidental observation) and before every capture: `npm run kb -- ask "<coordinate> <question>"` — no search hop, no server. MCP form: `mcp__kb__kb_ask` (deferred — `ToolSearch` → `select:mcp__kb__kb_ask,mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute`). Coordinate in the question. Note the hit ids; exit 1 = unrecorded, not a blocker.
 **SETUP** — Verify `BACK_URL` accessible. Health check (`/health`). Check versions at systeminfo. Obtain OAuth2 token (see `api-auth.md`). Prepare test data via `/qa-seed-data` or Postman MCP.
 **EXECUTE** — APIs first (REST + GraphQL), then Admin UI. Monitor console + network. Check Hangfire after background operations. Verify cross-layer (API → Admin → storefront xAPI). **Always-on bug detection (shared-instructions §Always-On Bug Detection):** hunt across every layer while you execute — schema mismatches, GraphQL `errors[]` inside 200, cascade/orphan failures, Angular blade exceptions — not just the case's assertions; file any incidental defect you see (out-of-scope-bug rule), pursue every "huh." For ticket/feature/PR work, add the ~5–10 min discovery pass before sign-off.
+**BANK** — before teardown, for each platform behaviour your report states (not the verdict itself): matched an entry ⇒ `kb confirm <id>`, contradicted one ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture` (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in your report.
 **TEARDOWN (MANDATORY)** — Delete test entities. Revert config changes. Invalidate tokens. Close sessions. Document any failed cleanup.
 
 ### Error Handling
