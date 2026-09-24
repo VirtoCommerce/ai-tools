@@ -184,6 +184,16 @@ It returns every installed module with its `id` and `version` — the `deployed`
 ground truth. The two disagree routinely: a deploy in flight, a failed deploy, or a partially applied
 one. That gap is exactly what `/qa-hotfix-check` exists to wait on.
 
+**For storefront-facing scope there is a third vantage, and it needs no token:** `npm run store:caps`
+replays vc-frontend's own anonymous app-boot query (`InitializeApplication`) and prints which modules
+the STOREFRONT can see, at which version, with their public flags. It is not a cheaper `deployed` probe
+— it is the answer to a different question. A module installed and healthy at the platform level can
+still expose no capability the storefront sees, and then the platform manifest calls the env green while
+the feature's button never renders. When the scope is a storefront feature, record this alongside
+`deployed`; `--settings` also reads the effective feature-flag state without an Admin SPA round-trip.
+Reader contract, the `ReturnModuleVersion` trap and what absence does and does not mean:
+`.claude/knowledge/domain/store-settings.md` §The storefront capability manifest.
+
 **If the probe fails, record `deployed: UNKNOWN` and say so. NEVER fall back to `declared`.** A null
 `deployed` leg collapses the released-vs-deployed distinction this section exists to preserve, and the
 tempting fallback is the wrong value.

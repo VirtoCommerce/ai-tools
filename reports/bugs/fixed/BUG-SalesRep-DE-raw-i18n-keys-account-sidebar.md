@@ -1,8 +1,15 @@
 # BUG: Account sidebar renders raw i18n keys instead of German labels
 
-## Status: CONFIRMED — filed as [VCST-5681](https://virtocommerce.atlassian.net/browse/VCST-5681)
+## Status: FIXED — [VCST-5681](https://virtocommerce.atlassian.net/browse/VCST-5681)
 
 **Severity: Medium** (visible to end users on every localized page; fails silently — no console warning, so it is invisible to monitoring).
+
+## Resolution
+- **Root cause (dev, 2026-09-22):** not a translation gap — all six module `de.json` files already carry these keys. Module locale bundles load asynchronously, after the sidebar has rendered, so on that first pass `t()` returns the raw key; because the menu-tree translation mutated the link objects **in place** rather than replacing them, Vue saw unchanged props and never re-rendered when the bundle landed. That is the mechanism behind the non-determinism, the silence (no missing-key warning — the key was never actually missing), and why it surfaced on any locale, not only German.
+- **Fixed by:** [VirtoCommerce/vc-frontend#2496](https://github.com/VirtoCommerce/vc-frontend/pull/2496) (open, unmerged at verification time).
+- **Verified:** 2026-09-22, local frontend-only hybrid env running PR #2496's own CI theme artifact (`vc-theme-b2b-vue-2.58.0-pr-2496-3b02-3b02d64a.zip`, theme marker `X-VC-Local-Theme: fe-3cdb021fec18`), `/graphql`+`/connect/token` proxied to real `vcst-qa` data (store `B2B-store`). Signed in as `agent-test-sr-primary@example.com`. **10/10 full page loads clean, 0 raw keys** — `/de/company/my-customers` ×3, `/de/account/missions` ×2, `/de/account/orders` ×1, `/account/orders` (en) ×2, plus repeats — versus 0/7 on the pre-fix build (`2.58.0-pr-2495`), which was already non-deterministic before the fix. Full checklist: `reports/tickets/Sprint26-19/VCST-5681/testing-checklist.md`.
+- **Tracker:** VCST-5681 transitioned `In review → Ready for test → Testing → Tested` on 2026-09-22, on the operator's **explicit authorization** despite the real `vcst-qa` deployment still running an unrelated build (PR #2467) — `TESTED` here does NOT mean the fix has been observed on the shared deployment, only on the local pre-merge build. Verification comment: Jira comment id 110207 (inline evidence screenshot, `renderedBody`-verified).
+- **Residual, non-blocking:** the underlying defect is a **race condition**, not a deterministic gap — 3/3 formal + 16 total clean loads is strong pre-merge evidence but not proof the race is structurally eliminated rather than just less frequent. Not re-tested: the buyer-account EN variant (`agent-test-multiorg-...` on `/account/lists`) and a higher-volume automated repro. **Recommended: a confidence spot-check on the shared `vcst-qa` deployment once PR #2496 actually merges and deploys** (not required to close the ticket — that already happened — but worth doing before treating this defect class as closed).
 
 **Env:** vcptcore-qa @ Theme 2.55.0-pr-2408-0cc5 · store `B2B-store`
 

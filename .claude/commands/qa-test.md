@@ -1,5 +1,5 @@
 ---
-description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /qa-verify-fix inline, a refactor/migration/dependency bump takes the fixed-shape technical-change flow (2a + a blast-radius regression, no feature test), else feature-test at a FAST path (a checklist, plus the design/a11y visual lane when the ticket is UI-visible) or a FULL path (mandatory Test Model, case authoring, independent verifier gates). Regression is C1 — the exact set of cases this run wrote or changed. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
+description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /vc-fix:qa-verify-fix inline, a refactor/migration/dependency bump takes the fixed-shape technical-change flow (2a + a blast-radius regression, no feature test), else feature-test at a FAST path (a checklist, plus the design/a11y visual lane when the ticket is UI-visible) or a FULL path (mandatory Test Model, case authoring, independent verifier gates). Regression is C1 — the exact set of cases this run wrote or changed. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
 argument-hint: "<ticket-key> | feature name | PR #NNN | --epic <EPIC-KEY> [--iterate [--max-rounds N]]"
 disable-model-invocation: true
 ---
@@ -114,7 +114,7 @@ token-layer / component-primitive change. It changes neither flow nor effort, on
 produces, and it is the one that fails CLOSED. Methodology:
 [`skills/qa-test/ui-kit-class.md`](../skills/qa-test/ui-kit-class.md).
 
-1. **FLOW** — which pipeline runs at all: `verify-fix` · `hotfix-verify` · `feature-test`.
+1. **FLOW** — which pipeline runs at all: `/vc-fix:qa-verify-fix` · `hotfix-verify` · `feature-test`.
 2. **EFFORT** — FAST or FULL, **only** within `feature-test`. FULL for a new feature / Epic, P0–P1,
    cross-layer, ≥2 domains, a critical-revenue flow, or an unclear surface; FAST for a bug fix / copy-tweak /
    config / Technical task — or a `Review task` contribution whose PR diff is one-file and
@@ -128,7 +128,7 @@ produces, and it is the one that fails CLOSED. Methodology:
    `ticket-routing.md` §5's, stated only there — read it rather than assuming which way it points.**
 
 A `not-fixed` Bug takes `feature-test` **FAST** to reproduce and characterize the defect live with fresh
-evidence — there is no fix to *verify* yet; state that the next step is `/qa-fix <ticket-key>`.
+evidence — there is no fix to *verify* yet; state that the next step is `/vc-fix:qa-fix <ticket-key>`.
 
 ---
 
@@ -183,7 +183,7 @@ verifier re-ratification stays off, as at every other FAST gate.
 
 **`5-loop.0` round entry runs on FAST too — and it is the path that needs it most.** Every bug a FAST round
 files comes off a **checklist item**, so it carries no case id and nothing in the RED→GREEN set can ever
-speak for it; an inline `/qa-verify-fix` per fix-ready sub-task is the only way such a bug is ever
+speak for it; an inline `/vc-fix:qa-verify-fix` per fix-ready sub-task is the only way such a bug is ever
 verified or closed. It is not an exception to FAST's one-execution-agent promise for the same reason the
 contract axis is not: the bugs are verified through the flow `1a` already runs inline, not by a new lane.
 
@@ -268,7 +268,7 @@ for `feature-test`, the **EFFORT**, then the **SHAPE CLASS** (§5c) off the same
 | Flow | Then |
 |---|---|
 | `feature-test` | continue to `1b` and run the pipeline at the resolved effort — the rest of this document. A `ui-kit` shape class changes what that path produces (§5c) |
-| `verify-fix` | **run `/qa-verify-fix` inline — execute its Steps 0–7 as written** ([`qa-verify-fix.md`](qa-verify-fix.md)). Steps 2–5 do not run. **Fail-safe:** a `fix-ready` Bug with no STR *and* no linked fix PR has nothing to prove RED→GREEN against → fall back to `feature-test` FAST and note the missing repro basis |
+| `verify-fix` | **run `/vc-fix:qa-verify-fix` inline — execute its Steps 0–7 as written** ([`plugins/vc-fix/commands/qa-verify-fix.md`](plugins/vc-fix/commands/qa-verify-fix.md)). Steps 2–5 do not run. **Fail-safe:** a `fix-ready` Bug with no STR *and* no linked fix PR has nothing to prove RED→GREEN against → fall back to `feature-test` FAST and note the missing repro basis |
 | `hotfix-verify` | **STOP** — `Run /qa-hotfix-check <ticket-key>`. File nothing; transition nothing |
 | `technical-change` | run the fixed-shape flow — [`technical-change.md`](../skills/qa-test/technical-change.md). `2a` + a standard `/qa-regression` over the blast radius, then **Step 5 in full**; the checklist only if the ticket has machinery to verify. No Test Model, no authoring |
 | a **Sub-task** | resolve the parent and re-enter this classification as the **parent's** type × status |
@@ -682,8 +682,8 @@ loop exit** — one release, one recommendation. `5-verdict`'s reconciliation re
 no dispatch cost. FAST fires neither of the two, in the loop exactly as everywhere else.
 
 **Close the loop.** By default `/qa-test` verifies and reports; it never fixes — it states the next command
-and stops. PASS → TESTED, hand to the Feature Release Gate. FAIL → REOPEN → `/qa-fix <ticket-key>` → human
-review + merge + deploy → `/qa-verify-fix <ticket-key>`. BLOCKED → resolve the blocker and re-run from the
+and stops. PASS → TESTED, hand to the Feature Release Gate. FAIL → REOPEN → `/vc-fix:qa-fix <ticket-key>` → human
+review + merge + deploy → `/vc-fix:qa-verify-fix <ticket-key>`. BLOCKED → resolve the blocker and re-run from the
 top; no partial credit. With **`--iterate`**, 5-loop drives that loop itself, bounded — and it re-persists as
 well as re-runs: per-round filing, comment, `summary.json` and checklist, with the gate, the transition
 and promotion deferred to the exit round

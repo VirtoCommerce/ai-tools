@@ -426,11 +426,28 @@ export function loadSweep(kind: SweepKind, read: (p: string) => string = readSou
  * ------------------------------------------------------------------ */
 
 const TITLE_CAP = 110;
+const TITLE_SEP = " — ";
 function truncate(s: string, n = TITLE_CAP): string {
   if (s.length <= n) return s;
   const cut = s.slice(0, n - 1);
   const sp = cut.lastIndexOf(" ");
   return `${(sp > n * 0.6 ? cut.slice(0, sp) : cut).trimEnd()}…`;
+}
+
+/**
+ * B-40: truncating `${surface} — ${scenario}` as one string lets a long `surface` (shared by every
+ * row in a sweep) swallow the `scenario` suffix that is the only thing distinguishing one row's
+ * title from another — collapsing N sweep rows onto one title and failing the KEEP gate with
+ * "Title+Section duplicates an earlier row", which points at the wrong half. Truncate the surface
+ * alone and keep the scenario whole whenever it fits; only fall back to truncating the combined
+ * string when the scenario alone would not fit whatever budget is left.
+ */
+function sweepTitle(surface: string, scenario: string, n = TITLE_CAP): string {
+  const full = `${surface}${TITLE_SEP}${scenario}`;
+  if (full.length <= n) return full;
+  const surfaceBudget = n - TITLE_SEP.length - scenario.length;
+  if (surfaceBudget > 0) return `${truncate(surface, surfaceBudget)}${TITLE_SEP}${scenario}`;
+  return truncate(full, n);
 }
 
 export function expandSweep(
@@ -469,7 +486,7 @@ export function expandSweep(
       continue;
     }
     cases.push({
-      title: truncate(`${sweep.surface} — ${r.scenario}`),
+      title: sweepTitle(sweep.surface, r.scenario),
       link: `${sweep.kind}:${r.key}`,
       layer: sweep.layer ?? fallbackLayer,
       priority: r.priority,

@@ -1,6 +1,12 @@
 # Compare v2 — a long unbroken property value overflows its cell and is painted over the neighbouring column — P2
 
-## Status: FILED — [VCST-6029](https://virtocommerce.atlassian.net/browse/VCST-6029) (screenshots attached AND embedded inline, verified via renderedFields: 2 attachment-backed `<img>`, 0 surviving wiki markup, 0 error spans)
+## Status: FIXED — [VCST-6029](https://virtocommerce.atlassian.net/browse/VCST-6029) (screenshots attached AND embedded inline, verified via renderedFields: 2 attachment-backed `<img>`, 0 surviving wiki markup, 0 error spans)
+
+## Resolution
+- **Fixed by:** [VirtoCommerce/vc-frontend#2495](https://github.com/VirtoCommerce/vc-frontend/pull/2495) (open, unmerged at verification time) — `.compare-table__row-value`: `overflow-wrap: break-word` → `overflow-wrap: anywhere`, CSS only, one rule, applies to all 7 rows / 14 value cells.
+- **Verified:** 2026-09-22, local pre-merge build of the PR's own CI theme artifact (`vc-theme-b2b-vue-2.58.0-pr-2495-c828-c828ee92.zip`), API proxied to real `vcst-qa` catalog data. STR 3/3, 10/10 checklist, live RED→GREEN discrimination matched the measurements below to the hundredth of a pixel. Full report: `reports/tickets/Sprint26-19/VCST-6029/verification-report.md` · evidence page: `reports/tickets/Sprint26-19/VCST-6029/evidence.html`.
+- **Tracker:** VCST-6029 transitioned `Testing → Tested`.
+- **Residual, non-blocking:** the cell still has `overflow: visible` and no `min-w-0` — `anywhere` removes the cause rather than adding a clip fallback; not reachable with current catalog data. Verified on Chromium only. Re-confirm on the shared `vcst-qa` deployment once PR #2495 merges.
 
 **Severity:** Medium/P2 (**High at ≤~600px**) · **Type:** Rendering / CSS layout · **Archetype:** `PARITY`
 **Found by:** `/qa-bug`, 2026-09-18 — user report: *"I see UI bug here one overlay another column"* + screenshot of the SKU row.

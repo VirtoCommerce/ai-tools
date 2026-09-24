@@ -1,0 +1,33 @@
+{
+  "ticket": "VCST-5933",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-09-23",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1072.0-pr-3108-b6ef-vcst-5378-unified-buyer-flow-b6ef79b0",
+    "relevant_modules": {"VirtoCommerce.XOrder": "3.1013.0-pr-52-a3c9", "VirtoCommerce.Customer": "3.1025.0", "VirtoCommerce.Xapi": "3.1022.0", "VirtoCommerce.ProfileExperienceApiModule": "3.1018.0"},
+    "pr_build": "VirtoCommerce.XOrder 3.1013.0-pr-52-a3c9 (vc-module-x-order#52), pinned via vc-deploy-dev#6608"
+  },
+  "agent_used": "inline (API, Newman) + qa-frontend-expert (storefront; playwright-firefox -> playwright-edge fallback)",
+  "str_result": "3/3 API (+1 capture run, 22/22 each); 3/3 storefront lock cycles",
+  "baseline_reproduction": "from-qa-bug (Newman run 2026-09-09, 1 failed at request 8: organizationOrders(locked) served totalCount 66)",
+  "checklist_total": 10,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "checklist_blocked": 2,
+  "regression_issues": [],
+  "side_effects": [],
+  "notes": [
+    "Own-order visibility while locked not coverable: fixture buyer owns no order in the locked org",
+    "Storefront 'All orders' for the unlocked org not coverable: fixture role shows only 'My orders' (API covers org-specificity)",
+    "test-data/postman/vcst-qa.postman_environment.json b2bUserId is stale (fixture account re-created); overridden at runtime with the live-resolved id"
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-AUTH-015", "BL-B2B-013"],
+  "tracker_transition": {"role": "tested", "state": "Tested"},
+  "tracker_comment_id": "110324",
+  "prior_runs": [{"date": "2026-09-23", "verdict": "BLOCKED", "reason": "fix-not-deployed", "tracker_comment_id": "110322"}],
+  "evidence": "reports/tickets/Sprint26-19/VCST-5933/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-5933/"
+}

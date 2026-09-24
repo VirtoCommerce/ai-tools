@@ -499,8 +499,14 @@ function capturedVars(row: Row): Set<string> {
 // headers, `Body: {...}` on their own lines — see graphql-test-cases-runner.md §3.7) is
 // NOT single-tag-per-line, so judging it against STEP_TAG_RE manufactured a false D-001
 // on every continuation line (found authoring VCST-5319 suite 075d, e.g. MSN-001/002/006).
+// [MCP-OP] added 2026-09-23. An MCP-only case (no GQL/REST op) fell to the ELSE branch of the
+// Determinism check, which is the UI/Admin rule D-001 — "every non-blank step line must carry a
+// tag". An [MCP-OP] block is deliberately multi-line (tool name, then a JSON argument object), so
+// EVERY body line tripped it: 8 green suite-102 cases were held at Draft by tc:promote PR-008 over
+// a Critical finding about grammar they use correctly. The runner branch delegates to
+// validateStepBlocks, which now pair-checks the MCP family too.
 function isRunnerGraphql(row: Row): boolean {
-  return /\[GQL-OP\b|\[REST-OP\b/i.test(row.Steps);
+  return /\[GQL-OP\b|\[REST-OP\b|\[MCP-OP\b/i.test(row.Steps);
 }
 
 export function lintRow(row: Row, idx: number, seenIds: Map<string, number>): Finding[] {
@@ -896,21 +902,47 @@ function rank(s: Severity): number {
   return SEVERITY_ORDER.indexOf(s);
 }
 
+/**
+ * B-40: this CLI historically took only a CSV path, while the sibling `tc:scope` takes a bare
+ * suite id (`075d`) resolved through the manifest — an easy mix-up that used to die with a raw
+ * `ENOENT` stack instead of a usable message. Accept both: a path that exists on disk is used
+ * as-is; anything else is looked up as an `id` in `config/test-suites.json`, the same manifest
+ * `tc:scope` already resolves ids through.
+ */
+function resolveSuiteFile(arg: string): string {
+  if (existsSync(arg)) return arg;
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+  const manifestPath = join(repoRoot, "config", "test-suites.json");
+  if (existsSync(manifestPath)) {
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { suites: { id: string; file: string }[] };
+    const hit = manifest.suites.find((s) => s.id === arg);
+    if (hit) {
+      const resolved = join(repoRoot, hit.file);
+      if (existsSync(resolved)) return resolved;
+      console.error(`lint-test-cases: suite "${arg}" resolves to ${hit.file} in config/test-suites.json, but that file does not exist`);
+      process.exit(1);
+    }
+  }
+  console.error(`lint-test-cases: "${arg}" is neither an existing file nor a suite id in config/test-suites.json`);
+  process.exit(1);
+}
+
 function main(): void {
   const argv = process.argv.slice(2);
-  const file = argv.find((a) => !a.startsWith("--"));
+  const fileArg = argv.find((a) => !a.startsWith("--"));
   const json = argv.includes("--json");
   const failOnArg = (argv.find((a) => a.startsWith("--fail-on=")) ?? "--fail-on=High").split("=")[1] as Severity;
   const failOn = SEVERITY_ORDER.includes(failOnArg) ? failOnArg : "High";
   const staleArg = Number(argv.find((a) => a.startsWith("--stale-days="))?.split("=")[1]);
   const staleDays = Number.isFinite(staleArg) && staleArg > 0 ? staleArg : DEFAULT_STALE_DAYS;
 
-  if (!file) {
+  if (!fileArg) {
     console.error(
-      "Usage: lint-test-cases.ts <suite.csv> [--json] [--fail-on=Blocker|Critical|High|Medium] [--stale-days=N]",
+      "Usage: lint-test-cases.ts <suite.csv | suite-id> [--json] [--fail-on=Blocker|Critical|High|Medium] [--stale-days=N]",
     );
     process.exit(1);
   }
+  const file = resolveSuiteFile(fileArg);
 
   // Strip a UTF-8 BOM — 12 suite CSVs carry one, and it would otherwise be parsed
   // as part of the first header cell ("Invalid Opening Quote" → bogus S-007 Blocker).

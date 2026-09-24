@@ -475,6 +475,144 @@ interface ParsedRestOp {
   jsonBody?: string;
 }
 
+export interface McpOpResponse {
+  /** The TOOL's status — `status_code` from the error payload when isError, else the HTTP status. */
+  status: number;
+  /** The raw HTTP status, kept for evidence: it is 200 even on a failed tool call. */
+  transportStatus?: number;
+  ok: boolean;
+  /** The UNWRAPPED tool payload — `result.content[0].text` parsed as JSON where it is JSON. */
+  body: unknown;
+  /** True when the MCP layer flagged a tool error (`result.isError`). */
+  isError: boolean;
+  errors: unknown[];
+  rawBody: string;
+  elapsed_ms: number;
+}
+
+/**
+ * Execute one `[MCP-OP]` block against the UCP MCP endpoint.
+ *
+ * Body grammar — first non-empty line is the TOOL NAME, the remainder is its JSON arguments:
+ *
+ *   [MCP-OP cart]
+ *   create_cart
+ *   { "store_id": "{{STORE_ID}}", "line_items": [{ "product_id": "@td(UCP_CONTRACT_PRODUCT.sku)", "quantity": 1 }] }
+ *
+ * Three UCP-specific facts this has to absorb, each of which cost a manual run to learn:
+ *  - the reply may arrive as an SSE `data:` line rather than a bare JSON body;
+ *  - the real payload is a JSON STRING nested at `result.content[0].text`, so a naive
+ *    `response.data` read finds nothing;
+ *  - a tool failure is `result.isError` with HTTP **200**, not an HTTP error status, so status
+ *    alone never decides the verdict.
+ */
+async function executeMcpOp(
+  label: string,
+  rawBody: string,
+  resolver: TestDataResolver,
+  variables: Record<string, string>,
+  token: string | undefined
+): Promise<McpOpResponse> {
+  const front = (process.env.FRONT_URL ?? "").replace(/\/+$/, "");
+  if (!front) throw new Error(`[MCP-EXEC ${label}] FRONT_URL is not set`);
+
+  // Every other op family runs substituteEnv(substituteVars(...)); this one did not, so a
+  // `{{STORE_ID}}` inside an [MCP-OP] body went to the wire LITERALLY and UCP answered
+  // `store_id does not identify an existing store` — which cascaded every downstream capture to
+  // undefined. 20 of 21 failures in the first converted run traced to this one missing pass.
+  const resolved = substituteEnv(substituteVars(resolver.resolve(rawBody), variables));
+
+  // An unresolved {{TOKEN}} must NEVER reach the wire. Sending one produces a plausible-looking
+  // product error about a value the author never wrote — it reads as a product defect and costs a
+  // whole run to trace back. Fail loudly at the boundary instead.
+  const unresolved = resolved.match(/\{\{[A-Za-z_]\w*\}\}/g);
+  if (unresolved) {
+    throw new Error(
+      `[MCP-OP ${label}] refusing to send: unresolved token(s) ${[...new Set(unresolved)].join(", ")}.\n` +
+        `    Nothing supplied a value — check Test_Data, an earlier [MCP-CAPTURE], or the env.`
+    );
+  }
+
+  const lines = resolved.split(/\r?\n/).filter((l) => l.trim());
+  if (!lines.length) throw new Error(`[MCP-OP ${label}] empty body`);
+  const toolName = lines[0].trim();
+  const argsText = lines.slice(1).join("\n").trim();
+  let args: unknown = {};
+  if (argsText) {
+    try {
+      args = JSON.parse(argsText);
+    } catch (e) {
+      throw new Error(
+        `[MCP-OP ${label}] arguments are not valid JSON: ${(e as Error).message}\n${argsText.slice(0, 200)}`
+      );
+    }
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json, text/event-stream",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const started = Date.now();
+  const res = await fetch(`${front}/ucp/mcp`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: toolName, arguments: args },
+    }),
+  });
+  const text = await res.text();
+  const elapsed_ms = Date.now() - started;
+
+  // SSE framing: the JSON-RPC envelope arrives on a `data:` line.
+  const sse = text.match(/^data: (.*)$/m);
+  let envelope: Record<string, unknown> = {};
+  try {
+    envelope = JSON.parse(sse ? sse[1] : text) as Record<string, unknown>;
+  } catch {
+    return { status: res.status, ok: false, body: null, isError: true, errors: [{ message: "unparseable MCP reply" }], rawBody: text.slice(0, 2000), elapsed_ms };
+  }
+
+  const result = envelope.result as { content?: { text?: string }[]; isError?: boolean } | undefined;
+  const isError = Boolean(result?.isError) || Boolean(envelope.error);
+  let payload: unknown = envelope.error ?? result ?? envelope;
+  const inner = result?.content?.[0]?.text;
+  if (typeof inner === "string") {
+    try { payload = JSON.parse(inner); } catch { payload = inner; }
+  }
+
+  // THE ASSERTABLE STATUS IS THE TOOL'S, NOT THE TRANSPORT'S.
+  //
+  // MCP returns a failed tool call as HTTP **200** with `result.isError`, and UCP puts the real code
+  // in the payload (`{"is_error":true,"code":"invalid_request","status_code":400,…}`). Reporting the
+  // transport status made `[ERRORS label=x] HTTP 200` pass on calls that had FAILED — measured
+  // 2026-09-23 on UCPA-008, where a `create_cart` missing `store_id` asserted green. That is the same
+  // vacuous-pass shape as a null capture, one layer up: the assertion was true and tested nothing.
+  //
+  // So surface `status_code` when the tool reports an error. `HTTP 400` now means what an author
+  // intends by it, and `HTTP 200` can no longer be satisfied by a failure.
+  const payloadStatus =
+    isError && payload && typeof payload === "object"
+      ? (payload as { status_code?: number }).status_code
+      : undefined;
+
+  return {
+    status: payloadStatus ?? res.status,
+    transportStatus: res.status,
+    // A tool error carries HTTP 200, so `ok` must reflect isError, not the status line.
+    ok: res.ok && !isError,
+    body: payload,
+    isError,
+    errors: isError ? [payload] : [],
+    rawBody: text.slice(0, 4000),
+    elapsed_ms,
+  };
+}
+
 /**
  * Parse a free-form REST-OP body into method, url, headers, and body. Supports
  * the patterns used in 050i:
@@ -691,6 +829,11 @@ async function runCase(
   const nullCaptures: string[] = [];
   const schemaRef: SchemaRef = { current: effectiveSchema, refreshAttempted: false, refreshed: false };
   let currentToken: string | undefined;
+  // A STABLE holder, deliberately not a ctx property: the ctx object below is rebuilt as a fresh
+  // object literal for EVERY block, so anything a step writes onto ctx is discarded before the next
+  // step reads it. Measured 2026-09-22 — the UCP-audience token acquired at [AUTH] vanished exactly
+  // this way, and [MCP-EXEC] silently fell back to the xAPI token and got a bare 401.
+  const authState: { ucpToken?: string } = {};
 
   for (const block of blocks) {
     try {
@@ -711,6 +854,7 @@ async function runCase(
           resolver,
           evidenceOps,
           nullCaptures,
+          authState,
         },
         (token) => (currentToken = token),
         () => currentToken
@@ -770,13 +914,39 @@ async function runCase(
   // 6. Verdict (computed BEFORE cleanup so cleanup outcome cannot mask it)
   const passed = results.filter((r) => r.passed).length;
   const failed = results.length - passed;
-  const verdict = failed === 0 && results.length > 0 ? "PASS" : failed > 0 ? "FAIL" : "EMPTY";
+  // A NULL CAPTURE INVALIDATES THE CASE — it can never be a PASS.
+  //
+  // Measured 2026-09-22 (suite 102 / VCST-5378): null captures were printed as a warning and then
+  // excluded from the verdict, so a case whose `ucp_session` capture produced NOTHING posted an
+  // empty token to /restore, got the same 400 a genuinely-expired token gets, and reported **PASS**.
+  // The assertion was true; it just wasn't testing anything. That is the vacuous-pass shape the
+  // corpus already fights elsewhere ("silence is never a pass") arriving through the capture path.
+  //
+  // Downgrading to INVALID rather than FAIL is deliberate: the case did not observe the product
+  // failing, it failed to observe the product at all, and triage must be able to tell those apart.
+  const verdict =
+    nullCaptures.length > 0
+      ? "INVALID"
+      : failed === 0 && results.length > 0
+      ? "PASS"
+      : failed > 0
+      ? "FAIL"
+      : "EMPTY";
+  if (nullCaptures.length > 0) {
+    console.log(
+      `\n  ⚠ VERDICT FORCED TO INVALID — ${nullCaptures.length} capture(s) resolved to null/undefined,\n` +
+        `    so every downstream assertion ran against an empty value and proves nothing.`
+    );
+  }
   const summary = `\n=== Verdict: ${verdict} (${passed}/${results.length} assertions passed) ===`;
   console.log(summary);
 
   // 7. Cleanup — best-effort runner-native [REST]/[AUTH] execution.
   // Failures are recorded in evidence but never alter the verdict.
-  const cleanupRaw = resolver.resolve(row.Cleanup);
+  // `?? ""` because a CSV without the optional Cleanup column must not abort a run that has
+  // already produced its verdict — the crash lands AFTER the result is printed, so it reads as a
+  // runner failure on a case that actually passed.
+  const cleanupRaw = resolver.resolve(row.Cleanup ?? "");
   const cleanupSubstituted = substituteEnv(substituteVars(cleanupRaw, variables));
   const cleanupBlocks =
     cleanupSubstituted && cleanupSubstituted.trim().toLowerCase() !== "none"
@@ -891,6 +1061,7 @@ async function executeBlock(
     responses: Map<string, GraphQLResponse>;
     restOpBodies: Map<string, string>;
     restResponses: Map<string, RestOpResponse>;
+    authState: { ucpToken?: string };
     resolver: TestDataResolver;
     evidenceOps: OpEvidence[];
     nullCaptures: string[];
@@ -912,6 +1083,22 @@ async function executeBlock(
       const token = await ctx.tokenCache.getToken(block.role, block.org);
       console.log(`  token acquired (${Date.now() - t0}ms)`);
       setToken(token);
+
+      // UCP's /ucp/mcp validates audience, issuer AND resource path, so the xAPI token above is
+      // refused there with a bare 401. Mint the UCP-audience token for the same role now, lazily
+      // and best-effort: a case with no [MCP-*] step must not fail because UCP is not deployed.
+      const front = (process.env.FRONT_URL ?? "").replace(/\/+$/, "");
+      if (front) {
+        try {
+          ctx.authState.ucpToken = await ctx.tokenCache.getTokenForResource(block.role, block.org, {
+            backUrl: front,
+            resource: `${front}/ucp/mcp`,
+          });
+        } catch (e) {
+          // Recorded, never fatal — only an [MCP-EXEC] needs it, and it reports the miss itself.
+          console.log(`  (no UCP-audience token: ${(e as Error).message.slice(0, 100)})`);
+        }
+      }
       return;
     }
 
@@ -1111,6 +1298,95 @@ async function executeBlock(
       return;
     }
 
+    case "MCP-OP": {
+      // Defer resolution + execution until the matching [MCP-EXEC <label>]
+      ctx.restOpBodies.set("mcp:" + block.label, block.body);
+      return;
+    }
+
+    case "MCP-EXEC": {
+      const body = ctx.restOpBodies.get("mcp:" + block.label);
+      if (body === undefined) {
+        throw new Error(
+          `[MCP-EXEC ${block.label}] has no matching [MCP-OP ${block.label}]`
+        );
+      }
+      console.log(`\n• [MCP-EXEC ${block.label}] firing UCP tools/call`);
+      const mcpResp = await executeMcpOp(
+        block.label,
+        body,
+        ctx.resolver,
+        ctx.variables,
+        // Prefer the UCP-audience token [AUTH] minted; the xAPI token is refused at /ucp/mcp
+        // with a bare 401 even though it is perfectly valid against /graphql.
+        ctx.authState.ucpToken ?? getToken()
+      );
+      ctx.restResponses.set("mcp:" + block.label, mcpResp as unknown as RestOpResponse);
+      // Expose under the shared response Map so the EXISTING assertion machinery scores it —
+      // no second scoring path, which is what keeps a classifier and a runtime from drifting.
+      ctx.responses.set(block.label, {
+        status: mcpResp.status,
+        ok: mcpResp.ok,
+        data: { body: mcpResp.body, status: mcpResp.status, isError: mcpResp.isError },
+        errors: mcpResp.errors,
+        rawBody: mcpResp.rawBody,
+        elapsed_ms: mcpResp.elapsed_ms,
+      } as unknown as GraphQLResponse);
+      console.log(
+        `  ${mcpResp.status} ${mcpResp.ok ? "OK" : "ERR"}${mcpResp.isError ? " isError" : ""} — ${mcpResp.elapsed_ms}ms`
+      );
+      // UCP_DEBUG=1 prints the whole response body. Authoring an MCP case means guessing the
+      // envelope (create_cart nests under .cart, create_checkout under .checkout, handoff_checkout
+      // double-wraps under .result.checkout), and a wrong guess fails as `undefined` with no hint
+      // of the right path — the single largest source of false reds in suite 102.
+      if (process.env.UCP_DEBUG) {
+        console.log("  ↳ body: " + JSON.stringify(mcpResp.body).slice(0, 4000));
+      }
+      return;
+    }
+
+    case "MCP-CAPTURE": {
+      const resp = ctx.restResponses.get("mcp:" + block.label) as unknown as McpOpResponse | undefined;
+      if (!resp) {
+        throw new Error(
+          `[MCP-CAPTURE ${block.label}.${block.path}] no MCP response recorded for label`
+        );
+      }
+      // Substitute {{VAR}} placeholders in the path BEFORE walking it, so chained captures like
+      // `cart.line_items[?product_id={{PRODUCT_ID}}].quantity` resolve — the GQL and REST families
+      // have always done this; MCP-CAPTURE did not, and the miss is SILENT: the filter never matches,
+      // the capture lands `undefined`, and the case then fails on an unresolved token far from the
+      // cause (measured 2026-09-23 on UCPA-028).
+      const resolvedMcpPath = substituteEnv(substituteVars(block.path, ctx.variables));
+      const path = resolvedMcpPath.replace(/^body\./, "");
+      let val = getByPath(resp.body as Record<string, unknown>, path);
+      // Optional extractor: capture group 1 of `matching /re/`. Needed because UCP exposes the raw
+      // ucp_session ONLY inside continue_url's query string (verified live 2026-09-22), so a
+      // path-only capture cannot reach it.
+      if (block.matching && val !== undefined && val !== null) {
+        const m = String(val).match(new RegExp(block.matching));
+        if (!m) {
+          throw new Error(
+            `[MCP-CAPTURE ${block.label}.${block.path} matching /${block.matching}/] did not match: ${String(val).slice(0, 120)}`
+          );
+        }
+        val = m[1] ?? m[0];
+      }
+      if (val === undefined || val === null) {
+        ctx.nullCaptures.push(`${block.label}.${block.path} → ${block.variable}`);
+        console.log(
+          `  ⚠ [MCP-CAPTURE ${block.label}.${block.path} → ${block.variable}] = ${val === undefined ? "undefined" : "null"}`
+        );
+      } else {
+        const s = String(val);
+        ctx.variables[block.variable] = s;
+        console.log(
+          `• [MCP-CAPTURE ${block.label}.${block.path} → ${block.variable}] = ${s.length > 60 ? s.slice(0, 57) + "..." : s}`
+        );
+      }
+      return;
+    }
+
     case "REST-OP": {
       // Defer body resolution + execution until matching [REST-EXEC <label>]
       ctx.restOpBodies.set(block.label, block.body);
@@ -1125,7 +1401,12 @@ async function executeBlock(
         );
       }
       console.log(`\n• [REST-EXEC ${block.label}] firing REST request`);
-      const token = getToken();
+      // A REST op aimed at a UCP route needs the UCP-AUDIENCE token, exactly as [MCP-EXEC] does.
+      // The xAPI token is refused there with `401 identity_required`, which reads as a product
+      // refusal rather than a wrong credential — measured 2026-09-23, it failed all five
+      // handoff-restore cases (UCPA-015/019/020/021/026) while the chain in front of it worked.
+      const targetsUcp = /\/ucp\//.test(body);
+      const token = (targetsUcp ? ctx.authState.ucpToken : undefined) ?? getToken();
       const restResp = await executeRestOp(
         { kind: "REST-OP", label: block.label, body, raw: "" },
         ctx.backUrl,
@@ -1215,6 +1496,20 @@ async function executeBlock(
         if (ctx.args.dryRun) {
           console.log(`• [WAIT] --dry-run — skipping ${block.seconds}s sleep`);
           return;
+        }
+        // A wait the run cannot afford is REFUSED, never truncated. Before 2026-09-23 the parser
+        // silently clamped to 300 s: suite 102's UCPA-021 asks for 960 s so a 15-minute handoff-token
+        // TTL can elapse, then asserts the expired-token 400 — which an UNEXPIRED token returns too.
+        // So it scored PASS in 314 s while never crossing the boundary it exists to test, which is the
+        // one failure a green suite cannot surface. Raise the ceiling deliberately, per lane.
+        const maxWaitSec = Number(process.env.GQL_MAX_WAIT_SECONDS ?? 300);
+        if (block.seconds > maxWaitSec) {
+          throw new Error(
+            "[WAIT seconds=" + block.seconds + "] exceeds the " + maxWaitSec + "s ceiling. This case " +
+              "observes a boundary this run cannot reach, and a truncated wait would score as a PASS " +
+              "without ever crossing it. Re-run with GQL_MAX_WAIT_SECONDS=" + block.seconds + " on a " +
+              "lane that can afford the wall-clock, or redesign the case to assert something observable sooner."
+          );
         }
         console.log(`\n• [WAIT] sleeping ${block.seconds}s (fixed) ...`);
         await sleep(block.seconds * 1000);
@@ -1372,7 +1667,7 @@ async function main() {
 const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
 if (isCli) {
   main().catch((e) => {
-    console.error(`\nFATAL: ${e instanceof Error ? e.message : String(e)}`);
+    console.error(`\nFATAL: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
     process.exit(3);
   });
 }

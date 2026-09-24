@@ -114,6 +114,10 @@ const RUNNER_OP_KINDS = new Set<StepBlock["kind"]>([
   "REST",
   "REST-OP",
   "REST-EXEC",
+  // UCP / MCP JSON-RPC ops. Added 2026-09-22: suite 102 was 29/29 browser lane on EX-010 + EX-011
+  // because nothing here spoke JSON-RPC, so 29 deterministic HTTP cases each needed an AGENT.
+  "MCP-OP",
+  "MCP-EXEC",
 ]);
 
 /**
@@ -263,7 +267,7 @@ export function classifyCase(row: ClassifiableRow): CaseVerdict {
   }
 
   if (!blocks.some((b) => RUNNER_OP_KINDS.has(b.kind))) {
-    blockers.push({ code: "EX-011", detail: "no [GQL-OP]/[GQL-EXEC]/[REST*] block" });
+    blockers.push({ code: "EX-011", detail: "no [GQL-OP]/[GQL-EXEC]/[REST*]/[MCP*] block" });
   }
 
   for (const err of validateStepBlocks(blocks)) blockers.push({ code: "EX-003", detail: err });

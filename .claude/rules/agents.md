@@ -8,7 +8,7 @@ Knowledge-base inventory and the read-before-you-write rules (`graphql-schema.md
 
 Project `.mcp.json` (gitignored, per machine): `playwright-chrome` / `playwright-firefox` / `playwright-edge` (`config/mcp-playwright-*.config.json`), `postman`, `github`, `context7`; user/IDE level: Chrome DevTools, Azure, Atlassian, Figma, Microsoft Learn, **VirtoOZ** (primary VC docs via `/vc-docs`). Browser login secrets go through Playwright MCP `--secrets .env.playwright.local` — type the **bare key name** (`ORG_USER_PASSWORD`), never `{{VAR}}`: the miss is silent and hook-blocked. **Chrome DevTools MCP has no `--secrets`**; a DevTools brief must name its auth path (persistent profile / mint an account / delegate to a Playwright lane). Full server table, `--secrets` setup and the DevTools auth options: [`knowledge/execution/browser-lanes.md`](../knowledge/execution/browser-lanes.md).
 
-**Unclear product behaviour ⇒ ask VirtoOZ first.** Any agent, any task: when what the platform or the storefront is *supposed* to do is not clear, query VirtoOZ via `/vc-docs` before acting on a guess — the rule and its 3-source caveat live in [`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*.
+**About to WRITE product behaviour ⇒ ask VirtoOZ first.** Any agent, any task: query VirtoOZ via `/vc-docs` before committing a claim about what the platform or the storefront is *supposed* to do. **The trigger is the write, not whether you feel unsure** — converging evidence does not discharge it. The rule and its 3-source caveat live in [`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*.
 
 **But a doc is authoritative for MECHANISM, not SURFACE** — exact UI strings, control types, layout and counts are `{OBSERVED}`, never `{DOC}` (a user guide paraphrases labels by design); a documented rule binds only to the surface the doc names; and docs contradicting an existing case, suite or knowledge file is a trigger to OBSERVE, never a licence to overwrite it. **Delegation teeth, which is this file's business: a dispatch brief must never instruct a subagent to prefer a doc over the artifact it is about to edit** — the artifact may be the only source written from the screen, and the subagent cannot re-check the brief's premise. Full rule, the enforceable quote test and the measured incident (VCST-5959: a doc-first brief put two nonexistent UI labels into a suite that had them right): [`../knowledge/agents/qa/shared-instructions.md`](../knowledge/agents/qa/shared-instructions.md) §What VirtoOZ is authoritative FOR.
 
@@ -18,12 +18,9 @@ Project `.mcp.json` (gitignored, per machine): `playwright-chrome` / `playwright
 - Default to `chromium` (not `chrome`) for Playwright MCP browser launches. WebKit is NOT supported on Windows — fall back to Edge or Chrome immediately without attempting installation.
 - Always verify MCP server config uses correct browser engine names: `chromium`, `firefox`, `webkit` (not `chrome`, `edge`).
 - After any MCP config change, remind the user that a server restart is required before the new config takes effect.
-- Browser configs set viewport to 1920x1080, isolated contexts, HAR capture, and **video capture — which
-  records ALWAYS, not on failure** (`recordVideo` is a browser-context option; `retain-on-failure` is a
-  *test-runner* setting and does not exist here). Videos land in `test-results/<browser>/video/`
-  (gitignored, pruned with the rest of `test-results/`). Added 2026-09-11 — before that the three configs
-  carried **no** video setting at all while this line claimed "video on failure", so a reader who needed a
-  recording found none. **A config change needs an MCP server restart before it takes effect.**
+- Browser configs set viewport to 1920x1080, isolated contexts, and HAR capture. Video recording was
+  removed from all four lane configs 2026-09-21 — do not re-add a `recordVideo` block without also
+  restoring the guard in `scripts/unit/playwright-lane-configs.test.mjs`.
 
 ## QA Team (+ shared-instructions)
 

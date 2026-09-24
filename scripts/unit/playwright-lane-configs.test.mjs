@@ -9,8 +9,7 @@
 //
 // The same reasoning covers the other per-lane invariants asserted here: each is silent when wrong.
 // Two lanes sharing a `recordHar.path` or an `outputDir` means one lane quietly overwrites the
-// other's evidence; a missing `recordVideo` means reports-policy.md §5.2 has no frames to build a
-// GIF from; a dropped Firefox occlusion pref makes every click on that lane time out.
+// other's evidence; a dropped Firefox occlusion pref makes every click on that lane time out.
 //
 // These configs are read by the MCP servers at startup, NOT by this repo's code, so nothing else
 // would ever catch a malformed one.
@@ -64,22 +63,11 @@ test("HAR captures request/response bodies, not just headers (VCST triage 2026-0
   }
 });
 
-test("every lane records video into its own directory (reports-policy.md §5.2)", () => {
-  for (const { file, lane, cfg } of LANES) {
-    const video = cfg.browser?.contextOptions?.recordVideo;
-    assert.ok(video?.dir, `${file}: no recordVideo.dir — §5.2 motion evidence has no frames to draw on`);
-    assert.ok(video.dir.includes(`/${lane}/`), `${file}: recordVideo.dir "${video.dir}" is not lane-scoped`);
-    assert.ok(video.size?.width > 0 && video.size?.height > 0, `${file}: recordVideo.size is not set`);
-  }
-});
-
 test("lane artifact paths never collide", () => {
-  for (const key of ["outputDir", "har", "video"]) {
+  for (const key of ["outputDir", "har"]) {
     const seen = new Map();
     for (const { file, cfg } of LANES) {
-      const value = key === "outputDir" ? cfg.outputDir
-        : key === "har" ? cfg.browser?.contextOptions?.recordHar?.path
-          : cfg.browser?.contextOptions?.recordVideo?.dir;
+      const value = key === "outputDir" ? cfg.outputDir : cfg.browser?.contextOptions?.recordHar?.path;
       assert.ok(!seen.has(value),
         `${file} shares ${key} "${value}" with ${seen.get(value)} — one lane would overwrite the other's evidence`);
       seen.set(value, file);

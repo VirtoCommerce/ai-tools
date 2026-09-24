@@ -1,0 +1,29 @@
+{
+  "ticket": "VCST-6029",
+  "verdict": "VERIFIED",
+  "date": "2026-09-22",
+  "environment": "http://localhost (local frontend-only build, PR #2495 theme artifact, API proxied to https://vcst-qa.govirto.com)",
+  "build": {
+    "platform": "n/a (frontend-only, CSS fix)",
+    "theme": "vc-theme-b2b-vue-2.58.0-pr-2495-c828-c828ee92.zip",
+    "relevant_modules": {},
+    "pr_build": "VirtoCommerce/vc-frontend#2495 (open, unmerged) — verified locally against the PR's own CI artifact, not the shared vcst-qa deployment"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug (reports/bugs/open/medium/BUG-compare-table-long-value-overlays-adjacent-column-VCST-6029.md) + live RED/GREEN discrimination (shipped rule toggled back to break-word and re-measured, matching the RED baseline to the hundredth of a pixel)",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    "Single-layered defence: overflow-wrap: anywhere removes the cause rather than adding an overflow:hidden clip fallback; not reachable with current catalog data (next-longest code is 11 chars) — observation, not a defect",
+    "Verified on Chromium only; Firefox/Edge not spot-checked"
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-UI-004"],
+  "tracker_transition": {"role": "tested", "state": "Tested"},
+  "evidence": "reports/tickets/Sprint26-19/VCST-6029/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-6029/"
+}

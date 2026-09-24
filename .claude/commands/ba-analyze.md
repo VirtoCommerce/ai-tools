@@ -94,8 +94,7 @@ Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 
 - If scope is `module <name>`: run **ba-system-analyzer** (focused GitHub search for that module) + **ba-api-specialist** (module API surface)
 - If scope is `docs release …`: run **`ba-doc-writer` ALONE** — no other agent, in either mode. A
   release note describes **one shipped change**, and there is no per-ticket `system_analysis` or
-  `api_analysis` to have; requiring them would cost three dispatches for input the mode cannot use
-  (`ba-doc-writer` §6 states this as its own rule). Pass `doc_scope: release`, `release_mode`
+  `api_analysis` to have (`ba-doc-writer` §6). Pass `doc_scope: release`, `release_mode`
   (`fragment` for a ticket, `aggregate` for `--sprint`/`--version`), and the `summary_json_path` /
   `window`. **Do not pass an `audience` in fragment mode** — it is derived from the layer.
 - If scope is `docs ticket <TICKET>`: run **`ba-doc-writer` ALONE** — same reason as `docs release`:
@@ -223,8 +222,7 @@ the tracker comment (or the refusal). Print the guide paths, the composed commen
 the post result — then stop.
 
 **Exception — `docs release` writes NO `ba-report-{date}.md`.** It is not an analysis: its entire
-deliverable is the release note (or the refusal), so a companion analysis report would be an empty
-file with a date on it. Print the fragment path (or the refusal reason) to the terminal and stop.
+deliverable is the release note (or the refusal). Print the fragment path (or the refusal reason) to the terminal and stop.
 
 ```markdown
 # BA Analysis Report — Virto Commerce
@@ -304,8 +302,6 @@ Full drafts: [`reports/ba/bl-proposals-{date}.md`](./bl-proposals-{date}.md)
 - **BA business logic proposals are advisory only** — Step 4.5 drafts `reports/ba/bl-proposals-{date}.md`. **Never** write to `knowledge/oracles/business-logic.md` without explicit per-proposal user approval. The user must read each draft, approve (or edit) it individually, and direct promotion; Claude MUST NOT promote on its own, in bulk, or based on inferred approval. Every proposed entry must cite a source (Context7 quote, GitHub file:line, VC docs section, or UI screenshot). Drop unsourced entries rather than guess.
 
 ## Stories review mode (`stories --review <TICKET>`)
-
-> Absorbed from the former `/ba-stories --review` on 2026-09-08 — `/ba-stories` write mode was already this command's `stories` scope.
 
 Backlog-grooming / pre-test entry to `ba-story-writer` **Mode B**. Use it to harden a story's ACs before development or before `/qa-test` (which calls the same review inline at its Step 1d).
 

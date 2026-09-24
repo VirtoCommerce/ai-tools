@@ -38,6 +38,15 @@ import { fileURLToPath } from 'node:url';
 export const BUDGET = { alwaysLoadedChars: 80_000, longestLineChars: 2_500, skillBodyWarnChars: 19_000, promptBodyChars: 19_000 };
 
 /**
+ * B-55: every budget count must be checkout-invariant. A CRLF working copy (any Windows clone made
+ * before the `.claude/** text eol=lf` pin, or one `git add --renormalize` hasn't reached) costs one
+ * extra char per line versus the LF blob every budget and baseline is meant to describe — enough to
+ * fail a gate on a file that has not changed by a byte, and enough to bank a baseline ~1 char/line
+ * too generous. Normalize before counting so the number means the same thing on every machine.
+ */
+export const charCount = (s) => s.replace(/\r\n/g, '\n').length;
+
+/**
  * BUDGET-004's per-file ratchet. Same shape and same doctrine as `.summary-baseline.json` and
  * XREF_BASELINE: a file NOT listed must be under budget, and a listed file may only SHRINK.
  *
@@ -88,7 +97,7 @@ export function measureBudget(files, read = (f) => fs.readFileSync(f, 'utf8')) {
     const s = read(file);
     let longest = 0;
     for (const l of s.split(/\r?\n/)) if (l.length > longest) longest = l.length;
-    return { file, chars: s.length, longestLine: longest };
+    return { file, chars: charCount(s), longestLine: longest };
   });
   return { total: perFile.reduce((a, r) => a + r.chars, 0), longestLine: Math.max(0, ...perFile.map((r) => r.longestLine)), perFile };
 }
@@ -341,7 +350,7 @@ export function checkPromptBudget(files, baseline, read = (f) => fs.readFileSync
   const limit = BUDGET.promptBodyChars;
   const over = [], breaches = [];
   for (const file of files) {
-    const chars = read(file).length;
+    const chars = charCount(read(file));
     const allowed = baseline[file];
     if (chars > limit) {
       over.push({ file, chars, allowed: allowed ?? null });
@@ -422,7 +431,7 @@ export function lint(root = '.') {
     }
     const budget = measureBudget(alwaysLoadedFiles('.'));
     const skillsOver = walkMd('.claude/skills').filter((p) => path.basename(p) === 'SKILL.md')
-      .map((p) => ({ file: p, chars: fs.readFileSync(p, 'utf8').length })).filter((r) => r.chars > BUDGET.skillBodyWarnChars).sort((a, b) => b.chars - a.chars);
+      .map((p) => ({ file: p, chars: charCount(fs.readFileSync(p, 'utf8')) })).filter((r) => r.chars > BUDGET.skillBodyWarnChars).sort((a, b) => b.chars - a.chars);
     const counts = {}; for (const x of findings) counts[x.code] = (counts[x.code] || 0) + 1;
     for (const k of Object.keys(BASELINE)) counts[k] = counts[k] || 0;
     // DOC-003E is reported, never ratcheted: report artifacts are ephemeral BY POLICY, so its count

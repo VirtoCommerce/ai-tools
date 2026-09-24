@@ -1,10 +1,10 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-09-16T07:43:53.830Z
+**Validated at:** 2026-09-23T08:57:36.189Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 75 fixtures — 75 passed, 0 failed
+**Total:** 76 fixtures — 76 passed, 0 failed
 
-## ✅ Passed Fixtures (75)
+## ✅ Passed Fixtures (76)
 
 | Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
 |------|------|------|----------|---------------|----------------|--------------|
@@ -40,7 +40,8 @@
 | customerSalesReps | query | ORG_USER | sales-rep | (none) | 2026-08-27 | 1 noted |
 | deleteMemberAddresses | mutation | ORG_USER | profile | MEMBER_ID (String), CITY, COUNTRY_CODE, LINE1, POSTAL_CODE (of the address to delete) | 2026-08-27 | 1 noted |
 | getSavedForLater | query | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
-| initializeApplication | query | PUBLIC | store | (none — pass one of `domain` or `storeId` via gql-vars to resolve the store) | 2026-08-27 | 1 noted |
+| initializeApplication | query | PUBLIC | store | (none — pass one of `domain` or `storeId` via gql-vars to resolve the store) | 2026-09-23 | 1 noted |
+| initializeApplicationClient | query | PUBLIC | store | (none — pass `domain` via gql-vars) | 2026-09-23 | 1 noted |
 | loyaltyMissionProgress | query | ORG_USER | loyalty | STORE_ID (String) | 2026-08-27 | 2 noted |
 | me | query | ORG_USER | profile | (none) | 2026-08-27 | 1 noted |
 | meContactOrganizations | query | ORG_USER | profile | (none) | 2026-09-09 | 5 noted |
@@ -184,7 +185,10 @@
 - returns a cart object even if user has never used save-for-later (empty itemsCount) — null is also acceptable per backend
 
 **initializeApplication**:
-- resolving by `domain` returns `modules[]` list versus resolving by `storeId` (~79 entries with populated `version`). Anonymous/storefront context likely narrows the response — verify against the env you're testing.
+- measured 2026-09-23 on vcst-qa: the `domain` and `storeId` paths now agree exactly — both return 87 modules, all with a populated `version` (ReturnModuleVersion ON). The earlier "~18 by domain with empty version vs ~79 by storeId" divergence no longer reproduces; do not assert a module COUNT, it tracks the deployed manifest.
+
+**initializeApplicationClient**:
+- when `XAPI.Security.ReturnModuleVersion` is OFF, settings.modules[].version returns "" (empty string, not null — preserves the String! contract) and modules without public settings drop out of the list entirely, so an assertion on module COUNT is asserting that setting, not the manifest.
 
 **loyaltyMissionProgress**:
 - `status` and `statuses` are plain String on the schema, not an enum, so a typo is accepted by validation and silently returns an empty page — assert totalCount, never just a non-error response.

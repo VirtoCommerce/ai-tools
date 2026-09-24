@@ -33,6 +33,7 @@
     "seed:categories": "node scripts/seed-data/catalog/seed-catalog-categories.mjs",
     "seed:store": "node scripts/seed-data/store/seed-store.mjs",
     "store:set": "node scripts/seed-data/store/set-store-setting.mjs",
+    "store:caps": "node scripts/maintenance/probe-store-capabilities.mjs",
     "seed:teardown": "node scripts/seed-data/seed-test-data.js teardown",
     "seed:dry-run": "node scripts/seed-data/seed-test-data.js catalog --dry-run --verbose",
     "test": "tsx --test \"scripts/unit/**/*.test.mjs\" \"scripts/unit/**/*.test.ts\"",
@@ -56,6 +57,10 @@
     "seed:wl:teardown": "node scripts/seed-data/b2b/seed-company-users.mjs wl --teardown",
     "seed:pricing": "node scripts/seed-data/pricing/seed-pricing.mjs",
     "seed:pricing:teardown": "node scripts/seed-data/pricing/seed-pricing.mjs --teardown",
+    "seed:org-contract": "node scripts/seed-data/pricing/seed-org-contract-pricing.mjs",
+    "seed:org-contract:verify": "node scripts/seed-data/pricing/seed-org-contract-pricing.mjs --verify",
+    "seed:org-contract:teardown": "node scripts/seed-data/pricing/seed-org-contract-pricing.mjs --teardown",
+    "td:validate:org-contract": "node scripts/seed-data/pricing/validate-org-contract-data.mjs",
     "seed:inventory": "node scripts/seed-data/inventory/seed-inventory.mjs",
     "seed:inventory:teardown": "node scripts/seed-data/inventory/seed-inventory.mjs --teardown",
     "seed:loyalty": "node scripts/seed-data/loyalty/seed-loyalty.mjs",
@@ -270,7 +275,11 @@
     "td:test-attribution": "node scripts/maintenance/td-test-attribution.mjs",
     "test:roi-check": "node scripts/maintenance/lint-test-roi.mjs",
     "test:quality": "node scripts/maintenance/test-quality-report.mjs",
-    "tracker:comment": "node scripts/tracker/comment.mjs"
+    "tracker:comment": "node scripts/tracker/comment.mjs",
+    "ucp:schema:refresh": "node scripts/ucp/refresh-ucp-schema.mjs",
+    "ucp:schema:check": "node scripts/ucp/refresh-ucp-schema.mjs --check",
+    "ucp:schema:probe": "node scripts/ucp/refresh-ucp-schema.mjs --probe",
+    "bl:extract:has": "npx tsx scripts/knowledge/extract-bl.ts --has-domain"
   },
   "repository": {
     "type": "git",
