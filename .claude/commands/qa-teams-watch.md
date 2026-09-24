@@ -126,8 +126,9 @@ No assignee, no priority, no Fix Routing block.
 
 Always: `partner-reported`, `teams-monitor`, `needs-triage`.
 
-Add **`qa-autofix`** — the label a `/qa-fix` routine scans for — only when the report would
-survive that command's **Gate 0** fix-eligibility triage, i.e. all of:
+Add **`vc-fix` + `qa-autofix`** — the pair a `/qa-fix` routine scans for, applied **both or
+neither**, never one — only when the report would survive that command's **Gate 0**
+fix-eligibility triage, i.e. all of:
 
 - concrete reproduction steps: a navigation path, an explicit action sequence, or an API
   call with its inputs; **and**
@@ -135,14 +136,17 @@ survive that command's **Gate 0** fix-eligibility triage, i.e. all of:
   version, or a named environment such as OPUS / PROD4US / QA / PREP); **and**
 - the defect looks simple, localized, non-breaking, code-fixable.
 
-Withhold it for Gate 0's bail cases — no real STR, ambiguous, by-design, config- or
+Withhold them for Gate 0's bail cases — no real STR, ambiguous, by-design, config- or
 permission-gated, environment/data drift, API-only repro, security disclosure, needs
 refactoring, breaking change — and always when the substance was in an unreadable image.
-**When in doubt, withhold:** a missing label costs one manual run; a wrong one burns a
-`/qa-fix` cycle on a BAIL and leaves an out-of-scope comment on the ticket.
+**When in doubt, withhold:** missing labels cost one manual run; wrong ones burn a
+`/qa-fix` cycle on a BAIL and leave an out-of-scope comment on the ticket.
+
+> Same bar, same pair as `/qa-bug` Step 5 → *Fields either way* — the other writer of this
+> queue. Two intake paths, one label contract.
 
 > **Intermittency is not a bail.** "Not always reproducible", or other QA failing to
-> reproduce it on their environments, does **not** by itself withhold the label — a flaky
+> reproduce it on their environments, does **not** by itself withhold the labels — a flaky
 > symptom can have a deterministic code cause. VCST-5940 is the worked example: reported
 > as *«не всегда срабатывает»* on OPUS, fixed the same day by a single PR
 > (`vc-module-notification` 3.1014.0).
@@ -151,7 +155,7 @@ refactoring, breaking change — and always when the substance was in an unreada
 
 A run has a **finding** if it filed anything, flagged a possible screenshot-only report, or
 has anything else needing a human. Lead with that. Then: each ticket (key, URL, whether it
-got `qa-autofix` and why not if it didn't); the screenshot-only list; each candidate
+got the auto-fix pair, and why not if it didn't); the screenshot-only list; each candidate
 skipped and why (already linked / duplicate of KEY / ops request). Filed nothing? Say so
 plainly — that is a normal outcome, not a failure.
 
@@ -169,7 +173,7 @@ know nothing about each other.
 | | Intake (cloud) | Fix (local machine) |
 |---|---|---|
 | Runs | hourly, business hours | hourly |
-| Reads | the watched Teams chats | `labels = qa-autofix` |
+| Reads | the watched Teams chats | `labels in ("vc-fix", "qa-autofix")` |
 | Writes | VCST Bug + labels | branch + PR, ticket transitions |
 
 **Cloud side** — a Cowork scheduled task carrying this command's Phase 1-6 logic as its
@@ -181,7 +185,7 @@ search and the create.
 **Local side** — `/schedule`, hourly:
 
 ```
-project = VCST AND labels = qa-autofix AND statusCategory = "To Do" ORDER BY created ASC
+project = VCST AND labels in ("vc-fix", "qa-autofix") AND statusCategory = "To Do" ORDER BY created ASC
 ```
 
 Take the oldest, run `/qa-fix <KEY>`, report the terminal outcome. The ticket falls out of
@@ -190,8 +194,10 @@ the query by itself once Gate 1 moves it to in-progress — no cursor, no shared
 > **Use `statusCategory`, not a named status.** A VCST Bug created through the API lands in
 > **`Draft`**, not `To do` (verified 2026-09-14). A `status = "To do"` filter matches
 > nothing and the routine reports "no eligible tickets" forever while the intake half keeps
-> filing. `statusCategory = "To Do"` covers Draft, To do and REFINEMENT; since only the
-> intake half applies `qa-autofix`, the broader filter cannot over-select.
+> filing. `statusCategory = "To Do"` covers Draft, To do and REFINEMENT; the only writers of
+> the label pair are this command and `/qa-bug`, both holding it to the same Gate-0 bar, so
+> the broader filter cannot over-select. `labels in (…)` rather than `=`, so a ticket a
+> human labelled with only one of the pair is still picked up.
 
 ## Rules
 

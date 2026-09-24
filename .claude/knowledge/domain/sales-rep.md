@@ -312,6 +312,7 @@ reachable at store level; only General is (§6 **D15**). Where they *are* editab
 | `/company/my-customers/:organizationId` | same | customer profile (per prior art; reached via My-customers row links) |
 | `/company/customer-orders` | rep-gated | cross-customer order list — confirmed as the target of the dashboard's "All orders" link |
 | **`/company/documents`** | `sales-rep:access` **AND** `sales-rep-documents:read` (`§10 A6`: `checkPermissions` is a variadic AND) | **`CONFIRMED` live 2026-09-18 — G2 CLOSED.** Sidebar entry **"Document library"** renders for `agent-test-sr-docs@` and navigates here; **absent** for a plain rep. **The route was not guessed — it was read off a rendered link** |
+| **`/company/calendar`** | rep-gated; the exact guard was **not** read at source | **`CONFIRMED` live 2026-09-24 (`SalesRep 3.1009.0`)** — the **Calendar** page (§3i). Read off the rendered sidebar link's `href`, not guessed |
 | `/company/dashboard` as a **non-rep** | client-side redirect | `CONFIRMED` (rev 2) → `/account/dashboard`, silent, no 403 |
 
 `b2b-organizations.md` rev 2 §3 independently records that the rep routes are the only ones clearing
@@ -327,6 +328,12 @@ this table and with `§10 A6`.
 | non-rep (`ORG_USER_EMAIL`) | section absent entirely; sidebar starts at **Purchasing** | `CONFIRMED` live |
 
 The section heading is **"Sales Rep hub"**, above Purchasing, in all rep cases.
+
+**Calendar entry (2026-09-24, `SalesRep 3.1009.0`, Advanced rep).** A fourth item, **Calendar**, sits
+between My customers and Document library. It was **absent** on a load at 0 tasks and **present** on a
+load ~20 minutes later, after the rep's 12 tasks were seeded, on the same build. Whether it is gated on
+task data or appeared for another reason is `UNVERIFIED` (§8 **G15**). Do not write a case asserting
+either.
 
 ### 3c. Hub Dashboard (`/company/dashboard`)
 
@@ -349,6 +356,22 @@ month`; the YTD tile carries none. Each tile also carries a secondary line (`$13
   pinned first, each as *"Published <date> · N pages"* with an **Open** button, plus a **Browse all**
   link → `/company/documents`. **Absent for a plain rep** — so the permission gates the widget as well
   as the sidebar link, not just the route. `CONFIRMED` live.
+  **Open renders only for an inline-renderable content type** — `application/pdf`, `image/png|jpeg|gif|webp`,
+  `text/plain` (`vc-frontend` `client-app/modules/sales-rep/files.ts` `INLINE_RENDERABLE_TYPES`; the
+  comment gives the reason: other types *"could run script on the storefront origin"*). The widget has
+  **no Download fallback**, so a `.docx`/`.xlsx` row there carries **no action at all** — `CONFIRMED`
+  live 2026-09-24 and at source (§6 **D20**). Open on a PDF row opens the file in a new tab from a `blob:`
+  URL (fetched with the bearer token, since a plain anchor carries none) — `CONFIRMED` live 2026-09-24.
+- **Active carts tile — what it counts.** `CONFIRMED` live 2026-09-24, reconciled exactly against seeded
+  cart contents (tile *"44 items · 6 not for checkout · 44 items this week"* = the summed line quantities
+  of the rep's 3 carts). The figures are **item quantities of carts the REP created** inside served orgs
+  (`BL-SR-002` half b, `BL-SR-006`): the 7 buyer-owned carts in the same served orgs moved the tile by
+  **0**. "Not for checkout" = lines with `selectedForCheckout=false`. **A gift line added by a cart
+  promotion counts in the tile** but not in the header cart badge (36 in the tile's source cart vs a
+  badge of 35 on the same cart), per `BL-SR-006`'s gift clause.
+- **Tasks & due dates (2026-09-24)** — a right-rail widget: a month calendar with a dot per due date,
+  coloured by state (legend **Upcoming · Overdue · Completed**), and the selected day's tasks
+  (*"2 tasks"* for today). Seen only after tasks existed; see G15.
 - **Edit layout** button at the foot (drag/hide/reorder, `BL-SR-024..032`, not exercised — a mutation).
 
 ### 3d. My customers (`/company/my-customers`)
@@ -403,11 +426,35 @@ Walked breadth-first as `agent-test-sr-docs@`. All `CONFIRMED` live 2026-09-18.
 | Search | "Search by name". **Cyrillic matches correctly** (`Каталог` → the Unicode fixture). Submitting a search **resets an active category chip to All** |
 | Card grid | **15 per page** (vs the Admin blade's 20), pinned card first. Each card: a file-type badge (`PDF`/`ZIP`/`JPG`/`PNG`/`TXT`/`XLSX`/`DOCX`), a type-coloured icon, display name, category, and `Published <date> · N pages` where a page count exists |
 | Pagination | `Previous · 1 · 2 · Next` |
-| Per-document actions | **Open** (hero + grid cards) and **Download** (hero). Neither was actuated — whether they serve bytes is **G14** |
+| Per-document actions | **Open** (hero + grid cards) and **Download** (hero). Neither was actuated — whether they serve bytes is **G14**. **Source (2026-09-24):** every grid card also carries a **Download** in its hover overlay, unconditionally, while Open is gated on the same inline-renderable list as the dashboard widget (`pages/documents.vue`). So this page is where a `.docx`/`.xlsx` is reachable — the widget offers nothing for it (D20) |
 
 **Two observations to carry:** the hero card is a **global pinned/latest slot** — it does not react to the
 category filter or the search term (§6 **D17**); and the size unit renders as **"569 byte"** here against
 Admin's **"569 Bytes"** (§6 **D19**).
+
+### 3i. Calendar (`/company/calendar`) — NEW 2026-09-24
+
+`CONFIRMED` live 2026-09-24 on `SalesRep 3.1009.0`, as an Advanced rep holding 10 tasks. Not in any prior art.
+
+| Element | What renders |
+|---|---|
+| Heading / subtitle | **"CALENDAR"** · *"Your tasks, follow-ups and due dates across all accounts — laid out by day."* · breadcrumb *Home / Account / Sales Rep hub / Calendar* |
+| Header actions | **Today** · **New task** (neither actuated) |
+| Tabs | **`<today's date> N`** · **Upcoming N** · **Overdue N** · **Completed N** — observed `2 · 6 · 2 · 2`. The counts match the three filter rules `salesRepTaskFilterRules` returns (`upcoming` / `overdue` / `completed`) |
+| Day panel | The selected date, *"N tasks"*, **Add task**, and a table **Task · Status · Notes** — each row a checkbox, the task name as a link, *"Due <date> · <type>"* under it, a status pill (e.g. **Upcoming**), and the description as Notes |
+| Month grid | `« ‹ September 2026 › »`, a dot under each date with a task, coloured per the legend **Upcoming · Overdue · Completed** — overdue dots on past open dates, completed dots on past done dates |
+
+**First paint can be blank.** A load rendered a white page, then the full page ~5 s later, with no console
+error. Not a finding until it repeats — noted so a case waits for content rather than for `load`.
+
+**The task API behind it** (`/graphql/sales-rep`, introspected live 2026-09-24): queries `salesRepTasks`
+(`filter`, `period`, `today`, `keyword`, `sort`, paging), `salesRepTask(id)`, `salesRepTaskFilterRules`,
+`salesRepTaskSortRules`, `salesRepTaskTypes`; mutations `createSalesRepTask`
+(`name, description, type, priority, dueDate`), `updateSalesRepTask` (+`id`), `changeSalesRepTaskStatus`
+(`id, completed`), `deleteSalesRepTask`. A past `dueDate` is accepted on create; completion is a
+**separate** status call, not a create field. Tasks are private to their owner, so there is no admin REST
+surface — reaching them needs a token that acts as the rep. `graphql-schema.md` and
+`scripts/.graphql-schema.cache.json` do **not** carry these fields yet (the cache predates them).
 
 ---
 
@@ -570,6 +617,9 @@ Numbered `D1..Dn`; never renumber — a citation contract.
 | **D18 — a rep's ROLE is invisible in every list surface on both layers, while the role is what gates the feature** | The Admin Sales Reps grid offers **8** columns (4 visible, 4 hidden) and **none of them is the role** — the Advanced/basic distinction cannot be surfaced from the list at any column setting, nor from `POST /api/sales-rep/search`, whose row shape stops at `hasGlobalSalesRepRole` (a boolean that does not distinguish the two rep roles). The buyer-facing `/company/sales-reps` directory likewise gives *"no indication of which reps hold the Advanced role"* (§4). Only the **rep detail blade** (`roleName`) or a **JWT decode** answers it. Consequence: an operator auditing "who can read the document library" has to open **19 blades one at a time**, and a test needing an Advanced rep cannot discover one from any list endpoint — it must be told the fixture by name | `CONFIRMED` live 2026-09-18 (column picker enumerated on both grids + REST row shape + storefront table) |
 | **D19 — the same byte count is pluralized in Admin and not in the storefront** | The Admin document grid and detail blade render **"569 Bytes"**; the storefront hero card renders **"569 byte"** for the same document. Trivial in isolation, recorded because it is exactly the class of string a copy-assertion pins and because it shows the two layers format the same `size` field independently rather than sharing a formatter | `CONFIRMED` live 2026-09-18, both layers, same document |
 
+| **D20 — the dashboard's Document library widget offers no action on a document the page can download** | Both surfaces gate **Open** on the same inline-renderable type list, but only the `/company/documents` page adds an unconditional **Download**. On the widget, a `.docx`/`.xlsx` row renders its title and meta with **no button**. The rep can see the document from the dashboard and cannot act on it there. `vc-frontend` `components/sales-rep-documents.vue` vs `pages/documents.vue` | `CONFIRMED` live + source 2026-09-24. Low severity — the page is one click away. **FILED 2026-09-24 as VCST-6083**; report `reports/bugs/open/low/BUG-SalesRep-doc-widget-no-action-for-non-renderable-types-VCST-6083.md` |
+| **D21 — the docs cover the hub's PAGES and none of its WIDGETS** | `StorefrontUserGuide` §Sales Rep Hub: the Dashboard *"shows KPI cards summarizing the rep's activity, top selling products, and available documents"* and *"can be edited"*; the cards themselves appear only in a screenshot. **No page defines what Active carts counts**, the creator scope for carts, the gift clause, the Calendar or tasks. `PlatformUserGuide` §Sales Rep overview states the creator rule **for orders only**: *"List and filter orders: Show the orders a rep **created** for their customers."* So the carts half of `BL-SR-002`(b) and all of `BL-SR-006` rest on source + live, not `{DOC}`. And both oracles' *"Docs: N/A — pre-GA module, no VirtoOZ coverage"* is now stale: coverage exists, it just stops at the page level | `CONFIRMED` against VirtoOZ 2026-09-24. The oracle wording is `ba-system-analyzer`'s to change (`/qa-review-oracles`), not this map's |
+
 ---
 
 ## §7 — Coverage shape
@@ -679,7 +729,9 @@ in a served org is neither tested nor invariant-stated.
 | **G11** | Where the four Statistics cache-expiration settings ARE editable, given they are absent from the store Settings blade (D15) | **OPEN, NEW.** Needs the platform-wide **Settings** app (module settings scope), not visited this pass. Until answered, a hub-statistics staleness case has no knob it can name |
 | **G12** | Whether D16's untranslated-i18n-key render is deterministic, and what triggers it | **OPEN, NEW.** Observed 4× across 3 accounts on one build — twice broken, twice correct, same session. Needs a repeat-load loop on one account plus a look at whether the locale bundle request fails or races. Customer-facing; worth a bug once reproducible |
 | **G13** | D8's b2b half — does the org switcher still RETURN-AND-FLAG a locked org, now on the **released** `ProfileExperienceApi 3.1018.0`? | **OPEN, NEW.** Not re-derivable this pass: it requires a session as **`SR_REP_LOCKED`**, a reserved fixture this pass was forbidden to sign in as. The rev-2 observation stands and is no longer PR-dependent, but it has not been re-taken on the release build |
-| **G14** | Whether the storefront Document library's **Open** / **Download** actually serve the file | **OPEN, NEW.** Both affordances render on the hero card and Open renders on every grid card and dashboard-widget row; neither was actuated, to keep the pass read-only. Needs a run that follows the `url`/`previewUrl` and asserts content type and bytes |
+| **G14** | Whether the storefront Document library's **Open** / **Download** actually serve the file | **HALF-CLOSED 2026-09-24.** *Open* from the dashboard widget served a 4-page PDF into a new tab (`blob:` URL), rendered page-for-page. *Download* is still not actuated. Correction to the rev-3 wording: Open does **not** render on every widget row — only on inline-renderable types (D20) |
+| **G15** | What makes the **Calendar** sidebar item and the **Tasks & due dates** widget appear | **OPEN, NEW 2026-09-24.** Absent at 0 tasks, present after 12 were seeded, same build (§3b). Candidates: gated on task data, or a feature flag/deploy between loads. Needs a rep with zero tasks on a known build, loaded twice |
+| **G16** | Which `SalesRep` version introduced the tasks API | **OPEN, NEW 2026-09-24.** One deployment answered `Cannot query field 'salesRepTasks'` and, later the same day, served it on `3.1009.0`. The version it ran before was not captured. Until answered, a task case must check the module version before asserting absence as a defect |
 
 ---
 
@@ -799,3 +851,43 @@ No VirtoOZ page mentions `sales-rep:access`, `sales-rep-documents:read` or `…:
 (`Sales Rep Documents Manager`) appears in no documentation at all — the guides describe exactly two
 selectable roles. So a `{DOC}` oracle can ground the role NAMES and what they broadly grant, never a
 permission string; those are `{SPEC}` from module source.
+
+### A8 (2026-09-24) — learned while seeding the demo profile, NOT from a read-only pass
+
+Unlike the rest of this map, these observations were made **while writing data** (demo carts, lists,
+tasks, documents) on two deployments, both ending on `SalesRep 3.1009.0`. They are recorded as what the
+product did in response, which is why §3c/§3i can state tile arithmetic exactly.
+
+- **Acting as the rep needs no rep password.** An operator holding `platform:security:loginOnBehalf`
+  mints a token for the rep's `userId` (`grant_type=impersonate`) and switches it into a served org with
+  a `refresh_token` + `organization_id` grant. Every rep-scoped write here (carts, Customer lists, tasks)
+  went through that path. Carts it creates carry the **operator** in `createdBy` and still count as the
+  rep's for the Active-carts tile.
+- **A rep's cart is per organization.** After an org switch the rep's default cart is a different cart,
+  stamped with that org's `organizationId` — which is how one rep holds one cart per served customer.
+- **Catalog purchasability varies sharply per deployment.** On one, a whole product family had one
+  buyable product; every other candidate returned `PRODUCT_PRICE_INVALID` or `PRODUCT_FFC_QTY` from
+  `addItem`. A case that adds "any product in category X" is environment-fragile.
+- **Environments run different module versions** — see G16. Check `GET /api/platform/modules` before
+  treating a missing sales-rep surface as a defect.
+
+---
+
+## §11 — Test-data profiles: fixtures vs demo (pointer)
+
+The sales-rep surface is provisioned by **two mutually exclusive datasets** — `fixtures` (the
+`AGENT-TEST` regression family the §7 suites consume) and `demo` (presentation-grade, no
+`AGENT-TEST` string on any visible surface). They cannot coexist: one rep list, one global document
+library, one served-org graph.
+
+That is a **provisioning** concern, not a finding about the feature, so it is stated once in the
+seeding skill and nowhere else:
+[`.claude/skills/qa-seed-data/sales-rep-profiles.md`](../../skills/qa-seed-data/sales-rep-profiles.md)
+— the profile switch and its `_meta.dataset_profile` guard, `sr:inventory`, the marker + ledger
+teardown mechanism, the rules for reusing a real person’s account as a rep, and the live state of
+each environment.
+
+Two constraints from that file bind anyone reading THIS map, so they are named here and detailed
+there: a demo rep who must show documents needs **`Advanced Sales Representative`** (§3b), and
+order `createdDate` is server-assigned and silently ignored (§5b), so demo order history **cannot
+be backdated** — the narrative is "a day in the life", never "this quarter".
