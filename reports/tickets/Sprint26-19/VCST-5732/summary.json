@@ -1,0 +1,509 @@
+{
+  "$note": "Re-test of the 2026-09-18 developer disposition of the prior round's 38 findings. Not a first feature test — rev 1 of the Test Model (2026-09-17) drove that one; see reports/ba/test-models/VCST-5732-2026-09-17.md REV 2 for this run's delta.",
+  "ticket": "VCST-5732",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "path_route": {
+    "decided_at": "1b-confirmed",
+    "provisional": "full",
+    "narrow_story_tokens": {
+      "priority": true,
+      "layer": false,
+      "domains": false,
+      "chain_shape": false,
+      "surface": true,
+      "reach": false
+    },
+    "escalated_reason": "chain_shape"
+  },
+  "layer": "storefront",
+  "domain_map": {
+    "state": "STALE",
+    "slug": "sr",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "rev": 2,
+    "generated": "2026-09-10",
+    "age_days": 11,
+    "all_layer_chain": false,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "recommended": true,
+    "built_in_run": false,
+    "build_outcome": "not-attempted",
+    "build_skipped_reason": "stale-not-auto-refreshed",
+    "amended_in_run": false,
+    "amend_outcome": "not-attempted",
+    "amendments": [],
+    "sources": [
+      "reports/ba/test-models/VCST-5732-2026-09-17.md"
+    ],
+    "unmapped_surfaces": [
+      "Sales Rep Tasks widget (hub dashboard block)",
+      "/company/calendar — month grid, scope chips, day list, New/Edit Task modals",
+      "scoped xAPI salesRepTasks / salesRepTask / createSalesRepTask / updateSalesRepTask / changeSalesRepTaskStatus / deleteSalesRepTask"
+    ]
+  },
+  "shape_class": {
+    "value": "none",
+    "surface_source": [
+      "vc-frontend PR #2464 — a feature ON the storefront, not the UI kit itself"
+    ],
+    "skipped": []
+  },
+  "derived_oracle": null,
+  "verdict": "FAIL",
+  "$verdict_note": "FAIL on ONE ground only: two acceptance criteria are not implemented (the 'My Today's tasks' and 'Active' groups), which is 5-verdict.2's 'any AC not met'. It is NOT a defect verdict — the build agrees with both mockups on the ticket, so the conflict is between the story text and the design, and QA cannot settle it. Raised to the reporter 2026-09-18; no reply as of this run. The one in-scope functional defect found (M1, Medium) files without failing per 5-verdict.2. The nine accessibility findings do NOT fail this ticket (close-out.md 5-verdict.2 — BL-A11Y-* on a feature ticket is filed at its own severity as its own ticket; the story's ACs name no accessibility outcome).",
+  "date": "2026-09-21",
+  "timing": {
+    "started_at": "2026-09-21T13:50:00Z",
+    "finished_at": "2026-09-21T14:30:00Z",
+    "steps": {
+      "step1": 6,
+      "step2": 0.5,
+      "step3": 3,
+      "step4": 22,
+      "step5": 8.5
+    },
+    "time_to_first_test_minutes": 9,
+    "first_evidence_minutes": 18,
+    "reachability_minutes": null,
+    "$timing_note": "reachability_minutes is null because 1r did not run — a GAP, not a zero: the run entered as a re-test with a prior model and a known-reachable surface, and the two execution lanes reached the feature in 9 minutes.",
+    "agent_dispatches": 2,
+    "regression_predicted_minutes": null,
+    "regression_actual_minutes": null
+  },
+  "environment": "https://vcptcore-qa-storefront.govirto.com",
+  "build": {
+    "platform": "UNKNOWN",
+    "theme": "2.58.0-pr-2464-2971-2971a77b",
+    "relevant_modules": {
+      "VirtoCommerce.SalesRep": "3.1009.0-pr-16-e348",
+      "VirtoCommerce.TaskManagement": "3.1005.0"
+    },
+    "deployed": {
+      "platform": "UNKNOWN",
+      "relevant_modules": {
+        "VirtoCommerce.SalesRep": "3.1009.0-pr-16-e348",
+        "VirtoCommerce.TaskManagement": "3.1005.0"
+      }
+    },
+    "$build_note": "Theme read live from the storefront footer by the orchestrator before dispatch and independently re-read by both lanes. Same PR (#2464) as the prior round but a NEWER build: -2971-2971a77b vs the -595d of 2026-09-17, which is what makes this re-test meaningful. The prior round ran on vcptcore-qa1; THIS run is vcptcore-qa, so every prior {OBSERVED} figure was re-derived rather than carried. Platform version not read (no System Information page visit; the nav footer version is known-stale on this stand).",
+    "releasedThrough": {
+      "ledger_generated": null,
+      "components": {},
+      "behind": [],
+      "breaking": []
+    }
+  },
+  "release": {
+    "layers": [
+      "storefront"
+    ],
+    "layer_source": [
+      "vc-frontend PR #2464; backend modules untouched per the dev's 2026-09-18 comment"
+    ],
+    "layers_conflict": false,
+    "audience": [],
+    "component_versions": {},
+    "platform_version": null,
+    "breaking": false,
+    "breaking_source": null,
+    "user_visible": true,
+    "fragment": null,
+    "refusal": "verdict-not-pass",
+    "aggregated_into": null
+  },
+  "documentation": {
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": [],
+    "comment_posted": false,
+    "refusal": "operator-declined"
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Testing",
+      "to": "Testing",
+      "transition": null,
+      "confirmed": false,
+      "actor": "qa-lead",
+      "skipped": "no-op — the ticket was ALREADY in its in-testing status when the run was accepted; nothing to move"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "from": "Testing",
+      "to": null,
+      "transition": null,
+      "confirmed": false,
+      "actor": "qa-lead",
+      "skipped": "DECLINED BY THE OPERATOR, 2026-09-21. The run recommended REOPEN (verdict FAIL). The operator chose to make no transition; the ticket stays in Testing. Recorded rather than left blank — an absent closing hop is indistinguishable from a run that never reached 5-status."
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test",
+      "transition_id": "8",
+      "confirmed": true,
+      "actor": "qa-lead",
+      "date": "2026-09-23",
+      "basis": "verdict_amendment PASS_WITH_NOTES — the two unmet ACs were descoped 2026-09-23, removing the sole ground for the 2026-09-21 FAIL.",
+      "note": "Resolved live against the ticket workflow and matched on to.name, never a hardcoded id: the available set was Cancelled / On hold / Reopen / Tested. Verified after the write — status reads Tested. Supersedes the declined closing hop recorded above; that entry is left in place because it was accurate on its date."
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert",
+    "ui-ux-expert"
+  ],
+  "epic": {
+    "parent": "VCST-5142",
+    "siblings": {
+      "done": [],
+      "in_progress": [],
+      "blocked_dependency": []
+    },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 9,
+    "weak_acs": 0,
+    "gap_acs_added": 0,
+    "impl_coverage": {
+      "satisfied": 14,
+      "drift": 0,
+      "contradicts": 0,
+      "not_found": 2
+    },
+    "conditions_total": 16,
+    "conditions_with_evidence": 16,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 100,
+      "$ac_coverage_note": "Every one of the 16 atomic conditions carries evidence — including the two NOT-FOUND, which carry evidence of ABSENCE across all three layers (UI 4 chips, backend salesRepTaskFilterRules 3, both mockups 4). Satisfied-live is 14/16 = 87.5%; do not read the 100% as 'all conditions pass'.",
+      "satisfied_pct": 87.5,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "not_found": [
+      "AC 'Tasks are grouped by status: My Today's tasks' — no such group in the UI, none in the backend's filter rules, and absent from both mockups attached to the ticket",
+      "AC 'Tasks are grouped by status: Active' — same, absent in all three layers"
+    ]
+  },
+  "total_cases": 0,
+  "passed": 0,
+  "failed": 0,
+  "blocked": 0,
+  "$cases_note": "Zero cases authored: this run re-verified an existing disposition rather than adding coverage, so Artifact A did not run. The 38-item checklist (Artifact B) is the run's durable record. Durable regression coverage for this surface remains an open gap — route is /qa-test-lifecycle.",
+  "disposition_retest": {
+    "$comment": "This run's actual unit of work — the 38 findings of 2026-09-17/18 and what the 2026-09-18 dev disposition claimed about each. M#n = the manual comment, D#n = the deep report.",
+    "items_total": 38,
+    "claimed_fixed": 19,
+    "confirmed_fixed": 17,
+    "reopened": 1,
+    "fixed_with_caveat": 2,
+    "by_design_mitigation_confirmed": 11,
+    "by_design_mitigation_absent": 0,
+    "deferred_ui_kit_reverified": 4,
+    "partial_remeasured": 1,
+    "out_of_scope": 2,
+    "reopen_detail": [
+      "M1 — long Notes still break the day-list layout. The Title half WAS fixed (clamped to 2 lines) and all three named mechanisms shipped (Notes cap 1000, live counter, Title clamp), but the Notes cell has no clamp, so it widens its own column and starves the Task column: 330px->170px Task vs 190px->345px Notes, row ~350px tall. Reproduced twice, including with 922 chars of ordinary B2B prose well inside the new cap."
+    ],
+    "caveat_detail": [
+      "D9 — the sighted half is fixed (heading, count, rows and chip all re-render on a date change), but no live-region role (status/alert/log) exists anywhere in the accessibility tree, so the announcement half is not delivered. Screen-reader confirmation was not possible on the lane used; recorded as a strong signal, not as a pass.",
+      "D7 — the required state is now exposed, but only REACTIVELY: aria-invalid plus visible associated error text appear after a failed Save. Before the first submit the requirement is still conveyed by the visual asterisk alone. Better than the prior 'exposed by no route'; not a full fix."
+    ],
+    "mechanism_drift": [
+      "D18 — the dev described 'disabled Save now conveys why'. Save is not disabled at all; it is always clickable and validation fires on submit. Both lanes observed this independently. The user-facing outcome is achieved, so this is a documentation/mechanism mismatch, not a defect."
+    ],
+    "wording_deviations": [
+      "D20 — breadcrumb shipped, but reads 'Home / Account / Sales Rep hub / Calendar' where the mockup reads 'Home / My account / Sales Rep Hub / Calendar' (two words differ, one in case). Low, advisory, not filed."
+    ]
+  },
+  "iterations": {
+    "enabled": false,
+    "rounds": 1,
+    "max_rounds": 2,
+    "outcome": "passed",
+    "per_round": []
+  },
+  "new_cases_authored": 0,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": []
+  },
+  "regression": {
+    "c1": {
+      "suites": [],
+      "ids": [],
+      "run_id": null,
+      "pass_rate": null,
+      "skipped_reason": "No cases were authored or changed this run, so C1 had no scope. The 8 regression checks in the checklist's section A3 were executed by the Lane-A agent inside its own session and all PASSED; they are checklist items, not suite cases, and carry no RUN_ID."
+    }
+  },
+  "feature_release_gate": "not-assessed",
+  "$gate_note": "/qa-test runs no release-scoped sweep (5r removed 2026-09-10). Recorded as not-assessed, never as a pass, and never by substituting a checklist pass rate — which answers a different question.",
+  "regression_triage": {
+    "invoked": false,
+    "run_ids": [],
+    "confirmed_bugs": [],
+    "test_fixes_applied": [],
+    "dismissed": [],
+    "report_path": null
+  },
+  "bugs_filed": [],
+  "$bugs_filed_note": "Nothing filed to the tracker yet — 5-file asks first, and the operator's confirmation is pending. Local drafts written under reports/bugs/open/. FOUR candidates after dedup: (1) M1 IN-SCOPE Medium -> Sub-task of VCST-5732 [BUG-SalesRep-Tasks-Notes-Cell-Unclamped-Starves-Task-Column.md]; (2) D11+D9 a11y pair Medium -> own ticket, does not fail this ticket [BUG-SalesRep-Tasks-Calendar-Selected-Tile-Dots-Invisible-And-No-Live-Region.md]; (3) D6 High -> own shared-UI-kit ticket for vc-textarea [BUG-vc-textarea-has-no-accessible-name-shared-ui-kit.md]; (4) D8+D14+D16 Medium -> own shared-UI-kit ticket for vc-calendar [BUG-vc-calendar-grid-aria-application-role-and-focus-cluster.md]. Note (3) and (4) are what the dev's comment asked for as 'its own ticket' — they are TWO components and two fixes, not one. Plus (5) D28 PRE-EXISTING Medium -> own ticket [BUG-storefront-mobile-account-menu-button-no-accessible-name.md].",
+  "deduplicated": [
+    {
+      "finding": "INC-1 — account-sidebar i18n keys render raw",
+      "outcome": "DUPLICATE — already filed as VCST-5681; local report reports/bugs/open/medium/BUG-SalesRep-DE-raw-i18n-keys-account-sidebar.md. NOT re-filed. This run appended an update: it still reproduces on a third env/build pair (vcptcore-qa @ 2.58.0-pr-2464, after 2.55.0-pr-2408 and 2.56.0-pr-2438), and the EN manifestation is INTERMITTENT on clean loads while the DE one is deterministic with five keys — which means two mechanisms, not the single missing-key one the original report assumed."
+    },
+    {
+      "finding": "INC-2 — every language-switcher option carries the English (United States) flag and alt text",
+      "outcome": "DUPLICATE — already filed as VCST-5840 at P3/Low; local report reports/bugs/open/low/BUG-storefront-language-selector-flag-alt-text-identical.md. NOT re-filed and NOT re-graded: the Lane-A agent proposed Medium, but the existing record grades it Low and a re-test does not re-grade a finding to suit itself. Update appended, including one genuinely NEW sub-finding that VCST-5840 does not cover: the list contains TWO identical 'Nederlands' entries — a data defect in the locale list, so fixing the alt text will not remove it. Low, recorded not filed."
+    }
+  ],
+  "$dedup_note": "Both 'new' incidental defects turned out to be already-filed. This is the value of 5-triage's dedup step: without it this run would have opened two duplicate tickets and re-graded a third party's severity call.",
+  "bugs_not_filed": [
+    {
+      "finding": "D27 — uncaught 'Unknown variable dynamic import: ./virto-provider.vue' on /sign-in",
+      "severity": "Medium",
+      "reason": "NOT REPRODUCED this run on two independent engines (edge by the visual lane, firefox by the orchestrator): /sign-in loaded with zero console errors both times. An intermittent import-resolution fault is not disproved by two clean loads, so this is recorded as intermittent rather than closed. Whoever files it should say so.",
+      "draft": null
+    },
+    {
+      "finding": "D23 / D24 / D25 — mockup deviations kept by design (link-styled titles, no calendar card title, 4x4 grid dots vs 6x6 legend dots)",
+      "severity": "Low",
+      "reason": "Confirmed built as the dev described; by-design, below the severity floor, and not QA's decision to re-litigate.",
+      "draft": null
+    },
+    {
+      "finding": "D20 — breadcrumb wording differs from the mockup ('Account' vs 'My account', 'hub' vs 'Hub')",
+      "severity": "Low",
+      "reason": "Below the severity floor. Recorded here and in the checklist; worth one word to the designer, not a ticket.",
+      "draft": null
+    },
+    {
+      "finding": "Latent — a task created through the UI persists at start-of-LOCAL-day (a Sep-30 create stored 2026-09-29T21:00:00Z from a UTC+3 browser)",
+      "severity": "Low",
+      "reason": "Renders correctly for the creating rep and there is no time control by design, so nothing is observably broken here. But the same instant classifies onto the PREVIOUS day for a rep in a negative-offset timezone, and 'today'/'period' are sent as browser-local bounds. No oracle exists to judge it against (see oracle_gaps), so it is a product question, not a finding. Flagged rather than filed.",
+      "draft": null
+    },
+    {
+      "finding": "Environment, not product — the 'VirtoCommerce.Loyalty 3.1008.0 expects newer versions' backend-compat banner OCCLUDES the '+ New task' button at 1920px until dismissed",
+      "severity": "Medium",
+      "reason": "Not a VCST-5732 defect: it is the known vc-deploy-dev backend/packages.json pin lag on this stand. Recorded because an occluded primary CTA would read as a BL-UI-006/007 functional break to the next run that meets it without knowing why. Route: bump the pins, not the ticket.",
+      "draft": null
+    }
+  ],
+  "oracle_gaps": [
+    "NO BL-* invariant exists for sales-rep task CLASSIFICATION — rev 1 of the model recorded this gap and asked the run to propose one; rev 1 did not, and this run did not write one either (oracle writes belong to ba-system-analyzer via /qa-review-oracles, gated by the 3-source bar). The behaviour is now confirmed at the wire and is worth promoting: the server knows exactly three filters (upcoming = open AND due >= today, overdue = open AND due < today, completed), an unrecognised filter token returns HTTP 200 with totalCount 0 and NO error (the BL-SR-020 shape on a new field), completion outranks date in both directions, and the client composes a fourth 'selected day' scope as a period-bounded query with no filter. Proposed, not written.",
+    "No VirtoOZ doc page for the Sales Rep Tasks surface (pre-GA module), so there is no {DOC} oracle. Both lanes were told this explicitly so the absence could not be mistaken for 'no requirement'."
+  ],
+  "discovery": {
+    "ran": false,
+    "skipped_reason": "3x not run: this was a disposition re-test against an existing model and a 38-item finding inventory, not a discovery pass. Both lanes carried the always-on bug-detection floor instead, which is what surfaced INC-1 and INC-2.",
+    "lane": null,
+    "minutes": null,
+    "checklist_conditions": [],
+    "charter_sources": {
+      "matrix_gaps": [],
+      "reverse_edges": [],
+      "hypothesis_rows": [],
+      "ac_drift": [],
+      "rebase_rows": []
+    },
+    "hypotheses_grounded": 0,
+    "hypotheses_remaining": 0,
+    "model_amendments": 1,
+    "scenarios_new": [],
+    "oracle_proposals": 1,
+    "bugs_surfaced": [],
+    "report": null
+  },
+  "visual": {
+    "surface": "true",
+    "surface_source": [
+      "vc-frontend PR #2464 (.vue/.scss storefront diff)",
+      "two design mockups attached to the ticket",
+      "18 of the prior round's 38 findings were visual or a11y"
+    ],
+    "ran": true,
+    "skipped_reason": null,
+    "lane": "playwright-edge",
+    "$lane_note": "NOT the ui-ux-expert's default Chrome DevTools MCP lane: every target sits behind the rep login and Chrome DevTools MCP has no --secrets. Consequence, stated rather than omitted: no Lighthouse this run, so the two prior findings that came from Lighthouse could not be re-scored by it. D28 was corroborated by axe plus a manual accessible-tree read instead.",
+    "targets": [
+      "/company/dashboard — Tasks & due dates widget",
+      "/company/calendar — month grid, scope chips, day list, New/Edit Task modals"
+    ],
+    "axes": {
+      "design_spec": "ran",
+      "a11y": "ran",
+      "tokens": "ran"
+    },
+    "a11y_findings": [
+      {
+        "id": "D11",
+        "sc": "1.4.11",
+        "severity": "Med-High",
+        "verdict": "PARTIAL — white-background half FIXED (Completed dot 5.31:1, clears 3:1); selected-tile half NOT FIXED and WORSE. Tile is now brand red rgb(229,33,33): Upcoming dot rgb(43,126,168) ~1.02:1, Completed dot rgb(59,119,84) ~1.16:1, against 1.60/2.67 before. The dots are the day's only content indicator, so they are now effectively invisible on the selected day. Re-measured from scratch because the tile colour changed and voided the prior baseline."
+      },
+      {
+        "id": "D6",
+        "sc": "3.3.2, 4.1.2",
+        "severity": "High",
+        "verdict": "STILL FAILING — the Notes textarea has NO accessible name at all, in BOTH modals. Deferred to the UI-kit ticket (vc-textarea: aria-labelledby self-reference + for/forId so VcLabel renders a div)."
+      },
+      {
+        "id": "D8",
+        "sc": "4.1.2, 1.4.1",
+        "severity": "Med-High",
+        "verdict": "STILL FAILING, RELOCATED — aria-selected now exists on the <td role=gridcell>, but the focusable element is the nested <button>, which carries neither aria-selected nor aria-current. A screen reader announces what receives focus, so the defect moved one DOM level rather than being fixed. Fix: put it on the button."
+      },
+      {
+        "id": "D14",
+        "sc": "1.3.1, 4.1.2",
+        "severity": "Medium",
+        "verdict": "STILL PRESENT — role=application still wraps the day grid, on both /company/calendar and the dashboard mini-calendar. Re-verified against current head as the dev asked; VCST-5653's focus-ring work did not change it."
+      },
+      {
+        "id": "D16",
+        "sc": "2.4.3",
+        "severity": "Low",
+        "verdict": "PARTIALLY FIXED — focusActiveCell did land: arrow to a cell, Tab out, Shift+Tab back and focus returns to it. But the FIRST Tab into a freshly-rendered grid still lands on day 1 of the visible month, not the selected or current date (reproduced on a Sept-2027 grid with no selection)."
+      },
+      {
+        "id": "D9",
+        "sc": "4.1.3",
+        "severity": "Medium",
+        "verdict": "NOT DELIVERED (AT half) — no status/alert/log role anywhere in the accessibility tree after a date change. Not audibly confirmed; no screen-reader hookup on this lane."
+      },
+      {
+        "id": "D7",
+        "sc": "3.3.2",
+        "severity": "Medium",
+        "verdict": "FIXED reactively only — aria-invalid + associated visible error text after a failed Save; no aria-required and the asterisk is still not in the accessible name before the first submit."
+      },
+      {
+        "id": "D28",
+        "sc": "4.1.2",
+        "severity": "Medium",
+        "verdict": "STILL PRESENT, PRE-EXISTING — header account-menu button has an empty accessible name at <=768px. axe button-name (critical), 2 nodes. Outside this ticket."
+      },
+      {
+        "id": "INC-2",
+        "sc": "4.1.2",
+        "severity": "Medium",
+        "verdict": "NEW, PRE-EXISTING, storefront-wide — all 12 language-switcher options carry the English (United States) flag image and that alt text, so each option's accessible name announces the wrong language; plus two identical 'Nederlands' entries. Straddles Low/Medium; graded Medium because the accessible name is actively WRONG rather than merely missing."
+      }
+    ],
+    "invariant_failures": [],
+    "advisory": [
+      "D19/D13 — only the selected chip's count is accented (rgb(229,33,33) on its own white button background = 4.59:1, passes 4.5:1 with ~2% margin); the three siblings are neutral rgb(82,82,82) = 7.83:1. Independently re-measured by the orchestrator on a third engine because the prior finding measured the same colour against an #F5F5F5 canvas, where it would FAIL — the chip's own background is white, so it passes.",
+      "D12 — meta line now 6.22:1 hovered / 7.50:1 at rest, against 3.76/4.54 before.",
+      "D21 — week start is genuinely locale-driven: the lane switched the storefront to de and the grid became MO..SO with the widget fully localized. Sunday on this stand is the en-US store culture, not a defect.",
+      "D3/D10 — day descriptions now carry a pluralized count: '1 task. Marked: Upcoming' (09-22) vs '2 tasks. Marked: Upcoming' (09-28). Dots-per-status stays by design."
+    ],
+    "report": null,
+    "$report_note": "No design-report.md written: both lanes were told to return findings in-response so the orchestrator could fold them into ONE Step-5 report (.claude/rules/reports.md §1)."
+  },
+  "contract": {
+    "surface": "false",
+    "surface_source": [
+      "the dev's 2026-09-18 comment: 'All changes done in vc-frontend project, backend modules not touched'",
+      "both module versions identical to the prior round"
+    ],
+    "schema": {
+      "refreshed": null,
+      "unknown_reason": "not run — no backend change in scope, so a refresh would have cost 8.5s to confirm nothing moved",
+      "queries": 0,
+      "mutations": 0
+    },
+    "fixtures": {
+      "refreshed": null,
+      "validated_against_env": "vcptcore",
+      "total": 0,
+      "failed": 0,
+      "drift_in_scope": []
+    },
+    "$contract_note": "The CLIENT's composed documents were nonetheless captured at the wire, because the disposition turned on them: SalesRepTaskCounts (D2) and the updateSalesRepTask payload (D26). Both are recorded in the Lane-A findings."
+  },
+  "coverage_triage": {
+    "surface": "false",
+    "surface_source": [
+      "nothing existing was renamed, moved or removed — the change is a defect-fix round on a surface that has no regression cases at all"
+    ],
+    "ran": false,
+    "skipped_reason": "No suite asserts on the Sales Rep Tasks surface, so there was no corpus to triage. That absence is itself the gap: see data_gaps.",
+    "scanned": 0,
+    "dispositions": {
+      "keep": 0,
+      "repair": 0,
+      "rebase": 0,
+      "retire": 0
+    }
+  },
+  "data_gaps": [
+    "The Sales Rep TASKS surface still has ZERO regression cases after two QA rounds. Both rounds were checklist-driven, so nothing durable protects the 38 fixed items from regressing. Route: /qa-test-lifecycle.",
+    "The rep's task fixture is isolated PER REP ACCOUNT, not per run or per suite: the two lanes ran concurrently on one rep and the visual lane observed the functional lane's edits mid-session (an Upcoming count of 9 against a designed 8, which the orchestrator also saw on a third engine and correctly did NOT file). Two lanes on one rep is acceptable only for read-mostly work; a second rep account would remove the ambiguity.",
+    "Fixture field-state after the run deviates from the seed (SR_TASK_TODAY_ALPHA name/description/priority, SR_TASK_TODAY_SIERRA type/completed). Group SIZES were restored. Re-seed before the next round: TEST_ENV=vcptcore npm run seed:sales-rep-tasks",
+    "Env-config trap fixed in passing: the rep password for TEST_ENV=vcptcore was present only as SALES_REP_PASSWORD_VCPTCORE_QA1, and the seeder requires the exact _VCPTCORE suffix. The miss is silent by design; SALES_REP_PASSWORD_VCPTCORE now exists in the gitignored .env.local."
+  ],
+  "open_product_decision": {
+    "raised": "2026-09-18 to the reporter (Oleg Zhuk), in the prior round's QA comment",
+    "answered": true,
+    "question": "The ACs ask for five groups (My Today's tasks, Active, Upcoming, Overdue, Completed). The UI has four, the backend's filter rules three, and BOTH mockups attached to the ticket show the four that were built. Amend the ACs, or add the two groups?",
+    "why_it_is_not_a_defect": "The build agrees with the design, so the disagreement is between two artifacts on the same ticket, not between the build and a spec. QA cannot pick which is authoritative.",
+    "consequence_if_ignored": "A rep has no separate 'what is on me today' view: a task due today is labelled Upcoming and sits in one list with a task due 1 October. That is the feature's point in a rep's daily routine.",
+    "effect_on_this_run": "Superseded. This was the SOLE ground for the 2026-09-21 FAIL recorded above; with the two ACs withdrawn on 2026-09-23 the ticket has no unmet acceptance criterion left.",
+    "resolution": {
+      "date": "2026-09-23",
+      "outcome": "DESCOPED for now — the My Today's tasks and Active groups are withdrawn; the build is accepted as it stands, matching both mockups on the ticket.",
+      "recorded_in": "VCST-5732 comment 110205 (amended 2026-09-23)",
+      "reversible": "Stated as \"for now\", so a later decision to reinstate the two groups has a dated record to reverse rather than a silent gap."
+    }
+  },
+  "evidence": {
+    "screenshots": "reports/tickets/Sprint26-19/VCST-5732/screenshots/ (laneA-01..20, laneB-*, orch-chip-contrast-firefox.png)",
+    "har": [
+      "test-results/chrome/har/session.har (2943 entries, 314 GraphQL, all 9 task mutations)",
+      "test-results/edge/har/",
+      "test-results/firefox/har/"
+    ],
+    "har_caveat": "test-results/chrome/session-legacy.har is a stale 2026-08-03 leftover and is NOT this run.",
+    "console": "zero errors and zero warnings across the whole Lane-A session, all four surfaces, both rep accounts; no GraphQL errors[] inside any 200; no 4xx/5xx; slowest task call 447ms",
+    "checklist": "reports/tickets/Sprint26-19/VCST-5732/testing-checklist.md",
+    "test_model": "reports/ba/test-models/VCST-5732-2026-09-17.md (rev 1 = the first pass; REV 2 = this run's delta)"
+  },
+  "tracker_comment": {
+    "posted": false,
+    "reason": "DECLINED BY THE OPERATOR, 2026-09-21 — no tracker write was made by this run. The full comment body is drafted and kept at the session scratchpad path recorded below; nothing was attached to the ticket and no attachment was uploaded.",
+    "draft": "scratchpad/vcst5732-comment.txt (session-local, not a report artifact per .claude/rules/reports.md 1)",
+    "screenshots_attached": 0
+  },
+  "": "NONE FILED — the operator declined all tracker writes on 2026-09-21. The five drafts stand as the durable record under reports/bugs/open/ and can be filed later without re-running anything: (1) medium/BUG-SalesRep-Tasks-Notes-Cell-Unclamped-Starves-Task-Column.md [M1, IN-SCOPE, sub-task of VCST-5732]; (2) medium/BUG-SalesRep-Tasks-Calendar-Selected-Tile-Dots-Invisible-And-No-Live-Region.md [D11+D9, standalone]; (3) critical-high/BUG-vc-textarea-has-no-accessible-name-shared-ui-kit.md [D6, High, shared UI kit]; (4) medium/BUG-vc-calendar-grid-aria-application-role-and-focus-cluster.md [D8+D14+D16, shared UI kit]; (5) medium/BUG-storefront-mobile-account-menu-button-no-accessible-name.md [D28, PRE-EXISTING]. Items (3) and (4) are the two tickets the developer explicitly asked for.",
+  "verdict_amendment": {
+    "date": "2026-09-23",
+    "verdict": "PASS_WITH_NOTES",
+    "supersedes": "The verdict FAIL recorded for the 2026-09-21 run, which is left in place because it was correct on its date.",
+    "basis": "Round 3 (2026-09-22, theme 2.58.0-pr-2464-fd52-fd52185e / SalesRep 3.1009.0-pr-16-b624) delivered 3 of 5 requested fixes fully and 2 partly, with ZERO regressions and a full-feature re-check passing end to end; the two unmet ACs were then descoped on 2026-09-23. Remaining items are P2/P3 or accessibility filed as their own tickets, none of which fails a feature ticket whose ACs name no accessibility outcome (close-out.md 5-verdict.2).",
+    "not_closed_by_this_verdict": [
+      "N2 — the hover reveal leaves Notes unreachable for keyboard and touch users (native title on a non-focusable span).",
+      "N4 — the requested created/modified ordering is not what shipped; the API already exposes it as sort: \"recent\" (created-date desc) and the client never sends it. One-line client change.",
+      "Accessibility: selected-tile dot contrast 1.02:1 / 1.16:1; the shared vc-textarea and vc-calendar cluster; the dashboard widget still has no live region while the calendar page now does.",
+      "updateSalesRepTask echoes a STALE modifiedDate — a client trusting the echo shows stale ordering."
+    ]
+  }
+}

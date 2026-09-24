@@ -1,0 +1,55 @@
+{
+  "run_id": "FIX-2026-09-23-1557",
+  "date": "2026-09-23",
+  "ticket": "VCST-5999",
+  "tracker": "jira",
+  "profile": null,
+  "bug_report": "reports/bugs/open/critical-high/BUG-quote-from-cart-deletes-configuration-file-attachments-VCST-5999.md",
+  "outcome": "STOP",
+  "terminal_gate": "pre-G2 (environment) + G0 partial bail",
+  "ticket_status_after": "Draft",
+  "ticket_transitioned": false,
+  "repo": "VirtoCommerce/vc-module-quote",
+  "repo_kind": "module",
+  "developer_agent": "fullstack-backend (not dispatched)",
+  "rca_anchor": "src/VirtoCommerce.QuoteModule.ExperienceApi/Commands/CreateQuoteFromCartCommandHandler.cs (ClearAsync call in Handle); deletion at vc-module-x-cart XCart.Core/CartAggregate.cs:764",
+  "cloned": false,
+  "branch": null,
+  "pr_url": null,
+  "gates": {
+    "phase0_preflight": "PASS",
+    "G0_fix_eligibility": "PARTIAL BAIL — destructive half is single-repo and small; the ticket's stated Expected needs VCST-5995's ownership decision",
+    "G1_repo_route": "PASS (source-confirmed)",
+    "write_credential_preflight": "STOP",
+    "toolchain_preflight": "STOP",
+    "G2_reproduce": "not reached",
+    "G3_fix": "not reached",
+    "G4_review": "not reached",
+    "G5_ci": "not reached",
+    "G6_e2e": "not reached",
+    "G7_human_review": "not reached"
+  },
+  "blockers": [
+    "no .NET 10 SDK installed (repo targets net10.0 in 9 csproj files; local SDKs are 8.0.425 and 9.0.318) — Gate 2/3 cannot build or run, so no red->green proof is possible even without pushing",
+    "GITHUB_FIX_BUGS_TOKEN returns 401 Bad credentials on VirtoCommerce/vc-module-quote; gh CLI not installed — no push/PR capability"
+  ],
+  "remedy_shapes_considered": [
+    "clear Cart.Items before ClearAsync so the deletion finds no urls — one line, single repo, but relies on ClearAsync internal ordering",
+    "inline the eight reset lines in the quote handler — single repo, duplicates another module's aggregate semantics",
+    "add a non-destructive overload/flag to CartAggregate.ClearAsync — clean but two repos (vc-module-x-cart)",
+    "re-own files to the quote (xOrder shape) — pulls in VCST-5995's unresolved scope-factory decision"
+  ],
+  "build_verified_live": {
+    "env": "vcptcore-qa",
+    "source": "GET /api/platform/modules",
+    "VirtoCommerce.Quote": "3.1003.0",
+    "VirtoCommerce.XCart": "3.1036.0",
+    "VirtoCommerce.Xapi": "3.1023.0",
+    "VirtoCommerce.XOrder": "3.1012.0",
+    "VirtoCommerce.Orders": "3.1016.0",
+    "VirtoCommerce.FileExperienceApi": "3.1004.0"
+  },
+  "related_tickets": ["VCST-5995", "VCST-6000", "VCST-5924", "VCST-5431"],
+  "notes": "No recovery for already-created quotes — the referenced blobs are deleted; only new quotes benefit from any fix.",
+  "confidence": "HIGH on the blockers and the route; the Gate-0 call is a judgment, stated with its reasoning"
+}
