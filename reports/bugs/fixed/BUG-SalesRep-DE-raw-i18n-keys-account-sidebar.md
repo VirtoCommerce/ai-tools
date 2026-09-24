@@ -104,3 +104,31 @@ I tested vcst-qa, not the vcptcore-qa this report used. The **key-presence** fin
 Keep it open, but rewrite it: severity drops (one key, one path), and the fix routing is wrong as written. Adding keys to `de.json` and adding a CI guard would both be no-ops. The work is in **when module locale bundles are merged relative to menu render on an in-page locale change** — and it is not sales-rep-specific, so this may belong outside the SalesRep group entirely.
 
 **VCST-5681** is **Draft / To Do, unresolved** (Medium, updated 2026-08-24) — worth updating with the above before anyone starts on it.
+
+---
+
+## Update 2026-09-21 — still reproducing on a THIRD env/build pair; the EN half is intermittent, the DE half deterministic
+
+Found again incidentally during the `/qa-test VCST-5732` re-test (Sales Rep Tasks), **vcptcore-qa @ theme
+`2.58.0-pr-2464-2971-2971a77b`** — a newer build than either of the two pairs above, so the gap has now
+survived `2.55.0-pr-2408` → `2.56.0-pr-2438` → `2.58.0-pr-2464`. **Not re-filed: VCST-5681 already owns it.**
+
+What this run adds is the shape of the EN manifestation, which the original report could only infer:
+
+- **Under `en` — INTERMITTENT, and that is the new datum.** Correct on the first page load of a session;
+  the raw keys appear after subsequent navigations (reproduced on `/company/calendar` and
+  `/company/calendar?filter=upcoming`, both cold-loaded); then correct again on later loads. Keys seen:
+  `Quotes.navigation.route_name`, `Purchase_requests.menu.link.title`,
+  `Back_in_stock.navigation.route_name`. This is consistent with the original report's hypothesis of a
+  **lazy-loaded message-bundle race on re-mount**, now observed on a clean load rather than only after an
+  in-page locale switch.
+- **Under `de` — deterministic, five keys**, adding `Push_messages.menu.item_name` and
+  `Loyalty.navigation.route_name` to the three above.
+- **Still silent:** zero console errors, zero warnings, HTTP 200. Monitoring cannot see it. This is the
+  property that makes the CI guard proposed in §Fix Routing worth more than the fix itself.
+- The sales-rep hub's **own** labels localize correctly, so `BL-SR-013` holds for the rep-facing
+  vocabulary — the leak is in the shared account sidebar, as reported.
+
+**A correction to this report's env line, for whoever picks it up:** the original entry reads *"the German
+locale file is genuinely missing the keys"*. That remains the best explanation for the deterministic DE
+half, but it cannot explain the EN half — `en.json` is the source locale. Two mechanisms, not one.

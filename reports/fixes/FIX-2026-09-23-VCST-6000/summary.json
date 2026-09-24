@@ -1,0 +1,84 @@
+{
+  "run_id": "FIX-2026-09-23-VCST-6000",
+  "ticket": "VCST-6000",
+  "ticket_url": "https://virtocommerce.atlassian.net/browse/VCST-6000",
+  "ticket_type": "Bug",
+  "ticket_priority": "Medium",
+  "ticket_status_at_start": "Draft",
+  "ticket_status_at_end": "In review",
+  "status_transitions": [
+    {
+      "hop": "in-progress",
+      "applied": true,
+      "transition": "Take to development",
+      "to": "In progress",
+      "note": "Became reachable only after a human moved the ticket Draft -> To do; no in-development transition existed from Draft."
+    },
+    {
+      "hop": "in-review",
+      "applied": true,
+      "transition": "Go to review",
+      "to": "In review",
+      "note": "Terminal state for /qa-fix. Ready for test / Tested deliberately NOT applied - those belong to /qa-verify-fix after merge + deploy."
+    }
+  ],
+  "repo": "VirtoCommerce/vc-module-x-cart",
+  "repo_kind": "module",
+  "ownership": "platform",
+  "developer_agent": "fullstack-backend",
+  "reviewer_agent": "backend-reviewer",
+  "branch": "claude/qa-autofix/VCST-6000",
+  "base": "dev",
+  "commit": "a0cec27",
+  "pr_url": "https://github.com/VirtoCommerce/vc-module-x-cart/pull/144",
+  "pr_number": 144,
+  "pr_merged": false,
+  "rca_anchor": "src/VirtoCommerce.XCart.Core/Validators/ConfigurationItemValidator.cs::ValidateSectionTypeFile",
+  "files_changed": [
+    "src/VirtoCommerce.XCart.Core/Validators/ConfigurationItemValidator.cs",
+    "tests/VirtoCommerce.XCart.Tests/Validators/ConfigurationItemValidatorTests.cs"
+  ],
+  "gates": {
+    "G0_triage": "PASS",
+    "G1_route": "PASS",
+    "G1_write_creds": "PASS",
+    "G2_reproduce_red": "PASS",
+    "G3_fix_green": "PASS",
+    "G4_review": "APPROVE",
+    "G5_ci": "PASS",
+    "G6_e2e": "NOT_RUN_BY_DESIGN",
+    "G7_stop": "STOPPED_AT_OPEN_PR"
+  },
+  "ci_checks": {
+    "ci": "success",
+    "SonarCloud": "success",
+    "SonarCloud Code Analysis": "success",
+    "swagger-validation": "success",
+    "license/cla": "success",
+    "auto-tests / build-matrix": "success",
+    "auto-tests / auto-tests-result": "success",
+    "auto-tests / auto-autotests (postgres, elasticsearch8)": "success",
+    "auto-tests / auto-autotests (mysql, elasticsearch8)": "success",
+    "auto-tests / auto-autotests (sqlserver, elasticsearch8)": "success",
+    "deploy": "success",
+    "deploy-cloud": "skipped",
+    "detect-version-bump": "skipped"
+  },
+  "tests": {
+    "red_before": "ValidateFileSection_RequiredSectionWithOnlyEmptyFile_Invalid FAILED (Expected result.IsValid to be False, but found True); 1 failed / 5 passed / 6 total",
+    "green_after": "6 passed / 0 failed / 6 total; dotnet build clean, 0 warnings",
+    "existing_tests_modified": false,
+    "independently_reverified": "reviewer stash A/B against pre-fix source"
+  },
+  "needs_deploy_verification": true,
+  "next_step": "/qa-verify-fix VCST-6000 after merge + deploy",
+  "suite_impact": {
+    "case": "CFG-FILE-003",
+    "disposition": "KEEP - asserts correct behaviour, ahead of the code, not stale",
+    "expected_after_ship": "PASS"
+  },
+  "confidence": "HIGH",
+  "pr_mergeable": true,
+  "pr_mergeable_state": "blocked (awaiting required human review \u2014 intended)",
+  "workflow_note": "VCST Bug workflow: Draft -> To do -> In progress (Take to development) -> In review (Go to review) -> Ready for test -> Testing -> Tested -> Done. Draft only offers Cancelled / On hold / Ready for refinement."
+}

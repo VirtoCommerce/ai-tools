@@ -1,0 +1,65 @@
+{
+  "run_id": "FIX-2026-09-23-1352",
+  "date": "2026-09-23",
+  "ticket": "VCST-5995",
+  "tracker": "jira",
+  "profile": null,
+  "bug_report": "reports/bugs/open/critical-high/BUG-configurable-product-order-attachment-403-for-owner-VCST-5995.md",
+  "outcome": "STOP",
+  "terminal_gate": "G0",
+  "ticket_status_after": "To do",
+  "ticket_transitioned": false,
+  "repo": "VirtoCommerce/vc-module-x-order",
+  "repo_kind": "module",
+  "developer_agent": "fullstack-backend (not dispatched)",
+  "rca_anchor": "src/VirtoCommerce.XOrder.Data/Services/CustomerOrderAggregateRepository.cs:130",
+  "cloned": false,
+  "branch": null,
+  "pr_url": null,
+  "gates": {
+    "phase0_preflight": "PASS",
+    "G0_fix_eligibility": "BAIL",
+    "G1_repo_route": "PASS (route confirmed, not disputed)",
+    "write_credential_preflight": "STOP",
+    "G2_reproduce": "not reached",
+    "G3_fix": "not reached",
+    "G4_review": "not reached",
+    "G5_ci": "not reached",
+    "G6_e2e": "not reached",
+    "G7_human_review": "not reached"
+  },
+  "bail_reasons": [
+    "approach spans three candidate repos (x-order / x-cart / file-experience-api) because FileAuthorizationService selects the requirement factory by scope alone \u2014 a maintainer's architectural decision",
+    "a correct fix needs a data-migration decision for files on already-placed orders (owner-type change with no migration is a known measured failure mode)",
+    "authorization-boundary change on customer-uploaded identity documents; a wrong fix leaks documents without failing any test"
+  ],
+  "blockers": [
+    "GITHUB_FIX_BUGS_TOKEN and GITHUB_PERSONAL_ACCESS_TOKEN both return 401 Bad credentials; gh CLI not installed \u2014 no push/PR capability from this machine"
+  ],
+  "build_verified_live": {
+    "env": "vcptcore-qa1",
+    "source": "GET /api/platform/modules",
+    "VirtoCommerce.XCart": "3.1034.0",
+    "VirtoCommerce.XOrder": "3.1012.0",
+    "VirtoCommerce.Orders": "3.1016.0",
+    "VirtoCommerce.FileExperienceApi": "3.1004.0",
+    "VirtoCommerce.Quote": "3.1002.0",
+    "note": "newer than the ticket's versions; defect re-reproduced from scratch on these versions 2026-09-23 (order CO260923-00001): cart-owned 200 -> order-owned 403, admin 200/43B"
+  },
+  "related_tickets": [
+    "VCST-5999",
+    "VCST-6000",
+    "VCST-5924"
+  ],
+  "confidence": "HIGH on the bail; the route itself is source-confirmed",
+  "reproduction_current_build": {
+    "date": "2026-09-23",
+    "file_id": "91fad3ec36dc4369b14556cf1dbda0d7",
+    "cart": "7d9ceae2-f5ce-4d27-a6d6-4a55b910bd8d",
+    "order": "CO260923-00001",
+    "uploaded_owner_empty": 200,
+    "cart_owned_buyer": 200,
+    "order_owned_buyer": 403,
+    "order_owned_admin": "200 / 43 bytes"
+  }
+}

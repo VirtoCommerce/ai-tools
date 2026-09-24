@@ -27,3 +27,26 @@ Filed as its own ticket rather than against VCST-5346: it is a shared header com
 
 ## Refs
 `WCAG 1.1.1`, `WCAG 4.1.2` · `BL-A11Y-002` · full audit: `reports/tickets/Sprint26-17/VCST-5346/design-report.md` (O1)
+
+---
+
+## Update 2026-09-21 — reproduces on a second env and build, and there is a second, separate defect in the same list
+
+Re-observed during the `/qa-test VCST-5732` re-test on **vcptcore-qa @ theme
+`2.58.0-pr-2464-2971-2971a77b`** (the original was vcst-qa @ `2.57.0-pr-2396-5924`), so this is env- and
+build-independent, as a shared header component should be expected to be. **Not re-filed — VCST-5840
+owns it**, and the P3 grade recorded above stands; a re-test does not re-grade a finding to suit itself.
+
+All **12** locale options carry the `English (United States)` flag image with that alt text, so each
+option's accessible name is self-contradictory (`"English (United States) Deutsch"`, `"English (United
+States) русский"`). Unchanged from the original description.
+
+**New, and NOT covered by VCST-5840: the list contains two identical `Nederlands` entries.** That is a
+data defect in the locale list rather than an `alt`-text defect, so fixing the `alt` will not remove it and
+it will survive this ticket. `Low` — recorded here rather than filed, per the severity floor. Worth
+folding into VCST-5840's scope as a one-line addition when someone touches that component, since the two
+live in the same list.
+
+**Also corrects a repo memory:** `reference_vcptcore_qa_locales_and_reviews` records vcptcore-qa as having
+**no ru/pl locale**. That is now stale for `B2B-store`, which lists 12 locales including `русский` and
+`polski` — so the plural/i18n checks that memory ruled out on this stand may in fact be runnable.
