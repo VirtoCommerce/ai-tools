@@ -45,6 +45,7 @@ Provides the structured methodology framework for exploratory testing sessions. 
    - Select charter type: Feature, Risk, Workflow, or Edge-Case
    - Choose applicable heuristic(s): CRISP for quality attributes, SFDPOT for system dimensions
    - Set time box: 30-minute session (5 min setup + 20 min explore + 5 min document)
+   - **Ask the base about the charter area** — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`), one question per page path / GraphQL operation in the charter. What it already holds is known ground to subtract, exactly like the bug catalog
 
 3. **During a session — Guided exploration:**
    - Follow the selected heuristic's sub-questions to guide exploration
@@ -57,6 +58,7 @@ Provides the structured methodology framework for exploratory testing sessions. 
    - Assess coverage: what percentage of the charter was covered
    - Identify follow-up actions: bugs to file, questions to answer, risks to escalate
    - Update the coverage tracking matrix (area x session)
+   - **Bank every Observation that is platform behaviour**: matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, unrecorded ⇒ `kb capture` (`--deployment <env>`, nothing client-specific) — an exploratory session is where the base gets most of its new entries ([`authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5)
 
 5. **Learning loops — Continuous improvement:**
    - Bug found → update risk register (see `/qa-risk`)

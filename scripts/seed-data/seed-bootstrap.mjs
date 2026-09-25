@@ -45,6 +45,15 @@ const passthrough = process.argv.slice(2).filter((a) => a === '--dry-run' || a =
  * block a full clean). Invoked with `npm run seed:bootstrap -- --teardown`.
  */
 const TEARDOWN_STEPS = [
+  // Sales-rep goes FIRST — it is the most dependent domain in the chain. Its orders reference
+  // products, its reps' memberships reference the organisations `company-users` owns, and its
+  // documents reference uploaded files. Everything it holds must be released before the steps
+  // below start deleting the entities it points at. The family entrypoint reverses its own
+  // internal chain and picks the live profile (fixtures vs demo) off _meta.dataset_profile.
+  // NOTE: this sweeps only what the CSVs still declare. Entities the CSVs no longer name —
+  // hand-made reps, orphaned documents — need `npm run sr:inventory`, which is deliberately not
+  // wired into an unattended chain: it can delete things no script can recreate.
+  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', args: ['--teardown'] },
   // Wishlists are carts referencing products AND a security account, so they go before both.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', args: ['--teardown'] },
   // Orders/quotes reference products + users, so sweep them FIRST (before the entities they point at).
@@ -160,6 +169,13 @@ const STEPS = [
   // owned by USER_EMAIL, quotes submitted by ORG_USER_EMAIL, and line items point at real catalog
   // products. Optional: quotes need the Quote module deployed + Stores.EnableQuotes on the store.
   { name: 'orders', script: 'orders/seed-order-states.mjs', required: false, priority: 140 },
+  // Sales Rep family. Sits with the order steps because it CREATES orders, and after products (40)
+  // for their line items, inventory (70) for fulfillment centers, and company-users (100) for the
+  // org graph its reps are given memberships in. Optional: the module is absent on some
+  // deployments (the entrypoint then prints one skip line and exits 0), the document library needs
+  // `sales-rep-documents` in FileUpload:Scopes, and the task seeder needs a storefront password
+  // grant (SALES_REP_EMAIL + SALES_REP_PASSWORD_<ENV>).
+  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142 },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', required: false, priority: 145 },
   // VCST-5546 / INV-047 — a variation family stocked on the store's MAIN fulfillment center, so it
   // runs after `inventory` (70) has ensured the fulfillment centers exist.

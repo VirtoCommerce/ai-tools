@@ -139,13 +139,20 @@ You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/
    `--dry-run` seed — all green.
 6. **Provision it live (your job — no browser needed).** Against a non-prod, `ENV_RISK`-safe env
    (`TEST_ENV=<env>`), run the **real** seed — `TEST_ENV=<env> npm run seed:<domain>` (or the specific
-   `.mjs` seeder). Then confirm the outcome deterministically:
+   `.mjs` seeder). **Before it, ASK** the base about each Platform-API endpoint the seeder calls:
+   `npm run kb -- ask "<endpoint> <question>"` (MCP: `mcp__kb__kb_ask`) — what an endpoint was *seen*
+   doing (a default it applies, a field it ignores) is what a seeder otherwise re-learns by failing.
+   Then confirm the outcome deterministically:
    - runtime GUIDs landed in `test-data/aliases.<env>.json` (not in any committed CSV);
    - `TEST_ENV=<env> npm run td:validate` + `td:validate:<domain>` still green post-seed;
    - `TEST_ENV=<env> npm run td:reconcile` green — the live Platform-API probe confirms the entities
      exist, are org-scoped/role-correct, and have no residue/leaks.
    - then re-run `--teardown` on a throwaway pass to prove zero-residue symmetry (`verifyRemoved`),
      re-seed if the data is meant to persist for the run.
+   - **BANK** what the live run established about the platform (not about your script): matched ⇒
+     `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, unrecorded ⇒ `kb capture`
+     (`--deployment <env>`, nothing client-specific). List the ids in your report
+     (`knowledge/agents/authoring-standard.md` §5).
 7. **Delegate ONLY the browser part.** Hand off to `qa-backend-expert` / `qa-frontend-expert` the
    storefront/Admin-SPA rendering check or the full suite run against the seeded env — the only steps
    that need a browser. Report which env you seeded, the aliases written, and the reconcile result.

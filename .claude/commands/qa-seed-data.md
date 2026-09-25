@@ -42,8 +42,10 @@ npm run td:reconcile     # live: catalog root, user roles, B2B org-scoped member
 Read the skill definition and its references, then choose the path:
 
 1. Read `skills/qa-seed-data/SKILL.md` — start with **Seeding Tooling — Two Execution Paths** to pick a script vs Postman.
-2. **Path A (script — fastest):** for a fresh/arbitrary env start with `npm run seed:bootstrap`; otherwise run the relevant `npm run seed*` / `node scripts/seed-*.mjs` from the tooling table. Then write IDs back to `test-data/`, run `npm run td:validate` (static gate) and `npm run td:reconcile` (live gate) to confirm the data exists on this env.
-3. **Path B (Postman MCP):** read `skills/qa-seed-data/test-data-generation.md`, then `skills/qa-postman/SKILL.md` (index) + sub-guides (`mcp-tools.md`, `collections-and-requests.md`, `test-data-fixtures.md`), and execute the 6-step workflow (Read → Reuse check → Environment → Build → Execute → Report).
+2. **Ask the base per endpoint before the live seed** — for each Platform API endpoint the chosen seeders call: `npm run kb -- ask "<endpoint> <question>"` (MCP: `mcp__kb__kb_ask`). Record hit ids; a miss is not a blocker. Rule: [`CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*.
+3. **Path A (script — fastest):** for a fresh/arbitrary env start with `npm run seed:bootstrap`; otherwise run the relevant `npm run seed*` / `node scripts/seed-*.mjs` from the tooling table. Then write IDs back to `test-data/`, run `npm run td:validate` (static gate) and `npm run td:reconcile` (live gate) to confirm the data exists on this env.
+4. **Path B (Postman MCP):** read `skills/qa-seed-data/test-data-generation.md`, then `skills/qa-postman/SKILL.md` (index) + sub-guides (`mcp-tools.md`, `collections-and-requests.md`, `test-data-fixtures.md`), and execute the 6-step workflow (Read → Reuse check → Environment → Build → Execute → Report).
+5. **Bank what the seed established** (after `td:reconcile`) — for each API behaviour the run relied on or hit (a rejected payload, an async reindex, a silent no-op): matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture` (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in the run summary.
 
 ## Test Data Directory
 

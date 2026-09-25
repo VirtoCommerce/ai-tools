@@ -45,6 +45,14 @@ ever a paraphrase: a summarised invariant is a second, drifting copy of a single
   ([`SKILL.md`](SKILL.md) §The verifier, in one place). Packing the doer's artifacts, script output or
   live observations into its brief turns an independent check into a ratification of the doer's own
   reading. Rule text is not evidence and may be packed; **the evidence never is.**
+- **The observed-behaviour base.** Never packed as an answer — **the brief tells the agent to ask it
+  itself**: `mcp__kb__kb_ask`, with the coordinate of *its own* surface in *its own* question
+  ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*). This is the first rule's
+  second half, not an exception to it: the recipient is the one who knows what it is about to assert,
+  and a packed answer to a question the dispatcher guessed pre-answers the step exactly as a digested
+  prior report does. It also carries a **trust count and a deployment** that only mean anything beside
+  the agent's own observation — and the write side (`kb_confirm` on a match, `kb_dispute` on a
+  contradiction, `kb_capture` on a miss) cannot be delegated to a dispatcher at all.
 - **Anything whose FRESHNESS the recipient must judge.** If the agent's job includes deciding whether a
   snapshot is current, it needs the source and its date, not your cut of it.
 

@@ -72,11 +72,32 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/sweep-stray-screenshots.mjs\""
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/kb-flush.mjs\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/kb-register.mjs\""
+          }
+        ]
       }
     ]
   },
   "enabledPlugins": {
     "serena@claude-plugins-official": true
   },
-  "teammateMode": "in-process"
+  "teammateMode": "in-process",
+  "enabledMcpjsonServers": [
+    "kb"
+  ]
 }

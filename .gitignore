@@ -106,6 +106,7 @@ test-data/aliases.localhost.json
 # Self-diagnostics telemetry (Tier A collector) — per-session jsonl + state,
 # written under the project output root; transient, never committed (VCST-5475)
 .vc-fix/
+.kb-harvest/
 
 # vc-perf load/trace run artifacts (k6 summaries, counters CSV, .nettrace) — heavy,
 # machine-specific, regenerated per run; kept out of the plugin install dir so they

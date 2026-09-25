@@ -190,10 +190,77 @@ Install these via Claude Code's MCP settings (`.mcp.json` or `claude_code/settin
   "mcpServers": {
     "playwright-chrome":  { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-chrome.config.json"] },
     "playwright-firefox": { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-firefox.config.json"] },
-    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-edge.config.json"] }
+    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-edge.config.json"] },
+    "kb":                 { "command": "node", "args": ["scripts/kb/mcp.mjs"] }
   }
 }
 ```
+
+**`kb` — the shared knowledge base** (`kb_ask`, `kb_show`, `kb_capture`, `kb_confirm`, `kb_dispute`):
+what has actually been OBSERVED about how the platform behaves, with a trust label and provenance per
+observation.
+
+**You do not have to do anything.** A tracked `SessionStart` hook
+(`.claude/hooks/kb-register.mjs`) registers the server on your machine the first time you open the
+project, and the tracked `enabledMcpjsonServers` pre-approves it, so there is no command to run and
+no dialog to accept. **One restart is needed and cannot be avoided** — MCP servers bind *before*
+SessionStart hooks run, measured on Claude Code 2.1.275: the hook writes a correct `.mcp.json`, and
+the session it ran in still has no `kb` tools. So: pull, open the project once, restart, done.
+
+**If you would rather do it explicitly** — or after `/project-init`, which rewrites `.mcp.json`
+wholesale from its template:
+
+```bash
+npm run kb:install
+```
+
+It merges exactly the `kb` key into whatever `.mcp.json` you already have, creating the file only if
+there is none, leaves every other server and every other key untouched, and is a no-op on a second
+run. It refuses rather than rewrites if your `.mcp.json` does not parse. **Restart Claude Code
+afterwards** — MCP servers bind at session start. **And re-run it after `/project-init`**, which
+rewrites `.mcp.json` wholesale from its template rather than merging into it.
+
+Why a command and not a tracked file: **`.mcp.json` is gitignored** — unlike everything under
+`.claude/` it does not travel with a clone, it is per machine, and `.claude/settings.json` cannot
+declare MCP servers (measured: `mcp_servers: []`). Until it is registered the base is reachable only
+through the CLI (`npm run kb -- ask "<q>"`, which works on every clone with no setup) — and that door
+is measurably not the one agents take. The entry needs **no token**: reads are unauthenticated, the
+base being a public repository.
+
+**Then allow it once.** In the desktop app you approve the first `kb_ask` call and that is the whole
+setup. Headless (`claude -p`) is different, and it was measured: in a fresh untrusted sandbox a project
+`permissions.allow` entry did **not** take effect while `--allowedTools` did — so pass
+`--allowedTools "mcp__kb"` there rather than relying on settings. For an interactive session that
+should never ask, put `"mcp__kb"` in `permissions.allow` in your own `.claude/settings.local.json`
+(gitignored, per developer) — never in the shared `.claude/settings.json`.
+
+**Writing needs a token; reading never does.** `kb_capture` / `kb_confirm` / `kb_dispute` queue locally
+and go out as one commit **shortly after, on their own** — there is no push command to remember and
+**nothing to close**. Three things publish: the `Stop` hook at the end of a turn, an ordinary `kb`
+call once the oldest queued line is over five minutes old, and a timer in the server for the tail
+that has neither. This paragraph used to say "when the session ends", which was true and useless —
+nobody ends a session, and switching away from a tab is not ending one, so evidence sat on one laptop
+indefinitely. With no `KB_GITHUB_TOKEN` (or `GITHUB_TOKEN`) the flush reports `no-token` and **keeps
+the queue**: nothing is lost, and the first later session with a token sends it. An unauthenticated
+teammate is a full-value reader and can still record what they found — **but note the queue only
+drains on the machine it was written on**, so a reader-only machine accumulates locally until a token
+appears there.
+
+**Opting out.** The base is on by default. To take a machine out of it, set `KB_ENABLED=0` in the
+`env` block of your own `.claude/settings.local.json` and restart. With the switch set, nothing is
+queued and nothing is published, the `Stop` hook does nothing, and the `SessionStart` hook *removes*
+`kb` from `.mcp.json` rather than adding it back. `npm run kb -- ask` still reads, since reading a public
+repo sends nothing. Pushes go only to `VirtoCommerce/vc-knowledge`. A push to any other base is refused
+unless `KB_ALLOW_ANY_BASE=1` is set.
+
+**Reviewing before anything is published.** Set `KB_PUSH_CONFIRM=1` in the same place and nothing is
+published automatically. The hook, the sweep and the server's timer all hold the queue. Run
+`npm run kb -- push` in a terminal to see the exact commit, entry bodies included, and publish only on a
+`y`. The default path is still filtered before any push. A line is dropped if it contains a secret value
+from `.env.local` / `.env.playwright.local`, a token shape (PAT, JWT, Bearer), or a stand's **host** from
+any root `.env*` file. Stands are named by their `deployment` label, never by host. `npm run kb -- stat`
+shows the backlog, the age of the oldest queued line, and the last push result. A failure stays listed
+until a push lands. The detached push's own output goes to `push.log` next to the queue.
 
 **Pin the version — never `@playwright/mcp@latest`.** The pin must match `package.json`'s
 `@playwright/mcp` devDependency and `PLAYWRIGHT_MCP_PACKAGE` in `ci/lib/lane-mcp.ts`; `/project-init`'s
