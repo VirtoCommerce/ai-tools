@@ -12,7 +12,7 @@ evidence supports. Every edit here is `PROPOSE` (`healing-playbook.md`).
 | `docs/decisions/*.md` | Incidents already attributed to it | `grep -nw "<name>" docs/decisions/*.md` |
 | `/vc-self-check` | Flagged spans, struggle sub-signals, silent-suspect runs (vc-fix skills with telemetry on) | Run it for the session; it returns a finding struct in chat, oracle `.claude/knowledge/diagnostics/skill-expectations.md` |
 | `/qa-triage-results` test-defect buckets | Prompts whose authored cases keep producing bad steps/assertions/stale data | Its summary for recent runs |
-| PR review threads | Corrections reviewers keep making to output this prompt produced | GitHub MCP `search_pull_requests` / `pull_request_read` on this repo |
+| PR review threads | Corrections reviewers keep making to output this prompt produced | GitHub MCP `search_issues` (`is:pr`) then `get_pull_request_reviews` / `get_pull_request_comments` |
 | The user | The run that prompted this | Ask for the session and what went wrong |
 
 **No evidence ⇒ no behavioural edit.** Report "no behavioural signal found" and name what would
@@ -41,7 +41,7 @@ paid on every run.
   including one that must **not** trigger it; run old vs new; compare outputs and trigger rate.
   Trigger rate is only meaningful for model-invocable skills.
 - **Plugin skills:** `claude plugin eval <plugin>` runs eval cases from the plugin's `evals/` dir.
-  Neither plugin has one yet — writing the cases is part of the proposal, not something to run.
+  A plugin with no `evals/` dir (`ls plugins/*/evals`) has no cases to run — writing them is part of the proposal.
 - **Commands / agents:** replay the failing scenario from step 1 above on the new version (dry-run or a
   non-prod env), plus one known-good scenario to catch regressions.
 

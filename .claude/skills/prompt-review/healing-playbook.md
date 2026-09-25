@@ -60,4 +60,4 @@ move in one edit, propose any rewording in another.
 - The SKILL.md Step 4 gate for the target is green.
 - Every hunk is a SAFE recipe above or a confirmed PROPOSE.
 - `plugins/*` touched → a version bump + tag is owed (`docs/release-process.md`); say so.
-- A self-diagnostics containment file drifted → reported, not healed (SKILL.md Step 0.4).
+- A self-diagnostics containment file drifted → reported, not healed (SKILL.md Step 0, item 4).

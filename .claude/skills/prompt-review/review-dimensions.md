@@ -1,7 +1,7 @@
 # Review dimensions — what `/prompt-review` collects and checks
 
 Step 1 of [`SKILL.md`](SKILL.md) runs the Collect section below; Step 3 applies the severity scale,
-the ten dimensions and the Verdict section.
+the dimensions and the Verdict section.
 
 ## Collect
 
@@ -167,7 +167,7 @@ example, MAJOR in a rule. Exact UI strings cited as `{DOC}` → MINOR (they are 
   is an unreliable workaround, not a pass.
 - Listed in `.claude/skills/README.md` and, if user-facing, `.claude/ROUTING.md` → MINOR if missing.
 - `.claude/` ↔ `plugins/vc-fix/` copies: a difference is reported and asked about, not judged;
-  self-diagnostics containment files that are not byte-identical → MAJOR (SKILL.md Step 0.4).
+  self-diagnostics containment files that are not byte-identical → MAJOR (SKILL.md Step 0, item 4).
 - Artifacts other flows consume (`summary.json`, a CSV, a fingerprint store) keep their schema.
 
 ---

@@ -1,6 +1,6 @@
 ---
 name: prompt-review
-description: "Review, heal and improve THIS repo's own prompt files — skills (SKILL.md + supporting files), commands and agent definitions under .claude/ and plugins/*/. REVIEW is read-only (10 dimensions: triggering, budget/tiering, single source of truth, no-hardcode, portability, executability, write safety, delegation, product grounding, integration); HEAL (--fix) applies SAFE repairs and proposes the rest; IMPROVE (--improve) tunes from real-run evidence. Findings go to chat. Not for test cases (/qa-review-tests), oracles (/qa-review-oracles), product or script code (/code-review), a skill's runtime telemetry (/vc-self-check), or authoring a brand-new skill (anthropic-skills:skill-creator)."
+description: "Review, heal and improve THIS repo's own prompt files — skills (SKILL.md + supporting files), commands and agent definitions under .claude/ and plugins/*/. REVIEW is read-only (dimensions: triggering, budget/tiering, single source of truth, no-hardcode, portability, executability, write safety, delegation, product grounding, integration); HEAL (--fix) applies SAFE repairs and proposes the rest; IMPROVE (--improve) tunes from real-run evidence. Findings go to chat. Not for test cases (/qa-review-tests), oracles (/qa-review-oracles), product or script code (/code-review), a skill's runtime telemetry (/vc-self-check), or authoring a brand-new skill (anthropic-skills:skill-creator)."
 argument-hint: "<skill|command|agent name | path | changed | all> [--fix] [--improve] [--dry-run]"
 ---
 
@@ -13,13 +13,13 @@ file in the repo and, on request, repairs what it finds.
 
 | Pass | Flag | Writes? | Output |
 |---|---|---|---|
-| **REVIEW** | *(default)* | nothing, not even a temp file | findings table + verdict in chat |
+| **REVIEW** | *(default)* | nothing | findings table + verdict in chat |
 | **HEAL** | `--fix` | see §Write scope | diff + gates |
 | **IMPROVE** | `--improve` | see §Write scope, after evidence | proposal, then edit on confirmation |
 
 `--dry-run` with `--fix`/`--improve`: show each SAFE edit as a unified-diff snippet and each
 PROPOSE as a one-line description; **ask nothing, write nothing**; run the gates on the unchanged
-tree and label them *baseline, not post-heal*.
+tree and label them *baseline, not post-heal*. Bare `--dry-run`, with neither flag, is just REVIEW.
 
 It is model-invocable on purpose, so an orchestrator or subagent can run the read-only REVIEW;
 nothing is ever written without an explicit `--fix` / `--improve`.
@@ -39,7 +39,7 @@ nothing is ever written without an explicit `--fix` / `--improve`.
 
 | File | Read at |
 |---|---|
-| [`review-dimensions.md`](review-dimensions.md) | Step 1 (§Collect: the fact, grep and citation-sweep commands) and Step 3 (the 10 dimensions, severities, verdict) |
+| [`review-dimensions.md`](review-dimensions.md) | Step 1 (§Collect: the fact, grep and citation-sweep commands) and Step 3 (the dimensions, severities, verdict) |
 | [`healing-playbook.md`](healing-playbook.md) | Step 4 (`--fix` / `--dry-run`): recipes, SAFE vs PROPOSE |
 | [`improvement-loop.md`](improvement-loop.md) | Step 5 (`--improve`): evidence, diagnosis, measurement |
 
@@ -56,8 +56,12 @@ of them and this skill disagree, they win — and that disagreement is a finding
    unit** — the command/skill split and any duplicate copy are part of what is under review. An
    **alias** stub (a skill that forwards to another) is the unit; read the skill it forwards to only
    as far as needed to check the alias against it — findings in that skill are a separate run.
-2. **`changed`** → the union of `git diff --name-only origin/main...HEAD` and
-   `git diff --name-only HEAD`, filtered to `SKILL.md`, its supporting files, `commands/*.md` and
+   No hit anywhere → say so, list the closest names, and stop — unless exactly one name is a
+   one-character edit away: name it and continue.
+2. **`changed` / `all`** → `all` is every prompt file in the repo, by the same filter below minus
+   the branch diff. `changed` is the union of `git diff --name-only origin/main...HEAD`,
+   `git diff --name-only HEAD` and `git ls-files --others --exclude-standard` (a new prompt not yet
+   `git add`ed is the one most worth reviewing), filtered to `SKILL.md`, its supporting files, `commands/*.md` and
    `agents/*.md` under `.claude/` or `plugins/*/` (**not** `.claude/skills/README.md` or `.claude/ROUTING.md`). If
    `origin/main` is missing, use the uncommitted set and say so. Empty → report "no prompt files
    changed" and stop. More than 5 files → treat like `all` (triage table) and name the top 5.
@@ -70,9 +74,14 @@ of them and this skill disagree, they win — and that disagreement is a finding
    more. The file list and rule: `docs/decisions/self-diagnostics-design.md` (search
    "Canonical copy"). They are `.mjs`, so they are outside `--fix` scope: report drift, never heal it.
 5. **Concurrent editors** (this skill's own rule, by analogy with the suite one-author rule in
-   `.claude/rules/regression.md`): probe with `git log --all --since=3.days --oneline -- <paths>` and,
-   when GitHub MCP is available, `list_pull_requests` (state open, this repo) then `pull_request_read`
-   `get_files` on each — PR search matches text, not changed files. A hit → stop and say who. If neither probe could run, say "concurrent edits not
+   `.claude/rules/regression.md`): probe with `git status --short -- <paths>` (a shared working tree
+   holds another session's edits before anything is committed; uncommitted changes on a `--fix`
+   target → say so and ask before writing), `git log --all --since=3.days --oneline -- <paths>` and,
+   when GitHub MCP is available, `list_pull_requests` (state open, this repo) then
+   `get_pull_request_files` on each — PR search matches text, not changed files. (Use the split tool names, as
+   every other prompt here does: the consolidated `pull_request_read` exists only on newer GitHub
+   MCP builds, and which build runs is a per-machine `.mcp.json` choice. Tool absent ⇒ the "neither
+   probe could run" case below.) A hit → stop and say who. If neither probe could run, say "concurrent edits not
    verified" — never let the check pass silently.
 
 ## Step 1 — Collect facts deterministically (one batch, before reading prose)
@@ -89,9 +98,8 @@ and BL ids. Every grep/sweep hit is a **candidate**; confirm it before it become
 
 **`all` mode is triage-only:** one row per prompt file with: breach (over cap, not in baseline) ·
 overage vs baseline · DOC findings · sweep UNRESOLVED count · grep hits. Sort by those columns in
-that order, print the table, recommend the top 5 for individual runs, and stop. Asked to keep it?
-Save it as `docs/prompt-review-triage-<date>.md` — a dated audit snapshot beside the repo's other audits
-(prompt reviews are not a `reports/` category), with the head SHA and the regenerate note.
+that order, print the table, recommend the top 5 for individual runs, and stop. The table stays in chat — a triage file on
+disk is a report outside the ten categories (`.claude/rules/reports.md` §1).
 
 ## Step 2 — Read the target whole, find its callers
 
@@ -110,7 +118,7 @@ A caller that invokes the target by name (a pipeline phase, a CI workflow) fixes
 arguments — and **cannot run it at all if the target has `disable-model-invocation: true`**. Check
 that pairing explicitly (D10).
 
-## Step 3 — Review against the 10 dimensions
+## Step 3 — Review against the dimensions
 
 Apply every dimension in `review-dimensions.md`. Each finding: `ID · dimension · severity ·
 file:line · what · failure scenario (BLOCKER/MAJOR only) · fix`.
@@ -127,8 +135,8 @@ file:line · what · failure scenario (BLOCKER/MAJOR only) · fix`.
   preferring the doc (`.claude/rules/agents.md` — a doc is authoritative for MECHANISM, not SURFACE).
 
 Verdict per `review-dimensions.md` §Verdict. Print in chat — **no report file** (prompt reviews
-are not one of the ten categories, `.claude/rules/reports.md` §1). For more than 12 findings, drop
-the failure-scenario column for MINOR/NIT. Stop here unless `--fix` / `--improve`.
+are not one of the ten categories, `.claude/rules/reports.md` §1). For more than 12 findings, keep
+the table to one line per MINOR/NIT. Stop here unless `--fix` / `--improve`.
 
 ## Step 4 — HEAL (`--fix`)
 

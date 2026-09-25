@@ -167,7 +167,7 @@ Outside the four QA categories.
 |-------|---------|-----------------|
 | `/project-init` | Onboard the toolset onto a deployment — native-platform vs client; tracker + VCS host; write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json`; verify access. The profile is what routes each `/qa-fix` to the right repo + tracker | scaffold-env.mjs, scaffold-secrets.mjs, write-env.mjs, gen-profile.mjs, discover-repos.mjs, gen-mcp.mjs, verify-access.mjs |
 | `/vc-self-check` | Tier-B self-diagnostician — reads the passive session-telemetry jsonl + transcript + skill-expectations oracle → per-skill verdict into a local `DIAG-*.md`; the consent-gated `deliver` sub-step contributes a scrubbed quality report to VirtoCommerce. Never modifies the install | SKILL.md, deliver.mjs |
-| `/prompt-review` | Review, heal (`--fix`) and improve (`--improve`) THIS repo's own prompt files — skills, commands, agents in `.claude/` and `plugins/*/` — against 10 dimensions (triggering, BUDGET-004 tiering, single source of truth, no-hardcode, portability, executability, write safety, delegation, grounding, integration); findings to chat, gated by `context:check` | SKILL.md, review-dimensions.md, healing-playbook.md, improvement-loop.md |
+| `/prompt-review` | Review, heal (`--fix`) and improve (`--improve`) THIS repo's own prompt files — skills, commands, agents in `.claude/` and `plugins/*/` — against its review dimensions (triggering, BUDGET-004 tiering, single source of truth, no-hardcode, portability, executability, write safety, delegation, grounding, integration); findings to chat, gated by `context:check` | SKILL.md, review-dimensions.md, healing-playbook.md, improvement-loop.md |
 
 ## Agent → Skill Map
 
