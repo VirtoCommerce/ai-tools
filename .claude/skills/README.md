@@ -7,7 +7,7 @@
 > live): `ls .claude/skills | wc -l` for the total,
 > `grep -ohE '^description: "?\[[A-Za-z ]+\]' .claude/skills/*/SKILL.md | sort | uniq -c` for the
 > per-category split. Skills without a tag are the root-level ones (`project-init`,
-> `vc-self-check`) plus `qa-local-env`, which is grouped under Testing but
+> `vc-self-check`, `prompt-review`) plus `qa-local-env`, which is grouped under Testing but
 > carries no tag of its own. Both `[QA Method]` and `[QA Methodology]` spellings exist in the wild — they
 > are the same category.
 
@@ -40,7 +40,7 @@ skills/
 ├── qa-monitoring/                   # [QA Methodology]  Online bug monitoring (App Insights)
 ├── qa-perf-measure/                 # [QA Method]  Deployed-env backend-work measurement (dependency counts, N+1)
 ├── qa-test-cases-generator/         # [QA Methodology]  Generate agent-native CSV test cases
-├── qa-triage-results/               # [QA Methodology]  Triage a completed regression run's FAILs
+├── qa-triage-results/               # [QA Methodology]  Triage a completed regression run's non-passing cases
 ├── qa-hotfix/                       # [QA Methodology]  Release a hotfix into stable bundles
 ├── qa-hotfix-check/                 # [QA Methodology]  Deliver a released hotfix onto deployed envs
 ├── qa-bundle-check/                 # [QA Methodology]  Audit a stable bundle for available hotfixes
@@ -57,6 +57,7 @@ skills/
 │
 ├── project-init/                    # (root-level) Onboard the toolset onto a deployment
 ├── vc-self-check/                   # (root-level) Self-diagnostician (Tier B) → local DIAG-*.md
+├── prompt-review/                   # (root-level) Review / heal / improve our own skills, commands, agents
 │
 └── README.md                        # This file
 ```
@@ -106,7 +107,7 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | `/qa-investigate` | 5-phase bug investigation + evidence-to-claim root-cause worksheet (gated by `scripts/regression/bundle-evidence.ts`) | bug-investigation-flow.md, evidence-and-root-cause.md |
 | `/qa-evidence` | Evidence capture policy, 3-tier report verbosity, output paths | evidence-capture-policy.md, output-paths.md, sign-off-templates.md |
 | `/qa-defect` | Defect management lifecycle: JIRA Bug Workflow, triage, classification, verification, metrics | defect-lifecycle-workflow.md, defect-report-templates.md |
-| `/qa-triage-results` | Triage a completed regression run's FAILs: classify real-bug vs test-defect vs flaky, live-verify, route fixes (never files a ticket) | triage-taxonomy.md, routing-and-fix.md |
+| `/qa-triage-results` | Triage a completed regression run's FAIL / BLOCKED / SKIPPED cases: classify real-bug vs test-defect vs flaky, live-verify, route fixes (never files a ticket) | triage-taxonomy.md, routing-and-fix.md, live-triage-design.md |
 
 ### Proactive (pre-testing)
 
@@ -166,6 +167,7 @@ Outside the four QA categories.
 |-------|---------|-----------------|
 | `/project-init` | Onboard the toolset onto a deployment — native-platform vs client; tracker + VCS host; write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json`; verify access. The profile is what routes each `/qa-fix` to the right repo + tracker | scaffold-env.mjs, scaffold-secrets.mjs, write-env.mjs, gen-profile.mjs, discover-repos.mjs, gen-mcp.mjs, verify-access.mjs |
 | `/vc-self-check` | Tier-B self-diagnostician — reads the passive session-telemetry jsonl + transcript + skill-expectations oracle → per-skill verdict into a local `DIAG-*.md`; the consent-gated `deliver` sub-step contributes a scrubbed quality report to VirtoCommerce. Never modifies the install | SKILL.md, deliver.mjs |
+| `/prompt-review` | Review, heal (`--fix`) and improve (`--improve`) THIS repo's own prompt files — skills, commands, agents in `.claude/` and `plugins/*/` — against 10 dimensions (triggering, BUDGET-004 tiering, single source of truth, no-hardcode, portability, executability, write safety, delegation, grounding, integration); findings to chat, gated by `context:check` | SKILL.md, review-dimensions.md, healing-playbook.md, improvement-loop.md |
 
 ## Agent → Skill Map
 

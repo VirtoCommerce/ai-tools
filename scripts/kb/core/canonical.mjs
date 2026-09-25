@@ -59,3 +59,16 @@ export function slug(text) {
 export function mintId(subject, namespace = 'KB') {
   return `${namespace}-${hash(subject, 8).toUpperCase()}`;
 }
+
+// A STAND'S NAME, folded on SPELLING only: case, and `-` / whitespace against `_`.
+//
+// This is not the normaliser `stand()` in verbs.mjs refuses to be. That refusal is about MAPPING
+// one name onto another (`vcst` onto `vcst_qa`), which needs a table nobody owns. `vcst-qa` and
+// `vcst_qa` are not two beliefs about which stand it was -- they are one name typed two ways, and
+// the rule that joins them is derived from the string alone, so there is nothing to transcribe.
+// Measured on the published base 2026-09-25 (`grep -h "deployment:" entries/*.md | sort | uniq -c`):
+// 69 `vcst-qa` against 43 `vcst_qa`, one entry carrying both, so every per-stand count split one
+// stand in two. `_` is the form the repo's own env names use (`vcptcore_stable`, `vcptcore_qa1`).
+export function canonicalStand(name) {
+  return String(name).trim().toLowerCase().replace(/[\s-]+/g, '_');
+}

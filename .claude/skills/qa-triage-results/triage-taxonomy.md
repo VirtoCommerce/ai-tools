@@ -19,14 +19,14 @@ The product genuinely misbehaves. **Must be confirmable by a live repro** (Phase
 
 *Signals:* a real 5xx or GraphQL `errors[]` on a valid operation in `trace.networkFailures[]`; an app-code exception with a real stack frame (`ProductCard.vue:47`) in `consoleErrors[]`; a screenshot showing a control genuinely broken/missing (not merely renamed); a BL-* invariant actually violated by the product.
 
-*Example:* `CART-018` asserts line total = unit × qty. Trace: `POST /graphql (AddItem) → 200` but response `price.total` is `0`; screenshot shows `$0.00` in the cart. Live repro confirms. → `REAL_BUG`, P1, `vc-module-x-cart`, `BL-CART-003`.
+*Example:* `CART-018` asserts line total = unit × qty. Trace: `POST /graphql (AddItem) → 200` but response `price.total` is `0`; screenshot shows `$0.00` in the cart. Live repro confirms. → `REAL_BUG`, P1, `vc-module-x-cart`, `ORACLE_MATCH: BL-PRICE-008` (its violation signal is *line total ≠ qty × unit price*; check an id's own text before citing it — never the nearest-looking id).
 
 ---
 
 ## Test-side (product is fine — the test is wrong)
 
 ### `TEST_STEPS_DEFECT`
-The script is wrong: vague/compound step, or a missing `[WAIT]` after a state-changing `[ACT]` so the assertion reads before the async settle (the classic false FAIL — `reference_additem_async_settle`, `platform-patterns.md`).
+The script is wrong: vague/compound step, or a missing `[WAIT]` after a state-changing `[ACT]` so the assertion reads before the async settle (the classic false FAIL — `addItem` returns before the cart projection settles, `.claude/knowledge/oracles/vc-bug-catalog.md`; provenance `reference_additem_async_settle`).
 
 *Example:* `SRCH-004` does `[ACT] type query` immediately followed by `[ASSERT] results contain X` with no `[WAIT]`. Trace: no network error, all 200; screenshot shows results *did* load a moment later. → `TEST_STEPS_DEFECT`; fix = insert `[WAIT] for results list`.
 
@@ -54,13 +54,13 @@ The feature **legitimately changed** — control renamed/moved/removed, flow re-
 ## Non-actionable (no code and no test change)
 
 ### `FLAKY`
-Oscillates PASS↔FAIL across runs with no code change (`flaky:true` from the store or `compute-metrics.ts` trends), or a transient race/timeout with no product fault. → recommend re-run/quarantine; no bug, no CSV edit.
+Oscillates PASS↔FAIL across runs with no code change (`flaky:true` from the store or `scripts/regression/compute-metrics.ts` trends), or a transient race/timeout with no product fault. → recommend re-run/quarantine; no bug, no CSV edit.
 
 ### `ENV`
-Infra/environment failure: env unreachable, deploy window, search index still rebuilding, auth/session setup failed. Not product, not test. → recommend re-run once the env is healthy. (Datatrans redirect is *not* an ENV/BLOCKED reason — `feedback_datatrans_redirect_not_blocker`.)
+Infra/environment failure: env unreachable, deploy window, search index still rebuilding, auth/session setup failed. Not product, not test. → recommend re-run once the env is healthy. (A flow that redirects, e.g. Datatrans checkout, is *not* an ENV/BLOCKED reason — execute through it, `.claude/knowledge/execution/test-runner-tags.md`; provenance `feedback_datatrans_redirect_not_blocker`.)
 
 ### `KNOWN_ISSUE`
-Matches a `vc-bug-catalog` entry, an already-filed tracker ticket in `References`, or documented by-design / config-gated behavior (e.g. multi-step checkout gated by `checkout_multistep_enabled`; token revocation needs `EnablePersistentStorageTokenValidation`). → dismiss with the link.
+Matches a `vc-bug-catalog` entry, an already-filed tracker ticket in `References`, or documented by-design / config-gated behavior (e.g. multi-step checkout gated by `checkout_multistep_enabled`, `.claude/knowledge/automation/storefront-config-flags.md`; token revocation needs `EnablePersistentStorageTokenValidation`). → dismiss with the link.
 
 ---
 

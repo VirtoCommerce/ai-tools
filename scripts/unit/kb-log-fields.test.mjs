@@ -89,6 +89,21 @@ test('a miss on a question the base scores NOTHING on carries no nearMiss', asyn
   });
 });
 
+test('an ask mangled by Git Bash is answered and logged as the route, never as a local path', async () => {
+  // Measured 2026-09-25: the public log carried `C:/Program Files/Git/company/members …` four times.
+  await withQueue(async (env) => {
+    const clean = await ask(ANSWERED, opened(), { env, via: 'cli' });
+    const mangled = ANSWERED.replace('/company/members', 'C:/Program Files/Git/company/members');
+    const r = await ask(mangled, opened(), { env, via: 'cli' });
+    assert.deepEqual(r.hits.map((h) => h.id), clean.hits.map((h) => h.id), 'ranked on the repaired text');
+    assert.equal(r.repaired, 'msys');
+    const [first, second] = await linesOf(env);
+    assert.equal(second.q, ANSWERED);
+    assert.equal(second.repaired, 'msys');
+    assert.ok(!('repaired' in first), 'a clean ask carries no repair mark');
+  });
+});
+
 // ── Which ranker, and which door ──────────────────────────────────────────────────────────────
 
 test('every ask names the ranker that produced it — and only asks do', async () => {
@@ -620,6 +635,40 @@ test('both doors put the same field on the line, because both go through one cor
     const [cli, mcp] = await linesOf(env);
     assert.equal(cli.deployment, mcp.deployment);
     assert.deepEqual(Object.keys(mcp).filter((k) => k !== 'call'), Object.keys(cli));
+  });
+});
+
+test('a stand name is folded on SPELLING only — into the entry and the log alike', async () => {
+  // Measured 2026-09-25: 69 `vcst-qa` against 43 `vcst_qa` on the published base, one entry holding
+  // both, so every per-stand count split one stand in two. Driven through the verbs, because the
+  // fold is a property of what reaches the ENTRY and the LOG — a test of `canonicalStand` alone
+  // would not notice a writer that stopped calling it.
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: ' VCST-QA ' });
+    await confirm(EXISTING_ID, { deployment: 'vcst-qa' }, opened(), { env, via: 'cli' });
+    await capture({
+      subject: 'a fact seen on a stand typed with a hyphen',
+      question: 'is a stand typed with a hyphen the same stand',
+      claim: 'It is.',
+      deployment: 'vcst qa',
+      anchors: ['/company/hyphen-stand'],
+      scope: ['surface=storefront-ui'],
+    }, opened(), { env, via: 'cli' });
+    const [asked, confirmed, captured] = await linesOf(env);
+    assert.equal(asked.deployment, 'vcst_qa');
+    assert.equal(confirmed.deployment, 'vcst_qa');
+    assert.equal(confirmed.payload.item.deployment, 'vcst_qa', 'the entry, not only the log line');
+    assert.equal(captured.payload.entry.evidence[0].deployment, 'vcst_qa');
+  });
+});
+
+test('a stand NAME is never mapped — `vcst` stays `vcst`, not `vcst_qa`', async () => {
+  // The line `canonicalStand` must not cross: `vcst` onto `vcst_qa` needs a table nobody owns.
+  await withQueue(async (env) => {
+    await confirm(EXISTING_ID, { deployment: 'vcst' }, opened(), { env, via: 'cli' });
+    const [line] = await linesOf(env);
+    assert.equal(line.deployment, 'vcst');
+    assert.equal(line.payload.item.deployment, 'vcst');
   });
 });
 

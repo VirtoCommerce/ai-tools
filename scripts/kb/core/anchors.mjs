@@ -87,3 +87,27 @@ export const LOOKS_LIKE_A_LOCAL_PATH = /^[A-Za-z]:[/]|Program Files/;
 // What to do about it, said once so the gate and the door cannot word it differently.
 export const MSYS_REMEDY = 'Under Git Bash a leading "/" is rewritten before the tool sees it. '
   + 'Prefix the command with MSYS_NO_PATHCONV=1, or use the "VERB /route" form, which is not rewritten.';
+
+/**
+ * Undo the MSYS rewrite on a QUESTION -- the one input where repairing beats refusing.
+ *
+ * A capture refuses a mangled anchor (`anchorProblems`), because an entry is written once and read
+ * by everyone. An ask is the opposite: nothing is stored but the log line, and refusing would send
+ * the agent away with no answer for a mistake its shell made. Measured 2026-09-25: four asks for
+ * `/company/members …` arrived as `C:/Program Files/Git/company/members …`, ranked on the mangled
+ * coordinate, and wrote the operator's install directory into the PUBLIC log, verbatim.
+ *
+ * MSYS maps "/" onto its own install root, so the rewrite is exactly "that root, prefixed". The
+ * root is taken from the standard install locations and from EXEPATH (which Git Bash sets to its
+ * `bin`), never guessed wider than that: a real Windows path in a question is left alone.
+ */
+export function undoMsysRewrite(text, env = process.env) {
+  const s = String(text ?? '');
+  const escape = (r) => r.replace(/[.*+?^${}()|[\]]/g, '\\$&');
+  const roots = ['Program Files/Git', 'Program Files (x86)/Git', 'Git'].map((r) => `[A-Za-z]:/${escape(r)}`);
+  const exe = String(env?.EXEPATH ?? '').replace(/\\/g, '/').replace(/\/(?:usr\/)?bin\/?$/i, '');
+  if (/^[A-Za-z]:\//.test(exe)) roots.unshift(escape(exe));
+  // MSYS always emits forward slashes, and only rewrites an argument that STARTS with "/" -- but
+  // the CLI joins its words, so a rewritten word can also follow whitespace.
+  return s.replace(new RegExp(`(^|\\s)(?:${roots.join('|')})(?=/)`, 'gi'), '$1');
+}

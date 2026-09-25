@@ -11,9 +11,10 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { mintId } from './canonical.mjs';
+import { canonicalStand, mintId } from './canonical.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
+import { undoMsysRewrite } from './anchors.mjs';
 import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
@@ -265,11 +266,12 @@ const door = (via, call) => ({
  * does not. Trimmed, because an argument of whitespace is a caller that meant to say nothing, and
  * `deployment: ""` in the log would read as a stand whose name is the empty string.
  *
- * The value is recorded VERBATIM and is never normalised. The base already holds `vcst` once
- * against `vcst_qa` 33 times, so a normaliser has a real fragmentation to argue for -- and it
- * would be a transcribed mapping with no source of truth behind it, which is the same defect
- * wearing a tidier name. What the log needs is what the caller believed; the disagreement is a
- * finding, not something to iron out on the way in.
+ * The NAME is never mapped. The base already holds `vcst` once against `vcst_qa` 33 times, so a
+ * normaliser has a real fragmentation to argue for -- and it would be a transcribed mapping with no
+ * source of truth behind it, which is the same defect wearing a tidier name. What the log needs is
+ * what the caller believed; the disagreement is a finding, not something to iron out on the way in.
+ * Only the SPELLING is folded (case, `-` against `_`) by `canonicalStand`, which is a rule on the
+ * string and not a table -- see its comment for why `vcst-qa` vs `vcst_qa` is not a disagreement.
  *
  * A STRING OR NOTHING, which is not defensive typing. `kb.mjs`'s parser hands a flag given
  * without a value the boolean `true`, so `kb ask "q" --deployment --json` would otherwise publish
@@ -290,8 +292,10 @@ const door = (via, call) => ({
 export const DEPLOYMENT_MAX = 40;
 const stand = (deployment) => {
   const d = typeof deployment === 'string' ? deployment.trim() : '';
-  return d ? { deployment: d.slice(0, DEPLOYMENT_MAX).trim() } : {};
+  return d ? { deployment: canonicalStand(d.slice(0, DEPLOYMENT_MAX)) } : {};
 };
+/** The same fold for an EVIDENCE item, so an entry and the log line about it name one stand. */
+const standName = (deployment) => stand(deployment).deployment ?? deployment;
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
  *
@@ -425,12 +429,17 @@ async function queuedHere(question, { env }) {
   }));
 }
 
-export async function ask(question, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
+export async function ask(asked, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
   const started = Date.now();
+  // Ranked AND logged on the repaired text: the mangled one finds the wrong entries and puts a
+  // local install path in a public log (see `undoMsysRewrite`). `repaired` says it happened, so
+  // the agent learns the remedy and a log reader can count how often the shell got in the way.
+  const question = undoMsysRewrite(asked, env);
+  const repair = question !== asked ? { repaired: 'msys' } : {};
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why, ...ranked({ via, call, topic, deployment }) }, { env });
-    return { state: cat.state, why: cat.why, hits: [] };
+    await log({ kind: 'ask', q: question, ...repair, state: cat.state, why: cat.why, ...ranked({ via, call, topic, deployment }) }, { env });
+    return { state: cat.state, why: cat.why, hits: [], ...repair };
   }
 
   const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
@@ -443,6 +452,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
     await log({
       kind: 'ask',
       q: question,
+      ...repair,
       matched: [],
       state: 'miss',
       ...(nearMiss ? { nearMiss: { id: nearMiss.row.id, score: nearMiss.score, coverage: round2(nearMiss.coverage) } } : {}),
@@ -454,7 +464,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
       // that cannot tell the two apart over-states the hole in the corpus.
       ...(queued.length ? { queued: queued.map((q) => q.id) } : {}),
     }, { env });
-    return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length, queued };
+    return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length, queued, ...repair };
   }
 
   // Bodies in parallel (PLAN §3.1 step 3).
@@ -485,6 +495,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
   await log({
     kind: 'ask',
     q: question,
+    ...repair,
     matched: described.map((h) => h.id),
     // `scores` is POSITIONAL against `matched`, so the winning score is scores[0] and there is no
     // separate `score` field. A field for a fact another field already carries is a second copy
@@ -517,7 +528,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
     ...ranked({ via, call, topic, deployment }),
   }, { env });
 
-  return { state, hits: described, rows: cat.rows.length };
+  return { state, hits: described, rows: cat.rows.length, ...repair };
 }
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
@@ -771,7 +782,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
     anchors: input.anchors.map((a) => ({ coordinate: typeof a === 'string' ? a : a.coordinate })),
     evidence: [{
       method: input.method ?? 'observation',
-      deployment: input.deployment,
+      deployment: standName(input.deployment),
       at: new Date().toISOString(),
       by: `session:${sessionId(env)}`,
       // THE OPERATOR, beside the session, because `by` is a SESSION and was being counted as a
@@ -887,7 +898,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
 
   const item = {
     method: input.method ?? 'observation',
-    deployment: input.deployment,
+    deployment: standName(input.deployment),
     at: new Date().toISOString(),
     by: `session:${sessionId(env)}`,
     // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a
