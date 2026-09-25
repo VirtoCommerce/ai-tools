@@ -52,6 +52,7 @@ Before writing ANY GraphQL test case:
 2. **Check `xapi-query-ref.md`** for known-good query templates
 3. **Use Context7** (`/virtocommerce/vc-docs`) for any operations not in the local ref
 4. **If introspection and ref disagree, trust introspection** — the ref may be stale
+5. **Ask what the operation was OBSERVED to do** — `mcp__kb__kb_ask`, with the operation name itself in the question (`Query.cart`, `Mutations.addItemsCart`); an operation name is the strongest thing this base ranks on. Introspection gives you the SHAPE and can never give you the BEHAVIOUR — which field is actually populated, what a null means, which of two plausible readings the server takes. That gap is where an API claim goes wrong while looking checked ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*)
 
 **Schema reference:** Consult `knowledge/api/graphql-schema.md` — live introspection snapshot with all queries, mutations, input types, and return types. Key rules from the schema:
 - `CartType` has **flat** money fields (`subTotal`, `total`, `discountTotal`) — NOT nested under `totals`

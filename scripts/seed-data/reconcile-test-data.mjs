@@ -47,6 +47,7 @@ import { selectProbeTargets } from './overlay-specs.mjs';
 import { runStoreDefaultsCheck } from './store/check-store-defaults.mjs';
 import { parse } from 'csv-parse/sync';
 import { REP_ONLY_ORG } from './sales-rep/rep-only-org-specs.mjs';
+import { DEMO_PROFILE, DEMO_LEDGER_KEY, demoServedOrgExpectations } from './sales-rep/sales-rep-demo-specs.mjs';
 import { classifyStoreFfc, isBlockingStoreFfc, describeStoreFfc } from './store/store-ffc-specs.mjs';
 import {
   PRODUCTS as MSN_E2E_PRODUCTS, productFlagDrift, productFlagDriftMessage,
@@ -587,9 +588,33 @@ async function checkOverlayGuidLiveness() {
  * So this check reads the declared serve-list from the two committed sources of truth — the
  * `served_orgs` column of sales-rep/sales-reps.csv, plus the rep-only org from rep-only-org-specs.mjs
  * — and asserts the LIVE rep record still carries each one. Silent membership loss is now loud.
+ *
+ * PROFILE-AWARE. The serve-list's source of truth depends on WHICH sales-rep dataset the environment
+ * holds, which `_meta.dataset_profile` in `test-data/aliases.<env>.json` records. Under the demo
+ * profile the AGENT-TEST fixture reps were deliberately deleted by the changeover, so the committed
+ * CSV describes reps that are *supposed* to be absent: asserting it would emit a row of permanent
+ * ✗ failures that say nothing about the environment's health, and a check that is always red is a
+ * check nobody reads. The demo's own serve-list lives in the seeder's id ledger instead, so that is
+ * what gets asserted — the check keeps its teeth, it just points at the right declaration.
+ *
+ * The skip is ANNOUNCED, never silent: a quietly-skipped check is indistinguishable from a passing
+ * one, which is the failure mode this whole script exists to remove.
  */
 async function checkSalesRepServedOrgs() {
   console.log('\n[12] Sales-rep served-org integrity (declared serve-list still live on the rep)');
+
+  // Read the overlay FIRST — it names the dataset, and on the fixtures path it also carries the
+  // rep-only org's runtime id (resolved below, exactly as before).
+  // A malformed overlay is already a hard ✗ in [11]; swallowing it here keeps that ONE report
+  // instead of crashing the remaining checks (the pre-profile code parsed it later and threw).
+  const overlayPath = join(ROOT, `test-data/aliases.${TEST_ENV}.json`);
+  let overlay = {};
+  if (existsSync(overlayPath)) {
+    try { overlay = JSON.parse(readFileSync(overlayPath, 'utf8')); } catch { overlay = {}; }
+  }
+  const profile = overlay?._meta?.dataset_profile || null;
+  if (profile === DEMO_PROFILE) { await checkDemoServedOrgs(overlay); return; }
+
   const repsPath = join(ROOT, 'test-data/sales-rep/sales-reps.csv');
   if (!existsSync(repsPath)) { warn('no sales-rep/sales-reps.csv — skipping'); return; }
 
@@ -601,9 +626,7 @@ async function checkSalesRepServedOrgs() {
   const orgIdByKey = new Map(orgs.map((o) => [o.org_id, o.platform_id]));
 
   // The rep-only org is not in organizations.csv (it is spec-declared + overlay-backed), so resolve
-  // its runtime id the same way a case would: from the per-env overlay.
-  const overlayPath = join(ROOT, `test-data/aliases.${TEST_ENV}.json`);
-  const overlay = existsSync(overlayPath) ? JSON.parse(readFileSync(overlayPath, 'utf8')) : {};
+  // its runtime id the same way a case would: from the per-env overlay (read above).
   const repOnlyId = overlay?.[REP_ONLY_ORG.aliasName]?.id || null;
 
   let checked = 0;
@@ -638,6 +661,61 @@ async function checkSalesRepServedOrgs() {
     checked++;
   }
   if (!checked) warn('no rep had a resolvable declared serve-list to verify');
+}
+
+/**
+ * [12] under the DEMO profile — the same relationship assertion against the demo's own declaration.
+ *
+ * The demo does not create its reps; it ATTACHES served organizations to real, pre-existing rep
+ * accounts, and it records exactly what it attached in the overlay ledger (`rep-attachment` rows
+ * carrying `salesRepId` + `servedOrgIds`). That ledger is the only committed statement of who is
+ * supposed to serve whom on a demo environment, so it is the thing to reconcile against live.
+ *
+ * The failure it catches is the one from the doc above, unchanged: an entity probe cannot see a lost
+ * membership, because nothing is missing — the rep is alive, the organization is alive, and only the
+ * relationship between them is gone. On a demo that shows up as a customer list that has silently
+ * lost a customer, mid-presentation.
+ *
+ * `demoServedOrgExpectations()` is imported from the side-effect-free spec module rather than
+ * re-derived here, so the seeder, the guard and this check read one declaration.
+ */
+async function checkDemoServedOrgs(overlay) {
+  console.log(`     dataset_profile = "${DEMO_PROFILE}" (test-data/aliases.${TEST_ENV}.json → _meta)`);
+  console.log('     SKIPPING test-data/sales-rep/sales-reps.csv: the AGENT-TEST fixture reps it declares were');
+  console.log('     deliberately removed by the demo changeover, so every row would report a false ✗. Asserting');
+  console.log(`     the demo ledger (${DEMO_LEDGER_KEY}) instead — same relationship check, right declaration.`);
+
+  const ledger = overlay?.[DEMO_LEDGER_KEY] || null;
+  if (!ledger) {
+    warn(`dataset_profile is "${DEMO_PROFILE}" but aliases.${TEST_ENV}.json carries no ${DEMO_LEDGER_KEY} — the demo's served-org attachments are UNVERIFIABLE (and so is its teardown); re-run \`TEST_ENV=${TEST_ENV} npm run seed:sales-rep-family -- --profile demo\` and commit the refreshed overlay`);
+    return;
+  }
+
+  const expectations = demoServedOrgExpectations(ledger);
+  if (!expectations.length) {
+    warn(`${DEMO_LEDGER_KEY} holds no rep-attachment entries — no demo rep has a declared serve-list to verify`);
+    return;
+  }
+
+  for (const e of expectations) {
+    if (!e.salesRepId) { warn(`demo rep ${e.repKey}: ledger entry has no salesRepId — not verified`); continue; }
+    let rep = null;
+    try { rep = await api('GET', `/api/sales-rep/${e.salesRepId}`, null, { expectStatus: [200, 404] }); }
+    catch (err) { warn(`demo rep ${e.repKey}: probe error — ${String(err.message).slice(0, 90)}`); continue; }
+    if (!rep?.id) {
+      fail(`demo rep ${e.repKey} (salesRepId=${e.salesRepId}) is not a live sales rep — every served-org assertion for this rep is unevaluable; re-run \`TEST_ENV=${TEST_ENV} npm run seed:sales-rep-family -- --profile demo\``);
+      continue;
+    }
+    const servedIds = new Set((rep.organizations || []).map((o) => o.organizationId));
+    const missing = (e.servedOrgIds || []).filter((id) => id && !servedIds.has(id));
+    for (const id of missing) {
+      fail(
+        `demo rep ${e.repKey} ("${rep.fullName || rep.name || e.repKey}") no longer serves organization ${id} — the org and the rep are both alive, `
+        + `so check [11] cannot see this; every rep-scoped query/mutation on it now answers "Access denied." per BL-SR-002 and the demo's customer list is silently short one customer. `
+        + `Fix: \`TEST_ENV=${TEST_ENV} npm run seed:sales-rep-family -- --profile demo\``);
+    }
+    if (!missing.length) ok(`demo rep ${e.repKey}: serves all ${(e.servedOrgIds || []).length} ledger-declared org(s)`);
+  }
 }
 
 /**

@@ -106,7 +106,9 @@ Invoke the development skills:
 
 **Workflow (mirrors `ci/agents/fix-frontend-agent.md`):**
 1. **Understand the bug** — read the ticket JSON + `/qa-bug` report (STR, expected/actual, owning
-   layer, RCA). Confirm the root cause, not the symptom. **Rule out `$cfg` config-gating** (→ BAIL if so).
+   layer, RCA). **Ask the base what the failing surface was OBSERVED doing** — `npm run kb -- ask
+   "<endpoint | GraphQL op | page path> <question>"` (MCP: `mcp__kb__kb_ask`); a matching entry is the
+   deployed half of the bug report ([developers shared-instructions](../knowledge/agents/developers/shared-instructions.md)). Confirm the root cause, not the symptom. **Rule out `$cfg` config-gating** (→ BAIL if so).
 2. **Checkout** — the repo is resolved + cloned via `ci/lib/repo-router.ts` `checkoutForFix` into
    `.fix-workspace/vc-frontend/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`). Work there;
    absolute paths; run commands as `cd "<checkout>" && <cmd>`.

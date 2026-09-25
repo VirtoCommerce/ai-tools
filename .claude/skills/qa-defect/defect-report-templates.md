@@ -117,6 +117,18 @@ Assignee: [@developer-name]
 
 ---
 
+## Labels — the `/qa-fix` auto-fix pair
+
+Beyond the descriptive labels in the templates above, apply **`vc-fix` + `qa-autofix` together** when
+the bug is one `/qa-fix` could fix — they ARE the auto-fix queue the hourly routine and
+`ci/run-fix-cycle.ts` select on. Bar = `/qa-fix` **Gate 0**: clear STR + expected-vs-actual, an
+environment and a version, ONE owning repo, small localized diff, no refactoring, no breaking change.
+Withhold for every Gate-0 bail (no STR, ambiguous, by-design, config/permission-gated, env or data
+drift, security disclosure, breaking, multi-repo); when in doubt, withhold. Full rule: `/qa-bug` Step 5
+→ *Fields either way*. Azure Boards carries them as `System.Tags`.
+
+---
+
 ## Escalation Triggers (MUST report to qa-lead immediately)
 
 ### Frontend — Critical Revenue Flows

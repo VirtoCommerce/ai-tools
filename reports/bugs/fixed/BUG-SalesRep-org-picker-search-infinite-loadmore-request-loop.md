@@ -1,6 +1,7 @@
 # Sales Rep "Served organizations" picker: searching starts an infinite `organizations/search` request loop and the result set is capped at 20 — P1 — VCST-6028
 
 ## Status: CONFIRMED
+**Status: FIXED**
 
 **Tracker:** [VCST-6028](https://virtocommerce.atlassian.net/browse/VCST-6028)
 

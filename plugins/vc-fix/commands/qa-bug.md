@@ -382,6 +382,11 @@ Fields either way:
 - Summary: from bug title
 - Description: the full structured report — **Jira** = markdown; **Azure** = HTML (`azure-html-format.md`)
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low — Jira; Azure uses the numeric `Priority` field)
+- **Labels / Tags — apply `vc-fix` AND `qa-autofix` when `/qa-fix` could fix this bug.** These two labels ARE the auto-fix queue: the hourly `/qa-fix` routine and `ci/run-fix-cycle.ts` (`FIX_LABEL`) select tickets by them, so an eligible bug missing them is never picked up. Jira → the `labels` field; Azure Boards → `--tags` (`System.Tags`). Apply **both, or neither** — never one.
+  - **Apply when the report would survive `/qa-fix` Gate 0** (`.claude/rules/quality-gates.md` §1): concrete reproduction steps (navigation path, explicit action sequence, or an API call with its inputs) + clear expected-vs-actual; an environment and at least one version; a localized root cause — the **Fix Routing** block names ONE repo at **Routing confidence: HIGH | MEDIUM**; small diff, no refactoring, no breaking change (no public REST/GraphQL/DTO contract change, no DB schema/migration, no manifest or domain-event change).
+  - **Withhold for every Gate-0 bail:** no real STR, ambiguous, by-design, config- or permission-gated, environment/data drift, API-only repro, security disclosure, needs refactoring, breaking change, multi-repo (**Routing confidence: LOW**). **When in doubt, withhold** — a missing label costs one manual `/qa-fix <KEY>`; a wrong one burns a cycle on a BAIL and leaves an out-of-scope comment on the ticket.
+  - **Intermittency is not a bail.** "Not always reproducible", or other QA failing to reproduce it on their environments, does not by itself withhold the labels — a flaky symptom can have a deterministic code cause (VCST-5940: reported as intermittent, fixed the same day by one PR).
+  - This decides **labels only**, never whether to file: `/qa-bug` files every confirmed defect (§Scope boundary above), and Gate 0 re-judges eligibility at fix time.
 
 **Use the returned key verbatim** in the tracker's own format (Jira `ABC-123`, Azure Boards bare `12345`) for the report filename and any cross-links. Follow `/qa-defect workflow` (role-based, §0) for status transitions.
 
@@ -398,6 +403,8 @@ Fields either way:
    `stillMissing` (report it honestly — do NOT quietly re-try),
 5. whether the evidence rendered **inline** in the ticket body or is attachment-only (the Jira
    image dance and the Azure `<img src>` both persist ≠ render — say which you confirmed).
+6. whether the auto-fix labels (`vc-fix` + `qa-autofix`) were applied — and, when they were
+   withheld, the Gate-0 bail reason in one line, so the operator can add them by hand if they disagree.
 
 Then transition and move on. Only after this decision is complete does the run signal completion
 (see §Signal completion — the ordering rule).

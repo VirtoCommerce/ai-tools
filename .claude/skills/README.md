@@ -186,6 +186,8 @@ Outside the four QA categories.
 
 ## Frontmatter Reference
 
+> Authoring a new skill: [`../knowledge/agents/authoring-standard.md`](../knowledge/agents/authoring-standard.md) is the checklist it is reviewed against — including the observed-behaviour (`kb`) step (§5).
+
 | Field | Required | Description |
 |-------|----------|-------------|
 | `description` | Yes | Shown in `/` menu. Prefix with `[Category]` tag. |

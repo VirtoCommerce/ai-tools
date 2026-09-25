@@ -216,6 +216,13 @@ reporting all consume `gap-inventory.json`; none of them re-reads the suites.
    - **Context7 fallback** — if VirtoOZ returns thin/off-topic chunks: `mcp__context7__resolve-library-id { libraryName: "virtocommerce" }` → `/virtocommerce/vc-docs`, then `mcp__context7__query-docs { libraryId, query, tokens: 8000 }`.
    - Flag features documented in VC docs but absent from current regression coverage.
 
+4a. **What the platform was OBSERVED to do (`mcp__kb__kb_ask`)** — item 4 finds features the docs
+   describe; this one finds behaviour somebody has already *seen*, on a named deployment, with a trust
+   count. It reaches the class item 4 is blind to by construction: **a released behaviour the guides do
+   not document, or document wrongly**, which is a gap with nothing in the docs to flag it. Put the
+   coordinate in the question — endpoint, GraphQL operation, page path. Exit 1 means nobody wrote it
+   down ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*).
+
 **Output (Definition of Done for Step 1):**
 
 - `reports/coverage/COV-YYYY-MM-DD-HHMM/gap-inventory.json` — one record per gap:

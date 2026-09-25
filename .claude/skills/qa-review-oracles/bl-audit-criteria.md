@@ -17,6 +17,8 @@ concrete artifact, not an opinion:
 | **Source** | A `file:line` anchor in an `org:VirtoCommerce` repo whose code implements the behavior | GitHub MCP `search_code` / `get_file_contents` (read-only; QA never clones) |
 | **Live** | An `{OBSERVED}` result (screenshot / captured API response) confirming the behavior on the deployed build | `qa-testing-expert` (playwright-firefox), real UI/API only |
 
+**Ask the observed-behaviour base BEFORE the Live axis, never instead of it.** `mcp__kb__kb_ask`, coordinate in the question, holds what somebody already saw on a **named deployment** with a trust count — including, sometimes, the exact divergence this audit exists to find. It is not a fourth axis and it does not satisfy Live: a matching entry is `kb_confirm`ed once you have seen it yourself, a contradicting one is `kb_dispute`d, and what the base did not hold is a `kb_capture` ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*).
+
 **The Live axis must be RE-DERIVABLE, not merely reported.** An `{OBSERVED}` result taken on a
 disposable per-run fixture expires the moment that fixture is re-minted — silently, with every guard
 still green. So a live observation is admissible only when the auditor can see the state themselves,

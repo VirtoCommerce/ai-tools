@@ -78,6 +78,11 @@ the 2–3 representative classes a scenario distinguishes. The script's `--json`
 starting point; prune/relabel it to the axes the scenarios actually need.
 
 ### 4. Design the combination matrix (the core deliverable)
+**Before designing a combination that depends on how an entity behaves** (does an unpriced line earn
+points? does an auto promo stack?), ask the base: `npm run kb -- ask "<endpoint | GraphQL op> <question>"`
+(MCP: `mcp__kb__kb_ask`); cite hit ids in the matrix, a miss is not a blocker. Rule:
+[`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
+
 Feed the pruned factor spec (+ any constraints excluding invalid pairs) to the pairwise generator:
 
 ```bash
