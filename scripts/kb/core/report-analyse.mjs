@@ -15,6 +15,7 @@
 // relocated into the report, and it is the reason `unreachable` asks get their own panel row rather
 // than being folded into misses, and the reason a cache-rendered report carries a banner.
 
+import { canonicalStand } from './canonical.mjs';
 import { MIN_COVERAGE, MIN_WORDS } from './rank.mjs';
 
 /** Log kinds this analysis knows about. Anything else is counted and otherwise ignored. */
@@ -457,11 +458,11 @@ export function evidence(lines, idx) {
     if (l.kind === 'confirm' && l.id) {
       const r = get(l.id);
       r.confirms += 1;
-      if (l.deployment) r.deployments.add(String(l.deployment));
+      if (l.deployment) r.deployments.add(canonicalStand(l.deployment));
     } else if (l.kind === 'dispute' && l.id) {
       const r = get(l.id);
       r.disputes += 1;
-      if (l.deployment) r.deployments.add(String(l.deployment));
+      if (l.deployment) r.deployments.add(canonicalStand(l.deployment));
       if (l.saw) r.saw.push(String(l.saw));
     }
   }

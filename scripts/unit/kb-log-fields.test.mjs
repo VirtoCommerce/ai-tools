@@ -623,6 +623,40 @@ test('both doors put the same field on the line, because both go through one cor
   });
 });
 
+test('a stand name is folded on SPELLING only — into the entry and the log alike', async () => {
+  // Measured 2026-09-25: 69 `vcst-qa` against 43 `vcst_qa` on the published base, one entry holding
+  // both, so every per-stand count split one stand in two. Driven through the verbs, because the
+  // fold is a property of what reaches the ENTRY and the LOG — a test of `canonicalStand` alone
+  // would not notice a writer that stopped calling it.
+  await withQueue(async (env) => {
+    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: ' VCST-QA ' });
+    await confirm(EXISTING_ID, { deployment: 'vcst-qa' }, opened(), { env, via: 'cli' });
+    await capture({
+      subject: 'a fact seen on a stand typed with a hyphen',
+      question: 'is a stand typed with a hyphen the same stand',
+      claim: 'It is.',
+      deployment: 'vcst qa',
+      anchors: ['/company/hyphen-stand'],
+      scope: ['surface=storefront-ui'],
+    }, opened(), { env, via: 'cli' });
+    const [asked, confirmed, captured] = await linesOf(env);
+    assert.equal(asked.deployment, 'vcst_qa');
+    assert.equal(confirmed.deployment, 'vcst_qa');
+    assert.equal(confirmed.payload.item.deployment, 'vcst_qa', 'the entry, not only the log line');
+    assert.equal(captured.payload.entry.evidence[0].deployment, 'vcst_qa');
+  });
+});
+
+test('a stand NAME is never mapped — `vcst` stays `vcst`, not `vcst_qa`', async () => {
+  // The line `canonicalStand` must not cross: `vcst` onto `vcst_qa` needs a table nobody owns.
+  await withQueue(async (env) => {
+    await confirm(EXISTING_ID, { deployment: 'vcst' }, opened(), { env, via: 'cli' });
+    const [line] = await linesOf(env);
+    assert.equal(line.deployment, 'vcst');
+    assert.equal(line.payload.item.deployment, 'vcst');
+  });
+});
+
 test('an evidence NOTE is bounded too - the one prose field every agent actually reads', async () => {
   // THE INCONSISTENCY THIS CLOSES (review 3, F6). `topic` is capped at 60, `run` at 120 and
   // `deployment` at 40 - all three LOG fields no agent reads back. `note` is the opposite on every

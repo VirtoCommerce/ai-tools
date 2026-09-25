@@ -331,8 +331,10 @@ test('an ordinary run’s flush line carries no synthetic field', () => withQueu
 const WHO_TOKEN = 'ghp_atestonlytokenvaluethatisnotreal01';
 
 /** Warm the identity cache the way a door would have left it, for THIS test's token. */
+// Stamped with the REAL clock, not `AT`: `cachedWho` judges freshness against `Date.now()`, so a
+// record dated `AT` expired `WHO_TTL_MS` (7 days) after it and failed both tests from 2026-09-25.
 const knowWho = (dir, handle) =>
-  writeFile(whoPath(dir), `${JSON.stringify({ fp: fingerprint(WHO_TOKEN), who: handle, at: AT.toISOString() })}\n`, 'utf8');
+  writeFile(whoPath(dir), `${JSON.stringify({ fp: fingerprint(WHO_TOKEN), who: handle, at: new Date().toISOString() })}\n`, 'utf8');
 
 /**
  * An env whose token is the test's own, against an env root with no env files in it.

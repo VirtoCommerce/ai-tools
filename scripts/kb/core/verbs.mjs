@@ -11,7 +11,7 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { mintId } from './canonical.mjs';
+import { canonicalStand, mintId } from './canonical.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
@@ -265,11 +265,12 @@ const door = (via, call) => ({
  * does not. Trimmed, because an argument of whitespace is a caller that meant to say nothing, and
  * `deployment: ""` in the log would read as a stand whose name is the empty string.
  *
- * The value is recorded VERBATIM and is never normalised. The base already holds `vcst` once
- * against `vcst_qa` 33 times, so a normaliser has a real fragmentation to argue for -- and it
- * would be a transcribed mapping with no source of truth behind it, which is the same defect
- * wearing a tidier name. What the log needs is what the caller believed; the disagreement is a
- * finding, not something to iron out on the way in.
+ * The NAME is never mapped. The base already holds `vcst` once against `vcst_qa` 33 times, so a
+ * normaliser has a real fragmentation to argue for -- and it would be a transcribed mapping with no
+ * source of truth behind it, which is the same defect wearing a tidier name. What the log needs is
+ * what the caller believed; the disagreement is a finding, not something to iron out on the way in.
+ * Only the SPELLING is folded (case, `-` against `_`) by `canonicalStand`, which is a rule on the
+ * string and not a table -- see its comment for why `vcst-qa` vs `vcst_qa` is not a disagreement.
  *
  * A STRING OR NOTHING, which is not defensive typing. `kb.mjs`'s parser hands a flag given
  * without a value the boolean `true`, so `kb ask "q" --deployment --json` would otherwise publish
@@ -290,8 +291,10 @@ const door = (via, call) => ({
 export const DEPLOYMENT_MAX = 40;
 const stand = (deployment) => {
   const d = typeof deployment === 'string' ? deployment.trim() : '';
-  return d ? { deployment: d.slice(0, DEPLOYMENT_MAX).trim() } : {};
+  return d ? { deployment: canonicalStand(d.slice(0, DEPLOYMENT_MAX)) } : {};
 };
+/** The same fold for an EVIDENCE item, so an entry and the log line about it name one stand. */
+const standName = (deployment) => stand(deployment).deployment ?? deployment;
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
  *
@@ -771,7 +774,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
     anchors: input.anchors.map((a) => ({ coordinate: typeof a === 'string' ? a : a.coordinate })),
     evidence: [{
       method: input.method ?? 'observation',
-      deployment: input.deployment,
+      deployment: standName(input.deployment),
       at: new Date().toISOString(),
       by: `session:${sessionId(env)}`,
       // THE OPERATOR, beside the session, because `by` is a SESSION and was being counted as a
@@ -887,7 +890,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
 
   const item = {
     method: input.method ?? 'observation',
-    deployment: input.deployment,
+    deployment: standName(input.deployment),
     at: new Date().toISOString(),
     by: `session:${sessionId(env)}`,
     // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a
