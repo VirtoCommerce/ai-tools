@@ -10,6 +10,7 @@
 // Every function returns an ARRAY OF LINES rather than a string. The CLI writes them one at a time
 // and the server joins them; neither has to guess where the newlines were meant to be.
 
+import { MSYS_REMEDY } from './anchors.mjs';
 import { HEADLINE } from './exits.mjs';
 
 /** The three things `cat` cannot print, printed (PLAN §3.1 step 4). */
@@ -55,6 +56,9 @@ export function hitLines(hit) {
 export function askLines(r, { prefix = 'kb ask' } = {}) {
   const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
   if (r.why) lines.push(`  ${r.why}`);
+  // Said on every state: the repair already ran, but the next command from the same shell will be
+  // mangled the same way, and only the agent can change how it is typed.
+  if (r.repaired === 'msys') lines.push(`  (your shell rewrote a leading "/" into a local path; it was undone. ${MSYS_REMEDY})`);
   // A MISS SAYS THE BASE WAS RANKED, NOT MERELY THAT IT WAS EMPTY -- and it does NOT hand back the
   // near-miss id. The near-miss is diagnostic, written to the log for whoever is judging the floor
   // (PLAN §7); giving it to the agent would put a rejected entry in front of exactly the reader

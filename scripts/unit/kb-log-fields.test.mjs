@@ -89,6 +89,21 @@ test('a miss on a question the base scores NOTHING on carries no nearMiss', asyn
   });
 });
 
+test('an ask mangled by Git Bash is answered and logged as the route, never as a local path', async () => {
+  // Measured 2026-09-25: the public log carried `C:/Program Files/Git/company/members …` four times.
+  await withQueue(async (env) => {
+    const clean = await ask(ANSWERED, opened(), { env, via: 'cli' });
+    const mangled = ANSWERED.replace('/company/members', 'C:/Program Files/Git/company/members');
+    const r = await ask(mangled, opened(), { env, via: 'cli' });
+    assert.deepEqual(r.hits.map((h) => h.id), clean.hits.map((h) => h.id), 'ranked on the repaired text');
+    assert.equal(r.repaired, 'msys');
+    const [first, second] = await linesOf(env);
+    assert.equal(second.q, ANSWERED);
+    assert.equal(second.repaired, 'msys');
+    assert.ok(!('repaired' in first), 'a clean ask carries no repair mark');
+  });
+});
+
 // ── Which ranker, and which door ──────────────────────────────────────────────────────────────
 
 test('every ask names the ranker that produced it — and only asks do', async () => {

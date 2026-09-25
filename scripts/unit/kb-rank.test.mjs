@@ -11,7 +11,7 @@ import {
 } from '../kb/core/rank.mjs';
 import { anchorProblems, coordinateIndex, isStructuredCoordinate, namespaceRoots, neighbours } from '../kb/core/coordinates.mjs';
 import { normalizeRow } from '../kb/core/index-load.mjs';
-import { normalizeAnchor } from '../kb/core/anchors.mjs';
+import { normalizeAnchor, undoMsysRewrite } from '../kb/core/anchors.mjs';
 import { join } from 'node:path';
 
 const row = (o) => normalizeRow({ id: 'KB-TEST0001', path: 'entries/KB-TEST0001.md', subject: '', ...o });
@@ -181,6 +181,21 @@ test('anchorProblems catches the MSYS-rewritten local path', () => {
   const [p] = anchorProblems(['C:/Program Files/Git/checkout/shipping']);
   assert.equal(p.kind, 'local-path');
   assert.match(p.why, /MSYS_NO_PATHCONV=1/);
+});
+
+test('undoMsysRewrite restores the route a Git Bash question arrived without', () => {
+  const none = {};
+  // The exact line from the 2026-09-25 log.
+  assert.equal(undoMsysRewrite('C:/Program Files/Git/company/members Active column for locked member', none),
+    '/company/members Active column for locked member');
+  // The CLI joins its words, so a rewritten word can follow another one.
+  assert.equal(undoMsysRewrite('does C:/Program Files (x86)/Git/cart/items keep order', none), 'does /cart/items keep order');
+  // A non-standard install is found through EXEPATH, which Git Bash points at its `bin`.
+  assert.equal(undoMsysRewrite('D:/tools/git/checkout/shipping', { EXEPATH: 'D:\\tools\\git\\bin' }), '/checkout/shipping');
+  // Nothing else is touched: a real Windows path, a clean route, a VERB form.
+  for (const q of ['C:/Users/me/report.md', '/company/members', 'GET /api/cart', 'C:/Program Files/Gitlab/x']) {
+    assert.equal(undoMsysRewrite(q, none), q);
+  }
 });
 
 test('anchorProblems catches a menu path and a namespace', () => {

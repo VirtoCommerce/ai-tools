@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { canonicalStand, mintId } from './canonical.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
+import { undoMsysRewrite } from './anchors.mjs';
 import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
@@ -428,12 +429,17 @@ async function queuedHere(question, { env }) {
   }));
 }
 
-export async function ask(question, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
+export async function ask(asked, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
   const started = Date.now();
+  // Ranked AND logged on the repaired text: the mangled one finds the wrong entries and puts a
+  // local install path in a public log (see `undoMsysRewrite`). `repaired` says it happened, so
+  // the agent learns the remedy and a log reader can count how often the shell got in the way.
+  const question = undoMsysRewrite(asked, env);
+  const repair = question !== asked ? { repaired: 'msys' } : {};
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why, ...ranked({ via, call, topic, deployment }) }, { env });
-    return { state: cat.state, why: cat.why, hits: [] };
+    await log({ kind: 'ask', q: question, ...repair, state: cat.state, why: cat.why, ...ranked({ via, call, topic, deployment }) }, { env });
+    return { state: cat.state, why: cat.why, hits: [], ...repair };
   }
 
   const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
@@ -446,6 +452,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
     await log({
       kind: 'ask',
       q: question,
+      ...repair,
       matched: [],
       state: 'miss',
       ...(nearMiss ? { nearMiss: { id: nearMiss.row.id, score: nearMiss.score, coverage: round2(nearMiss.coverage) } } : {}),
@@ -457,7 +464,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
       // that cannot tell the two apart over-states the hole in the corpus.
       ...(queued.length ? { queued: queued.map((q) => q.id) } : {}),
     }, { env });
-    return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length, queued };
+    return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length, queued, ...repair };
   }
 
   // Bodies in parallel (PLAN §3.1 step 3).
@@ -488,6 +495,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
   await log({
     kind: 'ask',
     q: question,
+    ...repair,
     matched: described.map((h) => h.id),
     // `scores` is POSITIONAL against `matched`, so the winning score is scores[0] and there is no
     // separate `score` field. A field for a fact another field already carries is a second copy
@@ -520,7 +528,7 @@ export async function ask(question, opened, { env = process.env, top = 3, via = 
     ...ranked({ via, call, topic, deployment }),
   }, { env });
 
-  return { state, hits: described, rows: cat.rows.length };
+  return { state, hits: described, rows: cat.rows.length, ...repair };
 }
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
