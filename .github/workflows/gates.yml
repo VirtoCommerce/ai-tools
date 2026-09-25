@@ -45,6 +45,11 @@ jobs:
       # This is the gate that stops the 2026-09 re-tiering from growing back.
       - name: context:check — always-loaded budget + doc ratchet
         run: npm run context:check
+      # The knowledge/ file roster. It is GENERATED, so this gate catches it lagging the directory —
+      # which DOC-003 cannot: that ratchets DANGLING paths, so a hand-written roster could only ever be
+      # caught shrinking, never missing 22 of 60 files the way ROUTING.md was on 2026-09-25.
+      - name: knowledge:index:check — knowledge/ roster is current
+        run: npm run knowledge:index:check
       - name: qa-test:doclint — /qa-test command↔skill integrity
         run: npm run qa-test:doclint
       - name: suites:lint — manifest ↔ CSV sync, global case IDs, XREF-001
