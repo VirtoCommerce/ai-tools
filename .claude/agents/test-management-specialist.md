@@ -52,7 +52,7 @@ Techniques and data tactics are the **toolbox you reach into after** answering #
 Every feature decomposes into testable layers. Each layer has its own output format (tags defined in `test-case-template.md`):
 
 | Layer | What to Test | Step Tags | Assertion Tags | Target Suite |
-|-------|-------------|-----------|---------------|-------------|
+|---|---|---|---|---|
 | **REST API** | CRUD, auth, validation, error codes | `[HTTP]` `[AUTH]` `[SETUP]` | `[STATUS]` `[BODY]` `[SCHEMA]` `[HEADER]` | `Backend/api/049-*` |
 | **GraphQL xAPI** | Queries, mutations, `errors[]`, perf | `[GQL]` `[VAR]` `[AUTH]` | `[ERRORS]` `[DATA]` `[COUNT]` `[MATH]` | `Backend/graphql/050*` |
 | **Admin UI** | Blade CRUD, grids, forms, widgets | `[BLADE]` `[GRID]` `[SAVE]` | `[TOAST]` `[FORM]` `[BLADE]` `[GRID]` | `Backend/<module>/*` |
@@ -64,7 +64,7 @@ Every feature decomposes into testable layers. Each layer has its own output for
 ### Cross-Layer Verification Patterns
 
 | Pattern | Flow | Example |
-|---------|------|---------|
+|---|---|---|
 | Frontend → API → Admin | User action → GraphQL mutation → Admin confirms | Checkout → order → Admin shows order |
 | Admin → API → Frontend | Admin change → REST API → Storefront reflects | Price change → reindex (30-60s) → updated price |
 | GraphQL Round-Trip | Mutation → Query confirms | `addItem` → `cart` query → data integrity |
@@ -72,7 +72,7 @@ Every feature decomposes into testable layers. Each layer has its own output for
 ### Domain References (read on-demand)
 
 | Resource | Reference |
-|----------|-----------|
+|---|---|
 | Business invariants | `knowledge/oracles/business-logic.md` — slice with `npm run bl:extract -- --domain <d>` |
 | Edge Cases Library | `knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
 | Test Design Examples (toggles/flags) | `skills/qa-test-design/examples/` — one worked file per technique (real QA products CFG-001–CFG-010) |
@@ -138,7 +138,7 @@ Output: validated test cases, new scenario proposals, test data requirements, bu
 ### Test Design Techniques
 
 | Technique | When | Example |
-|-----------|------|---------|
+|---|---|---|
 | **Equivalence Partitioning** | Input fields | Valid / invalid / empty email |
 | **Boundary Value Analysis** | Quantities, prices | qty=0, 1, max-1, max, max+1 |
 | **Decision Tables** | Complex rules with multiple conditions | Configurable section type × sale price × promo type |
@@ -153,7 +153,7 @@ Full reference: `skills/qa-test-design/test-design-techniques.md`
 ### Layer → Agent Delegation (include in every report)
 
 | Layer | Assign To | Browser |
-|-------|-----------|---------|
+|---|---|---|
 | REST API | `qa-backend-expert` | `playwright-edge` / Postman MCP |
 | GraphQL xAPI | `qa-backend-expert` | `playwright-edge` / Postman MCP |
 | Admin UI | `qa-backend-expert` | `playwright-edge` / Chrome DevTools |
@@ -168,7 +168,7 @@ Full reference: `skills/qa-test-design/test-design-techniques.md`
 ### Observation & Action Space
 
 | Channel | Tool |
-|---------|------|
+|---|---|
 | DOM / Visual | `browser_snapshot`, `browser_take_screenshot` |
 | Console / Network | `browser_console_messages`, `browser_network_requests` |
 | Requirements | Atlassian MCP (JIRA), GitHub MCP (PRs) |
@@ -179,7 +179,7 @@ Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 ### Additional References (load on-demand)
 
 | Area | File |
-|------|------|
+|---|---|
 | Test Case Generator Skill | `skills/qa-test-cases-generator/SKILL.md` |
 | xAPI & REST API Reference | `skills/qa-api/xapi-query-ref.md` — ready-to-use query/mutation signatures for Steps column |
 | API Test Case Patterns | `skills/qa-api/api-test-case-patterns.md` — coverage checklists, REST/GraphQL step tags, per-domain test ID patterns, negative test sets, skeletons |
@@ -259,6 +259,7 @@ BLOCKED ❌ → escalate to qa-lead
    - **GraphQL layer**: `/qa-api cases <xModule> <operation>` — reads patterns + query signatures; applies `[GQL]`/`[ERRORS]`/`[ROUNDTRIP]` tags; always includes `errors[]` check. For new/modified queries or mutations, also apply the "New Query/Mutation Verification" checklist from `graphql-checklist.md` (schema, required/optional fields, permissions, response structure)
    - **Admin UI / Storefront / E2E layers**: `/qa-test-cases-generator VCST-XXXX --layer admin|storefront|e2e`
    - **Storefront journey cases**: for features listed in `e2e-scenario-catalog.md` (E2E-*) or flows with cross-screen state (checkout, cart→order, BOPIS end-to-end, login+purchase), prefer one journey case over a set of atomic screen cases — see Frontend Journey Exception above
+   - **KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
    - All cases: enriched 15-column CSV with **layer-specific tags** from `test-case-template.md`
    - **All generated cases start with `Automation_Status = Draft`.** `Draft` is a real, executable state, **not a holding pen**: the regression runner does **not** skip it, which is what lets the authoring run execute its own new cases. Promotion (step 7) records that a case has *earned* its status from evidence — it is not what makes the case runnable
    - Domain checklists as input: storefront → `domain-checklists.md`, admin/API → `backend-admin-checklists.md`. REAL labels from step 3. P0: happy + negative, P1: errors + edge cases
@@ -285,10 +286,10 @@ BLOCKED ❌ → escalate to qa-lead
    **Who flips the status, and when, depends on the caller** — this is the one place the two pipelines
    differ, and getting it wrong strands the cases:
 
-   | Caller | Append | Flip |
-   |---|---|---|
-   | **`/qa-test` Step 3** | you append `Draft` **during the run** | it **stays `Draft`** when the run ends. A later **`/qa-test-lifecycle`** pass flips it via `npm run tc:promote:apply`, citing that run's `RUN_ID`. You do not hand off, and you never promote |
-   | **`/qa-test-lifecycle` Phase 6P** | 6P appends (handoff / re-promotion / non-`/qa-test` sources) | 6P flips `Draft → Reviewed` on `qa-lead-orchestrator` approval — step 7 below |
+ | Caller | Append | Flip |
+ |---|---|---|
+ | **`/qa-test` Step 3** | you append `Draft` **during the run** | it **stays `Draft`** when the run ends. A later **`/qa-test-lifecycle`** pass flips it via `npm run tc:promote:apply`, citing that run's `RUN_ID`. You do not hand off, and you never promote |
+ | **`/qa-test-lifecycle` Phase 6P** | 6P appends (handoff / re-promotion / non-`/qa-test` sources) | 6P flips `Draft → Reviewed` on `qa-lead-orchestrator` approval — step 7 below |
 10. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95% overall (each applicable layer must have cases for a requirement to count as fully covered)
 11. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
 12. **Deliver Feature Test Matrix** — Test plan path, cases by layer × priority (Draft vs Reviewed counts), coverage %, delegation per layer, JIRA links
@@ -305,7 +306,7 @@ BLOCKED ❌ → escalate to qa-lead
 ### Error Handling
 
 | Failure | Action |
-|---------|--------|
+|---|---|
 | Context7 / JIRA unreachable | Proceed with code-based analysis + UI exploration; note missing context in deliverable |
 | Browser MCP fails mid-exploration | Switch to alternative browser from fallback chain (chrome → firefox → edge); document which layers couldn't be validated |
 | GraphiQL / Swagger unavailable | Use Postman MCP or `curl` for API verification; note API layer gaps |

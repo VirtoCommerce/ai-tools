@@ -104,6 +104,7 @@ So that [measurable business benefit or user outcome].
 
 Write **3–8 criteria** per story. Use strict Given/When/Then format.
 
+**KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 ```
 ✅ AC-1: [Happy path — the primary success scenario]
 Given [the user is in a specific state or context]
@@ -216,7 +217,7 @@ When the story touches **GraphQL xAPI** queries/mutations:
 Complement ACs with a test scenario matrix:
 
 | Scenario | Input | Expected Output | Test Type |
-|----------|-------|-----------------|-----------|
+|---|---|---|---|
 | Happy path | Valid data | Success | E2E |
 | Empty state | No items | Empty state UI shown | Unit |
 | Validation error | Invalid email | Inline error message | Unit |
@@ -308,7 +309,7 @@ Key ACs to always include: idempotency, error responses with meaningful codes, p
 Before finalizing, check for these anti-patterns:
 
 | Smell | Example | Fix |
-|-------|---------|-----|
+|---|---|---|
 | Too big | "As a user, I want a full checkout" | Split into 5+ smaller stories |
 | No testable outcome | "So that it's better" | Add measurable metric |
 | Vague actor | "As a user" | Specify exact persona |
@@ -340,7 +341,7 @@ Before finalizing, check for these anti-patterns:
 **1. AC Quality Scorecard** — one row per *existing* AC, every one run through the Story Smell Detector:
 
 | AC | Restated as a testable assertion | Testable? | Clarity | Smells | Verdict |
-|----|----------------------------------|-----------|---------|--------|---------|
+|---|---|---|---|---|---|
 | AC-1 | … | ✅ / ⚠ / ❌ | clear / ambiguous | (smell names) | KEEP / REWRITE / SPLIT |
 
 For every ⚠/❌, give the **concrete rewrite** — never just name the smell.
@@ -350,7 +351,7 @@ For every ⚠/❌, give the **concrete rewrite** — never just name the smell.
 **3. AC ↔ Implementation Coverage** — compare each AC against the supplied `implementation`:
 
 | AC | Implemented? | Where (file/symbol — diff) or behavior (live) | Verdict | Note |
-|----|-------------|-----------------------------------------------|---------|------|
+|---|---|---|---|---|
 | AC-1 | yes / partial / no | `LineItem.vue:47` / addItem mutation / observed live | SATISFIED / DRIFT / NOT-FOUND / CONTRADICTS | … |
 
 - **SATISFIED** — the diff/behavior clearly fulfills the AC.

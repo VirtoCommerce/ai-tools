@@ -71,7 +71,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 ### Domain References (read on-demand)
 
 | Resource | Reference |
-|----------|-----------|
+|---|---|
 | Business invariants | `knowledge/oracles/business-logic.md` |
 | Debugging Signals | `knowledge/execution/debugging-signals.md` — console patterns, network signatures, common false positives |
 | Browser Quirks | `knowledge/automation/browser-quirks.md` — per-browser rendering/behavior differences |
@@ -123,7 +123,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 ### Bug Taxonomy & Severity
 
 | Category | Signal | Default Severity |
-|----------|--------|-----------------|
+|---|---|---|
 | **Functional** | Doesn't match spec/AC | High (P0 if checkout/payment) |
 | **Visual/UI** | Layout break, wrong color/font | Medium (High if checkout) |
 | **Performance** | Exceeds threshold values | Medium (P0 if LCP > 4s) |
@@ -153,7 +153,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 ### Skills Integration (invoke during testing)
 
 | When | Skill | Reference File |
-|------|-------|---------------|
+|---|---|---|
 | Starting test session | `/qa-evidence` | `evidence-capture-policy.md` |
 | Exploratory testing | `/qa-sbtm` | `session-based-testing.md` |
 | Investigating a bug | `/qa-investigate` | `bug-investigation-flow.md` |
@@ -176,7 +176,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 ### Observation Space
 
 | Channel | Tool | Reliable For |
-|---------|------|-------------|
+|---|---|---|
 | DOM | `browser_snapshot` | Text, form state, element presence |
 | Visual | `browser_take_screenshot` | Layout, styling, responsive |
 | Console | `browser_console_messages` | JS errors, Vue/Angular warnings |
@@ -199,7 +199,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 Playwright, Postman, `DesignSync`, Figma: §Observation Space / §Action Space.
 
 | Server | Use |
-|--------|-----|
+|---|---|
 | Chrome DevTools MCP | Deep debugging, performance traces, HAR export |
 | Atlassian MCP | JIRA tickets, bug filing |
 | GitHub MCP | PRs, code search |
@@ -208,7 +208,7 @@ Playwright, Postman, `DesignSync`, Figma: §Observation Space / §Action Space.
 ### Additional References (load on-demand)
 
 | Area | Reference File |
-|------|---------------|
+|---|---|
 | Frontend suites | `regression/suites/Frontend/**/*.csv` |
 | Backend suites | `regression/suites/Backend/**/*.csv` |
 | E2E Scenario Catalog | `skills/qa-plan/e2e-scenario-catalog.md` |
@@ -242,7 +242,7 @@ AMBIGUOUS ⚠️ → flag to qa-lead-orchestrator with context + evidence
 ### Additional Environment Variables
 
 | Resource | Variable |
-|----------|----------|
+|---|---|
 | VC User | `USER_VIRTO` / `USER_VIRTO_PASSWORD` |
 | Datatrance | card details + `DATATRANCE_OTP` for 3DS |
 | Skyflow | `SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV` |
@@ -254,7 +254,8 @@ AMBIGUOUS ⚠️ → flag to qa-lead-orchestrator with context + evidence
 ### Test Lifecycle
 
 **SETUP** — Clear browser state. Verify `FRONT_URL` and `BACK_URL` accessible. Create/confirm test credentials. Set up evidence capture (HAR enabled). Select Firefox as primary browser.
-**EXECUTE** — Fetch JIRA ticket or test case CSV. Read relevant knowledge files. Navigate. Test per 5-phase strategy. Monitor console + network after every action. Screenshot key steps. Desktop AND mobile viewports. **Always-on bug detection (shared-instructions §Always-On Bug Detection):** hunt across every layer while you execute, not just the case's expected-vs-actual — file any incidental defect you see (out-of-scope-bug rule), pursue every "huh." For ticket/feature/PR work, add the ~5–10 min discovery pass (surprise-seeking + one adversarial tour/persona) before sign-off.
+**KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
+**EXECUTE** — Fetch JIRA ticket or test case CSV. Read relevant knowledge files. Navigate. Test per 5-phase strategy. Watch console + network per action. Screenshot key steps. Desktop AND mobile viewports. **Always-on bug detection (shared-instructions §Always-On Bug Detection):** hunt across every layer while you execute, not just the case's expected-vs-actual — file any incidental defect you see (out-of-scope-bug rule), pursue every "huh." For ticket/feature/PR work, add the ~5–10 min discovery pass (surprise-seeking + one adversarial tour/persona) before sign-off.
 **TEARDOWN (MANDATORY)** — Logout from storefront (user name → popup → **Logout**; `data-test-id="sign-out-button"`; no `/sign-out` URL, no header-level logout icon) and Admin. Delete test entities created during session. Clear browser state. Close all sessions. Document any failed cleanup steps.
 
 ### Reporting Format
@@ -279,7 +280,7 @@ Store reports in `reports/regression/` or `reports/bugs/`. Use **compact format*
 ### Error Handling
 
 | Failure | Action |
-|---------|--------|
+|---|---|
 | Browser MCP fails mid-test | Switch to a fallback browser per `defaults.fallbackChain` (chrome → edge → firefox); note in report. **Clicks timing out at "visible, enabled and stable" on firefox = the MCP server was not restarted after the occlusion-pref config change** (`knowledge/automation/browser-quirks.md` §Firefox) |
 | Environment unreachable | Retry 3×, then mark remaining tests BLOCKED; escalate to qa-lead |
 | Test data missing/stale | Use `/qa-seed-data` to regenerate; if blocked, skip with BLOCKED status |

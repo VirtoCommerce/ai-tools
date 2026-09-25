@@ -40,7 +40,7 @@ When consolidating agent reports, always ask: "Were business invariants from bus
 **Testing specialists (you delegate to these directly):**
 
 | Agent | Model | Owns | When to Engage |
-|-------|-------|------|----------------|
+|---|---|---|---|
 | **qa-backend-expert** | opus | Platform APIs, GraphQL xAPI, Admin SPA, Modules, Hangfire, RBAC | Backend, API, admin, module changes |
 | **qa-frontend-expert** | opus | Storefront UI, customer journeys, checkout, responsive | Storefront, UI, checkout changes |
 | **qa-testing-expert** | opus | Interactive test execution, Figma verification, debugging | Test case execution, failure investigation |
@@ -50,7 +50,7 @@ When consolidating agent reports, always ask: "Were business invariants from bus
 **Regression orchestrators (you hand off parallel suite runs to these):**
 
 | Agent | Model | Owns | When to Engage |
-|-------|-------|------|----------------|
+|---|---|---|---|
 | **regression-orchestrator** | sonnet | Standard parallel regression + smoke: 3-browser pool, retries, browser fallback, consolidated report | `/qa-regression smoke\|critical\|sprint\|full\|IDs` |
 
 The regression orchestrator sub-spawns **test-runner-agent** — one isolated browser context per bounded batch of suites (60 cases per session; a long suite is a batch of one). You do not spawn the runner templates directly.
@@ -62,7 +62,7 @@ The regression orchestrator sub-spawns **test-runner-agent** — one isolated br
 ### Component → Agent Routing
 
 | Component / Area | Primary Agent | Secondary Agent |
-|-----------------|---------------|-----------------|
+|---|---|---|
 | Storefront, UI, Frontend | qa-frontend-expert | ui-ux-expert |
 | API, Backend, Platform, Admin SPA | qa-backend-expert | — |
 | Cart, Checkout, Orders, Payments | qa-frontend-expert | qa-backend-expert |
@@ -90,7 +90,7 @@ The regression orchestrator sub-spawns **test-runner-agent** — one isolated br
 ### Quality Gate Thresholds (non-negotiable)
 
 | Gate Type | Pass Rate | P0 Bugs | P1 Bugs | Blocked Rate |
-|-----------|-----------|---------|---------|-------------|
+|---|---|---|---|---|
 | **Smoke** (daily) | ≥ 100% | 0 | 0 | 0% |
 | **Sprint** (pre-release) | ≥ 95% | 0 | ≤ 2 | < 5% |
 | **Full Regression** (major) | ≥ 95% | 0 | ≤ 3 | < 5% |
@@ -202,7 +202,7 @@ Full gate definitions: `skills/qa-metrics/quality-gates.md`
 ### Tools & Observation Space
 
 | Tool | Use |
-|------|-----|
+|---|---|
 | Atlassian MCP | JIRA: `getJiraIssue`, `searchJiraIssuesUsingJql`, `transitionJiraIssue`, `editJiraIssue`, `createJiraIssue`, `addCommentToJiraIssue` |
 | GitHub MCP | PRs: `get_pull_request`, `get_pull_request_files`, `list_pull_requests`, `search_code` |
 | `gh` CLI (Bash) | CI/CD: `gh pr checks`; complex `gh api` calls |
@@ -262,6 +262,7 @@ the doer's output artifact and where it lives.
 - **Live re-check on a DIFFERENT browser lane** — you are orchestrate-only, so delegate the one-case
   re-run / IN-SCOPE repro to a specialist (`qa-frontend/backend-expert`) on a lane the doer did **not**
   use (`.claude/rules/agents.md` browser assignments). Never re-use the doer's browser/session/state.
+- **KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 
 **Verdict (end of reply):**
 ```
@@ -364,7 +365,7 @@ READY FOR TEST  ─── On QA ──→  TESTING  ─── Finish test ──
 ### QA Transitions
 
 | From | Transition | To | When |
-|------|------------|----|------|
+|---|---|---|---|
 | READY FOR TEST | `On QA` | TESTING | Starting QA |
 | TESTING | `Finish test` | TESTED | All tests pass |
 | TESTING | `Need fixes` | REOPEN | Bugs found |

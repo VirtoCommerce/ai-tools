@@ -35,6 +35,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 3. **Reproduce the bug:**
    - If a JIRA ticket is provided, fetch details via Atlassian MCP
    - Extract exact URL, user action, expected vs actual behavior
+   - **Ask the base what that surface was OBSERVED doing** — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`), with the page path / endpoint / GraphQL operation as the coordinate. An entry that already describes the "actual" is the by-design alternative step 6 must rule out, handed to you for free
    - Attempt reproduction using the appropriate browser (Playwright MCP) on the resolved env
    - Try at least 3 reproduction attempts before declaring "cannot reproduce"
 
@@ -70,6 +71,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
    - Include the **env header** (§1) and the **Fix Routing block** (owning layer + repo + `repoKind`, per `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm rather than re-derive
    - For regressions, add the **Regression block** (§8C Step 4): introducing commit/PR, first-bad & last-good versions, why it broke, revert-safe vs. fix-forward
    - Save to `reports/bugs/`
+   - **Bank the platform behaviour you established** (not the verdict): matched an entry ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, unrecorded ⇒ `kb capture` (`--deployment <env>`, nothing client-specific). Cite the ids in the report ([`authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5)
    - Optionally create JIRA ticket via Atlassian MCP
 
 ## Rules

@@ -1,0 +1,386 @@
+// REACH — how much work a session did, and where in it the base was consulted.
+//
+// THE HOLE THIS FILLS. Every panel in `kb:report` is built from lines the base received, so the
+// base can only see sessions that spoke to it. `report-analyse.mjs` counts `sessions` as the number
+// of DISTINCT SESSIONS THAT APPEAR IN THE LOG — a session that ran for an hour, made three hundred
+// tool calls and never once asked contributes nothing at all: not a row, not a zero, not a line
+// saying it existed. So the one number that says whether the base is actually reaching the work —
+// asks per unit of work — has no denominator, and the failure mode everybody cares about is exactly
+// the one that is invisible.
+//
+// WHY THE ORDINALS AND NOT JUST A COUNT. "Touched once in three hundred calls" and "touched at call 3
+// and never again" are different diagnoses with different remedies, and a bare count cannot tell
+// them apart. `touchAt` records WHICH call each consultation was, so a session that front-loads its
+// reading and then works blind for two hundred calls is legible as such.
+//
+// WHAT IS READ AND WHAT IS NOT. The transcript is the only place that knows how many tool calls a
+// session made, and it is also the most sensitive file on the machine. So this reads NAMES and
+// POSITIONS and nothing else: a tool call contributes an ordinal and, for the CLI door, a boolean
+// from a regex over its command. No argument, no result, no prompt and no file content is stored,
+// copied, or carried into the record — and the record's whole vocabulary is integers plus a session
+// id, which is what makes it publishable at all under §7 (ids and counts, never prose).
+//
+// INCREMENTAL BY CURSOR, because the caller is a `Stop` hook that fires at the end of EVERY
+// assistant turn. Re-reading a growing transcript on each turn is O(file) per turn and O(file²) per
+// session; reading only the bytes appended since the last run is what makes this affordable enough
+// to be on by default.
+import { appendFileSync, existsSync, readFileSync, writeFileSync, readdirSync, statSync, rmSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
+
+/** The MCP door. Every kb tool is namespaced, so one prefix covers ask/show/capture/confirm/dispute. */
+const MCP_DOOR = /^mcp__kb__/;
+
+/**
+ * The CLI door — `npm run kb -- ask …`, or the module invoked directly, arriving as a shell call.
+ *
+ * Matched on the command and then DISCARDED: the boolean is kept, the string never is. It is a
+ * separate pattern rather than a broader one because `kb` is two letters and appears inside
+ * ordinary words; the three anchored forms here are the ways this repo actually invokes the base.
+ */
+const CLI_DOOR = /\bkb\.mjs\b|\bnpm run kb\b|\bkb:(ask|report|install)\b/;
+
+/**
+ * How long a session's counters must sit untouched before they are treated as final.
+ *
+ * DEFINED HERE AND NOT IMPORTED FROM `push.mjs`, although that file's `SWEEP_AFTER_MS` carries the
+ * same number. Two reasons, and the second is the operational one. They are different questions: a
+ * queue file is idle because nobody is appending to it and taking it risks a torn line; a reach
+ * state is idle because the SESSION ENDED, which is the only end-of-session signal this system has.
+ * And the `Stop` hook reads this on every assistant turn — importing it from `push.mjs` would pull
+ * the pusher, the GitHub client and the secret gate into a hook whose entire budget is tens of
+ * milliseconds. This module imports `node:fs` and `node:path` and nothing else, on purpose.
+ */
+export const REACH_IDLE_MS = 30 * 60 * 1000;
+
+/**
+ * Where a session's SUBAGENTS write: `<transcript dir>/<transcript id>/subagents/agent-*.jsonl`.
+ *
+ * WHY THIS IS READ AT ALL (PLAN §23.11). `teammateMode: "in-process"` gives every subagent its own
+ * transcript, and not one of its tool calls reaches the parent's. Run `cdb27d99` (2026-09-23): the
+ * parent made 22 calls, its one subagent made 456 — including 10 of the run's 12 base calls — and
+ * the published `session` line said 22 tools, 2 touches, "9.1 per 100 calls". The panel was
+ * measuring the orchestrator and calling it the session.
+ */
+export function subagentFiles(transcriptPath) {
+  if (!transcriptPath) return [];
+  const dir = join(dirname(transcriptPath), basename(transcriptPath, '.jsonl'), 'subagents');
+  let names;
+  try { names = readdirSync(dir); } catch { return []; }
+  return names.filter((n) => n.endsWith('.jsonl')).sort().map((n) => join(dir, n));
+}
+
+/**
+ * The first `timestamp` a slab of transcript carries — the session's real start.
+ *
+ * `firstAt` used to be the moment the hook first RAN, which is the end of the first turn: run
+ * `cdb27d99` started at 09:20:49 and its line said 09:26:55, six minutes of work outside the
+ * session's own window.
+ */
+export function firstStamp(chunk) {
+  for (const line of String(chunk).split('\n')) {
+    if (!line.includes('"timestamp"')) continue;
+    try {
+      const t = JSON.parse(line)?.timestamp;
+      if (typeof t === 'string' && t) return t;
+    } catch { /* torn */ }
+  }
+  return null;
+}
+
+/**
+ * Advance the counters over every subagent transcript, each on its own cursor — the parent's rules
+ * one level down: whole lines only, a file that SHRANK is recounted from zero.
+ *
+ * The subagents' calls are kept APART from the parent's `tools`/`touchAt`, not folded in: those are
+ * ordinals INTO THE PARENT's transcript, and an ordinal that meant "call 300 of the orchestrator"
+ * cannot also mean "call 300 of somebody else".
+ */
+function advanceSubagents(prior, transcriptPath) {
+  const held = prior && typeof prior === 'object' ? prior : {};
+  const next = {};
+  for (const file of subagentFiles(transcriptPath)) {
+    const name = basename(file);
+    const was = held[name] ?? { cursor: 0, tools: 0, touches: 0 };
+    let size;
+    try { size = statSync(file).size; } catch { next[name] = was; continue; }
+    const base = size < was.cursor ? { cursor: 0, tools: 0, touches: 0 } : was;
+    let chunk = '';
+    if (size > base.cursor) {
+      try { chunk = readFileSync(file).subarray(base.cursor, size).toString('utf8'); } catch { next[name] = base; continue; }
+    }
+    const cut = chunk.lastIndexOf('\n') + 1;
+    const counted = countToolUses(chunk.slice(0, cut));
+    next[name] = {
+      cursor: base.cursor + Buffer.byteLength(chunk.slice(0, cut), 'utf8'),
+      tools: base.tools + counted.tools,
+      touches: base.touches + counted.touchAt.length,
+    };
+  }
+  return next;
+}
+
+/** The totals the published line carries: integers, never a file name. */
+export function subagentTotals(subagents) {
+  const all = Object.values(subagents ?? {});
+  return {
+    agents: all.length,
+    agentTools: all.reduce((n, a) => n + Number(a.tools ?? 0), 0),
+    agentTouches: all.reduce((n, a) => n + Number(a.touches ?? 0), 0),
+  };
+}
+
+/** The reach state for one session. Lives beside the queue, never in the working tree. */
+export const reachPath = (dir, session) => join(dir, `${session}.reach.json`);
+
+export function readReach(dir, session) {
+  const path = reachPath(dir, session);
+  if (!existsSync(path)) return null;
+  try {
+    const raw = JSON.parse(readFileSync(path, 'utf8'));
+    return { session, cursor: 0, tools: 0, turns: 0, touchAt: [], firstAt: null, lastAt: null, ...raw };
+  } catch {
+    // A torn or hand-mangled state file is not worth failing a turn over, and starting the count
+    // again is a survivable loss: reach is a ratio over a session, not an audit trail.
+    return null;
+  }
+}
+
+/**
+ * Count tool calls in a slab of transcript, numbering them from `from`.
+ *
+ * Pure, and separated from the file handling because this is the part with a wrong answer: the
+ * ordinal arithmetic across chunk boundaries is what `touchAt` means, and a test can only pin it
+ * here. Malformed lines are skipped rather than thrown on — a transcript is written by another
+ * process and may be read mid-write.
+ *
+ * @returns {{tools: number, touchAt: number[]}} ordinals are 1-based and continue from `from`
+ */
+export function countToolUses(chunk, { from = 0 } = {}) {
+  let tools = from;
+  const touchAt = [];
+  for (const line of String(chunk).split('\n')) {
+    if (!line.trim()) continue;
+    let rec;
+    try { rec = JSON.parse(line); } catch { continue; }
+    const content = rec?.message?.content;
+    if (!Array.isArray(content)) continue;
+    for (const block of content) {
+      if (block?.type !== 'tool_use') continue;
+      tools += 1;
+      const name = String(block.name ?? '');
+      const viaMcp = MCP_DOOR.test(name);
+      const viaCli = !viaMcp && CLI_DOOR.test(String(block.input?.command ?? ''));
+      if (viaMcp || viaCli) touchAt.push(tools);
+    }
+  }
+  return { tools, touchAt };
+}
+
+/**
+ * Advance one session's reach from its transcript. Returns the new state, or null if there is
+ * nothing to read.
+ *
+ * ONLY WHOLE LINES ARE CONSUMED. The transcript's last line may be half-written at the moment a
+ * hook fires; the cursor stops at the final newline so the remainder is read once, whole, next turn.
+ * Without that rule a torn line is skipped as malformed and its tool calls are lost from the count
+ * permanently — an undercount that only ever appears in busy sessions, which are the ones this
+ * measurement exists for.
+ */
+export function advanceReach({ dir, session, transcriptPath, at = new Date(), who = null, run = '', synthetic = false } = {}) {
+  if (!dir || !session || !transcriptPath || !existsSync(transcriptPath)) return null;
+  const held = readReach(dir, session);
+  const prior = held ?? {
+    session, cursor: 0, tools: 0, turns: 0, touchAt: [], firstAt: null, lastAt: null,
+  };
+
+  let size;
+  try { size = statSync(transcriptPath).size; } catch { return null; }
+  // A transcript that SHRANK was replaced, not appended to; trusting the old cursor would read from
+  // the middle of a different file. Start again rather than report arithmetic over two documents —
+  // AND THAT MEANS THE COUNTERS TOO. Resetting the cursor alone leaves the ordinals continuing from
+  // a document that no longer exists, so the first call of the new transcript is reported as call
+  // 4 of a file that has three: `firstTouch`, the one field worth having, becomes fiction.
+  const restarted = size < prior.cursor;
+  const from = restarted ? 0 : prior.cursor;
+  const base = restarted ? { ...prior, tools: 0, touchAt: [] } : prior;
+
+  let chunk = '';
+  if (size > from) {
+    try {
+      const fd = readFileSync(transcriptPath);
+      chunk = fd.subarray(from, size).toString('utf8');
+    } catch { return null; }
+  }
+  const lastNewline = chunk.lastIndexOf('\n');
+  const consumed = lastNewline === -1 ? 0 : lastNewline + 1;
+  const { tools, touchAt } = countToolUses(chunk.slice(0, consumed), { from: base.tools });
+
+  // WHICH DISCONTINUITY, if any — recorded, because each of the three used to be a silent restart
+  // and one of them cost two messages of explanation (PLAN §23.6: `turns` 63 → 1, `tools` steady).
+  // Named by what was OBSERVED, never by a guessed cause: a shrinking transcript is "replaced",
+  // not "compacted".
+  const dropped = !held && consumeTombstone(dir, session);
+  const why = restarted ? 'transcript-replaced'
+    : dropped ? 'state-dropped'
+      : !held && promptsIn(chunk.slice(0, consumed)) > 1 ? 'state-absent'
+        : null;
+  if (why) {
+    appendRestart(dir, session, {
+      at: at.toISOString(),
+      kind: 'restart',
+      why,
+      ...(restarted ? { priorTools: prior.tools } : {}),
+      ...(run || prior.run ? { run: run || prior.run } : {}),
+      ...(who || prior.who ? { who: who || prior.who } : {}),
+      ...(synthetic ? { synthetic: true } : {}),
+    });
+  }
+
+  const next = {
+    session,
+    cursor: from + Buffer.byteLength(chunk.slice(0, consumed), 'utf8'),
+    tools,
+    turns: prior.turns + 1,
+    touchAt: [...base.touchAt, ...touchAt],
+    firstAt: prior.firstAt ?? (from === 0 ? firstStamp(chunk) : null) ?? at.toISOString(),
+    lastAt: at.toISOString(),
+    subagents: advanceSubagents(restarted ? null : prior.subagents, transcriptPath),
+    // LOCAL ONLY — `reachLine` never copies it. Kept so `idleReaches` can see that a session whose
+    // own turns have stopped is still WORKING through a subagent (PLAN §23.11).
+    transcriptPath,
+    // WHO RAN THIS SESSION, stamped by the session's own hook and carried to the published line.
+    //
+    // The reach line is the ONE line in this system whose subject is a DIFFERENT session from the
+    // one publishing it: a state file is swept and published by whoever comes next (`push.mjs`),
+    // so the writer's own handle would name the wrong person there. Recording it here, while the
+    // session that owns the state is still running, is the same rule the whole field is built on —
+    // stamp the identity when the line is WRITTEN, not when it is sent.
+    //
+    // The last known value survives a turn that could not read one: the handle comes from a cache
+    // that may be cold on this machine's first ever kb use and warm forever after, and a later
+    // turn finding nothing is no reason to forget what an earlier one found.
+    ...(who || prior.who ? { who: who || prior.who } : {}),
+    // AND THE RUN HANDLE, by the identical argument one field along. A `session` line is published
+    // by whoever sweeps it, and that sweeper may be running under a different `KB_RUN` — or none —
+    // so stamping the publisher's would name the wrong run with complete confidence, which is the
+    // failure that put `who` here in the first place. Same last-known-value rule: an env var unset
+    // for one turn is not a reason to forget what the session was running as.
+    ...(run || prior.run ? { run: run || prior.run } : {}),
+  };
+  try { writeFileSync(reachPath(dir, session), JSON.stringify(next), 'utf8'); } catch { return null; }
+  return next;
+}
+
+/**
+ * Reach states belonging to sessions that have stopped — the ones ready to publish.
+ *
+ * NEVER THE CALLER'S OWN, and never a state still being written. A live session's counters are not
+ * a fact yet: publishing them mid-session would put several lines in the log for one session, each
+ * a prefix of the next, and the report would have to guess which is the session. Idleness is the
+ * only end-of-session signal this system has — the same one `push` already uses to decide that
+ * another session's queue file is safe to take.
+ */
+export function idleReaches(dir, { session = null, now = Date.now(), idleMs = 0 } = {}) {
+  const out = [];
+  let names;
+  try { names = readdirSync(dir); } catch { return out; }
+  for (const name of names) {
+    if (!name.endsWith('.reach.json')) continue;
+    const owner = name.slice(0, -'.reach.json'.length);
+    if (owner === session) continue;
+    try {
+      if (now - statSync(join(dir, name)).mtimeMs < idleMs) continue;
+    } catch { continue; }
+    const state = readReach(dir, owner);
+    if (!state) continue;
+    // A PARENT IS NOT IDLE WHILE ITS SUBAGENT WORKS. The state file moves only when the parent's own
+    // `Stop` hook fires, and a parent waiting on a background subagent fires none: run `cdb27d99`
+    // sat 45 minutes behind one, was harvested as FINISHED at 22 calls, and resumed to a `restart`
+    // line. The transcripts are the activity; the state file is only its last reading.
+    if (stillWriting(state.transcriptPath, { now, idleMs })) continue;
+    out.push(state);
+  }
+  return out.sort((a, b) => a.session.localeCompare(b.session));
+}
+
+function stillWriting(transcriptPath, { now, idleMs }) {
+  if (!transcriptPath) return false;
+  for (const f of [transcriptPath, ...subagentFiles(transcriptPath)]) {
+    try { if (now - statSync(f).mtimeMs < idleMs) return true; } catch { /* gone is not writing */ }
+  }
+  return false;
+}
+
+/**
+ * The publishable line for one reach state. Integers and one id — no prose, by construction.
+ *
+ * `tools`/`touchAt` stay the PARENT's, ordinals into its own transcript; the subagents ride beside
+ * them as three counts, so a reader can add them and can still tell an orchestrator that consulted
+ * the base from one that delegated the consulting.
+ */
+export const reachLine = (state) => ({
+  kind: 'session',
+  session: state.session,
+  tools: state.tools,
+  turns: state.turns,
+  touchAt: state.touchAt,
+  ...subagentTotals(state.subagents),
+  firstAt: state.firstAt,
+  lastAt: state.lastAt,
+});
+
+/**
+ * Drop a published state — and leave a TOMBSTONE saying so.
+ *
+ * The tombstone is what tells the second of §23.6's three discontinuities apart from the third. A
+ * session harvested after 30 idle minutes may resume; its next turn finds no state and would read
+ * exactly like a scratchpad that was wiped. "Dropped after publication, by design" and "gone for no
+ * known reason" are different findings, so the drop is what records which one happened.
+ */
+export function dropReach(dir, session) {
+  try { rmSync(reachPath(dir, session), { force: true }); } catch { /* already gone */ }
+  try { writeFileSync(tombstonePath(dir, session), '', 'utf8'); } catch { /* costs a label, not a count */ }
+}
+
+/** `<session>.reach.dropped` — not `.reach.json`, so `idleReaches` steps over it. */
+export const tombstonePath = (dir, session) => join(dir, `${session}.reach.dropped`);
+
+function consumeTombstone(dir, session) {
+  const p = tombstonePath(dir, session);
+  if (!existsSync(p)) return false;
+  try { rmSync(p, { force: true }); } catch { /* still true: the drop happened */ }
+  return true;
+}
+
+/**
+ * How many PROMPTS a slab of transcript holds — a person's turn, not a tool result, a meta record or
+ * a compaction summary. Only its count leaves this function, never the text.
+ *
+ * It is how "state absent" is told apart from "first turn": the hook fires at the end of every turn,
+ * so a session's first reading holds one prompt. A first reading holding several means a state
+ * should have existed and does not.
+ */
+export function promptsIn(chunk) {
+  let n = 0;
+  for (const line of String(chunk).split('\n')) {
+    if (!line.trim()) continue;
+    let rec;
+    try { rec = JSON.parse(line); } catch { continue; }
+    if (rec?.type !== 'user' || rec.isMeta || rec.isCompactSummary) continue;
+    const c = rec.message?.content;
+    if (typeof c === 'string' || (Array.isArray(c) && c.some((b) => b?.type === 'text'))) n += 1;
+  }
+  return n;
+}
+
+/**
+ * The `restart` line, appended to the session's own queue file SYNCHRONOUSLY.
+ *
+ * Not through `log()` in queue.mjs, which is async: the caller is the `Stop` hook, which exits the
+ * moment `main()` returns, so an unawaited append can be lost. The line takes the same shape `log()`
+ * gives every line — `at` first, then the record, then `run`, `who`, `synthetic` — and the pusher
+ * maps it through `toLogLine` like any other. Cannot throw: a lost label must never cost a turn.
+ */
+function appendRestart(dir, session, line) {
+  try { appendFileSync(join(dir, `${session}.jsonl`), `${JSON.stringify(line)}\n`, 'utf8'); } catch { /* best effort */ }
+}

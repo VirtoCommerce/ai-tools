@@ -78,7 +78,10 @@ expensive mistake available here.
    page, never `/health`, which lies during a restart
    (`reference_platform_live_version_from_login_page`). The pin of record is
    `vc-deploy-dev@<env-branch>` → `backend/packages.json`.
-3. **Temporal A/B on one env: read the deploy boundary in UTC and guard-band it.** Misreading a
+3. **Ask the base per coordinate** — for each GraphQL op / endpoint you will measure:
+   `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`), e.g. a known N+1 or a no-op
+   precondition. Record hit ids; a miss is not a blocker. Rule: [`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
+4. **Temporal A/B on one env: read the deploy boundary in UTC and guard-band it.** Misreading a
    `merged_at` `Z` timestamp as a local offset shifted one cut by three hours and counted pre-change
    traffic as "after" — three published claims had to be withdrawn. A deploy is not instantaneous.
 
@@ -152,6 +155,10 @@ category correctly is the whole point of this phase.
   bottleneck reduces work without moving user-visible latency — that redirects the next investigation
   rather than ending it. Likewise a well-controlled **null** result ("no redundancy here to remove") is
   a finding worth publishing, *provided* the positive control fired in the same window.
+- **Bank structural findings, never raw timings** — an N+1, a duplicated call shape, a silent precondition
+  no-op: matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture`
+  (`--deployment {TEST_ENV}`). Raw timings and per-request counts stay in the report. Public base — nothing client-specific.
+  List the ids in the report.
 - **STOP.** Present the numbers and a recommendation. Do not file a tracker item, transition one, or
   open a PR.
 
@@ -172,7 +179,7 @@ category correctly is the whole point of this phase.
 - **Deliverables carry the finding, not the story of getting there** — audit trail goes in
   `summary.json` (`feedback_no_self_referential_commentary_in_deliverables`).
 - Read-only on App Insights and the code host; agents must not write to external systems
-  (`feedback_subagent_external_writes`).
+  (`feedback_subagent_external_writes`) — the one sanctioned write is the Phase 4 `kb` bank step.
 
 ## Agent delegation
 

@@ -32,7 +32,7 @@ amend an existing document rather than writing a second one beside it.
 ## Knowledge Files (read at runtime, on-demand)
 
 | File | When to consult |
-|------|-----------------|
+|---|---|
 | `.claude/knowledge/oracles/business-logic.md` | Always before drafting `bl_proposals` — extract existing BL-* IDs, reuse domain codes (PRICE, CART, CHK, ORD, AUTH, B2B, CAT, SRCH, SHIP, BOPIS, NOTIF, IMPEX, SEO, CROSS), follow entry schema. **Do not modify** — proposals only. |
 | `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | When flagging pain points or risks — cross-reference ECL-* IDs (13 generic + 7 VC-specific categories). |
 | `.claude/knowledge/execution/module-suite-map.md` | When mapping VC modules → existing test suites (avoid recommending coverage that already exists in `regression/suites/`). |
@@ -113,7 +113,7 @@ org:VirtoCommerce repo:VirtoCommerce/vc-module-{name} "IHandler"
 **Standard VC module repos to check**:
 
 | Module | Repo |
-|--------|------|
+|---|---|
 | Platform | `VirtoCommerce/vc-platform` |
 | Catalog | `VirtoCommerce/vc-module-catalog` |
 | Orders | `VirtoCommerce/vc-module-orders` |
@@ -156,6 +156,7 @@ When analyzing a module:
 
 Use **`playwright-firefox`** browser to explore the live storefront and map actual user flows, navigation structure, and UI state. This provides ground-truth data that code analysis alone cannot.
 
+**KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 **Storefront exploration checklist:**
 1. **Navigation & Information Architecture**
    - Browse the main menu, category tree, footer links
@@ -289,7 +290,7 @@ Look for these anti-patterns — from **both** code analysis AND live UI explora
 - Missing error handling in API calls
 
 ### 7. VC Docs Cross-Reference
-Use **VirtoOZ MCP** (primary — pick the topic-scoped tool that matches the question: `PlatformDeveloperGuide`, `StorefrontDeveloperGuide`, `PlatformUserGuide`, `StorefrontUserGuide`, `MarketplaceUserGuide`/`MarketplaceDeveloperGuide`, `DeploymentGuide`, `B2BExperts`, `*SourceCode`, or general `VirtoCommerce`). Fall back to **Context7 MCP** (`resolve-library-id` → `query-docs` for `/virtocommerce/vc-docs`) when VirtoOZ returns thin results. Fetch relevant sections from `https://docs.virtocommerce.org` to:
+Use **VirtoOZ MCP** (primary — pick the topic-scoped tool that matches the question: `PlatformDeveloperGuide`, `StorefrontDeveloperGuide`, `PlatformUserGuide`, `StorefrontUserGuide`, `MarketplaceUserGuide`/`MarketplaceDeveloperGuide`, `DeploymentGuide`, `B2BExperts`, `*SourceCode`, or general `VirtoCommerce`). Fallback: **Context7** `/virtocommerce/vc-docs` if VirtoOZ is thin. Fetch relevant sections from `https://docs.virtocommerce.org` to:
 - Verify the project is using best practices for detected modules
 - Identify features available in the platform that aren't being used
 - Flag deprecated APIs or patterns
@@ -349,7 +350,7 @@ Everything in this section applies to both axes. Three `ecl`-specific rules you 
 
 **You never edit a CSV** on either axis. Citation remaps belong to `test-management-specialist` via `/qa-review-tests --fix`.
 
-- **Parallel batch (default).** `/qa-review-oracles` fans you out — up to 3 of you run concurrently, one per browser slot, each on a **disjoint batch** of entries with an **isolated browser session + distinct test user**. In this mode you **do your own live observation on your assigned slot** (do not sub-delegate to `qa-testing-expert` — that would exceed the 3-browser cap), and you **return each verdict + evidence tuple + the proposed edit; you do NOT write the oracle yourself.** The orchestrator applies all edits serially (single writer) to avoid concurrent-write corruption.
+- **Parallel batch (default).** `/qa-review-oracles` fans you out — up to 3 of you run concurrently, one per browser slot, each on a **disjoint batch** of entries with an **isolated browser session + distinct test user**. In this mode you **do your own live observation on your assigned slot** (never sub-delegate to `qa-testing-expert` — it breaks the 3-browser cap), and you **return each verdict + evidence tuple + the proposed edit; you do NOT write the oracle yourself.** The orchestrator applies all edits serially (single writer).
 - **Three axes (all three required to confirm):** **docs** (`/vc-docs` VirtoOZ — quote + reference), **source** (GitHub MCP `search_code`/`get_file_contents` on `org:VirtoCommerce`, read-only — a `file:line` anchor), **live** (your own playwright slot — an `{OBSERVED}` result + screenshot, REAL-USER rule, no `browser_evaluate` bypass).
 - **Verdict → proposed action (applied by the orchestrator, not you):**
   - **CONFIRMED / DRIFT / MISSING** with unanimous, agreeing evidence → propose a body-only edit: **entry body only** (never the Severity-Tags meta table), stamp `- **Amended:** <date> (auto-applied, triangulated — BL-AUDIT-<date>)` + refresh `- **Source:**` (`file:line` + docs ref); MISSING gets the next free `BL-<DOMAIN>-<NNN>` (the orchestrator assigns the final number at apply time to avoid parallel ID collisions). Keep every entry **env-agnostic** (no env names/URLs/slugs).

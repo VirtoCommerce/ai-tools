@@ -1,0 +1,1104 @@
+// The v1 verb surface: ask, show, capture, confirm, dispute, stat (PLAN §4).
+//
+// Every verb takes an already-opened base and returns `{state, exit, ...}`; the CLI prints it and
+// exits. None of them knows whether the reader behind it is a directory or a network, which is the
+// seam's entire purpose.
+//
+// In THIS session `capture`/`confirm`/`dispute` only QUEUE. Nothing is sent anywhere -- the push
+// (Git Data API, blobs -> tree -> commit -> ref) is a later session, and the queue is already the
+// durable record it will read.
+
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import { mintId } from './canonical.mjs';
+import { parseEntry } from './frontmatter.mjs';
+import { anchorProblems, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
+import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
+import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
+import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
+import {
+  log, metaAsks, pendingMutations, queueBacklog, queueDir, readMeta, readPushStatus, readQueue, sessionId,
+} from './queue.mjs';
+import { cachedWho } from './who.mjs';
+import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
+
+// ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
+//
+// The confirmation count is COMPUTED from `evidence[]`, never declared (PLAN §12 rule 5) -- a
+// declared count is a second copy of something that already has a home. The index row carries a
+// precomputed `trust` so ranking need not open the entry; once the body IS open, the count is
+// recomputed from the evidence and the row is only a cross-check. The two disagreeing is index
+// drift, which is worth saying out loud rather than silently preferring one.
+//
+// The thresholds are a starting point, not a finding. The log will say whether they are the right
+// places to cut.
+export function trustOf(evidence = []) {
+  const supporting = evidence.filter((e) => !e.contradicts);
+  // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
+  // drift check compares one implementation against itself rather than against a second opinion.
+  const { trust: confirmations, disputed } = countEvidence(evidence);
+  // WHO SAW IT, AND ONLY WHO — never a deployment standing in for a person.
+  //
+  // THE DEFECT THIS CLOSES, and the reason it survived four days of green gates. The line used to
+  // read `e.by ?? e.deployment ?? 'unknown'`, which puts TWO KINDS OF IDENTIFIER in one Set: an
+  // evidence item with no observer contributed a STAND as though it were a party. PLAN §14.2a
+  // diagnosed exactly that, quoted this exact line, and then recorded itself as FIXED — and the
+  // code was never touched. Found 2026-09-22 by an independent review that mutated the line and
+  // watched all 483 kb tests stay green, because the only test of this function feeds evidence that
+  // always carries a `by`, so the fallback branch never ran.
+  //
+  // Measured on the live 109-entry base before the repair: 14 entries displayed more parties than
+  // they had named observers, and 7 of those displayed "1 independent party" with ZERO named
+  // observers — an entirely anonymous claim reading exactly like one a named session stood behind.
+  // It was wrong in the FLATTERING direction, on the number an agent uses to decide whether to
+  // re-verify, which is the direction nobody re-checks.
+  //
+  // `anonymous` is SURFACED rather than folded in, which is the other half of §14.2a's stated fix:
+  // "an observation nobody is named for" is a real and reportable state, and silently dropping those
+  // items would trade an overstatement for an understatement rather than for the truth.
+  //
+  // AND THE FIELD IS CALLED `sessions`, NOT `parties`, WHICH IS THE LARGER HALF OF THIS REPAIR.
+  //
+  // `by` holds `session:<key>` — it has never held a person. So the number this function computes
+  // has always been DISTINCT SESSIONS, and it was being rendered to agents as "N independent
+  // parties". Measured on the live base the day this was noticed: 31 distinct `by` values across the
+  // corpus, and **all 125 commits in the base are by one author**, with every session the log can
+  // name resolving to one operator. So "5 independent parties" on the flagship entry meant ONE
+  // PERSON, FIVE TIMES.
+  //
+  // It is not nothing — two sessions are two independent RUNS: separate context, separate agents,
+  // possibly a different build and stand, and the second did not copy the first, it re-derived. That
+  // is real independence of OBSERVATION. What it is not is independence of JUDGEMENT: one person,
+  // one habit of looking, one blind spot. The word "independent" promised the second and delivered
+  // the first, so the word goes and the number stays.
+  //
+  // `operators` is the number that will eventually mean what "parties" pretended to, and it is
+  // reported as UNKNOWN rather than as zero where the evidence predates the field: an item written
+  // before operators were recorded cannot be assigned to one, and counting it as "no operator" would
+  // repeat this whole defect in the opposite direction.
+  const sessions = new Set(supporting.filter((e) => e.by).map((e) => e.by)).size;
+  const anonymous = supporting.filter((e) => !e.by).length;
+  const named = supporting.filter((e) => e.who).map((e) => e.who);
+  const operators = named.length ? new Set(named).size : null;
+  const operatorsUnknown = supporting.filter((e) => e.by && !e.who).length;
+  const label = disputed ? 'DISPUTED'
+    : confirmations >= 3 ? 'well attested'
+      : confirmations === 2 ? 'corroborated'
+        : confirmations === 1 ? 'single observation'
+          : 'unattested';
+  return { label, confirmations, disputed, sessions, anonymous, operators, operatorsUnknown };
+}
+
+/**
+ * Everything a reader needs to weigh a hit, assembled from the entry's own frontmatter.
+ *
+ * When the body did NOT arrive there is no `evidence[]` to compute from, and computing anyway
+ * yields "0 confirmations" for an entry the index says has four -- a confident understatement,
+ * which is the worst direction for a trust label to be wrong in. So an unavailable body reports
+ * the index's own count, says it is provisional, and raises no drift: the two numbers were never
+ * compared, so they cannot be said to disagree.
+ */
+function describeHit(hit, parsed, { unavailable = null } = {}) {
+  const evidence = parsed?.data?.evidence ?? [];
+  const trust = unavailable
+    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
+    : trustOf(evidence);
+  return {
+    id: hit.row.id,
+    subject: hit.row.subject,
+    path: hit.row.path,
+    score: hit.score,
+    matchedOn: { tokens: hit.overlap, anchors: hit.anchors },
+    trust,
+    // Provenance, entry by entry: who saw it, where, and when. The three things `cat` cannot print
+    // and whose absence the bypass measurement is about.
+    provenance: evidence.map((e) => ({
+      method: e.method ?? 'observation',
+      deployment: e.deployment ?? null,
+      at: e.at ?? null,
+      by: e.by ?? null,
+      who: e.who ?? null,
+      contradicts: Boolean(e.contradicts),
+      note: e.note ?? null,
+    })),
+    indexTrust: hit.row.trust,
+    indexDrift: !unavailable && hit.row.trust !== trust.confirmations
+      ? `index says trust ${hit.row.trust}, evidence[] has ${trust.confirmations} — run \`kb reindex\``
+      : null,
+    body: parsed?.body?.trim() ?? null,
+    unavailable: null,
+  };
+}
+
+// ── What a line records about the CALL, and what it deliberately does not ─────────────────────
+//
+// A log field is cheap to add and effectively impossible to remove: the log is public, it is
+// append-only, and old lines can never be backfilled. So the bar is A QUESTION SOMEBODY HAS NOW,
+// not "might be handy one day". Three fields clear it here.
+//
+//   `rank`  the RANKER VERSION, not a position -- the value is a name (`floor-1`) precisely so it
+//           cannot be misread as one. This session is the first ranker change, and every line
+//           already in the base came from the no-floor ranker; without a marker every future
+//           before/after comparison silently mixes two systems (PLAN §14.1). IT GOES ON `ask`
+//           LINES ONLY, because nothing else ranks: a ranker version on a `capture` would be a
+//           field with no question behind it, which is the thing this list exists to refuse.
+//   `via`   which door was used, `mcp` or `cli`. PLAN §4 claims the CLI is load-bearing for three
+//           reasons; a month of these says whether that is true in practice or whether it has
+//           become test and CI infrastructure only, which decides whether two doors are worth
+//           maintaining. This one goes on every line a door writes. Omitted rather than guessed
+//           when the caller did not say: a field that defaults is a field that lies.
+//   `deployment`
+//           WHICH STAND the question was about, when the caller names one. `capture`, `confirm`
+//           and `dispute` have always carried it and `ask` had no such parameter at all, so the
+//           knowledge plane knew which deployment it was talking about and the demand plane did
+//           not. Measured on the published base on 2026-09-21: 148 of 182 observations come from
+//           `vcptcore_stable` and 33 from `vcst_qa`, and the only dispute this base has ever had
+//           (KB-27B4CD10) turned entirely on the difference between those two stands. A demand log
+//           that cannot separate them can show neither fact.
+//
+//           OPTIONAL, AND NEVER DEFAULTED, which is the whole of its safety. There is no source of
+//           truth for a stand's canonical name, and both candidates were checked rather than
+//           assumed. `TEST_ENV` is not set in the process at all (`node -e "process.env.TEST_ENV"`
+//           -> undefined; the MCP server is registered with no `env` block and inherits the
+//           session's), and its loader default `vcst` is not the string the base uses for that
+//           stand -- `vcst_qa`, 33 evidence lines against 1. `BACK_URL`'s host would map both live
+//           stands correctly and is equally absent from the process, and it invents
+//           `qa_admin_leo` for the `leo` env, which is the plausible-looking wrong value this
+//           whole plan keeps catching. The decisive one needs neither measurement: the server's
+//           environment is fixed when the session starts, while the stand is a property of the
+//           observation the question is ABOUT, and one process cannot know the other. So a default
+//           would print this process's guess as the agent's fact. Absent beats plausible.
+//   `topic` WHAT THE WORK WAS -- a short English noun phrase the AGENT formulates and passes with
+//           the call, capped in code at TOPIC_MAX. Reading the published base as an outsider,
+//           nothing said what a window was about: that 2026-09-21 07:22-08:15 concerned a
+//           configurable-product order was inferred from the question TEXTS and nothing else. That
+//           holds at nine asks and not at five hundred. It goes on the LINE and not on the file or
+//           the session, because a file boundary is the push timer and a session covers many
+//           tasks; a window's topics are then COMPUTED from the lines. See `label()` below for why
+//           the cap truncates where `stand()` drops.
+//
+//           AND IT IS HONESTLY PART-DERIVABLE, which is the objection this plan normally accepts:
+//           a human CAN read nine question texts and work out what the run was -- that is exactly
+//           how the 2026-09-21 review did it. It was bought anyway, with the trade stated: the
+//           derivation is a person reading prose and it does not survive volume, and the panel
+//           that would otherwise group the work groups by SESSION, which is not a unit of work.
+//   `run`   WHAT RUN THIS WAS -- the operator's opaque handle (`KB_RUN`), NEVER parsed. Not listed
+//           among the per-verb fields for the same reason as `who`: no verb writes it, `queue.mjs`
+//           stamps every line from the environment. A POINTER where `topic` is a DESCRIPTION, and
+//           the argument for keeping them apart is in `runOf()`.
+//   `who`   WHO WROTE THE LINE — the configured token's GitHub handle. Not listed among the
+//           per-verb fields below because NO VERB WRITES IT: it is stamped by `queue.mjs`'s single
+//           writer, like `synthetic`, so no verb can forget it and no verb can fake it. Reading
+//           the published base as an outsider, nothing said who produced a line; the identity WAS
+//           recoverable from the commit author and that is not enough, because the report reads
+//           log FILES over HTTP and — the real reason — the pusher is not always the asker. The
+//           full argument, the privacy boundary (a handle is an id and is already in every commit
+//           of this public base; an email, a path or a machine name is not) and the trap the field
+//           carries (it names whose TOKEN is configured, not who is at the keyboard) are in
+//           `core/who.mjs`.
+//
+// WHAT MUST NOT BE ADDED HERE, recorded so it is not proposed again:
+//
+//   * ENTRY BODIES OR CLAIM TEXT. PLAN §7: ids and subjects only. Claim prose in a second place is
+//     claim prose that can drift from the entry.
+//   * ANYTHING THE REPORT CAN DERIVE -- re-ask counts, repeat frequency, whether a capture followed
+//     a miss. One file per session makes all of it computable, and a field for a derivable fact is
+//     a second copy that can disagree with the first.
+//   * WHO CALLED IT -- main agent or subagent. STILL not recorded, and still not knowable here:
+//     the server sees a request, never the conversation around it. `parent_tool_use_id` is not in
+//     the request, exactly as this note said.
+//
+//     BUT THE NOTE OVERREACHED, and the correction is the useful half. "The request carries
+//     nothing identifying" was never checked -- it was inferred from one absent field. Dumping a
+//     real request on 2026-09-19 (`KB_RAW_DUMP`) found
+//     `_meta["claudecode/toolUseId"]`, the caller's OWN tool-use id. That is not a proxy for the
+//     answer, which is what this note rightly refused; it is the JOIN KEY to it, because every
+//     `tool_use` in the transcript carries `isSidechain` and `agentName`. So it is recorded as
+//     `call`.
+//
+//     AND THEN THE JOIN TURNED OUT NOT TO EXIST, which is the half a reader needs most. Measured
+//     2026-09-21 (PLAN §21.4 item 2, re-confirmed by STEP 5 / §21.17 on fresh traffic): under
+//     `teammateMode: "in-process"` a teammate's turns are never written to the parent transcript,
+//     so a SUBAGENT's `toolUseId` appears there 0 times and there is nothing to look it up in.
+//     `call` still proves "this was not the main thread"; it cannot say who, and no future field
+//     here can either.
+//
+//     THAT QUESTION IS NOW CLOSED BY MEASUREMENT, so it is not reopened by guessing. STEP 5
+//     captured the server's entire input at byte level across four runs, main thread against
+//     subagents of three types, some concurrent: ONE `initialize` per session (the teammates share
+//     the parent's process and its single stdio connection), `_meta` with exactly two keys, a
+//     `progressToken` that is one connection-global counter, and newline-delimited JSON with no
+//     envelope. Nothing separates a subagent -- from the parent or from another subagent. A field
+//     here would hold the same value for every caller, which is worse than a missing one: it reads
+//     as information and is not. The boundary is the mode -- `tmux`/`iterm2` teammates are separate
+//     processes and untested, and unreachable on Windows.
+//
+//     The lesson outlived both corrections: "we cannot see X" and "we never looked" wear the same
+//     clothes, and this file asserted the first for two sessions while meaning the second.
+//
+//     AND IT APPLIED A THIRD TIME, 2026-09-23. The SERVER still cannot tell callers apart — true,
+//     and unchanged. But the join was only ever tried against the PARENT transcript: Claude Code
+//     writes each subagent's turns to `<session>/subagents/agent-*.jsonl` beside a `.meta.json`
+//     naming its `agentType`, and 12 of 12 logged `call` ids resolved there. So the caller is now
+//     DERIVED at push time, on the machine that holds the transcripts, and stamped as `agent`
+//     (`core/caller.mjs`) — from a closed vocabulary, never from the agent's own say-so.
+//   * FREE TEXT FROM THE AGENT about why it asked. Unreliable, and the log is public.
+//   * THE DEPLOYMENT on `ask` -- REVERSED 2026-09-21, and it is now listed above. The refusal
+//     read: "`capture` records it, where it is a property of the observation rather than of the
+//     question". The premise is true and the conclusion does not follow -- a question is asked
+//     WHILE working on a stand, and the base's only dispute was two stands disagreeing. What the
+//     refusal got right is kept whole: the field is REPORTED, never derived.
+const DOORS = new Set(['mcp', 'cli']);
+/**
+ * `via` is WHICH DOOR; `call` is WHICH CALL — the caller's own tool-use id, when the client sends
+ * one (see `callIdOf` in mcp.mjs). It is the join key that makes "was this a subagent?" a lookup in
+ * the transcript rather than the elimination argument it took on 2026-09-19. Opaque, no content,
+ * and omitted rather than invented when the client offers nothing.
+ */
+const door = (via, call) => ({
+  ...(DOORS.has(via) ? { via } : {}),
+  ...(typeof call === 'string' && call ? { call } : {}),
+});
+/**
+ * WHICH STAND the question was about, when the caller names one -- and nothing at all when it
+ * does not. Trimmed, because an argument of whitespace is a caller that meant to say nothing, and
+ * `deployment: ""` in the log would read as a stand whose name is the empty string.
+ *
+ * The value is recorded VERBATIM and is never normalised. The base already holds `vcst` once
+ * against `vcst_qa` 33 times, so a normaliser has a real fragmentation to argue for -- and it
+ * would be a transcribed mapping with no source of truth behind it, which is the same defect
+ * wearing a tidier name. What the log needs is what the caller believed; the disagreement is a
+ * finding, not something to iron out on the way in.
+ *
+ * A STRING OR NOTHING, which is not defensive typing. `kb.mjs`'s parser hands a flag given
+ * without a value the boolean `true`, so `kb ask "q" --deployment --json` would otherwise publish
+ * `deployment: "true"` -- a stand name that is not a stand, indistinguishable in the log from one
+ * an agent meant. The typed guard is the same one `door()` puts on `call`, for the same reason.
+ *
+ * AND BOUNDED, which the first version was not. "Verbatim" is a promise about not NORMALISING --
+ * not to case-fold, not to map `vcst` onto `vcst_qa`, not to have an opinion about what a stand is
+ * called -- and it was wrongly read as a promise not to bound the length either. The value is
+ * caller-supplied, it lands in a PUBLIC, APPEND-ONLY log, and nothing between the tool call and the
+ * file had a view on its size, so an agent that put a paragraph here published a paragraph (§7: ids
+ * and subjects only, never prose). `DEPLOYMENT_MAX` is set far clear of every stand name this base
+ * has ever held -- the longest, `vcptcore_stable`, is 15 characters -- so a real value is never
+ * touched and the cap is only ever felt by something that was not a stand name. Truncated rather
+ * than dropped, by `label()`'s argument below: the caller did name a stand and the only defect is
+ * length, and the cut is deterministic so an ask and its confirm still join.
+ */
+export const DEPLOYMENT_MAX = 40;
+const stand = (deployment) => {
+  const d = typeof deployment === 'string' ? deployment.trim() : '';
+  return d ? { deployment: d.slice(0, DEPLOYMENT_MAX).trim() } : {};
+};
+/**
+ * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
+ *
+ * Reading the published base as an outsider on 2026-09-21, nothing said what the work was about:
+ * that the 07:22-08:15 window concerned a configurable-product order was inferred from the question
+ * texts and from nothing else. `run` (queue.mjs) is the operator's POINTER to a ticket; this is the
+ * DESCRIPTION, and the two are different things that only look alike.
+ *
+ * IT GOES ON THE LINE, and the two obvious alternatives were both checked and are both wrong.
+ * PER FILE is meaningless: a file boundary is set by the push timer, not by anything that happened
+ * in the work -- session `local_e8` left four files for one afternoon, split at 07:55, 08:05, 08:14
+ * and 08:14. PER SESSION is no better: a session covers many tasks, and typing a second prompt
+ * changes the work while the session id does not. A LINE is the only unit that is unambiguously
+ * about one thing, so a window's topics are the set of distinct topics inside it -- COMPUTED, never
+ * declared, the same rule that keeps the confirmation count out of an entry's frontmatter (§2).
+ *
+ * WHY THE AGENT AND NOT THE OPERATOR, and why it is not extracted from the prompt. The operator's
+ * prompt here is routinely RUSSIAN and everything stored in this base is ENGLISH; and a raw prompt
+ * is PROSE, which §7 keeps out of a public log. So a topic has to be FORMULATED, deliberately, by
+ * the only participant that holds both the language and the meaning.
+ *
+ * THE CAP IS IN CODE AND NOT IN THE TOOL DESCRIPTION, because a description is advice and this one
+ * is a §7 boundary. TRUNCATED rather than dropped, which is the one place this field departs from
+ * `stand()`'s "absent beats plausible": `stand()` drops because there is no correct value to record
+ * and a guess would be somebody else's fact, whereas here the agent HAS said what the work was and
+ * the only defect is length. The first `TOPIC_MAX` characters are still the agent's own words, and
+ * truncation is DETERMINISTIC -- the same over-long topic truncates to the same string, so an ask
+ * and its capture still join, which dropping would silently break at exactly the moment the field
+ * was most needed.
+ *
+ * What the cap CANNOT enforce is everything else the description asks for -- English, a noun phrase
+ * rather than a sentence, no client names, no customer data. Those stay advice because no code can
+ * check them, which is a reason to word the description carefully, not a reason to skip the cap.
+ */
+export const TOPIC_MAX = 60;
+/**
+ * HOW LONG AN EVIDENCE NOTE MAY BE — the bound this surface was missing, and the inconsistency is
+ * the argument.
+ *
+ * `topic` is capped at 60 characters, `run` at 120 and `deployment` at 40. All three are LOG fields
+ * that no agent ever reads back. `note` is the opposite on every axis: it is printed IN FULL, to
+ * every agent, on every hit, on every ask, out of a public repo, forever — and it had no bound at
+ * all. Review 3 measured the consequence (§22.18): mean answer payload 2,661 B per ask, worst
+ * single ask 11,610 B (~2,900 tokens), and `KB-4D082C89` carrying 4,956 B of notes against a 3,643 B
+ * body.
+ *
+ * THE SHAPE OF THE SLOPE IS WHAT MAKES THIS WORTH A BOUND RATHER THAN A WATCH. A well-attested entry
+ * costs 2.1x a single-observation one to read, because every confirmation may add a note. The
+ * design's central incentive is to confirm — §6.2 calls it "the cheapest and most valuable signal
+ * there is" — so THE MECHANISM THAT MAKES AN ENTRY TRUSTWORTHY IS THE MECHANISM THAT MAKES IT
+ * EXPENSIVE, and nothing measured it. The first symptom would have been an orchestrator's context
+ * budget, not a report panel.
+ *
+ * THE NUMBER IS MEASURED, AND THE REVIEW'S SUGGESTION WAS CHECKED RATHER THAN TAKEN. It proposed
+ * 1,500 on the grounds that "the notes I read would survive it untouched"; counted over all 45 notes
+ * in the live base, three exceed 1,500 and the longest is 2,547 — and they are the dispute notes on
+ * `KB-4D082C89`, which carry the whole argument of a contradiction and are exactly the prose this
+ * base is for. A bound that cuts the best writing in the corpus is the wrong bound. 4,000 sits clear
+ * of every real note, so it changes nothing that exists and bounds only what nothing else would.
+ * Truncated with a marker
+ * rather than dropped, for `label()`'s reason — the observer did write it down and the only defect
+ * is length — and the marker matters here where it does not for a topic: a reader must be able to
+ * tell a note that ENDS from a note that was CUT, or the last clause of an argument reads as the
+ * whole of it.
+ */
+export const NOTE_MAX = 4_000;
+const trimNote = (text) => {
+  const t = typeof text === 'string' ? text.trim() : '';
+  if (!t) return '';
+  return t.length <= NOTE_MAX ? t : `${t.slice(0, NOTE_MAX).trim()}… [cut at ${NOTE_MAX} chars]`;
+};
+const label = (topic) => {
+  const t = typeof topic === 'string' ? topic.trim() : '';
+  return t ? { topic: t.slice(0, TOPIC_MAX).trim() } : {};
+};
+/**
+ * The fields every agent-called verb stamps: which door, which call, what the work was. `reindex`
+ * is deliberately not among them -- it is an operator repair, there is no agent to have a topic.
+ */
+const context = ({ via, call, topic }) => ({ ...door(via, call), ...label(topic) });
+const ranked = ({ via, call, topic, deployment }) => ({ rank: RANKER, ...context({ via, call, topic }), ...stand(deployment) });
+
+/** Two decimal places: `nearMiss.coverage` is read by a human, and 0.45454545 is not. */
+const round2 = (n) => Math.round(Number(n) * 100) / 100;
+
+/** Open the base and load the index; every read verb starts here. */
+async function catalogue(opened) {
+  if (!opened.reader) return { state: 'no-base', why: opened.why };
+  return loadIndex(opened.reader);
+}
+
+// ── ask ───────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * What THIS SESSION has captured and not yet published, ranked against the question that just missed.
+ *
+ * THE HOLE IT CLOSES, found by an audit session and confirmed in the code (PLAN §22.11). `ask` reads
+ * the INDEX and nothing else, so a capture is invisible to it until the queue is pushed AND the
+ * index rebuilt — which is minutes away at best and an hour at worst. Within one session an agent
+ * could therefore miss a fact it had written itself, and the published log has an instance: a
+ * capture at 08:02:27 and a miss on the same fact at 08:09:22, seven minutes apart, one session.
+ *
+ * IT IS A NOTE, NEVER A HIT, and that boundary is the whole of its safety. A queued entry has no
+ * trust, no confirmations, no provenance anybody else can check and no id anyone else can resolve —
+ * it is one session's unreviewed draft. Returning it among `hits` would let an agent cite, as
+ * established, something that exists only in a temp directory on one laptop. So it rides on its own
+ * field, the state stays `miss`, and the exit code stays 1: the base really does hold nothing, which
+ * is the fact the agent has to act on.
+ *
+ * ON THE MISS PATH ONLY. An answered ask already has real entries in front of the agent and a draft
+ * beside them would compete with reviewed knowledge for attention — and the cost of reading the
+ * queue would be paid on every ask to serve the rarest case.
+ *
+ * RANKED BY THE SAME FUNCTION, over rows built by the same `buildRow` the index uses. A second
+ * matching implementation here would be a second ranker that drifts from the first, and the floor is
+ * the point: a draft that does not clear it is no more relevant than an entry that does not.
+ */
+async function queuedHere(question, { env }) {
+  const { lines } = await readQueue({ env });
+  const rows = [];
+  for (const l of lines) {
+    if (l.kind !== 'capture' || !l.payload?.entry) continue;
+    try { rows.push({ ...buildRow(l.payload.entry, entryPath(String(l.payload.entry.id))), at: l.at ?? null }); } catch { /* a queue line we cannot read is not worth failing an ask over */ }
+  }
+  if (!rows.length) return [];
+  return rank(question, rows, { top: 2 }).hits.map((h) => ({
+    id: h.row.id,
+    subject: h.row.subject,
+    at: h.row.at,
+    score: h.score,
+  }));
+}
+
+export async function ask(question, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
+  const started = Date.now();
+  const cat = await catalogue(opened);
+  if (cat.state !== 'ok') {
+    await log({ kind: 'ask', q: question, state: cat.state, why: cat.why, ...ranked({ via, call, topic, deployment }) }, { env });
+    return { state: cat.state, why: cat.why, hits: [] };
+  }
+
+  const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
+  if (!hits.length) {
+    const queued = await queuedHere(question, { env });
+    // THE MISS LINE, which since the floor landed is a line that can actually occur (PLAN §14.1).
+    // It carries the best REJECTED candidate: a miss that keeps naming the same near-miss is
+    // either a floor set too high or an entry phrased unlike the way anyone asks -- and neither
+    // is visible from a bare "matched: []".
+    await log({
+      kind: 'ask',
+      q: question,
+      matched: [],
+      state: 'miss',
+      ...(nearMiss ? { nearMiss: { id: nearMiss.row.id, score: nearMiss.score, coverage: round2(nearMiss.coverage) } } : {}),
+      ms: Date.now() - started,
+      ...ranked({ via, call, topic, deployment }),
+      // WHAT THIS SESSION ALREADY WROTE AND HAS NOT PUSHED, by id. On the LINE as well as in the
+      // result, because the panel that matters most here is a later reader's: a miss that names an
+      // unpublished draft of its own answer is a push-latency event, not a coverage gap, and a log
+      // that cannot tell the two apart over-states the hole in the corpus.
+      ...(queued.length ? { queued: queued.map((q) => q.id) } : {}),
+    }, { env });
+    return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length, queued };
+  }
+
+  // Bodies in parallel (PLAN §3.1 step 3).
+  const described = await Promise.all(hits.map(async (hit) => {
+    const read = await opened.reader.readEntry(hit.row.path);
+    if (!read.ok) {
+      // GRACEFUL DEGRADATION (PLAN §3.5): the base HAS an entry on this and we can still say so
+      // from the index alone. Strictly better than silence, and it cannot be mistaken for a miss.
+      const unavailable = read.reason === 'missing'
+        ? `the index names ${hit.row.path}, which is not in the base — drift; run \`kb reindex\``
+        : `body unavailable (${read.detail})`;
+      return { ...describeHit(hit, null, { unavailable }), unavailable, unavailableReason: read.reason };
+    }
+    try {
+      return describeHit(hit, parseEntry(read.text, hit.row.path));
+    } catch (err) {
+      const unavailable = `unparseable entry: ${err.message}`;
+      return { ...describeHit(hit, null, { unavailable }), unavailable, unavailableReason: 'missing' };
+    }
+  }));
+
+  const opened_ = described.filter((h) => !h.unavailable);
+  // At least one body arrived -> the question is answered, with the broken ones flagged. None
+  // arrived -> the agent got nothing, and the honest state is "conclude nothing": exit 1 would say
+  // the base holds nothing, which is the opposite of what the index just told us, and would send
+  // the agent off to capture a fact that already exists.
+  const state = opened_.length ? 'answer' : 'unreachable';
+  await log({
+    kind: 'ask',
+    q: question,
+    matched: described.map((h) => h.id),
+    // `scores` is POSITIONAL against `matched`, so the winning score is scores[0] and there is no
+    // separate `score` field. A field for a fact another field already carries is a second copy
+    // that can disagree with the first -- the rule PLAN §2 applies to the confirmation count.
+    scores: described.map((h) => h.score),
+    // WHY each hit matched, positional against `matched`. A closed vocabulary — never prose.
+    //
+    // This is the field that makes PLAN §17.4(3) measurable from the log instead of from a replay.
+    // The base's strongest signal is the anchor, and it fires on 0 of 91 of the entries' OWN
+    // questions because nobody writes `Mutations.changeOrganizationContactRole` in a sentence —
+    // while firing 3-4 times per session on the URLs an agent types into its tools. The renderer
+    // has always computed this and SHOWN it to the agent ("matched on: anchor …; words …") and
+    // then thrown it away. A month of these answers, from real traffic, whether the coordinate
+    // door is reachable at all by the way people actually ask.
+    matchedBy: described.map((h) => {
+      const byAnchor = h.matchedOn.anchors.length > 0;
+      const byWords = h.matchedOn.tokens.length > 0;
+      return byAnchor && byWords ? 'both' : byAnchor ? 'anchor' : 'words';
+    }),
+    // WHAT THE AGENT WAS TOLD about trust, at the moment it was told. Positional, and not
+    // derivable later: an entry's label moves as evidence accrues, so reading today's entry does
+    // not reconstruct what a reader saw last week. §14.2a is the reason this matters — the label
+    // was overstating independence for ~20% of the corpus, and no log line recorded what any
+    // agent had actually been shown while that was true.
+    trustShown: described.map((h) => h.trust.label),
+    opened: opened_.map((h) => h.id),
+    state,
+    ...(state === 'unreachable' ? { why: described[0]?.unavailable ?? 'no body could be read' } : {}),
+    ms: Date.now() - started,
+    ...ranked({ via, call, topic, deployment }),
+  }, { env });
+
+  return { state, hits: described, rows: cat.rows.length };
+}
+
+// ── show ──────────────────────────────────────────────────────────────────────────────────────
+
+export async function show(id, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
+  const cat = await catalogue(opened);
+  if (cat.state !== 'ok') {
+    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
+    return { state: cat.state, why: cat.why };
+  }
+  // Retired entries are shown. Retrieval will not return one, but a reader holding an id is
+  // entitled to see what is behind it -- including that it was retired.
+  const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
+  if (!row) {
+    await log({ kind: 'show', id, state: 'miss', ...context({ via, call, topic }) }, { env });
+    return { state: 'miss', why: `${id} is not in this base's index` };
+  }
+  const read = await opened.reader.readEntry(row.path);
+  if (!read.ok) {
+    // Both a 404 and a timeout leave the caller without the entry, so both are 'conclude
+    // nothing'. What differs is the REMEDY, which is why the message is built separately.
+    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...context({ via, call, topic }) }, { env });
+    return { state: 'unreachable', row, why: read.reason === 'missing' ? `${row.path} is not in the base — drift; run \`kb reindex\`` : read.detail };
+  }
+  let parsed;
+  try {
+    parsed = parseEntry(read.text, row.path);
+  } catch (err) {
+    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...context({ via, call, topic }) }, { env });
+    return { state: 'unreachable', row, why: `unparseable entry: ${err.message}` };
+  }
+  await log({ kind: 'show', id: row.id, state: 'answer', ...context({ via, call, topic }) }, { env });
+  return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
+}
+
+// ── capture ───────────────────────────────────────────────────────────────────────────────────
+
+const REQUIRED = ['subject', 'question', 'claim', 'deployment'];
+
+/**
+ * The `ask` this capture is ABOUT, as a pointer into the session's own log — or nothing.
+ *
+ * Panel 6 answers "did the agent go and find out anyway?" and the unhelpful panel "was the answer
+ * any use?" by following this pointer, so it has to name the RIGHT ask. It stores that ask's `at`:
+ * a POINTER to a line already in this session's log, never a copy of the question — a second copy
+ * of a question is a second thing that can disagree with the first.
+ *
+ * IT USED TO NAME THE LAST ASK, AND THAT WAS WRONG IN BOTH DIRECTIONS (PLAN §23.11). Run `cdb27d99`
+ * wrote three captures inside one minute, after one answered ask; all three pointed at it. Measured
+ * by the words each capture shares with each of the session's four asks:
+ *
+ *   KB-D54F3AAB (CFG_* 404s)          the MISS 50 min earlier: 10 · the last ask: 1
+ *   KB-7F535D52 (CyberSource flakes)  the last ask: 13 · the nearest other: 7
+ *   KB-8BE777BB (org switch header)   at most 2, against any ask
+ *
+ * So the report read "0 captures after a miss" on the run whose loop had closed exactly as designed,
+ * and charged one answer with three captures, two of them about something else. The pointer now
+ * goes to the ask the capture shares the most with — ties to the later — and ONLY if that clears
+ * the floor `relatedTo` already uses for "speaks to the same thing" (`MIN_RELATED_WORDS`, derived
+ * in `rank.mjs`), or the ask names one of the capture's own anchors verbatim — a structured
+ * coordinate cannot appear in a question by accident, which is the anchor bonus's own argument. Below the floor there is no
+ * pointer: a capture that followed no question is `unprompted`, which is a true reading, and a
+ * pointer to the nearest unrelated ask is a false one.
+ *
+ * ANY ASK OF THE SESSION, not only this agent's. The CFG capture above was written by a subagent
+ * about a miss its ORCHESTRATOR hit and handed down in the brief — one session, one loop.
+ *
+ * Pure, and exported, because it is the part with a wrong answer.
+ *
+ * @param {Array<{at: string, q: string}>} asks  the session's asks, any order
+ * @param {{text: string, anchors?: Array<string|{coordinate: string}>}} capture
+ * @returns {string|null} the chosen ask's `at`
+ */
+export function askAbout(asks, { text, anchors = [] }) {
+  const mine = new Set(tokenize(text));
+  // Only a coordinate the door would ACCEPT names an ask. A one-segment page (`/cart`) sits in half the
+  // storefront's questions, and a rejected one names everything: `/` is a substring of every question
+  // that mentions a page, which is how a live smoke on 2026-09-23 paired a `capture-invalid` with an
+  // unrelated answer. Either still counts as the words it contributes.
+  // NORMALISED before it is tested or searched for (PR #313 review 2): an ask carries the plain route,
+  // so `{BACK_URL}/api/platform/x` searched for verbatim never matched it and pairing was dead for
+  // every prefixed spelling.
+  const coords = anchors.map((a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim())
+    .filter((c) => c && !anchorProblems([c]).length)
+    .map((c) => normalizeAnchor(c))
+    .filter((c) => c && !isSingleSegmentPath(c)).map((c) => c.toLowerCase());
+  let best = null;
+  for (const a of asks) {
+    const q = String(a.q ?? '');
+    const shared = new Set(tokenize(q).filter((t) => mine.has(t))).size;
+    const named = coords.some((c) => q.toLowerCase().includes(c));
+    if (!named && shared < MIN_RELATED_WORDS) continue;
+    const score = (named ? 1_000 : 0) + shared;
+    if (!best || score > best.score || (score === best.score && String(a.at) > best.at)) best = { score, at: String(a.at) };
+  }
+  return best ? best.at : null;
+}
+
+/**
+ * The session's asks, from BOTH places they live: the queue holds every ask since the last flush,
+ * the sidecar (`readMeta`) holds them ACROSS flushes — the case the queue alone got wrong for 12 of
+ * 21 captures (PLAN §23.5). Joined on `at`, which the one writer makes unique.
+ */
+async function sessionAsks({ env }) {
+  const byAt = new Map();
+  for (const a of metaAsks(await readMeta(env))) byAt.set(a.at, { at: a.at, q: String(a.q ?? '') });
+  const { lines } = await readQueue({ env });
+  for (const l of lines) if (l.kind === 'ask' && l.at) byAt.set(String(l.at), { at: String(l.at), q: String(l.q ?? '') });
+  return [...byAt.values()];
+}
+
+const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env }), {
+  text: `${input.subject ?? ''} ${input.question ?? ''}`,
+  anchors: input.anchors ?? [],
+});
+
+/**
+ * Every entry THIS SESSION has already opened and read, newest first.
+ *
+ * THE MEASUREMENT THAT PUT IT HERE. The base's contradiction hint was `relatedTo`, which ranks the
+ * corpus by shared vocabulary. Against the three labelled contradiction pairs the corpus records in
+ * its own bodies ("This CONTRADICTS KB-…", "This refines the DISPUTED entry KB-…"), that hint
+ * surfaced 1 of 4 targets. The motivating miss is not close: KB-133FD544 and the entry its body
+ * says it "directly contradicts" share exactly ONE token — `order` — for a coverage of 0.029
+ * against a floor of three words. No threshold reaches that, and three different reorderings of the
+ * ranked lists were measured before this was written; the best put the target at rank 12 of 25.
+ *
+ * The reason is structural rather than a tuning error. 45% of the corpus's subjects are 8 words or
+ * fewer — the old terse house style — while a capture written today opens with 17 words of
+ * identifiers. Old entries and new facts do not share vocabulary by construction, and the entries
+ * most likely to have gone stale are precisely the old terse ones.
+ *
+ * SO THE SIGNAL IS NOT IN THE TEXT. It is in what the agent just did: it asked, it opened four
+ * bodies, and 67 seconds later it wrote a fact contradicting one of them. Checked against the same
+ * three pairs, "what this session opened before the capture" carries 4 of 4 targets, where the
+ * immediately-preceding ask alone carries 2 of 4 — so the union over the session is the one worth
+ * having, and `precedingAsk`'s single pointer is not enough.
+ *
+ * THE COST IS BOUNDED BY THE SESSION AND NOT BY THE BASE, which is what makes this affordable
+ * where a ranked list is not. Over the 14 captures in a fortnight of logs: median 3 entries, max 5,
+ * and 5 captures where the session had opened nothing at all and this prints nothing.
+ *
+ * `show` counts as an open and so does every `ask` hit whose body arrived: both put the entry's
+ * body in front of the agent, which is the only thing this is asking about. Newest first, because
+ * a contradiction is likelier with what was read a minute ago than with what was read at the start.
+ */
+async function openedThisSession({ env }) {
+  const { lines } = await readQueue({ env });
+  const out = [];
+  const seen = new Set();
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    const l = lines[i];
+    const ids = l.kind === 'ask' ? (l.opened ?? [])
+      : l.kind === 'show' && l.state === 'answer' && l.id ? [l.id]
+        : [];
+    for (const id of ids) {
+      if (typeof id !== 'string' || seen.has(id)) continue;
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  return out;
+}
+
+/**
+ * A capture the base TURNED AWAY at the door, logged — `capture-invalid`.
+ *
+ * Until 2026-09-23 these returned without a line, so the log could not see them at all: run
+ * `cdb27d99` had one refused for an anchor of `/`, retried it correctly nine seconds later, and the
+ * report printed "refusals 0" (PLAN §23.11). A door the agents keep bouncing off is exactly what
+ * this log exists to show, and the retry that followed is only legible beside the refusal.
+ *
+ * THE KINDS OF PROBLEM, NEVER THE COORDINATES. A rejected anchor is by definition one nobody vetted,
+ * and one rejection kind is `local-path` — a Windows path an MSYS shell mangled out of `/cart`,
+ * which names a directory on the writer's machine. The kind says what went wrong; the text that
+ * went wrong stays on the laptop. `subject` travels, as it does on every capture line.
+ */
+async function refuseAtDoor(result, input, { env, via, call, topic }) {
+  await log({
+    kind: 'capture-invalid',
+    subject: String(input.subject ?? '').trim(),
+    why: result.why,
+    ...(result.problems?.length ? { problems: [...new Set(result.problems.map((p) => p.kind))] } : {}),
+    ...(await precedingAsk({ env, input }).then((after) => (after ? { after } : {}))),
+    ...context({ via, call, topic }),
+  }, { env });
+  return result;
+}
+
+export async function capture(input, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
+  const door = { env, via, call, topic };
+  const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
+  if (!input.anchors?.length) missing.push('anchor');
+  if (missing.length) return refuseAtDoor({ state: 'invalid', why: `capture needs: ${missing.join(', ')}` }, input, door);
+
+  // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
+  // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
+  const problems = anchorProblems(input.anchors)
+    .filter((p) => !(p.kind === 'unstructured' && isSingleSegmentPath(p.normalized)));
+  if (problems.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems }, input, door);
+
+  const cat = await catalogue(opened);
+  if (cat.state !== 'ok') {
+    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
+    return { state: cat.state, why: cat.why };
+  }
+  const late = anchorProblems(input.anchors, { namespaces: namespaceRoots(cat.rows) });
+  if (late.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, door);
+
+  const scope = normalizeScope(input.scope);
+  if (!scope.length) return refuseAtDoor({ state: 'invalid', why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)' }, input, door);
+
+  // Read BEFORE this capture writes its own line, or the lookback finds nothing but itself.
+  const after = await precedingAsk({ env, input });
+
+  // THE DEDUP CHECK. Runs here against the session's index, and AGAIN at push time against the
+  // freshly re-read one -- which is what makes it race-free rather than merely likely (PLAN §2).
+  const dupe = findDuplicate(cat.rows, { anchors: input.anchors, scope });
+  if (dupe) {
+    await log({
+      kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
+      why: 'anchors+scope', when: 'call', ...(after ? { after } : {}), ...context({ via, call, topic }),
+    }, { env });
+    return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
+  }
+
+  const id = mintId(input.subject);
+  // THE SUBJECT IS TAKEN, at other coordinates — the case `findDuplicate` cannot see because it
+  // compares anchors and scope only, while the id is a pure function of the subject. Accepting it
+  // as `queued` told the writer it landed and then lost the claim at push (PR #313 review 2).
+  const holder = cat.rows.find((r) => r.id === id);
+  if (holder) {
+    const sameSubject = String(holder.subject ?? '').trim() === String(input.subject ?? '').trim();
+    await log({
+      kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
+      why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
+      ...(after ? { after } : {}), ...context({ via, call, topic }),
+    }, { env });
+    return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
+  }
+  const entry = {
+    id,
+    subject: input.subject,
+    plane: input.plane ?? 'experiential',
+    question: input.question,
+    status: 'active',
+    appliesTo: scope.map((s) => {
+      const [axis, ...rest] = s.split('=');
+      return { axis, value: rest.join('=') };
+    }),
+    anchors: input.anchors.map((a) => ({ coordinate: typeof a === 'string' ? a : a.coordinate })),
+    evidence: [{
+      method: input.method ?? 'observation',
+      deployment: input.deployment,
+      at: new Date().toISOString(),
+      by: `session:${sessionId(env)}`,
+      // THE OPERATOR, beside the session, because `by` is a SESSION and was being counted as a
+      // person. Without this the base can never distinguish "three people saw it" from "one person
+      // saw it three times" — and on 2026-09-22 every one of the base's 125 commits was one author,
+      // so the second is what every multi-session entry actually meant. Omitted rather than guessed
+      // when the token has not resolved; the handle is already in every log line and every commit of
+      // this public base, so it crosses no boundary the log has not crossed (`core/who.mjs`).
+      ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
+    }],
+  };
+
+  // Shown, never enforced: other entries already anchored at these coordinates. Two entries
+  // sharing a coordinate are usually two honest facts about one place -- but the writer is the
+  // only party who can notice that one of them contradicts a clause in the other, and only while
+  // the page is still open.
+  // WHAT THE WRITER ALREADY READ, and it is computed FIRST because it OUTRANKS both lists below.
+  //
+  // The dedup rule used to run the other way: neighbours were printed, then excluded from the
+  // related hint "so one entry is not reported twice". On 2026-09-20 that rule removed the entry a
+  // capture's own body said it contradicted from the one list framed as a contradiction warning,
+  // leaving it in an unranked 25-line coordinate dump. An entry the agent read minutes ago is the
+  // strongest thing either list can say about it, so it is said once, first, and the weaker framings
+  // do not repeat it. See `openedThisSession` for the measurement.
+  const live = new Set(retrievable(cat.rows).map((r) => r.id));
+  const read = (await openedThisSession({ env })).filter((rid) => rid !== id && live.has(rid));
+  const readRows = read.map((rid) => cat.rows.find((r) => r.id === rid)).filter(Boolean);
+
+  const alsoHere = rankNeighbours(
+    neighbours(cat.rows, input.anchors, { exclude: id }).filter((n) => !read.includes(n.id)),
+    `${input.subject} ${input.question}`,
+  );
+
+  // And entries this fact may SPEAK TO, which is a different question from where it was observed.
+  //
+  // `alsoHere` above asks who else stood at this coordinate. That was the whole of PLAN §17.4(6)
+  // until 2026-09-19, when it was checked against the pair that motivated it: KB-F78ED1CC's body
+  // says in terms that it CONTRADICTS KB-0C163966, and their normalised anchor sets do not
+  // intersect at all -- not a near miss, no shared coordinate. Measured across the 91-entry base,
+  // the anchor trigger fires on 1 entry and that entry is the wrong one. Anchors record WHERE
+  // SOMEBODY STOOD; a contradiction is about WHAT THEY CONCLUDED, and the two coincide less often
+  // than the design assumed.
+  //
+  // So this is keyed on the words instead (`relatedTo`, which carries the measurement). It is
+  // computed AFTER the queue write decision and feeds nothing into it: a capture is never blocked,
+  // slowed or altered by what comes back, and a base that ranks badly costs the writer a glance.
+  // The neighbours already named above are excluded so one entry is not reported twice.
+  const related = relatedTo(
+    `${input.subject} ${input.question}`,
+    retrievable(cat.rows),
+    { exclude: [id, ...read, ...alsoHere.hits.map((n) => n.id)] },
+  );
+
+  const written = await log({
+    kind: 'capture',
+    id,
+    subject: input.subject,
+    // THE QUESTION, not only the subject. The subject is the claim; the question is the RETRIEVAL
+    // KEY, and it is the half that decides whether anyone ever finds this entry again. Session 10
+    // measured why that distinction is load-bearing: a base subject is a 3-11 token label while
+    // the questions live sessions actually write are 12-17 token sentences, so a corpus of
+    // subjects can only describe the old house style. Analysing how agents PHRASE things — the
+    // whole point of the harvester — needs what they wrote here.
+    //
+    // Public without hesitation now that clients READ the base and never write to it: every
+    // question in this log is written by our own sessions about our own QA stands, which is the
+    // same standing `q` on `ask` has always had.
+    question: input.question,
+    ...(after ? { after } : {}),
+    // WHAT was surfaced, not how many. It shipped as a count on 2026-09-19 and was too thin within
+    // hours of meeting real traffic: a session was shown three related entries, then DISPUTED one --
+    // the first dispute in this base's history -- and the log could not say whether the entry it
+    // disputed was among the three. The count answered "does the hint put anything in front of a
+    // writer"; it could not answer "did the writer act on what it was shown", which is the only
+    // question that decides whether this feature earns its place.
+    //
+    // Ids, so §7 holds unchanged -- ids and subjects only, never prose. The count is dropped rather
+    // than kept alongside: a length is derivable from the list, and §7's rule against a second copy
+    // of a derivable fact is the same rule that governs the confirmation count in §2.
+    //
+    // An empty array still goes on every queued capture. `[]` means the hint ran and found nothing,
+    // which is what makes the non-empty rows mean anything.
+    related: related.hits.map((h) => h.row.id),
+    // THE ENTRIES THIS CAPTURE WAS WARNED ABOUT, by the same argument that turned `related` from a
+    // count into a list of ids: the question worth answering is not "did the hint fire" but "did
+    // the writer act on what it was shown", and only ids let a later dispute be matched back to the
+    // line that offered it. An empty array still ships — `[]` says the session had opened nothing,
+    // which was true of 5 of the 14 captures in the fortnight this was measured on, and is a
+    // different fact from a line written before the field existed.
+    read,
+    ...context({ via, call, topic }),
+    // The PAYLOAD the pusher needs. The public log line is this minus `payload` (see toLogLine):
+    // a log line carries ids and subjects only, but the queue must carry what it is queueing.
+    payload: { entry, body: String(input.claim).trim(), key: identityKey({ anchors: input.anchors, scope }) },
+  }, { env });
+
+  if (written.disabled) return { state: 'disabled', why: written.why };
+  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related, read: readRows };
+}
+
+// ── confirm / dispute ─────────────────────────────────────────────────────────────────────────
+
+async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
+  const cat = await catalogue(opened);
+  if (cat.state !== 'ok') {
+    await log({ kind, id, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
+    return { state: cat.state, why: cat.why };
+  }
+  const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
+  if (!row) return { state: 'invalid', why: `${id} is not in this base's index` };
+  if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
+  if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
+
+  const item = {
+    method: input.method ?? 'observation',
+    deployment: input.deployment,
+    at: new Date().toISOString(),
+    by: `session:${sessionId(env)}`,
+    // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a
+    // second opinion, and until this field existed nothing could tell the two apart.
+    ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
+    // BOUNDED, unlike every other prose field on this path used to be. See NOTE_MAX.
+    ...(kind === 'dispute'
+      ? { contradicts: true, note: trimNote(input.saw) }
+      : trimNote(input.note) ? { note: trimNote(input.note) } : {}),
+  };
+
+  const written = await log({
+    kind,
+    id: row.id,
+    // Through `stand()` rather than straight from the input, so the cap is a property of the FIELD
+    // and not of one verb: `ask` and `confirm` write the same `deployment` key into the same public
+    // log, and a bound that only one of them applies is a bound the log does not have. The guard
+    // above has already rejected an empty value, so the drop half of `stand()` never fires here.
+    ...stand(input.deployment),
+    // A dispute's `saw` used to be HERE, in the public line, and it should not have been. §7 is
+    // "ids and subjects only, never prose", and this was hundreds of characters of free text from
+    // an agent — found 2026-09-19 by reading a published line rather than the rule. Two reasons it
+    // goes, and the second is the one that generalises:
+    //
+    //   * It is a SECOND COPY. The same text is already the evidence item's `note` on the entry
+    //     itself, where it is reviewed as part of the entry. §7's rule against duplicating a
+    //     derivable fact is the rule PLAN §2 applies to the confirmation count.
+    //   * Free prose is the one shape `secret-gate` cannot protect. It scans VALUES — tokens,
+    //     passwords, paths it knows — and a sentence an agent composed is none of those. Session 3
+    //     found operator paths and usernames heading for this log by exactly that route.
+    //
+    // It is still in `payload` (local, never published) and still on the entry. Nothing is lost.
+    ...(kind === 'confirm' ? { trust: row.trust + 1 } : {}),
+    ...context({ via, call, topic }),
+    payload: { id: row.id, path: row.path, item },
+  }, { env });
+
+  // A dispute NEVER auto-retires anything. One contradicting observation against four
+  // confirmations is not a deletion; it is a flag, and a human decides. Automatic retirement on a
+  // single dissent would let one bad observation delete four good ones.
+  if (written.disabled) return { state: 'disabled', why: written.why };
+  return { state: 'queued', id: row.id, row, item, queuedTo: written.path, logWrite: written };
+}
+
+export const confirm = (id, input, opened, opts) => appendEvidence('confirm', id, input, opened, opts);
+export const dispute = (id, input, opened, opts) => appendEvidence('dispute', id, input, opened, opts);
+
+// ── stat ──────────────────────────────────────────────────────────────────────────────────────
+
+/** Not logged: an operator looking at the tool is not an agent using the base (PLAN §7). */
+export async function stat(opened, { env = process.env } = {}) {
+  const queue = await readQueue({ env });
+  const out = {
+    // `stat` NAMES THE BASE AND HOW IT WAS CHOSEN -- both, always (PLAN §12 rule 5).
+    base: opened.locator,
+    how: opened.how,
+    reader: opened.reader?.kind ?? null,
+    readerWhy: opened.why ?? null,
+    session: sessionId(env),
+    // WHO this process's lines will be attributed to -- read from the cache, never looked up
+    // here: `stat` is an operator looking at the tool, and it reports state rather than making
+    // any. A door has already resolved it by the time this runs (`resolveWho` in kb.mjs).
+    who: cachedWho({ dir: queueDir(env), env }),
+    queue: queue.path,
+    queueDepth: queue.lines.length,
+    pending: pendingMutations(queue.lines),
+    malformedQueueLines: queue.malformed,
+    // EVERY queue file waiting here, not only this session's, and how long the oldest line has sat —
+    // the number that says whether the queue is draining at all. Plus what the last push did, which
+    // is the only trace a detached push leaves (`recordPush`).
+    backlog: queueBacklog(env),
+    push: readPushStatus(env),
+  };
+  const cat = await catalogue(opened);
+  if (cat.state !== 'ok') return { ...out, state: cat.state, why: cat.why };
+  return {
+    ...out,
+    state: 'answer',
+    indexes: cat.indexes,
+    entries: cat.rows.length,
+    active: retrievable(cat.rows).length,
+    schema: cat.manifest.schema ?? null,
+  };
+}
+
+// ── reindex ───────────────────────────────────────────────────────────────────────────────────
+//
+// THE REPAIR VERB (PLAN §2). It rebuilds `index.json` from every entry, and it is the only
+// operation that reads the whole corpus. In normal weeks it never runs: the index is written by
+// whoever writes an entry, in the same commit, and nobody else ever. It exists for the two moments
+// when that invariant has already been broken -- a push that half-landed, or somebody editing an
+// entry on GitHub -- and for the three drift messages `ask` and `show` print, which named this verb
+// before it existed.
+//
+// IT IS LOCAL-ONLY, and that is not a limitation being apologised for. `reindex` has to enumerate
+// `entries/` and then WRITE the index; `raw` is a CDN that can do neither, and the API path that
+// could is the push, which is authenticated, rate-limited and a later session's business. The
+// operator repairing a base has a checkout in front of them -- that is what "after a botched push"
+// means -- so this runs against one and says so plainly when handed a URL.
+
+/**
+ * Rebuild every index the manifest declares, from the entries actually present.
+ *
+ * Reports what MOVED rather than just succeeding, because a repair whose output nobody looks at is
+ * indistinguishable from one that quietly made things worse: a row that vanished is either the
+ * drift being fixed or an entry that failed to parse, and only the operator can tell which.
+ */
+/**
+ * A base locator that is safe to put in a PUBLIC log.
+ *
+ * A remote base is public by definition and is what a reader of the log actually needs. A LOCAL
+ * base is a path on one machine: useless to every other reader and carrying the operator's home
+ * directory and username, which the secret gate cannot catch because that gate scans for the
+ * VALUES of known credentials, not for personal data. So a local base is reported as a category.
+ */
+export function publicLocator(locator) {
+  const s = String(locator ?? '');
+  return /^https?:\/\//i.test(s) ? s : '(local checkout)';
+}
+
+export async function reindex(opened, { env = process.env, write = true, generated } = {}) {
+  if (!opened.reader) return { state: 'no-base', why: opened.why };
+  if (typeof opened.reader.listEntries !== 'function') {
+    return {
+      state: 'no-base',
+      why: `reindex rebuilds the index from every entry and writes it back, which ${opened.locator} `
+        + 'cannot do — it is a read-only CDN base. Point it at a checkout: '
+        + 'kb reindex --base <path-to-clone>',
+    };
+  }
+
+  // THE MANIFEST IS REQUIRED; THE OLD INDEX IS NOT (PR #313 review 2). The index is rebuilt FROM
+  // THE ENTRIES, and a truncated or half-written index.json is precisely what the drift messages send
+  // an operator here to repair — so requiring it to parse made the repair verb refuse the one case it
+  // exists for. An unreadable index costs only the drift report (`before`), and says so.
+  const man = await loadManifest(opened.reader);
+  if (man.state !== 'ok') return { state: man.state, why: man.why };
+  const cat = await catalogue(opened);
+  const problems = [];
+  if (cat.state !== 'ok') {
+    problems.push({ path: man.names.join(', '), why: `the old index could not be read (${cat.why}) — rebuilt from entries/, so nothing is reported as added or removed` });
+  }
+
+  const listed = await opened.reader.listEntries();
+  if (!listed.ok) return { state: 'unreachable', why: `could not list entries/: ${listed.detail}` };
+
+  // plane -> index file, inverted from the manifest. An entry whose plane nothing declares has
+  // nowhere to be filed, and silently dropping it is how an index starts lying.
+  const byPlane = new Map(Object.entries(man.manifest.indexes).map(([plane, file]) => [plane, String(file)]));
+  const rowsFor = new Map([...new Set(byPlane.values())].map((file) => [file, []]));
+
+  const before = new Map((cat.state === 'ok' ? cat.rows : []).map((r) => [r.id, r]));
+  const seen = new Set();
+
+  for (const path of listed.paths) {
+    const read = await opened.reader.readEntry(path);
+    if (!read.ok) { problems.push({ path, why: `unreadable: ${read.detail}` }); continue; }
+    let data;
+    try { ({ data } = parseEntry(read.text, path)); } catch (err) { problems.push({ path, why: err.message }); continue; }
+
+    // The id is derived from the subject, so a file whose name disagrees with its own frontmatter
+    // is one of two entries wearing one address -- never something to guess about.
+    const expected = entryPath(String(data.id));
+    if (expected !== path) { problems.push({ path, why: `frontmatter id ${data.id} wants ${expected}` }); continue; }
+    if (seen.has(data.id)) { problems.push({ path, why: `duplicate id ${data.id}` }); continue; }
+
+    const file = byPlane.get(String(data.plane ?? 'experiential'));
+    if (!file) { problems.push({ path, why: `plane "${data.plane}" is not in kb.json indexes` }); continue; }
+
+    seen.add(data.id);
+    rowsFor.get(file).push(buildRow(data, path));
+  }
+
+  const written = [];
+  for (const [file, rows] of rowsFor) {
+    const built = buildIndex(rows, generated ? { generated } : {});
+    if (write) await writeFile(join(opened.reader.locator, file), `${JSON.stringify(built, null, 2)}\n`, 'utf8');
+    written.push({ file, count: built.count });
+  }
+
+  // With no readable old index there is nothing to diff against: every entry would read as "added",
+  // which is noise, not drift. The problem line above says why the diff is absent.
+  const added = cat.state === 'ok' ? [...seen].filter((id) => !before.has(id)).sort() : [];
+  const removed = [...before.keys()].filter((id) => !seen.has(id)).sort();
+  const retrusted = [...rowsFor.values()].flat()
+    .filter((r) => before.has(r.id) && (before.get(r.id).trust !== r.trust || before.get(r.id).disputed !== r.disputed))
+    .map((r) => ({ id: r.id, was: before.get(r.id).trust, now: r.trust }));
+
+  // `base` is CATEGORISED, never logged verbatim. The log is a file in a PUBLIC repository (PLAN
+  // §7), and `reindex` is the one verb that must be pointed at a local checkout -- so the verbatim
+  // locator is a filesystem path carrying the operator's home directory and username. The secret
+  // gate cannot catch it: that is a VALUE scan for credentials read out of `.env.local`, and a
+  // home-directory path is not a credential. Measured: three queued lines read
+  // `C:\Users\<name>\AppData\Local\Temp\dbg-6eY7Sr`. A remote base is public by
+  // definition and stays verbatim, because WHICH base was reindexed is the only part a reader of
+  // the log can use -- one machine's checkout path is not.
+  await log({ kind: 'reindex', base: publicLocator(opened.locator), entries: seen.size, added: added.length,
+    removed: removed.length, retrusted: retrusted.length, problems: problems.length }, { env });
+
+  return { state: 'answer', written, entries: seen.size, indexed: [...rowsFor.keys()],
+    added, removed, retrusted, problems, wrote: write };
+}
+
+/**
+ * The public form of a queued line: everything except the push payload.
+ *
+ * PLAN §7 says a log line carries ids and subjects only and never an entry body, and the queue has
+ * to carry the body or there is nothing to push. Both hold, because they are two artifacts: this
+ * strips the local queue down to the line that goes into the PUBLIC log. The pusher calls it.
+ */
+export function toLogLine(line) {
+  const { payload, ...rest } = line;
+  return rest;
+}
