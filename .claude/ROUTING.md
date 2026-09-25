@@ -44,6 +44,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Refresh the storefront sitemap knowledge file** | `/qa-sitemap [--check] [--no-browser]` | Command |
 | **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
+| **Review / heal / improve a skill, command or agent prompt** | `/prompt-review <name \| path \| changed \| all> [--fix] [--improve] [--dry-run]` | Skill |
 | **Run business analysis** | `/ba-analyze [full\|flows\|api\|docs\|stories\|ui\|module <name>]` | Command |
 | **Generate or review user stories** | `/ba-analyze stories <feature> \| stories --review VCST-XXXX` | Command |
 | **Get a test checklist for a domain** | `/qa-checklist domain \| feature \| new <domain> \| admin <module>` | Skill |
