@@ -9,8 +9,8 @@ handed to `/qa-generate-data`.
 - The domain's mind map (every `requires` / `produces` id, and the node each belongs to).
 - The domain's seeders and spec modules (`scripts/seed-data/<domain>/`), `package.json` `seed:*`
   scripts, and `test-data/aliases.json` (grep the entity's alias prefix).
-- The suites' Preconditions for the stamped cases. About 250 rows embed `npm run seed:…` there, and
-  those strings are the informal contract this model formalises.
+- The suites' Preconditions for the stamped cases. Many rows embed `npm run seed:…` there, and those
+  strings are the informal contract this model formalises.
 
 ## Procedure, per requirement id
 

@@ -5,7 +5,8 @@ reason unrelated to the product. Read-only.
 
 ## 1. Checker
 
-`npm run models:check -- --json`, codes TM-020..031 (header of `scripts/maintenance/check-test-models.ts`).
+`npm run models:check -- --json`, the data-model codes (right-hand column of the header of
+`scripts/maintenance/check-test-models.ts`).
 Every error is a finding as-is.
 
 ## 2. Judgment checks
@@ -19,7 +20,7 @@ Every error is a finding as-is.
 | Unfalsifiable discovery | a `DISCOVER` whose `discover_constraints` omit a dimension the node's oracle reads |
 | Over-seeding | a profile carrying a requirement outside its node's closure (TM-028 warn), or a profile whose `--plan` pulls in a seeder the path never reads |
 | Irreversible state without isolation | `cleanup.via` says the state cannot be undone and names nothing that isolates it |
-| Liveness (not checkable yet) | a requirement whose seed-time state (`*_at_seed` overlay fields) no longer holds. Record it as `UNVERIFIED` via `td:reconcile`; a state-liveness check does not exist yet |
+| Liveness (not checkable yet) | a requirement whose seed-time state (`*_at_seed` overlay fields) no longer holds. Report it (`td:reconcile` is the live check); setting `UNVERIFIED` is update mode's edit. A state-liveness check does not exist yet |
 
 ## 3. Report
 

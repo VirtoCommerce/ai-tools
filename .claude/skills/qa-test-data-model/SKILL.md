@@ -1,7 +1,7 @@
 ---
 name: qa-test-data-model
-description: "[QA Method] Build, update or audit a TEST DATA MODEL — the declared data STATE each behaviour of a domain requires (entity, required state, lifecycle scope, acquisition strategy, the existing seeder and @td() alias that reach it, cleanup, what the data discriminates) at test-data/models/<name>.data-model.json, plus executable profiles per mind-map node. Answers 'what state must exist before this runs?', never 'which API calls create it' — the existing seeders stay the executors. Hands a profile's ordered plan to /qa-seed-data."
-argument-hint: "<build|update|audit> <domain-slug> [--profile <profile-id>]"
+description: "[QA Method] Build, update or audit a TEST DATA MODEL — the declared data STATE each behaviour of a domain requires (entity, required state, lifecycle scope, acquisition strategy, the existing seeder and @td() alias that reach it, cleanup, what the data discriminates) at test-data/models/<name>.data-model.json, plus executable profiles per mind-map node. Answers 'what state must exist before this runs?', never 'which API calls create it' — the existing seeders stay the executors. Hands a profile's ordered plan to /qa-seed-data. Not for authoring seeders or fixtures (/qa-generate-data) or running them (/qa-seed-data)."
+argument-hint: "<build|update|audit> <domain-slug>"
 ---
 
 # /qa-test-data-model — the data contract behind a behaviour
@@ -37,7 +37,8 @@ The SECOND RULE is why `discriminates` is mandatory; DISPOSABLE FIXTURES is why 
 
 - **Shape:** [`../../templates/test-data-model.schema.json`](../../templates/test-data-model.schema.json),
   the single source of truth. Its `$comment`s define every enum value, and the checker loads it.
-- **Gate:** `npm run models:check` (TM-020..031). The same run checks the mind map, because a profile
+- **Gate:** `npm run models:check` (data-model codes: the right-hand column of the header of
+  `scripts/maintenance/check-test-models.ts`). The same run checks the mind map, because a profile
   is only valid against the node it serves.
 - **Seed plan:** `npm run models:check -- --plan <profile-id> [--json]` prints the profile's
   requirements **dependencies first**, each with its executor. `/qa-seed-data --profile` executes
@@ -46,7 +47,7 @@ The SECOND RULE is why `discriminates` is mandatory; DISPOSABLE FIXTURES is why 
 
 ## Lifecycle — pinned to the repo's isolation words
 
-| Value | Means | Isolation qualifier ([`test-data.md`](../../rules/test-data.md) rule 3) |
+| Value | Means | Isolation qualifier ([`test-data.md`](../../rules/test-data.md) §DISPOSABLE FIXTURES rule 3) |
 |---|---|---|
 | `STATIC` | environment layer: `{{VAR}}`, store settings | per environment |
 | `FIXTURE` | shared by a suite; **must** name `shared_state` | per suite |
@@ -65,8 +66,11 @@ The SECOND RULE is why `discriminates` is mandatory; DISPOSABLE FIXTURES is why 
 
 ## Pre-flight
 
-1. The domain's mind map must exist and pass `npm run models:check`. If it does not, run
-   `/qa-test-mind-map build` first.
+0. **Resolve the slug to files** the way [`/qa-test-mind-map`](../qa-test-mind-map/SKILL.md) §Pre-flight
+   step 0 does. The data model is `test-data/models/` + the same basename + `.data-model.json`.
+1. The domain's mind map must exist; if it does not, run `/qa-test-mind-map build` first. In `build`,
+   `npm run models:check` must also be green before you start. In `update` / `audit`, a red check is
+   the input, not a blocker.
 2. **Ask the base for the coordinates the data touches.** For each entity endpoint / GraphQL operation
    the seeders call for the requirements in scope, run `npm run kb -- ask "<coordinate> <question>"`
    (MCP: `mcp__kb__kb_ask`). Record hit ids. Rule: [`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
@@ -87,7 +91,7 @@ requires-closure is a warning, because that is data seeded for no behaviour. Nev
   returning it inline and losing it.
 - **`/qa-seed-data --profile <id>`** runs the `--plan` order. For each row it runs `seed_capability`
   (executor `seed`), leaves `case` rows to the case's own Steps, and resolves `resolve` rows through
-  `@td()` ([`../qa-seed-data/SKILL.md`](../qa-seed-data/SKILL.md) §Profile-driven seeding).
+  `@td()` ([`../qa-seed-data/profile-seeding.md`](../qa-seed-data/profile-seeding.md) §Procedure).
 - **`td:validate` / `td:reconcile` stay the drift guards** for the seeded values themselves. This model
   declares states; it does not re-assert fixture values (`.claude/rules/test-data.md` FOURTH RULE).
 
