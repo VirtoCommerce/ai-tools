@@ -209,3 +209,4 @@ Self-checked by the author; `/qa-domain-map` re-derives it before writing.
 | `/qa-test-plan`, `/qa-regression` | §4's selection-group and executability findings |
 | `/qa-review-oracles` | §3 and §6 rows that contradict a `BL-*` become audit inputs — as **proposals**, never edits |
 | `npm run domain:check` | staleness only; a **missing** map never fails a build |
+| `/qa-test-mind-map` | derives the machine-readable behaviour graph `<name>.mind-map.json` (sitting beside this map) from §1–§3; a map `rev` bump makes that graph's `domain_map_rev` stale (`models:check` TM-011) |

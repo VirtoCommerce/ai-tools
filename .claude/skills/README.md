@@ -34,6 +34,8 @@ skills/
 ├── qa-evidence/                     # [QA Methodology]  Evidence capture & report formatting
 ├── qa-defect/                       # [QA Methodology]  Defect management lifecycle
 ├── qa-test-design/                  # [QA Methodology]  Test case derivation techniques
+├── qa-test-mind-map/                # [QA Methodology]  Behaviour graph of a domain (JSON, stable ids)
+├── qa-test-data-model/              # [QA Methodology]  Data state each behaviour requires (JSON profiles)
 ├── qa-risk/                         # [QA Methodology]  Risk-based prioritization
 ├── qa-metrics/                      # [QA Methodology]  Quality metrics & gates
 ├── qa-sbtm/                         # [QA Methodology]  Session-based exploratory testing
@@ -86,7 +88,7 @@ Manual invocation, delegates to specialist agents.
 | `/qa-review-tests` | test-management-specialist + qa-testing-expert | review-criteria.md |
 | `/qa-local-env` | (deterministic scripts) | resolve-task.mjs, resolve-theme.mjs, gen-manifest.mjs, provision.ps1, healthcheck.mjs, init-admin.mjs |
 
-## QA Methodology (18)
+## QA Methodology
 
 Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocable reference-only), cross-team best practices.
 
@@ -109,6 +111,8 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
 | `/qa-test-design` | EP, BVA, decision tables, state transitions, pairwise, error guessing | test-design-techniques.md |
+| `/qa-test-mind-map` | Build / update / audit the behaviour graph of a domain — nodes, branches, states, data needs, evidence; cases link via `Behavior:` stamps | build.md, update.md, audit.md |
+| `/qa-test-data-model` | Build / update / audit the data STATE each behaviour requires, as profiles `/qa-seed-data --profile` executes | build.md, update.md, audit.md |
 | `/qa-risk` | Risk-based prioritization: 5x5 matrix, severity/priority, test depth | risk-prioritization-framework.md |
 | `/qa-metrics` | Quality metrics & gates: pass rate, defect density, DRE, coverage | quality-metrics-catalog.md, quality-gates.md |
 | `/qa-sbtm` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT | session-based-testing.md |
@@ -180,8 +184,8 @@ Outside the four QA categories.
 | qa-backend-expert | qa-api, qa-postman, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
 | qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan, qa-api, qa-postman |
 | ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate, qa-defect |
-| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-sbtm, qa-metrics, qa-review-tests, qa-coverage-gap |
-| test-data-engineer | qa-generate-data, qa-seed-data |
+| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-sbtm, qa-metrics, qa-review-tests, qa-coverage-gap, qa-test-mind-map |
+| test-data-engineer | qa-generate-data, qa-seed-data, qa-test-data-model |
 | fullstack-backend | dotnet-unit-test, dotnet-fix, angular-admin |
 | fullstack-frontend | vue-unit-test, vue-fix, vc-shell-fix |
 | regression-orchestrator | qa-metrics (gate enforcement after runs) |

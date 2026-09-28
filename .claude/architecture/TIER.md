@@ -105,6 +105,8 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `qa-design/` | **B** | Design system + UX heuristics — generic; matrix is storefront. |
 | `qa-plan/` | **B** | E2E scenario catalog — scenarios are C, the planning skill is B. |
 | `qa-seed-data/` | **C** | Storefront data seeding (catalogs, orgs, products). Per-project. |
+| `qa-test-mind-map/` | **B** | Behaviour-graph method + schema are generic; each `<name>.mind-map.json` is a Tier C artifact. |
+| `qa-test-data-model/` | **B** | Data-contract method + schema are generic; each data model names Tier C seeders and aliases, by reference only. |
 
 ### VC Knowledge (`skills/`)
 
