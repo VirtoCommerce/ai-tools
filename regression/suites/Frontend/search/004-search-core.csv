@@ -646,7 +646,7 @@ A scan cannot be dispatched in this environment (no camera) — this case enters
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
 [HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored
-Remove the added cart line (removeItem or UI) if the session/cart persists beyond this test",VCST-2945 · Archetype:PARITY · Technique:FLOW,Draft
+Remove the added cart line (removeItem or UI) if the session/cart persists beyond this test",VCST-2945 · Archetype:PARITY · Technique:FLOW | Behavior:srch.barcode.resolve.single-hit-opens,Draft
 SRCH-015,Barcode scan with no configured fields keeps the full-text search behaviour,Search > Barcode Scanner,Critical,,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. {{FRONT_URL}} accessible. B2B-store must be at its default barcode settings (scannerEnabled=true, fields=[]) for this case — Steps force that state before observing, since it cannot rely on another case's Cleanup having run first.
 @td(BARCODE_FULLTEXT_DISCRIM.sku) carries the GTIN as its own gtin field; @td(BARCODE_FULLTEXT_DISCRIM.otherSku) carries the same value as a whole word in its NAME — full-text must find both, exact would find only the first.","url={{FRONT_URL}}, image=@td(BARCODE_FULLTEXT_DISCRIM.image), code=@td(BARCODE_FULLTEXT_DISCRIM.gtin)","--- SCREEN: Fixture Setup (REST) ---
@@ -668,7 +668,7 @@ Anonymous shopper. {{FRONT_URL}} accessible. B2B-store must be at its default ba
 [DOM] the ?barcode= page shows a visible, intact result (empty state or a short list) — never a crash or blank grid {BL}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:FALLBACK · Technique:DT,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:FALLBACK · Technique:DT | Behavior:srch.barcode.fulltext,Draft
 SRCH-016,Disabling the barcode scanner hides the button in both search bars while a bookmarked barcode URL still resolves,Search > Barcode Scanner,High,,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
 Tests reverse edge RE2 (1c/3x, CONFIRMED live on BARCODE_STORE): the switch hides the button but does not revoke the xCatalog expansion for a hand-built URL.","url={{FRONT_URL}}, code=@td(BARCODE_GTIN_UNIQUE.gtin)","--- SCREEN: Fixture Setup (REST) ---
@@ -691,7 +691,7 @@ Tests reverse edge RE2 (1c/3x, CONFIRMED live on BARCODE_STORE): the switch hide
 [NAV] the bookmarked /search?barcode={{code}} still resolves to the PDP for @td(BARCODE_GTIN_UNIQUE.sku) — the switch only hides the button, it does not stop the xCatalog expansion {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:CONFIG · Technique:DT,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:CONFIG · Technique:DT | Behavior:srch.barcode.config.disable,Draft
 SRCH-017,Barcode scan matching several products lists them and does not auto-open one,Search > Barcode Scanner,High,,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
 @td(BARCODE_GTIN_SHARED.count) products (@td(BARCODE_GTIN_SHARED.skus)) share one GTIN.","url={{FRONT_URL}}, code=@td(BARCODE_GTIN_SHARED.gtin), image=@td(BARCODE_GTIN_SHARED.image)","--- SCREEN: Fixture Setup (REST) ---
@@ -707,7 +707,7 @@ Anonymous shopper. This case sets B2B-store's settings itself and restores them 
 [COUNT] product card count equals @td(BARCODE_GTIN_SHARED.count) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:BOUNDARY · Technique:EP,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:BOUNDARY · Technique:EP | Behavior:srch.barcode.resolve.multi-hit-lists,Draft
 SRCH-018,Barcode scan of a variation-level code opens the variation even when it is out of stock,Search > Barcode Scanner,Critical,BL-SRCH-004,ECL-8.2,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
 @td(BARCODE_VARIATION_MPN.variationSku) is OUT OF STOCK; the parent and @td(BARCODE_VARIATION_MPN.siblingSku) are in stock. The ""Show in stock only"" preference persists per browser and defaults to on (ECL-3.2) — leave it at its default for this case.","url={{FRONT_URL}}, variation=@td(BARCODE_VARIATION_MPN.variationSku), code=@td(BARCODE_VARIATION_MPN.mpn), image=@td(BARCODE_VARIATION_MPN.image)","--- SCREEN: Fixture Setup (REST) ---
@@ -723,7 +723,7 @@ Anonymous shopper. This case sets B2B-store's settings itself and restores them 
 [DOM] the variation's PDP renders normally (not a 404) even though the variation is out of stock and the in-stock preference is on {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:SCOPE · Technique:DT,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:SCOPE · Technique:DT | Behavior:srch.barcode.resolve.variation-hit,Draft
 SRCH-019,Barcode scan with no match shows the barcode empty state and Reset returns to a usable search,Search > Barcode Scanner,Medium,BL-SRCH-002,ECL-3.1,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
 unmatched_code=2945500000014 — a value in the same EAN-13 test series as the seeded BARCODE_* fixtures, deliberately unassigned (the seeded series uses …0018/…0017/…0016/…0015/…0013; …0014 is not used by any fixture).",url={{FRONT_URL}},"--- SCREEN: Fixture Setup (REST) ---
@@ -741,7 +741,7 @@ unmatched_code=2945500000014 — a value in the same EAN-13 test series as the s
 [NAV] URL after 'Reset' carries neither ?barcode= nor ?q= {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:FALLBACK · Technique:EP,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:FALLBACK · Technique:EP | Behavior:srch.barcode.resolve.zero-hit-empty,Draft
 SRCH-020,Mobile search bar scan follows the same exact-match rules as desktop,Search > Barcode Scanner,Medium,,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.","url={{FRONT_URL}}, image=@td(BARCODE_GTIN_UNIQUE.image)","--- SCREEN: Fixture Setup (REST) ---
 [HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
@@ -757,7 +757,7 @@ Anonymous shopper. This case sets B2B-store's settings itself and restores them 
 [DOM] the mobile search overlay is hidden once the PDP is shown — not stacked above it {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:PARITY · Technique:PW,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:PARITY · Technique:PW | Behavior:srch.barcode.resolve.mobile-parity,Draft
 SRCH-021,Anonymous and signed-in B2B shoppers get the same barcode resolution,Search > Barcode Scanner,Medium,BL-SRCH-004,,"This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
 @td(ORG_USER_DEFAULT.email) is a B2B org user with USD pricing on B2B-store.","url={{FRONT_URL}}, buyer=@td(ORG_USER_DEFAULT.email), code=@td(BARCODE_GTIN_UNIQUE.gtin)","--- SCREEN: Fixture Setup (REST) ---
 [HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
@@ -776,7 +776,7 @@ SRCH-021,Anonymous and signed-in B2B shoppers get the same barcode resolution,Se
 [STATE] both the anonymous and signed-in requests resolve to a product page — neither is the empty/no-match state {BL}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:PARITY · Technique:PW,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:PARITY · Technique:PW | Behavior:srch.barcode.resolve.actor-parity,Draft
 SRCH-022,Barcode scan made inside a category is global and is not saved to search history,Search > Barcode Scanner,Medium,,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.","url={{FRONT_URL}}, image=@td(BARCODE_GTIN_UNIQUE.image)","--- SCREEN: Fixture Setup (REST) ---
 [HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
@@ -795,7 +795,7 @@ Anonymous shopper. This case sets B2B-store's settings itself and restores them 
 [DOM] the 'Search' input's history dropdown after the scan lists the same entries as before it — the scanned code is absent from history {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:SCOPE · Technique:EG,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:SCOPE · Technique:EG | Behavior:srch.barcode.resolve.global-scope,Draft
 SRCH-023,Barcode results ignore facet and availability parameters and show no generated filter chips,Search > Barcode Scanner,Medium,BL-SRCH-001,ECL-3.2,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.","url={{FRONT_URL}}, code=@td(BARCODE_GTIN_SHARED.gtin)","--- SCREEN: Fixture Setup (REST) ---
 [HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
@@ -819,4 +819,4 @@ Anonymous shopper. This case sets B2B-store's settings itself and restores them 
 [NAV] changing sort does not navigate away from /search?barcode={{code}} — no redirect fires after narrowing {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:RENDER · Technique:DT,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:RENDER · Technique:DT | Behavior:srch.barcode.resolve.identity-lookup-hides-browsing,Draft

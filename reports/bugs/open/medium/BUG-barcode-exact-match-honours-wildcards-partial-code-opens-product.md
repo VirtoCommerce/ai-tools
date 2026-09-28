@@ -1,6 +1,6 @@
 # Barcode exact match treats `*` and `?` as wildcards; a partial code opens a product `[Medium]`
 
-## Status: READY_TO_SUBMIT
+## Status: FILED — VCST-6094 (Subtask of VCST-2945)
 
 **Severity:** Medium (P2) · **Related:** VCST-2945 (in scope — new code path)
 **Env:** vcst-qa · Catalog 3.1046.0-pr-909-2839 · XCatalog 3.1022.0-pr-113-f4a8 · theme 2.59.0-pr-2501-7e0c · Platform 3.1073.0-pr-3121-9965 · Elasticsearch 8

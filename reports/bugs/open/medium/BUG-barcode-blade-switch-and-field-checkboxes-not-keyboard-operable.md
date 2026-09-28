@@ -1,6 +1,6 @@
 # Barcode scanner blade: the switch and the field checkboxes cannot be used by keyboard and have no accessible name `[Medium]`
 
-## Status: READY_TO_SUBMIT
+## Status: FILED — VCST-6095 (relates to VCST-2945)
 
 **Severity:** Medium (P2) · **Type:** accessibility, standalone. Related to VCST-2945 but not a sub-task of it.
 **Env:** vcst-qa · Catalog 3.1046.0-pr-909-2839 · Platform 3.1073.0-pr-3121-9965 · axe-core 4.12.1 + a manual keyboard walk on blade `#storeBarcodeSearch`

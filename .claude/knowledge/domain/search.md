@@ -13,6 +13,7 @@ rationale: |
   test model for search/barcode (`reports/ba/**` glob returned nothing for either term).
 generated: 2026-09-28
 rev: 1
+amended: 2026-09-28
 stale_after_days: 60
 expires_after_days: 120
 sources:
@@ -255,12 +256,13 @@ probe.
 | # | Disagreement | Verdict |
 |---|---|---|
 | D1 | **Deployed but dormant.** All three barcode PRs are live on this environment, and the Admin UI, the REST endpoints and the xCatalog middleware all function — but B2B-store's stored settings are the untouched defaults (`scannerEnabled:true`, `fields:[]`). Operationally, on THIS environment, a scan today behaves **identically** to pre-VCST-2945 (VCST-2622): full-text only. A case or a bug report that asserts "exact-match scanning works" without first checking `GET .../barcode-search/store/{storeId}` is asserting an unconfigured capability, not a live one | `CONFIRMED` live + REST probe |
-| D2 | **The storefront toggle gates only the BUTTON, never the backend expansion.** Per PR113's own Breaking-changes note: `Catalog.Search.BarcodeScannerEnabled` only shows/hides the scanner icon; a hand-typed or bookmarked `?barcode=` URL (or a raw GraphQL `filter: barcode:"<v>"`) is still expanded server-side whenever fields are configured, scanner-enabled or not. This is a genuine "capability reachable by one path, hidden on another" shape | Source-only (PR113 body) — confirming it live needs `fields` configured on a **non-shared** store (§5 G1) |
-| D3 | **Two write paths, two validation regimes, same setting.** The Admin blade's own `PUT /api/catalog/barcode-search/store/{storeId}` validates every field name against the live index schema (400 on an unknown name). The **generic** platform Settings REST API can write the identical setting value **unvalidated** — an unknown field name is silently accepted, matches nothing at query time, and the Admin blade only surfaces the mismatch reactively (renders it "missing from index", disabled+checked, and drops it from the selection at the next edit) | Source-only (PR909 body) |
+| D2 | **The storefront toggle gates only the BUTTON, never the backend expansion.** Per PR113's own Breaking-changes note: `Catalog.Search.BarcodeScannerEnabled` only shows/hides the scanner icon; a hand-typed or bookmarked `?barcode=` URL (or a raw GraphQL `filter: barcode:"<v>"`) is still expanded server-side whenever fields are configured, scanner-enabled or not. This is a genuine "capability reachable by one path, hidden on another" shape | `CONFIRMED` live 2026-09-28 (VCST-2945): with `scannerEnabled:false` + fields configured, a hand-built `barcode:` term still expanded — xAPI on a dedicated store (1 hit) and storefront `/search?barcode=` still opened the product while the button was hidden in both bars. Was: source-only (PR113 body) |
+| D3 | **Two write paths, two validation regimes, same setting.** The Admin blade's own `PUT /api/catalog/barcode-search/store/{storeId}` validates every field name against the live index schema (400 on an unknown name). The **generic** platform Settings REST API can write the identical setting value **unvalidated** — an unknown field name is silently accepted, matches nothing at query time, and the Admin blade only surfaces the mismatch reactively (renders it "missing from index", disabled+checked, and drops it from the selection at the next edit) | `CONFIRMED` live 2026-09-28 (VCST-2945): generic `PUT /api/stores` with an unknown field → 204, stored verbatim, returned by the dedicated GET and OR-ed into xAPI without error; the blade shows it checked + MISSING FROM INDEX; the dedicated `PUT` rejects the same value with 400. Was: source-only (PR909 body) |
 | D4 | **Field-name reservation collision.** Per PR113's Breaking-changes note: once a store configures `fields`, the literal string `barcode` is reserved for the expansion on that store — a catalog property genuinely named `barcode` can no longer be filtered directly there (it can still be *selected* as one of the configured fields, just not queried by its own name) | Source-only (PR113 body) |
 | D5 | **Admin field-picker's unconfigured sort order is straight alphabetical, not "built-ins first."** With nothing checked, GTIN/MPN/SKU render interleaved among ~180 ordinary properties by display label — consistent with PR909's own "checked first, then alphabetical" description (nothing is checked pre-save), but a case must not assert the three built-ins are pinned to the top on a fresh/unconfigured store | `CONFIRMED` live 2026-09-28 |
 | D6 | **The barcode-scan modal's second action button carries no visible label** — only a loading-spinner glyph, next to a clearly-labelled "Cancel". This is a UX/accessibility signal (unclear affordance for a screen-reader or a sighted user unfamiliar with the icon), not a functional defect — never actuated with a real camera this pass | `CONFIRMED` live 2026-09-28 |
 | D7 | **A published guide describes pre-VCST-2945 behaviour, and that is expected, not a defect.** `StorefrontUserGuide` §Barcode scanner ([docs.virtocommerce.org/storefront/user-guide/shopping/searching-for-products](https://docs.virtocommerce.org/storefront/user-guide/shopping/searching-for-products), verbatim): *"users can scan a product's barcode with their phone's camera to **instantly open the product page**."* The actual (new, unmerged) mechanism gates that on `shouldOpenSingleBarcodeHit` — exactly one hit, an un-narrowed request, at most once per code — which the guide does not mention. **This is staleness by timing, not by error**: VirtoOZ's corpus predates an unmerged PR by construction. Re-check this row once PR2501 merges; if the guide is still unchanged at that point, it becomes a real gap | Doc quote `CONFIRMED` fetched verbatim; the nuance is source-only from PR2501 (unmerged) |
+| D8 | **"Exact" matching honours wildcards.** The Admin blade hint says *"Matching is exact: the scanned value must equal the stored value"* and PR113 says values are "compared exactly as term filters", but xAPI expands `barcode:"<v>"` into term filters that Elasticsearch 8 runs as wildcard queries when the value contains `*` or `?`: `barcode:"*"` returns the whole catalog and a truncated code + `*` returns a single hit, which the storefront opens as a product page. Generic term-filter wildcards are documented and deliberate (VCST-3840) — the disagreement is between the barcode path's exact contract and that shared behaviour | `CONFIRMED` live 2026-09-28 on xAPI and storefront (VCST-2945 → VCST-6094) |
 
 ---
 
@@ -300,13 +302,13 @@ hits total) confirms **zero** rows in any in-scope suite assert either term.
 
 | # | Gap | State |
 |---|---|---|
-| G1 | Whether `BarcodeScannerEnabled=false` still allows a hand-typed/bookmarked `barcode:` filter to be expanded server-side (D2) | **OPEN** — needs `Catalog.Search.BarcodeSearchFields` configured on a store, and B2B-store is shared with every other runner (do not touch it); needs an isolated store or an approved mutation window |
-| G2 | Whether the Admin blade's `PUT` genuinely rejects an unknown field name with `400` (PR909's own test suite claims it; not exercised live) | **OPEN** — needs a Save on a non-shared store |
+| G1 | Whether `BarcodeScannerEnabled=false` still allows a hand-typed/bookmarked `barcode:` filter to be expanded server-side (D2) | **CLOSED** 2026-09-28 (VCST-2945) — yes, it still expands; see D2 |
+| G2 | Whether the Admin blade's `PUT` genuinely rejects an unknown field name with `400` (PR909's own test suite claims it; not exercised live) | **CLOSED** 2026-09-28 (VCST-2945) — `PUT` with an unknown field → 400 naming the rejected fields, nothing persisted; null body → 400; unknown store → 404; mixed case / duplicates normalised |
 | G3 | Whether GTIN-based exact-match scanning actually finds the 35 live GTIN-bearing products once `fields` is configured, including the non-numeric outlier `"QA-900"` | **OPEN** — blocked by the same shared-store-settings constraint as G1 |
 | G4 | Whether a scan that hits exactly one **variation** (not a parent product) opens at `/product/<id>` per PR2501 | **OPEN** — no live variation+GTIN fixture identified this pass; needs `fields` configured too |
 | G5 | Admin Search → Index management (build/rebuild/swap blue-green/backup/cancel, per-entity indexing) — not live-browsed this pass | **OPEN** — deferred breadth-first; suite 061 (§2e, §4) already covers it in depth from source |
-| G6 | What the barcode-scan modal's unlabeled second (spinner) button does, and whether the flow completes when a real camera is granted | **OPEN** — needs a real camera grant, environment-dependent, out of scope for a read-only pass |
-| G7 | Which search provider is ACTIVE on this environment (ElasticSearch / ElasticSearch8 / Lucene / AzureSearch — all four installed) | **OPEN** — matters because exact-match case-sensitivity differs by provider (Elastic lowercases, Lucene does not) |
+| G6 | What the barcode-scan modal's unlabeled second (spinner) button does, and whether the flow completes when a real camera is granted | **CLOSED** 2026-09-28 (VCST-2945) — it is **Browse** (image upload); it stays disabled with a spinner until a camera stream plays, so without a camera the modal is a dead end with no message, and the button has no accessible name (VCST-6096) |
+| G7 | Which search provider is ACTIVE on this environment (ElasticSearch / ElasticSearch8 / Lucene / AzureSearch — all four installed) | **CLOSED** 2026-09-28 (VCST-2945) — Elasticsearch 8 is active on vcst-qa; term matching on `gtin` is case-insensitive |
 
 ## §6 — Prior-art verdicts
 
@@ -315,4 +317,6 @@ surface — this map is the first written enumeration, so there is nothing here 
 
 ## §7 — Amendments
 
-*(none yet — first build)*
+| Date | Ticket | What moved |
+|---|---|---|
+| 2026-09-28 | VCST-2945 | D2 source-only → CONFIRMED · D3 source-only → CONFIRMED · D8 added (CONFIRMED) · G1, G2, G6, G7 CLOSED |

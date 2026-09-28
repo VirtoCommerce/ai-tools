@@ -1,6 +1,6 @@
 # Mobile search overlay: submit button unnamed, close control announced as raw key `common.labels.close`, Cancel target 18 px tall `[Medium]`
 
-## Status: READY_TO_SUBMIT
+## Status: FILED — VCST-6097 (relates to VCST-2945)
 
 **Severity:** Medium (P2) · **Type:** Accessibility, WCAG 4.1.2 + 2.5.8 / BL-A11Y-002 + BL-UI-006 · **Archetype:** `RENDER`
 **Found by:** /qa-test VCST-2945 (2026-09-28) · **standalone, pre-existing** (see Provenance)
