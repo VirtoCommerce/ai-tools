@@ -110,8 +110,10 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    [`../skills/qa-test-fast/report-template.html`](../skills/qa-test-fast/report-template.html), and
    publish it as a private Artifact.
 6. **Ask once:** "Post the verdict comment to <TICKET>?" Yes ⇒ post it per [`verdict.md`](../skills/qa-test-fast/verdict.md) §Tracker
-   comment. No status transition.
+   comment, and write the returned id into `summary.json.tracker.comment_id` — a re-run amends that id
+   (Step 0.3). No status transition.
 7. **Bank what the run established.** For each platform behaviour the verdict states: matched ⇒
    `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture`
-   (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in `summary.json`.
+   (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in
+   `summary.json.report.kb`, then re-run `npm run summary:validate`.
 8. **Chat.** The verdict line, the page link, the `verdict.md` path, the bug links. Nothing else.
