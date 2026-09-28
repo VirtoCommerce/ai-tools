@@ -104,6 +104,7 @@ entries. Findings go to chat.
 
 - **`/qa-test` Step 1e test model** — Part 0 cites `<name>.mind-map.json` node ids instead of re-deriving
   the chain when the map exists ([`../qa-test-model/test-model.md`](../qa-test-model/test-model.md)).
+- **`/qa-test` 5-mind-map** — a FULL run whose domain has a map but no mind map runs `build <slug> --from <ticket>` after the verdict and stamps only its own authored cases ([`../qa-test/reporting.md`](../qa-test/reporting.md) §5-mind-map).
 - **Case authoring** — a plan row's `behavior` / `dataProfile` fields become the stamps
   (`scripts/test-cases/scaffold-rows.ts`, [`../../knowledge/execution/regression-scaffold.md`](../../knowledge/execution/regression-scaffold.md)).
 - **`/qa-test-lifecycle`** — hand each suspect's suite to `/qa-test-lifecycle suite <ID>`; its Phase 2

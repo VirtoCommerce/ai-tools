@@ -27,7 +27,7 @@
  */
 
 import {
-  assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, VERBOSE,
+  assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, VERBOSE, ONLY,
   BACK_URL, STORE_ID, writeEnvAliasOverride, discoverCatalogProducts,
 } from '../../lib/seed-common.mjs';
 import {
@@ -49,7 +49,13 @@ import {
   roleBody, accountBody, assertRolePermissions, assertCatalogLinkRolePermissions,
   assertSalesRepReadOnlyRolePermissions,
   COPY_ENDPOINT, LISTENTRYLINKS_ENDPOINT, CURRENTUSER_ENDPOINT, LINK_PROBE_VCATALOG_NAME,
+  BROWSEFILTERS_READONLY_ROLE, BROWSEFILTERS_READONLY_ACCOUNT, BROWSEFILTERS_READONLY_EXCLUDED_PERMISSION,
+  assertBrowseFiltersReadOnlyRolePermissions,
+  BROWSEFILTERS_NONE_ROLE, BROWSEFILTERS_NONE_ACCOUNT, BROWSEFILTERS_NONE_EXCLUDED_PERMISSION,
+  assertBrowseFiltersNoneRolePermissions,
+  BARCODE_SEARCH_ENDPOINT, BARCODE_FIELDS_ENDPOINT, BROWSEFILTERS_EXPECTED_STATUS,
 } from './backoffice-rbac-specs.mjs';
+import { STORE as BARCODE_STORE } from '../catalog/barcode-specs.mjs';
 
 const VERIFY = process.argv.includes('--verify');
 
@@ -334,6 +340,35 @@ const verifyFull = () => verifyEffectivePermissions(
   SALESREP_FULL_ACCOUNT, SALESREP_FULL_REQUIRED_PERMISSIONS, SALESREP_FULL_EXCLUDED_PERMISSIONS,
   'SalesRep FULL positive control (full CRUD + account-ops, isAdministrator=false)');
 
+// --- live verification: VCST-2945 barcode-search RBAC (GET / GET fields / PUT per account) ---
+//
+// Probes ONLY the dedicated AGENT-TEST barcode store (seeded by `npm run seed:barcode`), never
+// STORE_ID: a PUT that unexpectedly succeeded would otherwise rewrite the shared storefront's scan
+// configuration. The PUT body is the store's CURRENT settings read with the admin token, so even an
+// over-permissioned account that got through would write a no-op. A store that does not exist makes
+// the probe UNPROVEN (GET returns defaults for an unknown store and PUT 404s, so neither decides).
+async function verifyBrowseFilters(account) {
+  const expected = BROWSEFILTERS_EXPECTED_STATUS[account.aliasName];
+  log(`\n  [verify] VCST-2945 — ${account.aliasName}: barcode-search GET ${expected.get} / fields ${expected.fields} / PUT ${expected.put} on ${BARCODE_STORE.id}`);
+  const store = await api('GET', `/api/stores/${encodeURIComponent(BARCODE_STORE.id)}`, null, { expectStatus: [200, 404] }).catch(() => null);
+  if (!store?.id) { log(`  ✗ ${BARCODE_STORE.id} does not exist — run \`npm run seed:barcode\` first; boundary UNPROVEN`); return false; }
+  const current = await api('GET', BARCODE_SEARCH_ENDPOINT(BARCODE_STORE.id));
+  const tok = await loginToken(account.email, resolvePassword(account));
+  if (!tok) return false;
+  const auth = { Authorization: `Bearer ${tok}` };
+  const got = {
+    get: (await fetch(`${BACK_URL}${BARCODE_SEARCH_ENDPOINT(BARCODE_STORE.id)}`, { headers: auth })).status,
+    fields: (await fetch(`${BACK_URL}${BARCODE_FIELDS_ENDPOINT(BARCODE_STORE.id)}`, { headers: auth })).status,
+    put: (await fetch(`${BACK_URL}${BARCODE_SEARCH_ENDPOINT(BARCODE_STORE.id)}`, {
+      method: 'PUT', headers: { ...auth, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scannerEnabled: current?.scannerEnabled ?? true, fields: current?.fields ?? [] }),
+    })).status,
+  };
+  const ok = Object.keys(expected).every((k) => got[k] === expected[k]);
+  log(`  ${ok ? '✓' : '✗'} GET ${got.get} · GET fields ${got.fields} · PUT ${got.put} (expected ${expected.get} / ${expected.fields} / ${expected.put})`);
+  return ok;
+}
+
 async function loginToken(email, password) {
   try {
     const res = await fetch(`${BACK_URL}/connect/token`, {
@@ -400,15 +435,31 @@ const FIXTURES = [
     role: CATALOG_READONLY_ROLE, account: CATALOG_READONLY_ACCOUNT,
     assertPerms: assertCatalogReadOnlyRolePermissions, excluded: CATALOG_READONLY_EXCLUDED_PERMISSIONS.join(', '), verify: verifyCatalogReadOnlyForbidden,
   },
+  {
+    role: BROWSEFILTERS_READONLY_ROLE, account: BROWSEFILTERS_READONLY_ACCOUNT,
+    assertPerms: assertBrowseFiltersReadOnlyRolePermissions, excluded: BROWSEFILTERS_READONLY_EXCLUDED_PERMISSION,
+    verify: () => verifyBrowseFilters(BROWSEFILTERS_READONLY_ACCOUNT),
+  },
+  {
+    role: BROWSEFILTERS_NONE_ROLE, account: BROWSEFILTERS_NONE_ACCOUNT,
+    assertPerms: assertBrowseFiltersNoneRolePermissions, excluded: BROWSEFILTERS_NONE_EXCLUDED_PERMISSION,
+    verify: () => verifyBrowseFilters(BROWSEFILTERS_NONE_ACCOUNT),
+  },
 ];
+
+// --only <ALIAS[,ALIAS]> scopes seed / teardown / --verify to those accounts
+// (e.g. --only BROWSEFILTERS_READ_ONLY,BROWSEFILTERS_NONE); a role_id is accepted too.
+const ONLY_SET = ONLY ? new Set(String(ONLY).split(',').map((x) => x.trim()).filter(Boolean)) : null;
+const SELECTED = () => (ONLY_SET ? FIXTURES.filter((f) => ONLY_SET.has(f.account.aliasName) || ONLY_SET.has(f.role.role_id)) : FIXTURES);
 
 async function main() {
   assertSafeTarget();
+  if (ONLY_SET && !SELECTED().length) throw new Error(`--only ${ONLY} matched no fixture (use an aliasName, e.g. BROWSEFILTERS_READ_ONLY)`);
   await auth();
 
   if (TEARDOWN) {
     // Reverse order (symmetry): tear down in the mirror of the create order.
-    for (const { role, account } of [...FIXTURES].reverse()) await teardownFixture(role, account);
+    for (const { role, account } of [...SELECTED()].reverse()) await teardownFixture(role, account);
     // Sweep the link probe's throwaway virtual catalog if a crashed --verify run left one behind.
     if (!DRY_RUN) {
       const cats = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200, 201] });
@@ -419,7 +470,7 @@ async function main() {
     return;
   }
 
-  for (const { role, account, assertPerms, excluded } of FIXTURES) {
+  for (const { role, account, assertPerms, excluded } of SELECTED()) {
     const roleId = await ensureRole(role, assertPerms, excluded);
     const userId = await ensureAccount(account, role, roleId);
 
@@ -437,7 +488,7 @@ async function main() {
   // success while one of its seven proofs proved nothing (VCST-5318 dummy-id probe, 2026-07-31).
   if (VERIFY) {
     const results = [];
-    for (const { role, verify } of FIXTURES) results.push({ name: role.role_name, ok: await verify() });
+    for (const { role, verify } of SELECTED()) results.push({ name: role.role_name, ok: await verify() });
     const failed = results.filter((r) => !r.ok);
     if (failed.length) {
       log(`\n✗ ${failed.length}/${results.length} boundary proof(s) FAILED: ${failed.map((f) => f.name).join(', ')}`);

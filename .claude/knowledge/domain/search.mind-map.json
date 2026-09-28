@@ -1,0 +1,2545 @@
+{
+  "$schema": "../../templates/mind-map.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "srch",
+  "domain_map_rev": 1,
+  "generated": "2026-09-28",
+  "metadata": {
+    "scope": "The whole Search domain at the depth search.md rev 1 + the BL-SRCH/ECL-3 oracles + suite titles support (keyword search, suggestions, category/store scope, results page, facets, sort, paging, empty state, index build and lag, admin search configuration), plus the barcode-scanner slice in depth from VCST-2945. Barcode nodes rest on three OPEN PR builds (vc-module-catalog#909, vc-module-x-catalog#113, vc-frontend#2501) and carry maturity new; re-run update mode after they merge or revert.",
+    "built_from": "search.md rev 1 (§1 barcode chain links 1–6, §2a–2h, §3 D1–D8, §5 G1–G7); business-logic.md BL-SRCH-001..005, BL-STORE-001, BL-CAT-003, BL-A11Y-001/002, BL-UI-001; ECL-3.1, ECL-3.2; suites 004, 005, 050a, 103 (Title/References/Automation_Status); reports/ba/test-models/VCST-2945-2026-09-28.md (Part 0 chain, state diagram, 3x amendments); reports/tickets/Sprint26-19/VCST-2945/testing-checklist.md (per-item verdicts); REG-2026-09-28-1518 (suite results + triage-report.md); PR bodies #909/#113/#2501; lane summaries 3x/4a-be/4a-fe/4v; VirtoOZ StorefrontUserGuide §Search Options and PlatformUserGuide §Manage Search Index (queried 2026-09-28).",
+    "evidence_convention": "OBSERVED refs `VCST-2945 4a 2026-09-28` / `VCST-2945 3x 2026-09-28` / `VCST-2945 4v 2026-09-28` are LIVE AGENT LANE observations recorded as checklist verdicts (item id in the note). `REG-2026-09-28-1518` is the C1 execution of the 26 Draft cases that VCST-2945 authored; those cases are Draft (C1 ran --no-promote), so the run is cited as a live observation of that execution, NOT as a promotion. SPEC = the PR bodies.",
+    "kb_read": "2026-09-28 — 14 questions (npm run kb -- ask). Hits: KB-110E0652, KB-A0B3940F (DISPUTED), KB-71011C1F, KB-C3945D5C, KB-BC55C4F0, KB-417AC3F2, KB-78B45E71, KB-25829330, KB-B77CC09C, KB-041DF407, KB-C466AD5C, KB-2B0274B9, KB-F3B1E987. Misses: index lag after product update; products storeId scope; suggestions dropdown; public store settings keys; sort/paging on results page.",
+    "pending_requirements_note": "There is NO srch data model yet (test-data/models/ holds only loyalty-missions). A `requires`/`produces` id on a node must resolve in a data model (models:check TM-005), so the ids are kept OFF the nodes and recorded here per node until /qa-test-data-model build srch declares them; then move each list onto its node. Fixtures that already reach most of these states are the BARCODE_* and BROWSEFILTERS_* aliases in test-data/aliases.json — the model should point at them, never at a seeder.",
+    "pending_requirements": {
+      "srch.index.freshness": [
+        "data.srch.catalog.indexed"
+      ],
+      "srch.query.keyword": [
+        "data.srch.catalog.indexed"
+      ],
+      "srch.results.facets": [
+        "data.srch.catalog.indexed",
+        "data.srch.index.no-ghost-docs"
+      ],
+      "srch.barcode.config": [
+        "data.srch.store.barcode-dedicated",
+        "data.srch.user.store-admin"
+      ],
+      "srch.barcode.config.set-exact": [
+        "data.srch.store.barcode-defaults"
+      ],
+      "srch.barcode.config.set-fulltext": [
+        "data.srch.store.barcode-exact"
+      ],
+      "srch.barcode.config.disable": [
+        "data.srch.store.barcode-exact"
+      ],
+      "srch.barcode.config.stale-on-property-delete": [
+        "data.srch.property.stale-field",
+        "data.srch.store.barcode-exact"
+      ],
+      "srch.barcode.config.drop-missing-on-change": [
+        "data.srch.store.barcode-stale-field"
+      ],
+      "srch.barcode.config.generic-write-unvalidated": [
+        "data.srch.store.barcode-dedicated"
+      ],
+      "srch.barcode.config.permission-read-only": [
+        "data.srch.user.browsefilters-read-only"
+      ],
+      "srch.barcode.config.permission-none-api": [
+        "data.srch.user.browsefilters-none"
+      ],
+      "srch.barcode.config.permission-none-blade-false-off": [
+        "data.srch.user.browsefilters-none"
+      ],
+      "srch.barcode.config.per-store": [
+        "data.srch.store.barcode-exact",
+        "data.srch.store.barcode-defaults"
+      ],
+      "srch.barcode.expand": [
+        "data.srch.store.barcode-exact"
+      ],
+      "srch.barcode.expand.case-and-prefix": [
+        "data.srch.product.case-mixed-code"
+      ],
+      "srch.barcode.expand.or-fields": [
+        "data.srch.product.gtin-unique",
+        "data.srch.product.code-or"
+      ],
+      "srch.barcode.expand.property-field": [
+        "data.srch.product.property-code"
+      ],
+      "srch.barcode.expand.variation-scope": [
+        "data.srch.variation.mpn-out-of-stock"
+      ],
+      "srch.barcode.expand.after-code-change": [
+        "data.srch.product.reindex-candidate"
+      ],
+      "srch.barcode.expand.special-values": [
+        "data.srch.product.special-value"
+      ],
+      "srch.barcode.expand.facet-counts": [
+        "data.srch.product.gtin-shared",
+        "data.srch.index.no-ghost-docs"
+      ],
+      "srch.barcode.expand.wildcards": [
+        "data.srch.product.gtin-unique"
+      ],
+      "srch.barcode.expand.scanner-off-still-expands": [
+        "data.srch.store.barcode-disabled-with-fields"
+      ],
+      "srch.barcode.fulltext": [
+        "data.srch.store.barcode-defaults",
+        "data.srch.product.fulltext-discriminator"
+      ],
+      "srch.barcode.resolve.single-hit-opens": [
+        "data.srch.product.gtin-unique"
+      ],
+      "srch.barcode.resolve.multi-hit-lists": [
+        "data.srch.product.gtin-shared"
+      ],
+      "srch.barcode.resolve.variation-hit": [
+        "data.srch.variation.mpn-out-of-stock"
+      ],
+      "srch.barcode.resolve.actor-parity": [
+        "data.srch.customer.b2b-buyer"
+      ],
+      "srch.barcode.resolve.identity-lookup-hides-browsing": [
+        "data.srch.product.gtin-shared"
+      ]
+    },
+    "ticket": "VCST-2945"
+  },
+  "nodes": [
+    {
+      "id": "srch.search",
+      "type": "feature",
+      "name": "Product search",
+      "description": "Indexed full-text and filtered product search: the storefront search bar (desktop + mobile) with suggestions and a barcode-scan entry, the results page with facets/sort/paging/empty state, the xCatalog products(filter, facet, sort) contract, and the Admin search index + per-store search configuration.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "PlatformUserGuide §Search overview",
+          "note": "declared purpose, quoted in domain-map:srch@rev1 §1",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §2",
+          "note": "storefront + Admin SPA enumerated live on vcst-qa",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.index.manage",
+      "type": "behavior",
+      "name": "Admin builds the product search index",
+      "actors": [
+        "platform admin"
+      ],
+      "description": "Search Index blade: Build (index without recreating) or Delete and build (blue-green: a backup index is built while the active one keeps serving, then the aliases swap).",
+      "interfaces": [
+        "admin-ui",
+        "job"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "PlatformUserGuide §Manage Search Index",
+          "note": "Build / Delete and build / Swap indices — VirtoOZ queried 2026-09-28",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:srch@rev1 §2e",
+          "note": "enumerated from suite 061 titles; NOT live-browsed (G5 OPEN)"
+        }
+      ],
+      "notes": "Mechanism is documented; live behaviour of this blade is still an open gap (domain map G5). Suite 061 uses a legacy CSV header and cannot be stamped until it is migrated."
+    },
+    {
+      "id": "srch.index.manage.blue-green-swap",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Delete and build serves the old index until the swap; Swap indices reverts",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "PlatformUserGuide §Manage Search Index — Blue-green indexing",
+          "note": "supported by the Elasticsearch, Elasticsearch 8, Azure Search and OpenSearch providers",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.index.freshness",
+      "type": "behavior",
+      "name": "A catalog change reaches search results within the consistency window",
+      "interfaces": [
+        "job",
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SRCH-003",
+        "BL-CAT-003"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-003"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-CAT-003",
+          "note": "30–60 s lag acceptable; PDP and cart read live"
+        }
+      ]
+    },
+    {
+      "id": "srch.index.freshness.window-without-event-indexation",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "name": "With event-based indexation off, an edit is not reflected within the window until a targeted reindex",
+      "oracle_refs": [
+        "BL-SRCH-003"
+      ],
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B9: Catalog.Search.EventBasedIndexation.Enable=false on vcst-qa; the scheduled job skipped; a targeted POST /api/search/indexes/index fixed the document",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-041DF407",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Recorded as a question, not DRIFT: BL-SRCH-003's 120 s window was NOT ASSESSABLE on this environment (checklist B9 'BLOCKED-env'), so no source contradicts it yet."
+    },
+    {
+      "id": "srch.query.keyword",
+      "type": "behavior",
+      "name": "A shopper searches by keyword from the header search bar",
+      "actors": [
+        "anonymous visitor",
+        "signed-in B2B buyer"
+      ],
+      "description": "Submit by Enter, by the Search button or by opening /search?q= directly; keywords, SKUs or other attributes match against the full-text index.",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SRCH-001"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "StorefrontUserGuide §Search Options — Text-based search",
+          "note": "keywords, SKU numbers or other product attributes",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §2a",
+          "note": "desktop 1920 px + mobile 375 px, anonymous + signed-in",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.query.keyword.special-characters",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "Quotes, angle brackets, injection patterns and very long values are treated as literal text without an error",
+      "oracle_refs": [
+        "BL-SRCH-005"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-005"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B7: 600-char, XSS, SQL and emoji values in a products filter → 0 hits, no errors[]; C14: HTML in the value rendered as text",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.query.keyword.mobile-overlay-named-controls",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "The mobile search overlay's controls carry accessible names and adequate targets",
+      "oracle_refs": [
+        "BL-A11Y-002",
+        "BL-UI-006"
+      ],
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-A11Y-002"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F3B1E987",
+          "note": "390 px: unnamed submit button, backdrop close named with the raw key common.labels.close, Cancel 42x18 px",
+          "date": "2026-09-28"
+        }
+      ],
+      "drift": {
+        "expected": "BL-A11Y-002 (accessible naming) and BL-UI-006 (touch target sizing) hold on the mobile search overlay",
+        "observed": "the overlay's submit button has no accessible name, its close button is named with a raw i18n key, and Cancel measures 42x18 px (kb:KB-F3B1E987; VCST-2945 4v 2026-09-28) — present on the dev branch before the barcode PR",
+        "route": "VCST-6097 (vc-frontend, pre-existing)"
+      }
+    },
+    {
+      "id": "srch.suggest",
+      "type": "behavior",
+      "name": "The search bar suggests categories, products and recent searches while the shopper types",
+      "actors": [
+        "anonymous visitor",
+        "signed-in B2B buyer"
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §2a",
+          "note": "autocomplete dropdown: categories column, product previews, 'View all N results'",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.suggest.autocomplete",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "Typing shows category and product previews; a preview navigates to its product",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §2a",
+          "note": "baseline only; suite 004 owns depth",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.suggest.history-hints",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Focusing the empty input shows recent searches; only a submit from the bar writes history",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "StorefrontUserGuide §Search Options — Text-based search",
+          "note": "the dropdown shows the 5 most recent queries",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-25829330",
+          "note": "opening /search?q= directly does not add the term to history; a submit from the bar does",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.scope.category",
+      "type": "behavior",
+      "name": "A shopper narrows the search to the category being browsed",
+      "actors": [
+        "anonymous visitor",
+        "signed-in B2B buyer"
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "StorefrontUserGuide §Scoped (hierarchical) search",
+          "note": "a category chip marks the scope and can be reset to span the whole catalog",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5729",
+          "note": "SRCH-011..013 promoted 2026-08-27"
+        }
+      ]
+    },
+    {
+      "id": "srch.scope.category.single-removable-chip",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Exactly one scope chip is shown across category navigation and it stays removable",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5729",
+          "note": "SRCH-011 / SRCH-013 promoted 2026-08-27"
+        }
+      ]
+    },
+    {
+      "id": "srch.scope.store",
+      "type": "behavior",
+      "name": "Search results are scoped to the current store's catalog",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SRCH-004",
+        "BL-STORE-001"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-004"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-STORE-001"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.render",
+      "type": "behavior",
+      "name": "The results page lists what the query found",
+      "actors": [
+        "anonymous visitor",
+        "signed-in B2B buyer"
+      ],
+      "description": "Heading echoing the term and the count, facet sidebar, grid/list toggle, control chips (Show in stock pre-checked, Purchased before), sort dropdown.",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §2b",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.render.layout-stable",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "name": "The results page does not shift once the grid resolves, including few-result and empty states",
+      "oracle_refs": [
+        "BL-UI-001"
+      ],
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-UI-001"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4v 2026-09-28",
+          "note": "CLS 0.25–0.73 on search results; pre-existing on ?q= too",
+          "date": "2026-09-28"
+        }
+      ],
+      "drift": {
+        "expected": "BL-UI-001: layout is stable on initial render",
+        "observed": "CLS 0.25–0.73 on /search results with few results and on the empty state — the grid resolves after the heading paints (VCST-2945 4v 2026-09-28)",
+        "route": "draft reports/bugs/open/medium/BUG-storefront-search-results-layout-shift-few-results-and-empty-state.md (vc-frontend; filing deferred by the operator)"
+      }
+    },
+    {
+      "id": "srch.results.empty",
+      "type": "behavior",
+      "name": "A query with no hits shows an intact empty state with a way back",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SRCH-002",
+        "ECL-3.1"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-002",
+          "note": "triangulated BL-AUDIT-2026-07-22, CONFIRMED 3/3"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.facets",
+      "type": "behavior",
+      "name": "Facets narrow the results and their counts follow the applied filters",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SRCH-001",
+        "ECL-3.2"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-001",
+          "note": "triangulated BL-AUDIT-2026-07-22, CONFIRMED 3/3"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.facets.or-within-and-across",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "name": "Values within one facet combine with OR; different facets combine with AND",
+      "oracle_refs": [
+        "ECL-3.2"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "ECL-3.2",
+          "note": "row 3, triangulated docs+live+source ECL-AUDIT-2026-09-03"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.facets.price-range-inclusive",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A price range filter includes both of its bounds",
+      "oracle_refs": [
+        "ECL-3.2"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "ECL-3.2",
+          "note": "row 2, triangulated ECL-AUDIT-2026-09-03"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.facets.control-filters-persist",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Availability, branch and purchased-before controls persist across navigation; facet selections do not",
+      "oracle_refs": [
+        "ECL-3.2"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "ECL-3.2",
+          "note": "row 4, triangulated ECL-AUDIT-2026-08-27"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.facets.priority-order",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "Facet values follow the configured dictionary-priority direction; values without a priority sort last",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5851",
+          "note": "SRCH-FSORT-001..006 promoted 2026-09-10"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.facets.ghost-docs-inflate-counts",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "name": "Facet counts are not inflated by stale index documents of deleted products",
+      "oracle_refs": [
+        "BL-SRCH-001",
+        "BL-SRCH-003"
+      ],
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-001"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-041DF407",
+          "note": "hits exclude the stale docs, term_facets count them (6 for 3 hits)",
+          "date": "2026-09-28"
+        }
+      ],
+      "drift": {
+        "expected": "BL-SRCH-001: facet counts exactly match the filtered result; BL-SRCH-003: no ghost results for deleted products",
+        "observed": "with Catalog.Search.EventBasedIndexation.Enable=false, products deleted and recreated kept their old index documents; xAPI hits exclude them but term_facets count them (kb:KB-041DF407; VCST-2945 4a B8 passed only after a ghost-index purge)",
+        "route": "environment owner (event-based indexation off on vcst-qa) + /qa-review-oracles BL-SRCH-003 — does the invariant scope to event-based indexation?"
+      }
+    },
+    {
+      "id": "srch.results.sort",
+      "type": "behavior",
+      "name": "The shopper sorts results with the options the store configured",
+      "interfaces": [
+        "storefront",
+        "graphql",
+        "admin-ui"
+      ],
+      "description": "The dropdown is built from the API's sortings; the first visible option is the default; a non-default choice is carried as ?sort=<code>.",
+      "oracle_refs": [
+        "ECL-3.2"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "StorefrontUserGuide §Search Options — Text-based search",
+          "note": "results can be sorted",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §2d",
+          "note": "Sorting tile present on the Search configuration widget",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.sort.survives-requery",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Applying a filter keeps the selected sort",
+      "oracle_refs": [
+        "ECL-3.2"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "ECL-3.2",
+          "note": "row 1: sort code and facet expression are independent URL parameters"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.sort.unknown-code",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A hidden or unknown ?sort code leaves the dropdown blank but still returns results",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5729",
+          "note": "SRCH-NEW-059 promoted 2026-08-27"
+        }
+      ]
+    },
+    {
+      "id": "srch.results.paging",
+      "type": "behavior",
+      "name": "Large result sets load more products on scroll, keeping the term, filters and sort",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SRCH-001"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-07-01-1430",
+          "note": "no numbered pager exists — the infinite-scroll model the SRCH-NEW-044/045/048/049 cases were re-authored to"
+        }
+      ]
+    },
+    {
+      "id": "srch.admin.facets",
+      "type": "behavior",
+      "name": "A store admin chooses which properties are facets and how they aggregate",
+      "actors": [
+        "store admin"
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "PlatformUserGuide §Manage Properties — Configure facets",
+          "note": "Attribute (with a value sort) or Range; quoted in domain-map:srch@rev1 §2d",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §2d",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode",
+      "type": "capability",
+      "name": "Barcode scanner search",
+      "maturity": "new",
+      "description": "The storefront scanner (VCST-2622) routed by two store settings — Catalog.Search.BarcodeScannerEnabled and Catalog.Search.BarcodeSearchFields — into either the unchanged full-text search or an exact match on the configured index fields.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-2945",
+          "note": "PR bodies vc-module-catalog#909, vc-module-x-catalog#113, vc-frontend#2501 (open, deployed as PR builds)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §1",
+          "note": "D1: deployed; B2B-store holds the defaults",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.state.fulltext",
+      "type": "state",
+      "name": "Store barcode setup: scanner on, full-text (no fields)",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-catalog#909",
+          "note": "defaults: BarcodeScannerEnabled true, BarcodeSearchFields empty"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C3945D5C",
+          "note": "GET for a store with nothing stored returns {scannerEnabled:true, fields:[]}",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.state.exact",
+      "type": "state",
+      "name": "Store barcode setup: scanner on, exact match on ≥1 field",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "A3: exact + gtin,code saved and read back",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.state.exact-stale",
+      "type": "state",
+      "name": "Store barcode setup: a configured field no longer exists in the index",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-417AC3F2",
+          "note": "shown checked with a MISSING FROM INDEX badge",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.state.hidden",
+      "type": "state",
+      "name": "Store barcode setup: scanner off, no fields",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "BarcodeScannerEnabled === false hides the scanner in both bars"
+        }
+      ],
+      "notes": "Not exercised: the run switched the scanner off only with fields configured (hidden-but-expanding)."
+    },
+    {
+      "id": "srch.barcode.state.hidden-but-expanding",
+      "type": "state",
+      "name": "Store barcode setup: scanner off while fields stay configured",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 D2",
+          "note": "button hidden in both bars, hand-built ?barcode= still expanded",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.data.fill",
+      "type": "behavior",
+      "name": "A category manager puts a scannable code on a product or variation",
+      "chain_link": "1",
+      "maturity": "new",
+      "actors": [
+        "category manager"
+      ],
+      "description": "Product code, GTIN, MPN, or any short-text catalog property (multi-value allowed) — the values the store can later select as match fields.",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:srch@rev1 §1 link 1",
+          "note": "source: ProductDocumentBuilder.BuildSchemaAsync declares gtin/manufacturerPartNumber filterable (declaration-only)"
+        },
+        {
+          "class": "SPEC",
+          "ref": "vc-module-catalog#909"
+        }
+      ],
+      "notes": "The story's 'clear instructions for filling barcode properties' ship as blade hints on the Barcode scanner blade, not on the product editor (VCST-2945 1d) — a PO question, see open_questions."
+    },
+    {
+      "id": "srch.barcode.config",
+      "type": "behavior",
+      "name": "A store admin decides whether the scanner shows and how a scan is matched",
+      "chain_link": "2",
+      "maturity": "new",
+      "actors": [
+        "store admin"
+      ],
+      "description": "Store → Search configuration → Barcode scanner blade (third tile, wraps to a second row) backed by GET/PUT api/catalog/barcode-search/store/{storeId} and GET …/fields.",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-catalog#909"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "A1/A2: three tiles wrap; switch, Full-text / Exact radios, field list only in Exact, two hint blocks",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.config.set-exact",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "name": "Saving Exact with selected fields persists them and reopens them checked first",
+      "maturity": "new",
+      "state_before": "srch.barcode.state.fulltext",
+      "state_after": "srch.barcode.state.exact",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "A3: 204; GET returns the fields; checked first, then by display label",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.config.set-fulltext",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Emptying the field list returns scans to full-text search",
+      "maturity": "new",
+      "state_before": "srch.barcode.state.exact",
+      "state_after": "srch.barcode.state.fulltext",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "a missing, empty or unparsable field list keeps full text"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "storefront window closed by restoring {scannerEnabled:true, fields:[]}; final GET equal to defaults",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.config.disable",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "Switching the scanner off hides the button in both bars",
+      "maturity": "new",
+      "state_before": "srch.barcode.state.exact",
+      "state_after": "srch.barcode.state.hidden-but-expanding",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C11: off 13:51:30Z → button gone desktop + 390 px; on 13:52:20Z",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "SRCH-016 PASS (Draft case, live execution — not a promotion)",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.config.enable",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "Switching the scanner back on restores the button with the saved match setup",
+      "maturity": "new",
+      "state_before": "srch.barcode.state.hidden-but-expanding",
+      "state_after": "srch.barcode.state.exact",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C11: on at 13:52:20Z inside the storefront window",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.config.stale-on-property-delete",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "EG",
+      "name": "Deleting a property used as a barcode field leaves it configured, and scans on it silently find nothing",
+      "maturity": "new",
+      "state_before": "srch.barcode.state.exact",
+      "state_after": "srch.barcode.state.exact-stale",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 3x 2026-09-28",
+          "note": "RE1: stale field kept; /fields drops it at once; re-PUT of the same selection → 400; the badge is the only signal",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "SRCHA-055 PASS: xAPI 1 hit before the delete, 0 after a reindex (Draft case, live execution)",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "No cleanup path (vc-module-catalog#909: the widget is the only validating writer). Whether that is acceptable is a PO question (test model row 19)."
+    },
+    {
+      "id": "srch.barcode.config.drop-missing-on-change",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "A field missing from the index is shown checked and inert, and is dropped on the next change so it is never saved again",
+      "maturity": "new",
+      "state_before": "srch.barcode.state.exact-stale",
+      "state_after": "srch.barcode.state.exact",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-417AC3F2",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "A9: dropped on a field toggle and on a mode change; never re-saved",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.config.generic-write-unvalidated",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "name": "The generic store settings API writes an unknown field unvalidated; the blade surfaces it only as missing",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 D3",
+          "note": "PUT /api/stores with an unknown field → 204, stored verbatim, OR-ed into xAPI without error",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C3945D5C",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.config.validation",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "The dedicated PUT rejects unknown fields, a null body and an unknown store; GET for an unknown store returns defaults",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-catalog#909",
+          "note": "400 naming the rejected fields / 400 null body / 404 unknown store / 204"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C3945D5C",
+          "note": "also: mixed case and duplicates normalised, padded names trimmed",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.config.save-gating",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "ST",
+      "name": "Field order is frozen while editing; Exact with zero fields cannot be saved; Reset restores; a dirty close asks",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "A4 PASS; Save-disabled shows no reason (Low draft BUG-barcode-blade-exact-hint-in-full-text-and-silent-save-disable)",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Unconfigured stores list the picker straight alphabetically by display label, built-ins interleaved (domain map D5) — only a saved selection is pinned first."
+    },
+    {
+      "id": "srch.barcode.config.permission-read-only",
+      "type": "branch",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "A user with read-only search-configuration access sees the setup but cannot change it",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-BC55C4F0",
+          "note": "GET 200, PUT 403, stored value unchanged",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C466AD5C",
+          "note": "blade renders the stored state; no Save, Reset disabled, rows and radios inert",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.config.permission-none-api",
+      "type": "branch",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "A back-office user without search-configuration access can neither read nor write the setup",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-BC55C4F0",
+          "note": "GET, GET fields and PUT all 403; anonymous 401",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.config.permission-none-blade-false-off",
+      "type": "branch",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "name": "Without read access the blade shows an access error, not a scanner-off state",
+      "maturity": "new",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-catalog#909",
+          "note": "GET store/{id} requires catalog:BrowseFilters:Read; the stored value is scannerEnabled=true"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C466AD5C",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "SRCHA-056 FAIL, live 3× (triage: REAL_BUG)",
+          "date": "2026-09-28"
+        }
+      ],
+      "drift": {
+        "expected": "the blade reflects the stored setup or states that it cannot read it — it never claims a state the store does not hold (vc-module-catalog#909 permission table; checklist A8)",
+        "observed": "the blade issues only GET …/fields, gets 403, shows an 'Error 403' banner and still renders the switch OFF with no match mode while the stored value is scannerEnabled=true; after Dismiss the scanner-off UI remains (kb:KB-C466AD5C; VCST-2945 4a A8; SRCHA-056)",
+        "route": "vc-module-catalog (PR #909) — Low draft reports/bugs/open/low/BUG-barcode-blade-shows-scanner-off-without-browsefilters-read.md, not filed"
+      }
+    },
+    {
+      "id": "srch.barcode.config.keyboard-operable",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "The blade's switch and field checkboxes are operable from the keyboard",
+      "maturity": "new",
+      "oracle_refs": [
+        "BL-A11Y-001"
+      ],
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-A11Y-001"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "D-admin: switch has no name and no tab stop; field checkboxes are visibility:hidden inputs, not keyboard reachable",
+          "date": "2026-09-28"
+        }
+      ],
+      "drift": {
+        "expected": "BL-A11Y-001: every control is keyboard operable with visible focus",
+        "observed": "the Enable switch has no tab stop and the ~87 field checkboxes cannot be reached by keyboard (VCST-2945 4a D-admin, 4v)",
+        "route": "VCST-6095 (vc-module-catalog)"
+      }
+    },
+    {
+      "id": "srch.barcode.config.per-store",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "One store's barcode setup does not change another store's results",
+      "maturity": "new",
+      "oracle_refs": [
+        "BL-STORE-001"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-STORE-001"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "A11: exact config on the dedicated store; B2B-store GET unchanged and its barcode: term stays literal (0)",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.settings.public",
+      "type": "behavior",
+      "name": "The storefront reads the store's barcode setup from its public settings at app load",
+      "chain_link": "2",
+      "maturity": "new",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-catalog#909",
+          "note": "both settings public, exposed through store.settings.modules[\"VirtoCommerce.Catalog\"]"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B12: store { settings { modules } } carries both keys with the saved values",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-25829330",
+          "note": "a change is seen only after a full reload",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.settings.public.malformed-json",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A malformed stored field list falls back to full-text everywhere",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-catalog#909",
+          "note": "malformed stored JSON logs a warning and falls back to full text"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 3x 2026-09-28",
+          "note": "#18: dedicated GET fields:[], public settings expose the raw string, xAPI leaves the term literal",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.scan",
+      "type": "behavior",
+      "name": "The shopper opens the barcode scanner from the search bar",
+      "chain_link": "3",
+      "actors": [
+        "anonymous visitor",
+        "signed-in B2B buyer"
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "StorefrontUserGuide §Barcode scanner",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §2a",
+          "note": "desktop + mobile; modal with camera preview, Cancel and Browse",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Released since VCST-2622; VCST-2945 only gates it by setting."
+    },
+    {
+      "id": "srch.barcode.scan.button-visibility",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "The scan button shows only while the input is empty and swaps with the clear button when text is typed",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §2a",
+          "note": "the two are mutually exclusive",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.scan.dispatch",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "name": "A decoded scan routes to ?barcode= in exact mode and to ?q= in full-text mode",
+      "chain_link": "4b",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "useBarcodeSearch.ts; covered by the PR's unit tests only"
+        }
+      ],
+      "notes": "Not drivable live: no camera in the MCP lanes, and Browse never leaves loading (see no-camera-dead-end). Every storefront case enters at /search?barcode=<v>, the route this branch would push. Needs a fake-media lane (--use-fake-device-for-media-stream)."
+    },
+    {
+      "id": "srch.barcode.scan.not-in-history",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "EG",
+      "name": "A scan is not written to search history",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "deliberately not written to history"
+        }
+      ],
+      "notes": "VCST-2945 4a C9 could not distinguish it live: a URL entry never writes history anyway, so only the unit tests decide it."
+    },
+    {
+      "id": "srch.barcode.scan.no-camera-dead-end",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "Without a camera the modal spins indefinitely and the upload fallback stays disabled, with no message",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-2B0274B9",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C15 FAIL pre-existing; draft BUG-storefront-barcode-scanner-modal-dead-end-without-camera (filing deferred by the operator)",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Not DRIFT: the expected behaviour is a PO question ({HYPOTHESIS}), no higher-precedence source states it."
+    },
+    {
+      "id": "srch.barcode.scan.browse-named",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "The modal's Browse button keeps an accessible name while loading",
+      "oracle_refs": [
+        "BL-A11Y-002"
+      ],
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-A11Y-002"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4v 2026-09-28",
+          "note": "WCAG 4.1.2 button-name: vc-button--loading hides the content and the spinner has no label",
+          "date": "2026-09-28"
+        }
+      ],
+      "drift": {
+        "expected": "BL-A11Y-002: every control has an accessible name",
+        "observed": "in its loading state the Browse button has no accessible name (VCST-2945 4v; kb:KB-2B0274B9) — a VcButton loading-state defect, pre-existing",
+        "route": "VCST-6096 (vc-frontend UI kit)"
+      }
+    },
+    {
+      "id": "srch.barcode.fulltext",
+      "type": "behavior",
+      "name": "In full-text mode a scan is an ordinary keyword search",
+      "chain_link": "4a",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-25829330",
+          "note": "defaults: a typed GTIN is a full-text ?q= search that also matches other products' names",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C0 / C2: ?q=<code> ≥2 hits while ?barcode=<same> in exact mode opens one",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Released behaviour (VCST-2622) that VCST-2945 must leave unchanged when no fields are configured."
+    },
+    {
+      "id": "srch.barcode.fulltext.single-hit-lists",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "EP",
+      "name": "A full-text scan with exactly one hit lists it instead of opening the product",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "StorefrontUserGuide §Barcode scanner",
+          "note": "'scan a product's barcode … to instantly open the product page'",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 3x 2026-09-28",
+          "note": "#2/OQ1: ?q=QA-900 → a 1-result list",
+          "date": "2026-09-28"
+        }
+      ],
+      "drift": {
+        "expected": "StorefrontUserGuide §Barcode scanner and the VCST-2622 AC: a scan instantly opens the product page",
+        "observed": "on the full-text (?q=) path a single hit renders a one-item list; the pre-PR code never had a full-text redirect, so the VCST-2622 AC was never implemented on that path (VCST-2945 3x); the redirect exists only in exact mode (domain map D7)",
+        "route": "PO question (VCST-2622 AC vs shipped behaviour) + docs owner once vc-frontend#2501 merges — domain map D7"
+      }
+    },
+    {
+      "id": "srch.barcode.expand",
+      "type": "behavior",
+      "name": "xCatalog resolves a barcode term against the store's configured fields",
+      "chain_link": "4b",
+      "maturity": "new",
+      "description": "products(filter: barcode:\"<v>\") is rewritten to an OR of term filters on the configured index fields, the default scope widens to products and variations, aggregations are patched, and each expanded term is reported with isGenerated:true.",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-x-catalog#113"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-110E0652",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B1–B5 PASS on the dedicated store, Elasticsearch 8 active",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.no-fields-untouched",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "With no configured fields the barcode term stays a literal filter and finds nothing",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-x-catalog#113"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-25829330",
+          "note": "/search?barcode=<v> on defaults → barcode empty state",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.or-fields",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "name": "A match on any configured field counts, and each expanded field is reported as a generated filter",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B1/B2: gtin → 1 with isGenerated; gtin and code each → 1 under [gtin,code]",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.property-field",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "A configured short-text catalog property matches by its lowercased index name",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B3: property value → 1",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.case-and-prefix",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "Matching ignores letter case, is sensitive to surrounding whitespace, and never matches a bare prefix",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B5: lower/upper → 1, strict prefix → 0, leading/trailing space → 0; no GTIN-14 normalisation (3x)",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "vc-module-x-catalog#113",
+          "note": "case handling follows the provider: Elasticsearch lowercases, Lucene does not"
+        }
+      ],
+      "notes": "Case-insensitivity is a property of the ACTIVE provider (Elasticsearch 8 on vcst-qa, domain map G7); a Lucene deployment is not covered."
+    },
+    {
+      "id": "srch.barcode.expand.variation-scope",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "A barcode request also searches variations unless the caller set its own document scope",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B4: variation MPN → 1 by default; explicit is:product → 0",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.special-values",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "Quotes and colons stay inside one term; whitespace-only and very long values return no error",
+      "maturity": "new",
+      "oracle_refs": [
+        "BL-SRCH-005"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-005"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B7: escaped quote+colon value → 1; whitespace/empty untouched; 600 chars → no 500",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.wildcards",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "name": "An asterisk or question mark in the scanned value is matched literally",
+      "maturity": "new",
+      "oracle_refs": [
+        "BL-SRCH-005"
+      ],
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-005",
+          "note": "VIOLATED per VCST-2945 verdict"
+        },
+        {
+          "class": "SPEC",
+          "ref": "vc-module-x-catalog#113",
+          "note": "'values are compared exactly as term filters'"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-110E0652",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-78B45E71",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "CAT-GQL-150 FAIL (Draft case, live execution); live 4× this run",
+          "date": "2026-09-28"
+        }
+      ],
+      "drift": {
+        "expected": "BL-SRCH-005 (special characters are never interpreted as query operators) + vc-module-x-catalog#113 ('compared exactly as term filters') + the blade hint 'Matching is exact: the scanned value must equal the stored value'",
+        "observed": "Elasticsearch 8 honours * and ? inside the expanded term: barcode:\"*\" lists the whole catalog (4714 via xAPI; 3,722 on /search), a truncated GTIN + * returns 1 hit and the storefront single-hit redirect opens that product, ? substitutes one character (kb:KB-110E0652, kb:KB-78B45E71; VCST-2945 4a B6/C12). Generic term-filter wildcards are documented and deliberate (VCST-3840) — the barcode path inherits them unescaped (domain map D8)",
+        "route": "vc-module-x-catalog PR #113 author (intent: are * / ? intended on the barcode path?) — VCST-6094; ticket held in Testing pending that answer"
+      }
+    },
+    {
+      "id": "srch.barcode.expand.facet-counts",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "name": "Facet counts follow the barcode result",
+      "maturity": "new",
+      "oracle_refs": [
+        "BL-SRCH-001"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-001"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B8: shared GTIN → 3, term-facet counts consistent — after a ghost-index purge (see srch.results.facets.ghost-docs-inflate-counts)",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.barcode-field-is-facet",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "name": "A barcode field that is also a facet loses multi-select semantics while a barcode is active",
+      "maturity": "new",
+      "oracle_refs": [
+        "ECL-3.2"
+      ],
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-x-catalog#113",
+          "note": "runtime note: the barcode term is applied inside that facet's own aggregation too"
+        }
+      ],
+      "notes": "G12 WAIVED this run — no barcode field is a facet in the B2B-mixed catalog."
+    },
+    {
+      "id": "srch.barcode.expand.reserved-name",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "Once fields are configured, a property literally named barcode can no longer be filtered by its own name",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-x-catalog#113",
+          "note": "Breaking-changes runtime note; domain map D4 source-only"
+        }
+      ],
+      "notes": "G11 WAIVED — no such property exists and none was seeded."
+    },
+    {
+      "id": "srch.barcode.expand.second-term-literal",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "name": "Only the first barcode term is expanded; comma-separated values inside it OR together",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B11: a second barcode: term stays literal (AND → 0); comma values → N",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.scanner-off-still-expands",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "Switching the scanner off does not stop a hand-built barcode term from expanding",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-x-catalog#113",
+          "note": "BarcodeScannerEnabled only shows or hides the button"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 D2",
+          "note": "G1 CLOSED: xAPI 1 hit and /search?barcode= opened the product with the button hidden",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.after-code-change",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "After a product's code changes and is reindexed, the old code finds nothing and the new one finds it",
+      "maturity": "new",
+      "oracle_refs": [
+        "BL-SRCH-003"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B9 PASS contract after a targeted reindex; the 120 s window not assessable (event indexation off)",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Its case CAT-GQL-147 was a test defect in REG-2026-09-28-1518 (setup never saved) and now fails at its own setup assertion until that request is fixed — the node is decided by the 4a observation, not the case."
+    },
+    {
+      "id": "srch.barcode.expand.unpriced-not-found",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A product without a price in the active currency is not found by a barcode search",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 3x 2026-09-28",
+          "note": "the storefront's price.<currency>:(0 TO) term still applies to barcode requests",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.resolve",
+      "type": "behavior",
+      "name": "The results page turns a barcode result into the product, a list, or an empty state",
+      "chain_link": "5",
+      "maturity": "new",
+      "actors": [
+        "anonymous visitor",
+        "signed-in B2B buyer"
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "shouldOpenSingleBarcodeHit"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-71011C1F",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.resolve.single-hit-opens",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "name": "Exactly one hit replaces the search with the product page, and the shopper can add it to the cart",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C1: router.replace to the PDP, Back does not loop, Add to cart 0 → 1",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "SRCH-014 PASS (Draft case, live execution)",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.resolve.multi-hit-lists",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "name": "Several hits are listed under the barcode heading and none is opened",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C3: shared GTIN → 3 cards, no redirect",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.resolve.variation-hit",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "A single variation hit opens the variation's own page even when it is out of stock",
+      "maturity": "new",
+      "oracle_refs": [
+        "ECL-8.2"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C5: out-of-stock variation opened with Show in stock ON — via its own SEO slug",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "The /product/<variationId> branch for a variation WITHOUT a slug (vc-frontend#2501) was not exercised — the fixture gives variations slugs (domain map G4 still partly open)."
+    },
+    {
+      "id": "srch.barcode.resolve.zero-hit-empty",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "No hit shows the barcode empty state, and Reset clears the barcode and the keyword",
+      "maturity": "new",
+      "oracle_refs": [
+        "BL-SRCH-002",
+        "ECL-3.1"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-002"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C4: empty view with the code; Reset → /catalog without barcode or q",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.resolve.identity-lookup-hides-browsing",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "A barcode result ignores facet and availability parameters, hides the browsing controls, and a narrowed request never redirects",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C6: no sidebar, controls or chips; &facets= dropped; sort works; single hit + &sort= → list",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-71011C1F",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.resolve.mobile-parity",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "PW",
+      "name": "The mobile search overlay resolves a barcode exactly like the desktop bar and closes before the product opens",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C10: 390 px opens the same PDP, overlay closed",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.resolve.actor-parity",
+      "type": "branch",
+      "branch_kind": "permission",
+      "technique": "PW",
+      "name": "Anonymous and signed-in B2B shoppers get the same barcode resolution",
+      "maturity": "new",
+      "oracle_refs": [
+        "BL-SRCH-004"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C8: signed-in org buyer reached the same PDP",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.resolve.global-scope",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "EG",
+      "name": "A barcode search started from a category page searches the whole catalog",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C9: from /printers the /search?barcode= result equals the out-of-category one",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "A crafted category route (/<category>?barcode=) applies the term INSIDE that category (kb:KB-25829330) — only the /search route is global."
+    },
+    {
+      "id": "srch.barcode.resolve.whitespace-value",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A whitespace-only barcode value is sent untrimmed and renders the empty state with a blank code",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-25829330",
+          "note": "/search?barcode=%20%20 → barcode:\"  \" untrimmed, no error",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C13 PASS; Low draft BUG-storefront-barcode-whitespace-value-not-trimmed",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "srch.barcode.resolve.value-rendered-literally",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "Markup in the scanned value is shown as text in the heading",
+      "maturity": "new",
+      "oracle_refs": [
+        "BL-SRCH-005"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SRCH-005"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C14: ?barcode=<b>x</b> escaped",
+          "date": "2026-09-28"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "srch.search",
+      "to": "srch.index.manage",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.index.freshness",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.query.keyword",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.suggest",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.scope.category",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.scope.store",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.results.render",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.results.empty",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.results.facets",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.results.sort",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.results.paging",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.admin.facets",
+      "type": "contains"
+    },
+    {
+      "from": "srch.search",
+      "to": "srch.barcode",
+      "type": "contains"
+    },
+    {
+      "from": "srch.barcode",
+      "to": "srch.barcode.data.fill",
+      "type": "contains"
+    },
+    {
+      "from": "srch.barcode",
+      "to": "srch.barcode.config",
+      "type": "contains"
+    },
+    {
+      "from": "srch.barcode",
+      "to": "srch.barcode.settings.public",
+      "type": "contains"
+    },
+    {
+      "from": "srch.barcode",
+      "to": "srch.barcode.scan",
+      "type": "contains"
+    },
+    {
+      "from": "srch.barcode",
+      "to": "srch.barcode.fulltext",
+      "type": "contains"
+    },
+    {
+      "from": "srch.barcode",
+      "to": "srch.barcode.expand",
+      "type": "contains"
+    },
+    {
+      "from": "srch.barcode",
+      "to": "srch.barcode.resolve",
+      "type": "contains"
+    },
+    {
+      "from": "srch.index.manage",
+      "to": "srch.index.manage.blue-green-swap",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.index.freshness",
+      "to": "srch.index.freshness.window-without-event-indexation",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.query.keyword",
+      "to": "srch.query.keyword.special-characters",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.query.keyword",
+      "to": "srch.query.keyword.mobile-overlay-named-controls",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.suggest",
+      "to": "srch.suggest.autocomplete",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.suggest",
+      "to": "srch.suggest.history-hints",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.scope.category",
+      "to": "srch.scope.category.single-removable-chip",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.results.render",
+      "to": "srch.results.render.layout-stable",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.results.facets",
+      "to": "srch.results.facets.or-within-and-across",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.results.facets",
+      "to": "srch.results.facets.price-range-inclusive",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.results.facets",
+      "to": "srch.results.facets.control-filters-persist",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.results.facets",
+      "to": "srch.results.facets.priority-order",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.results.facets",
+      "to": "srch.results.facets.ghost-docs-inflate-counts",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.results.sort",
+      "to": "srch.results.sort.survives-requery",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.results.sort",
+      "to": "srch.results.sort.unknown-code",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.set-exact",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.set-fulltext",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.disable",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.enable",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.stale-on-property-delete",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.drop-missing-on-change",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.generic-write-unvalidated",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.validation",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.save-gating",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.permission-read-only",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.permission-none-api",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.permission-none-blade-false-off",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.keyboard-operable",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.per-store",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.settings.public",
+      "to": "srch.barcode.settings.public.malformed-json",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.scan",
+      "to": "srch.barcode.scan.button-visibility",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.scan",
+      "to": "srch.barcode.scan.dispatch",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.scan",
+      "to": "srch.barcode.scan.not-in-history",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.scan",
+      "to": "srch.barcode.scan.no-camera-dead-end",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.scan",
+      "to": "srch.barcode.scan.browse-named",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.fulltext",
+      "to": "srch.barcode.fulltext.single-hit-lists",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.no-fields-untouched",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.or-fields",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.property-field",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.case-and-prefix",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.variation-scope",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.special-values",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.wildcards",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.facet-counts",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.barcode-field-is-facet",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.reserved-name",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.second-term-literal",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.scanner-off-still-expands",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.after-code-change",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.unpriced-not-found",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.single-hit-opens",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.multi-hit-lists",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.variation-hit",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.zero-hit-empty",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.identity-lookup-hides-browsing",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.mobile-parity",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.actor-parity",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.global-scope",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.whitespace-value",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.value-rendered-literally",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.state.fulltext",
+      "to": "srch.barcode.state.exact",
+      "type": "transitions_to",
+      "via": "srch.barcode.config.set-exact"
+    },
+    {
+      "from": "srch.barcode.state.exact",
+      "to": "srch.barcode.state.fulltext",
+      "type": "transitions_to",
+      "via": "srch.barcode.config.set-fulltext"
+    },
+    {
+      "from": "srch.barcode.state.exact",
+      "to": "srch.barcode.state.exact-stale",
+      "type": "transitions_to",
+      "via": "srch.barcode.config.stale-on-property-delete"
+    },
+    {
+      "from": "srch.barcode.state.fulltext",
+      "to": "srch.barcode.state.exact-stale",
+      "type": "transitions_to",
+      "via": "srch.barcode.config.generic-write-unvalidated",
+      "note": "an unknown field written through the generic settings API"
+    },
+    {
+      "from": "srch.barcode.state.exact-stale",
+      "to": "srch.barcode.state.exact",
+      "type": "transitions_to",
+      "via": "srch.barcode.config.drop-missing-on-change"
+    },
+    {
+      "from": "srch.barcode.state.exact",
+      "to": "srch.barcode.state.hidden-but-expanding",
+      "type": "transitions_to",
+      "via": "srch.barcode.config.disable"
+    },
+    {
+      "from": "srch.barcode.state.hidden-but-expanding",
+      "to": "srch.barcode.state.exact",
+      "type": "transitions_to",
+      "via": "srch.barcode.config.enable"
+    },
+    {
+      "from": "srch.barcode.state.fulltext",
+      "to": "srch.barcode.state.hidden",
+      "type": "transitions_to",
+      "via": "srch.barcode.config.disable",
+      "note": "SPEC vc-frontend#2501; not exercised with an empty field list"
+    },
+    {
+      "from": "srch.barcode.state.hidden",
+      "to": "srch.barcode.state.fulltext",
+      "type": "transitions_to",
+      "via": "srch.barcode.config.enable",
+      "note": "SPEC — switch back on"
+    },
+    {
+      "from": "srch.barcode.settings.public",
+      "to": "srch.barcode.config",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.config",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.data.fill",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.index.freshness",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.expand",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.settings.public",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.barcode.fulltext",
+      "to": "srch.query.keyword",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.query.keyword",
+      "to": "srch.index.freshness",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.results.render",
+      "to": "srch.query.keyword",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.results.facets",
+      "to": "srch.admin.facets",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.barcode.scan",
+      "to": "srch.barcode.settings.public",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.expand.wildcards",
+      "type": "affected_by",
+      "note": "a wildcard value that expands to one hit opens a product through the single-hit redirect"
+    },
+    {
+      "from": "srch.results.facets",
+      "to": "srch.index.freshness",
+      "type": "affected_by"
+    }
+  ]
+}

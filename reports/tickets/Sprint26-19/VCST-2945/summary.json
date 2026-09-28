@@ -1,0 +1,409 @@
+{
+  "ticket": "VCST-2945",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": {
+    "kind": "jira",
+    "comment_id": "110641"
+  },
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "FULL",
+    "confirmed_at_1b": "FULL",
+    "narrow_story_tokens": {
+      "priority": "P2",
+      "layer": "cross-layer",
+      "domains": 3,
+      "chain_shape": "new-link",
+      "surface": "obvious",
+      "reach": "exceeds-diff"
+    },
+    "escalated_reason": null
+  },
+  "layer": "cross-layer",
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "srch",
+    "path": ".claude/knowledge/domain/search.md",
+    "rev": 1,
+    "built_in_run": true,
+    "build_outcome": "BUILT",
+    "all_layer_chain": true,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "mind_map": ".claude/knowledge/domain/search.mind-map.json",
+    "unmapped_surfaces": [],
+    "recommended": false,
+    "amended_in_run": true,
+    "amend_outcome": "AMENDED",
+    "amendments": [
+      "D2 source-only -> CONFIRMED",
+      "D3 source-only -> CONFIRMED",
+      "D8 added (CONFIRMED)",
+      "G1 CLOSED",
+      "G2 CLOSED",
+      "G6 CLOSED",
+      "G7 CLOSED"
+    ],
+    "mind_map_findings": [],
+    "mind_map_build": "BUILT",
+    "mind_map_stamped_cases": 26,
+    "mind_map_drift": 8
+  },
+  "shape_class": {
+    "value": "standard",
+    "sources": [
+      "diff: module + x-catalog + frontend feature, no token/primitive change"
+    ]
+  },
+  "derived_oracle": null,
+  "verdict": "FAIL",
+  "date": "2026-09-28",
+  "timing": {
+    "started_at": "2026-09-28T12:28:31Z",
+    "finished_at": "2026-09-28T16:57:23.822Z",
+    "reachability_minutes": 3.6,
+    "time_to_first_test_minutes": 70,
+    "first_evidence_minutes": 95,
+    "agent_dispatches": 30,
+    "regression_predicted_minutes": 32,
+    "regression_actual_minutes": 44
+  },
+  "environment": "vcst (B2B-store; FRONT_URL / BACK_URL from config.js)",
+  "build": {
+    "platform": "3.1073.0-pr-3121-9965",
+    "theme": "2.59.0-pr-2501-7e0c",
+    "relevant_modules": {
+      "VirtoCommerce.Catalog": "3.1046.0-pr-909-2839",
+      "VirtoCommerce.XCatalog": "3.1022.0-pr-113-f4a8"
+    },
+    "deployed": {
+      "platform": "3.1073.0-pr-3121-9965",
+      "theme": "2.59.0-pr-2501-7e0c",
+      "VirtoCommerce.Catalog": "3.1046.0-pr-909-2839",
+      "VirtoCommerce.XCatalog": "3.1022.0-pr-113-f4a8"
+    },
+    "releasedThrough": {
+      "breaking": []
+    }
+  },
+  "release": {
+    "refusal": "verdict-not-pass",
+    "audience": null,
+    "breaking": false,
+    "breaking_source": null,
+    "gate_recommendation": "NO-GO (ratified by qa-lead verifier)"
+  },
+  "documentation": {
+    "published": true,
+    "audiences": [
+      "customer",
+      "admin",
+      "developer"
+    ],
+    "files": [
+      "reports/ba/vcst-2945-barcode-scanner-customer-guide.md",
+      "reports/ba/vcst-2945-barcode-scanner-admin-guide.md",
+      "reports/ba/vcst-2945-barcode-scanner-developer-guide.md"
+    ],
+    "amended": false,
+    "comment_posted": false,
+    "refusal": null,
+    "note": "operator held posting until VCST-6094 is resolved and the PRs merge; bodies staged (3 per-audience comments, 224 lines > 120 cap)"
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "by": "qa-lead",
+      "confirmed": false,
+      "transition_id": "4"
+    },
+    {
+      "at": "5-status",
+      "from": "Testing",
+      "to": null,
+      "by": "qa-lead",
+      "confirmed": true,
+      "skipped": "operator decision: hold in Testing pending the x-catalog PR author answer on VCST-6094 (whether * / ? are intended in the barcode path); rule-default for FAIL would be Reopen"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-backend-expert (1r)",
+    "ba-system-analyzer (1c)",
+    "ba-system-analyzer (1c-map)",
+    "ba-story-writer (1d)",
+    "test-data-engineer (3a + 2 top-ups)",
+    "qa-testing-expert (3x)",
+    "qa-backend-expert (4a)",
+    "qa-frontend-expert (4a)",
+    "ui-ux-expert (4v)",
+    "test-management-specialist (A)",
+    "qa-lead-orchestrator (3-cases verifier, 4 passes)",
+    "regression-orchestrator (4c)",
+    "general-purpose (triage x2)",
+    "qa-backend-expert (bug drafts)",
+    "qa-frontend-expert (bug drafts)",
+    "qa-lead-orchestrator (5-report verifier)"
+  ],
+  "epic": {
+    "parent": null,
+    "siblings": {
+      "done": [
+        "VCST-2622"
+      ],
+      "in_progress": [],
+      "blocked_dependency": []
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 0,
+    "derived_acs": 16,
+    "weak_acs": 3,
+    "gap_acs_added": 13,
+    "impl_coverage": {
+      "satisfied": 15,
+      "drift": 0,
+      "contradicts": 1,
+      "not_found": 1
+    },
+    "conditions_total": 29,
+    "conditions_with_evidence": 26,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 89.7,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    }
+  },
+  "total_cases": 26,
+  "passed": 23,
+  "failed": 3,
+  "blocked": 0,
+  "iterations": null,
+  "new_cases_authored": 26,
+  "promotion": {
+    "promoted": [],
+    "held": [],
+    "note": "no promotion in /qa-test; C1 ran --no-promote"
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-09-28-1518",
+      "suites": [
+        "004",
+        "050a",
+        "103"
+      ],
+      "ids": 26,
+      "pass_rate": 88.46,
+      "passed": 23,
+      "failed": 3,
+      "blocked": 0
+    },
+    "release_sweep": "not-assessed"
+  },
+  "regression_triage": {
+    "run_ids": [
+      "REG-2026-09-28-1518"
+    ],
+    "report": "reports/regression/REG-2026-09-28-1518/triage-report.md",
+    "confirmed_bugs": [
+      "CAT-GQL-150",
+      "SRCHA-056"
+    ],
+    "test_fixes_applied": [
+      "CAT-GQL-147",
+      "SRCHA-056",
+      "SRCHA-053",
+      "SRCHA-054",
+      "SRCHA-055"
+    ],
+    "dismissed": []
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6094",
+      "severity": "Medium",
+      "relationship": "sub-task",
+      "parent": "VCST-2945",
+      "provenance": "in-scope",
+      "report": "reports/bugs/open/medium/BUG-barcode-exact-match-honours-wildcards-partial-code-opens-product.md"
+    },
+    {
+      "key": "VCST-6095",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent": null,
+      "provenance": "a11y-standalone",
+      "report": "reports/bugs/open/medium/BUG-barcode-blade-switch-and-field-checkboxes-not-keyboard-operable.md"
+    },
+    {
+      "key": "VCST-6096",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent": null,
+      "provenance": "pre-existing",
+      "report": "reports/bugs/open/medium/BUG-vc-button-loading-state-no-accessible-name.md"
+    },
+    {
+      "key": "VCST-6097",
+      "severity": "Medium",
+      "relationship": "related",
+      "parent": null,
+      "provenance": "pre-existing",
+      "report": "reports/bugs/open/medium/BUG-storefront-mobile-search-overlay-unnamed-controls-small-cancel.md"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "no-permission blade shows the scanner OFF after a 403",
+      "report": "reports/bugs/open/low/BUG-barcode-blade-shows-scanner-off-without-browsefilters-read.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Matching-is-exact hint shown in Full-text; Save disabled without a reason",
+      "report": "reports/bugs/open/low/BUG-barcode-blade-exact-hint-in-full-text-and-silent-save-disable.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "whitespace-only barcode not trimmed",
+      "report": "reports/bugs/open/low/BUG-storefront-barcode-whitespace-value-not-trimmed.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "results heading count read as a run-on token",
+      "report": "reports/bugs/open/low/BUG-storefront-search-heading-count-run-on-accessible-name.md"
+    },
+    {
+      "severity": "Medium",
+      "provenance": "out-of-scope",
+      "summary": "scanner modal dead end without a camera (filing deferred by the operator)",
+      "report": "reports/bugs/open/medium/BUG-storefront-barcode-scanner-modal-dead-end-without-camera.md"
+    },
+    {
+      "severity": "Medium",
+      "provenance": "out-of-scope",
+      "summary": "search results CLS 0.25-0.73 (filing deferred by the operator)",
+      "report": "reports/bugs/open/medium/BUG-storefront-search-results-layout-shift-few-results-and-empty-state.md"
+    }
+  ],
+  "discovery": {
+    "ran": true,
+    "box_minutes": 60,
+    "actual_minutes": 35,
+    "report": "reports/exploratory/SBTM-VCST-2945-2026-09-28.md",
+    "reconstructed": true,
+    "findings": 5,
+    "promoted": [
+      "CAT-GQL-150",
+      "SRCHA-056"
+    ],
+    "not_reached": [
+      "AC-14 older backend",
+      "exact-mode storefront redirect (lane had no write access to B2B-store)"
+    ]
+  },
+  "visual": {
+    "surface": true,
+    "surface_source": [
+      ".vue",
+      ".tpl.html",
+      "catalog.css"
+    ],
+    "axes": {
+      "a11y": "FAIL",
+      "design_system": "FAIL",
+      "vs_design": {
+        "status": "SKIPPED",
+        "skipped_reason": "no Prototype link on the ticket"
+      }
+    },
+    "invariant_failures": [
+      "BL-UI-001 CLS on search results (pre-existing)",
+      "BL-UI-006 mobile Cancel 18px (pre-existing)"
+    ],
+    "a11y_findings": [
+      "VCST-6095",
+      "VCST-6096",
+      "VCST-6097"
+    ],
+    "advisory": [
+      "heading run-on",
+      "homepage image-alt (CMS content)"
+    ],
+    "report": "reports/tickets/Sprint26-19/VCST-2945/design-report.md",
+    "reconstructed": true
+  },
+  "contract": {
+    "surface": true,
+    "surface_source": [
+      "filter.graphql",
+      "products(filter) barcode term"
+    ],
+    "schema_refreshed": "2026-09-28",
+    "fixtures": "76/76"
+  },
+  "coverage_triage": {
+    "surface": true,
+    "surface_source": [
+      "domains srch,cat,store",
+      "suites 004,005,003,061,051,050a,001"
+    ],
+    "hits": 98,
+    "dispositions": {
+      "CONFIRMED": 98,
+      "REPAIR": 0,
+      "RE-BASE": 0,
+      "SUPERSEDED": 0
+    },
+    "unscannable": [
+      "061"
+    ],
+    "unmatched_observables": [
+      "barcode",
+      "scanner"
+    ]
+  },
+  "test_data": {
+    "surface": true,
+    "surface_source": [
+      "0 variations with GTIN",
+      "1 MPN product",
+      "no discriminating full-text/exact pair"
+    ],
+    "seeder": "npm run seed:barcode",
+    "scoped_restore": "npm run seed:barcode -- --only stale-field",
+    "aliases": [
+      "BARCODE_*",
+      "BROWSEFILTERS_READ_ONLY",
+      "BROWSEFILTERS_NONE"
+    ]
+  },
+  "business_rules_verified": [
+    "BL-SRCH-001",
+    "BL-SRCH-002",
+    "BL-SRCH-004",
+    "BL-STORE-001",
+    "BL-SRCH-005 (VIOLATED - VCST-6094)",
+    "BL-SRCH-003 (not assessable - event-based indexation off)"
+  ],
+  "appinsights": {
+    "checked": false,
+    "reason": "no Reader role on the managed Log Analytics workspace; az token expired",
+    "layers": [
+      "frontend",
+      "backend"
+    ],
+    "window_minutes": 45,
+    "signals": null,
+    "correlated_failures": []
+  },
+  "screenshots": "reports/tickets/Sprint26-19/VCST-2945/screenshots/"
+}
