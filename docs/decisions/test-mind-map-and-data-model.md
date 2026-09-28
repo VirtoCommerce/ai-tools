@@ -77,8 +77,10 @@ A review of how the two pilot maps were actually used found the mechanics sound 
 DRIFTs, evidence rules held) and four gaps in use, each now closed or made visible:
 
 - **A DRIFT could park a defect.** Three routes named a draft bug or "open product defect" and no ticket,
-  so the conflict was known only to the map. `TM-018` (warn) now flags a route with no trackable owner.
-  An oracle id does not count, because it is the expected side of the conflict.
+  so the conflict was known only to the map. `TM-018` (warn) now flags a route with no trackable owner,
+  and any route marked `UNFILED`. Only a key of the deployment's own tracker project counts, because
+  case ids (`MSN-032`) and checker codes (`TM-018`) have the same shape. An oracle id or a docs URL
+  does not count either: both are the expected side of the conflict, not someone who resolves it.
 - **No human view.** A mind map's classic value is scope review with people, and a JSON file cannot be
   reviewed. `npm run models:view` projects the map into a Mermaid mindmap, a state diagram and an HTML
   page. It is regenerated on demand and never stored, so it cannot drift from the map.

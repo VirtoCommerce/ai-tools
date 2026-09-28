@@ -56,7 +56,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import type { ValidateFunction } from "ajv";
 import { ENTRY_RE } from "../knowledge/lint-bl.ts";
 import { SECTION_RE } from "../knowledge/lint-ecl.ts";
-import { parseSuite, loadDesignVocabulary } from "../test-cases/append-test-cases-to-suite.ts";
+import { parseSuite, loadDesignVocabulary, isCanonicalHeader } from "../test-cases/append-test-cases-to-suite.ts";
 
 // fileURLToPath, not .pathname — a space in the repo path ("My Projects") URL-encodes to %20.
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -172,6 +172,8 @@ export interface Context {
   discoverFns: Set<string> | null;
   generators: Set<string> | null;
   cases: Map<string, CaseStamps>;
+  /** Tracker project keys a DRIFT route may cite (`JIRA_PROJECT_KEY`, the profile's tracker key). */
+  trackerKeys?: Set<string>;
 }
 
 /* ------------------------------------------------------------------ *
@@ -398,15 +400,27 @@ export function statusProblem(status: string, evidence: Evidence[] = [], maturit
 /**
  * A DRIFT is a recorded conflict, and it is only resolved if its route reaches someone who will act.
  * A route that names only a draft bug, a team or "open defect" parks the conflict in the map, where
- * nobody but the map's next reader finds it. Trackable = a tracker key, an oracle audit, a kb dispute
- * or a URL. Oracle ids (BL-*, ECL-*) are the EXPECTED side, never an owner, so they do not count.
+ * nobody but the map's next reader finds it.
+ *
+ * Trackable = a key of THIS deployment's tracker project (read from the env / project profile, never
+ * a generic UPPER-123 shape, which case ids like MSN-032 and checker codes like TM-018 also match),
+ * an issue/PR in a named repo (`vc-frontend#2501`), a tracker issue URL, an oracle audit or a kb dispute.
+ * A documentation URL or an oracle id is the EXPECTED side of the conflict, never an owner.
+ * A route that says `UNFILED` is flagged whatever else it names — that marker is the author saying
+ * the owner does not exist yet, and TM-018 is what keeps it visible until it does.
  */
-const TRACKER_KEY_RE = /(?<![A-Za-z0-9-])(?!(?:BL|ECL)-)[A-Z][A-Z0-9]+-\d+\b/;
-const TRACKABLE_RE = [TRACKER_KEY_RE, /\/qa-review-oracles\b/, /\bkb[ _]dispute\b/i, /\bhttps?:\/\/\S+/];
+const ISSUE_URL_RE = /\bhttps?:\/\/\S*(?:\/browse\/|\/issues\/|\/pull\/|\/_workitems\/)\S*/;
+const REPO_REF_RE = /\b[A-Za-z0-9][\w.-]*#\d+\b/;
+const OTHER_OWNERS_RE = [/\/qa-review-oracles\b/, /kb[ _-]dispute/i];
 
-export function driftRouteProblem(route: string | undefined): string | null {
+export function driftRouteProblem(route: string | undefined, trackerKeys: Iterable<string> = []): string | null {
   if (!route?.trim()) return "DRIFT has no route — name who resolves it";
-  if (TRACKABLE_RE.some((re) => re.test(route))) return null;
+  if (/\bUNFILED\b/.test(route)) return "DRIFT route is marked UNFILED — file it, then put the key in the route";
+  const keys = [...trackerKeys].filter((k) => /^[A-Z][A-Z0-9]*$/.test(k));
+  const keyRe = keys.length ? new RegExp(`(?<![A-Za-z0-9-])(?:${keys.join("|")})-\\d+\\b`) : null;
+  if ((keyRe && keyRe.test(route)) || ISSUE_URL_RE.test(route) || REPO_REF_RE.test(route) || OTHER_OWNERS_RE.some((re) => re.test(route))) {
+    return null;
+  }
   const draft = /reports\/bugs\/open\//.test(route) ? " (it points at an unfiled draft bug)" : "";
   return `DRIFT route names no trackable owner${draft} — file a ticket, or route it to /qa-review-oracles or a kb dispute`;
 }
@@ -493,7 +507,7 @@ export function checkModels(input: CheckInput, ctx: Context): CheckResult {
       const sp = statusProblem(n.status, n.evidence, n.maturity);
       if (sp) add("TM-007", "error", file, sp, n.id);
       if (n.status === "DRIFT") {
-        const rp = driftRouteProblem(n.drift?.route);
+        const rp = driftRouteProblem(n.drift?.route, ctx.trackerKeys ?? []);
         if (rp) add("TM-018", "warn", file, rp, n.id);
       }
       if (n.technique && ctx.techniques && !ctx.techniques.has(n.technique)) {
@@ -641,6 +655,26 @@ export function checkModels(input: CheckInput, ctx: Context): CheckResult {
  * Context loading — every vocabulary from the file that owns it
  * ------------------------------------------------------------------ */
 
+/**
+ * This deployment's tracker keys: `JIRA_PROJECT_KEY` from the env layers + the profile's tracker key.
+ * The layers are PARSED, in config.js's order, rather than config.js imported: config.js exits the
+ * process when a secret is missing, which is every CI run and every fresh clone.
+ */
+async function trackerKeys(): Promise<Set<string>> {
+  const keys = new Set<string>();
+  try {
+    const { parse } = await import("dotenv");
+    const { resolveTestEnv } = await import(pathToFileURL(join(ROOT, "scripts", "lib", "resolve-test-env.js")).href);
+    const { loadProjectProfile } = await import(pathToFileURL(join(ROOT, "scripts", "lib", "project-profile.mjs")).href);
+    const layers = [".env.defaults", `.env.${resolveTestEnv("vcst")}`, ".env.local"].map((f) => readIf(join(ROOT, f)));
+    const merged = Object.assign({}, ...layers.filter((t): t is string => t !== null).map((t) => parse(t)), process.env);
+    for (const k of [merged.JIRA_PROJECT_KEY, loadProjectProfile(ROOT)?.tracker?.projectKey]) if (k) keys.add(k);
+  } catch {
+    // An unreadable env or profile ⇒ no key is trusted, and every tracker-only route warns. Loud, not guessed.
+  }
+  return keys;
+}
+
 function readIf(path: string): string | null {
   return existsSync(path) ? readFileSync(path, "utf8") : null;
 }
@@ -689,10 +723,8 @@ function eclIds(): Set<string> | null {
  * so a stamp in a legacy `References` cell lands under another name and is never read — silently.
  * Only a file that actually carries a stamp is worth a warning; legacy suites without one are not.
  */
-export function stampsUnreadable(text: string, parsedColumns: string[]): boolean {
-  if (!/\b(?:Behavior|DataProfile):/.test(text)) return false;
-  const header = (text.replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0] ?? "").split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-  return header.length !== parsedColumns.length || header.some((c, i) => c !== parsedColumns[i]);
+export function stampsUnreadable(text: string): boolean {
+  return /\b(?:Behavior|DataProfile):/.test(text) && !isCanonicalHeader(text);
 }
 
 export function loadCases(findings: Finding[]): Map<string, CaseStamps> {
@@ -704,14 +736,15 @@ export function loadCases(findings: Finding[]): Map<string, CaseStamps> {
       else if (e.name.endsWith(".csv")) {
         const suite = relative(ROOT, p).replace(/\\/g, "/");
         let rows;
-        const text = readFileSync(p, "utf8");
+        let text: string;
         try {
+          text = readFileSync(p, "utf8");
           rows = parseSuite(text).rows;
         } catch {
           findings.push({ code: "TM-019", severity: "warn", file: suite, msg: "suite does not parse — its model stamps were not read" });
           continue;
         }
-        if (stampsUnreadable(text, Object.keys(rows[0] ?? {}))) {
+        if (stampsUnreadable(text)) {
           findings.push({ code: "TM-019", severity: "warn", file: suite, msg: "legacy header — columns are read by position, so its model stamps were not read; migrate the suite to the enriched header first" });
           continue;
         }
@@ -822,6 +855,7 @@ async function main(): Promise<void> {
     discoverFns: exportNames(readIf(join(ROOT, "scripts", "lib", "live-discover.ts"))),
     generators: exportNames(readIf(join(ROOT, "scripts", "lib", "random-data.ts"))),
     cases: loadCases(findings),
+    trackerKeys: await trackerKeys(),
   };
 
   const baseline = baselineOf([...okMaps, ...okModels].map((m) => m.file), base);

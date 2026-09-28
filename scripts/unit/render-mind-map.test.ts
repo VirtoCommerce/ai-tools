@@ -2,7 +2,7 @@
 // stamps, the labels Mermaid can parse, and the state diagram. The pilot maps are the gate's to own.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildTree, subtreeCases, label, toMermaidMindmap, toMermaidStates, toHtml } from "../maintenance/render-mind-map.ts";
+import { buildTree, label, toMermaidMindmap, toMermaidStates, toHtml } from "../maintenance/render-mind-map.ts";
 import type { MapNode, MindMap } from "../maintenance/check-test-models.ts";
 
 const n = (id: string, extra: Partial<MapNode> = {}): MapNode => ({ id, type: "behavior", name: `name ${id}`, status: "CONFIRMED", evidence: [], ...extra });
@@ -38,11 +38,26 @@ test("the tree follows contains/branches_to only, draws a shared node once, and 
   assert.deepEqual(root.children[0].cases, ["C-1", "C-2"]);
 });
 
-test("a behaviour covered only through its branches counts as covered, each case once", () => {
+test("coverage is read off the edge graph: a shared branch counts for BOTH parents, each case once", () => {
   const m: MindMap = { ...map, edges: [...map.edges, { from: "x.b", to: "x.b.pos", type: "branches_to" }], nodes: [...map.nodes, n("x.b.pos", { type: "branch", branch_kind: "happy" })] };
   const tree = buildTree(m, new Map([["x.a", ["C-1"]], ["x.a.neg", ["C-1", "C-3"]], ["x.b.pos", ["C-4"]]]));
-  assert.deepEqual([...subtreeCases(tree[0].children[0])].sort(), ["C-1", "C-3"]);
-  assert.match(toMermaidMindmap(m, tree), /\[\? name x\.b · 1 case\]/);
+  assert.deepEqual([...tree[0].children[0].covered].sort(), ["C-1", "C-3"]);
+  // x.a.neg is DRAWN under x.a only, but x.b branches_to it too, so its C-1/C-3 count for x.b
+  assert.deepEqual([...tree[0].children[1].covered].sort(), ["C-1", "C-3", "C-4"]);
+  assert.match(toMermaidMindmap(m, tree), /\[\? name x\.b · 3 cases\]/);
+});
+
+test("a node the roots never reach is drawn as its own root; an OBSOLETE node is not a gap", () => {
+  const m: MindMap = {
+    ...map,
+    nodes: [...map.nodes, n("x.c1"), n("x.c2", { status: "OBSOLETE" })],
+    edges: [...map.edges, { from: "x.c1", to: "x.c2", type: "contains" }, { from: "x.c2", to: "x.c1", type: "branches_to" }],
+  };
+  const tree = buildTree(m, new Map());
+  assert.deepEqual(tree.map((t) => t.node.id), ["x.f", "x.c1"], "the cycle is not silently dropped");
+  const mm = toMermaidMindmap(m, tree);
+  assert.match(mm, /\[✗ name x\.c2 · obsolete\]/);
+  assert.ok(!/x\.c2 · NO CASE/.test(mm));
 });
 
 test("mindmap marks status and coverage, and strips what breaks Mermaid", () => {

@@ -85,10 +85,11 @@ entries. Findings go to chat.
   `drift.expected` (the higher-precedence source + ref), `drift.observed` and `drift.route` (who
   resolves it). Precedence is the repo's grounding order, not a generic one: this repo's oracles and
   knowledge → `kb` → VirtoOZ → live/source (*Product context*).
-- **A `route` reaches an owner, never a parking place.** It names a tracker key, `/qa-review-oracles`,
-  a `kb dispute` or a URL. A route to an unfiled draft bug, a repo or "open defect" hides the conflict in
-  the map; write `UNFILED — …` and let `TM-018` keep it visible until it is filed. An oracle id is the
-  expected side, not an owner.
+- **A `route` reaches an owner, never a parking place.** It names a key of this deployment's tracker
+  project (`JIRA_PROJECT_KEY`), an issue or PR in a named repo (`vc-frontend#2501`) or its URL,
+  `/qa-review-oracles`, or a `kb dispute`. A route to an unfiled draft bug, a repo or "open defect" hides
+  the conflict in the map; write `UNFILED — …` and `TM-018` keeps warning until the key replaces it. An
+  oracle id, a case id and a documentation URL are the expected side or the evidence, never an owner.
 - **A domain-map claim is cited with its map rev** (`domain-map:<slug>@rev<N> §<section>`), keeping
   the class of the map's own verdict (`CONFIRMED (live)` → `OBSERVED`, `(source)` → `DOC`).
 - **A promoted case is evidence of observation** (`OBSERVED`, ref = the promoting run id). A Draft,

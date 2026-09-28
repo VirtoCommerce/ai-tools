@@ -11,6 +11,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { COLUMNS } from "../test-cases/append-test-cases-to-suite.ts";
 import {
   checkModels,
   compileSchemas,
@@ -172,23 +173,32 @@ test("conflicting evidence is carried as DRIFT, and the schema requires the drif
   assert.deepEqual(schemaFindings(schemas.map, withRecord, "m", "TM-001"), []);
 });
 
-test("a DRIFT route must reach a trackable owner → TM-018 (warn), and an oracle id is not an owner", () => {
-  for (const ok of ["VCST-6097 (vc-frontend)", "/qa-review-oracles BL-SRCH-003", "kb dispute KB-1A", "https://example.test/x", "PO question (VCST-2622 AC)"]) {
-    assert.equal(driftRouteProblem(ok), null, ok);
+test("a DRIFT route must reach a trackable owner → TM-018 (warn)", () => {
+  const keys = ["VCST"];
+  for (const ok of ["VCST-6097 (vc-frontend)", "/qa-review-oracles BL-SRCH-003", "mcp__kb__kb_dispute KB-1A", "kb-dispute KB-1A",
+    "https://example.atlassian.net/browse/X-1", "vc-frontend#2501", "PO question (VCST-2622 AC)"]) {
+    assert.equal(driftRouteProblem(ok, keys), null, ok);
   }
-  assert.match(driftRouteProblem(undefined)!, /no route/);
-  assert.match(driftRouteProblem("open product defect; BL-LOY-019 violated, see ECL-3.1")!, /no trackable owner/);
-  assert.match(driftRouteProblem("draft reports/bugs/open/medium/BUG-x.md (filing deferred)")!, /unfiled draft/);
-  const drift = (route?: string) => node("x.a", { status: "DRIFT", drift: { expected: "BL says X", observed: "Y", ...(route ? { route } : {}) } });
-  assert.ok(codes(run(map([drift("vc-module-catalog (PR #909)")]), model([req("data.x.a")])), "warn").includes("TM-018"));
-  assert.ok(!codes(run(map([drift("VCST-1")]), model([req("data.x.a")])), "warn").includes("TM-018"));
+  assert.match(driftRouteProblem(undefined, keys)!, /no route/);
+  // oracle ids, suite case ids and checker codes share the UPPER-123 shape but are not owners
+  for (const bad of ["open defect; BL-LOY-019 violated, see ECL-3.1", "cases MSN-032 / SRCHA-056 assert it", "see TM-018",
+    "docs gap; report against https://docs.example.org/guide/", "vc-module-catalog (PR #909)"]) {
+    assert.match(driftRouteProblem(bad, keys)!, /no trackable owner/, bad);
+  }
+  assert.match(driftRouteProblem("draft reports/bugs/open/medium/BUG-x.md (filing deferred)", keys)!, /unfiled draft/);
+  assert.match(driftRouteProblem("UNFILED - resolve via /qa-review-oracles, then a VCST bug", keys)!, /marked UNFILED/);
+  assert.match(driftRouteProblem("VCST-1", [])!, /no trackable owner/, "with no configured tracker key, no key is trusted");
+  const drift = (route: string) => node("x.a", { status: "DRIFT", drift: { expected: "BL says X", observed: "Y", route } });
+  const warns = (route: string) => codes(run(map([drift(route)]), model([req("data.x.a")]), { ...ctx(), trackerKeys: new Set(keys) }), "warn");
+  assert.ok(warns("vc-module-catalog (PR #909)").includes("TM-018"));
+  assert.ok(!warns("VCST-1").includes("TM-018"));
 });
 
 test("a stamp in a legacy-header suite is unreadable → TM-019; an enriched or unstamped suite is not", () => {
-  const enriched = ["ID", "Title", "References"];
-  assert.equal(stampsUnreadable('\uFEFF"ID","Title","References"\nA,t,Behavior:x.a', enriched), false);
-  assert.equal(stampsUnreadable("ID,Title,Steps,References\nA,t,s,Behavior:x.a", enriched), true);
-  assert.equal(stampsUnreadable("ID,Title,Steps,References\nA,t,s,VCST-1", enriched), false, "no stamp, no warning");
+  const enriched = COLUMNS.map((c) => `"${c}"`).join(",");
+  assert.equal(stampsUnreadable(`${enriched}\nA,Behavior:x.a`), false);
+  assert.equal(stampsUnreadable("ID,Title,Steps,References\nA,t,s,Behavior:x.a"), true);
+  assert.equal(stampsUnreadable("ID,Title,Steps,References\nA,t,s,VCST-1"), false, "no stamp, no warning");
 });
 
 // ---------------------------------------------------------------- data model rules
