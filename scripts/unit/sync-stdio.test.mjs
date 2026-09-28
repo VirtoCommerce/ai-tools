@@ -21,7 +21,7 @@ test("output written just before process.exit() reaches a pipe in full", () => {
 });
 
 test("the helper is a no-op outside a pipe and never throws", async () => {
-  await import(helper); // the test runner's own stdio — whatever it is, importing must not fail
+  await import(pathToFileURL(helper).href); // the test runner's own stdio — whatever it is, importing must not fail
 });
 
 // The guard, so a NEW script cannot reintroduce the bug: any CLI in scripts/ or ci/ that writes to
