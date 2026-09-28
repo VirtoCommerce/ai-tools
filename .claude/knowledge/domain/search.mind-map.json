@@ -2061,6 +2061,466 @@
           "date": "2026-09-28"
         }
       ]
+    },
+    {
+      "id": "srch.barcode.config.shape-fields-offered-by-value-type",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "CT",
+      "name": "The barcode-fields list offers a catalog property by its value type, level and multiplicity",
+      "maturity": "new",
+      "description": "Open question: does the blade list only short-text properties, or every filterable one? Either answer is a finding when the other layer disagrees (dedicated PUT validates against the index schema, D3).",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs AddCustomPropertiesAsync (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "the index schema declares every Product/Variation property of type Boolean, DateTime, Integer, Number, ShortText, Color (filterable) and LongText, Html, GeoPoint (searchable only), lowercased; which of these GET …/barcode-search/store/{id}/fields lists is decided by catalog#909"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "domain-map:srch@rev1 §1 link 1",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry; the map and PR wording say only lowercased short-text Product/Variation properties"
+        }
+      ],
+      "requires": [
+        "data.srch.property.value-type-zoo",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-number-property",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "A Number property configured as a barcode field matches a numeric scan of its value",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "Number is indexed as a Double, filterable, under the lowercased name"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "search.md D3",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-numeric-leading-zero",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A scan with leading zeros equals a numeric property value without them (12-digit UPC-A vs its 11-digit numeric form)",
+      "maturity": "new",
+      "description": "The same scan can hit a ShortText product by string and a Number product by value; equal counts would hide the collapse.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "a Number/Integer value is stored as a number, so the leading zero of the stored string is not part of the value"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "numeric term equality",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-integer-overflow",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A 13-digit EAN scan against an Integer property field is out of the field's range",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs AddCustomPropertiesAsync (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "Integer maps to IndexDocumentFieldValueType.Integer (32-bit range in the index) while an EAN-13 is 13 digits"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "BVA at 2147483647",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-typed-field-non-matching-scan",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A scan that is not a number, boolean or date, expanded over a typed field, still returns the other fields' hits instead of failing the query",
+      "maturity": "new",
+      "description": "The integration risk: one typed field in the OR list turns a valid ShortText scan into a provider error or an empty page.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "Integer/Number/Boolean/DateTime fields are typed in the index; the OR expansion adds one term filter per configured field with the same raw string"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "error guessing",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-boolean-default-false",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "EG",
+      "name": "A Boolean property with no value is indexed as false, so a scan of false matches every product that never set it",
+      "maturity": "new",
+      "description": "Source also writes that default under property.Name (not lowercased) while other values use PropertyName lowercased; whether the provider folds the case is not established.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "\"replace empty value for Boolean property with default False\" — the false is written for every product carrying the property definition without a value"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "barcode consequence",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-dictionary-alias",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "A dictionary ShortText property is indexed by its alias, so a scan of the displayed value and a scan of the alias differ",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "ShortText/Color index \"propValue.Alias ?? propValue.Value\" in the language-independent base field"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "alias semantics for dictionary items",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.dictionary-multivalue-multilanguage-values",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-multivalue-property",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "A multivalue property holds several codes on one product and a scan of any one of them finds it",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "isCollection = property.Multivalue; each value is added to the same collection field"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "scan of any element",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.dictionary-multivalue-multilanguage-values",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-multilanguage-property",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "name": "A multilanguage property's per-language values all sit in one base field and each language also gets a <name>_<lang> field",
+      "maturity": "new",
+      "description": "A scan of the French value matches with no language context; whether the per-language fields can be configured is part of the fields-list question.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "ShortText base field per value plus \"{propertyName}_{languageCode}\" for Multilanguage properties; the per-language names are not in the declared schema (AddCustomPropertiesAsync)"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "language-blind match",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.dictionary-multivalue-multilanguage-values",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-longtext-property",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A LongText or Html property is searchable but not filterable and its value is stored lowercased, so an exact mixed-case scan does not equal it",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "LongText/Html: IsSearchable only, value.ToLowerInvariant(); AddCustomPropertiesAsync declares no IsFilterable"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "term filter on a non-filterable field",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-variation-property-double-hit",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "name": "A code held in a Variation-type property matches the variation and its parent, while a variation's own MPN/GTIN/code matches only the variation",
+      "maturity": "new",
+      "description": "Two hits for one physical code make the storefront list instead of opening a page (srch.barcode.resolve.multi-hit-lists).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.IndexProductVariation (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "the parent document receives the variation code as content and the variation properties of type Variation only (IndexCustomProperties(document, variation.Properties, [PropertyType.Variation])); gtin/manufacturerPartNumber/code fields are written per document in CreateDocument, so they never reach the parent"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B4: variation MPN found the variation only (1 hit); the Variation-type property half is source-only",
+          "date": "2026-09-28"
+        }
+      ],
+      "requires": [
+        "data.srch.variation.variation-property-active-inactive",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-inactive-variation",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Deactivating a variation removes its Variation-type property values from the parent's document but leaves the variation's own document",
+      "maturity": "new",
+      "description": "Whether the variation's own document is still returned to a shopper (status hidden, availability SoldOut) is srch.barcode.expand.shape-inactive-or-hidden-product.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.GetDocumentsAsync (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "IndexProductVariation(doc, variation) runs only when variation.IsActive is true; CreateDocumentAsync(variation, product) runs for every variation"
+        }
+      ],
+      "requires": [
+        "data.srch.variation.variation-property-active-inactive",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-inactive-or-hidden-product",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "An inactive product, or one under an inactive category, is indexed as hidden and SoldOut; a scan of its code finds it or not depending on the visibility filter",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.GetProductStatus/GetProductAvailability (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "status = visible only if IsActive and ParentCategoryIsActive; availability SoldOut when inactive"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "storefront visibility filter on the barcode path",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.inactive-hidden",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-product-type",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "CT",
+      "name": "Physical, Digital, BillOfMaterials and configurable products are found by the same fields and open the same result flow",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.CreateDocument (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "productType is one filterable string and no indexing branch depends on it; the type index field is written only on the parent for its variations (IndexProductVariation)"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "no product-type branch in the expansion",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.product-type-matrix",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-cross-catalog-duplicate-code",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "name": "The same code on products in two catalogs is found only through the catalog the store exposes",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.CreateDocument (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "one document per product id with a \"catalog\" collection; code is unique per catalog, not globally"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs header",
+          "note": "seven live products share one GTIN in a catalog B2B-store does not expose; the scan outcome there was never observed"
+        }
+      ],
+      "requires": [
+        "data.srch.product.catalog-placement",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-linked-category-single-hit",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "A product linked into a virtual-catalog category is one index document with several outlines, so a scan returns it once",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.CreateDocument (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "IndexDocument(product.Id); outlines and catalog values are collections on that one document"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "one hit, not one per link",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.catalog-placement",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-product-and-variation-share-value",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "name": "A product and its variation carrying the same GTIN both match a scan, so the result is a list",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.CreateDocument (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "each variation has its own document with its own gtin field"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B4: the default scope covers products and variations",
+          "date": "2026-09-28"
+        }
+      ],
+      "requires": [
+        "data.srch.variation.variation-property-active-inactive",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-dynamic-property",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "name": "A dynamic (platform) property value is indexed under its lowercased name, is not in the catalog property list, and may or may not be offered as a barcode field",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-search: SearchModule.Core/Extensions/IndexDocumentDynamicPropertyExtensions.cs AddDynamicProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "filterable field per dynamic property (dictionary: item names of all locales); ShortText also added to __content"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "fields list",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.dynamic-property-value",
+        "data.srch.store.barcode-exact"
+      ]
     }
   ],
   "edges": [
@@ -2586,6 +3046,97 @@
       "from": "srch.results.facets",
       "to": "srch.index.freshness",
       "type": "affected_by"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.shape-fields-offered-by-value-type",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-number-property",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-numeric-leading-zero",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-integer-overflow",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-typed-field-non-matching-scan",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-boolean-default-false",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-dictionary-alias",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-multivalue-property",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-multilanguage-property",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-longtext-property",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-variation-property-double-hit",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-inactive-variation",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-inactive-or-hidden-product",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-product-type",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-cross-catalog-duplicate-code",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-linked-category-single-hit",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-product-and-variation-share-value",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-dynamic-property",
+      "type": "branches_to"
     }
-  ]
+  ],
+  "amended": "2026-09-28"
 }

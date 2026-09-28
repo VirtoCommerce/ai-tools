@@ -9,7 +9,8 @@
     "ticket": "VCST-2945",
     "two_stores": "API/xAPI cases (050a, 103) own the dedicated AGENT-TEST-BARCODE store (data.srch.store.barcode-*); storefront cases (004) have to write B2B-store's own settings (data.srch.store.storefront-*), because the dedicated store is not reachable from FRONT_URL. The two families of store states are deliberately separate requirements.",
     "kb_read": "2026-09-28 — KB-C3945D5C, KB-84EA18E3, KB-BC55C4F0, KB-31802239, KB-041DF407, KB-4C29749E, KB-2CBB229F, KB-A47C7347. Miss: xCatalog products barcode expansion scope (no entry).",
-    "known_limit": "Profiles apply the store-setting STEP states through the case; /qa-seed-data --profile runs seed:barcode / seed:rbac and leaves the case rows to the Steps."
+    "known_limit": "Profiles apply the store-setting STEP states through the case; /qa-seed-data --profile runs seed:barcode / seed:rbac and leaves the case rows to the Steps.",
+    "barcode_shape_crossings": "2026-09-28: nine requirements and 18 profiles for the barcode x catalog-shape branches; none has a seeder yet (see each requirement's limits)."
   },
   "requirements": [
     {
@@ -1153,6 +1154,298 @@
           "ref": "005-search-filters-advanced.csv SRCH-FSORT-002 Preconditions"
         }
       ]
+    },
+    {
+      "id": "data.srch.property.value-type-zoo",
+      "entity": "Property",
+      "purpose": "One catalog property definition per value type, level and multiplicity, so the fields list and the index schema can be compared with the blade.",
+      "required_state": {
+        "properties": "Number, Integer, Boolean, DateTime, LongText, Html, ShortText-dictionary, ShortText-multivalue, ShortText-multilanguage, ShortText at Variation level, plus one dynamic property",
+        "names": "AGENT_TEST_BARCODE_* (index-field-safe)"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Seeded definition no case mutates; cases only read it. Serialise with the other barcode suites that read seed:barcode products.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "a seed:barcode teardown extension (AGENT_TEST_ prefix sweep)"
+      },
+      "discriminates": "Each type has a different index mapping; a single ShortText property cannot tell a build that lists every filterable field from one that lists short text only.",
+      "limits": "SEEDER GAP — extend PROPERTIES in barcode-specs.mjs and the seeder; value types are set at property creation and cannot be changed after values exist.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "PROPERTIES defines only two Product/ShortText properties (upc, stale); nothing here reaches this shape"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.typed-property-values",
+      "entity": "Product",
+      "purpose": "Products holding typed property values: a Number and a ShortText carrying the same digits with and without a leading zero, an Integer at 2147483647, a Boolean set and unset, a DateTime, a LongText in mixed case.",
+      "required_state": {
+        "number": "11-digit numeric on product A; the 12-digit zero-prefixed string of the same digits on product B (ShortText)",
+        "integer": "2147483647 on one product",
+        "boolean": "true on one product, no value on a second",
+        "datetime": "one value",
+        "longtext": "a mixed-case token"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Seeded definition no case mutates; cases only read it. Serialise with the other barcode suites that read seed:barcode products.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "a seed:barcode teardown extension (AGENT_TEST_ prefix sweep)"
+      },
+      "discriminates": "A scan of the zero-prefixed digits must hit B by string and A by number: equal hit counts mean the type made no difference.",
+      "limits": "SEEDER GAP — products with typed values do not exist; needs Z first.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "PROPERTIES defines only two Product/ShortText properties (upc, stale); nothing here reaches this shape"
+        }
+      ],
+      "relationships": [
+        {
+          "requirement": "data.srch.property.value-type-zoo",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.dictionary-multivalue-multilanguage-values",
+      "entity": "Product",
+      "purpose": "Products whose ShortText property is a dictionary (alias differs from display value), holds two values, or holds different values per language.",
+      "required_state": {
+        "dictionary": "item alias != display value",
+        "multivalue": "two distinct codes on one product",
+        "multilanguage": "the catalog has >= 2 languages and the values differ per language"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Seeded definition no case mutates; cases only read it. Serialise with the other barcode suites that read seed:barcode products.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "a seed:barcode teardown extension (AGENT_TEST_ prefix sweep)"
+      },
+      "discriminates": "Alias vs displayed value and value-in-language-1 vs -2 are different strings, so a build indexing the wrong one finds a different set.",
+      "limits": "SEEDER GAP — needs Z; also needs a catalog with two languages — buildStoreBody() gives the dedicated store one language and the fixture catalog's language list is unknown.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "PROPERTIES defines only two Product/ShortText properties (upc, stale); nothing here reaches this shape"
+        }
+      ],
+      "relationships": [
+        {
+          "requirement": "data.srch.property.value-type-zoo",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "data.srch.variation.variation-property-active-inactive",
+      "entity": "Product",
+      "purpose": "A parent with three variations: one active with a Variation-type property value, one inactive with another, one whose GTIN equals the parent's.",
+      "required_state": {
+        "parent": "active, in stock",
+        "variations": "active+value V1, inactive+value V2, active+GTIN equal to the parent's",
+        "property": "Variation-level ShortText from Z"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Seeded definition no case mutates; cases only read it. Serialise with the other barcode suites that read seed:barcode products.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "a seed:barcode teardown extension (AGENT_TEST_ prefix sweep)"
+      },
+      "discriminates": "V1 must hit parent and variation (2), V2 only its own document, the shared GTIN both documents: each count differs, so a build that indexes variations differently shows it.",
+      "limits": "SEEDER GAP — the seeder builds one parent with two variations (variationMpn, variationSibling) and no variation-level property; needs Z.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "PROPERTIES defines only two Product/ShortText properties (upc, stale); nothing here reaches this shape"
+        }
+      ],
+      "relationships": [
+        {
+          "requirement": "data.srch.property.value-type-zoo",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.inactive-hidden",
+      "entity": "Product",
+      "purpose": "An inactive product and an active product under an inactive category, each with a unique GTIN.",
+      "required_state": {
+        "products": "IsActive=false; IsActive=true under a category with IsActive=false",
+        "gtin": "unique per product"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Seeded definition no case mutates; cases only read it. Serialise with the other barcode suites that read seed:barcode products.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "a seed:barcode teardown extension (AGENT_TEST_ prefix sweep)"
+      },
+      "discriminates": "Both are indexed status hidden; the same scan on an ordinary product opens it, so the pair separates the visibility filter from the code match.",
+      "limits": "SEEDER GAP — no product-visibility fixture in barcode-specs.mjs.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "PROPERTIES defines only two Product/ShortText properties (upc, stale); nothing here reaches this shape"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.product-type-matrix",
+      "entity": "Product",
+      "purpose": "One product each of type Physical, Digital, BillOfMaterials and configurable, each with a distinct GTIN and a price.",
+      "required_state": {
+        "types": "Physical, Digital, BillOfMaterials, configurable",
+        "gtin": "distinct per type",
+        "price": "present in the store currency"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Seeded definition no case mutates; cases only read it. Serialise with the other barcode suites that read seed:barcode products.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "a seed:barcode teardown extension (AGENT_TEST_ prefix sweep)"
+      },
+      "discriminates": "Distinct GTINs per type let one scan per type show that each is found; an implementation branching on type finds only some.",
+      "limits": "SEEDER GAP — seed:barcode creates only ordinary Physical products; configurable products come from the configurable seeder (see configurable-products.md) and carry no GTIN there.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "PROPERTIES defines only two Product/ShortText properties (upc, stale); nothing here reaches this shape"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.catalog-placement",
+      "entity": "Product",
+      "purpose": "The same code in a second physical catalog, and a product linked into a virtual-catalog category.",
+      "required_state": {
+        "second_catalog": "same code as an exposed product, in a catalog the store does not expose",
+        "virtual_link": "product linked into >= 2 virtual categories"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Seeded definition no case mutates; cases only read it. Serialise with the other barcode suites that read seed:barcode products.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "a seed:barcode teardown extension (AGENT_TEST_ prefix sweep)"
+      },
+      "discriminates": "The hidden-catalog twin and the linked product give expected counts 1 and 1 where duplicated documents would give 2.",
+      "limits": "SEEDER GAP — no second catalog or link fixture; B2B-store's catalog is the virtual B2B-mixed one (catalog.md), so the dedicated store's link behaviour differs.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "PROPERTIES defines only two Product/ShortText properties (upc, stale); nothing here reaches this shape"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.dynamic-property-value",
+      "entity": "Product",
+      "purpose": "A product with a ShortText dynamic property value on the Product object type.",
+      "required_state": {
+        "dynamic_property": "ShortText, ObjectType Product, value set on one product"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Seeded definition no case mutates; cases only read it. Serialise with the other barcode suites that read seed:barcode products.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "a seed:barcode teardown extension (AGENT_TEST_ prefix sweep)"
+      },
+      "discriminates": "The value exists only in the dynamic-property index field, so it separates that field from catalog properties.",
+      "limits": "SEEDER GAP — no dynamic-property seeder for products in barcode-specs.mjs.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "PROPERTIES defines only two Product/ShortText properties (upc, stale); nothing here reaches this shape"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.store.barcode-typed-fields",
+      "entity": "Store",
+      "purpose": "The dedicated store's barcode fields set to typed property fields, written through the generic settings API because the blade may not list them.",
+      "required_state": {
+        "fields": "typed field names from Z"
+      },
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "fields": []
+        },
+        "transition": "GET-merge-PUT /api/stores with the typed field names in Catalog.Search.BarcodeSearchFields on @td(BARCODE_STORE.id), read back by GET …/barcode-search/store/{id}"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case restores fields=[] by the dedicated PUT"
+      },
+      "discriminates": "A typed field must reach the expansion for E/C/D/B to be observable.",
+      "limits": "Store-level state owned by the case, like data.srch.store.barcode-exact; serialise.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "search.md D3",
+          "note": "generic PUT /api/stores stores an unvalidated field list (OBSERVED 2026-09-28); typed names are the same path"
+        }
+      ],
+      "relationships": [
+        {
+          "requirement": "data.srch.property.value-type-zoo",
+          "required": true
+        }
+      ]
     }
   ],
   "profiles": [
@@ -1580,6 +1873,192 @@
         "data.srch.variation.mpn-out-of-stock"
       ],
       "notes": "Dedicated-store (xAPI) form. SRCH-018 runs on B2B-store and should stamp profile.srch.resolve-variation-hit."
+    },
+    {
+      "id": "profile.srch.config-shape-fields-offered-by-value-type",
+      "behavior": "srch.barcode.config.shape-fields-offered-by-value-type",
+      "purpose": "The barcode-fields list offers a catalog property by its value type, level and multiplicity",
+      "requirements": [
+        "data.srch.property.value-type-zoo",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-number-property",
+      "behavior": "srch.barcode.expand.shape-number-property",
+      "purpose": "A Number property configured as a barcode field matches a numeric scan of its value",
+      "requirements": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-numeric-leading-zero",
+      "behavior": "srch.barcode.expand.shape-numeric-leading-zero",
+      "purpose": "A scan with leading zeros equals a numeric property value without them (12-digit UPC-A vs its 11-digit numeric form)",
+      "requirements": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-integer-overflow",
+      "behavior": "srch.barcode.expand.shape-integer-overflow",
+      "purpose": "A 13-digit EAN scan against an Integer property field is out of the field's range",
+      "requirements": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-typed-field-non-matching-scan",
+      "behavior": "srch.barcode.expand.shape-typed-field-non-matching-scan",
+      "purpose": "A scan that is not a number, boolean or date, expanded over a typed field, still returns the other fields' hits instead of failing the query",
+      "requirements": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-boolean-default-false",
+      "behavior": "srch.barcode.expand.shape-boolean-default-false",
+      "purpose": "A Boolean property with no value is indexed as false, so a scan of false matches every product that never set it",
+      "requirements": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-dictionary-alias",
+      "behavior": "srch.barcode.expand.shape-dictionary-alias",
+      "purpose": "A dictionary ShortText property is indexed by its alias, so a scan of the displayed value and a scan of the alias differ",
+      "requirements": [
+        "data.srch.product.dictionary-multivalue-multilanguage-values",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-multivalue-property",
+      "behavior": "srch.barcode.expand.shape-multivalue-property",
+      "purpose": "A multivalue property holds several codes on one product and a scan of any one of them finds it",
+      "requirements": [
+        "data.srch.product.dictionary-multivalue-multilanguage-values",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-multilanguage-property",
+      "behavior": "srch.barcode.expand.shape-multilanguage-property",
+      "purpose": "A multilanguage property's per-language values all sit in one base field and each language also gets a <name>_<lang> field",
+      "requirements": [
+        "data.srch.product.dictionary-multivalue-multilanguage-values",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-longtext-property",
+      "behavior": "srch.barcode.expand.shape-longtext-property",
+      "purpose": "A LongText or Html property is searchable but not filterable and its value is stored lowercased, so an exact mixed-case scan does not equal it",
+      "requirements": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-variation-property-double-hit",
+      "behavior": "srch.barcode.expand.shape-variation-property-double-hit",
+      "purpose": "A code held in a Variation-type property matches the variation and its parent, while a variation's own MPN/GTIN/code matches only the variation",
+      "requirements": [
+        "data.srch.variation.variation-property-active-inactive",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-inactive-variation",
+      "behavior": "srch.barcode.expand.shape-inactive-variation",
+      "purpose": "Deactivating a variation removes its Variation-type property values from the parent's document but leaves the variation's own document",
+      "requirements": [
+        "data.srch.variation.variation-property-active-inactive",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-inactive-or-hidden-product",
+      "behavior": "srch.barcode.expand.shape-inactive-or-hidden-product",
+      "purpose": "An inactive product, or one under an inactive category, is indexed as hidden and SoldOut; a scan of its code finds it or not depending on the visibility filter",
+      "requirements": [
+        "data.srch.product.inactive-hidden",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-product-type",
+      "behavior": "srch.barcode.expand.shape-product-type",
+      "purpose": "Physical, Digital, BillOfMaterials and configurable products are found by the same fields and open the same result flow",
+      "requirements": [
+        "data.srch.product.product-type-matrix",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-cross-catalog-duplicate-code",
+      "behavior": "srch.barcode.expand.shape-cross-catalog-duplicate-code",
+      "purpose": "The same code on products in two catalogs is found only through the catalog the store exposes",
+      "requirements": [
+        "data.srch.product.catalog-placement",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-linked-category-single-hit",
+      "behavior": "srch.barcode.expand.shape-linked-category-single-hit",
+      "purpose": "A product linked into a virtual-catalog category is one index document with several outlines, so a scan returns it once",
+      "requirements": [
+        "data.srch.product.catalog-placement",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-product-and-variation-share-value",
+      "behavior": "srch.barcode.expand.shape-product-and-variation-share-value",
+      "purpose": "A product and its variation carrying the same GTIN both match a scan, so the result is a list",
+      "requirements": [
+        "data.srch.variation.variation-property-active-inactive",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
+    },
+    {
+      "id": "profile.srch.expand-shape-dynamic-property",
+      "behavior": "srch.barcode.expand.shape-dynamic-property",
+      "purpose": "A dynamic (platform) property value is indexed under its lowercased name, is not in the catalog property list, and may or may not be offered as a barcode field",
+      "requirements": [
+        "data.srch.product.dynamic-property-value",
+        "data.srch.store.barcode-exact"
+      ],
+      "notes": "Seeder gap: the shape requirements have no seed_capability; the case (or an extended seed:barcode) must create them, so /qa-seed-data --profile cannot provision them yet."
     }
   ]
 }

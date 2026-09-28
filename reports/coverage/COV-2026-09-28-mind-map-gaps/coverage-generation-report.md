@@ -66,3 +66,39 @@ or revisit if a case is authored that decides the parent as a whole.
 - Six of the DRIFT nodes (rows 6-10, 16) carry a route that is not yet a tracked owner (`TM-018`); file or route them before authoring, otherwise a new case would pin the current behaviour.
 - All stamped rows kept their `Automation_Status`. No row was promoted; Draft rows remain Draft.
 - Author every "author case" row through `tc:scaffold` and `append-test-cases-to-suite.ts --check-global-ids`, with the `Behavior:` stamp from the plan row.
+
+## Barcode x catalog shape - proposed case matrix (2026-09-28, UPDATE on srch)
+
+Why: the barcode branches were modelled against store settings only; one property shape (Product/ShortText) and one variation shape were seeded. The 18 new nodes sit under `srch.barcode.expand.shape-*` (+ `srch.barcode.config.shape-fields-offered-by-value-type`). Source: released `CatalogDocumentBuilder` / `ProductDocumentBuilder` (VirtoOZ source, master). The expansion (x-catalog#113) and fields endpoint (catalog#909) are open PRs the corpus does not hold and `kb ask` had no entry, so scan outcomes stay UNVERIFIED except two index-shape facts (CONFIRMED, DOC).
+
+Classification tree (CT). Four axes, each leaf an equivalence class:
+- **Product type**: Physical, Digital, BillOfMaterials, configurable. Indexing has no branch on it (only the parent's `type` collection for variations), so it collapses to one case per type.
+- **Property value type** (index mapping): ShortText/Color (string, filterable), Number (Double), Integer (32-bit), Boolean (empty becomes false), DateTime, LongText/Html (searchable only, lowercased), GeoPoint (searchable only; excluded, no scan meaning).
+- **Property level**: Product, Variation (propagates to the active parent), dynamic (separate index path, ShortText also to `__content`).
+- **Multiplicity**: single, multivalue (collection), dictionary (alias indexed), multilanguage (base field plus `<name>_<lang>`).
+
+Full cross 4x7x3x4 = 336. Invalid tuples removed (typed values are single only; dictionary/multivalue/multilanguage are ShortText only; dynamic has no multilanguage): about 90 valid. All-pairs needs at least 28 (7 types x 4 product types); product type is inert, so 4 type-cases plus 13 property-shape cases cover every pair that can differ: 17 cases below.
+
+| # | Case (one scan unless stated) | Node (`srch.barcode.` prefix) | Suite | Data requirement (`data.srch.`) |
+|---|---|---|---|---|
+| C1 | GET fields lists which of the zoo properties (per type/level/multiplicity), compared with the index schema | config.shape-fields-offered-by-value-type | 103 | property.value-type-zoo |
+| C2 | Number property configured, numeric scan finds its product | expand.shape-number-property | 050a | product.typed-property-values, store.barcode-typed-fields |
+| C3 | Scan `0`+digits: hits ShortText product by string AND Number product by value (expect 2) | expand.shape-numeric-leading-zero | 050a | typed-property-values |
+| C4 | Integer 2147483647 found; 13-digit EAN scan on an Integer field | expand.shape-integer-overflow | 050a | typed-property-values |
+| C5 | Fields [gtin, integer, boolean, datetime], scan a GTIN: gtin hit still returned, no error | expand.shape-typed-field-non-matching-scan | 050a | typed-property-values |
+| C6 | Boolean field, scan `false`: count equals products lacking a value | expand.shape-boolean-default-false | 050a | typed-property-values |
+| C7 | Dictionary property: alias scan vs displayed-value scan | expand.shape-dictionary-alias | 050a | product.dictionary-multivalue-multilanguage-values |
+| C8 | Multivalue: scan the second value | expand.shape-multivalue-property | 050a | same |
+| C9 | Multilanguage: scan the language-2 value; try configuring `<name>_<lang>` | expand.shape-multilanguage-property | 050a | same |
+| C10 | LongText mixed-case token scanned as stored and lowercased | expand.shape-longtext-property | 050a | typed-property-values |
+| C11 | Variation-type property value: parent+variation (2) vs variation MPN (1); storefront lists, does not open | expand.shape-variation-property-double-hit | 050a, 004 | variation.variation-property-active-inactive |
+| C12 | Deactivate the variation carrying V2: parent stops matching, variation doc stays | expand.shape-inactive-variation | 050a | same |
+| C13 | Inactive product; active product under an inactive category | expand.shape-inactive-or-hidden-product | 050a, 004 | product.inactive-hidden |
+| C14 | One scan per Physical/Digital/BOM/configurable; each found and opens its page | expand.shape-product-type | 050a, 004 | product.product-type-matrix |
+| C15 | Same code in a hidden catalog (expect 1); product linked into 2 virtual categories (expect 1) | expand.shape-cross-catalog-duplicate-code, expand.shape-linked-category-single-hit | 050a | product.catalog-placement |
+| C16 | Product and variation share a GTIN: 2 hits, list | expand.shape-product-and-variation-share-value | 004 | variation.variation-property-active-inactive |
+| C17 | Dynamic ShortText property: is it offered, does its value match | expand.shape-dynamic-property | 050a, 103 | product.dynamic-property-value |
+
+Seeder gap: `seed:barcode` (`scripts/seed-data/catalog/barcode-specs.mjs`) defines only two Product/ShortText properties, one parent with two variations, no inactive/hidden product, no second catalog or link, no dynamic property, no multilanguage catalog. The nine new requirements are `CREATE` with `executor: case` and `UNVERIFIED`; extending the spec module is the prerequisite for C2-C17. No CSV case was added.
+
+Possible product defects to verify (not filed): (a) an empty Boolean property is indexed under `property.Name` unlowered while every other typed value uses the lowercased name, so a mixed-case boolean may split into two fields; (b) one typed field in the OR expansion may turn a valid text scan into a provider error (C5); (c) PR909 wording says short-text only while the index schema also declares numeric/boolean/date fields filterable, so the fields list and the dedicated-PUT validator may disagree with the generic write path (D3).
