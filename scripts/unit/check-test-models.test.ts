@@ -16,6 +16,7 @@ import {
   compileSchemas,
   schemaFindings,
   statusProblem,
+  driftRouteProblem,
   seedPlan,
   requiresClosure,
   findCycles,
@@ -168,6 +169,18 @@ test("conflicting evidence is carried as DRIFT, and the schema requires the drif
   assert.ok(schemaFindings(schemas.map, doc, "m", "TM-001").some((f) => /drift/.test(f.msg)));
   const withRecord = { ...doc, nodes: [{ ...drift, drift: { expected: "BL says X", observed: "platform does Y" } }] };
   assert.deepEqual(schemaFindings(schemas.map, withRecord, "m", "TM-001"), []);
+});
+
+test("a DRIFT route must reach a trackable owner → TM-018 (warn), and an oracle id is not an owner", () => {
+  for (const ok of ["VCST-6097 (vc-frontend)", "/qa-review-oracles BL-SRCH-003", "kb dispute KB-1A", "https://example.test/x", "PO question (VCST-2622 AC)"]) {
+    assert.equal(driftRouteProblem(ok), null, ok);
+  }
+  assert.match(driftRouteProblem(undefined)!, /no route/);
+  assert.match(driftRouteProblem("open product defect; BL-LOY-019 violated, see ECL-3.1")!, /no trackable owner/);
+  assert.match(driftRouteProblem("draft reports/bugs/open/medium/BUG-x.md (filing deferred)")!, /unfiled draft/);
+  const drift = (route?: string) => node("x.a", { status: "DRIFT", drift: { expected: "BL says X", observed: "Y", ...(route ? { route } : {}) } });
+  assert.ok(codes(run(map([drift("vc-module-catalog (PR #909)")]), model([req("data.x.a")])), "warn").includes("TM-018"));
+  assert.ok(!codes(run(map([drift("VCST-1")]), model([req("data.x.a")])), "warn").includes("TM-018"));
 });
 
 // ---------------------------------------------------------------- data model rules

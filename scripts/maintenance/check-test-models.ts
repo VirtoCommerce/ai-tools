@@ -44,6 +44,7 @@
  *   TM-015 Behavior: stamp names an unknown node (error) / an OBSOLETE one (warn)
  *   TM-016 DataProfile: stamp names an unknown profile
  *   TM-017 suspect case — linked to a DRIFT, OBSOLETE or changed node (warn)
+ *   TM-018 DRIFT route names no trackable owner (warn)
  *   TM-019 suite CSV unparsable, its stamps not read (warn)
  */
 
@@ -99,6 +100,7 @@ export interface MapNode {
   produces?: string[];
   oracle_refs?: string[];
   last_verified?: string;
+  drift?: { expected: string; observed: string; route?: string };
   [k: string]: unknown;
 }
 export interface MapEdge {
@@ -382,6 +384,22 @@ export function statusProblem(status: string, evidence: Evidence[] = [], maturit
   return null;
 }
 
+/**
+ * A DRIFT is a recorded conflict, and it is only resolved if its route reaches someone who will act.
+ * A route that names only a draft bug, a team or "open defect" parks the conflict in the map, where
+ * nobody but the map's next reader finds it. Trackable = a tracker key, an oracle audit, a kb dispute
+ * or a URL. Oracle ids (BL-*, ECL-*) are the EXPECTED side, never an owner, so they do not count.
+ */
+const TRACKER_KEY_RE = /(?<![A-Za-z0-9-])(?!(?:BL|ECL)-)[A-Z][A-Z0-9]+-\d+\b/;
+const TRACKABLE_RE = [TRACKER_KEY_RE, /\/qa-review-oracles\b/, /\bkb[ _]dispute\b/i, /\bhttps?:\/\/\S+/];
+
+export function driftRouteProblem(route: string | undefined): string | null {
+  if (!route?.trim()) return "DRIFT has no route — name who resolves it";
+  if (TRACKABLE_RE.some((re) => re.test(route))) return null;
+  const draft = /reports\/bugs\/open\//.test(route) ? " (it points at an unfiled draft bug)" : "";
+  return `DRIFT route names no trackable owner${draft} — file a ticket, or route it to /qa-review-oracles or a kb dispute`;
+}
+
 export interface CheckInput {
   mindMaps: Loaded<MindMap>[];
   dataModels: Loaded<DataModel>[];
@@ -463,6 +481,10 @@ export function checkModels(input: CheckInput, ctx: Context): CheckResult {
       }
       const sp = statusProblem(n.status, n.evidence, n.maturity);
       if (sp) add("TM-007", "error", file, sp, n.id);
+      if (n.status === "DRIFT") {
+        const rp = driftRouteProblem(n.drift?.route);
+        if (rp) add("TM-018", "warn", file, rp, n.id);
+      }
       if (n.technique && ctx.techniques && !ctx.techniques.has(n.technique)) {
         add("TM-013", "error", file, `technique \`${n.technique}\` is not a §0 token (${[...ctx.techniques].join(", ")})`, n.id);
       }
@@ -651,7 +673,7 @@ function eclIds(): Set<string> | null {
   return out;
 }
 
-function loadCases(findings: Finding[]): Map<string, CaseStamps> {
+export function loadCases(findings: Finding[]): Map<string, CaseStamps> {
   const out = new Map<string, CaseStamps>();
   const walk = (dir: string): void => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {

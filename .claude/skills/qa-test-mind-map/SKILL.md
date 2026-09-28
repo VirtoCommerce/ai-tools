@@ -41,6 +41,9 @@ found while building goes to `/qa-review-oracles` or `kb capture`, never into th
   gone gets `status: OBSOLETE` plus `obsolete.reason`. Deleting it is `TM-030`.
 - **Linked tests are derived, never stored.** The `Behavior:` stamps in suite rows are the one writer
   of that link.
+- **The human view is a projection.** `npm run models:view -- <slug>` prints a Mermaid mindmap (status
+  and per-subtree case count on each node) plus the state diagram; `--format html --out <file>` gives a
+  collapsible page for a scope review with developers or the PO. Regenerate it; never commit or hand-edit it.
 
 ## Modes
 
@@ -82,6 +85,10 @@ entries. Findings go to chat.
   `drift.expected` (the higher-precedence source + ref), `drift.observed` and `drift.route` (who
   resolves it). Precedence is the repo's grounding order, not a generic one: this repo's oracles and
   knowledge → `kb` → VirtoOZ → live/source (*Product context*).
+- **A `route` reaches an owner, never a parking place.** It names a tracker key, `/qa-review-oracles`,
+  a `kb dispute` or a URL. A route to an unfiled draft bug, a repo or "open defect" hides the conflict in
+  the map; write `UNFILED — …` and let `TM-018` keep it visible until it is filed. An oracle id is the
+  expected side, not an owner.
 - **A domain-map claim is cited with its map rev** (`domain-map:<slug>@rev<N> §<section>`), keeping
   the class of the map's own verdict (`CONFIRMED (live)` → `OBSERVED`, `(source)` → `DOC`).
 - **A promoted case is evidence of observation** (`OBSERVED`, ref = the promoting run id). A Draft,
