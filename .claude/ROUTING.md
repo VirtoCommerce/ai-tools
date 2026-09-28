@@ -110,6 +110,12 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-perf-measure`, `/qa-monitoring`, `/qa-triage-results`, `/qa-deploy-pr`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-bundle-check`, `/qa-local-env` — the skills backing the same-named commands above
 
 ### Development (Skills — used by the `developers/` team in `/qa-fix`)
+
+> **These six skills and the four developer agents live ONLY in `plugins/vc-fix/`.** The `.claude/` copies were
+> removed 2026-09-25 for the same reason the bug-lifecycle commands were on 2026-09-08 (see the note at the top of
+> this file): they had silently forked, and `/qa-fix` — the only caller — is plugin-only. They appear in the `/` menu
+> once `vc-fix@vc-tools` is installed.
+
 - `/dotnet-unit-test` — Reproduce a backend bug as a failing xUnit test (red → green)
 - `/dotnet-fix` — Minimal, idiomatic .NET 10 fix in one VC module
 - `/angular-admin` — Fix a module's Admin SPA (AngularJS) UI; scratch harness for logic, visual render harness + numeric geometry for layout/CSS

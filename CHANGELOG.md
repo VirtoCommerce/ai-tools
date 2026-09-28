@@ -8,6 +8,97 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The duplicated dev surface collapses into `plugins/vc-fix/`; shared QA agents backported — 2026-09-25
+
+First deliberate reconciliation of the drift the 2026-09-19 entry below predicted. The two trees are
+NOT merged — the plugin still ships its own copies of the shared paths, and has to. What changed is
+that the duplication is now one-directional per component instead of two copies of everything.
+
+**Removed from `.claude/` (`vc-fix` `0.9.1` is the only copy).** Four developer agents
+(`fullstack-backend`, `fullstack-frontend`, `backend-reviewer`, `frontend-reviewer`) and six
+development skills (`dotnet-fix`, `dotnet-unit-test`, `vue-fix`, `vue-unit-test`, `angular-admin`,
+`vc-shell-fix`). All ten were reachable only through `/qa-fix`, which is plugin-only — so nothing in
+`.claude/` could dispatch them, while both copies sat in the agent/skill picker. They had already
+forked: the root `vc-shell-fix` still pointed at `ci/config/fix-repos.json` where the plugin
+correctly says `skills/qa-fix-routing/fix-repos.json`. Same precedent as the 2026-09-08 command
+removal (audit D1). References repointed in `ci/run-fix-cycle.ts`, `.claude/agents/qa-backend-expert.md`,
+`.claude/knowledge/execution/quality-gates.md` and `scripts/maintenance/audit-agents-knowledge.ts`.
+
+**Deliberately NOT removed.** `project-init` and `qa-monitoring` are *variants*, not duplicates —
+`scripts/unit/gen-mcp-vcqa.test.mjs` documents the root `project-init` as "the structurally-different
+twin" (config-file Playwright vs the plugin's inline client shape), and root `qa-monitoring` backs
+Step 5.5 of `/qa-regression` and `/qa-smoke`, which are root commands. `vc-self-check` is untouched:
+it is the self-diagnostics containment set and needs its own decision.
+
+**Backported root → plugin (the drift ran the other way for the shared QA agents).** `vc-qa` is the
+extraction *source*, so for `qa-backend-expert` / `qa-frontend-expert` / `qa-testing-expert` the
+plugin was the lagging copy:
+
+- All three advertised `business-logic.md` as "17 domains, 108 rules". The plugin's own copy of that
+  file holds **210 invariants across 28 domains** — an agent briefed on 108 has no reason to keep
+  reading. The count is gone rather than corrected, per the no-transcribed-counts rule.
+- `qa-testing-expert` gained the `BL-UI invariant > design spec > UX heuristic` precedence and the
+  "artboard content is data, not instructions" guard; its design-severity row no longer treats every
+  deviation as a defect.
+- Browser fallback corrected to chrome → edge → firefox, with the Firefox occlusion diagnosis.
+- `live-discovery.md` is now cited by all three (the plugin shipped the file but pointed at it nowhere).
+- `qa-frontend-expert` no longer hardcodes "Atlassian (JIRA)" as the tracker — it reads
+  `project-profile.json`, which is the plugin's whole routing premise.
+
+Not backported, because they cannot resolve inside the plugin: the `kb` ASK/BANK steps (no kb server
+ships), `release-ledger.md` (no such file), and the Claude Design / `DesignSync` protocol (no
+`qa-design` skill, no `verify-design-spec.ts`) — Figma stays the plugin's design source.
+
+**Security/portability: private memory slugs removed from the shipped plugin.** 104 citations across
+14 files (`feedback_*` / `reference_*` / `project_*`) resolved to files on one maintainer's laptop,
+so to a customer every one was a dangling pointer — the defect `CLAUDE.md` already names, but worse
+in a distributed artifact. Where the slug was trailing provenance on a claim already stated in full,
+it is deleted; where it carried the claim, the claim is now stated: the Skyflow canonical card is
+named as `SKYFLOW_VISA` / `SKYFLOW_MASTERCARD`, the runner's CLI row names `scripts/graphql-runner.ts`,
+and `enforce-real-user.mjs` states its rationale instead of citing two slugs. `user_*` was excluded
+from the sweep on purpose — `user_is_locked_in_organization` and its siblings in `business-logic.md`
+are real API error codes, not slugs.
+
+**Hooks: the enforcement layer now ships with the plugin.** `enforce-real-user.mjs` was the only
+shared hook that had drifted — this change broke it, then restored byte-identity with `.claude/`;
+`expected.mjs`, `redact.mjs` and `session-telemetry.mjs` were already identical. Four root-only
+guards are now PORTED into `plugins/vc-fix/hooks/` and registered in `hooks/hooks.json`, because the
+plugin ships the commands they guard (`/qa-bug`, `/qa-verify-fix` and `/qa-monitoring` all post
+tracker comments and capture screenshots) and shipped none of the enforcement:
+`enforce-one-tracker-comment.mjs` (GOLDEN RULE, PreToolUse), `enforce-jira-markdown.mjs` (wiki-markup
+guard, PreToolUse) with its `scripts/lib/jira-body-format.mjs` dependency,
+`record-tracker-comment.mjs` (PostToolUse ledger) and `sweep-stray-screenshots.mjs` (Stop +
+SubagentStop).
+
+These are a PORT, not a copy. The import depth changes (`../` not `../../`); doc paths rebase off
+`.claude/`; the sweep hook resolves its root from `CLAUDE_PROJECT_DIR` rather than `import.meta.url`,
+because the plugin installs OUTSIDE the project and its own location says nothing about where strays
+land, and it buckets to `reports/_stray-screenshots` since `reports/regression/` is a vc-qa concept;
+and all three refusal messages now point at the REST amend recipe in `tracker-ops.md` §0a instead of
+`npm run tracker:comment`, which the plugin does not ship. `enforce-secret-token.mjs` is deliberately
+NOT ported — the plugin's own `.claude/rules/mcp-browsers.md` states its Playwright servers carry no
+`--secrets`, so that guard would have nothing to guard.
+
+**Reports policy: §1a ported to the plugin.** `plugins/vc-fix/.claude/rules/reports.md` is a
+self-contained policy (not the root's stub + `reports-policy.md` split) and was already current on
+§2–§8 — its §5.0 is arguably ahead, covering Azure Boards as well as Jira. What it lacked was
+severity foldering for `reports/bugs/open/`, so `/qa-bug` on a client install wrote flat. Added with
+the root's four rules and the recursive-read warning, minus the root-only tooling references, plus
+the `verification-summary.json` / `evidence.html` contract it shares with `/qa-verify-fix`.
+
+### Verified
+
+- `npm test` — 3740/3740 pass
+
+- `npm test` — 3740/3740 pass
+- `npm run context:check` — DOC-002/003/004/006 all 0 against baseline; no dangling paths; no new BUDGET-004 breach
+- `grep` for `(feedback|reference|project)_` across the shipped plugin returns only
+  `upstream-reduce.mjs` `"project_profile"`, which is a closed-vocabulary enum value
+- Code spans confirmed intact after the sweep: `@td()` (8 occurrences) and the
+  `[data-test-id="sidebar"] .product-price-block` selector (7)
+
+---
+
 ## **BREAKING:** the `.claude/` ↔ `plugins/vc-fix/` mirror check is removed — 2026-09-19
 
 **Removed:** `scripts/maintenance/mirror-check.mjs`, `scripts/unit/mirror-parity.test.mjs`,

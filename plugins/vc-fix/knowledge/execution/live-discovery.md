@@ -199,7 +199,7 @@ Only the **product** needs live discovery (it drifts between seeds); the **root*
 `userId`/`currencyCode`/`cultureName` (the buyer context the cart will use) and gates on
 `price.USD:(0 TO)`, so the discovered product is one `addItem` actually accepts — not merely one that
 exists in catalog browse. (Cart buyability = placed + indexed in the B2B-mixed catalog with a valid
-price, which is stricter than "appears in `products()`"; see `project_vcstqa_cart_price_invalid_blocker`.)
+price, which is stricter than "appears in `products()`".)
 
 ```text
 [AUTH role=ORG_USER]

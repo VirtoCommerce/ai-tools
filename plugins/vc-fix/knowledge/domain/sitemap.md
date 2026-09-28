@@ -212,7 +212,7 @@ Counts are live product totals from the `/catalog` category grid as of **2026-07
 | Security & Protection | `/category/eee07117-dbbf-4713-b2be-8c9a96d81192` |
 | Digital products | `/category/03b70abf-a428-4049-957c-230783952ea9` |
 
-> Storefront resolves these category IDs against the **B2B virtual catalog root** — resolve via `@td(VIRTUAL_CATALOG_B2B.id)` (see `aliases.json` for the value on the active env). The vcst-qa value is `fc596540864a41bf8ab78734ee7353a3`; customers will see their own GUID. Products seeded into the physical catalog without a virtual-catalog link return 404 on storefront. See memory `feedback_storefront_virtual_catalog_link` for the failure mode.
+> Storefront resolves these category IDs against the **B2B virtual catalog root** — resolve via `@td(VIRTUAL_CATALOG_B2B.id)` (see `aliases.json` for the value on the active env). The vcst-qa value is `fc596540864a41bf8ab78734ee7353a3`; customers will see their own GUID. Products seeded into the physical catalog without a virtual-catalog link return 404 on storefront. for the failure mode.
 
 ---
 
@@ -257,7 +257,7 @@ The May layout (`configurable-products`, `cakes`) is gone; the CFG products move
 |-------------|-----|-------|-------|
 | Build the bike of your dreams | `/products-with-options/build-the-bike-of-your-dreams` | 3 | bike-with-options, off-road-bike, off-road-bike-configurable-product-text |
 | Configurable caps & shirts | `/products-with-options/configurable-caps-shirts` | 5 | hoodie, custom-t-shirt, hat, vintage-california-beach-pullover-hoodie *(back to this slug — was `configurable-products` in May)* |
-| Configurable Parents | `/products-with-options/cfg-parents` | 24 | seed cfg-parents family (see `project_configurable_parents_url_segment_cfg_parents` memory) |
+| Configurable Parents | `/products-with-options/cfg-parents` | 24 | seed cfg-parents family |
 | Dreamy cakes | `/products-with-options/dreamy-cakes` | 14 | *(was "cakes" / 1 — now a full variation set: buttercreme styles, filings, flowers)* |
 | Shirts, jeans and more | `/products-with-options/shirts-jeans-and-more` | 1 | mens-flannel-shirts-… (variation product) |
 | Wonderful beds | `/products-with-options/wonderful-beds` | 1 | bed-with-additional-options |
@@ -277,13 +277,13 @@ The May layout (`configurable-products`, `cakes`) is gone; the CFG products move
 | Bed with Additional Options | `/products-with-options/wonderful-beds/bed-with-additional-options` | "Customize" CTA |
 | Men's Flannel Shirts | `/products-with-options/shirts-jeans-and-more/mens-flannel-shirts-…` | Variation product |
 
-> **Do not assert exact prices or section IDs against these products.** Configuration sections drift with each re-seed; verify section composition at runtime via xAPI or live discovery. See `feedback_env_resilience` and `live-discovery.md`.
+> **Do not assert exact prices or section IDs against these products.** Configuration sections drift with each re-seed; verify section composition at runtime via xAPI or live discovery and `live-discovery.md`.
 
 ### Product Display Types
 
 Unchanged from March — 3 types: Configurable ("Customize" CTA + accordion widget), Variations ("N variations" link + "From $X"), Simple (direct quantity stepper / add-to-cart).
 
-> **B2B-store has NO "Add to Cart" button on PDP** — the **Increase quantity (+)** stepper IS the add-to-cart entry point (both guest and authenticated). See `feedback_qty_stepper_as_add_to_cart`.
+> **B2B-store has NO "Add to Cart" button on PDP** — the **Increase quantity (+)** stepper IS the add-to-cart entry point (both guest and authenticated).
 
 ### Sample Product UUIDs (live May 2026 — verify before asserting)
 
@@ -379,7 +379,7 @@ Admin SPA is an Angular SPA with blade navigation. Routes use hash-based URLs (`
 
 - **Runtime endpoint:** `{BACK_URL}/graphql` (POST)
 - **GraphiQL UI:** `{BACK_URL}/ui/graphiql`
-- `/xapi/graphql` is NOT valid in this project (see `reference_graphql_endpoints`)
+- `/xapi/graphql` is NOT valid in this project
 
 | Module | Key Queries | Key Mutations |
 |--------|-----------|--------------|
@@ -511,7 +511,7 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 - Organization lists
 - Bulk order processing
 - B2B virtual catalog root: `@td(VIRTUAL_CATALOG_B2B.id)` — vcst-qa value is `fc596540864a41bf8ab78734ee7353a3`, customer value differs
-- Same product added twice consolidates into one line item with summed quantity (B2B-store behavior — see `reference_b2b_lineitem_consolidation`)
+- Same product added twice consolidates into one line item with summed quantity (B2B-store behavior)
 
 ---
 
@@ -635,7 +635,7 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 | Change | Details |
 |--------|---------|
 | Platform version | 2.43.0 → **2.49.0** |
-| Catalog wipe + restore | 2026-05-15 restore replaced ~4,537 products and 422 categories; only ~5 of 28 CFG products survived (Hat / T-shirt / Hoodie + Bike/Off-Road kept GUIDs but sections rebuilt). See memory `project_vcstqa_restore_2026_05_15` |
+| Catalog wipe + restore | 2026-05-15 restore replaced ~4,537 products and 422 categories; only ~5 of 28 CFG products survived (Hat / T-shirt / Hoodie + Bike/Off-Road kept GUIDs but sections rebuilt). |
 | Language added | Ελληνικά (Greek, `el`) — 14 → **15** languages |
 | New top-level categories | Tyres, Home appliance (display label), TV & Multimedia, Office furniture, Sports, Services, Books, For women, Craft, Seasonal, WIPO, Wireless Accessory World, Mall of America, Evergreen Wholesale, Meiertobler Demo, Drinks And Food, Standard Test Products |
 | New seed categories | Configurable Parents, Conditional Parents, SEED-20260518-Electronics / Industrial Supplies / Office Supplies |

@@ -1,6 +1,6 @@
 # Mission save-validation accepts a **negative reward** — `FixedAmountReward { "amount": -1 }` persists on HTTP 200 — **P2**
 
-## Status: CONFIRMED (live, at the persisted entity)
+## Status: FIXED
 **Found by:** `/qa-test VCST-5320` → suite `075e` `MSNA-023`
 **Archetype:** `BOUNDARY`
 
@@ -40,3 +40,9 @@ The same case (`MSNA-023`) also found that **End-before-Start is accepted silent
 The ticket's own dev comment records *"Add mission validation on saving on backend (currently none, can even edit a Published mission)"* as **completed**. It is not complete for either field. Whatever validation landed does not cover the reward lower bound or the date-window ordering.
 
 **Refs:** `075e` `MSNA-023` · related `075d` `MSN-007` (pre-existing, linked) · `MSNA-011` (reward = 0 is the valid boundary)
+
+## Resolution
+- **Tracker:** VCST-5855 (Tested)
+- **Fix:** vc-module-loyalty PR #18. The validator rejects a negative reward (and a negative goal, VCST-6084), and the admin blade now shows the server's validation message.
+- **Verified:** 2026-09-25 on vcst-qa, `VirtoCommerce.Loyalty 3.1009.0-pr-18-4411`. API and Admin blade both pass 3/3. Evidence: `reports/tickets/Sprint26-19/VCST-5855/`.
+- **Residual:** a platform console `TypeError` (`join`) appears on list-shaped 400 bodies. It is out of scope and not filed.

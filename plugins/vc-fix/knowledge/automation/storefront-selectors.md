@@ -88,7 +88,7 @@ applicability_rationale: "vc-frontend stable selectors (data-test-id / role / ar
 | Decrease (−) button | `.vc-quantity-stepper button[aria-label="Decrease quantity"]` | 1 | Stable (aria-label) |
 | Increase (+) button | `.vc-quantity-stepper button[aria-label="Increase quantity"]` | 1 | Stable (aria-label) |
 | Qty input | `.vc-quantity-stepper input.vc-input__input` (or `input[type=number]` scoped to stepper) | 1 | Stable |
-| Add-to-cart entry | **On B2B-store, the `+` (Increase quantity) button IS the add-to-cart action** — there is no separate "Add to Cart" button on the PDP. Once qty ≥ 1, the View Cart button appears: `a.product-price__cart-button` (text `"View cart"`, links to `/cart`). |  | Documented per memory `feedback_qty_stepper_as_add_to_cart` |
+| Add-to-cart entry | **On B2B-store, the `+` (Increase quantity) button IS the add-to-cart action** — there is no separate "Add to Cart" button on the PDP. Once qty ≥ 1, the View Cart button appears: `a.product-price__cart-button` (text `"View cart"`, links to `/cart`). |  | Documented |
 | "Stock alert" button (out-of-stock SKUs) | `.product-price-block button[aria-label="Stock alert"]` | varies | Stable |
 | Add-to-list (wishlist) | `button.product-price-block__add-to-list` (aria-label `"Add to list"`) | 1 | Stable |
 | Add-to-compare | `button.product-price-block__add-to-compare` | 1 | Stable |
@@ -150,13 +150,13 @@ applicability_rationale: "vc-frontend stable selectors (data-test-id / role / ar
 | Place Order CTA (primary) | `[data-test-id="place-order-button"]` | 1 | Stable. **BL-CHK-003** — must disable after first click. |
 | Sticky Place Order (scroll-pinned duplicate) | `[data-test-id="sticked-place-order-button"]` | 1 | Stable |
 
-**Note:** A separate `/checkout/review` route exists but is gated by store config `checkout_multistep_enabled` (off by default in vcst-qa) per memory `project_checkout_multistep_gate`. CyberSource payments embed a form on `/cart`; Skyflow/Authorize.Net/Datatrance redirect to `/checkout/payment` after clicking Place Order.
+**Note:** A separate `/checkout/review` route exists but is gated by store config `checkout_multistep_enabled` (off by default in vcst-qa). CyberSource payments embed a form on `/cart`; Skyflow/Authorize.Net/Datatrance redirect to `/checkout/payment` after clicking Place Order.
 
 ---
 
 ## 6. Sign-Up Form (`{{FRONT_URL}}/sign-up`)
 
-**BLOCKER:** `/sign-up` and `/sign-in` BOTH redirect to `/catalog` when the browser session is authenticated, and the storefront has no UI-accessible sign-out (per memory `feedback_no_signout_page`; `/sign-out` returns 404, POST to `/logout` returns 405). Live selector capture of the sign-up form was NOT possible in this session.
+**BLOCKER:** `/sign-up` and `/sign-in` BOTH redirect to `/catalog` when the browser session is authenticated, and the storefront has no UI-accessible sign-out (`/sign-out` returns 404, POST to `/logout` returns 405). Live selector capture of the sign-up form was NOT possible in this session.
 
 **Documented from prior regression suite knowledge (`regression/suites/Frontend/auth/031-*.csv`) — needs live re-verification in a fresh incognito context before use in layout-shift tests:**
 
@@ -262,7 +262,7 @@ Captured via stylesheet introspection (`document.styleSheets` rule search). DOM 
 **Important — scope of toggle:**
 - This is **dark/light/auto mode toggle only** — it flips a CSS-variable color scheme on the active theme.
 - It is **NOT** a full theme preset switcher (e.g. Coffee → Velvet → Ocean). Theme presets are configured per-store in Admin SPA (Store → Settings → Theme) at build/deploy time, not via user UI.
-- Per memory `reference_theme_presets`, vc-frontend exposes 6 light + 3 dark presets; users only switch dark/light/auto within the active preset.
+- vc-frontend exposes 6 light + 3 dark presets; users only switch dark/light/auto within the active preset.
 - **FOUC test:** click `[data-test-id="dark-mode-toggle"]`, observe CSS variable swap (`--header-top-bg-color` etc. on `<header>`). No DOM unmount/remount expected; only computed styles change. Layout shift should be near-zero unless a theme alters `font-size`, padding, or border-width tokens.
 
 ---
@@ -406,7 +406,7 @@ Captured live 2026-05-14 by signing in as `USER_EMAIL`, navigating `/cart` with 
 
 | Element | Selector (anticipated, NOT live-verified) | Notes |
 |---|---|---|
-| Text-input section field | `.product-configuration [data-test-id="section"] input[type="text"].vc-input__input` OR `textarea.vc-input__input` (scoped to the Text section) | Per fixture `CFG_WEDDING_CAKE_CONDITIONS`, section `Custom text required` is `type=Text`, `maxLength=50`, gated by `Message` (Text type). **Did NOT render in initial DOM** — to live-verify, first select the `Message` option whose value enables Custom-text-required, then re-query. Per memory `project_configurable_text_section_validation`, the `maxLength` applies to Custom-input only; presets in a text section don't enforce it. |
+| Text-input section field | `.product-configuration [data-test-id="section"] input[type="text"].vc-input__input` OR `textarea.vc-input__input` (scoped to the Text section) | Per fixture `CFG_WEDDING_CAKE_CONDITIONS`, section `Custom text required` is `type=Text`, `maxLength=50`, gated by `Message` (Text type). **Did NOT render in initial DOM** — to live-verify, first select the `Message` option whose value enables Custom-text-required, then re-query., the `maxLength` applies to Custom-input only; presets in a text section don't enforce it. |
 | File-input section field | `[data-test-id="section"] input[type="file"]` | Section `Image` (`type=File`) also gated by `Message`; not in DOM. |
 | Validation error message | `[data-test-id="section"] .vc-input-details:not(.vc-input-details--hide-empty)` | Same `.vc-input-details` convention as standard inputs (Section 6). 15 `.vc-input-details` nodes present on initial DOM but all empty / hidden. No `.vc-input--error` present in default-valid state. |
 
@@ -419,7 +419,7 @@ Captured live 2026-05-14 by signing in as `USER_EMAIL`, navigating `/cart` with 
 | **List price (was-price, strikethrough)** | `[data-test-id="sidebar"] .product-price-block .price__list` | 1 | Stable. Example `$88.00`. |
 | **Actual price (current price — updates as options change)** | `[data-test-id="sidebar"] .product-price-block .price__actual` | 1 | Stable. Example `$85.00`. **Use this selector for dynamic-price assertions during configuration changes.** |
 | Price-actions container | `[data-test-id="sidebar"] .product-price-block .product-price__actions` | 1 | Stable (Layer 3) |
-| **Add-to-cart CTA** | `[data-test-id="sidebar"] .product-price-block button[aria-label="Add to cart"]` | 1 | Stable. Button text `"Add to cart"`, `title="Add to cart"`. **No `data-test-id`** on this button — file gap. For configurable products this IS a dedicated Add-to-Cart button (NOT the qty-stepper-as-add-to-cart pattern that B2B-store uses for standard PDPs per `feedback_qty_stepper_as_add_to_cart`). The button is enabled by default with no quantity stepper visible at the buy-block level. |
+| **Add-to-cart CTA** | `[data-test-id="sidebar"] .product-price-block button[aria-label="Add to cart"]` | 1 | Stable. Button text `"Add to cart"`, `title="Add to cart"`. **No `data-test-id`** on this button — file gap. For configurable products this IS a dedicated Add-to-Cart button (NOT the qty-stepper-as-add-to-cart pattern that B2B-store uses for standard PDPs). The button is enabled by default with no quantity stepper visible at the buy-block level. |
 | In-stock chip | `[data-test-id="sidebar"] .product-price-block .vc-chip.vc-chip--color--success` | 1 | Stable |
 
 ### What does NOT exist on this configurable PDP

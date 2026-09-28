@@ -4,27 +4,31 @@
   "build": {
     "platform": "3.1073.0-pr-3121-9965",
     "relevant_modules": {
-      "VirtoCommerce.Loyalty": "3.1009.0-pr-18-e3e4"
+      "VirtoCommerce.Loyalty": "3.1009.0-pr-18-4411"
     },
-    "pr_build": "vc-module-loyalty#18 @ e3e47e0 (live per /api/platform/modules)"
+    "pr_build": "vc-module-loyalty#18 @ 4411e19 (live per /api/platform/modules; served bundle contains the new error callback)"
   },
-  "agent_used": "inline (built-in browser, API probe)",
+  "agent_used": "inline API probes + qa-backend-expert (playwright-edge, Admin SPA)",
   "str_result": "3/3",
-  "method": "PUT /api/loyalty-missions with name='' and storeId='' (pre-existing required rules guarantee 400, nothing persists); FluentValidation returns all errors, so the new rule's message presence/absence is observable. Identical result on runs 1-3. Mission count 67 before / 67 after.",
+  "method": "PUT /api/loyalty-missions with empty name/store (3x) + named STR via API (reward -1 -> 400, not persisted) + Admin blade create (POST) and edit (PUT) paths",
   "tracker_transition": {
     "role": "tested",
-    "state": "Tested"
+    "state": "Tested",
+    "applied": true,
+    "path": [
+      "Ready for test",
+      "Testing (On QA)",
+      "Tested (Finish test)"
+    ],
+    "note": "applied after the run on operator request; Step 3/6 were skipped in-run because the status was not re-fetched"
   },
   "evidence_artifact": null,
   "bugs_filed": [],
   "regression_issues": [],
-  "not_covered": [
-    "Add Mission blade Save UX (would persist data)",
-    "positive-path real save"
-  ],
+  "not_covered": [],
   "ticket": "VCST-5855",
-  "verdict": "VERIFIED",
-  "baseline_reproduction": "from ticket: PUT 200, FixedAmountReward amount -1 persisted on Loyalty 3.1006.0-pr-14-da8a",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "baseline_reproduction": "RED live on 3.1009.0-pr-18-e3e4 earlier today (blade: 400: Bad request / Error 400, empty details, blank tree) + ticket STR on 3.1006.0-pr-14",
   "probes": {
     "A_reward_neg1": {
       "status": 400,
@@ -47,11 +51,70 @@
         "Mission name is required",
         "Mission store is required"
       ]
+    },
+    "G_goal_neg1_VCST6084": {
+      "status": 400,
+      "errors": [
+        "Mission name is required",
+        "Mission store is required",
+        "Mission goal value cannot be negative"
+      ]
+    },
+    "STR_named_reward_neg1": {
+      "status": 400,
+      "errors": [
+        "Mission reward amount cannot be negative"
+      ],
+      "persisted": 0
     }
   },
-  "checklist_total": 4,
-  "checklist_passed": 4,
-  "evidence": "reports/tickets/Sprint26-19/VCST-5855/verification-summary.json",
+  "checklist_total": 8,
+  "checklist_passed": 8,
+  "evidence": "reports/tickets/Sprint26-19/VCST-5855/screenshots/",
   "artifacts": "reports/tickets/Sprint26-19/VCST-5855/",
-  "jiraCommentId": "110473"
+  "runs": [
+    {
+      "date": "2026-09-25",
+      "time": "13:29Z",
+      "verdict": "VERIFIED",
+      "note": "run 1, API-only, read-only probes"
+    },
+    {
+      "date": "2026-09-25",
+      "time": "14:25Z",
+      "verdict": "FIX_INCOMPLETE"
+    },
+    {
+      "date": "2026-09-25",
+      "time": "15:59Z",
+      "verdict": "BLOCKED",
+      "note": "fix not deployed: expected Loyalty 3.1009.0-pr-18-4411 (pinned 15:52Z), running 3.1009.0-pr-18-e3e4",
+      "jiraCommentId": "110482"
+    },
+    {
+      "date": "2026-09-25",
+      "time": "16:20Z",
+      "verdict": "VERIFIED_WITH_NOTES",
+      "build": "3.1009.0-pr-18-4411",
+      "jiraCommentId": "110484"
+    }
+  ],
+  "admin_blade": {
+    "create_neg1": "POST 400 with validator message; blade shows only \"400: Bad request\", empty Error details, Mission tree blanks, OK wipes form; nothing persisted",
+    "zero_reward_real_save": "POST 200, Draft saved with amount 0 (d8699385-67c1-4f53-9aef-81423818dcef), deleted 204",
+    "edit_neg1": "PUT 400; blade shows \"Error 400\" without message; entity unchanged",
+    "published_readonly": "PASS"
+  },
+  "side_effects": [
+    "Pre-existing platform httpError handler logs TypeError reading join on any list-shaped 400 body (POST and PUT); message still shown; needs a vc-platform fix, not filed"
+  ],
+  "screenshots": "reports/tickets/Sprint26-19/VCST-5855/screenshots/",
+  "prior_jiraCommentId": "110473",
+  "verdict_note": "API fix verified 3/3; operator ruled the ticket Expected (validation error naming the reward field) unmet because the Admin blade drops server-side messages",
+  "jiraCommentId": "110484",
+  "jiraAttachments": [
+    "85063",
+    "85064"
+  ],
+  "checklist_failed": 0
 }

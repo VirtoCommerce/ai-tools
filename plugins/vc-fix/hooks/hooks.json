@@ -28,6 +28,14 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-telemetry.mjs\" agentstop"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/sweep-stray-screenshots.mjs\""
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -37,6 +45,19 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/enforce-real-user.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__atlassian__addCommentToJiraIssue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/enforce-one-tracker-comment.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/enforce-jira-markdown.mjs\""
           }
         ]
       }
@@ -59,6 +80,15 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-telemetry.mjs\" record"
           }
         ]
+      },
+      {
+        "matcher": "mcp__atlassian__addCommentToJiraIssue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/record-tracker-comment.mjs\""
+          }
+        ]
       }
     ],
     "Stop": [
@@ -67,6 +97,14 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-telemetry.mjs\" finalize"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/sweep-stray-screenshots.mjs\""
           }
         ]
       }
