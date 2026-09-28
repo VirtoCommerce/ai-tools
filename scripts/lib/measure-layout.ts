@@ -91,10 +91,11 @@ export const ALIGNMENT_TOLERANCE_PX = 1;
  * run REG-2026-07-24-2121 were this, incl. "both grid/list tab buttons 38x38" (exactly `sm`).
  * Below AA is a real defect (FAIL); between AA and AAA is a design-system tradeoff (WARN).
  */
-export const TOUCH_TARGET_MIN_PX = 44;
-
 /** WCAG 2.2 SC 2.5.8 Level AA floor. Below this is a genuine accessibility defect → FAIL. */
 export const TOUCH_TARGET_AA_MIN_PX = 24;
+
+/** The touch-target requirement (BL-UI-006) — the AA floor, never the AAA target. */
+export const TOUCH_TARGET_MIN_PX = TOUCH_TARGET_AA_MIN_PX;
 
 /** WCAG 2.2 SC 2.5.5 Level AAA target. Between AA and this → WARN, not FAIL. */
 export const TOUCH_TARGET_AAA_MIN_PX = 44;

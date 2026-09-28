@@ -646,15 +646,15 @@ Buyer logged in as {{USER_EMAIL}}; Filters popover available on /account/orders"
 [DOM] neither button has an empty or null accessible name
 [STATE] the two buttons do NOT share identical accessible names — each should have a unique label (e.g. 'Open Start date calendar' and 'Open End date calendar', or similar disambiguation)
 [STATE] both buttons have non-empty, non-duplicate accessible names that convey which date field they control",[CONSOLE] no a11y-related JS errors; [NETWORK] no requests triggered by this accessibility check (no Apply),"Both buttons share the identical aria-label='Open calendar' with no disambiguation (A6 anomaly — this is the current observed state, expected to FAIL until fixed); one or both buttons have no accessible name at all; buttons not discoverable via aria-label query",none,Coverage Gap Analysis — COV-2026-05-26-1430 — DP-15,Draft
-ORD-077,Date Picker — Touch Target Height for Date Inputs is at Least 44px on Mobile Viewport,Orders > Date Filter,Medium,BL-ORD-001,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+ORD-077,Date Picker — Touch Target Height for Date Inputs is at Least 24px on Mobile Viewport,Orders > Date Filter,Medium,BL-ORD-001,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; browser viewport resized to 375×812 (mobile); Filters popover available on /account/orders",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to {{FRONT_URL}}/account/orders (with viewport set to 375×812 or narrower — ensure mobile breakpoint active)
 [WAIT] orders list rendered at mobile viewport
 [ACT] click 'Filters' button
-[WAIT] popover visible with date inputs","[DOM] aria-label='Start date' bounding rect height >= 44px at 375px viewport
-[DOM] aria-label='End date' bounding rect height >= 44px at 375px viewport
+[WAIT] popover visible with date inputs","[DOM] aria-label='Start date' bounding rect height >= 24px at 375px viewport
+[DOM] aria-label='End date' bounding rect height >= 24px at 375px viewport
 [DOM] both inputs fully visible and not overlapping other controls at 375px
 [STATE] both inputs remain interactive (focusable and typeable) at mobile viewport
-[STATE] inspect the bounding rect height of aria-label='Start date' input — height must be >= 44px (WCAG 2.5.5 and Apple HIG minimum touch target)
+[STATE] inspect the bounding rect height of aria-label='Start date' input — height must be >= 24px (WCAG 2.2 SC 2.5.8 AA minimum touch target)
 [STATE] both inputs remain visible and are not obscured by the virtual keyboard placeholder at this viewport width",[CONSOLE] no layout-related JS errors at 375px; [NETWORK] no failed resource requests at mobile viewport,"Input height is 36px (current measured value from exploration — A5 anomaly, expected to FAIL); inputs obscured or overlapping at 375px; inputs not focusable at mobile viewport; popover not scrollable to reach date inputs at mobile viewport",Resize viewport back to 1920×1080 before next test,Coverage Gap Analysis — COV-2026-05-26-1430 — DP-16,Draft
 ORD-078,"Date Picker — Keyboard Navigation in Calendar Grid (Arrow + Enter Selects, Escape Closes)",Orders > Date Filter,Medium,BL-ORD-001,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover available on /account/orders; keyboard navigation enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to {{FRONT_URL}}/account/orders

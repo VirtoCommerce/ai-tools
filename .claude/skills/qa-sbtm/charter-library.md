@@ -335,7 +335,7 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 
 **Test ideas:**
 - Verify hamburger menu enumerates all top-nav items + any controls that were in the desktop header (cross-ref `feedback_mobile_hamburger_inventory`)
-- Touch targets: every tappable element must be ≥44x44 px (WCAG 2.5.5)
+- Touch targets: every tappable element must be ≥24x24 px (WCAG 2.5.8 AA)
 - Pinch-zoom: verify viewport allows zoom (no `user-scalable=no`)
 - Swipe gestures on PDP image carousel: swipe left/right; verify it doesn't trigger nav drawer
 - Swipe gestures on category filters: verify they don't conflict with horizontal scroll of facet chips

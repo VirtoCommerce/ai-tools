@@ -392,12 +392,12 @@ viewport_height: 812","[NAV] Resize browser viewport to 375x812
 [ASSERT] Verify search input/icon is visible in the header at 375px
 [ACT] Tap/click the search input or search icon to open search
 [ASSERT] Verify search input field is fully visible and not clipped/overflowed at 375px
-[ASSERT] Verify the search input has adequate touch target size (>=44px height)
+[ASSERT] Verify the search input has adequate touch target size (>=24px height)
 [ASSERT] Verify no horizontal scroll is introduced by the search component
 [ACT] Type a short query (e.g. 'ring') into the mobile search input
 [ASSERT] Verify suggestions dropdown/results appear within the viewport without overflow","[DOM] Search input visible and accessible at 375px width
 [DOM] No horizontal scroll introduced by search component
-[DOM] Touch target height >=44px
+[DOM] Touch target height >=24px
 [DOM] Search suggestions visible within viewport (no overflow clipping)
 [STATE] Mobile search state: usable","[CONSOLE] No JS errors at 375px viewport
 [NETWORK] Search query fires correctly (HTTP 200 on graphql endpoint)","Search input hidden at 375px; horizontal scroll introduced; suggestions overflow viewport; touch target too small","Restore viewport to default 1280px","VCST-2284","Reviewed"

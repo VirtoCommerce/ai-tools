@@ -368,7 +368,7 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Select store → verify address, hours, and pin highlighted on map
 - [ ] Mixed cart: pickup-eligible item shows pickup option, delivery-only item shows delivery only
 - [ ] Change pickup location during checkout → address and pricing update
-- [ ] Pickup map modal: resize, responsive layout, touch targets (44x44px min on mobile)
+- [ ] Pickup map modal: resize, responsive layout, touch targets (24x24px min on mobile, WCAG 2.5.8)
 - [ ] Order confirmation shows pickup location details and instructions
 - [ ] Inactive location hidden: locations with `isActive: false` do not appear in storefront selector
 - [ ] Working hours display: formatted hours (e.g., "Mon - Sun: 9 - 18") rendered correctly per location
@@ -509,7 +509,7 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Form labels: every input has an associated `<label>` or `aria-label`, error messages linked via `aria-describedby`
 - [ ] Screen reader announcements: dynamic content changes (toast notifications, cart updates, validation errors) announced via `aria-live` regions
 - [ ] Skip navigation: "Skip to main content" link present and functional as first focusable element
-- [ ] Touch targets: interactive elements meet minimum 44x44px touch target size on mobile viewports
+- [ ] Touch targets: interactive elements meet minimum 24x24px touch target size on mobile viewports (WCAG 2.5.8 AA)
 
 ## 30. Performance
 - [ ] Page load time: homepage, category page, PDP load within acceptable thresholds (LCP < 2.5s on 4G)
