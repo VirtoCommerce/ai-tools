@@ -116,8 +116,26 @@ Use it verbatim in the output:
 - **minor** — a convention violation, or a performance smell without measured impact
 - **nit** — style, naming, docs
 
-What to look for, in ranked order, is `review-checklist.md` (next to this file). Read it before
-spawning the diff-pass helper, and hand its path to that helper.
+## Review checklist
+
+What to look for lives in `checklist/`, one file per dimension. Walk them **in this order** — it is
+ranked by expected severity for code that ships as NuGet packages:
+
+1. `checklist/backward-compatibility.md` — highest
+2. `checklist/platform-conventions.md`
+3. `checklist/data-and-migrations.md`
+4. `checklist/performance.md`
+5. `checklist/correctness.md`
+6. `checklist/tests.md`
+
+Compatibility comes first for the reason at the top of this file: a break of the public or virtual
+surface reaches every downstream consumer silently on their next package bump, while an internal bug
+hits one flow and is usually caught by a test. Each item says what to flag and why; verify every claim
+against the code per **Code navigation**, never from memory of how the platform "usually" looks.
+
+A new rule goes into the file of its dimension; a new dimension is a new file plus a line in the list
+above, at the rank it deserves. Read the checklist before spawning the diff-pass helper, and hand that
+helper the paths in this order.
 
 ## Steps
 
@@ -165,8 +183,8 @@ the review is complete without it.
 
 ### 4. Diff pass (analysis helper)
 
-Spawn the diff-pass helper (`opus`) with: the worktree path, `origin/<baseRefName>`, the path of
-`review-checklist.md`, the path of `verification-discipline.md` with the instruction to read it first
+Spawn the diff-pass helper (`opus`) with: the worktree path, `origin/<baseRefName>`, the paths of
+the `checklist/` files in the order listed under **Review checklist**, the path of `verification-discipline.md` with the instruction to read it first
 and apply it throughout, the Serena rule above, and the read-only mandate. Its task:
 
 - Read the branch diff: `git -C <worktree> diff origin/<baseRefName>...HEAD`.
