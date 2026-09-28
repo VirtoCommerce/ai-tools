@@ -140,6 +140,42 @@ test('a row with no overlap at all is not returned', () => {
   assert.deepEqual(hits, []);
 });
 
+// ─── floor-1b: an anchor's weight is shared by the entries that carry it (STEP 6) ─────────────
+
+test('a coordinate on many entries stops outranking a word-rich answer; on one entry it still does', () => {
+  // The /cart case in small: the more entries share a coordinate, the less matching it says about
+  // WHICH of them is meant, so the one that shares the question's words has to be able to win.
+  const q = 'how is a configurable product line priced on Mutation.addItem';
+  const answer = row({ id: 'KB-AAAA0001', subject: 'configurable product line priced from option extended price' });
+  const lone = [row({ id: 'KB-BBBB0000', subject: 'unrelated', anchors: ['Mutation.addItem'] })];
+  const crowd = Array.from({ length: 5 }, (_, i) => row({ id: `KB-BBBB000${i}`, subject: 'unrelated', anchors: ['Mutation.addItem'] }));
+  assert.equal(scoreRows(q, [answer, ...lone])[0].row.id, 'KB-BBBB0000', 'one carrier: the full bonus, the anchor wins');
+  assert.equal(scoreRows(q, [answer, ...crowd])[0].row.id, 'KB-AAAA0001', 'five carriers: the words decide');
+});
+
+test('a page anchor admits exactly as before and adds nothing to the order', () => {
+  const q = 'on /cart how does the coupon sidebar pick its preset cards';
+  const bare = row({ id: 'KB-AAAA0001', subject: 'unrelated wording entirely', anchors: ['/cart'] });
+  const wordy = row({ id: 'KB-BBBB0002', subject: 'coupon sidebar preset cards', anchors: ['/cart'] });
+  const [first, second] = scoreRows(q, [bare, wordy]);
+  assert.equal(first.row.id, 'KB-BBBB0002', 'ordered by the words, because the page cannot tell them apart');
+  assert.equal(second.row.id, 'KB-AAAA0001', 'and an entry found only by the page is still in the list…');
+  assert.equal(second.admissible, true, '…and still admitted: floor-1b moves the order, never the floor');
+});
+
+test('weighing anchors changes the order and never the admission', () => {
+  const rows = [
+    row({ id: 'KB-AAAA0001', subject: 'cart totals lag a quantity change', anchors: ['/cart', 'Query.cart'] }),
+    row({ id: 'KB-BBBB0002', subject: 'coupon on the cart page', anchors: ['/cart', 'Query.cart'] }),
+    row({ id: 'KB-CCCC0003', subject: 'order status after checkout', anchors: ['Mutation.createOrderFromCart'] }),
+    row({ id: 'KB-DDDD0004', subject: 'cart quantity stepper', anchors: [] }),
+  ];
+  for (const q of ['why do /cart totals lag', 'Query.cart coupon', 'order status after Mutation.createOrderFromCart', 'cart quantity']) {
+    const admittedBy = (opts) => Object.fromEntries(scoreRows(q, rows, opts).map((h) => [h.row.id, h.admissible]));
+    assert.deepEqual(admittedBy(), admittedBy({ weighAnchors: false }), q);
+  }
+});
+
 test('ranking is deterministic — ties break on trust, then id', () => {
   const rows = [
     row({ id: 'KB-CCCC0003', subject: 'cart totals', trust: 1 }),

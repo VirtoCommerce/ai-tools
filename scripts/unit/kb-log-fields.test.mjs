@@ -114,7 +114,6 @@ test('every ask names the ranker that produced it — and only asks do', async (
     await ask(MISSED_COLD, opened(), { env, via: 'cli' });
     const lines = await linesOf(env);
     for (const l of lines) assert.equal(l.rank, RANKER, 'answered and missed alike');
-    assert.equal(RANKER, 'floor-1');
 
     const cap = await capture({
       subject: 'a fact about something else entirely',
