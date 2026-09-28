@@ -29,11 +29,13 @@ skills/
 ├── qa-generate-data/                # [Testing]  Design + author test-data combinations (offline)
 ├── qa-review-tests/                 # [Testing]  11-dimension test-case quality review
 ├── qa-local-env/                    # [Testing]  Local VC stack via start-local (fresh DB per run)
+├── qa-test-fast/                    # [Testing]  Method behind /qa-test-fast (grounded quick ticket test)
 │
 ├── qa-investigate/                  # [QA Methodology]  Bug investigation (5 phases)
 ├── qa-evidence/                     # [QA Methodology]  Evidence capture & report formatting
 ├── qa-defect/                       # [QA Methodology]  Defect management lifecycle
 ├── qa-test-design/                  # [QA Methodology]  Test case derivation techniques
+├── qa-test-model/                   # [QA Methodology]  Fault model of one ticket (value chain, scenario table, gate)
 ├── qa-test-mind-map/                # [QA Methodology]  Behaviour graph of a domain (JSON, stable ids)
 ├── qa-test-data-model/              # [QA Methodology]  Data state each behaviour requires (JSON profiles)
 ├── qa-risk/                         # [QA Methodology]  Risk-based prioritization
@@ -111,6 +113,7 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
 | `/qa-test-design` | EP, BVA, decision tables, state transitions, pairwise, error guessing | test-design-techniques.md |
+| `/qa-test-model` | The only builder of a ticket's Test Model (`/qa-test` FULL 1e and `/qa-test-fast` invoke it) — prior-model rule, contract refresh, the gate inline | test-model.md |
 | `/qa-test-mind-map` | Build / update / audit the behaviour graph of a domain — nodes, branches, states, data needs, evidence; cases link via `Behavior:` stamps | build.md, update.md, audit.md |
 | `/qa-test-data-model` | Build / update / audit the data STATE each behaviour requires, as profiles `/qa-seed-data --profile` executes | build.md, update.md, audit.md |
 | `/qa-risk` | Risk-based prioritization: 5x5 matrix, severity/priority, test depth | risk-prioritization-framework.md |

@@ -7,7 +7,7 @@ day §2 raised it.
 
 **The methodology — why Part 0 is derived first, the eight rules the scenario table must satisfy, when
 Part 0r role scenarios are required, the gate, and the worked references — lives in
-[`.claude/skills/qa-test/test-model.md`](../skills/qa-test/test-model.md). Read that before filling this
+[`.claude/skills/qa-test-model/test-model.md`](../skills/qa-test-model/test-model.md). Read that before filling this
 in.** This file is the shape only, so it can be copied without carrying the argument with it.
 
 ```

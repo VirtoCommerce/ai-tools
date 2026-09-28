@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-09-23)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-09-28)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -26,16 +26,16 @@
 12. **Pass the ambient context — `cultureName`, `storeId`, `userId`, `organizationId` — on almost every query and mutation.**
     Most xAPI operations resolve against an implied context, and **omitting a context arg is not an error**:
     the server substitutes a default and returns `200` with data that is wrong, empty, or `null`. There is no
-    message to notice. Measured on this schema (108 queries, derived at refresh):
+    message to notice. Measured on this schema (119 queries, derived at refresh):
 
     | Context arg | Queries accepting it | Required | Optional |
     |---|---|---|---|
-    | `cultureName` | 61 (56%) | 3 | 58 |
-    | `storeId` | 65 (60%) | 34 | 31 |
-    | `userId` | 31 (29%) | 2 | 29 |
-    | `organizationId` | 14 (13%) | 2 | 12 |
+    | `cultureName` | 65 (55%) | 3 | 62 |
+    | `storeId` | 71 (60%) | 37 | 34 |
+    | `userId` | 31 (26%) | 2 | 29 |
+    | `organizationId` | 14 (12%) | 2 | 12 |
 
-    **84 of 108 queries (78%) accept at least one; 74 (69%) accept one OPTIONALLY** —
+    **91 of 119 queries (76%) accept at least one; 79 (66%) accept one OPTIONALLY** —
     that last figure is the exposure, because those are the calls that can quietly answer for a context you
     never chose. Mutations take the same fields inside the `command:` wrapper (see Rule 1), so the same rule applies.
 
@@ -185,12 +185,23 @@ loyaltyBalance(storeId: String!, userId: String, orderId: String)
 loyaltyMissionProgress(after: String, first: Int, keyword: String, sort: String, storeId: String!, statuses: [String], completedStartDate: DateTime, completedEndDate: DateTime, cultureName: String, currencyCode: String, isStarted: Boolean, userId: String)
 checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
 currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: [String], regionIds: [String], cities: [String], ids: [String])
+returnableItems(orderId: String!)
+returnPolicy(storeId: String!)
+return(id: String!)
+returnReasons(storeId: String!, cultureName: String)
+returns(after: String, first: Int, keyword: String, sort: String, storeId: String!, statuses: [String], startDate: DateTime, endDate: DateTime)
+returnStatuses(cultureName: String)
 customerSalesReps(after: String, first: Int, keyword: String, sort: String, storeId: String)
 salesRepCustomerFilterRules(storeId: String, cultureName: String)
 salesRepCustomer(organizationId: String!)
 salesRepCustomerSortRules(storeId: String, cultureName: String)
 salesRepCustomers(after: String, first: Int, keyword: String, sort: String, storeId: String, filter: String, cultureName: String)
 salesRepLayout(scope: String!, storeId: String)
+salesRepTaskFilterRules(storeId: String, cultureName: String)
+salesRepTask(id: String!)
+salesRepTaskSortRules(storeId: String, cultureName: String)
+salesRepTasks(after: String, first: Int, keyword: String, sort: String, storeId: String, filter: String, period: SalesRepStatisticsPeriodInput, today: DateTime)
+salesRepTaskTypes()
 salesRepTopSellerFilterRules(storeId: String, cultureName: String, organizationId: String, period: SalesRepStatisticsPeriodInput)
 salesRepTopSellerSortRules(storeId: String, cultureName: String)
 salesRepTopSellers(organizationId: String, storeId: String, filter: String, sort: String, period: SalesRepStatisticsPeriodInput, take: Int, currencyCode: String, cultureName: String)
@@ -338,6 +349,10 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `confirmTask` | `ConfirmTaskCommandType` |
 | `rejectTask` | `RejectTaskCommandType` |
 | `pushHistoricalEvent` | `InputPushHistoricalEventType` |
+| `changeSalesRepTaskStatus` | `InputChangeSalesRepTaskStatus` |
+| `createSalesRepTask` | `InputCreateSalesRepTask` |
+| `deleteSalesRepTask` | `InputDeleteSalesRepTask` |
+| `updateSalesRepTask` | `InputUpdateSalesRepTask` |
 
 ### Orders
 
@@ -360,6 +375,10 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `deactivateBackInStockSubscription` | `DeactivateBackInStockSubscriptionCommandType` |
 | `saveSearchQuery` | `InputSaveSearchQueryType` |
 | `registerByInvitation` | `InputRegisterByInvitationType` |
+| `cancelReturn` | `CancelReturnCommandType` |
+| `createReturn` | `CreateReturnCommandType` |
+| `submitReturn` | `SubmitReturnCommandType` |
+| `updateReturn` | `UpdateReturnCommandType` |
 | `saveSalesRepLayout` | `InputSalesRepLayout` |
 | `sendCustomerCommunication` | `InputSendCustomerCommunicationType` |
 

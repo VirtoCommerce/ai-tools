@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-09-23",
-    "totalSuites": 145,
+    "generated": "2026-09-28",
+    "totalSuites": 146,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -140,7 +140,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 44,
+      "testCount": 54,
       "estimatedMinutes": 19,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1327,7 +1327,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 57,
+      "testCount": 65,
       "estimatedMinutes": 32,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1340,7 +1340,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 56,
+        "machine": 64,
         "browser": 1,
         "manual": 0
       }
@@ -3521,6 +3521,32 @@
         "browser": 4,
         "manual": 0
       }
+    },
+    {
+      "id": "103",
+      "name": "Search Configuration Admin (Barcode scanner)",
+      "file": "regression/suites/Backend/search/103-search-configuration-admin.csv",
+      "domain": "catalog-search",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P2",
+      "testCount": 8,
+      "estimatedMinutes": 0,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "search",
+        "barcode",
+        "search-configuration",
+        "admin",
+        "store",
+        "rbac"
+      ],
+      "requiresModules": [
+        "catalog",
+        "store"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
     }
   ],
   "selections": {
@@ -3574,7 +3600,8 @@
       "include": [
         "004",
         "005",
-        "061"
+        "061",
+        "103"
       ]
     },
     "orders": {

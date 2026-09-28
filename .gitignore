@@ -79,6 +79,10 @@ tests/screenshots/**/*.png
 # reports/test-lifecycle/, reports/coverage/) stays ignored — it is disposable.
 !reports/tickets/**/screenshots/*.png
 
+# VCST-2945 scannable barcode images ARE committed test data: the storefront scanner's file-upload
+# path decodes them and `td:validate:barcode` checks each one's stamped value against the spec.
+!test-data/uploads/barcodes/*.png
+
 # Playwright MCP accessibility snapshots — dropped at repo root by browser MCPs
 # during exploratory sessions. Transient working state, not deliverables.
 # (No tracked YAML at repo root, so the bare-yml pattern is safe.)

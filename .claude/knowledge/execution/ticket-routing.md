@@ -249,7 +249,7 @@ exactly one artifact — a Test Model **Part 0** — and a Story is the only thi
 precisely the run that must not take FAST: it is the only step that would have declared the surface, and
 FAST defers that indefinitely while looking like a saving. On a surface whose Part 0 already exists the
 story is refining a known mechanism and its new model carries that Part 0 forward
-(`skills/qa-test/test-model.md` §Why it is a durable file) — there, FAST is honest.
+(`skills/qa-test-model/test-model.md` §Why it is a durable file) — there, FAST is honest.
 
 **Say what the downgrade costs, in the run's own words.** A Story on FAST authors **no test cases** and
 builds **no model**, so the story's behaviour gets no durable regression coverage from this run and the

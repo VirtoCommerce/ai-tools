@@ -1,7 +1,7 @@
 ---
 name: qa-checklist
 description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses the built-in domain checklists (storefront + backend/admin + GraphQL) + custom creation."
-argument-hint: "domain name | feature | VCST-XXXX | new <domain> | admin <module>"
+argument-hint: "domain name | feature | VCST-XXXX [--from-model] | new <domain> | admin <module>"
 
 
 ---
@@ -19,6 +19,7 @@ Generate or retrieve domain-specific checklists that ensure complete test case c
 /qa-checklist admin catalog            # Retrieve Catalog Admin checklist (backend file)
 /qa-checklist admin pricing            # Retrieve Pricing Admin checklist
 /qa-checklist VCST-1234                # Generate checklist for JIRA ticket scope
+/qa-checklist VCST-1234 --from-model   # Mode 5: from test model + mind map
 /qa-checklist new "push messages"      # Create new checklist for unlisted domain
 /qa-checklist all                      # List every domain checklist with item counts
 ```
@@ -29,6 +30,7 @@ Generate or retrieve domain-specific checklists that ensure complete test case c
 - **backend-admin-checklists.md** — the Admin module checklists + the two API checklists, aligned with Bundle v14.0.8. Source of truth for Admin SPA and Platform API/xAPI domains.
 - **graphql-checklist.md** — the per-query/mutation GraphQL xAPI checklist covering every xAPI module (xCatalog, xCart, xOrder, xProfile, xCMS, xFrontend, xQuote, xMarketing) + a per-change verification template.
 - **checklist-creation-guide.md** — Methodology for creating new checklists: structure rules, quality criteria, VC-specific patterns, cross-layer verification, and examples.
+- **from-model.md** — Mode 5: items traced to the test model + mind map.
 
 **Counts are derived, never transcribed here.** `npm run checklists:count` prints every section
 and its item count across the three files (`-- --json` for machine use); that script's own header
@@ -63,9 +65,7 @@ already answer, and it must read them rather than re-derive them from the UI:
 build currently does; an item grounded in a `BL-*` encodes what it is supposed to do — only the second
 can fail on a regression the UI presents confidently. And an un-cited edge-case item is invisible to
 `ecl:lint` / `bl:lint`, so a checklist can neither be credited for oracle coverage nor be repaired when
-`/qa-review-oracles` amends the entry it was silently paraphrasing. Charter A of
-[`../qa-sbtm/charter-library.md`](../qa-sbtm/charter-library.md) was a verbatim un-cited restatement of
-ECL 1.1/1.2/1.3 for exactly this reason.
+`/qa-review-oracles` amends the entry it was silently paraphrasing.
 
 **`[OBSERVED]` → checklist, `[THEORETICAL]` → exploratory.** The ECL marks every pattern as one or the
 other. A checklist is walked on every release under the 6–15-item budget, so only `[OBSERVED]`
@@ -169,8 +169,7 @@ One checklist, suite 15. Sections: xCatalog · xCart Lifecycle & Checkout · xCa
 Products · xCart Wishlists & Saved for Later · xOrder · xProfile · xQuote · xCMS & xFrontend ·
 **xMarketing — Promotion Coupons** · Cross-Cutting · New Query/Mutation Verification.
 
-**Loyalty has no section here.** The loyalty xAPI surface is 3 queries and 0 loyalty-specific
-mutations, and its invariants are walked from storefront domain 34 — except `BL-LOY-013`
+**Loyalty has no section here** — its invariants are walked from storefront domain 34, except `BL-LOY-013`
 (`order.orderTotals` per-currency), which belongs in this file and is not yet written.
 
 ## Execution
@@ -184,7 +183,7 @@ mutations, and its invariants are walked from storefront domain 34 — except `B
    - API: "platform api" / "rest api" → API1
 2. Read the checklist from `domain-checklists.md`, `backend-admin-checklists.md`, or `graphql-checklist.md`
 3. Present the checklist with markdown checkboxes
-4. Suggest related checklists (e.g., storefront "Cart/Checkout" pairs with admin "Orders Admin" and "Pricing Admin"; storefront "Search" pairs with admin "Search & Indexing"; storefront "Loyalty" pairs with "Cart/Checkout" and "Orders")
+4. Suggest related checklists (e.g., storefront "Cart/Checkout" pairs with admin "Orders Admin")
 5. **Report oracle coverage** — list the `BL-*` / `ECL-<n>.<m>` the retrieved items cite, then name the
    domain's `[OBSERVED]` ECL sections that NO item covers, and any outcome-asserting item carrying no
    `BL-*`. These are back-annotation candidates: offer to add the citations (and any missing
@@ -236,6 +235,10 @@ mutations, and its invariants are walked from storefront domain 34 — except `B
 8. **Propose adding** the new checklist to `domain-checklists.md` (UI domains) or as a separate file
    (API/backend domains) — ask user for confirmation. On write: add the summary-table row, the section,
    and re-derive the header count with `npm run checklists:count` rather than incrementing by hand
+
+### Mode 5: From the test model (`VCST-XXXX --from-model`)
+
+Mode 2 + the test model + the mind map; every in-scope row or node becomes an item or a declared omission. Procedure: [`from-model.md`](from-model.md).
 
 ### Mode 4: List All (`all` keyword)
 
