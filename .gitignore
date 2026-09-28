@@ -120,7 +120,6 @@ test-data/aliases.localhost.json
 # Auto-fix pipeline — cloned product-repo source is transient working state
 .fix-workspace/
 # Auto-fix module discovery + dependency-graph cache (rebuilt from gh on TTL)
-ci/config/.module-registry.cache.json
 plugins/vc-fix/skills/qa-fix-routing/.module-registry.cache.json
 # Auto-fix run evidence (keep fix-report.md + summary.json, drop heavy artifacts)
 reports/fixes/FIX-*/**/*.png

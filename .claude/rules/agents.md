@@ -61,15 +61,14 @@ product repos via local `git`/`gh`. QA agents stay read-only on GitHub; write sc
 duplicates were removed 2026-09-25 (they had forked; `/qa-fix`, the only caller, is plugin-only).** The table below
 is the reference for what each does; `/plugin install vc-fix@vc-tools` is what puts them in the picker.
 
-Driven by `/qa-fix` (interactive twin of `ci/run-fix-cycle.ts`), reusing `ci/config/fix-repos.json` +
-`ci/lib/repo-router.ts` + `ci/lib/module-registry.ts`. One developer + one reviewer **per repo kind**,
+Driven by `/qa-fix`, reusing the routing in `plugins/vc-fix/skills/qa-fix-routing/`. One developer + one reviewer **per repo kind**,
 picked by the routed repo's `kind`. Gate ladder + no-auto-merge: `.claude/knowledge/execution/quality-gates.md`.
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| **fullstack-backend** | opus | Fixes ONE `vc-module-*` / `vc-platform` repo (.NET 10 / C# + the module's Admin SPA Angular). Reproduce-as-test → minimal fix → open PR. Interactive twin of `ci/agents/fix-backend-agent.md`. Skills: `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`. |
+| **fullstack-backend** | opus | Fixes ONE `vc-module-*` / `vc-platform` repo (.NET 10 / C# + the module's Admin SPA Angular). Reproduce-as-test → minimal fix → open PR. Skills: `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`. |
 | **backend-reviewer** | sonnet | Gate-4 reviewer of the C#/Angular local diff before the PR: single-repo, no test edits, no breaking changes, BL-* preserved, minimal & idiomatic. |
-| **fullstack-frontend** | opus | Fixes the `vc-frontend` storefront (Vue 3 / TS / Vite + in-repo UI kit + Storybook), **and** a `module` repo's declared embedded frontend sub-app on the same stack (e.g. `vc-module-pagebuilder`'s `src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/`), scoped to the sub-app path within that module's single-repo checkout. Reproduce-as-vitest-test (or, for a module sub-app, its own `tsx --test`/ephemeral harness) → minimal fix → open PR. Interactive twin of `ci/agents/fix-frontend-agent.md`. Skills: `/vue-unit-test`, `/vue-fix` (`/storybook-test` optional), `/vc-shell-fix` (module-embedded sub-app). |
+| **fullstack-frontend** | opus | Fixes the `vc-frontend` storefront (Vue 3 / TS / Vite + in-repo UI kit + Storybook), **and** a `module` repo's declared embedded frontend sub-app on the same stack (e.g. `vc-module-pagebuilder`'s `src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/`), scoped to the sub-app path within that module's single-repo checkout. Reproduce-as-vitest-test (or, for a module sub-app, its own `tsx --test`/ephemeral harness) → minimal fix → open PR. Skills: `/vue-unit-test`, `/vue-fix` (`/storybook-test` optional), `/vc-shell-fix` (module-embedded sub-app). |
 | **frontend-reviewer** | sonnet | Gate-4 reviewer of the Vue/TS local diff before the PR: single-repo (or single-sub-app scope for a module-embedded fix), no test/story edits, no leaked scratch-harness tooling, no breaking prop/event/slot or GraphQL contract, BL-UI preserved, minimal & idiomatic. |
 
 **Developer team tools & constraints:**

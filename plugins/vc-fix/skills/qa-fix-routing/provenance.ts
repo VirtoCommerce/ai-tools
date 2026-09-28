@@ -9,8 +9,7 @@
  * caller via the GitHub/Azure Repos APIs — this module is a PURE decision), classify
  * ownership and decide how the fix is delivered under the deployment's policy.
  *
- * Both /qa-fix (interactive) and ci/run-fix-cycle.ts (headless) call these so the
- * decision can't drift between the twins. See .claude/rules/quality-gates.md §1a/§2a.
+ * /qa-fix calls these. See .claude/rules/quality-gates.md §1a/§2a.
  */
 import type { RepoOwnership } from "./repo-router.js";
 

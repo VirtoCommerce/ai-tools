@@ -61,8 +61,8 @@ const CLASSIFICATIONS: Classification[] = [
     rationale: "Four-layer agent architecture template — universal pattern. But agent-pool table at line 210 (slot 1/2/3 with @td(AGENT_POOL_SLOT_N.*) refs) shows vcst values as 'reference'. Customer fills agent-user-pool.csv." },
   { path: ".claude/knowledge/agents/ba/shared-instructions.md", category: "agent-shared", applicability: "universal",
     rationale: "BA-team framework — VirtoOZ-first sourcing, the four documentation audiences, no-hardcode + external-write discipline, output policy. Pure BA craft/process, no vcst-specific assumptions." },
-  { path: ".claude/knowledge/agents/developers/shared-instructions.md", category: "agent-shared", applicability: "reference",
-    rationale: "Developers-team framework — write-token discipline, CLA commit identity, gate ladder, escalation/reporting. Universal pattern; the GITHUB_FIX_BUGS_TOKEN binding + repo allowlist are env/data (ci/config/fix-repos.json)." },
+  { path: "plugins/vc-fix/knowledge/agents/developers/shared-instructions.md", category: "agent-shared", applicability: "reference",
+    rationale: "Developers-team framework — write-token discipline, CLA commit identity, gate ladder, escalation/reporting. Universal pattern; the GITHUB_FIX_BUGS_TOKEN binding + repo allowlist are env/data (plugins/vc-fix/skills/qa-fix-routing/fix-repos.json)." },
 
   // BA agents (4)
   { path: ".claude/agents/ba-system-analyzer.md", category: "agent-ba", applicability: "universal",
@@ -140,7 +140,7 @@ const CLASSIFICATIONS: Classification[] = [
   { path: ".claude/knowledge/oracles/vc-bug-catalog.md", category: "knowledge", applicability: "reference",
     rationale: "Historical VC bug patterns indexed by domain. Customer reads as 'Familiar Problems' oracle but VC-specific entries (VCST-NNNN refs) are vcst's history. Useful learning artifact, adapt for customer's." },
   { path: ".claude/knowledge/architecture/vc-module-architecture.md", category: "knowledge", applicability: "reference",
-    rationale: "VC module repo anatomy + .NET 10 / xUnit / Angular conventions for the auto-fix pipeline. Universal PATTERN; repo list + routing are data (ci/). Customer adapts to their module set." },
+    rationale: "VC module repo anatomy + .NET 10 / xUnit / Angular conventions for the auto-fix pipeline. Universal PATTERN; repo list + routing are data (plugins/vc-fix/skills/qa-fix-routing/fix-repos.json). Customer adapts to their module set." },
   { path: ".claude/knowledge/architecture/vc-frontend-architecture.md", category: "knowledge", applicability: "reference",
     rationale: "vc-frontend storefront repo anatomy + Vue 3 / TS / vitest / @vue/test-utils / Storybook conventions for the auto-fix pipeline. Applicable to stock vc-frontend; customer with a custom storefront adapts." },
   { path: ".claude/knowledge/domain/white-labeling.md", category: "knowledge", applicability: "reference",
