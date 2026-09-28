@@ -1,0 +1,114 @@
+{
+  "about": "The labelled set STEP 6 (VCST-6087) is measured against -- PLAN §14.4 / §22.14. A TARGET is a question a human says the named entry answers; it passes when one of `expect` is in the top 3 an agent sees. A CONTROL is a question the base holds nothing on; it passes only while it stays a MISS. Every question is copied verbatim from the published ask log; the source line is cited so a reader can check the label, not trust it.",
+  "targets": [
+    {
+      "id": "T-gift-long",
+      "q": "RewardItemGiftNumItem automatic gift promotion — is the gift line item added to the cart/order automatically or must the shopper accept it via availableGifts / addGiftItems mutation?",
+      "expect": ["KB-0B27E984"],
+      "source": "log 2026-09-21 08:09 miss, nearMiss KB-0B27E984 (STEP-6-ranking.md)"
+    },
+    {
+      "id": "T-gift-short",
+      "q": "does an automatic gift promotion add a zero-price line to the cart and the order on the storefront",
+      "expect": ["KB-0B27E984"],
+      "source": "log 2026-09-22 07:19 session 9f98d03f, answer (PLAN §22.10)"
+    },
+    {
+      "id": "T-cart-short",
+      "q": "What does the storefront /cart page look like for a B2B organization buyer — decisions, controls, layout?",
+      "expect": ["KB-44B7B71E", "KB-50EBEEE9"],
+      "source": "log 2026-09-22 07:20 session a905b381, miss, nearMiss KB-44B7B71E (PLAN §22.10); KB-50EBEEE9 added by the operator 2026-09-28 -- its body lays out the whole /cart checkout page, while KB-44B7B71E covers only its payment step"
+    },
+    {
+      "id": "T-cart-long",
+      "q": "What does the B2B storefront cart page at /cart show and control for a signed-in organization buyer — line quantity input, selectedForCheckout checkboxes, coupons section, Place order / checkout button enablement?",
+      "expect": ["KB-44B7B71E", "KB-50EBEEE9"],
+      "source": "log 2026-09-22 07:18 session a905b381, miss, nearMiss KB-50EBEEE9; §22.14 scores KB-44B7B71E on it (the D-cart-detail row)"
+    },
+    {
+      "id": "T-ship-tax",
+      "q": "why is the order header shippingTaxTotal zero when the shipment's own taxTotal is non-zero",
+      "expect": ["KB-8793DFE7"],
+      "source": "log 2026-09-22 07:19 session 9f98d03f, answer; label confirmed by the operator 2026-09-28"
+    },
+    {
+      "id": "T-captured",
+      "q": "order inPayments capturedDate is set while paymentStatus is Authorized",
+      "expect": ["KB-1AC55A1D"],
+      "source": "log 2026-09-22 07:19 session 9f98d03f, answer; label confirmed by the operator 2026-09-28"
+    },
+    {
+      "id": "T-config-price",
+      "q": "how is a configurable product line priced in the storefront cart on /cart - option extendedPrice or unit salePrice",
+      "expect": ["KB-4B47D094"],
+      "source": "log 2026-09-22 07:19 session 9f98d03f, answer; label confirmed by the operator 2026-09-28"
+    },
+    {
+      "id": "T-mobile-size",
+      "q": "What size are interactive controls (buttons, checkboxes, quantity stepper) at 375px mobile viewport on catalog/PDP/cart pages — do any fall in the 24-44px range?",
+      "expect": ["KB-6B0E2FF7"],
+      "source": "log 2026-09-28 08:36 session p14424, miss; label confirmed by the operator 2026-09-28"
+    },
+    {
+      "id": "T-coupon-input",
+      "q": "/cart promo code field — where is the coupon input",
+      "expect": ["KB-938D7C06"],
+      "source": "log 2026-09-23 08:46 session d54e5a64 (asked with an MSYS-mangled prefix, restored to /cart); label confirmed by the operator 2026-09-28"
+    },
+    {
+      "id": "T-active-plain",
+      "q": "what does the storefront members Active column reflect?",
+      "expect": ["KB-27B4CD10", "KB-4B889114"],
+      "source": "PLAN §14.4 known GOOD (floor-1's labelled set, kb-floor.test.mjs)"
+    },
+    {
+      "id": "T-active-route",
+      "q": "What does the Active column on the storefront /company/members page reflect — the user account status or the organization membership/contact status?",
+      "expect": ["KB-27B4CD10", "KB-4B889114"],
+      "source": "PLAN §14.4 known GOOD (floor-1's labelled set, kb-floor.test.mjs)"
+    }
+  ],
+  "unrecovered": "§22.14 labels SIX targets; two of them (the 8-word row served at coverage 0.63 and the 12-word row served at 0.82) are given only as a length and a coverage, with neither the question nor the entry named, and the throwaway scripts that held them were deleted. They are NOT reconstructed here. The three 9f98d03f rows above were added instead, each labelled by the operator rather than inferred.",
+  "controls": [
+    {
+      "id": "C-orders-page",
+      "q": "GraphQL orders query totalCount and items on xOrder storefront surface",
+      "source": "run B, session ada88a13 (PLAN §22.8 #1)"
+    },
+    {
+      "id": "C-skyflow-init",
+      "q": "initializeCartPayment mutation publicParameters Skyflow",
+      "source": "run B, session ada88a13 (PLAN §22.8 #2)"
+    },
+    {
+      "id": "C-cart-payments",
+      "q": "allowCartPayment availablePaymentMethods cart GraphQL",
+      "source": "run B, session ada88a13 (PLAN §22.8 #3)"
+    },
+    {
+      "id": "C-order-by-number",
+      "q": "order(number:) query CustomerOrderType withPrices",
+      "source": "run B, session ada88a13 (PLAN §22.8 #4)"
+    },
+    {
+      "id": "C-smoke-path",
+      "q": "What is known about the storefront smoke path on virtostart — homepage, catalog browse, cart, checkout (/cart, /checkout), and the GraphQL operations behind them?",
+      "source": "log 2026-09-22 13:45 session c34caad0, miss; confirmed no-answer by the operator 2026-09-28"
+    },
+    {
+      "id": "C-bopis-pickup",
+      "q": "BOPIS pickup on /cart — what does selecting Pickup change on the placed order (fulfillment center, delivery address, shipping cost)?",
+      "source": "log 2026-09-23 06:43 session c34caad0, miss; pickup is mentioned in passing by six entries, none answers it; confirmed by the operator 2026-09-28"
+    },
+    {
+      "id": "C-price-sort-short",
+      "q": "Does product price sorting use the indexed price field rather than the displayed price?",
+      "source": "PLAN §14.4 known BAD (floor-1's labelled set, kb-floor.test.mjs)"
+    },
+    {
+      "id": "C-price-sort-long",
+      "q": "When sorting a product list by price ascending, does the storefront order by the indexed price or by the price actually displayed to the shopper?",
+      "source": "PLAN §14.4 known BAD (floor-1's labelled set, kb-floor.test.mjs)"
+    }
+  ]
+}
