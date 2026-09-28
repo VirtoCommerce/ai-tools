@@ -46,7 +46,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 ### UX Heuristics
 
-- Touch targets < 44x44px on mobile = a11y + usability bug
+- Touch targets < 24x24 CSS px (WCAG 2.2 SC 2.5.8 AA) on mobile = a11y + usability bug
 - Text < 16px on mobile = auto-zoom trigger on iOS = bug
 - Missing `aria-label` on icon-only buttons = real a11y bug
 - Form with no visible error state on invalid submit = UX bug

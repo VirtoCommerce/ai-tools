@@ -757,7 +757,7 @@ Silent impersonation of IMPERSONATE_TARGET completed (banner visible). Viewport 
 [ACT] Click the header hamburger-menu button (aria-label 'Menu')
 [WAIT] Mobile menu opens (main-menu.vue)
 [ASSERT] Locate 'Back to {operator}' item in the mobile menu","[DOM] 'Back to {operator}' item visible inside the open mobile menu (PR #2280 main-menu.vue +46/-22 revert hook)
-[DOM] Revert item is enabled and tappable (minimum touch target size 44x44px)
+[DOM] Revert item is enabled and tappable (minimum touch target size 24x24px)
 [DOM] Impersonation banner is visible in mobile layout alongside the menu","[CONSOLE] No JS errors on mobile menu open or revert item render","'Back to {operator}' absent from mobile menu (PR #2280 main-menu.vue hook not rendering); mobile menu does not open; impersonation banner missing on mobile; console TypeError","Stop impersonation via Revert; reset viewport; [PRE:CLEAR_SESSION]","VCST-4906, VCST-4725, BL-AUTH-006, BL-AUTH-007; Generated VCST-4906 / PR #2280 (2026-05-14); main-menu.vue +46/-22 mobile revert hook | Promoted: REG-2026-09-07-1342 (2026-09-07)",Automated
 "IMP-044","VcLoaderOverlay with Slot Content Displayed During Impersonate and Revert Transitions","LoginOnBehalf > Loading States > Overlay Slot","Medium","BL-AUTH-006",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
