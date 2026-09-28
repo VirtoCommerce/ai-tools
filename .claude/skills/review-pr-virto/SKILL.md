@@ -77,9 +77,11 @@ comments, literals and same-named members on other types.
 Serena indexes the **clone**, so it answers about the **baseline**, not about the PR. Two
 consequences:
 
-- **A symbol the diff adds or changes is the PR's own code** — read it in the worktree; that reading
-  is the review itself. An empty Serena result for such a symbol is expected and is not the stop
-  condition below.
+- **A symbol the diff adds does not exist in the baseline** — read it in the worktree; an empty Serena
+  result for it is expected and is not the stop condition below.
+- **A member the diff changes does exist in the baseline, and Serena must find it.** Its overrides
+  and callers are the compatibility question this review exists for, so an empty result for a
+  changed member *is* the stop condition below. Its new body you read in the worktree.
 - **The baseline is only right if the clone is at it.** After Step 2's fetch, check that the clone is
   clean (`git -C <clone> status --porcelain` prints nothing) and that `git -C <clone> rev-parse HEAD`
   equals `git -C <clone> rev-parse origin/<baseRefName>`. If not, **do not switch or reset it
@@ -88,8 +90,8 @@ consequences:
   repository the PR depends on, the right state is the version its `.csproj` / `module.manifest`
   references.
 
-When Serena comes back **empty** for code the PR does not touch, or is not installed, or has no
-project for the repository you need:
+When Serena comes back **empty** for anything except a symbol the PR adds, or is not installed, or
+has no project for the repository you need:
 
 1. Check the cheap causes first: is the right project active, is its clone at the baseline (above),
    does a shorter or substring name path find it?
@@ -193,8 +195,10 @@ into the review.
 Before any review starts, check both ends:
 
 - the worktree HEAD equals `headRefOid` from Step 1;
-- `git -C <worktree> diff --name-only origin/<baseRefName>...HEAD` lists the same files as `files`
-  from Step 1.
+- `git -C <worktree> diff --name-only origin/<baseRefName>...HEAD` lists the same files as
+  `gh api repos/VirtoCommerce/<repo>/pulls/<pr>/files --paginate --jq '.[].filename'`. Do not
+  compare against `files` from `gh pr view`: that field stops at 100 files without saying so, and a
+  larger PR would fail the check with a correct worktree.
 
 Either mismatch means the review would cover code that is not the PR — stop and find out why.
 
