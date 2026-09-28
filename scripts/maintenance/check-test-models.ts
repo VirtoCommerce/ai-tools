@@ -46,6 +46,7 @@
  *   TM-017 suspect case — linked to a DRIFT, OBSOLETE or changed node (warn)
  *   TM-018 DRIFT route names no trackable owner (warn)
  *   TM-019 suite CSV unparsable, or a legacy header hides its stamps (warn)
+ *   TM-032 integration point — a cross-domain depends_on / affected_by edge no case exercises (info)
  */
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -435,6 +436,38 @@ export interface CheckResult {
   findings: Finding[];
   coverage: Record<string, string[]>;
   suspects: { caseId: string; node: string; why: string }[];
+  /** Cross-domain depends_on / affected_by edges and the cases that exercise both sides. */
+  crossings: { from: string; to: string; type: string; cases: string[] }[];
+}
+
+/**
+ * An INTEGRATION POINT is a depends_on / affected_by edge between two domains — the seam where a
+ * feature meets functionality another domain owns, and where the bugs a feature's own suite never
+ * sees live (a loyalty goal and the checkout discount; barcode search and a configurable product).
+ * The domain of a node is its id prefix, which TM-003 already enforces.
+ */
+export function crossDomainEdges(edges: MapEdge[]): MapEdge[] {
+  const dom = (id: string) => id.split(".")[0];
+  return edges.filter((e) => (e.type === "depends_on" || e.type === "affected_by") && dom(e.from) !== dom(e.to));
+}
+
+/**
+ * A case exercises an integration point when its stamps reach BOTH sides — each side either stamped
+ * itself or reached through a stamped descendant (a branch under the behaviour). A case on one side
+ * only is that domain's test, not a test of the seam.
+ */
+export function crossingCases(edge: MapEdge, cases: Map<string, CaseStamps>, edges: MapEdge[]): string[] {
+  const reach = new Map<string, Set<string>>();
+  const reached = (id: string) => {
+    if (!reach.has(id)) reach.set(id, new Set([id, ...ancestors(id, edges)]));
+    return reach.get(id)!;
+  };
+  const out: string[] = [];
+  for (const [caseId, s] of cases) {
+    const sides = s.behaviors.map(reached);
+    if (sides.some((r) => r.has(edge.from)) && sides.some((r) => r.has(edge.to))) out.push(caseId);
+  }
+  return out;
 }
 
 export function checkModels(input: CheckInput, ctx: Context): CheckResult {
@@ -648,7 +681,13 @@ export function checkModels(input: CheckInput, ctx: Context): CheckResult {
     }
   }
 
-  return { findings, coverage: Object.fromEntries(coverage), suspects };
+  const allEdges = input.mindMaps.flatMap((m) => m.doc.edges);
+  const crossings = crossDomainEdges(allEdges).map((e) => ({ from: e.from, to: e.to, type: e.type, cases: crossingCases(e, ctx.cases, allEdges) }));
+  for (const c of crossings) {
+    if (!c.cases.length) add("TM-032", "info", nodeFile.get(c.from) ?? "?", `integration point ${c.from} -${c.type}-> ${c.to}: no case exercises both sides`, c.from);
+  }
+
+  return { findings, coverage: Object.fromEntries(coverage), suspects, crossings };
 }
 
 /* ------------------------------------------------------------------ *
@@ -895,7 +934,7 @@ async function main(): Promise<void> {
 
   const errors = findings.filter((f) => f.severity === "error");
   if (json) {
-    console.log(JSON.stringify({ mind_maps: mindMaps.map((m) => m.file), data_models: dataModels.map((m) => m.file), findings, coverage: result.coverage, suspects: result.suspects }, null, 2));
+    console.log(JSON.stringify({ mind_maps: mindMaps.map((m) => m.file), data_models: dataModels.map((m) => m.file), findings, coverage: result.coverage, suspects: result.suspects, crossings: result.crossings }, null, 2));
   } else {
     const nodeCount = okMaps.reduce((s, m) => s + m.doc.nodes.length, 0);
     const reqCount = okModels.reduce((s, m) => s + m.doc.requirements.length, 0);
@@ -903,6 +942,8 @@ async function main(): Promise<void> {
     for (const f of findings.filter((x) => x.severity !== "info")) console.log(`  ${f.code} [${f.severity}] ${basename(f.file)}${f.id ? ` ${f.id}` : ""}  ${f.msg}`);
     const gaps = findings.filter((f) => f.code === "TM-014").length;
     if (gaps) console.log(`  TM-014 [info] ${gaps} behaviour/branch node(s) have no stamped case — see --json or the audit mode`);
+    const seams = findings.filter((f) => f.code === "TM-032").length;
+    if (result.crossings.length) console.log(`  TM-032 [info] ${seams} of ${result.crossings.length} integration point(s) have no case exercising both sides — see --json \`crossings\``);
     console.log(errors.length ? `[models:check] FAIL — ${errors.length} error(s)` : "[models:check] OK");
   }
   process.exit(errors.length ? 1 : 0);

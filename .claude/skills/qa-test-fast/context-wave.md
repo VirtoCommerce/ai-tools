@@ -70,8 +70,9 @@ touches goes into the bundle as a model input.
   - Either way, `npm run models:check` must be green before the result is used.
   - **Map signals.** From `npm run models:check -- --json`, copy four lists for the slug into the
     bundle: DRIFT nodes (with `drift.observed`, and whether `TM-018` flags the route as unfiled),
-    UNVERIFIED nodes, nodes no case stamps (`TM-014`), and suspect cases (`TM-017`). Wave 3 filters
-    them to the in-scope nodes; no later step re-runs the checker.
+    UNVERIFIED nodes, nodes no case stamps (`TM-014`), suspect cases (`TM-017`), and integration
+    points no case exercises (`TM-032`, the `crossings` array). Wave 3 filters them to the in-scope
+    nodes; no later step re-runs the checker.
 
 **Join 2.** When Wave 2 built or updated the mind map, set the model's `Mind map:` header line to its
 path. A map built in this wave did not exist when the model was written, so the model's Part 0 carries
@@ -93,6 +94,7 @@ item or an omission line; this table says which, for the nodes whose truth is no
 | DRIFT | An item that re-observes `drift.observed`, with Expected `drift.expected`. The Result is `DRIFT HOLDS` or `DRIFT RESOLVED`, plus evidence. It decides an AC only when that AC names the behaviour. |
 | UNVERIFIED | An omission line `UNVERIFIED → charter`. With no ground truth to assert, it is exploratory work, not a pass/fail item. |
 | No stamped case | An ordinary item. A PASS on it is a `candidate case` in `verdict.md`. |
+| Integration point (cross-domain edge) | One item that exercises both sides, under the other domain's partition. A PASS is a `candidate case` carrying both stamps. |
 | Linked to a suspect case | No change. The suspect list stays in the bundle for the verdict. |
 
 ## Stage gate — inline, before any browser opens

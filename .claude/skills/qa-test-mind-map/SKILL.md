@@ -107,6 +107,12 @@ entries. Findings go to chat.
 - **`requires` / `produces` point into the data model**, never at a seeder. What state is needed is
   `/qa-test-data-model`'s job; how it is reached is the seeders'.
 - **A branch inherits its behaviour's `requires`.** List on a branch only what it needs beyond its parent.
+- **Draw the integration points.** When a behaviour depends on, or is changed by, functionality another
+  domain owns, add a cross-domain `depends_on` / `affected_by` edge to that domain's node. `TM-032` lists
+  every such edge no case exercises from both sides. When the other domain has no map yet, name it in
+  the node's `notes` (`integrates with: orders — cancellation`) so the test model still draws the link.
+- **A feature switch gets an `off` branch.** Its expected outcome is the pre-feature behaviour, which
+  is what an existing customer who never enables the feature relies on.
 
 ## Integration
 

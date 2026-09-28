@@ -89,4 +89,6 @@ test("html carries the drift record, the cross-links and escapes names", () => {
   assert.match(html, /route: VCST-1/);
   assert.match(html, /depends_on x\.a/);
   assert.ok(!html.includes("<b></"), "names are escaped");
+  const seamed = toHtml(m, buildTree(m, linked), new Map([["x.b|depends_on|x.a", []]]));
+  assert.match(seamed, /integration point: depends_on x\.a \(NO CASE\)/);
 });

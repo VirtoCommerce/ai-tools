@@ -22,7 +22,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { linkedTests, loadCases, type Finding, type MapNode, type MindMap } from "./check-test-models.ts";
+import { crossDomainEdges, crossingCases, linkedTests, loadCases, type Finding, type MapNode, type MindMap } from "./check-test-models.ts";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const MAP_DIR = join(ROOT, ".claude", "knowledge", "domain");
@@ -133,10 +133,17 @@ export function toMermaidStates(map: MindMap): string | null {
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export function toHtml(map: MindMap, tree: TreeNode[]): string {
+/**
+ * `seams` = the integration points (cross-domain edges) with the cases exercising both sides, keyed
+ * `from|type|to` — computed by the caller from ALL maps, because the other side lives in another file.
+ */
+export function toHtml(map: MindMap, tree: TreeNode[], seams: Map<string, string[]> = new Map()): string {
   const cross = new Map<string, string[]>();
   for (const e of map.edges) {
-    if (e.type === "depends_on" || e.type === "affected_by") cross.set(e.from, [...(cross.get(e.from) ?? []), `${e.type} ${e.to}`]);
+    if (e.type !== "depends_on" && e.type !== "affected_by") continue;
+    const seam = seams.get(`${e.from}|${e.type}|${e.to}`);
+    const text = seam === undefined ? `${e.type} ${e.to}` : `integration point: ${e.type} ${e.to} (${seam.length ? `${seam.length} case${seam.length > 1 ? "s" : ""}` : "NO CASE"})`;
+    cross.set(e.from, [...(cross.get(e.from) ?? []), text]);
   }
   const item = (t: TreeNode, depth: number): string => {
     const n = t.node;
@@ -207,7 +214,18 @@ function main(): void {
   }
   const map = JSON.parse(readFileSync(resolveMap(target), "utf8")) as MindMap;
   const findings: Finding[] = [];
-  const tree = buildTree(map, linkedTests(loadCases(findings)));
+  const cases = loadCases(findings);
+  const tree = buildTree(map, linkedTests(cases));
+  const allEdges = readdirSync(MAP_DIR)
+    .filter((f) => f.endsWith(".mind-map.json"))
+    .flatMap((f) => {
+      try {
+        return (JSON.parse(readFileSync(join(MAP_DIR, f), "utf8")) as MindMap).edges;
+      } catch {
+        return [];
+      }
+    });
+  const seams = new Map(crossDomainEdges(allEdges).map((e) => [`${e.from}|${e.type}|${e.to}`, crossingCases(e, cases, allEdges)] as const));
   for (const f of findings) console.error(`[models:view] ${f.code} ${f.file}: ${f.msg}`);
   const format = opt("--format") ?? "mermaid";
   if (format !== "mermaid" && format !== "html") {
@@ -215,7 +233,7 @@ function main(): void {
     process.exit(2);
   }
   const text =
-    format === "html" ? toHtml(map, tree) : [toMermaidMindmap(map, tree), toMermaidStates(map)].filter(Boolean).join("\n\n");
+    format === "html" ? toHtml(map, tree, seams) : [toMermaidMindmap(map, tree), toMermaidStates(map)].filter(Boolean).join("\n\n");
   const out = opt("--out");
   if (out) {
     writeFileSync(out, text);
