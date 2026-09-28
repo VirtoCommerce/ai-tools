@@ -1,0 +1,2400 @@
+{
+  "$schema": "../../templates/mind-map.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "cat",
+  "domain_map_rev": 1,
+  "generated": "2026-09-28",
+  "metadata": {
+    "scope": "Configurable products only (sections, options, required gate, priced configured line, cart/order/quote carry, file sections) plus the listing/search/compare identity seam. Not the wider Catalog domain (BL-CAT-001..012 other than 003/005/006).",
+    "built_from": "configurable-products.md rev 1 (§1-§7), business-logic.md BL-CAT-003/005/006, suites 052 and 050i (Title/References/Automation_Status; steps read for stamped rows), VirtoOZ PlatformUserGuide Manage Product Configurations and StorefrontUserGuide Options for Buying Products (queried 2026-09-28), vc-module-x-catalog GetProductConfigurationsQuery and vc-module-catalog ProductConfigurationSearchCriteria (VirtoOZ source, 2026-09-28)",
+    "kb_read": "2026-09-28 - 6 questions. Hits: KB-057A596A, KB-4B47D094, KB-F78ED1CC, KB-66089074, KB-CD451F5C, KB-71011C1F, KB-78B45E71, KB-0B27E984, KB-84EA18E3, KB-0D8C1133, KB-2D446A42. Miss: configurable product in keyword search results, card price, minVariationPrice.",
+    "evidence_convention": "No Automated case in 052/050i records a promoting run id in References, so no node cites a case as OBSERVED-by-promotion; a case is cited as SPEC and leaves the node UNVERIFIED. CFG-GQL-050 and 054 carry 'verified live vcptcore-qa1 2026-06' in their References and are cited OBSERVED with that note. kb refs are live agent observations.",
+    "cross_domain": "Integration points with search are affected_by edges in search.mind-map.json (srch.* -> cat.cfg.listing.*, cat.cfg.identity.*, cat.cfg.visibility.rename-lag). `npm run models:check -- --json` lists them under `crossings`; TM-032 names the ones no case exercises from both sides."
+  },
+  "nodes": [
+    {
+      "id": "cat.configurable",
+      "type": "feature",
+      "name": "Configurable products",
+      "description": "A catalog product carrying a Configuration (Product / Text / File sections, each optionally required) that the buyer completes before a priced, configured line reaches the cart and the order.",
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "Manage Product Configurations: sections and options on a catalog product"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "storefront PDP walk, anonymous session",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.identity",
+      "type": "behavior",
+      "name": "A configurable product is a catalog product that owns an active Configuration",
+      "chain_link": "1",
+      "interfaces": [
+        "admin-ui",
+        "graphql",
+        "rest"
+      ],
+      "actors": [
+        "merchandiser"
+      ],
+      "description": "Configurable is not a product type: it is a product that has a Configuration record, keyed by ProductId, with its own IsActive flag. Every downstream surface (PDP, listing card, cart, compare) branches on whether that Configuration exists and is active.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "Enable configuration feature: a switch on the product's Configuration widget"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog:Core/Model/Search/ProductConfigurationSearchCriteria.cs",
+          "note": "criteria carry ProductIds and IsActive"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "link 1",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.identity.non-configurable",
+      "type": "branch",
+      "name": "A product without a Configuration returns no sections",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-002",
+          "note": "Automated case; References carry no promoting run id"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §4",
+          "note": "productConfiguration contract"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.identity.invalid-id",
+      "type": "branch",
+      "name": "productConfiguration for an all-zero product id does not fail with a server error",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-003",
+          "note": "Automated case; References carry no promoting run id"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.identity.configuration-inactive",
+      "type": "branch",
+      "name": "A Configuration that is inactive is not offered to the buyer",
+      "branch_kind": "state",
+      "technique": "DT",
+      "notes": "Open: whether an inactive Configuration makes the product look non-configurable on PDP and on the listing card.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog:Core/Model/Search/ProductConfigurationSearchCriteria.cs",
+          "note": "IsActive is a search criterion; what the storefront does with an inactive one is not established"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-016",
+          "note": "IsActive preserved for a Product section with no predefined options (PR #873)"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.identity.option-is-catalog-item",
+      "type": "branch",
+      "name": "Options are existing catalog items; each is a product with its own route and its own catalog presence",
+      "branch_kind": "integration",
+      "technique": "CT",
+      "description": "The option's own product page uses a different route shape than the configurable parent, so a shopper leaving the configuration by clicking an option name lands on a differently addressed page.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "Options are selected from existing catalog items"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §5",
+          "note": "D2: option links resolve at /product/<guid>, the parent at /<slug>",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author",
+      "type": "behavior",
+      "name": "Merchandiser defines sections and options",
+      "chain_link": "1",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "actors": [
+        "merchandiser"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "Add sections and options: Product, Text and File types; Required toggle; Default; drag order"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CD451F5C",
+          "note": "REST body needs `sections` and isActive true; a wrong field name is accepted and saves an empty inactive configuration",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.section-types",
+      "type": "branch",
+      "name": "Product, Text and File section types are offered",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "three section types documented"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "types observed live: Product, Text, File",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.variation-section",
+      "type": "branch",
+      "name": "A Variation section saves its name and type but its options read back empty",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "notes": "Variation is not one of the three types the user guide documents. Not comparable across builds (domain-map §6-prior).",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CD451F5C",
+          "note": "single observation over REST; no validation error even for a non-existent option product",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-033",
+          "note": "Quarantined"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.rest-wrong-field",
+      "type": "branch",
+      "name": "A REST body naming the sections field wrongly is accepted and silently saves an empty inactive configuration",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CD451F5C",
+          "note": "single observation, vcst_qa 2026-09-25",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.required-flag",
+      "type": "branch",
+      "name": "Required off adds a None option; required on removes it",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "If you switch this option to off, a None option automatically appears"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §3a",
+          "note": "Creme (optional) offers a None radio, selected by default",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.default-option",
+      "type": "branch",
+      "name": "An option can be marked Default; exactly one default is kept per section",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "notes": "kb records a 500 for two isDefault options over REST; CFG-CA-029 explains a 2nd create-POST for the same productId 500s on IX_ProductConfiguration_ProductId and expects normalisation inside one create. Likely the same event; not classed DRIFT until re-observed.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "Turn the Default option to on"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CD451F5C",
+          "note": "exactly one option normalised to isDefault; two isDefault options over REST returned 500",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-029",
+          "note": "Draft: expects single-default normalisation on POST (VCST-4715)"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.option-add",
+      "type": "branch",
+      "name": "Option products are added to a Product section from existing catalog items",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "Options are selected from existing catalog items"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-003",
+          "note": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.option-price-qty",
+      "type": "branch",
+      "name": "An option carries a quantity and a price; extended price is price times quantity",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "option declares quantity 2, listPrice 88, extendedPrice 176",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-004",
+          "note": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.section-order",
+      "type": "branch",
+      "name": "Drag order in Admin is the order sections render on the PDP",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "notes": "Option order has no documented mechanism (domain-map §2).",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "Drag and drop the sections to configure the order of their appearance on the Frontend"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §6-prior",
+          "note": "2026-03-16, one product, a different build: 100% consistent",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.dependency",
+      "type": "branch",
+      "name": "A section can depend on a sibling: it appears once the sibling has a value",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-4713",
+          "note": "conditional sections"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-005",
+          "note": "productConfiguration returns dependsOnSectionId"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "link 3: dependsOnSectionId, coarse any-value gate",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.dependency-self",
+      "type": "branch",
+      "name": "A section cannot depend on itself; the picker excludes it",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-022",
+          "note": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.dependency-cycle",
+      "type": "branch",
+      "name": "A circular dependency A to B to A persists silently when editing existing sections",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-023",
+          "note": "Manual; title states the cycle is NOT guarded"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.dependency-parent-delete",
+      "type": "branch",
+      "name": "Deleting the parent section clears the dependent's dependsOnSectionId",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-021",
+          "note": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.remove-option-or-section",
+      "type": "branch",
+      "name": "Removing an option or a whole section updates what the storefront offers",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-008",
+          "note": "remove option (Manual)"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-009",
+          "note": "delete section (Manual)"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.author.section-name-validation",
+      "type": "branch",
+      "name": "A section with an empty name is rejected",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-011",
+          "note": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.activate",
+      "type": "behavior",
+      "name": "The Configuration is switched active; a Configuration with no sections is forced inactive",
+      "chain_link": "1",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "state_before": "cat.cfg.state.config-inactive",
+      "state_after": "cat.cfg.state.config-active",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "switch the configuration option to on"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CD451F5C",
+          "note": "saved with no sections and auto-deactivated",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-018",
+          "note": "Manual: PR #873, IsActive forced false with no sections"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.state.config-inactive",
+      "type": "state",
+      "name": "Configuration: inactive",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "the feature is off until switched on"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.state.config-active",
+      "type": "state",
+      "name": "Configuration: active",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "sections and options appear on the Frontend once enabled and saved"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.activate.no-sections",
+      "type": "branch",
+      "name": "Saving with no sections forces IsActive to false",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CD451F5C",
+          "note": "single observation",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-018",
+          "note": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.activate.product-section-no-options",
+      "type": "branch",
+      "name": "A Product section with no predefined options keeps IsActive on save",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-016",
+          "note": "Manual, PR #873"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-017",
+          "note": "Manual: Admin toggle not blocked"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.expose",
+      "type": "behavior",
+      "name": "productConfiguration returns the sections and options a buyer can fill",
+      "chain_link": "2",
+      "interfaces": [
+        "graphql"
+      ],
+      "description": "Shape only: id, name, isRequired, type, allowCustomText, allowTextOptions, maxLength, dependsOnSectionId, options (each with listPrice, salePrice, extendedPrice, quantity, isDefault).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §4",
+          "note": "query contract, graphql-schema.md:122"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "catalog side re-verified via productConfiguration option definition",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "link 2, live 2026-09-16",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.expose.two-required",
+      "type": "branch",
+      "name": "Two required Product sections come back with their options",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-001",
+          "note": "Automated, no promoting run id"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.expose.text-maxlength",
+      "type": "branch",
+      "name": "A Text section returns its maxLength",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-004",
+          "note": "Automated; VCST-4806, PR #2235"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.expose.is-default",
+      "type": "branch",
+      "name": "Each option returns isDefault",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-048",
+          "note": "Draft; VCST-4715"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.expose.cart-section-resolver",
+      "type": "branch",
+      "name": "A cart line resolves its own configurationSection (metadata and options) without leaking sections of other products",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "CFG-GQL-050",
+          "note": "References: verified live vcptcore-qa1 2026-06 (VCST-5173, x-cart#122)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "CFG-GQL-054",
+          "note": "no cross-product leakage; verified live 2026-06"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.pdp",
+      "type": "behavior",
+      "name": "The buyer sees the sections on the product page and fills them",
+      "chain_link": "2",
+      "interfaces": [
+        "storefront"
+      ],
+      "actors": [
+        "buyer (anonymous or signed in)"
+      ],
+      "description": "The configurable parent resolves at /<slug>. This is the page a search hit, a listing card's Customize link or a barcode single hit lands on.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "link 2, accordion, one block per section",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §3",
+          "note": "theme 2.58.0-pr-2485",
+          "date": "2026-09-16"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "added sections appear under the product description"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.pdp.add-control",
+      "type": "branch",
+      "name": "The PDP carries a real Add to cart button, not the quantity stepper",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "notes": "Deployment or theme dependent: KB-0C163966 recorded no button on vcptcore_stable. Never assume from one environment.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F78ED1CC",
+          "note": "well attested: button on vcst-qa and virtostart; parent quantity implicitly 1",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.pdp.none-option",
+      "type": "branch",
+      "name": "An optional Product section offers a None option preselected",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "None option"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §3a",
+          "note": "Creme radio on None",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.pdp.default-preselected",
+      "type": "branch",
+      "name": "A Default option is preselected as the starting point",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/storefront/user-guide/shopping/products-purchase-options",
+          "note": "Some options are set as default"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-027",
+          "note": "Draft; VCST-4715"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.pdp.conditional-reveal",
+      "type": "branch",
+      "name": "A dependent section appears once its parent section has a value",
+      "branch_kind": "state",
+      "technique": "DT",
+      "notes": "D3 / G5 open.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-4713",
+          "note": "conditional sections"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §3a",
+          "note": "a File section behind a Creme selection was not reached; radio click did not register",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.pdp.option-qty-fixed",
+      "type": "branch",
+      "name": "The per-option quantity is fixture-fixed and not editable by the buyer",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "quantity spinbutton rendered disabled",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.pdp.option-link-route",
+      "type": "branch",
+      "name": "An option's own name links to /product/<guid>, leaving the configured-parent context",
+      "branch_kind": "integration",
+      "technique": "CT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §5",
+          "note": "D2, two independent products",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.file",
+      "type": "behavior",
+      "name": "A File section takes uploads through the file endpoint and carries the returned URL",
+      "chain_link": "3",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "actors": [
+        "buyer",
+        "file-upload caller"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-057A596A",
+          "note": "platform-fixed accept list, 9.5 MB, 5 files; unlisted type rejected, Add to cart stays disabled",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §4",
+          "note": "POST /api/files/product-configuration, extension allowlist checked by extension"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "File: upload a file"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.file.accepted",
+      "type": "branch",
+      "name": "A listed type up to 9.5 MB, up to 5 files, is accepted",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-057A596A",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §5",
+          "note": "D1: dropzone copy states the exact allowlist, 9.5MB, max 5",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.file.rejected-type",
+      "type": "branch",
+      "name": "An unlisted type is rejected with 'File format is not allowed' and Add to cart stays disabled",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-057A596A",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.file.size-count-limits",
+      "type": "branch",
+      "name": "Over 9.5 MB or over 5 files is rejected",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-057A596A",
+          "note": "limits stated; the over-limit rejection was not itself recorded",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §7",
+          "note": "G6: source of the constants unknown",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.file.extension-not-content",
+      "type": "branch",
+      "name": "The allowlist is checked by extension, not content",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §4",
+          "note": "established fact: same bytes renamed .txt pass; not re-tested"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.file.upload-anonymous",
+      "type": "branch",
+      "name": "The upload endpoint accepts an unauthenticated caller",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "established fact, not re-exercised"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.file.access-scope",
+      "type": "branch",
+      "name": "Unattached files are anonymously readable; attached to a cart they are owner-only",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §4",
+          "note": "established fact: 403 for anon or other buyer once attached"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.file.fileurls-unvalidated",
+      "type": "branch",
+      "name": "addItem accepts a client-supplied fileUrls value without checking it came from the upload endpoint",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §7",
+          "note": "G2, not probed"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.file.no-reverse",
+      "type": "branch",
+      "name": "No path detaches or replaces one attached file without re-adding the line",
+      "branch_kind": "state",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §7",
+          "note": "G3: absence not yet confirmed at source"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.required-gate",
+      "type": "behavior",
+      "name": "Required sections gate the purchase",
+      "chain_link": "4",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-CAT-006"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-CAT-006",
+          "note": "Add to Cart disabled until every required section is filled"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "link 4, File ID Proof unfilled leaves Add to cart disabled",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.required-gate.all-filled",
+      "type": "branch",
+      "name": "With every required section complete, Add to cart is enabled",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-CAT-006"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.required-gate.one-missing",
+      "type": "branch",
+      "name": "With any required section incomplete, Add to cart stays disabled",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-CAT-006"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "live 2026-09-16",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.required-gate.optional-empty",
+      "type": "branch",
+      "name": "An optional section left empty does not block",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-CAT-006",
+          "note": "Optional sections may be left empty"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.required-gate.server-draft",
+      "type": "branch",
+      "name": "createConfiguredLineItem with required sections empty returns a draft (id null)",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-007",
+          "note": "Automated, no promoting run id"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.required-gate.deselect-in-cart",
+      "type": "branch",
+      "name": "Deselecting a required section in the cart is allowed by the mutation; enforcement is downstream",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "notes": "BL-CAT-006 speaks of adding to cart; whether the downstream checkout guard holds is not established here.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-027",
+          "note": "Automated: no required-guard at the mutation"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-028",
+          "note": "Automated: same for Text"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.price",
+      "type": "behavior",
+      "name": "The line price is the base price plus each selected option's extended price",
+      "chain_link": "5",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "description": "The PDP running price is the createConfiguredLineItem preview. Option extendedPrice is unit price times the option's quantity; the parent line quantity is not multiplied a second time.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "well attested, 3 confirmations: 350 + 176 = 526 from PDP through placed order",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "link 5",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.price.extended-not-unit",
+      "type": "branch",
+      "name": "Selecting an option adds unit price times option quantity, not the unit price",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.price.preview",
+      "type": "branch",
+      "name": "createConfiguredLineItem returns a preview with listPrice, salePrice and extendedPrice before anything is in the cart",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-006",
+          "note": "Automated preview with required selections"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.price.reprice-select",
+      "type": "branch",
+      "name": "Flipping an option's selectedForCheckout reprices the line by the option's effective (list or sale aware) price",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-013",
+          "note": "Automated: TRUE to FALSE reprices down"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-014",
+          "note": "Automated: FALSE to TRUE reprices up"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-025",
+          "note": "Automated: delta equals effective price"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.price.reprice-noop",
+      "type": "branch",
+      "name": "Setting selectedForCheckout to its current value does not reprice",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-015",
+          "note": "Automated; PR #114 short-circuit"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.price.option-edit-propagates",
+      "type": "branch",
+      "name": "Editing an option's price in Admin changes the PDP total for the next buyer",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-006",
+          "note": "Manual; steps note 'immediately or after cache clear'"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.price.discount-basis",
+      "type": "branch",
+      "name": "A coupon or bulk discount applies to base or to configured price consistently",
+      "branch_kind": "integration",
+      "technique": "PW",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "test-design-techniques.md EG-8",
+          "note": "error-guessing prompt, no source"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.price.currency-change",
+      "type": "branch",
+      "name": "Changing currency or store recomputes the configured price",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "test-design-techniques.md EG-5",
+          "note": "error-guessing prompt, no source"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line",
+      "type": "behavior",
+      "name": "addItem with configurationSections creates one configured cart line",
+      "chain_link": "5",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "state_before": "cat.cfg.state.preview",
+      "state_after": "cat.cfg.state.cart-line",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "line sku Configuration-<parent code>, quantity 1",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §4",
+          "note": "addItem InputAddItemType.configurationSections"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.state.preview",
+      "type": "state",
+      "name": "Configured line: preview",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "createConfiguredLineItem preview",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.state.cart-line",
+      "type": "state",
+      "name": "Configured line: in cart",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.state.order-line",
+      "type": "state",
+      "name": "Configured line: in a placed order",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "placed order stores the configuration item and the parent line",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line.identity-without-files",
+      "type": "branch",
+      "name": "Two lines differing only by an attached file share one cart-line identity; the second add is a silent no-op",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §1",
+          "note": "link 6, withoutFileSections; not re-observed"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §6b",
+          "note": "G9: no tagged row shown to assert it"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line.reconfigure",
+      "type": "branch",
+      "name": "A configured line can be reconfigured atomically, including its quantity",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-012",
+          "note": "Automated"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/storefront/user-guide/shopping/products-purchase-options",
+          "note": "After the product is added to cart, it remains editable"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line.reconfigure-invalid",
+      "type": "branch",
+      "name": "A reconfigure with an invalid or mismatched sectionId is rejected and leaves the line unchanged",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-037",
+          "note": "Draft, VCST-4960"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-038",
+          "note": "Draft"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-039",
+          "note": "Draft"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-040",
+          "note": "Draft"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line.selected-for-checkout",
+      "type": "branch",
+      "name": "selectedForCheckout survives an Edit-Configuration re-edit",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-VCST4961-A",
+          "note": "Automated; VCST-4961"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-VCST4961-B",
+          "note": "Automated"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line.selection-scope",
+      "type": "branch",
+      "name": "Select and unselect mutations act on one lineItemId; unmatched ids are no-ops",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-020",
+          "note": "Automated"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-021",
+          "note": "Automated"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-022",
+          "note": "Automated"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line.text-maxlength",
+      "type": "branch",
+      "name": "The cart mutation accepts customText at maxLength and rejects maxLength+1 with validationErrors",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "Text section custom or predefined text"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-042",
+          "note": "Automated: at maxLength accepted (VCST-4987)"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-043",
+          "note": "Draft: maxLength+1 rejected"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line.merge",
+      "type": "branch",
+      "name": "The guest to signed-in cart merge preserves the configuration",
+      "branch_kind": "integration",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-GQL-046",
+          "note": "Automated; VCST-5053, BL-CART-012"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-66089074",
+          "note": "merge is server-side during sign-in",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line.saved-for-later",
+      "type": "branch",
+      "name": "A saved-for-later card omits the configuration; moving back to cart restores it",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-66089074",
+          "note": "single observation: the projection does not select configurationItems",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line.components-list",
+      "type": "branch",
+      "name": "The cart shows Section, Value and Price per component",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "4-column table Number / Section / Value / Price",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.cart-line.option-disabled-later",
+      "type": "branch",
+      "name": "An option disabled by Admin after it was added leaves a cart line with an invalid configuration",
+      "branch_kind": "state",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "test-design-techniques.md EG-4",
+          "note": "error-guessing prompt, no source"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.order",
+      "type": "behavior",
+      "name": "The configured line carries into the placed order",
+      "chain_link": "7",
+      "interfaces": [
+        "graphql",
+        "storefront",
+        "admin-ui"
+      ],
+      "state_before": "cat.cfg.state.cart-line",
+      "state_after": "cat.cfg.state.order-line",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "order item stores price 88, extendedPrice 176, quantity 2; parent 526",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §4",
+          "note": "OrderConfigurationItemType keeps sectionId and sectionName"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.order.persisted-prices",
+      "type": "branch",
+      "name": "Stored option price and extendedPrice equal the catalog definition",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "backend corroboration on GET /api/order/customerOrders/{id}",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.order.view-columns",
+      "type": "branch",
+      "name": "The storefront order view shows only the option label; Section and Price columns are absent",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "(b): cart shows four columns, order view one",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.order.admin-widget",
+      "type": "branch",
+      "name": "The Admin order line item's Configuration widget lists configuration texts and files",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-057A596A",
+          "note": "single observation",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-014",
+          "note": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.quote",
+      "type": "behavior",
+      "name": "The configured line carries into a Quote",
+      "chain_link": "7",
+      "interfaces": [
+        "graphql"
+      ],
+      "drift": {
+        "expected": "Cart and Order configuration items keep sectionId and sectionName; VCST-5431 asks the same of Quote (domain-map:cat@rev1 §1 link 7)",
+        "observed": "QuoteConfigurationItemType has no sectionId or sectionName field (graphql-schema.md, introspected 2026-09-11)",
+        "route": "VCST-5431"
+      },
+      "notes": "Structural: no case can assert what the schema does not carry (domain-map §6b).",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §4",
+          "note": "QuoteConfigurationItemType carries {id,name,type,customText,files} and drops sectionId and sectionName"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.listing",
+      "type": "behavior",
+      "name": "In a catalog or search listing the configurable product is a card that leads to the PDP, not a quick-add",
+      "chain_link": "2",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "description": "Cross-domain seam with search. The card is drawn from the same products query the results page uses.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/storefront/user-guide/shopping/products-purchase-options",
+          "note": "Users adapt products by clicking the Customize button"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "identify configurable products by the Customize button instead of the Add to cart button"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F78ED1CC",
+          "note": "category-card shape: 'Customize' link = configurable; bare price plus stepper = directly purchasable",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.listing.customize-not-quick-add",
+      "type": "branch",
+      "name": "The card shows Customize and offers no quantity stepper or Add to cart",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F78ED1CC",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.listing.has-config-flag",
+      "type": "branch",
+      "name": "The card decides Customize versus quick-add from a per-product has-configuration lookup",
+      "branch_kind": "integration",
+      "technique": "CT",
+      "notes": "If this is a live lookup rather than an indexed field, a configuration edit shows on the card without waiting for BL-CAT-003 reindex; unproven.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-x-catalog:Core/Queries/GetProductConfigurationsQuery.cs",
+          "note": "query takes ProductIds and returns Dictionary<string,bool>; its consumer and whether it is index-lagged were not read"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.listing.keyword-search-hit",
+      "type": "branch",
+      "name": "A keyword search returns the configurable parent as a result card",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F78ED1CC",
+          "note": "the listing shapes are observed on category cards; no source shows a keyword search result",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.listing.card-price",
+      "type": "branch",
+      "name": "The card price is the parent's base price, before any option",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4B47D094",
+          "note": "PDP price before options equals catalog product.price (350)",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "KB-4B47D094",
+          "note": "that the card reuses product.price is inferred, not seen"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.listing.price-sort",
+      "type": "branch",
+      "name": "Sort by price orders configurable products by a defined key",
+      "branch_kind": "integration",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §6-prior",
+          "note": "2026-03-16, vcst-qa: minVariationPrice not used as sort key; a different build",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.listing.option-products-in-results",
+      "type": "branch",
+      "name": "The option products are themselves catalog items and can appear as results",
+      "branch_kind": "integration",
+      "technique": "CT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/catalog/managing-product-configurations",
+          "note": "Options are selected from existing catalog items"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §5",
+          "note": "D2: option links use /product/<guid>",
+          "date": "2026-09-16"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.listing.barcode-hit",
+      "type": "branch",
+      "name": "A barcode single hit on a configurable parent redirects to its PDP",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-71011C1F",
+          "note": "generic: 1 hit replaces the URL with the product page; no configurable product was used",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.listing.compare",
+      "type": "branch",
+      "name": "A configured product can be compared; identity and section labels in Compare come from the parent",
+      "branch_kind": "integration",
+      "technique": "CT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/storefront/user-guide/shopping/products-purchase-options",
+          "note": "Products configurations can be compared"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:cat@rev1 §6-prior",
+          "note": "VCST-5735 scenarios 16 and 17; PROPOSED-BL-CAT-013..019 never minted"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.visibility",
+      "type": "behavior",
+      "name": "A configurable product is on the storefront only while it is in the store's catalog and active; edits and deletes propagate",
+      "chain_link": "2",
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ],
+      "oracle_refs": [
+        "BL-CAT-003",
+        "BL-CAT-005"
+      ],
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-CAT-005",
+          "note": "a product needs a category within the store's catalog"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-CAT-003",
+          "note": "index lag window on search and listing; PDP is live"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.visibility.publish",
+      "type": "branch",
+      "name": "A published, active configurable product is reachable by direct URL and in a listing",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-010",
+          "note": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.visibility.rename-lag",
+      "type": "branch",
+      "name": "A rename shows on the PDP at once and in search or listing after the reindex window",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-CAT-003"
+        },
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-013",
+          "note": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.visibility.delete",
+      "type": "branch",
+      "name": "A deleted configurable product leaves the storefront",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "CFG-CA-015",
+          "note": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.visibility.physical-only",
+      "type": "branch",
+      "name": "A product only in a physical catalog is not on the storefront",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-CAT-005"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:cat@rev1 §2",
+          "note": "22 catalogs; SEED-20260527-Configurables-Default contents unknown (G4)",
+          "date": "2026-09-16"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.identity",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.identity",
+      "to": "cat.cfg.identity.non-configurable",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.identity",
+      "to": "cat.cfg.identity.invalid-id",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.identity",
+      "to": "cat.cfg.identity.configuration-inactive",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.identity",
+      "to": "cat.cfg.identity.option-is-catalog-item",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.author",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.section-types",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.variation-section",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.rest-wrong-field",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.required-flag",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.default-option",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.option-add",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.option-price-qty",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.section-order",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.dependency",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.dependency-self",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.dependency-cycle",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.dependency-parent-delete",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.remove-option-or-section",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.author",
+      "to": "cat.cfg.author.section-name-validation",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.activate",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.state.config-inactive",
+      "to": "cat.cfg.state.config-active",
+      "type": "transitions_to",
+      "via": "cat.cfg.activate"
+    },
+    {
+      "from": "cat.cfg.state.config-active",
+      "to": "cat.cfg.state.config-inactive",
+      "type": "transitions_to",
+      "via": "cat.cfg.activate",
+      "note": "save with no sections, or switch off"
+    },
+    {
+      "from": "cat.cfg.activate",
+      "to": "cat.cfg.activate.no-sections",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.activate",
+      "to": "cat.cfg.activate.product-section-no-options",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.expose",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.expose",
+      "to": "cat.cfg.expose.two-required",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.expose",
+      "to": "cat.cfg.expose.text-maxlength",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.expose",
+      "to": "cat.cfg.expose.is-default",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.expose",
+      "to": "cat.cfg.expose.cart-section-resolver",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.pdp",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.pdp",
+      "to": "cat.cfg.pdp.add-control",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.pdp",
+      "to": "cat.cfg.pdp.none-option",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.pdp",
+      "to": "cat.cfg.pdp.default-preselected",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.pdp",
+      "to": "cat.cfg.pdp.conditional-reveal",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.pdp",
+      "to": "cat.cfg.pdp.option-qty-fixed",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.pdp",
+      "to": "cat.cfg.pdp.option-link-route",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.file",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.accepted",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.rejected-type",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.size-count-limits",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.extension-not-content",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.upload-anonymous",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.access-scope",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.fileurls-unvalidated",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.no-reverse",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.required-gate",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.required-gate",
+      "to": "cat.cfg.required-gate.all-filled",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.required-gate",
+      "to": "cat.cfg.required-gate.one-missing",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.required-gate",
+      "to": "cat.cfg.required-gate.optional-empty",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.required-gate",
+      "to": "cat.cfg.required-gate.server-draft",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.required-gate",
+      "to": "cat.cfg.required-gate.deselect-in-cart",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.price",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.price",
+      "to": "cat.cfg.price.extended-not-unit",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.price",
+      "to": "cat.cfg.price.preview",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.price",
+      "to": "cat.cfg.price.reprice-select",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.price",
+      "to": "cat.cfg.price.reprice-noop",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.price",
+      "to": "cat.cfg.price.option-edit-propagates",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.price",
+      "to": "cat.cfg.price.discount-basis",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.price",
+      "to": "cat.cfg.price.currency-change",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.cart-line",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.state.preview",
+      "to": "cat.cfg.state.cart-line",
+      "type": "transitions_to",
+      "via": "cat.cfg.cart-line"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.cart-line.identity-without-files",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.cart-line.reconfigure",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.cart-line.reconfigure-invalid",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.cart-line.selected-for-checkout",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.cart-line.selection-scope",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.cart-line.text-maxlength",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.cart-line.merge",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.cart-line.saved-for-later",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.cart-line.components-list",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.cart-line.option-disabled-later",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.order",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.state.cart-line",
+      "to": "cat.cfg.state.order-line",
+      "type": "transitions_to",
+      "via": "cat.cfg.order"
+    },
+    {
+      "from": "cat.cfg.order",
+      "to": "cat.cfg.order.persisted-prices",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.order",
+      "to": "cat.cfg.order.view-columns",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.order",
+      "to": "cat.cfg.order.admin-widget",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.quote",
+      "type": "contains"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.listing",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.listing",
+      "to": "cat.cfg.listing.customize-not-quick-add",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.listing",
+      "to": "cat.cfg.listing.has-config-flag",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.listing",
+      "to": "cat.cfg.listing.keyword-search-hit",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.listing",
+      "to": "cat.cfg.listing.card-price",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.listing",
+      "to": "cat.cfg.listing.price-sort",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.listing",
+      "to": "cat.cfg.listing.option-products-in-results",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.listing",
+      "to": "cat.cfg.listing.barcode-hit",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.listing",
+      "to": "cat.cfg.listing.compare",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.visibility",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.visibility",
+      "to": "cat.cfg.visibility.publish",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.visibility",
+      "to": "cat.cfg.visibility.rename-lag",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.visibility",
+      "to": "cat.cfg.visibility.delete",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.visibility",
+      "to": "cat.cfg.visibility.physical-only",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.pdp",
+      "to": "cat.cfg.expose",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.required-gate",
+      "to": "cat.cfg.pdp",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.price",
+      "to": "cat.cfg.expose",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.price",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.cart-line",
+      "to": "cat.cfg.required-gate",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.order",
+      "to": "cat.cfg.cart-line",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.quote",
+      "to": "cat.cfg.cart-line",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.pdp",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.listing",
+      "to": "cat.cfg.identity",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.expose",
+      "to": "cat.cfg.identity",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.pdp",
+      "to": "cat.cfg.identity",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.expose",
+      "to": "cat.cfg.activate",
+      "type": "affected_by"
+    },
+    {
+      "from": "cat.cfg.listing",
+      "to": "cat.cfg.visibility",
+      "type": "affected_by"
+    },
+    {
+      "from": "cat.cfg.pdp",
+      "to": "cat.cfg.author",
+      "type": "affected_by"
+    }
+  ]
+}

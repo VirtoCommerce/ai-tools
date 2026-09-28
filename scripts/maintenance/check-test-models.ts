@@ -929,7 +929,8 @@ async function main(): Promise<void> {
       }
       if (plan.missing.length) console.log(`  missing: ${plan.missing.join(", ")}`);
     }
-    process.exit(plan.missing.length ? 1 : 0);
+    process.exitCode = plan.missing.length ? 1 : 0;
+    return;
   }
 
   const errors = findings.filter((f) => f.severity === "error");
@@ -946,7 +947,9 @@ async function main(): Promise<void> {
     if (result.crossings.length) console.log(`  TM-032 [info] ${seams} of ${result.crossings.length} integration point(s) have no case exercising both sides — see --json \`crossings\``);
     console.log(errors.length ? `[models:check] FAIL — ${errors.length} error(s)` : "[models:check] OK");
   }
-  process.exit(errors.length ? 1 : 0);
+  // exitCode, never process.exit(): exit() drops whatever stdout has not flushed yet, and a piped
+  // `--json` (| jq, | node) was cut at exactly 64 KiB once the output outgrew one pipe buffer.
+  process.exitCode = errors.length ? 1 : 0;
 }
 
 const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];

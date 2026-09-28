@@ -3136,6 +3136,46 @@
       "from": "srch.barcode.expand",
       "to": "srch.barcode.expand.shape-dynamic-property",
       "type": "branches_to"
+    },
+    {
+      "from": "srch.results.render",
+      "to": "cat.cfg.listing",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.results.render",
+      "to": "cat.cfg.identity.configuration-inactive",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.query.keyword",
+      "to": "cat.cfg.listing.keyword-search-hit",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.query.keyword",
+      "to": "cat.cfg.identity.option-is-catalog-item",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.results.sort",
+      "to": "cat.cfg.listing.price-sort",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.barcode.resolve.single-hit-opens",
+      "to": "cat.cfg.listing.barcode-hit",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.barcode.expand.shape-product-type",
+      "to": "cat.cfg.identity",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.index.freshness",
+      "to": "cat.cfg.visibility.rename-lag",
+      "type": "affected_by"
     }
   ],
   "amended": "2026-09-28"
