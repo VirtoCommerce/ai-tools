@@ -17,6 +17,7 @@ import {
   schemaFindings,
   statusProblem,
   driftRouteProblem,
+  stampsUnreadable,
   seedPlan,
   requiresClosure,
   findCycles,
@@ -183,6 +184,13 @@ test("a DRIFT route must reach a trackable owner → TM-018 (warn), and an oracl
   assert.ok(!codes(run(map([drift("VCST-1")]), model([req("data.x.a")])), "warn").includes("TM-018"));
 });
 
+test("a stamp in a legacy-header suite is unreadable → TM-019; an enriched or unstamped suite is not", () => {
+  const enriched = ["ID", "Title", "References"];
+  assert.equal(stampsUnreadable('\uFEFF"ID","Title","References"\nA,t,Behavior:x.a', enriched), false);
+  assert.equal(stampsUnreadable("ID,Title,Steps,References\nA,t,s,Behavior:x.a", enriched), true);
+  assert.equal(stampsUnreadable("ID,Title,Steps,References\nA,t,s,VCST-1", enriched), false, "no stamp, no warning");
+});
+
 // ---------------------------------------------------------------- data model rules
 
 const modelDoc = (r: object) => ({ schema_version: "1.0", domain_slug: "x", generated: "2026-01-01", requirements: [r], profiles: [] });
@@ -330,6 +338,10 @@ test("a changed behaviour with a stable id makes its linked cases suspect; last_
   const next = map([node("x.a", { name: "new wording" })]);
   assert.deepEqual(changedNodes(prev, next), ["x.a"]);
   assert.deepEqual(changedNodes(prev, map([node("x.a", { name: "old wording", last_verified: "2026-09-01" })])), []);
+  const bare = map([node("x.a")]);
+  assert.deepEqual(changedNodes(bare, map([node("x.a", { requires: ["data.x.a"] })])), [], "a first data contract is not a change");
+  const withReq = map([node("x.a", { requires: ["data.x.a"] })]);
+  assert.deepEqual(changedNodes(withReq, map([node("x.a", { requires: ["data.x.b"] })])), ["x.a"], "editing one is");
   const c = ctx([["C-1", { suite: "s.csv", behaviors: ["x.a"], profiles: [] }]]);
   const r = run(next, model([req("data.x.a")]), c, new Map([["m.json", prev]]));
   assert.deepEqual(r.suspects, [{ caseId: "C-1", node: "x.a", why: "node changed since baseline" }]);

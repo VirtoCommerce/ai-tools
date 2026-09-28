@@ -1,0 +1,4777 @@
+{
+  "$schema": "../../templates/mind-map.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "sr",
+  "domain_map_rev": 3,
+  "generated": "2026-09-28",
+  "amended": "2026-09-28",
+  "metadata": {
+    "scope": "Sales Rep: rep provisioning, served-org membership, store toggle, storefront hub (dashboard, my customers, customer profile, customer orders, document library, calendar), buyer-facing rep directory, scoped GraphQL contract, layout persistence, account access removal. Impersonation (suite 082) is out, as in the domain map.",
+    "built_from": "sales-rep.md rev 3 (sections 1-8, 10), business-logic.md Domain 20 (BL-SR-001..032), suites 050m/050m2/089/090/091/093/097 titles + References, kb KB-EA467E9B / KB-1144B33E / KB-7DA9B0B7 / KB-5A0C4200",
+    "kb_read": "2026-09-28 - 8 questions (customerSalesReps storeId scoping, GET /api/sales-rep/search, salesRepDocuments permission, /company/my-customers, sendCustomerCommunication, saveSalesRepLayout, salesRepCustomerOrderStatistics, /company/sales-reps): hits KB-EA467E9B, KB-1144B33E, KB-7DA9B0B7, KB-5A0C4200; /company/sales-reps: miss",
+    "not_modelled": "No sr data model exists yet, so requires/produces are omitted. Admin suites 092/092b are owned by another change and carry no stamps from this build."
+  },
+  "nodes": [
+    {
+      "id": "sr.sales-rep",
+      "type": "feature",
+      "name": "Sales Rep",
+      "status": "CONFIRMED",
+      "description": "A Contact plus login that holds sales-rep:access and serves a defined set of customer organizations; Admin manages reps and documents, the storefront gives the rep a hub and gives buyers a contact page.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/sales-rep/overview",
+          "note": "purpose quoted verbatim in the domain map section 1"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1",
+          "note": "purpose CONFIRMED; module deployed on both QA deployments",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.provision",
+      "type": "behavior",
+      "name": "Admin turns a Contact plus login into a sales rep",
+      "status": "CONFIRMED",
+      "description": "Single-select Sales Rep role on the rep blade; one aggregate save creates or updates the Contact and the login account.",
+      "chain_link": "1",
+      "actors": [
+        "platform admin"
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 1",
+          "note": "CONFIRMED source + live",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 5b",
+          "note": "SalesRepController.cs endpoints matched 1:1"
+        }
+      ]
+    },
+    {
+      "id": "sr.provision.role-picker",
+      "type": "branch",
+      "name": "The role picker offers exactly the two rep roles",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 2a",
+          "note": "picker and GET /api/sales-rep/roles both return 2",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/sales-rep/overview",
+          "note": "guide names two selectable roles"
+        }
+      ]
+    },
+    {
+      "id": "sr.provision.decoy-roles",
+      "type": "branch",
+      "name": "A platform role literally named Sales Rep does not make a rep",
+      "status": "CONFIRMED",
+      "description": "Sales Rep and Sales Executive carry no sales-rep:access; only the permission-filtered picker keeps an operator away from them.",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D11",
+          "note": "decoy GUIDs byte-identical on both environments; lack of access established by exclusion from the picker",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.provision.permission-matrix",
+      "type": "branch",
+      "name": "Create and update need the customer AND platform-security permission halves",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "oracle_refs": [
+        "BL-SR-014"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-014",
+          "note": "matrix quoted from SalesRepController.cs [Authorize] attributes"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 5b"
+        }
+      ]
+    },
+    {
+      "id": "sr.provision.role-catalog-third-role",
+      "type": "branch",
+      "name": "The platform role catalog carries a third rep role the guide never names",
+      "status": "DRIFT",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/sales-rep/overview",
+          "note": "guide: the Sales Rep role field offers two roles"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D2",
+          "note": "roles/search returns 9 roles incl. Sales Rep Documents Manager",
+          "date": "2026-09-18"
+        }
+      ],
+      "drift": {
+        "expected": "PlatformUserGuide Sales Rep overview: two rep roles (Sales representative, Advanced sales representative)",
+        "observed": "POST /api/platform/security/roles/search {keyword:\"Sales\"} returns Sales Rep Documents Manager (module constant DocumentsManagerRoleName); excluded from the picker only because the picker is permission-filtered (domain-map:sr@rev3 section 6 D2)",
+        "route": "UNFILED - no ticket exists; resolve via /qa-review-oracles (add or amend the BL entry), then file a VCST bug; docs gap to report against https://docs.virtocommerce.org/platform/user-guide/sales-rep/overview"
+      }
+    },
+    {
+      "id": "sr.provision.contact-write-bypass",
+      "type": "branch",
+      "name": "Names cleared through the Members API bypass the rep aggregate validator",
+      "status": "UNVERIFIED",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "rest"
+      ],
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-5A0C4200",
+          "note": "single observation on a newer module build (3.1011.0) than this map covers; not reproduced here"
+        }
+      ],
+      "notes": "Recorded question, not a defect: SalesRepDetailsValidator guards only /api/sales-rep; PUT /api/members with null names returned 204 and left fullName stale on the deployment the kb entry names."
+    },
+    {
+      "id": "sr.serve-orgs",
+      "type": "behavior",
+      "name": "Serving an organization creates a real membership",
+      "status": "CONFIRMED",
+      "description": "The Organizations served as Sales Rep chips are the served-customer list AND a real OrganizationMembership per org carrying the rep role.",
+      "chain_link": "2",
+      "actors": [
+        "platform admin"
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 2",
+          "note": "GET /api/sales-rep/{id} returns membershipId per served org, 2026-09-18",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-EA467E9B",
+          "note": "membership is the served-customer relationship itself"
+        }
+      ]
+    },
+    {
+      "id": "sr.serve-orgs.membership-created",
+      "type": "branch",
+      "name": "Each served organization appears with a membershipId in the rep payload",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 5b",
+          "note": "payload row shape observed",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-EA467E9B",
+          "note": "the two cannot be separated"
+        }
+      ]
+    },
+    {
+      "id": "sr.serve-orgs.count-agrees",
+      "type": "branch",
+      "name": "Served-org count agrees across Admin, sidebar badge, table and switcher",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "admin-ui",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 0 (row on 5 orgs)",
+          "note": "organizationsCount, badge, My-customers rows, switcher radios all 5",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.store-toggle",
+      "type": "behavior",
+      "name": "The store switch shows or hides the storefront Sales Rep UI",
+      "status": "CONFIRMED",
+      "description": "Stores > Settings > Sales Rep > General > Sales Rep Enabled. UI gate only.",
+      "chain_link": "3",
+      "actors": [
+        "platform admin"
+      ],
+      "interfaces": [
+        "admin-ui",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 2c",
+          "note": "toggle read live, ON, sole control in the group",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 10 A5",
+          "note": "read nowhere in the backend; storefront consumer only"
+        }
+      ]
+    },
+    {
+      "id": "sr.store-toggle.on-shows-hub",
+      "type": "branch",
+      "name": "Switch on and rep permission: hub and routes render",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-011"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-011",
+          "note": "both predicates required"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-001"
+        }
+      ]
+    },
+    {
+      "id": "sr.store-toggle.off-hides-ui",
+      "type": "branch",
+      "name": "Switch off: hub, list, profile and widgets are absent even for a permissioned rep",
+      "status": "UNVERIFIED",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-011"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-011",
+          "note": "stated with live verification 2026-07-23"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5469",
+          "note": "all four covering cases are Draft, none executed"
+        }
+      ],
+      "notes": "UNVERIFIED on purpose: the BL entry is triangulated but every covering case is still Draft, so no run has observed it on the current build."
+    },
+    {
+      "id": "sr.store-toggle.off-api-still-answers",
+      "type": "branch",
+      "name": "Switch off does not revoke API access: /graphql/sales-rep still serves the rep",
+      "status": "CONFIRMED",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 10 A5",
+          "note": "source: setting read only by the storefront"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-035",
+          "note": "Automated case asserting the toggle changes UI only"
+        }
+      ]
+    },
+    {
+      "id": "sr.store-toggle.default-value",
+      "type": "branch",
+      "name": "The declared default of the switch disagrees between backend descriptor and storefront comment",
+      "status": "UNVERIFIED",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 10 A5",
+          "note": "backend DefaultValue = true vs storefront comment \"default false\""
+        }
+      ],
+      "notes": "A rendered ON toggle with no modified marker is consistent with the backend; it cannot prove the storefront comment wrong (map section 10 A5)."
+    },
+    {
+      "id": "sr.store-toggle.statistics-cache-settings",
+      "type": "branch",
+      "name": "The four statistics cache settings are declared in source and absent from the store Settings surface",
+      "status": "DRIFT",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 6 D15",
+          "note": "ModuleConstants.Settings declares a Statistics group with four cache settings, default 5 minutes"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 2c",
+          "note": "Sales Rep has exactly one child, General, at store level",
+          "date": "2026-09-18"
+        }
+      ],
+      "drift": {
+        "expected": "ModuleConstants.Settings: General + Statistics groups (vc-module-sales-rep) and PlatformUserGuide sends the operator to store settings",
+        "observed": "Stores > B2B store > Settings (106 settings) shows Sales Rep > General only; no Statistics node (domain-map:sr@rev3 section 6 D15)",
+        "route": "UNFILED - no ticket exists; resolve via /qa-review-oracles (add or amend the BL entry), then file a VCST bug; first answer G11 (where the values are editable)"
+      }
+    },
+    {
+      "id": "sr.hub",
+      "type": "behavior",
+      "name": "The rep signs in and sees a hub sized by their role",
+      "status": "CONFIRMED",
+      "description": "Hub section above Purchasing needs sales-rep:access AND the store switch. Document library additionally needs sales-rep-documents:read.",
+      "chain_link": "4",
+      "actors": [
+        "sales rep",
+        "advanced sales rep",
+        "org buyer"
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-011"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3b",
+          "note": "sidebar contents per role, three accounts",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-SR-011"
+        }
+      ]
+    },
+    {
+      "id": "sr.hub.basic-rep",
+      "type": "branch",
+      "name": "A plain rep gets Dashboard and My customers only",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3b",
+          "note": "agent-test-sr-primary: Dashboard + My customers",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-023, SR-FE-024"
+        }
+      ]
+    },
+    {
+      "id": "sr.hub.advanced-rep",
+      "type": "branch",
+      "name": "An Advanced rep also gets the Document library link and dashboard widget",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3b",
+          "note": "agent-test-sr-docs: + Document library",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3c",
+          "note": "widget absent for a plain rep",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.hub.non-rep-sees-nothing",
+      "type": "branch",
+      "name": "A non-rep buyer never sees the hub, its link or its badge",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-011"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3b",
+          "note": "ORG_USER_EMAIL: section absent, sidebar starts at Purchasing",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-022"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-HD-002"
+        }
+      ]
+    },
+    {
+      "id": "sr.hub.non-rep-direct-url",
+      "type": "branch",
+      "name": "A non-rep hitting a rep route is redirected silently to the account dashboard",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-011"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3a",
+          "note": "client-side redirect, no 403 (rev 2 observation)",
+          "date": "2026-09-10"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 10 A6",
+          "note": "a failed guard redirects, it does not 403"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-002"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-CP-002"
+        }
+      ]
+    },
+    {
+      "id": "sr.hub.privileged-non-rep",
+      "type": "branch",
+      "name": "A privileged non-rep (org maintainer) gets no hub and issues no salesRep query",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-011"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-011",
+          "note": "verify clause names the org-maintainer fixture"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-055, SR-HD-063"
+        }
+      ]
+    },
+    {
+      "id": "sr.hub.global-only-rep",
+      "type": "branch",
+      "name": "A rep holding the permission globally with no org membership: admitted or redirected",
+      "status": "DRIFT",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-011"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-011",
+          "note": "VCST-5494 clears requiresOrganization on the three rep routes"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-EA467E9B",
+          "note": "a global-only rep is redirected to /account/dashboard from /company/my-customers"
+        }
+      ],
+      "drift": {
+        "expected": "BL-SR-011 + suite 089 SR-FE-013 (VCST-5494, vc-frontend PR #2391): a rep with the permission and zero org memberships is ADMITTED to /company/my-customers",
+        "observed": "kb:KB-EA467E9B (vcst_qa, 2026-09-25, single observation): the guard resolves the permission in an organization context; a global-only rep has none and is redirected to /account/dashboard",
+        "route": "/qa-review-oracles bl BL-SR-011 to triangulate against the deployed frontend build (VCST-5494); then kb dispute KB-EA467E9B or amend the BL"
+      }
+    },
+    {
+      "id": "sr.hub.admin-ui-over-empty-data",
+      "type": "branch",
+      "name": "An administrator sees the whole hub UI over empty data",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 10 A4",
+          "note": "checkPermissions short-circuits true for isAdministrator; backend filters by membership"
+        }
+      ],
+      "notes": "Source-derived, never observed live in this map."
+    },
+    {
+      "id": "sr.scope",
+      "type": "behavior",
+      "name": "Every rep read is confined to the organizations the rep serves",
+      "status": "CONFIRMED",
+      "description": "Membership scope is universal; creator scope applies to the statistics and rankings family only. Data filtering, not a permission check.",
+      "chain_link": "5",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-002"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-002"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 10 A3",
+          "note": "only the three document builders authorize on a permission"
+        }
+      ]
+    },
+    {
+      "id": "sr.scope.unserved-org",
+      "type": "branch",
+      "name": "An unserved organization resolves null or empty, never data",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-002"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-002",
+          "note": "half (a)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-GQL-123, SR-GQL-129"
+        }
+      ]
+    },
+    {
+      "id": "sr.scope.locked-membership",
+      "type": "branch",
+      "name": "A per-org locked membership excludes that org while unlocked orgs still resolve",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-002"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-002"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 8",
+          "note": "lock is a Contacts-side per-org control, rev-2 observation",
+          "date": "2026-09-10"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-GQL-124, SR-GQL-130"
+        }
+      ]
+    },
+    {
+      "id": "sr.scope.zero-served",
+      "type": "branch",
+      "name": "A permissioned rep serving zero customers gets an empty result, not an error",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 10 A3",
+          "note": "a rep with no granting membership gets an empty result, not an error"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-054, SR-FE-051"
+        }
+      ]
+    },
+    {
+      "id": "sr.scope.anonymous",
+      "type": "branch",
+      "name": "An anonymous caller gets an authorization error on every scoped query and mutation",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-002"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 5a",
+          "note": "real queries refused unauthenticated with Unauthorized, 200 envelope",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-SR-002"
+        }
+      ]
+    },
+    {
+      "id": "sr.scope.authentication-only",
+      "type": "branch",
+      "name": "sales-rep:access is not an API check: any signed-in buyer gets 200 with an empty scope",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-EA467E9B",
+          "note": "plain buyer and global-only rep both get 200 with totalCount 0"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 10 A3"
+        }
+      ]
+    },
+    {
+      "id": "sr.scope.creator-only-statistics",
+      "type": "branch",
+      "name": "Statistics and rankings count only what the calling rep created",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-002"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-002",
+          "note": "half (b)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3c",
+          "note": "buyer-owned carts moved the Active-carts tile by 0",
+          "date": "2026-09-24"
+        }
+      ]
+    },
+    {
+      "id": "sr.scope.customer-orders-creator-agnostic",
+      "type": "branch",
+      "name": "The customer-orders family deliberately shows every order of a served org",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-002"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-002",
+          "note": "not a violation of half (b)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 5",
+          "note": "both halves CONFIRMED live",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-GQL-121"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-04-1015",
+          "note": "promoting run of SR-CO-028"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers",
+      "type": "behavior",
+      "name": "My customers lists the served organizations with purchase totals",
+      "status": "CONFIRMED",
+      "description": "/company/my-customers over salesRepCustomers: name, YTD, last year, last order, Send-email action.",
+      "chain_link": "5",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3d",
+          "note": "columns and five-row list re-observed 2026-09-18",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers.table",
+      "type": "branch",
+      "name": "Rows carry org, YTD, prior-year totals, order count and last order",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3d",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-004, SR-FE-044, SR-FE-048"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers.no-order-dash",
+      "type": "branch",
+      "name": "An org with no orders shows a dash in Last order, not an error",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3d",
+          "note": "zero-order row renders the documented dash",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-005"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers.order-link",
+      "type": "branch",
+      "name": "The last-order link opens the order details in a new tab",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3c",
+          "note": "rep order links resolve into the buyer order-detail route",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-006"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers.search",
+      "type": "branch",
+      "name": "Search is by name only, capped at 64 characters, resettable",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3d",
+          "note": "search by name",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-007, SR-FE-008, SR-FE-009, SR-FE-010 +2"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers.sort",
+      "type": "branch",
+      "name": "Sorting by name, last order and YTD purchases reorders the list and resets to page 1",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-010"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-010"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-014, SR-FE-016, SR-FE-043"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers.paging",
+      "type": "branch",
+      "name": "Ten per page, count-only when first is 0, page clamps when the set shrinks",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3d",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-017, SR-FE-019"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers.filter-chips",
+      "type": "branch",
+      "name": "The All chip is the single baseline rule; selecting a chip re-queries",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-009"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-009"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-045"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers.badge",
+      "type": "branch",
+      "name": "The hub badge is the unfiltered served-org count and hides at zero",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3b",
+          "note": "badge = served-org count (5 and 1)",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-020, SR-FE-021, SR-FE-029"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers.error-state",
+      "type": "branch",
+      "name": "A failed query shows the error view, not the empty state",
+      "status": "UNVERIFIED",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-012"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-012",
+          "note": "empty vs no-match vs error must differ"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5304",
+          "note": "covering cases are Draft"
+        }
+      ]
+    },
+    {
+      "id": "sr.customers.remount-refetch",
+      "type": "branch",
+      "name": "Remounting with identical variables refetches without an empty flash",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-FE-049",
+          "note": "Automated state-transition case"
+        }
+      ]
+    },
+    {
+      "id": "sr.profile",
+      "type": "behavior",
+      "name": "A customer profile shows one served organization in depth",
+      "status": "CONFIRMED",
+      "description": "/company/my-customers/:organizationId: information card, orders section, quick actions, statistics, top products.",
+      "chain_link": "5",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 3a",
+          "note": "route from prior art and rendered My-customers links"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "SR-CP-002",
+          "note": "Automated cases exercise the page"
+        }
+      ]
+    },
+    {
+      "id": "sr.profile.information",
+      "type": "branch",
+      "name": "Organization, account type, ship-to city/region and primary contact name render",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-015",
+          "note": "Automated backend cases"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-CP-006, SR-CP-007"
+        }
+      ]
+    },
+    {
+      "id": "sr.profile.orders-section",
+      "type": "branch",
+      "name": "Recent orders render newest first with number, date and item count",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-CP-058",
+          "note": "Automated case"
+        }
+      ]
+    },
+    {
+      "id": "sr.profile.orders-status-filter",
+      "type": "branch",
+      "name": "Status chips are built from the rule catalog and filter the list",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-009"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-009"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-CP-009, SR-CP-010"
+        }
+      ]
+    },
+    {
+      "id": "sr.profile.orders-empty",
+      "type": "branch",
+      "name": "An org with zero orders shows the empty state and zero metrics",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-012"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-012"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-CP-013, SR-CP-054"
+        }
+      ]
+    },
+    {
+      "id": "sr.profile.stat-widgets",
+      "type": "branch",
+      "name": "MTD and YTD purchase widgets show count, AOV and total with period comparison",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-001"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-001"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-2225",
+          "note": "promoting run of SR-CP-028, SR-CP-029"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-CP-035"
+        }
+      ]
+    },
+    {
+      "id": "sr.profile.top-products",
+      "type": "branch",
+      "name": "Top products rank by units by default, re-rank by revenue and link to the PDP",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-008"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-008"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-CP-031, SR-CP-032, SR-CP-034"
+        }
+      ]
+    },
+    {
+      "id": "sr.profile.quick-actions",
+      "type": "branch",
+      "name": "Send email is active; Order on behalf, Create quote and Schedule call are disabled placeholders",
+      "status": "UNVERIFIED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5304",
+          "note": "covering cases are Reviewed, not executed"
+        }
+      ]
+    },
+    {
+      "id": "sr.profile.customer-switch-isolation",
+      "type": "branch",
+      "name": "Switching customer or tab never carries the previous customer state",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-CP-052",
+          "note": "Automated cases"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-04-1015",
+          "note": "promoting run of SR-CO-029, SR-CO-030"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats",
+      "type": "behavior",
+      "name": "Statistics and rankings answer over a period, per rep",
+      "status": "CONFIRMED",
+      "description": "salesRepCustomerOrderStatistics, ...CartStatistics, ...Counts, salesRepTopSellers under BL-SR-001..010.",
+      "chain_link": "5",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-001",
+        "BL-SR-003",
+        "BL-SR-004",
+        "BL-SR-005",
+        "BL-SR-006",
+        "BL-SR-007",
+        "BL-SR-008"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-001"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 5a",
+          "note": "21 queries + 2 mutations, matched 1:1 to source handlers"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.period-bounds",
+      "type": "branch",
+      "name": "Period bounds are inclusive UTC instants; omitted bounds mean all time",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-001"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-001"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.comparison-null-percent",
+      "type": "branch",
+      "name": "Percent change is null when the previous baseline is zero",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-003"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-003"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-HD-005"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.currency",
+      "type": "branch",
+      "name": "Money resolves to one currency and echoes it",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-004"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-004"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.excluded-orders",
+      "type": "branch",
+      "name": "Flag-cancelled and prototype orders are excluded; status-only cancelled is not",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-005"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-005"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.cart-statistics",
+      "type": "branch",
+      "name": "Active carts is a currency-scoped quantity; gift lines count in the tile, not the badge",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-006"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-006"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3c",
+          "note": "tile reconciled against seeded carts",
+          "date": "2026-09-24"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-HD-016"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.customer-counts",
+      "type": "branch",
+      "name": "assignedCustomers is period-independent and period counts never exceed it",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-007"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-007"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-HD-017"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.top-sellers",
+      "type": "branch",
+      "name": "Top sellers rank by units or revenue and take clamps at 10",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-008"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-008"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.filter-rules",
+      "type": "branch",
+      "name": "One named filter rule per axis; omitted means baseline; unknown fails closed",
+      "status": "CONFIRMED",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-009"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-009"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.sort-rules",
+      "type": "branch",
+      "name": "One named sort rule per axis; unknown name falls back; unsupported direction errors",
+      "status": "CONFIRMED",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-010"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-010"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.cross-customer-aggregate",
+      "type": "branch",
+      "name": "Omitting organizationId aggregates across every served customer",
+      "status": "UNVERIFIED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-058",
+          "note": "backend case; no promoting run recorded in References"
+        }
+      ]
+    },
+    {
+      "id": "sr.orders-list",
+      "type": "behavior",
+      "name": "The rep lists the orders they created",
+      "status": "CONFIRMED",
+      "description": "salesRepOrders: creator-scoped, newest first, hydrated; the contrast with the customer-orders family is BL-SR-002.",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-002"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-002"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/sales-rep/overview",
+          "note": "guide: orders a rep created for their customers"
+        }
+      ]
+    },
+    {
+      "id": "sr.orders-list.newest-first",
+      "type": "branch",
+      "name": "Orders come newest first with total, currency and item count",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-022",
+          "note": "Automated backend case"
+        }
+      ]
+    },
+    {
+      "id": "sr.orders-list.paging-keyword",
+      "type": "branch",
+      "name": "Paging and keyword narrow the list",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-026",
+          "note": "Automated backend case"
+        }
+      ]
+    },
+    {
+      "id": "sr.orders-list.store-scoped",
+      "type": "branch",
+      "name": "A store argument scopes orders; null means all stores",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-027",
+          "note": "Automated backend case"
+        }
+      ]
+    },
+    {
+      "id": "sr.orders-list.status-display",
+      "type": "branch",
+      "name": "statusDisplayValue localizes; the raw status is preserved; no filter returns all statuses",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-013"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-013"
+        }
+      ]
+    },
+    {
+      "id": "sr.dashboard",
+      "type": "behavior",
+      "name": "The hub dashboard summarises the rep activity",
+      "status": "CONFIRMED",
+      "description": "Six KPI cards, Recent orders, Top sellers, Document library widget for Advanced reps, Tasks widget, Edit layout.",
+      "chain_link": "4",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3c",
+          "note": "stats row, widgets and trend sub-lines re-observed 2026-09-18",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.dashboard.kpi-row",
+      "type": "branch",
+      "name": "All six KPI cards render real values with period comparison",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3c",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-HD-004, SR-HD-055"
+        }
+      ]
+    },
+    {
+      "id": "sr.dashboard.kpi-no-data",
+      "type": "branch",
+      "name": "A rep with no data sees zeros, not blanks, and populated cards co-render",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-012"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-012"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-HD-053, SR-HD-054"
+        }
+      ]
+    },
+    {
+      "id": "sr.dashboard.active-carts-tile",
+      "type": "branch",
+      "name": "Active carts shows item quantities of the rep own carts, split by checkout selection",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-006"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3c",
+          "note": "tile reconciled exactly against seeded cart contents",
+          "date": "2026-09-24"
+        }
+      ]
+    },
+    {
+      "id": "sr.dashboard.top-sellers-widget",
+      "type": "branch",
+      "name": "Top sellers widget: top 5 by units, by-revenue re-rank, category chips",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-008"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-008"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-HD-008, SR-HD-009, SR-HD-010, SR-HD-011 +2"
+        }
+      ]
+    },
+    {
+      "id": "sr.dashboard.widget-failure-isolation",
+      "type": "branch",
+      "name": "One failed widget query shows a per-card error; siblings still render",
+      "status": "UNVERIFIED",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5304",
+          "note": "covering cases are Draft"
+        }
+      ]
+    },
+    {
+      "id": "sr.dashboard.remount-no-polling",
+      "type": "branch",
+      "name": "No polling; remount refetches identical variables with no empty flicker",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-HD-049",
+          "note": "Automated boundary case"
+        }
+      ]
+    },
+    {
+      "id": "sr.dashboard.status-change-reflected",
+      "type": "branch",
+      "name": "An admin order-status change shows in the New-orders KPI and Recent orders",
+      "status": "UNVERIFIED",
+      "branch_kind": "integration",
+      "technique": "FLOW",
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5304",
+          "note": "case is Reviewed, not executed"
+        }
+      ]
+    },
+    {
+      "id": "sr.dashboard.trend-subline",
+      "type": "branch",
+      "name": "WEEK and MTD tiles carry a trend sub-line; YTD carries none",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3c",
+          "note": "seen live as \"+100% vs last week\" / \"-81% vs last month\"",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout",
+      "type": "behavior",
+      "name": "The rep arranges their pages and the arrangement persists",
+      "status": "CONFIRMED",
+      "description": "salesRepLayout / saveSalesRepLayout keyed by rep + scope + optional store; storefront edit mode over a block registry (BL-SR-015..032).",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-015",
+        "BL-SR-016",
+        "BL-SR-024",
+        "BL-SR-025"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-015"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 5c",
+          "note": "layout persistence is GraphQL-only"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.never-saved-defaults",
+      "type": "branch",
+      "name": "A never-saved key is null and renders registry defaults with editing enabled",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-026",
+        "BL-SR-015"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-026"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.roundtrip",
+      "type": "branch",
+      "name": "A saved document round-trips order, hidden flags and a fresh modifiedDate",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-017",
+        "BL-SR-018"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-017"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.full-replace",
+      "type": "branch",
+      "name": "Saving replaces the whole document; omitted blocks are gone",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-016"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-016"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.per-user-isolation",
+      "type": "branch",
+      "name": "One rep saved layout is invisible to another rep",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-015"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-015"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.scope-keys",
+      "type": "branch",
+      "name": "Scope, store and region ids are free strings that address distinct documents; profile scope is one per rep",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-020",
+        "BL-SR-023"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-020"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-SR-023"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.auth-required",
+      "type": "branch",
+      "name": "Both layout operations require an authenticated caller",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-021"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-021"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.input-validation",
+      "type": "branch",
+      "name": "Required input fields are schema-enforced; a list or object setting value is rejected; scalars keep their type",
+      "status": "CONFIRMED",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-019",
+        "BL-SR-022"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-022"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.explicit-save",
+      "type": "branch",
+      "name": "Edits are drafts until an explicit Save; Cancel and Reset are draft-only; failure keeps the draft",
+      "status": "UNVERIFIED",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-024"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-024",
+          "note": "stated; every covering case is Reviewed or Draft"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.save-in-flight",
+      "type": "branch",
+      "name": "A save in flight refuses a second save",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-030"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-030"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-HD-037"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.registry-reconcile",
+      "type": "branch",
+      "name": "The registry owns structure; unknown types drop, missing blocks append, misplaced blocks are re-homed on save",
+      "status": "CONFIRMED",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-025"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-025"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.column-groups",
+      "type": "branch",
+      "name": "The wide and rail columns are separate drag groups in both directions",
+      "status": "CONFIRMED",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-027"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-027"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.park-restore",
+      "type": "branch",
+      "name": "Stat cards park and restore by drag or keyboard; widgets hide via a dismiss control and a tray",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-028"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-028"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.keyboard-announcements",
+      "type": "branch",
+      "name": "Keyboard grab, move and drop announce via aria-live",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-029"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-029"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.hidden-widget-queries",
+      "type": "branch",
+      "name": "A hidden widget does not query; a hidden stat card still does",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-031"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-031"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.rail-mount",
+      "type": "branch",
+      "name": "The rail mounts only while it holds a visible block",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-032"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-032"
+        }
+      ]
+    },
+    {
+      "id": "sr.layout.widget-settings",
+      "type": "branch",
+      "name": "Max rows and status tabs are scope-wide, range-checked and applied on save",
+      "status": "UNVERIFIED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5367",
+          "note": "covering cases are Draft or Automated without a recorded run"
+        }
+      ]
+    },
+    {
+      "id": "sr.comms",
+      "type": "behavior",
+      "name": "The rep sends a message to a served customer",
+      "status": "CONFIRMED",
+      "description": "sendCustomerCommunication from the My-customers envelope and the profile Send email tile.",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 7",
+          "note": "11 storefront cases plus backend cases cover the mutation",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3d",
+          "note": "Actions column entry point",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.comms.dispatch-channels",
+      "type": "branch",
+      "name": "Email, push or both dispatch to the same audience",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-042",
+          "note": "Automated backend cases"
+        }
+      ]
+    },
+    {
+      "id": "sr.comms.channel-required",
+      "type": "branch",
+      "name": "At least one channel must be selected",
+      "status": "CONFIRMED",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-045",
+          "note": "Automated backend case"
+        }
+      ]
+    },
+    {
+      "id": "sr.comms.message-limits",
+      "type": "branch",
+      "name": "Message is required up to 1000; title is optional up to 128; a URL is accepted",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-048",
+          "note": "Automated backend cases"
+        }
+      ]
+    },
+    {
+      "id": "sr.comms.not-served-refused",
+      "type": "branch",
+      "name": "A rep that does not serve the org is refused",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-002"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-002"
+        }
+      ]
+    },
+    {
+      "id": "sr.comms.no-recipients",
+      "type": "branch",
+      "name": "An org with no effective recipient returns a no-recipients result",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-052",
+          "note": "Automated backend case"
+        }
+      ]
+    },
+    {
+      "id": "sr.comms.initiator-excluded",
+      "type": "branch",
+      "name": "The sending rep is excluded from recipients",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-054",
+          "note": "Automated backend case"
+        }
+      ]
+    },
+    {
+      "id": "sr.comms.modal-entry-points",
+      "type": "branch",
+      "name": "The envelope and profile tile open the same modal, named for the clicked org",
+      "status": "UNVERIFIED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5304",
+          "note": "cases carry a lowercase invalid status and are unpromotable (domain map section 7)"
+        }
+      ]
+    },
+    {
+      "id": "sr.comms.failed-send",
+      "type": "branch",
+      "name": "A failed send shows an error toast and keeps the modal open",
+      "status": "UNVERIFIED",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5304",
+          "note": "case carries a lowercase invalid status"
+        }
+      ]
+    },
+    {
+      "id": "sr.rep-as-buyer",
+      "type": "behavior",
+      "name": "The rep is structurally a full buyer-member of every served org",
+      "status": "CONFIRMED",
+      "description": "Because serving creates a real membership, the rep switcher lists every served org and order links resolve into the buyer route.",
+      "chain_link": "6",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D9",
+          "note": "re-observed live 2026-09-18: switcher, membershipId, buyer order route",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-EA467E9B"
+        }
+      ]
+    },
+    {
+      "id": "sr.rep-as-buyer.switcher-lists-orgs",
+      "type": "branch",
+      "name": "The org switcher lists every served org as a selectable membership",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3e",
+          "note": "5 radios for the multi-org rep, none locked",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.rep-as-buyer.single-org-no-switcher",
+      "type": "branch",
+      "name": "A single-org rep gets no Organizations block in the popover",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3e",
+          "note": "agent-test-sr-docs: name and Logout only",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.rep-as-buyer.transact",
+      "type": "branch",
+      "name": "A rep switched into a served org can place an order as a buyer",
+      "status": "UNVERIFIED",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5733",
+          "note": "retired finding 21: inherited from the LEO client project"
+        }
+      ],
+      "notes": "G9: a purchase-flow mutation, out of scope for the enumeration. No case anywhere asserts it (domain map section 7)."
+    },
+    {
+      "id": "sr.documents",
+      "type": "behavior",
+      "name": "Sales materials reach Advanced reps through a shared document library",
+      "status": "CONFIRMED",
+      "description": "Admin registers and pins files; the storefront library and dashboard widget read them. Shared library, not customer-scoped.",
+      "chain_link": "7",
+      "interfaces": [
+        "admin-ui",
+        "rest",
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 7",
+          "note": "verified end to end on Env-A: 21 documents through REST, GraphQL, Admin, storefront",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.register",
+      "type": "branch",
+      "name": "The two-step upload then register flow publishes a file with category and metadata",
+      "status": "UNVERIFIED",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 8 G8",
+          "note": "result characterised; write mechanics unverified"
+        }
+      ],
+      "notes": "Needs sales-rep-documents:write and a real upload."
+    },
+    {
+      "id": "sr.documents.pinned-first",
+      "type": "branch",
+      "name": "A pinned document sorts first and Pin/Unpin is a detail-blade toggle",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "admin-ui",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 2b",
+          "note": "pinned-first on both layers; toolbar shows one of Pin/Unpin; nothing actuated",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.default-order",
+      "type": "branch",
+      "name": "The default list order: newest first in GraphQL, pinned first in the UI",
+      "status": "UNVERIFIED",
+      "branch_kind": "boundary",
+      "technique": "DT",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 2b",
+          "note": "pinned-first observed in Admin grid and storefront card grid",
+          "date": "2026-09-18"
+        }
+      ],
+      "notes": "Two layers, two orderings; the covering cases assert newest-first. Whether that is a conflict or two different contracts is not decided by the map."
+    },
+    {
+      "id": "sr.documents.read-gate",
+      "type": "branch",
+      "name": "A rep with no documents permission is forbidden and sees no link, widget or route",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D12",
+          "note": "plain rep gets Forbidden on both document queries",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 10 A6",
+          "note": "variadic AND of access and read"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.write-only-rep",
+      "type": "branch",
+      "name": "A write-only rep: does :write alone open the read gate?",
+      "status": "DRIFT",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D12",
+          "note": "rev-2 Env-B: write grants no read; rev 3 Env-A fixture composed of two roles reads fine",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 10 A2",
+          "note": "seeder never updates a same-named role"
+        }
+      ],
+      "drift": {
+        "expected": "Suite cases SR-GQL-137 / SR-HD-091 (Automated): the read gate accepts :write alone, the widget stays absent",
+        "observed": "domain-map:sr@rev3 section 6 D12: on Env-B a Documents-Manager role drifted to [access, write] and was refused; on Env-A the fixture holds two roles so it cannot isolate what write grants alone",
+        "route": "UNFILED - needs a single-role Documents-Manager fixture from test-data-engineer; then /qa-review-oracles to settle the seeded mapping"
+      }
+    },
+    {
+      "id": "sr.documents.library-page",
+      "type": "branch",
+      "name": "The library page filters by category, searches by name, resets on search and shows a distinct empty state",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3h",
+          "note": "chips, counts recompute on search, Cyrillic matches",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.hero-ignores-filters",
+      "type": "branch",
+      "name": "The Latest publication hero ignores the category filter and the search term",
+      "status": "UNVERIFIED",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D17",
+          "note": "behaviour observed; whether it is intended is not decidable from the surface",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.download",
+      "type": "branch",
+      "name": "Download serves the file bytes",
+      "status": "UNVERIFIED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 8 G14",
+          "note": "Open served a PDF via blob URL; Download not actuated"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.unicode-and-preview",
+      "type": "branch",
+      "name": "A Unicode file name displays and downloads; image types preview, others get an icon",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3h",
+          "note": "Cyrillic search matches the Unicode fixture",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.widget-rows",
+      "type": "branch",
+      "name": "The dashboard widget lists 5 pinned-first rows with a range-checked max rows",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3c",
+          "note": "5 documents, pinned first, Browse all link",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.widget-no-action",
+      "type": "branch",
+      "name": "The widget offers Open only for inline types; a docx or xlsx row has no action",
+      "status": "DRIFT",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D20",
+          "note": "live 2026-09-24",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 6 D20",
+          "note": "vc-frontend sales-rep-documents.vue vs documents.vue"
+        }
+      ],
+      "drift": {
+        "expected": "A rep can act on any document they can see; the library page offers Download on every card",
+        "observed": "The dashboard widget gates Open on the inline-renderable list and has no Download fallback (domain-map:sr@rev3 section 6 D20)",
+        "route": "VCST-6083"
+      }
+    },
+    {
+      "id": "sr.documents.shared-library",
+      "type": "branch",
+      "name": "Documents are one shared library, not filtered by the caller org",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 5a",
+          "note": "no organizationId argument on any document query",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.paging",
+      "type": "branch",
+      "name": "Cursor paging returns disjoint pages; first has no server clamp",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-146",
+          "note": "Automated backend cases"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.search-filter",
+      "type": "branch",
+      "name": "category and keyword narrow the set; no match returns zero without an error",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-150",
+          "note": "Automated backend cases"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.fields",
+      "type": "branch",
+      "name": "A document exposes its full field set including page count and size",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 5a",
+          "note": "SalesRepDocument fields introspected live; each has a rendered counterpart",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.single-lookup",
+      "type": "branch",
+      "name": "A document is fetched by id; a missing id returns null",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-156",
+          "note": "Automated backend case"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.categories",
+      "type": "branch",
+      "name": "Category counts sum to the unfiltered total",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3h",
+          "note": "chips match GET documents/categories exactly",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.live-mutable",
+      "type": "branch",
+      "name": "The result set reflects new registrations without a cache lag",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-143",
+          "note": "Automated backend case"
+        }
+      ]
+    },
+    {
+      "id": "sr.documents.not-on-main-schema",
+      "type": "branch",
+      "name": "The document queries are not exposed on the default /graphql schema",
+      "status": "UNVERIFIED",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1144B33E",
+          "note": "some modules add a separately scoped schema under /graphql"
+        }
+      ]
+    },
+    {
+      "id": "sr.access",
+      "type": "behavior",
+      "name": "Access is taken away on three independent axes",
+      "status": "CONFIRMED",
+      "chain_link": "8",
+      "actors": [
+        "platform admin"
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 8",
+          "note": "block confirmed live; membership lock rev-2; delete doc-stated",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.rep.state.active",
+      "type": "state",
+      "name": "Rep account active",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 5b",
+          "note": "17 of 19 reps isLocked false",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.rep.state.blocked",
+      "type": "state",
+      "name": "Rep account blocked",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D4",
+          "note": "isLocked true for exactly two of 19 rows",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.rep.state.membership-locked",
+      "type": "state",
+      "name": "One org membership locked (account still active)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 8",
+          "note": "Contacts-side per-org lock, rev-2 observation",
+          "date": "2026-09-10"
+        }
+      ]
+    },
+    {
+      "id": "sr.rep.state.deleted",
+      "type": "state",
+      "name": "Rep deleted (Contact and login gone)",
+      "status": "UNVERIFIED",
+      "terminal": true,
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/sales-rep/overview",
+          "note": "doc: there is no way to keep one without the other; this cannot be undone"
+        }
+      ],
+      "notes": "Terminal by document statement only; the delete was never actuated (destructive)."
+    },
+    {
+      "id": "sr.access.block",
+      "type": "branch",
+      "name": "Block turns the account off in every served org at once; Unblock reverses it",
+      "status": "CONFIRMED",
+      "state_before": "sr.rep.state.active",
+      "state_after": "sr.rep.state.blocked",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 8",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 5b",
+          "note": "block/unblock need platform:security:update only"
+        }
+      ]
+    },
+    {
+      "id": "sr.access.unblock",
+      "type": "branch",
+      "name": "Unblock returns a blocked account to active",
+      "status": "CONFIRMED",
+      "state_before": "sr.rep.state.blocked",
+      "state_after": "sr.rep.state.active",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 2a",
+          "note": "Block / Unblock render as exactly one of the pair",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.access.lock-membership",
+      "type": "branch",
+      "name": "Locking one membership excludes only that org, from the Contacts side",
+      "status": "CONFIRMED",
+      "state_before": "sr.rep.state.active",
+      "state_after": "sr.rep.state.membership-locked",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-SR-002"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 8",
+          "note": "rev-2 observation",
+          "date": "2026-09-10"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 5d",
+          "note": "no mutation on the scoped schema"
+        }
+      ]
+    },
+    {
+      "id": "sr.access.unlock-membership",
+      "type": "branch",
+      "name": "Unlocking a membership restores the org",
+      "status": "CONFIRMED",
+      "state_before": "sr.rep.state.membership-locked",
+      "state_after": "sr.rep.state.active",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 9",
+          "note": "Lock <-> Unlock is one reversible toggle",
+          "date": "2026-09-10"
+        }
+      ]
+    },
+    {
+      "id": "sr.access.delete",
+      "type": "branch",
+      "name": "Delete removes Contact and login together and cannot be undone",
+      "status": "UNVERIFIED",
+      "state_before": "sr.rep.state.active",
+      "state_after": "sr.rep.state.deleted",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/sales-rep/overview",
+          "note": "doc-stated, destructive, not actuated"
+        }
+      ]
+    },
+    {
+      "id": "sr.access.blocked-column-label",
+      "type": "branch",
+      "name": "The Blocked column icon reads Active for a blocked rep",
+      "status": "DRIFT",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D4",
+          "note": "19-row UI and REST paired control",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 9",
+          "note": "prior-art VCST-4907 already warned of it"
+        }
+      ],
+      "drift": {
+        "expected": "A status icon in a column named Blocked reads as the account health an operator assumes",
+        "observed": "Exactly the two isLocked=true reps render img \"Active\"; the other 17 render \"Inactive\" (domain-map:sr@rev3 section 6 D4)",
+        "route": "UNFILED - no ticket exists; resolve via /qa-review-oracles (add or amend the BL entry), then file a VCST bug; prior art reports/ba/Sales-rep VCST-4907"
+      }
+    },
+    {
+      "id": "sr.directory",
+      "type": "behavior",
+      "name": "A buyer sees who serves their own organization",
+      "status": "CONFIRMED",
+      "description": "/company/sales-reps over customerSalesReps: read-only name, email, phone for the active organization.",
+      "actors": [
+        "org member"
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 4",
+          "note": "TechFlow 5 rows vs AcmeWest 1 row, the pair that shows active-org scoping",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/storefront/user-guide/account/sales-reps",
+          "note": "page reflects the currently active organization"
+        }
+      ]
+    },
+    {
+      "id": "sr.directory.active-org",
+      "type": "branch",
+      "name": "The list follows the active organization; a cross-org rep is excluded",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 4",
+          "note": "matches customerSalesReps for the same session exactly",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.directory.exclusions",
+      "type": "branch",
+      "name": "Blocked reps and per-org locked reps are excluded",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "DT",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D8",
+          "note": "Lena Park, Blake Barr, Sam Store correctly absent",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.directory.store-scope",
+      "type": "branch",
+      "name": "A specific store scopes the list; null means all stores",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D10",
+          "note": "paired control per fixture",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.directory.storeid-omitted",
+      "type": "branch",
+      "name": "Omitting storeId silently disables store scoping",
+      "status": "DRIFT",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D10",
+          "note": "delta 1 for a caller whose org has a cross-store rep, delta 0 otherwise",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 7",
+          "note": "8 of 9 cases call customerSalesReps without storeId"
+        }
+      ],
+      "drift": {
+        "expected": "PlatformDeveloperGuide: every query is store- and membership-scoped",
+        "observed": "Without storeId, agent-test-sr-docs sees 7 reps against 6 with it (Sam Store, other store); agent-test-sr-primary sees no difference (domain-map:sr@rev3 section 6 D10)",
+        "route": "UNFILED - no ticket exists; resolve via /qa-review-oracles (add or amend the BL entry), then file a VCST bug; the 8 storeId-less cases are a test-management action via /qa-review-tests --fix (domain map section 7, G10)"
+      },
+      "notes": "Which of SR-GQL-001..007 and 091 can pass for the wrong reason depends on the caller active org; none is stamped here."
+    },
+    {
+      "id": "sr.directory.search-sort-paging",
+      "type": "branch",
+      "name": "Search, name sort and paging work; email and phone are not sortable",
+      "status": "UNVERIFIED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5304",
+          "note": "storefront cases are Draft"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-006",
+          "note": "backend cases Automated"
+        }
+      ]
+    },
+    {
+      "id": "sr.directory.guest-redirect",
+      "type": "branch",
+      "name": "A guest hitting the page is redirected away",
+      "status": "UNVERIFIED",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-011"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-011",
+          "note": "buyer page stays org-gated"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5304",
+          "note": "cases are Draft"
+        }
+      ]
+    },
+    {
+      "id": "sr.directory.empty-and-paging",
+      "type": "branch",
+      "name": "A buyer whose org has no active rep sees the empty state",
+      "status": "UNVERIFIED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5304",
+          "note": "both cases are flagged NEEDS DATA GAP"
+        }
+      ]
+    },
+    {
+      "id": "sr.directory.remount-refetch",
+      "type": "branch",
+      "name": "Remount refetches identical variables; an Admin contact edit shows after remount",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-FE-MSR-021",
+          "note": "Automated state-transition case"
+        }
+      ]
+    },
+    {
+      "id": "sr.customer-orders",
+      "type": "behavior",
+      "name": "The rep browses every order of the customers they serve",
+      "status": "CONFIRMED",
+      "description": "/company/customer-orders over salesRepCustomerOrders / salesRepCustomerOrder: index-backed, membership-scoped, creator-agnostic.",
+      "chain_link": "5",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-002"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 1 link 5",
+          "note": "CONFIRMED live",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-SR-002"
+        }
+      ]
+    },
+    {
+      "id": "sr.customer-orders.breadcrumb",
+      "type": "branch",
+      "name": "The breadcrumb keeps the customer segment on the customer route and omits it across customers",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-CO-002",
+          "note": "Automated cases"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-CO-002, SR-CO-004, SR-CO-005"
+        }
+      ]
+    },
+    {
+      "id": "sr.customer-orders.paging",
+      "type": "branch",
+      "name": "A filter change resets to page 1; pages are disjoint",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-CO-006",
+          "note": "Automated cases"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-CO-006, SR-GQL-128"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-04-1015",
+          "note": "promoting run of SR-CO-007"
+        }
+      ]
+    },
+    {
+      "id": "sr.customer-orders.date-range",
+      "type": "branch",
+      "name": "The created-date range includes both boundary days in the rep timezone and clamps out-of-span values",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-CO-008",
+          "note": "Automated case"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-CO-008"
+        }
+      ]
+    },
+    {
+      "id": "sr.customer-orders.status-and-search",
+      "type": "branch",
+      "name": "Statuses combine as a union with reconciling facet counts; keyword matches by order number",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-009"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-009"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-CO-025"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-04-1015",
+          "note": "promoting run of SR-CO-031"
+        }
+      ]
+    },
+    {
+      "id": "sr.customer-orders.zero-match",
+      "type": "branch",
+      "name": "A zero-match filter is disclosed as a closable chip and is distinct from the no-data state",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-012"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-012"
+        }
+      ]
+    },
+    {
+      "id": "sr.customer-orders.filter-chips",
+      "type": "branch",
+      "name": "Removing a chip fires exactly one request",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-CO-035",
+          "note": "Automated case"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-04-1015",
+          "note": "promoting run of SR-CO-035"
+        }
+      ]
+    },
+    {
+      "id": "sr.customer-orders.open-order",
+      "type": "branch",
+      "name": "An order the rep did not place opens read-only; one they placed opens the buyer page; a typed buyer URL is refused",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3c",
+          "note": "order links resolve into the buyer order-detail route",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-SR-002"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-CO-010"
+        }
+      ]
+    },
+    {
+      "id": "sr.customer-orders.url-restore",
+      "type": "branch",
+      "name": "Reopening a filtered and sorted URL restores it or degrades safely",
+      "status": "CONFIRMED",
+      "branch_kind": "state",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-CO-014",
+          "note": "Automated case"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-CO-014"
+        }
+      ]
+    },
+    {
+      "id": "sr.customer-orders.facets",
+      "type": "branch",
+      "name": "Facet names are whitelisted; unknown or scope-prefixed names are dropped; counts sum to the total",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "SR-GQL-125",
+          "note": "Automated backend cases"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-GQL-122, SR-GQL-125, SR-GQL-126, SR-GQL-127"
+        }
+      ]
+    },
+    {
+      "id": "sr.localization",
+      "type": "behavior",
+      "name": "Rep-facing vocabulary localizes and never shows a raw key",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-013"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-013"
+        }
+      ]
+    },
+    {
+      "id": "sr.localization.labels-localize",
+      "type": "branch",
+      "name": "Titles, rule labels, statuses and money localize by culture",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "oracle_refs": [
+        "BL-SR-013"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-013"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "promoting run of SR-FE-028"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-25-1128",
+          "note": "promoting run of SR-CP-011"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-02-2055",
+          "note": "promoting run of SR-CO-013"
+        }
+      ]
+    },
+    {
+      "id": "sr.localization.raw-key-labels",
+      "type": "branch",
+      "name": "Raw i18n keys render as sidebar link text, intermittently",
+      "status": "DRIFT",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "oracle_refs": [
+        "BL-SR-013"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-SR-013",
+          "note": "a raw enum or i18n key must never surface"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D16",
+          "note": "four observations across three accounts, two rendering each way",
+          "date": "2026-09-18"
+        }
+      ],
+      "drift": {
+        "expected": "BL-SR-013: the storefront renders the localized label, never an i18n key",
+        "observed": "Sales_rep.navigation.link, Quotes.navigation.route_name and Back_in_stock.navigation.route_name rendered as link text on Ver. 2.58.0-pr-2467; hrefs stayed correct (domain-map:sr@rev3 section 6 D16)",
+        "route": "UNFILED - no ticket exists; resolve via /qa-review-oracles (add or amend the BL entry), then file a VCST bug; determinism first (G12)"
+      }
+    },
+    {
+      "id": "sr.tasks",
+      "type": "behavior",
+      "name": "The rep manages tasks and follow-ups on a calendar",
+      "status": "CONFIRMED",
+      "description": "/company/calendar and the Tasks widget over salesRepTasks (SalesRep 3.1009.0). New in the 2026-09-24 pass; no prior art.",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3i",
+          "note": "live 2026-09-24 as an Advanced rep with 10 tasks",
+          "date": "2026-09-24"
+        }
+      ]
+    },
+    {
+      "id": "sr.tasks.calendar-tabs",
+      "type": "branch",
+      "name": "The tab counts match the three task filter rules",
+      "status": "CONFIRMED",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3i",
+          "note": "tabs 2 / 6 / 2 / 2 match salesRepTaskFilterRules",
+          "date": "2026-09-24"
+        }
+      ]
+    },
+    {
+      "id": "sr.tasks.past-due-accepted",
+      "type": "branch",
+      "name": "A past due date is accepted on create; completion is a separate status call",
+      "status": "CONFIRMED",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ],
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 3i",
+          "note": "observed while seeding the demo profile",
+          "date": "2026-09-24"
+        }
+      ]
+    },
+    {
+      "id": "sr.tasks.nav-visibility",
+      "type": "branch",
+      "name": "What makes the Calendar link and Tasks widget appear",
+      "status": "UNVERIFIED",
+      "branch_kind": "state",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 8 G15",
+          "note": "absent at 0 tasks, present after 12 were seeded, same build"
+        }
+      ]
+    },
+    {
+      "id": "sr.tasks.api-version",
+      "type": "branch",
+      "name": "The tasks API exists only from a certain SalesRep version",
+      "status": "UNVERIFIED",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 8 G16",
+          "note": "one deployment answered Cannot query field salesRepTasks, later served it"
+        }
+      ]
+    },
+    {
+      "id": "sr.contract",
+      "type": "behavior",
+      "name": "The scoped schema is a separate GraphQL endpoint with open introspection",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 5a",
+          "note": "21 queries and 2 mutations introspected live",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1144B33E",
+          "note": "scoped schema under /graphql/sales-rep"
+        }
+      ]
+    },
+    {
+      "id": "sr.contract.introspection-open",
+      "type": "branch",
+      "name": "Introspection is allowed anonymously; real queries are refused",
+      "status": "CONFIRMED",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 6 D5",
+          "note": "two postures, only one guarded",
+          "date": "2026-09-18"
+        }
+      ]
+    },
+    {
+      "id": "sr.contract.store-bound-login",
+      "type": "branch",
+      "name": "The password grant for a rep needs the storeId form parameter",
+      "status": "CONFIRMED",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 5a",
+          "note": "every fixture token minted with storeId=B2B-store",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 5a",
+          "note": "PlatformDeveloperGuide states it verbatim"
+        }
+      ]
+    },
+    {
+      "id": "sr.contract.docs-behind-schema",
+      "type": "branch",
+      "name": "The published developer guide lists 13 queries and 1 mutation; the live schema has 21 and 2",
+      "status": "DRIFT",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:sr@rev3 section 6 D1",
+          "note": "quote from PlatformDeveloperGuide"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:sr@rev3 section 5a",
+          "note": "live introspection 2026-09-18",
+          "date": "2026-09-18"
+        }
+      ],
+      "drift": {
+        "expected": "PlatformDeveloperGuide Sales Rep overview: 13 queries + 1 mutation",
+        "observed": "Live /graphql/sales-rep: 21 queries + 2 mutations; the 8 missing queries and saveSalesRepLayout are the customer-orders and layout feature sets (domain-map:sr@rev3 section 6 D1)",
+        "route": "UNFILED - docs gap; report against https://docs.virtocommerce.org/platform/developer-guide/"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.provision",
+      "type": "contains"
+    },
+    {
+      "from": "sr.provision",
+      "to": "sr.provision.role-picker",
+      "type": "contains"
+    },
+    {
+      "from": "sr.provision",
+      "to": "sr.provision.decoy-roles",
+      "type": "contains"
+    },
+    {
+      "from": "sr.provision",
+      "to": "sr.provision.permission-matrix",
+      "type": "contains"
+    },
+    {
+      "from": "sr.provision",
+      "to": "sr.provision.role-catalog-third-role",
+      "type": "contains"
+    },
+    {
+      "from": "sr.provision",
+      "to": "sr.provision.contact-write-bypass",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.serve-orgs",
+      "type": "contains"
+    },
+    {
+      "from": "sr.serve-orgs",
+      "to": "sr.serve-orgs.membership-created",
+      "type": "contains"
+    },
+    {
+      "from": "sr.serve-orgs",
+      "to": "sr.serve-orgs.count-agrees",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.store-toggle",
+      "type": "contains"
+    },
+    {
+      "from": "sr.store-toggle",
+      "to": "sr.store-toggle.on-shows-hub",
+      "type": "contains"
+    },
+    {
+      "from": "sr.store-toggle",
+      "to": "sr.store-toggle.off-hides-ui",
+      "type": "contains"
+    },
+    {
+      "from": "sr.store-toggle",
+      "to": "sr.store-toggle.off-api-still-answers",
+      "type": "contains"
+    },
+    {
+      "from": "sr.store-toggle",
+      "to": "sr.store-toggle.default-value",
+      "type": "contains"
+    },
+    {
+      "from": "sr.store-toggle",
+      "to": "sr.store-toggle.statistics-cache-settings",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.hub",
+      "type": "contains"
+    },
+    {
+      "from": "sr.hub",
+      "to": "sr.hub.basic-rep",
+      "type": "contains"
+    },
+    {
+      "from": "sr.hub",
+      "to": "sr.hub.advanced-rep",
+      "type": "contains"
+    },
+    {
+      "from": "sr.hub",
+      "to": "sr.hub.non-rep-sees-nothing",
+      "type": "contains"
+    },
+    {
+      "from": "sr.hub",
+      "to": "sr.hub.non-rep-direct-url",
+      "type": "contains"
+    },
+    {
+      "from": "sr.hub",
+      "to": "sr.hub.privileged-non-rep",
+      "type": "contains"
+    },
+    {
+      "from": "sr.hub",
+      "to": "sr.hub.global-only-rep",
+      "type": "contains"
+    },
+    {
+      "from": "sr.hub",
+      "to": "sr.hub.admin-ui-over-empty-data",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.scope",
+      "type": "contains"
+    },
+    {
+      "from": "sr.scope",
+      "to": "sr.scope.unserved-org",
+      "type": "contains"
+    },
+    {
+      "from": "sr.scope",
+      "to": "sr.scope.locked-membership",
+      "type": "contains"
+    },
+    {
+      "from": "sr.scope",
+      "to": "sr.scope.zero-served",
+      "type": "contains"
+    },
+    {
+      "from": "sr.scope",
+      "to": "sr.scope.anonymous",
+      "type": "contains"
+    },
+    {
+      "from": "sr.scope",
+      "to": "sr.scope.authentication-only",
+      "type": "contains"
+    },
+    {
+      "from": "sr.scope",
+      "to": "sr.scope.creator-only-statistics",
+      "type": "contains"
+    },
+    {
+      "from": "sr.scope",
+      "to": "sr.scope.customer-orders-creator-agnostic",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.customers",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.customers.table",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.customers.no-order-dash",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.customers.order-link",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.customers.search",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.customers.sort",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.customers.paging",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.customers.filter-chips",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.customers.badge",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.customers.error-state",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.customers.remount-refetch",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.profile",
+      "type": "contains"
+    },
+    {
+      "from": "sr.profile",
+      "to": "sr.profile.information",
+      "type": "contains"
+    },
+    {
+      "from": "sr.profile",
+      "to": "sr.profile.orders-section",
+      "type": "contains"
+    },
+    {
+      "from": "sr.profile",
+      "to": "sr.profile.orders-status-filter",
+      "type": "contains"
+    },
+    {
+      "from": "sr.profile",
+      "to": "sr.profile.orders-empty",
+      "type": "contains"
+    },
+    {
+      "from": "sr.profile",
+      "to": "sr.profile.stat-widgets",
+      "type": "contains"
+    },
+    {
+      "from": "sr.profile",
+      "to": "sr.profile.top-products",
+      "type": "contains"
+    },
+    {
+      "from": "sr.profile",
+      "to": "sr.profile.quick-actions",
+      "type": "contains"
+    },
+    {
+      "from": "sr.profile",
+      "to": "sr.profile.customer-switch-isolation",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.stats",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.period-bounds",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.comparison-null-percent",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.currency",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.excluded-orders",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.cart-statistics",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.customer-counts",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.top-sellers",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.filter-rules",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.sort-rules",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.cross-customer-aggregate",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.orders-list",
+      "type": "contains"
+    },
+    {
+      "from": "sr.orders-list",
+      "to": "sr.orders-list.newest-first",
+      "type": "contains"
+    },
+    {
+      "from": "sr.orders-list",
+      "to": "sr.orders-list.paging-keyword",
+      "type": "contains"
+    },
+    {
+      "from": "sr.orders-list",
+      "to": "sr.orders-list.store-scoped",
+      "type": "contains"
+    },
+    {
+      "from": "sr.orders-list",
+      "to": "sr.orders-list.status-display",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.dashboard",
+      "type": "contains"
+    },
+    {
+      "from": "sr.dashboard",
+      "to": "sr.dashboard.kpi-row",
+      "type": "contains"
+    },
+    {
+      "from": "sr.dashboard",
+      "to": "sr.dashboard.kpi-no-data",
+      "type": "contains"
+    },
+    {
+      "from": "sr.dashboard",
+      "to": "sr.dashboard.active-carts-tile",
+      "type": "contains"
+    },
+    {
+      "from": "sr.dashboard",
+      "to": "sr.dashboard.top-sellers-widget",
+      "type": "contains"
+    },
+    {
+      "from": "sr.dashboard",
+      "to": "sr.dashboard.widget-failure-isolation",
+      "type": "contains"
+    },
+    {
+      "from": "sr.dashboard",
+      "to": "sr.dashboard.remount-no-polling",
+      "type": "contains"
+    },
+    {
+      "from": "sr.dashboard",
+      "to": "sr.dashboard.status-change-reflected",
+      "type": "contains"
+    },
+    {
+      "from": "sr.dashboard",
+      "to": "sr.dashboard.trend-subline",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.layout",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.never-saved-defaults",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.roundtrip",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.full-replace",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.per-user-isolation",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.scope-keys",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.auth-required",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.input-validation",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.explicit-save",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.save-in-flight",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.registry-reconcile",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.column-groups",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.park-restore",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.keyboard-announcements",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.hidden-widget-queries",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.rail-mount",
+      "type": "contains"
+    },
+    {
+      "from": "sr.layout",
+      "to": "sr.layout.widget-settings",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.comms",
+      "type": "contains"
+    },
+    {
+      "from": "sr.comms",
+      "to": "sr.comms.dispatch-channels",
+      "type": "contains"
+    },
+    {
+      "from": "sr.comms",
+      "to": "sr.comms.channel-required",
+      "type": "contains"
+    },
+    {
+      "from": "sr.comms",
+      "to": "sr.comms.message-limits",
+      "type": "contains"
+    },
+    {
+      "from": "sr.comms",
+      "to": "sr.comms.not-served-refused",
+      "type": "contains"
+    },
+    {
+      "from": "sr.comms",
+      "to": "sr.comms.no-recipients",
+      "type": "contains"
+    },
+    {
+      "from": "sr.comms",
+      "to": "sr.comms.initiator-excluded",
+      "type": "contains"
+    },
+    {
+      "from": "sr.comms",
+      "to": "sr.comms.modal-entry-points",
+      "type": "contains"
+    },
+    {
+      "from": "sr.comms",
+      "to": "sr.comms.failed-send",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.rep-as-buyer",
+      "type": "contains"
+    },
+    {
+      "from": "sr.rep-as-buyer",
+      "to": "sr.rep-as-buyer.switcher-lists-orgs",
+      "type": "contains"
+    },
+    {
+      "from": "sr.rep-as-buyer",
+      "to": "sr.rep-as-buyer.single-org-no-switcher",
+      "type": "contains"
+    },
+    {
+      "from": "sr.rep-as-buyer",
+      "to": "sr.rep-as-buyer.transact",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.documents",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.register",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.pinned-first",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.default-order",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.read-gate",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.write-only-rep",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.library-page",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.hero-ignores-filters",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.download",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.unicode-and-preview",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.widget-rows",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.widget-no-action",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.shared-library",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.paging",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.search-filter",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.fields",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.single-lookup",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.categories",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.live-mutable",
+      "type": "contains"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.documents.not-on-main-schema",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.access",
+      "type": "contains"
+    },
+    {
+      "from": "sr.access",
+      "to": "sr.rep.state.active",
+      "type": "contains"
+    },
+    {
+      "from": "sr.access",
+      "to": "sr.rep.state.blocked",
+      "type": "contains"
+    },
+    {
+      "from": "sr.access",
+      "to": "sr.rep.state.membership-locked",
+      "type": "contains"
+    },
+    {
+      "from": "sr.access",
+      "to": "sr.rep.state.deleted",
+      "type": "contains"
+    },
+    {
+      "from": "sr.access",
+      "to": "sr.access.block",
+      "type": "contains"
+    },
+    {
+      "from": "sr.access",
+      "to": "sr.access.unblock",
+      "type": "contains"
+    },
+    {
+      "from": "sr.access",
+      "to": "sr.access.lock-membership",
+      "type": "contains"
+    },
+    {
+      "from": "sr.access",
+      "to": "sr.access.unlock-membership",
+      "type": "contains"
+    },
+    {
+      "from": "sr.access",
+      "to": "sr.access.delete",
+      "type": "contains"
+    },
+    {
+      "from": "sr.access",
+      "to": "sr.access.blocked-column-label",
+      "type": "contains"
+    },
+    {
+      "from": "sr.rep.state.active",
+      "to": "sr.rep.state.blocked",
+      "type": "transitions_to",
+      "via": "sr.access.block"
+    },
+    {
+      "from": "sr.rep.state.blocked",
+      "to": "sr.rep.state.active",
+      "type": "transitions_to",
+      "via": "sr.access.unblock"
+    },
+    {
+      "from": "sr.rep.state.active",
+      "to": "sr.rep.state.membership-locked",
+      "type": "transitions_to",
+      "via": "sr.access.lock-membership"
+    },
+    {
+      "from": "sr.rep.state.membership-locked",
+      "to": "sr.rep.state.active",
+      "type": "transitions_to",
+      "via": "sr.access.unlock-membership"
+    },
+    {
+      "from": "sr.rep.state.active",
+      "to": "sr.rep.state.deleted",
+      "type": "transitions_to",
+      "via": "sr.access.delete"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.directory",
+      "type": "contains"
+    },
+    {
+      "from": "sr.directory",
+      "to": "sr.directory.active-org",
+      "type": "contains"
+    },
+    {
+      "from": "sr.directory",
+      "to": "sr.directory.exclusions",
+      "type": "contains"
+    },
+    {
+      "from": "sr.directory",
+      "to": "sr.directory.store-scope",
+      "type": "contains"
+    },
+    {
+      "from": "sr.directory",
+      "to": "sr.directory.storeid-omitted",
+      "type": "contains"
+    },
+    {
+      "from": "sr.directory",
+      "to": "sr.directory.search-sort-paging",
+      "type": "contains"
+    },
+    {
+      "from": "sr.directory",
+      "to": "sr.directory.guest-redirect",
+      "type": "contains"
+    },
+    {
+      "from": "sr.directory",
+      "to": "sr.directory.empty-and-paging",
+      "type": "contains"
+    },
+    {
+      "from": "sr.directory",
+      "to": "sr.directory.remount-refetch",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.customer-orders",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customer-orders",
+      "to": "sr.customer-orders.breadcrumb",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customer-orders",
+      "to": "sr.customer-orders.paging",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customer-orders",
+      "to": "sr.customer-orders.date-range",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customer-orders",
+      "to": "sr.customer-orders.status-and-search",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customer-orders",
+      "to": "sr.customer-orders.zero-match",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customer-orders",
+      "to": "sr.customer-orders.filter-chips",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customer-orders",
+      "to": "sr.customer-orders.open-order",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customer-orders",
+      "to": "sr.customer-orders.url-restore",
+      "type": "contains"
+    },
+    {
+      "from": "sr.customer-orders",
+      "to": "sr.customer-orders.facets",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.localization",
+      "type": "contains"
+    },
+    {
+      "from": "sr.localization",
+      "to": "sr.localization.labels-localize",
+      "type": "contains"
+    },
+    {
+      "from": "sr.localization",
+      "to": "sr.localization.raw-key-labels",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.tasks",
+      "type": "contains"
+    },
+    {
+      "from": "sr.tasks",
+      "to": "sr.tasks.calendar-tabs",
+      "type": "contains"
+    },
+    {
+      "from": "sr.tasks",
+      "to": "sr.tasks.past-due-accepted",
+      "type": "contains"
+    },
+    {
+      "from": "sr.tasks",
+      "to": "sr.tasks.nav-visibility",
+      "type": "contains"
+    },
+    {
+      "from": "sr.tasks",
+      "to": "sr.tasks.api-version",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.contract",
+      "type": "contains"
+    },
+    {
+      "from": "sr.contract",
+      "to": "sr.contract.introspection-open",
+      "type": "contains"
+    },
+    {
+      "from": "sr.contract",
+      "to": "sr.contract.store-bound-login",
+      "type": "contains"
+    },
+    {
+      "from": "sr.contract",
+      "to": "sr.contract.docs-behind-schema",
+      "type": "contains"
+    },
+    {
+      "from": "sr.hub",
+      "to": "sr.store-toggle",
+      "type": "depends_on",
+      "note": "hub renders only while the switch is on"
+    },
+    {
+      "from": "sr.hub",
+      "to": "sr.serve-orgs",
+      "type": "depends_on",
+      "note": "the rep customers are the served orgs"
+    },
+    {
+      "from": "sr.customers",
+      "to": "sr.serve-orgs",
+      "type": "depends_on"
+    },
+    {
+      "from": "sr.customer-orders",
+      "to": "sr.serve-orgs",
+      "type": "depends_on"
+    },
+    {
+      "from": "sr.directory",
+      "to": "sr.serve-orgs",
+      "type": "depends_on"
+    },
+    {
+      "from": "sr.documents",
+      "to": "sr.provision",
+      "type": "depends_on",
+      "note": "Advanced role holds sales-rep-documents:read"
+    },
+    {
+      "from": "sr.scope",
+      "to": "sr.access",
+      "type": "affected_by",
+      "note": "block and lock remove orgs from every scoped read"
+    },
+    {
+      "from": "sr.directory",
+      "to": "sr.access",
+      "type": "affected_by"
+    },
+    {
+      "from": "sr.rep-as-buyer",
+      "to": "sr.serve-orgs",
+      "type": "depends_on"
+    }
+  ]
+}

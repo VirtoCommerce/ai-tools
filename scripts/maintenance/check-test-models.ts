@@ -45,7 +45,7 @@
  *   TM-016 DataProfile: stamp names an unknown profile
  *   TM-017 suspect case — linked to a DRIFT, OBSOLETE or changed node (warn)
  *   TM-018 DRIFT route names no trackable owner (warn)
- *   TM-019 suite CSV unparsable, its stamps not read (warn)
+ *   TM-019 suite CSV unparsable, or a legacy header hides its stamps (warn)
  */
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -334,9 +334,20 @@ export function removedIds(prevIds: Iterable<string>, nextIds: Iterable<string>)
 
 /** Nodes whose behavioural content changed between two revisions (last_verified alone is not a change). */
 export function changedNodes(prev: MindMap, next: MindMap): string[] {
-  const strip = (n: MapNode) => JSON.stringify({ ...n, last_verified: undefined });
-  const before = new Map(prev.nodes.map((n) => [n.id, strip(n)]));
-  return next.nodes.filter((n) => before.has(n.id) && before.get(n.id) !== strip(n)).map((n) => n.id);
+  // Re-verifying a node is not a change. Neither is attaching its FIRST data contract: the behaviour is
+  // the same, and flagging every stamped case of a map that just gained a data model would make the
+  // suspect list useless. Editing an existing requires/produces still counts.
+  const strip = (n: MapNode, p?: MapNode) =>
+    JSON.stringify({
+      ...n,
+      last_verified: undefined,
+      ...(p && !p.requires?.length ? { requires: undefined } : {}),
+      ...(p && !p.produces?.length ? { produces: undefined } : {}),
+    });
+  const before = new Map(prev.nodes.map((n) => [n.id, n]));
+  return next.nodes
+    .filter((n) => before.has(n.id) && strip(before.get(n.id)!, before.get(n.id)) !== strip(n, before.get(n.id)))
+    .map((n) => n.id);
 }
 
 const BEHAVIOR_STAMP_RE = /\bBehavior:\s*([a-z][a-z0-9]*(?:\.[a-z0-9][a-z0-9-]*)+)/g;
@@ -673,6 +684,17 @@ function eclIds(): Set<string> | null {
   return out;
 }
 
+/**
+ * The suite parser maps a legacy (TestRail-style) header onto the enriched column names BY POSITION,
+ * so a stamp in a legacy `References` cell lands under another name and is never read — silently.
+ * Only a file that actually carries a stamp is worth a warning; legacy suites without one are not.
+ */
+export function stampsUnreadable(text: string, parsedColumns: string[]): boolean {
+  if (!/\b(?:Behavior|DataProfile):/.test(text)) return false;
+  const header = (text.replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0] ?? "").split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+  return header.length !== parsedColumns.length || header.some((c, i) => c !== parsedColumns[i]);
+}
+
 export function loadCases(findings: Finding[]): Map<string, CaseStamps> {
   const out = new Map<string, CaseStamps>();
   const walk = (dir: string): void => {
@@ -682,10 +704,15 @@ export function loadCases(findings: Finding[]): Map<string, CaseStamps> {
       else if (e.name.endsWith(".csv")) {
         const suite = relative(ROOT, p).replace(/\\/g, "/");
         let rows;
+        const text = readFileSync(p, "utf8");
         try {
-          rows = parseSuite(readFileSync(p, "utf8")).rows;
+          rows = parseSuite(text).rows;
         } catch {
           findings.push({ code: "TM-019", severity: "warn", file: suite, msg: "suite does not parse — its model stamps were not read" });
+          continue;
+        }
+        if (stampsUnreadable(text, Object.keys(rows[0] ?? {}))) {
+          findings.push({ code: "TM-019", severity: "warn", file: suite, msg: "legacy header — columns are read by position, so its model stamps were not read; migrate the suite to the enriched header first" });
           continue;
         }
         for (const r of rows) {
