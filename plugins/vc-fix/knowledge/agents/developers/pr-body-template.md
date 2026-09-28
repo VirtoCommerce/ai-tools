@@ -24,7 +24,8 @@ Related rules, not restated here:
    what you did to the code.
 3. **No internal pointers.** No gate numbers, no `/qa-*` commands, no run ids, no `reports/` or
    `.fix-workspace/` paths, no "the pipeline step". An upstream reader cannot resolve them — state the
-   fact itself.
+   fact itself. **One exception:** the closing footer names `/vc-fix:qa-fix`, on purpose, so a reviewer
+   knows which tool opened the PR. It is attribution, not a pointer — nowhere else in the body.
 4. **No client identifier in an upstream PR.** When the target is a `VirtoCommerce/*` repo (direct or
    fork-PR), grep the body for the client org, client repo, client domain and customer names before
    writing it. The ticket key is fine; everything else about the client stays out.
