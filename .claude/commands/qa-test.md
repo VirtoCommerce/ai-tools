@@ -16,7 +16,7 @@ a judgment call a gate does not settle, or when you are about to change how a st
 
 | Need | Read |
 |---|---|
-| Step 1e — the fault model, its eight rules, its gate | [`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md) · shape: [`templates/test-model.md`](../templates/test-model.md) |
+| Step 1e — the fault model, its eight rules, its gate | [`skills/qa-test-model/test-model.md`](../skills/qa-test-model/test-model.md) · shape: [`templates/test-model.md`](../templates/test-model.md) |
 | Steps 1a–1b — the fetch, the routing branch, the two pre-flight waves | [`skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) |
 | Steps 1r · 1c · 1c-map · 1d — the FULL-only context wave: briefs, returns, what each carries | [`skills/qa-test/context-wave.md`](../skills/qa-test/context-wave.md) |
 | The six derived axes as ONE mechanism (2b–2g) | [`skills/qa-test/axes.md`](../skills/qa-test/axes.md) |
@@ -336,14 +336,10 @@ The `1c` · `1c-map` · `1d` rows (agent, lane, when, returns, gate + record) an
 
 #### 1e — Build the Test Model *(FULL only)*
 
-Distil `1c` + `1d` + `1a` into the **fault model** Step 3 authors cases from, written to
-`reports/ba/test-models/<TICKET>-<date>.md`. **Part 0 — the value chain — is derived FIRST** and drawn in
-Mermaid; the condition space is built per link on top of it. **A mind map (2g) ⇒ Part 0 cites its node ids.**
-
-**Shape:** [`.claude/templates/test-model.md`](../templates/test-model.md). **Methodology, the eight rules
-the scenario table must satisfy, Part 0r, the gate and the worked references:**
-[`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md) — read it first; the gate below is only
-its checklist.
+**Invoke [`/qa-test-model`](../skills/qa-test-model/SKILL.md) `<TICKET> --context <1a+1c+1d, 2d, 2g>`** — the only
+builder of the **fault model** Step 3 authors from (`reports/ba/test-models/<TICKET>-<date>.md`). **Part 0 —
+the value chain — FIRST**, in Mermaid; a mind map (2g) ⇒ Part 0 cites its node ids. Method, the eight rules,
+Part 0r and the gate: [`test-model.md`](../skills/qa-test-model/test-model.md) — the gate below is its checklist.
 
 **Gate (inline, 13 clauses — every one contradictable):** flow/type/path set + atomic conditions + BL/ECL/
 domains/risk areas · `Value chain` complete **with the `flowchart` in the file** · `Mechanism coverage
@@ -360,11 +356,11 @@ every role resolves to a fixture alias or `FIXTURE-GAP`.**
 
 **Clauses 11/11b read the `domain_map` token (2g) and never re-derive it, and `1e` CONFIRMS 2g's
 provisional all-layer answer — both stated once, in
-[`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md) §The gate.**
+[`skills/qa-test-model/test-model.md`](../skills/qa-test-model/test-model.md) §The gate.**
 
 **Clauses 11, 11b and 4 each exist because a measured run passed every OTHER clause** — VCST-5317 and
 VCST-5735. The argument for all three, and what to re-derive after any rewrite of the scenario table:
-[`test-model.md`](../skills/qa-test/test-model.md) §Why clauses.
+[`test-model.md`](../skills/qa-test-model/test-model.md) §Why clauses.
 
 
 #### 1e-plan — emit the scenario matrix as an authoring plan *(FULL only)*

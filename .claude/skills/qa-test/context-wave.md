@@ -3,7 +3,7 @@
 **This file is the only place the FULL-path context wave is specified.**
 [`../../commands/qa-test.md`](../../commands/qa-test.md) keeps the ordered list, the trigger and the gate
 for each of these four and cites this file for the rest — the same split
-[`preflight.md`](preflight.md) holds for `1a`/`1b` and [`test-model.md`](test-model.md) for `1e`.
+[`preflight.md`](preflight.md) holds for `1a`/`1b` and [`test-model.md`](../qa-test-model/test-model.md) for `1e`.
 
 **All four are FULL-only and all four ride ONE message** — `1r ‖ 1c ‖ 1d ‖ [1c-map] ‖ 2-load` — because
 every one of them consumes only `1a`'s fetch. They are separate agents on separate lanes, not separate

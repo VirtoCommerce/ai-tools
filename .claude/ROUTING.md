@@ -24,6 +24,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|frontend\|backend\|IDs] [--cases <tier>] [--also-ids <ids>] [--no-plan]` | Command |
 | **Triage a finished regression run's failures** | `/qa-triage-results [RUN_ID\|latest] [--fix] [--verify]` | Command |
 | **Test a ticket / feature / PR** | `/qa-test <ticket-key> \| feature \| PR #N \| --epic <KEY> [--iterate]` | Command |
+| **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--dry-run]` | Command |
 | **Run an exploratory session** | `/qa-exploratory [sprint\|sprint:XX-YY\|checkout\|catalog\|B2B\|mobile\|new]` | Command |
 | **File or investigate a bug** | `/qa-bug description \| <ticket-key> \| screenshot` | Command |
 | **Autonomously fix a filed bug** | `/qa-fix VCST-XXXX` | Command |
@@ -47,8 +48,9 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Review / heal / improve a skill, command or agent prompt** | `/prompt-review <name \| path \| changed \| all> [--fix] [--improve] [--dry-run]` | Skill |
 | **Run business analysis** | `/ba-analyze [full\|flows\|api\|docs\|stories\|ui\|module <name>]` | Command |
 | **Generate or review user stories** | `/ba-analyze stories <feature> \| stories --review VCST-XXXX` | Command |
-| **Get a test checklist for a domain** | `/qa-checklist domain \| feature \| new <domain> \| admin <module>` | Skill |
+| **Get a test checklist for a domain** | `/qa-checklist domain \| feature \| VCST-XXXX [--from-model] \| new <domain> \| admin <module>` | Skill |
 | **Generate test cases** | `/qa-test-cases-generator VCST-XXXX \| domain \| suite ID \| migrate <suite>` | Skill |
+| **Build a ticket's test model (fault model) on its own** | `/qa-test-model <ticket-key> [--context <file>]` | Skill |
 | **Model how a domain behaves (behaviour graph, stable ids, evidence)** | `/qa-test-mind-map build \| update \| audit <domain-slug>` | Skill |
 | **Declare the data state each behaviour needs / seed one profile** | `/qa-test-data-model build \| update \| audit <domain-slug>` · `/qa-seed-data --profile <id>` | Skill |
 | **Design the test-data combinations a feature needs** | `/qa-generate-data <feature \| flow \| VCST-XXXX>` | Skill |
@@ -90,7 +92,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-coverage-gap` — Autonomous gap analysis + generation (4-cycle pipeline)
 - `/qa-test-mind-map` — The behaviour graph of a domain (`domain/<name>.mind-map.json`): behaviours, branches, states, data needs, evidence, stable ids. Cases link to it with `Behavior:` stamps; `npm run models:check -- --json` derives coverage and the suspect-case list
 - `/qa-review-tests` — 11-dimension quality review; `--triangulate` (Dim 11) checks whether a provenance tag is *true*, not merely present
-- `/qa-test` (skill) — the methodology behind the `/qa-test` command: `test-model.md`, `authoring.md`, `close-out.md`, `modes.md`
+- `/qa-test` (skill) — the methodology behind the `/qa-test` command: `authoring.md`, `close-out.md`, `modes.md`
+- `/qa-test-model` — a ticket's Test Model (fault model): the method, the gate and the prior-model rules; `/qa-test` FULL Step 1e invokes it
 
 ### Test Data (Skills)
 - `/qa-test-data-model` — The data STATE each mind-map behaviour requires, as profiles pointing at existing seeders + `@td()` aliases; `npm run models:check -- --plan <profile>` is the seed order

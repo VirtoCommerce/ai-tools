@@ -44,8 +44,7 @@ loads it and skips the ad-hoc charter authoring in "Exploration Charter" below.
 3. `--charter EXP-NN` runs one; otherwise run them **in series**, ≤5, 30 min each, and STOP after the
    last one. Never run two charters concurrently — the pool is 3 browser lanes and the regression
    suites need them.
-4. `lane` is `playwright-chrome` or `playwright-edge`. **Never firefox** — exploration is click-driven
-   — any of the three lanes will do, firefox included since 2026-09-08
+4. `lane` is any of the three Playwright lanes — `playwright-firefox` is click-capable since 2026-09-08
    (`.claude/rules/agents.md` §Parallel Execution). If all three are busy, QUEUE.
 5. Still run Steps 0.1–0.5 below (env health, build versions, 24 h duplicate check, docs, coverage map)
    — the charter says *what* to explore, pre-flight establishes *against what build*.

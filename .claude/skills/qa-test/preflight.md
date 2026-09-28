@@ -235,5 +235,5 @@ worse than reading none, because it arrives with a written deliverable's authori
 SAME ticket amends that model in place; another ticket on this surface writes its own file and carries the
 predecessor's Part 0 forward, citing it** — what is forbidden either way is a second independently-derived
 model of one surface, and VCST-5346 already has two:
-[`test-model.md`](test-model.md) §Why it is a durable file), and `5-docs` (an existing guide
+[`test-model.md`](../qa-test-model/test-model.md) §Why it is a durable file), and `5-docs` (an existing guide
 for this surface is amended, never forked).

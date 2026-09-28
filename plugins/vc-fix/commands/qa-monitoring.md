@@ -77,7 +77,7 @@ and the triage agent (`monitor-triage-agent`).
   scripts).
   Backend signals may be confirmed via a real API/Admin interaction. Confirm a second
   source before treating a payload-only signal as a bug.
-- **Reproduced** → draft a bug report to `reports/bugs/open/BUG-AI-<fp>-<date>.md` with the
+- **Reproduced** → draft a bug report to `reports/bugs/open/<bucket>/BUG-AI-<fp>-<date>.md` (severity bucket per `.claude/rules/reports.md` §1a) with the
   standard structure **and the `## Fix Routing` block** — the same profile-based contract
   `commands/qa-bug.md` defines, including its client|platform **Ownership hint** (a hint only;
   `/qa-fix` Gate 1/1b decides ownership from the profile). So the draft carries no native-only

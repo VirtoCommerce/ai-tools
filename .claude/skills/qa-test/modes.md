@@ -298,7 +298,7 @@ introduces** (a fix is a change, and it earns the same fault-model treatment the
 is the loop's one genuinely new coverage obligation). It may **not** rewrite Part 0: the value chain does
 not change because a bug was fixed, and if it would, the fix changed the mechanism and that is a new ticket,
 not a round. The `1e` gate re-fires **only on the amendment's new rows**, inline, no verifier
-([`test-model.md`](test-model.md) §The gate — it owns the clause list, this file never restates it).
+([`test-model.md`](../qa-test-model/test-model.md) §The gate — it owns the clause list, this file never restates it).
 
 **On FAST there is no model, so the amendment has nowhere to land — and the third clause is the one that
 matters.** Marking a hypothesis CONFIRMED or CLEARED is bookkeeping a FAST run does on its checklist

@@ -96,7 +96,7 @@ This is the prompt that drove V1, kept for whoever runs the next domain.
 > - `.claude/rules/test-data.md`
 > - `.claude/knowledge/agents/authoring-standard.md`
 > - `.claude/knowledge/domain/domain-map.md`
-> - `.claude/skills/qa-test/test-model.md`
+> - `.claude/skills/qa-test-model/test-model.md`
 > - `.claude/skills/qa-test-design/test-design-techniques.md` §1a, §5
 > - `.claude/knowledge/execution/test-data-authoring.md`
 > - `.claude/knowledge/execution/live-discovery.md`

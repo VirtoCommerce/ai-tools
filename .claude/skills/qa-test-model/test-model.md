@@ -1,7 +1,8 @@
-# Step 1e — the Test Model is a FAULT model
+# The Test Model is a FAULT model
 
-Methodology for `/qa-test` Step 1e. The command states *that* the model is required on FULL and *what
-gate* it must clear; this file is *why*, and the judgment rules the gate cannot mechanise. Fill-in shape:
+The method of [`/qa-test-model`](SKILL.md), the only builder of a Test Model — `/qa-test` FULL invokes it
+at Step 1e, `/qa-test-fast` in Stage 1. The skill is the procedure; this file is *why*, and the judgment
+rules the gate cannot mechanise. Fill-in shape:
 [`.claude/templates/test-model.md`](../../templates/test-model.md).
 
 ## What it is for
@@ -35,7 +36,7 @@ built **per link** on top of it.
 
 The order is not a style preference. It is the difference between a suite that proves the feature works and
 a suite of individually well-formed per-screen checks that all pass while it does not — see the Loyalty
-Missions measurement in [`SKILL.md`](SKILL.md) §The two things.
+Missions measurement in [`SKILL.md`](../qa-test/SKILL.md) §The two things.
 
 Diagram selection is not decorative either:
 
@@ -134,12 +135,18 @@ and may do exactly three things:
    fault-model treatment the original change got. This is the loop’s one genuinely new coverage
    obligation, and skipping it is how a fix ships untested.
 
+**One more case, outside the `--iterate` loop — a same-ticket re-run on an UNCHANGED diff** (the
+standalone `/qa-test-model`). There is no fix to model, so none of the three applies. What the
+re-run's gate can still find is an **input the first run missed**: an AC that lives in a custom field,
+an attachment nobody opened. That is recorded as a `## Round N — correction` section, one line per
+corrected clause, and the clause is fixed in place. Nothing else in the file moves.
+
 It may **not** rewrite Part 0. The value chain does not change because a bug was fixed; if it would,
 the fix changed the mechanism, and that is a new ticket rather than a round. The `1e` gate (§The gate)
 re-fires **only on the amendment’s new rows** — inline, no verifier, exactly like the original
 `Model complete | 1e | inline` gate. Round bookkeeping lives in
 `summary.json.iterations.per_round[].artifacts.model_amendment`; the loop contract is
-[`modes.md`](modes.md) §5-loop §Artifact refresh between rounds.
+[`modes.md`](../qa-test/modes.md) §5-loop §Artifact refresh between rounds.
 
 The AC table and DoD checklist stay terminal-only; the Artifact B checklist goes to the ticket folder.
 
@@ -323,7 +330,7 @@ actors.
 table. **Each `Not allowed` item becomes its own case** — that is the coverage this section exists to buy,
 and it is the row most likely to be deferred as "negative testing we can add later". Target suite is the
 layer's e2e suite (`concern: e2e` in `config/test-suites.json`). Handoff contract:
-[`authoring.md`](authoring.md) §Artifact A.
+[`authoring.md`](../qa-test/authoring.md) §Artifact A.
 
 ## The gate — thirteen clauses, every one contradictable
 
@@ -362,7 +369,7 @@ nested under 11 because the two read the same token.
    citing a GraphQL field, arg or response shape must rest on the snapshot `1b` item 2d refreshed *this
    run*** — a field name from an unrefreshed `graphql-schema.md` is an expected value of unknown age, and
    when 2d recorded `UNKNOWN` those oracles are `{HYPOTHESIS}`
-   ([`contract-refresh.md`](contract-refresh.md) §3). Fixture drift 2d reported on an op the ticket's own
+   ([`contract-refresh.md`](../qa-test/contract-refresh.md) §3). Fixture drift 2d reported on an op the ticket's own
    diff touches belongs in the model as a chain link and a candidate reverse edge, not as a footnote.
 10. The `Archetype sweep`, `UIP sweep` and `Probes carried in` rows are **PRESENT** — not yet resolved.
     Step 2 is what loads the `VC-*` catalog and the `UIP-*` probe set, so resolving them here would mean
@@ -389,7 +396,7 @@ contradictable while "the matrix is complete" is not:
 [`docs/decisions/qa-test-evolution.md`](../../../docs/decisions/qa-test-evolution.md) ·
 [`knowledge/domain/domain-map.md`](../../knowledge/domain/domain-map.md).
 
-**Both read the `domain_map` token (2g); neither re-derives it** ([`axes.md`](axes.md)).
+**Both read the `domain_map` token (2g); neither re-derives it** ([`axes.md`](../qa-test/axes.md)).
 `PRESENT`/`STALE` ⇒ both bind against the map's inventory, and on `STALE` a variant resolving only to a
 stale surface is recorded as such rather than treated as confirmed. **A map built in this run by `1c-map`
 is `PRESENT` here** — it passed the same gate before it was written — and carries `built_in_run: true`.
@@ -424,7 +431,7 @@ variants**, where variants are partitioned by the layer that BRANCHES on the thi
 when several layers branch differently — not whichever you read first), and only then map scenarios in.
 Re-derive after any rewrite of the scenario table: renumbering silently drops rows. Both failure modes hit
 one model on VCST-5735 and both presented as a full matrix —
-[`skills/qa-test/test-model.md`](test-model.md) §The matrix is only a check.
+[`skills/qa-test-model/test-model.md`](test-model.md) §The matrix is only a check.
 
 **The sweeps are present here and RESOLVED at Step 2 — the two are different gates and the ordering is
 not negotiable.** Step 2 is what loads the `VC-*` catalog entries and the `UIP-*` probe set, so a `1e` gate

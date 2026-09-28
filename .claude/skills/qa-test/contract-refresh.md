@@ -1,7 +1,7 @@
 # The contract-refresh axis — refresh the GraphQL schema and fixtures BEFORE anyone reads them
 
 **This file is the only place the `/qa-test` contract-refresh axis is specified.**
-`commands/qa-test.md`, `skills/qa-test/SKILL.md`, `authoring.md` and `test-model.md` **cite it and never
+`commands/qa-test.md`, `skills/qa-test/SKILL.md`, `authoring.md` and `qa-test-model/test-model.md` **cite it and never
 restate it** — the same single-source-of-truth discipline `ticket-routing.md` holds for flow routing and
 [`visual-axis.md`](visual-axis.md) holds for the design/a11y lane.
 
