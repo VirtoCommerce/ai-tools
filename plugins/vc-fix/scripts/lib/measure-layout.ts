@@ -32,7 +32,7 @@
  *   BL-UI-003  No state-induced shift (rect Δ = 0 on hover/focus)
  *   BL-UI-004  Content boundary (no silent overflow, no horizontal scroll)
  *   BL-UI-005  Alignment (vertical centers within 1 px, row heights match)
- *   BL-UI-006  Touch targets (≥ 44×44 px, ≥ 8 px gap at ≤ 768 px viewport)
+ *   BL-UI-006  Touch targets (≥ 24×24 CSS px — WCAG 2.2 SC 2.5.8 AA — and ≥ 8 px gap at ≤ 768 px viewport)
  */
 
 // ---------------------------------------------------------------------------
@@ -50,8 +50,8 @@ export const CLS_THRESHOLDS = { pass: 0.1, fail: 0.25 } as const;
 /** Pixel tolerance for alignment checks (BL-UI-005). 1 px absorbs sub-pixel rendering noise. */
 export const ALIGNMENT_TOLERANCE_PX = 1;
 
-/** Touch target minimum at ≤ 768 px viewport (BL-UI-006, WCAG 2.5.5). */
-export const TOUCH_TARGET_MIN_PX = 44;
+/** Touch target minimum at ≤ 768 px viewport (BL-UI-006, WCAG 2.2 SC 2.5.8 Level AA). */
+export const TOUCH_TARGET_MIN_PX = 24;
 
 /** Minimum gap between adjacent interactive elements at mobile viewport (BL-UI-006). */
 export const TOUCH_TARGET_GAP_PX = 8;
@@ -325,7 +325,7 @@ export const LAYOUT_SNIPPETS = {
 `.trim(),
 
   /**
-   * Audit every interactive element for ≥ 44×44 size and ≥ 8 px gap. Only meaningful
+   * Audit every interactive element for ≥ TOUCH_TARGET_MIN_PX (24×24) size and ≥ 8 px gap. Only meaningful
    * at viewport ≤ 768 px. Returns TouchTargetAuditResult.
    *
    * Scope: audits document-wide. For scoped audits (e.g. main content only,
@@ -344,7 +344,7 @@ export const LAYOUT_SNIPPETS = {
   const undersized = [];
   for (const el of els) {
     const r = el.getBoundingClientRect();
-    if (r.width < 44 || r.height < 44) {
+    if (r.width < ${TOUCH_TARGET_MIN_PX} || r.height < ${TOUCH_TARGET_MIN_PX}) {
       undersized.push({
         tag: el.tagName.toLowerCase(),
         role: el.getAttribute('role'),
@@ -477,7 +477,7 @@ export function touchTargetAuditSnippet(scope: string): string {
   const undersized = [];
   for (const el of els) {
     const r = el.getBoundingClientRect();
-    if (r.width < 44 || r.height < 44) {
+    if (r.width < ${TOUCH_TARGET_MIN_PX} || r.height < ${TOUCH_TARGET_MIN_PX}) {
       undersized.push({
         tag: el.tagName.toLowerCase(),
         role: el.getAttribute('role'),
@@ -1098,7 +1098,7 @@ export function classifyTouchTargets(
     return {
       invariant: "BL-UI-006",
       severity: "PASS",
-      message: `All ${result.evaluated} interactives meet 44×44 + 8 px spacing`,
+      message: `All ${result.evaluated} interactives meet ${TOUCH_TARGET_MIN_PX}×${TOUCH_TARGET_MIN_PX} + ${TOUCH_TARGET_GAP_PX} px spacing`,
       evidence: result,
     };
   }
