@@ -8,7 +8,7 @@
     "scope": "Configurable products only (sections, options, required gate, priced configured line, cart/order/quote carry, file sections) plus the listing/search/compare identity seam. Not the wider Catalog domain (BL-CAT-001..012 other than 003/005/006).",
     "built_from": "configurable-products.md rev 1 (§1-§7), business-logic.md BL-CAT-003/005/006, suites 052 and 050i (Title/References/Automation_Status; steps read for stamped rows), VirtoOZ PlatformUserGuide Manage Product Configurations and StorefrontUserGuide Options for Buying Products (queried 2026-09-28), vc-module-x-catalog GetProductConfigurationsQuery and vc-module-catalog ProductConfigurationSearchCriteria (VirtoOZ source, 2026-09-28)",
     "kb_read": "2026-09-28 - 6 questions. Hits: KB-057A596A, KB-4B47D094, KB-F78ED1CC, KB-66089074, KB-CD451F5C, KB-71011C1F, KB-78B45E71, KB-0B27E984, KB-84EA18E3, KB-0D8C1133, KB-2D446A42. Miss: configurable product in keyword search results, card price, minVariationPrice.",
-    "evidence_convention": "No Automated case in 052/050i records a promoting run id in References, so no node cites a case as OBSERVED-by-promotion; a case is cited as SPEC and leaves the node UNVERIFIED. CFG-GQL-050 and 054 carry 'verified live vcptcore-qa1 2026-06' in their References and are cited OBSERVED with that note. kb refs are live agent observations.",
+    "evidence_convention": "An Automated case with no recorded promoting run is cited as SPEC. A case whose References record `verified live <env> <date>` is cited OBSERVED with that date: CFG-GQL-021 (2026-05-07) and CFG-GQL-050..057 incl. 055b (vcptcore-qa1 2026-06-24) carry such notes; only the ones stamped on a node are cited (021, 050, 054). An evidence date is when the evidence was produced. kb refs are live agent observations.",
     "cross_domain": "Integration points with search are affected_by edges in search.mind-map.json (srch.* -> cat.cfg.listing.*, cat.cfg.identity.*, cat.cfg.visibility.rename-lag). `npm run models:check -- --json` lists them under `crossings`; TM-032 names the ones no case exercises from both sides."
   },
   "nodes": [
@@ -338,7 +338,7 @@
           "class": "OBSERVED",
           "ref": "domain-map:cat@rev1 §6-prior",
           "note": "2026-03-16, one product, a different build: 100% consistent",
-          "date": "2026-09-16"
+          "date": "2026-03-16"
         }
       ]
     },
@@ -639,7 +639,8 @@
           "ref": "CFG-GQL-054",
           "note": "no cross-product leakage; verified live 2026-06"
         }
-      ]
+      ],
+      "notes": "integrates with: cart — the line item configurationSection resolver"
     },
     {
       "id": "cat.cfg.pdp",
@@ -1193,7 +1194,8 @@
           "ref": "test-design-techniques.md EG-8",
           "note": "error-guessing prompt, no source"
         }
-      ]
+      ],
+      "notes": "integrates with: promotions — which price a coupon or bulk discount is taken from"
     },
     {
       "id": "cat.cfg.price.currency-change",
@@ -1208,7 +1210,8 @@
           "ref": "test-design-techniques.md EG-5",
           "note": "error-guessing prompt, no source"
         }
-      ]
+      ],
+      "notes": "integrates with: pricing and currency — recompute on a currency or store switch"
     },
     {
       "id": "cat.cfg.cart-line",
@@ -1381,16 +1384,18 @@
           "note": "Automated"
         },
         {
-          "class": "SPEC",
+          "class": "OBSERVED",
           "ref": "CFG-GQL-021",
-          "note": "Automated"
+          "note": "References: soft-noop contract verified live (env not recorded)",
+          "date": "2026-05-07"
         },
         {
           "class": "SPEC",
           "ref": "CFG-GQL-022",
           "note": "Automated"
         }
-      ]
+      ],
+      "notes": "Only the empty-lineItemId no-op path (CFG-GQL-021) was observed live; lineItemId scoping (CFG-GQL-020) and the unmatched-sectionId no-op (CFG-GQL-022) are Automated with no promoting run, so the node stays UNVERIFIED."
     },
     {
       "id": "cat.cfg.cart-line.text-maxlength",
@@ -1436,7 +1441,8 @@
           "note": "merge is server-side during sign-in",
           "date": "2026-09-28"
         }
-      ]
+      ],
+      "notes": "integrates with: cart — the guest to signed-in cart merge"
     },
     {
       "id": "cat.cfg.cart-line.saved-for-later",
@@ -1542,7 +1548,8 @@
           "note": "(b): cart shows four columns, order view one",
           "date": "2026-09-28"
         }
-      ]
+      ],
+      "notes": "integrates with: orders — the storefront order view"
     },
     {
       "id": "cat.cfg.order.admin-widget",
@@ -1685,7 +1692,7 @@
         },
         {
           "class": "HYPOTHESIS",
-          "ref": "KB-4B47D094",
+          "ref": "kb:KB-4B47D094",
           "note": "that the card reuses product.price is inferred, not seen"
         }
       ]
@@ -1702,7 +1709,7 @@
           "class": "OBSERVED",
           "ref": "domain-map:cat@rev1 §6-prior",
           "note": "2026-03-16, vcst-qa: minVariationPrice not used as sort key; a different build",
-          "date": "2026-09-16"
+          "date": "2026-03-16"
         }
       ]
     },
@@ -1757,9 +1764,9 @@
           "note": "Products configurations can be compared"
         },
         {
-          "class": "DOC",
+          "class": "SPEC",
           "ref": "domain-map:cat@rev1 §6-prior",
-          "note": "VCST-5735 scenarios 16 and 17; PROPOSED-BL-CAT-013..019 never minted"
+          "note": "VCST-5735 scenarios 16 and 17; PROPOSED-BL-CAT-013..019 never minted (a test-model scenario and unminted proposals are SPEC, not DOC)"
         }
       ]
     },

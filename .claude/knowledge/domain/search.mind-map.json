@@ -3154,7 +3154,7 @@
     },
     {
       "from": "srch.query.keyword",
-      "to": "cat.cfg.identity.option-is-catalog-item",
+      "to": "cat.cfg.listing.option-products-in-results",
       "type": "affected_by"
     },
     {

@@ -866,7 +866,7 @@ async function main(): Promise<void> {
 
   if (!mindMaps.length && !dataModels.length && !findings.length) {
     console.log("[models:check] no mind maps or data models yet — that is NOT a failure (a missing model passes).");
-    process.exit(0);
+    return;
   }
 
   const schemas = compileSchemas(JSON.parse(readFileSync(SCHEMA_MAP, "utf8")), JSON.parse(readFileSync(SCHEMA_MODEL, "utf8")));
@@ -908,7 +908,8 @@ async function main(): Promise<void> {
     const profile = okModels.flatMap((m) => m.doc.profiles).find((p) => p.id === planFor);
     if (!profile) {
       console.error(`[models:check] no profile \`${planFor}\``);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     const plan = seedPlan(profile, nodes, edges, reqs);
     const rows = plan.order.map((r, i) => ({
