@@ -329,7 +329,7 @@ A tool call succeeding is not proof the fix is correct — **verify your own wor
 - **Reviewer:** actually read the diff against every G4 criterion — do not APPROVE on the developer's
   summary alone.
 - Report honestly: quote the evidence for a PASS, quote the failing log for a STOP; never claim a gate you
-  did not confirm. Codified in memory `feedback_agents_self_check_and_verify`.
+  did not confirm.
 
 ## Reporting discipline
 - Long transcripts / investigation logs go via SendMessage to the orchestrator (or the `reports/fixes/FIX-*/`

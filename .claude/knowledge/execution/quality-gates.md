@@ -156,7 +156,7 @@ time and erodes trust in the pipeline; a BAIL just leaves the bug for a human. E
 |------|----------|
 | Repo allowlist + routing hints | `ci/config/fix-repos.json` |
 | Module→repo resolution, `isAllowedRepo`, `checkoutForFix`, `repoOwnership`, `computeOwnership`, `contributionPlan`, `clientUpstream`, `REPO_PROFILES` (build/test cmds) | `ci/lib/repo-router.ts` |
-| Module-embedded frontend sub-app declarations (e.g. a module's Vue 3 shell) + per-sub-app resolution | `ci/config/fix-repos.json` `moduleFrontendSubApps` · `ci/lib/repo-router.ts` `resolveOwningSubApp` · `skills/vc-shell-fix/SKILL.md` |
+| Module-embedded frontend sub-app declarations (e.g. a module's Vue 3 shell) + per-sub-app resolution | `ci/config/fix-repos.json` `moduleFrontendSubApps` · `ci/lib/repo-router.ts` `resolveOwningSubApp` · `plugins/vc-fix/skills/vc-shell-fix/SKILL.md` |
 | Frontend provenance decision (client customization vs platform bug) + delivery plan | `ci/lib/provenance.ts` (`classifyFrontendProvenance` / `frontendDeliveryPlan`) |
 | Tracker/host-agnostic ops (resolve/comment/transition; live transition discovery; clone/PR matrix) | `knowledge/execution/tracker-ops.md` |
 | PR/issue delivery by ownership (`getVcs` / `getUpstreamVcs`; GitHub fork-PR + issue dedup; Azure Repos PR) | `ci/lib/vcs/` |

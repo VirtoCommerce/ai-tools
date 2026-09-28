@@ -279,7 +279,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 ### BL-ORD-001: Order state machine guards `[P0-revenue]`
 - **Rule:** Payment and shipment follow strict state machines with guards:
   - **Payment:** `Pending → Authorized → Paid → Refunded`, with `Authorized → Voided` as a separate pre-capture branch. The capture operation sets `PaymentStatus = Paid` — there is **no `Captured` enum value**. Cannot capture without authorization. Cannot refund without capture (refund requires `Paid`). Void is only possible before capture (from `Authorized`, never from `Paid`). See BL-ORD-006 for the detailed transition table.
-  - **Shipment:** `New → Pick & Pack → Ready to Send → Send`. Cannot mark "Send" before "Pick & Pack". No "Delivered" sub-state — delivered semantics live at ORDER level (`OrderStatus = Completed`). See BL-ORD-007 and `project_order_status_vocab` memory.
+  - **Shipment:** `New → Pick & Pack → Ready to Send → Send`. Cannot mark "Send" before "Pick & Pack". No "Delivered" sub-state — delivered semantics live at ORDER level (`OrderStatus = Completed`). See BL-ORD-007.
 - **Verify:** In Admin → Order → attempt to skip states (e.g., capture without authorization) → should fail or button should be absent. Verify API rejects invalid state transitions.
 - **Violation signal:** Payment captured without prior authorization; shipment marked "Send" while still "New"; state skipped without error.
 - **Agents:** qa-backend-expert (order API, state transitions), qa-testing-expert (Admin SPA)
@@ -334,13 +334,13 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - Illegal: `New → Send` (skipping Pick & Pack and Ready to Send); reversing transitions.
 - **Verify:** For each illegal transition, attempt via API → expect error. In Admin, verify available actions match current state. Tracking number required for `Send` transition.
 - **Violation signal:** State skipped; shipment marked `Send` without tracking number; API allows illegal jump.
-- **Storefront label mapping:** per `project_order_status_vocab` memory — admin `Send` → storefront "Shipped"; order-level `Completed` → storefront "Completed" (delivered semantics).
+- **Storefront label mapping:** admin `Send` → storefront "Shipped"; order-level `Completed` → storefront "Completed" (delivered semantics).
 - **Agents:** qa-backend-expert (shipment API), qa-testing-expert (Admin SPA)
 
 ### BL-ORD-009: Order status vocabulary `[P1-data]`
 - **Rule:** The order status vocabulary is an **admin-editable, localizable dictionary** (`Order.Status` setting, `IsDictionary = true`, `IsLocalizable = true`) — **not** a fixed enum. Every value in the dictionary is **settable** via the Admin Order → Status dropdown (the dropdown is populated from the dictionary), and a deployment may add, rename, or remove values. The platform ships a default seed of settable values — `New`, `Not payed`, `Pending`, `Processing`, `Ready to send`, `Cancelled`, `Partially sent`, `Completed` — which deployments commonly customize (e.g. `Payment required`, `Ready for pickup`, `Custom`). The exact list and count are therefore environment-configurable; the invariant is the dictionary mechanism, not a fixed set or count.
 - **`Processing` is a normal settable dictionary value — NOT read-only/computed.** It is one of the seeded `Order.Status` values and is selectable from the Status dropdown. It also serves as the default `Order.InitialProcessingStatus` (the status auto-assigned when order processing begins — mirroring `Order.InitialStatus`, default `New`, at creation), but auto-assignment does not make it read-only: an admin can set it manually and it persists.
-- **System value vs display label:** The dictionary stores system values (e.g. `ReadyForPickup`), while Admin UI and storefront render localized labels (`Ready for pickup`). Tests must assert against the correct surface — see `project_order_status_vocab` memory.
+- **System value vs display label:** The dictionary stores system values (e.g. `ReadyForPickup`), while Admin UI and storefront render localized labels (`Ready for pickup`). Tests must assert against the correct surface  memory.
 - **Storefront labels may differ:** Storefront applies user-facing relabeling on top of platform status (e.g. admin `Pending` + shipment `Send` → storefront "Shipped"). Do not assume 1:1 label mapping between admin and storefront.
 - **Verify:** Open Admin → Orders → any order → the Status dropdown lists the deployment's configured `Order.Status` dictionary values, with `Processing` among the selectable options. Set an `AGENT-TEST-` order to `Processing` → Save → reopen → status persists as `Processing` in the editable Status control. Confirm the settable set matches Settings → Orders → General settings → order status dictionary.
 - **Violation signal:** Status dropdown does not reflect the `Order.Status` dictionary; a configured dictionary value is missing from the dropdown; a saved value does not persist; storefront shows the raw system value (`ReadyForPickup`) instead of the localized label.
@@ -1175,7 +1175,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Rule:** Successful GraphQL operations return data conformant to the schema's declared return type: (a) non-null fields are non-null in the response (resolver did not silently drop a required projection), (b) computed/derived fields (cart totals `total`/`subTotal`/`taxTotal`/`discountTotal`; index-backed price fields `price.actual`/`price.list`) are present and arithmetically consistent, (c) mutation responses include the full mutated entity, not a partial echo, (d) after-state queries reflect the mutation's effect — no stale read.
 - **Verify:** `[DATA label=X] $.path is non-null` on every required field of the projection; cross-path arithmetic checks (e.g., `subTotal.amount >= 0`; `total.amount >= subTotal.amount` when no discount; `discountTotal.amount > 0` after valid coupon); after-mutation re-read shows the new state.
 - **Violation signal:** `null` returned where schema declares `T!`; computed field `0` or missing after a recalc; stale cart state returned after `changeCartItemQuantity`; `data.entity.field` exists in projection but absent in response.
-- **Agents:** qa-backend-expert (xAPI integrity), test-management-specialist (full field selection per `feedback_graphql_full_field_selection`).
+- **Agents:** qa-backend-expert (xAPI integrity), test-management-specialist (full field selection).
 - **Suite coverage:** `050a` CAT-GQL-002/022, `050b1` CRB-GQL-006/017/046/047, plus ~18 references on flows where recalculation/full-shape correctness matters.
 - **Promoted:** 2026-05-15.
 

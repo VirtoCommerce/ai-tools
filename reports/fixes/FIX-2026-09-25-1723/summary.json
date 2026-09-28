@@ -1,0 +1,35 @@
+{
+  "ticket": "VCST-5855",
+  "run": "re-fix",
+  "repo": "VirtoCommerce/vc-module-loyalty",
+  "kind": "module",
+  "owning_layer": "admin-spa",
+  "branch": "claude/qa-autofix/VCST-5855",
+  "commit": "4411e19",
+  "pr_url": "https://github.com/VirtoCommerce/vc-module-loyalty/pull/18",
+  "gates": {
+    "G0": "PASS",
+    "G1": "PASS",
+    "G2": "PASS",
+    "G3": "PASS",
+    "G4": "APPROVE",
+    "G5": "PASS",
+    "G6": "needs-deploy-verification",
+    "G7": "human-review"
+  },
+  "proof_medium": "rendered-DOM",
+  "proof_provenance": "built-diff",
+  "proof_linkage": "error callback on both save paths + strip UI info from a copy; either alone leaves a red assertion",
+  "g2_proxy": false,
+  "confidence": "HIGH",
+  "tracker_transition": {
+    "applied": false,
+    "reason": "ticket at Tested; live transitions only Cancelled/On hold/Move to done"
+  },
+  "open": [
+    "form wipe on dialog OK not reproduced in harness",
+    "platform httpError join TypeError (vc-platform)"
+  ],
+  "ci": "all green @4411e19: ci, swagger-validation, auto-tests x3, SonarCloud QG, license/cla; mergeable, blocked on approval",
+  "jiraCommentId": "110481"
+}

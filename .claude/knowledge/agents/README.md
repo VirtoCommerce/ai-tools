@@ -52,7 +52,7 @@ one reviewer per repo kind**, picked by the routed repo's `kind`. Gate ladder:
 
 | Agent | Model | Color | Purpose |
 |-------|-------|-------|---------|
-| **fullstack-backend** | opus | green | Fixes a single `vc-module-*` / `vc-platform` repo — .NET 10 / C# + the module's Admin SPA (Angular). Reproduce-as-test → minimal fix → PR. Interactive twin of `ci/agents/fix-backend-agent.md`. Skills: `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`. |
+| **fullstack-backend** *(plugin-only)* | opus | green | Fixes a single `vc-module-*` / `vc-platform` repo — .NET 10 / C# + the module's Admin SPA (Angular). Reproduce-as-test → minimal fix → PR. Interactive twin of `ci/agents/fix-backend-agent.md`. Skills: `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`. |
 | **backend-reviewer** | sonnet | blue | Reviews the C#/Angular local diff before the PR (Gate 4): single-repo, no test edits, no breaking changes, BL-* preserved, minimal & idiomatic. |
 | **fullstack-frontend** | opus | cyan | Fixes the `vc-frontend` storefront — Vue 3 / TS / Vite + the in-repo UI kit + Storybook — **and** a `vc-module-*` repo's declared embedded Vue 3 frontend sub-app (e.g. `vc-module-pagebuilder`'s page-builder shell, scoped to the sub-app path). Reproduce-as-vitest-test (or the sub-app's own `tsx --test`/ephemeral harness) → minimal fix → PR. Interactive twin of `ci/agents/fix-frontend-agent.md`. Skills: `/vue-unit-test`, `/vue-fix`, `/vc-shell-fix` (`/storybook-test` optional). |
 | **frontend-reviewer** | sonnet | blue | Reviews the Vue/TS local diff before the PR (Gate 4): single-repo, no test/story edits, no breaking prop/event/slot or GraphQL contract, BL-UI preserved, minimal & idiomatic. |

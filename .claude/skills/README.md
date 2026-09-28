@@ -48,12 +48,7 @@ skills/
 ├── qa-review-oracles/               # [QA Methodology]  Two-axis oracle triangulation (BL + ECL) & auto-apply
 ├── qa-review-bl/                    # [QA Methodology]  Alias of qa-review-oracles bl
 │
-├── dotnet-unit-test/                # [Development]  Reproduce a backend bug as a failing xUnit test
-├── dotnet-fix/                      # [Development]  Minimal .NET 10 fix → green
-├── angular-admin/                   # [Development]  Fix a module's Admin SPA (AngularJS) UI
-├── vue-unit-test/                   # [Development]  Reproduce a vc-frontend bug as a failing vitest test
-├── vue-fix/                         # [Development]  Minimal Vue 3 / TS fix → green
-├── vc-shell-fix/                    # [Development]  Fix a module-embedded Vue 3 shell sub-app
+│   (the six [Development] skills are NOT here — see the note under "Development Skills" below)
 │
 ├── project-init/                    # (root-level) Onboard the toolset onto a deployment
 ├── vc-self-check/                   # (root-level) Self-diagnostician (Tier B) → local DIAG-*.md
@@ -147,6 +142,11 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 Manual invocation, used by the **developers/** team in `/qa-fix` (the only write-capable team). One
 test-skill + one fix-skill per repo kind; backend adds the Admin-SPA path; frontend adds the
 module-embedded Vue 3 sub-app path.
+
+> **These six live ONLY in [`plugins/vc-fix/skills/`](../../plugins/vc-fix/skills/) — there are no `.claude/skills/` copies.**
+> The duplicates were removed 2026-09-25: they had forked from the plugin, and `/qa-fix` (the only thing that
+> invokes them, along with its four developer agents) is itself plugin-only, so no `.claude/` flow could reach them.
+> The table below stays as the reference for WHAT they do; read them at their `plugins/vc-fix/skills/<name>/` path.
 
 | Skill | Invoked by | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|

@@ -4,6 +4,7 @@
 **Found by:** `/qa-design VCST-5346` (2026-08-28) · incidental, outside the audited feature
 **Tracker:** VCST-5840 (standalone Bug)
 **Archetype:** `RENDER`
+**Status**: FIXED
 
 **Env:** vcst-qa @ Theme `2.57.0-pr-2396-5924`, store `B2B-store`, chrome. Site-wide header component — not missions code.
 

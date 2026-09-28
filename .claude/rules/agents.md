@@ -57,6 +57,10 @@ Team framework: `knowledge/agents/ba/shared-instructions.md` (VirtoOZ-first sour
 
 The **only write-capable team** — clone / branch / commit / push / open PR on external VirtoCommerce
 product repos via local `git`/`gh`. QA agents stay read-only on GitHub; write scope is isolated here.
+**These four agents and their six skills live ONLY in [`plugins/vc-fix/`](../../plugins/vc-fix/) — the `.claude/`
+duplicates were removed 2026-09-25 (they had forked; `/qa-fix`, the only caller, is plugin-only).** The table below
+is the reference for what each does; `/plugin install vc-fix@vc-tools` is what puts them in the picker.
+
 Driven by `/qa-fix` (interactive twin of `ci/run-fix-cycle.ts`), reusing `ci/config/fix-repos.json` +
 `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts`. One developer + one reviewer **per repo kind**,
 picked by the routed repo's `kind`. Gate ladder + no-auto-merge: `.claude/knowledge/execution/quality-gates.md`.

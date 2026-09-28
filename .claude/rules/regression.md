@@ -22,11 +22,7 @@ Do not re-create it. Why it was removed: [`docs/decisions/regression-history.md`
 
 ## Test Suite Manifest: `config/test-suites.json`
 
-Central configuration for regression orchestration. Defines:
-- **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: one per suite in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
-- **Selection groups**: `smoke`, `critical`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`, …)
-- **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
+Central configuration for regression orchestration — browser pool + fallback chain, suite definitions, `selections`, run `defaults`. Read the file (schema: `config/test-suites.schema.json`); its values are not restated here.
 
 ## Regression Test Suites
 

@@ -75,13 +75,13 @@ const CLASSIFICATIONS: Classification[] = [
     rationale: "User-facing docs + admin guides. Pure docs craft." },
 
   // Developers agents (4) — the only write-capable team, used by /qa-fix
-  { path: ".claude/agents/fullstack-backend.md", category: "agent-dev", applicability: "universal",
+  { path: "plugins/vc-fix/agents/fullstack-backend.md", category: "agent-dev", applicability: "universal",
     rationale: ".NET 10 + Angular + xUnit/Jasmine fix workflow against vc-module-* / vc-platform repos via local git/gh. Repo allowlist is data; universal across VC customers." },
-  { path: ".claude/agents/backend-reviewer.md", category: "agent-dev", applicability: "universal",
+  { path: "plugins/vc-fix/agents/backend-reviewer.md", category: "agent-dev", applicability: "universal",
     rationale: "C#/Angular Gate-4 review discipline against VC business invariants + .NET 10 best practices. Universal." },
-  { path: ".claude/agents/fullstack-frontend.md", category: "agent-dev", applicability: "universal",
+  { path: "plugins/vc-fix/agents/fullstack-frontend.md", category: "agent-dev", applicability: "universal",
     rationale: "Vue 3 / TS + vitest/@vue/test-utils + Storybook fix workflow against vc-frontend via local git/gh. Repo allowlist is data; universal across VC storefront forks." },
-  { path: ".claude/agents/frontend-reviewer.md", category: "agent-dev", applicability: "universal",
+  { path: "plugins/vc-fix/agents/frontend-reviewer.md", category: "agent-dev", applicability: "universal",
     rationale: "Vue 3 / TS Gate-4 review discipline against BL-UI invariants + Vue 3 best practices. Universal." },
 
   // Knowledge files (26)
