@@ -1,6 +1,7 @@
 ---
 name: review-pr-virto
 description: Use when asked to review a pull request in a VirtoCommerce platform or vc-module-* GitHub repository ("review PR 123 in vc-module-cart", "look at this x-api PR", "run a review on this PR") — code that ships as NuGet packages to downstream projects the reviewer cannot see.
+compatibility: Requires the gh CLI signed in to GitHub, a local clone of the repository under review, and the Serena MCP server for code navigation. Optional — the Codex CLI with its Claude Code plugin (codex-lens.md), and the dotnet-diag plugin for perf-heavy diffs.
 ---
 
 # Review a VirtoCommerce PR
@@ -38,10 +39,10 @@ findings at the end.
 | Work | Who | Model |
 |---|---|---|
 | Inputs, worktree, verification, synthesis, anything posted | lead | session model |
-| Existing-threads sweep → digest | `general-purpose` subagent | `haiku` — mechanical extraction from the JSON files the lead saved |
-| Diff pass against the checklist | `general-purpose` subagent | `opus` — analysis against a rubric |
-| Test run in the worktree | `general-purpose` subagent | `sonnet` — needs a shell and a build |
-| Optional Codex lenses | background Bash in the lead | see `codex-lens.md` |
+| Digest of the existing review threads (Step 1) | **sweep helper** — a `general-purpose` subagent | `haiku` — mechanical extraction from the JSON files the lead saved |
+| Diff pass against the checklist (Step 4) | **diff-pass helper** — a `general-purpose` subagent | `opus` — analysis against a rubric |
+| Test run in the worktree (Step 5) | **test helper** — a `general-purpose` subagent | `sonnet` — needs a shell and a build |
+| Optional Codex lenses (Step 3) | background Bash in the lead | see `codex-lens.md` |
 
 Rules for every helper:
 
@@ -207,11 +208,12 @@ If the user has the Codex CLI and its Claude Code plugin, run the two Codex lens
 now, while Steps 4–5 run — setup, commands and pitfalls in `codex-lens.md`. If not, skip this step;
 the review is complete without it.
 
-### 4. Diff pass (analysis helper)
+### 4. Diff pass (diff-pass helper)
 
 Spawn the diff-pass helper (`opus`) with: the worktree path, `origin/<baseRefName>`, the paths of
-the `checklist/` files in the order listed under **Review checklist**, the path of `verification-discipline.md` with the instruction to read it first
-and apply it throughout, the Serena rule above, and the read-only mandate. Its task:
+the `checklist/` files in the order listed under **Review checklist**, the path of
+`verification-discipline.md` with the instruction to read it first and apply it throughout, the
+Serena rule above, and the read-only mandate. Its task:
 
 - Read the branch diff: `git -C <worktree> diff origin/<baseRefName>...HEAD`.
 - Navigate code per **Code navigation** above.
@@ -270,8 +272,8 @@ pins a dependency to a prerelease build of another PR in the same change (`-alph
 its dependency releases; it is re-pinned at release and never reaches the base branch as-is. It is
 **not a finding at any severity, not a blocking item, and not a request to re-pin to a newer build.**
 At most, one merge-order line: the companions' green CI validated against the pinned build's API
-surface, so the build against the released version is the one that must be re-run after the re-pin. If the author has not said which release the pin becomes, ask
-that as a question. Every technical fact about the pin can be true (NU5104, an older build, exact
+surface, so the build against the released version is the one that must be re-run after the re-pin.
+If the author has not said which release the pin becomes, ask that as a question. Every technical fact about the pin can be true (NU5104, an older build, exact
 prerelease resolution) and none of them bears on whether it is a defect.
 
 | Thought | Reality |
@@ -295,41 +297,9 @@ prerelease resolution) and none of them bears on whether it is a defect.
 - Post nothing to GitHub without an explicit ask — deliver the review in the conversation.
 - If the user authored the PR: converge on clear decisions and recommendations; do not offer to draft
   proposals or comments addressed to reviewers.
-- Asked to post: submit a formal **review**, never `gh pr comment`. An issue comment lands in the
-  conversation tab; it does **not** clear the user's "Review requested" state or move
-  `reviewDecision`. Only a submitted review of any type resolves the request. Ask which type first:
-  `COMMENT` is neutral (clears the request, no approval), `APPROVE` also lifts the merge gate,
-  `REQUEST_CHANGES` blocks merge.
-- **Hybrid layout, one review event.** Anchor line-specific findings as inline comments; keep
-  cross-cutting and design findings in the summary body, where a single line anchor would
-  misrepresent them. Post both in one call:
-  ```bash
-  gh api --method POST repos/VirtoCommerce/<repo>/pulls/<pr>/reviews --input <scratch>/review.json
-  # review.json: { "commit_id": "<headRefOid>", "event": "COMMENT" | "APPROVE" | "REQUEST_CHANGES",
-  #   "body": "<verdict + cross-cutting findings>",
-  #   "comments": [ { "path": "src/…", "line": <n>, "side": "RIGHT", "body": "<finding>" }, … ] }
-  ```
-  `line` + `side: RIGHT` anchors to the new-file line; a line outside every diff hunk is rejected
-  with 422. `gh pr review --body-file` carries only the summary body and cannot anchor lines, so use
-  it only when every finding is cross-cutting. To add inline threads after a summary was already
-  posted (a submitted review body cannot be edited), post a second `COMMENT` review carrying only
-  `comments`.
-- **Verify delivery by the anchored code, not by a field.** A review can post with comments silently
-  dropped, so check:
-  ```bash
-  gh api repos/VirtoCommerce/<repo>/pulls/<pr>/reviews/<review-id>/comments \
-    --jq '.[] | "\(.path|split("/")|last):\(.position)  <-  \(.diff_hunk|split("\n")|.[-1])"'
-  ```
-  Each row must show the line you meant to annotate. **Do not test `.line`**: this endpoint reports
-  the anchor in `position` and leaves `line` and `side` `null` even on a correctly delivered comment,
-  so a `select(.line == null)` check reports every comment as dropped. `diff_hunk` is the only field
-  that shows what the comment actually attached to.
-- Then confirm the request cleared:
-  `gh pr view <pr> --repo VirtoCommerce/<repo> --json reviewRequests,reviewDecision,latestReviews`
-  — a requested reviewer must be gone from `reviewRequests`.
-- **A listing endpoint that paginates lies by omission.** `…/pulls/<pr>/reviews` without
-  `--paginate` can omit the review you posted a minute ago, and the empty result reads as "it never
-  landed". Add `--paginate`, or query the review by id.
+- Asked to post: submit a formal **review**, never `gh pr comment` — only a submitted review clears
+  a pending review request. The type to ask about, the one-call layout for summary plus inline
+  comments, and how to verify delivery are in `posting.md`; read it before posting anything.
 - Comments in English. Nothing about a downstream client — no client names, no client code, no client
   data — in a public repository.
 - Keep the worktree until posting is done (line numbers may need re-checking), then
