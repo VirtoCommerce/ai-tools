@@ -61,7 +61,7 @@ kind (§Consumer sections).
 
 {REFERENCES}
 
-> 🤖 Opened by the /vc-fix:qa-fix. **Human review{DEPLOY GATE} required before merge — do not auto-merge.**
+> 🤖 Opened by `/vc-fix:qa-fix`. **Human review{DEPLOY GATE} required before merge — do not auto-merge.**
 ```
 
 ### Consumer sections
