@@ -145,6 +145,7 @@ export const GATES: Record<GateId, GateSpec> = {
       "when data_surface was false, that the SKIP was right: no link under test needs a divergence the fixtures lack",
       "whether tc:scope's scope and risk terms match the ones 1b item 2e derived",
       "that Artifact A's 2a phase RAN and every hit is disposed - REPAIR applied and re-linted, and both REPAIR and RE-BASE carried into C1's --ids (an absent disposition block reads exactly like a clean triage)",
+      "when the domain has a mind map, that each Behavior: stamp names the node its case actually decides - models:check proves the id exists, never that it fits",
     ],
   },
   "5-verdict": {
@@ -176,7 +177,14 @@ export const GATES: Record<GateId, GateSpec> = {
 // --- runner ---------------------------------------------------------------------------------
 
 function run(label: string, command: string, args: string[], reading: string): CommandFact {
-  const r = spawnSync(command, args, { encoding: "utf-8", maxBuffer: 32 * 1024 * 1024 });
+  // On Windows `npx` is `npx.cmd`, which spawnSync cannot start without a shell: every fact came back
+  // `exit null` with empty output. Args are repo-relative paths without spaces, so the shell's
+  // unquoted join is safe.
+  const r = spawnSync(command, args, {
+    encoding: "utf-8",
+    maxBuffer: 32 * 1024 * 1024,
+    shell: process.platform === "win32",
+  });
   const text = `${r.stdout ?? ""}${r.stderr ?? ""}`.trimEnd();
   const lines = text.split("\n").filter((l) => l.trim() !== "");
   return {
@@ -210,6 +218,11 @@ function factsFor(gate: GateId, opts: { suite?: string; runId?: string }): Comma
         "non-zero = an unresolvable reference"),
       run("tc:scope (existing-coverage triage)", "npx", ["tsx", "scripts/test-cases/scope-existing-coverage.ts"],
         "non-zero = the scan itself failed; hits are DATA, not a failure"),
+      // Suite-less on purpose: a Behavior:/DataProfile: stamp is resolved against the domain's
+      // mind map + data model, not against the suite that carries it.
+      run("models:check (mind map + data model, Behavior:/DataProfile: stamps)", "npx",
+        ["tsx", "scripts/maintenance/check-test-models.ts"],
+        "non-zero = a model is invalid, or a stamp names no node / profile (TM-015/016); a domain with no model passes"),
     );
   } else if (gate === "5-verdict" || gate === "5-report") {
     if (!opts.runId) throw new Error(`--gate ${gate} needs --run-id <RUN_ID> (unscoped returns the whole-history rate)`);

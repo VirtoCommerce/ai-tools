@@ -20,6 +20,7 @@ Prior model: [reports/ba/test-models/<PREDECESSOR>-<date>.md — the newest mode
 Domain map:  [.claude/knowledge/domain/<name>.md @ rev N (generated YYYY-MM-DD) | ABSENT]
              ABSENT is a valid value and blocks nothing — but then Chain position below reads
              "unverified", so the omission is recorded rather than invisible (gate clauses 11/11b).
+Mind map:    [.claude/knowledge/domain/<name>.mind-map.json — node ids this ticket touches | ABSENT]
 Chain position: [this ticket's chain as a SLICE of the domain chain — the links it TOUCHES and,
              explicitly, the links it DOES NOT. "L1, L4-L6 of L1-L9; does not touch L2-L3, L7-L9."
              Naming what you did not cover is contradictable; "the matrix is complete" is not.

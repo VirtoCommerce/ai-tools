@@ -7,7 +7,7 @@ for each of these four and cites this file for the rest — the same split
 
 **All four are FULL-only and all four ride ONE message** — `1r ‖ 1c ‖ 1d ‖ [1c-map] ‖ 2-load` — because
 every one of them consumes only `1a`'s fetch. They are separate agents on separate lanes, not separate
-waves; the thing being saved is a round-trip ([`SKILL.md`](SKILL.md) §Concurrency).
+waves; the thing being saved is a round-trip ([`sequencing.md`](sequencing.md) §Concurrency).
 
 Read this when you are dispatching the wave, writing one of its briefs, or changing what a brief carries.
 
@@ -123,3 +123,16 @@ gap-ACs into scope and carry every DRIFT/NOT-FOUND/CONTRADICTS into execution as
 (a static-diff finding is a suspicion, not a defect). The AC traceability table and the DoD checklist stay in
 working context (terminal-only, `.claude/rules/reports.md` §1); they are the spine for Step 3 and 5-verdict.
 
+## At a glance — `1c` · `1c-map` · `1d` (moved from the command)
+
+| Item | Agent / lane | Runs when | Returns | Gate + record |
+|---|---|---|---|---|
+| **`1c`** ticket context | `ba-system-analyzer` (read-only), `playwright-firefox` | always on FULL | existing functionality **first** · the **test object** · affected surface · surfaces the domain map omits · related flows · known pain points · docs grounding | Feeds `1e`'s condition space. **Never edits the domain map** — `5-docs-map` does that once, after the verdict. On internal error, gather context inline rather than retrying the delegation |
+| **`1c-map`** build the map | `ba-system-analyzer`, a **different** free lane | **all four**: FULL · state `ABSENT`/`unresolved` · `all_layer_chain: true` · `STALE` is never auto-refreshed | a new `knowledge/domain/<slug>.md` | Joins **before `1e`**; the run never waits past that. Any failure ⇒ `build_outcome: FAILED`, `state` stays `ABSENT`, proceed as FAST does. **Nothing here blocks, delays a verdict, or becomes a finding about the product** |
+| **`1d`** story review | `ba-story-writer` (Mode B — analyze only) | a ticket **with ACs**; else skip with a one-line note | AC quality scorecard · weak sides · AC↔implementation coverage · gap analysis · an AC→test traceability seed · the DoD checklist | **Advisory, never blocking.** Surface the findings inline and **proceed**; a static-diff finding is a suspicion, not a defect. Carry every DRIFT/NOT-FOUND/CONTRADICTS into execution to verify **live** at 5-verdict. The traceability table and DoD stay terminal-only (`.claude/rules/reports.md` §1) |
+
+**Two brief rules that cost a run when they were missed** — the full argument is in `context-wave.md`:
+the `1c` brief carries the GraphQL contract's **rev, not its path** (a snapshot of unknown age makes the
+agent report every field as unverified, so it guesses), and **`BL-*`/`ECL-*` travel as TEXT while prior art
+travels as PATHS** — a digest would pre-answer the triangulation `1c` exists to perform
+([`dispatch-pack.md`](dispatch-pack.md)).
