@@ -270,6 +270,14 @@ Fixtures for the store-level barcode search configuration (VCST-2945): a dedicat
 
 Barcode PNGs live in `uploads/barcodes/` (EAN-13 / Code 128 / QR, decode-verified with zxing-wasm before commit; each carries a `barcode-value` tEXt stamp the guard compares to the spec). Seed: `npm run seed:barcode` (+ `npm run seed:rbac -- --only BROWSEFILTERS_READ_ONLY,BROWSEFILTERS_NONE` for the two back-office accounts); guard: `npm run td:validate:barcode`. Aliases: `BARCODE_STORE`, `BARCODE_GTIN_UNIQUE`, `BARCODE_FULLTEXT_DISCRIM`, `BARCODE_GTIN_SHARED`, `BARCODE_CODE_OR`, `BARCODE_PROP`, `BARCODE_VARIATION_MPN`, `BARCODE_CASE`, `BARCODE_SPECIAL`, `BARCODE_REINDEX`, `BARCODE_STALE_FIELD`, `BROWSEFILTERS_READ_ONLY`, `BROWSEFILTERS_NONE`.
 
+**Scoped restore for a case that deletes the stale property mid-run:** `TEST_ENV=<env> npm run seed:barcode -- --only stale-field` (about 2–10 s). It touches ONLY these:
+- `AGENT_TEST_BARCODE_STALE`, re-used, or re-created if it was deleted.
+- `@td(BARCODE_STALE_FIELD.value)` on its dedicated product `@td(BARCODE_STALE_FIELD.sku)`.
+- That one product's index document: a documentIds reindex, polled until `<name>:"<value>"` on `AGENT-TEST-BARCODE` answers 1, and re-requested once if the job lock swallowed the first request.
+- `BARCODE_STALE_FIELD.id` and `.propertyId` in `aliases.<env>.json`. The property id CHANGES on re-create, so re-read it afterwards.
+
+It never touches either store's barcode settings, any other product, prices or stock. Both stores are fingerprinted before and after, and any difference fails the run. It refuses with "run the full seed" when the product or the store itself is missing. Use it instead of the full `seed:barcode` between two sub-flows of one case: the full seed resets `AGENT-TEST-BARCODE`'s settings, reconciles and reindexes every fixture, and runs the multi-minute proof.
+
 ### 15. Loyalty missions (no CSV — `scripts/seed-data/loyalty/missions-specs.mjs`)
 The VCST-5319 mission fixtures have **no committed data file**: the side-effect-free spec module IS the
 source of truth, and everything runtime (mission GUIDs, the resolved currency/locale codes, the banner

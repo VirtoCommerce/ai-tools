@@ -31,12 +31,13 @@
  * USAGE:
  *   TEST_ENV=vcst npm run seed:barcode [-- --dry-run] [-- --verbose]
  *   TEST_ENV=vcst npm run seed:barcode:teardown
+ *   TEST_ENV=vcst npm run seed:barcode -- --only stale-field   # scoped: restore ONLY the stale property + its value
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  ROOT, STORE_ID, FRONT_URL, DRY_RUN, VERBOSE, TEARDOWN,
+  ROOT, STORE_ID, FRONT_URL, DRY_RUN, VERBOSE, TEARDOWN, ONLY,
   log, verbose, assertSafeTarget, auth, api,
   ensureCategoryPath, ensureFulfillmentCenter, writeEnvAliasOverride, verifyRemoved, idsParam, SEED_FAMILY,
 } from '../../lib/seed-common.mjs';
@@ -223,10 +224,10 @@ function storeFingerprint(s) {
 
 /* ── seed steps ──────────────────────────────────────────────────────────────────────────────── */
 
-async function ensureProperties(catalogId) {
+async function ensureProperties(catalogId, keys = Object.keys(PROPERTIES)) {
   const out = {};
   let props = await catalogProperties(catalogId);
-  for (const def of Object.values(PROPERTIES)) {
+  for (const def of keys.map((k) => PROPERTIES[k])) {
     let found = props.find((x) => x.name === def.name);
     if (!found) {
       await api('POST', '/api/catalog/properties', buildPropertyBody(def, catalogId), { expectStatus: [200, 201, 204] });
@@ -270,6 +271,9 @@ async function ensureProduct(p, { loc, recorded, parentId, propsByKey }) {
   if (parentId && full.mainProductId !== parentId) { full.mainProductId = parentId; changed.push('mainProductId'); }
   if (full.isActive === false || full.isBuyable === false) { full.isActive = true; full.isBuyable = true; changed.push('active/buyable'); }
   if (changed.length) {
+    // A GET body carries its variations[]; POSTed back, the platform INSERTS them again and fails 500
+    // (PK_Item duplicate key). Omitting the array leaves the variations untouched (observed 2026-09-28).
+    delete full.variations;
     await api('POST', '/api/catalog/products', full, { expectStatus: [200, 201, 204] });
     log(`↻ ${p.sku}: reconciled ${changed.join(', ')}`);
   }
@@ -400,6 +404,66 @@ async function prove(ids) {
   log('Live proof (xAPI via FRONT_URL/graphql, anonymous):');
   for (const line of report) log(`  ${line}`);
   if (problems.length) throw new Error(`fixture proof FAILED — ${problems.join(' | ')}`);
+}
+
+/* ── scoped mode: --only stale-field ─────────────────────────────────────────────────────────────
+ * For a case that DELETES AGENT_TEST_BARCODE_STALE between two sub-flows and needs it back without
+ * the full seed (which resets AGENT-TEST-BARCODE's barcode settings, reconciles every fixture,
+ * reindexes all of them and runs the long proof — state other barcode suites read). Touches exactly:
+ * the stale property (re-used, or re-created), the stale value on its ONE dedicated product, that
+ * product's index document, and BARCODE_STALE_FIELD's overlay ids. Never store settings, other
+ * products, prices, stock or B2B-store (fingerprinted before/after, as in the full seed). */
+
+const SCOPES = ['stale-field'];
+
+async function mainStaleField() {
+  assertSafeTarget();
+  await auth();
+  const t0 = Date.now();
+  console.log(`\n🌱 Barcode fixtures — scoped: stale-field${DRY_RUN ? ' (DRY RUN)' : ''} — VCST-2945`);
+  const s = aliasStaticFields().BARCODE_STALE_FIELD;
+  const spec = PRODUCTS.find((p) => p.sku === s.sku);
+  // Both stores are fingerprinted (incl. their barcode settings) and must come out identical.
+  const prints = async () => JSON.stringify(await Promise.all([STORE_ID, STORE.id].map(async (id) => storeFingerprint(await api('GET', `/api/stores/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] })))));
+  const before = await prints();
+
+  // The dedicated product must already exist — this mode restores the property, never the product.
+  const recorded = recordedProductIds()[s.sku];
+  let product = await getProduct(recorded);
+  if (!(product?.code === s.sku && String(product.name || '').startsWith(NAME_STEM))) product = null;
+  if (!product) throw new Error(`stale-field product ${s.sku} is not live (overlay id ${recorded || 'none'}) — run the full \`npm run seed:barcode\``);
+  const catalog = await api('GET', `/api/catalog/catalogs/${product.catalogId}`, null, { expectStatus: [200, 404] });
+  if (!String(catalog?.name || '').startsWith(SEED_FAMILY)) throw new Error(`${s.sku} lives in "${catalog?.name}", not an ${SEED_FAMILY} catalog — refusing to create a property on real data`);
+  if (!(await api('GET', `/api/stores/${encodeURIComponent(STORE.id)}`, null, { expectStatus: [200, 404] }))?.id) throw new Error(`store ${STORE.id} is missing — run the full \`npm run seed:barcode\``);
+
+  const { stale } = await ensureProperties(product.catalogId, ['stale']);
+  const changed = reconcileProduct(product, spec, { stale });
+  if (changed.length && !DRY_RUN) await api('POST', '/api/catalog/products', product, { expectStatus: [200, 201, 204] });
+  log(changed.length ? `↻ ${s.sku}: re-wrote ${changed.join(', ')}` : `↻ ${s.sku}: value already present`);
+  if (DRY_RUN) { console.log('\n✅ dry run complete (no writes).'); return; }
+
+  // Reindex ONE document; poll the gtin-free exact filter on the dedicated store until it answers 1.
+  const reindex = () => api('POST', '/api/search/indexes/index', [{ documentType: 'Product', documentIds: [product.id] }], { expectStatus: [200, 204] });
+  await reindex();
+  const filter = `${s.name}:${quoteFilterValue(s.value)}`;
+  let retried = false;
+  let r;
+  for (;;) {
+    r = await xapi(STORE.id, { filter });
+    if (!r.error && r.totalCount === 1 && r.items?.[0]?.id === product.id) break;
+    // A concurrent indexation holding the job lock makes the first request a silent no-op.
+    if (!retried && Date.now() - t0 > 30_000) { await reindex(); retried = true; log('↻ reindex re-requested (job lock?)'); }
+    if (Date.now() - t0 > 120_000) throw new Error(`${filter} on ${STORE.id} → ${r.error || r.totalCount} after 120s (need 1 = ${product.id})`);
+    await sleep(3_000);
+  }
+  log(`✓ xAPI ${STORE.id} ${filter} → 1 (${s.sku})`);
+
+  const after = await prints();
+  if (after !== before) throw new Error(`${STORE_ID} / ${STORE.id} CHANGED during the run — before ${before} after ${after}.`);
+  log(`✓ ${STORE_ID} + ${STORE.id} unchanged (incl. barcode settings)`);
+  writeEnvAliasOverride({ BARCODE_STALE_FIELD: { id: product.id, propertyId: stale.id } });
+  log(`✓ aliases.${ENV}.json: BARCODE_STALE_FIELD.propertyId = ${stale.id}`);
+  console.log(`\n✅ stale-field restored in ${Math.round((Date.now() - t0) / 1000)}s — nothing else touched`);
 }
 
 /* ── main ────────────────────────────────────────────────────────────────────────────────────── */
@@ -553,7 +617,8 @@ async function teardown() {
   if (residual > 0 && !DRY_RUN) process.exit(1);
 }
 
-(TEARDOWN ? teardown() : main()).catch((e) => {
+if (ONLY && !SCOPES.includes(ONLY)) { console.error(`ABORT: --only ${ONLY} — known scopes: ${SCOPES.join(', ')}`); process.exit(2); }
+(TEARDOWN ? teardown() : ONLY === 'stale-field' ? mainStaleField() : main()).catch((e) => {
   console.error(`\n❌ SEED FAILED: ${e.message}`);
   if (VERBOSE) console.error(e.stack);
   process.exit(1);
