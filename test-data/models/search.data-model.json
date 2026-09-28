@@ -1,0 +1,1585 @@
+{
+  "$schema": "../../.claude/templates/test-data-model.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "srch",
+  "generated": "2026-09-28",
+  "metadata": {
+    "scope": "The data states the srch mind map's behaviours require. Every CREATE row points at an EXISTING seeder (seed:barcode, seed:rbac) and @td() alias; store-setting states are reached by the case's own Steps; nothing here is seeded by a new mechanism.",
+    "mind_map": ".claude/knowledge/domain/search.mind-map.json",
+    "ticket": "VCST-2945",
+    "two_stores": "API/xAPI cases (050a, 103) own the dedicated AGENT-TEST-BARCODE store (data.srch.store.barcode-*); storefront cases (004) have to write B2B-store's own settings (data.srch.store.storefront-*), because the dedicated store is not reachable from FRONT_URL. The two families of store states are deliberately separate requirements.",
+    "kb_read": "2026-09-28 — KB-C3945D5C, KB-84EA18E3, KB-BC55C4F0, KB-31802239, KB-041DF407, KB-4C29749E, KB-2CBB229F, KB-A47C7347. Miss: xCatalog products barcode expansion scope (no entry).",
+    "known_limit": "Profiles apply the store-setting STEP states through the case; /qa-seed-data --profile runs seed:barcode / seed:rbac and leaves the case rows to the Steps."
+  },
+  "requirements": [
+    {
+      "id": "data.srch.catalog.indexed",
+      "entity": "SearchIndex",
+      "purpose": "B2B-store's product index is built and a generic keyword returns several in-stock hits with a facet panel.",
+      "required_state": {
+        "store": "B2B-store",
+        "product_index": "built",
+        "keyword_hits": "several, in stock"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "SEARCH_KITCHEN.query",
+      "cleanup": {
+        "required": false
+      },
+      "limits": "Environment state, not seeded: no script here builds the whole B2B-store index. A term that stops returning several hits needs its alias re-verified, not a seeder run. It cannot decide freshness (srch.index.freshness needs a change made by the case itself).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.json SEARCH_KITCHEN",
+          "note": "live-verified products(storeId:B2B-store, query:kitchen) on vcptcore-qa (31) and vcst-qa (159)",
+          "date": "2026-08-17"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.index.no-ghost-docs",
+      "entity": "SearchIndex",
+      "purpose": "The index holds no documents of deleted products in the facet scope under test, so term-facet buckets count live products only.",
+      "required_state": {
+        "scope": "AGENT-TEST-Barcode product documents",
+        "indexed_documents": "equal to live products"
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_GTIN_SHARED.count",
+      "cleanup": {
+        "required": true,
+        "via": "seed:barcode:teardown purges the index documents of what it deletes (changelog window replay); a re-seed sweeps ghosts of earlier runs first"
+      },
+      "discriminates": "With the shared-GTIN trio live and zero ghosts, a term-facet bucket equals totalCount (3). A ghost of a deleted earlier trio doubles the bucket (6) while hits stay 3, so 'facet counts follow the result' is only decidable once the ghosts are gone.",
+      "limits": "Reached ONLY for the NAME_STEM (AGENT-TEST-Barcode) documents the barcode seeder owns. Ghosts of any other deleted catalog product are not swept, so srch.results.facets on the general B2B-store catalog cannot be guaranteed ghost-free by any existing seeder.",
+      "notes": "SEEDER GAP: no script purges store-wide ghost documents (a changelog-window POST /api/search/indexes/index over every Deleted CatalogProduct). Hand to /qa-generate-data if srch.results.facets gets a stamped case that reads general-catalog counts.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-041DF407",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-31802239",
+          "note": "window replay removes ghosts; documentIds does not",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "seeder sweeps and purges NAME_STEM ghosts"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.store.barcode-dedicated",
+      "entity": "Store",
+      "purpose": "The dedicated AGENT-TEST barcode store on B2B-store's catalog, reached only by storeId, whose barcode settings API/xAPI cases own.",
+      "required_state": {
+        "exists": true,
+        "catalog": "B2B-store's catalog",
+        "url": "not the storefront host"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Its barcode settings (Catalog.Search.BarcodeScannerEnabled / BarcodeSearchFields) are written by every case in 050a and 103: never assert the mode without the case setting it, and serialise those cases.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_STORE.id",
+      "cleanup": {
+        "required": false,
+        "via": "seed:barcode:teardown"
+      },
+      "discriminates": "Isolates the settings under test from B2B-store: a write that leaks across stores shows up as a changed B2B-store result (srch.barcode.config.per-store).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "STORE: dedicated store, deliberately not FRONT_URL"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.store.barcode-defaults",
+      "entity": "Store",
+      "purpose": "The dedicated store's barcode settings at the per-seed reset state: scanner on, no fields (full-text).",
+      "required_state": {
+        "scannerEnabled": true,
+        "fields": []
+      },
+      "relationships": [
+        {
+          "requirement": "data.srch.store.barcode-dedicated",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_STORE.id",
+      "cleanup": {
+        "required": true,
+        "via": "each case's Cleanup PUT api/catalog/barcode-search/store/@td(BARCODE_STORE.id) {scannerEnabled:true, fields:[]}; the next seed:barcode resets it too"
+      },
+      "discriminates": "An empty field list is the baseline, so fields that reappear checked after a save are attributable to that save, and a barcode term that finds 0 here but 1 in exact mode proves the mode drives the expansion.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "STORE.barcodeDefaults"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C3945D5C",
+          "note": "GET with nothing stored returns {scannerEnabled:true, fields:[]}",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.store.barcode-exact",
+      "entity": "Store",
+      "purpose": "The dedicated store switched to exact match on the fields the case names.",
+      "required_state": {
+        "scannerEnabled": true,
+        "fields": ">= 1 index field the case names (gtin / code / manufacturerPartNumber / a lowercased short-text property)"
+      },
+      "relationships": [
+        {
+          "requirement": "data.srch.store.barcode-defaults",
+          "required": true,
+          "note": "set FROM the reset state"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "fields": []
+        },
+        "transition": "PUT api/catalog/barcode-search/store/@td(BARCODE_STORE.id) with the case's field list, read back by GET before the next step"
+      },
+      "td_alias": "BARCODE_STORE.id",
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup column PUTs {scannerEnabled:true, fields:[]}"
+      },
+      "discriminates": "Only the field list differs from the reset state, so a term that finds exactly the fixture holding the value (and nothing on the full-text decoy) is attributable to the exact-match expansion.",
+      "limits": "Dedicated-store state: disturbs only the other 050a / 103 cases, which must be serialised with it. Never B2B-store's settings.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C3945D5C",
+          "note": "valid PUT 204, normalised",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.store.barcode-stale-field",
+      "entity": "Store",
+      "purpose": "The dedicated store configured with a field that no longer exists in the index.",
+      "required_state": {
+        "scannerEnabled": true,
+        "fields": "includes a name absent from GET .../fields"
+      },
+      "relationships": [
+        {
+          "requirement": "data.srch.store.barcode-dedicated",
+          "required": true
+        },
+        {
+          "requirement": "data.srch.property.stale-field",
+          "required": true,
+          "note": "the property the case configures and then deletes"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "fields": [
+            "@td(BARCODE_STALE_FIELD.name)"
+          ]
+        },
+        "transition": "configure @td(BARCODE_STALE_FIELD.name), DELETE /api/catalog/properties?id=@td(BARCODE_STALE_FIELD.propertyId)&doDeleteValues=true, reindex @td(BARCODE_STALE_FIELD.id) by documentIds; or write the name through the generic PUT /api/stores (GET-merge-PUT)"
+      },
+      "td_alias": "BARCODE_STALE_FIELD.name",
+      "cleanup": {
+        "required": true,
+        "via": "npm run seed:barcode -- --only stale-field, then the case's Cleanup PUT {scannerEnabled:true, fields:[]}"
+      },
+      "discriminates": "The stale name is the only configured field, so the blade's missing-field rendering and its drop-on-next-change are observable against a single, known name.",
+      "limits": "Consumes the disposable property: serialise SRCHA-053/054/055, and never delete BARCODE_PROP's property (about ten cases read it).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A47C7347",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-417AC3F2",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.store.barcode-disabled-with-fields",
+      "entity": "Store",
+      "purpose": "The dedicated store with the scanner switched off while its fields stay configured.",
+      "required_state": {
+        "scannerEnabled": false,
+        "fields": ">= 1"
+      },
+      "relationships": [
+        {
+          "requirement": "data.srch.store.barcode-exact",
+          "required": true,
+          "note": "switched off FROM exact mode"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "scannerEnabled": true
+        },
+        "transition": "PUT api/catalog/barcode-search/store/@td(BARCODE_STORE.id) {scannerEnabled:false, fields:<unchanged>}, read back"
+      },
+      "td_alias": "BARCODE_STORE.id",
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup column PUTs {scannerEnabled:true, fields:[]}"
+      },
+      "discriminates": "Differs from exact mode ONLY in the switch, so a hand-built barcode term that still finds 1 proves the switch gates the button, not the expansion.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 D2",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.store.storefront-defaults",
+      "entity": "Store",
+      "purpose": "B2B-store (the storefront's store) at its live barcode settings: scanner on, no fields (full-text).",
+      "required_state": {
+        "store": "B2B-store",
+        "Catalog.Search.BarcodeScannerEnabled": true,
+        "Catalog.Search.BarcodeSearchFields": []
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "STORE_PRIMARY.id",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "No fields, so a barcode term on B2B-store stays literal (0 hits) while the dedicated store in exact mode finds 1: a per-store leak collapses the two.",
+      "limits": "Shared by every runner: a storefront barcode case that left fields behind breaks this for everyone. SRCH-015 forces it in its own Steps rather than trusting another case's Cleanup.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §1 link 2",
+          "note": "live on B2B-store: enabled=true, fields=[]",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.store.storefront-exact",
+      "entity": "Store",
+      "purpose": "B2B-store switched to exact match on the fields the storefront case names, so ?barcode= resolves.",
+      "required_state": {
+        "store": "B2B-store",
+        "scannerEnabled": true,
+        "fields": ">= 1 field the case names"
+      },
+      "relationships": [
+        {
+          "requirement": "data.srch.store.storefront-defaults",
+          "required": true,
+          "note": "set FROM the live defaults"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "fields": []
+        },
+        "transition": "PUT api/catalog/barcode-search/store/{{STORE_ID}} with the case's field list as the admin, read back by GET"
+      },
+      "td_alias": "STORE_PRIMARY.id",
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup column PUTs {scannerEnabled:true, fields:[]} to {{STORE_ID}} and GETs it back"
+      },
+      "discriminates": "The storefront route only differs from a keyword search once fields exist, so 'opens the product' vs 'lists the full-text hits' is decidable on the same seeded code.",
+      "limits": "Store-level toggle on the SHARED storefront store: while it is set, every concurrent storefront search run (004, 005, any smoke hitting /search) sees exact-mode barcode behaviour. Serialise the whole Search > Barcode Scanner section and never schedule it beside another search suite.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C3945D5C",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.property.stale-field",
+      "entity": "CatalogProperty",
+      "purpose": "A disposable Product ShortText property holding one unique value on its own dedicated product.",
+      "required_state": {
+        "type": "Product",
+        "valueType": "ShortText",
+        "values": "exactly one, on a product no other alias reads",
+        "listed_by": "GET .../barcode-search/store/{id}/fields"
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_STALE_FIELD.name",
+      "cleanup": {
+        "required": true,
+        "via": "npm run seed:barcode -- --only stale-field re-creates the property and its value after a case deletes it; seed:barcode:teardown removes it"
+      },
+      "discriminates": "Its value exists nowhere else, so the scan finds 1 before the delete and 0 after: a result that stays 1 means the deletion never reached the index; a result that was already 0 means the fixture never worked.",
+      "limits": "Disposable per seed and consumed by SRCHA-053/054/055 — one per run, serialised.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "STALE_FIELD"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-84EA18E3",
+          "note": "a deleted property leaves /fields within ~1.5 s",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.user.store-admin",
+      "entity": "User",
+      "purpose": "The platform administrator who configures the barcode setup through the blade and the dedicated API.",
+      "required_state": {
+        "isAdministrator": true
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "ADMIN_USER.email_env_var",
+      "cleanup": {
+        "required": false
+      },
+      "limits": "An administrator bypasses the permission gate, so this account can never decide a permission branch; those use the BROWSEFILTERS_* accounts.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C3945D5C",
+          "note": "valid PUT 204 as admin",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.user.browsefilters-read-only",
+      "entity": "User",
+      "purpose": "A non-admin back-office account that may view but not save the barcode setup.",
+      "required_state": {
+        "isAdministrator": false,
+        "permissions": "catalog:BrowseFilters:Read, NOT catalog:BrowseFilters:Update"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A long-lived back-office account; nothing on it mutates across runs. Its password lives in .env.local only, so a missing secret is BLOCKED, not FAIL.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "fallback": "EXISTING"
+      },
+      "seed_capability": "seed:rbac",
+      "td_alias": "BROWSEFILTERS_READ_ONLY.email",
+      "cleanup": {
+        "required": false,
+        "via": "seed:rbac:teardown"
+      },
+      "discriminates": "Differs from the admin only in lacking :Update (GET 200 both, PUT 204 vs 403) and from the no-access account only in holding :Read (GET 200 vs 403).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/platform/backoffice-rbac-specs.mjs",
+          "note": "BROWSEFILTERS_READ_ONLY"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-BC55C4F0",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.user.browsefilters-none",
+      "entity": "User",
+      "purpose": "A non-admin back-office account with store access but no BrowseFilters permission.",
+      "required_state": {
+        "isAdministrator": false,
+        "permissions": "store access, NO catalog:BrowseFilters:*"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A long-lived back-office account; nothing on it mutates across runs. Its password lives in .env.local only, so a missing secret is BLOCKED, not FAIL.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "fallback": "EXISTING"
+      },
+      "seed_capability": "seed:rbac",
+      "td_alias": "BROWSEFILTERS_NONE.email",
+      "cleanup": {
+        "required": false,
+        "via": "seed:rbac:teardown"
+      },
+      "discriminates": "Differs from the read-only account by exactly catalog:BrowseFilters:Read: GET barcode-search 403 vs 200, and the blade must show an access error rather than a scanner-off state.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/platform/backoffice-rbac-specs.mjs",
+          "note": "BROWSEFILTERS_NONE"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-BC55C4F0",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.customer.b2b-buyer",
+      "entity": "Customer",
+      "purpose": "A signed-in B2B organisation buyer with USD pricing on B2B-store.",
+      "required_state": {
+        "authenticated": true,
+        "organization": "member",
+        "currency": "USD"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A long-lived org account whose cart persists across runs: assert resolution only, and remove any added line in Cleanup.",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "ORG_USER_DEFAULT.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Same code, same store, different actor: a resolve path that depends on the anonymous context (or on org catalog restrictions) lands on a different page for this buyer than for the anonymous shopper.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C8: signed-in org buyer reached the same PDP",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.gtin-unique",
+      "entity": "Product",
+      "purpose": "The only product holding its GTIN; buyable, priced USD, in stock.",
+      "required_state": {
+        "gtin": "held by exactly one product",
+        "buyable": true,
+        "priced": "USD",
+        "stock": "> 0"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A seeded definition no case mutates; cases only read it (and may add it to a cart). Its settings-independent identity is shared by 004, 050a and 103, so nothing store-setting-dependent may be asserted without the case setting the mode itself.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "fallback": "EXISTING"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_GTIN_UNIQUE.gtin",
+      "cleanup": {
+        "required": false,
+        "via": "seed:barcode:teardown"
+      },
+      "discriminates": "One hit, so exact mode must OPEN it; a build that lists instead of opening, or that also matches name words, is exposed.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "GTIN_UNIQUE"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.gtin-shared",
+      "entity": "Product",
+      "purpose": "Three products sharing one GTIN.",
+      "required_state": {
+        "gtin": "shared by 3 products",
+        "priced": "USD",
+        "stock": "> 0"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A seeded definition no case mutates; cases only read it (and may add it to a cart). Its settings-independent identity is shared by 004, 050a and 103, so nothing store-setting-dependent may be asserted without the case setting the mode itself.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "fallback": "EXISTING"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_GTIN_SHARED.gtin",
+      "cleanup": {
+        "required": false,
+        "via": "seed:barcode:teardown"
+      },
+      "discriminates": "N=3 hits, so exact mode must LIST and never auto-open; the same trio gives a facet bucket of exactly 3 to compare against totalCount.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "GTIN_SHARED"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.code-or",
+      "entity": "Product",
+      "purpose": "A product whose code is a scan value no GTIN holds and whose GTIN differs from the unique-GTIN product's.",
+      "required_state": {
+        "code": "a value no gtin holds",
+        "gtin": "different from data.srch.product.gtin-unique"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A seeded definition no case mutates; cases only read it (and may add it to a cart). Its settings-independent identity is shared by 004, 050a and 103, so nothing store-setting-dependent may be asserted without the case setting the mode itself.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "fallback": "EXISTING"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_CODE_OR.sku",
+      "cleanup": {
+        "required": false,
+        "via": "seed:barcode:teardown"
+      },
+      "discriminates": "With fields [gtin, code], the unique GTIN and this code must BOTH hit; a first-field-only or AND build finds 0 for the code.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "CODE_OR"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.property-code",
+      "entity": "Product",
+      "purpose": "A product whose Product ShortText property AGENT_TEST_BARCODE_UPC holds a UPC value.",
+      "required_state": {
+        "property": "AGENT_TEST_BARCODE_UPC (Product, ShortText)",
+        "value": "on this product only"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A seeded definition no case mutates; cases only read it (and may add it to a cart). Its settings-independent identity is shared by 004, 050a and 103, so nothing store-setting-dependent may be asserted without the case setting the mode itself.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "fallback": "EXISTING"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_PROP.value",
+      "cleanup": {
+        "required": false,
+        "via": "seed:barcode:teardown"
+      },
+      "discriminates": "Only the lowercased property field can match the value; a build that uses the catalog property's own name or ignores properties finds 0.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "PROP"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.case-mixed-code",
+      "entity": "Product",
+      "purpose": "A product whose code is mixed case, with a strict prefix that must match nothing.",
+      "required_state": {
+        "code": "mixed case",
+        "prefix": "a strict prefix of the code held by no product"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A seeded definition no case mutates; cases only read it (and may add it to a cart). Its settings-independent identity is shared by 004, 050a and 103, so nothing store-setting-dependent may be asserted without the case setting the mode itself.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "fallback": "EXISTING"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_CASE.value",
+      "cleanup": {
+        "required": false,
+        "via": "seed:barcode:teardown"
+      },
+      "discriminates": "The exact value hits and its strict prefix does not, separating an exact term compare from prefix/contains; valueFlipped exposes the provider's case folding.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "CASE"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        }
+      ],
+      "limits": "Only the case-INSENSITIVE provider side is reachable on vcst-qa; the case-sensitive Lucene path cannot be decided here."
+    },
+    {
+      "id": "data.srch.product.special-value",
+      "entity": "Product",
+      "purpose": "A product whose barcode property holds a QR-like value with a double quote and a colon.",
+      "required_state": {
+        "property": "AGENT_TEST_BARCODE_UPC",
+        "value": "contains \" and :"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A seeded definition no case mutates; cases only read it (and may add it to a cart). Its settings-independent identity is shared by 004, 050a and 103, so nothing store-setting-dependent may be asserted without the case setting the mode itself.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "fallback": "EXISTING"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_SPECIAL.value",
+      "cleanup": {
+        "required": false,
+        "via": "seed:barcode:teardown"
+      },
+      "discriminates": "A build that does not quote the value splits it into several terms or errors; the right one returns this product as one term.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "SPECIAL"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        }
+      ],
+      "relationships": [
+        {
+          "requirement": "data.srch.product.property-code",
+          "required": true,
+          "note": "same property; seeded together"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.variation.mpn-out-of-stock",
+      "entity": "Product",
+      "purpose": "A variation that alone carries an MPN and is out of stock while its parent and sibling are in stock.",
+      "required_state": {
+        "type": "variation",
+        "manufacturerPartNumber": "held only by this variation",
+        "stock": 0,
+        "parent_stock": "> 0",
+        "sibling_stock": "> 0"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A seeded definition no case mutates; cases only read it (and may add it to a cart). Its settings-independent identity is shared by 004, 050a and 103, so nothing store-setting-dependent may be asserted without the case setting the mode itself.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "fallback": "EXISTING"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_VARIATION_MPN.mpn",
+      "cleanup": {
+        "required": false,
+        "via": "seed:barcode:teardown"
+      },
+      "discriminates": "A build that does not widen to variations, or that applies the in-stock preference, finds nothing; the right one opens the variation's own page.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "VARIATION_MPN"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.fulltext-discriminator",
+      "entity": "Product",
+      "purpose": "A GTIN that is one product's GTIN AND a whole word in another product's name.",
+      "required_state": {
+        "gtin": "on product A",
+        "name_word": "the same value in product B's name"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A seeded definition no case mutates; cases only read it (and may add it to a cart). Its settings-independent identity is shared by 004, 050a and 103, so nothing store-setting-dependent may be asserted without the case setting the mode itself.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "fallback": "EXISTING"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_FULLTEXT_DISCRIM.gtin",
+      "cleanup": {
+        "required": false,
+        "via": "seed:barcode:teardown"
+      },
+      "discriminates": "Full-text finds >= 2 (both) while exact on [gtin] finds exactly 1; equal counts mean the mode switch changed nothing observable.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "FULLTEXT"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-28-1518",
+          "note": "C1 execution of the VCST-2945 Draft cases on this fixture",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.reindex-candidate",
+      "entity": "Product",
+      "purpose": "A per-seed product whose GTIN a case changes and reindexes.",
+      "required_state": {
+        "gtin": "the seeded (old) value",
+        "indexed": true
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:barcode",
+      "td_alias": "BARCODE_REINDEX.gtin",
+      "cleanup": {
+        "required": true,
+        "via": "the next seed:barcode restores the old GTIN; seed:barcode:teardown removes the product"
+      },
+      "discriminates": "Old and new GTIN are distinct values no other product holds, so 'old finds nothing, new finds it' separates a reindexed document from a stale one.",
+      "limits": "Disposable per seed: one consumer per seed, never shared with a concurrent suite. With event-based indexation off the case must request its own documentIds reindex (KB-4C29749E).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs",
+          "note": "REINDEX"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4C29749E",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.query.no-hit-term",
+      "entity": "SearchTerm",
+      "purpose": "A search term guaranteed to match no product.",
+      "required_state": {
+        "hits": 0,
+        "unique": "per call"
+      },
+      "lifecycle": "DYNAMIC",
+      "acquisition": {
+        "strategy": "GENERATE",
+        "generator": "uniqueSku"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "A freshly generated AGENT-TEST-SKU-<ts> value cannot exist in the catalog, so an empty state is attributable to 'no hits' and never to a coincidental match; a hand-picked nonsense word can start matching after a catalog import.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/lib/random-data.ts",
+          "note": "uniqueSku prefix AGENT-TEST-SKU + timestamp"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.query.large-result-term",
+      "entity": "SearchTerm",
+      "purpose": "A keyword whose hits span more than one scroll-loaded batch.",
+      "required_state": {
+        "store": "B2B-store",
+        "hits": "more than one batch (the cases assume 100+)"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "SEARCH_KITCHEN.query",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "With more hits than one batch, a second batch has to load and keep the term, filters and sort; a term that fits in one batch makes the paging case vacuous.",
+      "limits": "Environment catalog, not seeded: 159 hits on vcst-qa but 31 on vcptcore-qa (alias notes, 2026-08-17), so the 100+ assumption holds on vcst-qa only. No seeder guarantees a multi-batch result on every env.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-data/aliases.json SEARCH_KITCHEN",
+          "note": "vcst-qa totalCount=159, vcptcore-qa 31",
+          "date": "2026-08-17"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.results.distinct-prices",
+      "entity": "SearchTerm",
+      "purpose": "A keyword whose results carry at least two distinct prices, so a price sort visibly reorders them.",
+      "required_state": {
+        "store": "B2B-store",
+        "hits": ">= 2",
+        "prices": "at least two distinct values in the active currency"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "SEARCH_CLOTHING.query",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Distinct prices make ascending and descending orders differ; results with equal prices pass a sort that does nothing.",
+      "limits": "The distinct-prices property of this term is not asserted by any guard; the case must read two different prices before asserting an order.",
+      "notes": "Existing alias reused (SRCH-NEW-002 / SRCH-NEW-011 search 'hoodie'); nothing verifies the price spread, hence UNVERIFIED.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "004-search-core.csv SRCH-NEW-011 Preconditions",
+          "note": "'multiple results with varying prices' is asserted by the case, not by a fixture"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.history.recent-search",
+      "entity": "SearchHistory",
+      "purpose": "A recent-search entry written by a submit from the search bar in this session.",
+      "required_state": {
+        "written_by": "a submit from the header bar",
+        "session": "the case's own"
+      },
+      "lifecycle": "DERIVED",
+      "source": {
+        "produced_by": "srch.query.keyword",
+        "field": "the submitted term"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "The case knows the exact term it submitted, so the hint list must contain THAT term; a list of stale or seeded hints cannot tell 'history written' from 'history shown'.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:srch@rev1 §2",
+          "note": "only a submit from the bar writes history",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.category.with-subcategory",
+      "entity": "Category",
+      "purpose": "A top-level storefront category with at least one visible subcategory.",
+      "required_state": {
+        "level": "top",
+        "visible_children": ">= 1",
+        "store": "B2B-store"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "DISCOVER",
+        "discover_fn": "discoverVirtualCatalogRoot",
+        "discover_constraints": [
+          "store = {{STORE_ID}}, culture and currency of the storefront",
+          "top-level category (hasParent=false)",
+          "at least one visible subcategory in the catalog nav",
+          "products in the subtree, so a scoped search returns hits"
+        ]
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "A parent with a visible child makes category-to-category navigation possible, which is where a second scope chip would appear.",
+      "limits": "discoverVirtualCatalogRoot returns only the root; the case walks the nav to a child.",
+      "notes": "DISCOVER GAP: no live-discover function selects on this dimension, and no seeder or alias reaches it. The case must verify the constraint on the discovered data first and go BLOCKED (not FAIL) when it does not hold. Hand to /qa-generate-data if it becomes a recurring BLOCK.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "004-search-core.csv SRCH-011 Preconditions",
+          "note": "live-discover — do not assume a fixed category name"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.facet.overlapping-groups",
+      "entity": "Facet",
+      "purpose": "A results page with two facet groups whose product sets overlap, each with >= 2 values of count > 0.",
+      "required_state": {
+        "facet_groups": ">= 2",
+        "values_per_group": ">= 2 with count > 0",
+        "product_sets": "overlap but differ"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "DISCOVER",
+        "discover_fn": "discoverFirstAvailableProduct",
+        "discover_constraints": [
+          "store = {{STORE_ID}}, the signed-in buyer's currency",
+          "subtree exposing >= 2 facet groups",
+          ">= 2 values per group with count > 0",
+          "the two groups' product sets overlap without being equal"
+        ]
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Overlapping but unequal sets make OR (within a group: count grows) and AND (across groups: count shrinks) give different totals; disjoint or identical sets let a wrong combination produce the same number.",
+      "notes": "DISCOVER GAP: no live-discover function selects on this dimension, and no seeder or alias reaches it. The case must verify the constraint on the discovered data first and go BLOCKED (not FAIL) when it does not hold. Hand to /qa-generate-data if it becomes a recurring BLOCK.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "005-search-filters-advanced.csv SRCH-NEW-043 Preconditions"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.product.usd-priced",
+      "entity": "Product",
+      "purpose": "A listed product with a known price in the active currency, for price-range bounds.",
+      "required_state": {
+        "store": "B2B-store",
+        "price": "in the active currency",
+        "listed_on": "a page exposing the price-range slider"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "DISCOVER",
+        "discover_fn": "discoverFirstAvailableProduct",
+        "discover_constraints": [
+          "store = {{STORE_ID}}",
+          "currency = the signed-in buyer's currency",
+          "has a list price in that currency",
+          "listed in the /catalog subtree"
+        ]
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Its own price P is the bound: [P TO P+1] must include it and [P+1 TO P+2] must exclude it, so an exclusive-bound build loses the product at the edge.",
+      "limits": "discoverFirstAvailableProduct does not filter by price itself; the case reads the price before building the bounds.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "005-search-filters-advanced.csv SRCH-NEW-042 Preconditions"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.facet.dictionary-priorities",
+      "entity": "CatalogProperty",
+      "purpose": "A dictionary-type facet property whose values carry distinct non-zero priorities, plus values with no dictionary item.",
+      "required_state": {
+        "valueType": "dictionary",
+        "distinct_priorities": ">= 3",
+        "orphan_values": ">= 1 indexed value with no dictionary item",
+        "catalog": "physical"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "DISCOVER",
+        "discover_fn": "discoverFirstAvailableProduct",
+        "discover_constraints": [
+          "store with a PHYSICAL catalog",
+          "a dictionary property used as a facet",
+          ">= 3 dictionary values with distinct non-zero Priority",
+          "at least one indexed value with no dictionary item (FSORT-004)"
+        ]
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Distinct priorities make ascending and descending orders differ from name order; an orphan value exposes the priority-0 defect (orphans jump to the front in descending).",
+      "notes": "DISCOVER GAP: no live-discover function selects on this dimension, and no seeder or alias reaches it. The case must verify the constraint on the discovered data first and go BLOCKED (not FAIL) when it does not hold. Hand to /qa-generate-data if it becomes a recurring BLOCK. SEEDER GAP: no seeder creates a dictionary facet with priorities and orphan values.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "005-search-filters-advanced.csv SRCH-FSORT-001 Preconditions",
+          "note": "example seen on vcptcore-qa: Color"
+        }
+      ]
+    },
+    {
+      "id": "data.srch.store.facet-sort-priority",
+      "entity": "Store",
+      "purpose": "The store's aggregation for the dictionary facet set to Priority ascending (or descending).",
+      "required_state": {
+        "facet_sorting": "Priority ascending | Priority descending"
+      },
+      "relationships": [
+        {
+          "requirement": "data.srch.facet.dictionary-priorities",
+          "required": true
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "facet_sorting": "the store's current value"
+        },
+        "transition": "Stores > {store} > Search configuration > facets: set the facet's Sorting, save, reload the results page"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup column restores the facet's original Sorting"
+      },
+      "discriminates": "Ascending and descending on the same dictionary give reversed orders, so a setting that is ignored shows one order under both.",
+      "limits": "Store-level shared state: every concurrent run reading this facet on the store sees the changed order. Never schedule beside 005 facet cases or any storefront suite reading facet order.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "005-search-filters-advanced.csv SRCH-FSORT-002 Preconditions"
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "id": "profile.srch.expand-case-prefix",
+      "behavior": "srch.barcode.expand.case-and-prefix",
+      "purpose": "Exact on [code]: the mixed-case value hits, its strict prefix does not.",
+      "requirements": [
+        "data.srch.store.barcode-exact",
+        "data.srch.product.case-mixed-code"
+      ]
+    },
+    {
+      "id": "profile.srch.expand-or-fields",
+      "behavior": "srch.barcode.expand.or-fields",
+      "purpose": "Fields [gtin, code]: a GTIN and a code on two different products both hit.",
+      "requirements": [
+        "data.srch.store.barcode-exact",
+        "data.srch.product.gtin-unique",
+        "data.srch.product.code-or"
+      ]
+    },
+    {
+      "id": "profile.srch.expand-property-field",
+      "behavior": "srch.barcode.expand.property-field",
+      "purpose": "A short-text property configured by its lowercased index name matches its value.",
+      "requirements": [
+        "data.srch.store.barcode-exact",
+        "data.srch.product.property-code"
+      ]
+    },
+    {
+      "id": "profile.srch.config-per-store",
+      "behavior": "srch.barcode.config.per-store",
+      "purpose": "Exact on the dedicated store while B2B-store stays at defaults: 1 hit vs 0.",
+      "requirements": [
+        "data.srch.user.store-admin",
+        "data.srch.store.barcode-dedicated",
+        "data.srch.store.barcode-exact",
+        "data.srch.store.storefront-defaults"
+      ]
+    },
+    {
+      "id": "profile.srch.expand-after-code-change",
+      "behavior": "srch.barcode.expand.after-code-change",
+      "purpose": "Change a product's GTIN, reindex it: the old value stops and the new one starts matching.",
+      "requirements": [
+        "data.srch.store.barcode-exact",
+        "data.srch.product.reindex-candidate"
+      ]
+    },
+    {
+      "id": "profile.srch.expand-special-values",
+      "behavior": "srch.barcode.expand.special-values",
+      "purpose": "A value with a quote and a colon stays one term.",
+      "requirements": [
+        "data.srch.store.barcode-exact",
+        "data.srch.product.special-value"
+      ]
+    },
+    {
+      "id": "profile.srch.expand-facet-counts",
+      "behavior": "srch.barcode.expand.facet-counts",
+      "purpose": "Shared-GTIN trio with no ghost documents: term-facet buckets equal the barcode totalCount.",
+      "requirements": [
+        "data.srch.store.barcode-exact",
+        "data.srch.product.gtin-shared",
+        "data.srch.index.no-ghost-docs"
+      ]
+    },
+    {
+      "id": "profile.srch.expand-wildcards",
+      "behavior": "srch.barcode.expand.wildcards",
+      "purpose": "Wildcard characters around a unique GTIN are matched literally.",
+      "requirements": [
+        "data.srch.store.barcode-exact",
+        "data.srch.product.gtin-unique"
+      ]
+    },
+    {
+      "id": "profile.srch.config-validation",
+      "behavior": "srch.barcode.config.validation",
+      "purpose": "Dedicated PUT validation and GET defaults on the dedicated store, as the admin.",
+      "requirements": [
+        "data.srch.user.store-admin",
+        "data.srch.store.barcode-dedicated"
+      ]
+    },
+    {
+      "id": "profile.srch.config-permission-read-only",
+      "behavior": "srch.barcode.config.permission-read-only",
+      "purpose": "The read-only account reads the setup and is refused on save.",
+      "requirements": [
+        "data.srch.user.store-admin",
+        "data.srch.store.barcode-dedicated",
+        "data.srch.user.browsefilters-read-only"
+      ]
+    },
+    {
+      "id": "profile.srch.config-permission-none-api",
+      "behavior": "srch.barcode.config.permission-none-api",
+      "purpose": "The no-access account is refused on read and write.",
+      "requirements": [
+        "data.srch.user.store-admin",
+        "data.srch.store.barcode-dedicated",
+        "data.srch.user.browsefilters-none"
+      ]
+    },
+    {
+      "id": "profile.srch.config-save-gating",
+      "behavior": "srch.barcode.config.save-gating",
+      "purpose": "Blade editing rules on the dedicated store, as the admin.",
+      "requirements": [
+        "data.srch.user.store-admin",
+        "data.srch.store.barcode-dedicated"
+      ]
+    },
+    {
+      "id": "profile.srch.config-drop-missing",
+      "behavior": "srch.barcode.config.drop-missing-on-change",
+      "purpose": "A configured-but-missing field is shown inert and dropped on the next change.",
+      "requirements": [
+        "data.srch.user.store-admin",
+        "data.srch.store.barcode-dedicated",
+        "data.srch.store.barcode-stale-field"
+      ]
+    },
+    {
+      "id": "profile.srch.config-generic-write",
+      "behavior": "srch.barcode.config.generic-write-unvalidated",
+      "purpose": "Write a deleted property's name through the generic store API; the blade shows it only as missing.",
+      "requirements": [
+        "data.srch.user.store-admin",
+        "data.srch.store.barcode-dedicated",
+        "data.srch.property.stale-field"
+      ]
+    },
+    {
+      "id": "profile.srch.config-stale-on-delete",
+      "behavior": "srch.barcode.config.stale-on-property-delete",
+      "purpose": "Configure the disposable property, delete it, reindex: the scan goes from 1 to 0 while the field stays configured.",
+      "requirements": [
+        "data.srch.user.store-admin",
+        "data.srch.store.barcode-dedicated",
+        "data.srch.property.stale-field",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "profile.srch.config-permission-none-blade",
+      "behavior": "srch.barcode.config.permission-none-blade-false-off",
+      "purpose": "The no-access account opens the blade: access error, not scanner-off.",
+      "requirements": [
+        "data.srch.user.store-admin",
+        "data.srch.store.barcode-dedicated",
+        "data.srch.user.browsefilters-none"
+      ]
+    },
+    {
+      "id": "profile.srch.resolve-single-hit",
+      "behavior": "srch.barcode.resolve.single-hit-opens",
+      "purpose": "B2B-store in exact mode, unique GTIN: the product page opens and can be added to the cart.",
+      "requirements": [
+        "data.srch.store.storefront-exact",
+        "data.srch.product.gtin-unique"
+      ]
+    },
+    {
+      "id": "profile.srch.fulltext",
+      "behavior": "srch.barcode.fulltext",
+      "purpose": "B2B-store at defaults: a scanned GTIN finds both the owner and the name-word decoy.",
+      "requirements": [
+        "data.srch.store.storefront-defaults",
+        "data.srch.product.fulltext-discriminator"
+      ]
+    },
+    {
+      "id": "profile.srch.config-disable",
+      "behavior": "srch.barcode.config.disable",
+      "purpose": "B2B-store with fields, scanner switched off: the button hides, a hand-built URL still resolves.",
+      "requirements": [
+        "data.srch.user.store-admin",
+        "data.srch.store.storefront-exact"
+      ],
+      "notes": "Omits the inherited data.srch.store.barcode-dedicated: SRCH-016 writes B2B-store's settings (data.srch.store.storefront-exact), never the dedicated store's."
+    },
+    {
+      "id": "profile.srch.resolve-multi-hit",
+      "behavior": "srch.barcode.resolve.multi-hit-lists",
+      "purpose": "B2B-store in exact mode, shared GTIN: three products listed, none opened.",
+      "requirements": [
+        "data.srch.store.storefront-exact",
+        "data.srch.product.gtin-shared"
+      ]
+    },
+    {
+      "id": "profile.srch.resolve-variation-hit",
+      "behavior": "srch.barcode.resolve.variation-hit",
+      "purpose": "B2B-store exact on MPN: the out-of-stock variation's own page opens.",
+      "requirements": [
+        "data.srch.store.storefront-exact",
+        "data.srch.variation.mpn-out-of-stock"
+      ]
+    },
+    {
+      "id": "profile.srch.resolve-zero-hit",
+      "behavior": "srch.barcode.resolve.zero-hit-empty",
+      "purpose": "B2B-store in exact mode, a value no product holds: the barcode empty state.",
+      "requirements": [
+        "data.srch.store.storefront-exact"
+      ]
+    },
+    {
+      "id": "profile.srch.resolve-mobile-parity",
+      "behavior": "srch.barcode.resolve.mobile-parity",
+      "purpose": "The mobile overlay resolves the unique GTIN like the desktop bar.",
+      "requirements": [
+        "data.srch.store.storefront-exact",
+        "data.srch.product.gtin-unique"
+      ]
+    },
+    {
+      "id": "profile.srch.resolve-actor-parity",
+      "behavior": "srch.barcode.resolve.actor-parity",
+      "purpose": "Anonymous and the signed-in org buyer resolve the same unique GTIN to the same page.",
+      "requirements": [
+        "data.srch.store.storefront-exact",
+        "data.srch.customer.b2b-buyer",
+        "data.srch.product.gtin-unique"
+      ]
+    },
+    {
+      "id": "profile.srch.resolve-global-scope",
+      "behavior": "srch.barcode.resolve.global-scope",
+      "purpose": "A scan from a category page still finds the unique GTIN catalog-wide.",
+      "requirements": [
+        "data.srch.store.storefront-exact",
+        "data.srch.product.gtin-unique"
+      ]
+    },
+    {
+      "id": "profile.srch.resolve-identity-lookup",
+      "behavior": "srch.barcode.resolve.identity-lookup-hides-browsing",
+      "purpose": "Shared-GTIN result with facet/availability params: they are ignored and the browsing controls hidden.",
+      "requirements": [
+        "data.srch.store.storefront-exact",
+        "data.srch.product.gtin-shared"
+      ]
+    },
+    {
+      "id": "profile.srch.query-keyword",
+      "behavior": "srch.query.keyword",
+      "purpose": "A keyword with several hits on B2B-store.",
+      "requirements": [
+        "data.srch.catalog.indexed"
+      ]
+    },
+    {
+      "id": "profile.srch.suggest",
+      "behavior": "srch.suggest",
+      "purpose": "Typing a term that matches categories and products.",
+      "requirements": [
+        "data.srch.catalog.indexed"
+      ]
+    },
+    {
+      "id": "profile.srch.suggest-autocomplete",
+      "behavior": "srch.suggest.autocomplete",
+      "purpose": "Product previews while typing a matching term.",
+      "requirements": [
+        "data.srch.catalog.indexed"
+      ]
+    },
+    {
+      "id": "profile.srch.suggest-history",
+      "behavior": "srch.suggest.history-hints",
+      "purpose": "Submit a term from the bar, then focus the empty input: that term is a hint.",
+      "requirements": [
+        "data.srch.catalog.indexed",
+        "data.srch.history.recent-search"
+      ]
+    },
+    {
+      "id": "profile.srch.scope-category",
+      "behavior": "srch.scope.category",
+      "purpose": "Search from inside a discovered category.",
+      "requirements": [
+        "data.srch.category.with-subcategory"
+      ]
+    },
+    {
+      "id": "profile.srch.scope-category-chip",
+      "behavior": "srch.scope.category.single-removable-chip",
+      "purpose": "Navigate parent to child category: one removable scope chip.",
+      "requirements": [
+        "data.srch.category.with-subcategory"
+      ]
+    },
+    {
+      "id": "profile.srch.results-render",
+      "behavior": "srch.results.render",
+      "purpose": "A results page with hits, count, facets and controls.",
+      "requirements": [
+        "data.srch.catalog.indexed"
+      ]
+    },
+    {
+      "id": "profile.srch.results-empty",
+      "behavior": "srch.results.empty",
+      "purpose": "A generated term that matches nothing.",
+      "requirements": [
+        "data.srch.query.no-hit-term"
+      ]
+    },
+    {
+      "id": "profile.srch.results-facets",
+      "behavior": "srch.results.facets",
+      "purpose": "Facets on a multi-hit result as the org buyer.",
+      "requirements": [
+        "data.srch.catalog.indexed",
+        "data.srch.customer.b2b-buyer"
+      ],
+      "notes": "Counts on the general catalog assume no ghost documents; data.srch.index.no-ghost-docs is reachable only for AGENT-TEST-Barcode documents, so it is not part of this profile (seeder gap). Counts are asserted relative to each other, never against a fixed number."
+    },
+    {
+      "id": "profile.srch.facets-or-and",
+      "behavior": "srch.results.facets.or-within-and-across",
+      "purpose": "Two overlapping facet groups: OR within, AND across.",
+      "requirements": [
+        "data.srch.customer.b2b-buyer",
+        "data.srch.catalog.indexed",
+        "data.srch.facet.overlapping-groups"
+      ]
+    },
+    {
+      "id": "profile.srch.facets-price-range",
+      "behavior": "srch.results.facets.price-range-inclusive",
+      "purpose": "A discovered product's own price as both bounds.",
+      "requirements": [
+        "data.srch.customer.b2b-buyer",
+        "data.srch.catalog.indexed",
+        "data.srch.product.usd-priced"
+      ]
+    },
+    {
+      "id": "profile.srch.facets-priority-order",
+      "behavior": "srch.results.facets.priority-order",
+      "purpose": "A dictionary facet with distinct priorities, sorted ascending then descending.",
+      "requirements": [
+        "data.srch.customer.b2b-buyer",
+        "data.srch.catalog.indexed",
+        "data.srch.facet.dictionary-priorities",
+        "data.srch.store.facet-sort-priority"
+      ]
+    },
+    {
+      "id": "profile.srch.results-sort",
+      "behavior": "srch.results.sort",
+      "purpose": "Sort a result with distinct prices.",
+      "requirements": [
+        "data.srch.catalog.indexed",
+        "data.srch.results.distinct-prices"
+      ]
+    },
+    {
+      "id": "profile.srch.sort-survives-requery",
+      "behavior": "srch.results.sort.survives-requery",
+      "purpose": "Sort, then apply a filter: the sort stays.",
+      "requirements": [
+        "data.srch.results.distinct-prices",
+        "data.srch.catalog.indexed"
+      ]
+    },
+    {
+      "id": "profile.srch.sort-unknown-code",
+      "behavior": "srch.results.sort.unknown-code",
+      "purpose": "A hand-built ?sort code on a result with hits.",
+      "requirements": [
+        "data.srch.results.distinct-prices",
+        "data.srch.catalog.indexed"
+      ]
+    },
+    {
+      "id": "profile.srch.results-paging",
+      "behavior": "srch.results.paging",
+      "purpose": "A term whose hits span more than one batch.",
+      "requirements": [
+        "data.srch.query.large-result-term"
+      ]
+    },
+    {
+      "id": "profile.srch.query-special-characters",
+      "behavior": "srch.query.keyword.special-characters",
+      "purpose": "Hostile or odd input into the search bar on a working index.",
+      "requirements": [
+        "data.srch.catalog.indexed"
+      ]
+    },
+    {
+      "id": "profile.srch.expand-no-fields",
+      "behavior": "srch.barcode.expand.no-fields-untouched",
+      "purpose": "Dedicated store at defaults: a barcode term on a unique GTIN stays literal and finds nothing.",
+      "requirements": [
+        "data.srch.store.barcode-defaults",
+        "data.srch.product.gtin-unique"
+      ],
+      "notes": "Deliberately omits the parent expand's data.srch.store.barcode-exact: this branch is the no-fields negative of that state. SRCH-015 (storefront, B2B-store) belongs on profile.srch.fulltext instead."
+    },
+    {
+      "id": "profile.srch.expand-scanner-off",
+      "behavior": "srch.barcode.expand.scanner-off-still-expands",
+      "purpose": "Dedicated store with fields and the scanner off: a hand-built barcode term still finds 1 (xAPI).",
+      "requirements": [
+        "data.srch.store.barcode-exact",
+        "data.srch.store.barcode-disabled-with-fields"
+      ],
+      "notes": "Dedicated-store (xAPI) form. SRCH-016 runs on B2B-store and should stamp profile.srch.config-disable."
+    },
+    {
+      "id": "profile.srch.expand-variation-scope",
+      "behavior": "srch.barcode.expand.variation-scope",
+      "purpose": "Exact on MPN: the out-of-stock variation is in scope (xAPI).",
+      "requirements": [
+        "data.srch.store.barcode-exact",
+        "data.srch.variation.mpn-out-of-stock"
+      ],
+      "notes": "Dedicated-store (xAPI) form. SRCH-018 runs on B2B-store and should stamp profile.srch.resolve-variation-hit."
+    }
+  ]
+}

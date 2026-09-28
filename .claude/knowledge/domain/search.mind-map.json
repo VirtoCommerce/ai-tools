@@ -9,106 +9,6 @@
     "built_from": "search.md rev 1 (§1 barcode chain links 1–6, §2a–2h, §3 D1–D8, §5 G1–G7); business-logic.md BL-SRCH-001..005, BL-STORE-001, BL-CAT-003, BL-A11Y-001/002, BL-UI-001; ECL-3.1, ECL-3.2; suites 004, 005, 050a, 103 (Title/References/Automation_Status); reports/ba/test-models/VCST-2945-2026-09-28.md (Part 0 chain, state diagram, 3x amendments); reports/tickets/Sprint26-19/VCST-2945/testing-checklist.md (per-item verdicts); REG-2026-09-28-1518 (suite results + triage-report.md); PR bodies #909/#113/#2501; lane summaries 3x/4a-be/4a-fe/4v; VirtoOZ StorefrontUserGuide §Search Options and PlatformUserGuide §Manage Search Index (queried 2026-09-28).",
     "evidence_convention": "OBSERVED refs `VCST-2945 4a 2026-09-28` / `VCST-2945 3x 2026-09-28` / `VCST-2945 4v 2026-09-28` are LIVE AGENT LANE observations recorded as checklist verdicts (item id in the note). `REG-2026-09-28-1518` is the C1 execution of the 26 Draft cases that VCST-2945 authored; those cases are Draft (C1 ran --no-promote), so the run is cited as a live observation of that execution, NOT as a promotion. SPEC = the PR bodies.",
     "kb_read": "2026-09-28 — 14 questions (npm run kb -- ask). Hits: KB-110E0652, KB-A0B3940F (DISPUTED), KB-71011C1F, KB-C3945D5C, KB-BC55C4F0, KB-417AC3F2, KB-78B45E71, KB-25829330, KB-B77CC09C, KB-041DF407, KB-C466AD5C, KB-2B0274B9, KB-F3B1E987. Misses: index lag after product update; products storeId scope; suggestions dropdown; public store settings keys; sort/paging on results page.",
-    "pending_requirements_note": "There is NO srch data model yet (test-data/models/ holds only loyalty-missions). A `requires`/`produces` id on a node must resolve in a data model (models:check TM-005), so the ids are kept OFF the nodes and recorded here per node until /qa-test-data-model build srch declares them; then move each list onto its node. Fixtures that already reach most of these states are the BARCODE_* and BROWSEFILTERS_* aliases in test-data/aliases.json — the model should point at them, never at a seeder.",
-    "pending_requirements": {
-      "srch.index.freshness": [
-        "data.srch.catalog.indexed"
-      ],
-      "srch.query.keyword": [
-        "data.srch.catalog.indexed"
-      ],
-      "srch.results.facets": [
-        "data.srch.catalog.indexed",
-        "data.srch.index.no-ghost-docs"
-      ],
-      "srch.barcode.config": [
-        "data.srch.store.barcode-dedicated",
-        "data.srch.user.store-admin"
-      ],
-      "srch.barcode.config.set-exact": [
-        "data.srch.store.barcode-defaults"
-      ],
-      "srch.barcode.config.set-fulltext": [
-        "data.srch.store.barcode-exact"
-      ],
-      "srch.barcode.config.disable": [
-        "data.srch.store.barcode-exact"
-      ],
-      "srch.barcode.config.stale-on-property-delete": [
-        "data.srch.property.stale-field",
-        "data.srch.store.barcode-exact"
-      ],
-      "srch.barcode.config.drop-missing-on-change": [
-        "data.srch.store.barcode-stale-field"
-      ],
-      "srch.barcode.config.generic-write-unvalidated": [
-        "data.srch.store.barcode-dedicated"
-      ],
-      "srch.barcode.config.permission-read-only": [
-        "data.srch.user.browsefilters-read-only"
-      ],
-      "srch.barcode.config.permission-none-api": [
-        "data.srch.user.browsefilters-none"
-      ],
-      "srch.barcode.config.permission-none-blade-false-off": [
-        "data.srch.user.browsefilters-none"
-      ],
-      "srch.barcode.config.per-store": [
-        "data.srch.store.barcode-exact",
-        "data.srch.store.barcode-defaults"
-      ],
-      "srch.barcode.expand": [
-        "data.srch.store.barcode-exact"
-      ],
-      "srch.barcode.expand.case-and-prefix": [
-        "data.srch.product.case-mixed-code"
-      ],
-      "srch.barcode.expand.or-fields": [
-        "data.srch.product.gtin-unique",
-        "data.srch.product.code-or"
-      ],
-      "srch.barcode.expand.property-field": [
-        "data.srch.product.property-code"
-      ],
-      "srch.barcode.expand.variation-scope": [
-        "data.srch.variation.mpn-out-of-stock"
-      ],
-      "srch.barcode.expand.after-code-change": [
-        "data.srch.product.reindex-candidate"
-      ],
-      "srch.barcode.expand.special-values": [
-        "data.srch.product.special-value"
-      ],
-      "srch.barcode.expand.facet-counts": [
-        "data.srch.product.gtin-shared",
-        "data.srch.index.no-ghost-docs"
-      ],
-      "srch.barcode.expand.wildcards": [
-        "data.srch.product.gtin-unique"
-      ],
-      "srch.barcode.expand.scanner-off-still-expands": [
-        "data.srch.store.barcode-disabled-with-fields"
-      ],
-      "srch.barcode.fulltext": [
-        "data.srch.store.barcode-defaults",
-        "data.srch.product.fulltext-discriminator"
-      ],
-      "srch.barcode.resolve.single-hit-opens": [
-        "data.srch.product.gtin-unique"
-      ],
-      "srch.barcode.resolve.multi-hit-lists": [
-        "data.srch.product.gtin-shared"
-      ],
-      "srch.barcode.resolve.variation-hit": [
-        "data.srch.variation.mpn-out-of-stock"
-      ],
-      "srch.barcode.resolve.actor-parity": [
-        "data.srch.customer.b2b-buyer"
-      ],
-      "srch.barcode.resolve.identity-lookup-hides-browsing": [
-        "data.srch.product.gtin-shared"
-      ]
-    },
     "ticket": "VCST-2945"
   },
   "nodes": [
@@ -201,6 +101,9 @@
           "ref": "BL-CAT-003",
           "note": "30–60 s lag acceptable; PDP and cart read live"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed"
       ]
     },
     {
@@ -258,6 +161,12 @@
           "note": "desktop 1920 px + mobile 375 px, anonymous + signed-in",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed"
+      ],
+      "produces": [
+        "data.srch.history.recent-search"
       ]
     },
     {
@@ -332,6 +241,9 @@
           "note": "autocomplete dropdown: categories column, product previews, 'View all N results'",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed"
       ]
     },
     {
@@ -370,6 +282,9 @@
           "note": "opening /search?q= directly does not add the term to history; a submit from the bar does",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.history.recent-search"
       ]
     },
     {
@@ -396,6 +311,9 @@
           "ref": "VCST-5729",
           "note": "SRCH-011..013 promoted 2026-08-27"
         }
+      ],
+      "requires": [
+        "data.srch.category.with-subcategory"
       ]
     },
     {
@@ -457,6 +375,9 @@
           "ref": "domain-map:srch@rev1 §2b",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed"
       ]
     },
     {
@@ -505,6 +426,9 @@
           "ref": "BL-SRCH-002",
           "note": "triangulated BL-AUDIT-2026-07-22, CONFIRMED 3/3"
         }
+      ],
+      "requires": [
+        "data.srch.query.no-hit-term"
       ]
     },
     {
@@ -526,6 +450,10 @@
           "ref": "BL-SRCH-001",
           "note": "triangulated BL-AUDIT-2026-07-22, CONFIRMED 3/3"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed",
+        "data.srch.customer.b2b-buyer"
       ]
     },
     {
@@ -544,6 +472,9 @@
           "ref": "ECL-3.2",
           "note": "row 3, triangulated docs+live+source ECL-AUDIT-2026-09-03"
         }
+      ],
+      "requires": [
+        "data.srch.facet.overlapping-groups"
       ]
     },
     {
@@ -562,6 +493,9 @@
           "ref": "ECL-3.2",
           "note": "row 2, triangulated ECL-AUDIT-2026-09-03"
         }
+      ],
+      "requires": [
+        "data.srch.product.usd-priced"
       ]
     },
     {
@@ -595,6 +529,10 @@
           "ref": "VCST-5851",
           "note": "SRCH-FSORT-001..006 promoted 2026-09-10"
         }
+      ],
+      "requires": [
+        "data.srch.facet.dictionary-priorities",
+        "data.srch.store.facet-sort-priority"
       ]
     },
     {
@@ -653,6 +591,10 @@
           "note": "Sorting tile present on the Search configuration widget",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed",
+        "data.srch.results.distinct-prices"
       ]
     },
     {
@@ -706,6 +648,9 @@
           "ref": "REG-2026-07-01-1430",
           "note": "no numbered pager exists — the infinite-scroll model the SRCH-NEW-044/045/048/049 cases were re-authored to"
         }
+      ],
+      "requires": [
+        "data.srch.query.large-result-term"
       ]
     },
     {
@@ -887,6 +832,10 @@
           "note": "A1/A2: three tiles wrap; switch, Full-text / Exact radios, field list only in Exact, two hint blocks",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-dedicated",
+        "data.srch.user.store-admin"
       ]
     },
     {
@@ -906,6 +855,9 @@
           "note": "A3: 204; GET returns the fields; checked first, then by display label",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-defaults"
       ]
     },
     {
@@ -930,6 +882,9 @@
           "note": "storefront window closed by restoring {scannerEnabled:true, fields:[]}; final GET equal to defaults",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-exact"
       ]
     },
     {
@@ -955,6 +910,9 @@
           "note": "SRCH-016 PASS (Draft case, live execution — not a promotion)",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.storefront-exact"
       ]
     },
     {
@@ -1000,7 +958,11 @@
           "date": "2026-09-28"
         }
       ],
-      "notes": "No cleanup path (vc-module-catalog#909: the widget is the only validating writer). Whether that is acceptable is a PO question (test model row 19)."
+      "notes": "No cleanup path (vc-module-catalog#909: the widget is the only validating writer). Whether that is acceptable is a PO question (test model row 19).",
+      "requires": [
+        "data.srch.property.stale-field",
+        "data.srch.store.barcode-exact"
+      ]
     },
     {
       "id": "srch.barcode.config.drop-missing-on-change",
@@ -1024,6 +986,9 @@
           "note": "A9: dropped on a field toggle and on a mode change; never re-saved",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-stale-field"
       ]
     },
     {
@@ -1046,6 +1011,9 @@
           "ref": "kb:KB-C3945D5C",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.property.stale-field"
       ]
     },
     {
@@ -1109,6 +1077,9 @@
           "note": "blade renders the stored state; no Save, Reset disabled, rows and radios inert",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.user.browsefilters-read-only"
       ]
     },
     {
@@ -1126,6 +1097,9 @@
           "note": "GET, GET fields and PUT all 403; anonymous 401",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.user.browsefilters-none"
       ]
     },
     {
@@ -1158,7 +1132,10 @@
         "expected": "the blade reflects the stored setup or states that it cannot read it — it never claims a state the store does not hold (vc-module-catalog#909 permission table; checklist A8)",
         "observed": "the blade issues only GET …/fields, gets 403, shows an 'Error 403' banner and still renders the switch OFF with no match mode while the stored value is scannerEnabled=true; after Dismiss the scanner-off UI remains (kb:KB-C466AD5C; VCST-2945 4a A8; SRCHA-056)",
         "route": "vc-module-catalog (PR #909) — Low draft reports/bugs/open/low/BUG-barcode-blade-shows-scanner-off-without-browsefilters-read.md, not filed"
-      }
+      },
+      "requires": [
+        "data.srch.user.browsefilters-none"
+      ]
     },
     {
       "id": "srch.barcode.config.keyboard-operable",
@@ -1211,6 +1188,10 @@
           "note": "A11: exact config on the dedicated store; B2B-store GET unchanged and its barcode: term stays literal (0)",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-exact",
+        "data.srch.store.storefront-defaults"
       ]
     },
     {
@@ -1419,7 +1400,11 @@
           "date": "2026-09-28"
         }
       ],
-      "notes": "Released behaviour (VCST-2622) that VCST-2945 must leave unchanged when no fields are configured."
+      "notes": "Released behaviour (VCST-2622) that VCST-2945 must leave unchanged when no fields are configured.",
+      "requires": [
+        "data.srch.store.storefront-defaults",
+        "data.srch.product.fulltext-discriminator"
+      ]
     },
     {
       "id": "srch.barcode.fulltext.single-hit-lists",
@@ -1475,6 +1460,9 @@
           "note": "B1–B5 PASS on the dedicated store, Elasticsearch 8 active",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-exact"
       ]
     },
     {
@@ -1496,6 +1484,10 @@
           "note": "/search?barcode=<v> on defaults → barcode empty state",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-defaults",
+        "data.srch.product.gtin-unique"
       ]
     },
     {
@@ -1513,6 +1505,10 @@
           "note": "B1/B2: gtin → 1 with isGenerated; gtin and code each → 1 under [gtin,code]",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-unique",
+        "data.srch.product.code-or"
       ]
     },
     {
@@ -1530,6 +1526,9 @@
           "note": "B3: property value → 1",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.property-code"
       ]
     },
     {
@@ -1553,7 +1552,10 @@
           "note": "case handling follows the provider: Elasticsearch lowercases, Lucene does not"
         }
       ],
-      "notes": "Case-insensitivity is a property of the ACTIVE provider (Elasticsearch 8 on vcst-qa, domain map G7); a Lucene deployment is not covered."
+      "notes": "Case-insensitivity is a property of the ACTIVE provider (Elasticsearch 8 on vcst-qa, domain map G7); a Lucene deployment is not covered.",
+      "requires": [
+        "data.srch.product.case-mixed-code"
+      ]
     },
     {
       "id": "srch.barcode.expand.variation-scope",
@@ -1570,6 +1572,9 @@
           "note": "B4: variation MPN → 1 by default; explicit is:product → 0",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.variation.mpn-out-of-stock"
       ]
     },
     {
@@ -1594,6 +1599,9 @@
           "note": "B7: escaped quote+colon value → 1; whitespace/empty untouched; 600 chars → no 500",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.special-value"
       ]
     },
     {
@@ -1639,7 +1647,10 @@
         "expected": "BL-SRCH-005 (special characters are never interpreted as query operators) + vc-module-x-catalog#113 ('compared exactly as term filters') + the blade hint 'Matching is exact: the scanned value must equal the stored value'",
         "observed": "Elasticsearch 8 honours * and ? inside the expanded term: barcode:\"*\" lists the whole catalog (4714 via xAPI; 3,722 on /search), a truncated GTIN + * returns 1 hit and the storefront single-hit redirect opens that product, ? substitutes one character (kb:KB-110E0652, kb:KB-78B45E71; VCST-2945 4a B6/C12). Generic term-filter wildcards are documented and deliberate (VCST-3840) — the barcode path inherits them unescaped (domain map D8)",
         "route": "vc-module-x-catalog PR #113 author (intent: are * / ? intended on the barcode path?) — VCST-6094; ticket held in Testing pending that answer"
-      }
+      },
+      "requires": [
+        "data.srch.product.gtin-unique"
+      ]
     },
     {
       "id": "srch.barcode.expand.facet-counts",
@@ -1663,6 +1674,10 @@
           "note": "B8: shared GTIN → 3, term-facet counts consistent — after a ghost-index purge (see srch.results.facets.ghost-docs-inflate-counts)",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-shared",
+        "data.srch.index.no-ghost-docs"
       ]
     },
     {
@@ -1739,6 +1754,9 @@
           "note": "G1 CLOSED: xAPI 1 hit and /search?barcode= opened the product with the button hidden",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-disabled-with-fields"
       ]
     },
     {
@@ -1760,7 +1778,10 @@
           "date": "2026-09-28"
         }
       ],
-      "notes": "Its case CAT-GQL-147 was a test defect in REG-2026-09-28-1518 (setup never saved) and now fails at its own setup assertion until that request is fixed — the node is decided by the 4a observation, not the case."
+      "notes": "Its case CAT-GQL-147 was a test defect in REG-2026-09-28-1518 (setup never saved) and now fails at its own setup assertion until that request is fixed — the node is decided by the 4a observation, not the case.",
+      "requires": [
+        "data.srch.product.reindex-candidate"
+      ]
     },
     {
       "id": "srch.barcode.expand.unpriced-not-found",
@@ -1804,6 +1825,9 @@
           "ref": "kb:KB-71011C1F",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.storefront-exact"
       ]
     },
     {
@@ -1827,6 +1851,9 @@
           "note": "SRCH-014 PASS (Draft case, live execution)",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-unique"
       ]
     },
     {
@@ -1844,6 +1871,9 @@
           "note": "C3: shared GTIN → 3 cards, no redirect",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-shared"
       ]
     },
     {
@@ -1865,7 +1895,10 @@
           "date": "2026-09-28"
         }
       ],
-      "notes": "The /product/<variationId> branch for a variation WITHOUT a slug (vc-frontend#2501) was not exercised — the fixture gives variations slugs (domain map G4 still partly open)."
+      "notes": "The /product/<variationId> branch for a variation WITHOUT a slug (vc-frontend#2501) was not exercised — the fixture gives variations slugs (domain map G4 still partly open).",
+      "requires": [
+        "data.srch.variation.mpn-out-of-stock"
+      ]
     },
     {
       "id": "srch.barcode.resolve.zero-hit-empty",
@@ -1912,6 +1945,9 @@
           "ref": "kb:KB-71011C1F",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-shared"
       ]
     },
     {
@@ -1929,6 +1965,9 @@
           "note": "C10: 390 px opens the same PDP, overlay closed",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-unique"
       ]
     },
     {
@@ -1949,6 +1988,10 @@
           "note": "C8: signed-in org buyer reached the same PDP",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.customer.b2b-buyer",
+        "data.srch.product.gtin-unique"
       ]
     },
     {
@@ -1967,7 +2010,10 @@
           "date": "2026-09-28"
         }
       ],
-      "notes": "A crafted category route (/<category>?barcode=) applies the term INSIDE that category (kb:KB-25829330) — only the /search route is global."
+      "notes": "A crafted category route (/<category>?barcode=) applies the term INSIDE that category (kb:KB-25829330) — only the /search route is global.",
+      "requires": [
+        "data.srch.product.gtin-unique"
+      ]
     },
     {
       "id": "srch.barcode.resolve.whitespace-value",
