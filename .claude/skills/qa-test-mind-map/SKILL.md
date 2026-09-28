@@ -41,8 +41,8 @@ found while building goes to `/qa-review-oracles` or `kb capture`, never into th
   gone gets `status: OBSOLETE` plus `obsolete.reason`. Deleting it is `TM-030`.
 - **Linked tests are derived, never stored.** The `Behavior:` stamps in suite rows are the one writer
   of that link.
-- **The human view is a projection.** `npm run models:view -- <slug>` prints a Mermaid mindmap (status
-  and per-subtree case count on each node) plus the state diagram; `--format html --out <file>` gives a
+- **The human view is a projection.** `npm run models:view -- <slug>` prints a Mermaid mindmap (status,
+  and the cases stamped on each node or below it in the edge graph) plus the state diagram; `--format html --out <file>` gives a
   collapsible page for a scope review with developers or the PO. Regenerate it; never commit or hand-edit it.
 
 ## Modes
@@ -53,9 +53,10 @@ found while building goes to `/qa-review-oracles` or `kb capture`, never into th
 | `update` | The domain map's `rev` moved, a ticket changed behaviour, an oracle was amended, or `--since <ref>` shows a diff in the domain's code | [`update.md`](update.md) |
 | `audit` | Before a release, or when a suite's cases go red without a product change | [`audit.md`](audit.md) |
 
-Each mode ends in the JSON result contract defined in its own file. **Writes:** the map file; in
-`build` step 10, `Behavior:` stamps in suite CSVs (single writer per suite); in `build` step 9, `kb`
-entries. Findings go to chat.
+Each mode ends in the JSON result contract defined in its own file. **Writes:** the map file, including
+cross-domain edges drawn in the source-side map; in `build` step 10, `Behavior:` stamps in suite CSVs
+(single writer per suite); `kb` entries in `build` step 9 and `update` step 7 (a PUBLIC base); in
+`audit`, a report under `reports/knowledge/` only when the operator asks. Findings go to chat.
 
 ## Pre-flight (every mode)
 
@@ -93,7 +94,10 @@ entries. Findings go to chat.
 - **A domain-map claim is cited with its map rev** (`domain-map:<slug>@rev<N> §<section>`), keeping
   the class of the map's own verdict (`CONFIRMED (live)` → `OBSERVED`, `(source)` → `DOC`).
 - **A promoted case is evidence of observation** (`OBSERVED`, ref = the promoting run id). A Draft,
-  Manual or Deprecated case is not.
+  Manual or Deprecated case is not. An Automated case that records no promoting run is `SPEC`; one
+  whose References record `verified live <env> <date>` is `OBSERVED` with that date.
+- **An evidence `date` is when the evidence was produced** (the run, the observation, the source
+  read), never the day you cite it. A prior-art observation keeps its own date.
 
 ## Modelling rules
 
@@ -124,6 +128,10 @@ entries. Findings go to chat.
 - **`/qa-test-lifecycle`** — hand each suspect's suite to `/qa-test-lifecycle suite <ID>`; its Phase 2
   re-syncs it. The lifecycle does not read `suspects` itself.
 - **`/qa-review-oracles`** — every `DRIFT` whose `route` names it is a candidate for that audit.
+- **`/qa-checklist --from-model`** — Mode 5 selects the in-scope nodes by chain link, citation, descent
+  and crossing ([`../qa-checklist/from-model.md`](../qa-checklist/from-model.md)).
+- **`/qa-test-fast`** — Wave 2 runs `update` or `build` without stamps and copies the map signals into the
+  bundle ([`../qa-test-fast/context-wave.md`](../qa-test-fast/context-wave.md) §Wave 2).
 
 ## Failure handling
 
