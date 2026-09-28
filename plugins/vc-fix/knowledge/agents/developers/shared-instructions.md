@@ -241,6 +241,7 @@ the tracker link read at a glance while the title stays changelog/scope-tooling 
 squash-merges, so the PR title becomes the squashed commit subject). It is **distinct from the commit
 message**, which keeps the code area as its scope and the key trailing (`fix(<scope>): <summary> (<key>)`).
 This is the `gh pr create --title` value and the `PR_TITLE:` marker the agent emits.
+The PR **body** comes from `pr-body-template.md`, in this folder.
 
 ## After the PR — verify CI, don't assume green (Gate 5)
 **Opening the PR is not the finish line.** The run is not done until the PR's GitHub Actions checks are

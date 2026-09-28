@@ -151,34 +151,8 @@ Full list: `knowledge/agents/developers/shared-instructions.md`. If the fix is u
 `FIX_STATUS: FAILED`, don't push speculative changes.
 
 ### PR body (write to the given `PR_BODY.md` path)
-```markdown
-## Summary
-<2–3 sentences.>  Fixes JIRA **<KEY>**.
-
-## Root cause
-<1–2 sentences.>
-
-## Fix
-<File-level description; minimal-diff rationale; contract/field verified.>
-
-## Test (red → green)
-- Added `<TestClass.Method>` in `<test project>`: <assertion>. Fails on old code, passes with fix.
-
-## Verification
-- [ ] dotnet build -c Debug
-- [ ] dotnet test (affected project)
-- [ ] SonarCloud quality gate green (no new bug/vuln/hotspot; new-code coverage + duplication within thresholds)
-<one-line pass results>
-
-## ⚠ Needs deploy verification
-Statically verified only. The live symptom from <KEY> must be re-confirmed after this module is built
-and deployed to QA (regression pipeline + `/qa-verify-fix <KEY>`).
-
-## Reviewer notes
-<Risks, migration notes, tag original assignee if known.>
-
-> 🤖 Opened by the QA auto-fix pipeline. **Human review + deploy verification required before merge — do not auto-merge.**
-```
+Read `knowledge/agents/developers/pr-body-template.md` before you write the body. It is the one template
+for every auto-fix PR. Fill its **backend** column, with `{OPENED}` = `Opened`.
 
 ### Required output markers (each on its own line, at the very end)
 ```

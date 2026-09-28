@@ -48,44 +48,14 @@ A module's Admin UI ships **inside the same repo** (`src/VirtoCommerce.<Name>.We
    ```
    Overrides `FIX_COMMIT_NAME` / `FIX_COMMIT_EMAIL` win when set. If commits were already made with a bot
    author, re-author and force-push so CLA re-evaluates.
-7. **Write the PR body** to the given PR_BODY.md path (template below).
+7. **Write the PR body** to the given PR_BODY.md path (see the PR body template section below).
 8. **Emit markers.**
 
 ## PR body template (write to the given PR_BODY.md path)
 
-```markdown
-## Summary
-<2–3 sentences.>
-
-Fixes JIRA **<KEY>**.
-
-## Root cause
-<1–2 sentences.>
-
-## Fix
-<File-level description; minimal-diff rationale. Note any contract/field verified.>
-
-## Test (red → green)
-- Added `<TestClass.Method>` in `<test project>`: <assertion>. Fails on old code, passes with fix.
-<!-- Admin SPA logic: Node scratch-harness red→green output (not committed). -->
-<!-- Admin SPA layout/CSS: visual render-harness screenshots — before (broken/red) + after (fixed/green). -->
-
-## Verification
-- [ ] dotnet build -c Debug
-- [ ] dotnet test (affected project)
-- [ ] SonarCloud quality gate green (no new bug/vuln/hotspot; new-code coverage + duplication within thresholds)
-<Paste one-line pass results.>
-
-## ⚠ Needs deploy verification
-This change is statically verified only. The live storefront symptom from <KEY> must be
-re-confirmed after this module is built and deployed to the QA environment (regression
-pipeline + `/qa-verify-fix <KEY>`).
-
-## Reviewer notes
-<Risks, migration notes, anything needing human eyes. Tag original assignee if known.>
-
-> 🤖 Draft opened by the QA auto-fix pipeline. Human review + deploy verification required before merge.
-```
+Read `plugins/vc-fix/knowledge/agents/developers/pr-body-template.md` with the Read tool before you write
+the body; it is not preloaded here. It is the one template for every auto-fix PR, interactive and CI.
+Fill its **backend** column, with `{OPENED}` = `Draft opened`.
 
 ## Required output markers (each on its own line, at the very end)
 

@@ -210,38 +210,9 @@ changes (`/vc-shell-fix` Path 2) in the diff. Full list: `knowledge/agents/devel
 If the fix is unclear / risky / cross-repo → `FIX_STATUS: FAILED`, don't push speculative changes.
 
 ### PR body (write to the given `PR_BODY.md` path)
-```markdown
-## Summary
-<2–3 sentences.>  Fixes JIRA **<KEY>**. <If routed to a module sub-app, one clause: "Fix is scoped to
-`<repo>`'s `<subApp.path>` sub-app.">.
-
-## Root cause
-<1–2 sentences.>
-
-## Fix
-<File-level description; minimal-diff rationale; GraphQL field / prop contract verified; $cfg flag ruled out.>
-
-## Test (red → green)
-- Added `<path/to.spec.ts>` (vitest): <assertion>. Fails on old code, passes with this fix.
-
-## Verification
-- [ ] vue-tsc --noEmit (typecheck)
-- [ ] lint
-- [ ] vitest (new + affected)
-- [ ] build
-- [ ] SonarCloud quality gate green (no new bug/vuln/hotspot; new-code coverage + duplication within thresholds)
-<one-line pass result of each you ran>
-
-## ⚠ Needs visual / E2E verification
-<Include ONLY if the bug has a visual aspect.> Logic is unit-proven. Layout / CLS / visual behavior of
-<KEY> must be re-confirmed on a real deploy (Storybook + storefront) via
-`/qa-verify-fix <KEY>`.
-
-## Reviewer notes
-<Risks, BL-UI cells touched, tag the original assignee if known.>
-
-> 🤖 Opened by the QA auto-fix pipeline. **Human review required before merge — do not auto-merge.**
-```
+Read `knowledge/agents/developers/pr-body-template.md` before you write the body. It is the one template
+for every auto-fix PR. Fill its **storefront** column, or its **sub-app** column when routed to a module
+sub-app, with `{OPENED}` = `Opened`.
 
 ### Required output markers (each on its own line, at the very end)
 ```

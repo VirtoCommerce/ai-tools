@@ -283,8 +283,8 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   auth-per-host are in [`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §3). A **normal PR
   for human review — not auto-merged**, **PR title `fix(<key>): <summary>`** (Conventional Commits, ticket
   key in the scope slot; see
-  `knowledge/agents/developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until
-  human review"; backend adds "needs deploy verification"), label, link the tracker.
+  `knowledge/agents/developers/shared-instructions.md` §PR title), body from `knowledge/agents/developers/pr-body-template.md`
+  (the one PR body template: "do not auto-merge"; backend adds "needs deploy verification"), label, link the tracker.
 - **Tracker-key hygiene in the PR/issue body — a malformed key-shaped token turns the whole `ci` job RED.**
   VirtoCommerce's `module-ci.yml` runs *Parse Jira Keys from All Commits*
   (`vc-github-actions/get-jira-keys`) over the **PR body**, extracting with `/(([A-Z]+)-\d+)/g`, and

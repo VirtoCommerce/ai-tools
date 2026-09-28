@@ -114,7 +114,7 @@ bump dependents). The live dependency/impact graph is read from the Platform API
   JIRA key, e.g. `fix(pricing): apply coupon to post-tier amount (VCST-1234)`.
 - **PR:** `gh pr create` (interactive `/qa-fix`: a normal PR for human review; CI `run-fix-cycle.ts`:
   `--draft`), title `fix(<scope>): <imperative> (VCST-XXXX)`, body = RCA + JIRA link + red→green test +
-  verification checklist + "DO NOT MERGE until human review" (see the CI fix agents' PR-body template).
+  verification checklist + "DO NOT MERGE until human review" (template: `knowledge/agents/developers/pr-body-template.md`).
   Backend PRs add the **"needs deploy verification"** note — the live symptom is re-confirmed post-merge
   via the regression pipeline + `/qa-verify-fix`. **Never** auto-merge.
 - **Gates:** see `.claude/rules/quality-gates.md` (G0–G7). **Never** `merge_pull_request` / `gh pr merge`.

@@ -64,43 +64,15 @@ in short:
    ```
    Overrides `FIX_COMMIT_NAME` / `FIX_COMMIT_EMAIL` win when set. Commits already made with a bot author →
    re-author and force-push so CLA re-evaluates.
-7. **Write the PR body** to the path given in the assignment (see template below).
+7. **Write the PR body** to the path given in the assignment (see the PR body template section below).
 8. **Emit markers** (end of reply).
 
 ## PR body template (write to the given PR_BODY.md path)
 
-```markdown
-## Summary
-<2–3 sentences: what was broken, what this changes.>
-
-Fixes JIRA **<KEY>**.
-
-## Root cause
-<1–2 sentences.>
-
-## Fix
-<What changed and why, file-level. Minimal-diff rationale.>
-
-## Test (red → green)
-- Added `<path/to.spec.ts>`: <what it asserts>. Fails on the old code, passes with this fix.
-
-## Verification
-- [ ] vue-tsc --noEmit
-- [ ] lint
-- [ ] vitest (new + affected)
-- [ ] build
-- [ ] SonarCloud quality gate green (no new bug/vuln/hotspot; new-code coverage + duplication within thresholds)
-<Paste the one-line pass result of each you ran.>
-
-## ⚠ Needs visual / E2E verification
-<Include ONLY if the bug has a visual aspect.> Logic is unit-proven. Layout / CLS / visual behavior from
-<KEY> must be re-confirmed on a real deploy (Storybook + storefront) — regression pipeline + `/qa-verify-fix <KEY>`.
-
-## Reviewer notes
-<Risks, BL-UI cells touched, anything needing human eyes. Tag the original assignee if known.>
-
-> 🤖 Draft opened by the QA auto-fix pipeline. Human review required before merge.
-```
+Read `plugins/vc-fix/knowledge/agents/developers/pr-body-template.md` with the Read tool before you write
+the body; it is not preloaded here. It is the one template for every auto-fix PR, interactive and CI.
+Fill its **storefront** column, or its **sub-app** column when the assignment routes you to a module
+sub-app, with `{OPENED}` = `Draft opened`.
 
 ## Required output markers (each on its own line, at the very end)
 
