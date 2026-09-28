@@ -17,6 +17,7 @@
  *   6. no password literal in the committed fixture (a secret var name only).
  * Exit 1 on any violation.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

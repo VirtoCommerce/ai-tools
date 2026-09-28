@@ -35,6 +35,7 @@
  * Exit codes: 0 every case reported a verdict · 1 at least one case FAILED (a real defect
  * signal for the caller) · 2 the lanes plan is missing.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { spawnSync } from "child_process";
 import { existsSync, readFileSync, writeFileSync, appendFileSync, mkdirSync } from "fs";
 import { join } from "path";

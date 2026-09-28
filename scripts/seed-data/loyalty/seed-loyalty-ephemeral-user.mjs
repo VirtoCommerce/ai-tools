@@ -37,6 +37,7 @@
  * PTS prices and build a mixed cart? The PTS price list is assigned by catalogId, not memberId, so it
  * SHOULD be catalog-scoped rather than group-gated — but that is verified live, not assumed.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   STORE_ID, DRY_RUN, TEARDOWN, VERBOSE,
   log, verbose, assertSafeTarget, auth, api,

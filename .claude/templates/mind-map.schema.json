@@ -105,7 +105,7 @@
           "properties": {
             "expected": { "type": "string", "$comment": "What the higher-precedence source says, with its ref." },
             "observed": { "type": "string", "$comment": "What the platform was seen to do, with its ref." },
-            "route": { "type": "string", "$comment": "Where the conflict is resolved: /qa-review-oracles, kb dispute, a bug, a product decision." }
+            "route": { "type": "string", "$comment": "Who resolves the conflict, as something trackable: a tracker key of this deployment (JIRA_PROJECT_KEY), an issue/PR in a named repo or its URL, /qa-review-oracles, or a kb dispute. A route marked UNFILED, or naming none of these, is TM-018 (warn)." }
           }
         },
         "obsolete": {

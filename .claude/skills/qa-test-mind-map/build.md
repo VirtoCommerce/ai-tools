@@ -31,6 +31,10 @@ If you observe anything live yourself, you are also an **Observer** and step 9 a
    - negative, boundary, permission, state or integration paths
    - one per oracle `Violation signal` that is a separate path
    - one per existing case whose Title names a separate outcome
+   - one `integration` branch per place the behaviour meets functionality another domain owns; add a
+     cross-domain `depends_on` / `affected_by` edge when that domain has a map, else an
+     `integrates with: <domain> — <what>` line in `notes`
+   - an `off` branch for each feature switch (SKILL.md §Modelling rules)
 
    Set `branch_kind` + `technique`. No source, no branch; list it under `open_questions` in the result instead.
 5. **Data needs.** Put `requires` on each node for the state it needs beyond its parent, and `produces`
@@ -47,9 +51,12 @@ If you observe anything live yourself, you are also an **Observer** and step 9 a
    you established first-hand: matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held
    nothing ⇒ `kb capture` (`--deployment {TEST_ENV}`). Public base — nothing client-specific.
 10. **Stamp** existing cases with `Behavior:<node-id>` only after the map is green, as the single
-    writer of each suite (`.claude/rules/regression.md`). Reuse `applyCellEdits` from
-    `scripts/test-cases/promote-cases.ts`, which is byte-preserving and re-parse-verified. Never
-    stamp a Deprecated case.
+    writer of each suite (`.claude/rules/regression.md`). Read each candidate row's Steps and
+    Assertions first: a Title that names the behaviour is a lead, not a stamp. Reuse `applyCellEdits`
+    from `scripts/test-cases/promote-cases.ts` (byte-preserving, re-parse-verified). When it refuses a
+    row, or `models:check` reports TM-019 for the suite (a legacy header, whose stamps are never read),
+    leave the row unstamped and list it under `unstamped` with the reason; never hand-edit around it.
+    Never stamp a Deprecated case.
 
 ## Forbidden
 
@@ -72,6 +79,8 @@ If you observe anything live yourself, you are also an **Observer** and step 9 a
   "new_requirements": ["data.<slug>.<entity>.<state>"],
   "open_questions": ["<a behaviour no source could establish>"],
   "stamped_cases": 0,
+  "unstamped": [{ "case": "<id>", "reason": "applyCellEdits refused | TM-019 legacy header" }],
+  "integration_points": [{ "from": "<id>", "to": "<id> | <domain with no map>" }],
   "kb": { "read": ["KB-…"], "confirmed": [], "disputed": [], "captured": [] }
 }
 ```

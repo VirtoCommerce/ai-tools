@@ -8,7 +8,7 @@
 [DOM] Matching products displayed in grid
 [DOM] Result count visible
 [STATE] Search input retains 'laptop'","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Spinner >5s; 0 products returned unexpectedly; results page not loading; 4xx on searchProducts; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[CONSOLE] no TypeError or JS errors","Spinner >5s; 0 products returned unexpectedly; results page not loading; 4xx on searchProducts; console TypeError","none",regression-qa-theme-26.csv | Behavior:srch.query.keyword | DataProfile:profile.srch.query-keyword,"Automated"
 "SRCH-002","Search - Suggestions Dropdown","Search > Suggestions","Medium","BL-SRCH-002","ECL-14.2","Search configured with suggestions enabled","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search bar
 [ACT] fill 'Search': 'lap' (partial query)
@@ -16,7 +16,7 @@
 [ASSERT] Verify dropdown appears with suggestions","[DOM] Suggestions dropdown appears below search input
 [DOM] Suggestion items match partial query 'lap'
 [STATE] Clicking a suggestion populates input and executes search","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for suggestion query
-[CONSOLE] no TypeError or JS errors","Suggestions dropdown not appearing; suggestions unrelated to query; clicking suggestion not executing search; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[CONSOLE] no TypeError or JS errors","Suggestions dropdown not appearing; suggestions unrelated to query; clicking suggestion not executing search; console TypeError","none",regression-qa-theme-26.csv | Behavior:srch.suggest | DataProfile:profile.srch.suggest,"Automated"
 "SRCH-005","Search - Within Category","Search > Scoped","Medium","BL-SRCH-001","","Inside a specific category page","url={{FRONT_URL}}","[NAV] Navigate to a specific category page on {{FRONT_URL}}
 [ACT] Use the search bar while on the category page
 [ACT] fill 'Search': 'product'; [KEY] press [Enter]
@@ -24,7 +24,7 @@
 [ASSERT] Verify results are scoped to current category","[DOM] Search results scoped to the current category context
 [DOM] Clear indication of search scope (e.g., within category label)
 [STATE] Products from outside the category not in results","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with category scope
-[CONSOLE] no TypeError or JS errors","Results not scoped to category; products from all categories shown; no scope indicator; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[CONSOLE] no TypeError or JS errors","Results not scoped to category; products from all categories shown; no scope indicator; console TypeError","none",regression-qa-theme-26.csv | Behavior:srch.scope.category | DataProfile:profile.srch.scope-category,"Automated"
 "SRCH-007","Search - Sorting Results — Sort Dropdown Built from API sortings","Search > Sorting","Medium","BL-CAT-005, BL-SRCH-001","","Search returns multiple products with varying prices; storefront is on vc-frontend theme 2.52+ (sortings field in SearchProducts response)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a search returning multiple products
 [WAIT] Wait for results page with sort dropdown visible
 [ASSERT] Snapshot the sort dropdown and capture all visible option labels and codes (live-discover: read from rendered dropdown DOM, do not assume any fixed label list)
@@ -80,7 +80,7 @@
 [DOM] At least 1 product preview is shown, with preview count equal to min(total matching products for the query, autocomplete cap) — not an assumed fixed count
 [DOM] 'Hints' section remains visible above Products section
 [DOM] Clear (X) button appears in input when text is present","[NETWORK] POST /graphql (searchProducts) fires with keyword: 'hoodie'; capture response totalCount to cross-check preview count = min(totalCount, autocomplete cap)
-[CONSOLE] no TypeError or JS errors","Autocomplete products not appearing after typing; preview count does not equal min(total matches, autocomplete cap); Hints section disappearing; no GraphQL call fired; console TypeError","N/A","E2E-SEARCH-005, SRCH-002","Automated"
+[CONSOLE] no TypeError or JS errors","Autocomplete products not appearing after typing; preview count does not equal min(total matches, autocomplete cap); Hints section disappearing; no GraphQL call fired; console TypeError","N/A","E2E-SEARCH-005, SRCH-002 | Behavior:srch.suggest.autocomplete | DataProfile:profile.srch.suggest-autocomplete","Automated"
 "SRCH-NEW-003","Search Bar - Hints Section Shows Prior Searches on Focus","Search > Hints","High","","","Storefront accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [WAIT] Wait for dropdown to open
@@ -103,7 +103,7 @@
 [DOM] Each hint is a button with a search icon and query text
 [NAV] Clicking 'laptop' hint populates input with 'laptop' and navigates to /search?q=laptop
 [DOM] Search results for 'laptop' displayed","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for 'laptop'
-[CONSOLE] no TypeError or JS errors","Hints section absent when prior searches exist; hint buttons not clickable; clicking hint not navigating; console TypeError","N/A","E2E-SEARCH-003, SRCH-008","Automated"
+[CONSOLE] no TypeError or JS errors","Hints section absent when prior searches exist; hint buttons not clickable; clicking hint not navigating; console TypeError","N/A","E2E-SEARCH-003, SRCH-008 | Behavior:srch.suggest.history-hints | DataProfile:profile.srch.suggest-history","Automated"
 "SRCH-NEW-004","Search Bar - Clear Button Resets Input to Empty","Search > Input Controls","High","","","Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click the search input
 [WAIT] Wait for dropdown to open
@@ -167,7 +167,7 @@
 [ASSERT] Read the h1 page heading
 [ASSERT] Count the product cards rendered in the grid","[DOM] h1 heading shows a result count number
 [MATH] Count in heading matches actual number of visible product cards","[NETWORK] POST /graphql (searchProducts) returns HTTP 200
-[CONSOLE] no TypeError or JS errors","Heading count mismatches visible card count; heading missing count; console TypeError","none","","Automated"
+[CONSOLE] no TypeError or JS errors","Heading count mismatches visible card count; heading missing count; console TypeError","none",Behavior:srch.results.render | DataProfile:profile.srch.results-render,"Automated"
 "SRCH-NEW-010","Search Results - Grid and List View Toggle","Search > Results Page > Layout","High","BL-CAT-001","","Navigate to /search?q=hoodie; 4+ results expected","url={{FRONT_URL}}/search?q=hoodie","[NAV] Navigate to {{FRONT_URL}}/search?q=hoodie
 [WAIT] Wait for results
 [ASSERT] Confirm default grid layout (multi-column)
@@ -213,7 +213,7 @@
 [STATE] URL returns to clean (no ?sort) when default option selected
 [DOM] Drop-down renders blank during initial load before first API response (expected behavior per VCST-5177 design)","[NETWORK] no 4xx/5xx on sort change
 [NETWORK] POST /graphql (SearchProducts) response includes sortings[] with isDefault and selected flags
-[CONSOLE] no TypeError or JS errors","Sort combobox accessible name not updating on selection; native select-option failing (VcSelect is not a native select); product order unchanged after sort selection; {first_id_asc} == {first_id_desc} (sort direction not applied); URL not updating with sort code; URL not clearing on default selection; console TypeError; dropdown rendering blank permanently (not just during load)","none","VCST-5177; SRCH-007; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26)","Automated"
+[CONSOLE] no TypeError or JS errors","Sort combobox accessible name not updating on selection; native select-option failing (VcSelect is not a native select); product order unchanged after sort selection; {first_id_asc} == {first_id_desc} (sort direction not applied); URL not updating with sort code; URL not clearing on default selection; console TypeError; dropdown rendering blank permanently (not just during load)","none",VCST-5177; SRCH-007; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26) | Behavior:srch.results.sort | DataProfile:profile.srch.results-sort,"Automated"
 "SRCH-NEW-023","Search - Direct URL Navigation with Query Parameter","Search > URL Navigation","High","BL-SRCH-001","","Storefront is accessible","url={{FRONT_URL}}/search?q=hoodie","[NAV] Open a new browser tab
 [NAV] Navigate directly to {{FRONT_URL}}/search?q=hoodie (no prior homepage visit in this tab)
 [WAIT] Wait for results page to load
@@ -268,7 +268,7 @@
 [NAV] URL query params (q, sort, facets) unchanged after scroll-triggered load
 [STATE] Total rendered card count increases monotonically as scrolling continues","[NETWORK] POST /graphql (searchProducts) fires on scroll with an after-cursor param (not a page/skip param)
 [NETWORK] no 4xx/5xx on scroll-triggered requests
-[CONSOLE] no TypeError or JS errors","Scrolling to the bottom does not load additional products; appended batch duplicates the initial batch; URL params reset/cleared after scroll-load; console TypeError","none","Coverage Gap Analysis; GAP-CS-18; re-authored from numbered-pager assumption per REG-2026-07-01-1430 (see SRCH-NEW-049)","Automated"
+[CONSOLE] no TypeError or JS errors","Scrolling to the bottom does not load additional products; appended batch duplicates the initial batch; URL params reset/cleared after scroll-load; console TypeError","none",Coverage Gap Analysis; GAP-CS-18; re-authored from numbered-pager assumption per REG-2026-07-01-1430 (see SRCH-NEW-049) | Behavior:srch.results.paging | DataProfile:profile.srch.results-paging,"Automated"
 "SRCH-NEW-045","Search Term and Active Filters Persist After Infinite-Scroll Load-More","Search > Infinite Scroll","High","BL-SRCH-001","","Multiple products matching a search term with at least one applicable facet filter; results span 2+ scroll-loaded batches; storefront /search uses infinite scroll by design (no numbered pager, no ?page param — see SRCH-NEW-049)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} and execute a broad search that returns enough products for 2+ scroll-loaded batches (e.g. 'a')
 [KEY] press [Enter]
 [WAIT] Wait for search results page
@@ -504,7 +504,7 @@ search_query: @td(SEARCH_QUERY.q)","[NAV] Resize browser to 375px width
 [NAV] URL retains the ?sort=agent-test-nonexistent-sort-xyz parameter
 [STATE] No guessed default applied — the unknown code must not cause the combobox to show the first option's label","[NETWORK] searchProducts fires with the unknown sort code (not rewritten by client)
 [NETWORK] sortings[] in response has no entry with selected=true
-[CONSOLE] no TypeError — blank-state rendering must be handled without JS errors","Sort dropdown selecting the first option (incorrect default applied to unknown code); 500 error on unknown sort code; JS TypeError on blank-state render; URL rewritten by client to remove the unknown code; sort dropdown completely hidden (should still render blank, not hidden)","none — read-only",VCST-5177; BL-CAT-005; error-guessing; ECL-10.2 | Promoted: VCST-5729 (2026-08-27),Automated
+[CONSOLE] no TypeError — blank-state rendering must be handled without JS errors","Sort dropdown selecting the first option (incorrect default applied to unknown code); 500 error on unknown sort code; JS TypeError on blank-state render; URL rewritten by client to remove the unknown code; sort dropdown completely hidden (should still render blank, not hidden)","none — read-only",VCST-5177; BL-CAT-005; error-guessing; ECL-10.2 | Promoted: VCST-5729 (2026-08-27) | Behavior:srch.results.sort.unknown-code | DataProfile:profile.srch.sort-unknown-code,Automated
 "SRCH-JRNY-001","Buyer Journey - Progressive Autocomplete to PDP via Product Preview","Search > Buyer Journey > Autocomplete","Critical","BL-SRCH-002","ECL-3.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront accessible; product-preview-in-dropdown feature is ENABLED (Did-you-mean OFF is fine — this case asserts on product previews, not text suggestions); B2B buyer-query pool seeded at test-data/search-queries/b2b-buyer-queries.csv","url={{FRONT_URL}}; query_pool=test-data/search-queries/b2b-buyer-queries.csv","[NAV] Navigate to {{FRONT_URL}}
 [SETUP] read test-data/search-queries/b2b-buyer-queries.csv, filter rows where query_type=broad-noun, pick a random row → {picked_query}; record its query_id → {picked_query_id}
@@ -590,7 +590,7 @@ SRCH-011,Search Bar - Only One Category-Scope Indicator During Category Navigati
 [SETUP] `browser_evaluate` (read-only replay of the recorded timeline now that the transition has settled — disconnect the observers first so the array is frozen): window.__srchObservers?.forEach(o=>o.disconnect()); const tl=window.__srchTimeline||[]; const inp=document.querySelector('[data-test-id=global-search-query-input]'); const finalNeighborX=inp?inp.getBoundingClientRect().left:null; const baselineX=tl[0]?tl[0].neighborX:null; const maxSimultaneous=tl.reduce((m,e)=>Math.max(m,(e.loadingCount>=1&&e.chipCount>=1)?(e.loadingCount+e.chipCount):0),0); const maxNeighborDelta=baselineX==null?null:tl.reduce((m,e)=>Math.max(m,Math.abs((e.neighborX??baselineX)-baselineX)),0); const settled=tl[tl.length-1]||{}; return {timeline:tl, maxSimultaneous, maxNeighborDelta, finalNeighborX, settledLoadingCount:settled.loadingCount, settledChipCount:settled.chipCount, settledChipLabels:settled.chipLabels}; — store maxSimultaneous as {max_simultaneous}, maxNeighborDelta as {max_neighbor_delta}, settledLoadingCount as {settled_loading_count}, settledChipCount as {settled_chip_count}, settledChipLabels as {settled_chip_labels}, and the full timeline as {scope_timeline} (evidence only)","[DOM] {max_simultaneous} === 0 — across every recorded mutation in {scope_timeline}, the loading indicator and a scope chip were never present together in the scope-indicator slot {SPEC}
 [DOM] {settled_chip_count} === 1 AND {settled_loading_count} === 0 AND {settled_chip_labels} contains {parent_category_name} — exactly one scope chip visible at settle, naming {parent_category_name}, with no loading indicator present {SPEC}
 [STATE] No loading indicator remains once the scope chip for {parent_category_name} has settled — the last entry recorded in {scope_timeline} has loadingCount 0 {SPEC}","[CONSOLE] no TypeError or JS errors during the category-to-category transition
-[NETWORK] no 4xx/5xx on the category fetch triggered by the breadcrumb click",{max_simultaneous} >= 1 (a loading indicator and a scope chip recorded together in {scope_timeline}); {settled_chip_labels} still names {child_category_name} instead of {parent_category_name}; {max_neighbor_delta} > 2 (neighbor control shifted beyond tolerance at some recorded instant); console TypeError,none — read-only,VCST-5729,Automated
+[NETWORK] no 4xx/5xx on the category fetch triggered by the breadcrumb click",{max_simultaneous} >= 1 (a loading indicator and a scope chip recorded together in {scope_timeline}); {settled_chip_labels} still names {child_category_name} instead of {parent_category_name}; {max_neighbor_delta} > 2 (neighbor control shifted beyond tolerance at some recorded instant); console TypeError,none — read-only,VCST-5729 | Behavior:srch.scope.category.single-removable-chip | DataProfile:profile.srch.scope-category-chip,Automated
 SRCH-012,Search Bar - Placeholder Does Not Name the Stale Category While Scope Is Loading,Search > Scoped,Medium,BL-SRCH-004,,Storefront accessible; catalog nav has a top-level category with at least one visible subcategory (live-discover — do not assume a fixed category name),url={{FRONT_URL}},"[NAV] Navigate to {{FRONT_URL}}
 [ACT] Open the main catalog navigation menu
 [ASSERT] browser_snapshot the nav; pick a top-level category link that has visible subcategories → click it → store its name as {parent_category_name}
@@ -622,7 +622,7 @@ SRCH-013,Search Bar - Category Scope Chip Stays Removable After Category Navigat
 [STATE] Clicking the remove control clears the category scope — the chip is removed from the search bar {SPEC}
 [DOM] After the scope clears, no category name is present in the search input placeholder — it returns to the generic keyword-entry text {SPEC}
 [STATE] The remove control is never permanently unreachable after a category-to-category navigation — i.e. the loading-state flag governing the chip's v-else branch always resolves back to false, even after a prior navigation {SPEC}","[CONSOLE] no TypeError or JS errors during navigation, remove-click, or scope-clear
-[NETWORK] no 4xx/5xx on the category fetch or scope-clear action",Remove/clear control absent or non-interactive on the settled chip after navigation; clicking remove does not clear the scope; chip persists after the remove click; placeholder still names a category after clear; console TypeError,none — read-only,VCST-5729 | Promoted: VCST-5729 (2026-08-27),Automated
+[NETWORK] no 4xx/5xx on the category fetch or scope-clear action",Remove/clear control absent or non-interactive on the settled chip after navigation; clicking remove does not clear the scope; chip persists after the remove click; placeholder still names a category after clear; console TypeError,none — read-only,VCST-5729 | Promoted: VCST-5729 (2026-08-27) | Behavior:srch.scope.category.single-removable-chip | DataProfile:profile.srch.scope-category-chip,Automated
 SRCH-014,[JOURNEY] Barcode scan in exact mode opens the scanned product and lets the shopper add it to cart,Search > Barcode Scanner,Critical,BL-SRCH-004,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. {{FRONT_URL}} accessible. @td(BARCODE_GTIN_UNIQUE.sku) is the ONLY product carrying its GTIN, buyable, priced in USD, in stock (fixture: npm run seed:barcode).
 This case sets B2B-store's own barcode-scanner settings in Steps and restores them in Cleanup — do not run this case in parallel with another case in this Section; every case in Search > Barcode Scanner shares B2B-store and must be serialised.
@@ -646,7 +646,7 @@ A scan cannot be dispatched in this environment (no camera) — this case enters
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
 [HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored
-Remove the added cart line (removeItem or UI) if the session/cart persists beyond this test",VCST-2945 · Archetype:PARITY · Technique:FLOW | Behavior:srch.barcode.resolve.single-hit-opens,Draft
+Remove the added cart line (removeItem or UI) if the session/cart persists beyond this test",VCST-2945 · Archetype:PARITY · Technique:FLOW | Behavior:srch.barcode.resolve.single-hit-opens | DataProfile:profile.srch.resolve-single-hit,Draft
 SRCH-015,Barcode scan with no configured fields keeps the full-text search behaviour,Search > Barcode Scanner,Critical,,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. {{FRONT_URL}} accessible. B2B-store must be at its default barcode settings (scannerEnabled=true, fields=[]) for this case — Steps force that state before observing, since it cannot rely on another case's Cleanup having run first.
 @td(BARCODE_FULLTEXT_DISCRIM.sku) carries the GTIN as its own gtin field; @td(BARCODE_FULLTEXT_DISCRIM.otherSku) carries the same value as a whole word in its NAME — full-text must find both, exact would find only the first.","url={{FRONT_URL}}, image=@td(BARCODE_FULLTEXT_DISCRIM.image), code=@td(BARCODE_FULLTEXT_DISCRIM.gtin)","--- SCREEN: Fixture Setup (REST) ---
@@ -668,7 +668,7 @@ Anonymous shopper. {{FRONT_URL}} accessible. B2B-store must be at its default ba
 [DOM] the ?barcode= page shows a visible, intact result (empty state or a short list) — never a crash or blank grid {BL}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:FALLBACK · Technique:DT | Behavior:srch.barcode.fulltext,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:FALLBACK · Technique:DT | Behavior:srch.barcode.fulltext | Behavior:srch.barcode.expand.no-fields-untouched | DataProfile:profile.srch.fulltext,Draft
 SRCH-016,Disabling the barcode scanner hides the button in both search bars while a bookmarked barcode URL still resolves,Search > Barcode Scanner,High,,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
 Tests reverse edge RE2 (1c/3x, CONFIRMED live on BARCODE_STORE): the switch hides the button but does not revoke the xCatalog expansion for a hand-built URL.","url={{FRONT_URL}}, code=@td(BARCODE_GTIN_UNIQUE.gtin)","--- SCREEN: Fixture Setup (REST) ---
@@ -691,7 +691,7 @@ Tests reverse edge RE2 (1c/3x, CONFIRMED live on BARCODE_STORE): the switch hide
 [NAV] the bookmarked /search?barcode={{code}} still resolves to the PDP for @td(BARCODE_GTIN_UNIQUE.sku) — the switch only hides the button, it does not stop the xCatalog expansion {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:CONFIG · Technique:DT | Behavior:srch.barcode.config.disable,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:CONFIG · Technique:DT | Behavior:srch.barcode.config.disable | Behavior:srch.barcode.expand.scanner-off-still-expands | DataProfile:profile.srch.config-disable,Draft
 SRCH-017,Barcode scan matching several products lists them and does not auto-open one,Search > Barcode Scanner,High,,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
 @td(BARCODE_GTIN_SHARED.count) products (@td(BARCODE_GTIN_SHARED.skus)) share one GTIN.","url={{FRONT_URL}}, code=@td(BARCODE_GTIN_SHARED.gtin), image=@td(BARCODE_GTIN_SHARED.image)","--- SCREEN: Fixture Setup (REST) ---
@@ -707,7 +707,7 @@ Anonymous shopper. This case sets B2B-store's settings itself and restores them 
 [COUNT] product card count equals @td(BARCODE_GTIN_SHARED.count) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:BOUNDARY · Technique:EP | Behavior:srch.barcode.resolve.multi-hit-lists,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:BOUNDARY · Technique:EP | Behavior:srch.barcode.resolve.multi-hit-lists | DataProfile:profile.srch.resolve-multi-hit,Draft
 SRCH-018,Barcode scan of a variation-level code opens the variation even when it is out of stock,Search > Barcode Scanner,Critical,BL-SRCH-004,ECL-8.2,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
 @td(BARCODE_VARIATION_MPN.variationSku) is OUT OF STOCK; the parent and @td(BARCODE_VARIATION_MPN.siblingSku) are in stock. The ""Show in stock only"" preference persists per browser and defaults to on (ECL-3.2) — leave it at its default for this case.","url={{FRONT_URL}}, variation=@td(BARCODE_VARIATION_MPN.variationSku), code=@td(BARCODE_VARIATION_MPN.mpn), image=@td(BARCODE_VARIATION_MPN.image)","--- SCREEN: Fixture Setup (REST) ---
@@ -723,7 +723,7 @@ Anonymous shopper. This case sets B2B-store's settings itself and restores them 
 [DOM] the variation's PDP renders normally (not a 404) even though the variation is out of stock and the in-stock preference is on {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:SCOPE · Technique:DT | Behavior:srch.barcode.resolve.variation-hit,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:SCOPE · Technique:DT | Behavior:srch.barcode.resolve.variation-hit | Behavior:srch.barcode.expand.variation-scope | DataProfile:profile.srch.resolve-variation-hit,Draft
 SRCH-019,Barcode scan with no match shows the barcode empty state and Reset returns to a usable search,Search > Barcode Scanner,Medium,BL-SRCH-002,ECL-3.1,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
 unmatched_code=2945500000014 — a value in the same EAN-13 test series as the seeded BARCODE_* fixtures, deliberately unassigned (the seeded series uses …0018/…0017/…0016/…0015/…0013; …0014 is not used by any fixture).",url={{FRONT_URL}},"--- SCREEN: Fixture Setup (REST) ---
@@ -741,7 +741,7 @@ unmatched_code=2945500000014 — a value in the same EAN-13 test series as the s
 [NAV] URL after 'Reset' carries neither ?barcode= nor ?q= {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:FALLBACK · Technique:EP | Behavior:srch.barcode.resolve.zero-hit-empty,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:FALLBACK · Technique:EP | Behavior:srch.barcode.resolve.zero-hit-empty | DataProfile:profile.srch.resolve-zero-hit,Draft
 SRCH-020,Mobile search bar scan follows the same exact-match rules as desktop,Search > Barcode Scanner,Medium,,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.","url={{FRONT_URL}}, image=@td(BARCODE_GTIN_UNIQUE.image)","--- SCREEN: Fixture Setup (REST) ---
 [HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
@@ -757,7 +757,7 @@ Anonymous shopper. This case sets B2B-store's settings itself and restores them 
 [DOM] the mobile search overlay is hidden once the PDP is shown — not stacked above it {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:PARITY · Technique:PW | Behavior:srch.barcode.resolve.mobile-parity,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:PARITY · Technique:PW | Behavior:srch.barcode.resolve.mobile-parity | DataProfile:profile.srch.resolve-mobile-parity,Draft
 SRCH-021,Anonymous and signed-in B2B shoppers get the same barcode resolution,Search > Barcode Scanner,Medium,BL-SRCH-004,,"This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
 @td(ORG_USER_DEFAULT.email) is a B2B org user with USD pricing on B2B-store.","url={{FRONT_URL}}, buyer=@td(ORG_USER_DEFAULT.email), code=@td(BARCODE_GTIN_UNIQUE.gtin)","--- SCREEN: Fixture Setup (REST) ---
 [HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
@@ -776,7 +776,7 @@ SRCH-021,Anonymous and signed-in B2B shoppers get the same barcode resolution,Se
 [STATE] both the anonymous and signed-in requests resolve to a product page — neither is the empty/no-match state {BL}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:PARITY · Technique:PW | Behavior:srch.barcode.resolve.actor-parity,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:PARITY · Technique:PW | Behavior:srch.barcode.resolve.actor-parity | DataProfile:profile.srch.resolve-actor-parity,Draft
 SRCH-022,Barcode scan made inside a category is global and is not saved to search history,Search > Barcode Scanner,Medium,,,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.","url={{FRONT_URL}}, image=@td(BARCODE_GTIN_UNIQUE.image)","--- SCREEN: Fixture Setup (REST) ---
 [HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
@@ -795,7 +795,7 @@ Anonymous shopper. This case sets B2B-store's settings itself and restores them 
 [DOM] the 'Search' input's history dropdown after the scan lists the same entries as before it — the scanned code is absent from history {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:SCOPE · Technique:EG | Behavior:srch.barcode.resolve.global-scope,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:SCOPE · Technique:EG | Behavior:srch.barcode.resolve.global-scope | DataProfile:profile.srch.resolve-global-scope,Draft
 SRCH-023,Barcode results ignore facet and availability parameters and show no generated filter chips,Search > Barcode Scanner,Medium,BL-SRCH-001,ECL-3.2,"[PRE:CLEAR_SESSION]
 Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.","url={{FRONT_URL}}, code=@td(BARCODE_GTIN_SHARED.gtin)","--- SCREEN: Fixture Setup (REST) ---
 [HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
@@ -819,4 +819,4 @@ Anonymous shopper. This case sets B2B-store's settings itself and restores them 
 [NAV] changing sort does not navigate away from /search?barcode={{code}} — no redirect fires after narrowing {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
 [HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
-[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:RENDER · Technique:DT | Behavior:srch.barcode.resolve.identity-lookup-hides-browsing,Draft
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:RENDER · Technique:DT | Behavior:srch.barcode.resolve.identity-lookup-hides-browsing | DataProfile:profile.srch.resolve-identity-lookup,Draft
