@@ -50,9 +50,11 @@ functional ticket.
   - `test_data` — the ledger and teardown
   - `domain_map` — its state, plus the mind-map path and `mind_map_findings[]`
   - `bugs_filed` / `bugs_not_filed`
-  - `tracker.comment_id`
+  - `tracker.comment_id` — `null` until §Tracker comment posts, then the returned id
+  - `report.page_url` and `report.kb` — filled after §HTML page and the kb step
   
-  Then run `npm run summary:validate`; it must report no new finding.
+  Then run `npm run summary:validate`; it must report no new finding. Run it again after the last
+  write-back (comment id, page link, kb ids).
 - **`testing-checklist.md`** — the Result column filled in by you, the only writer.
 - **`verdict.md`** — **≤60 lines, in this order, nothing else:**
 
@@ -74,7 +76,7 @@ functional ticket.
 Created <n> AGENT-TEST- entities · removed <n> · settings restored and re-read: <list | none>
 
 ## Context used
-Model <path> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason>
+Model <path> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason> · PRs <repo#n list>
 ```
 
 **Mind-map findings** go into `summary.json.domain_map.mind_map_findings[]`: a node the run
@@ -86,7 +88,8 @@ contradicted, or a scenario that fit no node. They are handed to the next
 
 Load the `artifact-design` skill, then copy
 [`report-template.html`](report-template.html) to your scratchpad and fill in its `{{…}}` slots from
-`verdict.md`. The page restates nothing `verdict.md` does not carry. The page:
+`verdict.md`; the env, the ticket summary, the date and the checklist pass counts come from
+`summary.json`. The page states no finding `verdict.md` does not carry. The page:
 - embeds at most 4 screenshots, as `data:` URIs (the page must stand alone and stay under 1 MB)
 - links every bug report and the other files by their repo path
 
@@ -98,7 +101,8 @@ afterwards.
 ## Tracker comment
 
 Ask once: *"Post the verdict comment to <TICKET>?"* On yes:
-- post it per [`../qa-test/reporting.md`](../qa-test/reporting.md) §5-report.2 (`npm run tracker:comment`)
+- post it per [`../qa-test/reporting.md`](../qa-test/reporting.md) §5-report.2 (`npm run tracker:comment`),
+  then write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends it
 - it is **one** comment, amended and never appended to, per
   [`../../knowledge/execution/tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0
 - screenshots go **inline**, verified from `renderedBody` ([`../../rules/reports.md`](../../rules/reports.md) §5.0)

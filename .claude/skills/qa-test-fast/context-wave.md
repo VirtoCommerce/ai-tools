@@ -36,7 +36,8 @@ PRs are change surface.** Deployment-manifest PRs and this repo's PRs are listed
 ### C · Domain map — only when the state is `ABSENT` or `unresolved`
 Invoke `/qa-domain-map <slug>` on `playwright-firefox` as
 [`../qa-test/context-wave.md`](../qa-test/context-wave.md) §1c-map does. That means the command itself,
-never a re-implementation. The state is decided by [`../qa-test/axes.md`](../qa-test/axes.md) §2g:
+never a re-implementation. Cite §1c-map for the invocation only; its FULL-only trigger does not apply,
+the trigger is this section's heading. The state is decided by [`../qa-test/axes.md`](../qa-test/axes.md) §2g:
 - `PRESENT` → read it
 - `STALE` → read it as hypotheses and never auto-refresh
 - a build failure → record it and proceed, never block

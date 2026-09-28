@@ -29,6 +29,7 @@ skills/
 ├── qa-generate-data/                # [Testing]  Design + author test-data combinations (offline)
 ├── qa-review-tests/                 # [Testing]  11-dimension test-case quality review
 ├── qa-local-env/                    # [Testing]  Local VC stack via start-local (fresh DB per run)
+├── qa-test-fast/                    # [Testing]  Method behind /qa-test-fast (grounded quick ticket test)
 │
 ├── qa-investigate/                  # [QA Methodology]  Bug investigation (5 phases)
 ├── qa-evidence/                     # [QA Methodology]  Evidence capture & report formatting
