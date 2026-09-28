@@ -400,7 +400,7 @@ page; `evidence_artifact` stays `null` unless a hosted Artifact was actually pub
 
 Output to the user: verdict, STR result, checklist score, regressions found, tracker transition, and artifact paths.
 
-**Bug report lifecycle:** locate any matching local bug report in `reports/bugs/open/` (by ticket ID or title keywords), then route by verdict:
+**Bug report lifecycle:** locate any matching local bug report in `reports/bugs/open/**` — recursive, it is foldered by severity — (by ticket ID or title keywords), then route by verdict:
 
 | Verdict | Action on the local bug report |
 |---------|-------------------------------|

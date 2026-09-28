@@ -92,7 +92,7 @@ curl -sk -X POST "{{BACK_URL}}/api/platform/security/users/create" \
   -d '{
     "userName": "qa-agent-slot1@virtocommerce.com",
     "email": "qa-agent-slot1@virtocommerce.com",
-    "password": "TestAgent1!",
+    "password": "{{AGENT_SLOT1_PASSWORD}}",
     "storeId": "B2B-store",
     "memberId": "{{CONTACT_ID_SLOT1}}",
     "isAdministrator": false,
@@ -107,7 +107,7 @@ curl -sk -X POST "{{BACK_URL}}/api/platform/security/users/create" \
   -d '{
     "userName": "qa-agent-slot2@virtocommerce.com",
     "email": "qa-agent-slot2@virtocommerce.com",
-    "password": "TestAgent2!",
+    "password": "{{AGENT_SLOT2_PASSWORD}}",
     "storeId": "B2B-store",
     "memberId": "{{CONTACT_ID_SLOT2}}",
     "isAdministrator": false,
@@ -122,7 +122,7 @@ curl -sk -X POST "{{BACK_URL}}/api/platform/security/users/create" \
   -d '{
     "userName": "qa-agent-slot3@virtocommerce.com",
     "email": "qa-agent-slot3@virtocommerce.com",
-    "password": "TestAgent3!",
+    "password": "{{AGENT_SLOT3_PASSWORD}}",
     "storeId": "B2B-store",
     "memberId": "{{CONTACT_ID_SLOT3}}",
     "isAdministrator": false,
@@ -138,7 +138,7 @@ curl -sk -X POST "{{BACK_URL}}/api/platform/security/users/create" \
 for SLOT in 1 2 3; do
   curl -sk -X POST "{{BACK_URL}}/connect/token" \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    -d "grant_type=password&scope=offline_access&username=qa-agent-slot${SLOT}@virtocommerce.com&password=TestAgent${SLOT}!&storeId=B2B-store"
+    -d "grant_type=password&scope=offline_access&username=qa-agent-slot${SLOT}@virtocommerce.com&password={{AGENT_SLOT${SLOT}_PASSWORD}}&storeId=B2B-store"
   echo ""
 done
 # Each should return an access_token

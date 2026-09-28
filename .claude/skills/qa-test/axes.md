@@ -119,7 +119,7 @@ missing passes.**
 `.claude/knowledge/domain/<name>.mind-map.json` (`/qa-test-mind-map`) beside the map. It records
 `domain_map.mind_map` = that path, or `null`. When it is present, four steps read it:
 
-- `1e` Part 0 cites its node ids ([`test-model.md`](test-model.md)).
+- `1e` Part 0 cites its node ids ([`test-model.md`](../qa-test-model/test-model.md)).
 - `1e-plan` rows carry `behavior` / `dataProfile`.
 - Step 3 stamps them ([`authoring.md`](authoring.md) §Carry the model's design decision into the row).
 - `5-docs-map` hands back what the run established ([`reporting.md`](reporting.md) §5-docs-map).
