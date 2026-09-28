@@ -44,6 +44,7 @@
  * Exit codes: 0 on a non-empty extract; 2 on a filter that matches nothing — a silent empty brief is
  * worse than a loud failure, because an agent handed zero patterns reports "no edge case applies".
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from "fs";
 import { join } from "path";
 import { APPENDIX_RE, CHAPTER_RE, FENCE_RE, SECTION_RE } from "./lint-ecl.ts";

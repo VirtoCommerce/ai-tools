@@ -29,6 +29,7 @@
  * (the vcst module set). On a client deployment the mapping differs, so a
  * client-specific suite legitimately resolves to nothing here.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";

@@ -28,6 +28,7 @@
  * Usage:  node scripts/maintenance/td-test-attribution.mjs <domain> [--max 40] [--json <path>]
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';

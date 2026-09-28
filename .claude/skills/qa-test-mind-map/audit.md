@@ -11,10 +11,10 @@ ranked list. Read-only: an audit that edits is an update.
 
 | Family | Checker codes |
 |---|---|
-| Structural | TM-002, 003, 004, 009, 010, 012 |
-| Behavioural | TM-006, 007, 008, 013 |
+| Structural | TM-001, 002, 003, 004, 009, 010, 012 |
+| Behavioural | TM-006, 007, 008, 013, 018 |
 | Data | TM-005, and the data-model codes TM-020..031 |
-| Coverage / staleness | TM-011, 014, 015, 016, 017, 030 |
+| Coverage / staleness | TM-011, 014, 015, 016, 017, 019, 030, 032 |
 
 ## 2. Judgment checks, per node
 

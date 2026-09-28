@@ -1,4 +1,5 @@
 /* TEMPORARY PROBE — delete after use. Reads group membership for candidate loyalty users. */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { api, auth, assertSafeTarget } from '../../lib/seed-common.mjs';
 import { USER_ROLES, resolveRole } from '../../lib/user-roles.mjs';
 

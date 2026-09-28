@@ -28,6 +28,8 @@ The impact path always runs one way: change → domain node → behaviour → da
      Keep the older evidence.
    - **behaviour removed**: `status: OBSOLETE` + `obsolete{date, reason, replaced_by?}`. Never delete it (`TM-030`).
    - **new behaviour or branch**: add it with a new id under the same prefix, and wire the edges.
+   - **new integration point**: the same cross-domain edge or `integrates with:` note as
+     [`build.md`](build.md) step 4.
 3. Update `domain_map_rev` and `amended`. Leave `generated` alone: it dates the last full derivation.
 4. `npm run models:check`. `TM-030` is checked against `HEAD` by default; use `--base origin/main`
    before a PR. The `suspects` array now lists every case linked to a changed, DRIFT or OBSOLETE node.
@@ -49,6 +51,7 @@ The impact path always runs one way: change → domain node → behaviour → da
   "drift": [{ "node": "<id>", "route": "…" }],
   "suspects": [{ "caseId": "…", "node": "…", "why": "…" }],
   "data_model_followups": ["data.<slug>.…"],
+  "integration_points": [{ "from": "<id>", "to": "<id> | <domain with no map>" }],
   "models_check": "OK | FAIL <n>"
 }
 ```

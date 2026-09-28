@@ -36,6 +36,7 @@
  * their authorization (read-only, but it is their data).
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { resolve, dirname } from 'path';

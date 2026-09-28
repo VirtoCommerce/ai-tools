@@ -34,6 +34,7 @@
  *   TEST_ENV=vcst npm run seed:barcode -- --only stale-field   # scoped: restore ONLY the stale property + its value
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {

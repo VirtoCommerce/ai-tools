@@ -46,7 +46,7 @@
 [STATE] First option saved without error
 [STATE] Second option added successfully
 [DOM] Both options visible in the configuration section","[API] GET /api/catalog/products/{id} — verify options in configurations
-[CONSOLE] No errors","Product search returns no results; option not saved; second option overwrites first","delete added option products via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+[CONSOLE] No errors","Product search returns no results; option not saved; second option overwrites first","delete added option products via Admin",TP_CONFIGURABLE_PRODUCTS_001 | Behavior:cat.cfg.author.option-add,"Manual"
 "CFG-CA-004","Set and Update Option Price and Quantity","Catalog > Configurable Products > Option Products","High","BL-CAT-001; BL-CAT-003","","Options added to QA Test Options section (CFG-CA-003). Admin logged in.","qty=3; price=25.00; extendedPrice=75.00; adminUrl={{BACK_URL}}","[NAV] Open the first option in the configuration section
 [ACT] Update the quantity to 3
 [ACT] Update the price to $25.00
@@ -58,7 +58,7 @@
 [STATE] Saved without error
 [STATE] Updated values displayed
 [MATH] Extended price calculation is correct","[API] GET /api/catalog/products/{id} — verify option qty and price
-[CONSOLE] No errors","Extended price calculation wrong; qty not saved; price revert after save","restore original option price and qty","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+[CONSOLE] No errors","Extended price calculation wrong; qty not saved; price revert after save","restore original option price and qty",TP_CONFIGURABLE_PRODUCTS_001 | Behavior:cat.cfg.author.option-price-qty,"Manual"
 "CFG-CA-005","Mark Configuration Section as Required and Verify Storefront Enforcement","Catalog > Configurable Products > Required Options","High","BL-CAT-001","","QA Test Configurable Product with configuration section exists. Admin logged in. Product published and accessible on storefront.","frontUrl={{FRONT_URL}}; adminUrl={{BACK_URL}}","[NAV] Open the QA Test Options configuration section in Admin
 [ACT] Change the required flag to true/on
 [ACT] Save the section
@@ -77,7 +77,7 @@
 [STATE] Option selected
 [STATE] Item successfully added to cart","[API] POST /graphql — cart mutation — verify required option enforced
 [CONSOLE] No validation errors in console
-[NETWORK] Cart API rejects add without required option","Required option not enforced; item added to cart without selection; accordion label not updated","restore section to optional via Admin","TP_CONFIGURABLE_PRODUCTS_001, CONFIG-002","Manual"
+[NETWORK] Cart API rejects add without required option","Required option not enforced; item added to cart without selection; accordion label not updated","restore section to optional via Admin","TP_CONFIGURABLE_PRODUCTS_001, CONFIG-002 | Behavior:cat.cfg.required-gate.one-missing","Manual"
 "CFG-CA-006","Edit Existing Configuration Option Price and Verify on Storefront","Catalog > Configurable Products > Edit","High","BL-CAT-001; BL-CAT-003","","QA Test Configurable Product exists with options. Admin logged in. Note current price of first option ($25.00).","oldPrice=25.00; newPrice=30.00; frontUrl={{FRONT_URL}}; adminUrl={{BACK_URL}}","[NAV] Open first option in Admin
 [ACT] Change price from $25.00 to $30.00
 [ACT] Save changes
@@ -90,7 +90,7 @@
 [FORMAT] Option now shows $30.00 (updated immediately or after cache clear)
 [MATH] Total = base price + $30.00 x qty","[API] GET /api/catalog/products/{id} — verify option price updated
 [NAV] {{FRONT_URL}} product PDP — verify updated price shown
-[CONSOLE] No cache or pricing errors","Price not updated on storefront; stale cache not cleared; calculation uses old price","restore option price to $25.00","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+[CONSOLE] No cache or pricing errors","Price not updated on storefront; stale cache not cleared; calculation uses old price","restore option price to $25.00",TP_CONFIGURABLE_PRODUCTS_001 | Behavior:cat.cfg.price.option-edit-propagates,"Manual"
 "CFG-CA-007","Add Second Configuration Section to Existing Configurable Product","Catalog > Configurable Products > Configuration Sections","High","BL-CAT-001","","QA Test Configurable Product has one section (QA Test Options). Admin logged in.","section2Name=QA Color Options; adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open QA Test Configurable Product in Admin
 [ACT] Add a second configuration section: QA Color Options
 [ACT] Add 2 option products to QA Color Options
@@ -122,7 +122,7 @@
 [STATE] Product PDP loads
 [DOM] Deleted option no longer appears in accordion","[API] GET /api/catalog/products/{id} — verify option removed
 [NAV] {{FRONT_URL}} PDP accordion — verify option count
-[CONSOLE] No errors","Option still visible on storefront; confirmation not shown; other option also removed","none (option was created for deletion)","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+[CONSOLE] No errors","Option still visible on storefront; confirmation not shown; other option also removed","none (option was created for deletion)",TP_CONFIGURABLE_PRODUCTS_001 | Behavior:cat.cfg.author.remove-option-or-section,"Manual"
 "CFG-CA-009","Delete Entire Configuration Section from Configurable Product","Catalog > Configurable Products > Delete Section","Medium","BL-CAT-001","ECL-5.1","QA Test Configurable Product has 2 sections (from CFG-CA-007). Admin logged in.","adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open QA Test Configurable Product in Admin
 [ACT] Select QA Color Options section for deletion
 [ACT] Click Delete section
@@ -137,7 +137,7 @@
 [STATE] Product PDP loads
 [DOM] Only one accordion (QA Test Options) shown in widget","[API] GET /api/catalog/products/{id} — verify 1 configuration section remains
 [NAV] {{FRONT_URL}} PDP — verify only one accordion
-[CONSOLE] No errors","Second section not deleted; first section also removed; storefront still shows two accordions","none (section was created for deletion)","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+[CONSOLE] No errors","Second section not deleted; first section also removed; storefront still shows two accordions","none (section was created for deletion)",TP_CONFIGURABLE_PRODUCTS_001 | Behavior:cat.cfg.author.remove-option-or-section,"Manual"
 "CFG-CA-010","Publish and Activate Configurable Product — Verify Storefront Visibility","Catalog > Configurable Products > Publish","Critical","BL-CAT-001","","QA Test Configurable Product exists but is NOT published/inactive. Admin logged in.","adminUrl={{BACK_URL}}; frontUrl={{FRONT_URL}}","[NAV] Open QA Test Configurable Product in Admin
 [ASSERT] Verify current state is draft/unpublished
 [NAV] Attempt to find the product on storefront (direct URL or catalog browse)
@@ -152,7 +152,7 @@
 [DOM] Product appears in catalog or accessible by direct URL
 [DOM] Configure the parameters widget is visible on PDP","[API] GET /api/catalog/products/{id} — verify isPublished=true
 [NAV] {{FRONT_URL}} product URL — verify 200 response not 404
-[CONSOLE] No errors","Product still 404 after publish; published flag not persisted; Configure widget missing on PDP","unpublish/deactivate product after test via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+[CONSOLE] No errors","Product still 404 after publish; published flag not persisted; Configure widget missing on PDP","unpublish/deactivate product after test via Admin",TP_CONFIGURABLE_PRODUCTS_001 | Behavior:cat.cfg.visibility.publish,"Manual"
 "CFG-CA-011","Validation Error When Creating Configuration Section with Empty Name","Catalog > Configurable Products > Validation","Medium","BL-CAT-001","","Configurable product open in Admin. Admin logged in.","adminUrl={{BACK_URL}}","[NAV] Initiate Add configuration section
 [ACT] Leave section name EMPTY
 [ACT] Click Save
@@ -162,7 +162,7 @@
 [STATE] Validation error: Section name is required or similar message; section NOT saved
 [STATE] Name entered
 [STATE] Section saved successfully","[CONSOLE] No unhandled JS errors
-[DOM] Validation error message visible in UI","No validation error; empty section saved; error message not descriptive","delete created section (from second save) via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+[DOM] Validation error message visible in UI","No validation error; empty section saved; error message not descriptive","delete created section (from second save) via Admin",TP_CONFIGURABLE_PRODUCTS_001 | Behavior:cat.cfg.author.section-name-validation,"Manual"
 "CFG-CA-012","Duplicate Configuration Section Name Behavior","Catalog > Configurable Products > Validation","Medium","BL-CAT-001","","QA Test Configurable Product has section QA Test Options. Admin logged in.","adminUrl={{BACK_URL}}","[NAV] Attempt to add a second section with the same name QA Test Options
 [ACT] Click Save
 [ACT] If allowed: verify storefront shows two sections with same name","[STATE] Section form shown with duplicate name
@@ -180,7 +180,7 @@
 [STATE] Product PDP loads
 [DOM] Name now shows QA Updated Configurable Product on storefront","[API] GET /api/catalog/products/{id} — verify updated name
 [NAV] {{FRONT_URL}} product PDP — verify name updated
-[CONSOLE] No errors","Name not updated on storefront within 60s; search still returns old name; PDP shows old name","restore product name to original via Admin","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+[CONSOLE] No errors","Name not updated on storefront within 60s; search still returns old name; PDP shows old name","restore product name to original via Admin",TP_CONFIGURABLE_PRODUCTS_001 | Behavior:cat.cfg.visibility.rename-lag,"Manual"
 "CFG-CA-014","View Configured Orders in Admin Order Management","Admin > Orders > Configured Orders","High","BL-CAT-001","","A configured product order has been placed on storefront. Admin logged in.","adminUrl={{BACK_URL}}","[NAV] Navigate to Orders module in Admin
 [NAV] Find the order placed with the configured product
 [NAV] Open the order
@@ -194,7 +194,7 @@
 [DOM] Selected option (e.g. Seat) visible as sub-item or configuration attribute
 [MATH] Order total matches what customer paid
 [STATE] Status change to Processing saves without error","[API] GET /api/order/orders/{id} — verify line items include configured options
-[CONSOLE] No errors","Order total doesn't match storefront total; configuration details missing from order; status change fails","restore order status","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+[CONSOLE] No errors","Order total doesn't match storefront total; configuration details missing from order; status change fails","restore order status",TP_CONFIGURABLE_PRODUCTS_001 | Behavior:cat.cfg.order.admin-widget,"Manual"
 "CFG-CA-015","Delete Configurable Product from Admin and Verify Storefront Removal","Catalog > Configurable Products > Delete","Medium","BL-CAT-001","ECL-5.1","QA Updated Configurable Product exists and is published. Admin logged in. Note the direct storefront URL for this product.","frontUrl={{FRONT_URL}}; adminUrl={{BACK_URL}}","[NAV] Open QA Updated Configurable Product in Admin
 [ACT] Click Delete
 [ACT] Confirm deletion
@@ -208,7 +208,7 @@
 [STATE] Product does not appear in search results","[API] GET /api/catalog/products — verify product absent
 [NAV] {{FRONT_URL}} direct URL — verify 404
 [API] POST /api/catalog/search — verify product not in results
-[CONSOLE] No errors","Product still accessible on storefront after delete; search still returns deleted product; 500 instead of 404","none (product was created for deletion)","TP_CONFIGURABLE_PRODUCTS_001","Manual"
+[CONSOLE] No errors","Product still accessible on storefront after delete; search still returns deleted product; 500 instead of 404","none (product was created for deletion)",TP_CONFIGURABLE_PRODUCTS_001 | Behavior:cat.cfg.visibility.delete,"Manual"
 "CFG-CA-016","Save Configuration with Product Section Having No Predefined Options — IsActive Preserved","Catalog > Configurable Products > IsActive Validation","Critical","BL-CAT-001","","Admin logged in at {{BACK_URL}}. A configurable product exists. Admin Bearer token obtained.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with body: { productId: <existing-configurable-product-id>, isActive: true, sections: [{ name: Dynamic Options Section, type: Product, isRequired: false, options: [] }] }
 [WAIT] Response received
@@ -220,7 +220,7 @@
 [BODY] isActive = true — NOT silently reset to false
 [STATE] Configuration with Product section having no predefined options remains active","[API] GET after POST confirms isActive = true persisted in database
 [ADMIN] Navigate to product in Admin UI > Configurations tab — Active toggle should be ON
-[CONSOLE] No server errors","isActive silently reset to false despite being set to true; HTTP 400/422 rejecting empty options on Product section; 500 server error; isActive field missing from response","Delete created configuration via DELETE API after test","PR #873 — fix: Stop silently resetting product configuration IsActive (2026-03-23)","Manual"
+[CONSOLE] No server errors","isActive silently reset to false despite being set to true; HTTP 400/422 rejecting empty options on Product section; 500 server error; isActive field missing from response","Delete created configuration via DELETE API after test",PR #873 — fix: Stop silently resetting product configuration IsActive (2026-03-23) | Behavior:cat.cfg.activate.product-section-no-options,"Manual"
 "CFG-CA-017","Admin UI Active Toggle Not Blocked When Product Section Has No Options","Catalog > Configurable Products > IsActive UI","High","BL-CAT-001","","Admin logged in at {{BACK_URL}}. A configurable product exists with at least one Product-type section that has NO predefined options (dynamically resolved options).","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}","[NAV] Navigate to {{BACK_URL}} and log in as admin
 [NAV] Navigate to Catalog module
 [NAV] Open a configurable product that has a Product-type section with no predefined options
@@ -235,7 +235,7 @@
 [STATE] After save and re-open, Active toggle remains ON — not silently reset by $watch
 [DOM] No visual indication that toggle is restricted","[API] GET /api/catalog/products/configurations — verify isActive = true after save
 [CONSOLE] No JavaScript errors in Admin SPA
-[CONSOLE] No Angular $watch errors","Active toggle grayed out or disabled when Product section has no options; toggle silently resets to OFF after save; $watch handler overrides user choice; canBeEnabled incorrectly evaluates to false","none","PR #873 — fix: Stop silently resetting product configuration IsActive (2026-03-23)","Manual"
+[CONSOLE] No Angular $watch errors","Active toggle grayed out or disabled when Product section has no options; toggle silently resets to OFF after save; $watch handler overrides user choice; canBeEnabled incorrectly evaluates to false","none",PR #873 — fix: Stop silently resetting product configuration IsActive (2026-03-23) | Behavior:cat.cfg.activate.product-section-no-options,"Manual"
 "CFG-CA-018","Save Configuration with No Sections — IsActive Forced to False","Catalog > Configurable Products > IsActive Validation","High","BL-CAT-001","","Admin logged in at {{BACK_URL}}. Admin Bearer token obtained. A configurable product exists.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with body: { productId: <existing-configurable-product-id>, isActive: true, sections: [] }
 [WAIT] Response received
@@ -245,7 +245,7 @@
 [BODY] isActive = false — correctly forced to false because no sections exist
 [STATE] The empty-sections guard is the ONLY condition that forces IsActive to false","[API] GET after POST confirms isActive = false when sections are empty
 [ADMIN] Navigate to product > Configurations tab — Active toggle should be OFF and possibly disabled
-[CONSOLE] No server errors","isActive = true despite empty sections (guard removed); HTTP 400 rejecting empty sections; 500 server error","Delete created configuration via DELETE API after test","PR #873 — fix: Stop silently resetting product configuration IsActive (2026-03-23)","Manual"
+[CONSOLE] No server errors","isActive = true despite empty sections (guard removed); HTTP 400 rejecting empty sections; 500 server error","Delete created configuration via DELETE API after test",PR #873 — fix: Stop silently resetting product configuration IsActive (2026-03-23) | Behavior:cat.cfg.activate.no-sections,"Manual"
 "CFG-CA-019","Set Active when section has value Dependency on a Section via Admin UI","Catalog > Configurable Products > Conditional Sections","Critical","BL-CAT-001","","Admin logged in at {{BACK_URL}}. Seed product with conditional sections exists: Section A (Base Options, required, no dependency) and Section B (Accessories, optional). Section IDs known from prior GET API call or Admin UI.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug); sectionB_name=Accessories; sectionA_name=Base Options","[NAV] Navigate to {{BACK_URL}} and log in as {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}}
 [NAV] Navigate to Catalog module
 [NAV] Search for seed product @td(CFG_CONDITIONAL.slug) and open it
@@ -263,7 +263,7 @@
 [STATE] Save completes without error toast
 [DOM] After re-open: ""Active when section has value"" field shows Base Options — dependency persisted
 [STATE] No other section data changed (name, required flag, options unchanged)","[API] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] } — verify sections[B].dependsOnSectionId = sectionA.id
-[CONSOLE] No Angular JS errors or $http errors in Admin SPA","""Active when section has value"" dropdown not visible in section detail blade; dropdown opens but no sections listed; save fails with validation error; dependency value reverts to null on re-open; wrong section ID persisted","none (seed product restored to base state by separate teardown script)","VCST-4713","Manual"
+[CONSOLE] No Angular JS errors or $http errors in Admin SPA","""Active when section has value"" dropdown not visible in section detail blade; dropdown opens but no sections listed; save fails with validation error; dependency value reverts to null on re-open; wrong section ID persisted","none (seed product restored to base state by separate teardown script)",VCST-4713 | Behavior:cat.cfg.author.dependency,"Manual"
 "CFG-CA-020","Clear Active when section has value Dependency from Section — Verify Removal Persists","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","","Admin logged in. Seed product Section B (Accessories) has dependsOnSectionId = Section A.id (set by CFG-CA-019 or pre-seeded). Admin Bearer token available.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
 [NAV] Open seed product in Catalog module
 [NAV] Open Configurations tab and click Section B (Accessories)
@@ -297,7 +297,7 @@
 [DOM] Section B detail blade: Depends On is now empty/None — not referencing deleted Section A
 [STATUS] GET returns 200
 [BODY] sections[B].dependsOnSectionId is null — orphan FK cleared by cascade logic on delete","[API] GET confirms no section references deleted Section A id in any dependsOnSectionId
-[CONSOLE] No JS errors; no 500 on the Configurations tab after delete","Section B still shows deleted Section A in Depends On dropdown; GET returns stale FK pointing to deleted section id; Admin UI crashes when re-opening section B after parent deleted; confirmation dialog not shown","re-seed Section A and restore dependency for subsequent tests","VCST-4713","Manual"
+[CONSOLE] No JS errors; no 500 on the Configurations tab after delete","Section B still shows deleted Section A in Depends On dropdown; GET returns stale FK pointing to deleted section id; Admin UI crashes when re-opening section B after parent deleted; confirmation dialog not shown","re-seed Section A and restore dependency for subsequent tests",VCST-4713 | Behavior:cat.cfg.author.dependency-parent-delete,"Manual"
 "CFG-CA-022","""Active when section has value"" Dropdown Excludes Self — Section Cannot Depend on Itself","Catalog > Configurable Products > Conditional Sections","High","BL-CAT-001","","Admin logged in. Seed product with at least two sections (A and B) accessible.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug); sectionB_name=Accessories","[NAV] Navigate to {{BACK_URL}} and log in
 [NAV] Open seed product in Catalog module > Configurations tab
 [ACT] Click on Section B (Accessories) to open its detail blade
@@ -307,7 +307,7 @@
 [STATE] Section B (Accessories) does NOT appear in its own ""Active when section has value"" dropdown options
 [STATE] Only other sections (e.g. Section A: Base Options) are shown as valid parents
 [STATE] If only one section exists, dropdown is either empty or shows a disabled placeholder","[CONSOLE] No JS errors when opening dropdown
-[API] Self-dependency is NOT enforced server-side — POST/PATCH with dependsOnSectionId = own section id returns 200/204 and PERSISTS; the self-exclusion is a UI-ONLY guard (the dropdown omits self). Circular (mutual) deps are ALSO not guarded when editing existing sections — they persist (200); a 500 ""circular dependency was detected"" appears ONLY when both sections are inserted new in one create-POST (EF insert-ordering artifact, not a validation guard) — see CFG-CA-023.","Section B appears in its own dropdown and can be selected; dropdown shows all sections including self","none","VCST-4713","Manual"
+[API] Self-dependency is NOT enforced server-side — POST/PATCH with dependsOnSectionId = own section id returns 200/204 and PERSISTS; the self-exclusion is a UI-ONLY guard (the dropdown omits self). Circular (mutual) deps are ALSO not guarded when editing existing sections — they persist (200); a 500 ""circular dependency was detected"" appears ONLY when both sections are inserted new in one create-POST (EF insert-ordering artifact, not a validation guard) — see CFG-CA-023.","Section B appears in its own dropdown and can be selected; dropdown shows all sections including self","none",VCST-4713 | Behavior:cat.cfg.author.dependency-self,"Manual"
 "CFG-CA-023","Circular Dependency (A↔B) — NOT Guarded When Editing Existing Sections: Cycle Persists Silently (200); Only a From-Scratch Create-POST With the Cycle Errors (500 EF Insert-Ordering)","Catalog > Configurable Products > Conditional Sections","Medium","BL-CAT-001","ECL-5.1","Admin logged in. Seed product. Section A currently has no dependency. Section B currently depends on Section A (from CFG-CA-019 or pre-seeded).","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; slug=@td(CFG_CONDITIONAL.slug)","[NAV] Navigate to {{BACK_URL}} and log in
 [NAV] Open seed product > Configurations tab
 [ASSERT] Confirm Section B depends on Section A
@@ -323,7 +323,7 @@
 [BODY] search read-back after save: Section A dependsOnSectionId = Section B id AND Section B dependsOnSectionId = Section A id — the cycle is stored
 [STATE] The ONLY place a cycle errors is a from-scratch create-POST that inserts BOTH sections new in one call carrying the cyclic FKs — HTTP 500 ""circular dependency was detected in the data to be saved"" (EF cannot order the [Added] inserts); this is an insert-ordering artifact, NOT a validation guard, and does not protect the edit path
 [STATE] No Admin SPA crash; storefront tolerates a persisted cycle without hanging — the vc-frontend section-visibility resolver is bounded by section count (useConfigurableProduct.ts maxIterations), so affected sections simply stay hidden","[CONSOLE] No unhandled client exceptions
-[API] search read-back confirms the cycle persisted (Section A → Section B AND Section B → Section A) after a 200 save — server has no cycle validation on the edit path","Admin SPA crashes on save or on re-opening Configurations tab; storefront hangs/infinite-loops on a product with a persisted cycle (frontend resolver is bounded — should not happen); the edit-path save returns a 500 or a validation warning (would indicate a NEW server-side cycle guard was added — update this case)","clear Section A dependency after test (set ""Active when section has value"" back to ""Always active"")","VCST-4713","Manual"
+[API] search read-back confirms the cycle persisted (Section A → Section B AND Section B → Section A) after a 200 save — server has no cycle validation on the edit path","Admin SPA crashes on save or on re-opening Configurations tab; storefront hangs/infinite-loops on a product with a persisted cycle (frontend resolver is bounded — should not happen); the edit-path save returns a 500 or a validation warning (would indicate a NEW server-side cycle guard was added — update this case)","clear Section A dependency after test (set ""Active when section has value"" back to ""Always active"")",VCST-4713 | Behavior:cat.cfg.author.dependency-cycle,"Manual"
 "CFG-CA-024","REST API — POST Configuration with dependsOnSectionId and GET Verifies Persistence","Catalog > Configurable Products > REST API","Medium","BL-CAT-001","","Admin Bearer token obtainable. Seed product exists. Section A id and Section B id known. dependsOnSectionId not yet set via API.","adminUrl={{BACK_URL}}; adminEmail={{ADMIN_EMAIL}}; adminPass={{ADMIN_PASSWORD}}; sectionA_id=<id-of-section-A>; sectionB_id=<id-of-section-B>","[AUTH] POST {{BACK_URL}}/connect/token with grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}, scope=offline_access — store access_token
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<seed-product-id>] } with Authorization: Bearer <token> — note current section structure
 [HTTP] PATCH {{BACK_URL}}/api/catalog/products/configurations/<config-id> with a JSON Patch (Operation[]) setting section B's dependsOnSectionId = <sectionA_id> — PATCH by config id is a supported UPDATE verb (204). Verified live: PATCH → 204 and POST /configurations carrying the existing config id → 200 both update; PUT → 405. The IX_ProductConfiguration_ProductId 500 fires only on a POST creating a NEW config (no id) for a productId that already owns one — not on the id-carrying upsert.
@@ -380,7 +380,7 @@
 [STATE] Checking one option as default automatically unchecks all other options in the same section (UI enforcement)
 [TOAST] Success notification after Save
 [STATUS] GET returns HTTP 200
-[BODY] GET response: Option B has isDefault=true; Option A has isDefault=false; no other option has isDefault=true","[API] GET response confirms single-default invariant: exactly one option has isDefault=true; [ADMIN] Admin blade reflects current default state after re-opening blade","Default checkbox not visible in Product-type section options; checking one option does not uncheck others; Save fails; GET after Save shows multiple options with isDefault=true; GET shows all options isDefault=false (save not persisting)","Restore product to original state (clear default or delete test configuration)","VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27)","Draft"
+[BODY] GET response: Option B has isDefault=true; Option A has isDefault=false; no other option has isDefault=true","[API] GET response confirms single-default invariant: exactly one option has isDefault=true; [ADMIN] Admin blade reflects current default state after re-opening blade","Default checkbox not visible in Product-type section options; checking one option does not uncheck others; Save fails; GET after Save shows multiple options with isDefault=true; GET shows all options isDefault=false (save not persisting)","Restore product to original state (clear default or delete test configuration)",VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27) | Behavior:cat.cfg.author.default-option,"Draft"
 "CFG-CA-028","Admin UI — Default Checkbox Works for Text-Type Section Options (VCST-4715)","Configurable Products > Admin > Default Option UI — Text","High","BL-CAT-006","ECL-14.1","Admin authenticated at {{BACK_URL}}. A configurable product with a Text-type section that has predefined dictionary options exists. Admin blade accessible.","admin={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; back_url={{BACK_URL}}","[NAV] Log in at {{BACK_URL}}; open Catalog module; locate product with Text section; open Configurable Sections blade
 [BLADE] Open the Text-type section's options list
 [ASSERT] Verify Default checkbox visible for each Text-type option (same UI component as Product section)
@@ -399,7 +399,7 @@
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations/search body { productIds: [<id>] } — read back the persisted configuration
 [ASSERT] search results[0]: only the FIRST submitted default (option A) has isDefault=true; options B and C isDefault=false (service preserves first, clears the rest)","[STATUS] POST returns 200 or 201 (no 422 — single-default normalization is server-side, not a validation error)
 [BODY] search read-back results[0]: exactly ONE option has isDefault=true — the FIRST submitted (option A); options B and C isDefault=false
-[SCHEMA] isDefault field present on each option in the search results as boolean","[ROUNDTRIP] REST normalization enforced by ProductConfigurationService: only first default preserved when multiple submitted; [STOREFRONT] After reindex (~60s): storefront PDP pre-selects option A","POST with two isDefault=true returning 422 validation error (should be 200 + normalization); both options showing isDefault=true in GET (normalization not applied); isDefault field absent from GET response; first POST with single default not persisting (isDefault=false in GET response)","Delete test configuration after test","VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27)","Draft"
+[SCHEMA] isDefault field present on each option in the search results as boolean","[ROUNDTRIP] REST normalization enforced by ProductConfigurationService: only first default preserved when multiple submitted; [STOREFRONT] After reindex (~60s): storefront PDP pre-selects option A","POST with two isDefault=true returning 422 validation error (should be 200 + normalization); both options showing isDefault=true in GET (normalization not applied); isDefault field absent from GET response; first POST with single default not persisting (isDefault=false in GET response)","Delete test configuration after test",VCST-4715; Synced: PR #880 vc-module-catalog (2026-05-27) | Behavior:cat.cfg.author.default-option,"Draft"
 "CFG-CA-030","REST API — GET Configurations Returns isDefault=false for All Options When No Default Set (VCST-4715)","Configurable Products > Admin > REST API IsDefault","High","BL-CAT-006","ECL-14.1","Admin authenticated with Bearer token. An existing configurable product with options where NO option has been set as default. Or: a product where all options are posted with isDefault=false.","admin={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; back_url={{BACK_URL}}","[AUTH] POST {{BACK_URL}}/connect/token with {{ADMIN_EMAIL}}/{{ADMIN_PASSWORD}} to obtain admin Bearer token
 [HTTP] POST {{BACK_URL}}/api/catalog/products/configurations with all options having isDefault=false (or omitting the isDefault field entirely)
 [ASSERT] POST returns 200 or 201

@@ -24,6 +24,7 @@
  * Safety: ENV_RISK gate (blocks ENV_RISK=production unless --allow-admin-writes-on-prod); idempotent by location name within the store.
  * No _seed-results report (VCST-5406) — BOPIS_* resolve by static location_id business key.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   assertSafeTarget, auth, api, loadCsv, log, verbose, csvBool, iso3,
   ensureFulfillmentCenter, verifyRemoved,

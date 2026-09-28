@@ -46,6 +46,19 @@ Diagram selection is not decorative either:
 | `sequenceDiagram` | the chain crosses layers, or any part is async (job / queue / webhook / settlement) |
 | `stateDiagram-v2` | the entity has a lifecycle, or an effect is expected to **reverse** (cancel / refund / expire / revoke) |
 
+**Integration points are chain links, and they get their own variants.** Where the chain passes through
+functionality another domain owns (the checkout total, order cancellation, the catalog's product and
+property shapes, the search index), that link is a column like any other. Its variants are **that
+domain's** partitions: discount or none, product type, property value type, variation or parent. They are
+not the feature's own. This is where a feature's own suite passes and the product still breaks: the
+loyalty missions' discount, currency, cancellation and organization-mode defects all sat on such links.
+When both domains have a mind map, the link is a cross-domain `depends_on` / `affected_by` edge, and
+`models:check` `TM-032` lists the ones no case exercises. When they don't, the column is drawn anyway.
+
+**A feature behind a switch gets an `off` variant row.** With the feature off, or for an actor it does
+not apply to, every link keeps its pre-feature behaviour. Pre-feature data (orders, accounts, settings
+that existed before the release) is a variant of the same row.
+
 ### The matrix is only a check if its ROWS and COLUMNS are derived independently of the scenario list
 
 *"No blank cells"* is the gate because a blank is a hole someone can see. That property survives only while

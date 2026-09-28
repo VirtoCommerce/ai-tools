@@ -23,6 +23,7 @@
  *   npx tsx scripts/lib/regression-triage.ts history <RUN_ID|runDir|latest> [--env <env>]
  *       → backfills per-suite RunEntry rows into reports/regression/history.json
  */
+import "./sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { createHash } from "crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "fs";
 import { join, isAbsolute } from "path";

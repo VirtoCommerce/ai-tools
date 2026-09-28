@@ -49,6 +49,7 @@
  *
  * Exit code: 0 on a clean plan; 1 on any gate error; 2 on an unreadable source.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
 import { fileURLToPath } from "url";

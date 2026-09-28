@@ -38,6 +38,7 @@
  *
  * See `.claude/rules/reports.md` §9 Retention for the policy this implements.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
