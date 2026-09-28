@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { candidates, corpus, foldPlural, terms } from '../kb/bench/candidates.mjs';
 import { anchorWeight } from '../kb/core/rank.mjs';
 import { normalizeRow } from '../kb/core/index-load.mjs';
-import { majority, parseVerdict } from '../kb/bench-two-stage.mjs';
+import { headlines, majority, parseVerdict } from '../kb/bench-two-stage.mjs';
 
 let seq = 0;
 const row = (o) => {
@@ -106,6 +106,18 @@ test('a verdict off the contract is invalid, never coerced into a pick', () => {
   assert.equal(parseVerdict('{"why": "x"}', list).pick, 'invalid');
   assert.equal(parseVerdict('{"pick": null, "why": "x"}', list).pick, null);
   assert.equal(parseVerdict('{"pick": "KB-AAAA0002", "why": "x"}', list).pick, 'KB-AAAA0002');
+});
+
+test('what the judge is shown: bodies only for the first bodiesTop, an also-covers line only where one exists', () => {
+  const list = ['a', 'b', 'c'].map((s) => ({ row: row({ subject: s, question: `${s}?` }) }));
+  const [x, y, z] = list.map((h) => h.row.id);
+  const bodies = new Map([[x, 'BODY-X'], [y, 'BODY-Y'], [z, 'BODY-Z']]);
+  const hybrid = headlines(list, { bodies, bodiesTop: 2 });
+  assert.ok(hybrid.includes('BODY-X') && hybrid.includes('BODY-Y'));
+  assert.equal(hybrid.includes('BODY-Z'), false);
+  const covers = headlines(list, { covers: new Map([[x, 'the stepper'], [y, '']]) });
+  assert.equal(covers.split('also covers:').length - 1, 1, 'an empty line is not shown');
+  assert.equal(headlines(list).includes('body:') || headlines(list).includes('also covers:'), false);
 });
 
 test('majority needs more than half the runs; otherwise split', () => {

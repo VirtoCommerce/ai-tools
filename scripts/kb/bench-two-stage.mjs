@@ -34,7 +34,7 @@ import { join } from 'node:path';
 import { openBase } from './core/base.mjs';
 import { loadIndex, retrievable } from './core/index-load.mjs';
 import { parseEntry } from './core/frontmatter.mjs';
-import { RANKER } from './core/rank.mjs';
+import { RANKER, TOP_N } from './core/rank.mjs';
 import { candidates, corpus } from './bench/candidates.mjs';
 import { evaluate } from './bench-rank.mjs';
 
@@ -42,15 +42,22 @@ const SET = new URL('./bench/rank-labelled-set.json', import.meta.url);
 // What the judge is shown. `headlines` is the design as specified (id, subject, question -- what an
 // agent sees before it opens anything). `bodies` adds each candidate's full body, as `kb_show` returns
 // it, and has its own prompt, which differs from the first ONLY where the input differs.
+//
+// `hybrid` shows bodies for the first TOP_N candidates only -- rank.mjs's own "how many bodies one
+// question may open" -- and headlines for the rest. `covers` shows no body at all, but a generated
+// "also covers" line per entry (`bench/summarize.mjs`, passed with `--covers`), which is the cheap
+// field the base would carry if this view holds.
 const VIEWS = {
   headlines: new URL('./bench/judge-prompt.md', import.meta.url),
   bodies: new URL('./bench/judge-prompt-bodies.md', import.meta.url),
+  hybrid: new URL('./bench/judge-prompt-hybrid.md', import.meta.url),
+  covers: new URL('./bench/judge-prompt-covers.md', import.meta.url),
 };
 export const JUDGE_MODEL = 'claude-haiku-4-5-20251001';
 const RECALL_KS = [5, 10, 20];
 
 function parseArgs(argv) {
-  const f = { bases: [], ks: [10], runs: 3, fuse: 'add', concurrency: 4, out: null, from: null, view: 'headlines' };
+  const f = { bases: [], ks: [10], runs: 3, fuse: 'add', concurrency: 4, out: null, from: null, view: 'headlines', covers: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === '--base') f.bases.push({ locator: argv[++i], gated: true });
@@ -62,22 +69,26 @@ function parseArgs(argv) {
     else if (a === '--out') f.out = argv[++i];
     else if (a === '--from') f.from = argv[++i];
     else if (a === '--view') f.view = argv[++i];
+    else if (a === '--covers') f.covers.push(argv[++i]);
   }
   return f;
 }
 
 /**
  * The headlines an agent would see -- and, in the `headlines` view, the only thing the judge sees.
- * With `bodies` (id -> body) each headline also carries its entry's full body.
+ * `detail` adds per-entry lines: `bodies` (id -> body) for the first `bodiesTop` entries, and/or
+ * `covers` (id -> "also covers" line) for every entry.
  */
-export function headlines(list, bodies = null) {
+export function headlines(list, { bodies = null, bodiesTop = Infinity, covers = null } = {}) {
+  const indent = (s) => String(s).replace(/\n/g, '\n         ');
   return list.map((h, i) => `${i + 1}. ${h.row.id}\n   subject: ${h.row.subject}\n   question: ${h.row.question}`
-    + (bodies ? `\n   body: ${String(bodies.get(h.row.id) ?? '(body unavailable)').replace(/\n/g, '\n         ')}` : '')).join('\n');
+    + (covers && covers.get(h.row.id) ? `\n   also covers: ${indent(covers.get(h.row.id))}` : '')
+    + (bodies && i < bodiesTop ? `\n   body: ${indent(bodies.get(h.row.id) ?? '(body unavailable)')}` : '')).join('\n');
 }
 
-export function userMessage(question, list, bodies = null) {
+export function userMessage(question, list, detail = {}) {
   return `The agent asked:\n\n${question}\n\nThe knowledge base returned ${list.length} candidate entr${list.length === 1 ? 'y' : 'ies'}:\n\n`
-    + `${list.length ? headlines(list, bodies) : '(none)'}\n\nWhich entry answers the agent's question? Reply with the JSON only.`;
+    + `${list.length ? headlines(list, detail) : '(none)'}\n\nWhich entry answers the agent's question? Reply with the JSON only.`;
 }
 
 /** Strict parse of the judge's reply. Anything off-contract is `invalid`, never coerced into a pick. */
@@ -102,9 +113,13 @@ export const VERDICT_SCHEMA = JSON.stringify({
   additionalProperties: false,
 });
 
-function callJudge(system, message) {
+/**
+ * One isolated headless Haiku call (see the header for what "isolated" means). `schema` fixes the
+ * reply's shape; the judge's is VERDICT_SCHEMA, and `bench/summarize.mjs` passes its own.
+ */
+export function callModel(system, message, schema = VERDICT_SCHEMA) {
   const args = ['-p', '--model', JUDGE_MODEL, '--system-prompt', system, '--tools', '', '--strict-mcp-config',
-    '--setting-sources', '', '--no-session-persistence', '--output-format', 'json', '--json-schema', VERDICT_SCHEMA];
+    '--setting-sources', '', '--no-session-persistence', '--output-format', 'json', '--json-schema', schema];
   return new Promise((resolve, reject) => {
     judgeCwd ??= mkdtempSync(join(tmpdir(), 'kb-judge-'));
     const child = spawn('claude', args, { cwd: judgeCwd, stdio: ['pipe', 'pipe', 'pipe'] });
@@ -120,21 +135,25 @@ function callJudge(system, message) {
         if (!r || r.is_error) throw new Error(r?.result ?? 'no result');
         const models = Object.keys(r.modelUsage ?? {});
         if (models.some((m) => m !== JUDGE_MODEL)) throw new Error(`unexpected model(s): ${models.join(',')}`);
-        resolve({ text: r.structured_output ? JSON.stringify(r.structured_output) : r.result, // A long prompt is cached by the CLI, and `input_tokens` then counts only the uncached tail --
-        // the cached part is in the two cache fields. All three together are what the model read.
-        inputTokens: (r.usage?.input_tokens ?? 0) + (r.usage?.cache_read_input_tokens ?? 0) + (r.usage?.cache_creation_input_tokens ?? 0),
-        cost: r.total_cost_usd ?? 0 });
+        resolve({
+          text: r.structured_output ? JSON.stringify(r.structured_output) : r.result,
+          // A long prompt is cached by the CLI, and `input_tokens` then counts only the uncached
+          // tail -- the cached part is in the two cache fields. All three are what the model read.
+          inputTokens: (r.usage?.input_tokens ?? 0) + (r.usage?.cache_read_input_tokens ?? 0) + (r.usage?.cache_creation_input_tokens ?? 0),
+          cost: r.total_cost_usd ?? 0,
+        });
       } catch (e) { reject(new Error(`judge call failed (exit ${code}): ${e.message} ${err.slice(0, 200)}`)); }
     });
     child.stdin.end(message);
   });
 }
 
-async function judgeWithRetry(system, message) {
-  try { return await callJudge(system, message); } catch { return callJudge(system, message); }
+export async function callWithRetry(system, message, schema = VERDICT_SCHEMA) {
+  try { return await callModel(system, message, schema); } catch { return callModel(system, message, schema); }
 }
+const judgeWithRetry = (system, message) => callWithRetry(system, message);
 
-async function pool(jobs, n) {
+export async function pool(jobs, n) {
   const results = new Array(jobs.length);
   let next = 0;
   let done = 0;
@@ -176,12 +195,30 @@ async function loadBodies(reader, rows) {
   return bodies;
 }
 
+/**
+ * What each view adds to the headlines, for one base. A `covers` file names the base it was made
+ * from, and the one for THIS base is required -- lines made from another base's bodies would describe
+ * entries that are not the ones being judged.
+ */
+async function detailFor(flags, locator, reader, rows) {
+  if (flags.view === 'bodies') return { bodies: await loadBodies(reader, rows) };
+  if (flags.view === 'hybrid') return { bodies: await loadBodies(reader, rows), bodiesTop: TOP_N };
+  if (flags.view === 'covers') {
+    const file = flags.covers.map((p) => JSON.parse(readFileSync(p, 'utf8'))).find((c) => c.base === locator);
+    if (!file) throw new Error(`--view covers: no --covers file was made from ${locator}`);
+    const missing = rows.filter((r) => !(r.id in file.covers)).map((r) => r.id);
+    if (missing.length) throw new Error(`--covers for ${locator} lacks ${missing.length} entries (${missing.slice(0, 3).join(', ')}…)`);
+    return { covers: new Map(Object.entries(file.covers).map(([id, c]) => [id, c.covers])) };
+  }
+  return {};
+}
+
 async function measure(flags, set, system) {
   const cases = [...set.targets.map((t) => ({ ...t, kind: 'target' })), ...set.controls.map((c) => ({ ...c, kind: 'control' }))];
   const bases = [];
   for (const { locator, gated } of flags.bases) {
     const { rows, reader } = await loadBase(locator);
-    const bodies = flags.view === 'bodies' ? await loadBodies(reader, rows) : null;
+    const detail = await detailFor(flags, locator, reader, rows);
     const ids = new Set(rows.map((r) => r.id));
     const stats = corpus(rows);
     const recall = {};
@@ -199,9 +236,9 @@ async function measure(flags, set, system) {
       for (const c of cases) {
         const list = candidates(c.q, rows, { k, fuse: flags.fuse, stats });
         const listIds = list.map((h) => h.row.id);
-        const message = userMessage(c.q, list, bodies);
+        const message = userMessage(c.q, list, detail);
         const entry = { k, id: c.id, kind: c.kind, expect: c.expect ?? [], present: (c.expect ?? []).some((e) => ids.has(e)),
-          list: listIds, listChars: headlines(list, bodies).length, runs: [] };
+          list: listIds, listChars: headlines(list, detail).length, runs: [] };
         judged.push(entry);
         for (let r = 0; r < flags.runs; r += 1) {
           jobs.push(async () => {
