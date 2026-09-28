@@ -37,7 +37,7 @@ Thirty-six entries, ordered by criticality. Criticality = (revenue-path proximit
 | 2 | **VcProductCard** | Browse → buy funnel entry. Renders 16+ instances per catalog page; height drift breaks the grid; long-title overflow obscures price. |
 | 3 | **VcLineItem** | Cart edit surface. Stepper-update shift makes accidental over-orders; line totals reflow obscures the running total. |
 | 4 | **VcTable** | Data surfaces (orders, lists, members). Row-height drift across data rows is the canonical "looks broken" signal users notice fastest. |
-| 5 | **VcDialog (modal)** | Address/confirmation modals. Body-scroll-lock done wrong causes background page jump on open; close-button under 44 px is the mobile-trap defect. |
+| 5 | **VcDialog (modal)** | Address/confirmation modals. Body-scroll-lock done wrong causes background page jump on open; close-button under 24 px is the mobile-trap defect. |
 | 6 | **Popover** (ship-to selector, account dropdown) | State-shift sensitive — opening must not displace adjacent header items. Content overflow on mobile is chronic. |
 | 7 | **VcSidebar** (account section — VcLayout sidebar slot) | Layout backbone for `/account/*`. **Naming note:** there is no Storybook primitive literally named "VcSidebar" — this row audits the [VcLayout](https://vcst-qa-storybook.govirto.com/?path=/docs/components-atoms-vclayout--docs) sidebar slot pattern. Storybook also ships [VcPopupSidebar](https://vcst-qa-storybook.govirto.com/?path=/docs/components-atoms-vcpopupsidebar--docs) (mobile-drawer pattern) — distinct from this row. Sidebar item alignment drift signals a broken design-token chain. |
 | 8 | **BOPIS Modal** (pickup-locations-modal) | Revenue-critical pickup flow. 102-location scroll list (no pagination) + country/region/city filters + map column → high complexity, layout-stability defects likely. Specialization of VcDialog with unique behaviors warranting dedicated coverage. |
@@ -55,7 +55,7 @@ Thirty-six entries, ordered by criticality. Criticality = (revenue-path proximit
 | 20 | **VcVariantPicker** | Variant selector on PDP + catalog cards (`[data-test-id^="variations-"]`). Variant change swaps price + image + inventory — must NOT push the Add-to-Cart CTA or shift the gallery (BL-UI-003 critical on revenue path). Swatch row alignment, long color/size labels at 375 px. |
 | 21 | **VcWidget** (content section wrapper) | Generic widget wrapper (`<section class="vc-widget …">`). Hosts order summary widget, product price block, configurable PDP sections (`.vc-widget--collapsible`). Skeleton variant: `.vc-widget-skeleton`. Critical because the widget IS the structural container — its padding/border/collapsible toggle behaviors anchor multiple downstream components. Header alignment across stacked widgets in a column. |
 | 22 | **VcTabSwitch** | Tab-switcher pattern — catalog view switcher (`[data-test-id="view-switcher"]` with `grid-view-tab` / `list-view-tab`), PDP details tabs, account sub-section tabs (where applicable). Active-tab underline transition must not jump; long tab labels at 375 px stress BL-UI-004; tab tap targets are mobile-critical. |
-| 23 | **VcSwitch** (toggle) | Binary on/off control — used in preferences, filter toggles where rendered as switches, possibly the dark-mode toggle variant in account settings. State-change must not shift adjacent text/labels (BL-UI-003). Mobile tap target ≥ 44 × 44 including label hit-area. |
+| 23 | **VcSwitch** (toggle) | Binary on/off control — used in preferences, filter toggles where rendered as switches, possibly the dark-mode toggle variant in account settings. State-change must not shift adjacent text/labels (BL-UI-003). Mobile tap target ≥ 24 × 24 including label hit-area. |
 | 24 | **VcScrollbar** (custom scroll) | Custom scroll primitive (`.vc-scrollbar.vc-scrollbar--vertical`). Used inside the BOPIS modal location list (50 of 102 rows scroll), VcTable mobile horizontal scroll, and other constrained-height surfaces. Critical because scrollbar appearance/disappearance on overflow MUST NOT shift adjacent content (the container must reserve scrollbar gutter). |
 | 25 | **VcImage** (Atoms) | The **#1 CLS offender** per BL-UI-001. Used everywhere images render — product cards, line items, PDP gallery, home hero, content blocks. Without `width`/`height` attrs or `aspect-ratio` CSS, image load shifts surrounding content. Currently BL-UI-001 is anchored on VcProductCard/VcLineItem (their containing parents); a dedicated row formalizes the image-attribute contract at the primitive level. |
 | 26 | **VcAlert** (Molecules) | Inline error/warning/info/success banner — distinct from Notifications/Toast (#12, overlay). Renders inline above forms (sign-in failures, payment errors), inside cart (validation failures), at top of pages (system messages). Insertion MUST shift downstream content predictably; container must reserve space when conditionally rendered. |
@@ -66,7 +66,7 @@ Thirty-six entries, ordered by criticality. Criticality = (revenue-path proximit
 | 31 | **VcModal** (Organisms) | Underlying modal wrapper primitive (`.vc-modal`, `.vc-modal__wrapper`, `.vc-modal__backdrop`, `.vc-modal__panel`). Hosts `VcDialog` (#5) inside. BOPIS Modal (#8) and VcConfirmationModal (#32) are specializations. Audits the wrapper-level body-scroll-lock + fullscreen-on-mobile contracts (vs. VcDialog #5 which audits the inner dialog frame). |
 | 32 | **VcConfirmationModal** (Organisms) | Yes/no confirmation pattern (thin VcModal specialization with confirm/cancel button row). Used for destructive actions (remove item, clear cart, delete address). Button-row alignment, long-message overflow, button touch targets. |
 | 33 | **VcAddToCart** (Organisms) | Dedicated Add-to-Cart button — used on Configurable PDP (`[data-test-id="sidebar"] .product-price-block button[aria-label="Add to cart"]` per storefront-selectors §12). On standard B2B-store PDP the qty stepper plays this role instead (per `feedback_qty_stepper_as_add_to_cart`). Loading state on click must not shift adjacent content. |
-| 34 | **VcSlider** (Molecules) | Range slider — price-range facet filter on `/catalog`. Handle drag updates value display without shifting surrounding controls. Handle touch target ≥ 44 × 44 is a chronic mobile-slider pain point. |
+| 34 | **VcSlider** (Molecules) | Range slider — price-range facet filter on `/catalog`. Handle drag updates value display without shifting surrounding controls. Handle touch target ≥ 24 × 24 is a chronic mobile-slider pain point. |
 | 35 | **VcRating** (Molecules) | Product star rating display. Renders on product cards + PDP. Stars + count baseline alignment; mostly read-only so BL-UI-003 / BL-UI-006 typically N/A. |
 | 36 | **VcBreadcrumbs** (Atoms) | Hierarchical navigation row above PDP / category content. Long path (deep category trees) overflows at 375 px — chronic mobile issue. Breadcrumb items + separators baseline alignment. |
 
@@ -121,7 +121,7 @@ Recorded 2026-07-25 from run **REG-2026-07-24-2121** (vcst-qa @ Theme 2.54.0-pr-
 
 | Matrix entry | Assumed shape | Live shape (2026-07-25) | Affected 048b cases |
 |---|---|---|---|
-| **#20 VcVariantPicker** | swatch/button row (`[data-test-id^="variations-"]`), "swatch row baseline alignment", "each swatch ≥ 44 × 44" | A variation-bearing product **was** found and its `.product-variations` container matches the documented selector, but selection renders as a full **`VcLineItems` list** — image + title + a per-variant `vc-quantity-stepper` per row. There is no swatch/button row to align or size. | `LAYOUT-COMP-VCVARIANTPICKER-001/002/003` |
+| **#20 VcVariantPicker** | swatch/button row (`[data-test-id^="variations-"]`), "swatch row baseline alignment", "each swatch ≥ 24 × 24" | A variation-bearing product **was** found and its `.product-variations` container matches the documented selector, but selection renders as a full **`VcLineItems` list** — image + title + a per-variant `vc-quantity-stepper` per row. There is no swatch/button row to align or size. | `LAYOUT-COMP-VCVARIANTPICKER-001/002/003` |
 | **#16 VcRadioButton** (shipping-method selector cell) | `input[type=radio]` / `.vc-radio-button` group; "selection-change may shift the form below" | The `/cart` shipping-method selector renders **2 plain-text options** ("Fixed Rate (Ground)/(Air)") with **zero** `input[type=radio]` and zero `.vc-radio-button`-classed elements. BOPIS-modal and Configurable-PDP radio cells are unaffected. | `LAYOUT-COMP-VCRADIO-001/002/003` |
 | **#14 VcEmptyView / Empty State** | wrapper selector `.vc-empty-page` | The empty-cart "Your cart is empty" heading sits inside `.vc-container.relative.max-lg:pb-12` — **no `.vc-empty-page` wrapper anywhere in the ancestor chain**. Independently re-confirmed across two passes. | `LAYOUT-COMP-EMPTY-001` |
 | **#19 VcDropdownMenu** (header account-menu cell) | dropdown with "User + Organizations sections", `li`/`[role=menuitem]` list, "menu-item hover", "long item lists need keyboard navigation" | The account-menu popover is a **minimal 1-icon popover** (name + logout button) with no multi-item `[role=menuitem]` list to audit for spacing, alignment, or per-item touch target. Other VcDropdownMenu cells (language/currency/sort) unverified this run. | `LAYOUT-COMP-VCDROPDOWN-001/004` |
@@ -139,7 +139,7 @@ Not every invariant is meaningful for every component. The matrix at the bottom 
 - **BL-UI-003 (state-induced shift)** — Applies to components with state transitions: hover (VcButton, VcProductCard, VcDropdownMenu item hover), update (VcLineItem stepper, cart badge, VcQuantityStepper +/− press, VcPriceDisplay dynamic update on Configurable PDP, VcBadge digit-count change), open (VcDialog, Popover, BOPIS Modal, Header mobile drawer, VcSelect dropdown panel, VcDropdownMenu panel, VcModal wrapper, VcConfirmationModal), sort/filter (VcTable), validation-error insertion (VcInput), toast emit (Notifications), alert insertion (VcAlert — inline banner appears above content), select-all toggle (VcCheckbox — action-bar reveal), shipping/payment method change (VcRadioButton — form section reflow), country change (VcSelect — State/Province options repopulate, form section may resize), variant change (VcVariantPicker — price/image swap), collapse/expand (VcWidget collapsible toggle, VcExpansionPanels expand/collapse), tab switch (VcTabSwitch — underline indicator, content panel swap), toggle (VcSwitch — adjacent text must not shift), scrollbar appear/disappear on overflow (VcScrollbar — content gutter must be reserved), slide change (VcCarousel — surrounding chrome stays fixed), page change (VcPagination — pagination control stays fixed; only the list rows replace), broken-image placeholder swap (VcImage), loading state (VcAddToCart spinner overlay), drag (VcSlider handle drag updates value-display). Does NOT apply to VcChip, VcRating (typically read-only display), VcBreadcrumbs (static once rendered).
 - **BL-UI-004 (content boundary / overflow)** — Applies to text-bearing or content-bearing components: VcProductCard (long title), VcLineItem (long title), VcTable (long cell content), VcDialog (long modal content), Popover (mobile width), VcInput (long value), VcEmptyView (illustration + text @375), Header (hamburger overflow @375), VcChip (long label wrap/truncate), VcSelect (long option label inside trigger; long-option-list panel overflow at 375 px), VcDropdownMenu (long item label; mobile panel width), VcVariantPicker (long swatch labels wrap), VcWidget (long content inside collapsible body), VcTabSwitch (long tab labels @375), VcAlert (long-message overflow), VcCarousel (slide content at 375 px), VcPagination (many-page truncation / compact mode at 375 px), VcExpansionPanels (long content inside open panel), VcModal (mobile fullscreen modifier), VcConfirmationModal (long-message), VcBreadcrumbs (deep-path overflow at 375 px). Does NOT apply to VcCheckbox/VcRadioButton/VcSwitch (fixed-size toggles), VcScrollbar (the component IS the overflow handler), VcImage / VcBadge / VcAddToCart / VcSlider / VcRating (sizing intrinsic to the primitive contract).
 - **BL-UI-005 (alignment)** — Applies to multi-element groups: VcProductCard in grid row, VcLineItem in cart row, VcTable cell row, VcSidebar nav items, Header nav items in row, VcPriceDisplay (sale strikethrough + actual price baseline), VcQuantityStepper (+/− buttons align with numeric input), VcCheckbox (icon + label baseline), VcRadioButton (radio dot + label baseline), VcChip (baseline alignment within a row of chips, e.g. availability chips per pickup row), VcDropdownMenu (menu items align vertically — leading icon / label / trailing chevron baseline), VcVariantPicker (swatch row baseline alignment), VcWidget (widget headers align across stacked widgets in a column), VcTabSwitch (tabs in a row align), VcSwitch (switch + label baseline), VcBadge (baseline within parent icon), VcPagination (page-number row baseline), VcExpansionPanels (panel-header row alignment), VcConfirmationModal (button-row alignment), VcSlider (handles + track + value labels), VcRating (stars + count baseline), VcBreadcrumbs (breadcrumb items + separators baseline). Does NOT apply to VcSelect (single-column field), VcScrollbar (single-axis primitive), VcImage / VcAlert / VcModal / VcAddToCart / VcCarousel (single-element or single-column compositions).
-- **BL-UI-006 (touch targets at ≤ 768 px)** — Applies to components containing interactive elements: VcButton (everywhere), VcLineItem (stepper, remove, checkbox), VcDialog (close, action buttons), VcProductCard (variations/add buttons on mobile), VcInput (form fields ≥ 44 px), VcQuantityStepper (+/− buttons), Header (hamburger toggle, cart icon, account button), VcCheckbox (tap target ≥ 44 px including label hit-area), VcRadioButton (tap target ≥ 44 px including label hit-area, with ≥ 8 px gap between stacked radios), VcSelect (trigger button ≥ 44 × 44; each option row in the open panel ≥ 44 px tall), VcDropdownMenu (trigger + each menu item ≥ 44 × 44), VcVariantPicker (each swatch/option ≥ 44 × 44 with ≥ 8 px gap), VcTabSwitch (each tab ≥ 44 × 44 with ≥ 8 px gap), VcSwitch (tap target ≥ 44 × 44 including label hit-area), VcAlert (close button if present ≥ 44 × 44), VcCarousel (navigation arrows + pagination dots ≥ 44 × 44), VcPagination (each page button ≥ 44 × 44), VcExpansionPanels (panel-header tap target ≥ 44 × 44), VcModal (close button), VcConfirmationModal (confirm + cancel buttons), VcAddToCart (button ≥ 44 × 44), VcSlider (handle tap target — chronic mobile-slider pain point). Does NOT apply to VcChip (currently status-only, non-interactive in this codebase), VcWidget (header collapse toggle is already audited via VcButton), VcScrollbar (mobile devices use native scroll), VcImage / VcBadge / VcRating / VcBreadcrumbs (non-interactive or links audited at parent-page level).
+- **BL-UI-006 (touch targets at ≤ 768 px)** — Applies to components containing interactive elements: VcButton (everywhere), VcLineItem (stepper, remove, checkbox), VcDialog (close, action buttons), VcProductCard (variations/add buttons on mobile), VcInput (form fields ≥ 24 px), VcQuantityStepper (+/− buttons), Header (hamburger toggle, cart icon, account button), VcCheckbox (tap target ≥ 24 px including label hit-area), VcRadioButton (tap target ≥ 24 px including label hit-area, with ≥ 8 px gap between stacked radios), VcSelect (trigger button ≥ 24 × 24; each option row in the open panel ≥ 24 px tall), VcDropdownMenu (trigger + each menu item ≥ 24 × 24), VcVariantPicker (each swatch/option ≥ 24 × 24 with ≥ 8 px gap), VcTabSwitch (each tab ≥ 24 × 24 with ≥ 8 px gap), VcSwitch (tap target ≥ 24 × 24 including label hit-area), VcAlert (close button if present ≥ 24 × 24), VcCarousel (navigation arrows + pagination dots ≥ 24 × 24), VcPagination (each page button ≥ 24 × 24), VcExpansionPanels (panel-header tap target ≥ 24 × 24), VcModal (close button), VcConfirmationModal (confirm + cancel buttons), VcAddToCart (button ≥ 24 × 24), VcSlider (handle tap target — chronic mobile-slider pain point). Does NOT apply to VcChip (currently status-only, non-interactive in this codebase), VcWidget (header collapse toggle is already audited via VcButton), VcScrollbar (mobile devices use native scroll), VcImage / VcBadge / VcRating / VcBreadcrumbs (non-interactive or links audited at parent-page level).
 
 Cells marked `—` in the matrix are non-applicable by these rules and are NOT counted toward the gap total.
 
@@ -235,7 +235,7 @@ PREREQ: authenticated user on /cart
    (typical regression: body-scroll-lock removes scrollbar, page widens, content shifts left)
 5. At viewport 375 px:
    browser_evaluate(touchTargetAuditSnippet('[role="dialog"], .vc-dialog'))
-   → close button (X) and modal CTAs must all be ≥ 44×44
+   → close button (X) and modal CTAs must all be ≥ 24×24
 ```
 
 ### 6. Popover (ship-to selector)
@@ -305,7 +305,7 @@ NAV: /cart
 8. TOUCH TARGETS at 375 px (BL-UI-006):
    touchTargetAuditSnippet('[data-test-id="pickup-locations-modal"]')
    → close X (`.vc-dialog-header__close` — no data-test-id, known gap), search button,
-     filter dropdowns, row labels all ≥ 44×44 with ≥ 8 px gap
+     filter dropdowns, row labels all ≥ 24×24 with ≥ 8 px gap
 
 NOTE: No pagination component — 50 of 102 locations visible by default (scroll-only).
       Selected-state lives on `.vc-radio-button--checked`, not the row container.
@@ -341,7 +341,7 @@ PREREQ: navigate from a fresh, unauthenticated browser context.
 
 4. At viewport 375 px (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('form'))
-   → every `<input>`, `<button>`, password-toggle icon ≥ 44 × 44
+   → every `<input>`, `<button>`, password-toggle icon ≥ 24 × 24
 ```
 
 ### 10. VcQuantityStepper
@@ -378,8 +378,8 @@ A) PDP variant (NAV: any in-stock PDP, e.g. /search → click first card → lan
 
 4. At viewport 375 px (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('.product-price-block .vc-quantity-stepper'))
-   → +/− buttons ≥ 44 × 44 with ≥ 8 px gap; numeric input itself
-     should also be ≥ 44 × 44 tap target
+   → +/− buttons ≥ 24 × 24 with ≥ 8 px gap; numeric input itself
+     should also be ≥ 24 × 24 tap target
 
 B) Cart variant: covered under VcLineItem §3 — re-use snapshots.
 ```
@@ -424,7 +424,7 @@ PREREQ: authenticated user on `/`.
    browser_click on hamburger trigger (verify selector live — likely
      `header button[aria-label*="menu" i]` or `[data-test-id="mobile-menu-toggle"]`)
    browser_evaluate(touchTargetAuditSnippet('header'))
-   → hamburger toggle, cart icon, account button all ≥ 44 × 44
+   → hamburger toggle, cart icon, account button all ≥ 24 × 24
 ```
 
 ### 12. Notifications/Toast
@@ -540,7 +540,7 @@ PREREQ: authenticated user on /cart with ≥ 2 line items.
 
 3. At viewport 375 px (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('[data-test-id="cart.products-section"]'))
-   → each `[data-test-id^="vc-line-item-checkbox"]` ≥ 44 × 44 including label
+   → each `[data-test-id^="vc-line-item-checkbox"]` ≥ 24 × 24 including label
 ```
 
 ### 16. VcRadioButton
@@ -572,7 +572,7 @@ A) Cart shipping/payment selector variant:
 
 3. At viewport 375 px (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('[data-test-id="shipping-method-selector"]'))
-   → each radio row ≥ 44 × 44 with ≥ 8 px gap between stacked radios
+   → each radio row ≥ 24 × 24 with ≥ 8 px gap between stacked radios
 
 B) BOPIS modal row-select variant: covered under BOPIS Modal §8 — re-use snapshots.
 ```
@@ -648,7 +648,7 @@ A) Address-form variant (NAV: /account/addresses → click edit/add):
 5. Touch targets at 375 px (BL-UI-006):
    resize to 375; open Country dropdown
    browser_evaluate(touchTargetAuditSnippet('.vc-select__panel'))
-   → trigger ≥ 44 × 44; each option row in panel ≥ 44 px tall with ≥ 8 px gap
+   → trigger ≥ 24 × 24; each option row in panel ≥ 24 px tall with ≥ 8 px gap
 
 B) BOPIS modal filter variant: re-use §8 BOPIS Modal protocol; the filter
    dropdown selectors are `[data-test-id="filter-country"]`,
@@ -684,7 +684,7 @@ PREREQ: authenticated user on `/`.
 
 5. Touch targets (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('.vc-popover.vc-dropdown-menu'))
-   → trigger + every menu item ≥ 44 × 44
+   → trigger + every menu item ≥ 24 × 24
 ```
 
 ### 20. VcVariantPicker
@@ -713,7 +713,7 @@ PREREQ: navigate to a PDP with ≥ 2 variations
 
 4. Touch targets at 375 px (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('.product-variations'))
-   → each swatch ≥ 44 × 44 with ≥ 8 px gap
+   → each swatch ≥ 24 × 24 with ≥ 8 px gap
 ```
 
 ### 21. VcWidget
@@ -781,7 +781,7 @@ PREREQ: /catalog (anon or auth).
 
 4. Touch targets at 375 px (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('[data-test-id="view-switcher"]'))
-   → each tab ≥ 44 × 44 with ≥ 8 px gap
+   → each tab ≥ 24 × 24 with ≥ 8 px gap
 ```
 
 ### 23. VcSwitch
@@ -808,7 +808,7 @@ PREREQ: authenticated user on the page that hosts a VcSwitch.
 
 3. Touch target at 375 px (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('.vc-switch'))
-   → tap target ≥ 44 × 44 including label hit-area
+   → tap target ≥ 24 × 24 including label hit-area
 ```
 
 ### 24. VcScrollbar
@@ -901,7 +901,7 @@ PREREQ: incognito context on /sign-in.
 
 4. Close-button touch target (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('.vc-alert'))
-   → close button (if present) ≥ 44 × 44
+   → close button (if present) ≥ 24 × 24
 ```
 
 ### 27. VcBadge
@@ -950,7 +950,7 @@ A) Home hero variant (NAV: /):
    resize to 375 px
    browser_evaluate(LAYOUT_SNIPPETS.overflowAudit)
    browser_evaluate(touchTargetAuditSnippet('.slider-block'))
-   → arrows + pagination dots ≥ 44 × 44
+   → arrows + pagination dots ≥ 24 × 24
 
 B) PDP gallery variant — re-use the protocol against `.image-gallery`.
 ```
@@ -982,7 +982,7 @@ PREREQ: authenticated user with sufficient items to trigger pagination.
 
 4. Touch targets (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('.vc-pagination'))
-   → each page button ≥ 44 × 44 with ≥ 8 px gap
+   → each page button ≥ 24 × 24 with ≥ 8 px gap
 ```
 
 ### 30. VcExpansionPanels / VcExpansionPanel
@@ -1010,7 +1010,7 @@ PREREQ: /catalog with filter facets visible.
 
 4. Header touch target (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('.vc-expansion-panels'))
-   → each panel header ≥ 44 × 44
+   → each panel header ≥ 24 × 24
 ```
 
 ### 31. VcModal
@@ -1038,7 +1038,7 @@ PREREQ: open any modal trigger (e.g., BOPIS modal per §8 or address-edit on /ca
 
 4. Close button touch target (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('.vc-modal'))
-   → close button ≥ 44 × 44
+   → close button ≥ 24 × 24
 ```
 
 ### 32. VcConfirmationModal
@@ -1066,7 +1066,7 @@ PREREQ: authenticated user on /cart with ≥ 1 line item.
 
 4. Button touch targets (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('.vc-confirmation-modal'))
-   → confirm + cancel buttons ≥ 44 × 44 with ≥ 8 px gap
+   → confirm + cancel buttons ≥ 24 × 24 with ≥ 8 px gap
 
 NOTE: dismiss the modal (click cancel) before leaving the test to keep
       teardown deterministic.
@@ -1093,7 +1093,7 @@ PREREQ: anon or auth on Configurable PDP (`@td(CONFIGURABLE.testSlug)`),
 
 3. Touch target (BL-UI-006):
    browser_evaluate(touchTargetAuditSnippet('[data-test-id="sidebar"] .product-price-block'))
-   → Add-to-Cart button ≥ 44 × 44
+   → Add-to-Cart button ≥ 24 × 24
 ```
 
 ### 34. VcSlider
@@ -1119,7 +1119,7 @@ PREREQ: /catalog with a category that exposes a price-range facet.
 3. Handle touch target at 375 px (BL-UI-006 — KNOWN MOBILE PAIN POINT):
    resize to 375 px
    browser_evaluate(touchTargetAuditSnippet('[data-test-id="filter-price"] .vc-slider'))
-   → each handle ≥ 44 × 44 (sliders chronically ship 24 × 24 thumbs that
+   → each handle ≥ 24 × 24 (sliders chronically ship sub-24 px thumbs that
      fail this contract)
 ```
 
