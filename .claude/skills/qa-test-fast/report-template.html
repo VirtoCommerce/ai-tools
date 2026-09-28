@@ -1,0 +1,169 @@
+<!--
+  /qa-test-fast verdict page — the TEMPLATE. Copy to the scratchpad, fill every {{…}} slot from verdict.md,
+  then publish with the Artifact tool (icon: "checklist"). Rules: verdict.md in this folder §HTML page.
+  - Set data-verdict on <main> to PASS | PASS_WITH_NOTES | FAIL | BLOCKED; the band colours itself.
+  - Chips take data-s = PASS | FAIL | BLOCKED | NOT_RUN, or data-sev = critical | high | medium | low.
+  - Repeat a <tr> / <li> / <figure> per row; delete a section's rows, never the section — an empty
+    section keeps its "none" line so the reader sees it was considered.
+  - Screenshots: at most 4, as data: URIs (the page must stand alone). Everything else is a repo path.
+  - Delete this comment before publishing.
+-->
+<title>{{TICKET}} Verdict</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --paper: #f5f6f8; --surface: #ffffff; --ink: #1c2330; --muted: #596275; --rule: #dadee6;
+    --accent: #2f5d8a;
+    --pass: #1d7648; --pass-bg: #e3f3ea; --fail: #b3261e; --fail-bg: #fbe7e5;
+    --notes: #8a5d00; --notes-bg: #fbf1d9; --blocked: #4d5566; --blocked-bg: #e9ebef;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #12161c; --surface: #1a2029; --ink: #e5e8ee; --muted: #9ba4b3; --rule: #2d3541;
+      --accent: #86acd4;
+      --pass: #5cc995; --pass-bg: #153324; --fail: #f28b82; --fail-bg: #3a1a18;
+      --notes: #e3b650; --notes-bg: #372b10; --blocked: #aab2c0; --blocked-bg: #252c37;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #12161c; --surface: #1a2029; --ink: #e5e8ee; --muted: #9ba4b3; --rule: #2d3541;
+    --accent: #86acd4;
+    --pass: #5cc995; --pass-bg: #153324; --fail: #f28b82; --fail-bg: #3a1a18;
+    --notes: #e3b650; --notes-bg: #372b10; --blocked: #aab2c0; --blocked-bg: #252c37;
+  }
+
+  body { background: var(--paper); color: var(--ink); font: 15px/1.55 var(--sans); padding-inline: 16px; padding-block: 28px 48px; }
+  .report { max-width: 960px; margin: 0 auto; display: grid; gap: 28px; }
+  h1, h2 { text-wrap: balance; margin: 0; }
+  h2 { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  section { display: grid; gap: 12px; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .mono, code { font-family: var(--mono); font-size: .92em; }
+  .muted { color: var(--muted); }
+
+  /* Verdict band — the one bold element; its colour is the verdict. */
+  .band { --v: var(--blocked); --vbg: var(--blocked-bg);
+    background: var(--vbg); border: 1px solid var(--v); border-radius: 10px; padding: 20px 22px; display: grid; gap: 10px; }
+  [data-verdict="PASS"] .band { --v: var(--pass); --vbg: var(--pass-bg); }
+  [data-verdict="PASS_WITH_NOTES"] .band { --v: var(--notes); --vbg: var(--notes-bg); }
+  [data-verdict="FAIL"] .band { --v: var(--fail); --vbg: var(--fail-bg); }
+  .eyebrow { font: 500 13px var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .verdict-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
+  .verdict { font-size: clamp(28px, 6vw, 40px); font-weight: 700; letter-spacing: .01em; color: var(--v); line-height: 1.1; }
+  .title { font-size: 19px; font-weight: 600; }
+  .lede { margin: 0; max-width: 68ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 500; font-family: var(--mono); font-size: 12.5px; }
+
+  /* Counts — only because AC pass/fail totals ARE the question this page answers. */
+  .tally { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .chip { display: inline-block; font: 600 11.5px/1 var(--mono); letter-spacing: .04em; padding: 5px 8px; border-radius: 999px;
+    color: var(--blocked); background: var(--blocked-bg); white-space: nowrap; }
+  .chip[data-s="PASS"] { color: var(--pass); background: var(--pass-bg); }
+  .chip[data-s="FAIL"], .chip[data-sev="critical"], .chip[data-sev="high"] { color: var(--fail); background: var(--fail-bg); }
+  .chip[data-sev="medium"] { color: var(--notes); background: var(--notes-bg); }
+
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+  tr:last-child td { border-bottom: 0; }
+  td.id { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; color: var(--muted); }
+
+  ul.rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  ul.rows li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; padding: 10px 14px; background: var(--surface);
+    border: 1px solid var(--rule); border-radius: 8px; }
+  ul.rows li .grow { flex: 1 1 240px; }
+  .none { color: var(--muted); font-style: italic; margin: 0; }
+
+  .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .shots figure { margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+  .shots img { display: block; width: 100%; height: auto; }
+  .shots figcaption { font-size: 12.5px; padding: 8px 10px; color: var(--muted); }
+
+  dl.context { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: 13.5px; }
+  dl.context dt { color: var(--muted); }
+  dl.context dd { margin: 0; font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
+  @media (max-width: 520px) { dl.context { grid-template-columns: 1fr; } dl.context dd { margin-bottom: 6px; } }
+</style>
+
+<main class="report" data-verdict="{{VERDICT}}">
+  <header class="band">
+    <div class="eyebrow"><span>{{TICKET}}</span><span>{{ENV}}</span><span>{{DATE}}</span></div>
+    <div class="verdict-row">
+      <span class="verdict">{{VERDICT_LABEL}}</span>
+      <span class="title">{{TICKET_SUMMARY}}</span>
+    </div>
+    <p class="lede">{{ONE_SENTENCE}}</p>
+    <div class="meta">
+      <span>Build <b>{{BUILD}}</b></span>
+      <span>Checklist <b>{{PASSED}}/{{TOTAL}} passed</b></span>
+      <span>Bugs <b>{{BUG_COUNT}}</b></span>
+    </div>
+  </header>
+
+  <section aria-labelledby="h-ac">
+    <h2 id="h-ac">Acceptance criteria</h2>
+    <div class="tally">
+      <span class="chip" data-s="PASS">{{AC_PASS}} PASS</span>
+      <span class="chip" data-s="FAIL">{{AC_FAIL}} FAIL</span>
+      <span class="chip" data-s="BLOCKED">{{AC_BLOCKED}} BLOCKED</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>AC</th><th>What was checked</th><th>Result</th><th>Evidence</th></tr></thead>
+        <tbody>
+          <tr><td class="id">{{AC_ID}}</td><td>{{AC_TEXT}}</td><td><span class="chip" data-s="{{AC_RESULT}}">{{AC_RESULT}}</span></td><td class="mono">{{AC_EVIDENCE}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-bugs">
+    <h2 id="h-bugs">Bugs</h2>
+    <ul class="rows">
+      <li><span class="chip" data-sev="{{SEV}}">{{SEV}}</span><span class="grow">{{BUG_TITLE}}</span><span class="mono muted">{{BUG_REPORT_PATH}} · {{TRACKER_KEY_OR_NOT_FILED}}</span></li>
+    </ul>
+    <!-- no bugs: <p class="none">No product defects found.</p> -->
+  </section>
+
+  <section aria-labelledby="h-untested">
+    <h2 id="h-untested">Not tested, and why</h2>
+    <ul class="rows">
+      <li><span class="grow">{{ITEM}}</span><span class="muted">{{REASON}}</span></li>
+    </ul>
+    <!-- nothing skipped: <p class="none">Every in-scope item ran.</p> -->
+  </section>
+
+  <section aria-labelledby="h-shots">
+    <h2 id="h-shots">Evidence</h2>
+    <div class="shots">
+      <figure><img src="{{DATA_URI}}" alt="{{SHOT_ALT}}"><figcaption>{{SHOT_CAPTION}}</figcaption></figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-data">
+    <h2 id="h-data">Test data</h2>
+    <p class="lede">Created <b>{{CREATED}}</b> <code>AGENT-TEST-</code> entities, removed <b>{{REMOVED}}</b>. Settings restored and re-read: {{SETTINGS_OR_NONE}}.</p>
+  </section>
+
+  <section aria-labelledby="h-context">
+    <h2 id="h-context">Context used</h2>
+    <dl class="context">
+      <dt>Test model</dt><dd>{{MODEL_PATH}}</dd>
+      <dt>Checklist</dt><dd>{{CHECKLIST_PATH}}</dd>
+      <dt>Domain map</dt><dd>{{DOMAIN_MAP_STATE}}</dd>
+      <dt>Mind map</dt><dd>{{MIND_MAP_OR_SKIPPED}}</dd>
+      <dt>Exploratory</dt><dd>{{SBTM_PATH_OR_REASON}}</dd>
+      <dt>PRs</dt><dd>{{PR_LIST}}</dd>
+    </dl>
+  </section>
+</main>

@@ -16,7 +16,7 @@ a judgment call a gate does not settle, or when you are about to change how a st
 
 | Need | Read |
 |---|---|
-| Step 1e — the fault model, its eight rules, its gate | [`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md) · shape: [`templates/test-model.md`](../templates/test-model.md) |
+| Step 1e — the fault model, its eight rules, its gate | [`skills/qa-test-model/test-model.md`](../skills/qa-test-model/test-model.md) · shape: [`templates/test-model.md`](../templates/test-model.md) |
 | Steps 1a–1b — the fetch, the routing branch, the two pre-flight waves | [`skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) |
 | Steps 1r · 1c · 1c-map · 1d — the FULL-only context wave: briefs, returns, what each carries | [`skills/qa-test/context-wave.md`](../skills/qa-test/context-wave.md) |
 | The six derived axes as ONE mechanism (2b–2g) | [`skills/qa-test/axes.md`](../skills/qa-test/axes.md) |
@@ -90,7 +90,7 @@ FULL   1a → 1b → 1r ‖ 1c ‖ 1d ‖ [1c-map] ‖ 2-load
                 → 3-exec ────────► 4a ‖ 4v                    ◄── FIRST TEST
                                   ‖ A = [2a] dispose → author → append → 3-cases ──► 4c (C1)
                        4a returns ─► CHECK A ─► (still authoring? wait) ─► 4c
-                → 5-triage → 5-verdict → 5-file → 5-report → 5-status → 5-docs → [5-docs-map]
+                → 5-triage → 5-verdict → 5-file → 5-report → 5-status → 5-docs → [5-docs-map] → [5-mind-map]
 ```
 
 `[1c-map]` only when 2g resolves `ABSENT`/`unresolved` on an all-layer chain, and `[5-docs-map]` only when a map exists and the run verified something to write back — both FULL-only, both non-blocking ([`context-wave.md`](../skills/qa-test/context-wave.md) §1c-map · [`reporting.md`](../skills/qa-test/reporting.md) §5-docs-map). `[2a]` is Artifact **A's first phase** on both paths, FAST only under `--coverage`. The `--iterate`
@@ -309,7 +309,7 @@ Five things it must leave behind, each consumed by a named later step:
 | It produces | Consumed by | The rule that makes it load-bearing |
 |---|---|---|
 | the **domain map** read (or `ABSENT`) | `1e` clauses 11 / 11b | **FULL builds a missing map** at `1c-map`; **FAST recommends and proceeds**. `STALE` is never auto-refreshed. Nothing here blocks |
-| the **mind map** path, or `null` | `1e` Part 0 · `1e-plan` · 3a · A's stamps · `5-docs-map` | present ⇒ cite its node ids; `null` ⇒ nothing changes ([`axes.md`](../skills/qa-test/axes.md) §2g) |
+| the **mind map** path, or `null` | `1e` Part 0 · `1e-plan` · 3a · A's stamps · `5-docs-map` | present ⇒ cite its node ids; `null` ⇒ built at `5-mind-map` (FULL) ([`axes.md`](../skills/qa-test/axes.md) §2g) |
 | the **bibliography** — prior BA analysis · prior test model · domain-knowledge docs · tickets already tested here | the `1c` brief, as **paths to read** | so `ba-system-analyzer` starts from the prior analysis instead of re-deriving it |
 | the **`Test object` block** — purpose · operations · data · variants · constraints | `1e`'s condition space | *you cannot design an experiment on an object whose properties you do not know.* A `1e` that skips it enumerates screens — the measured Loyalty Missions failure |
 | an `UNDECLARED` purpose | `1e` (FULL) / the checklist (FAST) | **`UNDECLARED` is the run's FIRST finding, not a blank** (measured: 1 of 13 domains has a declared purpose) |
@@ -336,14 +336,10 @@ The `1c` · `1c-map` · `1d` rows (agent, lane, when, returns, gate + record) an
 
 #### 1e — Build the Test Model *(FULL only)*
 
-Distil `1c` + `1d` + `1a` into the **fault model** Step 3 authors cases from, written to
-`reports/ba/test-models/<TICKET>-<date>.md`. **Part 0 — the value chain — is derived FIRST** and drawn in
-Mermaid; the condition space is built per link on top of it. **A mind map (2g) ⇒ Part 0 cites its node ids.**
-
-**Shape:** [`.claude/templates/test-model.md`](../templates/test-model.md). **Methodology, the eight rules
-the scenario table must satisfy, Part 0r, the gate and the worked references:**
-[`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md) — read it first; the gate below is only
-its checklist.
+**Invoke [`/qa-test-model`](../skills/qa-test-model/SKILL.md) `<TICKET> --context <1a+1c+1d, 2d, 2g>`** — the only
+builder of the **fault model** Step 3 authors from (`reports/ba/test-models/<TICKET>-<date>.md`). **Part 0 —
+the value chain — FIRST**, in Mermaid; a mind map (2g) ⇒ Part 0 cites its node ids. Method, the eight rules,
+Part 0r and the gate: [`test-model.md`](../skills/qa-test-model/test-model.md) — the gate below is its checklist.
 
 **Gate (inline, 13 clauses — every one contradictable):** flow/type/path set + atomic conditions + BL/ECL/
 domains/risk areas · `Value chain` complete **with the `flowchart` in the file** · `Mechanism coverage
@@ -360,11 +356,11 @@ every role resolves to a fixture alias or `FIXTURE-GAP`.**
 
 **Clauses 11/11b read the `domain_map` token (2g) and never re-derive it, and `1e` CONFIRMS 2g's
 provisional all-layer answer — both stated once, in
-[`skills/qa-test/test-model.md`](../skills/qa-test/test-model.md) §The gate.**
+[`skills/qa-test-model/test-model.md`](../skills/qa-test-model/test-model.md) §The gate.**
 
 **Clauses 11, 11b and 4 each exist because a measured run passed every OTHER clause** — VCST-5317 and
 VCST-5735. The argument for all three, and what to re-derive after any rewrite of the scenario table:
-[`test-model.md`](../skills/qa-test/test-model.md) §Why clauses.
+[`test-model.md`](../skills/qa-test-model/test-model.md) §Why clauses.
 
 
 #### 1e-plan — emit the scenario matrix as an authoring plan *(FULL only)*
@@ -646,7 +642,7 @@ The ordered close-out phases, plus **`5-loop`** — the bounded loop that repeat
 | **5-report** | Report | Feed + ratify the Feature Release Gate · post the tracker comment (**incl. the mandatory `Not filed (below severity floor)` line, `None` when empty**) · persist `summary.json` + update the checklist in place with verdicts · output the one chat report | verifier |
 | **5-status** | Change status | **After** the report, **ask first**, `qa-lead` only. PASS / PASS WITH NOTES → TESTED · FAIL → REOPEN with failures + bug links · **BLOCKED → NO transition + a mandatory comment naming the blocker** (the ticket stays in-testing: TESTED would be a lie and REOPEN files an env blocker into the dev queue). **TESTED is the terminal state this command may reach.** One row per verdict, the record, and the per-flow ownership: [`ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) | — |
 | **5-docs** | Publish documentation | **After** TESTED, **both paths**. Write the §3/§4/§5 guides for the surface the ticket moved into `reports/ba/`, then post them as **ONE tracker comment with a section per audience** — the run's one sanctioned second comment (`tracker-ops.md` §0 rule 4). Audiences, size caps and the three refusals: [`virto-doc-style.md`](../knowledge/ba/virto-doc-style.md) §10. Not a release note: no version literals. **A non-`PASS` verdict SCOPES this step rather than refusing it** — document the passing paths, carry the `Not documented` line and the verbatim verdict. Precondition is **5-status having run**, not TESTED. Ask before posting; refuse rather than pad. An existing guide is **amended, never forked** | inline |
-| **5-docs-map** | Amend the domain map | **FULL only, after 5-status, when a map EXISTS.** Write back what this run VERIFIED — a surface `1c` reached, a `D*` confirmed/refuted **live**, a `G*` closed, a count corrected — one `§7 — Amendments` row per write. **Costs no dispatch.** Live-`CONFIRMED` only; **never deletes a row or renumbers an id**. Independent of 5-docs's refusals. Non-blocking; `NOTHING_TO_AMEND` is a recorded outcome. A mind map is never edited here: `mind_map_findings[]`. Mechanism: [`reporting.md`](../skills/qa-test/reporting.md) §5-docs-map | inline |
+| **5-docs-map** | Amend the domain map | **FULL only, after 5-status, when a map EXISTS.** Write back what this run VERIFIED **live** (the closed list is `reporting.md`'s), one `§7` row per write. **No dispatch.** Live-`CONFIRMED` only; **never deletes a row or renumbers an id**. Independent of 5-docs's refusals. Non-blocking; `NOTHING_TO_AMEND` is a recorded outcome. A mind map is never edited here (`mind_map_findings[]`); a missing one: `5-mind-map`. Mechanism: [`reporting.md`](../skills/qa-test/reporting.md) §5-docs-map | inline |
 | **5-loop** | Iterate (`--iterate` only) | The bounded test → fix → re-test loop. **Per round (≥2):** `5-loop.0` round entry — probe the build, re-read the board, verify each fix-ready bug inline — then 5-triage–5-file + the round delta (an **amend** of the run's one comment) + `summary.json` + an appended checklist section. **At loop exit, once:** 5-report in full → 5-status → 5-docs → 5-docs-map, so a `--iterate` run posts **one** QA-Complete comment and makes **one** transition whatever the round count. Round entry, the per-round table and the reason for each row: [`modes.md`](../skills/qa-test/modes.md) §5-loop | round cap · deploy confirm · G0 BAIL → STOP |
 
 **Severity is graded at 5-triage and never re-graded at 5-file** to move a finding across the floor. Filing and
