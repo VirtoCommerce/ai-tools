@@ -2,7 +2,7 @@
 name: qa-seed-data
 description: "[Testing] Seed/teardown ALL test data — catalogs, products, pricing, inventory, B2B orgs/users, configurable products, loyalty, promotions, BOPIS — on ANY environment (TEST_ENV) via repo seed scripts (npm run seed) or Postman MCP; verify with td:reconcile"
 argument-hint: "[bootstrap|minimal|catalog|b2b|pricing|inventory|loyalty|promotions|bopis|configurable|users|full|teardown]"
-disable-model-invocation: true
+
 ---
 
 # /qa-seed-data — Test Data Generation & Teardown

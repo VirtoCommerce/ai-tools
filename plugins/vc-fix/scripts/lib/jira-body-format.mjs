@@ -1,7 +1,7 @@
 // Detects Jira WIKI markup in a body that must be MARKDOWN.
 //
-// Rule source: knowledge/execution/tracker-ops.md §5a — "Body format —
-// Markdown, NOT Jira wiki markup (VCST-5212)".
+// Rule source: knowledge/execution/tracker-ops.md §2 — "Jira content is
+// Markdown, NOT wiki markup (VCST-5212)".
 //
 // WHY A SHARED MODULE. This detection is used by the helper script AND by the
 // PreToolUse hook. Two copies of a regex is two things to drift; the incident
@@ -10,7 +10,7 @@
 // rule was stated in one place and applied in none.
 //
 // NARROW BY DESIGN. Jira wiki image syntax `!file.png|width=700!` is REQUIRED for
-// attachments (§5c), and `{{VAR}}` is this repo's own test-data token syntax
+// attachments (§2, screenshot carve-out), and `{{VAR}}` is this repo's own test-data token syntax
 // (the test-data token syntax). Neither may be flagged. Only constructs that are
 // unambiguously wiki AND never legitimate in a Markdown body are reported:
 // headings (`h1.`–`h6.`), block macros ({code}/{noformat}/{panel}/{quote}), and
@@ -65,7 +65,7 @@ export function wikiMarkupRefusal(body) {
   return (
     `This body is Jira WIKI markup, but this Jira renders MARKDOWN — it would post 200 OK and ` +
     `display as literal text.\n\n${rows}\n\n` +
-    `    Rule: knowledge/execution/tracker-ops.md §5a (VCST-5212).\n` +
-    `    Note: image syntax !file.png|width=700! is CORRECT and is not flagged (§5c).`
+    `    Rule: knowledge/execution/tracker-ops.md §2 (VCST-5212).\n` +
+    `    Note: image syntax !file.png|width=700! is CORRECT and is not flagged (§2, screenshot carve-out).`
   );
 }

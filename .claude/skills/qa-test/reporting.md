@@ -439,6 +439,28 @@ which the closed list above already refuses to a run. It records instead, in
 Each finding carries the case id and the run id. The next `/qa-test-mind-map update --from <ticket>`
 consumes them, and this step writes nothing else.
 
+### 5-mind-map — build the missing mind map (FULL, after 5-docs-map)
+
+**Trigger — all three, or no build:** path **FULL** · `domain_map.state` is `PRESENT` (a map `1c-map` built
+this run counts) · `domain_map.mind_map` is `null`. An existing mind map is never rebuilt here — it is
+handed back through `mind_map_findings[]` above. **FAST:** one line in the chat report —
+*"No mind map for `<slug>`: run `/qa-test-mind-map build <slug> --from <ticket>`"* — and nothing else.
+
+**Invoke the skill, never a paraphrase of it:** `/qa-test-mind-map build <slug> --from <ticket>`, whose
+`build.md` owns the procedure and whose `models:check` owns the gate. What this pipeline adds to the brief:
+the run's evidence by path (Test Model incl. its 3x amendments, the executed checklist with verdicts, the C1
+run folder, `summary.json`) and **one restriction** — step 10 stamps `Behavior:` **only on the cases this
+run authored**, because this run is those rows' single writer and no other suite's. Draft cases are not
+observation evidence (the skill's own rule), so the brief cites the lanes' live verdicts instead.
+
+**It runs after 5-status and 5-docs-map for the same reason 5-docs-map does:** nothing this run wrote back
+can have shaped the verdict. It never blocks and never amends the verdict; a red `models:check` that the
+build cannot fix records `FAILED` and leaves no half-written map. A new domain behaviour it could not
+ground stays `UNVERIFIED` — the map's honesty rules are the skill's, unchanged.
+
+**Record** `domain_map.mind_map_build` = `BUILT` / `FAILED` / `not-triggered` (+ reason), and on `BUILT` set
+`domain_map.mind_map` to the new path and list the stamped case ids.
+
 ### Record it
 
 `domain_map.amended_in_run` · `amend_outcome` (`AMENDED` / `NOTHING_TO_AMEND` / `FAILED` / `not-attempted`)

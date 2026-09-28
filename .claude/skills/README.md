@@ -113,7 +113,7 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
 | `/qa-test-design` | EP, BVA, decision tables, state transitions, pairwise, error guessing | test-design-techniques.md |
-| `/qa-test-model` | Build or amend a ticket's test model outside `/qa-test` FULL — prior-model rule, contract refresh, the gate inline; method stays in `qa-test-model/test-model.md` | — (cites `qa-test-model/test-model.md`) |
+| `/qa-test-model` | The only builder of a ticket's Test Model (`/qa-test` FULL 1e and `/qa-test-fast` invoke it) — prior-model rule, contract refresh, the gate inline | test-model.md |
 | `/qa-test-mind-map` | Build / update / audit the behaviour graph of a domain — nodes, branches, states, data needs, evidence; cases link via `Behavior:` stamps | build.md, update.md, audit.md |
 | `/qa-test-data-model` | Build / update / audit the data STATE each behaviour requires, as profiles `/qa-seed-data --profile` executes | build.md, update.md, audit.md |
 | `/qa-risk` | Risk-based prioritization: 5x5 matrix, severity/priority, test depth | risk-prioritization-framework.md |

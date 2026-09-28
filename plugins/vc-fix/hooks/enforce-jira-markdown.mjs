@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // PreToolUse hook — blocks a Jira comment written in WIKI markup before it posts.
 //
-// Rule source: knowledge/execution/tracker-ops.md §5a — Markdown, NOT
+// Rule source: knowledge/execution/tracker-ops.md §2 — Markdown, NOT
 // Jira wiki markup (VCST-5212).
 //
 // WHY A HOOK. That rule already existed, with a ticket reference, and a run broke
@@ -13,7 +13,7 @@
 // already gone out and the comment cannot be deleted through the MCP.
 //
 // Detection is deliberately narrow (scripts/lib/jira-body-format.mjs): image
-// syntax `!file.png|width=700!` is REQUIRED by §5c and `{{VAR}}` is the repo's
+// syntax `!file.png|width=700!` is REQUIRED by §2's screenshot carve-out and `{{VAR}}` is the repo's
 // test-data token syntax — neither is flagged.
 //
 // Fails OPEN on any error — a hook bug must never block legitimate work.
@@ -37,7 +37,7 @@ try {
       `${refusal}\n\n` +
       `    Convert the body to Markdown and post again. If you have already posted a wiki-markup\n` +
       `    comment, AMEND it rather than adding a corrected copy (§0):\n` +
-      `      REST PUT to /rest/api/3/issue/<KEY>/comment/<id> — recipe in`,
+      `      REST PUT to /rest/api/3/issue/<KEY>/comment/<id> — recipe in\n` +
       `      knowledge/execution/tracker-ops.md §0a (the Atlassian MCP has no edit tool).`,
   }));
   process.exit(0);

@@ -39,6 +39,7 @@
     "sources": [],
     "unmapped_surfaces": [],
     "mind_map": ".claude/knowledge/domain/<name>.mind-map.json|null",
+    "mind_map_build": "BUILT|FAILED|not-triggered — set at 5-mind-map (FULL, post-verdict) when the map is PRESENT and mind_map was null; FAST never builds (reporting.md §5-mind-map)",
     "mind_map_findings": []
   },
   "shape_class": {
