@@ -108,6 +108,11 @@ reasons it cannot be a terminal dump:
      80–160-line band is per model — and never re-derives Part 0 from scratch, which is what produces two
      independent models of one surface. So *"amended, never forked"* governs the **round**; *"carried
      forward, never re-derived"* governs the **next ticket**.
+   - **The domain has a mind map** (`.claude/knowledge/domain/<name>.mind-map.json`, `/qa-test-mind-map`)
+     → Part 0 **cites** its node ids in the `Mind map:` header line instead of copying the chain and
+     states from a predecessor, and each case-plan row names its node as `behavior` (persisted as a
+     `Behavior:` stamp by `scaffold-rows.ts`). A disagreement with a node is DRIFT for
+     `/qa-test-mind-map update` — never a silent re-draw in this model.
 3. A file is **lintable in principle** — Part 0, the five fault-model parts and the resolved sweeps could
    be checked rather than asserted. **`npm run model:lint` is not implemented**, so today this third reason <!-- doclint:may-not-exist -->
    is an intention, not a gate: do not cite it as though a script were enforcing it. The live deterministic

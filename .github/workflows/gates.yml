@@ -76,6 +76,12 @@ jobs:
         run: npm run test:roi-check -- --base "origin/${{ github.base_ref }}"
       - name: bl:lint / ecl:lint — oracle citation integrity
         run: npm run bl:lint && npm run ecl:lint
+      # Test Mind Map + Test Data Model (docs/decisions/test-mind-map-and-data-model.md): schema, graph,
+      # reference and Behavior:/DataProfile: stamp integrity. On a PR the stable-id check (TM-030 — a
+      # node or requirement id may never disappear) diffs against the base fetched above; on push it
+      # has no base and checks integrity only. A domain with no model passes.
+      - name: models:check — mind map / data model integrity
+        run: npm run models:check -- --base "${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD' }}"
       - name: suites:executability:check — determinism ratchet
         run: npm run suites:executability:check
       - name: scope:validate — critical-ui-scope ↔ suite manifest

@@ -115,6 +115,18 @@ it past that point, a failed or gate-refused build leaves `state: ABSENT` and pr
 is never a finding about the product. `npm run domain:check` encodes the same asymmetry: **stale fails,
 missing passes.**
 
+**The mind-map sidecar rides on this axis, and adds no axis and no lane.** The same 2g read checks for
+`.claude/knowledge/domain/<name>.mind-map.json` (`/qa-test-mind-map`) beside the map. It records
+`domain_map.mind_map` = that path, or `null`. When it is present, four steps read it:
+
+- `1e` Part 0 cites its node ids ([`test-model.md`](test-model.md)).
+- `1e-plan` rows carry `behavior` / `dataProfile`.
+- Step 3 stamps them ([`authoring.md`](authoring.md) §Carry the model's design decision into the row).
+- `5-docs-map` hands back what the run established ([`reporting.md`](reporting.md) §5-docs-map).
+
+When it is absent, nothing changes: no run builds a mind map inline, because deriving one is a full
+`/qa-test-mind-map build` pass. `npm run models:check` keeps the same asymmetry: a missing model passes.
+
 **Two-moment axis, like `coverage_surface`.** At `1b` 2g the all-layer question is answered
 **provisionally** — from `1a`'s domains plus whether the domain has a back-office surface at all — because
 the ticket's value chain does not exist until `1e`. It is **confirmed at `1e`** against Part 0. And it

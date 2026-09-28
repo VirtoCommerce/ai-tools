@@ -42,6 +42,11 @@ Five decisions, each of which was a live fork:
   or a reshaped table is **exit 2**, never a sweep that quietly expands to nothing. `UIP-*` is not one
   failure shape, so it carries a per-probe archetype map and a probe with **no** mapping is a hard error
   rather than a wrong default. Waiving a swept item requires a reason.
+- **A plan row may name its model links** — `behavior` (a mind-map node id) and `dataProfile` (a
+  data-model profile id). Unlike `link`, they are **persisted**, as `Behavior:` / `DataProfile:` stamps
+  in References: the only place `npm run models:check` derives a node's linked cases from. The
+  scaffolder checks their shape; whether they exist is `models:check` TM-015 / TM-016
+  ([`/qa-test-mind-map`](../../skills/qa-test-mind-map/SKILL.md)).
 - **It never writes into `regression/suites/`.** The output is a staged CSV in the scratchpad; the append
   stays with `append-test-cases-to-suite.ts`, run serially by the orchestrator. That is what makes
   concurrent per-surface authoring batches compatible with the one-author-per-CSV rule above — and it

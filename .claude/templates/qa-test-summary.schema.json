@@ -37,7 +37,9 @@
     "amend_outcome": "AMENDED|NOTHING_TO_AMEND|FAILED|not-attempted|null",
     "amendments": [],
     "sources": [],
-    "unmapped_surfaces": []
+    "unmapped_surfaces": [],
+    "mind_map": ".claude/knowledge/domain/<name>.mind-map.json|null",
+    "mind_map_findings": []
   },
   "shape_class": {
     "$comment": "The THIRD classifier, derived at 1a on the feature-test branch beside `ticket_type` and `path` — never instead of either (ticket-routing.md §5c; methodology skills/qa-test/ui-kit-class.md). It answers whether the thing under test is a feature ON a surface or the surface ITSELF, and it changes only what the resolved path PRODUCES: on `ui-kit` Artifact A, the 3-cases gate and 4c/C1 do not run on either path, and the `visual` + `coverage` axes need no flag. It may never promote or demote FAST/FULL — same rule as an axis. IT IS THE ONE CLASSIFIER THAT FAILS CLOSED: every other asks 'should we also do X?' so doubt widens the run, but this one SUBTRACTS, so an unestablished class is `none` and the run authors cases as normal — a wrong `ui-kit` deletes durable coverage from a run that needed it (the axes.md §3 data_surface defect, read backwards). `null` means the class was never derived, which is a gap, NOT a `none`. surface_source[] is recorded even for `none`, following the axes' own rule that an omitted block reads as a clean one. `skipped[]` names what the class actually removed from THIS run, so the artifact says it rather than only this schema. Supersedes the ad-hoc `uikit_rule_applied` string one pre-schema run wrote; do not reintroduce that spelling.",

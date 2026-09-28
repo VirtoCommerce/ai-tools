@@ -25,9 +25,9 @@ test cases / suites          ─►  reference each combination via @td(COMBO_AL
 ```
 
 > **Output (decided):** the durable deliverable is the **gap fixtures (`test-data/<domain>/*.csv`) +
-> combination `@td()` aliases (`aliases.json`)**, ready for `/qa-seed-data`. The **variant inventory and
-> combination matrix are returned inline to the caller** (test-management) — never written as stray files
-> (honors `.claude/rules/reports.md`).
+> combination `@td()` aliases (`aliases.json`)**, ready for `/qa-seed-data`. The **variant inventory is
+> returned inline**; the **combination matrix persists as data-model profiles** when the domain has a mind
+> map (§6b) — never as stray files (`.claude/rules/reports.md`).
 
 > **Combination design first, row authoring second.** The value here is combinatorial / boundary
 > COVERAGE, not plausible-looking individual rows. A single product row is not "prepared test data";
@@ -93,7 +93,7 @@ node scripts/test-data/discover-variants.mjs <feature> --json | npx tsx scripts/
 It emits the **minimal all-pairs covering set** + the full-factorial count it replaced (so you can LOG
 what pairwise dropped — never silently cap). Assign a **Combo ID** and the **scenario it covers** to each
 row. Add explicit rows for boundaries / known bad-neighborhood combinations (`vc-bug-catalog`) even if
-pairwise wouldn't pick them. *(The matrix is returned inline to the caller — not written to a file.)*
+pairwise wouldn't pick them. *(Persisted only as §6b profiles — never a separate matrix file.)*
 
 ### 5. Resolve each cell — reuse first, author the gap
 For every entity a combination needs, in order:
@@ -126,6 +126,12 @@ whose business key already exists is reused, never duplicated) and enforces the 
 blanked, bare UUIDs rejected, `seeded=false`, `AGENT-TEST-` prefix checked). This is the **only on-disk
 output**. (Manual fallback if you don't build a plan: edit the CSVs + `aliases.json` by hand, then run
 `npx tsx scripts/test-data/validate-td-refs.ts`.)
+
+### 6b. Persist the design
+If `.claude/knowledge/domain/<name>.mind-map.json` exists, write each Combo ID as a **profile** (node =
+the scenario it covers) and each cell's state as a **requirement** in `test-data/models/<name>.data-model.json`,
+pointing at the alias + seeder step 6 used — [`/qa-test-data-model build`](../qa-test-data-model/build.md).
+Then `npm run models:check`. No mind map ⇒ skip; the matrix stays inline.
 
 ### 7. Report & hand off
 Return **inline to the caller**: the variant inventory (step 2), the combination matrix (step 4, with

@@ -134,7 +134,7 @@ agent that then authors only the gaps, and there is no handoff to lose.
 exact set is the `REPAIR`/`RE-BASE` ids. This is why the merge does not cost FAST its coverage axis.
 
 **Neither phase gates `3-exec`**, the gate that releases the first test. The whole step runs past it —
-which is the 2026-09-10 re-reading that took Artifact A off the critical path ([`SKILL.md`](SKILL.md)
+which is the 2026-09-10 re-reading that took Artifact A off the critical path ([`sequencing.md`](sequencing.md)
 §Ordering), now inherited by the triage that used to sit in front of the checklist.
 
 **Two rules the merge creates, and they are the ones to hold:**
