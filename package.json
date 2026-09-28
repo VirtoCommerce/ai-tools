@@ -296,7 +296,8 @@
     "ucp:schema:check": "node scripts/ucp/refresh-ucp-schema.mjs --check",
     "ucp:schema:probe": "node scripts/ucp/refresh-ucp-schema.mjs --probe",
     "bl:extract:has": "npx tsx scripts/knowledge/extract-bl.ts --has-domain",
-    "kb:install": "node scripts/kb/install-mcp.mjs"
+    "kb:install": "node scripts/kb/install-mcp.mjs",
+    "models:check": "npx tsx scripts/maintenance/check-test-models.ts"
   },
   "repository": {
     "type": "git",
@@ -322,6 +323,7 @@
     "@anthropic-ai/claude-agent-sdk": "^0.2.140",
     "@playwright/test": "^1.61.1",
     "@types/node": "^22.19.19",
+    "ajv": "^8.20.0",
     "cross-env": "^7.0.3",
     "csv-stringify": "^6.7.0",
     "playwright": "^1.61.1",

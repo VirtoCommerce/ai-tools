@@ -422,6 +422,19 @@ nobody looked at.
 - **Nothing here blocks.** A failed amendment records `domain_map.amend_outcome: FAILED` with the reason
   and leaves the map untouched; the run's verdict was final at 5-verdict.
 
+### The mind map — hand back, never amend inline
+
+When `domain_map.mind_map` is set, this step does **not** edit the graph. Behaviour is a re-derivation,
+which the closed list above already refuses to a run. It records instead, in
+`domain_map.mind_map_findings[]`:
+
+- **a stamped case whose verdict contradicts its node.** Examples: a FAIL on a `CONFIRMED` node, or a
+  PASS on a `DRIFT` node whose observed side the case now disproves. Each is a DRIFT candidate.
+- **a scenario from `1e-plan` that fit no node.** Each is a missing-behaviour candidate.
+
+Each finding carries the case id and the run id. The next `/qa-test-mind-map update --from <ticket>`
+consumes them, and this step writes nothing else.
+
 ### Record it
 
 `domain_map.amended_in_run` · `amend_outcome` (`AMENDED` / `NOTHING_TO_AMEND` / `FAILED` / `not-attempted`)

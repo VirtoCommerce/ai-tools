@@ -241,6 +241,19 @@ reader can tell whose refusal the case defends). The appender **rejects a row wi
 stamps**; `Probe:` and `Role:` are provenance, optional and unvalidated. No new CSV column: these join the
 `Synced:` / `Audited:` / `Promoted:` stamps `References` already carries.
 
+**When the domain has a mind map (`domain_map.mind_map`, axes.md §2g), each row also names its
+node:**
+
+- Set the plan row's `behavior` to the node id its scenario decides.
+- When the data model has a matching profile, set `dataProfile` too.
+- `tc:scaffold` persists them as `Behavior:<node-id>` / `DataProfile:<profile-id>`.
+- After the append, run `npm run models:check`. TM-015 / TM-016 fail a stamp that names nothing.
+
+A scenario that fits no node is a model gap. Record it for `/qa-test-mind-map update`; never invent a
+node id to satisfy the stamp. Step 3a then seeds a stamped profile with
+`/qa-seed-data --profile <id>` ([`../qa-seed-data/profile-seeding.md`](../qa-seed-data/profile-seeding.md))
+instead of re-deriving its data.
+
 ### Scaffold before authoring — never hand-type the boilerplate
 
 ```bash
