@@ -55,6 +55,7 @@
  *   node scripts/seed-data/loyalty/seed-org-loyalty.mjs --missions-only --only ORG_LOY_MISSION_2,ORG_LOY_MISSION_PARTIAL
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   assertSafeTarget, auth, api, log, verbose, loadCsv,
   writeEnvAliasOverride, verifyRemoved,

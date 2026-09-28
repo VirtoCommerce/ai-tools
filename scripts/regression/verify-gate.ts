@@ -33,6 +33,7 @@
 // exits 0, because deciding is the verifier's job. Only a usage error or an unreadable input is
 // non-zero, so a CI wrapper can never mistake this for a gate result.
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { spawnSync } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { parse as parseCsv } from "csv-parse/sync";

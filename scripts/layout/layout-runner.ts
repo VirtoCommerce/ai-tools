@@ -90,6 +90,7 @@
  * A case with no parseable assertion is reported BLOCKED, never PASS — silence is not a pass.
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, basename } from "path";
 import { parse as parseCsv } from "csv-parse/sync";

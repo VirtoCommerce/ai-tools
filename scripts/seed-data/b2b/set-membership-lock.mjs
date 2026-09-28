@@ -24,6 +24,7 @@
  * A lock left behind is exactly the residue that poisons a later suite: it terminates the fixture's
  * sessions on every subsequent lock transition and makes an unrelated suite fail at sign-in.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { fileURLToPath } from 'node:url';
 import { resolve, join } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';

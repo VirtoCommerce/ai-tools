@@ -27,6 +27,7 @@
  * Safety: ENV_RISK gate (blocks ENV_RISK=production unless --allow-admin-writes-on-prod); idempotent by property name within the catalog.
  * No _seed-results report (VCST-5406) — properties are not referenced by any @td alias id.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   assertSafeTarget, auth, api, loadCsv, ensureVirtualCatalog, log, verbose, csvBool,
   DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL, SEED_FAMILY,

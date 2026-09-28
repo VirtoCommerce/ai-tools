@@ -27,6 +27,7 @@
  *   npx tsx scripts/update-graphql-fixtures.ts --apply-renames --refresh
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { config as loadDotenv } from "dotenv";
 import { resolveTestEnv } from "../lib/resolve-test-env.js";
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "fs";

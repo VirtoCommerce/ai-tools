@@ -32,6 +32,7 @@
  * Exit codes: 0 planned cleanly · 1 the selection cannot run as-is (unknown id, missing CSV,
  * no executor, or a cap that would guarantee truncation).
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";

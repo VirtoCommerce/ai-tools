@@ -18,6 +18,7 @@
  *   node scripts/discover-variants.mjs promotions --json > spec.json
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 const JSON_ONLY = process.argv.includes("--json");
 const feature = process.argv.slice(2).find((a) => !a.startsWith("--"));
 

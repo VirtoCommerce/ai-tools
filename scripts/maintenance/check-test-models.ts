@@ -49,6 +49,7 @@
  *   TM-032 integration point — a cross-domain depends_on / affected_by edge no case exercises (info)
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative, basename } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";

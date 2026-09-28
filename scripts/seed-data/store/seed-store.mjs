@@ -12,6 +12,7 @@
  *   node scripts/seed-data/seed-store.mjs [--dry-run] [--verbose]
  *   TEST_ENV=localhost npm run seed:store
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   DRY_RUN, log, assertSafeTarget, auth, api, ensureVirtualCatalog, ensureStore,
 } from '../../lib/seed-common.mjs';
