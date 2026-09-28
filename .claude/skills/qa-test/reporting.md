@@ -83,7 +83,9 @@ rate via
 ### 2. Post the tracker comment (before the status transition — that is 5-status)
 
 Markdown, never wiki markup; outcome-first, evidence referenced not inlined
-(`.claude/knowledge/execution/tracker-ops.md` §5a):
+(`.claude/knowledge/execution/tracker-ops.md` §5a). **Post it with `npm run tracker:comment` and record the
+id in `summary.json.tracker.comment_id`; every later write this run makes to the ticket AMENDS that
+comment, never a second one** (`tracker-ops.md` §0):
 
 ```
 QA Complete — [X] cases, [Y] passed, [Z] failed.
@@ -106,8 +108,9 @@ costs a ticket nobody knows to include.
 The `Not filed` line is **mandatory and says `None` when there are none** — an omitted line is
 indistinguishable from a run that found no Low issues.
 
-**`--iterate`:** this full template is posted **once, at loop exit**. Rounds 1…N−1 post the much
-shorter **round delta** instead ([`modes.md`](modes.md) §5-loop §The round-delta comment) — the full
+**`--iterate`:** this full template is posted **once, at loop exit**. Rounds 1…N−1 write the much
+shorter **round delta** into that same comment instead — round 1 posts it, later rounds and the exit
+template amend it ([`modes.md`](modes.md) §5-loop §The round-delta comment) — the full
 template every round buries the ticket under near-identical comments, while posting nothing leaves a
 prerelease deployed to the shared test env with no trace. The delta carries the same mandatory
 `Not filed` accounting.
@@ -202,8 +205,8 @@ Strictly **after** the report is posted. **Single source of truth for the whole 
 | Verdict | Transition | Also required |
 |---|---|---|
 | PASS / PASS WITH NOTES | `Finish test` → TESTED | `PASS WITH NOTES` is a PASS; the notes live in the comment, never in a different transition |
-| FAIL | `Need fixes` → REOPEN | The comment lists every failure and every filed bug link, posted **before** the transition |
-| **BLOCKED** | **none — deliberately** | A **mandatory comment** naming the blocker (env / data / dependency / not-deployed), what it blocks, and that the ticket awaits a re-run. It stays in-testing |
+| FAIL | `Need fixes` → REOPEN | The 5-report comment (amended, never a second one) lists every failure and every filed bug link, posted **before** the transition |
+| **BLOCKED** | **none — deliberately** | A **mandatory comment** — the 5-report comment, amended — naming the blocker (env / data / dependency / not-deployed), what it blocks, and that the ticket awaits a re-run. It stays in-testing |
 
 **Why BLOCKED transitions nothing, and why it needed a row.** This table had two rows for a four-value
 verdict vocabulary, so a blocked run left the ticket in in-testing with no comment obligation and no rule
@@ -233,7 +236,7 @@ transitions need. The ticket therefore stays in-testing across rounds, so the St
 if round 1 skipped it, the exit round does it here, exactly as the paragraph above already requires.
 
 **A BUG the loop verified is a different ticket, and it has its own hop** — taken by the inline
-`/qa-verify-fix` at round entry, capped at `TESTED`, and only when that bug's fix is merged and present in
+`/vc-fix:qa-verify-fix` at round entry, capped at `TESTED`, and only when that bug's fix is merged and present in
 the round's probed build; everything else the loop left in in-testing closes out here at 5-status alongside the
 ticket ([`modes.md`](modes.md) §Round entry ·
 [`ticket-status-transitions.md`](../../knowledge/execution/ticket-status-transitions.md) §5a). It does not
@@ -249,9 +252,9 @@ VERIFIED/REOPEN verdict, and `hotfix-verify` handed off before 1b.
   documentation to the ticket** (§5-docs) and `5-docs-map` writes back to the domain map (non-blocking). New cases
   stay `Draft` — promotion is [`/qa-test-lifecycle`](../../commands/qa-test-lifecycle.md)'s pass, not this one.
   **Then point at the release note** — see §Release note below.
-- **FAIL → REOPEN** → `/qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge +
-  deploy → `/qa-verify-fix <ticket-key>`. A too-complex/multi-repo bug (G0 BAIL) is handed to a human,
-  resuming at `/qa-verify-fix`. Once the fix is deployed, a re-run of `/qa-test <ticket-key>` auto-routes the
+- **FAIL → REOPEN** → `/vc-fix:qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge +
+  deploy → `/vc-fix:qa-verify-fix <ticket-key>`. A too-complex/multi-repo bug (G0 BAIL) is handed to a human,
+  resuming at `/vc-fix:qa-verify-fix`. Once the fix is deployed, a re-run of `/qa-test <ticket-key>` auto-routes the
   Bug to the `verify-fix` flow, since its status is now `fix-ready`.
 - **BLOCKED** → resolve the blocker (env/data/dependency) and **re-run `/qa-test <ticket-key>`** from the
   top; no partial credit.
@@ -326,7 +329,8 @@ table).
 Audiences come from the **§9.1 layer→audience row**, read for a different purpose — do not re-derive the
 layer and do not build a second map.
 
-**Ask before posting.** The comment is an external write to the tracker; confirmation is required here
+**Ask before posting.** This is the run's one sanctioned second comment (`tracker-ops.md` §0 rule 4) —
+the ask names it as a separate documentation comment, and a decline posts nothing. The comment is an external write to the tracker; confirmation is required here
 exactly as it is at 5-file and 5-status, and a subagent never posts it unprompted
 (`.claude/rules/agents.md` §Agent Delegation, and the standing subagent external-write rule).
 

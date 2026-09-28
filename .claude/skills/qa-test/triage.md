@@ -50,7 +50,7 @@ goes to `qa-backend-expert` via `ci/agents/monitor-triage-agent.md` → `REAL_BU
 CONFIG_GATED | THIRD_PARTY | TRANSIENT` + severity + confidence (ambiguous → NEEDS_REVIEW).
 
 A HIGH-confidence `REAL_BUG` enters the finding list with evidence attached (signature + portal link); it
-gets **no separate `BUG-AI-*` draft** — 5-file's `/qa-bug` owns it.
+gets **no separate `BUG-AI-*` draft** — 5-file's `/vc-fix:qa-bug` owns it.
 
 ### 2. Validate evidence quality
 

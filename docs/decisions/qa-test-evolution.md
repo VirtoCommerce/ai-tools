@@ -285,3 +285,10 @@ has to answer §5a.
 `regression:select` picks the suites, `regression-orchestrator` runs them with the normal runner agents on
 the normal browser lanes, with the normal HAR and evidence capture. Nothing about execution is lighter or
 headless. The only new step in the whole design is the two-command `RG`.
+
+## FAST's survivors — why they stay (moved from `/qa-test`, 2026-09-28)
+
+**Why the survivors survive** — the four that get argued about: the
+`BL-*` **and `ECL-*`** rule text — without it a FAST verdict is ungrounded, not merely cheap · `5-verdict`'s AC/DoD
+reconciliation, which produces the verdict · the committed `testing-checklist.md`, this run's **only** durable record · **`5-docs`**,
+whose refusal set makes it free.

@@ -389,7 +389,7 @@ Because each batch self-lints, the Step-3 gate becomes confirmation rather than 
 authored from exactly the guesses that lane exists to replace. **This constraint is untouched by the
 2026-09-10 restructure** — what changed is that nothing waits for authoring to FINISH except `4c`. `3a` and `3x` are concurrent with each
 other; **A alone is downstream of all three**
-([`SKILL.md`](SKILL.md) §What must NOT be parallelised). The fan-out this section describes is *within*
+([`sequencing.md`](sequencing.md) §What must NOT be parallelised). The fan-out this section describes is *within*
 Artifact A — one batch per execution surface, once the wave has closed.
 
 ---

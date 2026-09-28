@@ -75,16 +75,16 @@ Then branch on the resolved FLOW:
 - **`feature-test`** (Story / Task / Technical task / Review task / Epic, and a `not-fixed` Bug) → continue to `1b` and
   run the five-step pipeline at the resolved FAST/FULL effort. (A `not-fixed` Bug runs FAST to
   reproduce/characterize the defect live and attach fresh evidence — there is no fix to *verify* yet;
-  state the next step is `/qa-fix <ticket-key>`.) This is the rest of this document.
-- **`verify-fix`** (a `fix-ready` Bug) → **run `/qa-verify-fix` inline (see below)**; do not run Steps 2–5.
+  state the next step is `/vc-fix:qa-fix <ticket-key>`.) This is the rest of this document.
+- **`verify-fix`** (a `fix-ready` Bug) → **run `/vc-fix:qa-verify-fix` inline (see below)**; do not run Steps 2–5.
 - **`hotfix-verify`** (a `hotfix-ready` Bug) → **STOP** with a one-line pointer: `Run /qa-hotfix-check
   <ticket-key>` (hotfix delivery/verification is that command's job). File nothing; transition nothing.
 - **`Sub-task`** → resolve the parent work item and re-enter this classification as the **parent's**
   type × status; route on that.
 
-### Flow = `verify-fix` — run `/qa-verify-fix` inline
+### Flow = `verify-fix` — run `/vc-fix:qa-verify-fix` inline
 
-`/qa-test` **runs the `/qa-verify-fix` pipeline inline** in this same session — **execute its Steps 0–7 as
+`/qa-test` **runs the `/vc-fix:qa-verify-fix` pipeline inline** in this same session — **execute its Steps 0–7 as
 written** ([`qa-verify-fix.md`](../../../plugins/vc-fix/commands/qa-verify-fix.md)); do not duplicate or paraphrase them here. The
 feature-test authoring / AC-reconcile / promotion machinery is **not** run: a fix-ready Bug needs its fix
 verified, not new cases authored. The run ends at the verify-fix verdict.
@@ -116,9 +116,9 @@ row `FILTERED_OUT` — the exact failure the step exists to prevent. The run-fat
 inputs exist, at the **Step-3 gate re-run**. Items 3 → 4 stay ordered as written; both are millisecond globs, so splitting them buys
 nothing. Measured rationale and the list of things that must **not** be parallelised — the serial suite
 append, one `suites:sync`, no verifier beside its own doer, no two suites on one disposable fixture set:
-[`skills/qa-test/SKILL.md`](SKILL.md) §Concurrency.
+[`skills/qa-test/sequencing.md`](sequencing.md) §Concurrency.
 
-1. **Environment health** — `/qa-env-check endpoints`. If unhealthy, warn user.
+1. **Environment health** — `/vc-fix:qa-env-check endpoints`. If unhealthy, warn user.
 2. **Build & version** — GitHub MCP `get_file_contents` on `backend/packages.json` + `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`, or the branch matching `TEST_ENV`). Record platform + theme + ticket-relevant module versions — this is the **`declared`** (git) state. Then probe `GET {{BACK_URL}}/api/platform/modules` for the **`deployed`** state, which is the ground truth and routinely differs (deploy in flight, failed, or partially applied). A failed probe records `deployed: UNKNOWN` — **never** fall back to `declared`. **PR testing:** confirm the PR's artifact version appears in `packages.json`/`artifact.json`; if not deployed → offer `/qa-deploy-pr <ticket-key>` (**ask first**) or warn and ask whether to wait.
 2-release. **Recent-release check** — read `.claude/knowledge/domain/release-ledger.md` §1 + the newest §2 month(s) for the ticket's component(s), and record the Δ vs `deployed` in `summary.json` as `releasedThrough`. Full precedence rule: `agent-dispatch.md § Build Verification`. Three consequences, and they are the reason this step exists rather than being a header field:
    - **A ⚠ BREAKING change in the component under test forces FULL**, whatever `1a` scored. `ticket-routing.md` says *when in doubt → FULL*; a contract that moved last month is doubt with a date on it, and a FAST run would author no cases and write no Test Model against it.
