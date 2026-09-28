@@ -73,10 +73,25 @@ Why Serena and not reading files: the questions this review lives on are "who ov
 identity. A text read answers only "what text is at this path", and a text search also matches
 comments, literals and same-named members on other types.
 
-When Serena comes back **empty**, or is not installed, or has no project for the repository you need:
+Serena indexes the **clone**, so it answers about the **baseline**, not about the PR. Two
+consequences:
 
-1. Check the cheap causes first: is the right project active, is its checkout at the version the PR
-   builds against, does a shorter or substring name path find it?
+- **A symbol the diff adds or changes is the PR's own code** — read it in the worktree; that reading
+  is the review itself. An empty Serena result for such a symbol is expected and is not the stop
+  condition below.
+- **The baseline is only right if the clone is at it.** After Step 2's fetch, check that the clone is
+  clean (`git -C <clone> status --porcelain` prints nothing) and that `git -C <clone> rev-parse HEAD`
+  equals `git -C <clone> rev-parse origin/<baseRefName>`. If not, **do not switch or reset it
+  yourself** — it may hold the user's work. Say what you found and ask whether to fast-forward or
+  switch it, or to go on knowing that baseline answers reflect another state. For any other
+  repository the PR depends on, the right state is the version its `.csproj` / `module.manifest`
+  references.
+
+When Serena comes back **empty** for code the PR does not touch, or is not installed, or has no
+project for the repository you need:
+
+1. Check the cheap causes first: is the right project active, is its clone at the baseline (above),
+   does a shorter or substring name path find it?
 2. Still nothing → **stop and ask the user.** Offer, in this order:
    - clone the missing repository locally and activate it in Serena;
    - install or fix Serena (recipe below);
@@ -161,19 +176,30 @@ helper the paths in this order.
 
 ### 2. Worktree at the PR head (lead)
 
-Fetch the PR head by its pull ref — this also works when the branch lives in a fork — and add a
-detached worktree next to the clone, never inside it:
+Fetch **both ends of the range** — the base branch and the PR head, the head by its pull ref so it
+also works when the branch lives in a fork — then add a detached worktree next to the clone, never
+inside it:
 
 ```bash
-git -C <clone> fetch origin pull/<pr>/head:refs/remotes/origin/pr/<pr>
+git -C <clone> fetch origin +<baseRefName>:refs/remotes/origin/<baseRefName> +pull/<pr>/head:refs/remotes/origin/pr/<pr>
 git -C <clone> worktree add --detach <clone>/../worktrees/<repo>/pr-<pr> origin/pr/<pr>
 ```
 
-Then check that the worktree HEAD equals `headRefOid` from Step 1 before any review starts. A stale
-remote ref produces a review of code that is not in the PR.
+The `+` lets a re-run pick up a force-pushed head. A stale `origin/<baseRefName>` is as bad as a
+stale head: the three-dot diff then starts from an older merge base and pulls base-branch commits
+into the review.
 
-Code navigation uses Serena on the **clone** (the baseline); the worktree is where the diff and the
-tests run. For every site the PR has not touched, the two agree by definition.
+Before any review starts, check both ends:
+
+- the worktree HEAD equals `headRefOid` from Step 1;
+- `git -C <worktree> diff --name-only origin/<baseRefName>...HEAD` lists the same files as `files`
+  from Step 1.
+
+Either mismatch means the review would cover code that is not the PR — stop and find out why.
+
+Code navigation uses Serena on the **clone**, once it is at the baseline (**Code navigation**); the
+worktree is where the diff and the tests run. For every site the PR has not touched, the two agree by
+definition.
 
 ### 3. Optional: Codex lenses (background)
 
