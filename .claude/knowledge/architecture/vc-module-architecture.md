@@ -110,8 +110,8 @@ bump dependents). The live dependency/impact graph is read from the Platform API
 - **Workspace:** `.fix-workspace/<repo>/` (gitignored). **One** repo per run.
 - **Branch:** `claude/qa-autofix/VCST-XXXX` (from `checkoutForFix`). **Commit:** Conventional Commits +
   JIRA key, e.g. `fix(pricing): apply coupon to post-tier amount (VCST-1234)`.
-- **PR:** `gh pr create` (a normal PR for human review), title `fix(<scope>): <imperative> (VCST-XXXX)`, body = RCA + JIRA link + red→green test +
-  verification checklist + "DO NOT MERGE until human review" (template: `plugins/vc-fix/knowledge/agents/developers/pr-body-template.md`).
+- **PR:** `gh pr create` (a normal PR for human review), title `fix(<KEY>): <imperative>`, body from the one PR body template — consumer sections, collapsed
+  red→green evidence, the repo's own References block, "do not auto-merge" footer (template: `plugins/vc-fix/knowledge/agents/developers/pr-body-template.md`).
   Backend PRs add the **"needs deploy verification"** note — the live symptom is re-confirmed post-merge
   via the regression pipeline + `/qa-verify-fix`. **Never** auto-merge.
 - **Gates:** see `.claude/knowledge/execution/quality-gates.md` (G0–G7). **Never** `merge_pull_request` / `gh pr merge`.

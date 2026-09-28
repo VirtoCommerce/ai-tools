@@ -128,8 +128,8 @@ cause in a NuGet dependency".
 - **Branch:** `claude/qa-autofix/VCST-XXXX` (from `checkoutForFix`). **Commit:** Conventional Commits +
   JIRA key, e.g. `fix(cart): clamp quantity input to valid range (VCST-1234)`, **authored as the human
   token-owner with Claude as `Co-Authored-By:`** (CLA — see `knowledge/agents/developers/shared-instructions.md`).
-- **PR:** `gh pr create` (`/qa-fix`: a normal PR for human review), title `fix(VCST-XXXX): <imperative>`, body = RCA + JIRA link + red→green test +
-  verification checklist + "DO NOT MERGE until human review". Add a **"needs visual / E2E verification"**
+- **PR:** `gh pr create` (`/qa-fix`: a normal PR for human review), title `fix(VCST-XXXX): <imperative>`, body from the one PR body template
+  (consumer sections, collapsed red→green evidence, "do not auto-merge" footer — `knowledge/agents/developers/pr-body-template.md`). Add a **"needs visual / E2E verification"**
   note when the bug has a visual aspect — Gate 6 re-confirms it directly: once the PR's artifact
   deploys, `qa-frontend-expert` re-verifies the original STR live on the deployed storefront (no
   `/qa-regression` dependency — full `vc-qa` plugin only, not shipped here), or `/qa-verify-fix`

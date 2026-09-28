@@ -8,6 +8,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The headless CI auto-fix twin is removed; auto-fix PR bodies follow Virto's PR-description guide — `vc-fix` `0.9.2` — 2026-09-28
+
+**Removed: the headless auto-fix lane.** `ci/run-fix-cycle.ts`, `ci/agents/fix-{triage,backend,frontend}-agent.md`,
+`.github/workflows/auto-fix.yml` (its `cron:` was already commented out) and the `ci:fix` / `ci:fix:dry` scripts
+are gone, with the CI-only libs they alone used (`ci/lib/{vcs,trackers}/`, `ado-rest.ts`, `provenance.ts`,
+`module-registry.ts`). The interactive `/vc-fix:qa-fix` is the only auto-fix path. **Migration:** run
+`/vc-fix:qa-fix <KEY>` where you ran `npm run ci:fix`.
+
+**Changed: repo routing lives only in `vc-fix`.** `ci/lib/repo-router.ts` and `ci/config/fix-repos.json` are
+deleted; `ci/run-monitor.ts`, `suite-source-map.ts` and the unit tests import
+`plugins/vc-fix/skills/qa-fix-routing/`. The CI copy's newer routing rules (sales-rep, profile-experience-api,
+return, seo, the payment / x-marketing matches) were merged into the plugin's `fix-repos.json` first, so no
+rule was lost.
+
+**Changed: one PR body template, shaped by the upstream guide.** The four drifted inline templates are now
+`plugins/vc-fix/knowledge/agents/developers/pr-body-template.md`, restructured on
+`vc-platform/docs/prompts/pr-description-guide.md`: consumer sections answered with an explicit `None`, a
+runtime-behaviour line under Breaking changes, red→green proof in a collapsed block, and the target repo's own
+`## References` block. The line after `### Artifact URL:` is left empty because CI's `publish-artifact-link`
+overwrites exactly that line. Later edits go to the **live** body (CI and review bots write into it) and the
+body is re-checked after every push.
+
+**Verified:** `repo-router`, `provenance` and `suite-audit` unit tests 59/59 against the plugin paths;
+`context:check` DOC-002/003/004/006 all 0; `knowledge:index:check` OK; PR #334 CI green.
+
 ## The duplicated dev surface collapses into `plugins/vc-fix/`; shared QA agents backported — 2026-09-25
 
 First deliberate reconciliation of the drift the 2026-09-19 entry below predicted. The two trees are

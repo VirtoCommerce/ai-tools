@@ -129,8 +129,8 @@ cause in a NuGet dependency".
 - **Branch:** `claude/qa-autofix/VCST-XXXX` (from `checkoutForFix`). **Commit:** Conventional Commits +
   JIRA key, e.g. `fix(cart): clamp quantity input to valid range (VCST-1234)`, **authored as the human
   token-owner with Claude as `Co-Authored-By:`** (CLA — see `plugins/vc-fix/knowledge/agents/developers/shared-instructions.md`).
-- **PR:** `gh pr create` (a normal PR for human review), title `fix(VCST-XXXX): <imperative>`, body = RCA + JIRA link + red→green test +
-  verification checklist + "DO NOT MERGE until human review". Add a **"needs visual / E2E verification"**
+- **PR:** `gh pr create` (a normal PR for human review), title `fix(VCST-XXXX): <imperative>`, body from the one PR body template
+  (consumer sections, collapsed red→green evidence, "do not auto-merge" footer — `plugins/vc-fix/knowledge/agents/developers/pr-body-template.md`). Add a **"needs visual / E2E verification"**
   note when the bug has a visual aspect — re-confirmed via `/qa-regression frontend` + `/qa-verify-fix`.
   **Never** auto-merge.
 - **Gates:** see `.claude/knowledge/execution/quality-gates.md` (G0–G7). **Never** `merge_pull_request` / `gh pr merge`.

@@ -115,7 +115,7 @@ auto-merge:
    awaiting human review (never merged).
 3. **Agent:** `fullstack-backend` / `fullstack-frontend` (LAYER 4) are forbidden `merge_pull_request` /
    `gh pr merge`; PRs are opened for human review (a normal PR) with a
-   "DO NOT MERGE until human review" body.
+   body whose footer says "do not auto-merge" (`knowledge/agents/developers/pr-body-template.md`).
 
 ---
 
