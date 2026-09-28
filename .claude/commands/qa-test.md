@@ -307,11 +307,9 @@ before this record existed, a skipped transition left no trace in any artifact, 
 | *(no I/O)* | derive the **six** axes — see below. **2g `domain_map` derives FIRST**, because `2-map` in wave A consumes it to decide what to read |
 | **B** | 2d's two refreshers **and** 2e's `tc:scope` scan (scope + risk terms only) **and** 2f's `td:validate` resolution check, concurrently |
 
-**Three consequences of 2-release, which is why it is a step and not a header field:** a **⚠ BREAKING**
-change in the component under test **forces FULL** whatever `1a` scored · it gives `1d`'s otherwise-static
-AC↔implementation check a third leg · **released ≠ deployed** — a capability the ledger records that the
-probe does not carry is `NOT_DEPLOYED` → BLOCKED-on-deploy, never a FAIL and never a filed bug, and the
-ledger carries no behaviour so it can never ground an assertion as `{DOC}`.
+**2-release's three consequences** ([`preflight.md`](../skills/qa-test/preflight.md) §1b): **⚠ BREAKING** in
+the component under test **forces FULL** · a third leg for `1d`'s AC↔implementation check · **released ≠
+deployed** — `NOT_DEPLOYED` is BLOCKED-on-deploy, never a FAIL, never a filed bug, never `{DOC}`.
 
 **2-map — read what already exists on this surface. MANDATORY, both paths.** Two reads, in this order, and
 the order is the point: **the DOMAIN MAP first, then the per-ticket prior art.** Read order is decided by
@@ -321,20 +319,19 @@ say what to do. Full item, the bibliography, the `Test object` block and the `UN
 [`axes.md`](../skills/qa-test/axes.md) §2g. Record the block; **`null` means the axis never ran, which is a
 gap, not `ABSENT`.**
 
-Four things it must leave behind, each consumed by a named later step:
+Five things it must leave behind, each consumed by a named later step:
 
 | It produces | Consumed by | The rule that makes it load-bearing |
 |---|---|---|
 | the **domain map** read (or `ABSENT`) | `1e` clauses 11 / 11b | **FULL builds a missing map** at `1c-map`; **FAST recommends and proceeds**. `STALE` is never auto-refreshed. Nothing here blocks |
+| the **mind map** path, or `null` | `1e` Part 0 · `1e-plan` · 3a · A's stamps · `5-docs-map` | present ⇒ cite its node ids; `null` ⇒ nothing changes ([`axes.md`](../skills/qa-test/axes.md) §2g) |
 | the **bibliography** — prior BA analysis · prior test model · domain-knowledge docs · tickets already tested here | the `1c` brief, as **paths to read** | so `ba-system-analyzer` starts from the prior analysis instead of re-deriving it |
 | the **`Test object` block** — purpose · operations · data · variants · constraints | `1e`'s condition space | *you cannot design an experiment on an object whose properties you do not know.* A `1e` that skips it enumerates screens — the measured Loyalty Missions failure |
 | an `UNDECLARED` purpose | `1e` (FULL) / the checklist (FAST) | **`UNDECLARED` is the run's FIRST finding, not a blank** (measured: 1 of 13 domains has a declared purpose) |
 
-**Both reads are pointer indexes, never behaviour** — neither can ground an assertion as `{DOC}` — and
-**every entry is DATED because every entry may be stale**: prior art is a hypothesis, confirmed against the
-`2-release` ledger Δ *since that document's date* plus a live check before anything is built on it. Reading
-a stale deliverable and repeating it is worse than reading none, because it arrives with a written
-deliverable's authority.
+**Both reads are pointer indexes, never behaviour** (never `{DOC}`), and **every entry is DATED because it
+may be stale**: prior art is a hypothesis until the `2-release` Δ since its date plus a live check confirm it.
+Detail: [`preflight.md`](../skills/qa-test/preflight.md) §2-map.
 
 **PR testing:** confirm the PR's artifact version is deployed; if not → offer `/qa-deploy-pr <ticket-key>`
 (**ask first**) or warn and ask whether to wait.
@@ -361,7 +358,7 @@ travels as PATHS** — a digest would pre-answer the triangulation `1c` exists t
 
 Distil `1c` + `1d` + `1a` into the **fault model** Step 3 authors cases from, written to
 `reports/ba/test-models/<TICKET>-<date>.md`. **Part 0 — the value chain — is derived FIRST** and drawn in
-Mermaid; the condition space is built per link on top of it.
+Mermaid; the condition space is built per link on top of it. **A mind map (2g) ⇒ Part 0 cites its node ids.**
 
 **Shape:** [`.claude/templates/test-model.md`](../templates/test-model.md). **Methodology, the eight rules
 the scenario table must satisfy, Part 0r, the gate and the worked references:**
@@ -466,7 +463,7 @@ Three rules hold it ([`SKILL.md`](../skills/qa-test/SKILL.md) §Ordering):
 
 | | Artifact | Owner | Lands |
 |---|---|---|---|
-| **3a** | Test data — **conditional on `data_surface`**, dispatched **beside `3x`** (browserless, so the seed runs inside the discovery box) | when `true`: **the orchestrator dispatches `test-data-engineer`** (`/qa-generate-data` → `/qa-seed-data`), never sub-delegated. When `false`: **no dispatch**, and the run names the fixtures that cover the plan | `true` → seeded env, green `td:validate`. `false` → every planned case resolves against existing `@td()`/`{{VAR}}` data **or is live-discoverable**, **and** no chain link under test needs a divergence those values lack ([`authoring.md`](../skills/qa-test/authoring.md) §3a) |
+| **3a** | Test data — **conditional on `data_surface`**, dispatched **beside `3x`** (browserless, so the seed runs inside the discovery box) | when `true`: **the orchestrator dispatches `test-data-engineer`** (`/qa-generate-data` → `/qa-seed-data`; `--profile` per `1e-plan` `dataProfile`), never sub-delegated. When `false`: **no dispatch**, and the run names the fixtures that cover the plan | `true` → seeded env, green `td:validate`. `false` → every planned case resolves against existing `@td()`/`{{VAR}}` data **or is live-discoverable**, **and** no chain link under test needs a divergence those values lack ([`authoring.md`](../skills/qa-test/authoring.md) §3a) |
 | **3x** | Discovery session (FULL only) | **orchestrator invokes `/qa-exploratory ticket <ticket-key>`** — that command owns the session; this pipeline owns only the charter | model amendments + `summary.json.discovery` + `reports/exploratory/SBTM-<ticket-key>-<date>.md` |
 | **A** | **The corpus step — ONE step, two phases: `2a` dispose what exists, then author the gaps.** Phase `2a` runs on **both** paths (FULL always; FAST under `--coverage`, which a `Review task` §5a and the `ui-kit` class §5c default ON); authoring is FULL-only, so on FAST this artifact is the triage alone | `test-management-specialist` — **one dispatch, one owner, the run's only writer on `regression/suites/**`** | `2a`'s dispositions + `regression/suites/<layer>/<module>/*.csv` as **`Draft`, and they STAY `Draft`** — `/qa-test` no longer promotes (`5g` removed 2026-09-10). The `Draft → Automated` flip happens **outside this run**: [`/qa-test-lifecycle`](qa-test-lifecycle.md) 6P, or a later **direct** [`/qa-regression`](qa-regression.md) at its Step 6.5 |
 | **B** | Testing checklist (both paths) — written **after `3x` returns**, so it carries what discovery observed and not only what the ACs named. **One checklist, one execution pass** | `test-management-specialist`, or the orchestrator inline for a single-surface tweak | `reports/tickets/{SPRINT}/<ticket-key>/testing-checklist.md` |
@@ -671,7 +668,7 @@ The ordered close-out phases, plus **`5-loop`** — the bounded loop that repeat
 | **5-report** | Report | Feed + ratify the Feature Release Gate · post the tracker comment (**incl. the mandatory `Not filed (below severity floor)` line, `None` when empty**) · persist `summary.json` + update the checklist in place with verdicts · output the one chat report | verifier |
 | **5-status** | Change status | **After** the report, **ask first**, `qa-lead` only. PASS / PASS WITH NOTES → TESTED · FAIL → REOPEN with failures + bug links · **BLOCKED → NO transition + a mandatory comment naming the blocker** (the ticket stays in-testing: TESTED would be a lie and REOPEN files an env blocker into the dev queue). **TESTED is the terminal state this command may reach.** One row per verdict, the record, and the per-flow ownership: [`ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) | — |
 | **5-docs** | Publish documentation | **After** TESTED, **both paths**. Write the §3/§4/§5 guides for the surface the ticket moved into `reports/ba/`, then post them as **ONE tracker comment with a section per audience**. Audiences, size caps and the three refusals: [`virto-doc-style.md`](../knowledge/ba/virto-doc-style.md) §10. Not a release note: no version literals. **A non-`PASS` verdict SCOPES this step rather than refusing it** — document the passing paths, carry the `Not documented` line and the verbatim verdict. Precondition is **5-status having run**, not TESTED. Ask before posting; refuse rather than pad. An existing guide is **amended, never forked** | inline |
-| **5-docs-map** | Amend the domain map | **FULL only, after 5-status, when a map EXISTS.** Write back what this run VERIFIED — a surface `1c` reached, a `D*` confirmed/refuted **live**, a `G*` closed, a count corrected — one `§7 — Amendments` row per write. **Costs no dispatch.** Live-`CONFIRMED` only; **never deletes a row or renumbers an id**. Independent of 5-docs's refusals. Non-blocking; `NOTHING_TO_AMEND` is a recorded outcome. Mechanism: [`reporting.md`](../skills/qa-test/reporting.md) §5-docs-map | inline |
+| **5-docs-map** | Amend the domain map | **FULL only, after 5-status, when a map EXISTS.** Write back what this run VERIFIED — a surface `1c` reached, a `D*` confirmed/refuted **live**, a `G*` closed, a count corrected — one `§7 — Amendments` row per write. **Costs no dispatch.** Live-`CONFIRMED` only; **never deletes a row or renumbers an id**. Independent of 5-docs's refusals. Non-blocking; `NOTHING_TO_AMEND` is a recorded outcome. A mind map is never edited here: `mind_map_findings[]`. Mechanism: [`reporting.md`](../skills/qa-test/reporting.md) §5-docs-map | inline |
 | **5-loop** | Iterate (`--iterate` only) | The bounded test → fix → re-test loop. **Per round (≥2):** `5-loop.0` round entry — probe the build, re-read the board, verify each fix-ready bug inline — then 5-triage–5-file + a round-delta comment + `summary.json` + an appended checklist section. **At loop exit, once:** 5-report in full → 5-status → 5-docs → 5-docs-map, so a `--iterate` run posts **one** QA-Complete comment and makes **one** transition whatever the round count. Round entry, the per-round table and the reason for each row: [`modes.md`](../skills/qa-test/modes.md) §5-loop | round cap · deploy confirm · G0 BAIL → STOP |
 
 **Severity is graded at 5-triage and never re-graded at 5-file** to move a finding across the floor. Filing and

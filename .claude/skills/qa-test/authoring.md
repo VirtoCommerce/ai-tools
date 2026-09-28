@@ -149,6 +149,14 @@ specs/seeder/`@td()` aliases/drift-guard + its unit test, **and RUN the seed liv
 env, ending on a green `td:validate` (+ any `td:validate:<domain>` guard it added). The skip condition is
 now the derived `data_surface` above rather than a judgment made at dispatch time.
 
+**Profiles first, when the domain has a data model.** The `1e-plan` rows already name a `dataProfile`
+([§Carry the model's design decision into the row](#carry-the-models-design-decision-into-the-row)),
+and 3a runs after `1e-plan`, so the brief passes those profile ids. `test-data-engineer` seeds each with
+`/qa-seed-data --profile <id>` ([`../qa-seed-data/profile-seeding.md`](../qa-seed-data/profile-seeding.md)):
+the profile IS the designed combination, so `/qa-generate-data` runs only for the plan rows no profile
+covers. A state the plan needs that no profile declares is a data-model gap. Report it for
+`/qa-test-data-model update`; do not patch the model inside a run.
+
 A fixture that cannot be seeded is reported as such and its dependent cases are marked BLOCKED — never
 authored against data that does not exist. **Seeder files authored by any other agent are unvalidated
 drafts**: hand them to `test-data-engineer` to review and run, never treat them as done.
@@ -250,9 +258,9 @@ node:**
 - After the append, run `npm run models:check`. TM-015 / TM-016 fail a stamp that names nothing.
 
 A scenario that fits no node is a model gap. Record it for `/qa-test-mind-map update`; never invent a
-node id to satisfy the stamp. Step 3a then seeds a stamped profile with
-`/qa-seed-data --profile <id>` ([`../qa-seed-data/profile-seeding.md`](../qa-seed-data/profile-seeding.md))
-instead of re-deriving its data.
+node id to satisfy the stamp. The `dataProfile` ids were already seeded at Step 3a, which reads them
+from the plan ([§3a When it runs](#when-it-runs)). A profile first named while authoring is a fixture
+need 3a missed, so it goes back to the orchestrator as a top-up re-dispatch, like any other.
 
 ### Scaffold before authoring — never hand-type the boilerplate
 

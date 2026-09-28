@@ -194,6 +194,11 @@ release ledger it is a **pointer index that can never ground an assertion as `{D
 blocks — a FAST run, a single-layer chain or a failed build records `Domain map: ABSENT — chain position
 unverified` at `1e`. **`STALE` is never auto-refreshed.**
 
+**1a. Its mind map**, when 2g recorded `domain_map.mind_map` (`/qa-test-mind-map`). This is the behaviour
+graph beside the map. Read the nodes in the ticket's slice: they are what `1e` Part 0 cites and what the
+`1e-plan` rows name as `behavior`. Its `DRIFT` and `UNVERIFIED` nodes are open questions to hand to `1c`.
+Like the map, it is never an oracle. `null` ⇒ skip it; no run builds one inline ([`axes.md`](axes.md) §2g).
+
 **2. The per-ticket prior art**, read directly — `reports/ba/<domain folder>/` (prior BA analysis),
 `reports/ba/test-models/` (prior test models), and the tickets already tested here
 (`reports/tickets/**/summary.json`). (The generated index that used to front these sources was removed 2026-09-08 — read the sources directly, 
@@ -201,7 +206,7 @@ dated by their filenames or `git log`.)
 Two questions, and the second is the one that lets you design a test.
 
 **The bibliography** — carry four things forward: the prior BA analysis, the prior test model, the domain
-knowledge docs, and the tickets already tested here.
+knowledge docs (the mind map's path among them, when 2g found one), and the tickets already tested here.
 
 **The `Test object` block — what the thing IS.** Purpose (the value chain) · the **operations** you can
 perform on it · the **data** whose properties its assertions read · the **variants** that change its
