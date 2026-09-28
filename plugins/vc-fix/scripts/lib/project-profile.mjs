@@ -12,9 +12,9 @@
  *
  * Written by `/project-init` (gen-profile.mjs). Read by:
  *   - config.js                → every skill sees it via `env.PROFILE`
- *   - ci/lib/trackers/*        → which tracker adapter to use
- *   - ci/lib/repo-router.ts    → client-vs-platform ownership routing
- *   - ci/run-fix-cycle.ts + developer agents
+ *   - skills/qa-fix-routing/trackers/*   → which tracker adapter to use
+ *   - skills/qa-fix-routing/repo-router.ts → client-vs-platform ownership routing
+ *   - /qa-fix + developer agents
  *
  * SAFE DEFAULTS: when project-profile.json is ABSENT (fresh checkout, or the
  * existing VirtoCommerce-internal QA setup) this returns the exact pre-existing

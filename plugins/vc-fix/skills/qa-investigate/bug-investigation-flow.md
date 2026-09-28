@@ -163,7 +163,7 @@ Insights resource pair all differ per env.** A bug confirmed on the wrong env is
 ### Step 5: Map the owning layer → `repoKind` → repo (the fix target)
 
 Once the lowest failing layer is known, name **where the fix lives** in the same vocabulary
-`/qa-bug`'s Fix Routing block and `ci/lib/repo-router.ts` + `ci/config/fix-repos.json` use. This is what
+`/qa-bug`'s Fix Routing block and `skills/qa-fix-routing/repo-router.ts` + `skills/qa-fix-routing/fix-repos.json` use. This is what
 makes the handoff to `/qa-fix` precise (Section 8 then confirms the *exact* repo via `search_code`).
 
 | Lowest failing layer | `repoKind` | Owning repo | Tell-tale |

@@ -17,7 +17,7 @@ import {
   signalFromRow,
   type Signal,
 } from "./lib/fingerprint-store.js";
-import { isAllowedRepo, routingReference, suggestRepo } from "./lib/repo-router.js";
+import { isAllowedRepo, routingReference, suggestRepo } from "../plugins/vc-fix/skills/qa-fix-routing/repo-router.js";
 
 // Layered env preload (gap-fill only — override:false, so CI `-e` values always
 // win). Lets `npm run ci:monitor` work locally without exporting vars by hand,
@@ -94,7 +94,7 @@ function log(msg: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Agent phase runner (mirrors ci/run-fix-cycle.ts)
+// Agent phase runner
 // ---------------------------------------------------------------------------
 
 interface PhaseResult {

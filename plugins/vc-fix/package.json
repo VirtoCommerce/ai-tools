@@ -1,6 +1,6 @@
 {
   "name": "vc-fix",
-  "version": "0.1.0",
+  "version": "0.9.2",
   "description": "Bug lifecycle plugin for Virto Commerce QA — project setup, bug filing, autonomous fixing, fix verification. Self-contained subset of vc-qa.",
   "main": "config.js",
   "type": "module",

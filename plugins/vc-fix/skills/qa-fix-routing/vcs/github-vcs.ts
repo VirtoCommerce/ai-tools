@@ -1,8 +1,7 @@
 /**
- * GithubVcs — Vcs implementation over the `gh` CLI. This is the DEFAULT host and
- * its `direct`-mode openPullRequest is the verbatim equivalent of the
- * `gh pr create --repo … --draft …` call that used to live inline in
- * run-fix-cycle.ts, so VirtoCommerce-internal runs are unchanged.
+ * GithubVcs — Vcs implementation over the `gh` CLI. This is the DEFAULT host;
+ * its `direct`-mode openPullRequest is a plain `gh pr create --repo …` against
+ * VirtoCommerce/*.
  *
  * Adds two profile-driven extensions used only by a CLIENT deployment:
  *   - fork-mode PRs: `--head <forkOwner>:<branch>` (operator = client contributes
@@ -30,8 +29,7 @@ export class GithubVcs implements Vcs {
   constructor(deps: VcsDeps) {
     this.dryRun = deps.dryRun;
     this.log = deps.log;
-    // `gh` present on PATH ⇒ usable. (run-fix-cycle's validateEnv already proves
-    // `gh --version`; auth is verified at push time.)
+    // `gh` present on PATH ⇒ usable; auth is verified at push time.
     let ok = false;
     try {
       execSync("gh --version", { stdio: "ignore" });

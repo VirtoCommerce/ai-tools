@@ -1,9 +1,9 @@
-// Unit tests for ci/lib/provenance.ts — the frontend "client customization vs platform
+// Unit tests for plugins/vc-fix/skills/qa-fix-routing/provenance.ts — the frontend "client customization vs platform
 // bug" decision + delivery policy. Pure (type-only import of repo-router, no side effects).
 // Run: `npx tsx --test scripts/unit/provenance.test.ts` / `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { classifyFrontendProvenance, frontendDeliveryPlan } from "../../ci/lib/provenance.ts";
+import { classifyFrontendProvenance, frontendDeliveryPlan } from "../../plugins/vc-fix/skills/qa-fix-routing/provenance.ts";
 
 // ---- classifyFrontendProvenance ---------------------------------------------
 

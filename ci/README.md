@@ -21,14 +21,6 @@ GitHub Actions / CLI / Docker
   │                             ├── Phase 3: Delegates to run-regression.ts
   │                             └── Writes reports/full-cycle/CYCLE-*/
   │
-  ├── auto-fix.yml ────── ci/run-fix-cycle.ts ───── Triage → Fix → Draft PR (per JIRA bug)
-  │                             ├── Fetches JIRA bug + linked reports/bugs/*.md
-  │                             ├── Phase 0: Triage gate (real code defect? which repo?)
-  │                             ├── Checks out product source (vc-frontend / vc-module-* / vc-platform)
-  │                             ├── Phase 1: Reproduce-as-test → fix → build/lint/typecheck/test
-  │                             ├── Opens a DRAFT PR (gh) + comments/transitions JIRA
-  │                             └── Writes reports/fixes/FIX-*/
-  │
   └── (all) ───────────── ci/notify-teams.ts ────── Teams Adaptive Card notification
 ```
 
@@ -103,79 +95,6 @@ Syncs test cases with code changes, validates them, then runs regression.
 pass (Phase 2) — a change-driven Phase 1 always reviews, because `/qa-test-lifecycle`'s Review phase
 always runs. Neither model phase generates cases or opens a browser, so CI cannot ground a
 `{HYPOTHESIS}` assertion; such cases stay `Draft` and out of regression selections.
-
-### Auto-Fix (`auto-fix.yml`)
-
-Reads JIRA **bug** tickets and, for each one, opens a **draft PR** that fixes the
-defect in the relevant *product* repo. This is the missing middle of the loop:
-regression *finds* bugs → auto-fix *proposes a fix* → human reviews & merges →
-regression *re-verifies* after deploy.
-
-> **Key difference from regression:** regression drives a live deployed environment
-> via Playwright (no source). Auto-fix **clones product source** (`vc-frontend`,
-> `vc-module-*`, `vc-platform`) and edits code. It needs `gh` with write access to
-> those repos, plus Node and .NET toolchains.
-
-**Per-ticket phases:**
-
-| Phase | Budget | What happens | Tools |
-|-------|--------|--------------|-------|
-| Context | — | Fetch JIRA issue (REST) + find linked `reports/bugs/*.md` | (orchestrator) |
-| 0. Triage | 15% | Real, code-fixable defect? Route to a repo. **Bails on by-design / config-gated / env-data / API-only / no-STR.** | Read, Glob, Grep, Bash |
-| (checkout) | — | Clone repo, cut branch `claude/qa-autofix/VCST-XXXX` (deterministic) | `gh`, `git` |
-| 1. Fix | 70% | Reproduce-as-test (red) → minimal fix → build + lint + typecheck + test (green) → commit + push | Read, Edit, Write, Glob, Grep, Bash |
-| (PR + JIRA) | 15% | `gh pr create --draft`, label, JIRA comment + transition | `gh`, JIRA REST |
-
-**Verification bars differ by layer:**
-- **Frontend (vc-frontend):** self-verifiable in CI — `vue-tsc`, lint, **vitest** red→green, build. High-confidence draft PRs.
-- **Backend (vc-module-* / vc-platform):** *static* only — `dotnet build` + `dotnet test` + xUnit red→green. The live storefront symptom **cannot** be re-verified here (needs redeploy); PRs are labeled "needs deploy verification" and the loop closes post-merge via the regression pipeline + `/qa-verify-fix`.
-
-**Scale & dependencies (100+ module repos):** repos are **not** enumerated. The allowlist is **pattern-based** (`ci/config/fix-repos.json` → `allow.patterns`/`deny`/`explicit`). The dependency graph comes from the **Platform API** (`ci/lib/module-registry.ts`), not from scraping manifests:
-- `GET /api/platform/modules` → installed modules with `Dependencies[]` and `ProjectUrl` (the authoritative module-ID → repo map — e.g. `VirtoCommerce.Xapi` → `vc-module-experience-api`, which a name heuristic can't derive).
-- `POST /api/platform/modules/getdependents` → reverse graph (impact) in one call.
-
-The fix prompt is given the routed module's dependencies, and the agent **bails on cross-module fixes** (root cause in a NuGet dependency needs human version-bump + publish coordination). Optional `FIX_IMPACT_ANALYSIS=true` adds *dependents* for post-merge regression scope. Auth is the standard platform password grant (admin creds from env — see `knowledge/api/api-auth.md`); the module list is disk-cached (`MODULE_REGISTRY_TTL_H`, default 24h). All best-effort — if `BACK_URL`/creds are absent the pipeline still runs without dependency context.
-
-**Safety model:** draft PRs only (never auto-merge) · pattern allowlist + org check (`isAllowedRepo` rejects anything off-org / off-pattern / denied) · by-design **triage gate** · cross-module **bail** · low-confidence fixes are **skipped** (JIRA comment) rather than PR'd · `gh` token scope is the real blast-radius control.
-
-**Invoke:**
-
-```bash
-# One ticket, no writes (safe pilot) — needs ANTHROPIC_API_KEY + gh auth
-FIX_TICKETS=VCST-5110 npm run ci:fix:dry
-
-# One ticket for real (opens a draft PR, comments JIRA)
-FIX_TICKETS=VCST-5110 npm run ci:fix
-
-# Scan for labeled tickets (needs JIRA REST creds)
-npm run ci:fix
-```
-
-**Env vars:**
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | yes | Claude API key |
-| `GH_TOKEN` / `GITHUB_TOKEN` | yes | `gh` auth — PAT with **write** on the product repos (the default Actions token can't push to other repos) |
-| `FIX_TICKETS` | one of | Comma-separated VCST keys (manual mode) |
-| `FIX_LABEL` / `FIX_JQL` | one of | Scan mode — discover tickets by label (needs JIRA REST) |
-| `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` | for JIRA | REST access for fetch/comment/transition. If absent, use `FIX_TICKETS` and JIRA writes are skipped. |
-| `MAX_TICKETS` | no | Default `5` |
-| `MAX_BUDGET_USD` | no | Default `30.0` |
-| `MODEL` | no | Default Sonnet; set Opus for harder fixes |
-| `DRY_RUN` | no | `true` = no PR, no JIRA writes |
-| `JIRA_TRANSITION` | no | Target status after PR (default `In Review`) |
-| `FIX_REPO_ORG` | no | GitHub org override for the repo allowlist (default from `ci/config/fix-repos.json`). Use for customer forks / a different org. |
-| `FIX_REPOS_CONFIG` | no | Path to the repo registry (default `ci/config/fix-repos.json`) |
-| `BACK_URL` + `ADMIN`/`ADMIN_PASSWORD`/`STORE_ID` | for deps | Platform API access for the module dependency graph (`GET /api/platform/modules`, `getdependents`). Absent → pipeline runs without dependency context. |
-| `MODULE_REGISTRY_TTL_H` | no | Hours to cache the installed-module list from the API (default `24`) |
-| `MODULE_REGISTRY_CACHE` | no | Path to the module cache (default `ci/config/.module-registry.cache.json`, gitignored) |
-| `FIX_IMPACT_ANALYSIS` | no | `true` = also fetch reverse dependents (`getdependents`) for impact notes |
-| `FIX_INSECURE_TLS` | no | `true` = relax TLS cert validation for the Platform API (self-signed QA cert) |
-
-**Output:** `reports/fixes/FIX-YYYY-MM-DD-HHMM/` — `fix-report.md`, `summary.json`, and per-ticket `<KEY>/` dirs (triage + fix transcripts, `ticket.json`, `PR_BODY.md`). Cloned source lives in `.fix-workspace/` (gitignored).
-
-**Extending coverage:** module repos are auto-discovered — no list to maintain. To onboard a new *kind* of repo or change routing hints, edit **`ci/config/fix-repos.json`** (`allow.patterns`, `deny`, `explicit`, `routing`). For a different GitHub org / customer fork, set `FIX_REPO_ORG` or edit the config's `org`. Build/lint/test commands per repo *kind* live in `REPO_PROFILES` in `ci/lib/repo-router.ts`.
 
 ## Suite Selection
 

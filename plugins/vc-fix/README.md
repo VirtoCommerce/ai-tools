@@ -141,8 +141,7 @@ breakdown of what's included and what was intentionally dropped:
 
 `/qa-fix` never auto-merges. Every fix ends at an open PR for human review. The full G0–G7 gate
 ladder (triage → reproduce → fix → review → CI/E2E → human review) is documented in
-[`.claude/rules/quality-gates.md`](.claude/rules/quality-gates.md) — the single source of truth
-both this interactive plugin and any future headless twin must follow.
+[`.claude/rules/quality-gates.md`](.claude/rules/quality-gates.md) — the single source of truth.
 
 ## Reference
 
