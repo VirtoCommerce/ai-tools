@@ -260,7 +260,9 @@ GH_TOKEN="$FIX" gh pr view <pr> --json statusCheckRollup    # machine-readable r
 (`/qa-fix` owns this poll directly; the analyze-and-fix loop below is yours. Note: **Storybook
 CI does NOT run on PRs** — it's push-only — so don't wait on it.)
 
-- **All green + `mergeable`** → done. Capture the one-line pass results in the PR body. Never merge.
+- **All green + `mergeable`** → done. Capture the one-line pass results in the PR body — edit the
+  **live** body, never re-upload `PR_BODY.md` (`pr-body-template.md` §The body has other writers — editing a
+  live PR). Never merge.
 - **Any check RED → fetch and READ the logs before touching anything.** Don't guess from the check name:
   ```bash
   GH_TOKEN="$FIX" gh run view <run-id> --log-failed          # only the failing steps' logs
@@ -280,7 +282,8 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
   | SonarCloud QG red on **pre-existing** debt unrelated to the diff | Don't chase it — mark won't-fix in Sonar or note it in the PR; not your scope |
   | Infra / flake (runner timeout, transient network, queue, env provisioning) | Re-run once; if it recurs it's infra → escalate, don't loop |
 - **Self-correct in the SAME repo, re-push, re-poll — at most 2 iterations.** Each push re-triggers CI;
-  wait for the new run, don't assume the fix worked. Persistent RED, a cross-repo cause surfaced by the
+  wait for the new run, don't assume the fix worked. After each push, re-check the PR body against the
+  diff (`pr-body-template.md` §Keep it true after every push). Persistent RED, a cross-repo cause surfaced by the
   logs, or a repo-owned QG threshold → **STOP + report** (`FIX_STATUS: FAILED` with the reason quoted
   from the logs); do not keep pushing. **Never** merge to make a check pass.
 
