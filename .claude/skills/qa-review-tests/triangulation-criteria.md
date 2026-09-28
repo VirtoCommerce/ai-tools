@@ -132,7 +132,7 @@ and **stop at the first hit**:
 1. `config/test-suites.json` → the suite's **`requiresModules`** (module slugs, e.g. `["orders"]`)
 2. `.claude/knowledge/execution/module-suite-map.md` → the Module Map table, reverse-lookup the suite
    number → Module name + REST API path + xAPI module
-3. `ci/config/fix-repos.json` → the `routing[]` regex rules map a module/domain term → repo name
+3. `plugins/vc-fix/skills/qa-fix-routing/fix-repos.json` → the `routing[]` regex rules map a module/domain term → repo name
    (`vc-module-x-cart`, `vc-frontend`, `vc-platform`, …)
 
 **Unresolvable ⇒ the source axis is ABSENT ⇒ UNGROUNDED. Never guess a repo.** A wrong repo produces

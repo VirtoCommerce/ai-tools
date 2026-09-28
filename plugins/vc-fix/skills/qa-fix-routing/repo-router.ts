@@ -4,7 +4,7 @@
  * and provides deterministic clone / branch helpers for the fix pipeline.
  *
  * The bugs found by this QA system live in *external* repos (the storefront and
- * backend modules), NOT in this testing repo. `ci/run-fix-cycle.ts` uses this
+ * backend modules), NOT in this testing repo. `/qa-fix` uses this
  * module to (a) suggest a target repo to the triage agent, (b) validate the
  * agent's chosen repo against an allowlist, and (c) check out the source.
  */

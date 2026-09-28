@@ -2,9 +2,8 @@
  * Vcs — code-host abstraction for the auto-fix pipeline's WRITE side
  * (open a pull request, file an issue, ensure a fork exists).
  *
- * Historically run-fix-cycle.ts shelled out to `gh pr create` directly against
- * VirtoCommerce/* repos. That is exactly the GithubVcs `direct`-mode path and is
- * preserved 1:1. This interface lets a CLIENT deployment (project-init wrote a
+ * The default is the GithubVcs `direct`-mode path — `gh pr create` against
+ * VirtoCommerce/* repos. This interface lets a CLIENT deployment (project-init wrote a
  * profile) instead:
  *   - open the PR on a CLIENT repo that may live on Azure Repos, or
  *   - open a cross-fork PR to the VirtoCommerce upstream (operator = client), or

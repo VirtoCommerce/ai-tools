@@ -11,7 +11,7 @@ code, so the fix has an objective red→green proof. This is **Gate 2** of the a
 
 ## When to use
 - A storefront bug in `vc-frontend` has been routed and the source is checked out in
-  `.fix-workspace/vc-frontend/` (via `ci/lib/repo-router.ts` `checkoutForFix`, base `dev`).
+  `.fix-workspace/vc-frontend/` (via `skills/qa-fix-routing/repo-router.ts` `checkoutForFix`, base `dev`).
 - Before writing any production-code fix — the test comes first.
 
 ## Steps
@@ -70,4 +70,4 @@ code, so the fix has an objective red→green proof. This is **Gate 2** of the a
 - `knowledge/architecture/vc-frontend-architecture.md` — repo layout, seams, build/test profile
 - `knowledge/automation/storefront-selectors.md` — `data-test-id` map to find the component
 - `.claude/rules/quality-gates.md` — G2 (red), G3 (green + existing tests untouched)
-- Build/test commands: `REPO_PROFILES.frontend` in `ci/lib/repo-router.ts`
+- Build/test commands: `REPO_PROFILES.frontend` in `skills/qa-fix-routing/repo-router.ts`
