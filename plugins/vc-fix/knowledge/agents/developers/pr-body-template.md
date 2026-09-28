@@ -1,8 +1,7 @@
 # PR body template — every auto-fix PR (single source of truth)
 
-This is the **one** PR body template for every auto-fix PR, whether interactive `/qa-fix`
-(`fullstack-backend`, `fullstack-frontend`) or the headless CI twin (`ci/agents/fix-backend-agent.md`,
-`ci/agents/fix-frontend-agent.md`). The agents cite this file and keep no copy of their own, so change the
+This is the **one** PR body template for every auto-fix PR opened by `/qa-fix`
+(`fullstack-backend`, `fullstack-frontend`). The agents cite this file and keep no copy of their own, so change the
 template **here**. Write the filled body to the `PR_BODY.md` path your assignment gives you.
 
 Related rules, not restated here:
@@ -41,7 +40,7 @@ value is *omit* leaves no line and no heading behind.
 ## Reviewer notes
 <Risks, {REVIEWER FOCUS}, anything needing human eyes. Tag the original assignee if known.>
 
-> 🤖 {OPENED} by the QA auto-fix pipeline. **Human review{DEPLOY GATE} required before merge — do not auto-merge.**
+> 🤖 Opened by the QA auto-fix pipeline. **Human review{DEPLOY GATE} required before merge — do not auto-merge.**
 ```
 
 ## Slots
@@ -60,10 +59,6 @@ embedded frontend sub-app (`moduleFrontendSubApps`).
 | `{DEPLOY WARNING}` | **always** — §Deploy verification | **only if the bug has a visual aspect** — §Visual / E2E verification | same as storefront |
 | `{REVIEWER FOCUS}` | migration notes | BL-UI cells touched | BL-UI cells touched |
 | `{DEPLOY GATE}` | ` + deploy verification` | omit | omit |
-
-`{OPENED}` depends on who opens the PR, not on its kind: **`Opened`** for interactive `/qa-fix`, which
-opens a normal PR for human review; **`Draft opened`** for CI `ci/run-fix-cycle.ts`, which opens it with
-`--draft`.
 
 ### Harness evidence
 

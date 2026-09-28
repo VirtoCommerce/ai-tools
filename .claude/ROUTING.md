@@ -67,7 +67,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-triage-results` — Classify a completed run's FAIL/BLOCKED/SKIPPED into real bug vs test defect vs flaky/env; live-verify, route test fixes, draft bugs. Never files a ticket, never triggers `/qa-fix`
 - `/qa-exploratory` — Scenario-discovery session. `sprint` runs the plan's §5.3 charters (≤5, in series). Lane: any free browser slot (all 3 click since 2026-09-08)
 - `/qa-bug` — Reproduce, document, optionally file
-- `/qa-fix` — Autonomous fix of an already-filed bug: G0 triage → G1 single-repo route → reproduce-as-test → minimal fix → review → PR → **STOP for human review** (never auto-merges). Interactive twin of `ci/run-fix-cycle.ts`
+- `/qa-fix` — Autonomous fix of an already-filed bug: G0 triage → G1 single-repo route → reproduce-as-test → minimal fix → review → PR → **STOP for human review** (never auto-merges)
 - `/qa-verify-fix` — Reproduce the original bug, confirm the fix, regression checks, transition the ticket (stops at TESTED)
 - `/qa-deploy-pr` — Gather every fresh CI prerelease artifact a change produced and deploy them together in ONE `vc-deploy-dev` manifest update. Unblocks `/qa-test PR #N` and `/qa-verify-fix`
 - `/qa-bundle-check` → `/qa-hotfix` → `/qa-hotfix-check` — the three-link hotfix chain: find bundles missing a shipped patch → cherry-pick onto `support/<X.Y>` and release → deliver onto the deployed envs and close the ticket
@@ -182,7 +182,7 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 |---|---|
 | Which **flow** a tracker item takes (type × status) | `.claude/knowledge/execution/ticket-routing.md` |
 | The bug auto-fix **gate ladder** G0–G7, no-auto-merge, client-code containment | `.claude/knowledge/execution/quality-gates.md` |
-| Which **repo / tracker / host** a fix delivers to | `ci/lib/repo-router.ts` + `ci/config/fix-repos.json` (+ `project-profile.json`) |
+| Which **repo / tracker / host** a fix delivers to | `plugins/vc-fix/skills/qa-fix-routing/repo-router.ts` + `plugins/vc-fix/skills/qa-fix-routing/fix-repos.json` (+ `project-profile.json`) |
 | Tracker/host-agnostic ops (resolve / comment / transition / PR) | `.claude/knowledge/execution/tracker-ops.md` |
 | Which **suites** a change needs | `npm run regression:select` (`scripts/lib/suite-selection.ts`) |
 | Which **lane** a case runs on | `scripts/lib/case-classifier.ts` (via `npm run suites:lanes`) |

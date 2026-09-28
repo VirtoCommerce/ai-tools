@@ -18,7 +18,7 @@
  * RESOLUTION CHAIN (stops at the first hit, per triangulation-criteria.md §2):
  *   1. manifest `requiresModules`  — explicit wins when an author declared it
  *   2. module-suite-map.md Module Map — reverse-index suite id → module(s)
- *   3. ci/config/fix-repos.json `routing[]` — module context → repo name
+ *   3. plugins/vc-fix/skills/qa-fix-routing/fix-repos.json `routing[]` — module context → repo name
  *
  * UNRESOLVED IS A REAL ANSWER. When no module can be found the caller must score
  * the source axis ABSENT ⇒ UNGROUNDED. It must never guess a repo: a wrong repo
@@ -35,7 +35,7 @@ import { fileURLToPath } from "url";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const MAP_PATH = join(REPO_ROOT, ".claude", "knowledge", "execution", "module-suite-map.md");
-const FIX_REPOS_PATH = join(REPO_ROOT, "ci", "config", "fix-repos.json");
+const FIX_REPOS_PATH = join(REPO_ROOT, "plugins", "vc-fix", "skills", "qa-fix-routing", "fix-repos.json");
 
 export interface ModuleMapRow {
   module: string;

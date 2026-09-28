@@ -1,6 +1,6 @@
 ---
 applicability: reference
-applicability_rationale: "Developers-team shared framework — write-tool discipline, single-repo + no-auto-merge + never-edit-tests rules, escalation, reporting. Universal across VC customers' vc-module-* and vc-frontend repos; the repo allowlist is data (ci/config/fix-repos.json)."
+applicability_rationale: "Developers-team shared framework — write-tool discipline, single-repo + no-auto-merge + never-edit-tests rules, escalation, reporting. Universal across VC customers' vc-module-* and vc-frontend repos; the repo allowlist is data (skills/qa-fix-routing/fix-repos.json)."
 ---
 
 # Shared Developer Instructions — Virto Commerce Auto-Fix
@@ -8,10 +8,8 @@ applicability_rationale: "Developers-team shared framework — write-tool discip
 Shared framework for the **developers team** — one developer + one reviewer **per repo kind**:
 `fullstack-backend` + `backend-reviewer` (module/platform, .NET 10 / Angular) and `fullstack-frontend`
 + `frontend-reviewer` (vc-frontend, Vue 3 / TS). The developer implements the fix; the reviewer gates
-the diff. These agents are the **interactive twins** of the headless CI fix agents
-(`ci/agents/fix-triage-agent.md`, `fix-backend-agent.md`, `fix-frontend-agent.md`) and the `/qa-fix`
-command is the interactive twin of `ci/run-fix-cycle.ts`. Both paths share the same infra and the same
-gate ladder — never diverge from it.
+the diff. The `/qa-fix` command drives them over the shared infra and gate ladder below — never
+diverge from it.
 
 ## What this team is (and is not)
 - **Is:** a small, write-capable developer team that fixes a single confirmed, simple, non-breaking
@@ -24,9 +22,9 @@ gate ladder — never diverge from it.
 | Concern | Source of truth |
 |---------|-----------------|
 | Gate ladder G0–G7 | `.claude/rules/quality-gates.md` |
-| Module→repo routing, `isAllowedRepo`, `checkoutForFix`, build/test `REPO_PROFILES` | `ci/lib/repo-router.ts` |
-| Live module dependency graph (Platform API) | `ci/lib/module-registry.ts` |
-| Repo allowlist + routing hints | `ci/config/fix-repos.json` |
+| Module→repo routing, `isAllowedRepo`, `checkoutForFix`, build/test `REPO_PROFILES` | `skills/qa-fix-routing/repo-router.ts` |
+| Live module dependency graph (Platform API) | `skills/qa-fix-routing/module-registry.ts` |
+| Repo allowlist + routing hints | `skills/qa-fix-routing/fix-repos.json` |
 | VC module repo anatomy, .NET 10 / xUnit / Angular conventions | `knowledge/architecture/vc-module-architecture.md` |
 | vc-frontend storefront anatomy, Vue 3 / TS / vitest / Storybook conventions | `knowledge/architecture/vc-frontend-architecture.md` |
 | BL-* invariants / historical failures | `business-logic.md`, `vc-bug-catalog.md` |
@@ -110,7 +108,7 @@ spending a retry loop on it.
 ## Where the fix goes — ownership routing (client vs platform)
 A deployment may be the native VirtoCommerce platform **or** a CLIENT project with its own custom
 modules / theme / storefront fork. The routed repo's **ownership** decides where your PR (or, when
-unfixable, an issue) goes. Ownership is **data, not guesswork**: `ci/lib/repo-router.ts` `repoOwnership(repo)`
+unfixable, an issue) goes. Ownership is **data, not guesswork**: `skills/qa-fix-routing/repo-router.ts` `repoOwnership(repo)`
 returns `client` or `platform` from `project-profile.json` (written by `/project-init`); `contributionPlan(repo)`
 returns `{ ownership, host, mode, forkOwner }`. **When no profile is present, every repo is `platform` /
 GitHub / `direct` — i.e. the original VirtoCommerce-internal behaviour, unchanged.**
@@ -122,9 +120,8 @@ GitHub / `direct` — i.e. the original VirtoCommerce-internal behaviour, unchan
 | **Platform** repo, operator = **client** | **fork** PR to `VirtoCommerce/<repo>` | the fix branch lives on the client's fork (`upstream.clientGithubAccount`); PR head is `<forkOwner>:<branch>` |
 | **Platform** bug that is **real but NOT fixable** (too-complex / multi-repo per Gate 0/1) | a **GitHub Issue** on `VirtoCommerce/<repo>` | not a PR — the client can't fix complex platform internals, so hand it upstream (client just needs a GitHub account) |
 
-In the headless twin (`ci/run-fix-cycle.ts`) this routing is automatic (it calls `getVcs(ownership)` /
-`getUpstreamVcs()` and a fork-aware `checkoutForFix`). **You** (interactive) must apply the same matrix by
-hand: read `contributionPlan(routeRepo)`, then clone/branch/push/PR accordingly. The single-repo and
+**You** must apply this matrix by hand: read `contributionPlan(routeRepo)`, then clone/branch/push/PR
+accordingly. The single-repo and
 no-auto-merge hard rules below are unchanged in every case.
 
 ### VirtoOZ covers CORE, not the client's customisation
@@ -143,7 +140,7 @@ When the routed repo is a **client `frontend` fork**, the *repo* is client-owned
 live in **unmodified vc-frontend code** carried into the fork. Don't decide from the symptom — decide from
 the RCA anchor's **provenance** against the fork's upstream (`clientUpstream(repo)` → `{ upstream,
 upstreamRef }`): fetch the anchor file from the client repo and from `vc-frontend @ upstreamRef`, then use
-`classifyFrontendProvenance()` + `frontendDeliveryPlan()` (`ci/lib/provenance.ts`). Anchor client-only or
+`classifyFrontendProvenance()` + `frontendDeliveryPlan()` (`skills/qa-fix-routing/provenance.ts`). Anchor client-only or
 differing ⇒ fix + PR on the client repo; byte-identical to unmodified upstream ⇒ platform bug →
 **contribute the fix upstream**: fork `vc-frontend`, fix, open a **fork-PR to VirtoCommerce** (the standard
 §1a platform path — client-scrubbed, §2a; the client gets it via a later release + fork sync, we do NOT
@@ -169,9 +166,8 @@ platform code — NEVER client source, in any form.** This outranks fixing the b
 The ambient `gh`/`git` session on this host is logged in as the **read-only** GitHub MCP token — it
 **cannot** push. All remote write operations (clone, push, PR) must run as the **dedicated write
 token** `GITHUB_FIX_BUGS_TOKEN` from `.env.local` (gitignored), exposed to `gh`/`git` as `GH_TOKEN`
-(`GH_TOKEN` takes precedence over the ambient `GITHUB_TOKEN`). This is the interactive mirror of CI's
-`AUTOFIX_GITHUB_TOKEN → GH_TOKEN` (`.github/workflows/auto-fix.yml`); `ci/lib/repo-router.ts` stays
-token-name-agnostic (it just consumes ambient `gh`), so only the env binding differs between twins.
+(`GH_TOKEN` takes precedence over the ambient `GITHUB_TOKEN`). `skills/qa-fix-routing/repo-router.ts`
+stays token-name-agnostic (it just consumes ambient `gh`).
 
 Load the token once per shell command (it does not persist between Bash calls) and **never print it**:
 ```bash
@@ -196,12 +192,12 @@ read-only / wrong identity. Check `project-profile.json` → `vcs.auth` to know 
 For a **client repo on Azure Repos** (`vcs.clientHost: "azure-repos"`), GitHub auth doesn't apply: clone
 with the Azure Git URL `https://dev.azure.com/<org>/<project>/_git/<repo>` and authenticate with
 `ADO_PAT` (`.env.local`) or an `az login` session (`ADO_AUTH=az-login`) — **never a password**. Open the
-PR with the Azure DevOps REST `POST …/_apis/git/repositories/<repo>/pullrequests` (the headless twin's
-`AzureReposVcs` does exactly this). `gh pr create` is GitHub-only.
+PR with the Azure DevOps REST `POST …/_apis/git/repositories/<repo>/pullrequests` (as
+`skills/qa-fix-routing/vcs/azure-repos-vcs.ts` does). `gh pr create` is GitHub-only.
 
 ### Commit identity — author as the human, NOT a bot (CLA)
 Commits **must be authored by the human who owns the write token** (the GitHub account behind
-`GITHUB_FIX_BUGS_TOKEN` / CI's `AUTOFIX_GITHUB_TOKEN`), with **Claude as a `Co-Authored-By:` trailer** —
+`GITHUB_FIX_BUGS_TOKEN`), with **Claude as a `Co-Authored-By:` trailer** —
 never the reverse. The VirtoCommerce org runs **CLA Assistant** on PRs: it blocks until every commit
 **author** has signed the CLA. A commit authored by a bot identity (e.g. `Claude QA Auto-Fix
 <noreply@anthropic.com>`, login `claude`) waits forever on an identity no human can sign for, stalling
@@ -261,8 +257,7 @@ Poll until both resolve (re-poll on an interval; don't block-sleep), then act:
 GH_TOKEN="$FIX" gh pr checks <pr-url-or-branch>             # status of every check
 GH_TOKEN="$FIX" gh pr view <pr> --json statusCheckRollup    # machine-readable rollup
 ```
-(Interactive `/qa-fix` owns this poll directly; in headless CI the orchestrator `ci/run-fix-cycle.ts`
-polls and hands a red back to you — either way the analyze-and-fix loop below is yours. Note: **Storybook
+(`/qa-fix` owns this poll directly; the analyze-and-fix loop below is yours. Note: **Storybook
 CI does NOT run on PRs** — it's push-only — so don't wait on it.)
 
 - **All green + `mergeable`** → done. Capture the one-line pass results in the PR body. Never merge.
@@ -304,7 +299,7 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
 5. **No secrets.** Never read, echo, or commit credentials/connection strings/`.env*`/`*.Development.json`.
    The GitHub PAT stays in the env used by `gh`/`git`; never print it.
 6. **No auto-merge.** Forbidden: `mcp__github__merge_pull_request`, `gh pr merge`. PRs are opened for
-   human review and never merged (interactive: a normal PR via `gh pr create`; CI: `--draft`).
+   human review and never merged (a normal PR via `gh pr create`).
 7. **Preserve BL-* invariants.** A fix that passes the STR but breaks a `BL-*` rule is a regression.
 
 ## Escalation triggers (STOP + report, don't loop)

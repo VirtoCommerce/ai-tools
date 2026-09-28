@@ -4,8 +4,8 @@ Single reference for the interactive bug-lifecycle commands (`/qa-bug`, `/qa-fix
 `/qa-verify-fix`) so none of them hardcode **Jira + GitHub + VirtoCommerce**. The
 deployment's `project-profile.json` (written by `/project-init`) decides which bug tracker
 and which code host every operation talks to. **With no profile ⇒ Jira / GitHub /
-VirtoCommerce — the original VC-internal behaviour, unchanged.** The headless twins
-(`ci/lib/trackers/*`, `ci/lib/vcs/*`) already do this in code; interactive commands must
+VirtoCommerce — the original VC-internal behaviour, unchanged.** The routing library
+(`plugins/vc-fix/skills/qa-fix-routing/trackers/*`, `plugins/vc-fix/skills/qa-fix-routing/vcs/*`) already does this in code; the commands must
 apply the same matrix by reading the profile.
 
 > Read the profile once at the start of a run: `node -e "console.log(JSON.stringify(require('./scripts/lib/project-profile.mjs')))"`
@@ -106,7 +106,7 @@ Use whichever surface is available; prefer the MCP when connected, else the CLI/
 `{base}` = `https://dev.azure.com/<tracker.azure.organization>/<tracker.azure.project>`.
 Auth (never passwords): Jira via the Atlassian MCP OAuth (or `JIRA_API_TOKEN`+`JIRA_EMAIL`);
 Azure via `ADO_PAT` (Basic, empty user) or an `az login` session (`ADO_AUTH=az-login`) — same
-helpers as `ci/lib/ado-rest.ts`.
+helpers as `plugins/vc-fix/skills/qa-fix-routing/ado-rest.ts`.
 
 ### Live transition discovery — the load-bearing rule
 The former hardcoded Jira transition NAMES ("Take to development", "Go to review", "Ready to
@@ -126,7 +126,7 @@ them. Always resolve the *destination status* by role, then map it to the live w
 
 ## 3. Which git/PR mechanism? — from `contributionPlan(repo)`
 
-After Gate 1 resolves the one repo, read `contributionPlan(routeRepo)` (`ci/lib/repo-router.ts`)
+After Gate 1 resolves the one repo, read `contributionPlan(routeRepo)` (`plugins/vc-fix/skills/qa-fix-routing/repo-router.ts`)
 — it returns `{ ownership, host, mode, forkOwner, azure }`. That, not a hardcoded assumption,
 picks how you clone/push/PR:
 
@@ -138,12 +138,11 @@ picks how you clone/push/PR:
 | platform repo, `mode=fork` | fork → clone the fork, branch from `upstream/<base>` | `gh pr create --head <forkOwner>:<branch>` |
 
 `checkoutForFix(repo, key, ws)` already encodes all four — prefer calling it over doing this by
-hand. For opening the PR, the headless `getVcs(plan.host)` picks GitHub vs Azure Repos; interactive
-you run the matching command above.
+hand. For opening the PR, run the matching command above.
 
 ### Write auth per host
 - **GitHub, PAT host:** all remote git/gh writes as `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`);
-  the ambient MCP token is read-only. (See `knowledge/agents/developers/shared-instructions.md` §GitHub authentication.)
+  the ambient MCP token is read-only. (See `plugins/vc-fix/knowledge/agents/developers/shared-instructions.md` §GitHub authentication.)
 - **GitHub, browser-login host** (`vcs.auth: "gh-cli"`): the ambient `gh` already has write scope —
   drop the `GH_TOKEN=` prefix (`gh auth status` confirms).
 - **Azure Repos:** `ADO_PAT` embedded in the clone URL, or an `az login` session — never a password.
