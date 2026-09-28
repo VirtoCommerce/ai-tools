@@ -116,7 +116,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
    (do NOT hand-roll `curl`+`python` — that caused the repeated `/tmp`/`cp1252`/emoji failures last run;
    see [`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §2). Use the ticket **key format the
    tracker gave you** verbatim (`ABC-123` for Jira, a bare `12345` for Azure Boards — not always `VCST-`).
-   Confirm it's a Bug in a workable status. Load the linked `/qa-bug` report from `reports/bugs/open/`
+   Confirm it's a Bug in a workable status. Load the linked `/qa-bug` report from `reports/bugs/open/**` (recursive — severity subfolders)
    (or `fixed/`) **if one exists** — it's the preferred input, not a hard requirement. (Match the report
    to the ticket by the tracker's key format: for Azure Boards' bare numeric ids match `AB#<n>` / `#<n>`,
    NOT a bare `<n>` substring — `521` would otherwise false-match `VCST-5218`.)

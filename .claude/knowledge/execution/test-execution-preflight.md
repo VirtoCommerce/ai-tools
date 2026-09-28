@@ -197,7 +197,7 @@ writing to. Downstream the shipping address silently never binds and Place order
 `errors: null`, no console error — which reads as a product defect in whatever case runs next. That is
 exactly how `COMP-E2E-007` failed in `REG-2026-08-26-0943`: a cart leaked from earlier agent activity on a
 shared account, not a storefront bug.
-See `reports/bugs/open/BUG-multi-cart-users-cannot-set-checkout-shipping-address-VCST-5811.md`; rules live in
+See VCST-5811 (its local bug report was withdrawn and deleted 2026-08-26, in `b2fe79da`); rules live in
 `scripts/seed-data/carts/cart-hygiene-specs.mjs`. **42 suites declare `[PRE:RESET_CART]`**, so any of them
 can inherit this.
 
