@@ -256,6 +256,8 @@ node:**
 - When the data model has a matching profile, set `dataProfile` too.
 - `tc:scaffold` persists them as `Behavior:<node-id>` / `DataProfile:<profile-id>`.
 - After the append, run `npm run models:check`. TM-015 / TM-016 fail a stamp that names nothing.
+  A `TM-019` legacy-header warning on the target suite means its stamps are never read, because the
+  parser maps that header by position. Author into an enriched suite, or migrate the suite first.
 
 A scenario that fits no node is a model gap. Record it for `/qa-test-mind-map update`; never invent a
 node id to satisfy the stamp. The `dataProfile` ids were already seeded at Step 3a, which reads them

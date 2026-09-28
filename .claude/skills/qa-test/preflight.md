@@ -197,6 +197,9 @@ unverified` at `1e`. **`STALE` is never auto-refreshed.**
 **1a. Its mind map**, when 2g recorded `domain_map.mind_map` (`/qa-test-mind-map`). This is the behaviour
 graph beside the map. Read the nodes in the ticket's slice: they are what `1e` Part 0 cites and what the
 `1e-plan` rows name as `behavior`. Its `DRIFT` and `UNVERIFIED` nodes are open questions to hand to `1c`.
+Then read `npm run models:check -- --json` for the same slice and hand two lists to Artifact A's `2a`:
+nodes with no stamped case (`TM-014`), which are the gaps the run authors when `2a` confirms them, and
+suspect cases (`TM-017`), which `2a` disposes like any other hit ([`coverage-triage.md`](coverage-triage.md) §3).
 Like the map, it is never an oracle. `null` ⇒ skip it; no run builds one inline ([`axes.md`](axes.md) §2g).
 
 **2. The per-ticket prior art**, read directly — `reports/ba/<domain folder>/` (prior BA analysis),

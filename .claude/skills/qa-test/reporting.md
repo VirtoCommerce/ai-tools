@@ -435,6 +435,9 @@ which the closed list above already refuses to a run. It records instead, in
 - **a stamped case whose verdict contradicts its node.** Examples: a FAIL on a `CONFIRMED` node, or a
   PASS on a `DRIFT` node whose observed side the case now disproves. Each is a DRIFT candidate.
 - **a scenario from `1e-plan` that fit no node.** Each is a missing-behaviour candidate.
+- **every in-scope DRIFT node the run observed**, as `HOLDS` or `RESOLVED` with the evidence. A DRIFT
+  that holds and whose route `TM-018` flags as unfiled was a bug candidate at 5-triage, like any other
+  failure. The key 5-file returned for it is the finding's proposed route.
 
 Each finding carries the case id and the run id. The next `/qa-test-mind-map update --from <ticket>`
 consumes them, and this step writes nothing else.
