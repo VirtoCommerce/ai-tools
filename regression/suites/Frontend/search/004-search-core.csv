@@ -623,3 +623,200 @@ SRCH-013,Search Bar - Category Scope Chip Stays Removable After Category Navigat
 [DOM] After the scope clears, no category name is present in the search input placeholder — it returns to the generic keyword-entry text {SPEC}
 [STATE] The remove control is never permanently unreachable after a category-to-category navigation — i.e. the loading-state flag governing the chip's v-else branch always resolves back to false, even after a prior navigation {SPEC}","[CONSOLE] no TypeError or JS errors during navigation, remove-click, or scope-clear
 [NETWORK] no 4xx/5xx on the category fetch or scope-clear action",Remove/clear control absent or non-interactive on the settled chip after navigation; clicking remove does not clear the scope; chip persists after the remove click; placeholder still names a category after clear; console TypeError,none — read-only,VCST-5729 | Promoted: VCST-5729 (2026-08-27),Automated
+SRCH-014,[JOURNEY] Barcode scan in exact mode opens the scanned product and lets the shopper add it to cart,Search > Barcode Scanner,Critical,BL-SRCH-004,,"[PRE:CLEAR_SESSION]
+Anonymous shopper. {{FRONT_URL}} accessible. @td(BARCODE_GTIN_UNIQUE.sku) is the ONLY product carrying its GTIN, buyable, priced in USD, in stock (fixture: npm run seed:barcode).
+This case sets B2B-store's own barcode-scanner settings in Steps and restores them in Cleanup — do not run this case in parallel with another case in this Section; every case in Search > Barcode Scanner shares B2B-store and must be serialised.
+A scan cannot be dispatched in this environment (no camera) — this case enters at /search?barcode=<value>, the exact route useBarcodeSearch.ts pushes on a real scan (3x).","url={{FRONT_URL}}, product=@td(BARCODE_GTIN_UNIQUE.sku), code=@td(BARCODE_GTIN_UNIQUE.gtin), image=@td(BARCODE_GTIN_UNIQUE.image)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code"",""manufacturerPartNumber"",""@td(BARCODE_PROP.propertyName)""]}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm fields = the 4 just saved
+--- SCREEN: Storefront (exact mode) ---
+[NAV] {{FRONT_URL}}
+[WAIT] home page fully loaded (hard reload — the SPA reads store module settings once at app start)
+[NAV] {{FRONT_URL}}/search?barcode={{code}}
+[WAIT] navigation settles (router.replace, if any, has fired)
+--- SCREEN: PDP ---
+[WAIT] product page loaded with an 'Add to Cart' control visible and enabled
+[ACT] note the cart badge count shown before adding
+[ACT] click 'Add to Cart'
+[WAIT] cart badge count updates","[NAV] final URL is a /product/... page (the PDP for @td(BARCODE_GTIN_UNIQUE.sku)), not a /search results page {SPEC}
+[STATE] pressing the browser Back button once does not return to the /search?barcode= page again — router.replace leaves no redirect loop {SPEC}
+[DOM] the PDP's product title element is visible and its text/SKU matches @td(BARCODE_GTIN_UNIQUE.sku) {OBSERVED}
+[DOM] cart badge count after 'Add to Cart' equals the count noted before it, plus 1 {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored
+Remove the added cart line (removeItem or UI) if the session/cart persists beyond this test",VCST-2945 · Archetype:PARITY · Technique:FLOW,Draft
+SRCH-015,Barcode scan with no configured fields keeps the full-text search behaviour,Search > Barcode Scanner,Critical,,,"[PRE:CLEAR_SESSION]
+Anonymous shopper. {{FRONT_URL}} accessible. B2B-store must be at its default barcode settings (scannerEnabled=true, fields=[]) for this case — Steps force that state before observing, since it cannot rely on another case's Cleanup having run first.
+@td(BARCODE_FULLTEXT_DISCRIM.sku) carries the GTIN as its own gtin field; @td(BARCODE_FULLTEXT_DISCRIM.otherSku) carries the same value as a whole word in its NAME — full-text must find both, exact would find only the first.","url={{FRONT_URL}}, image=@td(BARCODE_FULLTEXT_DISCRIM.image), code=@td(BARCODE_FULLTEXT_DISCRIM.gtin)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token>
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []} — force full-text mode regardless of the GET result
+--- SCREEN: Storefront, full-text mode ---
+[NAV] {{FRONT_URL}}
+[WAIT] home page fully loaded (hard reload)
+[NAV] {{FRONT_URL}}/search?q={{code}}
+[WAIT] results page loaded
+[ACT] note the result count under full-text mode
+[ACT] note the 'Search' input's value under full-text mode
+--- SCREEN: same unconfigured store, exact-style URL ---
+[NAV] {{FRONT_URL}}/search?barcode={{code}}
+[WAIT] results page loaded","[MATH] product count for ?q={{code}} >= 2 (matches @td(BARCODE_FULLTEXT_DISCRIM.sku) by GTIN and @td(BARCODE_FULLTEXT_DISCRIM.otherSku) by name) {OBSERVED}
+[DOM] the 'Search' input displays {{code}} as the active phrase under ?q= — full-text is unchanged by this feature {SPEC}
+[REL] the ?barcode={{code}} request on this same unconfigured store returns a DIFFERENT, smaller result than the ?q={{code}} request on the same store — the literal 'barcode' index field matches neither seeded product {SPEC}
+[DOM] the ?barcode= page shows a visible, intact result (empty state or a short list) — never a crash or blank grid {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:FALLBACK · Technique:DT,Draft
+SRCH-016,Disabling the barcode scanner hides the button in both search bars while a bookmarked barcode URL still resolves,Search > Barcode Scanner,High,,,"[PRE:CLEAR_SESSION]
+Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
+Tests reverse edge RE2 (1c/3x, CONFIRMED live on BARCODE_STORE): the switch hides the button but does not revoke the xCatalog expansion for a hand-built URL.","url={{FRONT_URL}}, code=@td(BARCODE_GTIN_UNIQUE.gtin)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": false, ""fields"": [""gtin"",""code"",""manufacturerPartNumber"",""@td(BARCODE_PROP.propertyName)""]}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm scannerEnabled=false
+--- SCREEN: Storefront desktop ---
+[NAV] {{FRONT_URL}}
+[WAIT] home page fully loaded (hard reload)
+[ASSERT] header search bar is visible
+--- SCREEN: Storefront mobile (390px) ---
+[NAV] Resize browser viewport to 390x844
+[NAV] {{FRONT_URL}}
+[WAIT] home page fully loaded
+[ACT] open the mobile header search overlay
+--- SCREEN: bookmarked exact URL ---
+[NAV] {{FRONT_URL}}/search?barcode={{code}}
+[WAIT] navigation settles","[DOM] no Barcode scan control is present in the desktop header search bar {SPEC}
+[DOM] no Barcode scan control is present in the mobile header search overlay at 390px {SPEC}
+[NAV] the bookmarked /search?barcode={{code}} still resolves to the PDP for @td(BARCODE_GTIN_UNIQUE.sku) — the switch only hides the button, it does not stop the xCatalog expansion {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:CONFIG · Technique:DT,Draft
+SRCH-017,Barcode scan matching several products lists them and does not auto-open one,Search > Barcode Scanner,High,,,"[PRE:CLEAR_SESSION]
+Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
+@td(BARCODE_GTIN_SHARED.count) products (@td(BARCODE_GTIN_SHARED.skus)) share one GTIN.","url={{FRONT_URL}}, code=@td(BARCODE_GTIN_SHARED.gtin), image=@td(BARCODE_GTIN_SHARED.image)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code"",""manufacturerPartNumber"",""@td(BARCODE_PROP.propertyName)""]}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm fields = the 4 just saved
+--- SCREEN: Storefront (exact mode, shared GTIN) ---
+[NAV] {{FRONT_URL}}
+[WAIT] home page fully loaded (hard reload)
+[NAV] {{FRONT_URL}}/search?barcode={{code}}
+[WAIT] results page loaded","[NAV] final URL stays /search?barcode={{code}} — no redirect to a PDP fires for a multi-hit result {SPEC}
+[DOM] heading reads the header_barcode key (""Your search for barcode … returned the following"") naming {{code}} {SPEC}
+[COUNT] product card count equals @td(BARCODE_GTIN_SHARED.count) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:BOUNDARY · Technique:EP,Draft
+SRCH-018,Barcode scan of a variation-level code opens the variation even when it is out of stock,Search > Barcode Scanner,Critical,BL-SRCH-004,ECL-8.2,"[PRE:CLEAR_SESSION]
+Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
+@td(BARCODE_VARIATION_MPN.variationSku) is OUT OF STOCK; the parent and @td(BARCODE_VARIATION_MPN.siblingSku) are in stock. The ""Show in stock only"" preference persists per browser and defaults to on (ECL-3.2) — leave it at its default for this case.","url={{FRONT_URL}}, variation=@td(BARCODE_VARIATION_MPN.variationSku), code=@td(BARCODE_VARIATION_MPN.mpn), image=@td(BARCODE_VARIATION_MPN.image)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code"",""manufacturerPartNumber"",""@td(BARCODE_PROP.propertyName)""]}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm fields = the 4 just saved
+--- SCREEN: Storefront (exact mode, variation-level MPN) ---
+[NAV] {{FRONT_URL}}
+[WAIT] home page fully loaded (hard reload)
+[ASSERT] the ""Show in stock only"" preference is at its default (on)
+[NAV] {{FRONT_URL}}/search?barcode={{code}}
+[WAIT] navigation settles","[NAV] final URL is /product/@td(BARCODE_VARIATION_MPN.variationId) — the variation's own page, not the parent's {SPEC}
+[DOM] the variation's PDP renders normally (not a 404) even though the variation is out of stock and the in-stock preference is on {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:SCOPE · Technique:DT,Draft
+SRCH-019,Barcode scan with no match shows the barcode empty state and Reset returns to a usable search,Search > Barcode Scanner,Medium,BL-SRCH-002,ECL-3.1,"[PRE:CLEAR_SESSION]
+Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
+unmatched_code=2945500000014 — a value in the same EAN-13 test series as the seeded BARCODE_* fixtures, deliberately unassigned (the seeded series uses …0018/…0017/…0016/…0015/…0013; …0014 is not used by any fixture).",url={{FRONT_URL}},"--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code"",""manufacturerPartNumber"",""@td(BARCODE_PROP.propertyName)""]}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm fields = the 4 just saved
+--- SCREEN: Storefront (exact mode, no match) ---
+[NAV] {{FRONT_URL}}
+[WAIT] home page fully loaded (hard reload)
+[NAV] {{FRONT_URL}}/search?barcode=2945500000014
+[WAIT] results page loaded
+[ACT] click 'Reset' in the empty-state view
+[WAIT] navigation settles","[DOM] the page heading (key ""header_barcode_empty"") names the scanned code and is rendered via VcEmptyView {SPEC}
+[DOM] the page layout remains visible and intact — not a blank grid, not an error page {BL}
+[NAV] URL after 'Reset' carries neither ?barcode= nor ?q= {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:FALLBACK · Technique:EP,Draft
+SRCH-020,Mobile search bar scan follows the same exact-match rules as desktop,Search > Barcode Scanner,Medium,,,"[PRE:CLEAR_SESSION]
+Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.","url={{FRONT_URL}}, image=@td(BARCODE_GTIN_UNIQUE.image)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code"",""manufacturerPartNumber"",""@td(BARCODE_PROP.propertyName)""]}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm fields = the 4 just saved
+--- SCREEN: Mobile (390px) ---
+[NAV] Resize browser viewport to 390x844
+[NAV] {{FRONT_URL}}
+[WAIT] home page fully loaded (hard reload)
+[ACT] open the mobile header search overlay
+[NAV] {{FRONT_URL}}/search?barcode={{code}}
+[WAIT] navigation settles","[REL] final URL is the PDP for @td(BARCODE_GTIN_UNIQUE.sku), the same resolution the desktop bar reaches for the same code {SPEC}
+[DOM] the mobile search overlay is hidden once the PDP is shown — not stacked above it {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:PARITY · Technique:PW,Draft
+SRCH-021,Anonymous and signed-in B2B shoppers get the same barcode resolution,Search > Barcode Scanner,Medium,BL-SRCH-004,,"This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.
+@td(ORG_USER_DEFAULT.email) is a B2B org user with USD pricing on B2B-store.","url={{FRONT_URL}}, buyer=@td(ORG_USER_DEFAULT.email), code=@td(BARCODE_GTIN_UNIQUE.gtin)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code"",""manufacturerPartNumber"",""@td(BARCODE_PROP.propertyName)""]}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm fields = the 4 just saved
+--- SCREEN: Anonymous shopper ---
+[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/search?barcode={{code}}
+[WAIT] navigation settles
+[ACT] capture the resulting URL/product id as anon_result
+--- SCREEN: Signed-in B2B buyer — @td(ORG_USER_DEFAULT.email) ---
+[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+[PRE:VERIFY_AUTH:ORG_USER_DEFAULT]
+[NAV] {{FRONT_URL}}/search?barcode={{code}}
+[WAIT] navigation settles","[REL] the final URL/product id reached signed in as @td(ORG_USER_DEFAULT.email) equals anon_result reached anonymously for the same code {BL}
+[STATE] both the anonymous and signed-in requests resolve to a product page — neither is the empty/no-match state {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:PARITY · Technique:PW,Draft
+SRCH-022,Barcode scan made inside a category is global and is not saved to search history,Search > Barcode Scanner,Medium,,,"[PRE:CLEAR_SESSION]
+Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.","url={{FRONT_URL}}, image=@td(BARCODE_GTIN_UNIQUE.image)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code"",""manufacturerPartNumber"",""@td(BARCODE_PROP.propertyName)""]}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm fields = the 4 just saved
+--- SCREEN: Storefront, scan from inside a category ---
+[NAV] {{FRONT_URL}}
+[ACT] navigate into any storefront category listing page
+[ACT] note the category context shown (breadcrumb/URL)
+[ACT] open the 'Search' input
+[ACT] note the search-history dropdown entries shown before scanning
+[NAV] {{FRONT_URL}}/search?barcode={{code}} (issued while still inside the category context)
+[WAIT] navigation settles
+[ACT] re-open the 'Search' input
+[ACT] inspect the 'Search' input's history dropdown entries now shown","[NAV] the product reached is the SAME one an out-of-category scan for {{code}} reaches — the result is not scoped to the category that was being browsed {SPEC}
+[DOM] the 'Search' input's history dropdown after the scan lists the same entries as before it — the scanned code is absent from history {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:SCOPE · Technique:EG,Draft
+SRCH-023,Barcode results ignore facet and availability parameters and show no generated filter chips,Search > Barcode Scanner,Medium,BL-SRCH-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+Anonymous shopper. This case sets B2B-store's settings itself and restores them in Cleanup — serialised with every other case in this Section.","url={{FRONT_URL}}, code=@td(BARCODE_GTIN_SHARED.gtin)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code"",""manufacturerPartNumber"",""@td(BARCODE_PROP.propertyName)""]}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm fields = the 4 just saved
+--- SCREEN: Storefront (exact mode, shared GTIN result) ---
+[NAV] {{FRONT_URL}}
+[NAV] {{FRONT_URL}}/search?barcode={{code}}
+[WAIT] results list loaded
+[ACT] note the product count on this request
+[ACT] note the presence/absence of the facet sidebar
+[ACT] note the presence/absence of the in-stock/purchased-before/branch controls
+[ACT] note the presence/absence of any filter chip
+[NAV] {{FRONT_URL}}/search?barcode={{code}}&facets=brand:AnyValue
+[WAIT] navigation settles
+[ACT] note the product count on this request
+[ACT] change the sort control to a non-default option
+[WAIT] list re-renders","[DOM] the facet sidebar and the in-stock/purchased-before/branch controls are absent on the barcode result {SPEC}
+[DOM] a chip for the generated barcode/field filter is absent from the active-filter row, on either request {SPEC}
+[COUNT] product count with ?facets= appended equals the product count without it — the facets param is ignored on a barcode request {SPEC}
+[NAV] changing sort does not navigate away from /search?barcode={{code}} — no redirect fires after narrowing {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": []}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> — confirm defaults restored",VCST-2945 · Archetype:RENDER · Technique:DT,Draft

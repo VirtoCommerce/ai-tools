@@ -1,0 +1,159 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+SRCHA-049,Barcode search settings API validates field names and store,Search Configuration > Barcode scanner,High,,,"Admin credentials {{ADMIN}}/{{ADMIN_PASSWORD}} available. @td(BARCODE_STORE.id) is the dedicated VCST-2945 store — no other suite depends on its barcode settings, but every case in THIS suite shares it and must be serialised.","store=@td(BARCODE_STORE.id), admin={{ADMIN}}","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": [""not-a-real-index-field""]}
+[CAPTURE] status code and body of the previous call
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: null
+[CAPTURE] status code of the previous call
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/AGENT-TEST-NONEXISTENT-STORE Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin""]}
+[CAPTURE] status code of the previous call
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code""]}
+[CAPTURE] status code of the previous call
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token>","[STATUS] the unknown-field PUT returns 400, and the body names the rejected field {SPEC}
+[STATUS] the null-body PUT returns 400 {SPEC}
+[STATUS] the unknown-store PUT returns 404 {SPEC}
+[STATUS] the valid PUT (fields gtin, code) returns 204 {SPEC}
+[BODY] the follow-up GET reflects exactly [""gtin"",""code""] — neither rejected attempt persisted anything {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:DT,Draft
+SRCHA-050,Read-only search configuration user can view but not change barcode settings,Search Configuration > Barcode scanner,High,,,"[PRE:SIGNIN_AS:BROWSEFILTERS_READ_ONLY]
+@td(BROWSEFILTERS_READ_ONLY.email) holds catalog:BrowseFilters:Read only (no Update). @td(BARCODE_STORE.id) is set to scannerEnabled=true, fields=[""gtin""] by this case's own setup before the reader looks at it.","store=@td(BARCODE_STORE.id), reader=@td(BROWSEFILTERS_READ_ONLY.email)","--- SCREEN: Fixture Setup (REST, admin token) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin""]}
+--- SCREEN: Reader — @td(BROWSEFILTERS_READ_ONLY.email), BrowseFilters:Read only ---
+[PRE:SIGNIN_AS:BROWSEFILTERS_READ_ONLY]
+[NAV] Navigate to More > Stores at {{BACK_URL}}
+[GRID] open the store row for @td(BARCODE_STORE.id)
+[ACT] click the 'Search configuration' widget
+[WAIT] Search configuration blade opens with Facets / Sorting / Barcode scanner tiles
+[ACT] click the 'Barcode scanner' tile
+[WAIT] Barcode scanner blade opens
+[ACT] attempt to select the match-mode radio
+[ACT] attempt to select a field checkbox
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username=@td(BROWSEFILTERS_READ_ONLY.email) password={{BROWSEFILTERS_READ_ONLY_PASSWORD}} scope=offline_access — capture reader access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <reader access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code""]}
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <reader access_token>","[FORM] the switch, match-mode radios and field checkboxes render but are disabled for the reader {SPEC}
+[BLADE] no active/enabled 'Save' control is present in the blade {SPEC}
+[STATUS] the reader's own PUT attempt returns 403 {SPEC}
+[BODY] the follow-up GET (reader token) still shows fields=[""gtin""] — the reader's PUT changed nothing {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SCOPE · Technique:DT,Draft
+SRCHA-051,Back-office user without search configuration permissions cannot read or write barcode settings,Search Configuration > Barcode scanner,High,,,@td(BROWSEFILTERS_NONE.email) holds neither catalog:BrowseFilters:Read nor :Update.,"store=@td(BARCODE_STORE.id), outsider=@td(BROWSEFILTERS_NONE.email)","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username=@td(BROWSEFILTERS_NONE.email) password={{BROWSEFILTERS_NONE_PASSWORD}} scope=offline_access — capture outsider access_token
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <outsider access_token>
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{store}}/fields Authorization: Bearer <outsider access_token>
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <outsider access_token> body: {""scannerEnabled"": false, ""fields"": []}
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token>","[STATUS] GET store settings returns 403 for the outsider {SPEC}
+[STATUS] GET /fields returns 403 for the outsider {SPEC}
+[STATUS] PUT returns 403 for the outsider {SPEC}
+[BODY] the admin re-GET afterward shows settings unchanged from what this case's own precondition set — the outsider's PUT persisted nothing {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SCOPE · Technique:DT,Draft
+SRCHA-052,Barcode scanner blade keeps field order stable and guards Save and unsaved changes,Search Configuration > Barcode scanner,Medium,,,"Admin credentials {{ADMIN}}/{{ADMIN_PASSWORD}} available. @td(BARCODE_STORE.id) is set to scannerEnabled=true, fields=[""gtin"",""code""] by this case's own setup.","store=@td(BARCODE_STORE.id), admin={{ADMIN}}","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""code""]}
+--- SCREEN: Admin blade ---
+[NAV] Navigate to More > Stores at {{BACK_URL}}
+[GRID] open the store row for @td(BARCODE_STORE.id)
+[ACT] click the 'Search configuration' widget
+[WAIT] Search configuration blade opens with Facets / Sorting / Barcode scanner tiles
+[ACT] click the 'Barcode scanner' tile
+[WAIT] Barcode scanner blade opens
+[ASSERT] field list shows gtin, code checked first, then the remaining fields alphabetically
+[ACT] note the current 'Fields to match' order as rendered
+[ACT] toggle 'Exact match on selected fields' mode to 'Full-text search'
+[WAIT] mode switches
+[ACT] toggle the match mode back to 'Exact match on selected fields'
+[WAIT] mode switches
+[ACT] select one additional field checkbox
+[WAIT] selection updates
+[ACT] deselect that same field checkbox
+[WAIT] selection updates
+[ACT] deselect every field so zero fields remain selected
+[WAIT] field list updates
+[ASSERT] 'Save' is disabled
+[ACT] select 'gtin' again
+[WAIT] selection updates
+[ACT] close the blade without clicking Save or Reset
+[WAIT] a dirty-close confirmation dialog appears","[GRID] the field order captured before toggling equals the order captured after — reordering never happens while the admin interacts with the blade {SPEC}
+[FORM] 'Save' is disabled while Exact mode has zero fields selected {SPEC}
+[DOM] a dirty-close confirmation dialog is visible when the blade is closed with unsaved changes {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:LIFECYCLE · Technique:ST,Draft
+SRCHA-053,Barcode scanner blade drops a saved field that is missing from the index on the next change,Search Configuration > Barcode scanner,Medium,,,"Admin credentials {{ADMIN}}/{{ADMIN_PASSWORD}} available. @td(BARCODE_STALE_FIELD.name) (""agent_test_barcode_stale"") is a disposable ShortText property with a value on @td(BARCODE_STALE_FIELD.sku) — this case DELETES its underlying catalog property to reach the ""missing from index"" state (3x precedent) and re-seeds it in Cleanup. Serialise with SRCHA-054 and SRCHA-055, which also delete/restore disposable barcode properties on the same @td(BARCODE_STORE.id) store — do not interleave any two of these three cases.","store=@td(BARCODE_STORE.id), admin={{ADMIN}}, ghost=@td(BARCODE_STALE_FIELD.name)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin"",""{{ghost}}""]}
+[HTTP] DELETE {{BACK_URL}}/api/catalog/properties/@td(BARCODE_STALE_FIELD.propertyId) Authorization: Bearer <admin access_token>
+[WAIT] up to 60s for the property/index schema to drop the deleted field
+--- SCREEN: Admin blade ---
+[NAV] Navigate to More > Stores at {{BACK_URL}}
+[GRID] open the store row for @td(BARCODE_STORE.id)
+[ACT] click the 'Search configuration' widget
+[WAIT] Search configuration blade opens with Facets / Sorting / Barcode scanner tiles
+[ACT] click the 'Barcode scanner' tile
+[WAIT] Barcode scanner blade opens
+[ASSERT] {{ghost}} renders checked, disabled, with a 'missing from index' badge
+[ACT] toggle the match mode from Exact to Full-text (a mode change — {{ghost}}'s own checkbox is never touched)
+[WAIT] mode switches
+[ACT] toggle the match mode back to Exact
+[WAIT] mode switches
+[SAVE] click Save
+[WAIT] save completes
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token>","[BLADE] before any change, {{ghost}} shows checked + disabled + a 'missing from index' badge {SPEC}
+[BODY] after the mode-change Save, the persisted fields[] no longer contains {{ghost}} {SPEC}
+[BLADE] {{ghost}} is not offered again as a re-saveable option once it has been dropped {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError","Run `npm run seed:barcode` to recreate the AGENT_TEST_BARCODE_STALE property before any later case referencing BARCODE_STALE_FIELD (any field) runs.
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:STALE · Technique:ST,Draft
+SRCHA-054,Barcode fields written through the generic store settings API surface as missing in the blade,Search Configuration > Barcode scanner,Medium,,,"Admin credentials {{ADMIN}}/{{ADMIN_PASSWORD}} available. This case deletes @td(BARCODE_STALE_FIELD.propertyId) itself (independent of SRCHA-053) to guarantee {{ghost}} is genuinely absent from the index before writing it through the GENERIC settings API. Re-seeds in Cleanup. Serialise with SRCHA-053 and SRCHA-055, which also delete/restore disposable barcode properties on the same @td(BARCODE_STORE.id) store — do not interleave any two of these three cases.","store=@td(BARCODE_STORE.id), admin={{ADMIN}}, ghost=@td(BARCODE_STALE_FIELD.name)","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] DELETE {{BACK_URL}}/api/catalog/properties/@td(BARCODE_STALE_FIELD.propertyId) Authorization: Bearer <admin access_token>
+[WAIT] up to 60s for the property/index schema to drop the deleted field
+[HTTP] GET {{BACK_URL}}/api/stores/{{store}} Authorization: Bearer <admin access_token> — capture the full store object
+[HTTP] PUT {{BACK_URL}}/api/stores/{{store}} Authorization: Bearer <admin access_token> — the captured store object unchanged except Settings.Catalog.Search.BarcodeScannerEnabled=true and Settings.Catalog.Search.BarcodeSearchFields=[""gtin"",""{{ghost}}""] (the GENERIC, unvalidated settings write — not the dedicated barcode-search endpoint)
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token>
+[NAV] Navigate to More > Stores at {{BACK_URL}}
+[GRID] open the store row for @td(BARCODE_STORE.id)
+[ACT] click the 'Search configuration' widget
+[WAIT] Search configuration blade opens with Facets / Sorting / Barcode scanner tiles
+[ACT] click the 'Barcode scanner' tile
+[WAIT] Barcode scanner blade opens
+[HTTP] POST {{BACK_URL}}/graphql query: products(storeId: ""{{store}}"", currencyCode: ""{{CURRENCY_CODE}}"", filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:'@td(BARCODE_GTIN_UNIQUE.gtin)'"") returning totalCount and errors, Authorization: Bearer <admin access_token>","[STATUS] the generic PUT /api/stores/{{store}} returns 2xx even though it carries the unknown field {{ghost}} {SPEC}
+[BODY] the dedicated GET api/catalog/barcode-search/store/{{store}} echoes {{ghost}} verbatim in fields[] {SPEC}
+[BLADE] the Barcode scanner blade shows {{ghost}} checked, disabled, with a 'missing from index' badge — with no indication the write bypassed validation {SPEC}
+[API] the xAPI barcode query (fields gtin + {{ghost}}) still returns totalCount=1 with errors[] empty for @td(BARCODE_GTIN_UNIQUE.gtin) — the unknown field silently contributes nothing to the OR rather than breaking the query {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body","Run `npm run seed:barcode` to recreate the AGENT_TEST_BARCODE_STALE property before any later case referencing BARCODE_STALE_FIELD (any field) runs.
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:PARITY · Technique:EG,Draft
+SRCHA-055,Deleting a catalog property used as a barcode field leaves scans failing until the setup is resaved,Search Configuration > Barcode scanner,Medium,,,"Admin credentials {{ADMIN}}/{{ADMIN_PASSWORD}} available. This case DELETES @td(BARCODE_STALE_FIELD.propertyId) — the disposable property (value @td(BARCODE_STALE_FIELD.value) on product @td(BARCODE_STALE_FIELD.sku)) — to prove the reverse edge (RE1, 1c/3x). It must NOT delete @td(BARCODE_PROP.propertyId): that property is part of the configured field set other barcode cases (GraphQL and storefront suites) rely on, so deleting it would strand them.
+Event-based indexation is OFF on vcst-qa, so after the delete this case requests a manual reindex of @td(BARCODE_STALE_FIELD.id) itself (POST /api/search/indexes/index) and polls before asserting the 0 result, re-requesting the reindex once more if the first request no-ops because another indexation held the lock.
+Serialise with SRCHA-053 and SRCHA-054 (same disposable property) and with any other case that writes @td(BARCODE_STORE.id)'s barcode settings — the earlier constraint against running concurrently with a BARCODE_PROP (any field) case no longer applies, since this case never touches BARCODE_PROP.","store=@td(BARCODE_STORE.id), admin={{ADMIN}}, ghost=@td(BARCODE_STALE_FIELD.name)","--- SCREEN: Fixture Setup (REST) ---
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": [""{{ghost}}""]}
+[HTTP] POST {{BACK_URL}}/graphql query: products(storeId: ""{{store}}"", currencyCode: ""{{CURRENCY_CODE}}"", filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:'@td(BARCODE_STALE_FIELD.value)'"") returning totalCount, Authorization: Bearer <admin access_token> — confirm totalCount=1 before deleting anything
+[HTTP] DELETE {{BACK_URL}}/api/catalog/properties/@td(BARCODE_STALE_FIELD.propertyId) Authorization: Bearer <admin access_token>
+[HTTP] POST {{BACK_URL}}/api/search/indexes/index Authorization: Bearer <admin access_token> body: [{""documentType"": ""Product"", ""documentIds"": [""@td(BARCODE_STALE_FIELD.id)""]}]
+[WAIT] up to 90s for the reindex job to finish
+[HTTP] POST {{BACK_URL}}/graphql query: products(storeId: ""{{store}}"", currencyCode: ""{{CURRENCY_CODE}}"", filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:'@td(BARCODE_STALE_FIELD.value)'"") returning totalCount, Authorization: Bearer <admin access_token>
+[HTTP] POST {{BACK_URL}}/api/search/indexes/index Authorization: Bearer <admin access_token> body: [{""documentType"": ""Product"", ""documentIds"": [""@td(BARCODE_STALE_FIELD.id)""]}] — re-request only if the previous query still reported totalCount=1 (another indexation held the lock at the first request)
+[WAIT] up to 90s for this second reindex request to finish, only if it was sent
+[HTTP] POST {{BACK_URL}}/graphql query: products(storeId: ""{{store}}"", currencyCode: ""{{CURRENCY_CODE}}"", filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:'@td(BARCODE_STALE_FIELD.value)'"") returning totalCount, Authorization: Bearer <admin access_token> — this is the value asserted
+--- SCREEN: Admin blade ---
+[NAV] Navigate to More > Stores at {{BACK_URL}}
+[GRID] open the store row for @td(BARCODE_STORE.id)
+[ACT] click the 'Search configuration' widget
+[WAIT] Search configuration blade opens with Facets / Sorting / Barcode scanner tiles
+[ACT] click the 'Barcode scanner' tile
+[WAIT] Barcode scanner blade opens","[BLADE] {{ghost}} renders checked, disabled, with a 'missing from index' badge {SPEC}
+[API] the xAPI barcode query for @td(BARCODE_STALE_FIELD.value) returns totalCount=1 before the delete and totalCount=0 once the reindex has settled — scans silently stop matching {SPEC}
+[BLADE] no error or warning banner in the Admin SPA names the deleted property as the cause {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError","Run `npm run seed:barcode` to recreate the AGENT_TEST_BARCODE_STALE property and its value on @td(BARCODE_STALE_FIELD.sku) before ANY other case referencing BARCODE_STALE_FIELD (any field) runs.
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:STALE · Technique:EG,Draft
+SRCHA-056,Barcode scanner blade shows an access error instead of a false disabled state to a user without permission,Search Configuration > Barcode scanner,Medium,,,"@td(BROWSEFILTERS_NONE.email) holds neither catalog:BrowseFilters:Read nor :Update. @td(BARCODE_STORE.id) is genuinely ENABLED (scannerEnabled=true) before the outsider looks at it, so a false-disabled reading in the blade cannot be coincidentally correct.","store=@td(BARCODE_STORE.id), outsider=@td(BROWSEFILTERS_NONE.email)","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin""]}
+[PRE:SIGNIN_AS:BROWSEFILTERS_NONE]
+[NAV] Navigate to More > Stores at {{BACK_URL}}
+[GRID] open the store row for @td(BARCODE_STORE.id)
+[ACT] click the 'Search configuration' widget
+[WAIT] Search configuration blade opens
+[ACT] click the 'Barcode scanner' tile
+[WAIT] the blade attempts to open; the underlying GET returns 403","[BLADE] the blade shows an explicit access-error state (e.g. ""Error 403"" / access denied) {SPEC}
+[DOM] the false-disabled reading (a fully-rendered scanner-OFF UI with no error text) is absent {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access — capture admin access_token
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{store}} Authorization: Bearer <admin access_token> body: {""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:FALLBACK · Technique:EG,Draft

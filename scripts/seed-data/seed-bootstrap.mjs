@@ -81,6 +81,9 @@ const TEARDOWN_STEPS = [
   { name: 'org-contract', script: 'pricing/seed-org-contract-pricing.mjs', args: ['--teardown'] },
   { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['--teardown'] },
   { name: 'bopis', script: 'bopis/seed-bopis.mjs', args: ['--teardown'] },
+  // VCST-2945 barcode fixtures — its products, properties, dedicated store and pricelist. Before the
+  // inventory / catalog sweeps (its products sit in the AGENT-TEST-SEED catalog on the store FFC).
+  { name: 'barcode', script: 'catalog/seed-barcode-fixtures.mjs', args: ['--teardown'] },
   // Variation family + its per-FFC stock records — before the fulfillment centers they sit on.
   { name: 'variation-stock', script: 'inventory/seed-variation-stock.mjs', args: ['--teardown'] },
   { name: 'inventory', script: 'inventory/seed-inventory.mjs', args: ['--teardown'] },
@@ -180,6 +183,9 @@ const STEPS = [
   // VCST-5546 / INV-047 — a variation family stocked on the store's MAIN fulfillment center, so it
   // runs after `inventory` (70) has ensured the fulfillment centers exist.
   { name: 'variation-stock', script: 'inventory/seed-variation-stock.mjs', required: false, priority: 72 },
+  // VCST-2945 — barcode scanner search fixtures + a dedicated AGENT-TEST store on the store catalog.
+  // After inventory (70): it stocks the store FFC. Never writes STORE_ID (fingerprinted before/after).
+  { name: 'barcode', script: 'catalog/seed-barcode-fixtures.mjs', required: false, priority: 74 },
   // VCST-5705 / CAT-079 + CAT-080 + WISH-30 — two wishlists in two REAL stores. Runs last: it needs
   // the catalog structure and a fulfillment center, and it creates its own products + customer.
   // `required: false` because it hard-aborts on an env with no genuine second store

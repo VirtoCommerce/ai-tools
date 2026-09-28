@@ -2381,5 +2381,55 @@
         "itemsCount": 3
       }
     ]
+  },
+  "BARCODE_STORE": {
+    "catalogId": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "BARCODE_GTIN_UNIQUE": {
+    "id": "b1a6b21b-bd26-4934-8d38-ef788f0d93d7"
+  },
+  "BARCODE_FULLTEXT_DISCRIM": {
+    "id": "8f47bfa4-a537-472a-b8f3-49a6910f9bfd",
+    "otherId": "91d98d38-4820-440f-a697-dbb39dbf93a8"
+  },
+  "BARCODE_GTIN_SHARED": {
+    "ids": "e0331621-5891-4c4c-9208-7a55044105dc,448ad2db-13fd-4aac-bf5a-7e2ea9bec287,1050cfee-f38f-4151-870d-160cbbf10761"
+  },
+  "BARCODE_CODE_OR": {
+    "id": "631ed824-36f5-4e6c-bdd2-e9f90483ec3d"
+  },
+  "BARCODE_PROP": {
+    "id": "22989192-c1c4-4325-b116-cc8ce9e4c628",
+    "propertyId": "bc0c969b-71e1-43cb-aff5-548f73f25481"
+  },
+  "BARCODE_VARIATION_MPN": {
+    "parentId": "c87cc11b-aece-43af-809d-378c84bc7d43",
+    "variationId": "5968bcea-ea3c-4a95-b8db-26e98ffb7cb5",
+    "siblingId": "23ab21b0-20d6-485b-8108-35f75ba346a4"
+  },
+  "BARCODE_CASE": {
+    "id": "93b428fe-e133-4969-a862-0420ef3f08b4"
+  },
+  "BARCODE_SPECIAL": {
+    "id": "25e50bae-1dea-4d34-9432-00183d937497"
+  },
+  "BARCODE_REINDEX": {
+    "id": "9b591434-b6fd-468a-86bd-974cd2633e75"
+  },
+  "BARCODE_STALE_FIELD": {
+    "propertyId": "f88fd967-15a8-4827-bef1-6db35bc10809",
+    "id": "b2b5614e-576b-488c-9da6-24771b75decb"
+  },
+  "BROWSEFILTERS_READ_ONLY": {
+    "_inline": true,
+    "platform_id": "bcb2e991-1601-4f67-9f81-7ee187d785f1",
+    "user_id": "bcb2e991-1601-4f67-9f81-7ee187d785f1",
+    "role_id": "AGENT-TEST-BrowseFilters-Read-Only"
+  },
+  "BROWSEFILTERS_NONE": {
+    "_inline": true,
+    "platform_id": "bc011cd9-e3e4-4947-81c9-ddb6292849fa",
+    "user_id": "bc011cd9-e3e4-4947-81c9-ddb6292849fa",
+    "role_id": "AGENT-TEST-BrowseFilters-None"
   }
 }

@@ -806,3 +806,274 @@ CAT-GQL-142,"PriceType.discountPercent Is 0 for a Product With No Active Discoun
 [DATA label=get_price] data.product.price.discountPercent is non-null {SPEC}
 [DATA label=get_price] data.product.price.discountPercent = 0 {SPEC}
 [DATA label=get_price] data.product.price.discountAmount.amount = 0 {DOC}",none,"discountPercent = null (ternary regressed to a nullable path), discountPercent is a tiny non-zero value like 0.0001 (float/rounding artefact), find_product returns zero items",none (read-only),VCST-5691,Automated
+CAT-GQL-143,xCatalog barcode filter term matches gtin exactly regardless of letter case and not by prefix,xCatalog > Barcode filter,High,,,"Runner-native. @td(BARCODE_STORE.id) is the dedicated VCST-2945 store, isolated from B2B-store — no shared-state risk with other suites, but serialised with the other 7 cases in this suite (all mutate the same store's barcode settings).
+@td(BARCODE_CASE.value) is a product code stored MIXED CASE exactly as ""@td(BARCODE_CASE.value)""; @td(BARCODE_CASE.valueFlipped) is that same value with every letter's case inverted — a field derived by flipCase() in the seed spec module (drift-guarded by td:validate:barcode), never hand-typed — used to probe ""differs only in case"" while still asserting the exact seeded value elsewhere. @td(BARCODE_CASE.prefix) is a strict prefix of it that must match nothing under an exact-term filter.","store=@td(BARCODE_STORE.id), code=@td(BARCODE_CASE.value), prefix=@td(BARCODE_CASE.prefix)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": [""code""]}
+[GQL-OP exact_case]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""{{code}}\"""") {
+    totalCount
+    items { id code }
+    filters { name isGenerated }
+  }
+}
+[GQL-EXEC exact_case]
+[GQL-OP exact_case_upper]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""@td(BARCODE_CASE.valueFlipped)\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC exact_case_upper]
+[GQL-OP exact_case_prefix]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""{{prefix}}\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC exact_case_prefix]","[ERRORS label=exact_case] errors[] empty {BL}
+[COUNT label=exact_case] data.products.totalCount = 1 {SPEC}
+[DATA label=exact_case] data.products.items.0.code = {{code}} {OBSERVED}
+[DATA label=exact_case] data.products.filters[?name=code].isGenerated = true {SPEC}
+[ERRORS label=exact_case_upper] errors[] empty {BL}
+[COUNT label=exact_case_upper] data.products.totalCount = 1 {OBSERVED}
+[ERRORS label=exact_case_prefix] errors[] empty {BL}
+[COUNT label=exact_case_prefix] data.products.totalCount = 0 {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:BVA · Probe:VC-API-004,Draft
+CAT-GQL-144,xCatalog barcode filter ORs every configured field,xCatalog > Barcode filter,High,,,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
+@td(BARCODE_GTIN_UNIQUE.gtin) is only findable via the gtin field; @td(BARCODE_CODE_OR.sku) is a different product findable only via the code field — together they prove the two configured fields are OR-ed, not the first one only.","store=@td(BARCODE_STORE.id), gtinCode=@td(BARCODE_GTIN_UNIQUE.gtin), skuCode=@td(BARCODE_CODE_OR.sku)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": [""gtin"",""code""]}
+[GQL-OP by_gtin]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""{{gtinCode}}\"""") {
+    totalCount
+    items { id code gtin }
+    filters { name isGenerated }
+  }
+}
+[GQL-EXEC by_gtin]
+[GQL-OP by_code]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""{{skuCode}}\"""") {
+    totalCount
+    items { id code gtin }
+    filters { name isGenerated }
+  }
+}
+[GQL-EXEC by_code]","[ERRORS label=by_gtin] errors[] empty {BL}
+[COUNT label=by_gtin] data.products.totalCount = 1 {SPEC}
+[DATA label=by_gtin] data.products.filters[?name=gtin].isGenerated = true {SPEC}
+[ERRORS label=by_code] errors[] empty {BL}
+[COUNT label=by_code] data.products.totalCount = 1 {SPEC}
+[DATA label=by_code] data.products.items.0.code = {{skuCode}} {OBSERVED}
+[DATA label=by_code] data.products.filters[?name=code].isGenerated = true {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:DT,Draft
+CAT-GQL-145,xCatalog barcode filter matches a configured short-text property,xCatalog > Barcode filter,High,,,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
+@td(BARCODE_PROP.propertyName) is the lowercased index field name for the ShortText property AGENT_TEST_BARCODE_UPC, exactly as GET .../fields lists it; @td(BARCODE_PROP.value) is set on @td(BARCODE_PROP.sku) only.","store=@td(BARCODE_STORE.id), prop=@td(BARCODE_PROP.propertyName), value=@td(BARCODE_PROP.value)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": [""@td(BARCODE_PROP.propertyName)""]}
+[GQL-OP by_prop]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""{{value}}\"""") {
+    totalCount
+    items { id code }
+    filters { name isGenerated }
+  }
+}
+[GQL-EXEC by_prop]","[ERRORS label=by_prop] errors[] empty {BL}
+[COUNT label=by_prop] data.products.totalCount = 1 {SPEC}
+[DATA label=by_prop] data.products.items.0.code = @td(BARCODE_PROP.sku) {OBSERVED}
+[DATA label=by_prop] data.products.filters[?name={{prop}}].isGenerated = true {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:EP,Draft
+CAT-GQL-146,xCatalog barcode configuration on one store does not change another store's results,xCatalog > Barcode filter,High,"BL-STORE-001, BL-SRCH-004",,Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite. {{STORE_ID}} (B2B-store) is left untouched by this case's setup — it must still have no barcode fields configured.,"store=@td(BARCODE_STORE.id), defaultStore={{STORE_ID}}, code=@td(BARCODE_GTIN_UNIQUE.gtin)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": [""gtin""]}
+[GQL-OP on_configured]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""{{code}}\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC on_configured]
+[GQL-OP on_default]
+query {
+  products(storeId: ""{{defaultStore}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""{{code}}\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC on_default]","[ERRORS label=on_configured] errors[] empty {BL}
+[COUNT label=on_configured] data.products.totalCount = 1 {SPEC}
+[ERRORS label=on_default] errors[] empty {BL}
+[COUNT label=on_default] data.products.totalCount = 0 {BL}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SCOPE · Technique:DT,Draft
+CAT-GQL-147,xCatalog barcode filter stops finding a product after its code is changed,xCatalog > Barcode filter,Medium,"BL-SRCH-003, BL-CAT-003",,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
+@td(BARCODE_REINDEX.sku) is DISPOSABLE per seed — this case changes its gtin from @td(BARCODE_REINDEX.gtin) to @td(BARCODE_REINDEX.newGtin) and restores it in Cleanup; do not run this case concurrently with another case referencing BARCODE_REINDEX (any field).
+Event-based indexation is OFF on vcst-qa and the scheduled IndexChangesJob can lag ~59 minutes with its own start-date semantics that a manual reindex request moves — so a plain fixed wait would observe environment configuration, not BL-SRCH-003. This case instead triggers a manual reindex of the changed product itself (POST /api/search/indexes/index) and polls until it settles, re-requesting the reindex once more if the first request no-ops because another indexation held the lock. BL-SRCH-003's 120s timing claim is therefore NOT asserted here — that number only holds when event-based indexation is ON, which this case does not control; only eventual index correctness is asserted.
+If the reconstructed POST body in Steps is rejected for a missing required field, GET the full product body first and re-POST it verbatim with only gtin changed (GET-merge-POST; the module's save verb is POST, not PUT, on /api/catalog/products). **Live-checked this amendment (2026-09-28, vcst-qa):** even a full, UNMODIFIED round-trip (`GET` then `POST` the identical body back) of `POST /api/catalog/products` currently returns `500 {""message"":""Object reference not set to an instance of an object.""}` for @td(BARCODE_REINDEX.id) AND for an unrelated product (@td(BARCODE_GTIN_UNIQUE.id)) — reproduced twice, so this is not this case's payload shape and not specific to one product. This reads as a candidate PRE-EXISTING platform defect on the products save path, independent of VCST-2945; it blocks this case's own setup mutation right now. Report it separately (do not file it as a VCST-2945 finding) and retry the GET-merge-POST step once it is fixed; until then this case's gtin-change step is expected to fail at `set_new_gtin`, which is a setup failure (BLOCKED), not a verdict on the barcode reindex behavior under test.","store=@td(BARCODE_STORE.id), product=@td(BARCODE_REINDEX.sku)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": [""gtin""]}
+[GQL-OP before_change]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""@td(BARCODE_REINDEX.gtin)\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC before_change]
+[REST-OP get_product]
+GET {{BACK_URL}}/api/catalog/products/@td(BARCODE_REINDEX.id)
+[REST-EXEC get_product]
+[REST-CAPTURE get_product.body.name → REINDEX_NAME]
+[REST-CAPTURE get_product.body.code → REINDEX_CODE]
+[REST-CAPTURE get_product.body.catalogId → REINDEX_CATALOG_ID]
+[REST-CAPTURE get_product.body.categoryId → REINDEX_CATEGORY_ID]
+[REST-OP set_new_gtin]
+POST {{BACK_URL}}/api/catalog/products
+Content-Type: application/json
+Body: [{""id"": ""@td(BARCODE_REINDEX.id)"", ""name"": ""{{REINDEX_NAME}}"", ""code"": ""{{REINDEX_CODE}}"", ""catalogId"": ""{{REINDEX_CATALOG_ID}}"", ""categoryId"": ""{{REINDEX_CATEGORY_ID}}"", ""gtin"": ""@td(BARCODE_REINDEX.newGtin)"", ""variations"": null}]
+[REST-EXEC set_new_gtin]
+[REST-OP reindex_request_1]
+POST {{BACK_URL}}/api/search/indexes/index
+Content-Type: application/json
+Body: [{""documentType"": ""Product"", ""documentIds"": [""@td(BARCODE_REINDEX.id)""]}]
+[REST-EXEC reindex_request_1]
+[GQL-OP after_new]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""@td(BARCODE_REINDEX.newGtin)\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC after_new]
+[WAIT until=after_new timeout=90 interval=10] data.products.totalCount = 1
+[REST-OP reindex_request_2]
+POST {{BACK_URL}}/api/search/indexes/index
+Content-Type: application/json
+Body: [{""documentType"": ""Product"", ""documentIds"": [""@td(BARCODE_REINDEX.id)""]}]
+[REST-EXEC reindex_request_2]
+[WAIT until=after_new timeout=90 interval=10] data.products.totalCount = 1
+[GQL-OP after_old]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""@td(BARCODE_REINDEX.gtin)\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC after_old]","[ERRORS label=before_change] errors[] empty {BL}
+[COUNT label=before_change] data.products.totalCount = 1 {SPEC}
+[ERRORS label=after_new] errors[] empty {BL}
+[COUNT label=after_new] data.products.totalCount = 1 {BL}
+[ERRORS label=after_old] errors[] empty {BL}
+[COUNT label=after_old] data.products.totalCount = 0 {BL}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[REST-OP restore_gtin]
+POST {{BACK_URL}}/api/catalog/products
+Content-Type: application/json
+Body: [{""id"": ""@td(BARCODE_REINDEX.id)"", ""name"": ""{{REINDEX_NAME}}"", ""code"": ""{{REINDEX_CODE}}"", ""catalogId"": ""{{REINDEX_CATALOG_ID}}"", ""categoryId"": ""{{REINDEX_CATEGORY_ID}}"", ""gtin"": ""@td(BARCODE_REINDEX.gtin)"", ""variations"": null}]
+[REST-EXEC restore_gtin]
+[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:STALE · Technique:ST,Draft
+CAT-GQL-148,"xCatalog barcode filter treats quotes, colons and whitespace-only values safely",xCatalog > Barcode filter,High,BL-SRCH-005,ECL-3.1,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
+@td(BARCODE_SPECIAL.value) is set on @td(BARCODE_SPECIAL.sku) (the same property as @td(BARCODE_PROP.propertyName)) and contains a literal double-quote and colon. The GQL-VARS filter string below is the same value after the escaping escapeFilterSyntaxValue applies client-side (one backslash-quote pair per literal quote) — hand-derived from the alias's own value, not a separate fixture.","store=@td(BARCODE_STORE.id), special=@td(BARCODE_SPECIAL.value)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": [""@td(BARCODE_PROP.propertyName)""]}
+[GQL-OP special_value]
+query($filter: String!) {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: $filter) {
+    totalCount
+    items { id code }
+  }
+}
+[GQL-VARS special_value] {""filter"":""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""QR:2945\\\""SN\\\""07\""""}
+[GQL-EXEC special_value]
+[GQL-OP whitespace_only]
+query($filter: String!) {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: $filter) {
+    totalCount
+  }
+}
+[GQL-VARS whitespace_only] {""filter"":""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""   \""""}
+[GQL-EXEC whitespace_only]","[ERRORS label=special_value] errors[] empty {BL}
+[COUNT label=special_value] data.products.totalCount = 1 {SPEC}
+[ERRORS label=whitespace_only] errors[] empty {BL}
+[COUNT label=whitespace_only] data.products.totalCount = 0 {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:BVA,Draft
+CAT-GQL-149,xCatalog barcode filter facet counts follow the barcode result,xCatalog > Barcode filter,Medium,BL-SRCH-001,ECL-3.2,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
+@td(BARCODE_GTIN_SHARED.count) products share one GTIN — the case compares term-facet counts under the barcode filter against the same facet on the whole (unfiltered) catalog to falsify ""facet counts describe the whole catalog"".","store=@td(BARCODE_STORE.id), code=@td(BARCODE_GTIN_SHARED.gtin)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": [""gtin""]}
+[GQL-OP shared_barcode]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""{{code}}\"""" facet: ""productType"") {
+    totalCount
+    term_facets { name terms { term count } }
+  }
+}
+[GQL-EXEC shared_barcode]
+[GQL-CAPTURE shared_barcode.data.products.term_facets.0.terms.0.term → FACET_TERM]
+[GQL-OP whole_catalog]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO)"" facet: ""productType"") {
+    totalCount
+    term_facets { name terms { term count } }
+  }
+}
+[GQL-EXEC whole_catalog]","[ERRORS label=shared_barcode] errors[] empty {BL}
+[COUNT label=shared_barcode] data.products.totalCount = @td(BARCODE_GTIN_SHARED.count) {OBSERVED}
+[DATA label=shared_barcode] data.products.term_facets.0.terms.0.count <= data.products.totalCount {BL}
+[ERRORS label=whole_catalog] errors[] empty {BL}
+[DATA label=whole_catalog] data.products.term_facets.0.terms[?term={{FACET_TERM}}].count > @td(BARCODE_GTIN_SHARED.count) {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EP,Draft
+CAT-GQL-150,xCatalog barcode filter treats asterisk and question mark in the scanned value literally,xCatalog > Barcode filter,High,BL-SRCH-005,,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
+Candidate defect B1 (3x, not yet filed): the live pre-fix build treats '*' and '?' as wildcards rather than literal characters. This case asserts the pr113 SPEC (""compared exactly as term filters"") — it is expected to FAIL until that defect is fixed; a FAIL here is the finding, not an authoring error.","store=@td(BARCODE_STORE.id), code=@td(BARCODE_GTIN_UNIQUE.gtin)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": [""gtin""]}
+[GQL-OP exact]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""{{code}}\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC exact]
+[GQL-OP star_only]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""*\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC star_only]
+[GQL-OP prefix_star]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""294510000001*\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC prefix_star]
+[GQL-OP question_mark]
+query {
+  products(storeId: ""{{store}}"" currencyCode: ""{{CURRENCY_CODE}}"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.{{CURRENCY_CODE}}:(0 TO) barcode:\""294510000001?\"""") {
+    totalCount
+  }
+}
+[GQL-EXEC question_mark]","[ERRORS label=exact] errors[] empty {BL}
+[COUNT label=exact] data.products.totalCount = 1 {SPEC}
+[ERRORS label=star_only] errors[] empty {BL}
+[COUNT label=star_only] data.products.totalCount = 0 {SPEC}
+[ERRORS label=prefix_star] errors[] empty {BL}
+[COUNT label=prefix_star] data.products.totalCount = 0 {SPEC}
+[ERRORS label=question_mark] errors[] empty {BL}
+[COUNT label=question_mark] data.products.totalCount = 0 {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/catalog/barcode-search/store/{{store}}]
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EG,Draft
