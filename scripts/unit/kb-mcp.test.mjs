@@ -65,12 +65,12 @@ test('a protocol version we do not speak gets ours back rather than a failure', 
   } finally { q.done(); }
 });
 
-test('tools/list offers exactly the five verbs PLAN §4 puts on the MCP door', async () => {
+test('tools/list offers exactly the six verbs on the MCP door — PLAN §4 five plus STEP 6 none', async () => {
   const q = scratch('list');
   try {
     const r = await fixtureServer(q.dir).handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
     assert.deepEqual(r.result.tools.map((t) => t.name).sort(),
-      ['kb_ask', 'kb_capture', 'kb_confirm', 'kb_dispute', 'kb_show']);
+      ['kb_ask', 'kb_capture', 'kb_confirm', 'kb_dispute', 'kb_none', 'kb_show']);
     // push / reindex / stat are CLI-only: the push happens by itself when the process ends, and
     // the other two are operator repairs against a checkout.
     assert.ok(!r.result.tools.some((t) => /push|reindex|stat/.test(t.name)));
@@ -80,7 +80,8 @@ test('tools/list offers exactly the five verbs PLAN §4 puts on the MCP door', a
 test('every tool schema declares its required arguments — a tool that cannot be called correctly is worse than absent', () => {
   for (const t of TOOLS) {
     assert.equal(t.inputSchema.type, 'object', `${t.name} schema`);
-    assert.ok(t.inputSchema.required?.length, `${t.name} declares required fields`);
+    // DECLARED, even when empty: kb_none takes nothing it cannot do without, and says so.
+    assert.ok(Array.isArray(t.inputSchema.required), `${t.name} declares its required fields`);
     for (const field of t.inputSchema.required) {
       assert.ok(t.inputSchema.properties[field], `${t.name}.${field} is described`);
     }

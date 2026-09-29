@@ -53,7 +53,7 @@ test('a synthetic run writes real lines, marked — it is not silenced', async (
   // is measuring a path nobody uses. What it must not do is enter the demand panels.
   await withQueue(async (env) => {
     const r = await ask(ANSWERED, opened(), { env, via: 'cli' });
-    assert.equal(r.state, 'answer', 'the benchmark still gets a real answer');
+    assert.equal(r.state, 'candidates', 'the benchmark still gets real candidates');
     const [line] = await linesOf(env);
     assert.equal(line.synthetic, true);
     assert.equal(line.kind, 'ask');

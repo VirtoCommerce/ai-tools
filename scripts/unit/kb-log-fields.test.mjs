@@ -60,21 +60,17 @@ test('an answered ask records each hit’s score, positionally against matched',
   });
 });
 
-test('a MISS records the best candidate that did not clear the floor', async () => {
-  // The field that cannot be checked by reading the code: it needs a question the base scores
-  // something on and admits nothing for.
+test('a question the old floor REFUSED now reaches the agent as candidates — there is no floor to miss under', async () => {
+  // floor-1 scored something on MISSED_NEAR and admitted nothing, and logged the best rejected entry
+  // as `nearMiss`. Under two-stage-1 that entry is a candidate and the AGENT judges it; a floor that
+  // no longer exists has no near-miss to record.
   await withQueue(async (env) => {
     const r = await ask(MISSED_NEAR, opened(), { env, via: 'cli' });
-    assert.equal(r.state, 'miss');
+    assert.equal(r.state, 'candidates');
     const [line] = await linesOf(env);
-    assert.equal(line.state, 'miss');
-    assert.deepEqual(line.matched, []);
-    assert.ok(line.nearMiss, 'something scored and was rejected — that is the interesting miss');
-    assert.match(line.nearMiss.id, /^KB-/);
-    assert.ok(line.nearMiss.score > 0);
-    assert.ok(line.nearMiss.coverage > 0 && line.nearMiss.coverage < 1);
-    // Two decimal places, because a human reads it and 0.45454545 is not a number anybody weighs.
-    assert.equal(String(line.nearMiss.coverage), String(Math.round(line.nearMiss.coverage * 100) / 100));
+    assert.ok(line.matched.length > 0);
+    assert.ok(!('nearMiss' in line));
+    assert.deepEqual(r.candidates.map((c) => c.id), line.matched, 'what the agent judges is what the line records');
   });
 });
 
@@ -435,7 +431,7 @@ test('a capture with nothing related prints no related block at all', async () =
 test('an answer records WHY each hit matched — the coordinate door made measurable', async () => {
   await withQueue(async (env) => {
     const r = await ask(ANSWERED, opened(), { env, via: 'cli' });
-    assert.equal(r.state, 'answer');
+    assert.equal(r.state, 'candidates');
     const line = (await linesOf(env)).at(-1);
 
     assert.equal(line.matchedBy.length, line.matched.length, 'positional against matched');
@@ -603,7 +599,7 @@ test('an ask records the deployment the question was about when the caller names
     const lines = await linesOf(env);
     // It rides on the ANSWER and on the MISS alike: a miss on a stand is the more interesting of
     // the two, because "nobody has written this down about THAT stand" is the panel's whole job.
-    assert.equal(lines[0].state, 'answer');
+    assert.equal(lines[0].state, 'candidates');
     assert.equal(lines[0].deployment, 'vcptcore_stable');
     assert.equal(lines[1].state, 'miss');
     assert.equal(lines[1].deployment, 'vcst_qa');
@@ -850,7 +846,7 @@ test('a session with NO write token writes no handle and still works end to end'
   await withKnownWho(async (env) => {
     const answered = await ask(ANSWERED, opened(), { env, via: 'cli' });
     const missed = await ask(MISSED_COLD, opened(), { env, via: 'cli' });
-    assert.equal(answered.state, 'answer');
+    assert.equal(answered.state, 'candidates');
     assert.equal(missed.state, 'miss');
     for (const l of await linesOf(env)) {
       assert.ok(!('who' in l), 'absent — never null, never "unknown"');
@@ -904,7 +900,7 @@ test('a lookup is never attempted while logging, even with a transport that expl
   try {
     await withKnownWho(async (env) => {
       const r = await ask(ANSWERED, opened(), { env, via: 'cli' });
-      assert.equal(r.state, 'answer');
+      assert.equal(r.state, 'candidates');
       assert.equal((await linesOf(env))[0].who, HANDLE);
     });
   } finally {

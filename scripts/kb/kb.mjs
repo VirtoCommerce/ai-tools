@@ -22,8 +22,8 @@ import { flush, sweepIfDue } from './core/push.mjs';
 import { pushConfirmRequired, queueDir } from './core/queue.mjs';
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
-import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
-import { TOPIC_MAX, ask, capture, confirm, dispute, reindex, show, stat } from './core/verbs.mjs';
+import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
+import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
@@ -46,6 +46,7 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- ask "<question>" [--deployment <env>] [--topic "<what you're working on>"]
                                  [--base <dir>] [--top 3] [--json]
   npm run kb -- show KB-XXXXXXXX [--topic "<...>"] [--base <dir>] [--json]
+  npm run kb -- none [--ask <handle>] [--topic "<...>"] [--json]   none of the candidates answered
   npm run kb -- capture --subject "<one line>" --question "<the question it answers>"
                         --claim "<the claim, in prose>" --deployment <env>
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
@@ -56,7 +57,10 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
   npm run kb -- push [--dry-run] [--no-sweep]        send the queue to the base as ONE commit
 
-exit: 0 answered · 1 no coverage (or capture refused as a duplicate) · 2 no base · 3 unreachable
+exit: 0 candidates / answered · 1 nothing matched (or capture refused as a duplicate) · 2 no base · 3 unreachable
+
+ask returns up to 10 CANDIDATES and opens the first --top in full. You judge them: \`show\` the one that
+answers (that records your pick) and cite its id, or say \`none\` -- then go find out and \`capture\`.
 
 capture / confirm / dispute QUEUE their change locally. Nothing is sent by those commands.
 \`push\` sends everything queued — this session's lines plus any idle file left by an earlier one —
@@ -180,6 +184,13 @@ async function main(argv) {
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(showLines(r));
     return exitFor(r.state);
+  }
+
+  if (verb === 'none') {
+    const r = await none({ ask: typeof args.flags.ask === 'string' ? args.flags.ask : null, via: VIA, topic: args.flags.topic });
+    if (json) out(JSON.stringify(r, null, 2));
+    else emit(noneLines(r));
+    return r.state === 'disabled' ? EXIT.NO_BASE : exitFor(r.state);
   }
 
   if (verb === 'capture') {

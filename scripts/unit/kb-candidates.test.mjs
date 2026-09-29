@@ -6,7 +6,7 @@
 // not tested here; the labelled set is its test.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { candidates, corpus, foldPlural, terms } from '../kb/bench/candidates.mjs';
+import { candidates, corpus, foldPlural, terms } from '../kb/core/candidates.mjs';
 import { anchorWeight } from '../kb/core/rank.mjs';
 import { normalizeRow } from '../kb/core/index-load.mjs';
 import { headlines, majority, parseVerdict } from '../kb/bench-two-stage.mjs';
