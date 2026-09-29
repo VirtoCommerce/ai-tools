@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VCST-6056 Fix Evidence</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; build strip, then before/after, then per-path table, then payloads. */
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --fg: #1b2330; --muted: #5b6676; --line: #d9dee6;
+  --accent: #2f5f98; --pass: #1d7a4a; --pass-bg: #e3f3ea; --stale: #a3461f; --stale-bg: #fbeae1;
+  --code-bg: #eef1f5;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161d; --surface: #1a2029; --fg: #e3e8ef; --muted: #9aa5b4; --line: #2c3542;
+  --accent: #7fa8dc; --pass: #6fcf97; --pass-bg: #173226; --stale: #f0a27a; --stale-bg: #3a2218;
+  --code-bg: #0f1319; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1a2029; --fg: #e3e8ef; --muted: #9aa5b4; --line: #2c3542;
+  --accent: #7fa8dc; --pass: #6fcf97; --pass-bg: #173226; --stale: #f0a27a; --stale-bg: #3a2218;
+  --code-bg: #0f1319; color-scheme: dark }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); }
+main { max-width: 920px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 48px; display: grid; gap: 28px; }
+h1 { font-size: 1.6rem; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.1rem; margin: 0 0 10px; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.head { display: grid; gap: 10px; }
+.badge { display: inline-block; font: 600 .78rem/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase;
+  padding: 6px 10px; border-radius: 4px; background: var(--pass-bg); color: var(--pass); width: fit-content; }
+.strip { display: flex; flex-wrap: wrap; gap: 8px 20px; font: .85rem/1.4 var(--f-mono); color: var(--muted); }
+.strip b { color: var(--fg); font-weight: 600; }
+section { display: grid; gap: 10px; min-width: 0; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: .78rem; letter-spacing: .05em; text-transform: uppercase; }
+tr:last-child td { border-bottom: 0; }
+code, pre { font-family: var(--f-mono); font-size: .82rem; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+pre { margin: 0; padding: 14px; background: var(--code-bg); border-radius: 6px; overflow-x: auto; line-height: 1.5; }
+.ok { color: var(--pass); font-weight: 600; }
+.old { color: var(--stale); font-weight: 600; }
+.cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.cmp > div { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.tag { font: 600 .74rem/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; }
+.tag.old { color: var(--stale); } .tag.ok { color: var(--pass); }
+ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+footer { font-size: .82rem; color: var(--muted); display: grid; gap: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <header class="head">
+    <span class="badge">Verified with notes</span>
+    <h1>VCST-6056: UCP create_cart validates the combined quantity</h1>
+    <div class="strip">
+      <span>env <b>vcst-qa</b></span>
+      <span>UCP <b>3.1007.0-pr-9-91ca</b></span>
+      <span>PR <b>vc-module-ucp#9 @ 91ca741</b> (open)</span>
+      <span>XCart <b>3.1037.0-pr-141-fb27</b></span>
+      <span>Inventory <b>3.1008.0</b></span>
+      <span>Platform <b>3.1073.0-pr-3121-9965</b></span>
+      <span>verified <b>2026-09-29</b></span>
+    </div>
+    <p>Before the fix, create_cart checked each <code>line_items[]</code> entry against stock on its own and merged entries for the same product afterwards. Splitting 9 units into 4 + 5 on a product with 5 in stock gave a successful cart holding 9. The fix consolidates duplicate product ids (case-insensitively) before the first XCart mutation and sends the total, so XCart's stock rule sees 9 and the VCST-6054 refusal applies.</p>
+  </header>
+
+  <section>
+    <h2>Before and after: create_cart, entries 4 + 5, stock 5</h2>
+    <div class="cmp">
+      <div>
+        <span class="tag old">Pre-fix · UCP 3.1006.0-pr-7-612c</span>
+        <p class="muted">Source: the ticket's control table and reports/bugs/open/medium/BUG-ucp-stock-limit-bypassed-by-splitting-line-entries.md (2026-09-23). Response bodies were not kept, so the key fields are quoted.</p>
+        <pre>ucp.status                   = success
+cart.line_items[0].quantity  = 9      (stock 5)
+messages[]                   = []
+cart.messages[]              = []
+line_items[0].messages[0]    = PRODUCT_QTY_CHANGED
+  "The product available qty is changed"
+create_checkout              = success, $134.91
+checkout_and_handoff         = ok: true, continue_url minted</pre>
+      </div>
+      <div>
+        <span class="tag ok">Fixed · UCP 3.1007.0-pr-9-91ca</span>
+        <p class="muted">Source: evidence/VCST-6056-item01-split-4plus5-run1.json (MCP structuredContent). Identical on runs 2 and 3; REST returned 409 with the same body.</p>
+<pre>{
+  "is_error": true,
+  "code": "insufficient_stock",
+  "status_code": 409,
+  "message": "The requested operation could not be fulfilled.
+    Only 5 units of this product are currently available. …",
+  "details": {
+    "retryable": true,
+    "product_id": "d666d89d-…-5f4d363f0ee5",
+    "requested_quantity": 9,
+    "available_quantity": 5,
+    "operation_rejected": true
+  }
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Checklist</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Scenario</th><th>Outcome</th><th>requested / available</th><th>Runs</th></tr></thead>
+      <tbody>
+        <tr><td>Entries 4 + 5, same product (MCP + REST)</td><td><code>insufficient_stock</code>, REST 409</td><td>9 / 5</td><td class="ok">3/3</td></tr>
+        <tr><td>Nine entries of 1</td><td><code>insufficient_stock</code>, REST 409</td><td>9 / 5</td><td class="ok">3/3</td></tr>
+        <tr><td>Control: single entry 9, single entry 6</td><td><code>insufficient_stock</code>, REST 409</td><td>9 / 5 · 6 / 5</td><td class="ok">pass</td></tr>
+        <tr><td>Valid duplicates 2 + 3</td><td>success, one line of 5, <code>inventory_errors: []</code></td><td>5 / 5</td><td class="ok">pass</td></tr>
+        <tr><td>update_cart to 4 + 5 on that cart, then create_checkout, update_checkout, checkout_and_handoff</td><td>all refused, no continue_url (line keeps qty 9: documented non-atomic update)</td><td>9 / 5</td><td class="ok">pass</td></tr>
+        <tr><td>Correct the same cart to 2</td><td>errors cleared, checkout and handoff succeed (URL not followed)</td><td>2 / 5</td><td class="ok">pass</td></tr>
+        <tr><td>Entries 2147483647 + 1</td><td><code>invalid_request</code>, 400, no cart mutation</td><td>n/a</td><td class="ok">pass</td></tr>
+        <tr><td>Mixed products [A 2, B 1, A 1]</td><td>two lines, A = 3, B = 1</td><td>n/a</td><td class="ok">pass</td></tr>
+        <tr><td>Same id, different letter case [lower 4, UPPER 5]</td><td><code>insufficient_stock</code>, REST 409</td><td>9 / 5</td><td class="ok">3/3</td></tr>
+        <tr><td>BL-CART-002 across all of the above; 16 refused carts checked in the back office</td><td>no success envelope with a line above stock; refused carts hold 0 items</td><td>n/a</td><td class="ok">pass</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Notes</h2>
+    <ul>
+      <li><span class="old">Low, not filed</span>: consolidation keeps the first entry's spelling of the product id, and catalog lookup is case-sensitive. <code>[UPPER 4, lower 5]</code> and even the in-stock <code>[UPPER 2, lower 3]</code> return success with an empty cart and <code>CART_PRODUCT_UNAVAILABLE</code>, so a valid lowercase entry is lost. Nothing is oversold. Draft: reports/bugs/open/low/BUG-ucp-consolidation-keeps-first-id-spelling-drops-valid-line-VCST-6056.md.</li>
+      <li>update_cart refusals list the same error twice in <code>details.errors[]</code>. This predates the fix (seen in VCST-6054 evidence).</li>
+      <li>A store promotion's $0 gift line appears in the platform cart but not in UCP <code>line_items</code>.</li>
+      <li>checkout_and_handoff took 2.66 s; create_checkout about 1.8 s.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <span>Evidence: reports/tickets/Sprint26-19/VCST-6056/evidence/ (22 redacted request/response files; Authorization, tokens, continue_url and ucp_session values removed).</span>
+    <span>Anonymous carts only. The shared low-stock fixture was read, never changed.</span>
+    <span>The fix is verified on the PR branch build. Re-check after merge if the merged artifact differs from 91ca741.</span>
+  </footer>
+</main>
+</body>
+</html>

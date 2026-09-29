@@ -1,6 +1,6 @@
 # [Platform][Admin SPA] `setError` throws `TypeError ... 'join'` when an error body has no `errors` list — View details comes up empty
 
-## Status: READY_TO_SUBMIT — filed as VCST-6086 (https://virtocommerce.atlassian.net/browse/VCST-6086)
+## Status: CONFIRMED — VCST-6086 re-reproduced 2026-09-29; fix PR https://github.com/VirtoCommerce/vc-platform/pull/3125 (In review)
 
 **Severity:** Low · **Env:** vcst-qa @ Platform `3.1073.0-pr-3121-9965`, `VirtoCommerce.Loyalty 3.1009.0-pr-18-4411` · seen 2026-09-25, 5/5 rejected saves (POST and PUT)
 
