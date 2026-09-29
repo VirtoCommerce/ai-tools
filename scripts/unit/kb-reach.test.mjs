@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   OWN_REACH_EVERY_MS, REACH_IDLE_MS, advanceReach, countToolUses, dropReach, idleReaches, lineTouches, lineWork, markSent,
-  ownReachDue, promptsIn, readReach, reachLine, reachPath, sentMark, sentPath, sessionKeyOf, unsent,
+  markTried, ownReachDue, promptsIn, readReach, reachLine, reachPath, sentMark, sentPath, sessionKeyOf, unsent, workIn,
 } from '../kb/core/reach.mjs';
 import { reach } from '../kb/core/report-analyse.mjs';
 import { LOGGED } from '../kb/core/queue.mjs';
@@ -505,7 +505,9 @@ test('the Stop hook keys reach on the QUEUE’s session id, never on the payload
   assert.match(src, /sessionId\(env\)/, 'the id comes from the same derivation the queue uses');
   assert.doesNotMatch(src, /payload[?.]*\.session_id/, 'the hook never reads the payload id itself');
   // And its own cadence never spawns a push that has no token to push with (VCST-6091 review 2).
-  assert.match(src, /ownReachDue\(dir, session\) && Boolean\(writeToken\(env\)\.token\)/);
+  assert.match(src, /ownReachDue\(dir, session, \{ state: advanced \}\) && Boolean\(writeToken\(env\)\.token\)/);
+  // …and paces itself by the ATTEMPT, so a push that stops early is not restarted every turn (review 3).
+  assert.match(src, /if \(mine\) markTried\(dir, session\)/);
 });
 
 test('a session sends its own counters at once, then only when they grew and the interval passed (VCST-6091)', () => {
@@ -557,7 +559,8 @@ test('legacy pid-keyed session lines are counted as the sessions they were, not 
   ]);
   assert.equal(r.accounted, 3, 'three sessions, not five');
   assert.equal(r.tools, 40 + 7 + 5, 'each counted once, at its fullest — not 10 + 25 + 40');
-  assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p1003', 'p1003']);
+  // Two groups sharing a pid are two labels, each with its start (review 3), never one label twice.
+  assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p1003@2026-09-28T08:00', 'p1003@2026-09-28T08:55']);
 });
 
 test('review 7: a replaced transcript CARRIES its work — the session never shrinks, so its new work is published', () => {
@@ -601,7 +604,7 @@ test('review 2.5: a legacy row whose key lives only in `_session` is still named
     { kind: 'session', _session: 'p3001', tools: 5, turns: 1, touchAt: [], firstAt: '2026-09-20T08:00:00Z', who: 'octo-a' },
     { kind: 'session', session: 'f3d05dd3', tools: 5, turns: 1, touchAt: [], firstAt: '2026-09-20T09:00:00Z' },
   ]);
-  assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p3001']);
+  assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p3001@2026-09-20T08:00']);
 });
 
 test('one definition of work and of session identity, shared by writer and report', () => {
@@ -622,4 +625,55 @@ test('review 1: a collapsed legacy group still joins its asks and counts them as
   assert.equal(r.accounted, 1);
   assert.equal(r.rows[0].asks, 2, 'asks under every member key');
   assert.equal(r.unaccounted, 0);
+});
+
+test('review 3.1: a replaced transcript carries the PARENT only — subagent files are recounted, not carried too', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-sub-'));
+  try {
+    const t = join(dir, 'sess.jsonl');
+    const subDir = join(dir, 'sess', 'subagents');
+    mkdirSync(subDir, { recursive: true });
+    writeFileSync(join(subDir, 'agent-1.jsonl'), `${turn('Read', 'Read', 'Read')}`, 'utf8');
+    writeFileSync(t, `${turn('Read', 'Edit')}${turn('Bash')}`, 'utf8');
+    advanceReach({ dir, session: 'sub00001', transcriptPath: t });
+    assert.equal(workIn(readReach(dir, 'sub00001')), 3 + 3, 'three parent calls, three subagent calls');
+    writeFileSync(t, `${turn('Read')}`, 'utf8');                      // the parent's transcript is replaced
+    const after = advanceReach({ dir, session: 'sub00001', transcriptPath: t });
+    assert.equal(workIn(after), 3 + 1 + 3, '3 carried + 1 new, and the subagent’s 3 counted ONCE');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('review 3.2: the hook’s own attempt paces it, and does not stop the push it started', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-tried-'));
+  try {
+    const now = Date.now();
+    writeFileSync(reachPath(dir, 'try00001'), JSON.stringify({ session: 'try00001', cursor: 1, tools: 9, turns: 2, touchAt: [] }), 'utf8');
+    assert.equal(ownReachDue(dir, 'try00001', { now }), true);
+    markTried(dir, 'try00001');                                       // the push then stops early, marking nothing
+    assert.equal(ownReachDue(dir, 'try00001', { now }), false, 'the next turn does not start another');
+    assert.equal(ownReachDue(dir, 'try00001', { now, attempts: false }), true, 'but the push that was started still sends');
+    assert.equal(ownReachDue(dir, 'try00001', { now: now + OWN_REACH_EVERY_MS + 1_000 }), true, 'and the cadence resumes');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('review 3.5: one legacy session is ONE group even when some of its lines are unsigned', () => {
+  const s = (session, tools, who) => ({ kind: 'session', session, tools, turns: 1, touchAt: [], firstAt: '2026-09-28T08:00:00.123Z', ...(who ? { who } : {}) });
+  const r = reach([s('p4001', 10), s('p4002', 20, 'octo-a'), s('p4003', 30)]);
+  assert.equal(r.accounted, 1);
+  assert.equal(r.tools, 30);
+});
+
+test('review 3.7: a legacy ask credited to a group outside the window is unaccounted, not lost', () => {
+  const r = reach([
+    { kind: 'session', session: 'p5001', tools: 5, turns: 1, touchAt: [], firstAt: '2026-09-01T08:00:00Z', who: 'octo-a' },
+    { kind: 'session', session: 'p5001', tools: 7, turns: 1, touchAt: [], firstAt: '2026-09-28T08:00:00Z', who: 'octo-b' },
+    { kind: 'ask', _session: 'p5001', who: 'octo-a', at: '2026-09-01T08:30:00Z' },
+  ], { since: '2026-09-20T00:00:00Z' });
+  assert.equal(r.accounted, 1);
+  assert.equal(r.rows[0].asks, 0);
+  assert.equal(r.unaccounted, 1, 'counted somewhere, as the same case with a real key would be');
 });

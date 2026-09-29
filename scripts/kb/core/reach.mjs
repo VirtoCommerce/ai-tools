@@ -207,9 +207,15 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   // fuller earlier line won every comparison (`fullestSessionLines`, `reach()`), and nothing it did
   // afterwards was ever visible. `carriedTools`/`carriedTouches` hold everything before the newest
   // document, so the session's work never decreases.
-  const priorLine = restarted ? reachLine(prior) : null;
+  //
+  // ONLY THE PARENT'S OWN CALLS ARE CARRIED. The subagent transcripts are separate files that were not
+  // replaced, and this same turn recounts them from their start (`advanceSubagents(null, …)` below),
+  // so carrying their totals as well counted every subagent call twice (VCST-6091 review 3).
   const carried = restarted
-    ? { tools: lineWork(priorLine), touches: lineTouches(priorLine) }
+    ? {
+      tools: Number(prior.carriedTools ?? 0) + Number(prior.tools ?? 0),
+      touches: Number(prior.carriedTouches ?? 0) + (Array.isArray(prior.touchAt) ? prior.touchAt.length : 0),
+    }
     : { tools: Number(prior.carriedTools ?? 0), touches: Number(prior.carriedTouches ?? 0) };
   const from = restarted ? 0 : prior.cursor;
   const base = restarted ? { ...prior, tools: 0, touchAt: [] } : prior;
@@ -376,13 +382,18 @@ export const isLegacyProcessKey = (id) => LEGACY_PROCESS_KEY.test(String(id ?? '
  * every `Stop` hook, so ONE session appears as one line per turn, each recounting its transcript from
  * the start: 126 lines, 125 of them `turns: 1`, over 13 real sessions, for one operator on
  * 2026-09-28. And a pid is not unique across machines, so one key can hold two people. What IS stable
- * across those lines is the transcript's own start (`firstAt`, read from the transcript itself) and
- * the operator, so that pair is the session.
+ * across those lines is the transcript's own start (`firstAt`, read from the transcript itself, to
+ * the millisecond), so that is the session.
+ *
+ * NOT THE OPERATOR AS WELL, which the first version added and review 3 took out: a cold identity
+ * cache leaves some of one session's lines unsigned, and keying by `who` split that one session into
+ * a signed group and an unsigned one. Two people's transcripts starting in the same millisecond is
+ * not a case worth a second key; one session's lines disagreeing about `who` is measured and common.
  */
 export function sessionKeyOf(l) {
   const id = l?.session ?? l?._session;
   if (!id) return null;
-  return isLegacyProcessKey(id) && l.firstAt ? `pid~${l.who ?? '?'}~${l.firstAt}` : id;
+  return isLegacyProcessKey(id) && l.firstAt ? `pid~${l.firstAt}` : id;
 }
 
 /**
@@ -396,6 +407,7 @@ export function sessionKeyOf(l) {
 export function dropReach(dir, session) {
   try { rmSync(reachPath(dir, session), { force: true }); } catch { /* already gone */ }
   try { rmSync(sentPath(dir, session), { force: true }); } catch { /* nothing was sent */ }
+  try { rmSync(triedPath(dir, session), { force: true }); } catch { /* nothing was tried */ }
   try { writeFileSync(tombstonePath(dir, session), '', 'utf8'); } catch { /* costs a label, not a count */ }
 }
 
@@ -447,22 +459,45 @@ export function unsent(dir, state) {
   return workIn(state) > mark.work || Number(state.turns ?? 0) > mark.turns;
 }
 
+/** `<session>.reach.tried` — when the hook last started a push for our own counters. */
+export const triedPath = (dir, session) => join(dir, `${session}.reach.tried`);
+
+/**
+ * Record that the hook started a push for our own counters, WHATEVER that push then does.
+ *
+ * The send mark alone could not pace the hook: it is written deep inside the push, so a push that
+ * stops early — a refused or unwritable base, a held queue — never writes it, `ownReachDue` stays
+ * true, and every turn starts another push that stops the same way (VCST-6091 review 3). The attempt
+ * is the cadence, the way `.last-flush` already is for the sweep.
+ */
+export function markTried(dir, session) {
+  try { writeFileSync(triedPath(dir, session), '', 'utf8'); } catch { /* costs one early retry, no more */ }
+}
+
+/** Milliseconds since the path was last written, or Infinity if it never was. */
+function ageOf(path, now) {
+  try { return now - statSync(path).mtimeMs; } catch { return Infinity; }
+}
+
 /**
  * Should this session push its own counters now, with nothing else to send?
  *
- * Only when there is something unsent, and either nothing was ever sent or the last send is `everyMs`
- * old. The first publication is immediate, so a short session is in the base while it is still running
- * rather than whenever the next session starts.
+ * Only when there is something unsent, and neither the last send nor the last attempt is younger than
+ * `everyMs`. The first publication is immediate, so a short session is in the base while it is still
+ * running rather than whenever the next session starts. `state` is the caller's copy when it already
+ * holds one — the hook has just written it — so the file is not read again.
+ *
+ * `attempts: false` is the PUSH's question. The hook marks the attempt immediately before it starts
+ * the push, so a push that counted attempts would find one a millisecond old and publish nothing —
+ * the very push the attempt was made for.
  */
-export function ownReachDue(dir, session, { now = Date.now(), everyMs = OWN_REACH_EVERY_MS } = {}) {
-  const state = readReach(dir, session);
+export function ownReachDue(dir, session, {
+  now = Date.now(), everyMs = OWN_REACH_EVERY_MS, state = readReach(dir, session), attempts = true,
+} = {}) {
   if (!state || workIn(state) === 0) return false;
   if (!unsent(dir, state)) return false;
-  try {
-    return now - statSync(sentPath(dir, session)).mtimeMs >= everyMs;
-  } catch {
-    return true; // never sent
-  }
+  const sent = ageOf(sentPath(dir, session), now);
+  return (attempts ? Math.min(sent, ageOf(triedPath(dir, session), now)) : sent) >= everyMs;
 }
 
 /** `<session>.reach.dropped` — not `.reach.json`, so `idleReaches` steps over it. */

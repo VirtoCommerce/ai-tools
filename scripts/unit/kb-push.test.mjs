@@ -433,12 +433,13 @@ test('a published `session` line credits the session it DESCRIBES, never the one
   assert.ok(!logLines(state).some((l) => l.kind === 'session'), "the sweeper's file holds no foreign counters");
 })));
 
-test('a `session` line for a state that never learned a handle is signed by the pusher (VCST-6091)', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
-  // This used to stay unsigned, on the argument that the pusher might be somebody else. It cannot
-  // be: the queue directory is one OS user's temp directory on one machine, so whoever pushes it
-  // wrote it. A line lacking `who` is one written on a cold identity cache, and 43 of 2026-09-28's
-  // lines went public unsigned for that reason alone. A handle the STATE did learn still wins (the
-  // test above).
+test('a harvested state that never learned a handle is signed by the pusher ONLY if its file is provably ours', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  // A line lacking `who` is usually one written on a cold identity cache (43 of 2026-09-28's lines).
+  // The pusher may sign it — but only when `ownedByMe` says the state file is ours: the same uid on
+  // POSIX, where `/tmp` is shared; the default per-user temp on Windows, and this suite's queue is a
+  // custom `KB_QUEUE_DIR`. So the expectation follows the rule on whatever machine runs it, and the
+  // test pins the WIRING: signed exactly when the ownership rule says so. A handle the STATE did learn
+  // always wins (the test above).
   await knowWho(dir, 'octo-pusher');
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
   const quiet = reachPath(dir, 'quiet002');
@@ -451,8 +452,12 @@ test('a `session` line for a state that never learned a handle is signed by the 
 
   const line = sessionLine(state, 'quiet002');
   assert.equal(line.session, 'quiet002');
-  assert.equal(line.who, 'octo-pusher');
+  // Decided before the push, which drops the state file.
+  assert.equal(line.who, OURS_IN_TEST_QUEUE ? 'octo-pusher' : undefined);
 })));
+
+/** Would `ownedByMe` call a file in this suite's custom queue directory ours, on this machine? */
+const OURS_IN_TEST_QUEUE = typeof process.getuid === 'function';
 
 test('a pusher with no identity signs nothing — the back-fill never invents a handle', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
@@ -1657,4 +1662,26 @@ test('review 2.7: on Windows a custom KB_QUEUE_DIR makes nothing foreign ours', 
   await writeFile(f, 'x\n', 'utf8');
   assert.equal(ownedByMe(f, { uid: null, env: {} }), true, 'the default: the user’s own profile temp');
   assert.equal(ownedByMe(f, { uid: null, env: { KB_QUEUE_DIR: dir } }), false, 'a directory that may be shared');
+}));
+
+test('review 3.4: a fuller unsigned session line keeps the author a signed copy of it carried', () => {
+  const signed = JSON.stringify({ kind: 'session', session: 'aaaa1111', tools: 5, firstAt: '2026-09-18T08:00:00Z', who: 'octo-a', run: 'VCST-1' });
+  const fuller = JSON.stringify({ kind: 'session', session: 'aaaa1111', tools: 9, firstAt: '2026-09-18T08:00:00Z' });
+  const kept = JSON.parse(fullestSessionLines([signed, fuller])[0]);
+  assert.deepEqual([kept.tools, kept.who, kept.run], [9, 'octo-a', 'VCST-1']);
+});
+
+test('review 3.6: harvesting a stranger’s state does not make our own counters ride along', () => withQueue(async ({ dir, env }) => {
+  // The harvest writes into OUR queue file; asked after it, "does our queue hold work?" was always yes.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeFile(reachPath(dir, SESSION), JSON.stringify({ session: SESSION, cursor: 0, tools: 30, turns: 3, touchAt: [], firstAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  await writeFile(sentPath(dir, SESSION), '20 2\n', 'utf8');                       // sent a moment ago
+  const quiet = reachPath(dir, 'quiet010');
+  await writeFile(quiet, JSON.stringify({ session: 'quiet010', cursor: 0, tools: 8, turns: 2, touchAt: [], firstAt: '2026-09-18T07:00:00Z' }), 'utf8');
+  const old = new Date(AT.getTime() - 60 * 60 * 1000);
+  await utimes(quiet, old, old);
+
+  assert.equal((await run(env, fakeApi(state))).state, 'pushed');
+  assert.equal(sessionLine(state, 'quiet010').tools, 8, 'the stranger is published');
+  assert.equal(sessionLine(state, SESSION), undefined, 'we are not — our cadence is not due');
 }));

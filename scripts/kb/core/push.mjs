@@ -236,10 +236,16 @@ function ownQueueHolds(env) {
  * EXCEPT ITS START. A state rebuilt after being dropped carries a later `firstAt`, and the report
  * windows a session by the EARLIEST one across its lines (`reach()`). So the kept line takes the
  * group's earliest `firstAt`, or the one fact the discarded lines held alone would go with them.
+ *
+ * AND ITS AUTHOR, by the same argument (review 3). One session's lines can disagree about `who` —
+ * a cold identity cache leaves the early ones unsigned — so a fuller unsigned line would otherwise
+ * win over a signed one and publish the session as nobody's. The kept line takes the first `who`
+ * (and `run`) any line of its group carries, when it carries none itself.
  */
 export function fullestSessionLines(rawLines) {
   const best = new Map();
   const earliest = new Map();
+  const known = new Map();
   const parsed = rawLines.map((raw) => {
     let l = null;
     try { l = JSON.parse(raw); } catch { /* not ours to judge — kept as it is */ }
@@ -257,6 +263,8 @@ export function fullestSessionLines(rawLines) {
     if (fuller) best.set(key, l);
     const began = typeof l.firstAt === 'string' ? l.firstAt : '';
     if (began && (!earliest.has(key) || began < earliest.get(key))) earliest.set(key, began);
+    const k = known.get(key) ?? {};
+    known.set(key, { who: k.who ?? l.who, run: k.run ?? l.run });
   }
   const placed = new Set();
   const out = [];
@@ -267,7 +275,13 @@ export function fullestSessionLines(rawLines) {
     placed.add(key);
     const kept = best.get(key);
     const began = earliest.get(key);
-    const line = began && began !== kept.firstAt ? { ...kept, firstAt: began } : kept;
+    const { who, run } = known.get(key);
+    const line = {
+      ...kept,
+      ...(began && began !== kept.firstAt ? { firstAt: began } : {}),
+      ...(!kept.who && who ? { who } : {}),
+      ...(!kept.run && run ? { run } : {}),
+    };
     out.push(JSON.stringify(line) === JSON.stringify(l) ? raw : JSON.stringify(line));
   }
   return out;
@@ -688,6 +702,9 @@ async function flushOnce({
   // second one beside it.
   if (includeMine) {
     const dir = queueDir(env);
+    // Asked BEFORE the harvest, which appends foreign states' lines to OUR queue file: asked after, it
+    // would always answer yes, and our counters would ride every harvesting push (review 3).
+    const heldWork = ownQueueHolds(env);
     for (const state of idleReaches(dir, { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
       // Its own last send may already carry everything it did (VCST-6091): then there is nothing new
       // to say, and the state is dropped without a second, identical line.
@@ -696,7 +713,7 @@ async function flushOnce({
       // that has already ended, and we may well be a different person under a different run. Where
       // the state never learned a handle, ours is used ONLY if the state file is provably ours
       // (`ownedByMe`); otherwise `null` — no identity beats the wrong one (`core/who.mjs`).
-      const who = state.who ?? (ownedByMe(reachPath(dir, state.session)) ? undefined : null);
+      const who = state.who ?? (ownedByMe(reachPath(dir, state.session), { env }) ? undefined : null);
       const written = await log(reachLine(state), { env, who, run: state.run ?? null });
       // Dropped only once the line is safely appended. A state file removed after a failed write is
       // a session that silently never existed — the exact hole this whole mechanism was built to
@@ -712,7 +729,8 @@ async function flushOnce({
     //     because another session's file is busy does not become a commit per turn;
     //   * not a dry run, which must change nothing.
     const mine = dryRun || !token ? null : readReach(dir, session);
-    if (mine && workIn(mine) > 0 && unsent(dir, mine) && (ownQueueHolds(env) || ownReachDue(dir, session, { now: now().getTime() }))) {
+    if (mine && workIn(mine) > 0 && unsent(dir, mine)
+      && (heldWork || ownReachDue(dir, session, { now: now().getTime(), state: mine, attempts: false }))) {
       const written = await log(reachLine(mine), { env, who: mine.who ?? undefined, run: mine.run ?? null });
       if (written.ok) markSent(dir, session, mine);
     }
@@ -723,7 +741,7 @@ async function flushOnce({
   const loaded = [];
   for (const f of files) {
     const q = await readQueue({ env, path: f.path });
-    if (q.lines.length) loaded.push({ ...f, lines: orderQueue(q.lines), malformed: q.malformed, raw: q.raw, signable: f.mine || ownedByMe(f.path) });
+    if (q.lines.length) loaded.push({ ...f, lines: orderQueue(q.lines), malformed: q.malformed, raw: q.raw, signable: f.mine || ownedByMe(f.path, { env }) });
   }
   if (!loaded.length) {
     await touchStamp({ env, now });

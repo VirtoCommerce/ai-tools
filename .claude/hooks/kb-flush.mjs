@@ -31,7 +31,7 @@ import { closeSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, 
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { REACH_IDLE_MS, advanceReach, idleReaches, ownReachDue } from '../../scripts/kb/core/reach.mjs';
+import { REACH_IDLE_MS, advanceReach, idleReaches, markTried, ownReachDue } from '../../scripts/kb/core/reach.mjs';
 import { hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, runOf, sessionId } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
 import { writeToken } from '../../scripts/kb/core/token.mjs';
@@ -78,6 +78,7 @@ function main() {
   // Counting is cheap and unconditional: cursor-based, so each turn reads only the bytes appended
   // since the last one, and it stores integers — never a name, an argument or a result. `reach.mjs`
   // carries what is read and what deliberately is not.
+  let advanced;
   if (payload?.transcript_path) {
     try {
       // WHO RAN THIS SESSION is stamped here, on the state, and not by whoever later publishes
@@ -85,7 +86,7 @@ function main() {
       // on a different machine, so the publisher's handle would name the wrong one (`who.mjs`).
       // `cachedWho` is filesystem-only and cannot reach the network — this hook runs at the end of
       // every assistant turn and its whole budget is tens of milliseconds.
-      advanceReach({ dir, session, transcriptPath: payload.transcript_path, who: cachedWho({ dir }), run: runOf(), synthetic: isSynthetic() });
+      advanced = advanceReach({ dir, session, transcriptPath: payload.transcript_path, who: cachedWho({ dir }), run: runOf(), synthetic: isSynthetic() }) ?? undefined;
     } catch { /* accounting must never cost a turn */ }
   }
 
@@ -98,11 +99,15 @@ function main() {
   // base only when a later session on this machine happened to sweep it — days later, or never.
   // ONLY WITH A TOKEN: without one the push queues nothing and marks nothing sent, so `ownReachDue`
   // would stay true and every turn would start a detached push that does nothing (VCST-6091 review).
-  // `writeToken` reads env files and nothing else, which the hook's budget allows.
-  const mine = ownReachDue(dir, session) && Boolean(writeToken(env).token);
+  // `writeToken` reads env files and nothing else, which the hook's budget allows. The state is the
+  // copy `advanceReach` just wrote, so it is not read back from disk.
+  const mine = ownReachDue(dir, session, { state: advanced }) && Boolean(writeToken(env).token);
   if (!queueHasWork(dir) && !stale && !mine) return;
   // KB_PUSH_CONFIRM=1: a detached child has nobody to ask, so it would only hold. Not spawned.
   if (pushConfirmRequired(process.env)) return;
+  // THE ATTEMPT PACES THE CADENCE, not the push's success: a push that stops early (a refused base, a
+  // held queue) marks nothing sent, and without this every turn would start another (review 3).
+  if (mine) markTried(dir, session);
 
   // `$CLAUDE_PROJECT_DIR` is set for hooks; resolving from this file is the fallback that survives
   // being invoked from somewhere else.

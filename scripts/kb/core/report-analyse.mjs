@@ -943,20 +943,22 @@ export function reach(lines, { since = null } = {}) {
     // asks filed under any of them and still counts them as accounted for.
     const keys = new Set(prior?.keys ?? []);
     keys.add(l.session ?? l._session);
-    best.set(id, fuller ? { line: l, tools, began: start, keys } : { ...prior, began: start, keys });
+    // The group's operator is the first one ANY of its lines names: the fullest line may be unsigned.
+    const who = prior?.who ?? l.who ?? null;
+    best.set(id, fuller ? { line: l, tools, began: start, keys, who } : { ...prior, began: start, keys, who });
   }
 
   // A LEGACY KEY'S ASKS GO TO EXACTLY ONE GROUP. One `p<pid>` can sit in two groups — two people, or
   // one person's pid reused — and summing its asks into every group holding it counted them twice
-  // (VCST-6091 review). An ask carries its own `who` and `at`, so it goes to the group of the same
-  // operator that had started by then, the latest such; failing that, to the first group holding the
-  // key. A real key keeps the plain lookup.
+  // (VCST-6091 review). An ask carries its own `who` and `at`, so it goes to a group whose operator
+  // does not contradict it and that had started by then, the latest such; failing that, to the first
+  // group holding the key. A real key keeps the plain lookup.
   const legacyGroups = new Map();
   for (const [id, g] of best) {
     if (!id.startsWith('pid~')) continue;
     for (const k of g.keys) {
       if (!legacyGroups.has(k)) legacyGroups.set(k, []);
-      legacyGroups.get(k).push({ id, who: g.line.who ?? '?', began: g.began });
+      legacyGroups.get(k).push({ id, who: g.who, began: g.began });
     }
   }
   const legacyAsks = new Map();
@@ -964,24 +966,32 @@ export function reach(lines, { since = null } = {}) {
     if (l.kind !== 'ask' || !isLegacyProcessKey(l._session) || !legacyGroups.has(l._session)) continue;
     const groups = legacyGroups.get(l._session);
     const at = String(l.at ?? '');
-    const mine = groups.filter((g) => g.who === (l.who ?? '?') && (!at || !g.began || g.began <= at));
-    const to = mine.sort((a, b) => b.began.localeCompare(a.began))[0] ?? groups[0];
+    const fits = groups.filter((g) => (!g.who || !l.who || g.who === l.who) && (!at || !g.began || g.began <= at));
+    const to = fits.sort((a, b) => b.began.localeCompare(a.began))[0] ?? groups[0];
     legacyAsks.set(to.id, (legacyAsks.get(to.id) ?? 0) + 1);
   }
 
   const rows = [];
   const seen = new Set();
+  // A legacy group outside the window keeps its asks OUT of the rows, and so has to count them as
+  // unaccounted — the same fate a real key's session outside the window gets (review 3). Its keys are
+  // not added to `seen`, where another group sharing the pid would have hidden them.
+  let legacyOutside = 0;
   for (const [id, { line: l, began, keys }] of best) {
-    if (since && began && began < since) continue;
-    for (const k of keys) seen.add(k);
     const legacy = id.startsWith('pid~');
+    if (since && began && began < since) {
+      if (legacy && legacyAsks.get(id)) legacyOutside += 1;
+      continue;
+    }
+    if (!legacy) for (const k of keys) seen.add(k);
     const touchAt = Array.isArray(l.touchAt) ? l.touchAt : [];
     const agentTools = Number(l.agentTools ?? 0);
     const agentTouches = Number(l.agentTouches ?? 0);
     rows.push({
-      // A collapsed legacy group is shown under the key its fullest line carried, never the grouping
-      // key — and that key may live only in `_session`, on a line from before `session` was written.
-      session: legacy ? (l.session ?? l._session) : id,
+      // A collapsed legacy group is shown under the key its fullest line carried — which may live only
+      // in `_session`, on a line from before `session` was written — WITH ITS START, because two groups
+      // can share that key and two rows under one label read as one session twice (review 3).
+      session: legacy ? `${l.session ?? l._session}@${began.slice(0, 16)}` : id,
       // Totals over the session; the subagents' share beside them, and whatever was carried over a
       // replaced transcript. A line from before 2026-09-23 carries no `agent*` fields and reads as the
       // parent alone — which is what it measured.
@@ -1014,7 +1024,9 @@ export function reach(lines, { since = null } = {}) {
   return {
     rows,
     accounted: rows.length,
-    unaccounted: [...asksBySession.keys()].filter((s) => !seen.has(s)).length,
+    // Legacy keys that some group holds were settled above, group by group; the rest by key.
+    unaccounted: [...asksBySession.keys()].filter((s) => !seen.has(s) && !(isLegacyProcessKey(s) && legacyGroups.has(s))).length
+      + legacyOutside,
     tools,
     touches,
     agentTools: rows.reduce((n, r) => n + r.agentTools, 0),
