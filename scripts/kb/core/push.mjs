@@ -734,8 +734,10 @@ async function flushOnce({
     //     because another session's file is busy does not become a commit per turn;
     //   * not a dry run.
     // AND IT NEVER TOUCHES THE QUEUE (review 4). The line rides this push IN MEMORY and the send mark is
-    // written only once the commit has landed, so a declined, failed or dry push leaves the queue and
-    // the mark exactly as they were — and a push that never happens queues nothing to grow.
+    // written only once the commit has landed, so a declined, failed or dry push adds nothing of OURS
+    // to the queue and leaves the mark as it was — and a push that never happens queues nothing to
+    // grow. (The harvest above is a different matter and predates this: outside a dry run it still
+    // moves idle states' lines into our queue before any gate. They go out with the next push.)
     const mine = dryRun || !token ? null : readReach(dir, session);
     if (mine && workIn(mine) > 0 && unsent(dir, mine)
       && (heldWork || ownReachDue(dir, session, { now: now().getTime(), state: mine, attempts: false }))) {
