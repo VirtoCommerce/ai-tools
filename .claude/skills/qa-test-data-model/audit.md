@@ -15,6 +15,7 @@ Every error is a finding as-is.
 |---|---|
 | Vacuous pair | two requirements serving sibling branches (member / outsider, above / below a target) whose `required_state` or `constraints` do not actually differ on the dimension under test (SECOND RULE) |
 | Mis-scoped fixture | a `FIXTURE` whose `shared_state` admits the very mutation one of its profiles' cases performs; that is a per-run requirement mislabelled |
+| Environment-destroyable fixture | a `FIXTURE` or `SCENARIO` whose `required_state` is pristine (zero count, never reached, first-time) and that something other than the tests can reach. It belongs in `STEP` per [`test-data-authoring.md`](../../knowledge/execution/test-data-authoring.md) §FIFTH RULE |
 | Pooled state | an account-level requirement used where the state is pooled higher up (an org-pooled balance), per `.claude/rules/test-data.md` DISPOSABLE FIXTURES rule 4 |
 | Toggle collision | a `STEP` store-level toggle whose `limits` does not name the concurrent suites it disturbs |
 | Unfalsifiable discovery | a `DISCOVER` whose `discover_constraints` omit a dimension the node's oracle reads |

@@ -1,0 +1,347 @@
+{
+  "$schema": "../../.claude/templates/test-data-model.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "push",
+  "generated": "2026-09-29",
+  "metadata": {
+    "scope": "Recipients and inbox states for the storefront push suites (068) - domain map G3. The 050l API recipient (PUSH_RECIPIENT_API / PUSH_ORG_API, authored the same day) is not modelled until 050l is re-pointed off TECHFLOW_ADMIN.",
+    "built_from": "/qa-generate-data push-messages recipients, 2026-09-29; push-messages.mind-map.json; live check of 068 (--verify) the same day"
+  },
+  "requirements": [
+    {
+      "id": "data.push.org.inbox",
+      "entity": "Organization",
+      "purpose": "An organization no sales rep serves and no case adds members to, so org-scoped push sends reach only the push fixture users.",
+      "required_state": {
+        "name": "AGENT-TEST-Org-PushInbox",
+        "served_by_sales_rep": "none",
+        "members": "reader, bystander, bulk"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Membership. Adding a member at runtime (track-new-recipients cases) or letting a rep serve the org would make rep and org-targeted pushes land in the reader's inbox.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "PUSH_ORG_INBOX.name",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "An organization with no sales rep and a closed member list makes \"who received this push\" answerable from memberIds alone: an unexpected message in a fixture inbox then points at a targeting leak, not at a rep or a runtime-added member.",
+      "limits": "A member add or modify event on this org's members re-triggers Track-new-recipients top-ups from OTHER senders' tracked messages (free-text memberQuery), so foreign rows can appear in these inboxes at any time. Seeded 2026-09-29 on vcst.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:b2b -- --only agent-test-push (vcst)",
+          "note": "created ORG-020 AGENT-TEST-Org-PushInbox with its pinned platform_id; reader, bystander and bulk each report me.contact.organizationId = that org; td:validate:push [5]: served by no sales-rep CSV row, no organization-memberships row adds a member",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.push.recipient.reader",
+      "entity": "User",
+      "purpose": "The storefront account whose inbox suite 068 reads (bell, Notifications page) and targets (PUSH-024 user A, PUSH-033).",
+      "required_state": {
+        "org": "AGENT-TEST-Org-PushInbox",
+        "role": "Purchasing agent",
+        "store": "B2B-store",
+        "status": "Approved"
+      },
+      "relationships": [
+        {
+          "requirement": "data.push.org.inbox",
+          "required": true
+        }
+      ],
+      "lifecycle": "FIXTURE",
+      "shared_state": "Its inbox: see data.push.inbox.reader-mixed.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "PUSH_RECIPIENT_READER.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "The only account suite 068 both targets and reads: a targeted send must appear in THIS inbox (reader +1) while the bystander and the bulk account in the same org stay unchanged, which separates per-user targeting from per-org delivery.",
+      "limits": "Seeded 2026-09-29 on vcst. The inbox also holds messages from other senders (tracked messages whose free-text memberQuery matches the account); those are not the fixture's and are never counted.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:b2b -- --only agent-test-push (vcst); PUSH_RECIPIENT_READER",
+          "note": "login created with an Approved Purchasing agent membership in AGENT-TEST-Org-PushInbox; password grant with storeId B2B-store returned 200 and me.memberId equals the aliases.vcst.json contactId",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.push.recipient.bystander",
+      "entity": "User",
+      "purpose": "A member of the same organization as the reader that no memberIds ever names (068 PUSH-024 user B).",
+      "required_state": {
+        "org": "AGENT-TEST-Org-PushInbox",
+        "targeted_messages": "0"
+      },
+      "relationships": [
+        {
+          "requirement": "data.push.org.inbox",
+          "required": true
+        }
+      ],
+      "lifecycle": "FIXTURE",
+      "shared_state": "Its inbox must stay free of targeted AGENT-TEST messages; an org-wide send would end that.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "PUSH_RECIPIENT_BYSTANDER.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Same organization as the reader, divergent inboxes: an org-scoped leak shows the reader's targeted message here (reader >= 1, bystander 0), so 'a customer reads only their own rows' is decidable. Two users in different orgs could not tell a per-user filter from a per-org one.",
+      "limits": "targeted_messages counts AGENT-TEST rows and memberIds naming; foreign tracked messages (Track new recipients + a free-text memberQuery) also reach this account and are not a targeting leak. Seeded 2026-09-29 on vcst.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:push:verify (vcst) [L3]",
+          "note": "login created in AGENT-TEST-Org-PushInbox (token 200, storeId B2B-store); 0 AGENT-TEST rows in its inbox (hidden included) and no push message whose memberIds names its member id; 3 foreign rows from tracked messages of other senders",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.push.recipient.bulk",
+      "entity": "User",
+      "purpose": "A separate recipient in the inbox org that absorbs mark-all-read and clear-all (068 PUSH-021, PUSH-029).",
+      "required_state": {
+        "org": "AGENT-TEST-Org-PushInbox"
+      },
+      "relationships": [
+        {
+          "requirement": "data.push.org.inbox",
+          "required": true
+        }
+      ],
+      "lifecycle": "FIXTURE",
+      "shared_state": "Everything in its inbox ends read and hidden after each run.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "PUSH_RECIPIENT_BULK.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Keeps destructive bulk writes off the reader: after mark-all-read and clear-all the bulk inbox is all read and hidden while the reader still holds read AND unread messages, so the unread-count cases stay decidable in the same run.",
+      "limits": "Seeded 2026-09-29 on vcst. The inbox also holds messages from other senders (tracked messages whose free-text memberQuery matches the account); those are not the fixture's and are never counted.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:b2b -- --only agent-test-push (vcst); PUSH_RECIPIENT_BULK",
+          "note": "login created with an Approved Purchasing agent membership in AGENT-TEST-Org-PushInbox; password grant with storeId B2B-store returned 200 and me.memberId equals the aliases.vcst.json contactId",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.push.inbox.reader-mixed",
+      "entity": "PushMessageInbox",
+      "purpose": "The reader's inbox holds at least 11 visible Sent AGENT-TEST messages, at least one read and at least one unread.",
+      "required_state": {
+        "visible_sent_messages": ">= 11",
+        "read": ">= 1",
+        "unread": ">= 1",
+        "hidden": "any"
+      },
+      "constraints": {
+        "visible_sent_messages": "> storefront page size (10)",
+        "unread": "< total"
+      },
+      "relationships": [
+        {
+          "requirement": "data.push.recipient.reader",
+          "required": true
+        }
+      ],
+      "lifecycle": "FIXTURE",
+      "shared_state": "Read flags: PUSH-019/022/036 each mark one message read and restore it. Never assert an exact count, and never run mark-all or clear-all against this inbox (that is data.push.recipient.bulk's job).",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "seed"
+      },
+      "seed_capability": "seed:push",
+      "td_alias": "PUSH_DATA_READER_INBOX.recipient",
+      "cleanup": {
+        "required": true,
+        "via": "Cannot be undone: a Sent message can be neither edited nor deleted (push.irrevocable). Isolated by the dedicated reader account in its own organization."
+      },
+      "discriminates": "unread != total makes 'the Notifications heading and the bell badge show the UNREAD count' (PUSH-020/036) and 'Show unread only' decidable; with every message unread the heading equals both counts and the case passes whichever it shows. 11 visible messages against a page size of 10 makes pagination (PUSH-018) decidable.",
+      "limits": "seed:push reaches it by TOP-UP (counts the reader's visible AGENT-TEST rows, sends only the difference, keeps >= 1 read and >= 1 unread); a second run sends nothing. It counts only AGENT-TEST rows: tracked messages from other senders also land here (Track new recipients with a free-text memberQuery) and are never counted toward the thresholds. Authored 2026-09-29 by /qa-generate-data; seeded and verified live on vcst 2026-09-29.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:push + npm run seed:push:verify (vcst) [L1]",
+          "note": "seed:push sent 11 (10 plain + 1 link to {{FRONT_URL}}/account/orders), all visible to the reader within 1 s, then marked one read: visible=11 read=1 unread=10, link present. A second run (--only reader) planned and sent 0.",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.push.inbox.bulk-fresh",
+      "entity": "PushMessageInbox",
+      "purpose": "The bulk recipient holds at least 3 visible unread messages sent in this run, before mark-all-read and clear-all consume them.",
+      "required_state": {
+        "visible_unread_messages": ">= 3",
+        "sent_in_this_run": "yes"
+      },
+      "relationships": [
+        {
+          "requirement": "data.push.recipient.bulk",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "seed"
+      },
+      "seed_capability": "seed:push",
+      "td_alias": "PUSH_DATA_BULK.recipient",
+      "cleanup": {
+        "required": true,
+        "via": "Cannot be undone (irrevocable Sent messages); mark-all-read and clear-all are the consumption itself. Isolated by the dedicated bulk account."
+      },
+      "discriminates": "Fresh unread, visible messages give mark-all-read something to flip and clear-all something to hide; after a previous run the inbox is all read and all hidden, and both cases would pass on a no-op.",
+      "limits": "Run PUSH-021 before PUSH-029 in the same run (clear-all hides what mark-all needs visible). Authored 2026-09-29 by /qa-generate-data; seeded and verified live on vcst 2026-09-29.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:push + npm run seed:push:verify (vcst) [L2]",
+          "note": "seed:push sent 3 fresh messages; all visible and unread to the bulk user within 4 s (batch_marker / batch_message_ids written to aliases.vcst.json)",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.push.inbox.empty",
+      "entity": "User",
+      "purpose": "A personal storefront account that no push message has ever reached, created by the case itself (068 PUSH-025).",
+      "required_state": {
+        "account_type": "Personal",
+        "pushMessages(withHidden: true).totalCount": "0",
+        "identity": "name and email contain no token of any tracked Sent memberQuery"
+      },
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "The case Cleanup deletes the login (DELETE /api/platform/security/users?names=) and the contact (DELETE /api/members?ids=)."
+      },
+      "discriminates": "Zero messages INCLUDING hidden ones is the only state that shows the empty-state text; an inbox emptied with clear-all still lists its messages on the page (push.manage.clear-all), so it cannot stand in.",
+      "limits": "A stored account cannot hold this state: a Sent message with Track new recipients and a broad memberQuery reaches every matching member at creation (KB-CB05268E) — the seeded PD-04 account (PUSH_RECIPIENT_EMPTY) was reached within seconds and is retired. The case therefore creates the account right before it reads the inbox, and reports BLOCKED if a tracked query still catches it.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CB05268E",
+          "note": "negative control 2026-09-29: an account created with no tracked token in its name or email had pushMessages(withHidden:true).totalCount 0 after 20s",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "profile.push.body-only",
+      "behavior": "push.inbox.body-only",
+      "purpose": "Reader's page and bell show body + timestamp, no topic.",
+      "requirements": [
+        "data.push.inbox.reader-mixed",
+        "data.push.recipient.reader"
+      ]
+    },
+    {
+      "id": "profile.push.unread-filter",
+      "behavior": "push.inbox.unread-filter",
+      "purpose": "Show unread only narrows a mixed inbox.",
+      "requirements": [
+        "data.push.inbox.reader-mixed",
+        "data.push.recipient.reader"
+      ]
+    },
+    {
+      "id": "profile.push.own-only",
+      "behavior": "push.inbox.own-only",
+      "purpose": "A message targeted at the reader never reaches the bystander in the same org.",
+      "requirements": [
+        "data.push.inbox.reader-mixed",
+        "data.push.recipient.reader",
+        "data.push.recipient.bystander",
+        "data.push.org.inbox"
+      ]
+    },
+    {
+      "id": "profile.push.empty-state",
+      "behavior": "push.inbox.empty-state",
+      "purpose": "A never-targeted account sees the empty state on the page and in the bell.",
+      "requirements": [
+        "data.push.inbox.empty"
+      ]
+    },
+    {
+      "id": "profile.push.mark-read",
+      "behavior": "push.manage.mark-read",
+      "purpose": "Mark one of the reader's unread messages read, then restore it.",
+      "requirements": [
+        "data.push.inbox.reader-mixed",
+        "data.push.recipient.reader"
+      ]
+    },
+    {
+      "id": "profile.push.mark-unread",
+      "behavior": "push.manage.mark-unread",
+      "purpose": "Mark one of the reader's read messages unread, then restore it.",
+      "requirements": [
+        "data.push.inbox.reader-mixed",
+        "data.push.recipient.reader"
+      ]
+    },
+    {
+      "id": "profile.push.mark-all",
+      "behavior": "push.manage.mark-all",
+      "purpose": "Mark all read on the bulk recipient's fresh messages.",
+      "requirements": [
+        "data.push.inbox.bulk-fresh",
+        "data.push.recipient.bulk"
+      ]
+    },
+    {
+      "id": "profile.push.clear-all",
+      "behavior": "push.manage.clear-all",
+      "purpose": "Clear all on the bulk recipient: bell empties, page keeps listing.",
+      "requirements": [
+        "data.push.inbox.bulk-fresh",
+        "data.push.recipient.bulk"
+      ]
+    },
+    {
+      "id": "profile.push.realtime",
+      "behavior": "push.deliver.realtime",
+      "purpose": "The reader's open storefront receives a new message without reload.",
+      "requirements": [
+        "data.push.recipient.reader"
+      ]
+    }
+  ],
+  "amended": "2026-09-29"
+}

@@ -4,7 +4,7 @@
   "domain_slug": "sr",
   "domain_map_rev": 3,
   "generated": "2026-09-28",
-  "amended": "2026-09-28",
+  "amended": "2026-09-29",
   "metadata": {
     "scope": "Sales Rep: rep provisioning, served-org membership, store toggle, storefront hub (dashboard, my customers, customer profile, customer orders, document library, calendar), buyer-facing rep directory, scoped GraphQL contract, layout persistence, account access removal. Impersonation (suite 082) is out, as in the domain map.",
     "built_from": "sales-rep.md rev 3 (sections 1-8, 10), business-logic.md Domain 20 (BL-SR-001..032), suites 050m/050m2/089/090/091/093/097 titles + References, kb KB-EA467E9B / KB-1144B33E / KB-7DA9B0B7 / KB-5A0C4200",
@@ -3851,6 +3851,507 @@
         "observed": "Live /graphql/sales-rep: 21 queries + 2 mutations; the 8 missing queries and saveSalesRepLayout are the customer-orders and layout feature sets (domain-map:sr@rev3 section 6 D1)",
         "route": "UNFILED - docs gap; report against https://docs.virtocommerce.org/platform/developer-guide/"
       }
+    },
+    {
+      "id": "sr.list-share",
+      "type": "behavior",
+      "name": "The rep shares a list with customer organizations, with an optional message",
+      "description": "changeWishlist with scope Customer: addSharedWithIds/removeSharedWithIds edit the target set; message is stored once per sharing setting and read back through sharingSetting.message. Owner keeps Write, targets get Read. Sending a notification is a separate step (sr.list-share.notify-separate).",
+      "actors": [
+        "sales rep"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep#21 SalesRepCustomerCartSharingScopePolicy",
+          "note": "source read of deployed PR build SalesRep 3.1012.0-pr-21-f681; nothing observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-x-cart#141 InputChangeWishlistType",
+          "note": "source read plus live introspection: addSharedWithIds, removeSharedWithIds, message; sharingSetting is singular",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "ACs AC-1..AC-4 and AC-D2",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "integrates with: lists domain (no mind map) - wishlist ownership and the customer own lists view; notifications domain (no mind map) - push and email. Legacy sharedWithId replaces the whole set. All BE PRs still OPEN."
+    },
+    {
+      "id": "sr.list-share.targets-delta",
+      "type": "branch",
+      "name": "Targets are edited by add and remove deltas; the rep must serve every added org",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep#21 SalesRepCustomerCartSharingScopePolicy",
+          "note": "authorize serves every ADDED org; removals are not gated; ApplyTargets",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-cart#194 CartSharingSettingTarget",
+          "note": "migration copies SharedWithId into a target row; MaxTargets 1000",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Targets load only when selected; legacy sharedWithId replaces the whole set; migration of pre-existing single-customer shares is unobserved."
+    },
+    {
+      "id": "sr.list-share.message-persisted",
+      "type": "branch",
+      "name": "The share message is saved once per sharing setting and read back as sharingSetting.message",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-cart#194 CartSharingSetting.Message",
+          "note": "nvarchar(1024) nullable, one value per list, not per target",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-x-cart#141 SharingSettingType.message",
+          "note": "no owner gate - visible to recipients by design per README",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Latest message only; no history (AC-2)."
+    },
+    {
+      "id": "sr.list-share.message-semantics",
+      "type": "branch",
+      "name": "Message input: null leaves it unchanged, blank clears it, text is trimmed, over 1024 is rejected",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-x-cart#141 ApplyMessage",
+          "note": "null=unchanged; empty or whitespace=clear (null); trimmed; >1024 returns an error; MessageMaxLength 1024",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Storefront textarea maxlength 250 in the undeployed frontend fix, backend 1024, push message 1000: three limits."
+    },
+    {
+      "id": "sr.list-share.message-needs-scope",
+      "type": "branch",
+      "name": "A message sent without scope in the same write is silently ignored",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-x-cart#141 UpdateScopeAsync",
+          "note": "message applied only when scope is in the same write (early return)",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Risk hotspot named by the ticket review; expected outcome is unsettled (silent ignore versus an error) until observed."
+    },
+    {
+      "id": "sr.list-share.scope-change-resets",
+      "type": "branch",
+      "name": "Changing the scope resets the targets and the message",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-x-cart#141 EnsureSetting",
+          "note": "resets Targets and Message when scope CHANGES",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "A rep who switches scope and back loses a saved message."
+    },
+    {
+      "id": "sr.list-share.last-target-refused",
+      "type": "branch",
+      "name": "Removing the last remaining target is refused",
+      "branch_kind": "negative",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep#21 SalesRepCustomerCartSharingScopePolicy",
+          "note": "throws when the resulting target set is empty",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "sr.list-share.customer-access",
+      "type": "branch",
+      "name": "A member of a target organization can see and read the shared list",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "status": "DRIFT",
+      "maturity": "released",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "reports/bugs/open/critical-high/BUG-rep-shared-wishlist-grants-customer-no-access.md",
+          "note": "observed on x-cart 3.1030: buyer wishlists empty and wishlist(listId) Access denied",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5335",
+          "note": "AC: the shared list appears in the buyer shopping lists",
+          "date": "2026-09-29"
+        }
+      ],
+      "drift": {
+        "expected": "VCST-5335 AC: an organization the list is shared with sees it in its shopping lists",
+        "observed": "buyer wishlists returned no items and reading the list returned Access denied (x-cart 3.1030, before the target-set PRs); not re-observed on the deployed PR builds",
+        "route": "UNFILED - reports/bugs/open/critical-high/BUG-rep-shared-wishlist-grants-customer-no-access.md"
+      },
+      "notes": "The deployed builds replace SharedWithId with a target table, so the defect may have changed shape. Re-observe before trusting either side."
+    },
+    {
+      "id": "sr.list-share.notify-separate",
+      "type": "branch",
+      "name": "Notifying customers is a separate send; the share message never flows into a push",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep#21 sendCustomerCommunication",
+          "note": "gains organizationIds[] up to 1000, message up to 1000; the share message does not flow into any push",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "AC-3 sends and shares with new customers only; AC-4 saves without sending; AC-D2 custom text replaces the default push text",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "integrates with: notifications - push and email delivery. Recipient scoping to only the newly added orgs is client behaviour of vc-frontend#2476 (now deployed, see sr.list-share.send-new-only)."
+    },
+    {
+      "id": "sr.list-share.edit-prefill",
+      "type": "branch",
+      "name": "Reopening a shared list shows the saved message in the edit dialog",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2476 wishlist-customer-sharing.vue",
+          "note": "prefilled once from sharingSetting.message; source read of head 0604e3f1, deployed as theme 2.59.0-pr-2476-0604; not yet observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "wishlist-customer-sharing deployed chunk",
+          "note": "deployed component is the old one: message starts empty and the payload carries sharedWithId only",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "The frontend fix is now deployed (theme 2.59.0-pr-2476-0604); the earlier OBSERVED entry describes the previous build. AC-1..AC-4 live here and in the sibling nodes."
+    },
+    {
+      "id": "sr.list-share.recipients-prefill",
+      "type": "branch",
+      "name": "Reopening a shared list preselects the recipients from the saved targets",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2476 wishlist-customer-sharing.vue:97",
+          "note": "recipients initialised from list.sharingSetting.targets; source read of head 0604e3f1, deployed as theme 2.59.0-pr-2476-0604; nothing observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "AC-1..AC-4",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "audienceCount falls back to the local selection when the server returns no targets (:142-144)."
+    },
+    {
+      "id": "sr.list-share.message-only-save",
+      "type": "branch",
+      "name": "A message-only edit saves the message and sends nothing (AC-4)",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2476 wishlist-customer-sharing.vue:253-257",
+          "note": "changeWishlist with add=[] remove=[] and the trimmed message; no sendCustomerCommunication; toast share_saved; source read of head 0604e3f1, deployed as theme 2.59.0-pr-2476-0604; nothing observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "AC-1..AC-4",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Already-sent notifications are not updated; the saved message is only read back on reopen."
+    },
+    {
+      "id": "sr.list-share.send-new-only",
+      "type": "branch",
+      "name": "Editing the message and adding customers sends to the newly added organizations only (AC-3)",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2476 wishlist-customer-sharing.vue:208-217",
+          "note": "one sendCustomerCommunication with only the added org ids; body is the trimmed message, or the default share text plus the link when blank; source read of head 0604e3f1, deployed as theme 2.59.0-pr-2476-0604; nothing observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "AC-1..AC-4",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Depends on the separate send in sr.list-share.notify-separate."
+    },
+    {
+      "id": "sr.list-share.message-cap-250",
+      "type": "branch",
+      "name": "The message field caps at 250 characters in the storefront",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2476 wishlist-customer-sharing.vue:87",
+          "note": "client-side maxlength constant 250, below the 1024 server limit of sr.list-share.message-semantics; source read of head 0604e3f1, deployed as theme 2.59.0-pr-2476-0604; nothing observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "AC-1..AC-4",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Whether a value over 250 can still reach the server is not established."
+    },
+    {
+      "id": "sr.list-share.save-enabled-rule",
+      "type": "branch",
+      "name": "Save is enabled only with at least one customer and an actual change",
+      "branch_kind": "state",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2476 wishlist-customer-sharing.vue:101-106,244",
+          "note": "canSave needs a non-empty audience plus a change in scope, added or removed targets, or the trimmed message; source read of head 0604e3f1, deployed as theme 2.59.0-pr-2476-0604; nothing observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "AC-1..AC-4",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "sr.list-share.clear-undo",
+      "type": "branch",
+      "name": "Clear all empties the recipients and Undo restores them",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2476 wishlist-customer-sharing.vue",
+          "note": "Clear all and Undo controls on the recipient list; source read of head 0604e3f1, deployed as theme 2.59.0-pr-2476-0604; nothing observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "AC-1..AC-4",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "sr.list-share.remove-customer",
+      "type": "branch",
+      "name": "Removing a customer sends removeSharedWithIds and no notification",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2476 wishlist-customer-sharing.vue",
+          "note": "remove is a delta on the target set; no send follows; source read of head 0604e3f1, deployed as theme 2.59.0-pr-2476-0604; nothing observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "AC-1..AC-4",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "sr.list-share.stop-sharing-confirm",
+      "type": "branch",
+      "name": "Stop sharing asks for confirmation when an audience exists and saves the list as Private",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2476 wishlist-customer-sharing.vue",
+          "note": "confirm modal only when audience exists; saves scope Private without a message (the server resets it); source read of head 0604e3f1, deployed as theme 2.59.0-pr-2476-0604; nothing observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "AC-1..AC-4",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Ties to sr.list-share.scope-change-resets. Whether a re-share after Stop keeps the last message is an open question."
+    },
+    {
+      "id": "sr.list-share.send-failure-warning",
+      "type": "branch",
+      "name": "A failed notification after a successful save shows a warning and keeps the save",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2476 wishlist-customer-sharing.vue",
+          "note": "send failure after save yields a warning toast only; source read of head 0604e3f1, deployed as theme 2.59.0-pr-2476-0604; nothing observed live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5728",
+          "note": "AC-1..AC-4",
+          "date": "2026-09-29"
+        }
+      ]
     }
   ],
   "edges": [
@@ -4772,6 +5273,131 @@
       "from": "sr.rep-as-buyer",
       "to": "sr.serve-orgs",
       "type": "depends_on"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.targets-delta",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.message-persisted",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.message-semantics",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.message-needs-scope",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.scope-change-resets",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.last-target-refused",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.customer-access",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.notify-separate",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.edit-prefill",
+      "type": "contains"
+    },
+    {
+      "from": "sr.sales-rep",
+      "to": "sr.list-share",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.rep-as-buyer",
+      "type": "depends_on",
+      "note": "the rep is a member of every served org, which the target authorization relies on"
+    },
+    {
+      "from": "sr.list-share.notify-separate",
+      "to": "sr.comms",
+      "type": "depends_on",
+      "note": "notification is a separate sendCustomerCommunication call"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.recipients-prefill",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.message-only-save",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.send-new-only",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.message-cap-250",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.save-enabled-rule",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.clear-undo",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.remove-customer",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.stop-sharing-confirm",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share",
+      "to": "sr.list-share.send-failure-warning",
+      "type": "contains"
+    },
+    {
+      "from": "sr.list-share.send-new-only",
+      "to": "sr.list-share.notify-separate",
+      "type": "depends_on",
+      "note": "the send is client-orchestrated through sendCustomerCommunication"
+    },
+    {
+      "from": "sr.list-share.message-only-save",
+      "to": "sr.list-share.notify-separate",
+      "type": "depends_on",
+      "note": "the send is client-orchestrated through sendCustomerCommunication"
+    },
+    {
+      "from": "sr.list-share.send-failure-warning",
+      "to": "sr.list-share.notify-separate",
+      "type": "depends_on",
+      "note": "the send is client-orchestrated through sendCustomerCommunication"
     }
   ]
 }

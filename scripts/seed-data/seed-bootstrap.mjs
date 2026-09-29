@@ -181,6 +181,10 @@ const STEPS = [
   // grant (SALES_REP_EMAIL + SALES_REP_PASSWORD_<ENV>).
   { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142 },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', required: false, priority: 145 },
+  // Push Messages inboxes (suite 068): tops the reader's inbox up to a mixed read/unread state and
+  // sends the bulk recipient 3 fresh messages. After company-users (100), which creates the
+  // PUSH_RECIPIENT_* logins. Sent messages are irrevocable, so there is no teardown to pair with it.
+  { name: 'push', script: 'push/seed-push.mjs', required: false, priority: 147 },
   // VCST-5546 / INV-047 — a variation family stocked on the store's MAIN fulfillment center, so it
   // runs after `inventory` (70) has ensured the fulfillment centers exist.
   { name: 'variation-stock', script: 'inventory/seed-variation-stock.mjs', required: false, priority: 72 },

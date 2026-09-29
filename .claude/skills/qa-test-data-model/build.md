@@ -16,9 +16,12 @@ handed to `/qa-generate-data`.
 
 1. **Entity + state.** `entity` in PascalCase; `required_state` as explicit key/values. `constraints`
    holds the relations a BVA or decision table needs (`goal_target: "> merchandise AND <= total"`).
-2. **Lifecycle** from the table in SKILL.md. For every `FIXTURE`, write `shared_state`: what mutates
-   on it across runs and what may therefore never be asserted on it. If a case must mutate it, the
-   requirement is `SCENARIO`, not `FIXTURE`.
+2. **Lifecycle** from the table in SKILL.md. Choose it with the decision questions in
+   [`test-data-authoring.md`](../../knowledge/execution/test-data-authoring.md) §FIFTH RULE **before**
+   step 3. Checking for an existing alias first is how a seeded fixture gets chosen for a state the
+   environment destroys. For every `FIXTURE`, write `shared_state`: what mutates on it across runs and
+   what may therefore never be asserted on it. A `STEP` with executor `case` records in `limits` why a
+   stored entity cannot hold the state.
 3. **Acquisition, reuse first:**
    - an alias already names this state → `EXISTING` + `td_alias`.
    - a seeder creates it → `CREATE` + `seed_capability` (the `seed:*` script) + `td_alias` for how the
