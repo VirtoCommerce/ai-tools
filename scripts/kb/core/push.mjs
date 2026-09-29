@@ -505,7 +505,7 @@ export async function flush(opts = {}) {
   const r = await flushOnce(opts);
   // Keyed on the REQUEST, not the result: a dry run can end in `nothing`, `no-base` or
   // `foreign-base` too, and none of those may overwrite the status of the last real push.
-  if (!opts.dryRun && !['dry-run', 'declined', 'disabled'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
+  if (!opts.dryRun && !['declined', 'disabled'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
   return r;
 }
 
@@ -639,7 +639,9 @@ async function flushOnce({
 
     // A dry run returns BEFORE the gate: it is a preview, so it never asks "publish this?", and a "no"
     // would turn it into `declined` and hide the plan it was run to show (VCST-6103).
-    if (dryRun) return { state: 'dry-run', session, plan: built.plan };
+    // `held` answers the question a preview's reader actually has — will this go out without me?
+    // Only KB_PUSH_CONFIRM holds a queue; otherwise any later sweep, CLI or MCP, may publish it.
+    if (dryRun) return { state: 'dry-run', session, plan: built.plan, held: pushConfirmRequired(env) };
     if (gate) {
       const yes = await gate(built.plan);
       if (!yes) return { state: 'declined', session, plan: built.plan, why: 'the operator declined this push; the queue is untouched' };
@@ -683,10 +685,11 @@ async function flushOnce({
   // with the next real push as a failure that never happened, and `kb stat` would report it.
   const why = last?.detail ?? last?.why ?? 'unknown';
   const reason = last?.reason ?? null;
-  if (dryRun) return { state: 'failed', dryRun: true, session, why, reason, queued: allLines.length };
+  const failed = { state: 'failed', session, attempts: attempt, why, reason, queued: allLines.length, kept: loaded.map((f) => f.path) };
+  if (dryRun) return { ...failed, dryRun: true };
   await touchStamp({ env, now });
   await log({ kind: 'flush', ok: false, attempts: attempt, why, reason }, { env });
-  return { state: 'failed', session, attempts: attempt, why, reason, queued: allLines.length, kept: loaded.map((f) => f.path) };
+  return failed;
 }
 
 /**

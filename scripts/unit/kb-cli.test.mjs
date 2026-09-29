@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
@@ -298,14 +298,21 @@ function snapshot(dir) {
   return out;
 }
 
-/** Spawn the CLI with a DUE own-queue; return its fetches, output, and the queue dir before/after. */
+/**
+ * Spawn the CLI with one DUE queue file, `sweep001.jsonl`, and return its fetches, output, and the
+ * queue dir before/after. The file is this process's OWN queue unless `CLAUDE_CODE_HOST_SESSION_ID`
+ * is overridden, in which case it is an IDLE FOREIGN file: its line and its mtime are an hour old,
+ * past both OWN_FLUSH_AFTER_MS and SWEEP_AFTER_MS.
+ */
 async function kbRecorded(args, extraEnv = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'kb-cli-sweep-'));
   const logDir = mkdtempSync(join(tmpdir(), 'kb-cli-fetch-'));
   try {
     const log = join(logDir, 'fetch.log');
-    const at = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // well past OWN_FLUSH_AFTER_MS
-    writeFileSync(join(dir, 'sweep001.jsonl'), `${JSON.stringify({ at, kind: 'ask', q: 'x', matched: [], state: 'miss' })}\n`, 'utf8');
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const file = join(dir, 'sweep001.jsonl');
+    writeFileSync(file, `${JSON.stringify({ at: hourAgo.toISOString(), kind: 'ask', q: 'x', matched: [], state: 'miss' })}\n`, 'utf8');
+    utimesSync(file, hourAgo, hourAgo);
     const before = snapshot(dir);
     let stdout = '';
     try {
@@ -347,16 +354,27 @@ test('a SUCCESSFUL push --dry-run with a due own-queue writes nothing and change
   assert.deepEqual(r.calls.filter(isWrite), [], `no write was attempted:\n${r.calls.join('\n')}`);
   assert.equal(headReads(r.calls), 1, 'the dry run read the head once, for its plan; the sweep never followed');
   assert.deepEqual(r.after, r.before, 'the queue, the stamp and the push status are exactly as they were');
-  // The queue is an hour old, so it goes out on the very next call — not "once it is N minutes old".
-  assert.match(r.stdout, /NOT held: the next kb call \(CLI or MCP\) publishes/, 'and it says so, rather than implying a hold');
+  assert.match(r.stdout, /NOT held: any later kb call \(CLI or MCP\) may publish/, 'and it says so, rather than implying a hold');
 });
 
-test('the NOT-held warning appears only when something WILL publish the queue', async () => {
-  for (const [why, env] of [['KB_NO_SWEEP', { KB_NO_SWEEP: '1' }], ['no token', { KB_GITHUB_TOKEN: '' }]]) {
-    const r = await kbRecorded(['push', '--dry-run'], { KB_FAKE_BASE: 'healthy', ...env });
-    assert.match(r.stdout, /would commit/, why);
-    assert.doesNotMatch(r.stdout, /NOT held/, `${why}: nothing will publish it, so the warning would be false`);
-  }
+test('a dry run of ANOTHER session\'s idle file warns too — the warning is not about this session only', async () => {
+  // This session's own queue is empty; the plan is an idle foreign file, which the next sweep takes
+  // at once because a dry run no longer moves the stamp.
+  const r = await kbRecorded(['push', '--dry-run'], { KB_FAKE_BASE: 'healthy', CLAUDE_CODE_HOST_SESSION_ID: 'other002' });
+  assert.match(r.stdout, /would commit/, 'the foreign file is in the plan');
+  assert.match(r.stdout, /NOT held: any later kb call/);
+  assert.deepEqual(r.after, r.before);
+});
+
+test('--json carries the same hold status, and KB_PUSH_CONFIRM=1 is the one thing that holds', async () => {
+  const open = JSON.parse((await kbRecorded(['push', '--dry-run', '--json'], { KB_FAKE_BASE: 'healthy' })).stdout);
+  assert.equal(open.state, 'dry-run');
+  assert.equal(open.held, false, 'a machine reader is told the queue is not held');
+  const held = await kbRecorded(['push', '--dry-run', '--json'], { KB_FAKE_BASE: 'healthy', KB_PUSH_CONFIRM: '1' });
+  assert.equal(JSON.parse(held.stdout).held, true);
+  const text = await kbRecorded(['push', '--dry-run'], { KB_FAKE_BASE: 'healthy', KB_PUSH_CONFIRM: '1' });
+  assert.match(text.stdout, /would commit/, 'and a dry run under the gate still shows the plan');
+  assert.doesNotMatch(text.stdout, /NOT held/);
 });
 
 test('a FAILED push --dry-run records no failure — nothing was attempted (VCST-6103)', async () => {
@@ -367,7 +385,7 @@ test('a FAILED push --dry-run records no failure — nothing was attempted (VCST
   assert.deepEqual(r.after, r.before, 'no `flush ok:false` line, no FAILED push status, no stamp');
 });
 
-test('boolean flags never swallow the next argument, and `=false` means false', () => withQueue(async (env) => {
+test('boolean flags never swallow the next argument; a value is given only with `=`', () => withQueue(async (env) => {
   const q = 'what does the Active column on /company/members reflect';
   const r = await kb(['ask', '--no-sweep', q, '--base', FIXTURE], { env });
   noTrap(r);
@@ -377,11 +395,12 @@ test('boolean flags never swallow the next argument, and `=false` means false', 
   assert.equal(human.code, 0);
   assert.match(human.stdout, /KB-27B4CD10/);
   assert.throws(() => JSON.parse(human.stdout), '--json=false prints the human form, not JSON');
-  // A space-separated true|false is still the flag's value, never part of the question.
-  const spaced = await kb(['ask', q, '--base', FIXTURE, '--json', 'true'], { env });
-  assert.equal(spaced.code, 0);
-  assert.doesNotThrow(() => JSON.parse(spaced.stdout), '--json true is JSON');
-  const off = await kb(['ask', q, '--base', FIXTURE, '--json', 'false'], { env });
-  assert.match(off.stdout, /KB-27B4CD10/, 'and "false" did not become part of the question');
-  assert.throws(() => JSON.parse(off.stdout), '--json false is not JSON');
+  const on = await kb(['ask', q, '--base', FIXTURE, '--json=true'], { env });
+  assert.doesNotThrow(() => JSON.parse(on.stdout), '--json=true is JSON');
+  const zero = await kb(['ask', q, '--base', FIXTURE, '--json=0'], { env });
+  assert.throws(() => JSON.parse(zero.stdout), '--json=0 is false, like =false');
+  // One rule for both spellings: the word after a bare boolean flag is never its value — it is the
+  // verb's argument, whatever it says.
+  const bare = await kb(['ask', '--json', q, '--base', FIXTURE], { env });
+  assert.doesNotThrow(() => JSON.parse(bare.stdout), 'a bare --json is on, and the question after it survives');
 }));

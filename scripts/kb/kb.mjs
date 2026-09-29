@@ -18,7 +18,7 @@
 
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
-import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, ownFlushDue, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
+import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
 import { pushConfirmRequired, queueDir } from './core/queue.mjs';
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
@@ -28,7 +28,8 @@ import { TOPIC_MAX, ask, capture, confirm, dispute, reindex, show, stat } from '
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
 /**
- * Flags that never take a value. Without this list `kb ask --no-sweep "q"` swallowed the question as
+ * Flags that never take the next argument: a value is given only as `--flag=value`, and
+ * `=false|0|no|off` means false. Without this list `kb ask --no-sweep "q"` swallowed the question as
  * the flag's value, and `--dry-run=false` was the truthy string "false" — a dry run (VCST-6103).
  */
 const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help']);
@@ -43,14 +44,7 @@ function parseArgs(argv) {
     if (!a.startsWith('--')) { out._.push(a); continue; }
     const eq = a.indexOf('=');
     const name = (eq === -1 ? a.slice(2) : a.slice(2, eq));
-    if (BOOLEAN_FLAGS.has(name)) {
-      // `--json true` / `--json false` still work: a bare true|false after the flag is its value,
-      // and anything else is left for the verb.
-      let v = eq === -1 ? null : a.slice(eq + 1);
-      if (v === null && /^(true|false)$/i.test(argv[i + 1] ?? '')) v = argv[++i];
-      out.flags[name] = v === null || !/^(false|0|no|off)$/i.test(v);
-      continue;
-    }
+    if (BOOLEAN_FLAGS.has(name)) { out.flags[name] = eq === -1 || !/^(false|0|no|off)$/i.test(a.slice(eq + 1)); continue; }
     const value = eq === -1 ? (argv[i + 1]?.startsWith('--') ? true : argv[++i] ?? true) : a.slice(eq + 1);
     if (name in out.repeated) out.repeated[name].push(String(value));
     else out.flags[name] = value;
@@ -259,13 +253,11 @@ async function main(argv) {
       if (r.plan.converted) out(`  ${r.plan.converted} queued capture(s) would convert to confirm`);
       for (const p of r.plan.problems ?? []) out(`  ! ${p.id ?? ''} ${p.why}`);
       out('  nothing was sent, and nothing was changed.');
-      // Said only when it is TRUE: under KB_PUSH_CONFIRM, KB_NO_SWEEP or without a token nothing
-      // publishes it, and "once it is N minutes old" counts from the OLDEST line, so it may be now.
-      if (!pushConfirmRequired() && !process.env.KB_NO_SWEEP && token) {
-        out(await ownFlushDue()
-          ? '  NOT held: the next kb call (CLI or MCP) publishes this session\'s queue. KB_PUSH_CONFIRM=1 holds it for review.'
-          : `  NOT held: the first kb call (CLI or MCP) after its oldest line is ${minutes(OWN_FLUSH_AFTER_MS)} minutes old publishes it. KB_PUSH_CONFIRM=1 holds it for review.`);
-      }
+      // DELIBERATELY not a prediction of WHEN (VCST-6103 review): what the next sweep takes depends
+      // on this session's queue age, other sessions' idle files, their reach records and the stamp,
+      // and a forecast restating those rules drifts from `sweepIfDue` the day they change. This
+      // sentence is true under all of them. `r.held` is the same fact for a `--json` reader.
+      if (!r.held) out('  NOT held: any later kb call (CLI or MCP) may publish what is listed here. KB_PUSH_CONFIRM=1 holds it for review.');
     } else if (r.dryRun) {
       out(`kb push (dry run): could not build the plan — ${r.why ?? ''}`);
       out('  nothing was sent, and nothing was changed.');

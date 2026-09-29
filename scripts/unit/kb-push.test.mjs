@@ -22,7 +22,7 @@ import {
   RETENTION_DAYS, SWEEP_AFTER_MS, appendEvidence, commitMessage, expiredLogs, flush, logPath,
   logTargetOf, outsideBase, ownFlushDue, postVerbSweepAllowed, queueFiles, sameEvidence, shouldSweep, unionLines,
 } from '../kb/core/push.mjs';
-import { orderQueue, pushStatusPath, queueBacklog, queuePath, readPushStatus, releaseConsumed } from '../kb/core/queue.mjs';
+import { orderQueue, pushStatusPath, queueBacklog, queuePath, readPushStatus, readQueue, releaseConsumed } from '../kb/core/queue.mjs';
 import { reachPath } from '../kb/core/reach.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 // THE READER, IN THE WRITER'S TEST, DELIBERATELY. STEP 3c's whole claim is that the path gained a
@@ -1200,6 +1200,19 @@ test('a dry run that stops before the plan — no base, foreign base — writes 
   assert.equal((await flush({ env, base: '/a/local/dir', dryRun: true })).state, 'no-base');
   assert.equal((await flush({ env, base: 'https://raw.githubusercontent.com/someone/else/main', dryRun: true })).state, 'foreign-base');
   assert.equal(existsSync(pushStatusPath(env)), false);
+}));
+
+test('a FAILED dry run has the same shape as a failed push, plus `dryRun`, and records nothing', () => withQueue(async ({ dir, env }) => {
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'x', matched: [], state: 'miss' }]);
+  const down = { getRef: async () => ({ ok: false, reason: 'unreachable', detail: 'HTTP 503' }) };
+  const r = await run(env, down, { dryRun: true });
+  assert.equal(r.state, 'failed');
+  assert.equal(r.dryRun, true);
+  assert.equal(r.attempts, 1, 'a consumer that reads `attempts` off any failure gets a number');
+  assert.deepEqual(r.kept, [queuePath(env)]);
+  assert.equal(existsSync(pushStatusPath(env)), false);
+  const { lines } = await readQueue({ env, path: queuePath(env) });
+  assert.ok(!lines.some((l) => l.kind === 'flush'), 'no `flush ok:false` line for a push that was never attempted');
 }));
 
 test('a dry run never reaches the gate — a preview does not ask "publish this?" (VCST-6103)', () => withQueue(async ({ dir, env }) => {
