@@ -41,6 +41,7 @@
  *   node scripts/seed-data/seed-b2b-addresses.mjs [--dry-run] [--verbose] [--only <ORG-ID|ADDR-ID>] [--teardown]
  * Safety: ENV_RISK gate; contact-level rows (contact_id set) are out of scope (org addresses only).
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   assertSafeTarget, auth, api, loadCsv, log, verbose, iso3, csvBool, verifyRemoved,
   DRY_RUN, TEARDOWN, ONLY, BACK_URL, STORE_ID,

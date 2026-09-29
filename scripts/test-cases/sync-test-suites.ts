@@ -26,6 +26,7 @@
  *   npm run suites:lint          exit 1 if file is out of sync (for CI)
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { join, sep } from "path";
 import { fileURLToPath } from "url";

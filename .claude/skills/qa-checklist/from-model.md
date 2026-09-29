@@ -31,11 +31,17 @@ Every item traces to its source, and every in-scope source row is either an item
    - **By citation.** A behaviour the model's Part 0 cites by node id is in scope.
    - **By descent.** Every node reached along `contains` / `branches_to` edges from a behaviour picked
      by either route is in scope too. Branches carry no `chain_link` of their own.
+   - **By crossing.** An in-scope node's cross-domain `depends_on` / `affected_by` edges bring the
+     other domain's node in, as ONE item that exercises both sides. The item's Ref names both ids, and
+     its Condition is the other domain's partition (product type, discount, cancellation). The model's
+     integration-point links that reach a domain with no map get an item the same way, with Ref `S#<n>`.
 
    **`interfaces` never selects a node.** It is a layer enum (`storefront`, `graphql`, `admin-ui`, …),
    so almost every behaviour matches some ticket. It decides the node's **lane** in step 6 instead.
 
    For each in-scope `behavior` or `branch` node, add an item unless a step-2 item already observes it.
+   A feature switch in scope (a gate behaviour, or the model's `off` variant row) also gets one item
+   asserting that existing behaviour is unchanged with the feature off.
    When one does, that item's Ref also names the node. A `state` node is covered through the
    transition that reaches it and needs no item of its own.
 4. **The ticket changes a mechanism no node carries?** Record it as mind-map DRIFT under the checklist.

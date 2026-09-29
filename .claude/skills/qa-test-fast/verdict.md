@@ -71,6 +71,7 @@ functional ticket.
 
 ## Not tested, and why
 - <item / charter item> — <reason>
+- <node id> — candidate case (passed here, no suite case stamps it)
 
 ## Data
 Created <n> AGENT-TEST- entities · removed <n> · settings restored and re-read: <list | none>
@@ -80,7 +81,10 @@ Model <path> · Checklist <path> · Domain map <state> · Mind map <path | SKIPP
 ```
 
 **Mind-map findings** go into `summary.json.domain_map.mind_map_findings[]`: a node the run
-contradicted, or a scenario that fit no node. They are handed to the next
+contradicted, a scenario that fit no node, every DRIFT item's `HOLDS`/`RESOLVED` result with its
+evidence, and an UNVERIFIED node the exploratory session established. A DRIFT that holds and whose
+route `TM-018` flags as unfiled is a bug: it goes through `/vc-fix:qa-bug` like any other, and the key
+or path that returns becomes the finding's proposed route. They are handed to the next
 `/qa-test-mind-map update --from <TICKET>`, never applied here
 ([`../qa-test/reporting.md`](../qa-test/reporting.md) §5-docs-map).
 

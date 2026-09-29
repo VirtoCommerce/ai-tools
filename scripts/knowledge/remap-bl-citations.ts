@@ -56,6 +56,7 @@
  *   npm run bl:remap -- --drop BL-FOO-001 --reason "domain retired" --apply
  *   npm run bl:remap -- --list                 # every dangling id + its citing cases
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";

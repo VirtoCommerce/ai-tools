@@ -27,6 +27,7 @@
  * Exit codes: 0 fine · 1 (`--check` only) a suite lost machine cases against the manifest
  * · 2 an argument problem (unknown suite).
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { isCanonicalHeader, parseSuite } from "./append-test-cases-to-suite.js";

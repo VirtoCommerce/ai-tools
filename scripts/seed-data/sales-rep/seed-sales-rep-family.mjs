@@ -40,6 +40,7 @@
  *   TEST_ENV=vcst       npm run seed:sales-rep-family -- --step docs --only SR_DOC_PDF
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

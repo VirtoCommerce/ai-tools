@@ -25,6 +25,7 @@
  *   node scripts/seed-test-data.js catalog --dry-run # preview without creating
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';

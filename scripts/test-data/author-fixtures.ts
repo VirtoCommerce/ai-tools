@@ -28,6 +28,7 @@
  * Plan shape: see the PlanSchema interfaces below (and the /qa-generate-data SKILL.md).
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { execSync } from "child_process";

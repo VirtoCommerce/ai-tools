@@ -298,7 +298,8 @@
     "ucp:schema:probe": "node scripts/ucp/refresh-ucp-schema.mjs --probe",
     "bl:extract:has": "npx tsx scripts/knowledge/extract-bl.ts --has-domain",
     "kb:install": "node scripts/kb/install-mcp.mjs",
-    "models:check": "npx tsx scripts/maintenance/check-test-models.ts"
+    "models:check": "npx tsx scripts/maintenance/check-test-models.ts",
+    "models:view": "npx tsx scripts/maintenance/render-mind-map.ts"
   },
   "repository": {
     "type": "git",

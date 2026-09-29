@@ -30,6 +30,7 @@
  *   npx tsx scripts/regression/close-run.ts --run-id <RUN_ID|latest> [--env <env>]
  *                                           [--status completed|stalled] [--json] [--dry-run]
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { basename, join, resolve } from "path";
 import { fileURLToPath } from "url";

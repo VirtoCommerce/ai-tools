@@ -14,6 +14,7 @@
  *   npx tsx scripts/validate-td-refs.ts --warn-only  # downgrade hardcoded IDs to warnings (WIP escape hatch)
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join, relative } from "path";
 import { parse as parseCsv } from "csv-parse/sync";

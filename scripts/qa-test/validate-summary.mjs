@@ -23,6 +23,7 @@
  *   node scripts/qa-test/validate-summary.mjs --update-baseline
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import fs from 'node:fs';
 import path from 'node:path';
 

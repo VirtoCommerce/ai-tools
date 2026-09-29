@@ -20,6 +20,7 @@
  *   npx tsx scripts/lib/combinatorial-generator.ts '{"factors":[{"name":"pricing","values":["priced","unpriced"]},{"name":"balance",values:[...]}],"constraints":[]}'
  */
 
+import "./sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 export interface Factor {
   /** Axis name, e.g. "pricing-state", "loyalty-balance". */
   name: string;

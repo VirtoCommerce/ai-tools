@@ -21,6 +21,7 @@
  *   2 = usage / IO error
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, statSync, readdirSync, existsSync } from "fs";
 import { resolve, join, relative } from "path";
 import { parse as parseCsv } from "csv-parse/sync";

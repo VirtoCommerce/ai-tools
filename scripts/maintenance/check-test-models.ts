@@ -44,9 +44,12 @@
  *   TM-015 Behavior: stamp names an unknown node (error) / an OBSOLETE one (warn)
  *   TM-016 DataProfile: stamp names an unknown profile
  *   TM-017 suspect case — linked to a DRIFT, OBSOLETE or changed node (warn)
- *   TM-019 suite CSV unparsable, its stamps not read (warn)
+ *   TM-018 DRIFT route names no trackable owner (warn)
+ *   TM-019 suite CSV unparsable, or a legacy header hides its stamps (warn)
+ *   TM-032 integration point — a cross-domain depends_on / affected_by edge no case exercises (info)
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative, basename } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -55,7 +58,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import type { ValidateFunction } from "ajv";
 import { ENTRY_RE } from "../knowledge/lint-bl.ts";
 import { SECTION_RE } from "../knowledge/lint-ecl.ts";
-import { parseSuite, loadDesignVocabulary } from "../test-cases/append-test-cases-to-suite.ts";
+import { parseSuite, loadDesignVocabulary, isCanonicalHeader } from "../test-cases/append-test-cases-to-suite.ts";
 
 // fileURLToPath, not .pathname — a space in the repo path ("My Projects") URL-encodes to %20.
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -99,6 +102,7 @@ export interface MapNode {
   produces?: string[];
   oracle_refs?: string[];
   last_verified?: string;
+  drift?: { expected: string; observed: string; route?: string };
   [k: string]: unknown;
 }
 export interface MapEdge {
@@ -170,6 +174,8 @@ export interface Context {
   discoverFns: Set<string> | null;
   generators: Set<string> | null;
   cases: Map<string, CaseStamps>;
+  /** Tracker project keys a DRIFT route may cite (`JIRA_PROJECT_KEY`, the profile's tracker key). */
+  trackerKeys?: Set<string>;
 }
 
 /* ------------------------------------------------------------------ *
@@ -332,9 +338,20 @@ export function removedIds(prevIds: Iterable<string>, nextIds: Iterable<string>)
 
 /** Nodes whose behavioural content changed between two revisions (last_verified alone is not a change). */
 export function changedNodes(prev: MindMap, next: MindMap): string[] {
-  const strip = (n: MapNode) => JSON.stringify({ ...n, last_verified: undefined });
-  const before = new Map(prev.nodes.map((n) => [n.id, strip(n)]));
-  return next.nodes.filter((n) => before.has(n.id) && before.get(n.id) !== strip(n)).map((n) => n.id);
+  // Re-verifying a node is not a change. Neither is attaching its FIRST data contract: the behaviour is
+  // the same, and flagging every stamped case of a map that just gained a data model would make the
+  // suspect list useless. Editing an existing requires/produces still counts.
+  const strip = (n: MapNode, p?: MapNode) =>
+    JSON.stringify({
+      ...n,
+      last_verified: undefined,
+      ...(p && !p.requires?.length ? { requires: undefined } : {}),
+      ...(p && !p.produces?.length ? { produces: undefined } : {}),
+    });
+  const before = new Map(prev.nodes.map((n) => [n.id, n]));
+  return next.nodes
+    .filter((n) => before.has(n.id) && strip(before.get(n.id)!, before.get(n.id)) !== strip(n, before.get(n.id)))
+    .map((n) => n.id);
 }
 
 const BEHAVIOR_STAMP_RE = /\bBehavior:\s*([a-z][a-z0-9]*(?:\.[a-z0-9][a-z0-9-]*)+)/g;
@@ -382,6 +399,34 @@ export function statusProblem(status: string, evidence: Evidence[] = [], maturit
   return null;
 }
 
+/**
+ * A DRIFT is a recorded conflict, and it is only resolved if its route reaches someone who will act.
+ * A route that names only a draft bug, a team or "open defect" parks the conflict in the map, where
+ * nobody but the map's next reader finds it.
+ *
+ * Trackable = a key of THIS deployment's tracker project (read from the env / project profile, never
+ * a generic UPPER-123 shape, which case ids like MSN-032 and checker codes like TM-018 also match),
+ * an issue/PR in a named repo (`vc-frontend#2501`), a tracker issue URL, an oracle audit or a kb dispute.
+ * A documentation URL or an oracle id is the EXPECTED side of the conflict, never an owner.
+ * A route that says `UNFILED` is flagged whatever else it names — that marker is the author saying
+ * the owner does not exist yet, and TM-018 is what keeps it visible until it does.
+ */
+const ISSUE_URL_RE = /\bhttps?:\/\/\S*(?:\/browse\/|\/issues\/|\/pull\/|\/_workitems\/)\S*/;
+const REPO_REF_RE = /\b[A-Za-z0-9][\w.-]*#\d+\b/;
+const OTHER_OWNERS_RE = [/\/qa-review-oracles\b/, /kb[ _-]dispute/i];
+
+export function driftRouteProblem(route: string | undefined, trackerKeys: Iterable<string> = []): string | null {
+  if (!route?.trim()) return "DRIFT has no route — name who resolves it";
+  if (/\bUNFILED\b/.test(route)) return "DRIFT route is marked UNFILED — file it, then put the key in the route";
+  const keys = [...trackerKeys].filter((k) => /^[A-Z][A-Z0-9]*$/.test(k));
+  const keyRe = keys.length ? new RegExp(`(?<![A-Za-z0-9-])(?:${keys.join("|")})-\\d+\\b`) : null;
+  if ((keyRe && keyRe.test(route)) || ISSUE_URL_RE.test(route) || REPO_REF_RE.test(route) || OTHER_OWNERS_RE.some((re) => re.test(route))) {
+    return null;
+  }
+  const draft = /reports\/bugs\/open\//.test(route) ? " (it points at an unfiled draft bug)" : "";
+  return `DRIFT route names no trackable owner${draft} — file a ticket, or route it to /qa-review-oracles or a kb dispute`;
+}
+
 export interface CheckInput {
   mindMaps: Loaded<MindMap>[];
   dataModels: Loaded<DataModel>[];
@@ -392,6 +437,38 @@ export interface CheckResult {
   findings: Finding[];
   coverage: Record<string, string[]>;
   suspects: { caseId: string; node: string; why: string }[];
+  /** Cross-domain depends_on / affected_by edges and the cases that exercise both sides. */
+  crossings: { from: string; to: string; type: string; cases: string[] }[];
+}
+
+/**
+ * An INTEGRATION POINT is a depends_on / affected_by edge between two domains — the seam where a
+ * feature meets functionality another domain owns, and where the bugs a feature's own suite never
+ * sees live (a loyalty goal and the checkout discount; barcode search and a configurable product).
+ * The domain of a node is its id prefix, which TM-003 already enforces.
+ */
+export function crossDomainEdges(edges: MapEdge[]): MapEdge[] {
+  const dom = (id: string) => id.split(".")[0];
+  return edges.filter((e) => (e.type === "depends_on" || e.type === "affected_by") && dom(e.from) !== dom(e.to));
+}
+
+/**
+ * A case exercises an integration point when its stamps reach BOTH sides — each side either stamped
+ * itself or reached through a stamped descendant (a branch under the behaviour). A case on one side
+ * only is that domain's test, not a test of the seam.
+ */
+export function crossingCases(edge: MapEdge, cases: Map<string, CaseStamps>, edges: MapEdge[]): string[] {
+  const reach = new Map<string, Set<string>>();
+  const reached = (id: string) => {
+    if (!reach.has(id)) reach.set(id, new Set([id, ...ancestors(id, edges)]));
+    return reach.get(id)!;
+  };
+  const out: string[] = [];
+  for (const [caseId, s] of cases) {
+    const sides = s.behaviors.map(reached);
+    if (sides.some((r) => r.has(edge.from)) && sides.some((r) => r.has(edge.to))) out.push(caseId);
+  }
+  return out;
 }
 
 export function checkModels(input: CheckInput, ctx: Context): CheckResult {
@@ -463,6 +540,10 @@ export function checkModels(input: CheckInput, ctx: Context): CheckResult {
       }
       const sp = statusProblem(n.status, n.evidence, n.maturity);
       if (sp) add("TM-007", "error", file, sp, n.id);
+      if (n.status === "DRIFT") {
+        const rp = driftRouteProblem(n.drift?.route, ctx.trackerKeys ?? []);
+        if (rp) add("TM-018", "warn", file, rp, n.id);
+      }
       if (n.technique && ctx.techniques && !ctx.techniques.has(n.technique)) {
         add("TM-013", "error", file, `technique \`${n.technique}\` is not a §0 token (${[...ctx.techniques].join(", ")})`, n.id);
       }
@@ -601,12 +682,38 @@ export function checkModels(input: CheckInput, ctx: Context): CheckResult {
     }
   }
 
-  return { findings, coverage: Object.fromEntries(coverage), suspects };
+  const allEdges = input.mindMaps.flatMap((m) => m.doc.edges);
+  const crossings = crossDomainEdges(allEdges).map((e) => ({ from: e.from, to: e.to, type: e.type, cases: crossingCases(e, ctx.cases, allEdges) }));
+  for (const c of crossings) {
+    if (!c.cases.length) add("TM-032", "info", nodeFile.get(c.from) ?? "?", `integration point ${c.from} -${c.type}-> ${c.to}: no case exercises both sides`, c.from);
+  }
+
+  return { findings, coverage: Object.fromEntries(coverage), suspects, crossings };
 }
 
 /* ------------------------------------------------------------------ *
  * Context loading — every vocabulary from the file that owns it
  * ------------------------------------------------------------------ */
+
+/**
+ * This deployment's tracker keys: `JIRA_PROJECT_KEY` from the env layers + the profile's tracker key.
+ * The layers are PARSED, in config.js's order, rather than config.js imported: config.js exits the
+ * process when a secret is missing, which is every CI run and every fresh clone.
+ */
+async function trackerKeys(): Promise<Set<string>> {
+  const keys = new Set<string>();
+  try {
+    const { parse } = await import("dotenv");
+    const { resolveTestEnv } = await import(pathToFileURL(join(ROOT, "scripts", "lib", "resolve-test-env.js")).href);
+    const { loadProjectProfile } = await import(pathToFileURL(join(ROOT, "scripts", "lib", "project-profile.mjs")).href);
+    const layers = [".env.defaults", `.env.${resolveTestEnv("vcst")}`, ".env.local"].map((f) => readIf(join(ROOT, f)));
+    const merged = Object.assign({}, ...layers.filter((t): t is string => t !== null).map((t) => parse(t)), process.env);
+    for (const k of [merged.JIRA_PROJECT_KEY, loadProjectProfile(ROOT)?.tracker?.projectKey]) if (k) keys.add(k);
+  } catch {
+    // An unreadable env or profile ⇒ no key is trusted, and every tracker-only route warns. Loud, not guessed.
+  }
+  return keys;
+}
 
 function readIf(path: string): string | null {
   return existsSync(path) ? readFileSync(path, "utf8") : null;
@@ -651,7 +758,16 @@ function eclIds(): Set<string> | null {
   return out;
 }
 
-function loadCases(findings: Finding[]): Map<string, CaseStamps> {
+/**
+ * The suite parser maps a legacy (TestRail-style) header onto the enriched column names BY POSITION,
+ * so a stamp in a legacy `References` cell lands under another name and is never read — silently.
+ * Only a file that actually carries a stamp is worth a warning; legacy suites without one are not.
+ */
+export function stampsUnreadable(text: string): boolean {
+  return /\b(?:Behavior|DataProfile):/.test(text) && !isCanonicalHeader(text);
+}
+
+export function loadCases(findings: Finding[]): Map<string, CaseStamps> {
   const out = new Map<string, CaseStamps>();
   const walk = (dir: string): void => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -660,10 +776,16 @@ function loadCases(findings: Finding[]): Map<string, CaseStamps> {
       else if (e.name.endsWith(".csv")) {
         const suite = relative(ROOT, p).replace(/\\/g, "/");
         let rows;
+        let text: string;
         try {
-          rows = parseSuite(readFileSync(p, "utf8")).rows;
+          text = readFileSync(p, "utf8");
+          rows = parseSuite(text).rows;
         } catch {
           findings.push({ code: "TM-019", severity: "warn", file: suite, msg: "suite does not parse — its model stamps were not read" });
+          continue;
+        }
+        if (stampsUnreadable(text)) {
+          findings.push({ code: "TM-019", severity: "warn", file: suite, msg: "legacy header — columns are read by position, so its model stamps were not read; migrate the suite to the enriched header first" });
           continue;
         }
         for (const r of rows) {
@@ -745,7 +867,7 @@ async function main(): Promise<void> {
 
   if (!mindMaps.length && !dataModels.length && !findings.length) {
     console.log("[models:check] no mind maps or data models yet — that is NOT a failure (a missing model passes).");
-    process.exit(0);
+    return;
   }
 
   const schemas = compileSchemas(JSON.parse(readFileSync(SCHEMA_MAP, "utf8")), JSON.parse(readFileSync(SCHEMA_MODEL, "utf8")));
@@ -773,6 +895,7 @@ async function main(): Promise<void> {
     discoverFns: exportNames(readIf(join(ROOT, "scripts", "lib", "live-discover.ts"))),
     generators: exportNames(readIf(join(ROOT, "scripts", "lib", "random-data.ts"))),
     cases: loadCases(findings),
+    trackerKeys: await trackerKeys(),
   };
 
   const baseline = baselineOf([...okMaps, ...okModels].map((m) => m.file), base);
@@ -786,7 +909,8 @@ async function main(): Promise<void> {
     const profile = okModels.flatMap((m) => m.doc.profiles).find((p) => p.id === planFor);
     if (!profile) {
       console.error(`[models:check] no profile \`${planFor}\``);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     const plan = seedPlan(profile, nodes, edges, reqs);
     const rows = plan.order.map((r, i) => ({
@@ -807,12 +931,13 @@ async function main(): Promise<void> {
       }
       if (plan.missing.length) console.log(`  missing: ${plan.missing.join(", ")}`);
     }
-    process.exit(plan.missing.length ? 1 : 0);
+    process.exitCode = plan.missing.length ? 1 : 0;
+    return;
   }
 
   const errors = findings.filter((f) => f.severity === "error");
   if (json) {
-    console.log(JSON.stringify({ mind_maps: mindMaps.map((m) => m.file), data_models: dataModels.map((m) => m.file), findings, coverage: result.coverage, suspects: result.suspects }, null, 2));
+    console.log(JSON.stringify({ mind_maps: mindMaps.map((m) => m.file), data_models: dataModels.map((m) => m.file), findings, coverage: result.coverage, suspects: result.suspects, crossings: result.crossings }, null, 2));
   } else {
     const nodeCount = okMaps.reduce((s, m) => s + m.doc.nodes.length, 0);
     const reqCount = okModels.reduce((s, m) => s + m.doc.requirements.length, 0);
@@ -820,9 +945,13 @@ async function main(): Promise<void> {
     for (const f of findings.filter((x) => x.severity !== "info")) console.log(`  ${f.code} [${f.severity}] ${basename(f.file)}${f.id ? ` ${f.id}` : ""}  ${f.msg}`);
     const gaps = findings.filter((f) => f.code === "TM-014").length;
     if (gaps) console.log(`  TM-014 [info] ${gaps} behaviour/branch node(s) have no stamped case — see --json or the audit mode`);
+    const seams = findings.filter((f) => f.code === "TM-032").length;
+    if (result.crossings.length) console.log(`  TM-032 [info] ${seams} of ${result.crossings.length} integration point(s) have no case exercising both sides — see --json \`crossings\``);
     console.log(errors.length ? `[models:check] FAIL — ${errors.length} error(s)` : "[models:check] OK");
   }
-  process.exit(errors.length ? 1 : 0);
+  // exitCode, never process.exit(): exit() drops whatever stdout has not flushed yet, and a piped
+  // `--json` (| jq, | node) was cut at exactly 64 KiB once the output outgrew one pipe buffer.
+  process.exitCode = errors.length ? 1 : 0;
 }
 
 const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];

@@ -25,6 +25,7 @@
  *   npm run seed:bootstrap -- --verbose
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import {

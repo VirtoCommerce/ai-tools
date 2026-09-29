@@ -10,6 +10,7 @@
  * Reads BACK_URL / ADMIN_USER / ADMIN_PASSWORD from the layered env loader (config.js).
  * Never logs the password or the access token.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import '../../../config.js';
 
 const [, , contactId, phoneArg] = process.argv;

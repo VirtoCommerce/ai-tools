@@ -18,6 +18,7 @@
  *   node scripts/qa-test/doclint.mjs [--json] [--warn-only]
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';

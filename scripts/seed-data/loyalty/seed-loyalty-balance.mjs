@@ -25,6 +25,7 @@
  *
  * NOT wired into seed:bootstrap (it places orders — manual only). Conventions: scripts/lib/seed-common.mjs.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
