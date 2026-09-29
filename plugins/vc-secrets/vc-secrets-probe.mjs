@@ -125,9 +125,10 @@ function main(server) {
     // child OUT of the terminal's foreground group, so Ctrl-C stops reaching it. Measured -- a
     // detached child survives a SIGINT sent to its parent's group, a non-detached one does not. So
     // without these the probe dies and leaves the launcher, and the server it spawned, running: the
-    // orphaned tree this file shares killProcessTree to prevent, arriving by the other door.
-    // cmdLaunch installs the same pair for the same reason.
-    for (const signal of ["SIGINT", "SIGTERM"]) {
+    // orphaned tree this file shares killProcessTree to prevent, arriving by the other door. SIGHUP is
+    // the same door: it is what closing the terminal the probe runs in delivers, and the launcher,
+    // detached, would not receive it. cmdLaunch installs the same set for the same reason.
+    for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
         process.on(signal, (received) => {
             clearTimeout(timer);
             killProcessTree(child, received);

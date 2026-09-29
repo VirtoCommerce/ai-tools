@@ -26,8 +26,9 @@ as you can read the same credential store directly, with or without this tool. R
 with that boundary in mind; nothing below quietly widens it.
 
 What it does not do: there is deliberately **no command that prints a secret value**, and no verb that
-runs an arbitrary command with secrets attached. Only declared servers and tasks are launched — and
-since a task inherits stdio, a *declared* task can of course print what it was given
+runs an arbitrary command with secrets attached. Only declared servers and tasks are launched — and, when
+a repository declares them, only after you [trust](#trusting-a-repositorys-declarations) that
+declaration. Since a task inherits stdio, a *declared* task can of course print what it was given
 (`{"command": "printenv"}`). That is why a task's argv belongs in a reviewed declaration: the guarantee
 is that the caller cannot choose the command, not that a reviewer can stop reading.
 
@@ -65,7 +66,9 @@ but a command you type by hand does not:
 | `doctor` | Diagnose. Exits non-zero on any `FAIL`, so it works as a gate. |
 | `unlock` | Warm the gpg agent for the session (gpg backend only) — decrypts whichever of the current or the older stored file exists. No-op on Windows and macOS. |
 | `migrate` | Copy legacy-prefix entries to namespaced keys. Idempotent. |
-| `emit-config <client>` | Print the MCP entries for every declared server in that client's format — `claude-code`, `cursor` or `codex`. Stdout is exactly what you paste; the guidance goes to stderr. See [Clients](#clients). |
+| `emit-config <client>` | Print the MCP entries for every declared server in that client's format — `claude-code`, `cursor` or `codex`. Stdout is exactly what you paste; the guidance goes to stderr, including a note for each repository server you have not trusted yet. See [Clients](#clients). |
+| `trust` | Show what this repository's declarations would run — command, args, env names — and, on a `y` typed at a terminal, record it. Refuses without an interactive terminal. See [Trusting a repository's declarations](#trusting-a-repositorys-declarations). |
+| `untrust [path]` | Remove the trust record for `path` (default: the repository you are in). Needs no terminal and no declaration. |
 
 ## Declarations
 
@@ -77,6 +80,11 @@ Reviewable, and committed where they belong. Three homes, precedence
 | `project` | `<repo>/.claude/vc-secrets.json` | yes | the team's servers |
 | `local` | `<repo>/.claude/vc-secrets.local.json` | no, gitignore it | yours, in this repo only |
 | `user` | `~/.claude/vc-secrets.json` | no | yours, everywhere |
+
+A server or task whose winning entry is in a `project` or `local` file needs [your trust](#trusting-a-repositorys-declarations)
+before it launches; a `user` one does not, since you wrote it. `local` is gated with `project` although it
+is nominally yours: the launcher cannot tell a tracked file from an untracked one without running `git`
+inside a repository it has not yet decided to trust, and it will not do that.
 
 ```jsonc
 {
@@ -116,8 +124,8 @@ Identical validation, identical injection, identical process-group teardown. The
 what is **absent**: there is no verb that takes a command from the caller. `vc-secrets exec -- <cmd>`
 would be the convenient version of this, and it would also be a secret printer — `exec -- printenv` —
 which is exactly what a tool with no read command must not acquire. A task's argv lives in the
-declaration, so it is reviewed in a pull request like a server's, and the caller chooses only *which
-declared* task to run.
+declaration, so it is reviewed in a pull request like a server's — and, when a repository declares it,
+refused until you have trusted it — and the caller chooses only *which declared* task to run.
 
 What this does not reach: a credential that must appear inside a URL or an argument the tool then
 writes somewhere (a git remote with an embedded token, for instance). Injecting it into the
@@ -230,6 +238,57 @@ registration block and no project- or local-scope launchable has claimed it -- w
 references it at all, or only a user-scope launchable does (which needs no authorization, since you
 would be writing both sides).
 
+## Trusting a repository's declarations
+
+The client approved `node "$VC_SECRETS" run gh` once, usually at user scope. What `gh` *runs* is decided by
+whichever `.claude/vc-secrets.json` or `.claude/vc-secrets.local.json` the launcher finds walking up from
+the working directory — so without a gate, any repository you open could make an entry you approved run
+its own command, with no prompt, and a declaration that names no secret is never checked by `authorized`
+at all. Codex's "Open restricted" mode for untrusted folders does not close this: it still starts the
+MCP servers in your user config, which is why the launcher gates repository declarations itself.
+
+The rule: a server or task whose **winning** entry is in a `project` or `local` file is not launched until
+you have trusted exactly what that entry declares. Run `vc-secrets trust` in the repository:
+
+```
+server "gh" (project, /work/repo/.claude/vc-secrets.json) -- shadows your user-scope "gh"
+    command: npx
+    args: ["-y","gh-mcp"]
+    env: T=secret:pat, LABEL=literal:(7 chars)
+Trust these for /work/repo? [y/N]
+```
+
+- What is recorded is the **declared** shape — `command`, `args` and `env` as written (`secret:pat`, not a
+  value) — in `~/.config/vc-secrets/trust.json` (`$XDG_CONFIG_HOME` honoured), keyed by the repository root.
+  The review prints a `literal:` value's length and never the value, since that is where a pasted credential
+  ends up.
+- **Any change** — a different `command`, different `args`, an env key added, removed or re-pointed — refuses
+  the launch until you run `trust` again. Trusting replaces the repository's record, so an entry that has
+  gone from the declarations is gone from the record too, and a later re-declaration of the same name
+  starts untrusted.
+- It needs an **interactive terminal**, as a confirmation of intent rather than a boundary. Both stdin and
+  stderr must be terminals, and on Linux and macOS your answer is read from the controlling terminal
+  (`/dev/tty`), not from stdin. That refuses a pipe, a redirected stream, a script and an agent's plain shell
+  tool. It does **not** stop a process that deliberately allocates a pseudo-terminal — `script`, `expect`, a
+  pty library on any OS, ConPTY or winpty on Windows — and on Windows only the stdin/stderr check applies,
+  because there is no `/dev/tty` to read from. The guard hook sees only the client's write tools, so this is
+  what stands between the record and a `trust` that answered a pipe; see
+  [Scope of the protection](#scope-of-the-protection). `untrust` removes trust and needs neither a terminal
+  nor a declaration.
+- The check happens before anything is resolved: an untrusted repository does not trigger a keystore prompt
+  or a token refresh. The trust file is read only when a repository's launchable is launched, so your own
+  user-scope servers never depend on it. A trust file that cannot be read refuses repository launches
+  rather than reading as empty or as trusted, and `doctor` names it.
+- `secrets`, `oauth` and `vaults` declarations are not gated — they execute nothing — and a secret crossing
+  still needs its own `authorized` block. Trusting a server does not grant it your secret.
+- `doctor` prints a `FAIL` for each repository launchable that is untrusted or has changed since, and does
+  not run the `--version` probe on it: that probe would execute the very command the gate refuses.
+  `emit-config` still emits every server and notes on stderr which ones are not trusted yet.
+- Each git worktree is its own repository root and is trusted separately.
+
+Trust covers the argv and env declarations, not what they lead to; see
+[Scope of the protection](#scope-of-the-protection).
+
 ## Where a secret is stored, and under what key
 
 Keys are namespaced by the declaration's home, so a project's secrets and your personal ones never
@@ -244,7 +303,10 @@ Precedence is the client's own, and deliberately so: Claude Code resolves a serv
 scopes as local, then project, then user, taking **the whole entry** from the winner rather than merging
 fields. The same name in more than one home is therefore normal here too, across the user boundary
 included — and `doctor` reports every such collision with the home that won, which is how the client
-answers the same ambiguity when it shows you the effective set.
+answers the same ambiguity when it shows you the effective set. The report is not the whole answer: a
+winner from a repository still has to be [trusted](#trusting-a-repositorys-declarations) before it
+launches, so a repository that shadows one of your own names does not get to run its own command under
+the approval you gave the name.
 
 A project-declared server may **reference** a user-scope secret — one personal PAT used from several repos
 is the ordinary case, and declaring it per project would put copies of the same credential in as many
@@ -275,8 +337,10 @@ approval would be the one writing it, and the loader says so and ignores it.
 The shape, rather than the name, is what has to match, and the reason is one level of indirection: your
 `.mcp.json` entry says `node "$VC_SECRETS" run gh`, and that is what the MCP client asks you to approve.
 The declaration deciding what `gh` actually runs sits below that approval — rewrite it and the client sees
-no change to re-ask about. So an approved name is not an approved command, and the authorization pins the
-command.
+no change to re-ask about. So an approved name is not an approved command. Two records pin it, and they
+answer different questions: your **trust** in the repository pins the command and env of every server or
+task that repository declares, whether or not a secret is involved; `authorized` still decides which
+command may receive *your* secret, and stays in your user file where no repository can write it.
 
 Your own user-scope servers and tasks need no block: you wrote both sides, and there is no one to
 authorize against.
@@ -327,6 +391,11 @@ than writing these by hand — it gets the file mode, the atomic replace and the
 that as "none" would be a claim rather than a gap. `emit-config` says the same thing when it prints
 an entry for that client.
 
+Codex's "Open restricted" mode for untrusted folders does **not** stop the MCP entries in your user config
+from starting, and those entries are exactly `node <shim> run <name>` — so a repository's declaration
+could run through one. That is why the launcher gates repository declarations itself; see
+[Trusting a repository's declarations](#trusting-a-repositorys-declarations).
+
 `emit-config <client>` generates the entries from your declaration, which already names every
 server. Its stdout is exactly what you paste; the guidance goes to stderr, so a redirect produces a
 valid file.
@@ -335,7 +404,9 @@ valid file.
 
 Every verb reads the declaration, so write one first — `<repo>/.claude/vc-secrets.json` for the team's
 secrets, `~/.claude/vc-secrets.json` for your own. On a fresh machine, skipping this step means every
-verb below throws.
+verb below throws. Then, for a repository's servers and tasks, read them and run `vc-secrets trust` in
+that repository from a terminal — a launch refuses them until you have, and again after any change to
+them. Your own user-scope ones need no such step.
 
 Then follow your client's branch. They differ in three things and nothing else: how the plugin is
 installed, whether the shim is needed at all, and — on one of them — whether the hook is trusted.
@@ -408,7 +479,7 @@ Paste `emit-config codex` into `~/.codex/config.toml`, run `doctor`, and trust t
 | `VC_SECRETS_GPG_RECIPIENT` | Encrypt to a specific key instead of your default |
 | `VC_SECRETS_POWERSHELL` | Set to `pwsh` if Constrained Language Mode blocks the in-box PowerShell's `Add-Type` |
 | `VC_SECRETS_TIMING` | `1` prints the resolve-phase duration to stderr. The probe drops it from the launcher it spawns — that line would otherwise be the last one before a silent server death, and get read as a launcher refusal |
-| `VC_SECRETS_CONFIG_DIR` | Test support — read declarations from one directory. `doctor` warns whenever it is set |
+| `VC_SECRETS_CONFIG_DIR` | Test support — read declarations from one directory. That directory is a project root like any other and needs [trust](#trusting-a-repositorys-declarations): exempting it would let anything able to set this variable name a directory of its own and skip the gate. It is one of several launcher-environment inputs the gate does not defend; see [Scope of the protection](#scope-of-the-protection). `doctor` warns whenever it is set |
 
 ## When something fails
 
@@ -418,6 +489,10 @@ Paste `emit-config codex` into `~/.codex/config.toml`, run `doctor`, and trust t
 | `FAIL` on every local secret at once | the shell cannot reach the credential store (a sandboxed or restricted one cannot); rerun where it can |
 | `secret "x" is only under the legacy key` | Run `migrate` — the value cannot be re-typed, the store never gives it back |
 | `projectId disagrees` | The project and local files name different ids; they key the same secrets |
+| `server "x" is declared by <file> ... and is not trusted` | A repository declares it and you have not trusted it. Read the declaration, then run `vc-secrets trust` in the repository named at the end of the line, from a terminal |
+| `server "x" changed since you trusted it: ...` | The declaration differs from what you trusted; the line lists what. If you accept it, run `vc-secrets trust` again in that repository. If you did not make the change, that is the finding |
+| `the trust file ... is unusable` | The trust file is corrupt or from a newer launcher. Repository launches are refused until it reads: fix or delete it and run `trust` again in each repository |
+| `vc-secrets trust requires an interactive terminal` | Run it yourself in a terminal. A pipe, a script and an agent's plain shell tool are refused; a process that allocates its own pseudo-terminal is not, so this is a confirmation of intent — see [Scope of the protection](#scope-of-the-protection) |
 | `schemaVersion N needs a newer vc-secrets` | The declaration is ahead of the installed plugin — update the plugin |
 | `Missing environment variables: VC_SECRETS` | The variable was never set on this machine — run the `install` skill |
 | A wrapped server shows failed in `/mcp` | `doctor` first (secret?), then the probe for the binary: take the `installPath` of `vc-secrets@vc-tools` from `~/.claude/plugins/installed_plugins.json`, then `node <installPath>/vc-secrets-probe.mjs <server>` |
@@ -431,10 +506,12 @@ binary is broken. `doctor` covers the separate question of whether the secret re
 
 ## Why an edit to a declaration gets blocked
 
-The plugin ships a `PreToolUse` hook that denies agent writes to three things: a declaration file, the
-installed shim, and this package's own code. A declaration decides which command receives which secret,
-so it changes through a human PR; the shim sits on the path of every launch and no plugin update
-overwrites it; and the package's modules are what handle the token once a declaration has named it.
+The plugin ships a `PreToolUse` hook that denies agent writes to four things: a declaration file, the
+trust file, the installed shim, and this package's own code. A declaration decides which command receives
+which secret, so it changes through a human PR; the trust file records which repository declarations you
+approved to run, so it changes only through `trust` and `untrust`; the shim sits on the path of every launch
+and no plugin update overwrites it; and the package's modules are what handle the token once a declaration
+has named it.
 
 The criterion for that third group is not "does this file touch a token". It has three prongs and a
 file needs one of them: **loaded into a process that holds a token**, **relaxing what an agent may do
@@ -560,6 +637,22 @@ This removes plaintext-at-rest on the MCP path and shrinks the accidental and pr
 surface. It is **not** a boundary against a deliberately malicious agent running the same backend
 tools itself, editing a declaration, or tampering with `PATH` — inside one OS user account there is
 no such boundary. A real one needs a broker under a separate account.
+
+A changed repository declaration is refused until you [trust](#trusting-a-repositorys-declarations) it
+again, so a repository can no longer swap the command behind a name you approved. `trust` demands an
+interactive terminal, which refuses a pipe, a script and an agent's plain shell tool but not a process that
+deliberately allocates a pseudo-terminal (`script`, `expect`, a pty library, ConPTY or winpty): it is a
+confirmation of intent, not a boundary. The gaps that remain are worth stating plainly. Trust covers the **argv and env declarations**, not the files they name: a
+declared `node ./server.js` stays trusted while `server.js` changes underneath it, and the same holds for
+a script, or for the project `.npmrc` that `npx` reads. Nor does it cover `PATH`, which decides what
+`npx` or `node` resolves to. Trust is also only as good as the reading you gave the review, and the guard
+that protects the record is a speed bump, not a boundary.
+
+The gate also stands on the **launcher's own environment**, which it does not defend. What a repository
+declares is checked; what the process running the launcher was started with is not. `XDG_CONFIG_HOME` or
+`HOME` relocates the trust file, `VC_SECRETS_CONFIG_DIR` names another project root, and `NODE_OPTIONS` on
+the launcher process itself runs code inside the process that holds every secret. Anything that can set
+those can already do what the gate exists to prevent.
 
 Two things it does harden regardless: `NODE_OPTIONS`, `LD_PRELOAD`, `LD_AUDIT`, `LD_LIBRARY_PATH`,
 `DYLD_INSERT_LIBRARIES`, and `DYLD_LIBRARY_PATH` are refused as declaration `env` keys and stripped

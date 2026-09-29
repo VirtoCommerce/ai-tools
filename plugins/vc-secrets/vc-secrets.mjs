@@ -9,6 +9,8 @@ import http from "node:http";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
+import readline from "node:readline";
+import tty from "node:tty";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { VcSecretsError } from "./vc-secrets-error.mjs";
@@ -82,6 +84,24 @@ function sanitizeEnv(env) {
     }
 
     return out;
+}
+
+// On Windows a declared key replaces every inherited spelling of it, not only an identical one: the
+// environment is case-insensitive there, but a plain object is not, so assigning a declared PATH beside
+// the inherited Path hands the child both and lets the platform pick -- and resolveSpawnCommand, which
+// searches the child's PATH, would read the inherited one and ignore the declaration.
+function mergeDeclaredEnv(base, declared, platform = process.platform) {
+    const out = { ...base };
+    if (platform === "win32") {
+        const declaredKeys = new Set(Object.keys(declared).map((key) => key.toUpperCase()));
+        for (const key of Object.keys(out)) {
+            if (declaredKeys.has(key.toUpperCase())) {
+                delete out[key];
+            }
+        }
+    }
+
+    return Object.assign(out, declared);
 }
 
 // grammar: ("secret" | "oauth") ":" name [ "." field ]; name [a-z0-9-]+, field [A-Za-z0-9_]+
@@ -169,14 +189,22 @@ const keystoreFilePresent = (p) => pathPresent(p, `the keystore file "${p}"`);
 // Where each scope's declarations live. The project root is found by walking up from cwd rather
 // than assuming it: the client spawns a server with cwd at the project, but a task or a hand-run
 // `doctor` can start anywhere below it.
+//
+// `root` is the repository the declarations belong to, which is what a trust record is keyed by. It is
+// the parent of the `.claude` directory the walk stopped at, and null when the walk found no project.
 function configPaths(env = process.env, cwd = process.cwd()) {
     const home = env.HOME || os.homedir();
     const override = env.VC_SECRETS_CONFIG_DIR;
     // The override stands in for a PROJECT, not for every scope: a test needs project-scope
     // declarations to be project-scoped, or `projectId` and the keystore namespace go untested. A test
     // that wants user scope points HOME at a fixture instead.
+    //
+    // Its root is the directory itself, and it is gated like any repository: an exemption would let
+    // anything able to set this variable name a directory of its own and skip the gate. It is not the
+    // only such input -- the launcher's whole environment is outside what the gate defends (README,
+    // Scope of the protection).
     if (override) {
-        return { user: null, project: path.join(override, CONFIG_NAME), local: path.join(override, LOCAL_CONFIG_NAME) };
+        return { user: null, project: path.join(override, CONFIG_NAME), local: path.join(override, LOCAL_CONFIG_NAME), root: override };
     }
     let dir = path.resolve(cwd);
     let projectDir = null;
@@ -208,6 +236,7 @@ function configPaths(env = process.env, cwd = process.cwd()) {
         user: path.join(home, ".claude", CONFIG_NAME),
         project: projectDir ? path.join(projectDir, CONFIG_NAME) : null,
         local: projectDir ? path.join(projectDir, LOCAL_CONFIG_NAME) : null,
+        root: projectDir ? path.dirname(projectDir) : null,
     };
 }
 
@@ -756,7 +785,14 @@ function loadConfig(paths = configPaths()) {
     // bought. What replaces the ban is visibility: `doctor` reports each crossing, so it is a fact the
     // developer can see rather than one nobody mentions.
 
-    return { secrets, servers, tasks, oauth, vaults, registrations, projectId, collisions, warnings, files };
+    // Where a trust record for this repository is keyed. Hand-built `paths` (a test's, mostly) carry no
+    // `root`, so it falls back to the layout configPaths produces -- declarations sit one directory
+    // below the root -- which keeps both routes landing on the same key for the same files.
+    const declaredFile = paths.project ?? paths.local;
+    const root = paths.root ?? (declaredFile ? path.dirname(path.dirname(declaredFile)) : null);
+    const projectRoot = root ? trustRootKey(root) : null;
+
+    return { secrets, servers, tasks, oauth, vaults, registrations, projectId, projectRoot, collisions, warnings, files };
 }
 
 // The scope half of a keystore key. Project and local declarations share one namespace on purpose —
@@ -836,13 +872,304 @@ function authorizationRefusal(envVar, kind, refName, { reason, where }) {
 // Unconditional for the reason stated above authorizationRefusal.
 const DOCTOR_REMEDY = '; run "vc-secrets doctor" for the block to add';
 
-// `kind` is "servers" or "tasks". Both are launchables with the same declaration shape; the only
-// difference is who starts them — the MCP client, or a person running `task`.
-async function resolveEnvEntries(name, cfg, resolveSecret, kind = "servers") {
+// --- Repository trust ---------------------------------------------------------------------------
+//
+// What `authorized` cannot cover: it guards a secret CROSSING, so a repository declaration that names
+// no secret is never checked -- and the client only ever approved `node "$VC_SECRETS" run gh`, one
+// level above the declaration that decides what `gh` runs. Any repository opened could therefore make an
+// entry approved once (usually at user scope) run its own command, unprompted. A launchable whose
+// winning entry sits in a project or local file is refused until the person has read its argv and env and
+// said so; what they said is recorded here, per repository, and compared at every launch.
+//
+// `local` is gated with `project`. The two differ by whether git tracks the file, and telling them apart
+// would mean running git inside the very repository that has not been trusted yet.
+// secrets/oauth/vaults declarations are not gated: they execute nothing, and `authorized` still guards
+// the crossings they make.
+
+const TRUST_FILE_NAME = "trust.json";
+const TRUST_SCHEMA_VERSION = 1;
+
+// The keys a record's maps are found under are the `kind` values cmdLaunch and doctor already pass
+// around, so a lookup needs no translation between them.
+const LAUNCHABLE_KINDS = ["servers", "tasks"];
+
+// The trust file sits beside the keystore's `secrets` directory, the way the oversize markers' `state`
+// directory does, so one config base holds everything this tool keeps on the machine.
+function trustFilePath(env = process.env) {
+    return path.join(path.dirname(secretsDir(env)), TRUST_FILE_NAME);
+}
+
+// The key a repository is recorded under. realpath, so a symlinked checkout and its target are one
+// repository; lower-cased on win32, whose file system is case-insensitive and would otherwise record the
+// same directory twice under two spellings of it. `platform` and `realpath` are seams because neither
+// half can be exercised on another platform's machine otherwise.
+//
+// The fallback for a path that does not exist (or cannot be resolved) is the plain resolve, as in
+// canonicalPath: `untrust <path>` must still find a record for a checkout that has since been deleted.
+function trustRootKey(root, { platform = process.platform, realpath = fs.realpathSync.native } = {}) {
+    let canonical;
+    try {
+        canonical = realpath(root);
+    } catch {
+        canonical = (platform === "win32" ? path.win32 : path.posix).resolve(root);
+    }
+
+    return platform === "win32" ? canonical.toLowerCase() : canonical;
+}
+
+// The declared values, not the resolved ones: trust is about what the repository asks to run, and an
+// env value resolves to a secret nobody may see. Built from SERVER_DECL_KEYS so that a key the schema
+// gains later is recorded and compared without anyone remembering to touch this.
+function launchShape(entry) {
+    const shape = {};
+    for (const key of SERVER_DECL_KEYS) {
+        shape[key] = structuredClone(entry[key]);
+    }
+
+    return shape;
+}
+
+function plainObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+// Env keys and how each differs. The VALUE is never printed: it is a declaration (`secret:name`,
+// `literal:...`), and a literal is exactly the kind of text that turns out to be a pasted credential.
+function envDifferences(trusted, actual) {
+    const before = plainObject(trusted) ? trusted : {};
+    const after = plainObject(actual) ? actual : {};
+    const diffs = [];
+    for (const key of [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()) {
+        if (!Object.hasOwn(before, key)) {
+            diffs.push(`env ${key} added`);
+        } else if (!Object.hasOwn(after, key)) {
+            diffs.push(`env ${key} removed`);
+        } else if (before[key] !== after[key]) {
+            diffs.push(`env ${key} changed`);
+        }
+    }
+
+    return diffs;
+}
+
+// The differences between a recorded shape and the one declared now, in the words shapeDifferences
+// uses; an empty list when they agree. `command` names both sides because the reader has to decide
+// whether the new one is acceptable; `args` and any key the schema adds say only that they changed,
+// since a changed argv is read in the declaration itself, where the whole of it is visible.
+function trustDifferences(trusted, actual) {
+    const diffs = [];
+    for (const key of SERVER_DECL_KEYS) {
+        if (key === "command") {
+            if (trusted.command !== actual.command) {
+                diffs.push(`command is ${JSON.stringify(actual.command)}, trusted ${JSON.stringify(trusted.command)}`);
+            }
+        } else if (key === "env") {
+            diffs.push(...envDifferences(trusted.env, actual.env));
+        } else if (JSON.stringify(trusted[key]) !== JSON.stringify(actual[key])) {
+            diffs.push(`${key} changed`);
+        }
+    }
+
+    return diffs;
+}
+
+// Every launchable whose winning entry a repository declared -- the ones the gate applies to.
+function gatedLaunchables(cfg) {
+    const found = [];
+    for (const kind of LAUNCHABLE_KINDS) {
+        for (const [name, launchable] of Object.entries(cfg[kind] ?? {})) {
+            if (launchable.home !== USER_SCOPE) {
+                found.push({ kind, name, launchable });
+            }
+        }
+    }
+
+    return found;
+}
+
+// Whether the winning entry replaced one from the user file. A chain user -> project -> local records
+// two collisions, and either one starting at the user scope is enough: the name is one the person's own
+// file declared.
+function shadowsUserScope(cfg, kind, name) {
+    const singular = kind === "tasks" ? "task" : "server";
+
+    return (cfg.collisions ?? []).some((c) => c.kind === singular && c.name === name && c.from === USER_SCOPE);
+}
+
+// The ONE predicate behind the launch gate, `doctor` and `emit-config`. Pure: the state is handed in,
+// so a caller reads the file only once it knows a gated launchable exists.
+//
+// `shadowsUser` is reported because it is the case a person is least able to see: the approved name is
+// theirs, the file that now decides what it runs is not.
+function trustProblem(cfg, kind, name, state) {
+    const launchable = own(cfg[kind], name);
+    if (launchable === undefined || launchable.home === USER_SCOPE) {
+        return null;
+    }
+    const shadowsUser = shadowsUserScope(cfg, kind, name);
+    const recorded = own(own(own(state.repositories, cfg.projectRoot), kind), name);
+    if (recorded === undefined) {
+        return { reason: "untrusted", home: launchable.home, shadowsUser };
+    }
+    const differences = trustDifferences(recorded, launchShape(launchable));
+
+    return differences.length === 0 ? null : { reason: "changed", differences, home: launchable.home, shadowsUser };
+}
+
+// Carries the root because the verb acts on the CURRENT directory's repository, and this text is read
+// out of a client's log where the current directory is not the reader's.
+function trustRemedy(problem, cfg) {
+    return `review it, then run "vc-secrets trust"${problem.reason === "changed" ? " again" : ""} in ${cfg.projectRoot}`;
+}
+
+// A single line: it travels through fail() and doctor, and the probe classifies a launcher refusal by
+// its last line.
+function trustRefusal(kind, name, problem, cfg) {
+    const label = `${kind === "tasks" ? "task" : "server"} "${name}"`;
+    if (problem.reason === "changed") {
+        return `${label} changed since you trusted it: ${problem.differences.join("; ")} -- ${trustRemedy(problem, cfg)}`;
+    }
+    const file = cfg.files?.[problem.home] ?? problem.home;
+    const shadow = problem.shadowsUser ? ` (it shadows your user-scope "${name}")` : "";
+
+    return `${label} is declared by ${file}${shadow} and is not trusted -- ${trustRemedy(problem, cfg)}`;
+}
+
+function emptyTrustState() {
+    return { schemaVersion: TRUST_SCHEMA_VERSION, repositories: {} };
+}
+
+// Why a parsed document is not a trust state, or null. Every level a lookup passes through is checked,
+// because a hand-edited file that fails halfway would otherwise surface as a TypeError from deep inside
+// a launch.
+function trustStateProblem(doc) {
+    if (!plainObject(doc)) {
+        return "not an object";
+    }
+    if (doc.schemaVersion !== TRUST_SCHEMA_VERSION) {
+        return `schemaVersion is ${JSON.stringify(doc.schemaVersion)}, this vc-secrets speaks ${TRUST_SCHEMA_VERSION}`;
+    }
+    if (!plainObject(doc.repositories)) {
+        return '"repositories" is not an object';
+    }
+    for (const [root, record] of Object.entries(doc.repositories)) {
+        if (!plainObject(record) || typeof record.trustedAt !== "string") {
+            return `the record for ${root} is malformed`;
+        }
+        for (const kind of LAUNCHABLE_KINDS) {
+            if (!plainObject(record[kind]) || !Object.values(record[kind]).every(plainObject)) {
+                return `the record for ${root} has a malformed "${kind}"`;
+            }
+        }
+    }
+
+    return null;
+}
+
+// A missing file is an empty state: nothing is trusted yet. Anything else that keeps the file from
+// being read as one THROWS instead -- a corrupt file that read as empty would silently un-trust every
+// repository, and one that read as trusted would be the gate failing open.
+function readTrustState(env = process.env) {
+    const file = trustFilePath(env);
+    let doc;
+    try {
+        doc = JSON.parse(fs.readFileSync(file, "utf8"));
+    } catch (e) {
+        if (isAbsentPathError(e)) {
+            return emptyTrustState();
+        }
+        throw new VcSecretsError(`the trust file ${file} could not be read (${readFailureReason(e)}) -- fix or delete it, `
+            + "then run \"vc-secrets trust\" again in each repository; until then repository declarations are refused");
+    }
+    const problem = trustStateProblem(doc);
+    if (problem !== null) {
+        throw new VcSecretsError(`the trust file ${file} is unusable (${problem}) -- fix or delete it, `
+            + "then run \"vc-secrets trust\" again in each repository; until then repository declarations are refused");
+    }
+
+    return doc;
+}
+
+// Atomic for the reason writeLocalValue's gpg branch is: a launch reading while `trust` writes must see
+// the old file or the new one, never half of either.
+function writeTrustState(env, state) {
+    const file = trustFilePath(env);
+    const tmp = `${file}.${process.pid}.tmp`;
+    try {
+        fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
+        fs.writeFileSync(tmp, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
+        fs.renameSync(tmp, file);
+    } catch (e) {
+        try {
+            fs.rmSync(tmp, { force: true });
+        } catch { /* best-effort cleanup -- the original error is what matters */ }
+        throw new VcSecretsError(`the trust file ${file} could not be written (${e.code ?? e.message})`);
+    }
+}
+
+// What doctor and emit-config need to know about every gated launchable, computed once: the problem
+// it would meet at launch, keyed by "<kind>/<name>". The file is read only when a gated launchable
+// exists. An unreadable one is `unreadable` -- reported once, as itself -- and every gated launchable
+// then counts as refused, because that is what a launch would do.
+function trustAssessment(cfg, readState = () => readTrustState(process.env)) {
+    const gated = gatedLaunchables(cfg);
+    const problems = new Map();
+    const findings = [];
+    if (gated.length === 0) {
+        return { problems, findings, unreadable: null };
+    }
+    let state;
+    try {
+        state = readState();
+    } catch (e) {
+        for (const { kind, name } of gated) {
+            problems.set(`${kind}/${name}`, null);
+        }
+
+        return { problems, findings: [e.message], unreadable: e.message };
+    }
+    for (const { kind, name } of gated) {
+        const problem = trustProblem(cfg, kind, name, state);
+        if (problem !== null) {
+            problems.set(`${kind}/${name}`, problem);
+            findings.push(trustRefusal(kind, name, problem, cfg));
+        }
+    }
+
+    return { problems, findings, unreadable: null };
+}
+
+// emit-config still emits every server -- the entry is only a call to the launcher -- and says, on the
+// stream that is not pasted, which of them the launcher will refuse until trusted.
+function trustNotes(cfg, { problems, unreadable }) {
+    const notes = unreadable === null ? [] : [unreadable];
+    for (const { kind, name } of gatedLaunchables(cfg)) {
+        const problem = problems.get(`${kind}/${name}`);
+        if (kind !== "servers" || !problem) {
+            continue;
+        }
+        notes.push(problem.reason === "changed"
+            ? `${name}: changed since you trusted it -- run "vc-secrets trust" again before starting it`
+            : `${name}: declared by this repository and not trusted yet -- run "vc-secrets trust" before starting it`);
+    }
+
+    return notes;
+}
+
+// The one refusal for a name nothing declares, shared by the launch gate and the resolver: the gate has
+// to ask BEFORE it can look the winner up, and the resolver stays callable on its own.
+function requireLaunchable(kind, name, cfg) {
     if (!Object.hasOwn(cfg[kind], name)) {
         throw new VcSecretsError(`unknown ${kind === "tasks" ? "task" : "server"} "${name}" -- not declared in ${CONFIG_NAME}`);
     }
-    const server = cfg[kind][name];
+
+    return cfg[kind][name];
+}
+
+// `kind` is "servers" or "tasks". Both are launchables with the same declaration shape; the only
+// difference is who starts them — the MCP client, or a person running `task`.
+async function resolveEnvEntries(name, cfg, resolveSecret, kind = "servers") {
+    const server = requireLaunchable(kind, name, cfg);
     // validate every reference BEFORE contacting any backend
     const entries = [];
     const oauthEntries = [];
@@ -1448,6 +1775,8 @@ function runTool(spec, { stdinValue, redactValues = [] } = {}) {
         // Backend tools need the same .cmd-shim handling cmdRun gives the server command: on Windows
         // `az` exists only as az.cmd, and a shell-less spawn cannot execute a batch shim. Without this
         // the ENOENT below surfaces as "not found on PATH", misreading a working `az` as absent.
+        // A name the resolver cannot find throws here, inside the executor, so it rejects with the
+        // same "not found on PATH" text a spawn ENOENT would have produced.
         const invocation = buildSpawnInvocation(resolveSpawnCommand(spec.cmd), spec.args);
         const child = spawn(invocation.cmd, invocation.args, {
             env: sanitizeEnv({ ...process.env, ...(spec.extraEnv || {}) }),
@@ -1535,28 +1864,64 @@ const LEGACY_ENV_VARS = ["ADO_MCP_AUTH_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "
 // Only the actual credentials are stripped so a stale plaintext token cannot leak into the child.
 const LEGACY_SECRET_ENV_VARS = ["ADO_MCP_AUTH_TOKEN", "GITHUB_PERSONAL_ACCESS_TOKEN", "AZURE_CLIENT_SECRET"];
 
-function resolveSpawnCommand(command, { platform = process.platform, env = process.env, existsSync = fs.existsSync } = {}) {
-    const P = platform === "win32" ? path.win32 : path.posix;
-    if (platform !== "win32" || P.extname(command) !== "" || /[\\/]/.test(command)) {
-        return { kind: "direct", cmd: command };
-    }
-    const dirs = (env.Path || env.PATH || "").split(";").filter(Boolean);
-    const exts = (env.PATHEXT || ".COM;.EXE;.BAT;.CMD").split(";").filter(Boolean);
+// On win32 a bare command name is looked up by libuv in the CURRENT DIRECTORY before PATH, and this
+// launcher runs with the project checkout as its cwd -- so a repository that commits a `powershell.exe`
+// or a `cmd.exe` would have it executed with the secrets in its environment. Passing an absolute path
+// to spawn is the only lookup that never consults the cwd, hence: on win32 every name is resolved here,
+// against PATH entries that are themselves absolute (a relative entry such as `.` is a cwd lookup by
+// another name), and a name that is not found is an error rather than a fallback to libuv's search.
+// POSIX execvp does not search the cwd for a bare name either, unless PATH itself holds an empty element
+// or `.`; PATH is outside what this protects (README, Scope of the protection), so the bare name is left
+// to it there.
+// Looked up without regard to case: the environment is case-insensitive on Windows, but the child's env
+// is a plain object, and a declaration may spell it `path` -- mergeDeclaredEnv has already made that the
+// only spelling, so a fixed-case read would find nothing and report a working tool missing.
+function windowsEnvValue(env, key) {
+    const found = Object.keys(env).find((x) => x.toUpperCase() === key);
+
+    return found === undefined ? undefined : env[found];
+}
+
+function findOnWindowsPath(name, env, existsSync) {
+    const P = path.win32;
+    // Quotes are legal around a Windows PATH entry, and libuv strips them; without the same strip a
+    // quoted entry would be skipped as "not absolute" and a working tool reported missing.
+    const dirs = (windowsEnvValue(env, "PATH") || "").split(";").map((x) => x.replace(/^"(.*)"$/, "$1"))
+        .filter((x) => x !== "" && P.isAbsolute(x));
+    // A name that already carries an extension is that file; only an extension-less one is expanded.
+    const suffixes = P.extname(name) !== "" ? [""] : (windowsEnvValue(env, "PATHEXT") || ".COM;.EXE;.BAT;.CMD").split(";").filter(Boolean);
     for (const dir of dirs) {
-        for (const ext of exts) {
-            const candidate = P.join(dir, command + ext);
-            if (!existsSync(candidate)) {
-                continue;
+        for (const suffix of suffixes) {
+            const candidate = P.join(dir, name + suffix);
+            if (existsSync(candidate)) {
+                return candidate;
             }
-            const lower = ext.toLowerCase();
-            if (lower === ".cmd" || lower === ".bat") {
-                return { kind: "cmd-shim", cmd: candidate };   // shell-less spawn cannot run .cmd shims
-            }
-            return { kind: "direct", cmd: candidate };
         }
     }
 
-    return { kind: "direct", cmd: command };   // let spawn produce its own ENOENT
+    return null;
+}
+
+function resolveSpawnCommand(command, { platform = process.platform, env = process.env, existsSync = fs.existsSync } = {}) {
+    if (platform !== "win32" || /[\\/]/.test(command)) {
+        return { kind: "direct", cmd: command };
+    }
+    const found = findOnWindowsPath(command, env, existsSync);
+    if (found === null) {
+        // The text runTool already produced for ENOENT and doctor parses with /^(\S+): not found on PATH/.
+        throw new VcSecretsError(`${command}: not found on PATH`);
+    }
+    const lower = path.win32.extname(found).toLowerCase();
+    if (lower !== ".cmd" && lower !== ".bat") {
+        return { kind: "direct", cmd: found };
+    }
+    // A shell-less spawn cannot run a .cmd shim, and the shell that does is looked up the same way.
+    const shell = findOnWindowsPath("cmd.exe", env, existsSync);
+    if (shell === null) {
+        throw new VcSecretsError("cmd.exe: not found on PATH");
+    }
+
+    return { kind: "cmd-shim", cmd: found, shell };
 }
 
 function buildSpawnInvocation(resolved, args) {
@@ -1566,7 +1931,7 @@ function buildSpawnInvocation(resolved, args) {
     // cmd.exe /d /s /c ""<exe>" "<arg>"…" — verbatim line sidesteps cmd's outer-quote stripping
     const line = [resolved.cmd, ...args].map((a) => `"${a}"`).join(" ");
 
-    return { cmd: "cmd.exe", args: [`/d /s /c "${line}"`], opts: { windowsVerbatimArguments: true } };
+    return { cmd: resolved.shell, args: [`/d /s /c "${line}"`], opts: { windowsVerbatimArguments: true } };
 }
 
 // Pure mapping so the advice contract can be unit-tested without spawning real
@@ -2187,13 +2552,24 @@ function childNodeRefusal({ launchableName, command, declared, version }) {
 //
 // The probe mirrors cmdLaunch exactly, so doctor's verdict and the launch's are answers about the
 // same binary rather than about two different ones.
-function childNodeProbes(cfg, references, { probe = childNodeVersionIo, platform = process.platform } = {}) {
+//
+// `refused` is trustAssessment's problems, keyed the way `seen` is. A launchable in it is skipped: the
+// probe SPAWNS the declared command, and for a repository's launchable nobody has trusted that is the
+// execution the launch gate exists to refuse. The skip lives here rather than in the caller so that a
+// caller cannot forget it -- which only holds while `refused` has no default: an empty one would let the
+// omission pass silently, so leaving it out throws instead, and a caller with nothing refused says so
+// with `new Map()`.
+function childNodeProbes(cfg, references, { probe = childNodeVersionIo, platform = process.platform, refused } = {}) {
+    if (!(refused instanceof Map)) {
+        throw new Error("childNodeProbes needs `refused`, a Map of the launchables the trust gate refuses -- "
+            + "probing one would run a command nobody has approved");
+    }
     const probedVersions = new Map();
     const seenLaunchables = new Set();
     const out = [];
     for (const { kind, launchableName } of references) {
         const seen = `${kind}/${launchableName}`;
-        if (seenLaunchables.has(seen)) {
+        if (seenLaunchables.has(seen) || refused.has(seen)) {
             continue;
         }
         seenLaunchables.add(seen);
@@ -2239,8 +2615,17 @@ function isNodeCommand(command, { platform = process.platform } = {}) {
 // `run` is a seam only so the FAILURE path can be driven: the success path needs no help, but a
 // probe that cannot run is the case this function now has to describe, and arranging a real spawn
 // failure portably means breaking PATH resolution, whose rules differ per platform and node version.
-function childNodeVersionIo({ command = "node", platform = process.platform, env = process.env, run = spawnSync } = {}) {
-    const invocation = buildSpawnInvocation(resolveSpawnCommand(command, { platform, env }), ["--version"]);
+function childNodeVersionIo({ command = "node", platform = process.platform, env = process.env, run = spawnSync,
+    existsSync = fs.existsSync } = {}) {
+    let invocation;
+    try {
+        invocation = buildSpawnInvocation(resolveSpawnCommand(command, { platform, env, existsSync }), ["--version"]);
+    } catch (e) {
+        // A node the resolver cannot find is a probe that could not run, which is the failure return
+        // below and not an exception: both consumers turn this string into a refusal that names the
+        // reason, and a throw here would escape them as an uncaught error from `doctor`.
+        return `no usable version (${e.message})`;
+    }
     const r = run(invocation.cmd, invocation.args,
         // Sanitized like runTool's and cmdLaunch's children, and last so no invocation option can
         // put a loader back. What this seam can actually show is the loud failure: node validates
@@ -2413,7 +2798,8 @@ function openBrowser(spec, { spawnProcess = spawn, log = (line) => process.stder
     return child.unref();
 }
 
-function buildBrowserCommand(platform, env, url, onPath = commandOnPath) {
+function buildBrowserCommand(platform, env, url, onPath = commandOnPath,
+    resolveCommand = (command) => resolveSpawnCommand(command, { platform, env })) {
     if (platform === "darwin") {
         return { cmd: "open", args: [url] };
     }
@@ -2435,7 +2821,20 @@ function buildBrowserCommand(platform, env, url, onPath = commandOnPath) {
             throw new VcSecretsError("refusing to open a URL containing a double quote");
         }
 
-        return { cmd: "cmd", args: [`/c start "" "${url}"`], opts: { windowsVerbatimArguments: true } };
+        // Resolved to an absolute path, never the bare name libuv would look up in the cwd first. An
+        // unresolvable cmd.exe is "no opener" rather than an error: sign-in still completes by hand
+        // from the URL cmdLogin has already printed.
+        let shell;
+        try {
+            shell = resolveCommand("cmd.exe").cmd;
+        } catch (e) {
+            if (e instanceof VcSecretsError) {
+                return null;
+            }
+            throw e;
+        }
+
+        return { cmd: shell, args: [`/c start "" "${url}"`], opts: { windowsVerbatimArguments: true } };
     }
     // Named to match this package's own override convention (VC_SECRETS_LOCAL_BACKEND,
     // VC_SECRETS_POWERSHELL), not the source's launcher-prefixed spelling -- the public-repo rule
@@ -3530,7 +3929,7 @@ async function oauthTenantChecks(cfg, references, { resolveOrgTenant: resolve = 
     return checks;
 }
 
-function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, toolsMissing, wired, configDirOverride, legacyOnly = [], shimContract = null, wiringProblems = [], clientConfigsSeen = [], writeProbe = null, oauthStatus = {}, oauthOversize = {}, tenantChecks = [], childNodes = [] }) {
+function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, toolsMissing, wired, configDirOverride, legacyOnly = [], shimContract = null, wiringProblems = [], clientConfigsSeen = [], writeProbe = null, oauthStatus = {}, oauthOversize = {}, tenantChecks = [], childNodes = [], trustFindings = [] }) {
     const lines = [];
     const loadedFiles = Object.entries(cfg.files ?? {}).map(([scope, file]) => `${scope}=${file}`).join(", ");
     if (loadedFiles) {
@@ -3733,6 +4132,12 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, to
             }
         }
     }
+    // A repository's launchable that has not been trusted, or has changed since it was: the launch would
+    // refuse it, so the diagnostic that says the setup works must not pass it. The text is the launch's
+    // own refusal, so the two cannot describe different remedies.
+    for (const finding of trustFindings) {
+        lines.push(`FAIL ${finding}`);
+    }
     // Crossing from a project declaration to a personal secret OR sign-in is allowed and often
     // intended, but it is the one relationship a reader of either file alone cannot see: the
     // project file names something it did not declare, and the user file has no idea who consumes
@@ -3904,10 +4309,22 @@ async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = 
     return "ok";
 }
 
-function commandOnPath(tool) {
-    const probe = process.platform === "win32" ? "where" : "which";
+// Through the resolver on win32 rather than `where`: a bare `where` is itself looked up in the cwd
+// first, and answering by the same lookup the launch will use keeps "doctor says present" and "run
+// finds it" from disagreeing.
+function commandOnPath(tool, { platform = process.platform, env = process.env, existsSync = fs.existsSync } = {}) {
+    if (platform === "win32") {
+        try {
+            return existsSync(resolveSpawnCommand(tool, { platform, env, existsSync }).cmd);
+        } catch (e) {
+            if (e instanceof VcSecretsError) {
+                return false;
+            }
+            throw e;
+        }
+    }
 
-    return spawnSync(probe, [tool], { stdio: "ignore", windowsHide: true }).status === 0;
+    return spawnSync("which", [tool], { stdio: "ignore", windowsHide: true }).status === 0;
 }
 
 const DOCTOR_FLAGS = ["--all"];
@@ -4065,15 +4482,17 @@ async function cmdDoctor(cfg, flags = []) {
     const references = oauthReferences(cfg);
     const tenantChecks = await oauthTenantChecks(cfg, references);
 
+    const trust = trustAssessment(cfg);
+
     // Only where an oauth reference exists: before the switch no child needs --import at all, and a
     // FAIL about a flag nothing uses would be a diagnostic inventing its own problem.
-    const childNodes = childNodeProbes(cfg, references);
+    const childNodes = childNodeProbes(cfg, references, { refused: trust.problems });
 
     const lines = doctorReport(cfg, {
         env: process.env, platform: process.platform, enableLists, resolvable, skipped,
         toolsMissing, wired, configDirOverride: Boolean(process.env.VC_SECRETS_CONFIG_DIR), legacyOnly,
         shimContract: activeShimContract, wiringProblems, clientConfigsSeen,
-        writeProbe, oauthStatus, oauthOversize, tenantChecks, childNodes,
+        writeProbe, oauthStatus, oauthOversize, tenantChecks, childNodes, trustFindings: trust.findings,
     });
     // sync write: stderr is async on a POSIX pipe and on a Windows console, and process.exit drops pending writes
     fs.writeSync(2, lines.join("\n") + "\n");
@@ -4082,6 +4501,27 @@ async function cmdDoctor(cfg, flags = []) {
     }
 }
 
+// killProcessTree's follow-up SIGKILL: how long after the signal, and whether the timer keeps the process
+// alive to deliver it. The default is for a caller that exits on its own.
+const DEFAULT_KILL_ESCALATION = { afterMs: 5000, ref: false };
+
+// The launcher's own escalation. It has to be SHORTER than the client's shutdown window, or it never
+// runs: the MCP TypeScript SDK's stdio transport closes a server by ending stdin, waiting 2 s, sending
+// SIGTERM, waiting 2 s, then SIGKILL (packages/client/src/client/stdio.ts in
+// modelcontextprotocol/typescript-sdk). SIGKILL cannot be handled, so a launcher still waiting on a
+// direct child that traps SIGTERM dies without running any handler, and the group -- which holds the
+// secrets in its environment -- outlives it. Half the 2 s SIGTERM-to-SIGKILL gap leaves the rest as
+// margin for a loaded machine. That window is an MCP client's, so it binds servers only: a task is
+// started by a person from a terminal, nothing SIGKILLs the launcher behind it, and a second is too
+// little for a run that writes its summary or rolls back on Ctrl-C -- a task keeps the grace the
+// default always gave it. Ref'd in both cases so that firing does not depend on some other handle
+// keeping the loop alive -- today the child's own handle does, but this timer is the whole guarantee
+// and should not lean on that.
+const LAUNCH_KILL_ESCALATION = {
+    servers: { afterMs: 1000, ref: true },
+    tasks: { afterMs: 5000, ref: true },
+};
+
 // A signal reaches the direct child only. On Windows that leaves a grandchild running: `dnx` spawns
 // dotnet.exe, which survives, orphans, and keeps a lock on the package file it was reading -- so the
 // NEXT run fails with "the process cannot access the file" instead of the clean timeout it deserved.
@@ -4089,19 +4529,48 @@ async function cmdDoctor(cfg, flags = []) {
 // between attempts; this package inherits the finding, not the experiment.
 //
 // SYNCHRONOUS on the win32 branch on purpose: a caller that kills and exits on the next line races its
-// own teardown, and an async spawn loses. Not cmdLaunch, which exits from the child's `close` handler
-// once the kill has landed. The POSIX path needs no such care -- kill(2) has been delivered on return.
+// own teardown, and an async spawn loses. The POSIX path needs no such care -- kill(2) has been
+// delivered on return.
+//
+// Two follow-up timers exist, and they serve different callers. The default is unref'd, so it can never
+// hold a process open: it is for a caller that stays alive after the kill. Every caller here except
+// cmdLaunch exits on the next line and takes that timer with it, so for them it is inert. cmdLaunch is
+// the caller whose survival is the point -- it passes LAUNCH_KILL_ESCALATION for its kind, ref'd, because a
+// direct child that traps the signal keeps the launcher running and nothing else would end it. The
+// "exit" handler in cmdLaunch covers every way the launcher leaves ON ITS OWN; only the ref'd timer makes
+// it leave.
 //
 // The child must have been spawned DETACHED, or `-child.pid` names a group it is not in: usually
-// absent, but a recycled pid makes it someone else's, and that group takes the SIGKILL five seconds
-// later. cmdLaunch and vc-secrets-probe.mjs both spawn detached.
+// absent, but a recycled pid makes it someone else's, and that group takes the SIGKILL follow-up.
+// cmdLaunch and vc-secrets-probe.mjs both spawn detached.
+//
+// Returns the SIGKILL follow-up timer so a caller that later stands its handlers down can clear it, or
+// null where none was armed: on win32, where taskkill /T /F is already forced, and when `escalation` is
+// null, which is how a caller that forwards several signals arms it once.
 function killProcessTree(child, signal, { platform = process.platform, spawnSyncProcess = spawnSync,
-    killProcess = (pid, sig) => process.kill(pid, sig) } = {}) {
+    killProcess = (pid, sig) => process.kill(pid, sig),
+    resolveCommand = (command) => resolveSpawnCommand(command, { platform }),
+    escalation = DEFAULT_KILL_ESCALATION } = {}) {
     if (platform === "win32") {
-        spawnSyncProcess("taskkill", ["/PID", String(child.pid), "/T", "/F"],
+        let taskkill;
+        try {
+            // Absolute, because a bare `taskkill` is looked up in the cwd first and this runs from the
+            // project checkout.
+            taskkill = resolveCommand("taskkill.exe").cmd;
+        } catch (e) {
+            if (!(e instanceof VcSecretsError)) {
+                throw e;
+            }
+            // The direct child only, which is what a plain kill reaches; a tree left running beats
+            // running whatever a lookup in the cwd would have found.
+            child.kill(signal);
+
+            return null;
+        }
+        spawnSyncProcess(taskkill, ["/PID", String(child.pid), "/T", "/F"],
             { stdio: "ignore", windowsHide: true });
 
-        return;
+        return null;
     }
     let group = true;
     try {
@@ -4112,7 +4581,10 @@ function killProcessTree(child, signal, { platform = process.platform, spawnSync
         group = false;
         child.kill(signal);
     }
-    setTimeout(() => {
+    if (escalation === null) {
+        return null;
+    }
+    const timer = setTimeout(() => {
         try {
             if (group) {
                 killProcess(-child.pid, "SIGKILL");
@@ -4120,7 +4592,12 @@ function killProcessTree(child, signal, { platform = process.platform, spawnSync
                 child.kill("SIGKILL");
             }
         } catch { /* already gone */ }
-    }, 5000).unref();
+    }, escalation.afterMs);
+    if (!escalation.ref) {
+        timer.unref();
+    }
+
+    return timer;
 }
 
 // A repeating interval rather than one timer aimed at the margin: a timer that long fires late after
@@ -4139,6 +4616,17 @@ const RENEWAL_TICK_MS = 5 * 60 * 1000;
 // take the whole process group down on a signal. Giving tasks their own copy of this is how the two
 // would drift on the parts that are security-relevant.
 async function cmdLaunch(kind, name, cfg, deps = {}) {
+    // The gate stands before anything that could prompt or spend a credential: a repository nobody has
+    // trusted must not cost even a keystore unlock, and refusing after resolution would have already
+    // handed it that. The trust file is read only when the winning entry is a repository's, so a
+    // user-scope launch never depends on it -- an unreadable file cannot take down the servers you
+    // wrote yourself.
+    if (requireLaunchable(kind, name, cfg).home !== USER_SCOPE) {
+        const problem = trustProblem(cfg, kind, name, deps.trustState ?? readTrustState(process.env));
+        if (problem !== null) {
+            throw new VcSecretsError(trustRefusal(kind, name, problem, cfg));
+        }
+    }
     const startedAt = process.hrtime.bigint();
     const resolver = makeSecretResolver(cfg);
     const entries = await resolveEnvEntries(name, cfg, resolver, kind);
@@ -4158,14 +4646,14 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
     // on Windows a name differing only by case is the same variable, and childEnv is a plain object
     // that no longer folds anything, so deleting AZURE_CLIENT_SECRET leaves `Azure_Client_Secret`
     // standing. Unconditional, because keeping one spelling while the declaration adds another would
-    // hand the child both and let the platform pick -- Object.assign(childEnv, entries.env) runs
-    // after this loop, so whatever the launchable declares wins there.
+    // hand the child both and let the platform pick -- mergeDeclaredEnv runs after this loop, so
+    // whatever the launchable declares wins there.
     for (const key of Object.keys(childEnv)) {
         if (LEGACY_SECRET_ENV_VARS.includes(key.toUpperCase())) {
             delete childEnv[key];   // a stale session token must not leak into the child
         }
     }
-    Object.assign(childEnv, entries.env);
+    childEnv = mergeDeclaredEnv(childEnv, entries.env);
 
     // Only a launchable with an oauth reference goes through what follows. Every other one takes
     // the plain spawn path -- routing them all through this would widen the NODE_OPTIONS carve-out
@@ -4211,7 +4699,11 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
             targetPackage: oauthEntry.decl.targetPackage, binName: oauthEntry.decl.binName });
     }
 
-    const invocation = buildSpawnInvocation(resolveSpawnCommand(server.command), server.args);
+    // Looked up against the CHILD's environment, because that is the PATH its own spawn would search:
+    // a declaration may set PATH (it is not denylisted), and resolving against this process's would
+    // find a different binary than the one Node then fails to, or does, run.
+    const invocation = buildSpawnInvocation(
+        (deps.resolveCommand ?? resolveSpawnCommand)(server.command, { env: childEnv }), server.args);
     const child = (deps.spawnFn ?? spawn)(invocation.cmd, invocation.args, {
         stdio: "inherit",
         env: childEnv,
@@ -4298,9 +4790,36 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
         renewalTimer.unref();   // must not keep the launcher alive after the child is gone
     }
 
-    const onSignal = (signal) => killProcessTree(child, signal);
-    for (const signal of ["SIGINT", "SIGTERM"]) {
+    // The escalation is armed by the FIRST signal only: a second one (a client's SIGINT after its own
+    // SIGTERM) re-signals the group but must not restart the clock the first one set.
+    let escalationTimer = null;
+    const onSignal = (signal) => {
+        const timer = killProcessTree(child, signal,
+            { escalation: escalationTimer === null ? LAUNCH_KILL_ESCALATION[kind] : null });
+        escalationTimer ??= timer;
+    };
+    // SIGHUP as well: it is what a closing terminal delivers, and the child is detached into a group of
+    // its own, so without a handler the launcher dies of it (129) and the whole group lives on.
+    const forwardedSignals = ["SIGINT", "SIGTERM", "SIGHUP"];
+    for (const signal of forwardedSignals) {
         process.on(signal, onSignal);
+    }
+    // The one place every way this process leaves ON ITS OWN passes: the child's close, a spawn error,
+    // fail(), an uncaught exception. Not a SIGKILL of the launcher itself (the MCP client's last step, or
+    // the OOM killer) -- nothing runs then, which is why a forwarded signal also arms the short
+    // escalation above, and a launcher killed before it fires still leaves the group. A group member
+    // that traps SIGTERM outlives the direct child (see
+    // killProcessTree), and it holds the secrets in its environment. SIGKILL rather than a signal it
+    // can trap, without a grace period: nothing after "exit" runs, and the MCP client's own shutdown
+    // SIGKILLs this process within seconds anyway. ESRCH -- the group already empty -- is the normal
+    // case. A pid-less child is a spawn that never happened, which names no group.
+    const onExit = () => {
+        try {
+            process.kill(-child.pid, "SIGKILL");
+        } catch { /* already gone */ }
+    };
+    if (process.platform !== "win32" && Number.isInteger(child.pid)) {
+        process.on("exit", onExit);
     }
     // Named, because dispose() has to detach them: they end the PROCESS, and a caller holding a
     // handle it has already disposed would otherwise have the whole CLI exit under it when the
@@ -4324,13 +4843,17 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
         channel,
         dispose: async () => {
             process.off("exit", cleanup);
-            for (const signal of ["SIGINT", "SIGTERM"]) {
+            process.off("exit", onExit);
+            for (const signal of forwardedSignals) {
                 process.off(signal, onSignal);
             }
             child.removeListener("error", onChildError);
             child.removeListener("close", onChildClose);
             if (renewalTimer !== null) {
                 clearInterval(renewalTimer);
+            }
+            if (escalationTimer !== null) {
+                clearTimeout(escalationTimer);
             }
             await channel?.close();
         },
@@ -4346,6 +4869,158 @@ function cmdRun(serverName, cfg) {
 // tool still has no way to print a secret or route one into something chosen at the call site.
 function cmdTask(taskName, cfg) {
     return cmdLaunch("tasks", taskName, cfg);
+}
+
+// The controlling terminal, opened for reading and for writing. Not stdin/stderr: those can be a pipe
+// or a file whatever the process was started from, while /dev/tty is the terminal of the session the
+// process belongs to -- and opening it fails (ENXIO) for a process that has none. The caller treats any
+// failure to open it as a refusal, never as a fallback to stdin, which would be the very thing this
+// replaces.
+function openControllingTerminal() {
+    let readFd = null;
+    let writeFd = null;
+    try {
+        readFd = fs.openSync("/dev/tty", "r");
+        writeFd = fs.openSync("/dev/tty", "w");
+    } catch (e) {
+        for (const fd of [readFd, writeFd]) {
+            if (fd !== null) {
+                fs.closeSync(fd);
+            }
+        }
+        throw e;
+    }
+    const input = new tty.ReadStream(readFd);
+    const output = new tty.WriteStream(writeFd);
+
+    return { input, output, close: () => { input.destroy(); output.destroy(); } };
+}
+
+// One line from `terminal`, for a question that has no default worth taking. EOF before an answer is an
+// empty one, which the caller reads as "no".
+function askLine(question, terminal = { input: process.stdin, output: process.stderr }) {
+    return new Promise((resolve) => {
+        const rl = readline.createInterface({ input: terminal.input, output: terminal.output });
+        rl.once("close", () => resolve(""));
+        rl.question(question, (answer) => {
+            resolve(answer);
+            rl.close();
+        });
+    });
+}
+
+// A literal is the one env value that may be a pasted credential, so its length is all the review shows;
+// a reference is a NAME, which is what the reader needs to see.
+function describeEnvDeclaration(value) {
+    const literal = parseLiteral(value);
+
+    return literal === null ? value : `${LITERAL_PREFIX}(${literal.length} chars)`;
+}
+
+const logToStderr = (text) => fs.writeSync(2, text);
+
+// Records what this repository's declarations ask to run, after the person has read it.
+//
+// The terminal requirement is a CONFIRMATION OF INTENT, not a security boundary. The guard hook sees
+// only the client's write tools, so the record is reachable through a shell, and this verb refuses to
+// be driven by a pipe, a redirected stream, a script or an agent's plain shell tool: it needs stdin AND
+// stderr to be terminals (stderr because that is where the review is shown), and on POSIX it reads the
+// answer from /dev/tty rather than from stdin. A process that deliberately allocates a pseudo-terminal
+// gets past every one of those -- `script`, `expect`, a pty library on any OS, ConPTY or winpty on
+// Windows -- and nothing here can tell it from a person. On win32 there is no /dev/tty to open, so the
+// answer is still read from stdin and only the stdin/stderr check stands.
+//
+// A trust record REPLACES the previous one for the repository, so an entry that is gone from the
+// declarations is gone from the record too, rather than staying approved for a later re-declaration.
+async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = process.stderr.isTTY === true,
+    platform = process.platform, openTerminal = openControllingTerminal, ask = askLine, env = process.env,
+    now = () => new Date(), log = logToStderr } = {}) {
+    const root = cfg.projectRoot;
+    const gated = gatedLaunchables(cfg);
+    if (gated.length === 0) {
+        // An old record for a repository that declares nothing gated any more would be trust waiting for
+        // the next declaration to inherit, so it goes -- the safe direction, which is why this needs no
+        // terminal.
+        if (root !== null) {
+            const state = readTrustState(env);
+            if (Object.hasOwn(state.repositories, root)) {
+                delete state.repositories[root];
+                writeTrustState(env, state);
+                log(`vc-secrets: nothing in ${root} needs trust -- removed its trust record\n`);
+
+                return;
+            }
+        }
+        log(`vc-secrets: nothing in ${root ?? "this repository"} needs trust\n`);
+
+        return;
+    }
+    const review = [];
+    for (const { kind, name, launchable } of gated) {
+        const file = cfg.files?.[launchable.home] ?? launchable.home;
+        const shadow = shadowsUserScope(cfg, kind, name) ? ` -- shadows your user-scope "${name}"` : "";
+        const envDeclarations = Object.entries(launchable.env).map(([key, value]) => `${key}=${describeEnvDeclaration(value)}`);
+        review.push(`${kind === "tasks" ? "task" : "server"} "${name}" (${launchable.home}, ${file})${shadow}`,
+            `    command: ${launchable.command}`,
+            `    args: ${JSON.stringify(launchable.args)}`,
+            `    env: ${envDeclarations.length === 0 ? "(none)" : envDeclarations.join(", ")}`);
+    }
+    log(`${review.join("\n")}\n`);
+    const refusal = new VcSecretsError("vc-secrets trust requires an interactive terminal -- it confirms what this "
+        + "repository may run, and a pipe or a script cannot answer it for you");
+    if (!isTTY || !isErrTTY) {
+        throw refusal;
+    }
+    // Read for its validation only: it throws on an unreadable or corrupt record BEFORE the person is
+    // asked, and before the terminal is opened, so a refusal here leaves nothing to close. What is
+    // written is read again after the answer, below.
+    readTrustState(env);
+    let terminal;
+    if (platform === "win32") {
+        terminal = { input: process.stdin, output: process.stderr, close: () => {} };
+    } else {
+        try {
+            terminal = openTerminal();
+        } catch {
+            throw refusal;
+        }
+    }
+    let answer;
+    try {
+        answer = String(await ask(`Trust these for ${root}? [y/N] `, terminal)).trim().toLowerCase();
+    } finally {
+        terminal.close();
+    }
+    if (answer !== "y" && answer !== "yes") {
+        log("vc-secrets: not trusted -- nothing recorded\n");
+
+        return;
+    }
+    const record = { trustedAt: now().toISOString() };
+    for (const kind of LAUNCHABLE_KINDS) {
+        record[kind] = Object.fromEntries(gated.filter((x) => x.kind === kind).map((x) => [x.name, launchShape(x.launchable)]));
+    }
+    // Read AGAIN: the person took as long as they took, and an `untrust` (or a trust of another
+    // repository) that landed meanwhile is in the file now and not in a copy read before the prompt.
+    const state = readTrustState(env);
+    state.repositories[root] = record;
+    writeTrustState(env, state);
+    log(`vc-secrets: trusted ${Object.keys(record.servers).length} server(s) and ${Object.keys(record.tasks).length} task(s) for ${root}\n`
+        + `vc-secrets: a secret crossing still needs its own authorization in ${CONFIG_HINT_PATH} -- "vc-secrets doctor" reports each one\n`);
+}
+
+// The way back. No terminal and no declaration needed: removing trust only ever makes launches stricter.
+async function cmdUntrust(pathArg, { env = process.env, cwd = process.cwd(), log = logToStderr } = {}) {
+    const root = trustRootKey(pathArg ?? configPaths(env, cwd).root ?? cwd);
+    const state = readTrustState(env);
+    if (!Object.hasOwn(state.repositories, root)) {
+        log(`vc-secrets: ${root} has no trust record -- nothing to remove\n`);
+
+        return;
+    }
+    delete state.repositories[root];
+    writeTrustState(env, state);
+    log(`vc-secrets: removed the trust record for ${root}\n`);
 }
 
 // --- CLI entry ---
@@ -4432,13 +5107,14 @@ async function cmdEmitConfig(cfg, argv) {
         throw new VcSecretsError(`emit-config: name a client (${clientNames().join(", ")})`);
     }
     const { body, notes } = emitConfig(cfg, name);
+    notes.push(...trustNotes(cfg, trustAssessment(cfg)));
     // Notes to fd 2, body to fd 1: stdout is exactly what gets pasted into a strict-JSON or TOML file,
     // so a redirect produces a valid file and a terminal still shows the guidance.
     fs.writeSync(2, notes.map((n) => `emit-config: ${n}\n`).join(""));
     fs.writeSync(1, body);
 }
 
-const VERBS = ["run", "task", "set", "unlock", "login", "logout", "doctor", "migrate", "emit-config"];
+const VERBS = ["run", "task", "set", "unlock", "login", "logout", "doctor", "migrate", "emit-config", "trust", "untrust"];
 const USAGE = `usage: vc-secrets <${VERBS.join("|")}> [name]`;
 
 async function main(argv) {
@@ -4448,6 +5124,12 @@ async function main(argv) {
     // it. Every other verb genuinely needs a declaration and fails as before.
     if (!VERBS.includes(command)) {
         throw new VcSecretsError(USAGE);
+    }
+    // Before loadConfig, because it removes a record and needs no declaration to exist -- the checkout may
+    // be gone, or the file deleted, and the record is exactly what is left behind.
+    if (command === "untrust") {
+        await cmdUntrust(arg);
+        return;
     }
     let cfg;
     try {
@@ -4500,7 +5182,25 @@ async function main(argv) {
         await cmdEmitConfig(cfg, argv.slice(1));
         return;
     }
+    if (command === "trust") {
+        await cmdTrust(cfg);
+        return;
+    }
     throw new VcSecretsError(USAGE);   // a known verb reached here missing its required argument
+}
+
+// Turns off libuv's cwd-first lookup for a bare command name, for this process and -- through
+// sanitizeEnv, which does not strip it -- for every child that inherits it. resolveSpawnCommand already
+// hands spawn an absolute path, so this is the second layer: it holds for a spawn that ever bypasses
+// the resolver, and for whatever a wrapper like npx looks up on its own. Read from the calling
+// process's environment, which is why it is set here and not only in the child's. Mutates `env` in
+// place because process.env cannot be replaced; returns it for the caller's convenience.
+function hardenSpawnEnv(env, platform) {
+    if (platform === "win32") {
+        env.NoDefaultCurrentDirectoryInExePath = "1";
+    }
+
+    return env;
 }
 
 // The single entry point, used both by direct invocation below and by the shim -- which cannot rely on
@@ -4510,6 +5210,7 @@ async function runCli(argv, { shimContract } = {}) {
     if (typeof shimContract === "number") {
         activeShimContract = shimContract;
     }
+    hardenSpawnEnv(process.env, process.platform);
     process.on("uncaughtException", fail);
     process.on("unhandledRejection", fail);
 
@@ -4534,14 +5235,18 @@ export {
     childNodeSupportsImport, childNodeVersionIo, isNodeCommand, childNodeRefusal, childNodeProbes,
     REDIRECT_PATH, MAX_ERROR_PARAMS, closeTabPage, forTerminal, escapeHtml, failedPage, listenForCallback,
     openBrowser, buildBrowserCommand, handleCallback, cmdLogin, cmdLogout, withDeadline, LOGIN_WAIT_MS,
-    runTool, resolveSpawnCommand, buildSpawnInvocation, makeSecretResolver, cmdRun, cmdTask, cmdLaunch, killProcessTree,
+    runTool, resolveSpawnCommand, buildSpawnInvocation, hardenSpawnEnv, commandOnPath, mergeDeclaredEnv,
+    LAUNCH_KILL_ESCALATION,
+    makeSecretResolver, cmdRun, cmdTask, cmdLaunch, killProcessTree,
     RENEWAL_TICK_MS,
     validateLaunchables, LEGACY_ENV_VARS, LEGACY_SECRET_ENV_VARS,
     mapResolveError, applyKeystrokes, promptHidden, cmdSet, cmdUnlock, unlockTargets, cmdDoctor, cmdMigrate, newKeyPresent, readLegacyLocalValue,
     SECRET_NAME_RE, LAUNCHABLE_NAME_RE, PACKAGE_NAME_RE, BIN_NAME_RE, doctorReport,
     readEnableLists, readWiredServers, readWiredElsewhere, consumedSecrets, DANGEROUS_ENV_VARS, sanitizeEnv,
     consumerShape, shapeDifferences, validateAuthorized, validateVaults, authorizationFor, crossingProblem, own,
-    emitConfig, cmdEmitConfig,
+    emitConfig, cmdEmitConfig, SERVER_DECL_KEYS,
+    trustFilePath, trustRootKey, launchShape, trustDifferences, trustProblem, trustRefusal, trustAssessment, trustNotes,
+    gatedLaunchables, readTrustState, writeTrustState, cmdTrust, cmdUntrust, openControllingTerminal,
     // Re-exported so the test file reaches them through the namespace import it already uses.
     clientNames, clientDescriptor, MIN_VERSION_UNKNOWN, defaultDataHome, defaultShimDir, defaultShimPath,
 };

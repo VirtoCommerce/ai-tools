@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Blocks agent writes to what decides which command receives which secret, and to what then handles
-// it: a declaration file, the installed shim every launch goes through, and this package's own files --
+// it: a declaration file, the trust record that lets a repository's declaration run at all, the
+// installed shim every launch goes through, and this package's own files --
 // all of them except the test files, which are how the package is worked on, and `README.md`, which
 // grants nothing. `vc-secrets-probe.mjs` reads like a third exception and is not one: nothing on the run
 // path imports it, which is the tempting reason, and that answers who imports the probe rather than who
@@ -35,6 +36,13 @@ import { targetsFrom } from "./targets.mjs";
 // because dropping it entirely would match a directory merely ending in ".claude".
 const DECLARATION_RE = /(^|\/)\.claude\/vc-secrets(\.local)?\.json$/i;
 const SHIM_RE = /(^|\/)plugins\/data\/[^/]+\/vc-secrets-shim\.mjs$/i;
+// The record of which repository declarations a person has read and approved to run. An agent that could
+// write it would trust its own repository, which is the gate this file backs. It lives under the config
+// base (`~/.config/vc-secrets/trust.json`, or `$XDG_CONFIG_HOME/...`), so it is matched by its
+// directory and name -- `vc-secrets/` is the one segment no other file of that name is likely to sit
+// under. The pending `.tmp` file `trust` writes before its rename is not matched: the rename is what
+// makes it a record, and a stray one is never read.
+const TRUST_FILE_RE = /(^|\/)vc-secrets\/trust\.json$/i;
 // This package's own code. Three ways in, and a file needs only one of them: it is LOADED INTO a
 // process that holds a token, it RELAXES WHAT AN AGENT MAY DO WITHOUT A HUMAN -- switching this guard
 // off is the extreme of that, and a skill's `disable-model-invocation` the ordinary case -- or it
@@ -160,6 +168,14 @@ for (const raw of targets.paths) {
     if (DECLARATION_RE.test(filePath)) {
         fs.writeSync(2,
             "BLOCK: a vc-secrets declaration decides which command receives which secret -- change it via a human PR, not an in-session edit. "
+            + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
+        process.exit(2);
+    }
+    // Not the declaration's remedy: the record changes only through `vc-secrets trust`, which asks a person
+    // at a terminal -- a PR cannot reach it, and an in-session edit would skip the question.
+    if (TRUST_FILE_RE.test(filePath)) {
+        fs.writeSync(2,
+            "BLOCK: the vc-secrets trust file records which repository declarations you approved to run -- change it with \"vc-secrets trust\" or \"vc-secrets untrust\" in your own terminal, not an in-session edit. "
             + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
         process.exit(2);
     }

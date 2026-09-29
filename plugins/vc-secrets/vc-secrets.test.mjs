@@ -1,10 +1,11 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { PassThrough } from "node:stream";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import * as m from "./vc-secrets.mjs";
 import * as target from "./vc-secrets-target.mjs";
@@ -19,6 +20,28 @@ after(() => {
         fs.rmSync(dir, { recursive: true, force: true });
     }
 });
+
+// The environment for a spawned launcher or probe. The developer's own, minus every VC_SECRETS_* knob:
+// a VC_SECRETS_CONFIG_DIR in their shell would point `doctor` at their real declarations, with real
+// secret reads and `az`, and VC_SECRETS_LOCAL_BACKEND would pick a store the test did not choose. HOME,
+// USERPROFILE and XDG_CONFIG_HOME go to a fresh directory so that no FILE-based state a run reaches --
+// the gpg files and the trust file under XDG_CONFIG_HOME -- is the developer's. That does not reach the
+// wcm and keychain entries: they live in the operating system's store, not under any of those
+// variables, so a test that can touch them pins the backend (as the doctor tests do) or stubs the tool
+// on PATH. Both HOME and USERPROFILE for the reason shimEnv gives; a test that means to use a fixture
+// home passes it in `extra`, which lands last.
+function launcherEnv(extra = {}) {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-launcher-home-"));
+    tmpDirs.push(home);
+    const env = {};
+    for (const [key, value] of Object.entries(process.env)) {
+        if (!/^VC_SECRETS_/i.test(key)) {
+            env[key] = value;
+        }
+    }
+
+    return { ...env, HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: home, ...extra };
+}
 
 // One path fails the named fs call with EACCES, the way it does under an ancestor that lost its search
 // bit; every other path reaches the real call. Mode bits cannot produce this portably: a run as root
@@ -96,6 +119,12 @@ const CAN_RUN_POSIX_STUB = process.platform !== "win32"
 const CAN_RUN_BASH = probe(() =>
     spawnSync("bash", ["-c", `${JSON.stringify(process.execPath)} -e 0`]).status === 0);
 
+// The group-kill tests drive a real launcher over a real POSIX process group and a `sh` script. Named
+// for the pair, because a machine can have either half alone: win32 has no process groups to kill, and a
+// stripped container may have no sh.
+const CAN_ORPHAN_A_GROUP = process.platform !== "win32"
+    && probe(() => spawnSync("sh", ["-c", "exit 0"]).status === 0);
+
 // The probes' own control, and the reason it exists: `probe()` answers false for ANY exception, so a
 // broken probe -- a renamed local, a moved probeDir, a dropped import -- turns every test gated on it
 // into a skip while the run stays green. Nothing else in the suite would notice; the totals move and
@@ -146,13 +175,42 @@ function scopedPaths({ user, project, local } = {}) {
     };
 }
 
-// A minimal stand-in for a spawned child, for cmdLaunch tests that inject spawnFn: never signalled
-// in these tests.
-function fakeChild() {
-    const child = new EventEmitter();
-    child.pid = process.pid;
+// What `trust` records for a config: every launchable a repository declared, as launchShape sees it.
+// Derived from the config under test rather than written out, so a test that changes a declaration
+// changes what was trusted with it and keeps meaning "trusted as declared". Passed as `deps.trustState`
+// to the in-process launch path, and to trustProblem directly.
+function trustedStateFor(cfg) {
+    const record = { trustedAt: "2000-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+    for (const kind of ["servers", "tasks"]) {
+        for (const [name, launchable] of Object.entries(cfg[kind])) {
+            if (launchable.home !== "user") {
+                record[kind][name] = m.launchShape(launchable);
+            }
+        }
+    }
 
-    return child;
+    return { schemaVersion: 1, repositories: { [cfg.projectRoot]: record } };
+}
+
+// The same, as a real trust file under the environment a spawned launcher will read it from -- for the
+// tests that run `vc-secrets run` as a process. `cwd` is where the launcher will discover its
+// declarations, unless the env carries VC_SECRETS_CONFIG_DIR, which configPaths honours first.
+function seedTrust(env, cwd) {
+    m.writeTrustState(env, trustedStateFor(m.loadConfig(m.configPaths(env, cwd))));
+
+    return env;
+}
+
+function trustedLauncherEnv(dir, extra = {}) {
+    return seedTrust(launcherEnv({ VC_SECRETS_CONFIG_DIR: dir, ...extra }), dir);
+}
+
+// A minimal stand-in for a spawned child, for cmdLaunch tests that inject spawnFn: never signalled
+// in these tests. Deliberately pid-less: cmdLaunch kills the child's process GROUP when the launcher
+// exits, and a pid borrowed from a real process -- this one's, once -- would name a group that may be
+// the runner's own.
+function fakeChild() {
+    return new EventEmitter();
 }
 
 test("parseReference: plain name", () => {
@@ -1526,19 +1584,21 @@ test("childNodeVersionIo: probes the command it is given, and PATH node only by 
     // measured by an unrelated binary -- refusing a server that would have started, or passing one
     // that then aborts on --import. Asserting the spawned path is the only way to see which node ran.
     // Both platforms, because the probe hands its command to resolveSpawnCommand and that function
-    // is where they differ: on win32 a bare `node` carries no extension and no separator, so it goes
-    // through the PATHEXT scan. `env: {}` gives that scan nothing to find, so it falls through to the
-    // name as written and the case stays deterministic without stubbing the filesystem. Pinning one
-    // platform and calling it covered is what leaves the other leg of the CI matrix unexercised.
-    for (const [platform, declared] of [["linux", "/usr/local/bin/node"],
-        ["win32", "C:\\Program Files\\nodejs\\node.exe"]]) {
+    // is where they differ: on win32 a bare `node` carries no separator, so it is resolved to the
+    // absolute file the PATH scan finds -- injected here, so the case does not depend on the machine's
+    // filesystem -- while a declared path is spawned as written. Pinning one platform and calling it
+    // covered is what leaves the other leg of the CI matrix unexercised.
+    const existsSync = onlyFiles("c:/bin/node.exe");
+    for (const [platform, declared, bare] of [["linux", "/usr/local/bin/node", "node"],
+        ["win32", "C:\\Program Files\\nodejs\\node.exe", "C:\\bin\\node.exe"]]) {
         const spawned = [];
         const run = (cmd) => { spawned.push(cmd); return { status: 0, stdout: "v22.23.2\n" }; };
+        const env = { Path: "C:\\bin", PATHEXT: ".exe" };
 
-        m.childNodeVersionIo({ run, platform, env: {} });
-        m.childNodeVersionIo({ command: declared, run, platform, env: {} });
+        m.childNodeVersionIo({ run, platform, env, existsSync });
+        m.childNodeVersionIo({ command: declared, run, platform, env, existsSync });
 
-        assert.deepEqual(spawned, ["node", declared], platform);
+        assert.deepEqual(spawned, [bare, declared], platform);
     }
 });
 
@@ -2125,11 +2185,20 @@ test("runTool: a dangerous variable in the launcher's own environment never reac
     }
 });
 
+// Answers true only for the named files, compared the way NTFS does: case-insensitively, either slash.
+function onlyFiles(...files) {
+    const wanted = files.map((f) => f.toLowerCase());
+
+    return (p) => wanted.includes(p.toLowerCase().replace(/\\/g, "/"));
+}
+
+const WIN_ENV = { Path: "C:\\bin;C:\\Windows\\System32", PATHEXT: ".COM;.EXE;.BAT;.CMD" };
+
 test("resolveSpawnCommand: win32 .cmd shim found case-insensitively", () => {
-    const existsSync = (p) => p.toLowerCase().replace(/\\/g, "/") === "c:/program files/nodejs/npx.cmd";
+    const existsSync = onlyFiles("c:/program files/nodejs/npx.cmd", "c:/windows/system32/cmd.exe");
     const r = m.resolveSpawnCommand("npx", {
         platform: "win32",
-        env: { Path: "C:\\Program Files\\nodejs", PATHEXT: ".COM;.EXE;.BAT;.CMD" },
+        env: { Path: "C:\\Program Files\\nodejs;C:\\Windows\\System32", PATHEXT: ".COM;.EXE;.BAT;.CMD" },
         existsSync,
     });
     assert.equal(r.kind, "cmd-shim");
@@ -2137,28 +2206,154 @@ test("resolveSpawnCommand: win32 .cmd shim found case-insensitively", () => {
 });
 
 test("resolveSpawnCommand: win32 .exe is direct", () => {
-    const existsSync = (p) => p.toLowerCase().replace(/\\/g, "/") === "c:/bin/github-mcp-server.exe";
+    const existsSync = onlyFiles("c:/bin/github-mcp-server.exe");
     const r = m.resolveSpawnCommand("github-mcp-server", {
-        platform: "win32", env: { Path: "C:\\bin", PATHEXT: ".COM;.EXE;.BAT;.CMD" }, existsSync,
+        platform: "win32", env: WIN_ENV, existsSync,
     });
     assert.equal(r.kind, "direct");
     assert.ok(r.cmd.toLowerCase().endsWith(".exe"));
 });
 
-test("resolveSpawnCommand: non-win32 and pathful commands unchanged", () => {
-    // A POPULATED env is load-bearing: with `env: {}` the PATH scan has nothing to walk, so the early
-    // return and the trailing fallback both answer {kind:"direct"} and deleting the guard is invisible.
-    // With a real Path and PATHEXT, an unguarded scan finds a PATH candidate here and the cmd changes.
-    const env = { Path: "C:\\bin", PATHEXT: ".COM;.EXE;.BAT;.CMD" };
-    assert.deepEqual(m.resolveSpawnCommand("npx", { platform: "linux", env, existsSync: () => true }),
+test("resolveSpawnCommand: non-win32 and pathful commands are passed through as named", () => {
+    // A populated env and an existsSync that says yes are load-bearing: were the pass-through guard
+    // deleted, the scan below would find a PATH candidate and answer with ITS path instead of the name.
+    assert.deepEqual(m.resolveSpawnCommand("npx", { platform: "linux", env: WIN_ENV, existsSync: () => true }),
         { kind: "direct", cmd: "npx" });
-    assert.deepEqual(m.resolveSpawnCommand("C:\\x\\y.cmd", { platform: "win32", env, existsSync: () => true }),
+    assert.deepEqual(m.resolveSpawnCommand("C:\\x\\y.cmd", { platform: "win32", env: WIN_ENV, existsSync: () => true }),
         { kind: "direct", cmd: "C:\\x\\y.cmd" });
 });
 
+test("resolveSpawnCommand: win32 a name that carries an extension resolves to the absolute PATH hit", () => {
+    // Such a name used to go out untouched, and libuv looks a bare name up in the cwd before PATH.
+    const r = m.resolveSpawnCommand("powershell.exe", {
+        platform: "win32", env: WIN_ENV, existsSync: onlyFiles("c:/windows/system32/powershell.exe"),
+    });
+    assert.deepEqual(r, { kind: "direct", cmd: "C:\\Windows\\System32\\powershell.exe" });
+});
+
+test("resolveSpawnCommand: win32 never looks in the cwd, or in a PATH entry that is not absolute", () => {
+    // Every candidate is recorded rather than only the outcome: an existsSync that says yes to the
+    // relative and bare spellings would otherwise be answered by an implementation that never asked.
+    const asked = [];
+    const existsSync = (p) => {
+        asked.push(p);
+
+        return !path.win32.isAbsolute(p);
+    };
+    for (const name of ["powershell.exe", "npx"]) {
+        assert.throws(() => m.resolveSpawnCommand(name, {
+            platform: "win32", env: { Path: ".;tools;C:\\bin", PATHEXT: ".COM;.EXE;.BAT;.CMD" }, existsSync,
+        }), (e) => e instanceof m.VcSecretsError && e.message === `${name}: not found on PATH`);
+    }
+    assert.ok(asked.length > 0 && asked.every((p) => path.win32.isAbsolute(p)),
+        `only absolute candidates may be probed: ${JSON.stringify(asked)}`);
+});
+
+test("resolveSpawnCommand: win32 a quoted PATH entry is still searched", () => {
+    const r = m.resolveSpawnCommand("gpg", {
+        platform: "win32", env: { Path: '"C:\\Program Files\\GnuPG\\bin"', PATHEXT: ".exe" },
+        existsSync: onlyFiles("c:/program files/gnupg/bin/gpg.exe"),
+    });
+    assert.equal(r.cmd, "C:\\Program Files\\GnuPG\\bin\\gpg.exe");
+});
+
+test("resolveSpawnCommand: win32 searches the PATH of the env it is given, not this process's", () => {
+    const seen = [];
+    const r = m.resolveSpawnCommand("tool", {
+        platform: "win32", env: { PATH: "C:\\declared\\bin" }, existsSync: (candidate) => { seen.push(candidate); return true; },
+    });
+    assert.equal(r.cmd, "C:\\declared\\bin\\tool.COM", "the first hit in the given PATH");
+    assert.ok(seen.every((x) => x.startsWith("C:\\declared\\bin\\")), `only the declared PATH was searched: ${seen}`);
+});
+
+test("mergeDeclaredEnv: on win32 a declared key replaces every inherited spelling, so the resolver searches the declared PATH", () => {
+    const inherited = { Path: "C:\\inherited\\bin", Other: "kept" };
+    const merged = m.mergeDeclaredEnv(inherited, { PATH: "C:\\declared\\bin" }, "win32");
+    assert.deepEqual(Object.keys(merged).filter((key) => key.toUpperCase() === "PATH"), ["PATH"], "one spelling reaches the child");
+    assert.equal(merged.Other, "kept");
+    const r = m.resolveSpawnCommand("tool", { platform: "win32", env: merged, existsSync: () => true });
+    assert.ok(r.cmd.startsWith("C:\\declared\\bin\\"), `the declaration decides the lookup: ${r.cmd}`);
+    // POSIX keys are case-sensitive, so both spellings are distinct variables and both stay.
+    assert.deepEqual(Object.keys(m.mergeDeclaredEnv(inherited, { PATH: "/declared" }, "linux")).sort(), ["Other", "PATH", "Path"]);
+});
+
+test("mergeDeclaredEnv: on win32 a declared key is matched to inherited ones in any letter case, whatever case it is declared in", () => {
+    const merged = m.mergeDeclaredEnv({ Path: "C:\\inherited\\bin" }, { path: "C:\\declared\\bin" }, "win32");
+    assert.deepEqual(merged, { path: "C:\\declared\\bin" }, "exactly one spelling reaches the child, and it is the declaration's");
+    const r = m.resolveSpawnCommand("tool", { platform: "win32", env: merged, existsSync: () => true });
+    assert.ok(r.cmd.startsWith("C:\\declared\\bin\\"), `and the lookup reads it whatever its case: ${r.cmd}`);
+});
+
+test("resolveSpawnCommand: win32 a shim carries the absolute cmd.exe it will be run by", () => {
+    const r = m.resolveSpawnCommand("npx", {
+        platform: "win32", env: WIN_ENV, existsSync: onlyFiles("c:/bin/npx.cmd", "c:/windows/system32/cmd.exe"),
+    });
+    assert.equal(r.kind, "cmd-shim");
+    assert.equal(r.shell, "C:\\Windows\\System32\\cmd.exe");
+    assert.equal(m.buildSpawnInvocation(r, ["-y"]).cmd, r.shell, "the invocation spawns it, not a bare cmd.exe");
+});
+
+test("resolveSpawnCommand: win32 a .bat is run through cmd.exe like a .cmd", () => {
+    const r = m.resolveSpawnCommand("tool", {
+        platform: "win32", env: WIN_ENV, existsSync: onlyFiles("c:/bin/tool.bat", "c:/windows/system32/cmd.exe"),
+    });
+    assert.equal(r.kind, "cmd-shim");
+    assert.equal(r.cmd.toLowerCase(), "c:\\bin\\tool.bat");
+    assert.equal(r.shell, "C:\\Windows\\System32\\cmd.exe");
+});
+
+test("resolveSpawnCommand: win32 a name that carries an extension is not also expanded by PATHEXT", () => {
+    // `git.exe.cmd` is what PATHEXT expansion of `git.exe` would find; the name says which file it means.
+    assert.throws(() => m.resolveSpawnCommand("git.exe", {
+        platform: "win32", env: WIN_ENV, existsSync: onlyFiles("c:/bin/git.exe.cmd", "c:/windows/system32/cmd.exe"),
+    }), (e) => e instanceof m.VcSecretsError && e.message === "git.exe: not found on PATH");
+});
+
+test("resolveSpawnCommand: win32 a shim with no cmd.exe to run it is not found, not run through a bare name", () => {
+    assert.throws(() => m.resolveSpawnCommand("npx", {
+        platform: "win32", env: WIN_ENV, existsSync: onlyFiles("c:/bin/npx.cmd"),
+    }), (e) => e instanceof m.VcSecretsError && e.message === "cmd.exe: not found on PATH");
+});
+
+test("commandOnPath: win32 answers from the resolver, so a cwd-only or missing tool is absent", () => {
+    const existsSync = onlyFiles("c:/bin/gpg.exe");
+    assert.equal(m.commandOnPath("gpg", { platform: "win32", env: WIN_ENV, existsSync }), true);
+    assert.equal(m.commandOnPath("az", { platform: "win32", env: WIN_ENV, existsSync }), false);
+    assert.equal(m.commandOnPath("gpg", { platform: "win32", env: { Path: ".;tools", PATHEXT: ".EXE" },
+        existsSync: (p) => !path.win32.isAbsolute(p) }), false);
+});
+
+test("commandOnPath: win32 a name that carries a path is present only when that file exists", () => {
+    const existsSync = onlyFiles("c:/tools/x.exe");
+    assert.equal(m.commandOnPath("C:\\tools\\x.exe", { platform: "win32", env: WIN_ENV, existsSync }), true);
+    assert.equal(m.commandOnPath("C:\\nope\\x.exe", { platform: "win32", env: WIN_ENV, existsSync }), false);
+});
+
+test("childNodeVersionIo: a node the resolver cannot find is a probe that could not run, not an exception", () => {
+    const version = m.childNodeVersionIo({ command: "node", platform: "win32",
+        env: { Path: "C:\\vc-secrets-no-such-dir", PATHEXT: ".EXE" },
+        run: () => assert.fail("nothing was found, so nothing may be spawned") });
+    assert.equal(version, "no usable version (node: not found on PATH)");
+    assert.equal(m.childNodeSupportsImport(version), false);
+});
+
+test("hardenSpawnEnv: win32 turns off the cwd lookup, and the sanitizer lets it through to children", () => {
+    const env = {};
+    assert.equal(m.hardenSpawnEnv(env, "win32"), env);
+    assert.equal(env.NoDefaultCurrentDirectoryInExePath, "1");
+    assert.equal(m.sanitizeEnv(env).NoDefaultCurrentDirectoryInExePath, "1");
+});
+
+test("hardenSpawnEnv: other platforms are left exactly as they were", () => {
+    for (const platform of ["linux", "darwin"]) {
+        assert.deepEqual(m.hardenSpawnEnv({ A: "b" }, platform), { A: "b" });
+    }
+});
+
 test("buildSpawnInvocation: verbatim cmd line quotes every token", () => {
-    const inv = m.buildSpawnInvocation({ kind: "cmd-shim", cmd: "C:\\Program Files\\nodejs\\npx.cmd" }, ["-y", "@azure-devops/mcp@2.8.1"]);
-    assert.equal(inv.cmd, "cmd.exe");
+    const shell = "C:\\Windows\\System32\\cmd.exe";
+    const inv = m.buildSpawnInvocation({ kind: "cmd-shim", cmd: "C:\\Program Files\\nodejs\\npx.cmd", shell }, ["-y", "@azure-devops/mcp@2.8.1"]);
+    assert.equal(inv.cmd, shell);
     assert.deepEqual(inv.args, ['/d /s /c ""C:\\Program Files\\nodejs\\npx.cmd" "-y" "@azure-devops/mcp@2.8.1""']);
     assert.equal(inv.opts.windowsVerbatimArguments, true);
 
@@ -2174,7 +2369,7 @@ test("cmdRun: child gets literal env, legacy + dangerous vars stripped, exit cod
             env: { PROBE: "literal:v" } } },
     });
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "run", "probe"],
-        { env: { ...process.env, VC_SECRETS_CONFIG_DIR: dir, ADO_MCP_AUTH_TOKEN: "stale", NODE_OPTIONS: "--max-old-space-size=4096" }, encoding: "utf8" });
+        { env: trustedLauncherEnv(dir, { ADO_MCP_AUTH_TOKEN: "stale", NODE_OPTIONS: "--max-old-space-size=4096" }), encoding: "utf8" });
     assert.equal(r.status, 7);
     assert.equal(r.stdout, "");
 });
@@ -2182,7 +2377,7 @@ test("cmdRun: child gets literal env, legacy + dangerous vars stripped, exit cod
 test("cmdRun: unknown server → exit 1, single-line stderr without stack", () => {
     const dir = tmpConfigDir({ secrets: {}, servers: {} });
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "run", "ghost"],
-        { env: { ...process.env, VC_SECRETS_CONFIG_DIR: dir }, encoding: "utf8" });
+        { env: launcherEnv({ VC_SECRETS_CONFIG_DIR: dir }), encoding: "utf8" });
     assert.equal(r.status, 1);
     assert.match(r.stderr, /unknown server/);
     assert.ok(!r.stderr.includes("    at "), "no stack frames");
@@ -2194,16 +2389,50 @@ test("cmdRun: unknown server → exit 1, single-line stderr without stack", () =
 // `// killProcessTree(child, signal)` each satisfied the guard for the thing they replaced.
 const STRIP_COMMENTS = /\/\/[^\n]*|\/\*[\s\S]*?\*\//g;
 
+test("runCli hardens the spawn environment of this very process before it dispatches anything", () => {
+    // The two halves are tested alone -- hardenSpawnEnv's result above, the resolver's cwd rule in its
+    // own tests -- and nothing else exercises the call between them: it runs once, from the entry point,
+    // against the real process.env, which a test cannot reach without launching a CLI. So the wiring is
+    // pinned on the source, comments stripped and the call required in full, because a comment naming it
+    // or a call on a copy of the env would each leave the win32 cwd lookup open. The order matters too:
+    // hardened after dispatch, the first spawn has already happened.
+    const body = m.runCli.toString().replace(STRIP_COMMENTS, "");
+    const hardened = body.indexOf("hardenSpawnEnv(process.env, process.platform)");
+    const dispatched = body.indexOf("main(argv)");
+    assert.ok(hardened >= 0, "runCli must call hardenSpawnEnv(process.env, process.platform)");
+    assert.ok(dispatched > hardened, "and before main(argv) dispatches");
+});
+
 test("killProcessTree on win32 kills the whole tree, because a plain kill reaches only the top", () => {
+    const spawned = [];
+    const signalled = [];
+    const asked = [];
+    m.killProcessTree({ pid: 4242, kill: (s) => signalled.push(["child", s]) }, "SIGTERM", {
+        platform: "win32",
+        spawnSyncProcess: (cmd, args) => spawned.push([cmd, args]),
+        killProcess: (pid, s) => signalled.push([pid, s]),
+        resolveCommand: (name) => {
+            asked.push(name);
+
+            return { kind: "direct", cmd: `C:\\Windows\\System32\\${name}` };
+        },
+    });
+    assert.deepEqual(asked, ["taskkill.exe"]);
+    assert.deepEqual(spawned, [["C:\\Windows\\System32\\taskkill.exe", ["/PID", "4242", "/T", "/F"]]],
+        "the RESOLVED absolute path is what is spawned, never the bare name");
+    assert.deepEqual(signalled, [], "the win32 branch signals nothing itself");
+});
+
+test("killProcessTree on win32 kills only the child when taskkill cannot be resolved, and spawns nothing", () => {
     const spawned = [];
     const signalled = [];
     m.killProcessTree({ pid: 4242, kill: (s) => signalled.push(["child", s]) }, "SIGTERM", {
         platform: "win32",
         spawnSyncProcess: (cmd, args) => spawned.push([cmd, args]),
-        killProcess: (pid, s) => signalled.push([pid, s]),
+        resolveCommand: () => { throw new m.VcSecretsError("taskkill.exe: not found on PATH"); },
     });
-    assert.deepEqual(spawned, [["taskkill", ["/PID", "4242", "/T", "/F"]]]);
-    assert.deepEqual(signalled, [], "the win32 branch signals nothing itself");
+    assert.deepEqual(spawned, []);
+    assert.deepEqual(signalled, [["child", "SIGTERM"]]);
 });
 
 test("the win32 default is spawnSync, since a kill-then-exit caller loses the race against an async one", () => {
@@ -2865,7 +3094,7 @@ test("childNodeProbes: one entry per launchable, however many oauth references i
     const refs = [{ kind: "servers", launchableName: "s", envVar: "A", name: "ado" },
         { kind: "servers", launchableName: "s", envVar: "B", name: "gh" }];
     let spawns = 0;
-    const out = m.childNodeProbes(cfg, refs, { probe: () => { spawns += 1; return "v18.17.1"; } });
+    const out = m.childNodeProbes(cfg, refs, { refused: new Map(), probe: () => { spawns += 1; return "v18.17.1"; } });
 
     assert.equal(out.length, 1, "one launchable is one finding");
     assert.equal(spawns, 1, "and one probe");
@@ -2898,7 +3127,7 @@ test("childNodeProbes: each launchable is judged by its own command, on either p
 
     for (const [platform, windowsIsNode] of [["linux", false], ["win32", true]]) {
         const probedCommands = [];
-        const out = m.childNodeProbes(cfg, refs, { platform,
+        const out = m.childNodeProbes(cfg, refs, { platform, refused: new Map(),
             probe: ({ command }) => { probedCommands.push(command); return "v18.17.1"; } });
 
         assert.deepEqual(out.map((x) => [x.launchableName, x.command, x.declared]), [
@@ -3298,7 +3527,7 @@ test("cmdLaunch: a server with no oauth reference gets no NODE_OPTIONS and no ch
     const cfg = m.loadConfig(projectPaths({ secrets: {},
         servers: { github: { command: process.execPath, args: ["-e", ""], env: { LIT: "literal:x" } } } }));
     const handle = await m.cmdLaunch("servers", "github", cfg,
-        { spawnFn: (cmd, args, opts) => { seen = opts.env; return fakeChild(); } });
+        { trustState: trustedStateFor(cfg), spawnFn: (cmd, args, opts) => { seen = opts.env; return fakeChild(); } });
     try {
         assert.equal(seen.LIT, "x");
         assert.equal(seen.NODE_OPTIONS, undefined);
@@ -3319,6 +3548,7 @@ test("cmdLaunch: a child node below the flag floor is refused before anything is
     const cfg = m.loadConfig(authorizedOauthPaths());
     let spawned = 0;
     await assert.rejects(() => m.cmdLaunch("servers", "s", cfg, {
+        trustState: trustedStateFor(cfg),
         childNodeVersion: () => "v18.17.1",
         readCache: async () => ({ state: "valid", accessToken: "cached" }),
         spawnFn: () => { spawned++; return fakeChild(); },
@@ -3341,7 +3571,9 @@ test("cmdLaunch: the version gate probes the declared node, and says so when it 
     });
 
     let probed = null;
-    await assert.rejects(() => m.cmdLaunch("servers", "s", m.loadConfig(paths), {
+    const cfg = m.loadConfig(paths);
+    await assert.rejects(() => m.cmdLaunch("servers", "s", cfg, {
+        trustState: trustedStateFor(cfg),
         childNodeVersion: (opts) => { probed = opts?.command ?? null; return "v18.17.1"; },
         readCache: async () => ({ state: "valid", accessToken: "cached" }),
         spawnFn: () => { throw new Error("must not spawn"); },
@@ -3363,7 +3595,9 @@ test("cmdLaunch: a wrapper command is probed via PATH, and the refusal does not 
     // proxy rather than an answer, so the message must not repeat the claim removed above — it says
     // which node it holds and that the launch goes through the wrapper.
     let probed = "unset";
-    await assert.rejects(() => m.cmdLaunch("servers", "s", m.loadConfig(authorizedOauthPaths()), {
+    const cfg = m.loadConfig(authorizedOauthPaths());
+    await assert.rejects(() => m.cmdLaunch("servers", "s", cfg, {
+        trustState: trustedStateFor(cfg),
         childNodeVersion: (opts) => { probed = opts?.command ?? null; return "v18.17.1"; },
         readCache: async () => ({ state: "valid", accessToken: "cached" }),
         spawnFn: () => { throw new Error("must not spawn"); },
@@ -3381,6 +3615,7 @@ test("cmdLaunch: no usable token fails naming login, and never spawns", async ()
     const cfg = m.loadConfig(authorizedOauthPaths());
     let spawned = 0;
     await assert.rejects(() => m.cmdLaunch("servers", "s", cfg, {
+        trustState: trustedStateFor(cfg),
         readCache: async () => ({ state: "absent" }),
         spawnFn: () => { spawned++; return fakeChild(); },
     }), /vc-secrets login ado/);
@@ -3393,22 +3628,329 @@ test("cmdLaunch: dispose detaches the handlers that would exit the process", asy
     // no longer owns happens to close.
     const cfg = m.loadConfig(projectPaths({ secrets: {},
         servers: { github: { command: process.execPath, args: ["-e", ""], env: {} } } }));
-    const child = fakeChild();
+    // A pid above any the kernel hands out (Linux caps at 2^22): the group-kill handler below is only
+    // registered for a child that has one, and were this test to fail before dispose it would signal
+    // -pid at exit, where that can only be ESRCH.
+    const child = Object.assign(fakeChild(), { pid: 2 ** 22 + 1 });
     // Counted as a DELTA: the runner holds signal listeners of its own, so an absolute count would
-    // pin the harness rather than the launch. SIGINT/SIGTERM are registered unconditionally, unlike
-    // the "exit" handler, which only the oauth path installs -- that one is pinned in
+    // pin the harness rather than the launch. The signals are registered unconditionally. The "exit"
+    // listener here is the POSIX group kill; the oauth path's own "exit" handler is pinned in
     // vc-secrets-oauth.test.mjs, where a launch reaches it.
-    const signals = ["SIGINT", "SIGTERM"];
+    const signals = ["SIGINT", "SIGTERM", "SIGHUP"];
     const before = signals.map((s) => process.listenerCount(s));
-    const handle = await m.cmdLaunch("servers", "github", cfg, { spawnFn: () => child });
+    const exitBefore = process.listenerCount("exit");
+    const handle = await m.cmdLaunch("servers", "github", cfg, { trustState: trustedStateFor(cfg), spawnFn: () => child });
     assert.equal(child.listenerCount("close"), 1);
     assert.deepEqual(signals.map((s) => process.listenerCount(s)), before.map((n) => n + 1));
+    assert.equal(process.listenerCount("exit"), exitBefore + (process.platform === "win32" ? 0 : 1),
+        "a POSIX launch kills the child's group on the way out; win32 has taskkill for that");
     await handle.dispose();
     assert.equal(child.listenerCount("close"), 0);
     assert.equal(child.listenerCount("error"), 0);
     // A surviving onSignal closure still holds the disposed child, so the next Ctrl-C signals
-    // -child.pid for a process this handle no longer owns.
+    // -child.pid for a process this handle no longer owns -- and a surviving exit handler would
+    // SIGKILL that group when the process ends.
     assert.deepEqual(signals.map((s) => process.listenerCount(s)), before);
+    assert.equal(process.listenerCount("exit"), exitBefore);
+});
+
+// Signal 0 says a process exists, and a killed one whose parent never reaps it -- PID 1 of a container
+// with no init -- keeps answering it as a zombie. Those are dead for this purpose.
+function processIsAlive(pid) {
+    try {
+        process.kill(pid, 0);
+    } catch {
+        return false;
+    }
+    try {
+        return !/^\d+ \(.*\) Z/.test(fs.readFileSync(`/proc/${pid}/stat`, "utf8"));
+    } catch {
+        return true;   // no /proc: signal 0 answering is all there is to go on
+    }
+}
+
+async function waitFor(condition, { timeoutMs, stepMs = 25 }) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const value = condition();
+        if (value) {
+            return value;
+        }
+        await new Promise((resolve) => setTimeout(resolve, stepMs));
+    }
+
+    return condition();
+}
+
+// A server whose direct child (sh) starts a grandchild that ignores TERM and HUP -- the shape of an npx
+// wrapper over a server that traps them -- and then waits on it. The grandchild records its OWN pid
+// (`$$` of a fresh sh, not of the subshell that would inherit the parent's).
+async function assertGroupDiesWith(signal) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-orphan-"));
+    tmpDirs.push(dir);
+    const pidFile = path.join(dir, "grandchild.pid");
+    // No double quote anywhere: a declaration refuses one, for Windows' sake.
+    const script = "sh -c 'trap : TERM HUP; echo $$ > $PIDFILE; while :; do sleep 1; done' &\nwait\n";
+    const configDir = tmpConfigDir({ secrets: {}, servers: {
+        orphan: { command: "sh", args: ["-c", script], env: { PIDFILE: `literal:${pidFile}` } } } });
+    const launcher = spawn(process.execPath, [LAUNCHER_PATH, "run", "orphan"],
+        { env: trustedLauncherEnv(configDir), stdio: ["ignore", "ignore", "pipe"] });
+    let stderr = "";
+    launcher.stderr.on("data", (d) => { stderr += d; });
+    const exited = new Promise((resolve) => launcher.once("exit", resolve));
+    let grandchild = null;
+    try {
+        // Written by `echo`, so an empty read is the file caught between its creation and its content.
+        grandchild = Number(await waitFor(() => {
+            try {
+                return fs.readFileSync(pidFile, "utf8").trim();
+            } catch {
+                return "";
+            }
+        }, { timeoutMs: 10_000 }));
+        assert.ok(grandchild > 0, `the grandchild never started: ${stderr}`);
+        assert.ok(processIsAlive(grandchild), "the fixture must be running before the signal, or the test proves nothing");
+
+        launcher.kill(signal);
+        await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 10_000))]);
+        assert.ok(launcher.exitCode !== null || launcher.signalCode !== null, `the launcher must exit on ${signal}: ${stderr}`);
+
+        const gone = await waitFor(() => !processIsAlive(grandchild), { timeoutMs: 2000 });
+        assert.ok(gone, `a group member that ignores ${signal} must not outlive the launcher: ${stderr}`);
+    } finally {
+        launcher.kill("SIGKILL");
+        if (grandchild) {
+            try {
+                process.kill(grandchild, "SIGKILL");
+            } catch { /* already gone */ }
+        }
+    }
+}
+
+test("cmdLaunch: a group member that ignores SIGTERM does not outlive the launcher",
+    { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups and an sh to build the fixture with", timeout: 60_000 },
+    () => assertGroupDiesWith("SIGTERM"));
+
+// What a closing terminal delivers. Unhandled, it kills the launcher outright and leaves the detached
+// group standing.
+test("cmdLaunch: a group member that ignores SIGHUP does not outlive the launcher",
+    { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups and an sh to build the fixture with", timeout: 60_000 },
+    () => assertGroupDiesWith("SIGHUP"));
+
+// The other half of the orphan problem: it is the DIRECT child that traps TERM, so the launcher has
+// nothing to exit on and its own "exit" handler never gets to run. The MCP client SIGKILLs a launcher
+// that outlasts its shutdown window, and SIGKILL runs no handler -- so the group has to be gone before
+// that, by the launcher's own escalation. `trap ''` is inherited across exec, so the sleeps ignore TERM too.
+test("cmdLaunch: a direct child that traps SIGTERM is escalated to SIGKILL, and the launcher and group go",
+    { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups and an sh to build the fixture with", timeout: 60_000 },
+    async () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-trap-"));
+        tmpDirs.push(dir);
+        const directFile = path.join(dir, "direct.pid");
+        const grandchildFile = path.join(dir, "grandchild.pid");
+        // No double quote anywhere: a declaration refuses one, for Windows' sake.
+        const script = "trap '' TERM\necho $$ > $DIRECT_PIDFILE\n"
+            + "sh -c 'trap : TERM HUP; echo $$ > $GRANDCHILD_PIDFILE; while :; do sleep 1; done' &\n"
+            + "while :; do sleep 1; done\n";
+        const configDir = tmpConfigDir({ secrets: {}, servers: {
+            stubborn: { command: "sh", args: ["-c", script],
+                env: { DIRECT_PIDFILE: `literal:${directFile}`, GRANDCHILD_PIDFILE: `literal:${grandchildFile}` } } } });
+        const launcher = spawn(process.execPath, [LAUNCHER_PATH, "run", "stubborn"],
+            { env: trustedLauncherEnv(configDir), stdio: ["ignore", "ignore", "pipe"] });
+        let stderr = "";
+        launcher.stderr.on("data", (d) => { stderr += d; });
+        const exited = new Promise((resolve) => launcher.once("exit", resolve));
+        const readPid = (file) => Number(fs.readFileSync(file, "utf8").trim());
+        const pidWritten = (file) => () => {
+            try {
+                return readPid(file) > 0;
+            } catch {
+                return false;
+            }
+        };
+        let direct = null;
+        let grandchild = null;
+        try {
+            const started = await waitFor(() => pidWritten(directFile)() && pidWritten(grandchildFile)(), { timeoutMs: 10_000 });
+            assert.ok(started, `the fixture never wrote both pid files: ${stderr}`);
+            direct = readPid(directFile);
+            grandchild = readPid(grandchildFile);
+            assert.ok(processIsAlive(direct) && processIsAlive(grandchild),
+                `the fixture must be running before the signal, or the test proves nothing: ${stderr}`);
+
+            launcher.kill("SIGTERM");
+            // The grace is 1 s; three leaves room for a loaded machine without approaching the 5 s a
+            // forgotten escalation would take from the unref'd default.
+            await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 3000))]);
+            assert.ok(launcher.exitCode !== null || launcher.signalCode !== null,
+                `the launcher must leave once its child ignores SIGTERM: ${stderr}`);
+            assert.equal(launcher.signalCode, null, "the launcher must leave by its own exit, not be killed from outside");
+
+            const gone = await waitFor(() => !processIsAlive(direct) && !processIsAlive(grandchild), { timeoutMs: 1000 });
+            assert.ok(gone, `neither the SIGTERM-ignoring child nor its group may outlive the launcher: ${stderr}`);
+        } finally {
+            launcher.kill("SIGKILL");
+            // Read again rather than trusting the variables: a failure before they were assigned would
+            // otherwise leave SIGTERM-ignoring loops running on the machine for good.
+            direct ??= pidWritten(directFile)() ? readPid(directFile) : null;
+            grandchild ??= pidWritten(grandchildFile)() ? readPid(grandchildFile) : null;
+            if (direct) {
+                try {
+                    process.kill(-direct, "SIGKILL");
+                } catch { /* already gone */ }
+            }
+            if (grandchild) {
+                try {
+                    process.kill(grandchild, "SIGKILL");
+                } catch { /* already gone */ }
+            }
+        }
+    });
+
+test("killProcessTree: a null escalation signals once and arms no follow-up", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+
+    const signalled = [];
+    const timer = m.killProcessTree({ pid: 4242, kill: (s) => signalled.push(["child", s]) }, "SIGTERM",
+        { platform: "linux", killProcess: (pid, s) => signalled.push([pid, s]), escalation: null });
+    t.mock.timers.tick(60_000);
+    assert.equal(timer, null);
+    assert.deepEqual(signalled, [[-4242, "SIGTERM"]]);
+});
+
+test("killProcessTree: an escalation is delivered at its own delay, and a caller can clear it", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+
+    const signalled = [];
+    const seams = { platform: "linux", killProcess: (pid, s) => signalled.push([pid, s]),
+        escalation: { afterMs: 1000, ref: true } };
+    m.killProcessTree({ pid: 4242, kill: () => {} }, "SIGTERM", seams);
+    t.mock.timers.tick(999);
+    assert.deepEqual(signalled, [[-4242, "SIGTERM"]], "not before its delay");
+    t.mock.timers.tick(1);
+    assert.deepEqual(signalled, [[-4242, "SIGTERM"], [-4242, "SIGKILL"]]);
+
+    signalled.length = 0;
+    clearTimeout(m.killProcessTree({ pid: 4242, kill: () => {} }, "SIGTERM", seams));
+    t.mock.timers.tick(5000);
+    assert.deepEqual(signalled, [[-4242, "SIGTERM"]], "a cleared escalation never fires");
+});
+
+test("killProcessTree: the follow-up timer keeps the event loop alive exactly when the escalation says ref", () => {
+    for (const ref of [true, false]) {
+        const timer = m.killProcessTree({ pid: 4242, kill: () => {} }, "SIGTERM",
+            { platform: "linux", killProcess: () => {}, escalation: { afterMs: 60_000, ref } });
+        try {
+            assert.equal(timer.hasRef(), ref);
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+});
+
+test("killProcessTree: win32 arms no follow-up and returns none", (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+
+    const timer = m.killProcessTree({ pid: 4242, kill: () => {} }, "SIGTERM", {
+        platform: "win32", spawnSyncProcess: () => {}, resolveCommand: () => ({ kind: "direct", cmd: "taskkill.exe" }),
+    });
+    assert.equal(timer, null);
+});
+
+// A group that does not exist: the pid is above any the kernel hands out, so killing -pid fails and
+// killProcessTree falls back to child.kill -- which the fake records. SIGHUP because it is the forwarded
+// signal a test process is least likely to hold a listener for.
+async function launchWithRecordingChild(kind = "servers") {
+    const cfg = m.loadConfig(projectPaths({ secrets: {},
+        [kind]: { github: { command: process.execPath, args: ["-e", ""], env: {} } } }));
+    const killed = [];
+    const child = Object.assign(fakeChild(), { pid: 2 ** 22 + 1, kill: (s) => killed.push(s) });
+    const handle = await m.cmdLaunch(kind, "github", cfg, { trustState: trustedStateFor(cfg), spawnFn: () => child });
+
+    return { handle, killed };
+}
+
+test("cmdLaunch: a task keeps the default grace before its escalation, since no MCP client is waiting to SIGKILL it",
+    { skip: process.platform === "win32" && "win32 has taskkill /T /F and no follow-up to arm" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const { handle, killed } = await launchWithRecordingChild("tasks");
+        try {
+            process.emit("SIGINT", "SIGINT");
+            t.mock.timers.tick(4999);
+            assert.deepEqual(killed, ["SIGINT"], "a Ctrl-C'd task gets the time to write its summary or roll back");
+            t.mock.timers.tick(1);
+            assert.deepEqual(killed, ["SIGINT", "SIGKILL"], "and is still escalated, not left running");
+        } finally {
+            await handle.dispose();
+        }
+    });
+
+test("LAUNCH_KILL_ESCALATION: both kinds keep the launcher alive until their escalation fires", () => {
+    // Pinned because nothing else observes it: the child's own handle keeps the loop alive today, so a
+    // timer flipped to unref'd passes every behavioural test while the guarantee quietly moves onto it.
+    assert.deepEqual(Object.keys(m.LAUNCH_KILL_ESCALATION).sort(), ["servers", "tasks"]);
+    for (const kind of ["servers", "tasks"]) {
+        assert.equal(m.LAUNCH_KILL_ESCALATION[kind].ref, true, `${kind} escalation must be ref'd`);
+    }
+});
+
+test("cmdLaunch: several forwarded signals arm one escalation, at the launcher's own short delay",
+    { skip: process.platform === "win32" && "win32 has taskkill /T /F and no follow-up to arm" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const { handle, killed } = await launchWithRecordingChild();
+        try {
+            process.emit("SIGHUP", "SIGHUP");
+            process.emit("SIGHUP", "SIGHUP");
+            assert.deepEqual(killed, ["SIGHUP", "SIGHUP"], "each signal is forwarded");
+            t.mock.timers.tick(999);
+            assert.deepEqual(killed, ["SIGHUP", "SIGHUP"], "the escalation is shorter than the client's 2 s window, not before 1 s");
+            t.mock.timers.tick(1);
+            assert.deepEqual(killed, ["SIGHUP", "SIGHUP", "SIGKILL"], "and it is armed once, not once per signal");
+        } finally {
+            await handle.dispose();
+        }
+    });
+
+test("cmdLaunch: dispose clears a pending escalation",
+    { skip: process.platform === "win32" && "win32 has taskkill /T /F and no follow-up to arm" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const { handle, killed } = await launchWithRecordingChild();
+        process.emit("SIGHUP", "SIGHUP");
+        await handle.dispose();
+        t.mock.timers.tick(60_000);
+        assert.deepEqual(killed, ["SIGHUP"], "a disposed launch must not SIGKILL a child it no longer owns");
+    });
+
+test("cmdLaunch: a second forwarded signal does not lose the first one's escalation, so dispose still clears it",
+    { skip: process.platform === "win32" && "win32 has taskkill /T /F and no follow-up to arm" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const { handle, killed } = await launchWithRecordingChild();
+        process.emit("SIGHUP", "SIGHUP");
+        process.emit("SIGHUP", "SIGHUP");
+        await handle.dispose();
+        t.mock.timers.tick(60_000);
+        assert.deepEqual(killed, ["SIGHUP", "SIGHUP"], "the escalation the first signal armed must not outlive the handle");
+    });
+
+test("cmdLaunch: the spawn command is looked up against the child's env, so a declared PATH is what is searched", async () => {
+    // resolveSpawnCommand only searches on win32, so on any other platform the lookup is a
+    // pass-through and its env cannot be observed from the result -- hence the seam. What is asserted is
+    // the env handed over: the declaration's PATH, not this process's.
+    const cfg = m.loadConfig(projectPaths({ secrets: {},
+        servers: { github: { command: "tool", args: [], env: { PATH: "literal:/declared/bin" } } } }));
+    const seen = [];
+    const child = Object.assign(fakeChild(), { pid: 2 ** 22 + 1 });
+    const handle = await m.cmdLaunch("servers", "github", cfg, {
+        trustState: trustedStateFor(cfg),
+        resolveCommand: (command, options) => { seen.push([command, options.env.PATH]); return { kind: "direct", cmd: command }; },
+        spawnFn: () => child,
+    });
+    await handle.dispose();
+    assert.deepEqual(seen, [["tool", "/declared/bin"]]);
 });
 
 test("cmdLaunch: hands createChannel the same namespace keyFor keys the entry under, at both scopes", async () => {
@@ -3420,6 +3962,7 @@ test("cmdLaunch: hands createChannel the same namespace keyFor keys the entry un
     const launch = async (cfg) => {
         let passed;
         const handle = await m.cmdLaunch("servers", "s", cfg, {
+            trustState: trustedStateFor(cfg),
             childNodeVersion: () => "v20.11.0",
             readCache: async () => ({ state: "valid", accessToken: "cached" }),
             createChannel: ({ scopeKey }) => {
@@ -3750,7 +4293,7 @@ test("a pinned argv reaches the child exactly as declared, even through the win3
 
     // platform: "linux" would make buildSpawnInvocation the identity function — this only pins a JSON
     // round-trip. win32 with an extension-less command is what actually exercises the rewrite.
-    const existsSync = (p) => p.toLowerCase().replace(/\\/g, "/") === "c:/bin/npx.cmd";
+    const existsSync = onlyFiles("c:/bin/npx.cmd", "c:/bin/cmd.exe");
     const resolved = m.resolveSpawnCommand(loaded.servers.pinned.command, {
         platform: "win32", env: { Path: "C:\\bin", PATHEXT: ".COM;.EXE;.BAT;.CMD" }, existsSync,
     });
@@ -3759,7 +4302,7 @@ test("a pinned argv reaches the child exactly as declared, even through the win3
 
     // A version pin is only worth writing down if it survives to argv — verify each declared token
     // appears intact and in order inside the verbatim cmd.exe line.
-    assert.equal(invocation.cmd, "cmd.exe");
+    assert.equal(invocation.cmd, "C:\\bin\\cmd.exe");
     assert.deepEqual(invocation.args, [`/d /s /c ""${resolved.cmd}" ${args.map((a) => `"${a}"`).join(" ")}"`]);
     assert.equal(invocation.opts.windowsVerbatimArguments, true);
 });
@@ -4289,7 +4832,7 @@ test("cmdMigrate: a project/local collision on one name is one keystore entry, r
     const binDir = stubBinary("security", "#!/bin/sh\necho already-present\nexit 0\n");
 
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "migrate"], {
-        env: { ...process.env, VC_SECRETS_CONFIG_DIR: dir, VC_SECRETS_LOCAL_BACKEND: "keychain", PATH: `${binDir}${path.delimiter}${process.env.PATH}` },
+        env: launcherEnv({ VC_SECRETS_CONFIG_DIR: dir, VC_SECRETS_LOCAL_BACKEND: "keychain", PATH: `${binDir}${path.delimiter}${process.env.PATH}` }),
         encoding: "utf8",
     });
 
@@ -4315,10 +4858,10 @@ esac
 `);
 
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "migrate"], {
-        env: {
-            ...process.env, VC_SECRETS_CONFIG_DIR: dir, VC_SECRETS_LOCAL_BACKEND: "keychain",
+        env: launcherEnv({
+            VC_SECRETS_CONFIG_DIR: dir, VC_SECRETS_LOCAL_BACKEND: "keychain",
             PATH: `${binDir}${path.delimiter}${process.env.PATH}`, SECURITY_CALL_LOG: logPath,
-        },
+        }),
         encoding: "utf8",
     });
 
@@ -4349,11 +4892,17 @@ test("migrating a legacy wcm entry stores the plaintext, not the hex it was read
     const legacyHex = Buffer.from(plaintext, "utf16le").toString("hex");
     const writeLogPath = path.join(dir, "wcm-write.log");
 
-    // powershell.exe stub: runTool closes stdin with nothing written for a read and with the value
+    // PowerShell stub: runTool closes stdin with nothing written for a read and with the value
     // for a write (see runTool's spec.stdinData branch), so "$(cat)" tells the two apart without
     // needing to decode the real -EncodedCommand payload. The new key's read must report "not
     // found" (exit 3) so migrate proceeds to the legacy one.
-    const binDir = stubBinary("powershell.exe", `#!/bin/sh
+    //
+    // Named without an extension and selected through VC_SECRETS_POWERSHELL, never as `powershell.exe`:
+    // on win32 stubBinary writes `<name>.cmd`, which a lookup of the literal `powershell.exe` never
+    // reaches -- the real PowerShell then ran against the developer's real Credential Manager. The
+    // override is the bare NAME and not the stub's path: an absolute `.cmd` path goes out `direct`, and
+    // node refuses to spawn a batch file without a shell.
+    const binDir = stubBinary("vc-ps-stub", `#!/bin/sh
 value=$(cat)
 if [ -n "$value" ]; then
   printf '%s=%s\\n' "$VC_SECRETS_NAME" "$value" >> "$WCM_WRITE_LOG"
@@ -4366,10 +4915,10 @@ esac
 `);
 
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "migrate"], {
-        env: {
-            ...process.env, VC_SECRETS_CONFIG_DIR: dir, VC_SECRETS_LOCAL_BACKEND: "wcm",
+        env: launcherEnv({
+            VC_SECRETS_CONFIG_DIR: dir, VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-ps-stub",
             PATH: `${binDir}${path.delimiter}${process.env.PATH}`, WCM_WRITE_LOG: writeLogPath,
-        },
+        }),
         encoding: "utf8",
     });
 
@@ -4389,7 +4938,7 @@ test("cmdRun: identifiers (AZURE_TENANT_ID, AZURE_CLIENT_ID) survive into the ch
             env: {} } },
     });
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "run", "probe"], {
-        env: { ...process.env, VC_SECRETS_CONFIG_DIR: dir, AZURE_TENANT_ID: "tid", AZURE_CLIENT_ID: "cid" },
+        env: trustedLauncherEnv(dir, { AZURE_TENANT_ID: "tid", AZURE_CLIENT_ID: "cid" }),
         encoding: "utf8",
     });
 
@@ -4407,7 +4956,7 @@ test("cmdRun: a legacy credential inherited under another case is stripped too",
             env: {} } },
     });
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "run", "probe"], {
-        env: { ...process.env, VC_SECRETS_CONFIG_DIR: dir, Azure_Client_Secret: "stale" },
+        env: trustedLauncherEnv(dir, { Azure_Client_Secret: "stale" }),
         encoding: "utf8",
     });
 
@@ -4428,7 +4977,7 @@ test("cmdRun: a legacy name the launchable declares itself survives the strip", 
             env: { AZURE_CLIENT_SECRET: "literal:declared" } } },
     });
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "run", "probe"], {
-        env: { ...process.env, VC_SECRETS_CONFIG_DIR: dir, AZURE_CLIENT_SECRET: "stale" },
+        env: trustedLauncherEnv(dir, { AZURE_CLIENT_SECRET: "stale" }),
         encoding: "utf8",
     });
 
@@ -4467,7 +5016,7 @@ test("cmdDoctor: with the backend's tool missing, the write probe does not run a
     tmpDirs.push(emptyBin);
 
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "doctor"], { cwd: root, encoding: "utf8",
-        env: { ...process.env, HOME: isolatedHome, PATH: emptyBin, VC_SECRETS_LOCAL_BACKEND: "keychain" } });
+        env: seedTrust(launcherEnv({ HOME: isolatedHome, PATH: emptyBin, VC_SECRETS_LOCAL_BACKEND: "keychain" }), root) });
 
     assert.match(r.stderr, /FAIL required tool "security"/, `the one real cause must be named: ${r.stderr}`);
     assert.doesNotMatch(r.stderr, /a write at the size limit/, `the probe must not have run: ${r.stderr}`);
@@ -4489,8 +5038,10 @@ test("cmdDoctor: a task's name does not mark a same-named server as enabled", ()
     const isolatedHome = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-doctor-home-"));
     tmpDirs.push(isolatedHome);
 
+    // gpg because it is the one backend `doctor` does not write-probe: the others put and remove an
+    // entry in the real Credential Manager or login keychain, and this test is about SKIP lines.
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "doctor"],
-        { cwd: root, env: { ...process.env, HOME: isolatedHome }, encoding: "utf8" });
+        { cwd: root, env: seedTrust(launcherEnv({ HOME: isolatedHome, VC_SECRETS_LOCAL_BACKEND: "gpg" }), root), encoding: "utf8" });
 
     // Pre-fix concern named in the code's own comment: servers and tasks must be iterated SEPARATELY so
     // a task cannot mark a same-named server enabled merely by existing — that would drop the SKIP and
@@ -5969,4 +6520,1076 @@ test("nonAsciiInEmittedLiterals: a // inside a string does not end the scan", ()
     // scheme and the rest of the line, this em dash included, is never examined.
     const found = nonAsciiInEmittedLiterals('fail("see https://example.invalid \u2014 then retry");');
     assert.equal(found.length, 1, `expected one finding, got ${JSON.stringify(found)}`);
+});
+
+// ── repository trust ────────────────────────────────────────────────────────────────────────────────
+//
+// A launchable whose winning entry a repository declared is refused until the person has read it and run
+// `trust`. The gate is one predicate (trustProblem) behind three callers, so the predicate is tested as
+// a table and each caller is tested for what it does with the answer.
+
+const TRUST_BASE = { command: "npx", args: ["-y", "gh-mcp"], env: { T: "secret:pat", L: "literal:kept" } };
+
+// A repository whose project file declares `servers`/`tasks` (and, optionally, a user file that does).
+function trustCfg({ servers = { gh: TRUST_BASE }, tasks = {}, user } = {}) {
+    return m.loadConfig(scopedPaths({ user, project: { projectId: "proj-x", servers, tasks } }));
+}
+
+// The same config with one launchable's declaration overridden, keeping everything else -- so the trust
+// record made from the ORIGINAL is compared against a changed declaration under the same root.
+function withDeclaration(cfg, kind, name, override) {
+    return { ...cfg, [kind]: { ...cfg[kind], [name]: { ...cfg[kind][name], ...override } } };
+}
+
+// Fresh environment for the verbs that write the trust file: an XDG_CONFIG_HOME of its own, so the
+// developer's real file is never the one read or written.
+function trustEnv() {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-trust-home-"));
+    tmpDirs.push(home);
+
+    return { HOME: home, XDG_CONFIG_HOME: home };
+}
+
+const NO_TRUST = { schemaVersion: 1, repositories: {} };
+
+// The launch gate reads the trust file through process.env, which has no seam of its own on the
+// cmdRun/cmdTask path. Restored on the way out, as the PATH-moving helpers above do.
+async function withProcessEnv(env, fn) {
+    const saved = Object.fromEntries(Object.keys(env).map((key) => [key, process.env[key]]));
+    Object.assign(process.env, env);
+    try {
+        return await fn();
+    } finally {
+        for (const [key, value] of Object.entries(saved)) {
+            if (value === undefined) {
+                delete process.env[key];
+            } else {
+                process.env[key] = value;
+            }
+        }
+    }
+}
+
+test("trustProblem: a user-scope launchable needs no trust, whatever the state holds", () => {
+    const cfg = m.loadConfig(scopedPaths({ user: {
+        servers: { gh: TRUST_BASE }, tasks: { job: { command: "true", args: [], env: {} } } } }));
+    assert.equal(m.trustProblem(cfg, "servers", "gh", NO_TRUST), null);
+    assert.equal(m.trustProblem(cfg, "tasks", "job", NO_TRUST), null);
+});
+
+test("trustProblem: a repository launchable with no record for its repository is untrusted, at either home", () => {
+    const project = trustCfg();
+    assert.deepEqual(m.trustProblem(project, "servers", "gh", NO_TRUST),
+        { reason: "untrusted", home: "project", shadowsUser: false });
+
+    const local = m.loadConfig(scopedPaths({ project: { projectId: "proj-x" }, local: { servers: { gh: TRUST_BASE } } }));
+    assert.deepEqual(m.trustProblem(local, "servers", "gh", NO_TRUST),
+        { reason: "untrusted", home: "local", shadowsUser: false },
+        "local is gated like project: the launcher cannot tell a tracked file from an untracked one without running git in the repository");
+});
+
+test("trustProblem: a record for the repository that lacks the name is untrusted, for servers and tasks alike", () => {
+    const cfg = trustCfg({ servers: { gh: TRUST_BASE, other: TRUST_BASE }, tasks: { job: TRUST_BASE } });
+    const state = trustedStateFor(cfg);
+    const record = state.repositories[cfg.projectRoot];
+    delete record.servers.other;
+    delete record.tasks.job;
+    assert.equal(m.trustProblem(cfg, "servers", "gh", state), null);
+    assert.equal(m.trustProblem(cfg, "servers", "other", state).reason, "untrusted");
+    assert.equal(m.trustProblem(cfg, "tasks", "job", state).reason, "untrusted");
+});
+
+test("trustProblem: a record for a different repository trusts nothing here", () => {
+    const cfg = trustCfg();
+    const state = { schemaVersion: 1, repositories: { "/somewhere/else": trustedStateFor(cfg).repositories[cfg.projectRoot] } };
+    assert.equal(m.trustProblem(cfg, "servers", "gh", state).reason, "untrusted");
+});
+
+test("trustProblem: the shape as declared is trusted, and each single change is reported as only that difference", () => {
+    const cfg = trustCfg({ tasks: { gh: TRUST_BASE } });
+    const state = trustedStateFor(cfg);
+    for (const kind of ["servers", "tasks"]) {
+        assert.equal(m.trustProblem(cfg, kind, "gh", state), null, `${kind}: unchanged`);
+    }
+    const { L, ...withoutL } = TRUST_BASE.env;
+    const cases = [
+        [{ command: "sh" }, [`command is ${JSON.stringify("sh")}, trusted ${JSON.stringify(TRUST_BASE.command)}`]],
+        [{ args: [...TRUST_BASE.args, "--extra"] }, ["args changed"]],
+        [{ env: { ...TRUST_BASE.env, T: "secret:other" } }, ["env T changed"]],
+        [{ env: { ...TRUST_BASE.env, ADDED: "literal:x" } }, ["env ADDED added"]],
+        [{ env: withoutL }, ["env L removed"]],
+    ];
+    for (const [override, differences] of cases) {
+        const problem = m.trustProblem(withDeclaration(cfg, "servers", "gh", override), "servers", "gh", state);
+        assert.deepEqual(problem, { reason: "changed", differences, home: "project", shadowsUser: false }, JSON.stringify(override));
+    }
+});
+
+test("trustProblem: a launchable that shadows a user-scope entry says so, however the chain of homes runs", () => {
+    const user = { servers: { gh: { command: "user-gh", args: [], env: {} } } };
+    const shadowing = trustCfg({ user });
+    assert.equal(m.trustProblem(shadowing, "servers", "gh", NO_TRUST).shadowsUser, true);
+    assert.equal(m.trustProblem(trustCfg(), "servers", "gh", NO_TRUST).shadowsUser, false);
+
+    const chain = m.loadConfig(scopedPaths({ user,
+        project: { projectId: "proj-x", servers: { gh: TRUST_BASE } },
+        local: { servers: { gh: { ...TRUST_BASE, command: "local-gh" } } } }));
+    const problem = m.trustProblem(chain, "servers", "gh", NO_TRUST);
+    assert.equal(problem.home, "local");
+    assert.equal(problem.shadowsUser, true, "user -> project -> local still replaced the user's entry");
+
+    const sameKindOnly = trustCfg({ user: { tasks: { gh: { command: "user-gh", args: [], env: {} } } } });
+    assert.equal(m.trustProblem(sameKindOnly, "servers", "gh", NO_TRUST).shadowsUser, false,
+        "a user TASK of that name is not a server that was shadowed");
+});
+
+test("trustProblem: a launchable named like an Object.prototype member is looked up as a name, not as a property", () => {
+    const cfg = trustCfg({ servers: { gh: TRUST_BASE, toString: TRUST_BASE } });
+    const state = trustedStateFor(cfg);
+    delete state.repositories[cfg.projectRoot].servers.toString;
+    assert.equal(m.trustProblem(cfg, "servers", "toString", state).reason, "untrusted",
+        "an inherited toString is not a recorded entry");
+    assert.equal(m.trustProblem(cfg, "servers", "toString", NO_TRUST).reason, "untrusted");
+    assert.equal(m.trustProblem(cfg, "servers", "gh", state), null);
+});
+
+test("trustProblem: the VC_SECRETS_CONFIG_DIR override is a project root and is gated like one", () => {
+    const dir = tmpConfigDir({ servers: { gh: TRUST_BASE } });
+    const env = { ...trustEnv(), VC_SECRETS_CONFIG_DIR: dir };
+    const paths = m.configPaths(env, dir);
+    assert.equal(paths.root, dir);
+    const cfg = m.loadConfig(paths);
+    assert.equal(cfg.projectRoot, m.trustRootKey(dir));
+    assert.equal(m.trustProblem(cfg, "servers", "gh", NO_TRUST).reason, "untrusted");
+    assert.equal(m.trustProblem(cfg, "servers", "gh", trustedStateFor(cfg)), null);
+});
+
+test("configPaths: the root is the parent of the .claude directory the walk stopped at, and null with no project", () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-root-"));
+    tmpDirs.push(repo);
+    fs.mkdirSync(path.join(repo, ".claude"));
+    fs.writeFileSync(path.join(repo, ".claude", m.CONFIG_NAME), JSON.stringify({ servers: {} }));
+    const nested = path.join(repo, "src", "deep");
+    fs.mkdirSync(nested, { recursive: true });
+    assert.equal(m.configPaths({ HOME: "/nonexistent-home" }, nested).root, repo);
+
+    const bare = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-noroot-"));
+    tmpDirs.push(bare);
+    assert.equal(m.configPaths({ HOME: "/nonexistent-home" }, bare).root, null);
+});
+
+test("loadConfig: hand-built paths land on the same root configPaths would have computed for those files", () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-fallback-"));
+    tmpDirs.push(repo);
+    fs.mkdirSync(path.join(repo, ".claude"));
+    const file = path.join(repo, ".claude", m.CONFIG_NAME);
+    fs.writeFileSync(file, JSON.stringify({ servers: {} }));
+    const discovered = m.loadConfig(m.configPaths({ HOME: "/nonexistent-home" }, repo));
+    const handBuilt = m.loadConfig({ user: null, project: file, local: null });
+    assert.equal(handBuilt.projectRoot, discovered.projectRoot);
+
+    assert.equal(m.loadConfig({ user: file, project: null, local: null }).projectRoot, null,
+        "a config with only a user file has no repository");
+});
+
+test("loadConfig: a checkout reached through a symlink has the same projectRoot as its target",
+    { skip: !CAN_SYMLINK && "this machine cannot create a symlink" },
+    () => {
+        const repo = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-root-real-"));
+        tmpDirs.push(repo);
+        fs.mkdirSync(path.join(repo, ".claude"));
+        fs.writeFileSync(path.join(repo, ".claude", m.CONFIG_NAME), JSON.stringify({ servers: {} }));
+        const link = path.join(probeDir, `checkout-alias-${path.basename(repo)}`);
+        fs.symlinkSync(repo, link, "dir");
+        const load = (dir) => m.loadConfig({ user: null, project: path.join(dir, ".claude", m.CONFIG_NAME), local: null });
+        assert.equal(load(link).projectRoot, load(repo).projectRoot, "one repository, one trust record");
+        assert.equal(load(link).projectRoot, m.trustRootKey(repo));
+    });
+
+test("trustRootKey: lower-cased on win32 only, and the injected realpath decides what exists", () => {
+    const passThrough = (p) => p;
+    const win = (p) => m.trustRootKey(p, { platform: "win32", realpath: passThrough });
+    assert.equal(win("C:\\Work\\Repo"), win("c:\\work\\repo"), "one directory, two spellings, one record");
+    const posix = (p) => m.trustRootKey(p, { platform: "linux", realpath: passThrough });
+    assert.notEqual(posix("/Work/Repo"), posix("/work/repo"), "a case-sensitive file system keeps the two apart");
+
+    const absent = () => { throw Object.assign(new Error("ENOENT"), { code: "ENOENT" }); };
+    assert.equal(m.trustRootKey("C:\\Gone\\Repo", { platform: "win32", realpath: absent }), win("c:\\gone\\repo"),
+        "a path that no longer exists still keys the same way, so untrust can find its record");
+});
+
+test("trustRootKey: the key is what the injected realpath resolves, not what this machine's file system says", () => {
+    assert.equal(m.trustRootKey("/checkout/alias", { platform: "linux", realpath: () => "/checkout/real" }), "/checkout/real");
+    assert.equal(m.trustRootKey("C:\\Alias", { platform: "win32", realpath: () => "C:\\Real" }), "c:\\real");
+});
+
+test("trustRootKey: a symlinked checkout and its target are one repository", { skip: !CAN_SYMLINK && "this machine cannot create a symlink" }, () => {
+    const target = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-real-"));
+    tmpDirs.push(target);
+    const link = path.join(probeDir, `alias-${path.basename(target)}`);
+    fs.symlinkSync(target, link, "dir");
+    assert.equal(m.trustRootKey(link), m.trustRootKey(target));
+});
+
+test("launchShape: an entry holding only the schema keys is reproduced key for key", () => {
+    const entry = Object.fromEntries(m.SERVER_DECL_KEYS.map((key) => [key, TRUST_BASE[key]]));
+    assert.deepEqual(m.launchShape(entry), entry);
+    assert.deepEqual(Object.keys(m.launchShape(entry)), [...m.SERVER_DECL_KEYS]);
+});
+
+test("launchShape: what the loader adds to an entry (scope, home) is not part of the shape", () => {
+    const loaded = trustCfg().servers.gh;
+    assert.ok("home" in loaded && "scope" in loaded, "the fixture must carry the loader's own fields");
+    assert.deepEqual(Object.keys(m.launchShape(loaded)), [...m.SERVER_DECL_KEYS]);
+});
+
+test("launchShape: equal declarations give equal shapes, and a change to any single schema key gives a different one", () => {
+    const changes = {
+        command: { command: "sh" },
+        args: { args: [...TRUST_BASE.args, "--extra"] },
+        env: { env: { ...TRUST_BASE.env, ADDED: "literal:x" } },
+    };
+    assert.deepEqual(Object.keys(changes).sort(), [...m.SERVER_DECL_KEYS].sort(),
+        "a key added to the schema must be given a case here, or it is trusted without being compared");
+    const base = m.launchShape(TRUST_BASE);
+    assert.deepEqual(m.launchShape({ ...TRUST_BASE }), base);
+    for (const key of m.SERVER_DECL_KEYS) {
+        const changed = m.launchShape({ ...TRUST_BASE, ...changes[key] });
+        assert.notDeepEqual(changed, base, `${key}: a changed shape`);
+        assert.ok(m.trustDifferences(base, changed).length > 0, `${key}: reported as a difference`);
+    }
+    assert.deepEqual(m.trustDifferences(base, m.launchShape({ ...TRUST_BASE })), []);
+});
+
+test("launchShape: a copy, so editing the declaration afterwards cannot edit what was recorded", () => {
+    const entry = { command: "npx", args: ["a"], env: { K: "literal:v" } };
+    const shape = m.launchShape(entry);
+    entry.args.push("b");
+    entry.env.K = "literal:w";
+    assert.deepEqual(shape, { command: "npx", args: ["a"], env: { K: "literal:v" } });
+});
+
+test("trustDifferences: never prints a literal value, a changed one or an added one", () => {
+    const before = { command: "npx", args: [], env: { L: "literal:old-marker-value", R: "secret:pat" } };
+    const after = { command: "npx", args: [], env: { L: "literal:new-marker-value", R: "secret:pat", ADDED: "literal:added-marker-value" } };
+    const diffs = m.trustDifferences(before, after);
+    assert.deepEqual(diffs, ["env ADDED added", "env L changed"]);
+    assert.doesNotMatch(diffs.join("\n"), /marker-value/);
+});
+
+test("trustDifferences: env keys are compared by own property, so an inherited name is not a key", () => {
+    const diffs = m.trustDifferences({ command: "x", args: [], env: {} }, { command: "x", args: [], env: { toString: "literal:y" } });
+    assert.deepEqual(diffs, ["env toString added"]);
+});
+
+test("trustRefusal: an untrusted launchable names its declaring file, what it shadows, and where to trust it", () => {
+    const cfg = trustCfg({ user: { servers: { gh: { command: "user-gh", args: [], env: {} } } }, tasks: { job: TRUST_BASE } });
+    const server = m.trustProblem(cfg, "servers", "gh", NO_TRUST);
+    assert.equal(m.trustRefusal("servers", "gh", server, cfg),
+        `server "gh" is declared by ${cfg.files.project} (it shadows your user-scope "gh") and is not trusted -- `
+        + `review it, then run "vc-secrets trust" in ${cfg.projectRoot}`);
+    const task = m.trustProblem(cfg, "tasks", "job", NO_TRUST);
+    assert.equal(m.trustRefusal("tasks", "job", task, cfg),
+        `task "job" is declared by ${cfg.files.project} and is not trusted -- review it, then run "vc-secrets trust" in ${cfg.projectRoot}`);
+});
+
+test("trustRefusal: a changed launchable lists every difference and asks for the trust again", () => {
+    const cfg = trustCfg();
+    const state = trustedStateFor(cfg);
+    const changed = withDeclaration(cfg, "servers", "gh", { command: "sh", args: ["-c", "x"] });
+    const problem = m.trustProblem(changed, "servers", "gh", state);
+    const text = m.trustRefusal("servers", "gh", problem, changed);
+    assert.equal(text, `server "gh" changed since you trusted it: ${problem.differences.join("; ")} -- `
+        + `review it, then run "vc-secrets trust" again in ${cfg.projectRoot}`);
+    assert.equal(problem.differences.length, 2, "both differences, not the first");
+    assert.ok(!text.includes("\n"), "one physical line, for the probe's last-line classification");
+});
+
+test("readTrustState: a missing file is an empty state, not an error", () => {
+    assert.deepEqual(m.readTrustState(trustEnv()), NO_TRUST);
+});
+
+test("readTrustState: a file that is not a trust state throws, naming the file, instead of reading as trusted or empty", () => {
+    const env = trustEnv();
+    const file = m.trustFilePath(env);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const valid = { trustedAt: "2000-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+    const documents = {
+        "not JSON": "{ nope",
+        "not an object": "[]",
+        "a schemaVersion this launcher does not speak": JSON.stringify({ schemaVersion: 2, repositories: {} }),
+        "no schemaVersion": JSON.stringify({ repositories: {} }),
+        "repositories that is not an object": JSON.stringify({ schemaVersion: 1, repositories: [] }),
+        "a record without trustedAt": JSON.stringify({ schemaVersion: 1, repositories: { "/r": { servers: {}, tasks: {} } } }),
+        "a record whose servers is not an object": JSON.stringify({ schemaVersion: 1, repositories: { "/r": { ...valid, servers: [] } } }),
+        "a record whose task entry is not an object": JSON.stringify({ schemaVersion: 1, repositories: { "/r": { ...valid, tasks: { job: "x" } } } }),
+    };
+    for (const [what, text] of Object.entries(documents)) {
+        fs.writeFileSync(file, text);
+        assert.throws(() => m.readTrustState(env), (e) => {
+            assert.ok(e instanceof m.VcSecretsError, what);
+            assert.ok(e.message.includes(file), `${what}: names the file -- ${e.message}`);
+
+            return true;
+        }, what);
+    }
+    fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, repositories: { "/r": valid } }));
+    assert.deepEqual(m.readTrustState(env).repositories["/r"], valid, "the control: a valid file reads");
+});
+
+test("readTrustState: a JSON syntax error reports the position and none of the file's content", () => {
+    const env = trustEnv();
+    const file = m.trustFilePath(env);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, '{"schemaVersion": LEAK-MARKER-VALUE}');
+    assert.throws(() => m.readTrustState(env), (e) => {
+        assert.doesNotMatch(e.message, /LEAK-MARKER-VALUE/);
+
+        return true;
+    });
+});
+
+test("writeTrustState: round-trips, leaves no temporary file, and keeps the file private", () => {
+    const env = trustEnv();
+    const state = { schemaVersion: 1, repositories: { "/repo": { trustedAt: "2000-01-01T00:00:00.000Z",
+        servers: { gh: m.launchShape(TRUST_BASE) }, tasks: {} } } };
+    m.writeTrustState(env, state);
+    assert.deepEqual(m.readTrustState(env), state);
+    const dir = path.dirname(m.trustFilePath(env));
+    assert.deepEqual(fs.readdirSync(dir), [path.basename(m.trustFilePath(env))], "the .tmp file was renamed away");
+    if (process.platform !== "win32") {
+        assert.equal(fs.statSync(m.trustFilePath(env)).mode & 0o777, 0o600);
+        assert.equal(fs.statSync(dir).mode & 0o777, 0o700);
+    }
+
+    m.writeTrustState(env, NO_TRUST);
+    assert.deepEqual(m.readTrustState(env), NO_TRUST, "a second write replaces the first");
+});
+
+test("writeTrustState: a failed write is a VcSecretsError naming the file, and leaves no temporary file behind", () => {
+    const env = trustEnv();
+    // A directory where the file must go: the rename onto it fails after the temporary file was written.
+    fs.mkdirSync(m.trustFilePath(env), { recursive: true });
+    assert.throws(() => m.writeTrustState(env, NO_TRUST), (e) => e instanceof m.VcSecretsError && e.message.includes(m.trustFilePath(env)));
+    assert.deepEqual(fs.readdirSync(path.dirname(m.trustFilePath(env))), [path.basename(m.trustFilePath(env))]);
+});
+
+test("trustFilePath: sits beside the keystore's secrets directory, under the config base", () => {
+    const env = trustEnv();
+    assert.equal(path.dirname(m.trustFilePath(env)), path.dirname(m.secretsDir(env)));
+    assert.equal(path.basename(m.trustFilePath(env)), "trust.json");
+    assert.ok(m.trustFilePath(env).startsWith(env.XDG_CONFIG_HOME));
+    const noXdg = { HOME: env.HOME };
+    assert.equal(path.dirname(m.trustFilePath(noXdg)), path.dirname(m.secretsDir(noXdg)));
+});
+
+test("cmdLaunch: an untrusted repository server is refused before any token, cache or channel is touched", async () => {
+    const cfg = m.loadConfig(authorizedOauthPaths());
+    const touched = [];
+    const deps = {
+        readCache: async () => { touched.push("readCache"); return { state: "valid", accessToken: "cached" }; },
+        childNodeVersion: () => { touched.push("childNodeVersion"); return "v20.11.0"; },
+        createChannel: () => { touched.push("createChannel"); return { path: "/tmp/not-a-real.sock", push: () => 1, peers: () => 1, close: async () => {}, removeSync: () => {} }; },
+        spawnFn: () => { touched.push("spawn"); return fakeChild(); },
+    };
+    await assert.rejects(() => m.cmdLaunch("servers", "s", cfg, { ...deps, trustState: NO_TRUST }),
+        new RegExp(`server "s" is declared by .* and is not trusted -- review it, then run "vc-secrets trust" in `));
+    assert.deepEqual(touched, [], "a repository nobody trusted must not cost a keystore read");
+
+    // The control: with the record the same launch reaches the cache, which is what proves the seam above
+    // is on the path the refusal cut short.
+    const handle = await m.cmdLaunch("servers", "s", cfg, { ...deps, trustState: trustedStateFor(cfg) });
+    await handle.dispose();
+    assert.ok(touched.includes("readCache"), `the trusted launch never reached the cache: ${touched}`);
+});
+
+test("cmdLaunch: a changed repository server is refused with the differences, and never spawned", async () => {
+    const cfg = trustCfg();
+    const state = trustedStateFor(cfg);
+    const changed = withDeclaration(cfg, "servers", "gh", { args: ["-y", "another-package"] });
+    let spawned = 0;
+    await assert.rejects(() => m.cmdLaunch("servers", "gh", changed, { trustState: state, spawnFn: () => { spawned++; return fakeChild(); } }),
+        /server "gh" changed since you trusted it: args changed -- review it, then run "vc-secrets trust" again in /);
+    assert.equal(spawned, 0);
+});
+
+test("cmdLaunch: an unknown name is reported as unknown, before the trust file is consulted", async () => {
+    const cfg = trustCfg();
+    await assert.rejects(() => m.cmdLaunch("servers", "ghost", cfg, {
+        get trustState() { throw new Error("the trust state must not be read for a name nothing declares"); } }),
+        /unknown server "ghost"/);
+});
+
+test("cmdLaunch: the trust file is read only for a repository launchable, and an unreadable one refuses that launch alone", async () => {
+    const env = trustEnv();
+    const file = m.trustFilePath(env);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, "{ corrupt");
+    const user = m.loadConfig(scopedPaths({ user: { servers: { mine: { command: process.execPath, args: ["-e", ""], env: {} } } } }));
+    await withProcessEnv(env, async () => {
+        const handle = await m.cmdLaunch("servers", "mine", user, { spawnFn: () => fakeChild() });
+        await handle.dispose();
+
+        await assert.rejects(() => m.cmdLaunch("servers", "gh", trustCfg(), { spawnFn: () => fakeChild() }),
+            (e) => e instanceof m.VcSecretsError && e.message.includes(file));
+    });
+});
+
+test("cmdTask: an untrusted repository task is refused like a server, through the same gate", async () => {
+    const cfg = trustCfg({ servers: {}, tasks: { job: TRUST_BASE } });
+    await withProcessEnv(trustEnv(), () => assert.rejects(() => m.cmdTask("job", cfg),
+        /task "job" is declared by .* and is not trusted -- review it, then run "vc-secrets trust" in /));
+});
+
+test("run: a repository server nobody trusted is refused by the real launcher, and the server never starts", () => {
+    const marker = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-ran-")), "ran");
+    tmpDirs.push(path.dirname(marker));
+    // The path travels in the environment: a double quote in `args` is refused, and a Windows path would
+    // need escaping inside a script.
+    const dir = tmpConfigDir({ servers: { probe: { command: process.execPath,
+        args: ["-e", "require('node:fs').writeFileSync(process.env.MARKER, 'x')"], env: { MARKER: `literal:${marker}` } } } });
+    const env = launcherEnv({ VC_SECRETS_CONFIG_DIR: dir });
+    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "run", "probe"], { env, encoding: "utf8" });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /vc-secrets: server "probe" is declared by .* and is not trusted -- review it, then run "vc-secrets trust" in /);
+    assert.ok(!fs.existsSync(marker), "the declared command ran");
+
+    seedTrust(env, dir);
+    const trusted = spawnSync(process.execPath, [LAUNCHER_PATH, "run", "probe"], { env, encoding: "utf8" });
+    assert.equal(trusted.status, 0, trusted.stderr);
+    assert.ok(fs.existsSync(marker), "the control: once trusted, the same declaration runs");
+});
+
+test("trust: the real verb refuses without a terminal and records nothing", () => {
+    const dir = tmpConfigDir({ servers: { gh: TRUST_BASE } });
+    const env = launcherEnv({ VC_SECRETS_CONFIG_DIR: dir });
+    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "trust"], { env, encoding: "utf8", input: "y\n" });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /vc-secrets trust requires an interactive terminal/);
+    assert.ok(!fs.existsSync(m.trustFilePath(env)), "an answer piped in must not be taken");
+});
+
+test("untrust: the real verb needs no declaration and no terminal, and says when there is nothing to remove", () => {
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-undeclared-"));
+    tmpDirs.push(empty);
+    const env = launcherEnv();
+    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "untrust", empty], { env, cwd: empty, encoding: "utf8", input: "" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stderr, /has no trust record -- nothing to remove/);
+});
+
+test("untrust: the real verb removes the record of the path it is given, not the working directory's", () => {
+    const [given, working] = ["given", "working"].map((tag) => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), `vc-secrets-untrust-cli-${tag}-`));
+        tmpDirs.push(dir);
+
+        return dir;
+    });
+    const env = launcherEnv();
+    const record = { trustedAt: "1999-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+    m.writeTrustState(env, { schemaVersion: 1,
+        repositories: { [m.trustRootKey(given)]: record, [m.trustRootKey(working)]: record } });
+    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "untrust", given], { env, cwd: working, encoding: "utf8", input: "" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.deepEqual(Object.keys(m.readTrustState(env).repositories), [m.trustRootKey(working)]);
+});
+
+test("the usage line names trust and untrust", () => {
+    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "no-such-verb"], { env: launcherEnv(), encoding: "utf8" });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /usage: vc-secrets <.*\|trust\|untrust>/);
+});
+
+// cmdTrust and cmdUntrust take their terminal, their answer, their clock and their output as seams, so
+// the tests never need a pty and never write to the developer's terminal. The platform is pinned to
+// linux so the default does not change what a run on Windows exercises; `openTerminal` hands out a fake
+// and keeps it, so a test can see what `ask` was given and that it was closed. `beforeAnswer` runs
+// while the person is "deciding", for what changes on disk in that time.
+function trustSeams(env, { isTTY = true, isErrTTY = true, platform = "linux", openTerminal, answer = "y",
+    log = [], beforeAnswer } = {}) {
+    const asked = [];
+    const askedOn = [];
+    const opened = [];
+    const fakeTerminal = () => {
+        const terminal = { input: {}, output: {}, closed: 0, close() { this.closed += 1; } };
+        opened.push(terminal);
+
+        return terminal;
+    };
+
+    return { seams: { isTTY, isErrTTY, platform, openTerminal: openTerminal ?? fakeTerminal, env,
+        now: () => new Date("2001-02-03T04:05:06.000Z"),
+        ask: async (question, terminal) => {
+            asked.push(question);
+            askedOn.push(terminal);
+            await beforeAnswer?.();
+
+            return answer;
+        }, log: (text) => log.push(text) },
+    asked, askedOn, opened, log };
+}
+
+test("cmdTrust: without a terminal it refuses, asks nothing and writes nothing", async () => {
+    const env = trustEnv();
+    const { seams, asked, opened } = trustSeams(env, { isTTY: false });
+    await assert.rejects(() => m.cmdTrust(trustCfg(), seams), /vc-secrets trust requires an interactive terminal/);
+    assert.deepEqual(asked, []);
+    assert.deepEqual(opened, [], "no terminal is opened for a refusal");
+    assert.ok(!fs.existsSync(m.trustFilePath(env)));
+});
+
+test("cmdTrust: a terminal on stdin but not on stderr refuses too, because the review is shown on stderr", async () => {
+    const env = trustEnv();
+    const { seams, asked, opened } = trustSeams(env, { isErrTTY: false });
+    await assert.rejects(() => m.cmdTrust(trustCfg(), seams), /vc-secrets trust requires an interactive terminal/);
+    assert.deepEqual(asked, []);
+    assert.deepEqual(opened, []);
+    assert.ok(!fs.existsSync(m.trustFilePath(env)));
+});
+
+test("cmdTrust: on POSIX a controlling terminal that cannot be opened refuses, and stdin is not a fallback", async () => {
+    const env = trustEnv();
+    const { seams, asked } = trustSeams(env, {
+        openTerminal: () => { throw Object.assign(new Error("ENXIO: no such device or address, open '/dev/tty'"), { code: "ENXIO" }); },
+    });
+    await assert.rejects(() => m.cmdTrust(trustCfg(), seams), /vc-secrets trust requires an interactive terminal/);
+    assert.deepEqual(asked, []);
+    assert.ok(!fs.existsSync(m.trustFilePath(env)));
+});
+
+test("cmdTrust: a trust file that cannot be read refuses before the person is asked", async () => {
+    const env = trustEnv();
+    const file = m.trustFilePath(env);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, "{ not json");
+    const { seams, asked, opened } = trustSeams(env);
+    await assert.rejects(() => m.cmdTrust(trustCfg(), seams), /the trust file .* could not be read/);
+    assert.deepEqual(asked, [], "an answer given for a record that cannot be written back is a wasted one");
+    assert.deepEqual(opened, [], "refused before the terminal is opened, so there is nothing left to close");
+    assert.equal(fs.readFileSync(file, "utf8"), "{ not json");
+});
+
+test("cmdTrust: on POSIX the question goes to the opened controlling terminal, which is closed afterwards", async () => {
+    const env = trustEnv();
+    const { seams, askedOn, opened } = trustSeams(env);
+    await m.cmdTrust(trustCfg(), seams);
+    assert.equal(opened.length, 1);
+    assert.deepEqual(askedOn, [opened[0]], "the answer is read from the terminal that was opened, not from stdin");
+    assert.equal(opened[0].closed, 1);
+
+    const failing = trustSeams(env);
+    failing.seams.ask = async () => { throw new Error("read failed"); };
+    await assert.rejects(() => m.cmdTrust(trustCfg(), failing.seams), /read failed/);
+    assert.equal(failing.opened[0].closed, 1, "closed on the way out of a failed read as well");
+});
+
+test("cmdTrust: on win32 there is no /dev/tty to try, so the answer is read from stdin and stderr", async () => {
+    const env = trustEnv();
+    const { seams, askedOn } = trustSeams(env, {
+        platform: "win32",
+        openTerminal: () => { throw new Error("win32 must never try to open a controlling terminal"); },
+    });
+    await m.cmdTrust(trustCfg(), seams);
+    assert.equal(askedOn.length, 1);
+    assert.equal(askedOn[0].input, process.stdin);
+    assert.equal(askedOn[0].output, process.stderr);
+
+    const noStderr = trustSeams(env, { platform: "win32", isErrTTY: false });
+    await assert.rejects(() => m.cmdTrust(trustCfg(), noStderr.seams), /requires an interactive terminal/,
+        "both terminals are still required on win32");
+});
+
+// The default opener, against a real process with no controlling terminal: detached puts the child in a
+// session of its own, which is exactly what an agent's tool process without a pty looks like. A test
+// that opened /dev/tty here would prove nothing on a developer machine, where one exists.
+test("openControllingTerminal: a process in a session without a terminal cannot open one",
+    { skip: process.platform === "win32" && "win32 has no /dev/tty and never calls it" },
+    () => {
+        const script = `import(${JSON.stringify(pathToFileURL(LAUNCHER_PATH).href)}).then((mod) => {`
+            + "try { mod.openControllingTerminal(); process.exit(0); } catch { process.exit(42); } });";
+        const r = spawnSync(process.execPath, ["-e", script],
+            { detached: true, stdio: "ignore", timeout: 20_000 });
+        assert.equal(r.status, 42, "opening /dev/tty must fail without a controlling terminal");
+    });
+
+// askLine is not exported and cmdTrust is its only caller, so its contract is observed through cmdTrust's
+// default `ask`, on a stream pair the test controls. The terminal's own close() is a no-op here: whatever
+// happens to the input stream afterwards is askLine's doing.
+function streamTerminal() {
+    const input = new PassThrough();
+    const output = new PassThrough();
+    const shown = [];
+    output.on("data", (chunk) => shown.push(String(chunk)));
+
+    return { terminal: { input, output, close() {} }, shown };
+}
+
+// "hung" when the prompt is still open after `ms`: a prompt that never settles must fail a test, not stall it.
+async function settlesWithin(promise, ms = 5_000) {
+    let timer;
+    const hung = new Promise((resolve) => { timer = setTimeout(() => resolve("hung"), ms); });
+    try {
+        return await Promise.race([promise.then(() => "settled"), hung]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+test("cmdTrust: the default prompt settles at end of input instead of waiting for an answer that cannot come", async () => {
+    const { terminal } = streamTerminal();
+    terminal.input.end();
+    const { seams } = trustSeams(trustEnv(), { openTerminal: () => terminal });
+    assert.equal(await settlesWithin(m.cmdTrust(trustCfg(), { ...seams, ask: undefined })), "settled");
+});
+
+test("cmdTrust: end of input at the default prompt is no, and records nothing", async () => {
+    const env = trustEnv();
+    const { terminal } = streamTerminal();
+    terminal.input.end();
+    const { seams, log } = trustSeams(env, { openTerminal: () => terminal });
+    await settlesWithin(m.cmdTrust(trustCfg(), { ...seams, ask: undefined }));
+    assert.match(log.join(""), /not trusted -- nothing recorded/);
+    assert.ok(!fs.existsSync(m.trustFilePath(env)), "no answer is not consent");
+});
+
+test("cmdTrust: the default prompt shows the question, takes the line it is given, and stops reading the input", async () => {
+    const env = trustEnv();
+    const cfg = trustCfg();
+    const { terminal, shown } = streamTerminal();
+    const { seams } = trustSeams(env, { openTerminal: () => terminal });
+    const pending = m.cmdTrust(cfg, { ...seams, ask: undefined });
+    terminal.input.write("y\n");
+    assert.equal(await settlesWithin(pending), "settled");
+    assert.ok(shown.join("").includes(`Trust these for ${cfg.projectRoot}? [y/N] `));
+    assert.ok(m.readTrustState(env).repositories[cfg.projectRoot], "the line that was typed is the answer");
+    assert.equal(terminal.input.isPaused(), true, "the reader was closed, so the terminal is not left being consumed");
+});
+
+test("cmdTrust: anything but y or yes writes nothing", async () => {
+    const env = trustEnv();
+    for (const answer of ["n", "", "no", "yep", "  "]) {
+        const { seams } = trustSeams(env, { answer });
+        await m.cmdTrust(trustCfg(), seams);
+        assert.ok(!fs.existsSync(m.trustFilePath(env)), `"${answer}" recorded something`);
+    }
+});
+
+test("cmdTrust: y records the full declared shape of everything gated, and yes in any case does too", async () => {
+    const cfg = trustCfg({ tasks: { job: { command: "true", args: [], env: {} } } });
+    for (const answer of ["y", "YES", " Yes "]) {
+        const env = trustEnv();
+        const { seams, asked } = trustSeams(env, { answer });
+        await m.cmdTrust(cfg, seams);
+        assert.match(asked[0], /^Trust these for .*\? \[y\/N\] $/);
+        assert.ok(asked[0].includes(cfg.projectRoot));
+        assert.deepEqual(m.readTrustState(env).repositories[cfg.projectRoot], {
+            trustedAt: "2001-02-03T04:05:06.000Z",
+            servers: { gh: m.launchShape(cfg.servers.gh) },
+            tasks: { job: m.launchShape(cfg.tasks.job) },
+        }, answer);
+        assert.equal(m.trustProblem(cfg, "servers", "gh", m.readTrustState(env)), null, "what it recorded is what the gate accepts");
+    }
+});
+
+test("cmdTrust: a second trust replaces the record, so an entry removed from the declarations is pruned", async () => {
+    const env = trustEnv();
+    const before = trustCfg({ servers: { gh: TRUST_BASE, gone: TRUST_BASE } });
+    await m.cmdTrust(before, trustSeams(env).seams);
+    assert.deepEqual(Object.keys(m.readTrustState(env).repositories[before.projectRoot].servers).sort(), ["gh", "gone"]);
+
+    const after = trustCfg({ servers: { gh: TRUST_BASE } });
+    assert.equal(after.projectRoot, before.projectRoot, "the fixture must be the same repository");
+    await m.cmdTrust(after, trustSeams(env).seams);
+    assert.deepEqual(Object.keys(m.readTrustState(env).repositories[after.projectRoot].servers), ["gh"]);
+    assert.equal(m.trustProblem(before, "servers", "gone", m.readTrustState(env)).reason, "untrusted",
+        "a re-declared name is not covered by the earlier approval");
+});
+
+test("cmdTrust: another repository's record is left as it was", async () => {
+    const env = trustEnv();
+    const other = { trustedAt: "1999-01-01T00:00:00.000Z", servers: { x: m.launchShape(TRUST_BASE) }, tasks: {} };
+    m.writeTrustState(env, { schemaVersion: 1, repositories: { "/somewhere/else": other } });
+    await m.cmdTrust(trustCfg(), trustSeams(env).seams);
+    assert.deepEqual(m.readTrustState(env).repositories["/somewhere/else"], other);
+});
+
+test("cmdTrust: an untrust that lands while the person is deciding is kept, not written back over", async () => {
+    const env = trustEnv();
+    const other = { trustedAt: "1999-01-01T00:00:00.000Z", servers: { x: m.launchShape(TRUST_BASE) }, tasks: {} };
+    m.writeTrustState(env, { schemaVersion: 1, repositories: { "/removed/meanwhile": other } });
+    const cfg = trustCfg();
+    const { seams } = trustSeams(env, { beforeAnswer: () => {
+        // What `vc-secrets untrust` and a trust of another repository, in another terminal, leave behind.
+        m.writeTrustState(env, { schemaVersion: 1, repositories: { "/added/meanwhile": other } });
+    } });
+    await m.cmdTrust(cfg, seams);
+    const after = m.readTrustState(env).repositories;
+    assert.deepEqual(Object.keys(after).sort(), ["/added/meanwhile", cfg.projectRoot].sort(),
+        "the concurrent removal and addition both survive next to the new record");
+});
+
+test("cmdTrust: the review shows what will run, names references, and prints no literal value", async () => {
+    const cfg = trustCfg({ user: { servers: { gh: { command: "user-gh", args: [], env: {} } } },
+        servers: { gh: { command: "npx", args: ["-y", "gh-mcp"], env: { T: "secret:pat", L: "literal:review-marker-value" } } } });
+    const env = trustEnv();
+    const { seams, log } = trustSeams(env, { answer: "n" });
+    await m.cmdTrust(cfg, seams);
+    const text = log.join("");
+    assert.ok(text.includes(cfg.files.project), "the declaring file");
+    assert.ok(text.includes('shadows your user-scope "gh"'));
+    assert.ok(text.includes("npx") && text.includes(JSON.stringify(["-y", "gh-mcp"])));
+    assert.ok(text.includes("T=secret:pat"), "a reference is a name, and the reader needs it");
+    assert.ok(text.includes(`L=literal:(${"review-marker-value".length} chars)`));
+    assert.doesNotMatch(text, /review-marker-value/);
+});
+
+// A repository whose project file declares `gh` and whose local file declares `mine` and a task, so the
+// winning entry of two of the three is in the local home.
+function localDeclaredCfg() {
+    const cfg = m.loadConfig(scopedPaths({
+        project: { projectId: "proj-x", servers: { gh: TRUST_BASE } },
+        local: { servers: { mine: TRUST_BASE }, tasks: { job: TRUST_BASE } },
+    }));
+    assert.equal(cfg.servers.mine.home, "local", "the fixture must have the local file win");
+    assert.equal(cfg.tasks.job.home, "local");
+
+    return cfg;
+}
+
+// One name per way a collision can fail to be a shadow of the user's own: `a` and task `dup`/`job` are
+// declared at the user scope and re-declared by the project (shadows); `b` has no collision at all;
+// server `dup` collides with nothing of ITS kind though the user's task of that name does; `p` collides
+// project -> local, which starts at the project, not the user.
+function shadowCfg() {
+    return m.loadConfig(scopedPaths({
+        user: { servers: { a: TRUST_BASE }, tasks: { dup: TRUST_BASE, job: TRUST_BASE } },
+        project: { projectId: "proj-x", servers: { a: TRUST_BASE, b: TRUST_BASE, dup: TRUST_BASE, p: TRUST_BASE },
+            tasks: { dup: TRUST_BASE, job: TRUST_BASE } },
+        local: { servers: { p: TRUST_BASE } },
+    }));
+}
+
+test("cmdTrust: a launchable whose winning entry is in the local file is reviewed and recorded like a project one", async () => {
+    const cfg = localDeclaredCfg();
+    const env = trustEnv();
+    const { seams, log } = trustSeams(env);
+    await m.cmdTrust(cfg, seams);
+    const text = log.join("");
+    assert.ok(text.includes(`server "mine" (local, ${cfg.files.local})`), text);
+    assert.ok(text.includes(`task "job" (local, ${cfg.files.local})`), text);
+    const record = m.readTrustState(env).repositories[cfg.projectRoot];
+    assert.deepEqual(Object.keys(record.servers).sort(), ["gh", "mine"]);
+    assert.deepEqual(Object.keys(record.tasks), ["job"]);
+    assert.deepEqual(m.trustAssessment(cfg, () => m.readTrustState(env)).findings, [],
+        "what was recorded is what the gate accepts, so a local launchable can be trusted and not only refused");
+});
+
+test("cmdTrust: the review says which kind of launchable shadows the user's own, and only when one does", async () => {
+    const { seams, log } = trustSeams(trustEnv(), { answer: "n" });
+    await m.cmdTrust(shadowCfg(), seams);
+    const lines = log.join("").split("\n");
+    const lineFor = (label) => {
+        const line = lines.find((x) => x.startsWith(label));
+        assert.ok(line, `no review line starts with ${label}`);
+
+        return line;
+    };
+    assert.match(lineFor('task "dup" (project, '), / -- shadows your user-scope "dup"$/);
+    assert.match(lineFor('server "a" (project, '), / -- shadows your user-scope "a"$/);
+    assert.doesNotMatch(lineFor('server "b" (project, '), /shadows/);
+    assert.doesNotMatch(lineFor('server "p" (local, '), /shadows/, "a project entry replaced by a local one is not the user's");
+});
+
+test("cmdTrust: with nothing gated it says so without asking, and drops a stale record without a terminal", async () => {
+    const env = trustEnv();
+    const cfg = m.loadConfig(scopedPaths({ user: { servers: { mine: TRUST_BASE } }, project: { projectId: "proj-x" } }));
+    const stale = { trustedAt: "1999-01-01T00:00:00.000Z", servers: { gone: m.launchShape(TRUST_BASE) }, tasks: {} };
+    m.writeTrustState(env, { schemaVersion: 1, repositories: { [cfg.projectRoot]: stale, "/somewhere/else": stale } });
+    const { seams, asked, log } = trustSeams(env, { isTTY: false });
+    await m.cmdTrust(cfg, seams);
+    assert.deepEqual(asked, []);
+    assert.match(log.join(""), /needs trust -- removed its trust record/);
+    assert.deepEqual(Object.keys(m.readTrustState(env).repositories), ["/somewhere/else"]);
+
+    const second = trustSeams(env, { isTTY: false });
+    await m.cmdTrust(cfg, second.seams);
+    assert.match(second.log.join(""), /nothing in .* needs trust\n$/);
+});
+
+test("cmdUntrust: removes the record for the path given and only that one", async () => {
+    const env = trustEnv();
+    const [a, b] = ["a", "b"].map((tag) => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), `vc-secrets-untrust-${tag}-`));
+        tmpDirs.push(dir);
+
+        return dir;
+    });
+    const record = { trustedAt: "1999-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+    m.writeTrustState(env, { schemaVersion: 1, repositories: { [m.trustRootKey(a)]: record, [m.trustRootKey(b)]: record } });
+    const log = [];
+    await m.cmdUntrust(a, { env, log: (text) => log.push(text) });
+    assert.deepEqual(Object.keys(m.readTrustState(env).repositories), [m.trustRootKey(b)]);
+    assert.match(log.join(""), /removed the trust record/);
+
+    await m.cmdUntrust(a, { env, log: (text) => log.push(text) });
+    assert.match(log.at(-1), /has no trust record -- nothing to remove/);
+});
+
+test("cmdUntrust: with no path it takes the repository configPaths finds from the working directory", async () => {
+    const env = trustEnv();
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-untrust-cwd-"));
+    tmpDirs.push(repo);
+    fs.mkdirSync(path.join(repo, ".claude"));
+    fs.writeFileSync(path.join(repo, ".claude", m.CONFIG_NAME), JSON.stringify({ servers: {} }));
+    const nested = path.join(repo, "src");
+    fs.mkdirSync(nested);
+    const record = { trustedAt: "1999-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+    m.writeTrustState(env, { schemaVersion: 1, repositories: { [m.trustRootKey(repo)]: record } });
+    await m.cmdUntrust(undefined, { env, cwd: nested, log: () => {} });
+    assert.deepEqual(m.readTrustState(env).repositories, {});
+});
+
+test("cmdUntrust: for a path that no longer exists it still finds the record", async () => {
+    const env = trustEnv();
+    const gone = path.join(os.tmpdir(), "vc-secrets-never-existed", "repo");
+    const record = { trustedAt: "1999-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+    m.writeTrustState(env, { schemaVersion: 1, repositories: { [m.trustRootKey(gone)]: record } });
+    await m.cmdUntrust(gone, { env, log: () => {} });
+    assert.deepEqual(m.readTrustState(env).repositories, {});
+});
+
+test("cmdUntrust: a symlink to a trusted checkout removes that checkout's record",
+    { skip: !CAN_SYMLINK && "this machine cannot create a symlink" },
+    async () => {
+        const env = trustEnv();
+        const real = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-untrust-real-"));
+        tmpDirs.push(real);
+        const link = path.join(probeDir, `untrust-alias-${path.basename(real)}`);
+        fs.symlinkSync(real, link, "dir");
+        const record = { trustedAt: "1999-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+        m.writeTrustState(env, { schemaVersion: 1, repositories: { [m.trustRootKey(real)]: record } });
+        await m.cmdUntrust(link, { env, log: () => {} });
+        assert.deepEqual(m.readTrustState(env).repositories, {});
+    });
+
+test("trustProblem: only a collision that started in the user file, for this kind and this name, is a shadow", () => {
+    const cfg = shadowCfg();
+    const { problems } = m.trustAssessment(cfg, () => NO_TRUST);
+    const shadows = Object.fromEntries([...problems].map(([key, problem]) => [key, problem.shadowsUser]));
+    assert.deepEqual(shadows, {
+        "servers/a": true,
+        "servers/b": false,
+        "servers/dup": false,
+        "servers/p": false,
+        "tasks/dup": true,
+        "tasks/job": true,
+    });
+    const refusal = (kind, name) => m.trustRefusal(kind, name, problems.get(`${kind}/${name}`), cfg);
+    assert.ok(refusal("tasks", "dup").startsWith('task "dup" is declared by '), refusal("tasks", "dup"));
+    assert.ok(refusal("tasks", "dup").includes('(it shadows your user-scope "dup")'));
+    assert.ok(refusal("servers", "a").startsWith('server "a" is declared by '));
+    assert.ok(!refusal("servers", "b").includes("shadows"));
+});
+
+test("trustAssessment: reads no file when nothing is gated, so a user-scope config never depends on it", () => {
+    const cfg = m.loadConfig(scopedPaths({ user: { servers: { mine: TRUST_BASE } } }));
+    const result = m.trustAssessment(cfg, () => { throw new Error("the trust file was read"); });
+    assert.equal(result.problems.size, 0);
+    assert.deepEqual(result.findings, []);
+    assert.equal(result.unreadable, null);
+});
+
+test("trustAssessment: untrusted and changed launchables are findings, trusted ones say nothing", () => {
+    const cfg = trustCfg({ servers: { ok: TRUST_BASE, drifted: TRUST_BASE, fresh: TRUST_BASE }, tasks: { job: TRUST_BASE } });
+    const state = trustedStateFor(cfg);
+    delete state.repositories[cfg.projectRoot].servers.fresh;
+    delete state.repositories[cfg.projectRoot].tasks.job;
+    const actual = withDeclaration(cfg, "servers", "drifted", { command: "sh" });
+    const result = m.trustAssessment(actual, () => state);
+    assert.deepEqual([...result.problems.keys()].sort(), ["servers/drifted", "servers/fresh", "tasks/job"]);
+    assert.equal(result.findings.length, 3);
+    assert.ok(result.findings.every((f) => f.includes("vc-secrets trust")));
+    assert.ok(!result.findings.some((f) => f.includes('"ok"')));
+});
+
+test("trustAssessment: an unreadable trust file is one finding, and every gated launchable counts as refused", () => {
+    const cfg = trustCfg({ tasks: { job: TRUST_BASE } });
+    const failure = new m.VcSecretsError("the trust file /x/trust.json is unusable (not an object)");
+    const result = m.trustAssessment(cfg, () => { throw failure; });
+    assert.deepEqual(result.findings, [failure.message]);
+    assert.equal(result.unreadable, failure.message);
+    assert.deepEqual([...result.problems.keys()].sort(), ["servers/gh", "tasks/job"]);
+});
+
+test("doctorReport: each trust finding is a FAIL line, and none adds nothing", () => {
+    const cfg = trustCfg();
+    const report = (trustFindings) => m.doctorReport(cfg, {
+        env: {}, platform: "linux", enableLists: { enabled: [], disabled: [], envKeys: [] },
+        resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(), ...(trustFindings ? { trustFindings } : {}) });
+    const finding = m.trustRefusal("servers", "gh", m.trustProblem(cfg, "servers", "gh", NO_TRUST), cfg);
+    assert.ok(report([finding]).includes(`FAIL ${finding}`));
+    assert.deepEqual(report(undefined), report([]), "the parameter is optional and defaults to no findings");
+    assert.ok(!report([]).some((l) => l.includes("vc-secrets trust")));
+});
+
+test("childNodeProbes: a launchable in the refused set is not probed, because the probe would run its command", () => {
+    const cfg = { servers: { trusted: { command: "npx" }, refused: { command: "npx" } }, tasks: {} };
+    const refs = [{ kind: "servers", launchableName: "trusted" }, { kind: "servers", launchableName: "refused" }];
+    const probed = [];
+    const out = m.childNodeProbes(cfg, refs, {
+        probe: ({ command }) => { probed.push(command); return "v20.11.0"; },
+        refused: new Map([["servers/refused", { reason: "untrusted" }]]),
+    });
+    assert.deepEqual(out.map((x) => x.launchableName), ["trusted"]);
+    assert.equal(probed.length, 1, "one probe, for the launchable that may run");
+
+    const none = m.childNodeProbes(cfg, [refs[1]], { probe: () => { throw new Error("probed a refused launchable"); },
+        refused: new Map([["servers/refused", null]]) });
+    assert.deepEqual(none, [], "an unreadable trust file (a null problem) refuses too");
+});
+
+test("trustNotes: emit-config names each untrusted or changed repository server, and only those", () => {
+    const cfg = trustCfg({ servers: { ok: TRUST_BASE, drifted: TRUST_BASE, fresh: TRUST_BASE }, tasks: { job: TRUST_BASE } });
+    const state = trustedStateFor(cfg);
+    delete state.repositories[cfg.projectRoot].servers.fresh;
+    delete state.repositories[cfg.projectRoot].tasks.job;
+    const actual = withDeclaration(cfg, "servers", "drifted", { command: "sh" });
+    const notes = m.trustNotes(actual, m.trustAssessment(actual, () => state));
+    assert.deepEqual(notes.sort(), [
+        'drifted: changed since you trusted it -- run "vc-secrets trust" again before starting it',
+        'fresh: declared by this repository and not trusted yet -- run "vc-secrets trust" before starting it',
+    ]);
+
+    const userOnly = m.loadConfig(scopedPaths({ user: { servers: { mine: TRUST_BASE } } }));
+    assert.deepEqual(m.trustNotes(userOnly, m.trustAssessment(userOnly, () => { throw new Error("read"); })), []);
+});
+
+test("trustAssessment: an untrusted launchable from the local file is a problem, and trustNotes names the server", () => {
+    const cfg = localDeclaredCfg();
+    const result = m.trustAssessment(cfg, () => NO_TRUST);
+    assert.deepEqual([...result.problems.keys()].sort(), ["servers/gh", "servers/mine", "tasks/job"]);
+    assert.equal(result.problems.get("servers/mine").home, "local");
+    assert.ok(result.findings.some((f) => f.startsWith('server "mine" is declared by ')), result.findings.join("\n"));
+    assert.ok(m.trustNotes(cfg, result).includes(
+        'mine: declared by this repository and not trusted yet -- run "vc-secrets trust" before starting it'));
+});
+
+test("trustNotes: an unreadable trust file is reported once, as itself", () => {
+    const cfg = trustCfg({ servers: { a: TRUST_BASE, b: TRUST_BASE } });
+    const failure = new m.VcSecretsError("the trust file /x/trust.json is unusable (not an object)");
+    assert.deepEqual(m.trustNotes(cfg, m.trustAssessment(cfg, () => { throw failure; })), [failure.message]);
+});
+
+test("guard-declarations: blocks the trust file, in every payload shape and under any spelling of the path", () => {
+    for (const [label, payload] of [
+        ["absolute", { tool_name: "Write", tool_input: { file_path: "/home/dev/.config/vc-secrets/trust.json" } }],
+        ["relative", { tool_name: "Edit", tool_input: { file_path: ".config/vc-secrets/trust.json" } }],
+        ["windows", { tool_name: "Write", tool_input: { file_path: "C:\\Users\\dev\\.config\\vc-secrets\\trust.json" } }],
+        ["notebook", { tool_name: "NotebookEdit", tool_input: { notebook_path: "/home/dev/.config/vc-secrets/trust.json" } }],
+        ["apply_patch", { tool_name: "apply_patch", tool_input: { command: "*** Begin Patch\n*** Update File: /home/dev/.config/vc-secrets/trust.json\n*** End Patch" } }],
+    ]) {
+        const r = spawnSync(process.execPath, [GUARD_HOOK_PATH], { input: JSON.stringify(payload), encoding: "utf8", env: { ...process.env } });
+        assert.equal(r.status, 2, `${label}: exit 2`);
+        assert.match(r.stderr, /vc-secrets trust/, `${label}: the reason names the way to change it`);
+    }
+});
+
+test("guard-declarations: the trust file is blocked in any letter case, as a case-insensitive file system spells it", () => {
+    for (const filePath of ["/home/dev/.config/VC-SECRETS/TRUST.JSON", "C:\\Users\\dev\\.config\\Vc-Secrets\\Trust.Json"]) {
+        const r = runGuardHook(JSON.stringify({ tool_name: "Write", tool_input: { file_path: filePath } }));
+        assert.equal(r.status, 2, filePath);
+        assert.match(r.stderr, /trust file/, `${filePath}: blocked as the trust file, not by another pattern`);
+    }
+});
+
+test("guard-declarations: a trust.json that is not under a vc-secrets directory, or is not the file itself, is not ours", () => {
+    for (const notOurs of ["/repo/trust.json", "/repo/not-vc-secrets/trust.json", "/repo/vc-secrets/trust.json.bak",
+        "/repo/vc-secrets/trust.json.123.tmp", "/repo/vc-secrets/other/trust.json"]) {
+        assert.equal(runGuardHook(guardInput(notOurs)).status, 0, notOurs);
+    }
+});
+
+// A repository on disk, found the way a real run finds it: by walking up from its working directory.
+function trustRepo(servers) {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-trust-repo-"));
+    tmpDirs.push(root);
+    fs.mkdirSync(path.join(root, ".claude"));
+    fs.writeFileSync(path.join(root, ".claude", m.CONFIG_NAME), JSON.stringify({ secrets: {}, servers }));
+
+    return root;
+}
+
+test("doctor: an untrusted repository server is a FAIL with the remedy, a trusted one is not mentioned, and a corrupt trust file is one FAIL", () => {
+    const root = trustRepo({ s: { command: "true", args: [], env: {} } });
+    // gpg because it is the one backend `doctor` does not write-probe, as the tests above choose it.
+    const env = launcherEnv({ VC_SECRETS_LOCAL_BACKEND: "gpg" });
+    const doctor = () => spawnSync(process.execPath, [LAUNCHER_PATH, "doctor"], { cwd: root, env, encoding: "utf8" });
+
+    const untrusted = doctor();
+    assert.equal(untrusted.status, 1);
+    assert.match(untrusted.stderr, /^FAIL server "s" is declared by .* and is not trusted -- review it, then run "vc-secrets trust" in /m);
+
+    seedTrust(env, root);
+    assert.doesNotMatch(doctor().stderr, /is not trusted|changed since you trusted/, "a trusted launchable adds no line");
+
+    const file = m.trustFilePath(env);
+    fs.writeFileSync(file, "{ corrupt");
+    const corrupt = doctor();
+    const failures = corrupt.stderr.split("\n").filter((l) => l.startsWith("FAIL") && l.includes(file));
+    assert.equal(failures.length, 1, `one FAIL naming the file:\n${corrupt.stderr}`);
+    assert.match(corrupt.stderr, /INFO config files loaded/, "and doctor carried on");
+});
+
+test("childNodeProbes: `refused` is required, so a caller cannot forget it", () => {
+    const cfg = { servers: { s: { command: "npx" } }, tasks: {} };
+    const refs = [{ kind: "servers", launchableName: "s" }];
+    const probe = () => { throw new Error("probed without being told what is refused"); };
+    assert.throws(() => m.childNodeProbes(cfg, refs, { probe }), /needs `refused`/);
+    assert.throws(() => m.childNodeProbes(cfg, refs), /needs `refused`/);
+    assert.throws(() => m.childNodeProbes(cfg, refs, { probe, refused: [] }), /needs `refused`/, "a Map, not just something iterable");
+});
+
+// The real verb, because the two halves are each tested alone above and nothing else notices the wire
+// between them: doctor hands childNodeProbes the trust gate's problems, and a doctor that stopped doing so
+// would EXECUTE the declared command of a repository nobody trusted, to ask it for a version. The command
+// is a script that leaves a marker, standing in for whatever a hostile declaration would do.
+test("doctor: an untrusted repository's declared node is not run to ask its version, a trusted one is",
+    { skip: process.platform === "win32" && "a #!/bin/sh script is not executable by a shell-less win32 spawn" },
+    () => {
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-doctor-probe-"));
+        tmpDirs.push(root);
+        fs.mkdirSync(path.join(root, ".claude"));
+        fs.mkdirSync(path.join(root, "bin"));
+        const marker = path.join(root, "probe-ran");
+        const script = path.join(root, "bin", "node");
+        fs.writeFileSync(script, `#!/bin/sh\necho ran > '${marker}'\necho v22.0.0\n`);
+        fs.chmodSync(script, 0o755);
+        fs.writeFileSync(path.join(root, ".claude", m.CONFIG_NAME), JSON.stringify({
+            projectId: "proj-x", secrets: {}, oauth: { ado: OAUTH_DECL },
+            servers: { s: { command: "./bin/node", args: [], env: { TOKEN: "oauth:ado" } } },
+        }));
+        // gpg because it is the one backend `doctor` does not write-probe, as the tests above choose it.
+        const env = launcherEnv({ VC_SECRETS_LOCAL_BACKEND: "gpg" });
+        const doctor = () => spawnSync(process.execPath, [LAUNCHER_PATH, "doctor"], { cwd: root, env, encoding: "utf8" });
+
+        const untrusted = doctor();
+        assert.match(untrusted.stderr, /server "s" is declared by .* and is not trusted/, "the fixture must be refused");
+        assert.ok(!fs.existsSync(marker), `doctor ran the command of a repository nobody trusted:\n${untrusted.stderr}`);
+
+        seedTrust(env, root);
+        doctor();
+        assert.ok(fs.existsSync(marker), "the control: once trusted, the same declaration IS probed, so the marker can appear");
+    });
+
+test("emit-config: still emits every server, and says on stderr which the launcher will refuse until trusted", () => {
+    const root = trustRepo({ fresh: { command: "true", args: [], env: {} } });
+    const env = launcherEnv();
+    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "emit-config", "claude-code"], { cwd: root, env, encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(Object.hasOwn(JSON.parse(r.stdout).mcpServers, "fresh"), "the entry is emitted regardless");
+    assert.match(r.stderr, /fresh: declared by this repository and not trusted yet -- run "vc-secrets trust" before starting it/);
+
+    seedTrust(env, root);
+    const trusted = spawnSync(process.execPath, [LAUNCHER_PATH, "emit-config", "claude-code"], { cwd: root, env, encoding: "utf8" });
+    assert.doesNotMatch(trusted.stderr, /not trusted yet/);
 });

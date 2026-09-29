@@ -25,6 +25,46 @@ after(() => {
     }
 });
 
+// The environment for a spawned launcher or probe: the developer's own without any VC_SECRETS_* knob
+// (a VC_SECRETS_CONFIG_DIR in their shell would point `doctor` or a probe at their real declarations,
+// secret reads and `az`) and with HOME, USERPROFILE and XDG_CONFIG_HOME on a fresh directory, so no
+// FILE-based state a run reaches is theirs. The operating system's own stores -- the wcm and keychain
+// entries -- are not under those variables, so a test that can touch one pins the backend in `extra`
+// rather than relying on this. The same scrub runEntry applies, matched without regard to case; `extra`
+// lands last, so a test that means to use a fixture home passes it there.
+function launcherEnv(extra = {}) {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-launcher-home-"));
+    tmpDirs.push(home);
+    const env = { ...process.env };
+    for (const key of Object.keys(env)) {
+        if (/^VC_SECRETS_/i.test(key)) {
+            delete env[key];
+        }
+    }
+
+    return { ...env, HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: home, ...extra };
+}
+
+// A spawned launcher refuses a repository's launchable until a trust record says otherwise. Written
+// through the launcher's own writeTrustState under the env the launcher will read it from, and built
+// from the config itself with launchShape, so the record follows the declaration under test. Kept local
+// like tmpProbeConfigDir below: this file does not import from the other suite.
+function trustedLauncherEnv(dir, extra = {}) {
+    const env = launcherEnv({ VC_SECRETS_CONFIG_DIR: dir, ...extra });
+    const cfg = m.loadConfig(m.configPaths(env, dir));
+    const record = { trustedAt: "2000-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+    for (const kind of ["servers", "tasks"]) {
+        for (const [name, launchable] of Object.entries(cfg[kind])) {
+            if (launchable.home !== "user") {
+                record[kind][name] = m.launchShape(launchable);
+            }
+        }
+    }
+    m.writeTrustState(env, { schemaVersion: 1, repositories: { [cfg.projectRoot]: record } });
+
+    return env;
+}
+
 test("vc-secrets-oauth throws the same VcSecretsError the launcher's exit-code path recognises", () => {
     // The whole reason VcSecretsError lives in its own module. Two same-named classes would both
     // print fine, but fail() reads `instanceof VcSecretsError` to pick the exit code, so a second
@@ -1777,12 +1817,25 @@ test("writeSecretValue: an oversize keychain value is refused before the runner 
 // environment-dependent test that reports the machine, not the code.
 const onPath = (...present) => (tool) => present.includes(tool);
 
+// The win32 branch resolves cmd.exe to an absolute path, so its tests stand a resolver in rather than
+// lean on whichever PATH and filesystem the machine running them has.
+const WIN_CMD = "C:\\Windows\\System32\\cmd.exe";
+const resolvesCmd = (name) => ({ kind: "direct", cmd: name === "cmd.exe" ? WIN_CMD : name });
+
 test("buildBrowserCommand: one command per platform", () => {
     assert.deepEqual(m.buildBrowserCommand("linux", {}, "http://x/", onPath("xdg-open")),
         { cmd: "xdg-open", args: ["http://x/"] });
     assert.deepEqual(m.buildBrowserCommand("darwin", {}, "http://x/", onPath()),
         { cmd: "open", args: ["http://x/"] });
-    assert.equal(m.buildBrowserCommand("win32", {}, "http://x/", onPath()).cmd, "cmd");
+    assert.equal(m.buildBrowserCommand("win32", {}, "http://x/", onPath(), resolvesCmd).cmd, WIN_CMD,
+        "the resolved absolute cmd.exe, never the bare name libuv would look for in the cwd first");
+});
+
+test("buildBrowserCommand: win32 with no resolvable cmd.exe has no opener, and never falls back to a bare name", () => {
+    const unresolvable = () => { throw new m.VcSecretsError("cmd.exe: not found on PATH"); };
+    assert.equal(m.buildBrowserCommand("win32", {}, "http://x/", onPath(), unresolvable), null);
+    // The default resolver, over an env whose only PATH entry holds no cmd.exe.
+    assert.equal(m.buildBrowserCommand("win32", { Path: "C:\\vc-secrets-no-such-dir" }, "http://x/", onPath()), null);
 });
 
 test("buildBrowserCommand: on WSL the interop opener is preferred over xdg-open", () => {
@@ -1813,7 +1866,7 @@ test("buildBrowserCommand: a URL carrying & or | survives to the browser on ever
         const built = m.buildBrowserCommand(platform, {}, nasty, onPath("xdg-open"));
         assert.ok(built.args.includes(nasty), `${platform} must pass the URL as one argument`);
     }
-    const win = m.buildBrowserCommand("win32", {}, nasty, onPath());
+    const win = m.buildBrowserCommand("win32", {}, nasty, onPath(), resolvesCmd);
     assert.deepEqual(win.args, [`/c start "" "${nasty}"`], "one verbatim line, with the URL quoted");
     assert.equal(win.opts.windowsVerbatimArguments, true,
         "without this node re-quotes the line and the quotes stop protecting anything");
@@ -4284,12 +4337,11 @@ channelTest("importing the target module wakes no receiver; importing the preloa
 
 const launcherModuleUrl = new URL("./vc-secrets.mjs", import.meta.url).href;
 
-// A minimal stand-in for a spawned child: never signalled in these tests.
+// A minimal stand-in for a spawned child: never signalled in these tests. Pid-less on purpose:
+// cmdLaunch kills the child's process GROUP when the launcher exits, and a pid borrowed from a real
+// process -- this one's, once -- would name a group that may be the runner's own.
 function fakeChild() {
-    const child = new EventEmitter();
-    child.pid = process.pid;
-
-    return child;
+    return new EventEmitter();
 }
 
 // A launchable declared entirely at USER scope, so neither the oauth entry nor the server it is
@@ -4373,7 +4425,7 @@ channelTest("cmdLaunch: the channel directory is removed when the launcher proce
         const handle = await m.cmdLaunch("servers", "s", ${JSON.stringify(CMD_LAUNCH_CFG)}, {
             readCache: async () => ({ state: "valid", accessToken: "t" }),
             childNodeVersion: () => "v20.11.0",
-            spawnFn: () => Object.assign(new EventEmitter(), { pid: process.pid }),
+            spawnFn: () => new EventEmitter(),
         });
         process.stdout.write(path.dirname(handle.channel.path));
         process.exit(0);   // the production exit path: no dispose, no close
@@ -4740,7 +4792,7 @@ test("vc-secrets-probe: a launcher refusal is captured, classified, and still ec
     // asserted through a real run.
     const dir = tmpProbeConfigDir({ secrets: {}, servers: {} });
     const r = spawnSync(process.execPath, [PROBE_PATH, "ghost"],
-        { env: { ...process.env, VC_SECRETS_CONFIG_DIR: dir }, encoding: "utf8" });
+        { env: launcherEnv({ VC_SECRETS_CONFIG_DIR: dir }), encoding: "utf8" });
     assert.match(r.stderr, /probe: ghost -> launcher refused: unknown server/);
     assert.match(r.stderr, /^vc-secrets: unknown server/m, "the launcher's own line must still reach the developer");
     assert.equal(r.stdout, "", "the probe writes nothing on fd 1");
@@ -4748,8 +4800,8 @@ test("vc-secrets-probe: a launcher refusal is captured, classified, and still ec
 });
 
 test("vc-secrets-probe: a backend tool's multi-line failure is still a launcher refusal, not a dead server",
-    { skip: m.detectLocalBackend(process.platform, process.env) !== "gpg"
-        && "needs gpg to be the backend this machine selects -- the stub on PATH stands in for it" }, () => {
+    { skip: process.platform === "win32"
+        && "the stub is an extensionless #!/bin/sh script, which a win32 lookup never resolves as gpg" }, () => {
     // The classifier reads the LAST stderr line, and a tool's own stderr arrives embedded in the
     // launcher's message with its newlines intact. A locked gpg agent answers in three lines, so the
     // last one was "gpg: decryption failed ..." -- nobody's launcher prefix -- and the probe reported
@@ -4774,8 +4826,8 @@ test("vc-secrets-probe: a backend tool's multi-line failure is still a launcher 
     });
 
     const r = spawnSync(process.execPath, [PROBE_PATH, "s"], { encoding: "utf8",
-        env: { ...process.env, VC_SECRETS_CONFIG_DIR: dir, XDG_CONFIG_HOME: home,
-            PATH: `${binDir}${path.delimiter}${process.env.PATH}` } });
+        env: trustedLauncherEnv(dir, { XDG_CONFIG_HOME: home, VC_SECRETS_LOCAL_BACKEND: "gpg",
+            PATH: `${binDir}${path.delimiter}${process.env.PATH}` }) });
 
     assert.match(r.stderr, /launcher refused/, `the probe must blame the launcher, not the server:\n${r.stderr}`);
     assert.doesNotMatch(r.stderr, /server exited before responding/);
@@ -4821,7 +4873,7 @@ test("vc-secrets-probe: a silent server death stays the server's even with the l
     const dir = tmpProbeConfigDir({ projectId: "p", secrets: {},
         servers: { silent: { command: process.execPath, args: ["-e", "setTimeout(()=>process.exit(3),80)"], env: {} } } });
     const r = spawnSync(process.execPath, [PROBE_PATH, "silent"],
-        { env: { ...process.env, VC_SECRETS_CONFIG_DIR: dir, VC_SECRETS_TIMING: "1" }, encoding: "utf8" });
+        { env: trustedLauncherEnv(dir, { VC_SECRETS_TIMING: "1" }), encoding: "utf8" });
     assert.match(r.stderr, /probe: silent -> server exited before responding/);
     assert.doesNotMatch(r.stderr, /resolve phase took/, "the timing knob must not reach the launcher the probe spawns");
 });
@@ -4854,7 +4906,7 @@ test("vc-secrets-probe kills the process TREE at every call site", () => {
     const source = stripComments(fs.readFileSync(PROBE_PATH, "utf8"));
     for (const [where, pattern] of [
         ["the 30 s timeout", /TIMEOUT \(30 s\)[\s\S]{0,140}?killProcessTree\(/],
-        ["the interrupt handler", /for \(const signal of \["SIGINT", "SIGTERM"\]\)[\s\S]{0,260}?killProcessTree\(/],
+        ["the interrupt handler", /for \(const signal of \["SIGINT", "SIGTERM", "SIGHUP"\]\)[\s\S]{0,260}?killProcessTree\(/],
         ["the answered-handshake path", /serverInfo\.name[\s\S]{0,240}?killProcessTree\(/],
     ]) {
         assert.match(source, pattern, `${where} must terminate the child through the shared tree kill`);
@@ -4879,14 +4931,19 @@ test("a child killProcessTree signals is spawned detached, and its parent handle
     // out of the terminal's foreground group, so Ctrl-C stops reaching it. Measured -- a detached
     // child survives a SIGINT sent to its parent's group and a non-detached one does not -- so with
     // no handler the parent dies and orphans the tree that detached was adopted to let it kill.
-    for (const file of ["vc-secrets-probe.mjs", "vc-secrets.mjs"]) {
+    // The launcher names its list, because SIGHUP joined it and the list is also what dispose() removes;
+    // the probe spells its set out.
+    for (const [file, installs] of [
+        ["vc-secrets-probe.mjs", /for \(const signal of \["SIGINT", "SIGTERM", "SIGHUP"\]\)\s*\{\s*process\.on\(/],
+        ["vc-secrets.mjs", /for \(const signal of forwardedSignals\)\s*\{\s*process\.on\(/],
+    ]) {
         const source = stripComments(fs.readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), "utf8"));
         assert.match(source, /detached: process\.platform !== "win32"/, `${file} must spawn detached`);
         // `process.on`, not merely the loop: cmdLaunch's dispose() REMOVES the same handlers with a
         // loop spelled identically to the one that installs them, so a match on the loop alone is
         // satisfied by the removal and says nothing about the install. Measured -- deleting the
         // install loop left the looser pattern matching the dispose one, green.
-        assert.match(source, /for \(const signal of \["SIGINT", "SIGTERM"\]\)\s*\{\s*process\.on\(/,
+        assert.match(source, installs,
             `${file} must INSTALL handlers for the signals detached diverts away from its child`);
     }
 });
