@@ -25,7 +25,7 @@ shape, and in what order?**
 | | `.claude/knowledge/**` | `vc-knowledge` (the base) |
 |---|---|---|
 | Size | 56 files, **1.89 MB** (always-loaded tier: 67 KB) | **106 entries**, ~300 words each |
-| Written by | humans in a PR, or an agent under review (`ba-system-analyzer` auto-applies oracle edits behind a 3-source bar; `/qa-domain-map` builds domain maps). Three files are genuinely generated | `kb_capture` mid-run; identity `anchors + scope`; `confirm` / `dispute` maintain it |
+| Written by | humans in a PR, or an agent under review (`ba-system-analyzer` auto-applies oracle edits behind a 3-source bar; `/qa-domain-map` builds domain maps). Three files are genuinely generated | `kb_capture` mid-run; identity `anchors + scope` (+ claim since VCST-6102); `confirm` / `dispute` maintain it |
 | Retrieved by | **path citation, never a query** — something in the loaded tier names the file | `kb_ask` → token overlap + `ANCHOR_BONUS = 10` → top 3 |
 | Read as | **the whole file.** `business-logic.md` is 409 KB ≈ 100k tokens | one entry |
 | Reaches | every clone of this repo | anyone, including a customer deployment |

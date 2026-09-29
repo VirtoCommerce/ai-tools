@@ -53,12 +53,15 @@ export function hitLines(hit) {
   return lines;
 }
 
+/** Said wherever a repair ran: the next command from the same shell will be mangled the same way. */
+const MSYS_NOTE = `  (your shell rewrote a leading "/" into a local path; it was undone. ${MSYS_REMEDY})`;
+
 export function askLines(r, { prefix = 'kb ask' } = {}) {
   const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
   if (r.why) lines.push(`  ${r.why}`);
   // Said on every state: the repair already ran, but the next command from the same shell will be
   // mangled the same way, and only the agent can change how it is typed.
-  if (r.repaired === 'msys') lines.push(`  (your shell rewrote a leading "/" into a local path; it was undone. ${MSYS_REMEDY})`);
+  if (r.repaired === 'msys') lines.push(MSYS_NOTE);
   // A MISS SAYS THE BASE WAS RANKED, NOT MERELY THAT IT WAS EMPTY -- and it does NOT hand back the
   // near-miss id. The near-miss is diagnostic, written to the log for whoever is judging the floor
   // (PLAN §7); giving it to the agent would put a rejected entry in front of exactly the reader
@@ -106,7 +109,14 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
   return lines;
 }
 
-export function captureLines(r, { prefix = 'kb capture' } = {}) {
+export function captureLines(r, opts = {}) {
+  const lines = captureBody(r, opts);
+  // Same note as `askLines`: the anchor was repaired, but the next command will be mangled the same way.
+  if (r.repaired === 'msys') lines.splice(1, 0, MSYS_NOTE);
+  return lines;
+}
+
+function captureBody(r, { prefix = 'kb capture' } = {}) {
   if (r.state === 'invalid') {
     return [`${prefix}: ${r.why}`, ...(r.problems ?? []).map((p) => `  ${p.coordinate} — ${p.kind}: ${p.why}`)];
   }
@@ -191,6 +201,12 @@ function relatedLines(related) {
 }
 
 export function evidenceLines(verb, r) {
+  const lines = evidenceBody(verb, r);
+  if (r.repaired === 'msys') lines.splice(1, 0, MSYS_NOTE);
+  return lines;
+}
+
+function evidenceBody(verb, r) {
   if (r.state === 'invalid') return [`kb ${verb}: ${r.why}`];
   if (r.state !== 'queued') {
     const lines = [`kb ${verb}: ${HEADLINE[r.state] ?? r.state}`];
