@@ -21,6 +21,9 @@ export type StepBlock =
   | RestOpStep
   | RestExecStep
   | RestCaptureStep
+  | McpOpStep
+  | McpExecStep
+  | McpCaptureStep
   | WaitStep
   | UnknownStep;
 
@@ -115,6 +118,59 @@ export interface RestCaptureStep {
   kind: "REST-CAPTURE";
   label: string;
   path: string;
+  variable: string;
+  raw: string;
+}
+
+/**
+ * UCP / MCP op family — JSON-RPC `tools/call` against the UCP MCP endpoint.
+ *
+ * WHY A THIRD FAMILY. The machine lane speaks GraphQL (`GQL-*`) and plain REST (`REST-*`).
+ * UCP is neither: it is JSON-RPC 2.0 over HTTP at `/ucp/mcp`, whose replies may arrive as an SSE
+ * `data:` line and whose payload is a JSON string nested at `result.content[0].text`. Suite 101 was
+ * therefore 29/29 browser lane — `EX-010` (parser cannot type the line) + `EX-011` (no runner op) —
+ * so every one of its cases needed an AGENT to execute what is really a deterministic HTTP call.
+ *
+ *   [MCP-OP <label>]            followed by a body:  first line = tool name, rest = JSON arguments
+ *   [MCP-EXEC <label>]          fire it; store the UNWRAPPED tool payload under <label>
+ *   [MCP-CAPTURE <label>.<path> → VAR]
+ *
+ * Deliberately mirrors REST-OP/EXEC/CAPTURE so an author who knows one knows this.
+ */
+export interface McpOpStep {
+  kind: "MCP-OP";
+  label: string;
+  body: string;
+  raw: string;
+}
+
+/** Trigger to fire the named MCP-OP and store the response under <label> */
+export interface McpExecStep {
+  kind: "MCP-EXEC";
+  label: string;
+  raw: string;
+}
+
+/**
+ * Capture from a stored MCP tool payload into the variable bag.
+ *
+ * Optional `matching /re/` extracts a SUBSTRING from the captured value using capture group 1.
+ * Without it the whole value is taken.
+ *
+ *   [MCP-CAPTURE cah.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ -> UCP_SESSION]
+ *
+ * WHY. UCP never returns the raw `ucp_session` as a field — verified live 2026-09-22: it exists
+ * ONLY inside the `continue_url` query string, and `handoff` carries just `{ucp, checkout, messages}`.
+ * Every restore-based case therefore needs a query param out of a URL, and a path-only capture
+ * grammar cannot express that. Without this the whole restore class is unauthorable on the machine
+ * lane regardless of how good the transport is.
+ */
+export interface McpCaptureStep {
+  kind: "MCP-CAPTURE";
+  label: string;
+  path: string;
+  /** Optional extractor; capture group 1 becomes the stored value. */
+  matching?: string;
   variable: string;
   raw: string;
 }
@@ -332,6 +388,43 @@ export function parseSteps(cell: string): StepBlock[] {
       continue;
     }
 
+    const mcpOpMatch = line.match(/^\[MCP-OP\s+([\w-]+)\s*\]\s*$/i);
+    if (mcpOpMatch) {
+      const label = mcpOpMatch[1];
+      const body: string[] = [];
+      i++;
+      while (i < lines.length) {
+        if (isStepTag(lines[i].trim())) break;
+        body.push(lines[i]);
+        i++;
+      }
+      blocks.push({ kind: "MCP-OP", label, body: body.join("\n").trim(), raw });
+      continue;
+    }
+
+    const mcpExecMatch = line.match(/^\[MCP-EXEC\s+([\w-]+)\s*\]\s*$/i);
+    if (mcpExecMatch) {
+      blocks.push({ kind: "MCP-EXEC", label: mcpExecMatch[1], raw });
+      i++;
+      continue;
+    }
+
+    const mcpCapMatch = line.match(
+      /^\[MCP-CAPTURE\s+([\w-]+)\.(.+?)(?:\s+matching\s+\/(.+?)\/)?\s*(?:→|->)\s*(\w+)\s*\]\s*$/i
+    );
+    if (mcpCapMatch) {
+      blocks.push({
+        kind: "MCP-CAPTURE",
+        label: mcpCapMatch[1],
+        path: mcpCapMatch[2].trim(),
+        matching: mcpCapMatch[3],
+        variable: mcpCapMatch[4],
+        raw,
+      });
+      i++;
+      continue;
+    }
+
     const restMatch = line.match(/^\[REST\s+(GET|POST|PUT|PATCH|DELETE)\s+(\S+)\s*\]\s*$/i);
     if (restMatch) {
       const method = restMatch[1].toUpperCase();
@@ -379,12 +472,20 @@ export function parseSteps(cell: string): StepBlock[] {
         });
       } else {
         // sleep mode: [WAIT seconds=N] or bare [WAIT] (legacy free-text)
+        //
+        // The parser stays TOTAL: it records the seconds the author asked for and never clamps or
+        // throws. The ceiling is enforced by the RUNNER, at the moment it would sleep
+        // (GQL_MAX_WAIT_SECONDS, default 300). Enforcing it here instead took down the whole suite:
+        // case-classifier calls parseSteps to work out a case's LANE, so a throw on one case made
+        // `suites:lanes -- 101` fail outright and no case in the suite could be planned — the
+        // "one unparsable case blocks everyone" failure this repo has paid for before.
+        const requestedSec = seconds ? parseInt(seconds[1], 10) : 12;
         blocks.push({
           kind: "WAIT",
           mode: "sleep",
           timeoutSec: 0,
           intervalSec: 0,
-          seconds: seconds ? Math.min(parseInt(seconds[1], 10), 300) : 12,
+          seconds: requestedSec,
           raw,
         });
       }
@@ -403,7 +504,7 @@ export function parseSteps(cell: string): StepBlock[] {
 }
 
 function isStepTag(line: string): boolean {
-  return /^\[(AUTH|GQL-ENDPOINT|GQL-OP|GQL-VARS|GQL-EXEC|GQL-CAPTURE|REST-OP|REST-EXEC|REST-CAPTURE|REST|WAIT|SETUP|TEARDOWN)\b/i.test(line);
+  return /^\[(AUTH|GQL-ENDPOINT|GQL-OP|GQL-VARS|GQL-EXEC|GQL-CAPTURE|REST-OP|REST-EXEC|REST-CAPTURE|REST|MCP-OP|MCP-EXEC|MCP-CAPTURE|WAIT|SETUP|TEARDOWN)\b/i.test(line);
 }
 
 /**
@@ -486,6 +587,37 @@ export function validateStepBlocks(blocks: StepBlock[]): string[] {
     }
     if (b.kind === "GQL-CAPTURE" && !opLabels.has(b.label)) {
       errors.push(`[GQL-CAPTURE ${b.label}.…] references undeclared op label "${b.label}"`);
+    }
+  }
+
+  // --- the MCP family, added 2026-09-23 --------------------------------------------------------
+  //
+  // Until now only the GQL family was pair-checked here, so an MCP case got NO structural check at
+  // all — a dangling [MCP-EXEC label] or an [MCP-CAPTURE label.path] naming an op that does not
+  // exist reached the runner, which then failed at a step far from the mistake. Worse, suite 102's
+  // MCP-only cases were not even routed to this validator (lint-test-cases.ts isRunnerGraphql
+  // matched [GQL-OP]/[REST-OP] only), so they fell through to the UI rule D-001 and every body line
+  // of an [MCP-OP] block — the tool name, the JSON arguments — was flagged "step line lacks a type
+  // tag". That held 8 green cases at Draft with a Critical finding about grammar they use correctly.
+  const mcpOpLabels = new Set<string>();
+  const mcpExecCounts = new Map<string, number>();
+  for (const b of blocks) {
+    if (b.kind === "MCP-OP") mcpOpLabels.add(b.label);
+    if (b.kind === "MCP-EXEC") mcpExecCounts.set(b.label, (mcpExecCounts.get(b.label) ?? 0) + 1);
+  }
+  for (const label of mcpOpLabels) {
+    const c = mcpExecCounts.get(label) ?? 0;
+    if (c === 0) errors.push(`[MCP-OP ${label}] has no matching [MCP-EXEC ${label}]`);
+    if (c > 1) errors.push(`[MCP-OP ${label}] has ${c} [MCP-EXEC ${label}] — expected exactly 1`);
+  }
+  for (const [label] of mcpExecCounts) {
+    if (!mcpOpLabels.has(label)) {
+      errors.push(`[MCP-EXEC ${label}] has no matching [MCP-OP ${label}]`);
+    }
+  }
+  for (const b of blocks) {
+    if (b.kind === "MCP-CAPTURE" && !mcpOpLabels.has(b.label)) {
+      errors.push(`[MCP-CAPTURE ${b.label}.…] references undeclared op label "${b.label}"`);
     }
   }
 

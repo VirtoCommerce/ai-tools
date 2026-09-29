@@ -62,7 +62,7 @@ cheap to trust is that it reuses steps whose contracts are gated elsewhere.
 
 **`B` and `RG` are independent** once `2a` has returned: dispatch them in one message rather than
 sequentially. They touch nothing in common — the checklist agent reads the ticket's machinery claims, the
-regression runs suites — so this is the ordinary round-trip saving of [`SKILL.md`](SKILL.md) §Concurrency.
+regression runs suites — so this is the ordinary round-trip saving of [`sequencing.md`](sequencing.md) §Concurrency.
 Mind the 3-lane browser cap: the checklist agent occupies a lane, so it counts against `/qa-regression`'s
 pool.
 

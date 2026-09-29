@@ -8,6 +8,7 @@
  *   node scripts/refresh-graphql-schema.mjs --url https://custom-url.com
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';

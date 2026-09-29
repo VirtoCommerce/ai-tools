@@ -36,6 +36,7 @@ You are the smoke test orchestrator running in the main context. Spawn sub-agent
 3. **Gate integrity** — run `npm run suites:gates`. The checklists are the verdict gate, so a case with no checklist item cannot fail the run: on 2026-07-27, suite 042 had grown to SMK-034 while `SMOKE-CHECKLIST.md` still declared `SMK-001 – SMK-033`, leaving the Critical saved-card revenue-path guard (SMK-034) unable to produce a NO-GO. **Non-zero exit ⇒ reconcile the checklist against the CSV before trusting the verdict** (or run and report the verdict as provisional, naming the unmapped cases).
 4. **Duplicate check** — scan `reports/regression/` for a `SMOKE-*` run from today. If found, warn user and show previous verdict.
 5. **Context7 query** — resolve `/virtocommerce/vc-docs`, query `"storefront cart checkout smoke"` with `tokens: 8000`. Check for recent module behavior changes that could affect smoke tests.
+6. **What the smoke path was OBSERVED to do** — `mcp__kb__kb_ask`, with the coordinate in the question (the page path, the GraphQL operation). This is the source item 5 cannot be: a doc describes a module change, the base holds what somebody actually saw on a named deployment, which is the class that turns a red smoke case into *known behaviour* rather than *new regression* before anybody re-runs it. A miss (exit 1) is not a blocker — it means the step is unrecorded, and what this run then establishes is worth a `kb_capture` ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*).
 
 ### Step 1 — Read Suite & Prepare Run
 
@@ -68,6 +69,7 @@ Follow the test-runner-agent protocol in agents/test-runner-agent.md.
 Execute every case in the CSV as a customer journey (currently 34 — SMK-001 through SMK-034; read the file, don't assume a count), including the Cross_Layer_Checks column on each case.
 For every case, record PASS/FAIL/SKIP against the matching item in SMOKE-CHECKLIST.md, and the matching UI-vs-backend parity item in SMOKE-CROSS-LAYER-CHECKLIST.md.
 Continuous observation (test-runner-agent §Always-On reflex): beyond the smoke cases, watch every layer during the journey — record any incidental defect (console exception, 5xx, GraphQL errors[] inside 200, visual break) as a preliminary bug (confirmed:false, "incidental":true) even when the case PASSes; do not change the case verdict.
+Observed behaviour (agent-dispatch.md §Agent Prompt Structure): for each page path / GraphQL operation the CSV touches that DEVIATES (FAIL, BLOCKED, unexpected result, incidental observation), and before every capture, ask the base yourself — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). At close-out, for each platform behaviour you report: matched ⇒ `kb confirm`, contradicted ⇒ `kb dispute`, nothing held ⇒ `kb capture` (`--deployment {TEST_ENV}`, nothing client-specific). List the entry ids in the output file.
 Capture evidence on failures. Write structured JSON results (per SMK-ID, plus a checklist section/item rollup) to the output file.
 ```
 
@@ -91,6 +93,7 @@ The pure REST/GraphQL API cases in 078 (the excluded list at the top of the chec
 Prioritize the Critical-priority cases (checklist §1–12) first — a failure there is a NO-GO; High/Medium failures are GO-WITH-RISK per the checklist's own GO/NO-GO table.
 For every executed case, record PASS/FAIL/SKIP against the matching item in ADMIN-SMOKE-CHECKLIST.md. If Track A data is available, verify created contacts/orders appear in Admin.
 Continuous observation (test-runner-agent §Always-On reflex): beyond the smoke cases, watch every layer — record any incidental defect (Angular blade exception, 5xx, GraphQL errors[] inside 200, schema/data mismatch) as a preliminary bug (confirmed:false, "incidental":true) even when the case PASSes; do not change the case verdict.
+Observed behaviour (agent-dispatch.md §Agent Prompt Structure): for each page path / GraphQL operation / endpoint / Admin blade the CSV touches that DEVIATES (FAIL, BLOCKED, unexpected result, incidental observation), and before every capture, ask the base yourself — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). At close-out, for each platform behaviour you report: matched ⇒ `kb confirm`, contradicted ⇒ `kb dispute`, nothing held ⇒ `kb capture` (`--deployment {TEST_ENV}`, nothing client-specific). List the entry ids in the output file.
 Capture evidence on failures. Write structured JSON results (per BSM-ID, plus a checklist section/item rollup) to the output file.
 ```
 

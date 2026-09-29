@@ -32,6 +32,8 @@ Same tuple as BL: concrete artifacts from all three **applicable** axes, agreein
 | **Source** | A `file:line` anchor in an `org:VirtoCommerce` repo showing the code path the pattern targets (the validator, the calculator, the resolver) | GitHub MCP `search_code` / `get_file_contents` (read-only) |
 | **Live** | An `{OBSERVED}` result showing the surface exists and is reachable — **not necessarily the failure itself** | `qa-testing-expert` (playwright-firefox), real UI/API only |
 
+**Ask the observed-behaviour base BEFORE the live axis, never instead of it.** `mcp__kb__kb_ask`, coordinate in the question, holds what somebody already saw on a **named deployment** with a trust count. It is not a fourth axis and it does not satisfy Live: a matching entry is `kb_confirm`ed after you reach the surface yourself, a contradicting one is `kb_dispute`d, and what it did not hold is a `kb_capture` ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*).
+
 > **The live axis proves REACHABILITY, not failure.** For BL, live means "the rule holds". For
 > ECL, live means "this condition can still arise on the deployed build" — the flow exists, the
 > field accepts the input, the state is constructible. Demanding a live reproduction of every

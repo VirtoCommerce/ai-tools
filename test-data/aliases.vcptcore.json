@@ -483,5 +483,71 @@
     "role_id": "AGENT-TEST-PB-SC-sc-nostore",
     "email": "AGENT-TEST-sc-nostore@test.virtocommerce.com",
     "store_id": "Electronics"
+  },
+  "SR_TASK_FUTURE_YANKEE": {
+    "id": "f3a5831e-f820-43e0-b312-d3098e7e2e81",
+    "due_date": "2026-09-23T11:00:00.000Z"
+  },
+  "SR_TASK_OVERDUE_MIKE": {
+    "id": "8a18d1d2-32ff-49ee-97a9-dccaa228c084",
+    "due_date": "2026-09-21T09:00:00.000Z"
+  },
+  "SR_TASK_DONE_ECHO": {
+    "id": "7a6cb61f-70ee-48c5-9d5c-c5cc78b0320a",
+    "due_date": "2026-09-13T16:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_ROMEO": {
+    "id": "8b13fddc-9e5e-432b-9744-d32c5b53a189",
+    "due_date": "2026-09-29T09:00:00.000Z"
+  },
+  "SR_TASK_TODAY_SIERRA": {
+    "id": "1be6af71-a3af-4371-81c9-a0c1f1df368b",
+    "due_date": "2026-09-22T12:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_OSCAR": {
+    "id": "e1509864-2712-4aa0-8cfe-f567d184e044",
+    "due_date": "2026-10-06T13:00:00.000Z"
+  },
+  "SR_TASK_OVERDUE_ZULU": {
+    "id": "f4e1ffae-1039-4cf5-8e23-45ede0847561",
+    "due_date": "2026-09-17T10:00:00.000Z"
+  },
+  "SR_TASK_DONE_FOXTROT": {
+    "id": "b45539e6-ef6a-4541-b007-2da5636b877d",
+    "due_date": "2026-09-27T10:00:00.000Z"
+  },
+  "SR_TASK_TODAY_DELTA": {
+    "id": "41e62a86-97f0-4e84-9001-dc4a69c6ef07",
+    "due_date": "2026-09-22T20:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_CHARLIE": {
+    "id": "106de804-1362-4e0e-b4a9-1e1901b4c244",
+    "due_date": "2026-09-29T17:00:00.000Z"
+  },
+  "SR_TASK_DONE_NOVEMBER": {
+    "id": "3edc8823-b684-416f-86f6-f513ebe16c7b",
+    "due_date": "2026-09-20T12:00:00.000Z"
+  },
+  "SR_TASK_TODAY_ALPHA": {
+    "id": "f216ae8d-61ea-48ca-903a-ff92a3abee73",
+    "due_date": "2026-09-22T07:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_BRAVO": {
+    "id": "cc032a0e-ec86-4884-a13d-4116ae5d260c",
+    "due_date": "2026-09-25T15:00:00.000Z"
+  },
+  "SR_TASK_DONE_TANGO": {
+    "id": "f18b2143-7737-433d-b924-0b1969caca76",
+    "due_date": "2026-09-22T15:00:00.000Z"
+  },
+  "SR_TASK_GROUPS": {
+    "open_overdue": "2",
+    "open_today": "3",
+    "open_future": "5",
+    "completed": "4",
+    "total": "14",
+    "seeded_at": "2026-09-22T11:54:44.917Z",
+    "decays_at_utc": "2026-09-23T00:00:00.000Z",
+    "owner_rep_email": "agent-test-sr-primary@example.com"
   }
 }

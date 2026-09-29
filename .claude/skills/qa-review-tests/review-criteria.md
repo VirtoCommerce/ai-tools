@@ -556,6 +556,13 @@ claim. Static analysis flags the ungrounded lines; the live `--verify` pass (Dim
 converts them. This is a **hard block** on promotion: a GRD-001 Blocker keeps the case below the ≥ PASS
 WITH WARNINGS verdict promotion requires.
 
+**Ask the observed-behaviour base before spending a browser lane on Dimension 8.** `mcp__kb__kb_ask`,
+coordinate in the question: an entry recorded on a named deployment grounds an ungrounded line as
+`{OBSERVED}` **with a citation**, at no lane cost, and it is the cheapest thing that can clear a
+GRD-001. It does not replace the live pass for a line the base does not hold — and what that pass then
+establishes is a `kb_capture` ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules →
+*Product context*).
+
 ### GRD-001: Ungrounded assertion `[Blocker]`
 - **Detection:** An assertion line is tagged `{HYPOTHESIS}` **or** carries no `{...}` provenance tag at
   all (an untagged assertion is treated as ungrounded). Provenance grammar: `test-case-template.md` →

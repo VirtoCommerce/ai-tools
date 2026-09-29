@@ -31,14 +31,22 @@ An incremental write-back of what a run actually verified is neither, and has it
 /qa-domain-map b2b --exclude sales-rep               # leave an area out, recorded in `excludes:`
 ```
 
-`<domain-slug>` **must** be a real `bl:extract` domain — `npm run bl:extract -- --list` prints them.
-An unknown slug **STOPs**: a map filed under a slug no oracle uses is a map nothing can look up.
+`<domain-slug>` **must** be a real `bl:extract` domain — `npm run bl:extract -- --has-domain <slug>`
+answers it (exit 0 declared, exit 2 unknown); `--list` prints them all. An unknown slug **STOPs**: a
+map filed under a slug no oracle uses is a map nothing can look up. **A domain with zero invariants
+is NOT unknown** — it is declared and empty, which is the normal state of a domain nobody has mapped,
+so `--has-domain` accepts it and this command proceeds.
 
 ---
 
 ## Step 0 — Resolve, and decide build vs refresh
 
-1. Validate the slug against `npm run bl:extract -- --list`. Unknown ⇒ **STOP**, print the list.
+1. Validate the slug with `npm run bl:extract -- --has-domain <slug>`. Exit 2 ⇒ **STOP**, print
+   `--list`. **Do not validate against `--list` output by eye** — that is what this gate used to say,
+   and it misfired: until 2026-09-23 the listing was built from invariants, so a declared domain
+   holding none was absent from it and read as unknown. It STOPped a legitimate `ucp --refresh`,
+   i.e. it failed hardest on the domains that most need a map. `--has-domain` answers *declared*,
+   `--domain` answers *populated*; this step wants the first.
 2. Resolve the target: `.claude/knowledge/domain/<name>.md` where a `domain_slug: <slug>` field matches.
    **Match on the field, not the filename** — a descriptive filename (`b2b-organizations.md`) and a
    mechanical slug (`b2b`) are both wanted, and the field is what reconciles them.
@@ -59,6 +67,7 @@ An unknown slug **STOPs**: a map filed under a slug no oracle uses is a map noth
 - **The PUBLISHED DOCS, via `/vc-docs` → VirtoOZ MCP — query EVERY guide the domain touches, not one.** A map covering back office + storefront needs **`PlatformUserGuide`** *and* **`StorefrontUserGuide`**; add `PlatformDeveloperGuide` / `StorefrontDeveloperGuide` / `FrontendSourceCode` for a contract layer, and `B2BExperts` for B2B. One guide answers for one audience, and **a disagreement between two guides about the same mechanism is itself a finding**. Context7 (`/virtocommerce/vc-docs`) is a fallback only.
   **VirtoOZ answers "how is it MEANT to work", never "what is new"** — its release corpus stops around Platform 3.917 while production is past 3.1050. A guide describing the pre-change behaviour is therefore **expected**, not a miss to retry; what turns it into a finding is the **live** check placed beside it.
   **Look for a PURPOSE statement while you are there.** §1's `UNDECLARED` verdict is only honest if the guides were actually checked — and a procedural guide that explains *how* to operate a feature without ever saying *what it is for* is the common case, so say that explicitly rather than leaving §1 looking unexamined.
+- **What the platform was OBSERVED to do — `mcp__kb__kb_ask`, before the live check, not after.** It is the banked result of a live check somebody already ran, on a named deployment, with a trust count — and it is the one source that can already hold the divergence the bullet above predicts between a 3.917-era guide and a 3.1050 production build. Put the coordinate in the question; exit 1 means nobody wrote it down, and what you then establish live is a `kb_capture` ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*).
 
 ## Step 2 — Dispatch `ba-system-analyzer`
 

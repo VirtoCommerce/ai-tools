@@ -1,0 +1,28 @@
+# name: initializeApplicationClient
+# category: store
+# role: PUBLIC
+# purpose: The VERBATIM app-boot payload vc-frontend sends — operation `InitializeApplication`, one required `$domain`, and only `storeUrl` + `settings.modules`. Replays the exact request the storefront boots from; its response becomes the feature map that `apply-gates-link` strips every `@needsModule` selection against, so a break here is client-visible. Documented: storefront/developer-guide/application-initialization. The broader store-bootstrap contract surface (languages, currencies, password rules, the rest of StoreSettingsType) is the separate `initializeApplication` fixture.
+# required-vars: (none — pass `domain` via gql-vars)
+# optional-vars: (none)
+# last-validated: 2026-09-23
+# known-issues: when `XAPI.Security.ReturnModuleVersion` is OFF, settings.modules[].version returns "" (empty string, not null — preserves the String! contract) and modules without public settings drop out of the list entirely, so an assertion on module COUNT is asserting that setting, not the manifest.
+# gql-vars: { "domain": "String!" }
+# runner-note: Operation name is `InitializeApplication` (PascalCase) — that is what goes on the wire and what the storefront's Network panel is filtered by. The lowercase `initializeApplication` is the exported JS wrapper in client-app/core/api/graphql/store/queries/initializeApplication/index.ts, NOT the operation. `$domain` is REQUIRED here (the client never resolves by storeId); pass the storefront hostname, not the platform host.
+# example-vars: {"domain": "vcst-qa-storefront.govirto.com"}
+# source: vc-frontend client-app/core/api/graphql/store/queries/initializeApplication/initializeApplication.graphql (verified 2026-09-23)
+
+query InitializeApplication($domain: String!) {
+  store(domain: $domain) {
+    storeUrl
+    settings {
+      modules {
+        moduleId
+        version
+        settings {
+          name
+          value
+        }
+      }
+    }
+  }
+}

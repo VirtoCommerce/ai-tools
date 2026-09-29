@@ -2880,5 +2880,52 @@
     "pass_rate": 63.64,
     "duration_minutes": 53.67,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-09-28-1518",
+    "date": "2026-09-28",
+    "suiteId": "004",
+    "suiteName": "Search Core",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 10.62,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-09-28-1518",
+    "date": "2026-09-28",
+    "suiteId": "050a",
+    "suiteName": "GraphQL xCatalog",
+    "environment": "vcst",
+    "total": 8,
+    "passed": 6,
+    "failed": 2,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 75,
+    "duration_minutes": 3.41,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-09-28-1518",
+    "date": "2026-09-28",
+    "suiteId": "103",
+    "suiteName": "Search Configuration Admin (Barcode scanner)",
+    "environment": "vcst",
+    "browser": "playwright-edge",
+    "total": 8,
+    "passed": 7,
+    "failed": 1,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 87.5,
+    "duration_minutes": 18.87,
+    "mode": "interactive"
   }
 ]

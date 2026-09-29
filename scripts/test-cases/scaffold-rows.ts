@@ -49,6 +49,7 @@
  *
  * Exit code: 0 on a clean plan; 1 on any gate error; 2 on an unreadable source.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
 import { fileURLToPath } from "url";
@@ -77,6 +78,14 @@ export interface PlanCase {
   title: string;
   /** Which link of the value chain this row crosses or guards (sidecar only). */
   link?: string;
+  /**
+   * The mind-map node this row makes executable (`.claude/knowledge/domain/<slug>.mind-map.json`).
+   * Unlike `link`, it is PERSISTED — as a `Behavior:` stamp in References, which is the only place
+   * `npm run models:check` derives a node's linked cases from.
+   */
+  behavior?: string;
+  /** The data-model profile the row's data comes from (`test-data/models/`), stamped as `DataProfile:`. */
+  dataProfile?: string;
   layer?: Layer;
   priority?: string;
   section?: string;
@@ -426,11 +435,28 @@ export function loadSweep(kind: SweepKind, read: (p: string) => string = readSou
  * ------------------------------------------------------------------ */
 
 const TITLE_CAP = 110;
+const TITLE_SEP = " — ";
 function truncate(s: string, n = TITLE_CAP): string {
   if (s.length <= n) return s;
   const cut = s.slice(0, n - 1);
   const sp = cut.lastIndexOf(" ");
   return `${(sp > n * 0.6 ? cut.slice(0, sp) : cut).trimEnd()}…`;
+}
+
+/**
+ * B-40: truncating `${surface} — ${scenario}` as one string lets a long `surface` (shared by every
+ * row in a sweep) swallow the `scenario` suffix that is the only thing distinguishing one row's
+ * title from another — collapsing N sweep rows onto one title and failing the KEEP gate with
+ * "Title+Section duplicates an earlier row", which points at the wrong half. Truncate the surface
+ * alone and keep the scenario whole whenever it fits; only fall back to truncating the combined
+ * string when the scenario alone would not fit whatever budget is left.
+ */
+function sweepTitle(surface: string, scenario: string, n = TITLE_CAP): string {
+  const full = `${surface}${TITLE_SEP}${scenario}`;
+  if (full.length <= n) return full;
+  const surfaceBudget = n - TITLE_SEP.length - scenario.length;
+  if (surfaceBudget > 0) return `${truncate(surface, surfaceBudget)}${TITLE_SEP}${scenario}`;
+  return truncate(full, n);
 }
 
 export function expandSweep(
@@ -469,7 +495,7 @@ export function expandSweep(
       continue;
     }
     cases.push({
-      title: truncate(`${sweep.surface} — ${r.scenario}`),
+      title: sweepTitle(sweep.surface, r.scenario),
       link: `${sweep.kind}:${r.key}`,
       layer: sweep.layer ?? fallbackLayer,
       priority: r.priority,
@@ -559,6 +585,14 @@ export function buildRows(
         `${where}: technique "${c.technique}" is not in the §0 vocabulary (${[...vocab.techniques].join(", ")})`,
       );
     if (c.probe && !/^VC-[A-Z0-9]+-\d+$/.test(c.probe)) errors.push(`${where}: probe "${c.probe}" is not a VC-*-NNN id`);
+    // Shape only: whether the node / profile EXISTS is `npm run models:check`'s TM-015 / TM-016, which
+    // reads the models this staged row will be appended next to.
+    if (c.behavior && !/^[a-z][a-z0-9]*(\.[a-z0-9][a-z0-9-]*)+$/.test(c.behavior)) {
+      errors.push(`${where}: behavior "${c.behavior}" is not a dotted mind-map node id`);
+    }
+    if (c.dataProfile && !/^profile\.[a-z][a-z0-9]*(\.[a-z0-9][a-z0-9-]*)+$/.test(c.dataProfile)) {
+      errors.push(`${where}: dataProfile "${c.dataProfile}" is not a profile.<slug>.<name> id`);
+    }
 
     errors.push(...checkKeep(c, where));
 
@@ -590,6 +624,8 @@ export function buildRows(
       `Archetype:${c.archetype}`,
       `Technique:${c.technique}`,
       ...(c.probe ? [`Probe:${c.probe}`] : []),
+      ...(c.behavior ? [`Behavior:${c.behavior}`] : []),
+      ...(c.dataProfile ? [`DataProfile:${c.dataProfile}`] : []),
     ].join(" · ");
     row.Automation_Status = "Draft";
     rows.push(row);

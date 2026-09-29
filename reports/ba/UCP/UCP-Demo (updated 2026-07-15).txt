@@ -1,0 +1,95 @@
+UCP Live Demo — B2B-store  (products & totals verified live on QA, 2026-07-15)
+Storefront: https://vcst-qa-storefront.govirto.com  |  Store: B2B-store (USD)
+
+========================================================================
+Scene 1 — "What can this store do?"
+You say: "I'd like to shop at this store. What can you help me do here?"
+
+Expect: Claude discovers the store's capabilities — search, cart, checkout, order tracking — and that
+you pay via hosted checkout. Sets the stage that Claude is your shopping assistant.
+
+------------------------------------------------------------------------
+Scene 2 — Find a product (natural language, with a budget)
+You say: "I need a printer for the office, but keep it under $150."
+
+Expect: A short list of REAL in-stock printers under $150 (names + prices, not raw data). Live options:
+  - Xerox WorkCentre 3215/NI ....... $149.00
+  - HP LaserJet Pro M130fn (recert). $148.29
+  - HP OfficeJet Pro 6978 .......... $119.99
+  - Epson WorkForce WF-3620 ........ $106.28  (only ~4 in stock)
+  - Epson WorkForce WF-3640 ........ $100.00  (on sale, list $199.99)
+  - Epson WorkForce WF-2750 ........ $99.99   (min order qty 2 — see Scene 3)
+  NOTE: earlier demo text listed "Xerox 3335DNI $99.99" — that is WRONG (it is $349). Do not use it.
+
+------------------------------------------------------------------------
+Scene 3 — Ask about one
+You say: "Tell me more about the Epson WorkForce WF-2750 — is it in stock?"
+
+Expect: Claude pulls product detail — $99.99, wireless all-in-one (print/copy/scan/fax), in stock with
+814 on hand. Important catch: this product has a MINIMUM order quantity of 2 (max 4). A single unit is
+rejected with "You can order from 2 to 4 items", so the smallest order is 2 units = $199.98 before tax.
+Good "it really knows the catalog" moment.
+
+------------------------------------------------------------------------
+Scene 4 — Build the cart (this naturally shows the guardrail)
+You say: "Great — add one Epson WorkForce WF-2750 to my cart."
+
+Expect: The store REJECTS a single unit (min qty 2). Claude reports "You can order from 2 to 4 items"
+and offers to add 2–4 instead. (Real business rule flowing through to the agent — this is the wow moment.)
+
+You say: "Add four of them."
+
+Expect: 4× WF-2750 → line total $399.96, tax $79.99, cart total $479.95. Claude confirms.
+
+You say: "Also add one HP OfficeJet Pro 6978."
+
+Expect: Added at $119.99 (no min-qty rule on this one). Cart now:
+  4× Epson WF-2750 .... $399.96
+  1× HP OfficeJet 6978  $119.99
+  Subtotal $519.95 · Tax $103.99 · Total $623.94  (shipping shown at checkout)
+
+------------------------------------------------------------------------
+Scene 5 — Check out (address in plain English)
+You say: "Let's check out. Ship it to Jane Doe, 400 Broad St, Seattle, WA 98109, USA —
+her email is jane.doe@example.com."
+
+Expect: Claude resolves country US→USA and state WA→Washington, applies the address, prepares checkout.
+(Recipient first/last name and ZIP are required; if missing Claude asks. It may re-confirm ZIP "98109" —
+cosmetic.)
+
+------------------------------------------------------------------------
+Scene 6 — Payment options
+You say: "What can I pay with?"
+
+Expect: Only hosted_checkout is available in this MVP. native_card and google_pay are shown as
+not-yet-available.
+
+------------------------------------------------------------------------
+Scene 7 — The handoff (the key moment)
+You say: "Perfect — take me to checkout to pay. Open link in browser and complete checkout. Set payment method as Manual"
+
+Expect: Claude returns a secure link (…/checkout?ucp_session=…). Click it — the real Virto storefront
+opens with your exact cart (4× WF-2750 + 1× HP 6978, ~$623.94 + shipping) and Jane's Seattle address
+prefilled. You finish payment in the normal store UI. Link expires ~15 min. This is the whole point:
+the AI assembles everything; the store handles the money.
+
+------------------------------------------------------------------------
+Scene 8 — Track the order (after paying)
+You say: "I've paid — where's my order?"
+
+Expect: Claude tracks by the cart it created — no order number needed — and reports order number
+(format CO<yymmdd>-#####), status (New), items, totals, and Ground shipping.
+Or with a number: "Track order CO260715-00001."
+
+========================================================================
+Live-demo safety net
+========================================================================
+- Claude asks which store → "Use the B2B-store."
+- Claude asks for the ZIP again → repeat "98109" (cosmetic; store already has it).
+- A product looks out of stock / $0.00 → that's the Electronics store's phones; stay on B2B-store printers.
+- Coupon → do NOT demo a discount code; none is seeded on this environment.
+- B2B contract pricing / purchase-order payment → not in this MVP build; stick to the B2C flow above.
+- KNOWN QA ISSUES (avoid or acknowledge, don't be surprised on stage):
+    * "under $150" is filtered by Claude, not the store — the store's price_min/price_max filter currently errors.
+    * On the created order, tracking may show an extra phantom line (e.g. a Canon MF232W at $0.00) and a
+      recalculated tax + $150 Ground shipping vs the pre-handoff snapshot. Logged for the devs; don't dwell on it live.

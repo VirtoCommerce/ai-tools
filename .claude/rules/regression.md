@@ -22,11 +22,7 @@ Do not re-create it. Why it was removed: [`docs/decisions/regression-history.md`
 
 ## Test Suite Manifest: `config/test-suites.json`
 
-Central configuration for regression orchestration. Defines:
-- **Browser pool**: 3 slots (playwright-chrome, playwright-firefox, playwright-edge) with fallback chain
-- **Suite definitions**: one per suite in module-aligned subdirectories under `Frontend/` and `Backend/`, with id, name, CSV file path, priority, test count, assigned agent type, and tags
-- **Selection groups**: `smoke`, `critical`, `sprint`, `full`, `frontend`, `backend`, plus module-specific groups (`catalog`, `search`, `orders`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`, `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`, …)
-- **Defaults**: max 3 parallel agents, 2 retries, 30s retry delay, HAR capture enabled
+Central configuration for regression orchestration — browser pool + fallback chain, suite definitions, `selections`, run `defaults`. Read the file (schema: `config/test-suites.schema.json`); its values are not restated here.
 
 ## Regression Test Suites
 
@@ -79,7 +75,7 @@ Suite selection accepts group names (`smoke`, `critical`, `catalog`, `orders`, e
 
 **There is no regression GitHub Actions workflow.** `regression.yml` was **removed 2026-09-08** — it ran exactly once, on 2026-02-11, from a schedule that was later commented out, and that run **failed** after 72 s. It never ran manually and never succeeded, so it documented a capability the team does not have. **The RUNNER is unaffected:** `ci/run-regression.ts` is invoked by `npm run ci:regression`, by the Docker image above, and by `full-cycle.yml` Phase 3 (Regression).
 
-The remaining pipelines (`suite-audit.yml`, `monitor.yml`, `auto-fix.yml`, `full-cycle.yml`) still have every `cron:` **commented out**, so nothing in `ci/` runs unattended (audit 2026-09-07 §4b, D9). Re-enabling one means uncommenting its `cron:` line; until then do not describe those runs as happening.
+The remaining pipelines (`suite-audit.yml`, `monitor.yml`, `full-cycle.yml`) still have every `cron:` **commented out**, so nothing in `ci/` runs unattended (audit 2026-09-07 §4b, D9). Re-enabling one means uncommenting its `cron:` line; until then do not describe those runs as happening.
 
 **Teams Notifications:** After each pipeline run, `ci/notify-teams.ts` sends an Adaptive Card to the configured Teams webhook. Requires `TEAMS_WEBHOOK_URL` secret.
 

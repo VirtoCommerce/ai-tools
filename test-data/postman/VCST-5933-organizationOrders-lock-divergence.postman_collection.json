@@ -1,8 +1,7 @@
 {
   "info": {
-    "_postman_id": "70309ed2-0daa-4827-bc90-21556374ac50",
-    "name": "VCST-5933 — organizationOrders authorizes on raw membership (self-contained)",
-    "description": "Self-contained reproducible evidence for VCST-5933. Locks and unlocks the membership over the REST API, so no seeder script is needed.\n\nLAST RUN 2026-09-09 via newman: 13/13 requests, 23 assertions, 1 failed — request 8, which is the evidence. Teardown verified back to V1.\n\nTHE DEFECT: organizationOrders(organizationId:) authorizes through CanAccessOrderAuthorizationHandler -> IsCustomerOrganization -> Contact.Organizations.Contains(organizationId) — raw membership, never lock-aware. organization(id:) re-evaluates the lock. The two reads disagree for a member who is LOCKED OUT.\n\nTHE ORDER IS NOT ARBITRARY — two measured facts force it:\n 1. Platform REST needs a CONTEXT-FREE ADMIN token. A storefront-scoped token gets 401 invalid_token, so lock/unlock cannot reuse the buyer's (requests 1-4 and 12-13 use the admin token).\n 2. A V2 lock KILLS a token minted BEFORE it. So the buyer authenticates at request 5, AFTER the lock.\n\nWHY EVERY CONTROL IS HERE — no single request carries the finding:\n · request 8 (THE DEFECT) is meaningless without 7: same principal, same org, refused\n · 9 proves the refusal is LOCK-specific, not a blanket customer-principal denial\n · 10 proves the query really reads the named org (measured 66 vs 14)\n · 11 proves it is not simply ungated — a NON-MEMBER org IS refused\n · 5 proves the buyer token is scoped to the UNLOCKED org, so nothing request 8 returns about the locked org can be explained by the token's scope\n\nREAD-BACK IS MANDATORY: POST .../{id}/lock on an unknown membership id returns 200 with a null body, NOT 404. Request 4 verifies the state instead of trusting request 3's status; request 13 does the same for the unlock.\n\nDO NOT RUN WITH --bail. Requests 12-13 unlock the fixture; --bail would stop at request 8 and leave it LOCKED, poisoning suites 006 and 050d.\n\nGRAPHQL BODIES USE mode:\"graphql\", never raw (qa-postman SKILL.md Rules).\n\nRUN: newman run <collection> -e <env> --env-var \"adminUser=$ADMIN\" --env-var \"adminPassword=$ADMIN_PASSWORD_VCST\" --env-var \"b2bUserPassword=$DEFAULT_TEST_PASSWORD\"",
+    "name": "VCST-5933 — organizationOrders must refuse a locked member",
+    "description": "Self-contained reproducible evidence for VCST-5933. Locks and unlocks the membership over the REST API, so no seeder script is needed.\n\nEXPECTED OUTCOME, by build:\n · PRE-FIX build (VirtoCommerce.XOrder <= 3.1012.0): every request executes and EXACTLY ONE assertion fails — request 8. That failure is the evidence (measured 2026-09-09: 66 orders served).\n · FIXED build (vc-module-x-order#52, 3.1013.0-pr-52-a3c9): all green. Measured 2026-09-23: 3/3 runs, request 8 Forbidden, teardown verified.\n · Any OTHER failure means the collection or the fixture is broken, not the product — start with 1a and 4.\n\nTHE DEFECT: organizationOrders(organizationId:) authorizes through CanAccessOrderAuthorizationHandler -> IsCustomerOrganization -> Contact.Organizations.Contains(organizationId) — raw membership, never lock-aware. organization(id:) re-evaluates the lock. The two reads disagree for a member who is LOCKED OUT.\n\nTHE ORDER IS NOT ARBITRARY — two measured facts force it (1a, 2a and 2b are later additions that sit inside this order):\n 1. Platform REST needs a CONTEXT-FREE ADMIN token. A storefront-scoped token gets 401 invalid_token, so lock/unlock cannot reuse the buyer's (requests 1-4 and 12-13 use the admin token).\n 2. A V2 lock KILLS a token minted BEFORE it. So the buyer authenticates at request 5, AFTER the lock.\n\nWHY EVERY CONTROL IS HERE — no single request carries the finding:\n · request 8 (THE DEFECT) is meaningless without 7: same principal, same org, refused\n · 9 proves the refusal is LOCK-specific, not a blanket customer-principal denial\n · 10 proves the query really reads the named org (measured 66 vs 14)\n · 11 proves it is not simply ungated — a NON-MEMBER org IS refused\n · 2b proves the locked org IS readable before the lock, so request 8's refusal is caused by the lock\n · 5 proves the buyer token is scoped to the UNLOCKED org, so nothing request 8 returns about the locked org can be explained by the token's scope\n\nRUNNING IT IN THE POSTMAN APP:\n 1. Select the environment \"vcst-qa — VCST-5933 evidence\".\n 2. Set the CURRENT value (not the initial value) of adminPassword and b2bUserPassword.\n 3. Run the WHOLE collection in the Collection Runner, request 1 to 13, without \"stop on failure\".\n Sending one request on its own cannot work: each request uses values the earlier ones saved (adminToken, b2bUserId, membershipId, authToken). A collection-level pre-request guard names the missing piece as a failed test and skips the request instead of letting it error.\n\nREAD-BACK IS MANDATORY: POST .../{id}/lock on an unknown membership id returns 200 with a null body, NOT 404. Request 4 verifies the state instead of trusting request 3's status; request 13 does the same for the unlock.\n\nDO NOT RUN WITH --bail. Requests 12-13 unlock the fixture; --bail would stop at request 8 and leave it LOCKED, poisoning suites 006 and 050d.\n\nGRAPHQL BODIES USE mode:\"graphql\", never raw (qa-postman SKILL.md Rules).\n\nRUN: newman run <collection> -e <env> --env-var \"adminPassword=$ADMIN_PASSWORD_VCST\" --env-var \"b2bUserPassword=$MULTI_ORG_USER_PASSWORD\"   (resolve both through process.env after importing config.js; never paste a literal)\n\nNO STORED USER ID: request 1a resolves it from b2bUserEmail. Do not add b2bUserId back to the environment — an environment value outranks the collection variable 1a sets, and a stale one silently disables the lock (2026-09-23).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -20,7 +19,6 @@
           }
         }
       ],
-      "id": "ebd865a4-91a7-4ea0-b0b4-613062b266be",
       "request": {
         "auth": {
           "type": "noauth"
@@ -68,6 +66,55 @@
       "response": []
     },
     {
+      "name": "1a. SETUP — resolve the buyer's user id from the email (never a stored GUID)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/platform/security/users/{{b2bUserEmail}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "platform",
+            "security",
+            "users",
+            "{{b2bUserEmail}}"
+          ]
+        },
+        "description": "The membership search in request 2 is keyed on the SECURITY-ACCOUNT user id. That id is platform-assigned and changes whenever the fixture account is re-created — measured 2026-09-23, when a stored b2bUserId had gone stale and request 2 found 0 memberships, so the lock never applied and every later request ran against an unlocked fixture. Resolving it here from the email makes the collection survive a re-seed."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 — buyer account found by email', () => pm.response.to.have.status(200));",
+              "const u = pm.response.json() || {};",
+              "pm.test('the account is the configured buyer, and has an id', () => {",
+              "  pm.expect(String(u.email || u.userName).toLowerCase(), 'email').to.equal(String(pm.environment.get('b2bUserEmail')).toLowerCase());",
+              "  pm.expect(u.id, 'user id').to.be.a('string').and.not.empty;",
+              "});",
+              "pm.collectionVariables.set('b2bUserId', u.id);",
+              "console.log('buyer user id resolved:', u.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "2. SETUP — find the membership id (discovered, not hardcoded)",
       "event": [
         {
@@ -84,7 +131,6 @@
           }
         }
       ],
-      "id": "523834bb-0ada-4854-9105-4fc89849bcfb",
       "request": {
         "auth": {
           "type": "bearer",
@@ -124,9 +170,114 @@
             "search"
           ]
         },
-        "description": "Discovered, not hardcoded: membership ids are platform-assigned and change on every re-seed. The search REQUIRES a scoping filter (UserId/OrganizationId) or returns BadRequest. Genuine REST JSON, so mode:raw is correct here."
+        "description": "Discovered, not hardcoded: membership ids are platform-assigned and change on every re-seed. The search REQUIRES a scoping filter (UserId/OrganizationId) or returns BadRequest. Genuine REST JSON, so mode:raw is correct here. The user id comes from request 1a, not from the environment."
       },
       "response": []
+    },
+    {
+      "name": "2a. BASELINE — buyer auth BEFORE the lock",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "password"
+            },
+            {
+              "key": "scope",
+              "value": "offline_access"
+            },
+            {
+              "key": "storeId",
+              "value": "{{storeId}}"
+            },
+            {
+              "key": "username",
+              "value": "{{b2bUserEmail}}"
+            },
+            {
+              "key": "password",
+              "value": "{{b2bUserPassword}}"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/connect/token",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "connect",
+            "token"
+          ]
+        },
+        "description": "A pre-lock buyer token for the baseline read in 2b. A V2 lock revokes tokens minted before it, so this token is used ONLY by 2b; request 5 authenticates again after the lock."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 — pre-lock buyer token issued', () => pm.response.to.have.status(200));",
+              "pm.environment.set('authToken', pm.response.json().access_token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2b. BASELINE — organizationOrders(locked org) is SERVED before the lock",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "graphql",
+          "graphql": {
+            "query": "query($orgId: String!) { organizationOrders(organizationId: $orgId, first: 1) { totalCount } }",
+            "variables": "{\n  \"orgId\": \"{{lockedOrgId}}\"\n}"
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graphql"
+          ]
+        },
+        "description": "CONTROL 0. Proves the locked org is readable to this buyer while unlocked, and records its order count. Without it, a Forbidden at request 8 could mean \"this org was never readable\" instead of \"the lock is now enforced\". Its count also gives request 10 something to discriminate against once request 8 is refused."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('BASELINE: the locked org is readable BEFORE the lock, with at least one order', () => {",
+              "  pm.expect(j.errors, 'errors[]').to.be.undefined;",
+              "  pm.expect(j.data.organizationOrders.totalCount, 'totalCount').to.be.above(0);",
+              "});",
+              "pm.collectionVariables.set('lockedOrgPreLockCount', String(j.data && j.data.organizationOrders ? j.data.organizationOrders.totalCount : 'null'));",
+              "console.log('organizationOrders(locked org) BEFORE the lock:', pm.collectionVariables.get('lockedOrgPreLockCount'));"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "3. SETUP — LOCK the membership (V2: permanent, non-active org)",
@@ -143,7 +294,6 @@
           }
         }
       ],
-      "id": "588a8e6f-1528-483a-844c-059bed61ddbf",
       "request": {
         "auth": {
           "type": "bearer",
@@ -207,7 +357,6 @@
           }
         }
       ],
-      "id": "bc3b29bf-05ba-4e6c-b1ba-c74c7745b14c",
       "request": {
         "auth": {
           "type": "bearer",
@@ -267,7 +416,6 @@
           }
         }
       ],
-      "id": "e70c50f8-846b-4d1d-811c-031a8a7be20a",
       "request": {
         "auth": {
           "type": "noauth"
@@ -342,7 +490,6 @@
           }
         }
       ],
-      "id": "80b4ee1b-279a-49c3-8038-a9cc431f0969",
       "request": {
         "method": "POST",
         "header": [
@@ -390,7 +537,6 @@
           }
         }
       ],
-      "id": "605cdcc4-a0d2-4d11-b4f0-19db46e41736",
       "request": {
         "method": "POST",
         "header": [
@@ -446,7 +592,6 @@
           }
         }
       ],
-      "id": "d377820e-c347-4166-92cd-02ac2a7ce9e0",
       "request": {
         "method": "POST",
         "header": [
@@ -492,7 +637,6 @@
           }
         }
       ],
-      "id": "1ff40fe0-c1e5-44e6-a60c-7a7414c5507d",
       "request": {
         "method": "POST",
         "header": [
@@ -531,16 +675,16 @@
             "exec": [
               "const j = pm.response.json();",
               "pm.test('organizationOrders(unlocked) is served', () => pm.expect(j.errors, 'errors[]').to.be.undefined);",
-              "const u = j.data.organizationOrders.totalCount;",
+              "const u = String(j.data.organizationOrders.totalCount);",
               "const l = pm.collectionVariables.get('lockedOrgTotalCount');",
-              "console.log('locked totalCount =', l, '| unlocked totalCount =', u);",
-              "if (l !== 'null') { pm.test('the two orgs return DIFFERENT counts — request 8 really read the named org', () => pm.expect(String(u), 'unlocked vs locked').to.not.equal(l)); }",
-              "else { console.log('request 8 was refused, so no count to discriminate against — expected once fixed.'); }"
+              "const pre = pm.collectionVariables.get('lockedOrgPreLockCount');",
+              "const other = (l && l !== 'null') ? l : pre;",
+              "console.log('unlocked totalCount =', u, '| locked-org count to compare =', other, (l && l !== 'null') ? '(request 8, served)' : '(2b, pre-lock baseline)');",
+              "pm.test('the two orgs return DIFFERENT counts — the organizationId argument is really honoured', () => pm.expect(u, 'unlocked vs locked').to.not.equal(other));"
             ]
           }
         }
       ],
-      "id": "0ac09b35-acd5-43dd-995e-6956523600dc",
       "request": {
         "method": "POST",
         "header": [
@@ -565,7 +709,7 @@
             "graphql"
           ]
         },
-        "description": "Measured 2026-09-09: totalCount 14, against 66 for the locked org. Different counts prove the organizationId argument is honoured."
+        "description": "Proves organizationOrders really reads the org named in the argument: the unlocked org's count differs from the locked org's. Compares against request 8 when 8 is served (pre-fix build), else against the 2b pre-lock baseline (fixed build). Measured: 66 vs 14 on 2026-09-09, 96 vs 15 on 2026-09-23."
       },
       "response": []
     },
@@ -596,7 +740,6 @@
           }
         }
       ],
-      "id": "4d66a901-91be-42db-9f9d-59bab434ba72",
       "request": {
         "method": "POST",
         "header": [
@@ -638,7 +781,6 @@
           }
         }
       ],
-      "id": "d4ee525f-5e23-40a6-8fc8-a42c1081f063",
       "request": {
         "auth": {
           "type": "bearer",
@@ -702,7 +844,6 @@
           }
         }
       ],
-      "id": "fa4045d9-1c52-4b42-981e-8616b13cac91",
       "request": {
         "auth": {
           "type": "bearer",
@@ -763,6 +904,46 @@
     {
       "key": "tokenOrgClaim",
       "value": ""
+    },
+    {
+      "key": "b2bUserId",
+      "value": ""
+    },
+    {
+      "key": "lockedOrgPreLockCount",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// PRECONDITION GUARD — runs before every request in this collection.",
+          "// A missing precondition becomes ONE readable failed test and the request is SKIPPED, instead of",
+          "// firing and failing with ENOTFOUND {{baseurl}} / 401 / 404 — errors that run no test script and save",
+          "// no variable, so every later request inherits the damage.",
+          "const step = (pm.info.requestName || '').split(' ')[0];",
+          "const missing = k => { const v = pm.variables.get(k); return v === undefined || v === null || v === '' || /^\\{\\{.*\\}\\}$/.test(String(v)); };",
+          "const rules = [",
+          "  [() => true, 'baseUrl', 'No environment selected. Choose \"vcst-qa — VCST-5933 evidence\" in the environment dropdown (top right).'],",
+          "  [s => s === '1.', 'adminPassword', 'adminPassword is empty. Set its CURRENT value in the environment (never the initial value — that one syncs to the team).'],",
+          "  [s => ['2a.', '5.'].includes(s), 'b2bUserPassword', 'b2bUserPassword is empty. Set its CURRENT value in the environment (never the initial value).'],",
+          "  [s => ['1a.', '2.', '3.', '4.', '12.', '13.'].includes(s), 'adminToken', 'adminToken is empty. Run the WHOLE collection in the Collection Runner, starting at request 1 — sending a request on its own has no token.'],",
+          "  [s => s === '2.', 'b2bUserId', 'b2bUserId is empty. Request 1a fills it — run the collection from request 1, in order.'],",
+          "  [s => ['3.', '4.', '12.', '13.'].includes(s), 'membershipId', 'membershipId is empty. Request 2 found no membership or did not run — run the collection from request 1, in order.'],",
+          "  [s => ['2b.', '6.', '7.', '8.', '9.', '10.', '11.'].includes(s), 'authToken', 'authToken is empty. Requests 2a / 5 fill it — run the collection from request 1, in order.'],",
+          "];",
+          "const problem = rules.find(([applies, key]) => applies(step) && missing(key));",
+          "if (problem) {",
+          "  const msg = problem[2];",
+          "  console.error('PRECONDITION NOT MET — ' + msg);",
+          "  pm.test('PRECONDITION NOT MET — ' + msg, () => { throw new Error(msg); });",
+          "  pm.execution.skipRequest();",
+          "}"
+        ]
+      }
     }
   ]
 }

@@ -1,0 +1,47 @@
+{
+  "run_id": "FIX-2026-09-23-1640",
+  "date": "2026-09-23",
+  "ticket": "VCST-6000",
+  "tracker": "jira",
+  "profile": null,
+  "bug_report": "reports/bugs/open/medium/BUG-configurable-file-upload-validation-gaps.md",
+  "outcome": "STOP",
+  "terminal_gate": "pre-G2 (environment)",
+  "ticket_status_after": "Draft",
+  "ticket_transitioned": false,
+  "repo": "VirtoCommerce/vc-module-x-cart",
+  "repo_kind": "module",
+  "developer_agent": "fullstack-backend (not dispatched)",
+  "rca_anchor": "src/VirtoCommerce.XCart.Core/Validators/ConfigurationItemValidator.cs -> ValidateSectionTypeFile",
+  "cloned": false,
+  "branch": null,
+  "pr_url": null,
+  "gates": {
+    "phase0_preflight": "PASS",
+    "G0_fix_eligibility": "CONDITIONAL PASS - shaped like an auto-fixable defect; needs product-intent confirmation (VirtoOZ unauthenticated this session) and a note that it changes behaviour for existing carts",
+    "G1_repo_route": "PASS (anchor confirmed in source; ConfigurationItemFile.Size already available to the validator)",
+    "write_credential_preflight": "STOP",
+    "toolchain_preflight": "STOP",
+    "G2_reproduce": "not reached",
+    "G3_fix": "not reached",
+    "G4_review": "not reached",
+    "G5_ci": "not reached",
+    "G6_e2e": "not reached",
+    "G7_human_review": "not reached"
+  },
+  "blockers": [
+    "no .NET 10 SDK (vc-module-x-cart targets net10.0; local SDKs 8.0.425 / 9.0.318)",
+    "GITHUB_FIX_BUGS_TOKEN returns 401 Bad credentials on VirtoCommerce/vc-module-x-cart; gh CLI not installed",
+    "VirtoOZ and Context7 connectors unauthenticated - product intent could not be grounded"
+  ],
+  "build_verified_live": {
+    "env": "vcptcore-qa",
+    "storefront": "2.59.0-pr-2485-8b28-8b288e09",
+    "VirtoCommerce.XCart": "3.1036.0",
+    "VirtoCommerce.Xapi": "3.1023.0",
+    "VirtoCommerce.FileExperienceApi": "3.1004.0"
+  },
+  "related_tickets": ["VCST-5995", "VCST-5999", "VCST-5924"],
+  "notes": "Best auto-fix candidate of the three tickets once the toolchain and credentials are in place.",
+  "confidence": "HIGH on the route and the blockers"
+}

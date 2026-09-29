@@ -38,6 +38,7 @@
  *   1  — a cell points at a missing test ID, is malformed, or (--strict) is a GAP
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join, relative } from "path";
 

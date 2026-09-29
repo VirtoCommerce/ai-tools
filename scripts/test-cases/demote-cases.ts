@@ -48,6 +48,7 @@
  *   npx tsx scripts/test-cases/demote-cases.ts [--suite <csv>] [--layer frontend] [--limit N]
  *   npx tsx scripts/test-cases/demote-cases.ts --suite <csv> --apply
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync } from "fs";
 import { resolve, sep } from "path";
 import { fileURLToPath } from "url";

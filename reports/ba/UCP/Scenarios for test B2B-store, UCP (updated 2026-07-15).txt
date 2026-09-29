@@ -1,0 +1,106 @@
+Scenarios for test B2B-store, UCP  —  test data verified live on QA 2026-07-15
+Storefront: https://vcst-qa-storefront.govirto.com  |  Stores: B2B-store, Electronics, QA-STORE, test_del, TS-FULL-001
+
+========================================================================
+VERIFIED PRODUCT REFERENCE (live QA, 2026-07-15)
+========================================================================
+B2B-store — printers (search "printer" returns total_count 34):
+  Xerox WorkCentre 6515/DN ......... id aad7a78a899048d6b21e646887bddaa6  code 565196699  $549.00  qty 18,972
+  Xerox WorkCentre 3335DNI ......... id 4b729fae613046448aaba7c265bb4f2d  code 55557702   $349.00  qty 344
+  Epson WorkForce WF-3640 .......... id 1c2eaea0a391492ca1045a42d598692e  code 553684135  SALE $100.00 / list $199.99
+  Epson Expression ET-2550 ......... id b4e347da31b842ccbf9bd847ac5c1849  code 554664805  $399.99
+  Epson WorkForce WF-2750 .......... id 28a40a7733614e45a22a9f2386b1db3e  code 555929564  $99.99   *** MIN ORDER QTY 2–4 ***
+  Epson WorkForce WF-3620 .......... id 5e40845a11184ca0a882f11d42268207  code 555929578  $106.28  qty 4 only
+  AGENT-TEST-Printer All-in-One .... id f29d33a8-8150-4a26-9c4b-faf526bc3073 code PR-001   $179.99
+  Kodak Instax Mini Link 2 ......... id 87bcc6c8-0425-43bf-b950-6e705456dc26 code ALCE6118 $155.00
+  HP LaserJet Pro M521dn ........... id e310d2bdb58445cfbd5b5d8cb2002d65  code 551879675  $899.00
+  HP Color LaserJet M577z .......... id 7e0d0fe29323433b8c6421dc6bf185cf  code 565567699  $5,337.84
+
+  Under $150: WF-2750 $99.99, WF-3640 $100.00 (sale), WF-3620 $106.28.
+  In $200–$600 band: Xerox 6515 $549, ET-2550 $399.99, Xerox 3335DNI $349.
+
+Electronics — smartphones (all currently price $0.00 / is_buyable=false — no pricelist seeded):
+  Samsung Galaxy S6 SM-G920F 32GB .. id 7c835a9b1c8e4445aa118dae659231c3  HAS variations[]: Gold, White Pearl (per-variant ids)
+  Samsung Galaxy Note 4 SM-N910C ... id ad4ae79ffdbc4c97959139a0c387c72e  HAS variations[]: Bronze, White (per-variant ids)
+  ASUS ZenFone 2 16GB .............. id 8b7b07c165924a879392f4f51a6f7ce0  variations[] EMPTY (16GB/64GB are SEPARATE SKUs, not variants)
+  ASUS ZenFone 2 64GB .............. id f9330eb5ed78427abb4dc4089bc37d9f  variations[] EMPTY
+
+KNOWN DEFECTS (do not re-file as new; see VCST-5339 comment 2026-07-15):
+  * search_products with price_min or price_max -> unhandled, unstructured error (no ucp_error body). Blocks B1, B3.
+  * Electronics smartphones have $0.00 price / is_buyable=false — cannot be added to cart.
+
+========================================================================
+A. Discovery & capabilities   [SKIPPED this run]
+========================================================================
+A1  get_store_capabilities -> profile, capability set, payment handlers, 5 stores.
+A2  Multi-store, no store_id -> agent picks/echoes a store_id (no silent default); cart/checkout without one -> missing_store_id.
+A3  Wrong/unreachable base_url -> structured ucp_error, no raw stack trace.
+
+========================================================================
+B. Product search & retrieval
+========================================================================
+B1  "find a printer under $150" -> search_products(query="printer", store_id="B2B-store", price_max=15000).
+    EXPECTED (corrected): matches are WF-2750 $99.99, WF-3640 $100.00 (sale), WF-3620 $106.28; total_count/has_next_page present.
+    KNOWN DEFECT: price_max currently errors — filter unusable until fixed. Old note "expect WF-2750/3335DNI @ $99.99" was wrong (3335DNI is $349).
+B2  "details of the Xerox 6515" -> get_product(aad7a78a899048d6b21e646887bddaa6, "B2B-store") -> price $549, image_url, availability qty, attributes, variations.
+B3  Price band "$200–$600" -> price_min=20000 & price_max=60000. EXPECTED in-band: Xerox 6515 $549, ET-2550 $399.99, Xerox 3335DNI $349; exclude $99/$100/$106 printers and the $5,337 HP.
+    KNOWN DEFECT: price_min/price_max error today.
+B4  Zero-match query ("flux capacitor") -> empty products, total_count=0, no error.  [verified pass]
+B5  Variant query (corrected product): "Samsung Galaxy S6, what colors?" in Electronics ->
+    search_products/get_product on id 7c835a9b1c8e4445aa118dae659231c3 returns variations[] = Gold + White Pearl with per-variant ids; agent can pick one.
+    NOTE: do NOT use ASUS ZenFone 2 — its variations[] is empty. NOTE: S6 price is $0.00/not buyable, so this validates the variant MODEL only, not add-to-cart.
+B6  Sale-vs-list: get_product on Epson WF-3640 (1c2eaea0a391492ca1045a42d598692e) -> price.amount=10000 while list_price.amount=19999; agent reports $100 sell price.  [verified pass]
+B7  Resilience: a product seeded only in the physical catalog is absent/404 (product_not_found). Proxy check: get_product on a non-existent id returns clean structured product_not_found (404).  [verified pass]
+
+========================================================================
+C. Cart lifecycle
+========================================================================
+C1  "Add the Xerox 6515" -> create_cart(store_id="B2B-store", line_items=[{product_id: aad7a78a..., quantity:1}]) -> cart.id, buyer_id, lines, totals. (No continue_url at create stage — expected.)
+C2  "Add an Epson WF-2750 as a gift" -> update_cart with COMPLETE line_items (not a delta).
+    CORRECTED: WF-2750 has min order qty 2 — add quantity:2 (qty 1 is rejected with recoverable PRODUCT_MIN_MAX_QTY "You can order from 2 to 4 items"). Result: 2 lines.
+C3  "Make it 3 Xerox" -> update_cart (keep Xerox line id, qty=3); quantity + subTotal update.
+C4  "Remove the Epson" -> update_cart (omit line OR id+qty=0); totals recompute.
+C5  "Apply code <live coupon>" -> update_cart(coupons=[…]); discount + promo message in totals.
+    DATA-PREP REQUIRED: no live promotion/coupon confirmed on B2B-store. Seed one before testing.
+C6  Invalid coupon ("BOGUS123") -> rejected with coupon_rejected warning, applied:false; cart stays valid.  [verified pass]
+C7  "What's in my cart?" -> get_cart(cart_id, store_id) -> lines, totals, coupons, promo messages, continue_url.
+C8  Same product twice: add Xerox 6515 in create_cart, then again via update_cart (product_id, no line id) -> ONE consolidated line, summed qty; assert via subTotal (2×$549=$1,098), NOT itemsCount.  [verified pass]
+C9  "Show my carts" -> list_carts(buyer_id, store_id); buyer-scoped; missing buyer_id -> clean invalid_request 400.  [verified pass]
+C10 Async settle: create_cart -> in QA the item is present immediately; if empty, get_cart re-read shows it.
+C11 Change-cart contract: agent reuses cart.id+buyer_id via update_cart, never create_cart as a fallback.  [verified pass]
+
+========================================================================
+D. Checkout, payment handlers & handoff
+========================================================================
+D1  "Check out, ship to 1 Main St, Seattle WA 98101, Jane Doe (jane@example.com)" -> checkout_and_handoff;
+    country normalized US->USA, region WA->region_id WA/"Washington"; returns continue_url (does NOT stop at snapshot).  [verified pass]
+D2  "What can I pay with?" -> get_payment_handlers(checkout_id) -> hosted_checkout: available (native_card/google_pay not_available).  [verified pass]
+D3  Two-step: create_checkout (no continue_url) -> handoff_checkout mints signed ucp_session token + continue_url.  [verified pass]
+D4  "Change the shipping address" -> update_checkout (checkout_updated msg + next_step hint) -> handoff_checkout returns a FRESH continue_url/token.  [verified pass]
+D5  Address with no recipient name -> 400 invalid_request "first_name and last_name are required"; agent asks who the order is for.  [verified pass]
+D6  Delivery address must parse into shipping_address, never notes.  [verified pass]
+D7  Open continue_url in browser -> storefront resolves ucp_session -> restores exact cart -> Virto checkout UI; cart matches. (Datatrans redirect to /checkout/payment is by-design.)  [MANUAL browser check]
+D8  Missing postal_code -> 400 invalid_request "postal_code is required"; agent asks for ZIP.  [verified pass]
+
+========================================================================
+E. Country / region resolution
+========================================================================
+E1  "Ship to Kazakhstan" -> resolve_country("KZ") -> KAZ (region_count 0).  [verified pass]
+E2  "United States, Washington" -> resolve_country("United States") -> USA (51 regions); list_regions("USA") -> WA=Washington.  [verified pass]
+E3  Country with no regions -> list_regions("KAZ") -> empty regions[]; city stays free text.  [verified pass]
+E4  ISO2 into country_code ("US") -> accepted, normalized to USA via platform ICountriesService.  [verified pass]
+E5  list_countries(query="United") -> filter works (5 hits: TZA, ARE, GBR, UMI, USA), respects limit.  [verified pass]
+
+========================================================================
+F. Order tracking   [SKIPPED this run]
+========================================================================
+F1  "I paid — where's my order?" right after handoff -> track_order(cart_id, buyer_id) uses saved ids; doesn't ask for order number.
+F2  "Order #<num>" -> track_order(order_number) -> status, totals, lines, shipment + payment snapshot, tracking fields.
+F3  Track by cart_id+buyer_id (no order number) -> resolves the order created from that cart.
+F4  Track before payment completes -> order_not_found / pending handled gracefully; expired ucp_session not used.
+F5  Unknown/foreign order id -> clean order_not_found; no leakage of another buyer's order.
+
+========================================================================
+G. B2B variant (header-scoped delegation, contract pricing)
+========================================================================
+Confirmed at §0: no OAuth, no PO/invoice handler on this build. Treat PO/invoice/approval as DEFERRED, not FAIL.

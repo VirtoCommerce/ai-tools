@@ -282,6 +282,13 @@ as `{HYPOTHESIS}`).
 | `{OBSERVED}` | confirmed live this session against the deployed build (DOM snapshot / smoke exec) | ✅ |
 | `{HYPOTHESIS}` | a plausible-bug guess with **no** traceable source | ❌ — phrase as "verify whether…"; **cannot be promoted** |
 
+**Before you grade a line `{HYPOTHESIS}`, ask the observed-behaviour base** — `mcp__kb__kb_ask`, with
+the coordinate in the question. `{HYPOTHESIS}` means *no traceable source*, and an entry somebody
+recorded on a named deployment **is** one: it turns the line into `{OBSERVED}` with a citation instead
+of a guess that cannot be promoted. The base does not make a line `{DOC}` — it is what was seen, not
+what is specified — and a line you then establish live yourself is a `kb_capture`
+([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*).
+
 Only `{SPEC}`/`{BL}`/`{DOC}`/`{OBSERVED}` may be phrased as hard assertions. A `{HYPOTHESIS}` line
 must be phrased as a question to verify (`[DOM] verify whether an inline error appears on invalid CVV`),
 never as a fact — and the case cannot leave `Draft` until it is grounded (see the `Automation_Status`

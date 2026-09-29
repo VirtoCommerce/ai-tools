@@ -21,6 +21,7 @@
  * failure) · 2 when neither source can be read.
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync } from "node:fs";
 
 import { loadManifest } from "../../ci/lib/suite-manifest.js";

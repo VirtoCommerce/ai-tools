@@ -28,6 +28,7 @@
  *      key, and carries no GUID (DV-021): rep aliases CSV-backed to sales-rep/document-reps, document
  *      aliases inline with fileName/category/contentType.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

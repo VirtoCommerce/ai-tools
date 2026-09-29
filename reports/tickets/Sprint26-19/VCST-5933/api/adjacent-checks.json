@@ -1,0 +1,55 @@
+{
+ "at": "2026-09-23T14:33:24.676Z",
+ "otherOrder": "AGENT-TEST-SRO-TZ-VCST-0300",
+ "ownOrder": null,
+ "checks": [
+  {
+   "check": "PRE  organizationOrders(locked-org) while UNLOCKED",
+   "result": "totalCount 96"
+  },
+  {
+   "check": "PRE  order(id: other member, locked-org)",
+   "result": "{\"order\":{\"id\":\"cf7d1490-8102-4570-9d7a-17f954e43c2c\",\"number\":\"AGENT-TEST-SRO-TZ-VCST-0300\"}}"
+  },
+  {
+   "check": "PRE  orders(userId: me)",
+   "result": "totalCount 0"
+  },
+  {
+   "check": "LOCK read-back isCurrentlyLocked",
+   "result": "true"
+  },
+  {
+   "check": "LOCKED organizationOrders(locked-org)",
+   "result": "ERR Forbidden"
+  },
+  {
+   "check": "LOCKED order(id: other member order in locked-org)",
+   "result": "ERR Forbidden"
+  },
+  {
+   "check": "LOCKED order(id: own order in locked-org)",
+   "result": "N/A — buyer owns no order in that org"
+  },
+  {
+   "check": "LOCKED orders(userId: me)",
+   "result": "totalCount 0"
+  },
+  {
+   "check": "LOCKED organizationOrders(unlocked-org)",
+   "result": "totalCount 15"
+  },
+  {
+   "check": "UNLOCK read-back isCurrentlyLocked",
+   "result": "false"
+  },
+  {
+   "check": "POST organizationOrders(locked-org) after UNLOCK",
+   "result": "totalCount 96"
+  },
+  {
+   "check": "POST order(id: other member) after UNLOCK",
+   "result": "{\"order\":{\"id\":\"cf7d1490-8102-4570-9d7a-17f954e43c2c\",\"number\":\"AGENT-TEST-SRO-TZ-VCST-0300\"}}"
+  }
+ ]
+}

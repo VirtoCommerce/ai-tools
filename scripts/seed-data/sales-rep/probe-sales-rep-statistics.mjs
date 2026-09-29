@@ -12,6 +12,7 @@
  *
  * Usage:  TEST_ENV=vcptcore node scripts/seed-data/sales-rep/probe-sales-rep-statistics.mjs [--rep <rep_key>] [--json]
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { assertSafeTarget, log, loadCsv, BACK_URL, STORE_ID } from '../../lib/seed-common.mjs';
 import { buildStatisticsWindows, COMPARISON_AXES } from './sales-rep-stats-specs.mjs';
 

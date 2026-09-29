@@ -27,14 +27,12 @@ Before any analysis, read `CLAUDE.md` (root) and `.claude/rules/agents.md` to un
 Read the prior art directly: `reports/ba/<domain folder>/` (prior BA analysis), `reports/ba/test-models/` (prior test models), `.claude/knowledge/domain/<domain>.md` (domain knowledge), and `reports/tickets/**/summary.json` (tickets already tested) for your target's domain, and READ the prior BA
 analysis, the prior test model and the domain-knowledge docs it names. Report what you read by path (and
 say so when a domain has none), separate what prior analysis already settled from what is new here, and
-amend an existing document rather than writing a second one beside it. Superseded framing: this used to
-read *"skim `reports/ba/` to avoid duplicating past work"*, which made 47 existing deliverables a dedup
-concern rather than an input.
+amend an existing document rather than writing a second one beside it.
 
 ## Knowledge Files (read at runtime, on-demand)
 
 | File | When to consult |
-|------|-----------------|
+|---|---|
 | `.claude/knowledge/oracles/business-logic.md` | Always before drafting `bl_proposals` — extract existing BL-* IDs, reuse domain codes (PRICE, CART, CHK, ORD, AUTH, B2B, CAT, SRCH, SHIP, BOPIS, NOTIF, IMPEX, SEO, CROSS), follow entry schema. **Do not modify** — proposals only. |
 | `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | When flagging pain points or risks — cross-reference ECL-* IDs (13 generic + 7 VC-specific categories). |
 | `.claude/knowledge/execution/module-suite-map.md` | When mapping VC modules → existing test suites (avoid recommending coverage that already exists in `regression/suites/`). |
@@ -46,11 +44,11 @@ concern rather than an input.
 | `.claude/knowledge/domain/store-settings.md` | When analyzing store config / multi-store behavior. |
 | `.claude/knowledge/automation/storefront-config-flags.md` | When `$cfg.*` feature flags are observed in `vc-frontend` UI — flag inventory snapshot from `settings_data.json`. |
 | `.claude/knowledge/api/platform-patterns.md` | When analyzing index lag / cache / desync behaviors. |
-| `.claude/knowledge/api/graphql-schema.md` | When flows hit GraphQL — authoritative xAPI query/mutation/input/return-type names. **Never judge its staleness yourself.** Its header carries the introspection date; a caller that refreshed it hands you the rev (`/qa-test` `1b` item 2d, `/qa-test-lifecycle` Pre-Flight 4). **No rev in your brief ⇒ the snapshot is of UNKNOWN age**: run `npm run schema:refresh` (writes this file only) if you have BACK_URL, else report every field name you took from it as unverified rather than as grounding. "Refresh if it looks stale" was the old instruction and is not actionable — nothing in the file tells you whether the live schema has moved since. Spec: `.claude/skills/qa-test/contract-refresh.md`. |
+| `.claude/knowledge/api/graphql-schema.md` | When flows hit GraphQL — authoritative xAPI query/mutation/input/return-type names. **Never judge its staleness yourself.** Its header carries the introspection date; a caller that refreshed it hands you the rev (`/qa-test` `1b` item 2d, `/qa-test-lifecycle` Pre-Flight 4). **No rev in your brief ⇒ the snapshot is of UNKNOWN age**: run `npm run schema:refresh` (writes this file only) if you have BACK_URL, else report every field name you took from it as unverified rather than as grounding. Spec: `.claude/skills/qa-test/contract-refresh.md`. |
 | `.claude/knowledge/api/graphql-test-cases-runner.md` | When recommending GraphQL test coverage in `pain_points` / `test_recommendations` — use this format's tag vocabulary so downstream `test-management-specialist` can hand it straight to `scripts/graphql/graphql-runner.ts`. |
 | `.claude/knowledge/api/api-auth.md` | When analyzing auth/RBAC flows — Platform OAuth2 token endpoint, credentials, headers. |
 | `test-data/README.md` + `test-data/aliases.json` | Whenever you reference catalogs, products, orgs, contacts, payment cards, addresses, coupons, etc. Use `@td(ALIAS.field)` (e.g. `@td(STORE_PRIMARY.id)`, `@td(CYBERSOURCE_VISA.number)`) — NEVER hardcode SKUs, GUIDs, prices, or emails in pain points / BL proposals / test_recommendations. The alias registry is the source-of-truth of what test data is already seeded; treat it as inventory before recommending "we need fixture X". |
-| `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` | When analyzing GraphQL/xAPI flows — schema-validated golden-set fixtures (63 ops). Each entry lists `path`, `category`, `role`, `requiredVars`, `usedBy` (suite IDs). When proposing GraphQL coverage gaps, first check whether a fixture already exists; if it does, reference it by name rather than asking the QA team to author a new query. |
+| `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` | When analyzing GraphQL/xAPI flows — schema-validated golden-set fixtures. Each entry lists `path`, `category`, `role`, `requiredVars`, `usedBy` (suite IDs). When proposing GraphQL coverage gaps, first check whether a fixture already exists; if it does, reference it by name rather than asking the QA team to author a new query. |
 
 ---
 
@@ -61,7 +59,7 @@ Explore the repo to understand:
 - **Module inventory** — list all VC modules present (look for `module.manifest`, `*.Web`, `*.Core`, `*.Data` projects)
 - **Custom extensions** — identify customizations vs. standard VC modules
 - **Frontend** — assume `vc-frontend` (Vue 3 + TypeScript + Vite) unless evidence shows custom replacement. Storefront.NET is retired and should not be reported as the active stack.
-- **Configuration** — review `appsettings.json` (platform), `vc-frontend/config/*.json` and `themes/*/settings_data.json` (storefront), QA's `.env` (33 vars; see `npm run env:check`).
+- **Configuration** — review `appsettings.json` (platform), `vc-frontend/config/*.json` and `themes/*/settings_data.json` (storefront), QA's `.env` (`npm run env:check`).
 - **Dependencies** — check `package.json`, `*.csproj` for versions and third-party integrations
 
 Use these file patterns to locate key artifacts:
@@ -112,10 +110,10 @@ org:VirtoCommerce repo:VirtoCommerce/vc-module-{name} "IDomainEvent"
 org:VirtoCommerce repo:VirtoCommerce/vc-module-{name} "IHandler"
 ```
 
-**Standard VC module repos to check** (the canonical list lives in memory `reference_vc_module_repos.md`; below is the fast lookup):
+**Standard VC module repos to check**:
 
 | Module | Repo |
-|--------|------|
+|---|---|
 | Platform | `VirtoCommerce/vc-platform` |
 | Catalog | `VirtoCommerce/vc-module-catalog` |
 | Orders | `VirtoCommerce/vc-module-orders` |
@@ -158,6 +156,7 @@ When analyzing a module:
 
 Use **`playwright-firefox`** browser to explore the live storefront and map actual user flows, navigation structure, and UI state. This provides ground-truth data that code analysis alone cannot.
 
+**KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 **Storefront exploration checklist:**
 1. **Navigation & Information Architecture**
    - Browse the main menu, category tree, footer links
@@ -260,8 +259,7 @@ Produce, for the feature under analysis:
    entitlement: what cancels, refunds, expires or revokes it? Search the module for the reverse
    operation (`cancel`/`revert`/`refund`/`rollback`/`unearn`/`deduct`) and for a status gate on the
    forward path. **"No reversal path exists" is a first-class finding**, worth more than any number of
-   render observations — and it is invisible unless someone asks. On Loyalty Missions this was found by
-   an exploratory session run *after* 119 cases had been written, not by the 119 cases.
+   render observations — and it is invisible unless someone asks.
 5. **The guard the sibling path has and this one does not.** When a module gains a second path that does
    the same class of work as an existing one (a second accrual path, a second pricing path, a second
    permission check), diff them: a guard present in one and absent in the other is a defect hypothesis
@@ -270,9 +268,7 @@ Produce, for the feature under analysis:
    the journey always; a `sequenceDiagram` when the chain crosses layers or is async; a
    `stateDiagram-v2` when the entity has a lifecycle or an effect is expected to reverse.
 
-**Do not skip a link because it is "obvious".** The obvious links are the ones nobody covers: on Loyalty
-Missions the two ends — *an order actually advances progress* and *the granted points are spendable* —
-were exactly the untested ones, while the middle rendered fine in 71 cases.
+**Do not skip a link because it is "obvious"** — the obvious links (usually the chain's two ends) are the ones nobody covers.
 
 ### 6. Pain Point Detection
 Look for these anti-patterns — from **both** code analysis AND live UI exploration:
@@ -294,7 +290,7 @@ Look for these anti-patterns — from **both** code analysis AND live UI explora
 - Missing error handling in API calls
 
 ### 7. VC Docs Cross-Reference
-Use **VirtoOZ MCP** (primary — pick the topic-scoped tool that matches the question: `PlatformDeveloperGuide`, `StorefrontDeveloperGuide`, `PlatformUserGuide`, `StorefrontUserGuide`, `MarketplaceUserGuide`/`MarketplaceDeveloperGuide`, `DeploymentGuide`, `B2BExperts`, `*SourceCode`, or general `VirtoCommerce`). Fall back to **Context7 MCP** (`resolve-library-id` → `query-docs` for `/virtocommerce/vc-docs`) when VirtoOZ returns thin results. Fetch relevant sections from `https://docs.virtocommerce.org` to:
+Use **VirtoOZ MCP** (primary — pick the topic-scoped tool that matches the question: `PlatformDeveloperGuide`, `StorefrontDeveloperGuide`, `PlatformUserGuide`, `StorefrontUserGuide`, `MarketplaceUserGuide`/`MarketplaceDeveloperGuide`, `DeploymentGuide`, `B2BExperts`, `*SourceCode`, or general `VirtoCommerce`). Fallback: **Context7** `/virtocommerce/vc-docs` if VirtoOZ is thin. Fetch relevant sections from `https://docs.virtocommerce.org` to:
 - Verify the project is using best practices for detected modules
 - Identify features available in the platform that aren't being used
 - Flag deprecated APIs or patterns
@@ -354,13 +350,13 @@ Everything in this section applies to both axes. Three `ecl`-specific rules you 
 
 **You never edit a CSV** on either axis. Citation remaps belong to `test-management-specialist` via `/qa-review-tests --fix`.
 
-- **Parallel batch (default).** `/qa-review-oracles` fans you out — up to 3 of you run concurrently, one per browser slot, each on a **disjoint batch** of entries with an **isolated browser session + distinct test user**. In this mode you **do your own live observation on your assigned slot** (do not sub-delegate to `qa-testing-expert` — that would exceed the 3-browser cap), and you **return each verdict + evidence tuple + the proposed edit; you do NOT write the oracle yourself.** The orchestrator applies all edits serially (single writer) to avoid concurrent-write corruption.
+- **Parallel batch (default).** `/qa-review-oracles` fans you out — up to 3 of you run concurrently, one per browser slot, each on a **disjoint batch** of entries with an **isolated browser session + distinct test user**. In this mode you **do your own live observation on your assigned slot** (never sub-delegate to `qa-testing-expert` — it breaks the 3-browser cap), and you **return each verdict + evidence tuple + the proposed edit; you do NOT write the oracle yourself.** The orchestrator applies all edits serially (single writer).
 - **Three axes (all three required to confirm):** **docs** (`/vc-docs` VirtoOZ — quote + reference), **source** (GitHub MCP `search_code`/`get_file_contents` on `org:VirtoCommerce`, read-only — a `file:line` anchor), **live** (your own playwright slot — an `{OBSERVED}` result + screenshot, REAL-USER rule, no `browser_evaluate` bypass).
 - **Verdict → proposed action (applied by the orchestrator, not you):**
   - **CONFIRMED / DRIFT / MISSING** with unanimous, agreeing evidence → propose a body-only edit: **entry body only** (never the Severity-Tags meta table), stamp `- **Amended:** <date> (auto-applied, triangulated — BL-AUDIT-<date>)` + refresh `- **Source:**` (`file:line` + docs ref); MISSING gets the next free `BL-<DOMAIN>-<NNN>` (the orchestrator assigns the final number at apply time to avoid parallel ID collisions). Keep every entry **env-agnostic** (no env names/URLs/slugs).
   - **CONTRADICTORY / UNGROUNDED / STALE-RETIRE** → **not confirmed**: flag for staging to `reports/ba/bl-proposals-{date}.md` as a `PROPOSED-BL-*` draft (or stale/retire entry) for a human. This is the definition of "not confirmed", not a human gate on confirmed items.
 - **Opportunistic extraction during `/ba-analyze` (no triangulation run)** still produces `PROPOSED-BL-*` drafts only — it never auto-applies, because a single-axis observation is by definition not confirmed. Auto-apply happens exclusively through the `/qa-review-oracles` three-axis path.
-- **Re-run the axis's gate before returning.** `npm run bl:lint` / `npm run ecl:lint` is the acceptance check for your own edits — report its before/after High count. A run that raises the count has broken something. Note that a green lint proves each citation **exists**, never that it is **right**: a case citing a real-but-wrong entry passes every gate (nine loyalty cases cited `ECL-13.2` "Subscription & Recurring Billing" meaning `ECL-13.3` "Loyalty & Points"). Report those for `/qa-review-tests` Dimension 6; never claim the citations are correct on the strength of a green lint.
+- **Re-run the axis's gate before returning.** `npm run bl:lint` / `npm run ecl:lint` is the acceptance check for your own edits — report its before/after High count. A run that raises the count has broken something. Note that a green lint proves each citation **exists**, never that it is **right**: a case citing a real-but-wrong entry passes every gate. Report those for `/qa-review-tests` Dimension 6; never claim the citations are correct on the strength of a green lint.
 
 ---
 

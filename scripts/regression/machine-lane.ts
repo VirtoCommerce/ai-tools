@@ -35,6 +35,7 @@
  * Exit codes: 0 every case reported a verdict · 1 at least one case FAILED (a real defect
  * signal for the caller) · 2 the lanes plan is missing.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { spawnSync } from "child_process";
 import { existsSync, readFileSync, writeFileSync, appendFileSync, mkdirSync } from "fs";
 import { join } from "path";
@@ -65,6 +66,15 @@ interface LanesFile {
 interface CaseRow {
   id: string;
   status: "PASS" | "FAIL" | "BLOCKED";
+  /**
+   * The lane that produced this verdict, stamped on EVERY row. `tc:promote` holds a case at
+   * `Draft` with PR-004 when it cannot attribute the verdict to an executing lane, and it derives
+   * a missing lane from the envelope's `browser` field only — which a machine envelope does not
+   * carry. So an unstamped machine row read as "lane not recorded" and 9 green cases were held
+   * (measured 2026-09-23, REG-2026-09-23-M7, suite 102). `suite-results-merge.ts` already stamps
+   * every row it materialises; this makes the machine lane symmetric with it.
+   */
+  lane: "machine";
   title?: string;
   failedAssertion?: string;
   evidenceFile?: string;
@@ -158,13 +168,14 @@ function main(): void {
     const code = proc.status;
 
     if (code === 0) {
-      cases.push({ id, status: "PASS", evidenceFile, durationMs });
+      cases.push({ id, lane: "machine", status: "PASS", evidenceFile, durationMs });
       console.log(`  PASS    ${id} (${durationMs}ms)`);
       continue;
     }
     if (code === 1) {
       cases.push({
         id,
+        lane: "machine" as const,
         status: "FAIL",
         evidenceFile,
         durationMs,
@@ -188,6 +199,7 @@ function main(): void {
     // 3, a signal, or a spawn failure: a runtime problem, not a claim about the case.
     cases.push({
       id,
+      lane: "machine" as const,
       status: "BLOCKED",
       evidenceFile,
       durationMs,

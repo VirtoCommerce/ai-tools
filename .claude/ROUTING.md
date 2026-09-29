@@ -24,6 +24,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|frontend\|backend\|IDs] [--cases <tier>] [--also-ids <ids>] [--no-plan]` | Command |
 | **Triage a finished regression run's failures** | `/qa-triage-results [RUN_ID\|latest] [--fix] [--verify]` | Command |
 | **Test a ticket / feature / PR** | `/qa-test <ticket-key> \| feature \| PR #N \| --epic <KEY> [--iterate]` | Command |
+| **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--dry-run]` | Command |
 | **Run an exploratory session** | `/qa-exploratory [sprint\|sprint:XX-YY\|checkout\|catalog\|B2B\|mobile\|new]` | Command |
 | **File or investigate a bug** | `/qa-bug description \| <ticket-key> \| screenshot` | Command |
 | **Autonomously fix a filed bug** | `/qa-fix VCST-XXXX` | Command |
@@ -44,10 +45,14 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Refresh the storefront sitemap knowledge file** | `/qa-sitemap [--check] [--no-browser]` | Command |
 | **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
+| **Review / heal / improve a skill, command or agent prompt** | `/prompt-review <name \| path \| changed \| all> [--fix] [--improve] [--dry-run]` | Skill |
 | **Run business analysis** | `/ba-analyze [full\|flows\|api\|docs\|stories\|ui\|module <name>]` | Command |
 | **Generate or review user stories** | `/ba-analyze stories <feature> \| stories --review VCST-XXXX` | Command |
-| **Get a test checklist for a domain** | `/qa-checklist domain \| feature \| new <domain> \| admin <module>` | Skill |
+| **Get a test checklist for a domain** | `/qa-checklist domain \| feature \| VCST-XXXX [--from-model] \| new <domain> \| admin <module>` | Skill |
 | **Generate test cases** | `/qa-test-cases-generator VCST-XXXX \| domain \| suite ID \| migrate <suite>` | Skill |
+| **Build a ticket's test model (fault model) on its own** | `/qa-test-model <ticket-key> [--context <file>]` | Skill |
+| **Model how a domain behaves (behaviour graph, stable ids, evidence)** | `/qa-test-mind-map build \| update \| audit <domain-slug>` | Skill |
+| **Declare the data state each behaviour needs / seed one profile** | `/qa-test-data-model build \| update \| audit <domain-slug>` · `/qa-seed-data --profile <id>` | Skill |
 | **Design the test-data combinations a feature needs** | `/qa-generate-data <feature \| flow \| VCST-XXXX>` | Skill |
 | **Analyze test coverage gaps** | `/qa-coverage-gap analyze \| generate \| validate \| full \| domain <name> \| suite <ID>` | Skill |
 | **Review test-case quality / triangulate staleness** | `/qa-review-tests suite <ID> \| file <path> \| diff \| --triangulate \| --fix` | Skill |
@@ -66,7 +71,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-triage-results` — Classify a completed run's FAIL/BLOCKED/SKIPPED into real bug vs test defect vs flaky/env; live-verify, route test fixes, draft bugs. Never files a ticket, never triggers `/qa-fix`
 - `/qa-exploratory` — Scenario-discovery session. `sprint` runs the plan's §5.3 charters (≤5, in series). Lane: any free browser slot (all 3 click since 2026-09-08)
 - `/qa-bug` — Reproduce, document, optionally file
-- `/qa-fix` — Autonomous fix of an already-filed bug: G0 triage → G1 single-repo route → reproduce-as-test → minimal fix → review → PR → **STOP for human review** (never auto-merges). Interactive twin of `ci/run-fix-cycle.ts`
+- `/qa-fix` — Autonomous fix of an already-filed bug: G0 triage → G1 single-repo route → reproduce-as-test → minimal fix → review → PR → **STOP for human review** (never auto-merges)
 - `/qa-verify-fix` — Reproduce the original bug, confirm the fix, regression checks, transition the ticket (stops at TESTED)
 - `/qa-deploy-pr` — Gather every fresh CI prerelease artifact a change produced and deploy them together in ONE `vc-deploy-dev` manifest update. Unblocks `/qa-test PR #N` and `/qa-verify-fix`
 - `/qa-bundle-check` → `/qa-hotfix` → `/qa-hotfix-check` — the three-link hotfix chain: find bundles missing a shipped patch → cherry-pick onto `support/<X.Y>` and release → deliver onto the deployed envs and close the ticket
@@ -85,10 +90,13 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-risk` — Risk-based prioritization (5×5 matrix)
 - `/qa-sbtm` — SBTM charters, heuristics, tours, debrief, sprint charter selection
 - `/qa-coverage-gap` — Autonomous gap analysis + generation (4-cycle pipeline)
+- `/qa-test-mind-map` — The behaviour graph of a domain (`domain/<name>.mind-map.json`): behaviours, branches, states, data needs, evidence, stable ids. Cases link to it with `Behavior:` stamps; `npm run models:check -- --json` derives coverage and the suspect-case list
 - `/qa-review-tests` — 11-dimension quality review; `--triangulate` (Dim 11) checks whether a provenance tag is *true*, not merely present
-- `/qa-test` (skill) — the methodology behind the `/qa-test` command: `test-model.md`, `authoring.md`, `close-out.md`, `modes.md`
+- `/qa-test` (skill) — the methodology behind the `/qa-test` command: `authoring.md`, `close-out.md`, `modes.md`
+- `/qa-test-model` — a ticket's Test Model (fault model): the method, the gate and the prior-model rules; `/qa-test` FULL Step 1e invokes it
 
 ### Test Data (Skills)
+- `/qa-test-data-model` — The data STATE each mind-map behaviour requires, as profiles pointing at existing seeders + `@td()` aliases; `npm run models:check -- --plan <profile>` is the seed order
 - `/qa-generate-data` — Design the cross-entity combinations a feature needs, reuse fixtures that already cover a case, author only the gaps + `@td()` aliases (offline)
 - `/qa-seed-data` — Seed / teardown via repo seed scripts (`npm run seed*`) or Postman MCP
 - `/qa-postman` — Postman MCP collections: create, configure, verify, export (Newman/Postman CLI executes, not MCP)
@@ -109,6 +117,12 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-perf-measure`, `/qa-monitoring`, `/qa-triage-results`, `/qa-deploy-pr`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-bundle-check`, `/qa-local-env` — the skills backing the same-named commands above
 
 ### Development (Skills — used by the `developers/` team in `/qa-fix`)
+
+> **These six skills and the four developer agents live ONLY in `plugins/vc-fix/`.** The `.claude/` copies were
+> removed 2026-09-25 for the same reason the bug-lifecycle commands were on 2026-09-08 (see the note at the top of
+> this file): they had silently forked, and `/qa-fix` — the only caller — is plugin-only. They appear in the `/` menu
+> once `vc-fix@vc-tools` is installed.
+
 - `/dotnet-unit-test` — Reproduce a backend bug as a failing xUnit test (red → green)
 - `/dotnet-fix` — Minimal, idiomatic .NET 10 fix in one VC module
 - `/angular-admin` — Fix a module's Admin SPA (AngularJS) UI; scratch harness for logic, visual render harness + numeric geometry for layout/CSS
@@ -175,7 +189,7 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 |---|---|
 | Which **flow** a tracker item takes (type × status) | `.claude/knowledge/execution/ticket-routing.md` |
 | The bug auto-fix **gate ladder** G0–G7, no-auto-merge, client-code containment | `.claude/knowledge/execution/quality-gates.md` |
-| Which **repo / tracker / host** a fix delivers to | `ci/lib/repo-router.ts` + `ci/config/fix-repos.json` (+ `project-profile.json`) |
+| Which **repo / tracker / host** a fix delivers to | `plugins/vc-fix/skills/qa-fix-routing/repo-router.ts` + `plugins/vc-fix/skills/qa-fix-routing/fix-repos.json` (+ `project-profile.json`) |
 | Tracker/host-agnostic ops (resolve / comment / transition / PR) | `.claude/knowledge/execution/tracker-ops.md` |
 | Which **suites** a change needs | `npm run regression:select` (`scripts/lib/suite-selection.ts`) |
 | Which **lane** a case runs on | `scripts/lib/case-classifier.ts` (via `npm run suites:lanes`) |
@@ -213,15 +227,18 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 
 > Moved verbatim from `.claude/rules/agents.md` on 2026-09-08 (PR 2 of the agentic-system audit): these rules bind only when a task touches the named file, so they load on demand.
 
-**Shared knowledge bases** — `ls .claude/knowledge/` for the current inventory; each file opens with its own scope. Grouped by directory: `api/` (api-auth, graphiql-interaction, graphql-schema, graphql-test-cases-runner, order-creation-matrix, platform-patterns) · `architecture/` (vc-frontend-architecture, vc-module-architecture) · `automation/` (browser-quirks, storefront-config-flags, storefront-selectors) · `ba/` (virto-doc-style) · `diagnostics/` (skill-expectations) · `domain/` (catalog, mobile-navigation, products, release-ledger, sitemap, store-settings, white-labeling) · `execution/` (debugging-signals, live-discovery, module-suite-map, performance-thresholds, test-data-authoring, test-execution-preflight, test-runner-tags, ticket-routing, tracker-ops) · `oracles/` (business-logic, critical-ui-scope, e-commerce-edge-cases-library, vc-bug-catalog).
+**Shared knowledge bases** — the file-level roster lives in [`.claude/knowledge/README.md`](knowledge/README.md) §File index, GENERATED by `npm run knowledge:index` and gated by `knowledge:index:check`; each row is the file's own opening line. A hand-written copy of that roster stood here until 2026-09-25 and had drifted to 38 of 60 files — it listed no `regression-*.md`, no `quality-gates.md`, no `reports-policy.md`, no `when-to-write-a-test.md` and none of the eight domain maps added since it was typed. Nothing caught it: `DOC-003` ratchets DANGLING paths, so a roster is only ever caught SHRINKING, never lagging, and a reader who trusts a short list concludes the missing file does not exist. The rules below are what this section keeps, because no generator can derive them.
+
+**And one knowledge base that is NOT a file in this repo** — `kb`, the shared record of what the platform was **OBSERVED** to do, held in the public `VirtoCommerce/vc-knowledge` and reached with `kb_ask` (MCP) or `npm run kb -- ask "<q>"` (no server needed). It is deliberately not in the list above, and the difference decides which one you reach for: **the files above say what the platform SHOULD do** — oracles, domain maps, contracts, all of them editable here — **`kb` says what it WAS SEEN doing**, on a named deployment, with a trust count and a dispute count. So it belongs *between* this repo's knowledge and a live check: it is the banked result of the live check somebody already ran. Writing to it is `kb_capture` / `kb_confirm` / `kb_dispute`, never an edit — there is no file here to open. Rule and question shape: [`../CLAUDE.md`](../CLAUDE.md) §Essential Rules → *Product context*.
 
 **Non-obvious read-before-you-write rules** (these do NOT follow from the filenames):
 - `api/graphql-schema.md` — MUST be consulted before writing or reviewing any GraphQL query/mutation (field names drift; verify against live introspection). **Refreshing it is the CALLER's step, never the reading agent's judgment** — `/qa-test` `1b` item 2d and `/qa-test-lifecycle` Pre-Flight 4 run `npm run schema:refresh` and pass the rev into the brief; an agent handed no rev must treat the snapshot as UNKNOWN age rather than deciding whether it "looks stale", which the file gives it no basis to do. **`schema:refresh` writes this doc ONLY** — the runner's `scripts/.graphql-schema.cache.json` is refreshed by `npm run graphql:fixtures:validate:refresh`, and because `loadSchemaCache` has no age check, the plain `graphql:fixtures:validate` passes clean against an arbitrarily old (and possibly other-env) cache. Single source of truth: `.claude/skills/qa-test/contract-refresh.md`.
 - `api/graphql-test-cases-runner.md` — the **canonical authoring contract** for runner-native GraphQL test cases (`scripts/graphql/graphql-runner.ts`): full tag grammar, predicate shapes, `@td()` resolver, capture chaining. Every agent that writes/reviews/migrates GraphQL cases MUST read it first; gold-standard reference suite: `regression/suites/Backend/graphql/050i-graphql-configurations.csv`.
 - `execution/live-discovery.md` — read before authoring any test naming a product / address / cart / coupon entity that may drift between seeds.
-- **`domain/<domain>.md` — the DOMAIN MAP. Read it FIRST** when analysing or designing against a surface: actors, value chain, surface inventory per layer, where the layers disagree, and the shape of existing coverage. Feature-scoped and persistent, unlike a per-ticket model. **It never grounds an assertion as `{DOC}`** — pointer index plus surface inventory only. Absent for most domains; build one with `/qa-domain-map <slug>`.
+- **`domain/<domain>.md` — the DOMAIN MAP. Read it FIRST** when analysing or designing against a surface: actors, value chain, surface inventory per layer, where the layers disagree, and the shape of existing coverage. Feature-scoped and persistent, unlike a per-ticket model. **It never grounds an assertion as `{DOC}`** — pointer index plus surface inventory only. Absent for most domains; build one with `/qa-domain-map <slug>`. Its machine-readable companion, where one exists, is `domain/<name>.mind-map.json` (`/qa-test-mind-map`) — also never an oracle.
 - **Prior art per ticket** — read the sources directly after the map: `reports/ba/<domain folder>/` (prior BA analysis), `reports/ba/test-models/` (prior test models — the same ticket's is amended, another ticket's has its Part 0 carried forward into a new file, never re-derived), `.claude/knowledge/domain/<domain>.md`, and `reports/tickets/**/summary.json` (tickets already tested). Prior art is a **hypothesis** to triangulate against the release ledger + live, never a baseline; it carries no behaviour and can never ground a `{DOC}` claim. (The generated `functionality-map.md` index that fronted these was removed 2026-09-08.)
 - `domain/release-ledger.md` — MUST be consulted before **designing a test for**, or **triaging a failure in**, a component the ledger records a release for since the env's deployed version. It is the only source in the repo that answers "what shipped recently": VirtoOZ's release corpus stops at Platform 3.917.1 while production is past 3.1050, so the docs MCP cannot see roughly nine months of releases. Generated — `npm run releases:refresh`; never hand-edit. **Three rules travel with it, and skipping any one of them produces a confidently wrong verdict:** (1) it says what is **released upstream**, never what is **deployed on the env under test** — a capability it records that the live `/api/platform/modules` probe does not carry is `NOT_DEPLOYED`, never a `FAIL` and never a bug; (2) it is an editorial monthly digest that **declares itself non-exhaustive**, so presence is evidence but absence is not — a miss never licenses "nothing changed"; (3) it carries **no behaviour** (no ACs, field lists, or expected-value literals), so it can raise a *hypothesis* about a failure but can never settle a verdict, and it can never ground an assertion as `{DOC}`.
+- `domain/store-settings.md` §The storefront capability manifest — read before concluding a storefront feature is **missing, disabled or undeployed**. `npm run store:caps` replays vc-frontend’s own anonymous app-boot query (`InitializeApplication`) and prints which modules the STOREFRONT can see, at which version, with their public flags (`--settings`). This is a THIRD vantage, not a cheaper `/api/platform/modules`: a module installed and healthy at the platform level can expose no capability the storefront sees, and the platform manifest calls that env green while the button never renders. No token, so any lane can pre-flight it. Read the probe’s mode line first — with `XAPI.Security.ReturnModuleVersion` OFF, versions blank out and settings-less modules vanish, and absence stops being evidence.
 - `oracles/critical-ui-scope.md` — **currently UNCOVERED** (its only covering suite `048b` was removed 2026-07-25, so every applicable cell is `GAP`); it is the scope definition + `/qa-design` audit reference, not a regression gate.
 - `oracles/business-logic.md` — **do not hand an agent this path when you know the domain.** `npm run bl:extract -- --domain <cart|pricing|auth|…>` slices the invariants verbatim (ids, bodies and severity tags unchanged) so a brief can carry them as DATA: measured, `--domain cart` is 15 of 216 invariants, 7.5% of the file, ~7.2K tokens against ~96K. `npm run bl:extract:list` shows the domains; `--id`, `--severity` and `--json` narrow further. An agent that receives an extract must not re-read the oracle (`knowledge/agents/qa/shared-instructions.md` §Business Logic Reference), and an extract declares itself a subset so a filtered-out domain is never read as "no rule applies".
 - `oracles/e-commerce-edge-cases-library.md` — **same rule as `business-logic.md` above.** `npm run ecl:extract -- --domain <d>` (or `--chapter <n>`) slices the `ECL-N.M` sections verbatim, whole pattern table included; `npm run ecl:extract:list` shows the chapters. `--domain` matches chapter AND section titles deliberately, so a payment brief still carries chapter 14's VC-specific payment section. When you are packing a brief, extract BOTH oracles or neither — one extract beside one path makes "the brief already carries it" ambiguous ([`skills/qa-test/dispatch-pack.md`](skills/qa-test/dispatch-pack.md)).

@@ -58,14 +58,14 @@ Produce a real audit, not a generic "audit all six" fallback.
 
 2. **Resolve applicable invariants heuristically** — derived from component characteristics:
 
-   | Invariant | Applicability rule |
-   |-----------|--------------------|
-   | BL-UI-001 CLS | Skipped — page-level metric, not a single-component concern. |
-   | BL-UI-002 spacing-grid | ON by default (almost every component has padding/margin/gap). |
-   | BL-UI-003 state-shift | ON if component has `:hover`, `v-if`, `transition`, or open/active/expanded state in its source. |
-   | BL-UI-004 overflow | ON if component renders variable-length content (slots, string props, lists, images). |
-   | BL-UI-005 alignment | ON if ≥ 2 horizontally-arranged children with similar role (button row, label/input pair). |
-   | BL-UI-006 touch targets | ON if any interactive element (`button`, `input`, `<a>`, `@click`, `role="button"`). Mandatory if present. |
+ | Invariant | Applicability rule |
+ |---|---|
+ | BL-UI-001 CLS | Skipped — page-level metric, not a single-component concern. |
+ | BL-UI-002 spacing-grid | ON by default (almost every component has padding/margin/gap). |
+ | BL-UI-003 state-shift | ON if component has `:hover`, `v-if`, `transition`, or open/active/expanded state in its source. |
+ | BL-UI-004 overflow | ON if component renders variable-length content (slots, string props, lists, images). |
+ | BL-UI-005 alignment | ON if ≥ 2 horizontally-arranged children with similar role (button row, label/input pair). |
+ | BL-UI-006 touch targets | ON if any interactive element (`button`, `input`, `<a>`, `@click`, `role="button"`). Mandatory if present. |
 
    Uncertain cases → run the union of definitely-applicable invariants and report which were skipped + why. User can re-run with `--all` for full coverage.
 
@@ -131,7 +131,7 @@ Use the **Agent tool** with `subagent_type: ui-ux-expert`. Browser: `Chrome DevT
 
 **Phase B — Storefront audit (always runs):**
 
-For **component targets**, Phase B uses an **explorer approach** — components render in multiple contexts (cart, catalog, account, modal, etc.), and a component can pass on one page while failing on another. Single-location auditing misses page-specific layout bugs (e.g., parent overrides, real-data overflow, sticky-header conflicts). The explorer flow enumerates 2-3 representative contexts and audits the component in each.
+For **component targets**, Phase B uses an **explorer approach** — components render in multiple contexts (cart, catalog, account, modal, etc.), and a component can pass on one page while failing on another. The explorer flow enumerates 2-3 representative contexts and audits the component in each.
 
 For **page or flow targets**, the page IS the context — skip the explorer enumeration and audit the page directly (the viewport sweep + invariant audits ARE the exploration at that level).
 
@@ -150,8 +150,8 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
 
    **Step 1.2 — Map file path → storefront URL** for each match:
 
-   | File-path pattern | Storefront URL |
-   |-------------------|----------------|
+ | File-path pattern | Storefront URL |
+ |---|---|
    | `client-app/pages/{page}.vue` or `pages/{page}/*.vue` | `/{page}` (top-level route) |
    | `client-app/pages/account/{view}.vue` | `/account/{view}` |
    | `client-app/pages/company/{view}.vue` | `/company/{view}` |
@@ -196,7 +196,6 @@ For **page or flow targets**, the page IS the context — skip the explorer enum
    - **Stable PASS** — invariant passes in every context. No issue.
    - **Stable FAIL** — invariant fails in every context. Component-level bug; fix at the component.
    - **Context-specific FAIL** — invariant fails in only some contexts. Integration bug; the *failing context* is where to fix (parent layout, page-level CSS, real data overflow).
-   - This classification is the unique value of the explorer approach — it tells the user WHERE to fix, not just WHAT.
 
 - Output: `reports/tickets/{SPRINT}/qa-design/{target-slug}-{YYYY-MM-DD}/storefront/{context-slug}/` per context — screenshots only for FAIL.
 
@@ -228,6 +227,7 @@ Runs alongside Phase B against the same live contexts, per the [`/qa-design` ski
   - [/qa-design skill](../skills/qa-design/SKILL.md) — methodology (live-token extraction, audit order, Findings → Filings tree).
 - Audit at three viewports: 375 / 768 / 1280 (skip a viewport only if the target is verifiably desktop-only).
 - Evidence capture per [evidence-capture-policy.md](../skills/qa-evidence/evidence-capture-policy.md) — screenshots for FAIL states only.
+- Briefs carry the `Observed behaviour` line (`agent-dispatch.md`).
 
 ---
 

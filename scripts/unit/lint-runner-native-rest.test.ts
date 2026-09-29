@@ -103,3 +103,57 @@ test("the exemption is keyed on the tag, not on the word REST appearing in prose
     "prose containing 'REST' must not trigger the runner-native exemption",
   );
 });
+
+// --- the SAME class, third family, 2026-09-23 -------------------------------------------------
+//
+// [MCP-OP] repeated the [REST-OP] story exactly: a new multi-line runner-native block was added to
+// the parser, the D-001 exemption predicate was not widened with it, and every MCP-only case was
+// scored against the one-tag-per-line UI grammar. The visible cost this time was not a false
+// Critical count but a stuck gate — `tc:promote` PR-008 lints a row AT ITS TARGET STATUS, so the
+// phantom Critical held 8 cases at Draft that had just run green (REG-2026-09-23-M7: 31 of 32
+// machine cases PASS, 0 promotable).
+//
+// Twice is a pattern, so state it: WIDENING THE PREDICATE IS PART OF ADDING A BLOCK FAMILY. Any
+// future `[X-OP]` that carries a multi-line body must be added to `isRunnerGraphql` in the same
+// commit as the parser support, or its cases silently fail a rule about a grammar they do not use.
+
+test("a pure-MCP runner-native case is exempt from D-001 (no [GQL-OP]/[REST-OP] anywhere)", () => {
+  const steps = [
+    "[MCP-OP search1]",
+    "search_products",
+    '{ "store_id": "{{STORE_ID}}", "query": "{{SEARCH_TERM}}", "limit": 1 }',
+    "[MCP-EXEC search1]",
+    "[MCP-CAPTURE search1.products.0.id -> PRODUCT_ID]",
+  ].join("\n");
+
+  assert.deepEqual(
+    d001(row("UCPA-030", steps)),
+    [],
+    "the tool name and the JSON argument line are [MCP-OP] BODY, not untagged step lines"
+  );
+});
+
+test("widening for MCP does not disable D-001 for the browser/Admin cases it polices", () => {
+  // The load-bearing inverse, same as the REST test above. A case with no runner-native op at all
+  // must still be held to one tag per line — a fix that silences a rule everywhere is not a fix.
+  const steps = ["[ACT] open the cart page", "click the Checkout button", "[VERIFY] the order summary renders"].join(
+    "\n"
+  );
+  const findings = d001(row("CART-001", steps));
+  assert.equal(findings.length, 1, `expected exactly the untagged line to be flagged: ${JSON.stringify(findings)}`);
+  assert.match(findings[0].message, /click the Checkout button/);
+});
+
+test("an MCP case mixed with GraphQL discovery is exempt too — the common suite-102 shape", () => {
+  const steps = [
+    "[GQL-OP discover]",
+    'query { products(storeId: "{{STORE_ID}}", first: 1) { items { code } } }',
+    "[GQL-EXEC discover]",
+    "[GQL-CAPTURE discover.data.products.items.0.code -> SEARCH_TERM]",
+    "[MCP-OP cart1]",
+    "create_cart",
+    '{ "store_id": "{{STORE_ID}}", "line_items": [{ "product_id": "{{PRODUCT_ID}}", "quantity": 1 }] }',
+    "[MCP-EXEC cart1]",
+  ].join("\n");
+  assert.deepEqual(d001(row("UCPA-007", steps)), []);
+});

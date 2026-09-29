@@ -173,7 +173,7 @@ For every test case row, evaluate:
   - [ ] Every `[GQL-OP <L>]` paired with exactly one `[GQL-EXEC <L>]`
   - [ ] Every `[GQL-EXEC <L>]` has a matching `[GQL-OP <L>]`
   - [ ] Every `[GQL-VARS <L>]` / `[GQL-CAPTURE <L>.*]` refers to a declared op label
-- [ ] **Runner-native GraphQL authoring contract** — every runner-native row conforms to `knowledge/api/graphql-test-cases-runner.md` (canonical `Steps`/`Assertions`/`Cleanup` grammar, predicate shapes, `getByPath` filter syntax, `@td()` resolver, capture chaining, authoring checklist). Read this doc when in doubt about whether a tag, predicate, or path expression is supported by the runner.
+- [ ] **Runner-native GraphQL authoring contract** — every runner-native row conforms to `knowledge/api/graphql-test-cases-runner.md` (grammar, predicates, `getByPath` filters, `@td()`, capture chaining). **An MCP `body.<path>` is verified by RUNNING the case with `UCP_DEBUG=1`, never by reading it** — that doc §THE ENVELOPE RULE.
 
 #### BL/ECL Coverage + Requirement Traceability (Dimension 6)
 - [ ] `Business_Rule` column populated with valid `BL-*` IDs (unless pure UI test)
@@ -422,7 +422,7 @@ Non-fixable issues (flagged for manual review):
 
 Read **triangulation-criteria.md** (this folder) first — it holds the evidence bar, the `docs: N/A` waiver, the suite→repo resolution chain, the verdict table, and the auto-fix matrix. `--triangulate` implies `--verify` and reuses its budget caps.
 
-**8a. Resolve the source axis.** For the suite in scope, resolve the backing repo: `config/test-suites.json` `requiresModules` → `.claude/knowledge/execution/module-suite-map.md` Module Map → `ci/config/fix-repos.json` `routing[]` (or `npm run tc:audit:source -- <ID>`). **Unresolvable ⇒ the source axis is ABSENT ⇒ every assertion in the suite is UNGROUNDED. Never guess a repo** — a wrong repo yields a confident `file:line` for unrelated code, manufacturing a false CONFIRMED.
+**8a. Resolve the source axis.** For the suite in scope, resolve the backing repo via **triangulation-criteria.md §2** (or `npm run tc:audit:source -- <ID>`). **Unresolvable ⇒ the source axis is ABSENT ⇒ every assertion in the suite is UNGROUNDED. Never guess a repo** — a wrong repo yields a confident `file:line` for unrelated code, manufacturing a false CONFIRMED.
 
 > **One repo is the start of the source axis, not the whole of it.** Before treating the axis as satisfied, enumerate **every surface that can write the state you are asserting** and anchor each — storefront (`vc-frontend`), the module's **Admin SPA blade** (`…Web/Scripts/blades/*.js` — its toolbar commands and `canExecuteMethod`), the backend command handlers/constants, and any platform **setting** that constrains the value. A suite lives under `Frontend/`, but the state it asserts is usually cross-surface: auditing a frontend suite does **not** license a storefront-only model. See **triangulation-criteria.md §1c**, which carries the worked failure this rule came from, and **§1d** — a missing constant or key is a finding, never an explanation.
 

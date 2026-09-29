@@ -1,8 +1,8 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-08-27",
+  "lastValidated": "2026-09-23",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 75,
+  "totalFixtures": 76,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -360,7 +360,26 @@
       "usedBy": ["VCST-4642"],
       "knownIssues": [
         "anonymous-readable when `XAPI.Security.ReturnModuleVersion` is ON (default) — version disclosure is by-design; operators may toggle OFF in prod",
-        "on vcst-qa, resolving by `domain` returns ~18 modules with empty `version`; resolving by `storeId` returns ~79 modules with populated `version` — anonymous/storefront context likely narrows the response"
+        "measured 2026-09-23 on vcst-qa: the `domain` and `storeId` paths now agree exactly — both return 87 modules, all with a populated `version` (ReturnModuleVersion ON). The earlier \"~18 by domain with empty version vs ~79 by storeId\" divergence no longer reproduces; do not assert a module COUNT, it tracks the deployed manifest."
+      ]
+    },
+    "initializeApplicationClient": {
+      "path": "queries/initializeApplicationClient.graphql",
+      "category": "store",
+      "role": "PUBLIC",
+      "requiredVars": [],
+      "gqlVars": {
+        "domain": "String!"
+      },
+      "runnerNote": "The VERBATIM vc-frontend app-boot payload — operation `InitializeApplication` (PascalCase, what actually goes on the wire), one REQUIRED `$domain` (the storefront hostname; the client never resolves by storeId), and only `storeUrl` + `settings.modules`. Its response becomes the feature map that `apply-gates-link` strips every `@needsModule` selection against, so a break here is client-visible. Documented: storefront/developer-guide/application-initialization. The broader store-bootstrap contract surface is the separate `initializeApplication` fixture. Source: vc-frontend client-app/core/api/graphql/store/queries/initializeApplication/initializeApplication.graphql, verified 2026-09-23.",
+      "exampleVars": {
+        "domain": "vcst-qa-storefront.govirto.com"
+      },
+      "usedBy": [
+        "VCST-4642"
+      ],
+      "knownIssues": [
+        "when `XAPI.Security.ReturnModuleVersion` is OFF, `settings.modules[].version` returns \"\" (empty string, not null — preserves the String! contract) and modules without public settings drop out of the list, so an assertion on module COUNT asserts that setting rather than the manifest"
       ]
     },
     "customerSalesReps": {

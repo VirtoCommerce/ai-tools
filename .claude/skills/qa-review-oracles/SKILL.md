@@ -23,7 +23,7 @@ Keep the QA pipeline's **shared oracles** grounded in reality. For each in-scope
 /qa-review-oracles ecl diff                 # sections touched since the last audit
 /qa-review-oracles bl domain cart --dry-run # triangulate + verdict, write NOTHING (preview)
 ```
-Omitting the axis means `all`. **`/qa-review-bl` is a retained alias** for `/qa-review-oracles bl` — it is referenced from `/qa-test-lifecycle` Phase 4c, `/ba-analyze`, `.claude/rules/*`, and the agent definitions, so it keeps working rather than silently breaking Phase 4c.
+Omitting the axis means `all`. **`/qa-review-bl` is a retained alias** for `/qa-review-oracles bl` — `/qa-test-lifecycle` Phase 4c invokes it by name, which is why the alias is model-invocable and this skill is not.
 
 ## Supporting Files
 

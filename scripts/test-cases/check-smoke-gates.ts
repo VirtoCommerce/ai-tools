@@ -20,6 +20,7 @@
  *
  * Exit code: 0 when no error-severity finding, 1 otherwise.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readdirSync, readFileSync } from "fs";
 import { basename, dirname, join } from "path";
 import { fileURLToPath } from "url";

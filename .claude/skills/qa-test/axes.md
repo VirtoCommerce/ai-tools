@@ -105,7 +105,7 @@ staleness suspicion, not a mandate to rewrite — that decision stays with an op
 | `PRESENT` | a map matches the slug and is inside `stale_after_days` | `2-map` reads it first; `1e` clauses 11/11b bind against its inventory; **`5-docs-map` writes back what the run verified** ([`reporting.md`](reporting.md) §5-docs-map) |
 | `STALE` | matches, but past `stale_after_days` | **read it, and treat every claim as a hypothesis** — a stale map is the *more* dangerous artifact, because it is read as current and arrives with a written deliverable's authority. Recommend `--refresh`; **never auto-refresh**. `5-docs-map` still amends it — upgrading a stale cell with a live observation is strictly an improvement, and it moves `amended`, never `generated`, so the map stays STALE until someone re-enumerates |
 | `ABSENT` | no map for this slug | **only if the chain is all-layer** — FULL builds it at `1c-map`, FAST recommends. Single-layer, or a build that failed: `1e` records `Domain map: ABSENT — chain position unverified` |
-| `unresolved` | slug did not resolve, or the directory was unreadable | same as `ABSENT` — **fail open** (build on FULL, recommend on FAST); see the fail direction below. A slug that `bl:extract --list` does not know **stops the build, never the run**: a map filed under a slug no oracle uses is a map nothing can look up |
+| `unresolved` | slug did not resolve, or the directory was unreadable | same as `ABSENT` — **fail open** (build on FULL, recommend on FAST); see the fail direction below. A slug `bl:extract --has-domain` rejects **stops the build, never the run**: a map filed under a slug no oracle uses is a map nothing can look up. Use `--has-domain`, not `--list` — a domain DECLARED with zero invariants is a valid slug, and judging by the listing used to read it as unknown |
 
 **Fail direction: fail-OPEN on the build, fail-NEVER on blocking.** A false positive now costs one BA pass
 on a domain that turns out not to need a map — recoverable, and the map is still true. A false negative
@@ -114,6 +114,29 @@ the clause the promotion to a build must not erode: `1c-map` joins before `1e` a
 it past that point, a failed or gate-refused build leaves `state: ABSENT` and proceeds, and a missing map
 is never a finding about the product. `npm run domain:check` encodes the same asymmetry: **stale fails,
 missing passes.**
+
+**The mind-map sidecar rides on this axis, and adds no axis and no lane.** The same 2g read checks for
+`.claude/knowledge/domain/<name>.mind-map.json` (`/qa-test-mind-map`) beside the map. It records
+`domain_map.mind_map` = that path, or `null`. When it is present, four steps read it:
+
+- `1e` Part 0 cites its node ids ([`test-model.md`](../qa-test-model/test-model.md)).
+- `1e-plan` rows carry `behavior` / `dataProfile`.
+- Step 3 stamps them ([`authoring.md`](authoring.md) §Carry the model's design decision into the row).
+- `5-docs-map` hands back what the run established ([`reporting.md`](reporting.md) §5-docs-map).
+
+**When it is absent, the lane is the domain map's, one step later.** A missing mind map on a domain whose
+map is `PRESENT` (including one `1c-map` built in this run) is **built on FULL after the verdict** —
+`5-mind-map`, `/qa-test-mind-map build <slug> --from <ticket>` ([`reporting.md`](reporting.md)
+§5-mind-map) — and **recommended in one line on FAST**. No domain map ⇒ no mind map: the build derives
+its nodes from the map's chain. Why after the verdict and not beside `1c-map`: the build's last step
+stamps `Behavior:` into suite rows, and before Artifact A's append that would put two writers on one
+CSV; and after 5-triage its evidence is the run's own verified observations rather than guesses. Nothing
+about it blocks, and a build that fails records `mind_map_build: FAILED` and changes nothing.
+**Why the absence is no longer silent (2026-09-28):** the old rule — *absent ⇒ nothing changes* — was the
+domain map's recommendation-only design in its original form, and it fails for the same reason: VCST-2945
+derived a full barcode behaviour graph in its Test Model, authored 26 cases with no `Behavior:` stamp to
+carry it, and left the next search ticket to re-derive it all. `npm run models:check` keeps its own
+asymmetry unchanged: a missing model passes.
 
 **Two-moment axis, like `coverage_surface`.** At `1b` 2g the all-layer question is answered
 **provisionally** — from `1a`'s domains plus whether the domain has a back-office surface at all — because

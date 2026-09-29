@@ -25,6 +25,7 @@
  *   node scripts/seed-pricing.mjs --dry-run --verbose
  *   node scripts/seed-pricing.mjs --teardown               # delete AGENT-TEST-PRICING-* pricelists
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE,
   log, verbose, assertSafeTarget, auth, api, ensureVirtualCatalog, idsParam,

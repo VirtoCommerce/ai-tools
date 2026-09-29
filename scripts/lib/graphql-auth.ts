@@ -34,6 +34,19 @@ export interface AuthOptions {
   backUrl: string;
   storeId?: string;
   scope?: string; // default: offline_access
+  /**
+   * OAuth 2.0 Resource Indicator — sets the issued token's AUDIENCE.
+   *
+   * Needed for any protected resource that validates `aud` rather than accepting the default
+   * `resource_server` audience. UCP is the first: `/ucp/mcp` validates audience, issuer AND
+   * resource path, so a token minted without this returns a flat 401 there even though it is
+   * perfectly valid for /graphql. Measured 2026-09-22 — it accounted for 13 of 21 failures on the
+   * first converted run of suite 102.
+   *
+   * The token must also be minted from the host that owns the resource (for UCP, FRONT_URL), which
+   * is why callers pass `backUrl` explicitly rather than relying on the default.
+   */
+  resource?: string;
 }
 
 const TOKEN_REFRESH_BUFFER_MS = 30_000;
@@ -221,6 +234,12 @@ export async function acquireToken(
     body.set("organization_id", creds.organizationId);
   }
 
+  // Resource Indicator — sets `aud`. Omitting it yields the default `resource_server` audience,
+  // which a resource that validates audience (e.g. UCP's /ucp/mcp) refuses with a bare 401.
+  if (opts.resource) {
+    body.set("resource", opts.resource);
+  }
+
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -327,6 +346,34 @@ export class TokenCache {
       creds.organizationId = resolveOrgRef(org, this.testDataDir, role);
     }
     const fresh = await acquireToken(creds, this.opts);
+    this.cache.set(key, fresh);
+    return fresh.accessToken;
+  }
+
+  /**
+   * A token for the same role but a DIFFERENT protected resource — its own host and `aud`.
+   *
+   * UCP is the case this exists for: `/ucp/mcp` validates audience, issuer and resource path, so
+   * the ordinary xAPI token (minted from BACK_URL with the default `resource_server` audience)
+   * returns a flat 401 there. Cached under a key that includes the resource, because handing an
+   * MCP call the xAPI token — or the reverse — fails in the confusing direction: a 401 on a
+   * credential that is demonstrably valid somewhere else.
+   */
+  async getTokenForResource(
+    role: string,
+    org: string | undefined,
+    overrides: { backUrl: string; resource: string }
+  ): Promise<string> {
+    const key = `${TokenCache.key(role, org)}::${overrides.resource}`;
+    const entry = this.cache.get(key);
+    if (entry && entry.expiresAt - TOKEN_REFRESH_BUFFER_MS > Date.now()) {
+      return entry.accessToken;
+    }
+    const creds = resolveRole(role, this.testDataDir);
+    if (org) {
+      creds.organizationId = resolveOrgRef(org, this.testDataDir, role);
+    }
+    const fresh = await acquireToken(creds, { ...this.opts, ...overrides });
     this.cache.set(key, fresh);
     return fresh.accessToken;
   }

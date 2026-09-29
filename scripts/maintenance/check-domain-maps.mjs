@@ -32,6 +32,7 @@
  * the generated `release-ledger.md` / `sitemap.md` sit in the same directory without being audited as maps.
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,7 +45,16 @@ const BL_ORACLE = join(ROOT, ".claude", "knowledge", "oracles", "business-logic.
 const REQUIRED = ["domain_slug", "generated", "rev", "stale_after_days", "sources"];
 const json = process.argv.includes("--json");
 
-/** Valid slugs come from the oracle itself, never a transcribed list (GOLDEN RULE). */
+/**
+ * Valid slugs come from the oracle itself, never a transcribed list (GOLDEN RULE).
+ *
+ * This reads the DOMAIN HEADINGS, so a domain declared with zero invariants is valid here — which
+ * is correct and is the behaviour `bl:extract --has-domain` was changed to match on 2026-09-23
+ * (`--list` had been built from invariants instead, so an empty domain was invisible to it and read
+ * as an unknown slug; it STOPped a legitimate `/qa-domain-map ucp --refresh`). Two copies of "what
+ * is a domain heading" now exist — this regex and `DOMAIN_RE` in `scripts/knowledge/lint-bl.ts` —
+ * because this gate runs under plain node and cannot import the `.ts`. Change both together.
+ */
 function validSlugs() {
   if (!existsSync(BL_ORACLE)) return null; // unreadable source ⇒ skip DOMAIN-005 rather than guess
   const text = readFileSync(BL_ORACLE, "utf8");
@@ -105,7 +115,10 @@ for (const file of readdirSync(DOMAIN_DIR).filter((f) => f.endsWith(".md"))) {
     findings.push({
       code: "DOMAIN-005",
       file,
-      msg: `domain_slug \`${slug}\` is not a bl:extract domain — a map nothing can look up. Run \`npm run bl:extract -- --list\``,
+      msg:
+        `domain_slug \`${slug}\` is not a bl:extract domain — a map nothing can look up. ` +
+        `Confirm with \`npm run bl:extract:has -- ${slug}\`; note a domain DECLARED with zero ` +
+        `invariants is valid, so this is a missing \`## Domain N: … (BL-X)\` heading, not an empty one.`,
     });
   }
 

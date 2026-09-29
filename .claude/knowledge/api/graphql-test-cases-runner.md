@@ -375,6 +375,80 @@ The `label=` selects which response the predicate runs against. `[VAR]` is the o
 
 Every successful GraphQL operation MUST have an `[ERRORS label=<L>] errors[] empty` assertion (ECL-14.1). HTTP 200 alone does NOT mean success.
 
+#### ⚠ THE GENERAL RULE — assert the RESPONSE BODY, not just the status
+
+**A status code is the weakest oracle this grammar offers, and on three separate surfaces it has been
+actively misleading. The body is where the contract lives — assert it.**
+
+An `[ERRORS]` status predicate answers *"did the transport work?"*. It does not answer *"did the
+operation do what it claims?"*, and the gap between those two questions is where vacuous passes live.
+A case whose only check is `HTTP 200` passes on a call that refused, did nothing, or returned an error
+payload — and it passes **confidently**, which is what makes it expensive.
+
+Three measured instances, each found the hard way, each on a different surface:
+
+| Surface | What returns on failure | What a status-only assertion did |
+|---|---|---|
+| GraphQL **cart mutations** | HTTP 200, `errors[]` EMPTY, payload `validationErrors[]` populated | passed on a refused `addItem` (the section below) |
+| GraphQL **xAPI generally** | HTTP 200 with `errors[]` populated | ECL-14.1 — "failure hidden in the response body, not in `errors[]`" |
+| **UCP / MCP** (`[MCP-EXEC]`) | HTTP **200** with `result.isError` and the real code in `body.status_code` | `[ERRORS] HTTP 200` passed on a `create_cart` that had failed for a missing `store_id` (2026-09-23, UCPA-008) |
+
+**So, per operation:**
+
+1. **Always** pair a status predicate with at least one `[DATA label=<L>]` on the body — the returned
+   id, the code, the named field, the count, the total. The status tells you the call arrived; the body
+   tells you what it did.
+2. **On an error path, assert the error's SHAPE, not merely that one occurred.** `body.code`,
+   `body.message` (a regex where the text names the offending field), and the absence of a leaked stack
+   or internal error. `HTTP 400` alone cannot distinguish "rejected the input I meant to test" from
+   "rejected something else entirely" — and this suite hit exactly that: a missing `country_code`
+   returned a raw XCart `"Error trying to resolve field 'addOrUpdateCartAddress'"` while a missing
+   `postal_code` returned a clean `invalid_request` naming the field. Same status, different contract.
+3. **Never let a status predicate be a case's only assertion.** If that is all a case has, it is not
+   testing behaviour — it is testing reachability, and `/qa-review-tests` should flag it.
+
+#### ⚠ THE ENVELOPE RULE — every MCP path is a guess until a run confirms it
+
+**The single largest source of false reds in suite 102 was not logic. It was writing `body.<field>`
+for a field the tool returns one level down.** Measured 2026-09-23: of 10 non-passing machine cases in
+`REG-2026-09-23-M5`, **seven** were wrong-envelope paths and nothing else — four of them BLOCKED the
+case outright (a capture landed `undefined`, then a later step refused to send on the unresolved token,
+so the failure surfaced steps away from its cause and looked structural).
+
+UCP does not have one envelope. It has at least four, and they differ per tool:
+
+| Tool | Where the payload actually is |
+|---|---|
+| `create_cart` · `update_cart` · `get_cart` | `body.ucp` (version/status/correlation_id) · `body.cart` (id, buyer_id, line_items, totals) · `body.messages[]` |
+| `create_checkout` | `body.checkout`, which **wraps the cart again** — totals are at `body.checkout.cart.totals`, NOT `body.checkout.totals` |
+| `handoff_checkout` | double-wrapped: `body.result.checkout.continue_url` |
+| `checkout_and_handoff` | `body.continue_url` at top level **and** `body.handoff.checkout.continue_url` — aliases of the same url |
+| any tool, on failure | a flat error object: `body.is_error` · `body.code` · `body.status_code` · `body.message` — **no `ucp`, no `cart`**, so every nested assertion reads `undefined` at once |
+
+**Why review cannot catch this by reading.** A wrong path and a right path are the same shape, the
+same length, and equally plausible; the reviewer would have to know the envelope by heart, per tool.
+And the miss is silent in the worst direction — `body.cart.line_items.length` on an error envelope
+scores `NaN`, and `body.status` on a success envelope scores `undefined`, neither of which reads as
+"you used the wrong path."
+
+**So the rule is mechanical, not a matter of care:**
+
+1. **Run the case once with `UCP_DEBUG=1` before promoting it.** The runner prints each MCP response
+   body inline; copy the path off the printed JSON instead of predicting it. One run replaces the
+   whole class.
+2. **A `{{VAR}}` inside a capture path is resolved** (`cart.line_items[?product_id={{PRODUCT_ID}}]`) —
+   it was not, until 2026-09-23, and that miss was silent too: the filter simply never matched.
+3. **Treat a `⚠ … = undefined` capture line as a FAILURE of the case, not a warning.** The runner
+   forces the verdict to `INVALID` for exactly this reason. Do not read past it.
+4. **A path-on-the-right assertion (`body.x = body.y`) does not work in the MCP family** — the RHS is
+   scored as a literal string, so it is a guaranteed false red. Capture one side and compare against
+   `{{VAR}}` (UCPA-027).
+
+**For MCP ops the runner now surfaces the tool's own `status_code` as the assertable status** (see
+`executeMcpOp`), so `HTTP 400` means what an author intends and `HTTP 200` can no longer be satisfied by
+a failure. That closes the *status* half. It does not close the *body* half — only an author asserting
+the payload does that.
+
 #### ⚠ `errors[] empty` is NOT a success check for a CART MUTATION
 
 `addItem`, `addItemsToCart`, `changeCartItemQuantity`, `addCoupon`, `addOrUpdateCartShipment` and

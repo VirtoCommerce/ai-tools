@@ -86,6 +86,54 @@ query {
 
 **QA note:** Only settings marked `IsPublic` appear in the xAPI response. If a module setting is missing from the response, verify the `IsPublic` flag on the backend `SettingDescriptor`, not just the store config.
 
+### The storefront capability manifest — `npm run store:caps`
+
+The same query carries a third thing the section above leaves out: **`modules { version }`**. That turns this payload into a **capability manifest** — which modules the storefront can see, at which version, and which flags each one exposes — and vc-frontend gates its own UI on exactly this response. Documented end to end in [Application Initialization](https://docs.virtocommerce.org/storefront/developer-guide/application-initialization), which calls it a **capability manifest** and spells out the four boot steps: load the shell → fire an anonymous `InitializeApplication` → cache the manifest → build a **feature map** from its installed-module list and gate every later query against it.
+
+**Do not hand-write the query or transcribe its answer.** Run the probe:
+
+```
+npm run store:caps                      # module | version | #public settings
+npm run store:caps -- --settings        # every public flag name=value, per module
+npm run store:caps -- --module loyalty  # one module (substring filter)
+npm run store:caps -- --store           # + store scalars, languages, currencies
+npm run store:caps -- --json            # machine-readable
+```
+
+It replays the committed fixture (`test-data/graphql/queries/initializeApplicationClient.graphql`) against the `TEST_ENV` host. There is **no committed snapshot and no drift gate** — the deployed manifest changes on every deploy, so a snapshot of it would be stale by design.
+
+#### Two mechanisms that bite QA, both `{DOC}`
+
+**Gating strips, it does not fail.** Optional selections carry `@needsModule`, and the Apollo `apply-gates-link` **removes any selection whose named module is absent from the manifest before the request leaves the browser** — so there is no HTTP 400 and no "Cannot query field" error. A field gated this way (every `VirtoCommerce.WhiteLabeling` contribution, for instance) simply is not asked for. **So "the response has no data for X" has two very different causes** — the backend did not return it, or the client never requested it — and only the outgoing request body tells them apart. Check the request, not just the response, before filing a backend bug.
+
+**The manifest is CACHED, per browser session, shared across tabs**, under `localStorage["vc:initialStore:v1:<storefront-domain>"]`. The boot query is single-fire across navigations: if a cached manifest exists for the domain it is used and `InitializeApplication` is never sent. **A module or flag changed in Admin is therefore invisible to an open session** — and to every other tab on that domain — until that key is cleared. When a flag flip "does not take effect", clear the key before suspecting the platform.
+
+#### Three vantages on "is this deployed?" — they disagree routinely
+
+| Vantage | Source | Needs a token | Answers |
+|---|---|---|---|
+| `declared` | `vc-deploy-dev` `backend/packages.json` | GitHub MCP | what git says SHOULD be on the env |
+| `deployed` | `GET {{BACK_URL}}/api/platform/modules` | **yes**, admin bearer | what IS installed — platform ground truth |
+| `storefront-visible` | **this query** / `store:caps` | **no** | what the STOREFRONT can see and gate on |
+
+The third is not a cheaper form of the second, it is a different fact. A module can be installed and healthy at the platform level yet carry no capability the storefront can see — the platform manifest calls that env green while the feature's button never renders. That is the shape of "it's deployed but it isn't there", and only this vantage shows it. Being token-free, it is also the cheapest pre-flight available to any lane.
+
+#### The one toggle that changes how to read it
+
+`XAPI.Security.ReturnModuleVersion` decides what the manifest means, so read the probe's mode line first:
+
+- **ON** (the default) — every installed module is listed **with** its version, *including modules exposing zero public settings*. The list is a full deployed manifest obtained without a token. This is the documented shape: the manifest "lists the store settings and the installed modules with their versions" `{DOC}`, and it matched live on vcst-qa 2026-09-23 `{OBSERVED}`.
+- **OFF** — `version` returns `""` (empty string, not `null`; it preserves the `String!` contract) **and modules with no public settings drop out of the list entirely.** In this mode absence is evidence of nothing, and versions must come from the platform manifest. **This half is NOT documented** — VirtoOZ describes the manifest only in its ON shape and never names `XAPI.Security.ReturnModuleVersion`, so the OFF behaviour rests on our own `{OBSERVED}` record (VCST-4642) and was not re-measured on 2026-09-23. Treat it as a doc gap worth reporting upstream, not as settled behaviour.
+
+Version disclosure being anonymous is **by design** when the toggle is ON; operators may turn it off in production. Either way, do not assert on a module COUNT — it tracks the deployed manifest, not a contract.
+
+#### Using it
+
+- **Before filing "feature X is missing"** — check whether the module is visible and whether its flag is ON. `Loyalty.Mode`, `Loyalty.Missions.Enable`, `Catalog.BrandStoreSetting.BrandsEnabled`, `ApplicationInsights.EnableTracking` and friends all read out of `--settings` in one anonymous call, no Admin SPA round-trip.
+- **A capability the ledger says shipped but the manifest does not carry is `NOT_DEPLOYED`**, never `FAIL` — precedence in `.claude/templates/agent-dispatch.md` §Build Verification.
+- **These are not `$cfg.*` flags.** Those are baked into the theme bundle and live in `.claude/knowledge/automation/storefront-config-flags.md`. A UI element can be gated by either; check both before calling it a bug.
+
+
 ---
 
 ## SPA Architecture — Test Implications

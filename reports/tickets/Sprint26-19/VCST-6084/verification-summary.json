@@ -1,0 +1,58 @@
+{
+  "date": "2026-09-25",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1073.0-pr-3121-9965",
+    "relevant_modules": {
+      "VirtoCommerce.Loyalty": "3.1009.0-pr-18-e3e4"
+    },
+    "pr_build": "vc-module-loyalty#18 @ e3e47e0 (live per /api/platform/modules)"
+  },
+  "agent_used": "inline (built-in browser, API probe)",
+  "str_result": "3/3",
+  "method": "PUT /api/loyalty-missions with name='' and storeId='' (pre-existing required rules guarantee 400, nothing persists); FluentValidation returns all errors, so the new rule's message presence/absence is observable. Identical result on runs 1-3. Mission count 67 before / 67 after.",
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested"
+  },
+  "evidence_artifact": null,
+  "bugs_filed": [],
+  "regression_issues": [],
+  "not_covered": [
+    "Add Mission blade Save UX (would persist data)",
+    "positive-path real save"
+  ],
+  "ticket": "VCST-6084",
+  "verdict": "VERIFIED",
+  "baseline_reproduction": "from ticket: no goal lower bound on dev @ e95b935 (3.1009.0)",
+  "probes": {
+    "C_countGoal_neg1": {
+      "status": 400,
+      "errors": [
+        "Mission name is required",
+        "Mission store is required",
+        "Mission goal value cannot be negative"
+      ]
+    },
+    "D_valueGoal_neg1": {
+      "status": 400,
+      "errors": [
+        "Mission name is required",
+        "Mission store is required",
+        "Mission goal value cannot be negative"
+      ]
+    },
+    "E_control_valid_tree": {
+      "status": 400,
+      "errors": [
+        "Mission name is required",
+        "Mission store is required"
+      ]
+    }
+  },
+  "checklist_total": 4,
+  "checklist_passed": 4,
+  "evidence": "reports/tickets/Sprint26-19/VCST-6084/verification-summary.json",
+  "artifacts": "reports/tickets/Sprint26-19/VCST-6084/",
+  "jiraCommentId": "110474"
+}

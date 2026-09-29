@@ -7,7 +7,7 @@
 > live): `ls .claude/skills | wc -l` for the total,
 > `grep -ohE '^description: "?\[[A-Za-z ]+\]' .claude/skills/*/SKILL.md | sort | uniq -c` for the
 > per-category split. Skills without a tag are the root-level ones (`project-init`,
-> `vc-self-check`) plus `qa-local-env`, which is grouped under Testing but
+> `vc-self-check`, `prompt-review`) plus `qa-local-env`, which is grouped under Testing but
 > carries no tag of its own. Both `[QA Method]` and `[QA Methodology]` spellings exist in the wild — they
 > are the same category.
 
@@ -29,18 +29,22 @@ skills/
 ├── qa-generate-data/                # [Testing]  Design + author test-data combinations (offline)
 ├── qa-review-tests/                 # [Testing]  11-dimension test-case quality review
 ├── qa-local-env/                    # [Testing]  Local VC stack via start-local (fresh DB per run)
+├── qa-test-fast/                    # [Testing]  Method behind /qa-test-fast (grounded quick ticket test)
 │
 ├── qa-investigate/                  # [QA Methodology]  Bug investigation (5 phases)
 ├── qa-evidence/                     # [QA Methodology]  Evidence capture & report formatting
 ├── qa-defect/                       # [QA Methodology]  Defect management lifecycle
 ├── qa-test-design/                  # [QA Methodology]  Test case derivation techniques
+├── qa-test-model/                   # [QA Methodology]  Fault model of one ticket (value chain, scenario table, gate)
+├── qa-test-mind-map/                # [QA Methodology]  Behaviour graph of a domain (JSON, stable ids)
+├── qa-test-data-model/              # [QA Methodology]  Data state each behaviour requires (JSON profiles)
 ├── qa-risk/                         # [QA Methodology]  Risk-based prioritization
 ├── qa-metrics/                      # [QA Methodology]  Quality metrics & gates
 ├── qa-sbtm/                         # [QA Methodology]  Session-based exploratory testing
 ├── qa-monitoring/                   # [QA Methodology]  Online bug monitoring (App Insights)
 ├── qa-perf-measure/                 # [QA Method]  Deployed-env backend-work measurement (dependency counts, N+1)
 ├── qa-test-cases-generator/         # [QA Methodology]  Generate agent-native CSV test cases
-├── qa-triage-results/               # [QA Methodology]  Triage a completed regression run's FAILs
+├── qa-triage-results/               # [QA Methodology]  Triage a completed regression run's non-passing cases
 ├── qa-hotfix/                       # [QA Methodology]  Release a hotfix into stable bundles
 ├── qa-hotfix-check/                 # [QA Methodology]  Deliver a released hotfix onto deployed envs
 ├── qa-bundle-check/                 # [QA Methodology]  Audit a stable bundle for available hotfixes
@@ -48,15 +52,11 @@ skills/
 ├── qa-review-oracles/               # [QA Methodology]  Two-axis oracle triangulation (BL + ECL) & auto-apply
 ├── qa-review-bl/                    # [QA Methodology]  Alias of qa-review-oracles bl
 │
-├── dotnet-unit-test/                # [Development]  Reproduce a backend bug as a failing xUnit test
-├── dotnet-fix/                      # [Development]  Minimal .NET 10 fix → green
-├── angular-admin/                   # [Development]  Fix a module's Admin SPA (AngularJS) UI
-├── vue-unit-test/                   # [Development]  Reproduce a vc-frontend bug as a failing vitest test
-├── vue-fix/                         # [Development]  Minimal Vue 3 / TS fix → green
-├── vc-shell-fix/                    # [Development]  Fix a module-embedded Vue 3 shell sub-app
+│   (the six [Development] skills are NOT here — see the note under "Development Skills" below)
 │
 ├── project-init/                    # (root-level) Onboard the toolset onto a deployment
 ├── vc-self-check/                   # (root-level) Self-diagnostician (Tier B) → local DIAG-*.md
+├── prompt-review/                   # (root-level) Review / heal / improve our own skills, commands, agents
 │
 └── README.md                        # This file
 ```
@@ -90,7 +90,7 @@ Manual invocation, delegates to specialist agents.
 | `/qa-review-tests` | test-management-specialist + qa-testing-expert | review-criteria.md |
 | `/qa-local-env` | (deterministic scripts) | resolve-task.mjs, resolve-theme.mjs, gen-manifest.mjs, provision.ps1, healthcheck.mjs, init-admin.mjs |
 
-## QA Methodology (18)
+## QA Methodology
 
 Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocable reference-only), cross-team best practices.
 
@@ -106,13 +106,16 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | `/qa-investigate` | 5-phase bug investigation + evidence-to-claim root-cause worksheet (gated by `scripts/regression/bundle-evidence.ts`) | bug-investigation-flow.md, evidence-and-root-cause.md |
 | `/qa-evidence` | Evidence capture policy, 3-tier report verbosity, output paths | evidence-capture-policy.md, output-paths.md, sign-off-templates.md |
 | `/qa-defect` | Defect management lifecycle: JIRA Bug Workflow, triage, classification, verification, metrics | defect-lifecycle-workflow.md, defect-report-templates.md |
-| `/qa-triage-results` | Triage a completed regression run's FAILs: classify real-bug vs test-defect vs flaky, live-verify, route fixes (never files a ticket) | triage-taxonomy.md, routing-and-fix.md |
+| `/qa-triage-results` | Triage a completed regression run's FAIL / BLOCKED / SKIPPED cases: classify real-bug vs test-defect vs flaky, live-verify, route fixes (never files a ticket) | triage-taxonomy.md, routing-and-fix.md, live-triage-design.md |
 
 ### Proactive (pre-testing)
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
 | `/qa-test-design` | EP, BVA, decision tables, state transitions, pairwise, error guessing | test-design-techniques.md |
+| `/qa-test-model` | The only builder of a ticket's Test Model (`/qa-test` FULL 1e and `/qa-test-fast` invoke it) — prior-model rule, contract refresh, the gate inline | test-model.md |
+| `/qa-test-mind-map` | Build / update / audit the behaviour graph of a domain — nodes, branches, states, data needs, evidence; cases link via `Behavior:` stamps | build.md, update.md, audit.md |
+| `/qa-test-data-model` | Build / update / audit the data STATE each behaviour requires, as profiles `/qa-seed-data --profile` executes | build.md, update.md, audit.md |
 | `/qa-risk` | Risk-based prioritization: 5x5 matrix, severity/priority, test depth | risk-prioritization-framework.md |
 | `/qa-metrics` | Quality metrics & gates: pass rate, defect density, DRE, coverage | quality-metrics-catalog.md, quality-gates.md |
 | `/qa-sbtm` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT | session-based-testing.md |
@@ -147,6 +150,11 @@ Manual invocation, used by the **developers/** team in `/qa-fix` (the only write
 test-skill + one fix-skill per repo kind; backend adds the Admin-SPA path; frontend adds the
 module-embedded Vue 3 sub-app path.
 
+> **These six live ONLY in [`plugins/vc-fix/skills/`](../../plugins/vc-fix/skills/) — there are no `.claude/skills/` copies.**
+> The duplicates were removed 2026-09-25: they had forked from the plugin, and `/qa-fix` (the only thing that
+> invokes them, along with its four developer agents) is itself plugin-only, so no `.claude/` flow could reach them.
+> The table below stays as the reference for WHAT they do; read them at their `plugins/vc-fix/skills/<name>/` path.
+
 | Skill | Invoked by | Purpose | Supporting Files |
 |-------|-----------|---------|-----------------|
 | `/dotnet-unit-test` | fullstack-backend | Reproduce a VC backend bug as a failing xUnit test (red) | xunit-patterns.md |
@@ -166,6 +174,7 @@ Outside the four QA categories.
 |-------|---------|-----------------|
 | `/project-init` | Onboard the toolset onto a deployment — native-platform vs client; tracker + VCS host; write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json`; verify access. The profile is what routes each `/qa-fix` to the right repo + tracker | scaffold-env.mjs, scaffold-secrets.mjs, write-env.mjs, gen-profile.mjs, discover-repos.mjs, gen-mcp.mjs, verify-access.mjs |
 | `/vc-self-check` | Tier-B self-diagnostician — reads the passive session-telemetry jsonl + transcript + skill-expectations oracle → per-skill verdict into a local `DIAG-*.md`; the consent-gated `deliver` sub-step contributes a scrubbed quality report to VirtoCommerce. Never modifies the install | SKILL.md, deliver.mjs |
+| `/prompt-review` | Review, heal (`--fix`) and improve (`--improve`) THIS repo's own prompt files — skills, commands, agents in `.claude/` and `plugins/*/` — against its review dimensions (triggering, BUDGET-004 tiering, single source of truth, no-hardcode, portability, executability, write safety, delegation, grounding, integration); findings to chat, gated by `context:check` | SKILL.md, review-dimensions.md, healing-playbook.md, improvement-loop.md |
 
 ## Agent → Skill Map
 
@@ -178,13 +187,15 @@ Outside the four QA categories.
 | qa-backend-expert | qa-api, qa-postman, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
 | qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan, qa-api, qa-postman |
 | ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate, qa-defect |
-| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-sbtm, qa-metrics, qa-review-tests, qa-coverage-gap |
-| test-data-engineer | qa-generate-data, qa-seed-data |
+| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-sbtm, qa-metrics, qa-review-tests, qa-coverage-gap, qa-test-mind-map |
+| test-data-engineer | qa-generate-data, qa-seed-data, qa-test-data-model |
 | fullstack-backend | dotnet-unit-test, dotnet-fix, angular-admin |
 | fullstack-frontend | vue-unit-test, vue-fix, vc-shell-fix |
 | regression-orchestrator | qa-metrics (gate enforcement after runs) |
 
 ## Frontmatter Reference
+
+> Authoring a new skill: [`../knowledge/agents/authoring-standard.md`](../knowledge/agents/authoring-standard.md) is the checklist it is reviewed against — including the observed-behaviour (`kb`) step (§5).
 
 | Field | Required | Description |
 |-------|----------|-------------|

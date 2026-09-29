@@ -1,5 +1,5 @@
 ---
-description: "Autonomous fix for an already-filed bug: triage → confirm root-cause → route to one repo → reproduce by unit test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review. Single repo only. Never auto-merges. Interactive twin of ci/run-fix-cycle.ts."
+description: "Autonomous fix for an already-filed bug: triage → confirm root-cause → route to one repo → reproduce by unit test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review. Single repo only. Never auto-merges."
 argument-hint: "ticket <KEY>"
 
 ---
@@ -9,15 +9,7 @@ argument-hint: "ticket <KEY>"
 > **Before posting any tracker comment, read `knowledge/execution/tracker-ops.md` §0 — the GOLDEN RULE.**
 
 Pick up a bug **already filed by `/qa-bug`** and drive it through the auto-fix lifecycle to an open PR,
-then **STOP for human review**. This is the **interactive twin** of the headless `ci/run-fix-cycle.ts`
-(the same relationship `/qa-regression` has with `ci/run-regression.ts`). It **reuses** that pipeline's
-infra and the shared gate ladder in `.claude/rules/quality-gates.md`.
-
-> **Note on `ci/…` references.** Mentions of `ci/run-fix-cycle.ts`, `ci/agents/*`, `ci/lib/*` throughout
-> this command and the agent docs are **design heritage** — the headless twin that runs in the native
-> agentic checkout. **That `ci/` tree is NOT shipped in the installed plugin**, so treat those paths as
-> conceptual provenance, not files to open. In the plugin, the equivalents are: routing → the baked
-> `project-profile.json` (+ `skills/qa-fix-routing/*`), tracker/PR ops → `skills/qa-fix-routing/ado.mjs`.
+then **STOP for human review**. It follows the shared gate ladder in `.claude/rules/quality-gates.md`.
 
 **Designed to generalize.** The pipeline is repo-kind- and project-agnostic: it routes to **one**
 allowed product repo of any kind and delegates the fix to the developer agent that matches that kind.
@@ -27,7 +19,7 @@ a rewrite:
 | Repo kind (from `skills/qa-fix-routing/repo-router.ts`) | Repos | Developer agent | Toolchain (`REPO_PROFILES`) |
 |---|---|---|---|
 | `module` / `platform` | `vc-module-*`, `vc-module-x-*`, `vc-platform` | **`fullstack-backend`** (live) | .NET 10 / xUnit (+ module Admin Angular / Jasmine) |
-| `frontend` | `vc-frontend` | **`fullstack-frontend`** (live; CI twin `ci/agents/fix-frontend-agent.md`) | Vue 3 / TS / vitest (+ in-repo UI kit / Storybook) |
+| `frontend` | `vc-frontend` | **`fullstack-frontend`** (live) | Vue 3 / TS / vitest (+ in-repo UI kit / Storybook) |
 
 > A `module` repo may additionally declare an embedded **frontend sub-app** on a different stack
 > (`moduleFrontendSubApps` in `skills/qa-fix-routing/fix-repos.json`, e.g. `vc-module-pagebuilder`'s Vue 3
@@ -98,7 +90,7 @@ helpers, and do **not** ask the operator what the profile already answers.
 ```
 `/qa-fix` does NOT create the ticket. It needs **at least one** of: a resolvable ticket in the tracker
 **or** a local `/qa-bug` report — only when **both** are missing does it stop and ask the user to run
-`/qa-bug` first (matching the CI twin `ci/run-fix-cycle.ts`, which bails only on `!ticket && !bugReport`).
+`/qa-bug` first.
 A ticket with no local report is the **normal client-deployment case** (the client's QA filed the bug
 straight in their tracker and never ran `/qa-bug`): `/qa-fix` continues, using the ticket
 description/STR/attachments as the repro context. Once invoked it **auto-continues** through all phases;
@@ -124,7 +116,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
    (do NOT hand-roll `curl`+`python` — that caused the repeated `/tmp`/`cp1252`/emoji failures last run;
    see [`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §2). Use the ticket **key format the
    tracker gave you** verbatim (`ABC-123` for Jira, a bare `12345` for Azure Boards — not always `VCST-`).
-   Confirm it's a Bug in a workable status. Load the linked `/qa-bug` report from `reports/bugs/open/`
+   Confirm it's a Bug in a workable status. Load the linked `/qa-bug` report from `reports/bugs/open/**` (recursive — severity subfolders)
    (or `fixed/`) **if one exists** — it's the preferred input, not a hard requirement. (Match the report
    to the ticket by the tracker's key format: for Azure Boards' bare numeric ids match `AB#<n>` / `#<n>`,
    NOT a bare `<n>` substring — `521` would otherwise false-match `VCST-5218`.)
@@ -155,8 +147,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
 
 ## Phase 1 — Triage (Gate 0) + Root-cause + Repo route (Gate 1)
 > **Owner:** the top-level session (triage — no separate orchestrator agent is shipped in `vc-fix`)
-> → `qa-backend-expert` (root-cause). Reuses the `ci/agents/fix-triage-agent.md` criteria
-> (design-heritage; CI-only) and `skills/qa-fix-routing/repo-router.ts`.
+> → `qa-backend-expert` (root-cause). Routes via `skills/qa-fix-routing/repo-router.ts`.
 
 - **Gate 0 — fix-eligibility triage** (`/qa-defect classify` + `/qa-risk`): proceed ONLY if the bug is
   a **simple, low-risk, localized, non-breaking, code-fixable** defect. **BAIL** (before any clone) on
@@ -283,8 +274,8 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   auth-per-host are in [`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §3). A **normal PR
   for human review — not auto-merged**, **PR title `fix(<key>): <summary>`** (Conventional Commits, ticket
   key in the scope slot; see
-  `knowledge/agents/developers/shared-instructions.md` §PR title), body from the agent's PR template ("DO NOT MERGE until
-  human review"; backend adds "needs deploy verification"), label, link the tracker.
+  `knowledge/agents/developers/shared-instructions.md` §PR title), body from `knowledge/agents/developers/pr-body-template.md`
+  (the one PR body template: "do not auto-merge"; backend adds "needs deploy verification"), label, link the tracker.
 - **Tracker-key hygiene in the PR/issue body — a malformed key-shaped token turns the whole `ci` job RED.**
   VirtoCommerce's `module-ci.yml` runs *Parse Jira Keys from All Commits*
   (`vc-github-actions/get-jira-keys`) over the **PR body**, extracting with `/(([A-Z]+)-\d+)/g`, and
@@ -396,8 +387,7 @@ routine runs headless on a cron (min 1h) over the code-host + tracker connectors
 command (e.g. *"scan the tracker for the `qa-autofix` label/tag, run `/qa-fix` on the top N eligible,
 open PRs"* — Jira JQL or Azure Boards WIQL per `tracker.kind`).
 This is why the work branch is **`claude/`-prefixed** (`claude/qa-autofix/VCST-XXXX`): routines may
-only push `claude/*` branches by default. The headless `ci/run-fix-cycle.ts` + `auto-fix.yml` remain
-available for CI-on-PR; the routine is the lighter scheduled trigger.
+only push `claude/*` branches by default.
 
 ## Rules
 - Single repo of any allowed kind; a STOP at any gate leaves the ticket filed for human handoff (see

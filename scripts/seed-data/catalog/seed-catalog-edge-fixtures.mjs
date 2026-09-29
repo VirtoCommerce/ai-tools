@@ -28,6 +28,7 @@
  * teardown with a verifyRemoved zero-residue assert.
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {

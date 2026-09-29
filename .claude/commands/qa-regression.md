@@ -238,10 +238,8 @@ record: `.claude/agents/regression-orchestrator.md` Steps 1.5–4.
 > **Why not batches of 3.** Dispatching in fixed groups and waiting for the whole group means each
 > group costs its SLOWEST suite while the other slots idle; continuous refill with longest-first
 > order costs the packing instead. **`regression:plan` prints both numbers for the selection you are
-> about to run — read them there rather than from a figure quoted here**, which is a measurement of
-> one manifest state and drifts with every suite change (the pair that used to sit in this
-> paragraph did). The plan also states the saving honestly when there is none: a selection whose
-> critical path is a single long suite reports a saving near zero rather than implying one.
+> about to run — read them there, never from a figure quoted here** (it drifts with every suite
+> change). A selection whose critical path is one long suite honestly reports a saving near zero.
 
 ### Step 5 — Monitor, Retry, Continue
 - **React to the first suite that settles, not to a batch.** Update the status tracker for that

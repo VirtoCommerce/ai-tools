@@ -80,6 +80,10 @@ tests/screenshots/**/*.png
 # reports/test-lifecycle/, reports/coverage/) stays ignored — it is disposable.
 !reports/tickets/**/screenshots/*.png
 
+# VCST-2945 scannable barcode images ARE committed test data: the storefront scanner's file-upload
+# path decodes them and `td:validate:barcode` checks each one's stamped value against the spec.
+!test-data/uploads/barcodes/*.png
+
 # Playwright MCP accessibility snapshots — dropped at repo root by browser MCPs
 # during exploratory sessions. Transient working state, not deliverables.
 # (No tracked YAML at repo root, so the bare-yml pattern is safe.)
@@ -107,6 +111,7 @@ test-data/aliases.localhost.json
 # Self-diagnostics telemetry (Tier A collector) — per-session jsonl + state,
 # written under the project output root; transient, never committed (VCST-5475)
 .vc-fix/
+.kb-harvest/
 
 # vc-perf load/trace run artifacts (k6 summaries, counters CSV, .nettrace) — heavy,
 # machine-specific, regenerated per run; kept out of the plugin install dir so they
@@ -116,7 +121,6 @@ test-data/aliases.localhost.json
 # Auto-fix pipeline — cloned product-repo source is transient working state
 .fix-workspace/
 # Auto-fix module discovery + dependency-graph cache (rebuilt from gh on TTL)
-ci/config/.module-registry.cache.json
 plugins/vc-fix/skills/qa-fix-routing/.module-registry.cache.json
 # Auto-fix run evidence (keep fix-report.md + summary.json, drop heavy artifacts)
 reports/fixes/FIX-*/**/*.png

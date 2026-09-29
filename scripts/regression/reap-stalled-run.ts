@@ -26,6 +26,7 @@
  *   npx tsx scripts/regression/reap-stalled-run.ts --idle-min 20 --apply
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

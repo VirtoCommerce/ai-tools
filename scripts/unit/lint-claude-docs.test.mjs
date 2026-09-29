@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored, promptFiles, checkPromptBudget, PROMPT_BASELINE_PATH } from '../maintenance/lint-claude-docs.mjs';
+import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored, promptFiles, checkPromptBudget, PROMPT_BASELINE_PATH, charCount } from '../maintenance/lint-claude-docs.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -15,6 +15,24 @@ test('measureBudget sums chars and finds the longest line across files', () => {
   assert.equal(r.total, 41 + 5);
   assert.equal(r.longestLine, 30);
   assert.deepEqual(r.perFile.map((p) => p.file), ['a', 'b']);
+});
+
+test('B-55: charCount is checkout-invariant — a CRLF copy counts the same as its LF blob', () => {
+  const lf = 'line one\nline two\nline three';
+  const crlf = lf.replace(/\n/g, '\r\n');
+  assert.equal(charCount(crlf), charCount(lf));
+  assert.notEqual(crlf.length, lf.length, 'sanity: the CRLF string really is longer raw');
+});
+
+test('B-55: measureBudget and checkPromptBudget count a CRLF file the same as its LF blob', () => {
+  const lf = 'a'.repeat(50) + '\n' + 'b'.repeat(50);
+  const crlf = lf.replace(/\n/g, '\r\n');
+  const src = { lf, crlf };
+  const budget = measureBudget(['lf', 'crlf'], (f) => src[f]);
+  assert.equal(budget.perFile[0].chars, budget.perFile[1].chars);
+
+  const prompt = checkPromptBudget(['lf', 'crlf'], {}, (f) => src[f], () => true);
+  assert.deepEqual(prompt, { over: [], breaches: [] });
 });
 
 test('alwaysLoadedFiles = CLAUDE.md + every .claude/rules/*.md, nothing else', () => {

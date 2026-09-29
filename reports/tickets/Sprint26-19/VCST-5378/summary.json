@@ -1,0 +1,329 @@
+{
+  "ticket": "VCST-5378",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "narrow_story_tokens": {
+      "priority": "FAIL - P1 (High), FAST needs P2-P3",
+      "layer": "FAIL - cross-layer (vc-platform + vc-module-ucp + vc-frontend)",
+      "domains": "FAIL - >=2 (UCP, Cart, Checkout, B2B orgs, Auth/OAuth)",
+      "chain_shape": "FAIL - net-new chain links (L2 identity linking, L6 handoff mint, L7 restore)",
+      "surface": "PASS - named, deployed, reachable",
+      "reach": "FAIL - reach exceeds diff; the Platform OAuth change is generic and reusable by any module resource"
+    },
+    "escalated_reason": "5 of 6 tokens contradicted; FULL is a Story's default and the downgrade is a conjunction of all six"
+  },
+  "layer": "cross-layer",
+  "shape_class": null,
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/ucp.md",
+    "rev": 1,
+    "generated": "2026-09-17",
+    "freshness": "STALE - stamped at older PR heads; never auto-refreshed. Amendments routed to 5-docs-map.",
+    "all_layer_chain": true
+  },
+  "derived_oracle": {
+    "bl_domain": "BL-UCP (business-logic.md Domain 25) - declared and deliberately EMPTY, 0 invariants",
+    "delegated": [
+      "BL-AUTH-001",
+      "BL-AUTH-015",
+      "BL-AUTH-017",
+      "BL-B2B-001",
+      "BL-B2B-002",
+      "BL-B2B-004",
+      "BL-CART-002",
+      "BL-CART-005",
+      "BL-CART-007",
+      "BL-CART-008",
+      "BL-CHK-001"
+    ],
+    "ecl": [
+      "ECL-1.2",
+      "ECL-5.1",
+      "ECL-6.1",
+      "ECL-14.1"
+    ],
+    "docs_grounding": "NONE - VirtoOZ carries no UCP page (domain map D8). Every oracle this run is {SPEC} or {OBSERVED}, never {DOC}.",
+    "audit": "reports/knowledge/BL-AUDIT-2026-09-22.md",
+    "proposals": "reports/ba/bl-proposals-2026-09-22.md"
+  },
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-09-22",
+  "environment": "vcst",
+  "timing": {
+    "reachability_minutes": 2,
+    "time_to_first_test_minutes": null
+  },
+  "build": {
+    "declared": "vc-deploy-dev branch vcst-qa theme/artifact.json @ecf695f7, committed 2026-09-22T13:41:20Z",
+    "deployed": {
+      "platform": "3.1072.0-pr-3108-b6ef",
+      "ucp_module": "3.1006.0-pr-7-612c",
+      "storefront": "2.59.0-pr-2467-1951-195127f5"
+    },
+    "probe": "GET {BACK_URL}/api/platform/modules with an admin token, plus the login-page HTML and the storefront footer",
+    "note": "All three components sit at their OPEN, UNMERGED PR heads on branch feat/VCST-5378-unified-buyer-flow. The environment moved TWICE on 2026-09-22, so every prior QA pass on this ticket measured a build that no longer exists."
+  },
+  "epic": {
+    "key": "VCST-5201",
+    "title": "Universal Commerce Protocol (UCP)",
+    "status": "Draft",
+    "integration_seam": "VCST-5126 (UCP - MVP) is Done; this story clones it"
+  },
+  "ac_analysis": {
+    "source": "No AC field exists. The de-facto ACs are the two user stories plus three developer comments (Implementation architecture, QA Steps - Claude, QA Steps - ChatGPT).",
+    "atomic_conditions": 16,
+    "verdicts": {
+      "SATISFIED": 9,
+      "DRIFT_wording": 1,
+      "NOT_FOUND": 2,
+      "UNVERIFIABLE_fixture_gap": 3,
+      "CONTRADICTS_as_worded": 1
+    },
+    "note": "The 3 UNVERIFIABLE conditions were unblocked mid-run by the 3a seeding lane and two of them now PASS."
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "action": "SKIPPED",
+      "reason": "the ticket was already in the in-testing status (Testing) when the run started",
+      "from": "Testing",
+      "to": null
+    },
+    {
+      "at": "5-status",
+      "action": "TRANSITIONED",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8)",
+      "confirmed_by": "operator",
+      "reason": "verdict PASS WITH NOTES; TESTED is the terminal state /qa-test may reach (never Done/Closed/Cancelled)",
+      "at_utc": "2026-09-22T16:39:59.083Z"
+    }
+  ],
+  "agents_dispatched": [
+    {
+      "step": "1r",
+      "agent": "qa-backend-expert",
+      "lane": "playwright-edge",
+      "result": "REACHABLE"
+    },
+    {
+      "step": "1c",
+      "agent": "ba-system-analyzer",
+      "lane": "source-diff",
+      "result": "three PR diffs reconciled against domain map D1-D13 / G1-G8"
+    },
+    {
+      "step": "1d",
+      "agent": "ba-story-writer",
+      "lane": "none",
+      "result": "16 atomic conditions, AC quality scorecard, DoD"
+    },
+    {
+      "step": "3a",
+      "agent": "test-data-engineer",
+      "lane": "browserless",
+      "result": "FIXTURE GAP CLOSED - org-conditioned contract pricing + assortment scoping seeded live"
+    },
+    {
+      "step": "3x",
+      "agent": "qa-testing-expert",
+      "lane": "playwright-firefox",
+      "result": "14 observations, 6 PROMOTE, 3 BACKLOG"
+    },
+    {
+      "step": "4-auth",
+      "agent": "qa-backend-expert",
+      "lane": "playwright-chrome",
+      "result": "PASS - authenticated chain end to end, 17/17 first-attempt restores"
+    },
+    {
+      "step": "A",
+      "agent": "test-management-specialist",
+      "lane": "authoring",
+      "result": "DONE - suite 101, 29 cases UCPA-001..029, all Draft"
+    },
+    {
+      "step": "4v",
+      "agent": "ui-ux-expert",
+      "lane": "Chrome DevTools MCP",
+      "result": "DONE - vs.DESIGN SKIPPED (no design link); 2 BL-A11Y findings EXCLUDED by operator decision; UX copy observation retained"
+    },
+    {
+      "step": "4a",
+      "agent": "qa-backend-expert",
+      "lane": "playwright-edge",
+      "result": "IN PROGRESS"
+    },
+    {
+      "step": "3-cases",
+      "agent": "qa-lead-orchestrator (Verifier Mode)",
+      "lane": "delegated live re-check on playwright-firefox",
+      "result": "APPROVE, HIGH confidence"
+    },
+    {
+      "step": "4c",
+      "agent": "regression-orchestrator",
+      "lane": "chrome/firefox",
+      "result": "IN PROGRESS"
+    }
+  ],
+  "test_data": {
+    "data_surface": true,
+    "dispatched": "test-data-engineer",
+    "outcome": "The fixture gap recorded in domain map ucp.md S7 is CLOSED. Org-conditioned contract pricing and assortment scoping are seeded and live.",
+    "measured": {
+      "contract_product_anonymous": "29.99",
+      "contract_product_contract_buyer": "11.11",
+      "control_product_both_contexts": "3.49",
+      "org_only_product_anonymous": "withheld",
+      "org_only_product_contract_buyer": "44.44"
+    },
+    "aliases": [
+      "UCP_ORG_CONTRACT",
+      "UCP_CONTRACT_PRODUCT",
+      "UCP_CONTRACT_CONTROL_PRODUCT",
+      "UCP_ORG_ONLY_PRODUCT",
+      "UCP_CONTRACT_BUYER"
+    ],
+    "verified_independently": "Yes - re-read through UCP search_products by the orchestrator, not from the seeder's own --verify"
+  },
+  "contract": {
+    "contract_surface": true,
+    "sources": [
+      "UCP delegates to XCatalog/XCart GraphQL in-process",
+      "storefront mergeCart"
+    ],
+    "refresh": "npm run schema:check - OK, 108 queries / 140 mutations / 54 types, no drift"
+  },
+  "coverage_triage": {
+    "coverage_surface": true,
+    "scan": "tc:scope --domain observability --suite 094",
+    "hits": 0,
+    "repair": 0,
+    "rebase": 0,
+    "unscannable": [],
+    "unmatched_observables": [
+      "handoff restore status code",
+      "MCP tool error contract for a missing required argument",
+      "handoff cache dependency telemetry dimensions",
+      "UCP discovery manifest origin"
+    ],
+    "note": "Suite 094 is telemetry-only; none of its 23 rows asserts the value chain. The unmatched observables are a genuine corpus gap, not a wording mismatch - checked."
+  },
+  "discovery": {
+    "session": "reports/exploratory/SBTM-VCST-5378-2026-09-22.md",
+    "observations": 14,
+    "promote": 6,
+    "backlog": 3,
+    "not_reached": [
+      "Sc.12 guest-checkout-disabled config half - flipping store config was out of bounds with two lanes running",
+      "Order-side attribution - stopped before payment as instructed"
+    ]
+  },
+  "visual": {
+    "visual_surface": true,
+    "sources": [
+      "vc-frontend#2467 adds the /oauth/authorize route",
+      "buyer-facing handoff failure banner",
+      "cart landing after restore"
+    ],
+    "lane_ran": true,
+    "report": "reports/tickets/Sprint26-19/VCST-5378/design-report.md",
+    "axes": {
+      "vs_DESIGN": "SKIPPED - the ticket carries no Prototype/design link, so there is no spec to diff against. Never a PASS.",
+      "BL-UI / BL-A11Y": "ASSESSED, then EXCLUDED by operator decision - see accessibility_excluded below. NOT a clean result.",
+      "WCAG 2.2 AA": "ASSESSED, then EXCLUDED by operator decision - see accessibility_excluded below. NOT a clean result."
+    },
+    "accessibility_excluded": {
+      "decided_by": "operator",
+      "date": "2026-09-22",
+      "instruction": "skip all accessibility findings in this task",
+      "effect": "BL-A11Y-* findings are not filed, not triaged, and not counted in the verdict for this run.",
+      "findings_set_aside": [
+        {
+          "id": "F1",
+          "severity": "High",
+          "summary": "handoff-failure toast covers 48% of the focused Sign in link at >=1280px; desktop only",
+          "oracle": "BL-A11Y-001 + WCAG 2.4.11 Focus Not Obscured (Minimum)"
+        },
+        {
+          "id": "F2",
+          "severity": "Medium",
+          "summary": "shipping-address edit (pencil) button on /cart/{cartId}?ucp_handoff=1 has no accessible name",
+          "oracle": "BL-A11Y-002 + WCAG 4.1.2 (axe button-name)"
+        }
+      ],
+      "note": "Both were reproduced live and keep their severities. They are set aside, NOT refuted and NOT absent. The absence of a11y entries in bugs_filed/bugs_not_filed for this run reflects this exclusion, not a passing audit."
+    },
+    "ux_observation_retained": "The handoff-failure banner collapses three distinct server causes (expired / already-used / forged-or-unknown, all returning an identical 400) into one sentence that reads diagnostic but is not, and \"unavailable in this tab\" misdirects a buyer whose token is simply invalid. It never states the one reassuring true fact - the cart is intact server-side. This is a clarity/copy finding, not an accessibility one, so it survives the exclusion.",
+    "citation_correction": "The lane originally cited PROPOSED-BL-UI-007 for F1 and graded the axis FAIL-blocking. BL-UI-007 already exists and is an ADMIN-surface invariant, so it cannot apply to a storefront toast; a bare BL-UI-007 would have resolved and passed bl:lint while pointing at the wrong entry. F1 re-cited to BL-A11Y-001. Per triage.md 7a a BL-A11Y-* finding never fails a functional ticket verdict, so the axis was non-blocking even before the operator exclusion.",
+    "auth_limitation": "Chrome DevTools MCP has no --secrets, so the lane declined to type a plaintext password and audited an ANONYMOUS handoff landing. The signed-in org-scoped landing remains visually unaudited. Incidentally CONFIRMED live: an anonymous open of an org-scoped continue_url redirects to /sign-in with the handoff preserved - closing half of domain-map gap G1."
+  },
+  "new_cases_authored": 29,
+  "regression": {
+    "c1": "COMPLETE",
+    "run_id": "REG-2026-09-22-1750",
+    "suite": "101",
+    "ids": "UCPA-001..UCPA-029",
+    "promote": false,
+    "results": {
+      "total": 29,
+      "pass": 23,
+      "fail": 3,
+      "blocked": 3,
+      "passRateExecuted": 0.885
+    },
+    "fails": [
+      "UCPA-024 stale expectation (product now 403, safer)",
+      "UCPA-025 stale expectation (product improved)",
+      "UCPA-029 agent shipping_address overwrote the buyer saved address record - needs a product decision"
+    ],
+    "blocked": [
+      "UCPA-004/008 no B2C-store fixture account",
+      "UCPA-013 needs an isolated stand for guest-checkout-disabled"
+    ]
+  },
+  "promotion": {
+    "applied": false,
+    "reason": "/qa-test does not promote (5g removed 2026-09-10). Cases stay Draft; the flip is a later /qa-test-lifecycle 6P or a direct /qa-regression Step 6.5."
+  },
+  "iterations": {
+    "mode": "--iterate --max-rounds 3",
+    "current_round": 1,
+    "rounds_used": 1,
+    "per_round": [
+      {
+        "round": 1,
+        "verdict": "PASS WITH NOTES",
+        "note": "Initial grade was FAIL on VCST-6053; overruled by operator decision 2026-09-22 (feature works overall). Rounds 2-3 not needed."
+      }
+    ]
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6053",
+      "severity": "High",
+      "relationship": "standalone + relates-to (operator asked for a separate bug)",
+      "summary": "raw ucp_session leaves the browser in cleartext to Google Analytics and is retained in Virto telemetry",
+      "evidence": "redacted 12-entry HAR slice attached; 141 App Insights rows; request-order proof the token is live when it leaves"
+    }
+  ],
+  "bugs_not_filed": [],
+  "appinsights": {
+    "correlation": "PASS - one key_hash followed Set->Get across pods; cross-pod read directly evidenced",
+    "sampling_note": "microsoft.sample_rate is NULL on this component; real retention is itemCount, measured 13-18 (~6-8%), far heavier than the ~50 recorded in suite 094 notes - that note needs correcting",
+    "leak": "FAIL - see VCST-6053"
+  },
+  "screenshots": "reports/tickets/Sprint26-19/VCST-5378/screenshots/",
+  "$comment": "Round 1 corrections of record. (1) The 2026-09-22 11:09 tracker comment reported F2 NOT FIXED and recommended re-opening it; it was measured on UCP pr-7-9bc9. On the deployed pr-7-612c F2 does not reproduce - five independent probes from BOTH hosts all resolve to the storefront origin. Correcting that comment is owed at 5-report. (2) A PR-diff prediction that continue_url minting could still disagree with the advertised handoff_url_template was REFUTED live. (3) A seeding-lane claim that xAPI takes price-evaluation groups from the CONTACT rather than the ORGANISATION was REFUTED by direct measurement - the org carries the group, the contact carries groups:[], and the buyer still reads the contract price; likely search-index lag. Relaying it would have filed a false product defect against this story's core B2B promise.\n\nROUND 1 GATES. 1e Test Model: PASS, 13 clauses (scenario 0, the FLOW journey, was ADDED rather than renumbering the table - renumbering silently drops matrix rows). 3-exec: APPROVE inline, after adding C15 (the ChatGPT client variant) as explicit non-coverage; every fixture the checklist names was verified resolvable LIVE, not merely declared. 3-cases: APPROVE by a fresh qa-lead verifier at HIGH confidence - it re-derived the deterministic core itself, confirmed zero fabricated BL-UCP-* citations, zero DV-024 evidence-path violations, zero id collisions with suite 094, 1:1 traceability for all 23 model scenarios plus the 6 SBTM PROMOTE scenarios, and per-case single-use token hygiene; it also found the summary.json-vs-SBTM-O11 contradiction and resolved it by its OWN live probe on a third lane rather than by reading either artifact.\n\nNEW CASES: suite 101 (regression/suites/Backend/ucp/101-ucp-agentic-commerce.csv), 29 cases UCPA-001..UCPA-029, all Draft. Traceability: test-model scenarios 0-22 -> UCPA-001..023 (1:1); SBTM PROMOTE net-new N1-N6 -> UCPA-024..029. Blocked on this environment (reported BLOCKED, never FAIL): UCPA-004 and UCPA-008 need a B2C-store fixture account that does not exist; UCPA-013 needs an isolated stand to flip guest-checkout. Closes the gap the domain map recorded: the pre-existing UCP corpus was 23 cases, 0 of which touch the value chain. UCPA-001 is a genuine end-to-end FLOW case with cross-step data dependencies.",
+  "tracker": {
+    "comment_id": "110311",
+    "amended": true
+  }
+}

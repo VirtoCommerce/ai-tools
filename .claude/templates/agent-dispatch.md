@@ -22,6 +22,13 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 **Output:** {OUTPUT_PATH}
 
+**Observed behaviour:** before your first live check of each page path / GraphQL operation / endpoint
+in scope, ask the base yourself — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`).
+On a scripted suite run, ask instead on each deviation (FAIL, BLOCKED, unexpected result, incidental
+observation) and before every capture.
+At close-out, for each platform behaviour you report: matched ⇒ `kb confirm`, contradicted ⇒
+`kb dispute`, nothing held ⇒ `kb capture` (`--deployment {TEST_ENV}`). List the entry ids in your output.
+
 **Evidence policy:** Follow `skills/qa-evidence/evidence-capture-policy.md`
 - Screenshots: failures + final state of critical flows only
 - Console: capture errors, skip noise
@@ -30,6 +37,11 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 {TASK_SPECIFIC_INSTRUCTIONS}
 ```
+
+**The `Observed behaviour` line is not optional** and is never replaced by packed answers — the
+recipient asks for its own surface ([`../skills/qa-test/dispatch-pack.md`](../skills/qa-test/dispatch-pack.md)).
+Omit it only for a Mechanic dispatch (release plumbing, diff review) per
+[`../knowledge/agents/authoring-standard.md`](../knowledge/agents/authoring-standard.md) §5.2.
 
 ## Browser Assignment & Fallback Chain
 
@@ -183,6 +195,16 @@ GET {{BACK_URL}}/api/platform/modules      (bearer token; the same call scripts/
 It returns every installed module with its `id` and `version` — the `deployed` state, and the only
 ground truth. The two disagree routinely: a deploy in flight, a failed deploy, or a partially applied
 one. That gap is exactly what `/qa-hotfix-check` exists to wait on.
+
+**For storefront-facing scope there is a third vantage, and it needs no token:** `npm run store:caps`
+replays vc-frontend's own anonymous app-boot query (`InitializeApplication`) and prints which modules
+the STOREFRONT can see, at which version, with their public flags. It is not a cheaper `deployed` probe
+— it is the answer to a different question. A module installed and healthy at the platform level can
+still expose no capability the storefront sees, and then the platform manifest calls the env green while
+the feature's button never renders. When the scope is a storefront feature, record this alongside
+`deployed`; `--settings` also reads the effective feature-flag state without an Admin SPA round-trip.
+Reader contract, the `ReturnModuleVersion` trap and what absence does and does not mean:
+`.claude/knowledge/domain/store-settings.md` §The storefront capability manifest.
 
 **If the probe fails, record `deployed: UNKNOWN` and say so. NEVER fall back to `declared`.** A null
 `deployed` leg collapses the released-vs-deployed distinction this section exists to preserve, and the

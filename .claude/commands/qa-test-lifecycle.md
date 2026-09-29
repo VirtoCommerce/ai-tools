@@ -41,7 +41,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 ## Flags
 
 | Flag | Effect |
-|------|--------|
+|---|---|
 | `--skip-sync` | Skip Phase 2 (Sync) — assume cases are current, go straight to gap analysis |
 | `--skip-generate` | Skip Phases 2-3 (Sync + Analyze/Generate) — start at Phase 4 Review |
 | `--skip-data` | Skip the Phase 3 data-prep step (`/qa-generate-data`) — author cases against existing fixtures only, don't design/author new combinations |
@@ -78,7 +78,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 ## Agent Delegation
 
 | Phase | Agent | Browser | Purpose |
-|-------|-------|---------|---------|
+|---|---|---|---|
 | 1. Scope | Orchestrator (you) | Not needed | Parse input, resolve affected suites, build change inventory |
 | 2. Sync & Update | `test-management-specialist` | Not needed | Assess staleness via Context7, update stale/broken cases |
 | 3. Analyze & Generate | `test-management-specialist` | Not needed | Coverage gap detection, data-prep via `/qa-generate-data` (combination design + gap fixtures), test case creation |
@@ -169,7 +169,7 @@ Step 2 — Compare against last known state:
 Step 3 — Map changes to suites:
 
 | What changed | Affected suites |
-|-------------|----------------|
+|---|---|
 | Backend module version changed | Map module name to suites via `module-suite-map.md` |
 | `PlatformVersion` changed | All suites (platform upgrade) — run `critical` selection |
 | Theme version changed | Frontend suites |
@@ -240,7 +240,7 @@ Use `knowledge/execution/module-suite-map.md` to route changes to specific test 
 For each affected suite, identify specific cases referencing changed areas and classify:
 
 | Impact Type | Meaning |
-|-------------|---------|
+|---|---|
 | `POTENTIALLY_STALE` | Case references a changed page/API/field — may need updates |
 | `LIKELY_BROKEN` | Case references a removed/renamed element or deprecated API |
 | `NEW_NEEDED` | New feature/endpoint with no test coverage |
@@ -257,7 +257,7 @@ Query Context7 (`/virtocommerce/vc-docs`) for each changed module's current beha
 Reclassify each case:
 
 | Original | Finding | New Classification |
-|----------|---------|-------------------|
+|---|---|---|
 | POTENTIALLY_STALE | Element/field still matches | `VALID` — no update |
 | POTENTIALLY_STALE | Element renamed/moved | `STALE` — update steps/assertions |
 | POTENTIALLY_STALE | New behavior not captured | `INCOMPLETE` — add assertions |
@@ -268,6 +268,7 @@ Reclassify each case:
 
 **For STALE cases:**
 1. Read current test case from suite CSV
+   - **KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 2. Query Context7 for correct current behavior
 3. Update Steps and Assertions to match new behavior
 4. Preserve: case ID, Title (update if feature name changed), Section, Priority, Business_Rule, Edge_Case_Refs
@@ -388,7 +389,7 @@ does not restate it.** Read its Review Dimensions table (and `review-criteria.md
 codes, and severities; a restated copy here would drift, and has. Delegate by *dimension number*:
 
 | Dimensions | Where they run in this pipeline |
-|------------|-------------------------------|
+|---|---|
 | **1–7, 9, 10** — structure, determinism, completeness, testability, data validity, BL/ECL + requirement traceability, duplication, technique coverage, assertion grounding | **Here (Phase 4a)**, static, no browser. Start with the deterministic core: `npm run suites:review -- <csv>` (dims 1–7, 9, 10 as exact rules, plus `TRI-000` stamp staleness), then spend LLM effort only on the judgment rules it can't decide |
 | **8** — live environment verification | **Phase 5** (`qa-testing-expert`, `playwright-firefox`) |
 | **10 (live half)** — grounding `{HYPOTHESIS}`/unconfirmed-`{SPEC}` → `{OBSERVED}` | **Phase 5** — static 4a only *detects* an ungrounded assertion; only the live pass can ground it |
@@ -492,7 +493,7 @@ This is gated by an **evidence bar, not human approval** — the **applicable-ax
 **Result classification:**
 
 | Finding | Severity | Action |
-|---------|----------|--------|
+|---|---|---|
 | VERIFIED | — | Test case is environment-compatible |
 | CHANGED | Critical | Element renamed/moved → auto-fix label |
 | BROKEN | Blocker | Page error or flow blocked → investigate |
@@ -552,16 +553,12 @@ when there is no `promotionSource`. **Never runs** under `--ci` or `--report-onl
 
 **Precondition, stated precisely — 6P does NOT require an APPROVED pipeline verdict.** It requires the
 **G10 re-derivation in step 1 to come back clean for the cases being promoted**, plus the step-2 approval.
-The distinction matters because `--promote-only` skips Phases 2–5 and therefore produces no
-APPROVED/NEEDS-FIXES verdict at all: gating 6P on that verdict would make the manual promotion command
-(`/qa-test-lifecycle VCST-XXXX --promote-only`) a silent no-op. On a **full** run the pipeline verdict
+(`--promote-only` skips Phases 2–5 and so produces no verdict to gate on.) On a **full** run the pipeline verdict
 still applies as a second condition — NEEDS FIXES / BLOCKED means the suites in scope are not in a state to
 receive new cases, so do not promote into them.
 
-The problem this closes: `/qa-test` authors ticket cases into `reports/tickets/{SPRINT}/VCST-XXXX/test-cases.csv`,
-and **nothing in the manifest-driven runner reads `reports/tickets/**`** — a case left there executes once,
-in the run that wrote it, and never again. Promotion is the only path from a ticket-scoped case to
-regression coverage, and this command is its only owner (`/qa-test` prepares, never promotes).
+**Nothing in the manifest-driven runner reads `reports/tickets/**`**, so promotion is the only path from a
+ticket-scoped case to regression coverage, and this command is its only owner (`/qa-test` prepares, never promotes).
 
 **1 — Re-derive eligibility independently (do NOT trust the hand-off).** `summary.json`'s
 `promotion.eligible[]` says where the previous run got to; it is **not** an approval. Re-derive from the
@@ -612,11 +609,8 @@ suite, and that is exactly the collision that overwrites the other suite's per-c
 rejects a colliding **incoming** ID. On a collision, **re-ID the incoming case** — never renumber the
 existing one, never reuse a retired ID.
 
-> It is opt-in rather than on-by-default because the committed corpus already carries **~224 IDs that
-> appear in more than one suite** (legacy debt — e.g. `CAT-001` sits in both `051-catalog-admin-products`
-> and `001-catalog-navigation`). Checking the corpus against itself would fail every append on
-> pre-existing debt instead of on the caller's own rows. Cleaning that debt is a separate task; 6P's job
-> is only to stop **adding** to it.
+> It is opt-in because the corpus already carries **~224 IDs in more than one suite** (legacy debt, e.g.
+> `CAT-001`); checking the corpus against itself would fail every append on that debt. 6P only stops **adding** to it.
 
 The `Automation_Status` flip `Draft → Reviewed` happens **in the rows being appended** — that flip *is* the
 promotion. Stamp `References` with `Promoted: VCST-XXXX → <suite id> (YYYY-MM-DD)`, appending; never
