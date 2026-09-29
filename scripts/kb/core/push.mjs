@@ -839,6 +839,7 @@ async function flushOnce({
     // would turn it into `declined` and hide the plan it was run to show (VCST-6103).
     // `held` answers the question a preview's reader actually has — will this go out without me?
     // Only KB_PUSH_CONFIRM holds a queue; otherwise any later sweep, CLI or MCP, may publish it.
+    // THIS process's env, though: the MCP server sweeping the same queue reads its own (review).
     if (dryRun) return { state: 'dry-run', session, plan: built.plan, held: pushConfirmRequired(env) };
     if (gate) {
       const yes = await gate(built.plan);

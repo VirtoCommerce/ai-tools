@@ -356,6 +356,8 @@ test('a SUCCESSFUL push --dry-run with a due own-queue writes nothing and change
   assert.equal(headReads(r.calls), 1, 'the dry run read the head once, for its plan; the sweep never followed');
   assert.deepEqual(r.after, r.before, 'the queue, the stamp and the push status are exactly as they were');
   assert.match(r.stdout, /NOT held: any later kb call \(CLI or MCP\) may publish/, 'and it says so, rather than implying a hold');
+  assert.match(r.stdout, /settings\.local\.json and restart the session: a shell variable does not reach the MCP server/,
+    'and names the one place a hold reaches the MCP server from');
 });
 
 test('a dry run of ANOTHER session\'s idle file warns too — the warning is not about this session only', async () => {
@@ -376,6 +378,8 @@ test('--json carries the same hold status, and KB_PUSH_CONFIRM=1 is the one thin
   const text = await kbRecorded(['push', '--dry-run'], { KB_FAKE_BASE: 'healthy', KB_PUSH_CONFIRM: '1' });
   assert.match(text.stdout, /would commit/, 'and a dry run under the gate still shows the plan');
   assert.doesNotMatch(text.stdout, /NOT held/);
+  // A shell KB_PUSH_CONFIRM=1 holds THIS process; the MCP server reads its own env (VCST-6103 review).
+  assert.match(text.stdout, /Held in this process only .*a shell variable does not reach the MCP server/, 'not a promise the MCP server keeps');
 });
 
 test('a FAILED push --dry-run records no failure — nothing was attempted (VCST-6103)', async () => {

@@ -32,6 +32,14 @@ import { TOPIC_MAX, ask, capture, confirm, dispute, reindex, show, stat } from '
  * `=false|0|no|off` means false. Without this list `kb ask --no-sweep "q"` swallowed the question as
  * the flag's value, and `--dry-run=false` was the truthy string "false" — a dry run (VCST-6103).
  */
+/**
+ * Where a hold has to live to hold. `KB_PUSH_CONFIRM` in a shell reaches that one command; the MCP
+ * server, which sweeps and flushes the same queue, gets its env from Claude Code at start — the same
+ * route `KB_ENABLED=0` takes (`core/queue.mjs`).
+ */
+const HOLD_EVERYWHERE = 'To hold it everywhere, set KB_PUSH_CONFIRM=1 in the `env` of .claude/settings.local.json '
+  + 'and restart the session: a shell variable does not reach the MCP server.';
+
 const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help']);
 
 /** A pacing constant in whole minutes, for prose — derived, so the text cannot drift from the code. */
@@ -79,7 +87,8 @@ ${minutes(SWEEP_AFTER_MS)} minutes, silently and without affecting the exit code
 hook and no scheduler: the next session picks it up. \`--no-sweep\` on any verb skips it, and so does
 \`--dry-run\`. A dry run holds nothing, though: this session's own queue is still published by the
 next kb call, CLI or MCP, once its oldest line is ${minutes(OWN_FLUSH_AFTER_MS)} minutes old. KB_PUSH_CONFIRM=1 holds every
-push for your yes instead.
+push for your yes instead — set in \`.claude/settings.local.json\` \`env\`, then restart the session, so the MCP
+server sees it too; a shell variable reaches this command only.
 
 --topic is a short ENGLISH noun phrase for what the work is -- "configurable product checkout" --
 so a window of the log can be read by what it was about rather than by whose session it was. Cut at
@@ -258,7 +267,12 @@ async function main(argv) {
       // on this session's queue age, other sessions' idle files, their reach records and the stamp,
       // and a forecast restating those rules drifts from `sweepIfDue` the day they change. This
       // sentence is true under all of them. `r.held` is the same fact for a `--json` reader.
-      if (!r.held) out('  NOT held: any later kb call (CLI or MCP) may publish what is listed here. KB_PUSH_CONFIRM=1 holds it for review.');
+      //
+      // And `r.held` is THIS process's env only (VCST-6103 review): the MCP server that sweeps the same
+      // queue reads its own, set when Claude Code started it. So neither line may promise a hold the
+      // next publisher does not share; both name the one place that reaches it.
+      if (r.held) out(`  Held in this process only (KB_PUSH_CONFIRM=1 here). ${HOLD_EVERYWHERE}`);
+      else out(`  NOT held: any later kb call (CLI or MCP) may publish what is listed here. ${HOLD_EVERYWHERE}`);
     } else if (r.dryRun) {
       out(`kb push (dry run): could not build the plan — ${r.why ?? ''}`);
       out('  nothing was sent, and nothing was changed.');
