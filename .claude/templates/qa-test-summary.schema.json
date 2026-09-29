@@ -410,7 +410,7 @@
   },
   "screenshots": "reports/tickets/{SPRINT}/<ticket-key>/screenshots/",
   "report": {
-    "$comment": "/qa-test-fast only (path FAST_GROUNDED); null elsewhere. The human-readable deliverables and the run's kb ledger: page_url is the private Artifact page, verdict_md the <=60-line verdict file. kb lists the entry ids the run read, confirmed, disputed and captured (authoring-standard section 5, item 6).",
+    "$comment": "/qa-test-fast only (path FAST_GROUNDED); null elsewhere. The human-readable deliverables and the run's kb ledger: page_url is the Artifact page, shared with Anyone at Virto Commerce, verdict_md the <=60-line verdict file. kb lists the entry ids the run read, confirmed, disputed and captured (authoring-standard section 5, item 6).",
     "page_url": "https://claude.ai/... | null",
     "verdict_md": "reports/tickets/{SPRINT}/<ticket-key>/verdict.md",
     "kb": { "read": [], "confirmed": [], "disputed": [], "captured": [] }

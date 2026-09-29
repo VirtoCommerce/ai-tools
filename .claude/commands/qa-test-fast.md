@@ -108,7 +108,8 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    Then run `npm run summary:validate`.
 5. **HTML page.** Load the `artifact-design` skill, fill in
    [`../skills/qa-test-fast/report-template.html`](../skills/qa-test-fast/report-template.html), and
-   publish it as a private Artifact.
+   publish it as an Artifact for **Anyone at Virto Commerce** — the user sets that in Share
+   ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page).
 6. **Ask once:** "Post the verdict comment to <TICKET>?" Yes ⇒ post it per [`verdict.md`](../skills/qa-test-fast/verdict.md) §Tracker
    comment, and write the returned id into `summary.json.tracker.comment_id` — a re-run amends that id
    (Step 0.3). No status transition.

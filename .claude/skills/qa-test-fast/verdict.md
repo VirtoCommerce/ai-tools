@@ -93,10 +93,16 @@ Load the `artifact-design` skill, then copy
 - embeds at most 4 screenshots, as `data:` URIs (the page must stand alone and stay under 1 MB)
 - links every bug report and the other files by their repo path
 
-Publish it with the Artifact tool, which makes it private by default. **Then**, after it is
+Publish it with the Artifact tool. **Then**, after it is
 published, add the link as a `Page: <url>` line directly under `verdict.md`'s one-sentence line and
 into `summary.json.report.page_url`. The page is built from `verdict.md`, so the link can only be added
 afterwards.
+
+**Audience: Anyone at Virto Commerce.** The page is read by the ticket's developers and PO through the
+tracker comment's link, so it is shared org-wide, not kept to its author. The Artifact tool publishes
+every page private and cannot change sharing, so after publishing, tell the user in one line to set
+**Share → Anyone at Virto Commerce**, and do it **before** the tracker-comment question: a link to a
+private page reaches no one. Never describe the page as private in the comment or in `verdict.md`.
 
 ## Tracker comment
 

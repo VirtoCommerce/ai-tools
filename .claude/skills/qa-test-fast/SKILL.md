@@ -42,7 +42,7 @@ mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *ins
 |---|---|---|
 | 1 | `reports/ba/test-models/<TICKET>-<date>.md` · the domain map (only via `/qa-domain-map`) · the mind map (only via `/qa-test-mind-map`) · `testing-checklist.md` | suite CSVs, the tracker |
 | 2 | evidence under `reports/tickets/{SPRINT}/<TICKET>/screenshots/` · `AGENT-TEST-` entities (then deletes them) · the SBTM session file · a setting or fixture a Data cell names (`flip+restore` / `mutate` + its seeder part, re-read after) · the Results in `testing-checklist.md` (you, at the join) | any other shared fixture, other lanes' settings |
-| 3 | `summary.json`, `verdict.md`, bug reports **via `qa-bug`** · the private Artifact page + its `Page:` line · one tracker comment after a yes · kb entries | a status transition, a hand-written bug |
+| 3 | `summary.json`, `verdict.md`, bug reports **via `qa-bug`** · the Artifact page (shared with Anyone at Virto Commerce) + its `Page:` line · one tracker comment after a yes · kb entries | a status transition, a hand-written bug |
 
 ## Rationalization table (each row was produced by a baseline run without this skill)
 
