@@ -103,10 +103,9 @@ export function isStructuredCoordinate(raw, { namespaces } = {}) {
  */
 export function anchorShape(raw) {
   const s = String(raw ?? '').trim();
-  const verbed = /^[A-Za-z]+\s+(\S+)$/.exec(s);
-  const path = verbed ? verbed[1] : s;
-  if (path.startsWith('/')) return { type: 'path', segments: path.split('/').filter(Boolean).length };
-  if (!/\s/.test(path) && path.includes('.')) return { type: 'graphql', segments: path.split('.').filter(Boolean).length };
+  const route = routeOf(s);
+  if (route) return { type: 'path', segments: route.split('/').filter(Boolean).length };
+  if (!/\s/.test(s) && s.includes('.')) return { type: 'graphql', segments: s.split('.').filter(Boolean).length };
   return { type: 'prose', segments: s.split(/\s+/).filter(Boolean).length };
 }
 

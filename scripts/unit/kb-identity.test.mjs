@@ -80,12 +80,24 @@ test('a DIFFERENT claim at the same anchors and scope is not a duplicate', () =>
     'the same claim at the same place is still refused');
 });
 
-test('claimKey ignores case, whitespace and punctuation, and nothing else', () => {
-  assert.equal(claimKey('  Cart totals LAG, a quantity-change. '), claimKey('cart totals lag a quantity change'));
-  assert.equal(claimKey('Barcode * and ? are wildcards'), claimKey('barcode and are wildcards'), 'symbols are punctuation');
+test('claimKey ignores case, whitespace and sentence punctuation, and nothing else', () => {
+  assert.equal(claimKey('  Cart totals LAG, a (quantity) change. '), claimKey('cart totals lag a quantity change'));
+  assert.equal(claimKey('Members: "Active" reads status!'), claimKey('members active reads status'));
   assert.notEqual(claimKey('cart totals lag a quantity change'), claimKey('cart totals lag after a quantity change'), 'a word is a word');
   assert.notEqual(claimKey('limit is 10'), claimKey('limit is 100'), 'digits are kept');
   assert.equal(claimKey('Größe übernimmt'), 'größe übernimmt', 'letters outside ASCII are kept');
+});
+
+test('claimKey keeps every symbol that can carry meaning — opposite claims never collide (VCST-6102 review)', () => {
+  // Merging these would refuse the second claim, then CONFIRM the opposite one at push.
+  for (const [a, b] of [
+    ['quantity -1 is rejected', 'quantity 1 is rejected'],
+    ['price > 0 is required', 'price < 0 is required'],
+    ['total shown in $', 'total shown in €'],
+    ['limit is 1.5 MB', 'limit is 15 MB'],
+    ['* and ? are wildcards', '* and are wildcards'],
+    ['quantity-change resets', 'quantity change resets'],
+  ]) assert.notEqual(claimKey(a), claimKey(b), `${a} / ${b}`);
 });
 
 test('a RETIRED entry never blocks a fresh capture', () => {

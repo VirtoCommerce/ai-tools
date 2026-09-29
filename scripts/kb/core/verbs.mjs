@@ -721,32 +721,39 @@ async function refuseAtDoor(result, input, { env, via, call, topic, repair = {} 
     ...(await precedingAsk({ env, input }).then((after) => (after ? { after } : {}))),
     ...context({ via, call, topic }),
   }, { env });
-  return { ...result, ...repair };
+  return result;
 }
 
 /**
- * Undo the MSYS rewrite on capture anchors (VCST-6102). Under Git Bash `--anchor /api/x/y` reaches
- * node as `C:/Program Files/Git/api/x/y`; on 2026-09-28 that was 16 of 28 `capture-invalid`, and the
- * retries it forced produced the day's two genuine duplicate refusals. The rewrite is exactly "the
- * MSYS root, prefixed" (`undoMsysRewrite`), so taking it off restores what the writer typed. Anything
- * that still looks local afterwards is a real local path, and `anchorProblems` refuses it as before.
+ * Undo the MSYS rewrite on every capture field that gets published (VCST-6102). Under Git Bash an
+ * argument that STARTS with "/" reaches node as `C:/Program Files/Git/...`: `--anchor /api/x/y` was 16
+ * of 28 `capture-invalid` on 2026-09-28, and a subject or question starting with a route is mangled
+ * the same way. The rewrite is exactly "the MSYS root, prefixed" (`undoMsysRewrite`), so taking it off
+ * restores what was typed. An anchor still local afterwards is a real local path, and
+ * `anchorProblems` refuses it as before.
  */
-function repairAnchors(anchors, env) {
-  const coord = (a) => (typeof a === 'string' ? a : a?.coordinate);
-  const fixed = anchors.map((a) => {
-    const raw = coord(a);
-    if (typeof raw !== 'string') return a;
-    const undone = undoMsysRewrite(raw, env);
-    if (undone === raw) return a;
-    return typeof a === 'string' ? undone : { ...a, coordinate: undone };
-  });
-  return { anchors: fixed, repair: fixed.some((a, i) => a !== anchors[i]) ? { repaired: 'msys' } : {} };
+const TEXT_FIELDS = ['subject', 'question', 'claim'];
+
+function repairShellRewrite(input, env) {
+  const undo = (v) => (typeof v === 'string' ? undoMsysRewrite(v, env) : v);
+  const out = { ...input };
+  for (const f of TEXT_FIELDS) out[f] = undo(input[f]);
+  if (Array.isArray(input.anchors)) {
+    out.anchors = input.anchors.map((a) => (typeof a === 'string' ? undo(a)
+      : typeof a?.coordinate === 'string' ? { ...a, coordinate: undo(a.coordinate) } : a));
+  }
+  const changed = TEXT_FIELDS.some((f) => out[f] !== input[f])
+    || (out.anchors ?? []).some((a, i) => JSON.stringify(a) !== JSON.stringify(input.anchors[i]));
+  return { input: out, repair: changed ? { repaired: 'msys' } : {} };
 }
 
-export async function capture(input, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
-  const fixed = Array.isArray(input.anchors) ? repairAnchors(input.anchors, env) : { anchors: input.anchors, repair: {} };
-  const { repair } = fixed;
-  input = { ...input, anchors: fixed.anchors };
+/** The marker rides on EVERY result from one place, rather than being threaded through each return. */
+export async function capture(input, opened, opts = {}) {
+  const { input: fixed, repair } = repairShellRewrite(input, opts.env ?? process.env);
+  return { ...(await captureRepaired(fixed, opened, { ...opts, repair })), ...repair };
+}
+
+async function captureRepaired(input, opened, { env = process.env, via = null, call = null, topic = null, repair = {} } = {}) {
   const door = { env, via, call, topic, repair };
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
@@ -761,7 +768,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
     await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
-    return { state: cat.state, why: cat.why, ...repair };
+    return { state: cat.state, why: cat.why };
   }
   const late = anchorProblems(input.anchors, { namespaces: namespaceRoots(cat.rows) });
   if (late.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, door);
@@ -781,12 +788,12 @@ export async function capture(input, opened, { env = process.env, via = null, ca
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
       why: 'anchors+scope+claim', when: 'call', ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
     }, { env });
-    return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row), ...repair };
+    return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
   }
 
   const id = mintId(input.subject);
   // THE SUBJECT IS TAKEN, at other coordinates — the case `findDuplicate` cannot see because it
-  // compares anchors and scope only, while the id is a pure function of the subject. Accepting it
+  // requires the same anchors and scope as well as the claim, while the id is a pure function of the subject. Accepting it
   // as `queued` told the writer it landed and then lost the claim at push (PR #313 review 2).
   const holder = cat.rows.find((r) => r.id === id);
   if (holder) {
@@ -796,7 +803,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
       ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
     }, { env });
-    return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }), ...repair };
+    return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
   }
   const entry = {
     id,
@@ -910,7 +917,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
   }, { env });
 
   if (written.disabled) return { state: 'disabled', why: written.why };
-  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related, read: readRows, ...repair };
+  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related, read: readRows };
 }
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────

@@ -364,6 +364,20 @@ test('capture REPAIRS a Git Bash-rewritten anchor instead of refusing it, and sa
   assert.equal(lines[0].repaired, 'msys');
   assert.ok(!/Program Files|C:\//.test(JSON.stringify(lines)), 'no local path reaches the queue or the log');
 
+  // The same rewrite hits a subject, question or claim that STARTS with a route; all three are published.
+  const text = await capture({
+    ...CAPTURE, subject: 'C:/Program Files/Git/account/returns cancel shifts the layout',
+    question: 'C:/Program Files/Git/account/returns why does the layout shift', claim: 'C:/Program Files/Git/account/returns shifts.',
+  }, opened(), { env });
+  assert.equal(text.repaired, 'msys');
+  assert.equal(text.entry.subject, '/account/returns cancel shifts the layout');
+  assert.ok(!/Program Files/.test(JSON.stringify((await readQueue({ env })).lines)), 'not in the payload either');
+
+  // A checkout under `D:/git/...` is a real local path: refused, not turned into a route.
+  const local = await capture({ ...CAPTURE, subject: 'a local one', anchors: ['D:/git/client-portal/src/x'] }, opened(), { env });
+  assert.equal(local.state, 'invalid');
+  assert.equal(local.problems[0].kind, 'local-path');
+
   // An anchor that needed no repair carries no marker.
   const clean = await capture({ ...CAPTURE, subject: 'another fact', anchors: ['/api/return/{id}/reject'] }, opened(), { env });
   assert.equal(clean.state, 'queued');

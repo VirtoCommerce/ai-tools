@@ -193,7 +193,9 @@ test('undoMsysRewrite restores the route a Git Bash question arrived without', (
   // A non-standard install is found through EXEPATH, which Git Bash points at its `bin`.
   assert.equal(undoMsysRewrite('D:/tools/git/checkout/shipping', { EXEPATH: 'D:\\tools\\git\\bin' }), '/checkout/shipping');
   // Nothing else is touched: a real Windows path, a clean route, a VERB form.
-  for (const q of ['C:/Users/me/report.md', '/company/members', 'GET /api/cart', 'C:/Program Files/Gitlab/x']) {
+  // `X:/git` is where people keep checkouts, so it is NOT a root without EXEPATH saying so (VCST-6102
+  // review): undoing it would publish `/client-portal/...` as a route.
+  for (const q of ['C:/Users/me/report.md', '/company/members', 'GET /api/cart', 'C:/Program Files/Gitlab/x', 'D:/git/client-portal/src/x']) {
     assert.equal(undoMsysRewrite(q, none), q);
   }
 });

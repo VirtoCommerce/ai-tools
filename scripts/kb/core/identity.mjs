@@ -53,14 +53,22 @@ export function identityKey({ anchors = [], scope = [] } = {}) {
 export const rowKey = (row) => `${(row.anchorKeys ?? []).join('|')}::${(row.scope ?? []).join('|')}`;
 
 /**
- * The claim half of identity: the subject lowercased, every run of non-letter/non-digit characters
- * collapsed to one space, trimmed. "Cart totals lag, a quantity change." and "cart totals lag a
- * quantity change" are one claim; any change of a WORD is another.
+ * The claim half of identity: the subject lowercased, whitespace collapsed, and SENTENCE punctuation
+ * (. , ; : ! ? quotes brackets) stripped from the edges of each word — nothing else. "Cart totals lag,
+ * a quantity change." and "cart totals lag a quantity change" are one claim.
+ *
+ * Every other symbol is part of the claim, because it can carry the meaning: "quantity -1 is
+ * rejected" and "quantity 1 is rejected", `>` and `<`, `$` and `€`, `1.5` and `15` are different facts,
+ * and merging them would confirm the opposite claim. A word that is ONLY punctuation (`?` in "* and
+ * ? are wildcards") is kept whole for the same reason.
  */
+const SENTENCE_EDGES = /^[.,;:!?"'“”‘’()[\]]+|[.,;:!?"'“”‘’()[\]]+$/gu;
 export const claimKey = (subject) => String(subject ?? '')
   .toLowerCase()
-  .replace(/[^\p{L}\p{N}]+/gu, ' ')
-  .trim();
+  .split(/\s+/)
+  .map((w) => w.replace(SENTENCE_EDGES, '') || w)
+  .filter(Boolean)
+  .join(' ');
 
 /**
  * Does the base already hold this fact?

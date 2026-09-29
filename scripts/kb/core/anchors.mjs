@@ -106,7 +106,10 @@ export const MSYS_REMEDY = 'Under Git Bash a leading "/" is rewritten before the
 export function undoMsysRewrite(text, env = process.env) {
   const s = String(text ?? '');
   const escape = (r) => r.replace(/[.*+?^${}()|[\]]/g, '\\$&');
-  const roots = ['Program Files/Git', 'Program Files (x86)/Git', 'Git'].map((r) => `[A-Za-z]:/${escape(r)}`);
+  // No bare `X:/Git`: that is also where people keep checkouts (`D:/git/client-portal/...`), and
+  // undoing it would turn a real local path into a fake route and publish the folder name
+  // (VCST-6102 review). A Git installed there is still found through EXEPATH below.
+  const roots = ['Program Files/Git', 'Program Files (x86)/Git'].map((r) => `[A-Za-z]:/${escape(r)}`);
   const exe = String(env?.EXEPATH ?? '').replace(/\\/g, '/').replace(/\/(?:usr\/)?bin\/?$/i, '');
   if (/^[A-Za-z]:\//.test(exe)) roots.unshift(escape(exe));
   // MSYS always emits forward slashes, and only rewrites an argument that STARTS with "/" -- but
