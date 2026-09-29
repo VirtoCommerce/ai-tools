@@ -198,6 +198,12 @@ test('undoMsysRewrite restores the route a Git Bash question arrived without', (
   for (const q of ['C:/Users/me/report.md', '/company/members', 'GET /api/cart', 'C:/Program Files/Gitlab/x', 'D:/git/client-portal/src/x']) {
     assert.equal(undoMsysRewrite(q, none), q);
   }
+  // A value that was ONE argument can only have been rewritten at its start (VCST-6102 review 2): a
+  // root later in it is prose the author wrote, e.g. a claim about Git Bash itself.
+  const one = { wholeArgument: true };
+  assert.equal(undoMsysRewrite('C:/Program Files/Git/cart totals lag', none, one), '/cart totals lag');
+  assert.equal(undoMsysRewrite('config lives at C:/Program Files/Git/etc/gitconfig', none, one),
+    'config lives at C:/Program Files/Git/etc/gitconfig');
 });
 
 test('anchorProblems catches a menu path and a namespace', () => {
@@ -209,7 +215,7 @@ test('anchorProblems catches a menu path and a namespace', () => {
 test('anchorShape says the type and segment count of an anchor, and nothing of its text (VCST-6102)', () => {
   assert.deepEqual(anchorShape('/api'), { type: 'path', segments: 1 });
   assert.deepEqual(anchorShape('POST /api/return/{id}'), { type: 'path', segments: 3 });
-  assert.deepEqual(anchorShape('Query.organizationContacts'), { type: 'graphql', segments: 2 });
+  assert.deepEqual(anchorShape('Query.organizationContacts'), { type: 'dotted', segments: 2 });
   assert.deepEqual(anchorShape('Add to cart'), { type: 'prose', segments: 3 });
   assert.deepEqual(anchorShape('Stores'), { type: 'prose', segments: 1 });
 });

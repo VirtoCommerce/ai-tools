@@ -99,13 +99,16 @@ export function isStructuredCoordinate(raw, { namespaces } = {}) {
  * type the `isStructuredCoordinate` test reads it as, and how many segments it has. Numbers and an
  * enum only — a rejected anchor is by definition one nobody vetted, and the base is public.
  *
- * @returns {{type: 'path'|'graphql'|'prose', segments: number}}
+ * `dotted`, not `graphql`: the rule reads any dot-joined token that way (`Query.products`, but also
+ * `app.js` or `Query.`), so the shape says what the rule saw rather than guessing what it was meant as.
+ *
+ * @returns {{type: 'path'|'dotted'|'prose', segments: number}}
  */
 export function anchorShape(raw) {
   const s = String(raw ?? '').trim();
   const route = routeOf(s);
   if (route) return { type: 'path', segments: route.split('/').filter(Boolean).length };
-  if (!/\s/.test(s) && s.includes('.')) return { type: 'graphql', segments: s.split('.').filter(Boolean).length };
+  if (!/\s/.test(s) && s.includes('.')) return { type: 'dotted', segments: s.split('.').filter(Boolean).length };
   return { type: 'prose', segments: s.split(/\s+/).filter(Boolean).length };
 }
 

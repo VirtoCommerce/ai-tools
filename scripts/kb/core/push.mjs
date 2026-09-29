@@ -517,7 +517,7 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
           kind: 'capture-refused',
           dupeOf: target.id,
           subject: entry.subject,
-          why: dupe ? 'anchors+scope+claim' : 'id-collision',
+          why: 'anchors+scope+claim', // `target` only ever comes from `dupe`
           when: 'push',
           ...(ok ? {} : { note: 'the duplicate could not be confirmed either' }),
           // The refusal is about THIS capture, so it carries the capture's author, not the pusher's.

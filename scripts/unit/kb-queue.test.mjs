@@ -391,6 +391,11 @@ test('capture REPAIRS a Git Bash-rewritten anchor instead of refusing it, and sa
   assert.equal(text.entry.subject, '/account/returns cancel shifts the layout');
   assert.ok(!/Program Files/.test(JSON.stringify((await readQueue({ env })).lines)), 'not in the payload either');
 
+  // A root in the MIDDLE of a one-argument field is prose the author wrote, not the shell's work.
+  const prose = await capture({ ...CAPTURE, subject: 'a fact about Git Bash', claim: 'The anchor arrived as C:/Program Files/Git/cart.' }, opened(), { env });
+  assert.ok(!('repaired' in prose));
+  assert.equal((await readQueue({ env })).lines.at(-1).payload.body, 'The anchor arrived as C:/Program Files/Git/cart.');
+
   // A checkout under `D:/git/...` is a real local path: refused, not turned into a route.
   const local = await capture({ ...CAPTURE, subject: 'a local one', anchors: ['D:/git/client-portal/src/x'] }, opened(), { env });
   assert.equal(local.state, 'invalid');

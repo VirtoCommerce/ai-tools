@@ -103,7 +103,7 @@ export const MSYS_REMEDY = 'Under Git Bash a leading "/" is rewritten before the
  * root is taken from the standard install locations and from EXEPATH (which Git Bash sets to its
  * `bin`), never guessed wider than that: a real Windows path in a question is left alone.
  */
-export function undoMsysRewrite(text, env = process.env) {
+export function undoMsysRewrite(text, env = process.env, { wholeArgument = false } = {}) {
   const s = String(text ?? '');
   const escape = (r) => r.replace(/[.*+?^${}()|[\]]/g, '\\$&');
   // No bare `X:/Git`: that is also where people keep checkouts (`D:/git/client-portal/...`), and
@@ -113,6 +113,9 @@ export function undoMsysRewrite(text, env = process.env) {
   const exe = String(env?.EXEPATH ?? '').replace(/\\/g, '/').replace(/\/(?:usr\/)?bin\/?$/i, '');
   if (/^[A-Za-z]:\//.test(exe)) roots.unshift(escape(exe));
   // MSYS always emits forward slashes, and only rewrites an argument that STARTS with "/" -- but
-  // the CLI joins its words, so a rewritten word can also follow whitespace.
-  return s.replace(new RegExp(`(^|\\s)(?:${roots.join('|')})(?=/)`, 'gi'), '$1');
+  // `ask` joins its words, so there a rewritten word can also follow whitespace. A value that was
+  // ONE argument (`wholeArgument`: a capture field, a --saw, a --note) can only have been rewritten
+  // at its start; a root later in it is text the author wrote on purpose, and is left alone.
+  const lead = wholeArgument ? '^' : '(^|\\s)';
+  return s.replace(new RegExp(`${lead}(?:${roots.join('|')})(?=/)`, 'gi'), wholeArgument ? '' : '$1');
 }

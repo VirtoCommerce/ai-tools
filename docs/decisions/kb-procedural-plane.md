@@ -65,7 +65,7 @@ plane that is free to generate is the dead one; the plane that costs a run to wr
 
 | | fact (today's base) | flow |
 |---|---|---|
-| identity | `anchors + scope` | **`goal + scope`** |
+| identity | `anchors + scope` (+ claim since VCST-6102) | **`goal + scope`** |
 | retrieval key | question words + a coordinate (`ANCHOR_BONUS = 10`) | the goal's verb and object; a procedural question names **no** coordinate |
 | validation | somebody saw it again | somebody **walked it** and reached the terminal state |
 | how it rots | wholesale — the behaviour changed | **partially and silently** — step 4 of 7 moved |
@@ -150,6 +150,10 @@ GitHub's file tree. Cost: the namespace argument, the `/^KB-[0-9A-F]{8}\.md$/` f
 and the `idRule` string in `kb.json`.
 
 ## Decision 4 — identity is `(goal, scope)`, and it must be plane-scoped
+
+> **Update 2026-09-29 (VCST-6102):** `findDuplicate` now also requires the subjects to agree (`claimKey`), so a
+> fact and a flow with different subjects at one anchor are no longer refused as one fact. The plane-scoping
+> argument below still holds for a flow whose goal is worded like an existing fact’s subject.
 
 `findDuplicate` compares `anchors + scope` across **all** rows. A flow carries anchors too, so without a
 plane filter the base refuses this pair as one fact:

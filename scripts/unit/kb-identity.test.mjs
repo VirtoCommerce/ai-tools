@@ -83,6 +83,9 @@ test('a DIFFERENT claim at the same anchors and scope is not a duplicate', () =>
 test('claimKey ignores case, whitespace and sentence punctuation, and nothing else', () => {
   assert.equal(claimKey('  Cart totals LAG, a (quantity) change. '), claimKey('cart totals lag a quantity change'));
   assert.equal(claimKey('Members: "Active" reads status!'), claimKey('members active reads status'));
+  // Typesetting is not the claim: backticks, an edge ellipsis, a free-standing dash.
+  assert.equal(claimKey('`sku:` is an alias of `code` — mpn is not…'), claimKey('sku: is an alias of code mpn is not'));
+  assert.equal(claimKey('scan spins forever – no message'), claimKey('scan spins forever no message'));
   assert.notEqual(claimKey('cart totals lag a quantity change'), claimKey('cart totals lag after a quantity change'), 'a word is a word');
   assert.notEqual(claimKey('limit is 10'), claimKey('limit is 100'), 'digits are kept');
   assert.equal(claimKey('Größe übernimmt'), 'größe übernimmt', 'letters outside ASCII are kept');

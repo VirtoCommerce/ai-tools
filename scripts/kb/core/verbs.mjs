@@ -708,7 +708,7 @@ async function openedThisSession({ env }) {
  */
 async function refuseAtDoor(result, input, { env, via, call, topic, repair = {} }) {
   // An `unstructured` verdict is either a rule too strict or a coordinate chosen badly, and the kind
-  // alone cannot say which (VCST-6102). The SHAPE can — segment count and path/graphql/prose — and
+  // alone cannot say which (VCST-6102). The SHAPE can — segment count and path/dotted/prose — and
   // it is numbers and an enum, so no part of the rejected value reaches the public log.
   const shapes = (result.problems ?? []).filter((p) => p.kind === 'unstructured').map((p) => anchorShape(p.normalized));
   await log({
@@ -735,7 +735,8 @@ async function refuseAtDoor(result, input, { env, via, call, topic, repair = {} 
 const TEXT_FIELDS = ['subject', 'question', 'claim'];
 
 function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
-  const undo = (v) => (typeof v === 'string' ? undoMsysRewrite(v, env) : v);
+  // Each of these is ONE argument, so only a root at its very start is the shell's doing.
+  const undo = (v) => (typeof v === 'string' ? undoMsysRewrite(v, env, { wholeArgument: true }) : v);
   const out = { ...input };
   for (const f of fields) out[f] = undo(input[f]);
   if (Array.isArray(input.anchors)) {

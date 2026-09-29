@@ -61,11 +61,18 @@ export const rowKey = (row) => `${(row.anchorKeys ?? []).join('|')}::${(row.scop
  * rejected" and "quantity 1 is rejected", `>` and `<`, `$` and `€`, `1.5` and `15` are different facts,
  * and merging them would confirm the opposite claim. A word that is ONLY punctuation (`?` in "* and
  * ? are wildcards") is kept whole for the same reason.
+ *
+ * FORMATTING is not the claim either (VCST-6102 review 2): backticks anywhere, an ellipsis at a word's
+ * edge, and a free-standing em or en dash ("a — b") are how a subject is typeset, never what it says.
+ * A hyphen stays: "-1" and "quantity-change" are text.
  */
-const SENTENCE_EDGES = /^[.,;:!?"'“”‘’()[\]]+|[.,;:!?"'“”‘’()[\]]+$/gu;
+const SENTENCE_EDGES = /^[.,;:!?"'“”‘’()[\]…]+|[.,;:!?"'“”‘’()[\]…]+$/gu;
+const TYPESETTING = /^[—–]+$/u;
 export const claimKey = (subject) => String(subject ?? '')
   .toLowerCase()
+  .replace(/`/g, '')
   .split(/\s+/)
+  .filter((w) => !TYPESETTING.test(w))
   .map((w) => w.replace(SENTENCE_EDGES, '') || w)
   .filter(Boolean)
   .join(' ');
