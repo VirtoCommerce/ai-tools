@@ -20,7 +20,7 @@ import { parseEntry, stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from '../kb/core/index-build.mjs';
 import {
   RETENTION_DAYS, SWEEP_AFTER_MS, appendEvidence, commitMessage, expiredLogs, flush, logPath,
-  logTargetOf, outsideBase, ownFlushDue, queueFiles, sameEvidence, shouldSweep, unionLines,
+  logTargetOf, outsideBase, ownFlushDue, postVerbSweepAllowed, queueFiles, sameEvidence, shouldSweep, unionLines,
 } from '../kb/core/push.mjs';
 import { orderQueue, queueBacklog, queuePath, readPushStatus, releaseConsumed } from '../kb/core/queue.mjs';
 import { reachPath } from '../kb/core/reach.mjs';
@@ -1135,6 +1135,18 @@ test('the sweep is paced by a stamp, and the stamp is written even when the push
   assert.equal(await shouldSweep({ env }), false);
   assert.equal(await shouldSweep({ env, now: () => new Date(Date.now() + SWEEP_AFTER_MS * 2) }), true);
 }));
+
+test('a --dry-run or --no-sweep invocation gets NO post-verb sweep — a preview must send nothing (VCST-6103)', () => {
+  // The hole: `push --dry-run` said "nothing was sent", then the post-verb sweep found this
+  // session's own queue past OWN_FLUSH_AFTER_MS and published the plan it had just shown.
+  assert.equal(postVerbSweepAllowed({ 'dry-run': true }), false);
+  assert.equal(postVerbSweepAllowed({ 'no-sweep': true }), false, '--no-sweep silences this sweep too, not only the one inside push');
+  assert.equal(postVerbSweepAllowed({ 'dry-run': true, base: '/x' }), false, 'on any verb, reindex --dry-run included');
+  // ...and every other invocation keeps the retry the sweep exists for.
+  assert.equal(postVerbSweepAllowed({}), true);
+  assert.equal(postVerbSweepAllowed({ json: true, topic: 'checkout' }), true);
+  assert.equal(postVerbSweepAllowed(), true);
+});
 
 // ─── small, load-bearing ──────────────────────────────────────────────────────────────────────
 

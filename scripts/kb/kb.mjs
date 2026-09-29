@@ -18,7 +18,7 @@
 
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
-import { flush, sweepIfDue } from './core/push.mjs';
+import { flush, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
 import { pushConfirmRequired, queueDir } from './core/queue.mjs';
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
@@ -64,7 +64,7 @@ as one atomic commit. \`--dry-run\` shows exactly what would be written and send
 
 Every invocation also sweeps IDLE queue files left behind by earlier sessions, at most every 30
 minutes, silently and without affecting the exit code. That sweep is why a failed push needs no
-hook and no scheduler: the next session picks it up.
+hook and no scheduler: the next session picks it up. \`--dry-run\` and \`--no-sweep\` skip it.
 
 --topic is a short ENGLISH noun phrase for what the work is -- "configurable product checkout" --
 so a window of the log can be read by what it was about rather than by whose session it was. Cut at
@@ -114,8 +114,9 @@ async function main(argv) {
   const opened = openBase({ baseArg: args.flags.base ? String(args.flags.base) : null });
   // The sweep targets THE BASE THIS INVOCATION READ, never the default: a run pointed at a local
   // fixture must not push fixture-derived lines to the public base, and the cheapest way to
-  // guarantee that is to hand the sweep the same locator the verb used.
-  sweepBase = opened.locator;
+  // guarantee that is to hand the sweep the same locator the verb used. A `--dry-run` or
+  // `--no-sweep` invocation gets no sweep at all (VCST-6103): the preview must send nothing.
+  sweepBase = postVerbSweepAllowed(args.flags) ? opened.locator : null;
 
   if (verb === 'stat') {
     const r = await stat(opened);

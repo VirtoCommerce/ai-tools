@@ -734,6 +734,19 @@ export async function sweepIfDue({ env = process.env, base = null, token = null,
   }
 }
 
+/**
+ * May the post-verb sweep run after an invocation with these flags?
+ *
+ * Not after `--dry-run`, on ANY verb (VCST-6103): the sweep publishes this session's own queue once
+ * it is `OWN_FLUSH_AFTER_MS` old, so `push --dry-run` printed "nothing was sent" and then pushed the
+ * very plan it had just shown. A preview is run by exactly the person who wanted to read the prose
+ * before it reached a public repo. And not after `--no-sweep`, which until then silenced only the
+ * flush inside `push` and left this one running.
+ */
+export function postVerbSweepAllowed(flags = {}) {
+  return !flags['dry-run'] && !flags['no-sweep'];
+}
+
 /** Re-read the base at its current head and compose everything the commit will contain. */
 async function buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, synthetic = false, run = '', who = null }) {
   const ref = await api.getRef();
