@@ -95,6 +95,22 @@ export function isStructuredCoordinate(raw, { namespaces } = {}) {
 }
 
 /**
+ * The SHAPE of a coordinate, for a log that must not carry the coordinate itself (VCST-6102): the
+ * type the `isStructuredCoordinate` test reads it as, and how many segments it has. Numbers and an
+ * enum only — a rejected anchor is by definition one nobody vetted, and the base is public.
+ *
+ * @returns {{type: 'path'|'graphql'|'prose', segments: number}}
+ */
+export function anchorShape(raw) {
+  const s = String(raw ?? '').trim();
+  const verbed = /^[A-Za-z]+\s+(\S+)$/.exec(s);
+  const path = verbed ? verbed[1] : s;
+  if (path.startsWith('/')) return { type: 'path', segments: path.split('/').filter(Boolean).length };
+  if (!/\s/.test(path) && path.includes('.')) return { type: 'graphql', segments: path.split('.').filter(Boolean).length };
+  return { type: 'prose', segments: s.split(/\s+/).filter(Boolean).length };
+}
+
+/**
  * normalised coordinate -> the rows that name it.
  *
  * Built from the index rather than from entry bodies, which is the whole saving of decision 1:
@@ -119,7 +135,7 @@ export function coordinateIndex(rows) {
  *
  * SHOWN, NEVER ENFORCED. Two entries sharing a coordinate are usually two honest facts about one
  * place, and that is the normal state of a working corpus. Refusal is the identity check's job
- * (anchors AND scope), and it is a separate question from this one.
+ * (anchors AND scope AND claim), and it is a separate question from this one.
  */
 export function neighbours(rows, anchors, { exclude = null } = {}) {
   const index = coordinateIndex(rows);

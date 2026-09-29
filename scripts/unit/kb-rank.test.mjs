@@ -9,7 +9,7 @@ import {
   ANCHOR_BONUS, MIN_COVERAGE, NEIGHBOUR_TOP, admissible, anchorHit, rank, rankNeighbours, relatedEnough, relatedTo,
   scoreRows, tokenize,
 } from '../kb/core/rank.mjs';
-import { anchorProblems, coordinateIndex, isStructuredCoordinate, namespaceRoots, neighbours } from '../kb/core/coordinates.mjs';
+import { anchorProblems, anchorShape, coordinateIndex, isStructuredCoordinate, namespaceRoots, neighbours } from '../kb/core/coordinates.mjs';
 import { normalizeRow } from '../kb/core/index-load.mjs';
 import { normalizeAnchor, undoMsysRewrite } from '../kb/core/anchors.mjs';
 import { join } from 'node:path';
@@ -202,6 +202,14 @@ test('anchorProblems catches a menu path and a namespace', () => {
   assert.equal(anchorProblems(['Admin SPA: Contacts > Member detail'])[0].kind, 'menu-path');
   assert.equal(anchorProblems(['/api'])[0].kind, 'unstructured');
   assert.deepEqual(anchorProblems(['/company/members', 'Query.organizationContacts']), []);
+});
+
+test('anchorShape says the type and segment count of an anchor, and nothing of its text (VCST-6102)', () => {
+  assert.deepEqual(anchorShape('/api'), { type: 'path', segments: 1 });
+  assert.deepEqual(anchorShape('POST /api/return/{id}'), { type: 'path', segments: 3 });
+  assert.deepEqual(anchorShape('Query.organizationContacts'), { type: 'graphql', segments: 2 });
+  assert.deepEqual(anchorShape('Add to cart'), { type: 'prose', segments: 3 });
+  assert.deepEqual(anchorShape('Stores'), { type: 'prose', segments: 1 });
 });
 
 // ─── the RELATED hint (PLAN §17.4(6), re-keyed on words) ──────────────────────────────────────

@@ -466,8 +466,11 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
       const anchors = (entry.anchors ?? []).map((a) => a.coordinate ?? a);
       const scope = (entry.appliesTo ?? []).map((s) => `${s.axis}=${s.value}`);
 
-      // THE PUSH-TIME DEDUP RE-RUN (PLAN §2 "Identity"). Same function, same test, fresh rows.
-      const dupe = findDuplicate(working, { anchors, scope });
+      // THE PUSH-TIME DEDUP RE-RUN (PLAN §2 "Identity"). Same function, same test, fresh rows — and
+      // the test includes the CLAIM, so only a capture saying the same thing converts into a confirm.
+      // A same-coordinate capture with a different subject falls through and is written as its own
+      // entry (VCST-6102: it used to confirm the unrelated incumbent and lose its own claim).
+      const dupe = findDuplicate(working, { anchors, scope, subject: entry.subject });
       // AN ID COLLISION IS NOT EVIDENCE OF THE SAME FACT, and this comment used to say it was.
       //
       // The old text read: "the id is minted from the subject, so two entries with this id have the
@@ -489,7 +492,7 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
       // reason, which is a state a human can see and act on, where a silent merge is not.
       const idClash = !dupe && working.find((r) => r.id === entry.id);
       const sameSubject = idClash && String(idClash.subject ?? '').trim() === String(entry.subject ?? '').trim();
-      // ONLY an anchors+scope duplicate converts. A SAME-SUBJECT id collision used to convert too, and
+      // ONLY an anchors+scope+claim duplicate converts. A SAME-SUBJECT id collision used to convert too, and
       // that was the common case of the loss described above (PR #313 review 2): the same subject
       // re-captured under DIFFERENT anchors appended its one evidence item to the incumbent — an
       // observation about another coordinate confirming this one — and wrote its claim nowhere, with
@@ -497,7 +500,7 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
       // refuses it while the session is live (`capture` in verbs.mjs); this is the backstop for a
       // capture queued before the incumbent reached the base.
       const target = dupe?.row ?? null;
-      // ANY id collision that is not an anchors+scope duplicate — one id, and either two different
+      // ANY id collision that is not an anchors+scope+claim duplicate — one id, and either two different
       // subjects (a true hash collision) or one subject at different coordinates. Refused, never
       // merged and never overwritten, and said out loud: the remedy is a human confirming the
       // incumbent or rewording one subject, which is cheap, and the alternative is losing a claim.
@@ -514,7 +517,7 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
           kind: 'capture-refused',
           dupeOf: target.id,
           subject: entry.subject,
-          why: dupe ? 'anchors+scope' : 'id-collision',
+          why: dupe ? 'anchors+scope+claim' : 'id-collision',
           when: 'push',
           ...(ok ? {} : { note: 'the duplicate could not be confirmed either' }),
           // The refusal is about THIS capture, so it carries the capture's author, not the pusher's.

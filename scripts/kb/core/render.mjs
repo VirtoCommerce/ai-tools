@@ -106,7 +106,14 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
   return lines;
 }
 
-export function captureLines(r, { prefix = 'kb capture' } = {}) {
+export function captureLines(r, opts = {}) {
+  const lines = captureBody(r, opts);
+  // Same note as `askLines`: the anchor was repaired, but the next command will be mangled the same way.
+  if (r.repaired === 'msys') lines.splice(1, 0, `  (your shell rewrote a leading "/" into a local path; it was undone. ${MSYS_REMEDY})`);
+  return lines;
+}
+
+function captureBody(r, { prefix = 'kb capture' } = {}) {
   if (r.state === 'invalid') {
     return [`${prefix}: ${r.why}`, ...(r.problems ?? []).map((p) => `  ${p.coordinate} — ${p.kind}: ${p.why}`)];
   }

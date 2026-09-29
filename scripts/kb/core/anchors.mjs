@@ -89,10 +89,12 @@ export const MSYS_REMEDY = 'Under Git Bash a leading "/" is rewritten before the
   + 'Prefix the command with MSYS_NO_PATHCONV=1, or use the "VERB /route" form, which is not rewritten.';
 
 /**
- * Undo the MSYS rewrite on a QUESTION -- the one input where repairing beats refusing.
+ * Undo the MSYS rewrite on a QUESTION, and since VCST-6102 on a capture ANCHOR too.
  *
- * A capture refuses a mangled anchor (`anchorProblems`), because an entry is written once and read
- * by everyone. An ask is the opposite: nothing is stored but the log line, and refusing would send
+ * A capture used to refuse a mangled anchor (`anchorProblems`); on 2026-09-28 that was 16 of 28
+ * `capture-invalid`, all a shell's mistake, and the retries produced the day's genuine duplicates.
+ * The rewrite is exact, so undoing it restores what was typed; what still looks local after it is
+ * refused as before. An ask never stored anything but the log line, and refusing it would send
  * the agent away with no answer for a mistake its shell made. Measured 2026-09-25: four asks for
  * `/company/members …` arrived as `C:/Program Files/Git/company/members …`, ranked on the mangled
  * coordinate, and wrote the operator's install directory into the PUBLIC log, verbatim.

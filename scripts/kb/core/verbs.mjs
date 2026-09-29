@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 import { canonicalStand, mintId } from './canonical.mjs';
 import { parseEntry } from './frontmatter.mjs';
-import { anchorProblems, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
+import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
 import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
@@ -706,20 +706,48 @@ async function openedThisSession({ env }) {
  * which names a directory on the writer's machine. The kind says what went wrong; the text that
  * went wrong stays on the laptop. `subject` travels, as it does on every capture line.
  */
-async function refuseAtDoor(result, input, { env, via, call, topic }) {
+async function refuseAtDoor(result, input, { env, via, call, topic, repair = {} }) {
+  // An `unstructured` verdict is either a rule too strict or a coordinate chosen badly, and the kind
+  // alone cannot say which (VCST-6102). The SHAPE can — segment count and path/graphql/prose — and
+  // it is numbers and an enum, so no part of the rejected value reaches the public log.
+  const shapes = (result.problems ?? []).filter((p) => p.kind === 'unstructured').map((p) => anchorShape(p.normalized));
   await log({
     kind: 'capture-invalid',
     subject: String(input.subject ?? '').trim(),
     why: result.why,
     ...(result.problems?.length ? { problems: [...new Set(result.problems.map((p) => p.kind))] } : {}),
+    ...(shapes.length ? { shapes } : {}),
+    ...repair,
     ...(await precedingAsk({ env, input }).then((after) => (after ? { after } : {}))),
     ...context({ via, call, topic }),
   }, { env });
-  return result;
+  return { ...result, ...repair };
+}
+
+/**
+ * Undo the MSYS rewrite on capture anchors (VCST-6102). Under Git Bash `--anchor /api/x/y` reaches
+ * node as `C:/Program Files/Git/api/x/y`; on 2026-09-28 that was 16 of 28 `capture-invalid`, and the
+ * retries it forced produced the day's two genuine duplicate refusals. The rewrite is exactly "the
+ * MSYS root, prefixed" (`undoMsysRewrite`), so taking it off restores what the writer typed. Anything
+ * that still looks local afterwards is a real local path, and `anchorProblems` refuses it as before.
+ */
+function repairAnchors(anchors, env) {
+  const coord = (a) => (typeof a === 'string' ? a : a?.coordinate);
+  const fixed = anchors.map((a) => {
+    const raw = coord(a);
+    if (typeof raw !== 'string') return a;
+    const undone = undoMsysRewrite(raw, env);
+    if (undone === raw) return a;
+    return typeof a === 'string' ? undone : { ...a, coordinate: undone };
+  });
+  return { anchors: fixed, repair: fixed.some((a, i) => a !== anchors[i]) ? { repaired: 'msys' } : {} };
 }
 
 export async function capture(input, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
-  const door = { env, via, call, topic };
+  const fixed = Array.isArray(input.anchors) ? repairAnchors(input.anchors, env) : { anchors: input.anchors, repair: {} };
+  const { repair } = fixed;
+  input = { ...input, anchors: fixed.anchors };
+  const door = { env, via, call, topic, repair };
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
   if (missing.length) return refuseAtDoor({ state: 'invalid', why: `capture needs: ${missing.join(', ')}` }, input, door);
@@ -732,8 +760,8 @@ export async function capture(input, opened, { env = process.env, via = null, ca
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
-    return { state: cat.state, why: cat.why };
+    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
+    return { state: cat.state, why: cat.why, ...repair };
   }
   const late = anchorProblems(input.anchors, { namespaces: namespaceRoots(cat.rows) });
   if (late.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, door);
@@ -746,13 +774,14 @@ export async function capture(input, opened, { env = process.env, via = null, ca
 
   // THE DEDUP CHECK. Runs here against the session's index, and AGAIN at push time against the
   // freshly re-read one -- which is what makes it race-free rather than merely likely (PLAN §2).
-  const dupe = findDuplicate(cat.rows, { anchors: input.anchors, scope });
+  // Anchors + scope + CLAIM (VCST-6102): the same coordinate with a different subject is a new fact.
+  const dupe = findDuplicate(cat.rows, { anchors: input.anchors, scope, subject: input.subject });
   if (dupe) {
     await log({
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
-      why: 'anchors+scope', when: 'call', ...(after ? { after } : {}), ...context({ via, call, topic }),
+      why: 'anchors+scope+claim', when: 'call', ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
     }, { env });
-    return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
+    return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row), ...repair };
   }
 
   const id = mintId(input.subject);
@@ -765,9 +794,9 @@ export async function capture(input, opened, { env = process.env, via = null, ca
     await log({
       kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
-      ...(after ? { after } : {}), ...context({ via, call, topic }),
+      ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
     }, { env });
-    return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
+    return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }), ...repair };
   }
   const entry = {
     id,
@@ -851,6 +880,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
     // question in this log is written by our own sessions about our own QA stands, which is the
     // same standing `q` on `ask` has always had.
     question: input.question,
+    ...repair,
     ...(after ? { after } : {}),
     // WHAT was surfaced, not how many. It shipped as a count on 2026-09-19 and was too thin within
     // hours of meeting real traffic: a session was shown three related entries, then DISPUTED one --
@@ -880,7 +910,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
   }, { env });
 
   if (written.disabled) return { state: 'disabled', why: written.why };
-  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related, read: readRows };
+  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related, read: readRows, ...repair };
 }
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────
