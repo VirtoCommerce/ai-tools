@@ -8,10 +8,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
+import { whoPath } from '../kb/core/who.mjs';
 
 const run = promisify(execFile);
 const REPO = join(import.meta.dirname, '..', '..');
@@ -273,56 +274,98 @@ test('--deployment on ask reaches the line; omitted or valueless, it leaves no f
   assert.ok(!('deployment' in lines[1]));
   assert.ok(!('deployment' in lines[2]), 'a valueless flag is not a stand called "true"');
 }));
-
-// ─── a preview sends nothing, the post-verb sweep included (VCST-6103) ────────────────────────
+// ─── a preview sends nothing and changes nothing (VCST-6103) ──────────────────────────────────
 //
 // The hole this pins: `push --dry-run` printed "nothing was sent", then the post-verb sweep found
 // the session's own queue past OWN_FLUSH_AFTER_MS and published the plan it had just shown
 // (VirtoCommerce/vc-knowledge#1). A LOCAL `--base` cannot reproduce it — the sweep never runs
 // against a base it cannot write — so these runs use the declared base's coordinates behind
-// `fixtures/kb-recording-network.mjs`, which answers every fetch with a 503 and records it. Nothing
-// leaves the process. The sweep swallows its own errors, so the only observable is the extra read
-// of the base's head that starts its push: that is what is counted.
+// `fixtures/kb-recording-network.mjs`, which records every fetch and never leaves the process.
+// `KB_FAKE_BASE=healthy` answers the reads a push makes, so the dry run SUCCEEDS as it did in the
+// incident; every write still gets a 503, and a write is exactly what these tests forbid.
 
 const RECORDING_TRAP = join(import.meta.dirname, 'fixtures', 'kb-recording-network.mjs');
 const HEAD_READ = /^GET \S+\/git\/ref\/heads\//;
+const isWrite = (call) => !call.startsWith('GET ');
 
-/** Spawn the CLI with a DUE own-queue and return every fetch it made. */
+/** Every file in the queue directory and its bytes, bar the identity cache `who` keeps there. */
+function snapshot(dir) {
+  const out = {};
+  for (const name of readdirSync(dir).sort()) {
+    if (name === basename(whoPath(dir))) continue;
+    out[name] = readFileSync(join(dir, name), 'utf8');
+  }
+  return out;
+}
+
+/** Spawn the CLI with a DUE own-queue; return its fetches, output, and the queue dir before/after. */
 async function kbRecorded(args, extraEnv = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'kb-cli-sweep-'));
+  const logDir = mkdtempSync(join(tmpdir(), 'kb-cli-fetch-'));
   try {
-    const log = join(dir, 'fetch.log');
+    const log = join(logDir, 'fetch.log');
     const at = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // well past OWN_FLUSH_AFTER_MS
     writeFileSync(join(dir, 'sweep001.jsonl'), `${JSON.stringify({ at, kind: 'ask', q: 'x', matched: [], state: 'miss' })}\n`, 'utf8');
+    const before = snapshot(dir);
+    let stdout = '';
     try {
-      await run(process.execPath, ['--import', `file://${RECORDING_TRAP.replace(/\\/g, '/')}`, CLI, ...args], {
+      ({ stdout } = await run(process.execPath, ['--import', `file://${RECORDING_TRAP.replace(/\\/g, '/')}`, CLI, ...args], {
         env: {
           ...process.env, KB_BASE: '', KB_QUEUE_DIR: dir, KB_FETCH_LOG: log, CLAUDE_CODE_HOST_SESSION_ID: 'sweep001',
-          // A token must exist or the push stops before the base is touched; VC_ENV_ROOT keeps the
+          // A token must exist or the sweep stops before the base is touched; VC_ENV_ROOT keeps the
           // developer's own .env.local — and whatever token is in it — out of the process.
-          VC_ENV_ROOT: dir, KB_GITHUB_TOKEN: 'not-a-real-token', GITHUB_TOKEN: '', KB_PUSH_CONFIRM: '', KB_NO_SWEEP: '',
+          VC_ENV_ROOT: logDir, KB_GITHUB_TOKEN: 'not-a-real-token', GITHUB_TOKEN: '', KB_PUSH_CONFIRM: '', KB_NO_SWEEP: '',
+          KB_FAKE_BASE: 'down',
           ...extraEnv,
         },
         cwd: REPO,
-      });
-    } catch { /* the 503s make most verbs exit non-zero; the calls are the observable */ }
-    return existsSync(log) ? readFileSync(log, 'utf8').split('\n').filter(Boolean) : [];
+      }));
+    } catch (err) { stdout = err.stdout ?? ''; }
+    const calls = existsSync(log) ? readFileSync(log, 'utf8').split('\n').filter(Boolean) : [];
+    return { calls, stdout, before, after: snapshot(dir) };
   } finally {
     rmSync(dir, { recursive: true, force: true });
+    rmSync(logDir, { recursive: true, force: true });
   }
 }
 
 const headReads = (calls) => calls.filter((c) => HEAD_READ.test(c)).length;
 
-test('the recording trap can SEE a post-verb sweep — otherwise the next test proves nothing', async () => {
-  // `stat` reads no head of its own, so any head read is the sweep publishing the due queue.
-  assert.equal(headReads(await kbRecorded(['stat'])), 1, 'a due own-queue is swept after an ordinary verb');
-  assert.equal(headReads(await kbRecorded(['stat'], { KB_NO_SWEEP: '1' })), 0, 'and KB_NO_SWEEP silences it');
+test('the recording trap can SEE a post-verb sweep — otherwise the tests below prove nothing', async () => {
+  // `stat` reads no head of its own, so a head read is the sweep publishing the due queue — and
+  // against a healthy base the sweep goes on to WRITE, which is the incident's second half.
+  const swept = await kbRecorded(['stat'], { KB_FAKE_BASE: 'healthy' });
+  assert.equal(headReads(swept.calls), 1, 'a due own-queue is swept after an ordinary verb');
+  assert.ok(swept.calls.some(isWrite), `and the sweep attempts a write:\n${swept.calls.join('\n')}`);
+  assert.equal(headReads((await kbRecorded(['stat'], { KB_NO_SWEEP: '1' })).calls), 0, 'KB_NO_SWEEP silences it');
+  assert.equal(headReads((await kbRecorded(['stat', '--no-sweep'])).calls), 0, 'and so does --no-sweep, on any verb');
 });
 
-test('push --dry-run with a due own-queue starts NO push beyond its own read (VCST-6103)', async () => {
-  const dry = await kbRecorded(['push', '--dry-run']);
-  assert.equal(headReads(dry), 1, `the dry run reads the head once, for its plan, and the sweep never follows:\n${dry.join('\n')}`);
-  assert.ok(!dry.some((c) => !c.startsWith('GET ')), 'and nothing but reads was attempted');
-  assert.equal(headReads(await kbRecorded(['push', '--dry-run', '--no-sweep'])), 1);
+test('a SUCCESSFUL push --dry-run with a due own-queue writes nothing and changes nothing (VCST-6103)', async () => {
+  const r = await kbRecorded(['push', '--dry-run'], { KB_FAKE_BASE: 'healthy' });
+  assert.match(r.stdout, /kb push \(dry run\): would commit/, 'the plan was built, as in the incident');
+  assert.deepEqual(r.calls.filter(isWrite), [], `no write was attempted:\n${r.calls.join('\n')}`);
+  assert.equal(headReads(r.calls), 1, 'the dry run read the head once, for its plan; the sweep never followed');
+  assert.deepEqual(r.after, r.before, 'the queue, the stamp and the push status are exactly as they were');
+  assert.match(r.stdout, /NOT held/, 'and it says the queue is still published later, rather than implying a hold');
 });
+
+test('a FAILED push --dry-run records no failure — nothing was attempted (VCST-6103)', async () => {
+  const r = await kbRecorded(['push', '--dry-run']); // every read is a 503
+  assert.match(r.stdout, /could not build the plan/);
+  assert.doesNotMatch(r.stdout, /the next session sweeps it/, 'a preview is not a failed push');
+  assert.deepEqual(r.calls.filter(isWrite), []);
+  assert.deepEqual(r.after, r.before, 'no `flush ok:false` line, no FAILED push status, no stamp');
+});
+
+test('boolean flags never swallow the next argument, and `=false` means false', () => withQueue(async (env) => {
+  const q = 'what does the Active column on /company/members reflect';
+  const r = await kb(['ask', '--no-sweep', q, '--base', FIXTURE], { env });
+  noTrap(r);
+  assert.equal(r.code, 0, `the question survived --no-sweep before it:\n${r.stdout}`);
+  assert.match(r.stdout, /KB-27B4CD10/);
+  const human = await kb(['ask', q, '--base', FIXTURE, '--json=false'], { env });
+  assert.equal(human.code, 0);
+  assert.match(human.stdout, /KB-27B4CD10/);
+  assert.throws(() => JSON.parse(human.stdout), '--json=false prints the human form, not JSON');
+}));

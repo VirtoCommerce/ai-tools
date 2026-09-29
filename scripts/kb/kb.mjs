@@ -27,6 +27,12 @@ import { TOPIC_MAX, ask, capture, confirm, dispute, reindex, show, stat } from '
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
+/**
+ * Flags that never take a value. Without this list `kb ask --no-sweep "q"` swallowed the question as
+ * the flag's value, and `--dry-run=false` was the truthy string "false" — a dry run (VCST-6103).
+ */
+const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help']);
+
 function parseArgs(argv) {
   const out = { _: [], flags: {}, repeated: { anchor: [], scope: [] } };
   for (let i = 0; i < argv.length; i += 1) {
@@ -34,6 +40,7 @@ function parseArgs(argv) {
     if (!a.startsWith('--')) { out._.push(a); continue; }
     const eq = a.indexOf('=');
     const name = (eq === -1 ? a.slice(2) : a.slice(2, eq));
+    if (BOOLEAN_FLAGS.has(name)) { out.flags[name] = eq === -1 || !/^(false|0|no|off)$/i.test(a.slice(eq + 1)); continue; }
     const value = eq === -1 ? (argv[i + 1]?.startsWith('--') ? true : argv[++i] ?? true) : a.slice(eq + 1);
     if (name in out.repeated) out.repeated[name].push(String(value));
     else out.flags[name] = value;
@@ -54,7 +61,7 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
-  npm run kb -- push [--dry-run] [--no-sweep]        send the queue to the base as ONE commit
+  npm run kb -- push [--dry-run]                    send the queue to the base as ONE commit
 
 exit: 0 answered · 1 no coverage (or capture refused as a duplicate) · 2 no base · 3 unreachable
 
@@ -64,7 +71,9 @@ as one atomic commit. \`--dry-run\` shows exactly what would be written and send
 
 Every invocation also sweeps IDLE queue files left behind by earlier sessions, at most every 30
 minutes, silently and without affecting the exit code. That sweep is why a failed push needs no
-hook and no scheduler: the next session picks it up. \`--dry-run\` and \`--no-sweep\` skip it.
+hook and no scheduler: the next session picks it up. \`--no-sweep\` on any verb skips it, and so does
+\`--dry-run\`. A dry run holds nothing, though: this session's own queue is still published by the
+next invocation once it is 5 minutes old. KB_PUSH_CONFIRM=1 holds every push for your yes instead.
 
 --topic is a short ENGLISH noun phrase for what the work is -- "configurable product checkout" --
 so a window of the log can be read by what it was about rather than by whose session it was. Cut at
@@ -238,7 +247,11 @@ async function main(argv) {
       for (const d of r.plan.deletions) out(`  - ${d}  (retention)`);
       if (r.plan.converted) out(`  ${r.plan.converted} queued capture(s) would convert to confirm`);
       for (const p of r.plan.problems ?? []) out(`  ! ${p.id ?? ''} ${p.why}`);
-      out('  nothing was sent.');
+      out('  nothing was sent, and nothing was changed.');
+      if (!pushConfirmRequired()) out('  NOT held: the next kb call publishes this queue once it is 5 minutes old. KB_PUSH_CONFIRM=1 holds it for review.');
+    } else if (r.dryRun) {
+      out(`kb push (dry run): could not build the plan — ${r.why ?? ''}`);
+      out('  nothing was sent, and nothing was changed.');
     } else {
       out(`kb push: ${r.state} — ${r.why ?? ''}`);
       if (r.state === 'failed') out('  the queue is intact; the next session sweeps it.');

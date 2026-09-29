@@ -38,7 +38,7 @@ import { buildIndex, buildRow, entryPath } from './index-build.mjs';
 import { normalizeRow } from './index-load.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
 import {
-  DISABLED_WHY, HELD_WHY, MUTATIONS, isSynthetic, pushConfirmRequired, kbDisabled, log, orderQueue, queueDir, queuePath, readQueue, recordPush,
+  DISABLED_WHY, HELD_WHY, MUTATIONS, composeLine, isSynthetic, pushConfirmRequired, kbDisabled, log, orderQueue, queueDir, queuePath, readQueue, recordPush,
   releaseConsumed, runOf, sessionId,
 } from './queue.mjs';
 import { REACH_IDLE_MS, dropReach, idleReaches, reachLine } from './reach.mjs';
@@ -503,7 +503,7 @@ export function commitMessage({ session, captures, confirms, disputes, logs }) {
  */
 export async function flush(opts = {}) {
   const r = await flushOnce(opts);
-  if (!['dry-run', 'declined', 'disabled'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
+  if (!r.dryRun && !['dry-run', 'declined', 'disabled'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
   return r;
 }
 
@@ -551,8 +551,13 @@ async function flushOnce({
   // Only when we are taking our own file at all: under an opportunistic foreign-only sweep
   // (`includeMine: false`) a line written here would sit unsent, and the next flush would write a
   // second one beside it.
+  //
+  // A DRY RUN composes these lines in memory and leaves the state files where they are (VCST-6103):
+  // the preview shows what a push would add, and changes nothing a later push would see.
+  const previewed = [];
   if (includeMine) {
     for (const state of idleReaches(queueDir(env), { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
+      if (dryRun) { previewed.push(composeLine(reachLine(state), { env, who: state.who ?? null, run: state.run ?? null })); continue; }
       // `who` AND `run` come off the STATE, never off this process: this line describes a session
       // that has already ended, and we may well be a different person on a different machine under
       // a different run. `null` where the state never learned one — no identity and no run beats
@@ -570,10 +575,12 @@ async function flushOnce({
   const loaded = [];
   for (const f of files) {
     const q = await readQueue({ env, path: f.path });
-    if (q.lines.length) loaded.push({ ...f, lines: orderQueue(q.lines), malformed: q.malformed, raw: q.raw });
+    const lines = f.mine ? [...q.lines, ...previewed] : q.lines;
+    if (lines.length) loaded.push({ ...f, lines: orderQueue(lines), malformed: q.malformed, raw: q.raw });
   }
   if (!loaded.length) {
-    await touchStamp({ env, now });
+    // The stamp paces the next sweep; a preview that moved it would postpone a real push by 30 min.
+    if (!dryRun) await touchStamp({ env, now });
     return { state: 'nothing', session, why: 'the queue is empty' };
   }
 
@@ -666,6 +673,12 @@ async function flushOnce({
   // A FAILED PUSH LEAVES THE QUEUE INTACT, and says so in the queue itself: one line saying the
   // attempt at T failed, which ships with the next sweep beside the line saying it later landed.
   // Nothing is patched retroactively — the sequence is the record.
+  //
+  // Except after a DRY RUN, which attempted nothing (VCST-6103): a `flush ok:false` line would ship
+  // with the next real push as a failure that never happened, and `kb stat` would report it.
+  if (dryRun) {
+    return { state: 'failed', dryRun: true, session, why: last?.detail ?? last?.why ?? 'unknown', reason: last?.reason ?? null, queued: allLines.length };
+  }
   await touchStamp({ env, now });
   await log({ kind: 'flush', ok: false, attempts: attempt, why: last?.detail ?? last?.why ?? 'unknown', reason: last?.reason ?? null }, { env });
   return {

@@ -1171,6 +1171,30 @@ test('a dry run sends nothing and shows everything', () => withQueue(async ({ di
   assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), true, 'and the queue is untouched');
 }));
 
+test('a dry run PREVIEWS an idle session line without converting it, and moves no stamp (VCST-6103)', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const api = fakeApi(state);
+  const quiet = reachPath(dir, 'quiet001');
+  await writeFile(quiet, JSON.stringify({ session: 'quiet001', cursor: 0, tools: 300, turns: 9, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  const old = new Date(AT.getTime() - 60 * 60 * 1000);
+  await utimes(quiet, old, old);
+
+  const r = await run(env, api, { dryRun: true });
+  assert.equal(r.state, 'dry-run');
+  assert.ok(r.plan.writes.some((w) => w.path.includes('quiet001')), 'the plan shows the session line a real push would send');
+  assert.equal(existsSync(quiet), true, 'and leaves its state file for that push');
+  assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), false, 'nothing was appended to the queue');
+  // Measured at AT, the instant a real flush would have stamped: a moved stamp reads "too soon".
+  assert.equal(await shouldSweep({ env, now: () => AT }), true, 'the sweep stamp did not move');
+  assert.equal(api.calls.includes('createBlob'), false);
+}));
+
+test('an EMPTY dry run moves no stamp either — a preview must not postpone the next sweep', () => withQueue(async ({ env }) => {
+  const r = await run(env, fakeApi(makeBase([])), { dryRun: true });
+  assert.equal(r.state, 'nothing');
+  assert.equal(await shouldSweep({ env, now: () => AT }), true);
+}));
+
 test('the gate can decline, and declining changes nothing', () => withQueue(async ({ dir, env }) => {
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact' })]);
   const api = fakeApi(state);

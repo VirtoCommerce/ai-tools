@@ -269,6 +269,23 @@ export async function log(record, { env = process.env, who, run } = {}) {
   // Off means off: a line queued while disabled would be published the moment the switch is
   // unset, which is the opposite of what turning it off asked for.
   if (kbDisabled(env)) return { ok: false, disabled: true, path: queuePath(env), line: null, why: DISABLED_WHY };
+  const line = composeLine(record, { env, who, run });
+  const path = queuePath(env);
+  try {
+    await mkdir(queueDir(env), { recursive: true });
+    await appendFile(path, `${JSON.stringify(line)}\n`, 'utf8');
+  } catch (err) {
+    return { ok: false, path, line, why: `${err.code ?? 'EUNKNOWN'}: ${err.message}` };
+  }
+  if (line.kind === 'ask') await noteAsk(env, line.at, line.q);
+  return { ok: true, path, line };
+}
+
+/**
+ * The line `log` would append, built and NOT written. `log` is its one writer; the other caller is
+ * a dry-run push (VCST-6103), which must show the lines a real push would add without adding them.
+ */
+export function composeLine(record, { env = process.env, who, run } = {}) {
   // All three marks are stamped LAST and by the single writer, so no verb can forget one and no
   // verb can fake one: `synthetic` because an env var must cover every line a benchmark run
   // produces including its flush, `run` for the same reason one level up -- a run handle that only
@@ -281,22 +298,13 @@ export async function log(record, { env = process.env, who, run } = {}) {
   // but it originated as `KB_RUN` in some earlier session, and a bound that one of two doors skips
   // is a bound the log does not have.
   const handle = run === undefined ? runOf(env) : String(run ?? '').trim().slice(0, RUN_MAX).trim();
-  const line = {
+  return {
     at: new Date().toISOString(),
     ...record,
     ...(handle ? { run: handle } : {}),
     ...(me ? { who: me } : {}),
     ...(isSynthetic(env) ? { synthetic: true } : {}),
   };
-  const path = queuePath(env);
-  try {
-    await mkdir(queueDir(env), { recursive: true });
-    await appendFile(path, `${JSON.stringify(line)}\n`, 'utf8');
-  } catch (err) {
-    return { ok: false, path, line, why: `${err.code ?? 'EUNKNOWN'}: ${err.message}` };
-  }
-  if (line.kind === 'ask') await noteAsk(env, line.at, line.q);
-  return { ok: true, path, line };
 }
 
 // ── the session's sidecar: what must outlive a flush ──────────────────────────────────────────
