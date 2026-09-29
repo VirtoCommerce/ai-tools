@@ -4,7 +4,6 @@
   "domain_slug": "srch",
   "domain_map_rev": 1,
   "generated": "2026-09-28",
-  "amended": "2026-09-28",
   "metadata": {
     "scope": "The whole Search domain at the depth search.md rev 1 + the BL-SRCH/ECL-3 oracles + suite titles support (keyword search, suggestions, category/store scope, results page, facets, sort, paging, empty state, index build and lag, admin search configuration), plus the barcode-scanner slice in depth from VCST-2945. Barcode nodes rest on three OPEN PR builds (vc-module-catalog#909, vc-module-x-catalog#113, vc-frontend#2501) and carry maturity new; re-run update mode after they merge or revert.",
     "built_from": "search.md rev 1 (§1 barcode chain links 1–6, §2a–2h, §3 D1–D8, §5 G1–G7); business-logic.md BL-SRCH-001..005, BL-STORE-001, BL-CAT-003, BL-A11Y-001/002, BL-UI-001; ECL-3.1, ECL-3.2; suites 004, 005, 050a, 103 (Title/References/Automation_Status); reports/ba/test-models/VCST-2945-2026-09-28.md (Part 0 chain, state diagram, 3x amendments); reports/tickets/Sprint26-19/VCST-2945/testing-checklist.md (per-item verdicts); REG-2026-09-28-1518 (suite results + triage-report.md); PR bodies #909/#113/#2501; lane summaries 3x/4a-be/4a-fe/4v; VirtoOZ StorefrontUserGuide §Search Options and PlatformUserGuide §Manage Search Index (queried 2026-09-28).",
@@ -2076,13 +2075,120 @@
       ]
     },
     {
-<<<<<<< HEAD
       "id": "srch.barcode.resolve.hides-intent-search-filters",
       "type": "branch",
       "branch_kind": "integration",
       "technique": "EG",
       "name": "Intent-search AI filter suggestions are hidden only while a barcode lookup is active",
-=======
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r1: AI intent-search filter suggestions are suppressed for the duration of a barcode lookup and restored once it ends, instead of persisting across it",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "No browser this wave (/qa-test-fast Stage 1); needs a live pass with intent-search enabled to confirm both the suppress and the restore-after-lookup halves."
+    },
+    {
+      "id": "srch.barcode.resolve.page-reset-on-change",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Scanning a second barcode resets the loaded page and page history instead of appending to the prior scan's results",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r2: page / pageHistory reset when the barcode value changes — covers load-more-then-second-scan",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Needs a URL-driven scan lane plus a load-more step before the second scan to verify live; not exercised this run (no camera/fake-media lane, no browser this wave)."
+    },
+    {
+      "id": "srch.barcode.resolve.keyword-suppressed-with-barcode",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "A barcode value takes precedence over a co-present keyword; Reset clears both together",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r4: with ?barcode=X&q=Y the keyword is suppressed while the barcode drives the query; Reset clears barcode and q together",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C4 corroborates the Reset-clears-both half on the zero-hit case only; the co-present-keyword-suppressed half was not separately exercised",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Distinct from srch.barcode.resolve.zero-hit-empty's Reset observation: this is the general suppression rule for any hit count, not only the empty state."
+    },
+    {
+      "id": "srch.barcode.resolve.repeated-query-param-coerced",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A URL with barcode repeated as multiple query values is coerced to its first value instead of crashing",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r5: a route with barcode given twice (?barcode=a&barcode=b), which the router parses as an array, is coerced with toFirstString instead of throwing",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Distinct from srch.barcode.expand.second-term-literal, which is the xAPI filter-syntax case of two barcode: term filters inside one query value; this is the URL-query-array case the storefront composable guards against. Not live-verified this wave."
+    },
+    {
+      "id": "srch.barcode.resolve.request-response-binding",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "name": "The single-hit redirect only fires from the response matching its own request, never a superseded one",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r6: shouldOpenSingleBarcodeHit binds the redirect decision to the request that produced it, guarding a fast second scan/edit from redirecting on a stale response",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Corresponds to the test model's RACE archetype row (shouldOpenSingleBarcodeHit request-binding), WAIVED there as not deterministically drivable through MCP; covered by the PR's own unit tests, not live this wave."
+    },
+    {
+      "id": "srch.barcode.resolve.analytics-fires",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "name": "A barcode lookup fires the same view-search-results analytics event as a keyword search",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r7: viewSearchResults analytics now fires for barcode lookups too, not only ?q= keyword searches",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Not live-verified this wave (no browser; GA4 dataLayer/gtag() inspection is the permitted live-check method for a future pass)."
+    },
+    {
       "id": "srch.barcode.config.shape-fields-offered-by-value-type",
       "type": "branch",
       "branch_kind": "integration",
@@ -2247,27 +2353,10 @@
       "branch_kind": "happy",
       "technique": "EP",
       "name": "A dictionary ShortText property is indexed by its alias, so a scan of the displayed value and a scan of the alias differ",
->>>>>>> 3026fdb6c3cd122b259db84df7159894fab24760
       "maturity": "new",
       "status": "UNVERIFIED",
       "evidence": [
         {
-<<<<<<< HEAD
-          "class": "SPEC",
-          "ref": "vc-frontend#2501",
-          "note": "review-thread fix r1: AI intent-search filter suggestions are suppressed for the duration of a barcode lookup and restored once it ends, instead of persisting across it",
-          "date": "2026-09-28"
-        }
-      ],
-      "notes": "No browser this wave (/qa-test-fast Stage 1); needs a live pass with intent-search enabled to confirm both the suppress and the restore-after-lookup halves."
-    },
-    {
-      "id": "srch.barcode.resolve.page-reset-on-change",
-      "type": "branch",
-      "branch_kind": "state",
-      "technique": "ST",
-      "name": "Scanning a second barcode resets the loaded page and page history instead of appending to the prior scan's results",
-=======
           "class": "DOC",
           "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
           "note": "ShortText/Color index \"propValue.Alias ?? propValue.Value\" in the language-independent base field"
@@ -2289,35 +2378,10 @@
       "branch_kind": "happy",
       "technique": "EP",
       "name": "A multivalue property holds several codes on one product and a scan of any one of them finds it",
->>>>>>> 3026fdb6c3cd122b259db84df7159894fab24760
       "maturity": "new",
       "status": "UNVERIFIED",
       "evidence": [
         {
-<<<<<<< HEAD
-          "class": "SPEC",
-          "ref": "vc-frontend#2501",
-          "note": "review-thread fix r2: page / pageHistory reset when the barcode value changes — covers load-more-then-second-scan",
-          "date": "2026-09-28"
-        }
-      ],
-      "notes": "Needs a URL-driven scan lane plus a load-more step before the second scan to verify live; not exercised this run (no camera/fake-media lane, no browser this wave)."
-    },
-    {
-      "id": "srch.barcode.resolve.keyword-suppressed-with-barcode",
-      "type": "branch",
-      "branch_kind": "state",
-      "technique": "DT",
-      "name": "A barcode value takes precedence over a co-present keyword; Reset clears both together",
-      "maturity": "new",
-      "status": "UNVERIFIED",
-      "evidence": [
-        {
-          "class": "SPEC",
-          "ref": "vc-frontend#2501",
-          "note": "review-thread fix r4: with ?barcode=X&q=Y the keyword is suppressed while the barcode drives the query; Reset clears barcode and q together",
-          "date": "2026-09-28"
-=======
           "class": "DOC",
           "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
           "note": "isCollection = property.Multivalue; each value is added to the same collection field"
@@ -2399,25 +2463,10 @@
           "class": "DOC",
           "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.IndexProductVariation (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
           "note": "the parent document receives the variation code as content and the variation properties of type Variation only (IndexCustomProperties(document, variation.Properties, [PropertyType.Variation])); gtin/manufacturerPartNumber/code fields are written per document in CreateDocument, so they never reach the parent"
->>>>>>> 3026fdb6c3cd122b259db84df7159894fab24760
         },
         {
           "class": "OBSERVED",
           "ref": "VCST-2945 4a 2026-09-28",
-<<<<<<< HEAD
-          "note": "C4 corroborates the Reset-clears-both half on the zero-hit case only; the co-present-keyword-suppressed half was not separately exercised",
-          "date": "2026-09-28"
-        }
-      ],
-      "notes": "Distinct from srch.barcode.resolve.zero-hit-empty's Reset observation: this is the general suppression rule for any hit count, not only the empty state."
-    },
-    {
-      "id": "srch.barcode.resolve.repeated-query-param-coerced",
-      "type": "branch",
-      "branch_kind": "negative",
-      "technique": "EG",
-      "name": "A URL with barcode repeated as multiple query values is coerced to its first value instead of crashing",
-=======
           "note": "B4: variation MPN found the variation only (1 hit); the Variation-type property half is source-only",
           "date": "2026-09-28"
         }
@@ -2454,27 +2503,10 @@
       "branch_kind": "negative",
       "technique": "DT",
       "name": "An inactive product, or one under an inactive category, is indexed as hidden and SoldOut; a scan of its code finds it or not depending on the visibility filter",
->>>>>>> 3026fdb6c3cd122b259db84df7159894fab24760
       "maturity": "new",
       "status": "UNVERIFIED",
       "evidence": [
         {
-<<<<<<< HEAD
-          "class": "SPEC",
-          "ref": "vc-frontend#2501",
-          "note": "review-thread fix r5: a route with barcode given twice (?barcode=a&barcode=b), which the router parses as an array, is coerced with toFirstString instead of throwing",
-          "date": "2026-09-28"
-        }
-      ],
-      "notes": "Distinct from srch.barcode.expand.second-term-literal, which is the xAPI filter-syntax case of two barcode: term filters inside one query value; this is the URL-query-array case the storefront composable guards against. Not live-verified this wave."
-    },
-    {
-      "id": "srch.barcode.resolve.request-response-binding",
-      "type": "branch",
-      "branch_kind": "integration",
-      "technique": "EG",
-      "name": "The single-hit redirect only fires from the response matching its own request, never a superseded one",
-=======
           "class": "DOC",
           "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.GetProductStatus/GetProductAvailability (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
           "note": "status = visible only if IsActive and ParentCategoryIsActive; availability SoldOut when inactive"
@@ -2496,27 +2528,10 @@
       "branch_kind": "integration",
       "technique": "CT",
       "name": "Physical, Digital, BillOfMaterials and configurable products are found by the same fields and open the same result flow",
->>>>>>> 3026fdb6c3cd122b259db84df7159894fab24760
       "maturity": "new",
       "status": "UNVERIFIED",
       "evidence": [
         {
-<<<<<<< HEAD
-          "class": "SPEC",
-          "ref": "vc-frontend#2501",
-          "note": "review-thread fix r6: shouldOpenSingleBarcodeHit binds the redirect decision to the request that produced it, guarding a fast second scan/edit from redirecting on a stale response",
-          "date": "2026-09-28"
-        }
-      ],
-      "notes": "Corresponds to the test model's RACE archetype row (shouldOpenSingleBarcodeHit request-binding), WAIVED there as not deterministically drivable through MCP; covered by the PR's own unit tests, not live this wave."
-    },
-    {
-      "id": "srch.barcode.resolve.analytics-fires",
-      "type": "branch",
-      "branch_kind": "integration",
-      "technique": "EG",
-      "name": "A barcode lookup fires the same view-search-results analytics event as a keyword search",
-=======
           "class": "DOC",
           "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.CreateDocument (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
           "note": "productType is one filterable string and no indexing branch depends on it; the type index field is written only on the parent for its variations (IndexProductVariation)"
@@ -2538,20 +2553,10 @@
       "branch_kind": "boundary",
       "technique": "EP",
       "name": "The same code on products in two catalogs is found only through the catalog the store exposes",
->>>>>>> 3026fdb6c3cd122b259db84df7159894fab24760
       "maturity": "new",
       "status": "UNVERIFIED",
       "evidence": [
         {
-<<<<<<< HEAD
-          "class": "SPEC",
-          "ref": "vc-frontend#2501",
-          "note": "review-thread fix r7: viewSearchResults analytics now fires for barcode lookups too, not only ?q= keyword searches",
-          "date": "2026-09-28"
-        }
-      ],
-      "notes": "Not live-verified this wave (no browser; GA4 dataLayer/gtag() inspection is the permitted live-check method for a future pass)."
-=======
           "class": "DOC",
           "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.CreateDocument (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
           "note": "one document per product id with a \"catalog\" collection; code is unique per catalog, not globally"
@@ -2642,7 +2647,6 @@
         "data.srch.product.dynamic-property-value",
         "data.srch.store.barcode-exact"
       ]
->>>>>>> 3026fdb6c3cd122b259db84df7159894fab24760
     }
   ],
   "edges": [
