@@ -742,14 +742,15 @@ async function flushOnce({
     // way this line could cost more than it measures:
     //   * a TOKEN — without one nothing is sent;
     //   * our own queue already HOLDS work, or our own cadence is due — so a push that exists only
-    //     because another session's file is busy does not become a commit per turn;
-    //   * not a dry run.
+    //     because another session's file is busy does not become a commit per turn.
+    // A dry run builds it too (VCST-6103): the line never leaves memory, and a preview that left it
+    // out would let the next real push commit a line its reader never saw.
     // AND IT NEVER TOUCHES THE QUEUE (review 4). The line rides this push IN MEMORY and the send mark is
     // written only once the commit has landed, so a declined, failed or dry push adds nothing of OURS
     // to the queue and leaves the mark as it was — and a push that never happens queues nothing to
     // grow. (The harvest above is a different matter and predates this: outside a dry run it still
     // moves idle states' lines into our queue before any gate. They go out with the next push.)
-    const mine = dryRun || !token ? null : readReach(dir, session);
+    const mine = token ? readReach(dir, session) : null;
     if (mine && workIn(mine) > 0 && unsent(dir, mine)
       && (heldWork || ownReachDue(dir, session, { now: now().getTime(), state: mine, attempts: false }))) {
       const who = mine.who ?? cachedWho({ dir, env });
@@ -771,11 +772,6 @@ async function flushOnce({
     const q = await readQueue({ env, path: f.path });
     const lines = f.mine ? [...q.lines, ...previewed] : q.lines;
     if (lines.length) loaded.push({ ...f, lines: orderQueue(lines), malformed: q.malformed, raw: q.raw, signable: f.mine || ownedByMe(f.path, { env }) });
-  }
-  // A real harvest writes our queue file, so its lines are read back above; a previewed one may have
-  // no file to ride on, and is carried the way `ownLine` is.
-  if (previewed.length && !loaded.some((f) => f.mine)) {
-    loaded.push({ path: queuePath(env), session, mine: true, lines: orderQueue(previewed), raw: null, signable: true, virtual: true });
   }
   if (ownLine) {
     const own = loaded.find((f) => f.mine);

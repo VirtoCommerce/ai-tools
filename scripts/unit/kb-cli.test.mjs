@@ -322,7 +322,8 @@ async function kbRecorded(args, extraEnv = {}) {
           // A token must exist or the sweep stops before the base is touched; VC_ENV_ROOT keeps the
           // developer's own .env.local — and whatever token is in it — out of the process.
           VC_ENV_ROOT: logDir, KB_GITHUB_TOKEN: 'not-a-real-token', GITHUB_TOKEN: '', KB_PUSH_CONFIRM: '', KB_NO_SWEEP: '',
-          KB_FAKE_BASE: 'down',
+          // A developer's durable KB_ENABLED=0 would turn every case here into `disabled`.
+          KB_ENABLED: '', KB_FAKE_BASE: 'down',
           ...extraEnv,
         },
         cwd: REPO,

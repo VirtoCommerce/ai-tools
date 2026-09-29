@@ -65,13 +65,14 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
-  npm run kb -- push [--dry-run]                    send the queue to the base as ONE commit
+  npm run kb -- push [--dry-run] [--no-sweep]       send the queue to the base as ONE commit
 
 exit: 0 answered · 1 no coverage (or capture refused as a duplicate) · 2 no base · 3 unreachable
 
 capture / confirm / dispute QUEUE their change locally. Nothing is sent by those commands.
 \`push\` sends everything queued — this session's lines plus any idle file left by an earlier one —
-as one atomic commit. \`--dry-run\` shows exactly what would be written and sends nothing.
+as one atomic commit. \`--dry-run\` shows exactly what would be written and sends nothing;
+\`--no-sweep\` on \`push\` also leaves those idle files out and sends this session's own queue file only.
 
 Every invocation also sweeps IDLE queue files left behind by earlier sessions, at most every
 ${minutes(SWEEP_AFTER_MS)} minutes, silently and without affecting the exit code. That sweep is why a failed push needs no

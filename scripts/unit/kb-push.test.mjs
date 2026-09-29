@@ -1784,6 +1784,18 @@ test('review 4.4: a DECLINED push leaves no counters line in the queue and no se
   assert.equal(existsSync(sentPath(dir, SESSION)), false, 'and nothing is marked sent');
 }));
 
+test('a dry run previews our counters exactly as a push would, and marks nothing sent (VCST-6103)', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeFile(reachPath(dir, SESSION), JSON.stringify({ session: SESSION, cursor: 0, tools: 30, turns: 3, touchAt: [], firstAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'x', matched: [], state: 'miss' }]);
+  const before = await readFile(join(dir, `${SESSION}.jsonl`), 'utf8');
+  const r = await run(env, fakeApi(state), { dryRun: true });
+  assert.equal(r.state, 'dry-run');
+  assert.ok(r.plan.writes.some((w) => w.text.includes('"kind":"session"')), 'the counters the next push would commit are shown');
+  assert.equal(await readFile(join(dir, `${SESSION}.jsonl`), 'utf8'), before, 'the queue is exactly as it was');
+  assert.equal(existsSync(sentPath(dir, SESSION)), false, 'and nothing is marked sent');
+}));
+
 test('review 4.5: a dry run deletes no other session’s state', () => withQueue(async ({ dir, env }) => {
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
   const quiet = reachPath(dir, 'quiet011');
