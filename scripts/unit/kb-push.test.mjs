@@ -19,11 +19,11 @@ import { mintId } from '../kb/core/canonical.mjs';
 import { parseEntry, stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from '../kb/core/index-build.mjs';
 import {
-  RETENTION_DAYS, SWEEP_AFTER_MS, appendEvidence, commitMessage, expiredLogs, flush, logPath,
-  logTargetOf, outsideBase, ownFlushDue, queueFiles, sameEvidence, shouldSweep, unionLines,
+  RETENTION_DAYS, SWEEP_AFTER_MS, appendEvidence, commitMessage, expiredLogs, flush, fullestSessionLines, logPath,
+  logTargetOf, outsideBase, ownFlushDue, published, queueFiles, sameEvidence, shouldSweep, unionLines,
 } from '../kb/core/push.mjs';
 import { orderQueue, queueBacklog, queuePath, readPushStatus, releaseConsumed } from '../kb/core/queue.mjs';
-import { reachPath } from '../kb/core/reach.mjs';
+import { reachPath, sentPath } from '../kb/core/reach.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 // THE READER, IN THE WRITER'S TEST, DELIBERATELY. STEP 3c's whole claim is that the path gained a
 // directory and the PARSER did not change; a claim about two modules cannot be pinned inside one.
@@ -173,6 +173,14 @@ const linesOfSession = (state, session) => [...state.files]
   .filter(([path]) => path.startsWith('v2/log/') && sessionOf(path) === session)
   .flatMap(([, text]) => text.trim().split('\n').map((l) => JSON.parse(l)));
 
+/**
+ * A capture that duplicates `KB-11111111` (same anchor, same default scope), so the push converts it
+ * into a confirmation. A quiet successful flush is no longer published (VCST-6091); one that converted
+ * something is, because that is a fact the commit cannot state. Tests that pin what the FLUSH LINE
+ * carries queue one of these, so there is a flush line to read.
+ */
+const converting = () => captureLine(makeEntry({ id: 'KB-99999999', subject: 'a fact, seen again', anchors: ['/cart'] }));
+
 /** The published `session` line describing `id`, read from THAT session's file — where it now lives. */
 const sessionLine = (state, id) => linesOfSession(state, id).find((l) => l.kind === 'session' && l.session === id);
 
@@ -288,18 +296,29 @@ test('no pushed log line carries a payload — and the claim is in the ENTRY, no
   assert.ok(state.files.get('v2/entries/KB-22222222.md').includes('THE-CLAIM-PROSE'), 'it reaches the entry');
 }));
 
-test('one flush line per push, describing its own delivery', () => withQueue(async ({ dir, env }) => {
+test('a quiet successful push publishes NO flush line — the commit already says it landed', () => withQueue(async ({ dir, env }) => {
+  // VCST-6091: 124 flush lines on 2026-09-28, and one of them the whole content of a file of its own.
+  // A flush with nothing to add to its commit is not published.
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
   const fresh = makeEntry({ id: 'KB-22222222', subject: 'a new fact', anchors: ['/checkout'] });
   await writeQueue(dir, SESSION, [captureLine(fresh)]);
+  const r = await run(env, fakeApi(state));
+  assert.equal(r.state, 'pushed');
+  assert.ok(!logLines(state).some((l) => l.kind === 'flush'));
+  assert.match(r.plan.message, /1 entry/, 'what it delivered is in the commit');
+}));
+
+test('a flush with something the commit cannot say IS published, once, describing its own delivery', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const fresh = makeEntry({ id: 'KB-22222222', subject: 'a new fact', anchors: ['/checkout'] });
+  await writeQueue(dir, SESSION, [captureLine(fresh), converting()]);
   assert.equal((await run(env, fakeApi(state))).state, 'pushed');
 
-  const lines = state.files.get(`v2/${logPath(SESSION, AT)}`).trim().split('\n').map((l) => JSON.parse(l));
-  const flushes = lines.filter((l) => l.kind === 'flush');
+  const flushes = logLines(state).filter((l) => l.kind === 'flush');
   assert.equal(flushes.length, 1);
   assert.deepEqual(
     { entries: flushes[0].entries, retries: flushes[0].retries, ok: flushes[0].ok, convertedToConfirm: flushes[0].convertedToConfirm },
-    { entries: 1, retries: 0, ok: true, convertedToConfirm: 0 },
+    { entries: 2, retries: 0, ok: true, convertedToConfirm: 1 },
   );
 }));
 
@@ -311,7 +330,7 @@ test('a synthetic run marks its FLUSH line too, not only its asks', () => withQu
   // its questions stayed out of it. Neither the mechanism's own tests nor a code read caught it;
   // publishing the output and looking at it did.
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'benchmark?', matched: [], state: 'miss', synthetic: true }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'benchmark?', matched: [], state: 'miss', synthetic: true }, converting()]);
   assert.equal((await run({ ...env, KB_SYNTHETIC: '1' }, fakeApi(state))).state, 'pushed');
 
   const lines = logLines(state);
@@ -320,7 +339,7 @@ test('a synthetic run marks its FLUSH line too, not only its asks', () => withQu
 
 test('an ordinary run’s flush line carries no synthetic field', () => withQueue(async ({ dir, env }) => {
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }, converting()]);
   assert.equal((await run(env, fakeApi(state))).state, 'pushed');
 
   assert.ok(!('synthetic' in logLines(state).find((l) => l.kind === 'flush')));
@@ -358,7 +377,7 @@ test('the flush line names the PUSHER — the one line where deliverer and autho
   // who a reader wants named, including when the file it swept belongs to somebody else.
   await knowWho(dir, 'octo-pusher');
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }, converting()]);
   assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
 
   assert.equal(logLines(state).find((l) => l.kind === 'flush').who, 'octo-pusher');
@@ -366,7 +385,7 @@ test('the flush line names the PUSHER — the one line where deliverer and autho
 
 test('a pusher with no resolved identity writes a flush line with no handle', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }, converting()]);
   assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
 
   assert.ok(!('who' in logLines(state).find((l) => l.kind === 'flush')), 'absent, never null');
@@ -383,6 +402,7 @@ test('a swept session line keeps ITS writer, and the pusher does not overwrite i
   await writeFile(foreign, `${JSON.stringify({ at: '2026-09-18T09:00:00Z', kind: 'ask', q: 'somebody else asked this', matched: [], state: 'miss', who: 'octo-asker' })}\n`, 'utf8');
   const old = new Date(AT.getTime() - SWEEP_AFTER_MS - 60_000);
   await utimes(foreign, old, old);
+  await writeQueue(dir, SESSION, [converting()]);
 
   assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
 
@@ -401,7 +421,7 @@ test('a published `session` line credits the session it DESCRIBES, never the one
   await writeFile(quiet, JSON.stringify({ session: 'quiet001', cursor: 0, tools: 300, turns: 9, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z', who: 'octo-quiet' }), 'utf8');
   const old = new Date(AT.getTime() - 60 * 60 * 1000);
   await utimes(quiet, old, old);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }, converting()]);
 
   assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
 
@@ -413,22 +433,32 @@ test('a published `session` line credits the session it DESCRIBES, never the one
   assert.ok(!logLines(state).some((l) => l.kind === 'session'), "the sweeper's file holds no foreign counters");
 })));
 
-test('a `session` line for a state that never learned a handle carries none', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
-  // And it is NOT filled in from the pusher, which is the whole point: an unknown author is a gap
-  // a reader can see, and a confident wrong one is a gap they cannot.
+test('a `session` line for a state that never learned a handle is signed by the pusher (VCST-6091)', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  // This used to stay unsigned, on the argument that the pusher might be somebody else. It cannot
+  // be: the queue directory is one OS user's temp directory on one machine, so whoever pushes it
+  // wrote it. A line lacking `who` is one written on a cold identity cache, and 43 of 2026-09-28's
+  // lines went public unsigned for that reason alone. A handle the STATE did learn still wins (the
+  // test above).
   await knowWho(dir, 'octo-pusher');
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
   const quiet = reachPath(dir, 'quiet002');
   await writeFile(quiet, JSON.stringify({ session: 'quiet002', cursor: 0, tools: 12, turns: 2, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z' }), 'utf8');
   const old = new Date(AT.getTime() - 60 * 60 * 1000);
   await utimes(quiet, old, old);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }, converting()]);
 
   assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
 
   const line = sessionLine(state, 'quiet002');
   assert.equal(line.session, 'quiet002');
-  assert.ok(!('who' in line), 'no identity beats the pusher’s');
+  assert.equal(line.who, 'octo-pusher');
+})));
+
+test('a pusher with no identity signs nothing — the back-fill never invents a handle', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'unsigned?', matched: [], state: 'miss' }]);
+  assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
+  assert.ok(!('who' in logLines(state).find((l) => l.kind === 'ask')), 'absent, never null');
 })));
 
 test('the log path is the DATE and the session, flat under log/ — no time of day, no counter', () => {
@@ -773,10 +803,9 @@ test('two pushes of ONE queue write ONE file, and the second merges into it', ()
   assert.deepEqual(lines.filter((l) => l.kind === 'ask').map((l) => l.q),
     ['first question', 'second question', 'third question'],
     'each question counted ONCE — the inflation is what made that window unreadable');
-  // BOTH flush lines stay. Two deliveries really did happen and a log that describes its own
-  // delivery has to say so; what this removes is the double COUNTING of the work, not the evidence
-  // that somebody published it twice.
-  assert.equal(lines.filter((l) => l.kind === 'flush').length, 2);
+  // Neither quiet delivery writes a flush line (VCST-6091). That the queue was published twice is
+  // still on record: it is two commits, which is where a delivery with nothing else to say lives.
+  assert.equal(lines.filter((l) => l.kind === 'flush').length, 0);
 }));
 
 test('two CONCURRENT publishers of one session\'s queue converge on one file', () => withQueue(async ({ dir, env }) => {
@@ -819,7 +848,9 @@ test('two CONCURRENT publishers of one session\'s queue converge on one file', (
 
   const lines = state.files.get(`v2/${logPath(SESSION, AT)}`).trim().split('\n').map((l) => JSON.parse(l));
   assert.deepEqual(lines.filter((l) => l.kind === 'ask').map((l) => l.q), ['first question', 'second question']);
-  assert.equal(lines.filter((l) => l.kind === 'flush').length, 2, 'both deliveries are on record');
+  // The loser RETRIED, and a retry is something its commit cannot say, so its flush line is published;
+  // the winner's quiet one is not (VCST-6091).
+  assert.deepEqual(lines.filter((l) => l.kind === 'flush').map((l) => l.retries), [1], 'the retry is on record');
 }));
 
 test('a session pushing twice in one day APPENDS to one file; its next day is a new file', () => withQueue(async ({ dir, env }) => {
@@ -840,7 +871,8 @@ test('a session pushing twice in one day APPENDS to one file; its next day is a 
 
 test('a flush that straddles midnight writes each line under ITS OWN date, not the push clock', () => withQueue(async ({ dir, env }) => {
   // The date in a name is a fact about the CONTENTS. A queue holding 23:58 and 00:03 lines, pushed
-  // at 00:05, is two files — and the flush summary, written at 00:05, rides in the second.
+  // at 00:05, is two files. (A quiet flush writes no summary line since VCST-6091, so day two holds
+  // only its own ask.)
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
   await writeQueue(dir, SESSION, [
     { at: '2026-09-18T23:58:00Z', kind: 'ask', q: 'late', matched: [], state: 'miss' },
@@ -855,7 +887,7 @@ test('a flush that straddles midnight writes each line under ITS OWN date, not t
   assert.deepEqual(logFiles(state), [day1, day2]);
   const parse = (p) => state.files.get(p).trim().split('\n').map((l) => JSON.parse(l));
   assert.deepEqual(parse(day1).map((l) => l.q ?? l.kind), ['late']);
-  assert.deepEqual(parse(day2).map((l) => l.q ?? l.kind), ['early', 'flush']);
+  assert.deepEqual(parse(day2).map((l) => l.q ?? l.kind), ['early']);
   assert.match(r.plan.message, /2 logs/, 'the commit message counts FILES written');
 }));
 
@@ -1259,7 +1291,7 @@ const AS_RUN = (env, root, handle = 'VCST-1234') => ({ ...asWho(env, root), KB_R
 test('the flush line carries the PUSHER’s run handle, like the mark and the handle beside it', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
   await knowWho(dir, 'octo-pusher');
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }, converting()]);
   assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
 
   // Only the flush line is asserted here, and deliberately: the queued `ask` above is a hand-written
@@ -1271,7 +1303,7 @@ test('the flush line carries the PUSHER’s run handle, like the mark and the ha
 
 test('a pusher running under no run handle writes a flush line with none', () => withQueue(async ({ dir, env }) => withRoot(async (root) => {
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }, converting()]);
   assert.equal((await run(asWho(env, root), fakeApi(state))).state, 'pushed');
 
   assert.ok(!('run' in logLines(state).find((l) => l.kind === 'flush')), 'absent, never null');
@@ -1286,7 +1318,7 @@ test('a swept queue file keeps the run ITS session wrote under, and the pusher d
   await writeFile(foreign, `${JSON.stringify({ at: '2026-09-18T09:00:00Z', kind: 'ask', q: 'somebody else asked this', matched: [], state: 'miss', run: 'REL-9' })}\n`, 'utf8');
   const old = new Date(AT.getTime() - SWEEP_AFTER_MS - 60_000);
   await utimes(foreign, old, old);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }, converting()]);
 
   assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
 
@@ -1304,7 +1336,7 @@ test('a published `session` line carries the run of the session it DESCRIBES', (
   await writeFile(quiet, JSON.stringify({ session: 'quiet003', cursor: 0, tools: 300, turns: 9, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z', who: 'octo-quiet', run: 'REL-9' }), 'utf8');
   const old = new Date(AT.getTime() - 60 * 60 * 1000);
   await utimes(quiet, old, old);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }, converting()]);
 
   assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
 
@@ -1322,7 +1354,7 @@ test('a `session` line for a state that never saw a run handle carries none', ()
   await writeFile(quiet, JSON.stringify({ session: 'quiet004', cursor: 0, tools: 12, turns: 2, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z' }), 'utf8');
   const old = new Date(AT.getTime() - 60 * 60 * 1000);
   await utimes(quiet, old, old);
-  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }, converting()]);
 
   assert.equal((await run(AS_RUN(env, root), fakeApi(state))).state, 'pushed');
 
@@ -1466,4 +1498,97 @@ test('KB_PUSH_CONFIRM=1: a push WITH a gate is shown the plan and sends only on 
   const r = await run(confirmEnv, fakeApi(state), { gate: async (plan) => { shown = plan; return true; } });
   assert.equal(r.state, 'pushed', r.why);
   assert.ok(shown?.writes?.length, 'the operator saw what was written');
+}));
+
+// ─── VCST-6091: one line per session, on its own day, delivered by the session itself ────────
+
+test('a `session` line is filed under the day the session STARTED, not the day it was published', () => {
+  // Two sessions of 2026-09-25 were published on 2026-09-28 and filed as `log/20260928-*`, beside
+  // nothing of theirs.
+  const line = { at: '2026-09-28T07:24:03Z', kind: 'session', session: '3befc25a', tools: 100, firstAt: '2026-09-25T12:18:05Z' };
+  const pushed = new Date('2026-09-28T07:24:03Z');
+  assert.equal(logTargetOf(line, { session: '4d874be4', fallback: pushed }), 'log/20260925-3befc25a.jsonl');
+  // A start the retention window has already dropped would be deleted by the commit that wrote it.
+  const ancient = { ...line, firstAt: '2026-01-01T00:00:00Z' };
+  assert.equal(logTargetOf(ancient, { session: '4d874be4', fallback: pushed }), 'log/20260928-3befc25a.jsonl');
+  // Every other kind keeps its own `at`.
+  assert.equal(logTargetOf({ at: '2026-09-25T12:00:00Z', kind: 'ask', firstAt: '2026-09-01T00:00:00Z' }, { session: 'aaaa1111', fallback: pushed }),
+    'log/20260925-aaaa1111.jsonl');
+});
+
+test('a file keeps ONE `session` line per session — the fullest — where the first one stood', () => {
+  const s = (tools, lastAt, extra = {}) => JSON.stringify({ at: lastAt, kind: 'session', session: 'aaaa1111', tools, lastAt, ...extra });
+  const ask = JSON.stringify({ at: '2026-09-18T10:00:00Z', kind: 'ask', q: 'x' });
+  const kept = fullestSessionLines([s(10, '2026-09-18T10:00:00Z'), ask, s(40, '2026-09-18T11:00:00Z'), s(25, '2026-09-18T12:00:00Z')]);
+  assert.equal(kept.length, 2);
+  assert.equal(JSON.parse(kept[0]).tools, 40, 'the fullest copy, in the first copy’s place');
+  assert.equal(kept[1], ask, 'every other line untouched');
+  // Subagents count as work: a parent with fewer own calls but more delegated ones is the fuller.
+  const delegated = fullestSessionLines([s(30, '2026-09-18T10:00:00Z'), s(12, '2026-09-18T11:00:00Z', { agentTools: 97 })]);
+  assert.equal(JSON.parse(delegated[0]).agentTools, 97);
+  // And the merge applies it across the existing file and the new lines.
+  const merged = unionLines(`${s(10, '2026-09-18T10:00:00Z')}\n`, [s(40, '2026-09-18T11:00:00Z')]);
+  assert.equal(merged.trim().split('\n').length, 1);
+});
+
+test('what reaches the log: no quiet flush, no work-less session — and never the reach signal', () => {
+  assert.equal(published({ kind: 'flush', ok: true, entries: 0, retries: 0, convertedToConfirm: 0 }), false);
+  for (const loud of [{ ok: false }, { ok: true, redacted: 1 }, { ok: true, problems: 2 }, { ok: true, retries: 1 },
+    { ok: true, convertedToConfirm: 1 }, { ok: true, note: 'the secret gate loaded no values' }]) {
+    assert.equal(published({ kind: 'flush', ...loud }), true, JSON.stringify(loud));
+  }
+  assert.equal(published({ kind: 'session', tools: 0, agentTools: 0 }), false, 'a session that did nothing');
+  // THE CASE THE REACH PANEL EXISTS FOR: work, and not one call to the base. Always kept.
+  assert.equal(published({ kind: 'session', tools: 19, touchAt: [] }), true);
+  assert.equal(published({ kind: 'session', tools: 0, agentTools: 97 }), true, 'delegated work is work');
+  assert.equal(published({ kind: 'ask', q: 'x' }), true);
+});
+
+test('a queue that holds nothing publishable is released without a commit', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const api = fakeApi(state);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'session', session: SESSION, tools: 0, turns: 1, touchAt: [] }]);
+  const r = await run(env, api);
+  assert.equal(r.state, 'nothing');
+  assert.equal(api.calls.includes('createCommit'), false, 'no empty commit');
+  assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), false, 'and the queue is released');
+}));
+
+test('a session publishes its OWN counters with its push, keeps its state, and the next send replaces them', () => withQueue(async ({ dir, env }) => {
+  // Before, only a LATER session could publish these — Friday's sessions reached the base on Monday.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const own = (tools) => writeFile(reachPath(dir, SESSION), JSON.stringify({ session: SESSION, cursor: 0, tools, turns: 3, touchAt: [2], firstAt: '2026-09-18T09:00:00Z', lastAt: '2026-09-18T10:00:00Z' }), 'utf8');
+  await own(40);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'one', matched: [], state: 'miss' }]);
+  assert.equal((await run(env, fakeApi(state))).state, 'pushed');
+  assert.equal(sessionLine(state, SESSION).tools, 40);
+  assert.ok(existsSync(reachPath(dir, SESSION)), 'still running, so the state stays');
+
+  await own(90);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:40:00Z', kind: 'ask', q: 'two', matched: [], state: 'miss' }]);
+  assert.equal((await run(env, fakeApi(state))).state, 'pushed');
+  const lines = linesOfSession(state, SESSION).filter((l) => l.kind === 'session');
+  assert.deepEqual(lines.map((l) => l.tools), [90], 'one line, the fuller one');
+}));
+
+test('the idle harvest writes no second line for a session whose last send already said it all', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const quiet = reachPath(dir, 'quiet009');
+  await writeFile(quiet, JSON.stringify({ session: 'quiet009', cursor: 0, tools: 50, turns: 4, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  await writeFile(sentPath(dir, 'quiet009'), '50\n', 'utf8');
+  const old = new Date(AT.getTime() - 60 * 60 * 1000);
+  await utimes(quiet, old, old);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
+
+  assert.equal((await run(env, fakeApi(state))).state, 'pushed');
+  assert.equal(sessionLine(state, 'quiet009'), undefined, 'nothing new to say');
+  assert.equal(existsSync(quiet), false, 'but the finished state is still dropped');
+}));
+
+test('a capture refused AT PUSH carries its own author, not nobody', () => withQueue(async ({ dir, env }) => {
+  // 6 of 2026-09-28's unsigned lines were exactly these: built by the pusher, stamped by nobody.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [{ ...converting(), who: 'octo-asker' }]);
+  assert.equal((await run(env, fakeApi(state))).state, 'pushed');
+  assert.equal(logLines(state).find((l) => l.kind === 'capture-refused').who, 'octo-asker');
 }));

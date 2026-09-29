@@ -12,10 +12,13 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, kbDisabled, pendingMutations, queuePath, readQueue, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
+import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, kbDisabled, pendingMutations, queuePath, readQueue, hookEnv, processKey, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { captureLines } from '../kb/core/render.mjs';
 import { ask, askAbout, capture, confirm, dispute, show, stat, toLogLine } from '../kb/core/verbs.mjs';
+
+/** A process with no session: its pid plus a random tail, so two machines cannot share one. */
+const PROCESS_KEY = /^p\d+-[0-9a-f]{4}$/;
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
 const opened = () => ({ reader: localReader(FIXTURE), locator: FIXTURE, how: 'test', why: null });
@@ -45,7 +48,42 @@ test('the session id comes from the inherited env, not from a caller remembering
   // CLAUDE_CODE_HOST_SESSION_ID is inherited by children, so the prior art's measured pain -- one
   // missed prefix drops a question row silently -- does not arise.
   assert.equal(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'f3d05dd3abcdef' }), 'f3d05dd3');
-  assert.match(sessionId({}), /^p\d+$/, 'with no session, the honest answer is "this process"');
+  assert.match(sessionId({}), PROCESS_KEY, 'with no session, the honest answer is "this process"');
+});
+
+test('a CLI or IDE session is keyed by CLAUDE_CODE_SESSION_ID, never by its process (VCST-6091)', () => {
+  // Only the desktop app sets CLAUDE_CODE_HOST_SESSION_ID. The CLI and the IDE extensions set
+  // CLAUDE_CODE_SESSION_ID on every child they spawn, and before it was read, three of four
+  // operators fell through to the process key on every single call.
+  const transcript = '52b778cc-1111-2222-3333-444455556666';
+  assert.equal(sessionId({ CLAUDE_CODE_SESSION_ID: transcript }), '52b778cc');
+  // The desktop key still wins, so every key already published keeps its meaning.
+  assert.equal(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_f3d05dd3-25c1', CLAUDE_CODE_SESSION_ID: transcript }), 'f3d05dd3');
+  // An UNUSABLE earlier value falls through to the next name, not straight to the process key.
+  assert.equal(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_ab.cd', CLAUDE_CODE_SESSION_ID: transcript }), '52b778cc');
+  assert.equal(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: '   ', CLAUDE_CODE_SESSION_ID: transcript }), '52b778cc');
+});
+
+test('a hook with no session variable keys itself by its payload, and agrees with its own session', () => {
+  // A hook is a new process every turn. Keyed by its process, each turn recounted the transcript
+  // from zero and became its own "session" (VCST-6091: 125 of 126 lines said `turns: 1`).
+  const payload = { session_id: '52b778cc-1111-2222-3333-444455556666', transcript_path: 'x.jsonl' };
+  const cliChild = { CLAUDE_CODE_SESSION_ID: payload.session_id };
+  assert.equal(sessionId(hookEnv({}, payload)), sessionId(cliChild), 'the hook and the CLI derive one key');
+  assert.equal(sessionId(hookEnv({}, payload)), sessionId(hookEnv({}, payload)), 'and it is the same every turn');
+  // A usable variable is never overridden: in the desktop app the payload id is a different identifier.
+  const desktop = { CLAUDE_CODE_HOST_SESSION_ID: 'local_f3d05dd3-25c1' };
+  assert.equal(sessionId(hookEnv(desktop, payload)), 'f3d05dd3');
+  // No payload, or an unusable one, leaves the process key as the honest answer.
+  assert.match(sessionId(hookEnv({}, null)), PROCESS_KEY);
+  assert.match(sessionId(hookEnv({}, { session_id: 'a/b' })), PROCESS_KEY);
+});
+
+test('the process key is stable for one process and carries more than a pid', () => {
+  // A pid is unique on one machine at one moment; on 2026-09-28 `p24300` on two laptops was one file.
+  assert.match(processKey(), PROCESS_KEY);
+  assert.equal(processKey(), processKey(), 'one process, one key, for its whole life');
+  assert.equal(sessionId({}), processKey());
 });
 
 test('the short key is taken from the part of the host id that VARIES, not from its marker', () => {
@@ -81,9 +119,9 @@ test('an id that is absent, blank, or unusable as a file name falls back to the 
   // The key becomes a public file name (`log/<YYYYMMDD>-<key>.jsonl`). A key carrying a
   // separator would nest the queue file one directory down and write a path nobody parses back —
   // so it is not repaired into something plausible, it admits there was no usable session.
-  assert.match(sessionId({}), /^p\d+$/, 'with no session, the honest answer is "this process"');
-  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: '   ' }), /^p\d+$/);
-  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'sess_a/b' }), /^p\d+$/);
+  assert.match(sessionId({}), PROCESS_KEY, 'with no session, the honest answer is "this process"');
+  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: '   ' }), PROCESS_KEY);
+  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'sess_a/b' }), PROCESS_KEY);
 });
 
 test('an unsafe character PAST the cut still refuses the id — the guard runs before the slice', () => {
@@ -100,7 +138,7 @@ test('an unsafe character PAST the cut still refuses the id — the guard runs b
   assert.equal(shortSession('sessionx/etc/passwd'), '', 'and so is a separator past the cut');
   assert.equal(shortSession('local_f3d05dd3-25c1-434b'), 'f3d05dd3', 'safe ids are untouched');
   // The fallback is the same honest one every other unusable id takes.
-  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_ab.cd' }), /^p\d+$/);
+  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_ab.cd' }), PROCESS_KEY);
 });
 
 test('an over-long run handle is BOUNDED before it reaches the public log', () => {

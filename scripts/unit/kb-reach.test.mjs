@@ -14,7 +14,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync, appendFileSync, utimesSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  REACH_IDLE_MS, advanceReach, countToolUses, dropReach, idleReaches, promptsIn, readReach, reachLine, reachPath,
+  OWN_REACH_EVERY_MS, REACH_IDLE_MS, advanceReach, countToolUses, dropReach, idleReaches, markSent, ownReachDue,
+  promptsIn, readReach, reachLine, reachPath, sentPath, sentWork,
 } from '../kb/core/reach.mjs';
 import { reach } from '../kb/core/report-analyse.mjs';
 import { LOGGED } from '../kb/core/queue.mjs';
@@ -494,7 +495,59 @@ test('the Stop hook keys reach on the QUEUE’s session id, never on the payload
   //
   // A source guard and not a behavioural one because the hook is a script: it runs on import and
   // exits the process, so there is nothing to call. What is pinned is the one line that decides it.
+  //
+  // SINCE VCST-6091 the payload's id MAY reach the derivation, but only through `hookEnv`, which
+  // hands it in under `CLAUDE_CODE_SESSION_ID` and only when no session variable is usable -- the
+  // CLI and IDE case, where that IS the id the session's own processes carry. `hookEnv`'s behaviour
+  // is pinned in kb-queue.test.mjs; this pins that the hook goes through it and nowhere else.
   const src = readFileSync(join(import.meta.dirname, '..', '..', '.claude', 'hooks', 'kb-flush.mjs'), 'utf8');
-  assert.match(src, /sessionId\(process\.env\)/, 'the id comes from the same derivation the queue uses');
-  assert.doesNotMatch(src, /payload[?.]*\.session_id/, 'the payload supplies the transcript path and nothing else');
+  assert.match(src, /const env = hookEnv\(process\.env, payload\)/, 'the payload reaches the key only through hookEnv');
+  assert.match(src, /sessionId\(env\)/, 'the id comes from the same derivation the queue uses');
+  assert.doesNotMatch(src, /payload[?.]*\.session_id/, 'the hook never reads the payload id itself');
+});
+
+test('a session sends its own counters at once, then only when they grew and the interval passed (VCST-6091)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-own-'));
+  try {
+    const now = Date.now();
+    writeFileSync(reachPath(dir, 'own00001'), JSON.stringify({ session: 'own00001', cursor: 10, tools: 19, turns: 6, touchAt: [] }), 'utf8');
+    // A session with work and no kb call at all: exactly the one that used to wait for a stranger.
+    assert.equal(ownReachDue(dir, 'own00001', { now }), true, 'never sent: at once');
+
+    markSent(dir, 'own00001', 19);
+    assert.equal(sentWork(dir, 'own00001'), 19);
+    assert.equal(ownReachDue(dir, 'own00001', { now }), false, 'nothing new since the send');
+
+    writeFileSync(reachPath(dir, 'own00001'), JSON.stringify({ session: 'own00001', cursor: 20, tools: 25, turns: 7, touchAt: [] }), 'utf8');
+    assert.equal(ownReachDue(dir, 'own00001', { now }), false, 'grew, but the last send is recent');
+    assert.equal(ownReachDue(dir, 'own00001', { now: now + OWN_REACH_EVERY_MS + 1_000 }), true, 'grew, and the interval passed');
+
+    // Dropping a finished state forgets what was sent, so a resumed session starts over cleanly.
+    dropReach(dir, 'own00001');
+    assert.equal(sentWork(dir, 'own00001'), 0);
+    assert.equal(ownReachDue(dir, 'own00001', { now }), false, 'no state, nothing to send');
+    assert.equal(readReach(dir, 'own00001'), null);
+    assert.throws(() => readFileSync(sentPath(dir, 'own00001')), /ENOENT/, 'the sent note went with the state');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('legacy pid-keyed session lines are counted as the sessions they were, not one per turn (VCST-6091)', () => {
+  // Before the fix every Stop hook minted a new `p<pid>` and recounted its transcript from zero, so
+  // one real session became one line per turn. The transcript's own start and the operator group them.
+  const turnLine = (session, tools, lastAt, who = 'octo-a', firstAt = '2026-09-28T08:00:00Z') =>
+    ({ kind: 'session', session, tools, turns: 1, touchAt: [], firstAt, lastAt, who });
+  const r = reach([
+    turnLine('p1001', 10, '2026-09-28T08:05:00Z'),
+    turnLine('p1002', 25, '2026-09-28T08:10:00Z'),
+    turnLine('p1003', 40, '2026-09-28T08:20:00Z'),
+    // The same pid on ANOTHER operator's machine is another session.
+    turnLine('p1003', 7, '2026-09-28T09:00:00Z', 'octo-b', '2026-09-28T08:55:00Z'),
+    // A real key is left exactly as it is.
+    { kind: 'session', session: 'f3d05dd3', tools: 5, turns: 2, touchAt: [1], firstAt: '2026-09-28T07:00:00Z', lastAt: '2026-09-28T07:30:00Z' },
+  ]);
+  assert.equal(r.accounted, 3, 'three sessions, not five');
+  assert.equal(r.tools, 40 + 7 + 5, 'each counted once, at its fullest — not 10 + 25 + 40');
+  assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p1003', 'p1003']);
 });

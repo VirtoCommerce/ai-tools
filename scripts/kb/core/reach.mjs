@@ -339,7 +339,61 @@ export const reachLine = (state) => ({
  */
 export function dropReach(dir, session) {
   try { rmSync(reachPath(dir, session), { force: true }); } catch { /* already gone */ }
+  try { rmSync(sentPath(dir, session), { force: true }); } catch { /* nothing was sent */ }
   try { writeFileSync(tombstonePath(dir, session), '', 'utf8'); } catch { /* costs a label, not a count */ }
+}
+
+// ── a session publishes its OWN counters (VCST-6091) ─────────────────────────────────────────
+//
+// Until 2026-09-29 a session's counters were published only by a LATER session, once this one had
+// been idle for `REACH_IDLE_MS` — and never by itself. So a session's reach arrived whenever somebody
+// next opened a session on that machine: two sessions of Friday 2026-09-25 reached the base on
+// Monday morning. Worse for the one case this measurement exists for: a session that never asks has
+// no queue work, so it never pushed at all, and depended entirely on a stranger.
+//
+// Now the session sends its own line: with every push it makes anyway, and — when it has nothing
+// else to send — at most once per `OWN_REACH_EVERY_MS`. Each publication is a fuller copy of the
+// last, and the publisher keeps one per file (`fullestSessionLines` in push.mjs). The idle harvest
+// stays as the backstop for whatever happened after the last send.
+
+/** How often a session with no other queue work pushes its own counters. */
+export const OWN_REACH_EVERY_MS = 30 * 60 * 1000;
+
+/** `<session>.reach.sent` — how much work the last published line carried. Not `.reach.json`. */
+export const sentPath = (dir, session) => join(dir, `${session}.reach.sent`);
+
+/** A state's whole work, subagents included: the number a published line is compared by. */
+export function workIn(state) {
+  return Number(state?.tools ?? 0) + Object.values(state?.subagents ?? {}).reduce((n, a) => n + Number(a?.tools ?? 0), 0);
+}
+
+/** The work the last published line for this session carried, or 0 if none was sent. */
+export function sentWork(dir, session) {
+  try { return Number(readFileSync(sentPath(dir, session), 'utf8').trim()) || 0; } catch { return 0; }
+}
+
+/** Record that a line carrying `work` was queued for publication. Best effort, like every other note. */
+export function markSent(dir, session, work) {
+  try { writeFileSync(sentPath(dir, session), `${work}\n`, 'utf8'); } catch { /* republished next time — merged, not doubled */ }
+}
+
+/**
+ * Should this session push its own counters now, with nothing else to send?
+ *
+ * Only when there is new work since the last send, and either nothing was ever sent or the last send
+ * is `everyMs` old. The first publication is immediate, so a short session is in the base while it is
+ * still running rather than whenever the next session starts.
+ */
+export function ownReachDue(dir, session, { now = Date.now(), everyMs = OWN_REACH_EVERY_MS } = {}) {
+  const state = readReach(dir, session);
+  if (!state) return false;
+  const work = workIn(state);
+  if (work <= sentWork(dir, session)) return false;
+  try {
+    return now - statSync(sentPath(dir, session)).mtimeMs >= everyMs;
+  } catch {
+    return true; // never sent
+  }
 }
 
 /** `<session>.reach.dropped` — not `.reach.json`, so `idleReaches` steps over it. */

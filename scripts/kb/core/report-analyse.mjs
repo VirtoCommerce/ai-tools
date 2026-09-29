@@ -905,6 +905,25 @@ export function kindTally(lines) {
  * with no `firstAt` is kept rather than guessed at, because dropping it would under-count silently
  * in the one panel whose whole job is counting what did NOT happen.
  */
+/** The bare `p<pid>` key a process with no session id got before VCST-6091 (now `p<pid>-<hex>`). */
+const LEGACY_PROCESS_KEY = /^p\d+$/;
+
+/**
+ * Which SESSION a `session` line belongs to, for grouping.
+ *
+ * Its own key — except the bare pid keys published before VCST-6091. Those were minted afresh by
+ * every `Stop` hook, so ONE session appears as one line per turn, each recounting its transcript from
+ * the start: 126 lines, 125 of them `turns: 1`, over 13 real sessions, for one operator on
+ * 2026-09-28. And a pid is not unique across machines, so one key can hold two people. What IS stable
+ * across those lines is the transcript's own start (`firstAt`, read from the transcript itself) and
+ * the operator, so that pair is the session. The lines themselves are left as published.
+ */
+export function sessionKeyOf(l) {
+  const id = l?.session ?? l?._session;
+  if (!id) return null;
+  return LEGACY_PROCESS_KEY.test(id) && l.firstAt ? `pid~${l.who ?? '?'}~${l.firstAt}` : id;
+}
+
 export function reach(lines, { since = null } = {}) {
   const asksBySession = new Map();
   for (const l of lines) {
@@ -927,7 +946,7 @@ export function reach(lines, { since = null } = {}) {
     if (l.kind !== 'session') continue;
     // The line names the session it DESCRIBES, which since 2026-09-23 is also the file it lives in;
     // an older file belongs to whichever session pushed it, so `l.session` is still read first.
-    const id = l.session ?? l._session;
+    const id = sessionKeyOf(l);
     if (!id) continue;
     const began = String(l.firstAt ?? l.at ?? '');
     const prior = best.get(id);
@@ -949,7 +968,8 @@ export function reach(lines, { since = null } = {}) {
     const agentTools = Number(l.agentTools ?? 0);
     const agentTouches = Number(l.agentTouches ?? 0);
     rows.push({
-      session: id,
+      // A collapsed legacy group is shown under the key its fullest line carried, never the grouping key.
+      session: id.startsWith('pid~') ? l.session : id,
       // Totals over the session; the subagents' share beside them. A line from before 2026-09-23
       // carries no `agent*` fields and reads as the parent alone — which is what it measured.
       tools: Number(l.tools ?? 0) + agentTools,

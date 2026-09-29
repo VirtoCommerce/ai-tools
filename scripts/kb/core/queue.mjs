@@ -20,6 +20,7 @@
 // run over this file BEFORE the push, plus the fact that these questions are about a public
 // product. Extending the base to client deployments must re-decide it first (PLAN §7, §11).
 
+import { randomBytes } from 'node:crypto';
 import { appendFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -217,18 +218,70 @@ export function shortSession(hostId) {
 }
 
 /**
- * Session identity is free: `CLAUDE_CODE_HOST_SESSION_ID` is inherited by child processes, so the
- * tool knows its own session without being told. The prior art's measured pain -- one missed
- * prefix drops a question row silently, 25 times out of 25 -- simply does not arise.
+ * Where a session's id can come from, in order. The FIRST USABLE one wins, not merely the first set:
+ * a blank or unsafe value falls through to the next name rather than straight to the process key.
  *
- * The fallback is a per-process id, which is honest: it says "this run", which is the most a
- * process outside a Claude session can truthfully claim. It also catches the two ways the env var
+ * `CLAUDE_CODE_HOST_SESSION_ID` stays first so that every key already in the base keeps meaning what
+ * it meant. But ONLY THE DESKTOP APP SETS IT (VCST-6091). The CLI and the IDE extensions set
+ * `CLAUDE_CODE_SESSION_ID` instead, on every Bash child and every MCP server they spawn (read out of
+ * the 2.1.284 binary on 2026-09-29). Before it was on this list, three of four operators fell through
+ * to the process key on every call: one person's day came out as 316 "sessions", and two people's
+ * sessions on two machines were filed under the same `p24300`.
+ *
+ * `CLAUDE_CODE_SESSION_ID` is the TRANSCRIPT id, which is also what a hook payload carries as
+ * `session_id`. So a `Stop` hook with no env var can hand its payload's id in under this name, and
+ * derive the same key the session's own CLI and MCP processes do (`kb-flush.mjs`).
+ */
+export const SESSION_ENV = Object.freeze(['CLAUDE_CODE_HOST_SESSION_ID', 'CLAUDE_SESSION_ID', 'CLAUDE_CODE_SESSION_ID']);
+
+let processKeyMemo = null;
+
+/**
+ * The key of a process that belongs to no session: `p<pid>-<4 hex>`.
+ *
+ * THE RANDOM TAIL IS WHAT A PID LACKED. A pid is unique on one machine at one moment and nowhere
+ * else, and a key is published: on 2026-09-28, `p24300` on one laptop and `p24300` on another were
+ * the same file in the base. Memoised, so one process keeps one key for its whole life.
+ */
+export function processKey() {
+  processKeyMemo ??= `p${process.pid}-${randomBytes(2).toString('hex')}`;
+  return processKeyMemo;
+}
+
+/**
+ * Session identity is free: the session id is inherited by child processes, so the tool knows its
+ * own session without being told. The prior art's measured pain -- one missed prefix drops a
+ * question row silently, 25 times out of 25 -- simply does not arise.
+ *
+ * The fallback is a per-process key, which is honest: it says "this run", which is the most a
+ * process outside a Claude session can truthfully claim. It also catches the two ways a variable
  * can be present and useless -- blank, or unusable as a file name -- because a key that cannot be
  * a path is worth less than an admission that there was no session.
  */
 export function sessionId(env = process.env) {
-  const raw = env.CLAUDE_CODE_HOST_SESSION_ID || env.CLAUDE_SESSION_ID;
-  return shortSession(raw) || `p${process.pid}`;
+  for (const name of SESSION_ENV) {
+    const key = shortSession(env[name]);
+    if (key) return key;
+  }
+  return processKey();
+}
+
+/**
+ * The environment a HOOK should key itself by: its own, plus the payload's `session_id` under
+ * `CLAUDE_CODE_SESSION_ID` when no variable on `SESSION_ENV` is usable.
+ *
+ * A hook is a NEW PROCESS EVERY TURN. Keyed by its process, each turn's `Stop` found no reach state,
+ * recounted the whole transcript from byte 0 and was later published as a separate session: 125 of
+ * one operator's 126 `session` lines on 2026-09-28 said `turns: 1`, over 13 real sessions, and their
+ * tool calls summed to 74,808 against ~4,121 (VCST-6091). The payload id is the same transcript id
+ * the session's CLI and MCP processes carry in `CLAUDE_CODE_SESSION_ID`, so the keys agree. An env
+ * var that IS usable is never overridden: in the desktop app it is the host id, and the payload's id
+ * is a different identifier there.
+ */
+export function hookEnv(env = process.env, payload = null) {
+  if (SESSION_ENV.some((name) => shortSession(env[name]))) return env;
+  const id = typeof payload?.session_id === 'string' ? payload.session_id : '';
+  return shortSession(id) ? { ...env, CLAUDE_CODE_SESSION_ID: id } : env;
 }
 
 /**

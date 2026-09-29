@@ -31,8 +31,8 @@ import { closeSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, 
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { REACH_IDLE_MS, advanceReach, idleReaches } from '../../scripts/kb/core/reach.mjs';
-import { isSynthetic, kbDisabled, pushConfirmRequired, runOf, sessionId } from '../../scripts/kb/core/queue.mjs';
+import { REACH_IDLE_MS, advanceReach, idleReaches, ownReachDue } from '../../scripts/kb/core/reach.mjs';
+import { hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, runOf, sessionId } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
 
 function queueHasWork(dir) {
@@ -68,8 +68,11 @@ function main() {
   // (`f3d05dd3…`, 8 characters of the part that VARIES — see `queue.mjs`). Measured here before
   // this shipped: keying reach on the payload produces `52b778cc` against asks filed under the
   // queue key, so the join matches NOTHING — every session reports as unaccounted and the panel
-  // silently says "not measured" forever. Only `transcript_path` is taken from the payload.
-  const session = sessionId(process.env);
+  // silently says "not measured" forever. `transcript_path` is taken from the payload, and so is
+  // `session_id` — but ONLY where no session variable is set (the CLI and IDE hooks, VCST-6091),
+  // under the name the session's own processes carry it, so it derives the SAME key (`hookEnv`).
+  const env = hookEnv(process.env, payload);
+  const session = sessionId(env);
 
   // Counting is cheap and unconditional: cursor-based, so each turn reads only the bytes appended
   // since the last one, and it stores integers — never a name, an argument or a result. `reach.mjs`
@@ -89,7 +92,11 @@ function main() {
   // early return dropped: no queue work meant no push, so the sessions worth knowing about were the
   // ones that could never report themselves. A finished session's counters are queue work now.
   const stale = idleReaches(dir, { session, idleMs: REACH_IDLE_MS }).length > 0;
-  if (!queueHasWork(dir) && !stale) return;
+  // AND THIS SESSION'S OWN COUNTERS, when it has nothing else to send (VCST-6091): at once the first
+  // time, then at most every `OWN_REACH_EVERY_MS`. Without it a session that never asked reached the
+  // base only when a later session on this machine happened to sweep it — days later, or never.
+  const mine = ownReachDue(dir, session);
+  if (!queueHasWork(dir) && !stale && !mine) return;
   // KB_PUSH_CONFIRM=1: a detached child has nobody to ask, so it would only hold. Not spawned.
   if (pushConfirmRequired(process.env)) return;
 
@@ -113,7 +120,8 @@ function main() {
     cwd: root,
     detached: true,
     stdio: ['ignore', out, out],
-    env: process.env,
+    // The push publishes under THIS session's key, so it gets the same environment the key came from.
+    env,
   });
   child.unref();
   if (typeof out === 'number') closeSync(out);
