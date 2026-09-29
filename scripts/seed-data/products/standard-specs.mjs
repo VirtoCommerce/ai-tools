@@ -450,6 +450,9 @@ export function validateStockGateShape(rowsById = {}, overlays = SPEC_OVERLAYS) 
       if (!(dropped >= 1)) problems.push(`${id}: dropped_stock ${dropped} must be >= 1 — at 0 the refusal is out_of_stock, not insufficient_stock`);
       if (!(effMin <= dropped)) problems.push(`${id}: min_quantity ${effMin} > dropped_stock ${dropped} — the refusal after the drop would be inventory_unavailable, not insufficient_stock`);
       if (!(cart >= effMin)) problems.push(`${id}: cart_qty ${cart} is below min_quantity ${effMin} — the baseline cart is refused for the minimum, not accepted`);
+    } else {
+      // A kind no branch recognises would be checked by NOTHING and still print green.
+      problems.push(`${id}: unknown stock-gate kind "${fx.kind}" — no ordering is checked for it`);
     }
   }
 

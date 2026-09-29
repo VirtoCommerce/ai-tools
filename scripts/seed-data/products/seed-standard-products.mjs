@@ -149,8 +149,11 @@ async function auth() {
   console.log(`  Auth: OK${DRY_RUN ? ' [DRY RUN — reads only]' : ''}`);
 }
 
+// POST /api/catalog/listentries is the catalog SEARCH (a read); only its /delete sub-route writes.
+// Treating it as a write made --dry-run stub every findProductByCode, so a dry-run teardown reported
+// "no seeded products found" against products that exist.
 const isReadCall = (method, path) =>
-  method === 'GET' || (method === 'POST' && path.includes('/search'));
+  method === 'GET' || (method === 'POST' && (path.includes('/search') || path === '/api/catalog/listentries'));
 
 async function api(method, path, body, { expectStatus = [200, 201, 204] } = {}) {
   if (DRY_RUN && !isReadCall(method, path)) {
@@ -490,7 +493,10 @@ async function teardown() {
   // Symmetric with findOrCreatePriceList: a multi-currency seed must not leave an orphan EUR pricelist
   // (a stale EUR price would keep pricing a deleted fixture's SKU if it were re-created by hand).
   // No catalog deletion (shared structure).
-  for (const currency of currenciesFor(records)) {
+  // NOT under --only: the pricelists are shared by EVERY seeded row, so a single-row teardown that
+  // deleted them would strip the price from all ~100 other standard fixtures while reporting success.
+  if (ONLY) console.log(`  – --only ${ONLY}: shared pricelist(s) ${currenciesFor(records).map((c) => priceListName(DATE, c)).join(', ')} kept (they price every seeded row)`);
+  for (const currency of (ONLY ? [] : currenciesFor(records))) {
     const plName = priceListName(DATE, currency);
     const s = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(plName)}`, null, { expectStatus: [200, 404] });
     const pls = (s?.results || []).filter((p) => p?.name === plName).map((p) => p.id);

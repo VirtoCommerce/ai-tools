@@ -17,7 +17,9 @@ PUSH-002,Draft Management — Validation on Empty Fields (Negative),Admin > Push
 [WAIT] 'Push Messages' blade opens with the message list
 [ACT] click toolbar 'New'
 [WAIT] 'New push message' blade opens
-[ACT] leave 'Message', 'Topic' and 'Recipients list' empty","[FORM] toolbar 'Save' and 'Send' are disabled while 'Message' is empty
+[ACT] leave 'Message' empty
+[ACT] leave 'Topic' empty
+[ACT] leave 'Recipients list' empty","[FORM] toolbar 'Save' and 'Send' are disabled while 'Message' is empty
 [FORM] the 'New push message' blade remains open and no message is created
 [DOM] the 'Message' field label carries the required marker '*'","[NETWORK] no POST request fired to create endpoint (or POST returns 400)
 [CONSOLE] no JS errors during validation trigger","Save proceeds with empty fields, no validation error shown, 500 error on save attempt",none,C385366,Not Automated
@@ -28,7 +30,7 @@ PUSH-003,Draft Management — Save Draft with Schedule Date,Admin > Push Message
 [WAIT] 'New push message' blade opens
 [ACT] fill 'Topic' with an AGENT-TEST- value
 [ACT] type an AGENT-TEST- text in the 'Message' editor
-[ACT] set 'Schedule send' to a future date and time
+[ACT] set 'Schedule send' to a future date/time
 [SAVE] click 'Save'
 [WAIT] success confirmation visible
 [ACT] click left menu 'Drafts'
@@ -85,7 +87,7 @@ PUSH-007,Scheduling — Send a Draft with a Future Schedule Date,Admin > Push Me
 [WAIT] Drafts list shows at least one row
 [ACT] click an AGENT-TEST- draft row to open it
 [WAIT] 'Push message details' blade opens
-[ACT] set 'Schedule send' to a future date and time
+[ACT] set 'Schedule send' to a future date/time
 [ACT] click toolbar 'Send'
 [WAIT] success confirmation visible","[TOAST] success notification confirms the send
 [GRID] the message status is 'Scheduled' and it is listed under left menu 'Scheduled'
@@ -122,7 +124,7 @@ PUSH-010,Recipient Tracking — New Recipients Do NOT Receive Message When Disab
 [WAIT] 'Push message details' blade opens
 [ACT] switch 'Track new recipients' off if it is on
 [WAIT] the switch shows off
-[ACT] create or identify a user who matches the recipients and was added after the message was sent
+[ACT] create or identify a user who matches the recipients, added after the message was sent
 [WAIT] the user account exists
 [ACT] sign in on {{FRONT_URL}} as that user
 [WAIT] authenticated header visible
@@ -139,7 +141,7 @@ PUSH-017,Storefront Notifications Page — List of Received Notifications,Storef
 [WAIT] notifications page loads","[NAV] URL is {{FRONT_URL}}/account/notifications
 [DOM] notifications list container is visible on the page
 [DOM] at least the 2 seeded push messages are shown as notification items
-[DOM] each notification item shows the message body and a timestamp, and no topic or title
+[DOM] each notification item shows the message body and a timestamp; no topic or title is present
 [FORMAT] notification items ordered by date (newest first)","[API] GET {{BACK_URL}}/api/platform/pushnotifications returns same messages visible in UI
 [NETWORK] no 4xx/5xx on page load or notifications API call
 [CONSOLE] no JS errors on notifications page","Blank page at /account/notifications, spinner does not resolve >10s, 401/403 on notifications API, notification items missing from list even though API returns them","Sign out after test; no data mutation",ECL-14.3 | Behavior:push.inbox,Not Automated
@@ -156,9 +158,10 @@ PUSH-018,Storefront Notifications Page — Pagination for Older Items,Storefront
 PUSH-019,Storefront Notifications — Read/Unread Visual State,Storefront > Notifications,High,,,User authenticated; at least one unread and at least one previously-read push message exist for this user,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
 [WAIT] notifications page loads
 [ASSERT] both read and unread notifications are visible in the list
-[ACT] note the unread item's leading dot and tinted card background
+[ACT] note the unread item's leading dot
+[ACT] note the unread item's tinted card background
 [ACT] click the unread notification item
-[WAIT] notification detail or read state changes","[DOM] an unread item shows a leading dot and a tinted card background; a read item shows neither
+[WAIT] notification detail or read state changes","[DOM] an unread item shows a visible leading dot and a tinted card background; a read item shows neither
 [STATE] after clicking an unread notification, its visual state changes to 'read' (distinction removed)
 [DOM] the clicked notification no longer shows unread indicator after interaction","[API] GET {{BACK_URL}}/api/platform/pushnotifications after click confirms isNew=false for clicked item
 [NETWORK] mark-read API call fires on notification click (no 4xx/5xx)
@@ -175,7 +178,7 @@ PUSH-020,Storefront Notifications — Notification Badge Unread Count,Storefront
 [ASSERT] page heading shows a count next to 'Notifications'","[DOM] bell icon is visible in header navigation
 [DOM] clicking bell opens a dropdown popover listing recent notifications
 [STATE] dropdown popover shows notification previews (message body + timestamp)
-[DOM] full notifications page heading shows the unread count
+[DOM] the 'Notifications' page heading shows the unread count
 [STATE] the heading count equals the header bell badge count (both are the unread count)","[API] GET {{BACK_URL}}/api/platform/pushnotifications?onlyNew=true totalCount matches count shown in page heading
 [CONSOLE] no JS errors during dropdown open or page load
 [NETWORK] no 4xx/5xx related to notification endpoints","Bell icon absent in header, dropdown does not open on click, notifications page heading missing count, count mismatch between heading and API response, 4xx/5xx on notification API call","Sign out after test; notification remains read",ECL-7.3 | Behavior:push.inbox,Not Automated
@@ -198,7 +201,7 @@ PUSH-022,Storefront Notifications — Notification Inline Content and Read Toggl
 [ACT] click a notification item row
 [WAIT] visual state change occurs
 [ASSERT] verify clicking toggles read/unread state (blue dot appears or disappears)","[DOM] notification list items show full message content inline (not truncated)
-[DOM] no topic or title is shown — each item carries the body and a timestamp only
+[DOM] no topic or title is present — each item carries the body and a timestamp only
 [DOM] notification date/timestamp visible and formatted correctly
 [STATE] clicking a notification row toggles its read/unread state (leading dot indicator)
 [FORMAT] message content renders correctly — no raw HTML tags or markdown syntax visible","[API] GET {{BACK_URL}}/api/platform/pushnotifications returns items with description/body matching inline content

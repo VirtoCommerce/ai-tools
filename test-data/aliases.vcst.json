@@ -2434,5 +2434,8 @@
   },
   "PROD_MIN_ABOVE_STOCK": {
     "id": "b3f1fa39-448f-4ca9-8ef9-35c922a15e86"
+  },
+  "PROD_STOCK_DROP": {
+    "id": "08807dbf-2e34-4d0f-854e-27abe0a75e39"
   }
 }

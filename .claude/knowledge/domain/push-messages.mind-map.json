@@ -491,7 +491,10 @@
         "graphql",
         "storefront"
       ],
-      "notes": "068 PUSH-033 names this SignalR; the transport is the xAPI subscription (domain map §6)."
+      "notes": "068 PUSH-033 names this SignalR; the transport is the xAPI subscription (domain map §6).",
+      "requires": [
+        "data.push.recipient.reader"
+      ]
     },
     {
       "id": "push.deliver.fcm",
@@ -638,6 +641,10 @@
       ],
       "interfaces": [
         "graphql"
+      ],
+      "requires": [
+        "data.push.inbox.reader-mixed",
+        "data.push.recipient.bystander"
       ]
     },
     {
@@ -701,6 +708,9 @@
       "interfaces": [
         "storefront",
         "graphql"
+      ],
+      "requires": [
+        "data.push.inbox.reader-mixed"
       ]
     },
     {
@@ -721,6 +731,9 @@
       "interfaces": [
         "storefront",
         "graphql"
+      ],
+      "requires": [
+        "data.push.inbox.reader-mixed"
       ]
     },
     {
@@ -781,6 +794,29 @@
       "interfaces": [
         "graphql"
       ]
+    },
+    {
+      "id": "push.inbox.empty-state",
+      "type": "branch",
+      "name": "An account with no messages sees an empty state on the page and in the bell",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront"
+      ],
+      "requires": [
+        "data.push.inbox.empty"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "/qa-review-tests 068 --verify S1",
+          "note": "an account with 0 messages including hidden ones: page and bell both render an empty-state text; the bell shows no Clear all",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Only an inbox that never received a message reaches this: clear-all hides from the bell but the page keeps listing (push.manage.clear-all)."
     },
     {
       "id": "push.manage",
@@ -848,7 +884,10 @@
         "graphql"
       ],
       "state_before": "push.recipient.state.unread",
-      "state_after": "push.recipient.state.read"
+      "state_after": "push.recipient.state.read",
+      "requires": [
+        "data.push.inbox.reader-mixed"
+      ]
     },
     {
       "id": "push.manage.mark-unread",
@@ -870,7 +909,10 @@
         "graphql"
       ],
       "state_before": "push.recipient.state.read",
-      "state_after": "push.recipient.state.unread"
+      "state_after": "push.recipient.state.unread",
+      "requires": [
+        "data.push.inbox.reader-mixed"
+      ]
     },
     {
       "id": "push.manage.mark-all",
@@ -890,6 +932,9 @@
       "interfaces": [
         "storefront",
         "graphql"
+      ],
+      "requires": [
+        "data.push.inbox.bulk-fresh"
       ]
     },
     {
@@ -955,7 +1000,10 @@
         "storefront",
         "graphql"
       ],
-      "notes": "No un-hide operation exists in the schema. Live divergence unobserved (domain map G9)."
+      "notes": "No un-hide operation exists in the schema. Live divergence unobserved (domain map G9).",
+      "requires": [
+        "data.push.inbox.bulk-fresh"
+      ]
     },
     {
       "id": "push.manage.sender-sees-read",
@@ -985,10 +1033,10 @@
     {
       "id": "push.manage.list-metrics",
       "type": "branch",
-      "name": "The message list reports the number of recipients and the percent read",
-      "branch_kind": "negative",
+      "name": "The Sent and tracked list views report the number of recipients and the percent read",
+      "branch_kind": "happy",
       "technique": "EG",
-      "status": "DRIFT",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "DOC",
@@ -997,8 +1045,8 @@
         },
         {
           "class": "OBSERVED",
-          "ref": "domain-map:push@rev1 §3 D1",
-          "note": "list and get-by-id return recipientsTotalCount/ReadCount/ReadPercent = 0 for all 200 newest Sent messages",
+          "ref": "domain-map:push@rev1 §7 2026-09-29",
+          "note": "Sent and Track-new-recipients views show Recipients # / Read % by default with non-zero values",
           "date": "2026-09-29"
         }
       ],
@@ -1006,11 +1054,28 @@
         "admin-ui",
         "rest"
       ],
-      "drift": {
-        "expected": "PlatformUserGuide manage-push-messages: the list shows the number of recipients and percent read",
-        "observed": "REST search and get return 0 for all three metrics while search-recipients and the Recipients blade show the real audience (domain-map:push@rev1 §3 D1)",
-        "route": "UNFILED — suspected defect D1, hand to /qa-bug"
-      }
+      "notes": "Was DRIFT at build (domain map D1 as first written); narrowed by the 2026-09-29 --verify pass on Platform 3.1074. The zero readings now live in push.manage.list-metrics-rest-zero."
+    },
+    {
+      "id": "push.manage.list-metrics-rest-zero",
+      "type": "branch",
+      "name": "The REST search and get fields report zero recipients and zero percent read",
+      "status": "CONFIRMED",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §3 D1",
+          "note": "recipientsTotalCount/ReadCount/ReadPercent = 0 for all 200 newest Sent messages on search and get; All-messages view shows 0 with the hidden columns enabled",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Suspected defect (not filed): the Sent view shows real values, so the zeros look like an unpopulated read path rather than missing data. Hand to /qa-bug."
     },
     {
       "id": "push.recipient.state.unread",
@@ -1615,11 +1680,22 @@
       "from": "push.push-messages",
       "to": "push.producer-returns",
       "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.list-metrics-rest-zero",
+      "type": "contains"
+    },
+    {
+      "from": "push.inbox",
+      "to": "push.inbox.empty-state",
+      "type": "contains"
     }
   ],
   "metadata": {
     "scope": "Push Messages: back-office compose/send/schedule/track, recipient resolution, in-app and FCM delivery, storefront bell and Notifications page, recipient read/clear, irrevocability, and the sales-rep and returns producers. Email notification templates and platform SignalR toasts are out, as in the domain map.",
     "built_from": "push-messages.md rev 1 (sections 1-6), business-logic.md Domain 27 (empty), suites 068/050l titles + References, kb KB-21BA7389 / KB-A98E467C / KB-1564BA07 / KB-C5B17CE2 / KB-048CB22A",
     "kb_read": "2026-09-29 - 5 questions (pushMessages, fcmSettings, /api/push-message/search, /account/notifications, sendCustomerCommunication)"
-  }
+  },
+  "amended": "2026-09-29"
 }
