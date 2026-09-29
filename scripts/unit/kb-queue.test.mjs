@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, kbDisabled, pendingMutations, queuePath, readQueue, hookEnv, processKey, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
+import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, kbDisabled, pendingMutations, queuePath, readQueue, hasSessionId, hookEnv, processKey, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { captureLines } from '../kb/core/render.mjs';
 import { ask, askAbout, capture, confirm, dispute, show, stat, toLogLine } from '../kb/core/verbs.mjs';
@@ -462,4 +462,10 @@ test('askAbout pairs a capture with an ask through a PREFIXED anchor — the ask
     { at: '2026-09-18T10:05:00Z', q: 'something else entirely about pricing' },
   ];
   assert.equal(askAbout(asks, { text: 'unrelated words only', anchors: ['{BACK_URL}/api/platform/modules'] }), '2026-09-18T10:00:00Z');
+});
+
+test('hasSessionId says whether a key is a session or a per-process fallback (VCST-6091 review 4)', () => {
+  assert.equal(hasSessionId({ CLAUDE_CODE_SESSION_ID: '52b778cc-1111' }), true);
+  assert.equal(hasSessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_ab.cd' }), false, 'an unusable id is none');
+  assert.equal(hasSessionId({}), false);
 });

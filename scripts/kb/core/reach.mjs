@@ -189,8 +189,14 @@ export function countToolUses(chunk, { from = 0 } = {}) {
 export function advanceReach({ dir, session, transcriptPath, at = new Date(), who = null, run = '', synthetic = false } = {}) {
   if (!dir || !session || !transcriptPath || !existsSync(transcriptPath)) return null;
   const held = readReach(dir, session);
+  // A state dropped after publication left its CARRIED totals in the tombstone (`dropReach`): a
+  // session harvested and then resumed is rebuilt from its current transcript, and without them the
+  // calls from before an earlier replacement would vanish and its older, fuller line would win every
+  // comparison (VCST-6091 review 4).
+  const tomb = held ? null : readTombstone(dir, session);
   const prior = held ?? {
     session, cursor: 0, tools: 0, turns: 0, touchAt: [], firstAt: null, lastAt: null,
+    ...(tomb?.carriedTools || tomb?.carriedTouches ? { carriedTools: tomb.carriedTools, carriedTouches: tomb.carriedTouches } : {}),
   };
 
   let size;
@@ -200,7 +206,12 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   // AND THAT MEANS THE COUNTERS TOO. Resetting the cursor alone leaves the ordinals continuing from
   // a document that no longer exists, so the first call of the new transcript is reported as call
   // 4 of a file that has three: `firstTouch`, the one field worth having, becomes fiction.
-  const restarted = size < prior.cursor;
+  //
+  // AND A DIFFERENT FILE UNDER THE SAME KEY IS A REPLACEMENT TOO, whatever its size (review 4): the
+  // desktop app keeps its host id across a `/clear` while the transcript moves to a new file, and the
+  // old cursor applied to that file skipped its first calls. The state already records its path.
+  const moved = Boolean(held && prior.transcriptPath && prior.transcriptPath !== transcriptPath);
+  const restarted = moved || size < prior.cursor;
   // BUT THE WORK ALREADY DONE IS CARRIED, not forgotten (VCST-6091 review). The ordinals restart with
   // the document they point into; the session's TOTALS do not, because the calls made before the
   // replacement really happened. Without the carry, a session's work fell at the replacement, its
@@ -210,11 +221,14 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   //
   // ONLY THE PARENT'S OWN CALLS ARE CARRIED. The subagent transcripts are separate files that were not
   // replaced, and this same turn recounts them from their start (`advanceSubagents(null, …)` below),
-  // so carrying their totals as well counted every subagent call twice (VCST-6091 review 3).
+  // so carrying their totals as well counted every subagent call twice (VCST-6091 review 3). A MOVED
+  // transcript is the exception: its subagents live beside the OLD file and are never read again, so
+  // theirs are carried as well.
+  const gone = moved ? subagentTotals(prior.subagents) : { agentTools: 0, agentTouches: 0 };
   const carried = restarted
     ? {
-      tools: Number(prior.carriedTools ?? 0) + Number(prior.tools ?? 0),
-      touches: Number(prior.carriedTouches ?? 0) + (Array.isArray(prior.touchAt) ? prior.touchAt.length : 0),
+      tools: Number(prior.carriedTools ?? 0) + Number(prior.tools ?? 0) + gone.agentTools,
+      touches: Number(prior.carriedTouches ?? 0) + (Array.isArray(prior.touchAt) ? prior.touchAt.length : 0) + gone.agentTouches,
     }
     : { tools: Number(prior.carriedTools ?? 0), touches: Number(prior.carriedTouches ?? 0) };
   const from = restarted ? 0 : prior.cursor;
@@ -236,7 +250,8 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   // Named by what was OBSERVED, never by a guessed cause: a shrinking transcript is "replaced",
   // not "compacted".
   const dropped = !held && consumeTombstone(dir, session);
-  const why = restarted ? 'transcript-replaced'
+  const why = moved ? 'transcript-moved'
+    : restarted ? 'transcript-replaced'
     : dropped ? 'state-dropped'
       : !held && promptsIn(chunk.slice(0, consumed)) > 1 ? 'state-absent'
         : null;
@@ -393,7 +408,10 @@ export const isLegacyProcessKey = (id) => LEGACY_PROCESS_KEY.test(String(id ?? '
 export function sessionKeyOf(l) {
   const id = l?.session ?? l?._session;
   if (!id) return null;
-  return isLegacyProcessKey(id) && l.firstAt ? `pid~${l.firstAt}` : id;
+  if (!isLegacyProcessKey(id)) return id;
+  // A legacy line with no `firstAt` is still a legacy GROUP — of one key — so its asks are settled by
+  // the same one-group rule as every other legacy key's, never also by the plain lookup (review 4).
+  return l.firstAt ? `pid~${l.firstAt}` : `pid~key~${id}`;
 }
 
 /**
@@ -403,12 +421,32 @@ export function sessionKeyOf(l) {
  * session harvested after 30 idle minutes may resume; its next turn finds no state and would read
  * exactly like a scratchpad that was wiped. "Dropped after publication, by design" and "gone for no
  * known reason" are different findings, so the drop is what records which one happened.
+ *
+ * AND IT HOLDS THE CARRIED TOTALS, the one part of a state its transcript cannot give back: a resumed
+ * session is rebuilt by re-reading its CURRENT transcript, which knows nothing of the documents an
+ * earlier replacement discarded (`advanceReach`, VCST-6091 review 4).
  */
 export function dropReach(dir, session) {
+  const state = readReach(dir, session);
+  const carried = state?.carriedTools || state?.carriedTouches
+    ? JSON.stringify({ carriedTools: Number(state.carriedTools ?? 0), carriedTouches: Number(state.carriedTouches ?? 0) })
+    : '';
   try { rmSync(reachPath(dir, session), { force: true }); } catch { /* already gone */ }
   try { rmSync(sentPath(dir, session), { force: true }); } catch { /* nothing was sent */ }
   try { rmSync(triedPath(dir, session), { force: true }); } catch { /* nothing was tried */ }
-  try { writeFileSync(tombstonePath(dir, session), '', 'utf8'); } catch { /* costs a label, not a count */ }
+  try { writeFileSync(tombstonePath(dir, session), carried, 'utf8'); } catch { /* costs a label, not a count */ }
+}
+
+/** What a tombstone carried over, or null when there is no tombstone. An empty one carried nothing. */
+function readTombstone(dir, session) {
+  const p = tombstonePath(dir, session);
+  if (!existsSync(p)) return null;
+  try {
+    const text = readFileSync(p, 'utf8').trim();
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return {};
+  }
 }
 
 // ── a session publishes its OWN counters (VCST-6091) ─────────────────────────────────────────

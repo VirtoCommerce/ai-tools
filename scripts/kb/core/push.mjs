@@ -159,6 +159,8 @@ export function logTargetOf(line, { session, fallback, retentionDays = RETENTION
     : session;
   const t = Date.parse(String(line?.at ?? ''));
   const dated = Number.isFinite(t) ? new Date(t) : fallback;
+  // No usable date at all goes straight to `logPath`, whose own error names the problem (review 4).
+  if (!(dated instanceof Date) || !Number.isFinite(dated.getTime())) return logPath(described, dated);
   const began = isSession ? Date.parse(String(line.firstAt ?? '')) : NaN;
   if (!Number.isFinite(began) || began > dated.getTime()) return logPath(described, dated);
   const day = new Date(began);
@@ -700,12 +702,16 @@ async function flushOnce({
   // Only when we are taking our own file at all: under an opportunistic foreign-only sweep
   // (`includeMine: false`) a line written here would sit unsent, and the next flush would write a
   // second one beside it.
+  let ownLine = null;
+  let ownState = null;
   if (includeMine) {
     const dir = queueDir(env);
     // Asked BEFORE the harvest, which appends foreign states' lines to OUR queue file: asked after, it
     // would always answer yes, and our counters would ride every harvesting push (review 3).
     const heldWork = ownQueueHolds(env);
-    for (const state of idleReaches(dir, { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
+    // The harvest writes lines and DELETES state files, so a dry run — which must change nothing —
+    // does not run it (review 4).
+    for (const state of dryRun ? [] : idleReaches(dir, { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
       // Its own last send may already carry everything it did (VCST-6091): then there is nothing new
       // to say, and the state is dropped without a second, identical line.
       if (!unsent(dir, state)) { dropReach(dir, state.session); continue; }
@@ -723,16 +729,25 @@ async function flushOnce({
     // AND OUR OWN COUNTERS (VCST-6091). The state is kept: this session is still running, and the next
     // send carries a fuller copy that replaces this one in the file. Three conditions, each closing a
     // way this line could cost more than it measures:
-    //   * a TOKEN — without one nothing is sent, and a line queued on every call would grow the queue
-    //     without bound for an operator who can never push it;
+    //   * a TOKEN — without one nothing is sent;
     //   * our own queue already HOLDS work, or our own cadence is due — so a push that exists only
     //     because another session's file is busy does not become a commit per turn;
-    //   * not a dry run, which must change nothing.
+    //   * not a dry run.
+    // AND IT NEVER TOUCHES THE QUEUE (review 4). The line rides this push IN MEMORY and the send mark is
+    // written only once the commit has landed, so a declined, failed or dry push leaves the queue and
+    // the mark exactly as they were — and a push that never happens queues nothing to grow.
     const mine = dryRun || !token ? null : readReach(dir, session);
     if (mine && workIn(mine) > 0 && unsent(dir, mine)
       && (heldWork || ownReachDue(dir, session, { now: now().getTime(), state: mine, attempts: false }))) {
-      const written = await log(reachLine(mine), { env, who: mine.who ?? undefined, run: mine.run ?? null });
-      if (written.ok) markSent(dir, session, mine);
+      const who = mine.who ?? cachedWho({ dir, env });
+      ownState = mine;
+      ownLine = {
+        at: now().toISOString(),
+        ...reachLine(mine),
+        ...(mine.run ? { run: mine.run } : {}),
+        ...(who ? { who } : {}),
+        ...(isSynthetic(env) ? { synthetic: true } : {}),
+      };
     }
   }
 
@@ -742,6 +757,12 @@ async function flushOnce({
   for (const f of files) {
     const q = await readQueue({ env, path: f.path });
     if (q.lines.length) loaded.push({ ...f, lines: orderQueue(q.lines), malformed: q.malformed, raw: q.raw, signable: f.mine || ownedByMe(f.path, { env }) });
+  }
+  if (ownLine) {
+    const own = loaded.find((f) => f.mine);
+    if (own) own.lines.push(ownLine);
+    // No queue file to release: `virtual` keeps `releaseConsumed` away from a path we never read.
+    else loaded.push({ path: queuePath(env), session, mine: true, lines: [ownLine], raw: null, signable: true, virtual: true });
   }
   if (!loaded.length) {
     await touchStamp({ env, now });
@@ -812,7 +833,12 @@ async function flushOnce({
       // item, so it is merged, never doubled.
       // ONLY WHAT WAS READ is released (`releaseConsumed`): a line appended while this push was in
       // flight stays queued for the next one (PR #313 review — deleting the file whole lost it).
-      for (const f of loaded) { try { await releaseConsumed(f.path, f.raw); } catch { /* merged, not doubled, next time */ } }
+      for (const f of loaded) {
+        if (f.virtual) continue;
+        try { await releaseConsumed(f.path, f.raw); } catch { /* merged, not doubled, next time */ }
+      }
+      // Landed, so it is sent. Not a moment earlier (review 4).
+      if (ownState && !landed.empty) markSent(queueDir(env), session, ownState);
       // The queue was read and nothing in it reaches the base: released, and said as `nothing`.
       if (landed.empty) return { state: 'nothing', session, why: 'nothing queued reaches the log' };
       return {

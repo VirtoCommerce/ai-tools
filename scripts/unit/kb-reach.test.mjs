@@ -504,10 +504,13 @@ test('the Stop hook keys reach on the QUEUE’s session id, never on the payload
   assert.match(src, /const env = hookEnv\(process\.env, payload\)/, 'the payload reaches the key only through hookEnv');
   assert.match(src, /sessionId\(env\)/, 'the id comes from the same derivation the queue uses');
   assert.doesNotMatch(src, /payload[?.]*\.session_id/, 'the hook never reads the payload id itself');
-  // And its own cadence never spawns a push that has no token to push with (VCST-6091 review 2).
-  assert.match(src, /ownReachDue\(dir, session, \{ state: advanced \}\) && Boolean\(writeToken\(env\)\.token\)/);
-  // …and paces itself by the ATTEMPT, so a push that stops early is not restarted every turn (review 3).
-  assert.match(src, /if \(mine\) markTried\(dir, session\)/);
+  // With no session id at all, nothing is counted under a per-turn process key (review 4).
+  assert.match(src, /const keyed = hasSessionId\(env\)/);
+  assert.match(src, /if \(keyed && payload\?\.transcript_path\)/);
+  // Its own cadence is paced by the ATTEMPT, marked before the token is looked for (reviews 3, 4)…
+  assert.match(src, /const due = keyed && ownReachDue\(dir, session, \{ state: advanced \}\);\s*if \(due\) markTried\(dir, session\);/);
+  // …and never spawns a push that has no token to push with (review 2).
+  assert.match(src, /const mine = due && Boolean\(writeToken\(env\)\.token\)/);
 });
 
 test('a session sends its own counters at once, then only when they grew and the interval passed (VCST-6091)', () => {
@@ -676,4 +679,51 @@ test('review 3.7: a legacy ask credited to a group outside the window is unaccou
   assert.equal(r.accounted, 1);
   assert.equal(r.rows[0].asks, 0);
   assert.equal(r.unaccounted, 1, 'counted somewhere, as the same case with a real key would be');
+});
+
+test('review 4.1: a state dropped and rebuilt keeps what it had carried over a replacement', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-tomb-'));
+  try {
+    const t = join(dir, 'tomb.jsonl');
+    writeFileSync(t, `${turn('Read', 'Read', 'Read')}${turn('Edit')}`, 'utf8');
+    advanceReach({ dir, session: 'tomb0001', transcriptPath: t });
+    writeFileSync(t, `${turn('Read')}`, 'utf8');                      // replaced: 4 calls carried
+    advanceReach({ dir, session: 'tomb0001', transcriptPath: t });
+    dropReach(dir, 'tomb0001');                                       // harvested as finished…
+    writeFileSync(t, `${turn('Read')}${turn('Bash')}`, 'utf8');       // …and it resumes
+    const rebuilt = advanceReach({ dir, session: 'tomb0001', transcriptPath: t });
+    assert.equal(workIn(rebuilt), 4 + 2, 'the carried 4 survive the drop');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('review 4.3: a different transcript file under the same key is a replacement, even when larger', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-moved-'));
+  try {
+    const a = join(dir, 'a.jsonl');
+    const b = join(dir, 'b.jsonl');
+    writeFileSync(a, `${turn('Read')}`, 'utf8');
+    advanceReach({ dir, session: 'move0001', transcriptPath: a });
+    writeFileSync(b, `${turn('Read', 'Read')}${turn('Edit', 'Bash')}${turn('Grep')}`, 'utf8');
+    const after = advanceReach({ dir, session: 'move0001', transcriptPath: b });
+    assert.equal(after.tools, 5, 'the new file is read from its start, not from the old cursor');
+    assert.equal(workIn(after), 1 + 5, 'and the old file’s call is carried');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('review 4.9: a legacy line with no firstAt is a group of its own, so its asks are counted once', () => {
+  // The double count needs the key in BOTH shapes: a line without `firstAt` (plain lookup) and one with
+  // it (a legacy group). Both then claimed the same two asks.
+  const r = reach([
+    { kind: 'session', session: 'p6001', tools: 4, turns: 1, touchAt: [] },
+    { kind: 'session', session: 'p6001', tools: 6, turns: 1, touchAt: [], firstAt: '2026-09-28T08:00:00Z' },
+    { kind: 'ask', _session: 'p6001', at: '2026-09-28T09:00:00Z' },
+    { kind: 'ask', _session: 'p6001', at: '2026-09-28T09:10:00Z' },
+  ]);
+  assert.equal(r.accounted, 2);
+  assert.equal(r.rows.reduce((n, x) => n + x.asks, 0), 2, 'two asks, two counted — not four');
+  assert.equal(r.unaccounted, 0);
 });

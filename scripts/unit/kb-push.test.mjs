@@ -1685,3 +1685,45 @@ test('review 3.6: harvesting a stranger’s state does not make our own counters
   assert.equal(sessionLine(state, 'quiet010').tools, 8, 'the stranger is published');
   assert.equal(sessionLine(state, SESSION), undefined, 'we are not — our cadence is not due');
 }));
+
+test('review 4.4: a DECLINED push leaves no counters line in the queue and no send mark', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeFile(reachPath(dir, SESSION), JSON.stringify({ session: SESSION, cursor: 0, tools: 30, turns: 3, touchAt: [], firstAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'x', matched: [], state: 'miss' }]);
+  const before = await readFile(join(dir, `${SESSION}.jsonl`), 'utf8');
+  let offered = null;
+  const r = await run(env, fakeApi(state), { gate: async (plan) => { offered = plan; return false; } });
+  assert.equal(r.state, 'declined');
+  assert.ok(offered.writes.some((w) => w.text.includes('"kind":"session"')), 'the counters WERE in what was offered');
+  assert.equal(await readFile(join(dir, `${SESSION}.jsonl`), 'utf8'), before, 'the queue is exactly as it was');
+  assert.equal(existsSync(sentPath(dir, SESSION)), false, 'and nothing is marked sent');
+}));
+
+test('review 4.5: a dry run deletes no other session’s state', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const quiet = reachPath(dir, 'quiet011');
+  await writeFile(quiet, JSON.stringify({ session: 'quiet011', cursor: 0, tools: 8, turns: 2, touchAt: [] }), 'utf8');
+  await writeFile(sentPath(dir, 'quiet011'), '8 2\n', 'utf8');                       // would be dropped unsent
+  const old = new Date(AT.getTime() - 60 * 60 * 1000);
+  await utimes(quiet, old, old);
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'x', matched: [], state: 'miss' }]);
+  assert.equal((await run(env, fakeApi(state), { dryRun: true })).state, 'dry-run');
+  assert.ok(existsSync(quiet), 'still there');
+}));
+
+test('review 4.8: a line with no usable date and no fallback fails with logPath’s own message', () => {
+  assert.throws(() => logTargetOf({ kind: 'ask' }, { session: 'aaaa1111' }), /logPath needs a valid date/);
+  // The case that threw a TypeError instead: a SESSION line, whose `firstAt` sent it past the date check.
+  assert.throws(() => logTargetOf({ kind: 'session', session: 'aaaa1111', firstAt: '2026-09-18T08:00:00Z' }, { session: 'x' }),
+    /logPath needs a valid date/);
+});
+
+test('review 4.4b: a push that LANDS our counters marks them sent, so the next push does not repeat them', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeFile(reachPath(dir, SESSION), JSON.stringify({ session: SESSION, cursor: 0, tools: 30, turns: 3, touchAt: [], firstAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'x', matched: [], state: 'miss' }]);
+  assert.equal((await run(env, fakeApi(state))).state, 'pushed');
+  assert.equal(await readFile(sentPath(dir, SESSION), 'utf8'), '30 3\n');
+  const api = fakeApi(state);
+  assert.equal((await run(env, api)).state, 'nothing', 'nothing new: no second commit');
+}));

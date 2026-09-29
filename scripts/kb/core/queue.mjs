@@ -285,6 +285,8 @@ export function sessionId(env = process.env) {
  * var that IS usable is never overridden: in the desktop app it is the host id, and the payload's id
  * is a different identifier there.
  */
+export const hasSessionId = (env = process.env) => SESSION_ENV.some((name) => shortSession(env[name]));
+
 export function hookEnv(env = process.env, payload = null) {
   if (SESSION_ENV.some((name) => shortSession(env[name]))) return env;
   const id = typeof payload?.session_id === 'string' ? payload.session_id : '';
