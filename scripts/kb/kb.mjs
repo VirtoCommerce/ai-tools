@@ -18,7 +18,7 @@
 
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
-import { flush, sweepIfDue } from './core/push.mjs';
+import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
 import { pushConfirmRequired, queueDir } from './core/queue.mjs';
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
@@ -27,6 +27,24 @@ import { TOPIC_MAX, ask, capture, confirm, dispute, reindex, show, stat } from '
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
+/**
+ * Flags that never take the next argument: a value is given only as `--flag=value`, and
+ * `=false|0|no|off` means false. Without this list `kb ask --no-sweep "q"` swallowed the question as
+ * the flag's value, and `--dry-run=false` was the truthy string "false" — a dry run (VCST-6103).
+ */
+/**
+ * Where a hold has to live to hold. `KB_PUSH_CONFIRM` in a shell reaches that one command; the MCP
+ * server, which sweeps and flushes the same queue, gets its env from Claude Code at start — the same
+ * route `KB_ENABLED=0` takes (`core/queue.mjs`).
+ */
+const HOLD_EVERYWHERE = 'To hold it everywhere, set KB_PUSH_CONFIRM=1 in the `env` of .claude/settings.local.json '
+  + 'and restart the session: a shell variable does not reach the MCP server.';
+
+const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help']);
+
+/** A pacing constant in whole minutes, for prose — derived, so the text cannot drift from the code. */
+function minutes(ms) { return Math.round(ms / 60_000); }
+
 function parseArgs(argv) {
   const out = { _: [], flags: {}, repeated: { anchor: [], scope: [] } };
   for (let i = 0; i < argv.length; i += 1) {
@@ -34,6 +52,7 @@ function parseArgs(argv) {
     if (!a.startsWith('--')) { out._.push(a); continue; }
     const eq = a.indexOf('=');
     const name = (eq === -1 ? a.slice(2) : a.slice(2, eq));
+    if (BOOLEAN_FLAGS.has(name)) { out.flags[name] = eq === -1 || !/^(false|0|no|off)$/i.test(a.slice(eq + 1)); continue; }
     const value = eq === -1 ? (argv[i + 1]?.startsWith('--') ? true : argv[++i] ?? true) : a.slice(eq + 1);
     if (name in out.repeated) out.repeated[name].push(String(value));
     else out.flags[name] = value;
@@ -54,17 +73,22 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
-  npm run kb -- push [--dry-run] [--no-sweep]        send the queue to the base as ONE commit
+  npm run kb -- push [--dry-run] [--no-sweep]       send the queue to the base as ONE commit
 
 exit: 0 answered · 1 no coverage (or capture refused as a duplicate) · 2 no base · 3 unreachable
 
 capture / confirm / dispute QUEUE their change locally. Nothing is sent by those commands.
 \`push\` sends everything queued — this session's lines plus any idle file left by an earlier one —
-as one atomic commit. \`--dry-run\` shows exactly what would be written and sends nothing.
+as one atomic commit. \`--dry-run\` shows exactly what would be written and sends nothing;
+\`--no-sweep\` on \`push\` also leaves those idle files out and sends this session's own queue file only.
 
-Every invocation also sweeps IDLE queue files left behind by earlier sessions, at most every 30
-minutes, silently and without affecting the exit code. That sweep is why a failed push needs no
-hook and no scheduler: the next session picks it up.
+Every invocation also sweeps IDLE queue files left behind by earlier sessions, at most every
+${minutes(SWEEP_AFTER_MS)} minutes, silently and without affecting the exit code. That sweep is why a failed push needs no
+hook and no scheduler: the next session picks it up. \`--no-sweep\` on any verb skips it, and so does
+\`--dry-run\`. A dry run holds nothing, though: this session's own queue is still published by the
+next kb call, CLI or MCP, once its oldest line is ${minutes(OWN_FLUSH_AFTER_MS)} minutes old. KB_PUSH_CONFIRM=1 holds every
+push for your yes instead — set in \`.claude/settings.local.json\` \`env\`, then restart the session, so the MCP
+server sees it too; a shell variable reaches this command only.
 
 --topic is a short ENGLISH noun phrase for what the work is -- "configurable product checkout" --
 so a window of the log can be read by what it was about rather than by whose session it was. Cut at
@@ -114,8 +138,9 @@ async function main(argv) {
   const opened = openBase({ baseArg: args.flags.base ? String(args.flags.base) : null });
   // The sweep targets THE BASE THIS INVOCATION READ, never the default: a run pointed at a local
   // fixture must not push fixture-derived lines to the public base, and the cheapest way to
-  // guarantee that is to hand the sweep the same locator the verb used.
-  sweepBase = opened.locator;
+  // guarantee that is to hand the sweep the same locator the verb used. A `--dry-run` or
+  // `--no-sweep` invocation gets no sweep at all (VCST-6103): the preview must send nothing.
+  sweepBase = postVerbSweepAllowed(args.flags) ? opened.locator : null;
 
   if (verb === 'stat') {
     const r = await stat(opened);
@@ -237,7 +262,20 @@ async function main(argv) {
       for (const d of r.plan.deletions) out(`  - ${d}  (retention)`);
       if (r.plan.converted) out(`  ${r.plan.converted} queued capture(s) would convert to confirm`);
       for (const p of r.plan.problems ?? []) out(`  ! ${p.id ?? ''} ${p.why}`);
-      out('  nothing was sent.');
+      out('  nothing was sent, and nothing was changed.');
+      // DELIBERATELY not a prediction of WHEN (VCST-6103 review): what the next sweep takes depends
+      // on this session's queue age, other sessions' idle files, their reach records and the stamp,
+      // and a forecast restating those rules drifts from `sweepIfDue` the day they change. This
+      // sentence is true under all of them. `r.held` is the same fact for a `--json` reader.
+      //
+      // And `r.held` is THIS process's env only (VCST-6103 review): the MCP server that sweeps the same
+      // queue reads its own, set when Claude Code started it. So neither line may promise a hold the
+      // next publisher does not share; both name the one place that reaches it.
+      if (r.held) out(`  Held in this process only (KB_PUSH_CONFIRM=1 here). ${HOLD_EVERYWHERE}`);
+      else out(`  NOT held: any later kb call (CLI or MCP) may publish what is listed here. ${HOLD_EVERYWHERE}`);
+    } else if (r.dryRun) {
+      out(`kb push (dry run): could not build the plan — ${r.why ?? ''}`);
+      out('  nothing was sent, and nothing was changed.');
     } else {
       out(`kb push: ${r.state} — ${r.why ?? ''}`);
       if (r.state === 'failed') out('  the queue is intact; the next session sweeps it.');
