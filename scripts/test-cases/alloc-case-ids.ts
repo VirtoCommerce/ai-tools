@@ -27,6 +27,7 @@
  *
  * Exit code: 0 on success; 1 on a bad argument or an unreadable corpus root.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync } from "fs";
 import { resolve } from "path";
 import { fileURLToPath } from "url";

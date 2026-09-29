@@ -842,7 +842,7 @@ query {
 [COUNT label=exact_case_prefix] data.products.totalCount = 0 {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:BVA · Probe:VC-API-004 | Behavior:srch.barcode.expand.case-and-prefix,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:BVA · Probe:VC-API-004 | Behavior:srch.barcode.expand.case-and-prefix | DataProfile:profile.srch.expand-case-prefix,Draft
 CAT-GQL-144,xCatalog barcode filter ORs every configured field,xCatalog > Barcode filter,High,,,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 @td(BARCODE_GTIN_UNIQUE.gtin) is only findable via the gtin field; @td(BARCODE_CODE_OR.sku) is a different product findable only via the code field — together they prove the two configured fields are OR-ed, not the first one only.","store=@td(BARCODE_STORE.id), gtinCode=@td(BARCODE_GTIN_UNIQUE.gtin), skuCode=@td(BARCODE_CODE_OR.sku)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
@@ -873,7 +873,7 @@ query {
 [DATA label=by_code] data.products.filters[?name=code].isGenerated = true {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:DT | Behavior:srch.barcode.expand.or-fields,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:DT | Behavior:srch.barcode.expand.or-fields | DataProfile:profile.srch.expand-or-fields,Draft
 CAT-GQL-145,xCatalog barcode filter matches a configured short-text property,xCatalog > Barcode filter,High,,,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 @td(BARCODE_PROP.propertyName) is the lowercased index field name for the ShortText property AGENT_TEST_BARCODE_UPC, exactly as GET .../fields lists it; @td(BARCODE_PROP.value) is set on @td(BARCODE_PROP.sku) only.","store=@td(BARCODE_STORE.id), prop=@td(BARCODE_PROP.propertyName), value=@td(BARCODE_PROP.value)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
@@ -892,7 +892,7 @@ query {
 [DATA label=by_prop] data.products.filters[?name={{prop}}].isGenerated = true {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:EP | Behavior:srch.barcode.expand.property-field,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:EP | Behavior:srch.barcode.expand.property-field | DataProfile:profile.srch.expand-property-field,Draft
 CAT-GQL-146,xCatalog barcode configuration on one store does not change another store's results,xCatalog > Barcode filter,High,"BL-STORE-001, BL-SRCH-004",,Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite. {{STORE_ID}} (B2B-store) is left untouched by this case's setup — it must still have no barcode fields configured.,"store=@td(BARCODE_STORE.id), defaultStore={{STORE_ID}}, code=@td(BARCODE_GTIN_UNIQUE.gtin)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
 {""scannerEnabled"": true, ""fields"": [""gtin""]}
@@ -915,7 +915,7 @@ query {
 [COUNT label=on_default] data.products.totalCount = 0 {BL}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SCOPE · Technique:DT | Behavior:srch.barcode.config.per-store,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SCOPE · Technique:DT | Behavior:srch.barcode.config.per-store | DataProfile:profile.srch.config-per-store,Draft
 CAT-GQL-147,xCatalog barcode filter stops finding a product after its code is changed,xCatalog > Barcode filter,Medium,"BL-SRCH-003, BL-CAT-003",,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 @td(BARCODE_REINDEX.sku) is DISPOSABLE per seed — this case changes its gtin from @td(BARCODE_REINDEX.gtin) to @td(BARCODE_REINDEX.newGtin) and restores it as the LAST step of Steps (not Cleanup — the runner's Cleanup phase only executes [AUTH] and one-shot [REST <METHOD> <path>] blocks, never [REST-OP]/[REST-EXEC], so a restore placed there silently never ran); do not run this case concurrently with another case referencing BARCODE_REINDEX (any field).
 Event-based indexation is OFF on vcst-qa and the scheduled IndexChangesJob can lag ~59 minutes with its own start-date semantics that a manual reindex request moves — so a plain fixed wait would observe environment configuration, not BL-SRCH-003. This case instead triggers a manual reindex of the changed product itself (POST /api/search/indexes/index) and polls until it settles, re-requesting the reindex once more if the first request no-ops because another indexation held the lock. BL-SRCH-003's 120s timing claim is therefore NOT asserted here — that number only holds when event-based indexation is ON, which this case does not control; only eventual index correctness is asserted.
@@ -988,7 +988,7 @@ Body: [{""id"": ""@td(BARCODE_REINDEX.id)"", ""productType"": ""{{REINDEX_PRODUC
 [COUNT label=after_old] data.products.totalCount = 0 {BL}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:STALE · Technique:ST | Behavior:srch.barcode.expand.after-code-change,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:STALE · Technique:ST | Behavior:srch.barcode.expand.after-code-change | DataProfile:profile.srch.expand-after-code-change,Draft
 CAT-GQL-148,"xCatalog barcode filter treats quotes, colons and whitespace-only values safely",xCatalog > Barcode filter,High,BL-SRCH-005,ECL-3.1,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 @td(BARCODE_SPECIAL.value) is set on @td(BARCODE_SPECIAL.sku) (the same property as @td(BARCODE_PROP.propertyName)) and contains a literal double-quote and colon. The GQL-VARS filter string below is the same value after the escaping escapeFilterSyntaxValue applies client-side (one backslash-quote pair per literal quote) — hand-derived from the alias's own value, not a separate fixture. A 611-character barcode value is built WITHOUT a literal in the CSV: @td(BARCODE_GTIN_UNIQUE.gtin) (13 chars) repeated 47 times by the runner's own {{VAR}}/@td() substitution — the source cell holds the short, repeatable expression, never a hand-typed long string.","store=@td(BARCODE_STORE.id), special=@td(BARCODE_SPECIAL.value)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
@@ -1026,7 +1026,7 @@ query($filter: String!) {
 [COUNT label=long_value] data.products.totalCount = 0 {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:BVA | Behavior:srch.barcode.expand.special-values,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:BVA | Behavior:srch.barcode.expand.special-values | DataProfile:profile.srch.expand-special-values,Draft
 CAT-GQL-149,xCatalog barcode filter facet counts follow the barcode result,xCatalog > Barcode filter,Medium,BL-SRCH-001,ECL-3.2,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 @td(BARCODE_GTIN_SHARED.count) products share one GTIN — the case compares term-facet counts under the barcode filter against the same facet on the whole (unfiltered) catalog to falsify ""facet counts describe the whole catalog"".","store=@td(BARCODE_STORE.id), code=@td(BARCODE_GTIN_SHARED.gtin)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
@@ -1054,7 +1054,7 @@ query {
 [DATA label=whole_catalog] data.products.term_facets.0.terms[?term={{FACET_TERM}}].count > @td(BARCODE_GTIN_SHARED.count) {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EP | Behavior:srch.barcode.expand.facet-counts,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EP | Behavior:srch.barcode.expand.facet-counts | DataProfile:profile.srch.expand-facet-counts,Draft
 CAT-GQL-150,xCatalog barcode filter treats asterisk and question mark in the scanned value literally,xCatalog > Barcode filter,High,BL-SRCH-005,,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 Candidate defect B1 (3x, not yet filed): the live pre-fix build treats '*' and '?' as wildcards rather than literal characters. This case asserts the pr113 SPEC (""compared exactly as term filters"") — it is expected to FAIL until that defect is fixed; a FAIL here is the finding, not an authoring error.","store=@td(BARCODE_STORE.id), code=@td(BARCODE_GTIN_UNIQUE.gtin)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
@@ -1096,4 +1096,4 @@ query {
 [COUNT label=question_mark] data.products.totalCount = 0 {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EG | Behavior:srch.barcode.expand.wildcards,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EG | Behavior:srch.barcode.expand.wildcards | DataProfile:profile.srch.expand-wildcards,Draft

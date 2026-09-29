@@ -41,6 +41,7 @@
  * .env.local / .env.defaults / process.env — same as scripts/bundle-version-check.ts.
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';

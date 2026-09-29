@@ -37,6 +37,7 @@
  *   .claude/rules/test-data.md.
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   api, auth, assertSafeTarget, ensureVirtualCatalog, ensureFulfillmentCenter,
   syncEnvAliases, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID, idsParam, loadCsv, buildStoreSeo,

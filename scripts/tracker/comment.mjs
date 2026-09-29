@@ -25,6 +25,7 @@
 // the PreToolUse hook reads. It is also mirrored into
 // reports/tickets/*/<TICKET>/summary.json as `tracker.comment_id` when that file exists.
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { wikiMarkupRefusal } from "../lib/jira-body-format.mjs";

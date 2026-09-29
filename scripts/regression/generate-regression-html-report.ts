@@ -18,6 +18,7 @@
  * is in progress, and exits with a final static render once the run is marked completed.
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync, mkdirSync, copyFileSync } from "node:fs";
 import { join, resolve, extname, dirname } from "node:path";
 import { fileURLToPath } from "node:url";

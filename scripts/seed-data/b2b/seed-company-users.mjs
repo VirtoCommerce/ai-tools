@@ -31,6 +31,7 @@
  * Identity from .env.{ENV}; secrets from .env.local. Prod blocked by ENV_RISK=production.
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {

@@ -11,11 +11,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { COLUMNS } from "../test-cases/append-test-cases-to-suite.ts";
 import {
   checkModels,
   compileSchemas,
   schemaFindings,
   statusProblem,
+  driftRouteProblem,
+  stampsUnreadable,
+  crossDomainEdges,
   seedPlan,
   requiresClosure,
   findCycles,
@@ -170,6 +174,54 @@ test("conflicting evidence is carried as DRIFT, and the schema requires the drif
   assert.deepEqual(schemaFindings(schemas.map, withRecord, "m", "TM-001"), []);
 });
 
+test("a DRIFT route must reach a trackable owner → TM-018 (warn)", () => {
+  const keys = ["VCST"];
+  for (const ok of ["VCST-6097 (vc-frontend)", "/qa-review-oracles BL-SRCH-003", "mcp__kb__kb_dispute KB-1A", "kb-dispute KB-1A",
+    "https://example.atlassian.net/browse/X-1", "vc-frontend#2501", "PO question (VCST-2622 AC)"]) {
+    assert.equal(driftRouteProblem(ok, keys), null, ok);
+  }
+  assert.match(driftRouteProblem(undefined, keys)!, /no route/);
+  // oracle ids, suite case ids and checker codes share the UPPER-123 shape but are not owners
+  for (const bad of ["open defect; BL-LOY-019 violated, see ECL-3.1", "cases MSN-032 / SRCHA-056 assert it", "see TM-018",
+    "docs gap; report against https://docs.example.org/guide/", "vc-module-catalog (PR #909)"]) {
+    assert.match(driftRouteProblem(bad, keys)!, /no trackable owner/, bad);
+  }
+  assert.match(driftRouteProblem("draft reports/bugs/open/medium/BUG-x.md (filing deferred)", keys)!, /unfiled draft/);
+  assert.match(driftRouteProblem("UNFILED - resolve via /qa-review-oracles, then a VCST bug", keys)!, /marked UNFILED/);
+  assert.match(driftRouteProblem("VCST-1", [])!, /no trackable owner/, "with no configured tracker key, no key is trusted");
+  const drift = (route: string) => node("x.a", { status: "DRIFT", drift: { expected: "BL says X", observed: "Y", route } });
+  const warns = (route: string) => codes(run(map([drift(route)]), model([req("data.x.a")]), { ...ctx(), trackerKeys: new Set(keys) }), "warn");
+  assert.ok(warns("vc-module-catalog (PR #909)").includes("TM-018"));
+  assert.ok(!warns("VCST-1").includes("TM-018"));
+});
+
+test("a stamp in a legacy-header suite is unreadable → TM-019; an enriched or unstamped suite is not", () => {
+  const enriched = COLUMNS.map((c) => `"${c}"`).join(",");
+  assert.equal(stampsUnreadable(`${enriched}\nA,Behavior:x.a`), false);
+  assert.equal(stampsUnreadable("ID,Title,Steps,References\nA,t,s,Behavior:x.a"), true);
+  assert.equal(stampsUnreadable("ID,Title,Steps,References\nA,t,s,VCST-1"), false, "no stamp, no warning");
+});
+
+test("an integration point is a cross-domain edge, exercised only by a case whose stamps reach BOTH sides → TM-032", () => {
+  const x = map([node("x.a"), node("x.a.br", { type: "branch", branch_kind: "integration" })], [
+    { from: "x.a", to: "x.a.br", type: "branches_to" },
+    { from: "x.a", to: "y.b", type: "affected_by" },
+  ]);
+  const y: MindMap = { domain_slug: "y", domain_map_rev: 1, nodes: [node("y.b")], edges: [] };
+  assert.deepEqual(crossDomainEdges([...x.edges, { from: "x.a", to: "x.a.br", type: "depends_on" }]).map((e) => e.to), ["y.b"], "same-domain edges are not seams");
+  const check = (cases: [string, CaseStamps][]) => {
+    const c = ctx(cases);
+    c.domainMapRevs!.set("y", 1);
+    return checkModels({ mindMaps: [{ file: "x.json", doc: x }, { file: "y.json", doc: y }], dataModels: [] }, c);
+  };
+  const oneSide = check([["C-1", { suite: "s.csv", behaviors: ["x.a.br"], profiles: [] }]]);
+  assert.ok(oneSide.findings.some((f) => f.code === "TM-032"), "a case on one side only is that domain's test, not the seam's");
+  // the branch reaches x.a through its parent edge, so a branch + y.b stamp exercises the seam
+  const both = check([["C-2", { suite: "s.csv", behaviors: ["x.a.br", "y.b"], profiles: [] }]]);
+  assert.ok(!both.findings.some((f) => f.code === "TM-032"));
+  assert.deepEqual(both.crossings, [{ from: "x.a", to: "y.b", type: "affected_by", cases: ["C-2"] }]);
+});
+
 // ---------------------------------------------------------------- data model rules
 
 const modelDoc = (r: object) => ({ schema_version: "1.0", domain_slug: "x", generated: "2026-01-01", requirements: [r], profiles: [] });
@@ -317,6 +369,10 @@ test("a changed behaviour with a stable id makes its linked cases suspect; last_
   const next = map([node("x.a", { name: "new wording" })]);
   assert.deepEqual(changedNodes(prev, next), ["x.a"]);
   assert.deepEqual(changedNodes(prev, map([node("x.a", { name: "old wording", last_verified: "2026-09-01" })])), []);
+  const bare = map([node("x.a")]);
+  assert.deepEqual(changedNodes(bare, map([node("x.a", { requires: ["data.x.a"] })])), [], "a first data contract is not a change");
+  const withReq = map([node("x.a", { requires: ["data.x.a"] })]);
+  assert.deepEqual(changedNodes(withReq, map([node("x.a", { requires: ["data.x.b"] })])), ["x.a"], "editing one is");
   const c = ctx([["C-1", { suite: "s.csv", behaviors: ["x.a"], profiles: [] }]]);
   const r = run(next, model([req("data.x.a")]), c, new Map([["m.json", prev]]));
   assert.deepEqual(r.suspects, [{ caseId: "C-1", node: "x.a", why: "node changed since baseline" }]);

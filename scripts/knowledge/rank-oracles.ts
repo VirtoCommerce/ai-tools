@@ -23,6 +23,7 @@
  * Reporting only — it never edits an oracle, never edits a CSV, and exits 0 unless its
  * own inputs are unreadable. Truncation always announces itself.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from "fs";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";

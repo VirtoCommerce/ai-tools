@@ -49,6 +49,7 @@ mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *ins
 | Excuse | Reality |
 |---|---|
 | "The mind map doesn't exist and nothing requires it — skip it." | Rule 4: build it (domain map present) or record the observable reason. The checklist's node tracing is where it pays off. |
+| "That node is already DRIFT in the map, so there's nothing to check." | A DRIFT is a question. Re-observe it: `HOLDS` or `RESOLVED` with evidence is the finding the next map update needs ([`context-wave.md`](context-wave.md) §Wave 3). |
 | "Pre-seed with the domain seeder first, then test." | Rule 3: data is made per item. A seeder runs only when an item's Data cell names it. A pre-seed wave is FULL's `3a`, not this flow. |
 | "I'll write the bug reports into `reports/bugs/open/` myself." | Rule 1: `/vc-fix:qa-bug` does the 4-layer validation, the owning-repo resolution and the `/qa-fix` handoff block. A hand-written report has none of them. |
 | "The opening status hop is automatic." | Rule 2: this flow makes no transition, and that includes the opening one. |

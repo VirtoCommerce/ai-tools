@@ -72,7 +72,8 @@ Full briefs, merge rules and the context bundle:
 3. **Wave 2 — one message:**
    - `/qa-test-model <TICKET> --context <bundle>`, run by you
    - `/qa-test-mind-map update|build <slug> --from <TICKET>` — `ba-system-analyzer`, no browser,
-     **without** build step 10
+     **without** build step 10; then copy the map signals into the bundle
+     ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Wave 2)
 4. **Wave 3.** Run `/qa-checklist <TICKET> --from-model --mind-map <slug>` and write the result to
    `reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`.
 5. **Stage gate.** Every model gate clause is `PASS`/`FIXED`. Every in-scope scenario row and node is

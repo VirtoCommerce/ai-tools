@@ -488,7 +488,7 @@
       "drift": {
         "expected": "BL-LOY-019: the contribution and the granted reward MUST be reversed on cancellation",
         "observed": "nothing is reversed — balance, ledger and Completed status are unchanged (BL-LOY-019 Live)",
-        "route": "open product defect; the cases assert the OBSERVED non-reversal and flip when a reversal path ships"
+        "route": "UNFILED product defect — no tracker key yet (BL-LOY-019 VIOLATED; no VCST ticket found 2026-09-28); the cases assert the OBSERVED non-reversal and flip when a reversal path ships"
       }
     },
     {

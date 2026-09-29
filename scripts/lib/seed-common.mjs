@@ -18,6 +18,7 @@
  *          seed-white-labeling.mjs (and future seeders).
  */
 
+import "./sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { config as loadDotenv } from 'dotenv';
 import { resolveTestEnv } from './resolve-test-env.js';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
