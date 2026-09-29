@@ -503,7 +503,9 @@ export function commitMessage({ session, captures, confirms, disputes, logs }) {
  */
 export async function flush(opts = {}) {
   const r = await flushOnce(opts);
-  if (!r.dryRun && !['dry-run', 'declined', 'disabled'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
+  // Keyed on the REQUEST, not the result: a dry run can end in `nothing`, `no-base` or
+  // `foreign-base` too, and none of those may overwrite the status of the last real push.
+  if (!opts.dryRun && !['dry-run', 'declined', 'disabled'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
   return r;
 }
 
@@ -557,12 +559,13 @@ async function flushOnce({
   const previewed = [];
   if (includeMine) {
     for (const state of idleReaches(queueDir(env), { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
-      if (dryRun) { previewed.push(composeLine(reachLine(state), { env, who: state.who ?? null, run: state.run ?? null })); continue; }
       // `who` AND `run` come off the STATE, never off this process: this line describes a session
       // that has already ended, and we may well be a different person on a different machine under
       // a different run. `null` where the state never learned one — no identity and no run beats
       // the wrong one (`core/who.mjs`).
-      const written = await log(reachLine(state), { env, who: state.who ?? null, run: state.run ?? null });
+      const marks = { env, who: state.who ?? null, run: state.run ?? null };
+      if (dryRun) { previewed.push(composeLine(reachLine(state), marks)); continue; }
+      const written = await log(reachLine(state), marks);
       // Dropped only once the line is safely appended. A state file removed after a failed write is
       // a session that silently never existed — the exact hole this whole mechanism was built to
       // close, reintroduced at the last step.
@@ -634,11 +637,13 @@ async function flushOnce({
     const built = await buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, synthetic: isSynthetic(env), run: runOf(env), who: cachedWho({ dir: queueDir(env), env }) });
     if (built.state !== 'ready') { last = built; break; }
 
+    // A dry run returns BEFORE the gate: it is a preview, so it never asks "publish this?", and a "no"
+    // would turn it into `declined` and hide the plan it was run to show (VCST-6103).
+    if (dryRun) return { state: 'dry-run', session, plan: built.plan };
     if (gate) {
       const yes = await gate(built.plan);
       if (!yes) return { state: 'declined', session, plan: built.plan, why: 'the operator declined this push; the queue is untouched' };
     }
-    if (dryRun) return { state: 'dry-run', session, plan: built.plan };
 
     const landed = await land({ api, plan: built.plan });
     if (landed.ok) {
@@ -676,20 +681,12 @@ async function flushOnce({
   //
   // Except after a DRY RUN, which attempted nothing (VCST-6103): a `flush ok:false` line would ship
   // with the next real push as a failure that never happened, and `kb stat` would report it.
-  if (dryRun) {
-    return { state: 'failed', dryRun: true, session, why: last?.detail ?? last?.why ?? 'unknown', reason: last?.reason ?? null, queued: allLines.length };
-  }
+  const why = last?.detail ?? last?.why ?? 'unknown';
+  const reason = last?.reason ?? null;
+  if (dryRun) return { state: 'failed', dryRun: true, session, why, reason, queued: allLines.length };
   await touchStamp({ env, now });
-  await log({ kind: 'flush', ok: false, attempts: attempt, why: last?.detail ?? last?.why ?? 'unknown', reason: last?.reason ?? null }, { env });
-  return {
-    state: 'failed',
-    session,
-    attempts: attempt,
-    why: last?.detail ?? last?.why ?? 'unknown',
-    reason: last?.reason ?? null,
-    queued: allLines.length,
-    kept: loaded.map((f) => f.path),
-  };
+  await log({ kind: 'flush', ok: false, attempts: attempt, why, reason }, { env });
+  return { state: 'failed', session, attempts: attempt, why, reason, queued: allLines.length, kept: loaded.map((f) => f.path) };
 }
 
 /**

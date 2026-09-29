@@ -347,7 +347,16 @@ test('a SUCCESSFUL push --dry-run with a due own-queue writes nothing and change
   assert.deepEqual(r.calls.filter(isWrite), [], `no write was attempted:\n${r.calls.join('\n')}`);
   assert.equal(headReads(r.calls), 1, 'the dry run read the head once, for its plan; the sweep never followed');
   assert.deepEqual(r.after, r.before, 'the queue, the stamp and the push status are exactly as they were');
-  assert.match(r.stdout, /NOT held/, 'and it says the queue is still published later, rather than implying a hold');
+  // The queue is an hour old, so it goes out on the very next call — not "once it is N minutes old".
+  assert.match(r.stdout, /NOT held: the next kb call \(CLI or MCP\) publishes/, 'and it says so, rather than implying a hold');
+});
+
+test('the NOT-held warning appears only when something WILL publish the queue', async () => {
+  for (const [why, env] of [['KB_NO_SWEEP', { KB_NO_SWEEP: '1' }], ['no token', { KB_GITHUB_TOKEN: '' }]]) {
+    const r = await kbRecorded(['push', '--dry-run'], { KB_FAKE_BASE: 'healthy', ...env });
+    assert.match(r.stdout, /would commit/, why);
+    assert.doesNotMatch(r.stdout, /NOT held/, `${why}: nothing will publish it, so the warning would be false`);
+  }
 });
 
 test('a FAILED push --dry-run records no failure — nothing was attempted (VCST-6103)', async () => {
@@ -368,4 +377,11 @@ test('boolean flags never swallow the next argument, and `=false` means false', 
   assert.equal(human.code, 0);
   assert.match(human.stdout, /KB-27B4CD10/);
   assert.throws(() => JSON.parse(human.stdout), '--json=false prints the human form, not JSON');
+  // A space-separated true|false is still the flag's value, never part of the question.
+  const spaced = await kb(['ask', q, '--base', FIXTURE, '--json', 'true'], { env });
+  assert.equal(spaced.code, 0);
+  assert.doesNotThrow(() => JSON.parse(spaced.stdout), '--json true is JSON');
+  const off = await kb(['ask', q, '--base', FIXTURE, '--json', 'false'], { env });
+  assert.match(off.stdout, /KB-27B4CD10/, 'and "false" did not become part of the question');
+  assert.throws(() => JSON.parse(off.stdout), '--json false is not JSON');
 }));

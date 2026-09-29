@@ -22,7 +22,7 @@ import {
   RETENTION_DAYS, SWEEP_AFTER_MS, appendEvidence, commitMessage, expiredLogs, flush, logPath,
   logTargetOf, outsideBase, ownFlushDue, postVerbSweepAllowed, queueFiles, sameEvidence, shouldSweep, unionLines,
 } from '../kb/core/push.mjs';
-import { orderQueue, queueBacklog, queuePath, readPushStatus, releaseConsumed } from '../kb/core/queue.mjs';
+import { orderQueue, pushStatusPath, queueBacklog, queuePath, readPushStatus, releaseConsumed } from '../kb/core/queue.mjs';
 import { reachPath } from '../kb/core/reach.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 // THE READER, IN THE WRITER'S TEST, DELIBERATELY. STEP 3c's whole claim is that the path gained a
@@ -1189,10 +1189,27 @@ test('a dry run PREVIEWS an idle session line without converting it, and moves n
   assert.equal(api.calls.includes('createBlob'), false);
 }));
 
-test('an EMPTY dry run moves no stamp either — a preview must not postpone the next sweep', () => withQueue(async ({ env }) => {
+test('an EMPTY dry run moves no stamp and writes no push status — a preview must not postpone the next sweep', () => withQueue(async ({ env }) => {
   const r = await run(env, fakeApi(makeBase([])), { dryRun: true });
   assert.equal(r.state, 'nothing');
   assert.equal(await shouldSweep({ env, now: () => AT }), true);
+  assert.equal(existsSync(pushStatusPath(env)), false, 'the status of the last REAL push is not overwritten');
+}));
+
+test('a dry run that stops before the plan — no base, foreign base — writes no push status either', () => withQueue(async ({ env }) => {
+  assert.equal((await flush({ env, base: '/a/local/dir', dryRun: true })).state, 'no-base');
+  assert.equal((await flush({ env, base: 'https://raw.githubusercontent.com/someone/else/main', dryRun: true })).state, 'foreign-base');
+  assert.equal(existsSync(pushStatusPath(env)), false);
+}));
+
+test('a dry run never reaches the gate — a preview does not ask "publish this?" (VCST-6103)', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [captureLine(makeEntry({ id: 'KB-22222222', subject: 'a new fact', anchors: ['/mine'] }))]);
+  let asked = 0;
+  const r = await run(env, fakeApi(state), { dryRun: true, gate: async () => { asked += 1; return false; } });
+  assert.equal(r.state, 'dry-run', 'a "no" would have turned it into `declined` and hidden the plan');
+  assert.equal(asked, 0);
+  assert.ok(r.plan.writes.length > 0);
 }));
 
 test('the gate can decline, and declining changes nothing', () => withQueue(async ({ dir, env }) => {

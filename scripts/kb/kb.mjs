@@ -18,7 +18,7 @@
 
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
-import { flush, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
+import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, ownFlushDue, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
 import { pushConfirmRequired, queueDir } from './core/queue.mjs';
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
@@ -33,6 +33,9 @@ import { TOPIC_MAX, ask, capture, confirm, dispute, reindex, show, stat } from '
  */
 const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help']);
 
+/** A pacing constant in whole minutes, for prose — derived, so the text cannot drift from the code. */
+function minutes(ms) { return Math.round(ms / 60_000); }
+
 function parseArgs(argv) {
   const out = { _: [], flags: {}, repeated: { anchor: [], scope: [] } };
   for (let i = 0; i < argv.length; i += 1) {
@@ -40,7 +43,14 @@ function parseArgs(argv) {
     if (!a.startsWith('--')) { out._.push(a); continue; }
     const eq = a.indexOf('=');
     const name = (eq === -1 ? a.slice(2) : a.slice(2, eq));
-    if (BOOLEAN_FLAGS.has(name)) { out.flags[name] = eq === -1 || !/^(false|0|no|off)$/i.test(a.slice(eq + 1)); continue; }
+    if (BOOLEAN_FLAGS.has(name)) {
+      // `--json true` / `--json false` still work: a bare true|false after the flag is its value,
+      // and anything else is left for the verb.
+      let v = eq === -1 ? null : a.slice(eq + 1);
+      if (v === null && /^(true|false)$/i.test(argv[i + 1] ?? '')) v = argv[++i];
+      out.flags[name] = v === null || !/^(false|0|no|off)$/i.test(v);
+      continue;
+    }
     const value = eq === -1 ? (argv[i + 1]?.startsWith('--') ? true : argv[++i] ?? true) : a.slice(eq + 1);
     if (name in out.repeated) out.repeated[name].push(String(value));
     else out.flags[name] = value;
@@ -69,11 +79,12 @@ capture / confirm / dispute QUEUE their change locally. Nothing is sent by those
 \`push\` sends everything queued — this session's lines plus any idle file left by an earlier one —
 as one atomic commit. \`--dry-run\` shows exactly what would be written and sends nothing.
 
-Every invocation also sweeps IDLE queue files left behind by earlier sessions, at most every 30
-minutes, silently and without affecting the exit code. That sweep is why a failed push needs no
+Every invocation also sweeps IDLE queue files left behind by earlier sessions, at most every
+${minutes(SWEEP_AFTER_MS)} minutes, silently and without affecting the exit code. That sweep is why a failed push needs no
 hook and no scheduler: the next session picks it up. \`--no-sweep\` on any verb skips it, and so does
 \`--dry-run\`. A dry run holds nothing, though: this session's own queue is still published by the
-next invocation once it is 5 minutes old. KB_PUSH_CONFIRM=1 holds every push for your yes instead.
+next kb call, CLI or MCP, once its oldest line is ${minutes(OWN_FLUSH_AFTER_MS)} minutes old. KB_PUSH_CONFIRM=1 holds every
+push for your yes instead.
 
 --topic is a short ENGLISH noun phrase for what the work is -- "configurable product checkout" --
 so a window of the log can be read by what it was about rather than by whose session it was. Cut at
@@ -248,7 +259,13 @@ async function main(argv) {
       if (r.plan.converted) out(`  ${r.plan.converted} queued capture(s) would convert to confirm`);
       for (const p of r.plan.problems ?? []) out(`  ! ${p.id ?? ''} ${p.why}`);
       out('  nothing was sent, and nothing was changed.');
-      if (!pushConfirmRequired()) out('  NOT held: the next kb call publishes this queue once it is 5 minutes old. KB_PUSH_CONFIRM=1 holds it for review.');
+      // Said only when it is TRUE: under KB_PUSH_CONFIRM, KB_NO_SWEEP or without a token nothing
+      // publishes it, and "once it is N minutes old" counts from the OLDEST line, so it may be now.
+      if (!pushConfirmRequired() && !process.env.KB_NO_SWEEP && token) {
+        out(await ownFlushDue()
+          ? '  NOT held: the next kb call (CLI or MCP) publishes this session\'s queue. KB_PUSH_CONFIRM=1 holds it for review.'
+          : `  NOT held: the first kb call (CLI or MCP) after its oldest line is ${minutes(OWN_FLUSH_AFTER_MS)} minutes old publishes it. KB_PUSH_CONFIRM=1 holds it for review.`);
+      }
     } else if (r.dryRun) {
       out(`kb push (dry run): could not build the plan — ${r.why ?? ''}`);
       out('  nothing was sent, and nothing was changed.');
