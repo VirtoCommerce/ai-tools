@@ -27,6 +27,7 @@
 // log line never does. `toLogLine()` in `verbs.mjs` is the ONE place that distinction lives, and
 // every line is mapped through it on the way into the log blob.
 
+import { statSync } from 'node:fs';
 import { readdir, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -41,7 +42,7 @@ import {
   DISABLED_WHY, HELD_WHY, MUTATIONS, isSynthetic, pushConfirmRequired, kbDisabled, log, orderQueue, queueDir, queuePath, readQueue, recordPush,
   releaseConsumed, runOf, sessionId,
 } from './queue.mjs';
-import { REACH_IDLE_MS, dropReach, idleReaches, markSent, reachLine, readReach, sentWork, workIn } from './reach.mjs';
+import { REACH_IDLE_MS, dropReach, idleReaches, markSent, ownReachDue, reachLine, reachPath, readReach, unsent, workIn } from './reach.mjs';
 import { toLogLine } from './verbs.mjs';
 import { cachedWho } from './who.mjs';
 import { stampCallersFromTranscripts } from './caller.mjs';
@@ -142,6 +143,11 @@ const SESSION_SAFE = /^[A-Za-z0-9_-]+$/;
  * while their asks sat in `log/20260925-*`. Dated by `firstAt`, the line lands in the session's own
  * existing file and is merged there. A start already outside the retention window would be deleted
  * by the same commit that wrote it, so such a line falls back to the ordinary date instead.
+ *
+ * THE WINDOW IS THE ONE `expiredLogs` APPLIES, to the letter: measured from the PUSH clock
+ * (`fallback`), against the START OF THE DAY the name will carry. Measured from the line's own `at`,
+ * or against the instant rather than the day, a start near the edge would be written and deleted by
+ * one commit.
  */
 export function logTargetOf(line, { session, fallback, retentionDays = RETENTION_DAYS }) {
   const isSession = line?.kind === 'session';
@@ -151,8 +157,11 @@ export function logTargetOf(line, { session, fallback, retentionDays = RETENTION
   const t = Date.parse(String(line?.at ?? ''));
   const dated = Number.isFinite(t) ? new Date(t) : fallback;
   const began = isSession ? Date.parse(String(line.firstAt ?? '')) : NaN;
-  const floor = dated.getTime() - retentionDays * 24 * 60 * 60 * 1000;
-  return logPath(described, Number.isFinite(began) && began >= floor && began <= dated.getTime() ? new Date(began) : dated);
+  if (!Number.isFinite(began) || began > dated.getTime()) return logPath(described, dated);
+  const day = new Date(began);
+  const dayStart = Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate());
+  const cut = (fallback instanceof Date ? fallback : dated).getTime() - retentionDays * 24 * 60 * 60 * 1000;
+  return logPath(described, dayStart >= cut ? day : dated);
 }
 
 /**
@@ -161,25 +170,50 @@ export function logTargetOf(line, { session, fallback, retentionDays = RETENTION
  *
  *   * A `flush` that SUCCEEDED AND HAS NOTHING TO SAY. The commit already records that a push landed,
  *     and what it carried. What the commit cannot say is kept: a failure, a redaction, a problem, a
- *     retry, a capture converted to a confirmation, a note. One such flush line was the only content
- *     of a file of its own that day (`log/20260928-4d874be4.jsonl`).
+ *     retry, a capture converted to a confirmation, a note, and WHICH OTHER SESSIONS' QUEUES IT SWEPT
+ *     (the commit message names only the pusher). One such flush line was the only content of a file
+ *     of its own that day (`log/20260928-4d874be4.jsonl`).
  *   * A `session` line with NO WORK in it. Zero tool calls is a session that did nothing, and there is
  *     no reach to measure. A session WITH work and zero base calls is the opposite case and is always
  *     kept: it is exactly what the reach panel exists to count.
  *
  * Only log lines are filtered; the queue's mutations are applied before this runs.
  *
- * AND THE UNSIGNED LINE IS SIGNED BY THE PUSHER (`route` in `buildPush`). The queue directory is one
- * machine's, under one OS user and one token, so every line in it was written by the operator who is
- * pushing it; a line lacking `who` is one written on a cold identity cache, before `resolveWho` had
- * answered. 43 of 2026-09-28's lines were unsigned for that reason alone.
+ * AND AN UNSIGNED LINE MAY BE SIGNED BY THE PUSHER — but only from a file the pusher provably wrote
+ * (`signable`). A line lacking `who` is usually one written on a cold identity cache, before
+ * `resolveWho` had answered: 43 of 2026-09-28's lines were unsigned for that reason alone.
  */
 export function published(line) {
   if (line?.kind === 'flush') {
-    return line.ok === false || Boolean(line.redacted || line.problems || line.note || line.retries || line.convertedToConfirm);
+    return line.ok === false || Boolean(line.redacted || line.problems || line.note || line.retries
+      || line.convertedToConfirm || line.swept?.length);
   }
   if (line?.kind === 'session') return workOf(line) > 0;
   return true;
+}
+
+/**
+ * Was this file written by the user this process runs as? The one condition under which the pusher's
+ * handle may sign a line that carries none.
+ *
+ * NOT "the queue is one user's", which was this PR's first answer and is false on Linux: `tmpdir()`
+ * is the shared `/tmp` there, so one queue directory can hold several users' files (VCST-6091
+ * review). On POSIX the file's owner is compared with our uid. On Windows `tmpdir()` is the user's own
+ * profile, and there is no uid to compare, so ownership is the directory's. A file that cannot be
+ * stat'ed is not ours: an unsigned line stays unsigned.
+ */
+export function ownedByMe(path, { uid = typeof process.getuid === 'function' ? process.getuid() : null } = {}) {
+  try {
+    const s = statSync(path);
+    return uid === null ? true : s.uid === uid;
+  } catch {
+    return false;
+  }
+}
+
+/** Does this session's own queue file hold anything yet? */
+function ownQueueHolds(env) {
+  try { return statSync(queuePath(env)).size > 0; } catch { return false; }
 }
 
 /** A `session` line's whole work: its own calls and its subagents'. The measure "fuller" compares. */
@@ -194,9 +228,14 @@ const workOf = (l) => Number(l?.tools ?? 0) + Number(l?.agentTools ?? 0);
  * the fullest line and nothing reads the others. Dropping them here is not an overwrite in the sense
  * `unionLines` forbids: the dropped line is the SAME session's counters at an earlier moment, wholly
  * contained in the one kept.
+ *
+ * EXCEPT ITS START. A state rebuilt after being dropped carries a later `firstAt`, and the report
+ * windows a session by the EARLIEST one across its lines (`reach()`). So the kept line takes the
+ * group's earliest `firstAt`, or the one fact the discarded lines held alone would go with them.
  */
 export function fullestSessionLines(rawLines) {
   const best = new Map();
+  const earliest = new Map();
   const parsed = rawLines.map((raw) => {
     let l = null;
     try { l = JSON.parse(raw); } catch { /* not ours to judge — kept as it is */ }
@@ -208,6 +247,8 @@ export function fullestSessionLines(rawLines) {
     const fuller = !prior || workOf(l) > workOf(prior)
       || (workOf(l) === workOf(prior) && String(l.lastAt ?? l.at ?? '') > String(prior.lastAt ?? prior.at ?? ''));
     if (fuller) best.set(l.session, l);
+    const began = typeof l.firstAt === 'string' ? l.firstAt : '';
+    if (began && (!earliest.has(l.session) || began < earliest.get(l.session))) earliest.set(l.session, began);
   }
   const placed = new Set();
   const out = [];
@@ -215,7 +256,10 @@ export function fullestSessionLines(rawLines) {
     if (l?.kind !== 'session' || typeof l.session !== 'string') { out.push(raw); continue; }
     if (placed.has(l.session)) continue;
     placed.add(l.session);
-    out.push(JSON.stringify(best.get(l.session)) === JSON.stringify(l) ? raw : JSON.stringify(best.get(l.session)));
+    const kept = best.get(l.session);
+    const began = earliest.get(l.session);
+    const line = began && began !== kept.firstAt ? { ...kept, firstAt: began } : kept;
+    out.push(JSON.stringify(line) === JSON.stringify(l) ? raw : JSON.stringify(line));
   }
   return out;
 }
@@ -638,24 +682,30 @@ async function flushOnce({
     for (const state of idleReaches(dir, { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
       // Its own last send may already carry everything it did (VCST-6091): then there is nothing new
       // to say, and the state is dropped without a second, identical line.
-      if (workIn(state) <= sentWork(dir, state.session)) { dropReach(dir, state.session); continue; }
+      if (!unsent(dir, state)) { dropReach(dir, state.session); continue; }
       // `who` AND `run` come off the STATE, never off this process: this line describes a session
-      // that has already ended, and we may well be a different person on a different machine under
-      // a different run. `null` where the state never learned one — no identity and no run beats
-      // the wrong one (`core/who.mjs`).
-      const written = await log(reachLine(state), { env, who: state.who ?? null, run: state.run ?? null });
+      // that has already ended, and we may well be a different person under a different run. Where
+      // the state never learned a handle, ours is used ONLY if the state file is provably ours
+      // (`ownedByMe`); otherwise `null` — no identity beats the wrong one (`core/who.mjs`).
+      const who = state.who ?? (ownedByMe(reachPath(dir, state.session)) ? undefined : null);
+      const written = await log(reachLine(state), { env, who, run: state.run ?? null });
       // Dropped only once the line is safely appended. A state file removed after a failed write is
       // a session that silently never existed — the exact hole this whole mechanism was built to
       // close, reintroduced at the last step.
       if (written.ok) dropReach(dir, state.session);
     }
-    // AND OUR OWN COUNTERS, whenever they grew since our last send (VCST-6091). The state is kept:
-    // this session is still running, and the next send carries a fuller copy that replaces this one
-    // in the file. Not on a dry run, which must change nothing.
-    const mine = dryRun ? null : readReach(dir, session);
-    if (mine && workIn(mine) > sentWork(dir, session)) {
-      const written = await log(reachLine(mine), { env, who: mine.who ?? null, run: mine.run ?? null });
-      if (written.ok) markSent(dir, session, workIn(mine));
+    // AND OUR OWN COUNTERS (VCST-6091). The state is kept: this session is still running, and the next
+    // send carries a fuller copy that replaces this one in the file. Three conditions, each closing a
+    // way this line could cost more than it measures:
+    //   * a TOKEN — without one nothing is sent, and a line queued on every call would grow the queue
+    //     without bound for an operator who can never push it;
+    //   * our own queue already HOLDS work, or our own cadence is due — so a push that exists only
+    //     because another session's file is busy does not become a commit per turn;
+    //   * not a dry run, which must change nothing.
+    const mine = dryRun || !token ? null : readReach(dir, session);
+    if (mine && workIn(mine) > 0 && unsent(dir, mine) && (ownQueueHolds(env) || ownReachDue(dir, session, { now: now().getTime() }))) {
+      const written = await log(reachLine(mine), { env, who: mine.who ?? undefined, run: mine.run ?? null });
+      if (written.ok) markSent(dir, session, mine);
     }
   }
 
@@ -664,7 +714,7 @@ async function flushOnce({
   const loaded = [];
   for (const f of files) {
     const q = await readQueue({ env, path: f.path });
-    if (q.lines.length) loaded.push({ ...f, lines: orderQueue(q.lines), malformed: q.malformed, raw: q.raw });
+    if (q.lines.length) loaded.push({ ...f, lines: orderQueue(q.lines), malformed: q.malformed, raw: q.raw, signable: f.mine || ownedByMe(f.path) });
   }
   if (!loaded.length) {
     await touchStamp({ env, now });
@@ -954,14 +1004,20 @@ async function buildPush({ api, prefix, full, loaded, allLines, counts, session,
   // the pushing session, which is why they are routed under `session` even when the only queue
   // taken was somebody else's.
   const byPath = new Map();
-  const route = (line, owner) => {
+  // THE PUSHER SIGNS an unsigned line only from a file it provably wrote (`ownedByMe`), and a `session`
+  // line only when it describes that file's own session — a harvested state is somebody else's until
+  // proven otherwise, and was already judged at harvest.
+  const signFor = (line, f) => (!line.who && who && f?.signable && (line.kind !== 'session' || line.session === f.session)
+    ? { ...line, who }
+    : line);
+  const route = (line, owner, f = null) => {
     if (!published(line)) return;
-    const signed = !line.who && who ? { ...line, who } : line;
+    const signed = signFor(line, f);
     const path = logTargetOf(signed, { session: owner, fallback: at });
     if (!byPath.has(path)) byPath.set(path, []);
     byPath.get(path).push(signed);
   };
-  for (const f of loaded) for (const l of f.lines) route(toLogLine(l), f.session);
+  for (const f of loaded) for (const l of f.lines) route(toLogLine(l), f.session, f);
   for (const l of [...applied.extraLog, flushLine]) route(l, session);
 
   const logs = [];

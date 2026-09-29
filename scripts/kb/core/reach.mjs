@@ -201,6 +201,10 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   // a document that no longer exists, so the first call of the new transcript is reported as call
   // 4 of a file that has three: `firstTouch`, the one field worth having, becomes fiction.
   const restarted = size < prior.cursor;
+  // The counters start again from zero, so what the session last SENT no longer measures anything:
+  // left in place it would hold every later send back until the new count overtook the old one, and
+  // a replaced transcript that never grew that far would never be published again (VCST-6091 review).
+  if (restarted) { try { rmSync(sentPath(dir, session), { force: true }); } catch { /* nothing sent */ } }
   const from = restarted ? 0 : prior.cursor;
   const base = restarted ? { ...prior, tools: 0, touchAt: [] } : prior;
 
@@ -359,7 +363,7 @@ export function dropReach(dir, session) {
 /** How often a session with no other queue work pushes its own counters. */
 export const OWN_REACH_EVERY_MS = 30 * 60 * 1000;
 
-/** `<session>.reach.sent` — how much work the last published line carried. Not `.reach.json`. */
+/** `<session>.reach.sent` — what the last published line carried: `<work> <turns>`. Not `.reach.json`. */
 export const sentPath = (dir, session) => join(dir, `${session}.reach.sent`);
 
 /** A state's whole work, subagents included: the number a published line is compared by. */
@@ -367,28 +371,46 @@ export function workIn(state) {
   return Number(state?.tools ?? 0) + Object.values(state?.subagents ?? {}).reduce((n, a) => n + Number(a?.tools ?? 0), 0);
 }
 
-/** The work the last published line for this session carried, or 0 if none was sent. */
-export function sentWork(dir, session) {
-  try { return Number(readFileSync(sentPath(dir, session), 'utf8').trim()) || 0; } catch { return 0; }
+/** What the last published line for this session carried; zeros if none was sent. */
+export function sentMark(dir, session) {
+  try {
+    const [work, turns] = readFileSync(sentPath(dir, session), 'utf8').trim().split(/\s+/).map(Number);
+    return { work: work || 0, turns: turns || 0 };
+  } catch {
+    return { work: 0, turns: 0 };
+  }
 }
 
-/** Record that a line carrying `work` was queued for publication. Best effort, like every other note. */
-export function markSent(dir, session, work) {
-  try { writeFileSync(sentPath(dir, session), `${work}\n`, 'utf8'); } catch { /* republished next time — merged, not doubled */ }
+/** The work the last published line for this session carried, or 0 if none was sent. */
+export const sentWork = (dir, session) => sentMark(dir, session).work;
+
+/** Record what a line queued for publication carried. Best effort, like every other note. */
+export function markSent(dir, session, state) {
+  try { writeFileSync(sentPath(dir, session), `${workIn(state)} ${Number(state?.turns ?? 0)}\n`, 'utf8'); } catch { /* republished next time — merged, not doubled */ }
+}
+
+/**
+ * Does this state say anything its last published line did not?
+ *
+ * MORE WORK OR MORE TURNS. Work alone missed the tail of a session whose last turns made no tool call:
+ * its `turns` and `lastAt` were never published, because the harvest saw no new work and dropped it.
+ */
+export function unsent(dir, state) {
+  const mark = sentMark(dir, state.session);
+  return workIn(state) > mark.work || Number(state.turns ?? 0) > mark.turns;
 }
 
 /**
  * Should this session push its own counters now, with nothing else to send?
  *
- * Only when there is new work since the last send, and either nothing was ever sent or the last send
- * is `everyMs` old. The first publication is immediate, so a short session is in the base while it is
- * still running rather than whenever the next session starts.
+ * Only when there is something unsent, and either nothing was ever sent or the last send is `everyMs`
+ * old. The first publication is immediate, so a short session is in the base while it is still running
+ * rather than whenever the next session starts.
  */
 export function ownReachDue(dir, session, { now = Date.now(), everyMs = OWN_REACH_EVERY_MS } = {}) {
   const state = readReach(dir, session);
-  if (!state) return false;
-  const work = workIn(state);
-  if (work <= sentWork(dir, session)) return false;
+  if (!state || workIn(state) === 0) return false;
+  if (!unsent(dir, state)) return false;
   try {
     return now - statSync(sentPath(dir, session)).mtimeMs >= everyMs;
   } catch {

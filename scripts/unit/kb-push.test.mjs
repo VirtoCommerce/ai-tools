@@ -20,7 +20,7 @@ import { parseEntry, stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from '../kb/core/index-build.mjs';
 import {
   RETENTION_DAYS, SWEEP_AFTER_MS, appendEvidence, commitMessage, expiredLogs, flush, fullestSessionLines, logPath,
-  logTargetOf, outsideBase, ownFlushDue, published, queueFiles, sameEvidence, shouldSweep, unionLines,
+  logTargetOf, outsideBase, ownFlushDue, ownedByMe, published, queueFiles, sameEvidence, shouldSweep, unionLines,
 } from '../kb/core/push.mjs';
 import { orderQueue, queueBacklog, queuePath, readPushStatus, releaseConsumed } from '../kb/core/queue.mjs';
 import { reachPath, sentPath } from '../kb/core/reach.mjs';
@@ -1575,7 +1575,7 @@ test('the idle harvest writes no second line for a session whose last send alrea
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
   const quiet = reachPath(dir, 'quiet009');
   await writeFile(quiet, JSON.stringify({ session: 'quiet009', cursor: 0, tools: 50, turns: 4, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z' }), 'utf8');
-  await writeFile(sentPath(dir, 'quiet009'), '50\n', 'utf8');
+  await writeFile(sentPath(dir, 'quiet009'), '50 4\n', 'utf8');
   const old = new Date(AT.getTime() - 60 * 60 * 1000);
   await utimes(quiet, old, old);
   await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'a real question?', matched: [], state: 'miss' }]);
@@ -1592,3 +1592,56 @@ test('a capture refused AT PUSH carries its own author, not nobody', () => withQ
   assert.equal((await run(env, fakeApi(state))).state, 'pushed');
   assert.equal(logLines(state).find((l) => l.kind === 'capture-refused').who, 'octo-asker');
 }));
+
+// ─── VCST-6091 review: the ways the first version of this could cost more than it measured ─────
+
+test('review 2: a push that exists only because ANOTHER session is busy does not publish our counters', () => withQueue(async ({ dir, env }) => {
+  // Otherwise a busy neighbour turns every one of our turns into a public commit.
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const api = fakeApi(state);
+  await writeFile(reachPath(dir, SESSION), JSON.stringify({ session: SESSION, cursor: 0, tools: 30, turns: 3, touchAt: [], firstAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  await writeFile(sentPath(dir, SESSION), '20 2\n', 'utf8');            // sent a moment ago
+  const r = await run(env, api);
+  assert.equal(r.state, 'nothing');
+  assert.equal(api.calls.includes('createCommit'), false);
+}));
+
+test('review 3: with no token, our counters are not queued at all — the queue cannot grow per turn', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeFile(reachPath(dir, SESSION), JSON.stringify({ session: SESSION, cursor: 0, tools: 30, turns: 3, touchAt: [] }), 'utf8');
+  for (let i = 0; i < 3; i += 1) assert.equal((await run(env, fakeApi(state), { token: null })).state, 'nothing');
+  assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), false, 'three turns, no queued line');
+}));
+
+test('review 4: an unsigned line is signed only from a file this user owns', () => withQueue(async ({ dir }) => {
+  const mine = join(dir, 'owned.jsonl');
+  await writeFile(mine, 'x\n', 'utf8');
+  assert.equal(ownedByMe(mine, { uid: null }), true, 'Windows: the temp directory is the user’s own');
+  const { uid } = await import('node:fs').then((fs) => fs.statSync(mine));
+  assert.equal(ownedByMe(mine, { uid }), true);
+  assert.equal(ownedByMe(mine, { uid: uid + 1 }), false, 'POSIX, another user’s file in a shared /tmp');
+  assert.equal(ownedByMe(join(dir, 'gone.jsonl'), { uid: null }), false, 'unreadable is not ours');
+}));
+
+test('review 5: a flush that SWEPT other queues is published — the commit names only the pusher', () => {
+  assert.equal(published({ kind: 'flush', ok: true, swept: ['abcd1234.jsonl'] }), true);
+  assert.equal(published({ kind: 'flush', ok: true, swept: [] }), false);
+});
+
+test('review 8: the fullest line keeps the EARLIEST start of its group', () => {
+  const s = (tools, firstAt) => JSON.stringify({ kind: 'session', session: 'aaaa1111', tools, firstAt, lastAt: `2026-09-18T1${tools}:00:00Z` });
+  const kept = fullestSessionLines([s(1, '2026-09-18T08:00:00Z'), s(5, '2026-09-18T09:30:00Z')]);
+  assert.equal(kept.length, 1);
+  assert.equal(JSON.parse(kept[0]).tools, 5);
+  assert.equal(JSON.parse(kept[0]).firstAt, '2026-09-18T08:00:00Z');
+});
+
+test('review 9: a start is kept only if its DAY survives the push-time retention cut', () => {
+  const pushed = new Date('2026-09-28T07:00:00Z');
+  const cutDay = new Date(pushed.getTime() - RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  // The day BEFORE the cut day would be deleted by this very commit, even with a late `at`.
+  const before = new Date(Date.UTC(cutDay.getUTCFullYear(), cutDay.getUTCMonth(), cutDay.getUTCDate() - 1, 23, 0));
+  const line = { at: '2026-09-28T07:00:00Z', kind: 'session', session: 'aaaa1111', tools: 3, firstAt: before.toISOString() };
+  assert.equal(logTargetOf(line, { session: 'x', fallback: pushed }), 'log/20260928-aaaa1111.jsonl');
+  assert.deepEqual(expiredLogs([`log/${logTargetOf(line, { session: 'x', fallback: pushed }).slice(4)}`], { at: pushed }), []);
+});

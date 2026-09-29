@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   OWN_REACH_EVERY_MS, REACH_IDLE_MS, advanceReach, countToolUses, dropReach, idleReaches, markSent, ownReachDue,
-  promptsIn, readReach, reachLine, reachPath, sentPath, sentWork,
+  promptsIn, readReach, reachLine, reachPath, sentPath, sentWork, unsent,
 } from '../kb/core/reach.mjs';
 import { reach } from '../kb/core/report-analyse.mjs';
 import { LOGGED } from '../kb/core/queue.mjs';
@@ -514,13 +514,19 @@ test('a session sends its own counters at once, then only when they grew and the
     // A session with work and no kb call at all: exactly the one that used to wait for a stranger.
     assert.equal(ownReachDue(dir, 'own00001', { now }), true, 'never sent: at once');
 
-    markSent(dir, 'own00001', 19);
+    markSent(dir, 'own00001', readReach(dir, 'own00001'));
     assert.equal(sentWork(dir, 'own00001'), 19);
     assert.equal(ownReachDue(dir, 'own00001', { now }), false, 'nothing new since the send');
 
     writeFileSync(reachPath(dir, 'own00001'), JSON.stringify({ session: 'own00001', cursor: 20, tools: 25, turns: 7, touchAt: [] }), 'utf8');
     assert.equal(ownReachDue(dir, 'own00001', { now }), false, 'grew, but the last send is recent');
     assert.equal(ownReachDue(dir, 'own00001', { now: now + OWN_REACH_EVERY_MS + 1_000 }), true, 'grew, and the interval passed');
+
+    // TURNS COUNT TOO: a session's last turns can make no tool call, and their `turns`/`lastAt` are
+    // news its last send did not carry (VCST-6091 review).
+    markSent(dir, 'own00001', readReach(dir, 'own00001'));
+    writeFileSync(reachPath(dir, 'own00001'), JSON.stringify({ session: 'own00001', cursor: 30, tools: 25, turns: 9, touchAt: [] }), 'utf8');
+    assert.equal(unsent(dir, readReach(dir, 'own00001')), true, 'same work, more turns: still unsent');
 
     // Dropping a finished state forgets what was sent, so a resumed session starts over cleanly.
     dropReach(dir, 'own00001');
@@ -550,4 +556,32 @@ test('legacy pid-keyed session lines are counted as the sessions they were, not 
   assert.equal(r.accounted, 3, 'three sessions, not five');
   assert.equal(r.tools, 40 + 7 + 5, 'each counted once, at its fullest — not 10 + 25 + 40');
   assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p1003', 'p1003']);
+});
+
+test('review 7: a replaced transcript forgets what was sent, so its new work is published', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-replaced-'));
+  try {
+    const t = join(dir, 'transcript.jsonl');
+    writeFileSync(t, `${turn('Read', 'Read', 'Read')}\n${turn('Edit')}\n`, 'utf8');
+    advanceReach({ dir, session: 'repl0001', transcriptPath: t });
+    markSent(dir, 'repl0001', readReach(dir, 'repl0001'));
+    writeFileSync(t, `${turn('Read')}\n`, 'utf8');                    // replaced: shorter than the cursor
+    advanceReach({ dir, session: 'repl0001', transcriptPath: t });
+    assert.equal(sentWork(dir, 'repl0001'), 0, 'the old mark is gone');
+    assert.equal(unsent(dir, readReach(dir, 'repl0001')), true);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('review 1: a collapsed legacy group still joins its asks and counts them as accounted', () => {
+  const r = reach([
+    { kind: 'session', session: 'p1001', tools: 10, turns: 1, touchAt: [], firstAt: '2026-09-28T08:00:00Z', who: 'octo-a' },
+    { kind: 'session', session: 'p1002', tools: 20, turns: 1, touchAt: [], firstAt: '2026-09-28T08:00:00Z', who: 'octo-a' },
+    { kind: 'ask', _session: 'p1001' },
+    { kind: 'ask', _session: 'p1002' },
+  ]);
+  assert.equal(r.accounted, 1);
+  assert.equal(r.rows[0].asks, 2, 'asks under every member key');
+  assert.equal(r.unaccounted, 0);
 });

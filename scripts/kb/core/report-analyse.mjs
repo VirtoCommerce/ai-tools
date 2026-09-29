@@ -887,24 +887,6 @@ export function kindTally(lines) {
  * a ratio out of a missing measurement -- the same discipline `unreachable` gets in the miss panel,
  * where the base was not read and so the ask says nothing about coverage.
  */
-/**
- * `since` — THE WINDOW, and this panel is the one place it has to be applied by hand.
- *
- * Every other panel is windowed for free, because `--days N` selects DAY FOLDERS under `log/` and an
- * `ask` line is written into its own session's file on the day it happened. A `session` line is not:
- * it describes a session that has ENDED and is published by whichever LATER session sweeps it
- * (`push.mjs`), so a line about a 09-18 session routinely rides in a 09-22 file. Measured the day
- * this landed: `2ca7d89e-0001.jsonl` carries the `session` lines for `35b6f0e1` and `798dcffa`,
- * neither of which is `2ca7d89e`.
- *
- * So filtering by file date does not filter these rows at all, and the symptom is a reach figure
- * that does not move when the window narrows — which is how an audit session found it (PLAN §22.11).
- * The row already carries `firstAt`, the session's OWN time. Nothing read it. Now this does.
- *
- * `null` means no window — `--sessions` replaces the day range rather than narrowing it, and a row
- * with no `firstAt` is kept rather than guessed at, because dropping it would under-count silently
- * in the one panel whose whole job is counting what did NOT happen.
- */
 /** The bare `p<pid>` key a process with no session id got before VCST-6091 (now `p<pid>-<hex>`). */
 const LEGACY_PROCESS_KEY = /^p\d+$/;
 
@@ -924,6 +906,24 @@ export function sessionKeyOf(l) {
   return LEGACY_PROCESS_KEY.test(id) && l.firstAt ? `pid~${l.who ?? '?'}~${l.firstAt}` : id;
 }
 
+/**
+ * `since` — THE WINDOW, and this panel is the one place it has to be applied by hand.
+ *
+ * Every other panel is windowed for free, because `--days N` selects DAY FOLDERS under `log/` and an
+ * `ask` line is written into its own session's file on the day it happened. A `session` line is not:
+ * it describes a session that has ENDED and is published by whichever LATER session sweeps it
+ * (`push.mjs`), so a line about a 09-18 session routinely rides in a 09-22 file. Measured the day
+ * this landed: `2ca7d89e-0001.jsonl` carries the `session` lines for `35b6f0e1` and `798dcffa`,
+ * neither of which is `2ca7d89e`.
+ *
+ * So filtering by file date does not filter these rows at all, and the symptom is a reach figure
+ * that does not move when the window narrows — which is how an audit session found it (PLAN §22.11).
+ * The row already carries `firstAt`, the session's OWN time. Nothing read it. Now this does.
+ *
+ * `null` means no window — `--sessions` replaces the day range rather than narrowing it, and a row
+ * with no `firstAt` is kept rather than guessed at, because dropping it would under-count silently
+ * in the one panel whose whole job is counting what did NOT happen.
+ */
 export function reach(lines, { since = null } = {}) {
   const asksBySession = new Map();
   for (const l of lines) {
@@ -956,14 +956,18 @@ export function reach(lines, { since = null } = {}) {
     const fuller = !prior || tools > prior.tools
       || (tools === prior.tools && String(l.lastAt ?? l.at ?? '') > String(prior.line.lastAt ?? prior.line.at ?? ''));
     const start = prior && prior.began && (!began || prior.began < began) ? prior.began : began;
-    best.set(id, fuller ? { line: l, tools, began: start } : { ...prior, began: start });
+    // EVERY key the group's lines were published under, so a collapsed legacy group still joins the
+    // asks filed under any of them and still counts them as accounted for.
+    const keys = new Set(prior?.keys ?? []);
+    keys.add(l.session ?? l._session);
+    best.set(id, fuller ? { line: l, tools, began: start, keys } : { ...prior, began: start, keys });
   }
 
   const rows = [];
   const seen = new Set();
-  for (const [id, { line: l, began }] of best) {
+  for (const [id, { line: l, began, keys }] of best) {
     if (since && began && began < since) continue;
-    seen.add(id);
+    for (const k of keys) seen.add(k);
     const touchAt = Array.isArray(l.touchAt) ? l.touchAt : [];
     const agentTools = Number(l.agentTools ?? 0);
     const agentTouches = Number(l.agentTouches ?? 0);
@@ -981,7 +985,7 @@ export function reach(lines, { since = null } = {}) {
       // Ordinals into the PARENT's transcript, so they describe the parent only.
       firstTouch: touchAt.length ? touchAt[0] : null,
       lastTouch: touchAt.length ? touchAt[touchAt.length - 1] : null,
-      asks: asksBySession.get(id) ?? 0,
+      asks: [...keys].reduce((n, k) => n + (asksBySession.get(k) ?? 0), 0),
       at: began || '',
     });
   }
