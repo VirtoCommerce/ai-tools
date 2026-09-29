@@ -31,9 +31,10 @@ import { closeSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, 
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { REACH_IDLE_MS, advanceReach, idleReaches } from '../../scripts/kb/core/reach.mjs';
-import { isSynthetic, kbDisabled, pushConfirmRequired, runOf, sessionId } from '../../scripts/kb/core/queue.mjs';
+import { REACH_IDLE_MS, advanceReach, idleReaches, markTried, ownReachDue } from '../../scripts/kb/core/reach.mjs';
+import { hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, runOf, sessionId } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
+import { writeToken } from '../../scripts/kb/core/token.mjs';
 
 function queueHasWork(dir) {
   try {
@@ -68,20 +69,29 @@ function main() {
   // (`f3d05dd3…`, 8 characters of the part that VARIES — see `queue.mjs`). Measured here before
   // this shipped: keying reach on the payload produces `52b778cc` against asks filed under the
   // queue key, so the join matches NOTHING — every session reports as unaccounted and the panel
-  // silently says "not measured" forever. Only `transcript_path` is taken from the payload.
-  const session = sessionId(process.env);
+  // silently says "not measured" forever. `transcript_path` is taken from the payload, and so is
+  // `session_id` — but ONLY where no session variable is set (the CLI and IDE hooks, VCST-6091),
+  // under the name the session's own processes carry it, so it derives the SAME key (`hookEnv`).
+  const env = hookEnv(process.env, payload);
+  const session = sessionId(env);
+  // NO SESSION ID ANYWHERE — neither in the env nor in the payload — means the key above is a fresh
+  // process key, a new one every turn. Counting under it recounts the transcript as a new session per
+  // turn, the exact inflation VCST-6091 removed; so this hook then counts nothing and sends nothing of
+  // its own (review 4). The queue it finds is still flushed below.
+  const keyed = hasSessionId(env);
 
   // Counting is cheap and unconditional: cursor-based, so each turn reads only the bytes appended
   // since the last one, and it stores integers — never a name, an argument or a result. `reach.mjs`
   // carries what is read and what deliberately is not.
-  if (payload?.transcript_path) {
+  let advanced;
+  if (keyed && payload?.transcript_path) {
     try {
       // WHO RAN THIS SESSION is stamped here, on the state, and not by whoever later publishes
       // it: a reach line is swept and pushed by a DIFFERENT session, possibly a different person
       // on a different machine, so the publisher's handle would name the wrong one (`who.mjs`).
       // `cachedWho` is filesystem-only and cannot reach the network — this hook runs at the end of
       // every assistant turn and its whole budget is tens of milliseconds.
-      advanceReach({ dir, session, transcriptPath: payload.transcript_path, who: cachedWho({ dir }), run: runOf(), synthetic: isSynthetic() });
+      advanced = advanceReach({ dir, session, transcriptPath: payload.transcript_path, who: cachedWho({ dir }), run: runOf(), synthetic: isSynthetic() }) ?? undefined;
     } catch { /* accounting must never cost a turn */ }
   }
 
@@ -89,7 +99,22 @@ function main() {
   // early return dropped: no queue work meant no push, so the sessions worth knowing about were the
   // ones that could never report themselves. A finished session's counters are queue work now.
   const stale = idleReaches(dir, { session, idleMs: REACH_IDLE_MS }).length > 0;
-  if (!queueHasWork(dir) && !stale) return;
+  // AND THIS SESSION'S OWN COUNTERS, when it has nothing else to send (VCST-6091): at once the first
+  // time, then at most every `OWN_REACH_EVERY_MS`. Without it a session that never asked reached the
+  // base only when a later session on this machine happened to sweep it — days later, or never.
+  // ONLY WITH A TOKEN: without one the push queues nothing and marks nothing sent, so `ownReachDue`
+  // would stay true and every turn would start a detached push that does nothing (VCST-6091 review).
+  // The state is the copy `advanceReach` just wrote, so it is not read back from disk.
+  //
+  // THE ATTEMPT PACES THE CADENCE, not the push's success, and it is marked the moment the cadence is
+  // due — before the token is looked for. A push that stops early (a refused base, a held queue) marks
+  // nothing sent, and without this every turn would start another (review 3); an operator with no
+  // token would read the env files on every turn to find the same nothing (review 4). Marked here,
+  // both are asked once per `OWN_REACH_EVERY_MS`.
+  const due = keyed && ownReachDue(dir, session, { state: advanced });
+  if (due) markTried(dir, session);
+  const mine = due && Boolean(writeToken(env).token);
+  if (!queueHasWork(dir) && !stale && !mine) return;
   // KB_PUSH_CONFIRM=1: a detached child has nobody to ask, so it would only hold. Not spawned.
   if (pushConfirmRequired(process.env)) return;
 
@@ -113,7 +138,8 @@ function main() {
     cwd: root,
     detached: true,
     stdio: ['ignore', out, out],
-    env: process.env,
+    // The push publishes under THIS session's key, so it gets the same environment the key came from.
+    env,
   });
   child.unref();
   if (typeof out === 'number') closeSync(out);

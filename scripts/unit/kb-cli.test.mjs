@@ -124,7 +124,7 @@ test('with no --base and no KB_BASE, the declared default is read, and offline t
 
 test('capture against an existing anchors+scope is REFUSED, exit 1, naming the id', () => withQueue(async (env) => {
   const r = await kb(['capture', '--base', FIXTURE,
-    '--subject', 'coupon discount does not change line prices',
+    '--subject', 'Cart promotion discount lands on the cart total, and never on the line items.',
     '--question', 'does a cart coupon change item prices',
     '--claim', 'It does not.', '--deployment', 'vcst_qa',
     '--anchor', 'POST /api/carts', '--anchor', 'Mutations.addCouponToCart',
@@ -142,7 +142,7 @@ test('EVERY operation appends exactly one queue line, the refusal included', () 
     ['ask', 'what does the Active column on /company/members reflect', '--base', FIXTURE],
     ['ask', 'how do I configure a Kubernetes ingress controller', '--base', FIXTURE],
     ['show', 'KB-27B4CD10', '--base', FIXTURE],
-    ['capture', '--base', FIXTURE, '--subject', 'coupon discount does not change line prices',
+    ['capture', '--base', FIXTURE, '--subject', 'Cart promotion discount lands on the cart total, and never on the line items.',
       '--question', 'q', '--claim', 'c', '--deployment', 'vcst_qa',
       '--anchor', 'POST /api/carts', '--anchor', 'Mutations.addCouponToCart', '--scope', 'surface=platform-api'],
     ['capture', '--base', FIXTURE, '--subject', 'checkout shipping step loses the selected method on back navigation',
