@@ -22,7 +22,8 @@ import {
   log, metaAsks, pendingMutations, queueBacklog, queueDir, readMeta, readPushStatus, readQueue, sessionId,
 } from './queue.mjs';
 import { cachedWho } from './who.mjs';
-import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
+import { MIN_RELATED_WORDS, RANKER, TOP_N, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
+import { candidates } from './candidates.mjs';
 
 // ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
 //
@@ -429,7 +430,21 @@ async function queuedHere(question, { env }) {
   }));
 }
 
-export async function ask(asked, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
+/**
+ * `ask`, two-stage (STEP 6, VCST-6087 Phase 2): the base PROPOSES, the agent DECIDES.
+ *
+ * Stage 1 is `candidates()` -- BM25 plus the coordinate channel, no floor -- and returns up to
+ * CANDIDATES_K headlines, of which the first `top` (TOP_N, 3) are opened in full. Stage 2 is the
+ * agent: it picks the entry that answers (and `show` records the pick) or says none does (`none`).
+ * WHY NOT A FLOOR: no rule on one score separated answerable from unanswerable asks on the labelled
+ * set (rank.mjs, the STEP 6 note above MIN_COVERAGE); a judge reading these candidates did, 10/11
+ * and 8/8 (`bench-two-stage.mjs`, PR #337).
+ *
+ * `miss` is kept for the case it always named honestly: not one entry shares a single term or a
+ * coordinate with the question. Everything else is `candidates`, exit 0, and the abstention -- the
+ * old exit 1 -- is now the agent's, on its own line.
+ */
+export async function ask(asked, opened, { env = process.env, top = TOP_N, via = null, call = null, deployment = null, topic = null } = {}) {
   const started = Date.now();
   // Ranked AND logged on the repaired text: the mangled one finds the wrong entries and puts a
   // local install path in a public log (see `undoMsysRewrite`). `repaired` says it happened, so
@@ -439,23 +454,20 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
     await log({ kind: 'ask', q: question, ...repair, state: cat.state, why: cat.why, ...ranked({ via, call, topic, deployment }) }, { env });
-    return { state: cat.state, why: cat.why, hits: [], ...repair };
+    return { state: cat.state, why: cat.why, hits: [], candidates: [], ...repair };
   }
 
-  const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
-  if (!hits.length) {
+  const list = candidates(question, retrievable(cat.rows)).map((h) => ({ ...h, score: round2(h.score) }));
+  if (!list.length) {
     const queued = await queuedHere(question, { env });
-    // THE MISS LINE, which since the floor landed is a line that can actually occur (PLAN §14.1).
-    // It carries the best REJECTED candidate: a miss that keeps naming the same near-miss is
-    // either a floor set too high or an entry phrased unlike the way anyone asks -- and neither
-    // is visible from a bare "matched: []".
+    // THE MISS LINE: nothing matched at all. There is no near-miss to record any more -- with no
+    // floor, "the best rejected candidate" does not exist; anything that matched is a candidate.
     await log({
       kind: 'ask',
       q: question,
       ...repair,
       matched: [],
       state: 'miss',
-      ...(nearMiss ? { nearMiss: { id: nearMiss.row.id, score: nearMiss.score, coverage: round2(nearMiss.coverage) } } : {}),
       ms: Date.now() - started,
       ...ranked({ via, call, topic, deployment }),
       // WHAT THIS SESSION ALREADY WROTE AND HAS NOT PUSHED, by id. On the LINE as well as in the
@@ -464,11 +476,12 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
       // that cannot tell the two apart over-states the hole in the corpus.
       ...(queued.length ? { queued: queued.map((q) => q.id) } : {}),
     }, { env });
-    return { state: 'miss', hits: [], nearMiss, rows: cat.rows.length, queued, ...repair };
+    return { state: 'miss', hits: [], candidates: [], rows: cat.rows.length, queued, ...repair };
   }
 
-  // Bodies in parallel (PLAN §3.1 step 3).
-  const described = await Promise.all(hits.map(async (hit) => {
+  // Bodies in parallel (PLAN §3.1 step 3), for the first `top` candidates only -- the rest are
+  // headlines the agent can open with `show`.
+  const described = await Promise.all(list.slice(0, Math.max(1, top)).map(async (hit) => {
     const read = await opened.reader.readEntry(hit.row.path);
     if (!read.ok) {
       // GRACEFUL DEGRADATION (PLAN §3.5): the base HAS an entry on this and we can still say so
@@ -487,20 +500,23 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
   }));
 
   const opened_ = described.filter((h) => !h.unavailable);
-  // At least one body arrived -> the question is answered, with the broken ones flagged. None
-  // arrived -> the agent got nothing, and the honest state is "conclude nothing": exit 1 would say
-  // the base holds nothing, which is the opposite of what the index just told us, and would send
-  // the agent off to capture a fact that already exists.
-  const state = opened_.length ? 'answer' : 'unreachable';
-  await log({
+  // At least one body arrived -> the agent has candidates to judge, with the broken ones flagged.
+  // None arrived -> the honest state is "conclude nothing": exit 1 would say the base holds nothing,
+  // which is the opposite of what the index just told us, and would send the agent off to capture a
+  // fact that already exists.
+  const state = opened_.length ? 'candidates' : 'unreachable';
+  // `matched` and its positional companions now cover EVERY candidate, opened or not: the whole list
+  // is what the agent judged, and a pick below the opened ones is still a pick from this ask.
+  const matchedOn = (h) => ({ tokens: h.overlap, anchors: h.anchors });
+  const written = await log({
     kind: 'ask',
     q: question,
     ...repair,
-    matched: described.map((h) => h.id),
+    matched: list.map((h) => h.row.id),
     // `scores` is POSITIONAL against `matched`, so the winning score is scores[0] and there is no
     // separate `score` field. A field for a fact another field already carries is a second copy
     // that can disagree with the first -- the rule PLAN §2 applies to the confirmation count.
-    scores: described.map((h) => h.score),
+    scores: list.map((h) => h.score),
     // WHY each hit matched, positional against `matched`. A closed vocabulary — never prose.
     //
     // This is the field that makes PLAN §17.4(3) measurable from the log instead of from a replay.
@@ -510,17 +526,18 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
     // has always computed this and SHOWN it to the agent ("matched on: anchor …; words …") and
     // then thrown it away. A month of these answers, from real traffic, whether the coordinate
     // door is reachable at all by the way people actually ask.
-    matchedBy: described.map((h) => {
-      const byAnchor = h.matchedOn.anchors.length > 0;
-      const byWords = h.matchedOn.tokens.length > 0;
+    matchedBy: list.map((h) => {
+      const byAnchor = matchedOn(h).anchors.length > 0;
+      const byWords = matchedOn(h).tokens.length > 0;
       return byAnchor && byWords ? 'both' : byAnchor ? 'anchor' : 'words';
     }),
-    // WHAT THE AGENT WAS TOLD about trust, at the moment it was told. Positional, and not
-    // derivable later: an entry's label moves as evidence accrues, so reading today's entry does
-    // not reconstruct what a reader saw last week. §14.2a is the reason this matters — the label
-    // was overstating independence for ~20% of the corpus, and no log line recorded what any
-    // agent had actually been shown while that was true.
-    trustShown: described.map((h) => h.trust.label),
+    // WHAT THE AGENT WAS TOLD about trust, at the moment it was told. Positional against `matched`,
+    // and not derivable later: an entry's label moves as evidence accrues, so reading today's entry
+    // does not reconstruct what a reader saw last week. §14.2a is the reason this matters — the
+    // label was overstating independence for ~20% of the corpus, and no log line recorded what any
+    // agent had actually been shown while that was true. `null` for a candidate shown as a headline
+    // only: it was shown no trust label, and a label here would record one it never saw.
+    trustShown: list.map((h) => described.find((d) => d.id === h.row.id)?.trust.label ?? null),
     opened: opened_.map((h) => h.id),
     state,
     ...(state === 'unreachable' ? { why: described[0]?.unavailable ?? 'no body could be read' } : {}),
@@ -528,7 +545,15 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
     ...ranked({ via, call, topic, deployment }),
   }, { env });
 
-  return { state, hits: described, rows: cat.rows.length, ...repair };
+  // THE HEADLINES, every candidate -- what Stage 2 judges. The first `top` also carry their body in
+  // `hits`, exactly as an answered ask always did.
+  const headlines = list.map((h) => ({
+    id: h.row.id, subject: h.row.subject, question: h.row.question, score: h.score, matchedOn: matchedOn(h),
+    opened: opened_.some((d) => d.id === h.row.id),
+  }));
+  // `ask` is this ask's handle -- its `at`, which the one writer makes unique -- so `none` can say
+  // WHICH ask it abstains on. Absent when nothing was written (the base switched off).
+  return { state, candidates: headlines, hits: described, rows: cat.rows.length, ...(written?.line?.at ? { ask: written.line.at } : {}), ...repair };
 }
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
@@ -560,8 +585,37 @@ export async function show(id, opened, { env = process.env, via = null, call = n
     await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...context({ via, call, topic }) }, { env });
     return { state: 'unreachable', row, why: `unparseable entry: ${err.message}` };
   }
-  await log({ kind: 'show', id: row.id, state: 'answer', ...context({ via, call, topic }) }, { env });
-  return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
+  // `after` makes this show a PICK: it names the ask whose candidates held this id (see `pickedFrom`).
+  const after = pickedFrom(await sessionAsks({ env }), row.id);
+  await log({ kind: 'show', id: row.id, state: 'answer', ...(after ? { after } : {}), ...context({ via, call, topic }) }, { env });
+  return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []), ...(after ? { after } : {}) };
+}
+
+// ── none ──────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The agent's abstention: none of an ask's candidates answers its question (STEP 6 Stage 2).
+ *
+ * This is what exit 1 used to say, moved from a score to a judgement, and it is logged as its own
+ * `none` line pointing at the ask it closes. It reads nothing from the base -- it is a verdict about
+ * a list the agent already has -- so it works offline and costs one line.
+ *
+ * WHICH ASK: the one the agent names by its handle (`ask`, as the ask returned it), else the
+ * session's latest. A handle that names no ask of this session is dropped rather than published:
+ * a pointer to nothing reads as a verdict on something.
+ */
+export async function none({ env = process.env, ask: handle = null, via = null, call = null, topic = null } = {}) {
+  const asks = (await sessionAsks({ env })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  const named = typeof handle === 'string' && handle.trim() ? asks.find((a) => a.at === handle.trim()) : null;
+  const target = named ?? (handle ? null : asks.at(-1) ?? null);
+  const written = await log({ kind: 'none', ...(target ? { after: target.at } : {}), ...context({ via, call, topic }) }, { env });
+  if (written.disabled) return { state: 'disabled', why: written.why };
+  if (!written.ok) return { state: 'unreachable', why: written.why };
+  return {
+    state: 'recorded',
+    ...(target ? { after: target.at, q: target.q } : {}),
+    ...(handle && !named ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
+  };
 }
 
 // ── capture ───────────────────────────────────────────────────────────────────────────────────
@@ -634,10 +688,27 @@ export function askAbout(asks, { text, anchors = [] }) {
  */
 async function sessionAsks({ env }) {
   const byAt = new Map();
-  for (const a of metaAsks(await readMeta(env))) byAt.set(a.at, { at: a.at, q: String(a.q ?? '') });
+  const ids = (m) => (Array.isArray(m) ? m.map(String) : []);
+  for (const a of metaAsks(await readMeta(env))) byAt.set(a.at, { at: a.at, q: String(a.q ?? ''), matched: ids(a.matched) });
   const { lines } = await readQueue({ env });
-  for (const l of lines) if (l.kind === 'ask' && l.at) byAt.set(String(l.at), { at: String(l.at), q: String(l.q ?? '') });
+  for (const l of lines) if (l.kind === 'ask' && l.at) byAt.set(String(l.at), { at: String(l.at), q: String(l.q ?? ''), matched: ids(l.matched) });
   return [...byAt.values()];
+}
+
+/**
+ * The ask a `show` PICKS FROM: the latest ask of this session whose candidates include the id -- or
+ * nothing, for a show that followed no such ask (a cited id, a ticket). This is how Stage 2's
+ * positive verdict reaches the log without a verb of its own: opening a candidate IS choosing it
+ * (ticket decision 1a). Pure, and exported, because it is the part with a wrong answer.
+ */
+export function pickedFrom(asks, id) {
+  const want = String(id).toUpperCase();
+  let best = null;
+  for (const a of asks) {
+    if (!(a.matched ?? []).some((m) => String(m).toUpperCase() === want)) continue;
+    if (!best || String(a.at) > best) best = String(a.at);
+  }
+  return best;
 }
 
 const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env }), {

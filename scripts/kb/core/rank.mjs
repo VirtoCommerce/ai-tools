@@ -200,8 +200,12 @@ export const MIN_WORDS = 2;
  *
  * `floor-1b` (STEP 6): the SAME admission as `floor-1` and a different ORDER -- anchors are weighed
  * by `anchorWeight`. Which entries clear the floor did not move; which three an agent sees did.
+ *
+ * `two-stage-1` (STEP 6, VCST-6087 Phase 2): `ask` no longer ranks with `scoreRows` and no longer has
+ * a floor. It returns `core/candidates.mjs`'s BM25 list, and the agent judges it. `scoreRows` and
+ * `admissible` below are floor-1b unchanged and serve the capture side and the queued-draft note.
  */
-export const RANKER = 'floor-1b';
+export const RANKER = 'two-stage-1';
 
 /**
  * A PAGE anchor -- a one-segment route such as `/cart` or `/sign-in`.

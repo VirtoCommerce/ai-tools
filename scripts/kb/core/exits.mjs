@@ -22,11 +22,20 @@ export const EXIT = Object.freeze({
   UNREACHABLE: 3,
 });
 
-/** The state names that may appear on a result, and nothing else is a state. */
-export const STATES = Object.freeze(['answer', 'miss', 'no-base', 'unreachable']);
+/**
+ * The state names that may appear on a result, and nothing else is a state.
+ *
+ * `candidates` (STEP 6, VCST-6087): `ask` read the base and has entries that MIGHT answer -- the
+ * judgement of whether one does is the agent's, so it is exit 0 like an answer, and the agent's
+ * "none of these" is its own verb (`kb_none`), which lands as `recorded`. `miss` still means what it
+ * always meant: the base was read and not one entry matched at all.
+ */
+export const STATES = Object.freeze(['answer', 'candidates', 'recorded', 'miss', 'no-base', 'unreachable']);
 
 const BY_STATE = Object.freeze({
   answer: EXIT.ANSWER,
+  candidates: EXIT.ANSWER,
+  recorded: EXIT.ANSWER,
   miss: EXIT.NO_COVERAGE,
   'no-base': EXIT.NO_BASE,
   unreachable: EXIT.UNREACHABLE,
@@ -44,6 +53,13 @@ export function exitFor(state) {
 /** What the caller is told, in the words PLAN §3.5 puts in each row. */
 export const HEADLINE = Object.freeze({
   answer: 'answered from the base',
+  // THE JUDGING INSTRUCTION, which is the whole of Stage 2: the base proposes, the agent decides. Both
+  // doors are named for the same reason `miss` names both.
+  candidates: 'these entries MIGHT answer your question — you decide. Pick the one that records the specific fact you '
+    + 'asked about: open it with `kb_show <id>` / `npm run kb -- show <id>` (that records your pick, even for one shown '
+    + 'below) and cite its id. Being about the same page or feature is NOT enough. If none of them answers it, say so '
+    + 'with `kb_none` / `npm run kb -- none`, then go find out and record it with `kb_capture`.',
+  recorded: 'recorded: none of the candidates answered your question. Go find out, then record it — `kb_capture`, or `npm run kb -- capture`.',
   // BOTH DOORS ARE NAMED, for the same reason the always-loaded line names both (PLAN §5.1): the
   // MCP server does not reach a clone until somebody registers `.mcp.json`, and the CLI does not
   // exist inside an MCP client. Naming one of them is a dead end for whichever reader has the other.

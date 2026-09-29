@@ -59,15 +59,24 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   // Said on every state: the repair already ran, but the next command from the same shell will be
   // mangled the same way, and only the agent can change how it is typed.
   if (r.repaired === 'msys') lines.push(`  (your shell rewrote a leading "/" into a local path; it was undone. ${MSYS_REMEDY})`);
-  // A MISS SAYS THE BASE WAS RANKED, NOT MERELY THAT IT WAS EMPTY -- and it does NOT hand back the
-  // near-miss id. The near-miss is diagnostic, written to the log for whoever is judging the floor
-  // (PLAN §7); giving it to the agent would put a rejected entry in front of exactly the reader
-  // most likely to use it anyway, which is the confident-wrong-answer this floor exists to stop.
-  // The COUNT is safe and is worth saying: it distinguishes "read, and nothing came close" from
-  // "read, and something came close but did not clear the bar".
-  if (r.state === 'miss' && r.nearMiss) {
-    lines.push(`  the closest candidate scored ${r.nearMiss.score} and did not clear the floor`
-      + ` (it matched ${Math.round(r.nearMiss.coverage * 100)}% of your question's words, and no anchor).`);
+  // (A miss no longer reports a near-miss: since two-stage-1 there is no floor, so a miss means not
+  // one entry matched, and there is no rejected candidate to describe.)
+  //
+  // THE CANDIDATE LIST (two-stage-1): every headline first, then the bodies of the opened ones, so
+  // the reader sees the whole field before any one entry's prose. The handle is printed because
+  // `kb_none` needs it to say WHICH ask it abstains on.
+  if (r.state === 'candidates') {
+    lines.push('');
+    for (const [i, c] of (r.candidates ?? []).entries()) {
+      const matched = [
+        c.matchedOn.anchors.length ? `anchor ${c.matchedOn.anchors.join(', ')}` : null,
+        c.matchedOn.tokens.length ? `words ${c.matchedOn.tokens.join(' ')}` : null,
+      ].filter(Boolean).join('; ');
+      lines.push(`  ${i + 1}. ${c.id}  ${c.subject}${c.opened ? '   (opened below)' : ''}`);
+      lines.push(`     question: ${c.question ?? '—'}`);
+      lines.push(`     matched on: ${matched || '—'}`);
+    }
+    if (r.ask) lines.push('', `  ask handle: ${r.ask}  (pass it as \`ask\` to kb_none)`);
   }
   // AND WHAT THIS SESSION ITSELF WROTE AND HAS NOT PUSHED. Unlike the near-miss above, this is safe
   // to hand back, because it is not a rejected entry somebody else wrote — it is the reader's own
@@ -80,6 +89,14 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
     for (const q of r.queued) lines.push(`    ${q.id}  ${q.subject}${q.at ? `  (queued ${q.at})` : ''}`);
   }
   for (const hit of r.hits ?? []) lines.push(...hitLines(hit));
+  return lines;
+}
+
+/** The agent's "none of these" verdict, recorded. */
+export function noneLines(r, { prefix = 'kb none' } = {}) {
+  const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
+  if (r.why) lines.push(`  ${r.why}`);
+  if (r.q) lines.push(`  for your ask: ${r.q}`);
   return lines;
 }
 

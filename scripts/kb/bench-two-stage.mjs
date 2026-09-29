@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // `node scripts/kb/bench-two-stage.mjs --base <dir> [--reference <dir> …]` — STEP 6b phase 1 (VCST-6087).
 //
-// Measures the two-stage design BEFORE it is built: Stage 1 (`bench/candidates.mjs`, BM25 + the
+// Measures the two-stage design BEFORE it is built: Stage 1 (`core/candidates.mjs`, BM25 + the
 // coordinate channel, no floor) is scored on recall@K, and Stage 2 -- a model judge standing in for
 // the agent -- is shown ONLY what an agent would see (the question and K headlines: id, subject,
 // question; never a label) and asked to pick the entry that answers or null. `--view bodies` also
@@ -35,7 +35,7 @@ import { openBase } from './core/base.mjs';
 import { loadIndex, retrievable } from './core/index-load.mjs';
 import { parseEntry } from './core/frontmatter.mjs';
 import { RANKER, TOP_N } from './core/rank.mjs';
-import { candidates, corpus } from './bench/candidates.mjs';
+import { candidates, corpus } from './core/candidates.mjs';
 import { evaluate } from './bench-rank.mjs';
 
 const SET = new URL('./bench/rank-labelled-set.json', import.meta.url);
@@ -229,7 +229,7 @@ async function measure(flags, set, system) {
         return { id: t.id, rank: at < 0 ? null : at + 1, present: t.expect.some((e) => ids.has(e)) };
       });
     }
-    const floors = evaluate(set, rows).filter((r) => r.arm.startsWith('current') || r.arm === 'floor-1');
+    const floors = evaluate(set, rows).filter((r) => r.arm.startsWith('floor-1b') || r.arm === 'floor-1');
     const jobs = [];
     const judged = [];
     for (const k of flags.ks) {

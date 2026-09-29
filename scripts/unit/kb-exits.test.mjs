@@ -52,8 +52,11 @@ const allDown = () => ({
 
 // ─── the map itself ───────────────────────────────────────────────────────────────────────────
 
-test('the four states map to the four codes', () => {
-  assert.deepEqual(STATES.map(exitFor), [EXIT.ANSWER, EXIT.NO_COVERAGE, EXIT.NO_BASE, EXIT.UNREACHABLE]);
+test('every state maps to its code — candidates and a recorded none are 0, like an answer', () => {
+  assert.deepEqual(Object.fromEntries(STATES.map((s) => [s, exitFor(s)])), {
+    answer: EXIT.ANSWER, candidates: EXIT.ANSWER, recorded: EXIT.ANSWER,
+    miss: EXIT.NO_COVERAGE, 'no-base': EXIT.NO_BASE, unreachable: EXIT.UNREACHABLE,
+  });
   assert.deepEqual([EXIT.ANSWER, EXIT.NO_COVERAGE, EXIT.NO_BASE, EXIT.UNREACHABLE], [0, 1, 2, 3]);
 });
 
@@ -117,9 +120,9 @@ test('the manifest carries a plane -> index map, and every declared index is loa
 
 // ─── ask, through each of the four ────────────────────────────────────────────────────────────
 
-test('ask -> 0 when the base answers', () => withTempDir(async (q) => {
+test('ask -> 0 when the base has candidates', () => withTempDir(async (q) => {
   const r = await ask('what does the Active column on /company/members reflect', opened(localReader(FIXTURE)), { env: envIn(q) });
-  assert.equal(r.state, 'answer');
+  assert.equal(r.state, 'candidates');
   assert.equal(exitFor(r.state), EXIT.ANSWER);
   assert.equal(r.hits[0].id, 'KB-27B4CD10');
 }));

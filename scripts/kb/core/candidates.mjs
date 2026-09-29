@@ -5,12 +5,20 @@
 // the STEP 6 note above `MIN_COVERAGE` in core/rank.mjs). So there is NO FLOOR here: anything that
 // matched is a candidate, and the measure of this function is recall@K, never precision.
 //
-// Pure and self-contained so Phase 2 can lift it into `core/` unchanged. Written from the textbook,
-// not fitted to the labelled set: `K1` and `B` are the standard BM25 defaults and are NOT tuned --
-// 19 labelled rows are a set one can overfit in an afternoon.
+// `ask` retrieves with THIS (PLAN STEP 6, VCST-6087 Phase 2); `rank.mjs`'s `scoreRows` stays for the
+// capture-side hints, which were measured under it. Written from the textbook, not fitted to the
+// labelled set: `K1` and `B` are the standard BM25 defaults and are NOT tuned -- 19 labelled rows are
+// a set one can overfit in an afternoon. The measurement it was accepted on is
+// `bench-two-stage.mjs` (PR #337).
+//
+// CANDIDATES_K and how many of them `ask` opens are DECIDED BY THAT MEASUREMENT, not by taste. On
+// vc-knowledge @818d478, a Haiku judge shown 10 headlines plus the first TOP_N (3) bodies picked
+// 10/11 targets and declined 8/8 controls, at about 1.4k tokens per ask. Headlines alone reached only
+// 8/11; all 10 bodies also reached 10/11, but at about 3.4k tokens. K=20 with the same 3 bodies fell
+// to 8/11: more headlines crowd the judgement.
 
-import { namespaceRoots } from '../core/coordinates.mjs';
-import { anchorHit, anchorWeight, tokenize } from '../core/rank.mjs';
+import { namespaceRoots } from './coordinates.mjs';
+import { anchorHit, anchorWeight, tokenize } from './rank.mjs';
 
 /** BM25 term-frequency saturation (textbook default). */
 export const K1 = 1.2;
@@ -18,6 +26,8 @@ export const K1 = 1.2;
 export const B = 0.75;
 /** Reciprocal-rank-fusion damping (the value from Cormack et al., 2009). */
 export const RRF_K = 60;
+/** How many candidates `ask` returns (see the measurement above). */
+export const CANDIDATES_K = 10;
 
 /**
  * Plural folding -- the ONLY normalisation on top of `tokenize`, and exactly this:
@@ -99,9 +109,12 @@ const byScore = (a, b) => b.score - a.score
  * weighs 0 but still makes the entry a candidate, as it still admits under `admissible`). Ties break
  * on trust, then id, so the list is deterministic.
  *
- * @returns {Array<{row, score, bm25, anchor, anchors}>} the top `k`, best first
+ * `overlap` is the question's (folded) terms this entry shares -- WHY it is a candidate, shown to the
+ * agent and logged as `matchedBy`, never used for the order.
+ *
+ * @returns {Array<{row, score, bm25, anchor, anchors, overlap}>} the top `k`, best first
  */
-export function candidates(question, rows, { k = 10, fuse = 'add', stats = corpus(rows) } = {}) {
+export function candidates(question, rows, { k = CANDIDATES_K, fuse = 'add', stats = corpus(rows) } = {}) {
   const qTerms = [...new Set(terms(question))];
   const qLower = String(question ?? '').toLowerCase();
   const scored = [];
@@ -110,7 +123,8 @@ export function candidates(question, rows, { k = 10, fuse = 'add', stats = corpu
     const anchors = (doc.row.anchorKeys ?? []).filter((key) => anchorHit(qLower, key, { namespaces: stats.namespaces }));
     if (lexical === 0 && anchors.length === 0) continue;
     const anchor = anchors.reduce((s, key) => s + anchorWeight(key, stats.carriers.get(key)), 0);
-    scored.push({ row: doc.row, bm25: lexical, anchor, anchors, score: lexical + anchor });
+    const overlap = qTerms.filter((t) => doc.tf.has(t));
+    scored.push({ row: doc.row, bm25: lexical, anchor, anchors, overlap, score: lexical + anchor });
   }
   if (fuse === 'rrf') {
     const rankIn = (field) => {

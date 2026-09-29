@@ -10,12 +10,12 @@
 // writes no log line at all. `KB_SYNTHETIC=1` is set anyway, so that if this ever grows a path
 // through the verbs, the traffic is still kept out of the demand panels (§14.2).
 //
-// THE "current" ARM IS rank.mjs ITSELF -- its scoring, its order, its `admissible` -- never a copy:
-// it measures the shipped rule. "floor-1" is the retired rule, rebuilt from `MIN_WORDS` + `MIN_COVERAGE` over the flat
+// THE "floor-1b (scoreRows)" ARM IS rank.mjs ITSELF -- its scoring, its order, its `admissible` -- never a copy:
+// it measures the rule the capture side still runs (`ask` itself moved to `two-stage-1`, measured by bench-two-stage.mjs). "floor-1" is the retired rule, rebuilt from `MIN_WORDS` + `MIN_COVERAGE` over the flat
 // anchor bonus it ran with (floor-1b kept its admission and changed only the order). Every other arm is a CANDIDATE kept for the record of how the shipped
 // rule was chosen: it starts from the same flat-bonus hits and applies its own admission and, where
 // it has one, its own anchor weight. `floor-1 + A1+B1 order (a)` is the experiment floor-1b was
-// ported from, so it must agree with "current" row for row -- a disagreement means the port drifted.
+// ported from, so it must agree with "floor-1b (scoreRows)" row for row -- a disagreement means the port drifted.
 
 process.env.KB_SYNTHETIC = '1';
 
@@ -24,7 +24,7 @@ import { readFile } from 'node:fs/promises';
 import { openBase } from './core/base.mjs';
 import { loadIndex, retrievable } from './core/index-load.mjs';
 import { isSingleSegmentPath } from './core/coordinates.mjs';
-import { ANCHOR_BONUS, MIN_COVERAGE, MIN_WORDS, RANKER, TOP_N, admissible, scoreRows, tokenize } from './core/rank.mjs';
+import { ANCHOR_BONUS, MIN_COVERAGE, MIN_WORDS, TOP_N, admissible, scoreRows, tokenize } from './core/rank.mjs';
 
 const SET = new URL('./bench/rank-labelled-set.json', import.meta.url);
 
@@ -42,7 +42,9 @@ const isPage = (key) => isSingleSegmentPath(key);
  */
 const words = (n) => (h) => h.anchors.length > 0 || h.overlap.length >= n;
 const ARMS = [
-  { name: `current (${RANKER})`, shipped: true, admit: admissible },
+  // `ask` stopped ranking with `scoreRows` at `two-stage-1` (bench-two-stage.mjs measures that). This
+  // arm is still rank.mjs's own scoring and admission -- floor-1b, which the capture side runs on.
+  { name: 'floor-1b (scoreRows)', shipped: true, admit: admissible },
   { name: 'floor-1', admit: (h) => h.anchors.length > 0 || (h.overlap.length >= MIN_WORDS && h.coverage >= MIN_COVERAGE) },
   { name: 'coverage >= 0.35', admit: (h) => h.anchors.length > 0 || (h.overlap.length >= 2 && h.coverage >= 0.35) },
   { name: 'overlap >= 3', admit: words(3) },
