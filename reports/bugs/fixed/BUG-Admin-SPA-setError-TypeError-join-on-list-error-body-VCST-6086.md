@@ -1,6 +1,12 @@
 # [Platform][Admin SPA] `setError` throws `TypeError ... 'join'` when an error body has no `errors` list — View details comes up empty
 
-## Status: CONFIRMED — VCST-6086 re-reproduced 2026-09-29; fix PR https://github.com/VirtoCommerce/vc-platform/pull/3125 (In review)
+## Status: FIXED — verified 2026-09-29 on vcst-qa (VCST-6086 → Tested)
+
+## Resolution
+- **Fix:** vc-platform PR https://github.com/VirtoCommerce/vc-platform/pull/3125 (`getErrorBody` guard in `setError`; not merged yet at verification time)
+- **Verified on:** Platform image `3.1074.0-pr-3125-c3b8-vcst-6086-c3b85c0c` (vc-deploy-dev PR #6649), Loyalty `3.1009.0-pr-18-4411`, 2026-09-29
+- **Method:** `/qa-verify-fix`. The loyalty mission rejected save was repeated 3/3 as POST and 3/3 as PUT, with no `reading 'join'` TypeError, and View details showed the server message. Direct `setError` calls with 13 body shapes all returned the expected `errorBody` and none threw. Evidence: `reports/tickets/Sprint26-19/VCST-6086/` (`evidence.html`, `verification-report.md`)
+- **Tracker:** VCST-6086 moved Testing → Tested; comment 110714
 
 **Severity:** Low · **Env:** vcst-qa @ Platform `3.1073.0-pr-3121-9965`, `VirtoCommerce.Loyalty 3.1009.0-pr-18-4411` · seen 2026-09-25, 5/5 rejected saves (POST and PUT)
 

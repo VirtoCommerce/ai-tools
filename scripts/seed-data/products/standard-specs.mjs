@@ -51,6 +51,14 @@ export const CSV_SOURCE = {
     seeded: 'seeded',           // 'true' → the seeder creates it; else @td-only
     slug: 'product_slug',       // derived (productSlug); committed so @td(ALIAS.slug) resolves
     storefrontUrl: 'storefront_url', // derived, store-RELATIVE path; @td(ALIAS.url) — never a host
+    // Stock-gate columns (VCST-6054). min_quantity is SEEDED (the product's minQuantity) and is the
+    // alternative to a SPEC_OVERLAYS minQuantity — a row may carry one or the other, never both (the
+    // guard fails the ambiguity). cart_qty / dropped_stock are NOT seeded: they are the scenario
+    // quantities a case uses against the fixture, committed next to the stock they must diverge from
+    // so @td(ALIAS.cart_qty) / @td(ALIAS.dropped_stock) resolve and the guard can hold the ordering.
+    minQuantity: 'min_quantity',
+    cartQty: 'cart_qty',
+    droppedStock: 'dropped_stock',
   },
 };
 
@@ -354,6 +362,106 @@ export const isRoundingMidpoint = (ratio, decimals = DISCOUNT_PERCENT_DECIMALS) 
 
 /** The value xAPI must report for a ratio, per the shipped fix. */
 export const expectedDiscountPercent = (ratio) => roundAwayFromZero(ratio, DISCOUNT_PERCENT_DECIMALS);
+
+// ---------------------------------------------------------------------------
+// STOCK-GATE fixtures (VCST-6054) — UCP refuses a cart/checkout the stock cannot cover.
+// ---------------------------------------------------------------------------
+// vc-module-ucp PR #9 returns three DISTINCT refusal codes, and each is only reachable from a stock
+// shape the pre-existing fixtures do not have:
+//   out_of_stock          — available 0              → PROD-101 QA-OOS-001 (already exists)
+//   insufficient_stock    — 0 < available < requested → PROD-102 QA-LOW-001 (already exists, static)
+//   inventory_unavailable — minQuantity > available, available > 0 → PROD-112 (NEW, static)
+//   insufficient_stock AFTER a cart was accepted (stock drops under an existing line)
+//                                                     → PROD-113 (NEW, mutated at run time)
+//
+// Every quantity below lives in test-products.csv (stock_qty / min_quantity / cart_qty /
+// dropped_stock); this block declares only WHICH ordering each row must keep, because the ordering is
+// the whole fixture and none of it is visible from a single cell. validateStockGateShape() is what the
+// drift guard runs.
+//
+// LIMITS (stated at the fixture, per the SECOND RULE):
+//   * PROD-112 cannot tell whether UCP evaluates minQuantity against the CART quantity or the
+//     REQUESTED quantity — at qty = min_quantity both are the same number.
+//   * PROD-113 is a SHARED mutable fixture: a case that drops its stock owns it until it restores
+//     stock_qty, so two suites consuming it are serialised (test-data.md §DISPOSABLE FIXTURES rule 4).
+//   * Both stock only the store MAIN fulfillment center as this repo defines it
+//     (inventory/fulfillment-centers.csv store_role=main → FC_EAST). On vcst that FFC is in the store's
+//     additionalFulfillmentCenterIds, not store.mainFulfillmentCenterId; UCP's available_quantity
+//     counts it (KB-25388E6C), which is what these fixtures rely on.
+export const STOCK_GATE_FIXTURES = {
+  'PROD-112': {
+    kind: 'min-above-stock',
+    expectCode: 'inventory_unavailable',
+    purpose: 'create_cart at qty = min_quantity is refused inventory_unavailable (available_quantity omitted), because the minimum order quantity cannot be met from a NON-ZERO stock',
+  },
+  'PROD-113': {
+    kind: 'stock-drop',
+    expectCode: 'insufficient_stock',
+    purpose: 'a cart accepted at cart_qty is refused at get_cart / create_checkout once stock drops to dropped_stock (still > 0, still >= min), then accepted again after restore to stock_qty',
+  },
+};
+
+const intCell = (v) => {
+  const s = String(v ?? '').trim();
+  if (!s) return null;
+  return /^\d+$/.test(s) ? Number(s) : NaN;
+};
+
+/**
+ * Non-vacuity contract for the stock-gate rows — the drift guard's check [14]. Pure.
+ * `rowsById` maps product_id → raw CSV row; `overlays` defaults to SPEC_OVERLAYS.
+ * Every message names the way the row could still exist and prove nothing.
+ */
+export function validateStockGateShape(rowsById = {}, overlays = SPEC_OVERLAYS) {
+  const m = CSV_SOURCE.map;
+  const problems = [];
+  const truthy = (v) => /^(true|yes|1)$/i.test(String(v ?? '').trim());
+
+  for (const [id, fx] of Object.entries(STOCK_GATE_FIXTURES)) {
+    const r = rowsById[id];
+    if (!r) { problems.push(`${id}: STOCK_GATE_FIXTURES declares it but test-products.csv has no such row`); continue; }
+    if (!truthy(r[m.seeded])) problems.push(`${id}: seeded=false — the seeder never creates it, so the ${fx.expectCode} case cannot run`);
+    if (!Number.isFinite(Number(r[m.listPrice])) || Number(r[m.listPrice]) <= 0) problems.push(`${id}: no positive list price — an unpriced product is refused for a reason other than stock`);
+
+    const stock = intCell(r[m.stock]);
+    const min = intCell(r[m.minQuantity]);
+    const cart = intCell(r[m.cartQty]);
+    const dropped = intCell(r[m.droppedStock]);
+    for (const [col, v] of [[m.stock, stock], [m.minQuantity, min], [m.cartQty, cart], [m.droppedStock, dropped]]) {
+      if (Number.isNaN(v)) problems.push(`${id}: ${col}="${r[col]}" is not a non-negative integer`);
+    }
+    if (min != null && overlays[id]?.minQuantity != null) {
+      problems.push(`${id}: minQuantity is set BOTH in the min_quantity column (${min}) and SPEC_OVERLAYS (${overlays[id].minQuantity}) — the overlay silently wins; keep exactly one`);
+    }
+    if (Number(overlays[id]?.packSize ?? 1) !== 1) problems.push(`${id}: packSize ${overlays[id].packSize} — a pack-size rule would refuse the line for a reason other than stock`);
+
+    if (fx.kind === 'min-above-stock') {
+      if (stock == null || !(stock >= 1)) problems.push(`${id}: stock_qty ${r[m.stock]} must be >= 1 — at 0 UCP answers out_of_stock (PROD-101's job), not inventory_unavailable`);
+      if (min == null || !(min > (stock ?? Infinity))) problems.push(`${id}: min_quantity ${r[m.minQuantity] || '(blank)'} must be STRICTLY above stock_qty ${r[m.stock]} — at min <= stock the minimum can be met and nothing is refused`);
+      if (cart != null || dropped != null) problems.push(`${id}: cart_qty / dropped_stock are stock-drop columns; a min-above-stock row must leave them blank`);
+    } else if (fx.kind === 'stock-drop') {
+      const effMin = min ?? 1;
+      if (stock == null || cart == null || dropped == null) {
+        problems.push(`${id}: stock_qty, cart_qty and dropped_stock are all required (have ${r[m.stock] || '-'} / ${r[m.cartQty] || '-'} / ${r[m.droppedStock] || '-'})`);
+        continue;
+      }
+      if (!(cart <= stock)) problems.push(`${id}: cart_qty ${cart} > stock_qty ${stock} — the baseline cart is refused before the drop, so there is no accepted cart to invalidate`);
+      if (!(dropped < cart)) problems.push(`${id}: dropped_stock ${dropped} >= cart_qty ${cart} — the dropped stock still covers the cart, so nothing is refused after the drop`);
+      if (!(dropped >= 1)) problems.push(`${id}: dropped_stock ${dropped} must be >= 1 — at 0 the refusal is out_of_stock, not insufficient_stock`);
+      if (!(effMin <= dropped)) problems.push(`${id}: min_quantity ${effMin} > dropped_stock ${dropped} — the refusal after the drop would be inventory_unavailable, not insufficient_stock`);
+      if (!(cart >= effMin)) problems.push(`${id}: cart_qty ${cart} is below min_quantity ${effMin} — the baseline cart is refused for the minimum, not accepted`);
+    }
+  }
+
+  // Scenario columns on an undeclared row are orphan data: nothing validates their ordering.
+  for (const [id, r] of Object.entries(rowsById)) {
+    if (STOCK_GATE_FIXTURES[id]) continue;
+    for (const col of [m.cartQty, m.droppedStock]) {
+      if (String(r[col] ?? '').trim()) problems.push(`${id}: ${col}="${r[col]}" on a row STOCK_GATE_FIXTURES does not declare — undeclared scenario quantities are never guarded`);
+    }
+  }
+  return problems;
+}
 
 // Real, IMPORTED catalog products (NOT seedable) that suites reference by GUID. The seeder DISCOVERS
 // them by their stable `code` and captures the runtime id (+ hosting catalogId) to aliases.<env>.json

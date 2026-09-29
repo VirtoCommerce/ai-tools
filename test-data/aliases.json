@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.57",
+    "version": "1.5.58",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -59,7 +59,8 @@
     "changelog_1_5_54": "VCST-5730 Shared Document Library for Sales Reps — 2 new CSV-backed rep aliases (SR_REP_DOCS = Advanced Sales Representative, i.e. sales-rep-documents:read; SR_REP_DOCS_WRITER = Sales Representative + Sales Rep Documents Manager, i.e. :write WITHOUT :read, which is what makes the deployed read-gate disjunction falsifiable) backed by test-data/sales-rep/document-reps.csv, plus 12 inline SR_DOC_* document aliases whose single source of truth is scripts/seed-data/sales-rep/sales-rep-docs-specs.mjs (the file BYTES are part of each fixture and are synthesized there, so a CSV mirror would be a second hand-maintained source). The 12 cover pdf/docx/xlsx/txt/png/jpg + an unknown .vcqa extension, a Cyrillic file name with spaces, a ~3 MB file, a blank display name (the NormalizeName fallback), 3 categories and 2 pinned rows — and 12 is chosen so \"exactly page size\" and \"page size + 1\" are both reachable at a page size of 5 AND of 10. Guard: npm run td:validate:sales-rep-docs.",
     "changelog_1_5_55": "VCST-5732 Sales Rep TASK fixtures: 14 task aliases (SR_TASK_OVERDUE_*/TODAY_*/FUTURE_*/DONE_*) + SR_TASK_GROUPS group-size expectations. Seeded by npm run seed:sales-rep-tasks against the scoped /graphql/sales-rep endpoint as the owning rep; guarded by npm run td:validate:sales-rep-tasks. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks).",
     "changelog_1_5_56": "B2B_STORE_MEMBERSHIP_ROLES — store-level Customer.MembershipRolesWhitelist fixture for B2B-store (settings v2 tenant values). Seeded by seed:membership-roles; guarded by td:validate:b2b. Answers domain-map open question G7.",
-    "changelog_1_5_57": "VCST-2945 barcode scanner search fixtures: BARCODE_STORE (dedicated AGENT-TEST store on the B2B-mixed catalog — tests own its barcode settings, never B2B-store's) + BARCODE_{GTIN_UNIQUE,FULLTEXT_DISCRIM,GTIN_SHARED,CODE_OR,PROP,VARIATION_MPN,CASE,SPECIAL,REINDEX,STALE_FIELD} (seed:barcode, td:validate:barcode, barcode images under test-data/uploads/barcodes/) + BROWSEFILTERS_READ_ONLY / BROWSEFILTERS_NONE back-office accounts (seed:rbac, td:validate:rbac)."
+    "changelog_1_5_57": "VCST-2945 barcode scanner search fixtures: BARCODE_STORE (dedicated AGENT-TEST store on the B2B-mixed catalog — tests own its barcode settings, never B2B-store's) + BARCODE_{GTIN_UNIQUE,FULLTEXT_DISCRIM,GTIN_SHARED,CODE_OR,PROP,VARIATION_MPN,CASE,SPECIAL,REINDEX,STALE_FIELD} (seed:barcode, td:validate:barcode, barcode images under test-data/uploads/barcodes/) + BROWSEFILTERS_READ_ONLY / BROWSEFILTERS_NONE back-office accounts (seed:rbac, td:validate:rbac).",
+    "changelog_1_5_58": "VCST-6054 UCP stock-refusal fixtures: PROD_MIN_ABOVE_STOCK (test-products.csv PROD-112 / QA-MINQ-001, minQuantity 3 > stock 2 > 0 -> inventory_unavailable) and PROD_STOCK_DROP (PROD-113 / QA-DROP-001, stock 10 / cart_qty 2 / dropped_stock 1 -> insufficient_stock after an accepted cart). New test-products.csv columns min_quantity (seeded as the product minQuantity) and cart_qty / dropped_stock (scenario quantities, not seeded). Ordering guarded by td:validate:standard check [14]. Both aliases expose id = the runtime product GUID from aliases.<env>.json (seed:products writes it for these two rows only), and seed:products now also writes FC_EAST.id - the FFC their stock sits on."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -1486,6 +1487,7 @@
     "_status_note": "CFG-029. [P?P!] with dep. No survivor."
   },
   "FC_EAST": {
+    "notes": "The store MAIN fulfillment center as this repo defines it (fulfillment-centers.csv store_role=main). id is the RUNTIME FFC id from aliases.<env>.json, written by seed:products and seed:variation-stock (the CSV ffc_id FFC-001 is a business key, not a platform id). Every seed:products fixture is stocked here, so it is the fulfillmentCenterId a case PUTs to /api/inventory/plenty when it mutates a fixture stock (e.g. PROD_STOCK_DROP). On vcst it sits in the store additionalFulfillmentCenterIds, not store.mainFulfillmentCenterId; UCP search_products available_quantity counts its stock (KB-25388E6C).",
     "file": "inventory/fulfillment-centers",
     "filter": {
       "ffc_id": "FFC-001"
@@ -2123,6 +2125,44 @@
     },
     "notes": "MOQ / pack-size fixture (minQuantity=6, packSize=6, stock=60 — applied at create time from standard-specs.mjs SPEC_OVERLAYS['PROD-103']; reconfirmed live 2026-07-25). Resolves by business key (code/SKU QA-PACK-001) — no runtime GUID pinned here (env-specific; ids live in aliases.<env>.json). NAVIGATE VIA @td(PROD_PACK_SIZE.url), composed as {{FRONT_URL}}@td(PROD_PACK_SIZE.url); /product/<sku> does not resolve. Unblocks CART-054/CART-055. Env var PACK_SIZE_SKU must equal this sku (enforced by td:validate:standard).",
     "_status": "seeded"
+  },
+  "PROD_MIN_ABOVE_STOCK": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-112"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "price": "price",
+      "id": "product_id",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "stock": "stock_qty",
+      "min_qty": "min_quantity"
+    },
+    "notes": "VCST-6054 minimum-order-above-stock fixture: min_qty (3) strictly above stock (2), stock >= 1, packSize 1, stocked only on the FC_EAST fulfillment center. create_cart at quantity = @td(PROD_MIN_ABOVE_STOCK.min_qty) is refused by UCP with inventory_unavailable (available_quantity omitted) - distinct from PROD_OOS (out_of_stock) and PROD_LOW_STOCK (insufficient_stock). STATIC: never mutate its stock. Cannot tell whether UCP evaluates the minimum against the cart or the requested quantity (equal at qty = min). Seeded by seed-standard-products.mjs from test-products.csv PROD-112; id resolves from aliases.<env>.json (on an unseeded env it falls back to the business key PROD-112, not a GUID - prefer capturing products.0.id from search_products). Ordering guarded by td:validate:standard check [14].",
+    "_status": "seeded-20260929"
+  },
+  "PROD_STOCK_DROP": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-113"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "price": "price",
+      "id": "product_id",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "stock": "stock_qty",
+      "min_qty": "min_quantity",
+      "cart_qty": "cart_qty",
+      "dropped_stock": "dropped_stock"
+    },
+    "notes": "VCST-6054 stock-drop fixture: baseline stock 10, cart_qty 2, dropped_stock 1 (1 <= dropped < cart_qty <= stock, min_qty 1 <= dropped). A case carts @td(PROD_STOCK_DROP.cart_qty), then PUT {{BACK_URL}}/api/inventory/plenty [{fulfillmentCenterId:@td(FC_EAST.id), productId:@td(PROD_STOCK_DROP.id), inStockQuantity:@td(PROD_STOCK_DROP.dropped_stock), reservedQuantity:0, status:Enabled}] and expects get_cart/create_checkout to refuse insufficient_stock, then RESTORES inStockQuantity @td(PROD_STOCK_DROP.stock). SHARED MUTABLE fixture - the consuming case owns it until restore; serialise consumers (test-data.md DISPOSABLE FIXTURES rule 4); If a run died before restoring, TEST_ENV=<env> npm run seed:products -- --only PROD-113 resets it: the seeder re-PUTs stock_qty on an existing product every run. Seeded by seed-standard-products.mjs from test-products.csv PROD-113; id resolves from aliases.<env>.json. Ordering guarded by td:validate:standard check [14].",
+    "_status": "seeded-20260929"
   },
   "PROD_TIER_PRICED": {
     "file": "products/test-products",

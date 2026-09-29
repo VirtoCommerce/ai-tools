@@ -1,56 +1,65 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-PUSH-001,Draft Management — Save Push Message as Draft,Admin > Push Messages > Draft Management,Critical,BL-NOTIF-003,,Push Messages module installed and accessible at {{BACK_URL}}; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/push-messages
-[BLADE] wait for Push Messages list blade to open
-[ACT] click 'Add' or 'Create' button
-[BLADE] wait for new message form blade to open
-[ACT] fill message title field
-[ACT] fill message body/content field
-[SAVE] click 'Save as Draft'
-[WAIT] success confirmation visible","[TOAST] success notification appears after save
-[GRID] draft message appears in message list with status 'Draft'
-[FORM] unsaved-changes dialog appears if navigating away without saving","[API] GET /api/platform/pushnotifications returns the saved draft with status=Draft
-[NETWORK] no 4xx/5xx on save request
-[CONSOLE] no JS errors during save","Spinner visible >10s after save, 4xx/5xx on save API call, console TypeError on save action, blade does not close after save",Delete draft message after test via Admin grid delete action,C385358 C385359 | Behavior:push.compose.save-draft,Not Automated
-PUSH-002,Draft Management — Validation on Empty Fields (Negative),Admin > Push Messages > Draft Management,Medium,,,"Push Messages module installed; admin user authenticated; new message form is open","admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/push-messages
-[BLADE] wait for Push Messages list blade to open
-[ACT] click 'Add' or 'Create' button
-[BLADE] wait for new message form blade to open
-[ACT] leave all required fields empty
-[SAVE] click 'Save' or 'Save as Draft'
-[WAIT] validation response visible","[FORM] validation error messages appear on required empty fields
-[FORM] save operation is prevented — blade remains open
-[DOM] error indicator on each empty required field","[NETWORK] no POST request fired to create endpoint (or POST returns 400)
-[CONSOLE] no JS errors during validation trigger","Save proceeds with empty fields, no validation error shown, 500 error on save attempt",none,C385366,Not Automated
-PUSH-003,Draft Management — Save Draft with Schedule Date,Admin > Push Messages > Draft Management,Medium,,,Push Messages module installed; admin user authenticated; new message form is open,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/push-messages
-[BLADE] wait for Push Messages list blade to open
-[ACT] click 'Add' or 'Create' button
-[BLADE] wait for new message form blade to open
-[ACT] fill message title field
-[ACT] fill message body/content field
-[ACT] set schedule date to a future date/time (e.g. tomorrow at 09:00)
-[SAVE] click 'Save as Draft'
-[WAIT] success confirmation visible","[TOAST] success notification appears
-[GRID] draft appears in list with status 'Draft' and the scheduled date displayed
-[FORM] scheduled date/time value persists correctly in the saved draft","[API] GET /api/platform/pushnotifications confirms draft saved with scheduledDate matching input
-[NETWORK] no 4xx/5xx on save
-[CONSOLE] no JS errors","Spinner >10s, schedule date field cleared after save, 4xx/5xx on save, wrong date persisted in response",Delete draft after test,C385368 | Behavior:push.compose.save-draft,Not Automated
-PUSH-004,Draft Management — Edit Existing Draft Message,Admin > Push Messages > Draft Management,High,,,Push Messages module installed; a draft push message exists in the system; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/push-messages
-[BLADE] wait for Push Messages list blade to open
-[GRID] locate existing draft message in list
-[ACT] click draft message row to open it
-[BLADE] wait for message detail blade to open
-[ACT] modify message title or body content
+PUSH-001,Draft Management — Save Push Message as Draft,Admin > Push Messages > Draft Management,Critical,,,Push Messages module installed; admin user authenticated at {{BACK_URL}},"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] fill 'Topic' with an AGENT-TEST- value
+[ACT] type an AGENT-TEST- text in the 'Message' editor
 [SAVE] click 'Save'
 [WAIT] success confirmation visible","[TOAST] success notification appears after save
-[FORM] updated content persists — reopening the draft shows new values
-[GRID] updated title/content reflected in list view","[API] GET /api/platform/pushnotifications/{id} returns updated content
+[GRID] the message appears under left menu 'Drafts' with status 'Draft'
+[FORM] unsaved-changes dialog appears if navigating away without saving","[API] GET /api/platform/pushnotifications returns the saved draft with status=Draft
+[NETWORK] no 4xx/5xx on save request
+[CONSOLE] no JS errors during save","Spinner visible >10s after save, 4xx/5xx on save API call, console TypeError on save action, blade does not close after save","Delete the draft after the test: tick its row checkbox under left menu 'Drafts', then click 'Delete selected'",C385358 C385359 | Behavior:push.compose.save-draft,Not Automated
+PUSH-002,Draft Management — Validation on Empty Fields (Negative),Admin > Push Messages > Draft Management,Medium,,,Push Messages module installed; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] leave 'Message', 'Topic' and 'Recipients list' empty","[FORM] toolbar 'Save' and 'Send' are disabled while 'Message' is empty
+[FORM] the 'New push message' blade remains open and no message is created
+[DOM] the 'Message' field label carries the required marker '*'","[NETWORK] no POST request fired to create endpoint (or POST returns 400)
+[CONSOLE] no JS errors during validation trigger","Save proceeds with empty fields, no validation error shown, 500 error on save attempt",none,C385366,Not Automated
+PUSH-003,Draft Management — Save Draft with Schedule Date,Admin > Push Messages > Draft Management,Medium,,,Push Messages module installed; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] fill 'Topic' with an AGENT-TEST- value
+[ACT] type an AGENT-TEST- text in the 'Message' editor
+[ACT] set 'Schedule send' to a future date and time
+[SAVE] click 'Save'
+[WAIT] success confirmation visible
+[ACT] click left menu 'Drafts'
+[WAIT] Drafts list refreshes
+[ACT] click the saved draft row
+[WAIT] 'Push message details' blade opens","[TOAST] success notification appears
+[GRID] the draft appears under left menu 'Drafts' with status 'Draft'
+[FORM] the reopened draft shows the 'Schedule send' value that was set, and its status remains 'Draft'","[API] GET /api/platform/pushnotifications confirms draft saved with scheduledDate matching input
+[NETWORK] no 4xx/5xx on save
+[CONSOLE] no JS errors","Spinner >10s, schedule date field cleared after save, 4xx/5xx on save, wrong date persisted in response","Delete the draft after the test: tick its row checkbox under left menu 'Drafts', then click 'Delete selected'",C385368 | Behavior:push.compose.save-draft,Not Automated
+PUSH-004,Draft Management — Edit Existing Draft Message,Admin > Push Messages > Draft Management,High,,,Push Messages module installed; an AGENT-TEST- draft push message exists; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click left menu 'Drafts'
+[WAIT] Drafts list shows at least one row
+[ACT] click an AGENT-TEST- draft row to open it
+[WAIT] 'Push message details' blade opens with 'Save', 'Send', 'Clone' and 'Delete' in the toolbar
+[ACT] modify 'Topic' or the 'Message' text
+[SAVE] click 'Save'
+[WAIT] success confirmation visible","[TOAST] success notification appears after save
+[FORM] updated content persists — reopening the draft shows the new 'Topic' / 'Message' values
+[GRID] the updated Topic / Message is reflected in the Drafts list","[API] GET /api/platform/pushnotifications/{id} returns updated content
 [NETWORK] no 4xx/5xx on update request
 [CONSOLE] no JS errors during edit","Spinner >10s, original values persist after save, 4xx/5xx on PUT/PATCH, blade does not close",Revert draft to original content or delete test draft,C385360,Not Automated
-PUSH-005,Draft Management — Delete Draft Message,Admin > Push Messages > Draft Management,High,,,Push Messages module installed; a draft push message exists; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/push-messages
-[BLADE] wait for Push Messages list blade to open
-[GRID] locate existing draft message in list
-[ACT] select draft message (checkbox or row)
-[ACT] click 'Delete' toolbar button
+PUSH-005,Draft Management — Delete Draft Message,Admin > Push Messages > Draft Management,High,,,Push Messages module installed; an AGENT-TEST- draft push message exists; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click left menu 'Drafts'
+[WAIT] Drafts list shows at least one row
+[ACT] tick the row checkbox of an AGENT-TEST- draft
+[ACT] click toolbar 'Delete selected'
 [WAIT] confirmation dialog appears
 [ACT] confirm deletion
 [WAIT] list refreshes","[GRID] deleted draft no longer appears in the message list
@@ -58,61 +67,71 @@ PUSH-005,Draft Management — Delete Draft Message,Admin > Push Messages > Draft
 [DOM] confirmation dialog dismissed after confirm","[API] GET /api/platform/pushnotifications confirms message no longer returned
 [NETWORK] DELETE request returns 200 or 204
 [CONSOLE] no JS errors during delete","Draft still visible in list after delete, confirmation dialog not shown, 4xx/5xx on DELETE request",none (draft deleted),C385363,Not Automated
-PUSH-006,Message List — Search/Filter Messages by Status,Admin > Push Messages > Message List,Medium,,,Push Messages module installed; messages in multiple statuses (Draft / Published / Scheduled) exist; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/push-messages
-[BLADE] wait for Push Messages list blade to open
-[GRID] locate status filter control (dropdown or chip filter)
-[ACT] select status filter value 'Draft'
+PUSH-006,Message List — Filter Messages by Status (Left Menu),Admin > Push Messages > Message List,Medium,,,Push Messages module installed; at least one Draft and one Sent message exist; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click left menu 'Drafts'
 [WAIT] grid refreshes with filtered results
-[ACT] change filter to 'Published'
-[WAIT] grid refreshes","[GRID] only Draft messages shown when 'Draft' filter applied
-[GRID] only Published messages shown when 'Published' filter applied
-[GRID] filter label/chip shows current active filter value
-[GRID] row count changes between filter selections","[NETWORK] filter query includes status parameter in API request
-[CONSOLE] no JS errors during filter interaction","All messages shown regardless of filter, grid does not refresh on filter change, 500 on filter request",Clear status filter after test,C385361,Not Automated
-PUSH-007,Publishing — Publish Message with Schedule Date,Admin > Push Messages > Publishing,Critical,BL-NOTIF-003,,Push Messages module installed; a draft message exists; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/push-messages
-[BLADE] wait for Push Messages list blade to open
-[GRID] locate draft message
-[ACT] click draft message to open detail blade
-[BLADE] wait for detail blade to open
-[ACT] set schedule date to a specific future date/time
-[ACT] click 'Publish' or 'Schedule' button
-[WAIT] success confirmation visible","[TOAST] success notification confirms publication/scheduling
-[GRID] message status changes to 'Scheduled' or 'Published' in list
-[FORM] scheduled date/time preserved correctly","[API] GET /api/platform/pushnotifications/{id} returns status='Scheduled' with correct scheduledDate
+[ACT] click left menu 'Sent'
+[WAIT] grid refreshes","[GRID] only rows with status 'Draft' are shown while 'Drafts' is selected
+[GRID] only rows with status 'Sent' are shown while 'Sent' is selected
+[GRID] the selected left-menu item is highlighted
+[GRID] the footer total ('N–M of T') differs between the two selections","[NETWORK] filter query includes status parameter in API request
+[CONSOLE] no JS errors during filter interaction","All messages shown regardless of filter, grid does not refresh on filter change, 500 on filter request",Click left menu 'All messages' after the test,C385361,Not Automated
+PUSH-007,Scheduling — Send a Draft with a Future Schedule Date,Admin > Push Messages > Publishing,Critical,,,Push Messages module installed; an AGENT-TEST- draft message with at least one recipient exists; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click left menu 'Drafts'
+[WAIT] Drafts list shows at least one row
+[ACT] click an AGENT-TEST- draft row to open it
+[WAIT] 'Push message details' blade opens
+[ACT] set 'Schedule send' to a future date and time
+[ACT] click toolbar 'Send'
+[WAIT] success confirmation visible","[TOAST] success notification confirms the send
+[GRID] the message status is 'Scheduled' and it is listed under left menu 'Scheduled'
+[FORM] 'Schedule send' keeps the date and time that was set","[API] GET /api/platform/pushnotifications/{id} returns status='Scheduled' with correct scheduledDate
 [NETWORK] no 4xx/5xx on publish request
 [CONSOLE] no JS errors","Message remains Draft after publish click, scheduled date lost, 4xx/5xx on publish, status not updated in grid",Delete or revert the scheduled message after test,C385367 | Behavior:push.send.schedule,Not Automated
-PUSH-008,Publishing — Verify Created Date in Store Context,Admin > Push Messages > Publishing,Medium,,,A published/scheduled push message exists with a known scheduled date; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/push-messages
-[BLADE] wait for list blade to open
-[GRID] locate published/scheduled message
-[ACT] click message to open detail blade
-[BLADE] wait for detail blade
-[ACT] inspect the 'Created Date' or publish date field in the store context section
-[ASSERT] verify date displayed matches the scheduled publish date","[FORM] created/publish date shown in store context matches the date set during scheduling
-[FORMAT] date displayed in expected locale format (not raw ISO timestamp)","[API] GET /api/platform/pushnotifications/{id} createdDate or scheduledDate matches UI display
+PUSH-008,Scheduling — Scheduled Date Shown in the Scheduled View,Admin > Push Messages > Publishing,Medium,,,state from PUSH-007: a Scheduled push message with a known 'Schedule send' value exists; admin user authenticated,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click left menu 'Scheduled'
+[WAIT] Scheduled list shows the 'Scheduled date' column
+[GRID] locate the Scheduled message","[GRID] the 'Scheduled date' cell equals the message's 'Schedule send' value
+[FORMAT] the date is shown in locale format (not a raw ISO timestamp)","[API] GET /api/platform/pushnotifications/{id} createdDate or scheduledDate matches UI display
 [CONSOLE] no JS errors","Date field blank, date format garbled, date differs from what was set",none,C385362,Not Automated
-PUSH-009,Recipient Tracking — New Recipients Receive Message When Enabled,Admin > Push Messages > Recipient Tracking,Medium,,,A published push message exists with 'Track New Recipients' enabled; admin user authenticated; at least one new user exists who joined after publication,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/push-messages
-[BLADE] wait for list blade to open
-[GRID] locate published message with Track New Recipients = ON
-[ACT] click message to open detail
-[BLADE] wait for detail blade
-[ACT] verify 'Track New Recipients' toggle is ON
-[ASSERT] confirm at least one new user account was created after message publication
-[ACT] check that new user's push message inbox contains this message","[FORM] 'Track New Recipients' toggle shows ON state
-[DOM] new user's notification inbox contains the tracked message","[API] GET /api/platform/pushnotifications for new user returns the tracked message
+PUSH-009,Recipient Tracking — New Recipients Receive Message When Enabled,Admin > Push Messages > Recipient Tracking,Medium,,,A Sent push message with 'Track new recipients' switched on exists; admin user authenticated; at least one user who matches its recipients list or query was added after it was sent,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click left menu 'Track new recipients'
+[WAIT] list shows the tracked Sent messages
+[ACT] click the tracked message row
+[WAIT] 'Push message details' blade opens
+[ACT] sign in on {{FRONT_URL}} as the newly added user
+[WAIT] authenticated header visible
+[NAV] {{FRONT_URL}}/account/notifications
+[WAIT] notifications page loads","[FORM] the 'Track new recipients' switch is on
+[DOM] the new user's notifications page lists the tracked message body","[API] GET /api/platform/pushnotifications for new user returns the tracked message
 [CONSOLE] no JS errors","New user's inbox does not contain message despite tracking enabled, toggle state not persisted",none,C385364 | Behavior:push.track-new.member-joins,Not Automated
-PUSH-010,Recipient Tracking — New Recipients Do NOT Receive Message When Disabled,Admin > Push Messages > Recipient Tracking,Medium,,,A published push message exists with 'Track New Recipients' disabled; admin user authenticated; a new user account can be created,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}/push-messages
-[BLADE] wait for list blade to open
-[GRID] locate published message
-[ACT] click message to open detail
-[BLADE] wait for detail blade
-[ACT] confirm 'Track New Recipients' toggle is OFF
-[ASSERT] set toggle to OFF and save if not already
-[ACT] create or identify a new user who joined after the message was published
-[ACT] check new user's push notification inbox","[FORM] 'Track New Recipients' toggle shows OFF state
-[DOM] new user's notification inbox does NOT contain this message","[API] GET /api/platform/pushnotifications for new user returns empty or does not contain this message
+PUSH-010,Recipient Tracking — New Recipients Do NOT Receive Message When Disabled,Admin > Push Messages > Recipient Tracking,Medium,,,A Sent push message exists; admin user authenticated; a new user matching its recipients can be created,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click left menu 'Sent'
+[WAIT] Sent list refreshes
+[ACT] click the message row
+[WAIT] 'Push message details' blade opens
+[ACT] switch 'Track new recipients' off if it is on
+[WAIT] the switch shows off
+[ACT] create or identify a user who matches the recipients and was added after the message was sent
+[WAIT] the user account exists
+[ACT] sign in on {{FRONT_URL}} as that user
+[WAIT] authenticated header visible
+[NAV] {{FRONT_URL}}/account/notifications
+[WAIT] notifications page loads","[FORM] the 'Track new recipients' switch shows off
+[DOM] the new user's notifications page does NOT list this message's body","[API] GET /api/platform/pushnotifications for new user returns empty or does not contain this message
 [NETWORK] no delivery request for new user after toggle=OFF
 [CONSOLE] no JS errors","New user receives message despite tracking disabled, 4xx/5xx on toggle save",Delete test user account if created during test,C385365,Not Automated
-PUSH-017,Storefront Notifications Page — List of Received Notifications,Storefront > Notifications,High,BL-NOTIF-001,,User authenticated on storefront; at least 2 push messages have been published and targeted to this user's account or role,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+PUSH-017,Storefront Notifications Page — List of Received Notifications,Storefront > Notifications,High,,,User authenticated on storefront; at least 2 push messages have been published and targeted to this user's account or role,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
 [WAIT] storefront home page loads
 [ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}} if not already signed in
 [WAIT] authenticated session established
@@ -120,7 +139,7 @@ PUSH-017,Storefront Notifications Page — List of Received Notifications,Storef
 [WAIT] notifications page loads","[NAV] URL is {{FRONT_URL}}/account/notifications
 [DOM] notifications list container is visible on the page
 [DOM] at least the 2 seeded push messages are shown as notification items
-[DOM] each notification item shows title/subject text
+[DOM] each notification item shows the message body and a timestamp, and no topic or title
 [FORMAT] notification items ordered by date (newest first)","[API] GET {{BACK_URL}}/api/platform/pushnotifications returns same messages visible in UI
 [NETWORK] no 4xx/5xx on page load or notifications API call
 [CONSOLE] no JS errors on notifications page","Blank page at /account/notifications, spinner does not resolve >10s, 401/403 on notifications API, notification items missing from list even though API returns them","Sign out after test; no data mutation",ECL-14.3 | Behavior:push.inbox,Not Automated
@@ -134,17 +153,17 @@ PUSH-018,Storefront Notifications Page — Pagination for Older Items,Storefront
 [FORMAT] older notifications appear after newer ones (chronological ordering maintained)","[API] paginated GET {{BACK_URL}}/api/platform/pushnotifications?skip=10&count=10 returns next page of messages
 [NETWORK] no 4xx/5xx on pagination request
 [CONSOLE] no JS errors","Pagination control absent when >10 messages exist, 'Load more' click produces no change, duplicate notifications on page 2, 500 on paginated request","Sign out; no data mutation",ECL-14.3,Not Automated
-PUSH-019,Storefront Notifications — Read/Unread Visual State,Storefront > Notifications,High,BL-NOTIF-001,,User authenticated; at least one unread and at least one previously-read push message exist for this user,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
+PUSH-019,Storefront Notifications — Read/Unread Visual State,Storefront > Notifications,High,,,User authenticated; at least one unread and at least one previously-read push message exist for this user,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
 [WAIT] notifications page loads
 [ASSERT] both read and unread notifications are visible in the list
-[ACT] note visual treatment of an unread notification item (bold title, highlight, dot indicator — any visual distinction)
+[ACT] note the unread item's leading dot and tinted card background
 [ACT] click the unread notification item
-[WAIT] notification detail or read state changes","[DOM] unread notifications are visually distinct from read ones (bold, highlight, dot, or other indicator)
+[WAIT] notification detail or read state changes","[DOM] an unread item shows a leading dot and a tinted card background; a read item shows neither
 [STATE] after clicking an unread notification, its visual state changes to 'read' (distinction removed)
 [DOM] the clicked notification no longer shows unread indicator after interaction","[API] GET {{BACK_URL}}/api/platform/pushnotifications after click confirms isNew=false for clicked item
 [NETWORK] mark-read API call fires on notification click (no 4xx/5xx)
 [CONSOLE] no JS errors on click","No visual difference between read and unread items, mark-read API call not fired on click, notification still shows unread indicator after click, 4xx/5xx on mark-read call","Sign out; notification remains read (no cleanup needed)",ECL-7.3 | Behavior:push.manage.mark-read,Not Automated
-PUSH-020,Storefront Notifications — Notification Badge Unread Count,Storefront > Notifications,High,BL-NOTIF-001,,User authenticated; at least one unread push message exists; header/navigation area is visible,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+PUSH-020,Storefront Notifications — Notification Badge Unread Count,Storefront > Notifications,High,,,User authenticated; at least one unread push message exists; header/navigation area is visible,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
 [WAIT] home page loads
 [ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}} if not already
 [WAIT] authenticated session established — header visible
@@ -153,37 +172,39 @@ PUSH-020,Storefront Notifications — Notification Badge Unread Count,Storefront
 [WAIT] dropdown popover appears with notification list
 [NAV] {{FRONT_URL}}/account/notifications
 [WAIT] full notifications page loads
-[ASSERT] verify page heading shows notification count (e.g. 'Notifications 17')","[DOM] bell icon is visible in header navigation
+[ASSERT] page heading shows a count next to 'Notifications'","[DOM] bell icon is visible in header navigation
 [DOM] clicking bell opens a dropdown popover listing recent notifications
-[STATE] dropdown popover shows notification previews (title + timestamp)
-[DOM] full notifications page heading includes total count of notifications
-[STATE] count in heading matches actual number of notification items","[API] GET {{BACK_URL}}/api/platform/pushnotifications?onlyNew=true totalCount matches count shown in page heading
+[STATE] dropdown popover shows notification previews (message body + timestamp)
+[DOM] full notifications page heading shows the unread count
+[STATE] the heading count equals the header bell badge count (both are the unread count)","[API] GET {{BACK_URL}}/api/platform/pushnotifications?onlyNew=true totalCount matches count shown in page heading
 [CONSOLE] no JS errors during dropdown open or page load
 [NETWORK] no 4xx/5xx related to notification endpoints","Bell icon absent in header, dropdown does not open on click, notifications page heading missing count, count mismatch between heading and API response, 4xx/5xx on notification API call","Sign out after test; notification remains read",ECL-7.3 | Behavior:push.inbox,Not Automated
-PUSH-021,Storefront Notifications — Mark All as Read (Bulk Action),Storefront > Notifications,High,BL-NOTIF-001,,User authenticated; multiple unread push messages exist for this user,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
+PUSH-021,Storefront Notifications — Mark All as Read (Bulk Action),Storefront > Notifications,High,,,User authenticated; multiple unread push messages exist for this user,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
 [WAIT] notifications page loads
 [ASSERT] verify multiple unread notifications visible (unread indicator present on multiple items)
-[ACT] click 'Mark all as read' button or bulk action link
-[WAIT] page updates — all notification items reflect read state","[DOM] 'Mark all as read' button or bulk action control is present on the notifications page
+[ACT] open the page options menu (⋮)
+[WAIT] the menu shows 'Mark all as read' and 'Mark all as unread'
+[ACT] click 'Mark all as read'
+[WAIT] page updates — all notification items reflect read state","[DOM] 'Mark all as read' is present in the page options menu (⋮)
 [STATE] all notification items lose unread indicator after 'Mark all as read' action
 [DOM] header notification badge resets to 0 or disappears
 [TOAST] success confirmation message shown (if applicable)","[API] GET {{BACK_URL}}/api/platform/pushnotifications?onlyNew=true returns count=0 after bulk mark-read
 [NETWORK] bulk mark-all-read API call fires with no 4xx/5xx
 [API] mark-all-read response errors[] is empty
 [CONSOLE] no JS errors","'Mark all as read' button absent on page, some notifications remain visually unread after action, badge count does not reset, 500 on mark-all-read call","Sign out; no data restoration needed (all read state acceptable)",ECL-7.3 | Behavior:push.manage.mark-all,Not Automated
-PUSH-022,Storefront Notifications — Notification Inline Content and Read Toggle,Storefront > Notifications,Medium,,,User authenticated; at least one push message with title and body content exists in user's notification inbox,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
+PUSH-022,Storefront Notifications — Notification Inline Content and Read Toggle,Storefront > Notifications,Medium,,,User authenticated; at least one push message with body content exists in user's notification inbox,"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
 [WAIT] notifications page loads
-[ASSERT] verify notification items display full message content inline (title + body visible in list without clicking)
+[ASSERT] notification items display the full message body inline without clicking
 [ACT] click a notification item row
 [WAIT] visual state change occurs
-[ASSERT] verify clicking toggles read/unread state (blue dot appears or disappears)","[DOM] notification list items show full message content inline (not truncated to title only)
-[DOM] notification title is visible for each item
+[ASSERT] verify clicking toggles read/unread state (blue dot appears or disappears)","[DOM] notification list items show full message content inline (not truncated)
+[DOM] no topic or title is shown — each item carries the body and a timestamp only
 [DOM] notification date/timestamp visible and formatted correctly
-[STATE] clicking a notification row toggles its read/unread state (blue dot indicator)
+[STATE] clicking a notification row toggles its read/unread state (leading dot indicator)
 [FORMAT] message content renders correctly — no raw HTML tags or markdown syntax visible","[API] GET {{BACK_URL}}/api/platform/pushnotifications returns items with description/body matching inline content
 [NETWORK] no 4xx/5xx on notification toggle
 [CONSOLE] no JS errors during click/toggle","Content truncated to title only in list view, raw HTML tags visible in rendered message, clicking does not toggle read state, blue dot indicator does not change, 4xx/5xx on toggle request","Sign out; no data mutation",ECL-14.3 | Behavior:push.inbox.rendering,Not Automated
-PUSH-024,Storefront Notifications — Targeting: User Receives Only Own Messages,Storefront > Notifications,High,BL-NOTIF-001,"ECL-7.3","Two user accounts exist (User A and User B); a push message was published targeting only User A's role or user ID; both users are accessible for testing","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}, org_email={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
+PUSH-024,Storefront Notifications — Targeting: User Receives Only Own Messages,Storefront > Notifications,High,,"ECL-7.3","Two user accounts exist (User A and User B); a push message was published targeting only User A's role or user ID; both users are accessible for testing","front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}, org_email={{ORG_USER_EMAIL}}, org_password={{ORG_USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
 [ACT] sign in as {{USER_EMAIL}} (User A — targeted user)
 [WAIT] authenticated session established
 [NAV] {{FRONT_URL}}/account/notifications
@@ -197,13 +218,13 @@ PUSH-024,Storefront Notifications — Targeting: User Receives Only Own Messages
 [DOM] User B's notification list excludes the targeted message","[API] GET {{BACK_URL}}/api/platform/pushnotifications for User B's token does not return the targeted message
 [CONSOLE] no JS errors for either user session","User B sees User A's targeted messages (security/isolation failure), targeted message absent for User A, 4xx on either user's notification fetch","Sign out as User B after test; no data mutation",ECL-7.3 | Behavior:push.inbox.own-only,Not Automated
 PUSH-025,Storefront Notifications — Empty State When No Notifications Exist,Storefront > Notifications,Medium,,,User authenticated; user account has NO push messages (inbox is empty),"front_url={{FRONT_URL}}, email={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
-[ACT] sign in as a user with no push messages (use a fresh account or clear all messages first)
-[WAIT] notifications page loads","[DOM] 'No notifications' empty state message is visible on the page
+[ACT] sign in as a user with no push messages (an account whose inbox has never received a message — 'Clear all' only hides messages from the bell, the page keeps listing them)
+[WAIT] notifications page loads","[DOM] empty state text 'You do not have any new notifications at this time' is visible on the page
 [DOM] notification list is empty — no notification items rendered
 [DOM] no error messages or broken layout elements","[API] GET {{BACK_URL}}/api/platform/pushnotifications for this user returns empty array
 [NETWORK] no 4xx/5xx on page load
 [CONSOLE] no JS errors on empty notifications page","Blank white page with no empty state message, spinner does not resolve, 500 error, error message shown instead of friendly empty state","Sign out after test",ECL-14.3,Not Automated
-PUSH-029,Storefront — Clear All Notifications (Bell Dropdown) and Mark Single as Unread,Storefront > Notifications > Bell Dropdown,High,BL-NOTIF-001,"""ECL-7.3""","""User authenticated with ≥3 notifications (mix of read and unread); bell dropdown accessible in header""","""front_url={{FRONT_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}""","""[NAV] {{FRONT_URL}}
+PUSH-029,Storefront — Clear All Notifications (Bell Dropdown) and Mark Single as Unread,Storefront > Notifications > Bell Dropdown,High,,ECL-7.3,User authenticated with ≥3 notifications (mix of read and unread); bell dropdown accessible in header,"front_url={{FRONT_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
 [ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}} if not already
 [WAIT] header bell icon visible with notification indicator
 [ACT] click bell icon to open notifications dropdown
@@ -213,35 +234,35 @@ PUSH-029,Storefront — Clear All Notifications (Bell Dropdown) and Mark Single 
 [WAIT] dropdown refreshes or closes
 [NAV] {{FRONT_URL}}/account/notifications
 [WAIT] notifications page loads
-[ASSERT] verify notifications list is empty (clear all succeeded)
+[ASSERT] the notifications page still lists the cleared messages (clear all hides them from the bell only)
 [ACT] navigate to a new session where messages exist (or re-seed a single message)
 [NAV] {{FRONT_URL}}/account/notifications
 [WAIT] page loads
 [ASSERT] locate a read notification item (no unread indicator)
-[ACT] click the 'Mark as unread' control on a read notification (icon, checkbox, or context action)
-[WAIT] visual state updates""","""[DOM] 'Clear all' action is present in bell dropdown
+[ACT] click a read notification card (its accessible name is 'Mark as unread')
+[WAIT] visual state updates","[DOM] 'Clear all' action is present in the bell dropdown footer while the inbox has messages
 [STATE] after 'Clear all': bell dropdown shows 'No new notifications' and badge clears to 0 — clear-all resets the bell tray/badge only; full /account/notifications history is RETAINED (not a bulk delete)
 [DOM] bell badge disappears or shows 0 after clear all
-[DOM] after 'Mark as unread': notification shows unread visual indicator (blue dot or bold)
-[STATE] bell badge increments by 1 after marking single notification unread""","""[API] xAPI clearAllPushMessages mutation fires on 'Clear all'; errors[] empty
+[DOM] after 'Mark as unread': notification shows unread visual indicator (leading dot and tinted background)
+[STATE] bell badge increments by 1 after marking single notification unread","[API] xAPI clearAllPushMessages mutation fires on 'Clear all'; errors[] empty
 [API] xAPI pushMessages(unreadOnly: true) returns totalCount=0 after clear all (unread/new tray emptied); pushMessages(unreadOnly: false) totalCount UNCHANGED (history retained, not deleted)
 [API] xAPI markPushMessageUnread mutation fires on 'Mark as unread'; errors[] empty
 [NETWORK] no 4xx/5xx on either mutation
-[CONSOLE] no JS errors""","""'Clear all' absent in dropdown, notifications still visible after clear all, errors[] non-empty on clearAllPushMessages, 'Mark as unread' control absent on a read notification, unread indicator absent after marking as unread""","""Re-seed push messages via admin if needed for subsequent tests; sign out""",COV-2026-06-09-push GAP-005 | Behavior:push.manage.clear-all,validated
-PUSH-033,Storefront — Real-Time Delivery via SignalR Without Page Reload,Storefront > Notifications > Real-Time,High,BL-NOTIF-001,ECL-14.3,"""User {{USER_EMAIL}} logged in on storefront; pushNotificationHub SignalR connection is active; admin can create and send a push message targeting {{USER_EMAIL}} in real time""","""front_url={{FRONT_URL}}, back_url={{BACK_URL}}, store_id={{STORE_ID}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}""","""--- STOREFRONT ---
+[CONSOLE] no JS errors","'Clear all' absent in dropdown, notifications still visible after clear all, errors[] non-empty on clearAllPushMessages, 'Mark as unread' control absent on a read notification, unread indicator absent after marking as unread",Re-seed push messages via admin if needed for subsequent tests; sign out,COV-2026-06-09-push GAP-005 | Behavior:push.manage.clear-all,validated
+PUSH-033,Storefront — Real-Time Delivery via the pushMessageCreated Subscription Without Page Reload,Storefront > Notifications > Real-Time,High,,ECL-14.3,User {{USER_EMAIL}} logged in on storefront; the storefront's xAPI pushMessageCreated subscription (graphql-transport-ws on {{FRONT_URL}}/graphql) is connected; admin can create and send a push message targeting {{USER_EMAIL}} in real time,"front_url={{FRONT_URL}}, back_url={{BACK_URL}}, store_id={{STORE_ID}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","--- STOREFRONT ---
 [NAV] {{FRONT_URL}}
 [ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}}
 [WAIT] authenticated session — bell badge visible
 [ASSERT] record initial bell badge unread count
---- ADMIN (setup — send targeted message via API, admin-authenticated) ---
+--- ADMIN: setup, send a targeted message via the admin API ---
 [API] POST {{BACK_URL}}/api/push-message  body: {""topic"":""AGENT-TEST-realtime"",""shortMessage"":""AGENT-TEST-realtime-body"",""status"":""Sent"",""memberIds"":[""{{TEST_USER_ID}}""]} -> 200 (message created+sent)
---- STOREFRONT (observe — no page reload) ---
-[WAIT] up to 10 seconds for bell badge to update without page reload""","""[DOM] bell badge count increments by 1 within 10s of admin send — without page reload
+--- STOREFRONT: observe without a page reload ---
+[WAIT] up to 10 seconds for bell badge to update without page reload","[DOM] bell badge count increments by 1 within 10s of admin send — without page reload
 [STATE] clicking bell dropdown reveals the new AGENT-TEST-realtime-body message in the list
-[DOM] new message appears at top of dropdown (newest first)""","""[NETWORK] SignalR pushNotificationHub WebSocket connection is active (ws:// or wss:// frame visible in network tab)
+[DOM] new message appears at top of dropdown (newest first)","[NETWORK] SignalR pushNotificationHub WebSocket connection is active (ws:// or wss:// frame visible in network tab)
 [API] xAPI pushMessages(unreadOnly: true) confirms new message in inbox after real-time delivery
-[CONSOLE] no JS errors; no SignalR connection-error events""","""Bell badge does not increment after send (SignalR not connected), badge only updates on page reload, new message absent from dropdown after badge update, AGENT-TEST-realtime-body not in xAPI pushMessages response, console SignalR error""","""REST DELETE {{BACK_URL}}/api/push-message?ids={{RT_MSG_ID}} (will return 500 if Sent — acceptable; log and proceed); sign out""",COV-2026-06-09-push GAP-009 | Behavior:push.deliver.realtime,validated
-PUSH-036,Storefront — Badge Live-Decrement on Read; Bell Dropdown vs Full Page Parity,Storefront > Notifications > Badge,Medium,BL-NOTIF-001,"""ECL-7.3""","""User authenticated with ≥2 unread notifications; bell badge shows unread count""","""front_url={{FRONT_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}""","""[NAV] {{FRONT_URL}}
+[CONSOLE] no JS errors; no SignalR connection-error events","Bell badge does not increment after send (SignalR not connected), badge only updates on page reload, new message absent from dropdown after badge update, AGENT-TEST-realtime-body not in xAPI pushMessages response, console SignalR error",REST DELETE {{BACK_URL}}/api/push-message?ids={{RT_MSG_ID}} (will return 500 if Sent — acceptable; log and proceed); sign out,COV-2026-06-09-push GAP-009 | Behavior:push.deliver.realtime,validated
+PUSH-036,Storefront — Badge Live-Decrement on Read; Bell Dropdown vs Full Page Parity,Storefront > Notifications > Badge,Medium,,ECL-7.3,User authenticated with ≥2 unread notifications; bell badge shows unread count,"front_url={{FRONT_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
 [ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}} if not already
 [WAIT] header visible with bell badge showing unread count
 [ASSERT] record badge count as N
@@ -250,20 +271,20 @@ PUSH-036,Storefront — Badge Live-Decrement on Read; Bell Dropdown vs Full Page
 [ASSERT] record unread item count in dropdown
 [ACT] click one unread notification item in dropdown
 [WAIT] item visual state changes to read
-[ASSERT] observe bell badge count""","""[DOM] badge count decrements by exactly 1 after reading one notification (N → N-1)
+[ASSERT] observe bell badge count","[DOM] badge count decrements by exactly 1 after reading one notification (N → N-1)
 [DOM] clicked notification loses unread indicator in dropdown
 [STATE] badge count in header (N-1) matches unread count shown in dropdown after reading
 [NAV] navigate to {{FRONT_URL}}/account/notifications
-[DOM] full notifications page unread count equals badge count (N-1) — dropdown and full page are in parity""","""[API] xAPI pushMessages(unreadOnly: true) totalCount = N-1 after marking one read
+[DOM] full notifications page unread count equals badge count (N-1) — dropdown and full page are in parity","[API] xAPI pushMessages(unreadOnly: true) totalCount = N-1 after marking one read
 [API] markPushMessageRead mutation fires on click; errors[] empty
-[CONSOLE] no JS errors during read action or badge update""","""Badge count does not decrement after reading (stuck at N), badge decrements by wrong amount, dropdown shows different unread count than full notifications page (parity failure), errors[] non-empty on mark-read mutation, HTTP 4xx/5xx on GraphQL call""","""Sign out; no data mutation needed""",COV-2026-06-09-push GAP-012 | Behavior:push.manage.mark-read,validated
-PUSH-037,Storefront — Notification Link Navigates to Linked Entity (Order / Quote / Shipment),Storefront > Notifications > Navigation,Medium,BL-NOTIF-001,ECL-14.3,"""User authenticated; at least one push message with a link to an order, quote, or shipment exists in the user's inbox (not only category links). NOTE: push-message model has no dedicated link field — a working link requires an HTML <a> anchor embedded directly in shortMessage; self-seed via admin POST /api/push-message if no such message exists.""","""front_url={{FRONT_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}""","""[NAV] {{FRONT_URL}}/account/notifications
+[CONSOLE] no JS errors during read action or badge update","Badge count does not decrement after reading (stuck at N), badge decrements by wrong amount, dropdown shows different unread count than full notifications page (parity failure), errors[] non-empty on mark-read mutation, HTTP 4xx/5xx on GraphQL call",Sign out; no data mutation needed,COV-2026-06-09-push GAP-012 | Behavior:push.manage.mark-read,validated
+PUSH-037,Storefront — Notification Link Navigates to Linked Entity (Order / Quote / Shipment),Storefront > Notifications > Navigation,Medium,,ECL-14.3,"User authenticated; at least one push message with a link to an order, quote, or shipment exists in the user's inbox (not only category links). NOTE: push-message model has no dedicated link field — a working link requires an HTML <a> anchor embedded directly in shortMessage; self-seed via admin POST /api/push-message if no such message exists.","front_url={{FRONT_URL}}, user_email={{USER_EMAIL}}, user_password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/account/notifications
 [ACT] sign in as {{USER_EMAIL}} with {{USER_PASSWORD}} if not already
 [WAIT] notifications page loads
 [ACT] scan notification items for any that contain an embedded URL or action button referencing /account/orders/, /account/quotes/, or /account/shipments/
 [ASSERT] at least one such notification is visible
 [ACT] click the notification link or 'View [entity]' button
-[WAIT] navigation completes — target page loads""","""[NAV] URL navigates to a path matching /account/orders/{id} OR /account/quotes/{id} OR /account/shipments/{id} — NOT a category link
+[WAIT] navigation completes — target page loads","[NAV] URL navigates to a path matching /account/orders/{id} OR /account/quotes/{id} OR /account/shipments/{id} — NOT a category link
 [DOM] target entity page loads with entity details visible (order number, quote ID, or shipment details)
-[DOM] entity referenced in notification matches the entity displayed on the target page""","""[NETWORK] no 4xx on navigation to linked entity (linked entity must exist)
-[CONSOLE] no JS errors during link click or navigation""","""Link navigates to /catalog or other non-entity page (wrong entity scope), 404 on entity page, entity page blank, entity ID in URL does not match notification content""","""Sign out; no data mutation""",COV-2026-06-09-push GAP-013,validated
+[DOM] entity referenced in notification matches the entity displayed on the target page","[NETWORK] no 4xx on navigation to linked entity (linked entity must exist)
+[CONSOLE] no JS errors during link click or navigation","Link navigates to /catalog or other non-entity page (wrong entity scope), 404 on entity page, entity page blank, entity ID in URL does not match notification content",Sign out; no data mutation,COV-2026-06-09-push GAP-013,validated

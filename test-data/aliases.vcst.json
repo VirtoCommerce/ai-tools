@@ -2431,5 +2431,8 @@
     "platform_id": "bc011cd9-e3e4-4947-81c9-ddb6292849fa",
     "user_id": "bc011cd9-e3e4-4947-81c9-ddb6292849fa",
     "role_id": "AGENT-TEST-BrowseFilters-None"
+  },
+  "PROD_MIN_ABOVE_STOCK": {
+    "id": "b3f1fa39-448f-4ca9-8ef9-35c922a15e86"
   }
 }
