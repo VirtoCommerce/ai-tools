@@ -27,6 +27,7 @@
 // log line never does. `toLogLine()` in `verbs.mjs` is the ONE place that distinction lives, and
 // every line is mapped through it on the way into the log blob.
 
+import { statSync } from 'node:fs';
 import { readdir, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -41,7 +42,10 @@ import {
   DISABLED_WHY, HELD_WHY, MUTATIONS, isSynthetic, pushConfirmRequired, kbDisabled, log, orderQueue, queueDir, queuePath, readQueue, recordPush,
   releaseConsumed, runOf, sessionId,
 } from './queue.mjs';
-import { REACH_IDLE_MS, dropReach, idleReaches, reachLine } from './reach.mjs';
+import {
+  REACH_IDLE_MS, dropReach, idleReaches, lineWork, markSent, ownReachDue, reachLine, reachPath, readReach, sessionKeyOf, unsent,
+  workIn,
+} from './reach.mjs';
 import { toLogLine } from './verbs.mjs';
 import { cachedWho } from './who.mjs';
 import { stampCallersFromTranscripts } from './caller.mjs';
@@ -135,13 +139,154 @@ const SESSION_SAFE = /^[A-Za-z0-9_-]+$/;
  * where an operator found them. A file now holds only its own session's lines. The id is used only
  * when it could be a file name; otherwise the line stays with the file it arrived in rather than
  * becoming a path nobody can parse back.
+ *
+ * AND ON THE DAY IT DESCRIBES, which is the day the session STARTED (`firstAt`), not the day it was
+ * published (VCST-6091). A session line is written when the session is judged finished, which can be
+ * days later: two sessions of 2026-09-25 were filed as `log/20260928-*`, beside nothing of theirs,
+ * while their asks sat in `log/20260925-*`. Dated by `firstAt`, the line lands in the session's own
+ * existing file and is merged there. A start already outside the retention window would be deleted
+ * by the same commit that wrote it, so such a line falls back to the ordinary date instead.
+ *
+ * THE WINDOW IS THE ONE `expiredLogs` APPLIES, to the letter: measured from the PUSH clock
+ * (`fallback`), against the START OF THE DAY the name will carry. Measured from the line's own `at`,
+ * or against the instant rather than the day, a start near the edge would be written and deleted by
+ * one commit.
  */
-export function logTargetOf(line, { session, fallback }) {
-  const described = line?.kind === 'session' && typeof line.session === 'string' && SESSION_SAFE.test(line.session)
+export function logTargetOf(line, { session, fallback, retentionDays = RETENTION_DAYS }) {
+  const isSession = line?.kind === 'session';
+  const described = isSession && typeof line.session === 'string' && SESSION_SAFE.test(line.session)
     ? line.session
     : session;
   const t = Date.parse(String(line?.at ?? ''));
-  return logPath(described, Number.isFinite(t) ? new Date(t) : fallback);
+  const dated = Number.isFinite(t) ? new Date(t) : fallback;
+  // No usable date at all goes straight to `logPath`, whose own error names the problem (review 4).
+  if (!(dated instanceof Date) || !Number.isFinite(dated.getTime())) return logPath(described, dated);
+  const began = isSession ? Date.parse(String(line.firstAt ?? '')) : NaN;
+  if (!Number.isFinite(began) || began > dated.getTime()) return logPath(described, dated);
+  const day = new Date(began);
+  const dayStart = Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate());
+  const cut = (fallback instanceof Date ? fallback : dated).getTime() - retentionDays * 24 * 60 * 60 * 1000;
+  return logPath(described, dayStart >= cut ? day : dated);
+}
+
+/**
+ * Does this line reach the public log at all? Two kinds are dropped, both measured as noise on
+ * 2026-09-28, when 472 of the day's 713 lines were bookkeeping (VCST-6091):
+ *
+ *   * A `flush` that SUCCEEDED AND HAS NOTHING TO SAY. The commit already records that a push landed,
+ *     and what it carried. What the commit cannot say is kept: a failure, a redaction, a problem, a
+ *     retry, a capture converted to a confirmation, a note, and WHICH OTHER SESSIONS' QUEUES IT SWEPT
+ *     (the commit message names only the pusher). One such flush line was the only content of a file
+ *     of its own that day (`log/20260928-4d874be4.jsonl`).
+ *   * A `session` line with NO WORK in it. Zero tool calls is a session that did nothing, and there is
+ *     no reach to measure. A session WITH work and zero base calls is the opposite case and is always
+ *     kept: it is exactly what the reach panel exists to count.
+ *
+ * Only log lines are filtered; the queue's mutations are applied before this runs.
+ *
+ * AND AN UNSIGNED LINE MAY BE SIGNED BY THE PUSHER — but only from a file the pusher provably wrote
+ * (`signable`). A line lacking `who` is usually one written on a cold identity cache, before
+ * `resolveWho` had answered: 43 of 2026-09-28's lines were unsigned for that reason alone.
+ */
+export function published(line) {
+  if (line?.kind === 'flush') {
+    return line.ok === false || Boolean(line.redacted || line.problems || line.note || line.retries
+      || line.convertedToConfirm || line.swept?.length);
+  }
+  if (line?.kind === 'session') return lineWork(line) > 0;
+  return true;
+}
+
+/**
+ * Was this file written by the user this process runs as? The one condition under which the pusher's
+ * handle may sign a line that carries none.
+ *
+ * NOT "the queue is one user's", which was this PR's first answer and is false on Linux: `tmpdir()`
+ * is the shared `/tmp` there, so one queue directory can hold several users' files (VCST-6091
+ * review). On POSIX the file's owner is compared with our uid. On Windows there is no uid to compare,
+ * so ownership is the directory's — which holds only for the DEFAULT one, the user's own profile temp.
+ * A `KB_QUEUE_DIR` can point anywhere, a shared folder included, so under one nothing foreign is
+ * ours. A file that cannot be stat'ed is not ours either: an unsigned line stays unsigned.
+ */
+export function ownedByMe(path, {
+  uid = typeof process.getuid === 'function' ? process.getuid() : null,
+  env = process.env,
+} = {}) {
+  try {
+    const s = statSync(path);
+    return uid === null ? !env.KB_QUEUE_DIR : s.uid === uid;
+  } catch {
+    return false;
+  }
+}
+
+/** Does this session's own queue file hold anything yet? */
+function ownQueueHolds(env) {
+  try { return statSync(queuePath(env)).size > 0; } catch { return false; }
+}
+
+/**
+ * Keep ONE `session` line per session in a file: the fullest (most work, ties to the later
+ * `lastAt`), where the first of them stood.
+ *
+ * A session now publishes its own counters as it goes (VCST-6091), so the file would otherwise grow a
+ * prefix copy per publication, each one a subset of the next. `reach()` in the report already takes
+ * the fullest line and nothing reads the others. Dropping them here is not an overwrite in the sense
+ * `unionLines` forbids: the dropped line is the SAME session's counters at an earlier moment, wholly
+ * contained in the one kept.
+ *
+ * EXCEPT ITS START. A state rebuilt after being dropped carries a later `firstAt`, and the report
+ * windows a session by the EARLIEST one across its lines (`reach()`). So the kept line takes the
+ * group's earliest `firstAt`, or the one fact the discarded lines held alone would go with them.
+ *
+ * AND ITS AUTHOR, by the same argument (review 3). One session's lines can disagree about `who` —
+ * a cold identity cache leaves the early ones unsigned — so a fuller unsigned line would otherwise
+ * win over a signed one and publish the session as nobody's. The kept line takes the first `who`
+ * (and `run`) any line of its group carries, when it carries none itself.
+ */
+export function fullestSessionLines(rawLines) {
+  const best = new Map();
+  const earliest = new Map();
+  const known = new Map();
+  const parsed = rawLines.map((raw) => {
+    let l = null;
+    try { l = JSON.parse(raw); } catch { /* not ours to judge — kept as it is */ }
+    return { raw, l };
+  });
+  // Grouped by `sessionKeyOf`, the report's own rule: a legacy `p<pid>` key is two people as often as
+  // one, and merging by the key alone deleted one of them from the public log (VCST-6091 review).
+  const keyOf = (l) => (l?.kind === 'session' && typeof l.session === 'string' ? sessionKeyOf(l) : null);
+  for (const { l } of parsed) {
+    const key = keyOf(l);
+    if (!key) continue;
+    const prior = best.get(key);
+    const fuller = !prior || lineWork(l) > lineWork(prior)
+      || (lineWork(l) === lineWork(prior) && String(l.lastAt ?? l.at ?? '') > String(prior.lastAt ?? prior.at ?? ''));
+    if (fuller) best.set(key, l);
+    const began = typeof l.firstAt === 'string' ? l.firstAt : '';
+    if (began && (!earliest.has(key) || began < earliest.get(key))) earliest.set(key, began);
+    const k = known.get(key) ?? {};
+    known.set(key, { who: k.who ?? l.who, run: k.run ?? l.run });
+  }
+  const placed = new Set();
+  const out = [];
+  for (const { raw, l } of parsed) {
+    const key = keyOf(l);
+    if (!key) { out.push(raw); continue; }
+    if (placed.has(key)) continue;
+    placed.add(key);
+    const kept = best.get(key);
+    const began = earliest.get(key);
+    const { who, run } = known.get(key);
+    const line = {
+      ...kept,
+      ...(began && began !== kept.firstAt ? { firstAt: began } : {}),
+      ...(!kept.who && who ? { who } : {}),
+      ...(!kept.run && run ? { run } : {}),
+    };
+    out.push(JSON.stringify(line) === JSON.stringify(l) ? raw : JSON.stringify(line));
+  }
+  return out;
 }
 
 /**
@@ -170,7 +315,8 @@ export function unionLines(existingText, freshLines) {
   };
   for (const l of String(existingText ?? '').split('\n')) take(l);
   for (const l of freshLines) take(l);
-  return out.length ? `${out.join('\n')}\n` : '';
+  const kept = fullestSessionLines(out);
+  return kept.length ? `${kept.join('\n')}\n` : '';
 }
 
 // ── the queue side ────────────────────────────────────────────────────────────────────────────
@@ -371,6 +517,10 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
           why: dupe ? 'anchors+scope' : 'id-collision',
           when: 'push',
           ...(ok ? {} : { note: 'the duplicate could not be confirmed either' }),
+          // The refusal is about THIS capture, so it carries the capture's author, not the pusher's.
+          // Built here rather than by `log()`, so nothing else would stamp it (VCST-6091: 6 of the
+          // day's unsigned lines on 2026-09-28 were exactly these).
+          ...(line.who ? { who: line.who } : {}),
         });
         if (ok) converted += 1;
         continue;
@@ -395,6 +545,7 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
               + 'confirmed — confirm the incumbent if it is the same fact, or reword this subject and capture again'
             : `${entry.id} is already held by a DIFFERENT subject (${JSON.stringify(idClash.subject)}); `
               + 'nothing was merged and nothing was confirmed — reword this subject and capture again',
+          ...(line.who ? { who: line.who } : {}),
         });
         problems.push({
           id: entry.id,
@@ -551,17 +702,54 @@ async function flushOnce({
   // Only when we are taking our own file at all: under an opportunistic foreign-only sweep
   // (`includeMine: false`) a line written here would sit unsent, and the next flush would write a
   // second one beside it.
+  let ownLine = null;
+  let ownState = null;
   if (includeMine) {
-    for (const state of idleReaches(queueDir(env), { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
+    const dir = queueDir(env);
+    // Asked BEFORE the harvest, which appends foreign states' lines to OUR queue file: asked after, it
+    // would always answer yes, and our counters would ride every harvesting push (review 3).
+    const heldWork = ownQueueHolds(env);
+    // The harvest writes lines and DELETES state files, so a dry run — which must change nothing —
+    // does not run it (review 4).
+    for (const state of dryRun ? [] : idleReaches(dir, { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
+      // Its own last send may already carry everything it did (VCST-6091): then there is nothing new
+      // to say, and the state is dropped without a second, identical line.
+      if (!unsent(dir, state)) { dropReach(dir, state.session); continue; }
       // `who` AND `run` come off the STATE, never off this process: this line describes a session
-      // that has already ended, and we may well be a different person on a different machine under
-      // a different run. `null` where the state never learned one — no identity and no run beats
-      // the wrong one (`core/who.mjs`).
-      const written = await log(reachLine(state), { env, who: state.who ?? null, run: state.run ?? null });
+      // that has already ended, and we may well be a different person under a different run. Where
+      // the state never learned a handle, ours is used ONLY if the state file is provably ours
+      // (`ownedByMe`); otherwise `null` — no identity beats the wrong one (`core/who.mjs`).
+      const who = state.who ?? (ownedByMe(reachPath(dir, state.session), { env }) ? undefined : null);
+      const written = await log(reachLine(state), { env, who, run: state.run ?? null });
       // Dropped only once the line is safely appended. A state file removed after a failed write is
       // a session that silently never existed — the exact hole this whole mechanism was built to
       // close, reintroduced at the last step.
-      if (written.ok) dropReach(queueDir(env), state.session);
+      if (written.ok) dropReach(dir, state.session);
+    }
+    // AND OUR OWN COUNTERS (VCST-6091). The state is kept: this session is still running, and the next
+    // send carries a fuller copy that replaces this one in the file. Three conditions, each closing a
+    // way this line could cost more than it measures:
+    //   * a TOKEN — without one nothing is sent;
+    //   * our own queue already HOLDS work, or our own cadence is due — so a push that exists only
+    //     because another session's file is busy does not become a commit per turn;
+    //   * not a dry run.
+    // AND IT NEVER TOUCHES THE QUEUE (review 4). The line rides this push IN MEMORY and the send mark is
+    // written only once the commit has landed, so a declined, failed or dry push adds nothing of OURS
+    // to the queue and leaves the mark as it was — and a push that never happens queues nothing to
+    // grow. (The harvest above is a different matter and predates this: outside a dry run it still
+    // moves idle states' lines into our queue before any gate. They go out with the next push.)
+    const mine = dryRun || !token ? null : readReach(dir, session);
+    if (mine && workIn(mine) > 0 && unsent(dir, mine)
+      && (heldWork || ownReachDue(dir, session, { now: now().getTime(), state: mine, attempts: false }))) {
+      const who = mine.who ?? cachedWho({ dir, env });
+      ownState = mine;
+      ownLine = {
+        at: now().toISOString(),
+        ...reachLine(mine),
+        ...(mine.run ? { run: mine.run } : {}),
+        ...(who ? { who } : {}),
+        ...(isSynthetic(env) ? { synthetic: true } : {}),
+      };
     }
   }
 
@@ -570,7 +758,13 @@ async function flushOnce({
   const loaded = [];
   for (const f of files) {
     const q = await readQueue({ env, path: f.path });
-    if (q.lines.length) loaded.push({ ...f, lines: orderQueue(q.lines), malformed: q.malformed, raw: q.raw });
+    if (q.lines.length) loaded.push({ ...f, lines: orderQueue(q.lines), malformed: q.malformed, raw: q.raw, signable: f.mine || ownedByMe(f.path, { env }) });
+  }
+  if (ownLine) {
+    const own = loaded.find((f) => f.mine);
+    if (own) own.lines.push(ownLine);
+    // No queue file to release: `virtual` keeps `releaseConsumed` away from a path we never read.
+    else loaded.push({ path: queuePath(env), session, mine: true, lines: [ownLine], raw: null, signable: true, virtual: true });
   }
   if (!loaded.length) {
     await touchStamp({ env, now });
@@ -641,7 +835,14 @@ async function flushOnce({
       // item, so it is merged, never doubled.
       // ONLY WHAT WAS READ is released (`releaseConsumed`): a line appended while this push was in
       // flight stays queued for the next one (PR #313 review — deleting the file whole lost it).
-      for (const f of loaded) { try { await releaseConsumed(f.path, f.raw); } catch { /* merged, not doubled, next time */ } }
+      for (const f of loaded) {
+        if (f.virtual) continue;
+        try { await releaseConsumed(f.path, f.raw); } catch { /* merged, not doubled, next time */ }
+      }
+      // Landed, so it is sent. Not a moment earlier (review 4).
+      if (ownState && !landed.empty) markSent(queueDir(env), session, ownState);
+      // The queue was read and nothing in it reaches the base: released, and said as `nothing`.
+      if (landed.empty) return { state: 'nothing', session, why: 'nothing queued reaches the log' };
       return {
         state: 'pushed',
         session,
@@ -858,12 +1059,20 @@ async function buildPush({ api, prefix, full, loaded, allLines, counts, session,
   // the pushing session, which is why they are routed under `session` even when the only queue
   // taken was somebody else's.
   const byPath = new Map();
-  const route = (line, owner) => {
-    const path = logTargetOf(line, { session: owner, fallback: at });
+  // THE PUSHER SIGNS an unsigned line only from a file it provably wrote (`ownedByMe`), and a `session`
+  // line only when it describes that file's own session — a harvested state is somebody else's until
+  // proven otherwise, and was already judged at harvest.
+  const signFor = (line, f) => (!line.who && who && f?.signable && (line.kind !== 'session' || line.session === f.session)
+    ? { ...line, who }
+    : line);
+  const route = (line, owner, f = null) => {
+    if (!published(line)) return;
+    const signed = signFor(line, f);
+    const path = logTargetOf(signed, { session: owner, fallback: at });
     if (!byPath.has(path)) byPath.set(path, []);
-    byPath.get(path).push(line);
+    byPath.get(path).push(signed);
   };
-  for (const f of loaded) for (const l of f.lines) route(toLogLine(l), f.session);
+  for (const f of loaded) for (const l of f.lines) route(toLogLine(l), f.session, f);
   for (const l of [...applied.extraLog, flushLine]) route(l, session);
 
   const logs = [];
@@ -905,6 +1114,9 @@ async function buildPush({ api, prefix, full, loaded, allLines, counts, session,
 
 /** blobs → tree → commit → ref. The last step is the compare-and-swap that makes it atomic. */
 async function land({ api, plan }) {
+  // Nothing to write is possible since `published()` drops lines (VCST-6091): a queue holding only
+  // a work-less `session` line publishes nothing, and an empty commit would say otherwise.
+  if (!plan.writes.length && !plan.deletions.length) return { ok: true, sha: null, empty: true };
   const blobs = [];
   for (const w of plan.writes) {
     const b = await api.createBlob(w.text);
