@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -273,3 +273,56 @@ test('--deployment on ask reaches the line; omitted or valueless, it leaves no f
   assert.ok(!('deployment' in lines[1]));
   assert.ok(!('deployment' in lines[2]), 'a valueless flag is not a stand called "true"');
 }));
+
+// ─── a preview sends nothing, the post-verb sweep included (VCST-6103) ────────────────────────
+//
+// The hole this pins: `push --dry-run` printed "nothing was sent", then the post-verb sweep found
+// the session's own queue past OWN_FLUSH_AFTER_MS and published the plan it had just shown
+// (VirtoCommerce/vc-knowledge#1). A LOCAL `--base` cannot reproduce it — the sweep never runs
+// against a base it cannot write — so these runs use the declared base's coordinates behind
+// `fixtures/kb-recording-network.mjs`, which answers every fetch with a 503 and records it. Nothing
+// leaves the process. The sweep swallows its own errors, so the only observable is the extra read
+// of the base's head that starts its push: that is what is counted.
+
+const RECORDING_TRAP = join(import.meta.dirname, 'fixtures', 'kb-recording-network.mjs');
+const HEAD_READ = /^GET \S+\/git\/ref\/heads\//;
+
+/** Spawn the CLI with a DUE own-queue and return every fetch it made. */
+async function kbRecorded(args, extraEnv = {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-cli-sweep-'));
+  try {
+    const log = join(dir, 'fetch.log');
+    const at = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // well past OWN_FLUSH_AFTER_MS
+    writeFileSync(join(dir, 'sweep001.jsonl'), `${JSON.stringify({ at, kind: 'ask', q: 'x', matched: [], state: 'miss' })}\n`, 'utf8');
+    try {
+      await run(process.execPath, ['--import', `file://${RECORDING_TRAP.replace(/\\/g, '/')}`, CLI, ...args], {
+        env: {
+          ...process.env, KB_BASE: '', KB_QUEUE_DIR: dir, KB_FETCH_LOG: log, CLAUDE_CODE_HOST_SESSION_ID: 'sweep001',
+          // A token must exist or the push stops before the base is touched; VC_ENV_ROOT keeps the
+          // developer's own .env.local — and whatever token is in it — out of the process.
+          VC_ENV_ROOT: dir, KB_GITHUB_TOKEN: 'not-a-real-token', GITHUB_TOKEN: '', KB_PUSH_CONFIRM: '', KB_NO_SWEEP: '',
+          ...extraEnv,
+        },
+        cwd: REPO,
+      });
+    } catch { /* the 503s make most verbs exit non-zero; the calls are the observable */ }
+    return existsSync(log) ? readFileSync(log, 'utf8').split('\n').filter(Boolean) : [];
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const headReads = (calls) => calls.filter((c) => HEAD_READ.test(c)).length;
+
+test('the recording trap can SEE a post-verb sweep — otherwise the next test proves nothing', async () => {
+  // `stat` reads no head of its own, so any head read is the sweep publishing the due queue.
+  assert.equal(headReads(await kbRecorded(['stat'])), 1, 'a due own-queue is swept after an ordinary verb');
+  assert.equal(headReads(await kbRecorded(['stat'], { KB_NO_SWEEP: '1' })), 0, 'and KB_NO_SWEEP silences it');
+});
+
+test('push --dry-run with a due own-queue starts NO push beyond its own read (VCST-6103)', async () => {
+  const dry = await kbRecorded(['push', '--dry-run']);
+  assert.equal(headReads(dry), 1, `the dry run reads the head once, for its plan, and the sweep never follows:\n${dry.join('\n')}`);
+  assert.ok(!dry.some((c) => !c.startsWith('GET ')), 'and nothing but reads was attempted');
+  assert.equal(headReads(await kbRecorded(['push', '--dry-run', '--no-sweep'])), 1);
+});
