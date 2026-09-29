@@ -49,4 +49,4 @@ USER-047,qa-gift-02@virtocommerce.com,{{TEST_USER_PASSWORD}},Gift,Recipient,Pers
 USER-048,qa-refund@virtocommerce.com,{{TEST_USER_PASSWORD}},Refund,Requester,Personal,+1-555-0148,Active,Refund testing,User requesting refunds,true
 USER-049,qa-cancel@virtocommerce.com,{{TEST_USER_PASSWORD}},Order,Canceller,Personal,+1-555-0149,Active,Order cancellation,User cancelling orders,true
 USER-050,qa-bulk-import@virtocommerce.com,{{TEST_USER_PASSWORD}},Bulk,Importer,Personal,+1-555-0150,Active,Bulk operations,Testing bulk user import,true
-USER-051,agent-test-push-empty@test-agent.com,{{TEST_USER_PASSWORD}},Push,NeverTargeted,Personal,,Active,068 PUSH-025 empty inbox,"Never target this account: a Sent push cannot be deleted and Clear all only hides it, so ONE targeted send ends the empty state for good.",false
+USER-051,agent-test-push-empty@test-agent.com,{{TEST_USER_PASSWORD}},Push,NeverTargeted,Personal,,Active,068 PUSH-025 empty inbox,"Never target this account: a Sent push cannot be deleted and Clear all only hides it, so ONE targeted send ends the empty state for good.",true

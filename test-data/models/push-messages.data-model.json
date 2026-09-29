@@ -28,8 +28,16 @@
         "required": false
       },
       "discriminates": "An organization with no sales rep and a closed member list makes \"who received this push\" answerable from memberIds alone: an unexpected message in a fixture inbox then points at a targeting leak, not at a rep or a runtime-added member.",
-      "limits": "Authored 2026-09-29 by /qa-generate-data (seeded=false); UNVERIFIED until /qa-seed-data provisions it.",
-      "status": "UNVERIFIED"
+      "limits": "A member add or modify event on this org's members re-triggers Track-new-recipients top-ups from OTHER senders' tracked messages (free-text memberQuery), so foreign rows can appear in these inboxes at any time. Seeded 2026-09-29 on vcst.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:b2b -- --only agent-test-push (vcst)",
+          "note": "created ORG-020 AGENT-TEST-Org-PushInbox with its pinned platform_id; reader, bystander and bulk each report me.contact.organizationId = that org; td:validate:push [5]: served by no sales-rep CSV row, no organization-memberships row adds a member",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
     },
     {
       "id": "data.push.recipient.reader",
@@ -58,8 +66,16 @@
         "required": false
       },
       "discriminates": "The only account suite 068 both targets and reads: a targeted send must appear in THIS inbox (reader +1) while the bystander and the bulk account in the same org stay unchanged, which separates per-user targeting from per-org delivery.",
-      "limits": "Authored 2026-09-29 by /qa-generate-data (seeded=false); UNVERIFIED until /qa-seed-data provisions it.",
-      "status": "UNVERIFIED"
+      "limits": "Seeded 2026-09-29 on vcst. The inbox also holds messages from other senders (tracked messages whose free-text memberQuery matches the account); those are not the fixture's and are never counted.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:b2b -- --only agent-test-push (vcst); PUSH_RECIPIENT_READER",
+          "note": "login created with an Approved Purchasing agent membership in AGENT-TEST-Org-PushInbox; password grant with storeId B2B-store returned 200 and me.memberId equals the aliases.vcst.json contactId",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
     },
     {
       "id": "data.push.recipient.bystander",
@@ -86,8 +102,16 @@
         "required": false
       },
       "discriminates": "Same organization as the reader, divergent inboxes: an org-scoped leak shows the reader's targeted message here (reader >= 1, bystander 0), so 'a customer reads only their own rows' is decidable. Two users in different orgs could not tell a per-user filter from a per-org one.",
-      "limits": "Authored 2026-09-29 by /qa-generate-data (seeded=false); UNVERIFIED until /qa-seed-data provisions it.",
-      "status": "UNVERIFIED"
+      "limits": "targeted_messages counts AGENT-TEST rows and memberIds naming; foreign tracked messages (Track new recipients + a free-text memberQuery) also reach this account and are not a targeting leak. Seeded 2026-09-29 on vcst.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:push:verify (vcst) [L3]",
+          "note": "login created in AGENT-TEST-Org-PushInbox (token 200, storeId B2B-store); 0 AGENT-TEST rows in its inbox (hidden included) and no push message whose memberIds names its member id; 3 foreign rows from tracked messages of other senders",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
     },
     {
       "id": "data.push.recipient.bulk",
@@ -113,8 +137,16 @@
         "required": false
       },
       "discriminates": "Keeps destructive bulk writes off the reader: after mark-all-read and clear-all the bulk inbox is all read and hidden while the reader still holds read AND unread messages, so the unread-count cases stay decidable in the same run.",
-      "limits": "Authored 2026-09-29 by /qa-generate-data (seeded=false); UNVERIFIED until /qa-seed-data provisions it.",
-      "status": "UNVERIFIED"
+      "limits": "Seeded 2026-09-29 on vcst. The inbox also holds messages from other senders (tracked messages whose free-text memberQuery matches the account); those are not the fixture's and are never counted.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:b2b -- --only agent-test-push (vcst); PUSH_RECIPIENT_BULK",
+          "note": "login created with an Approved Purchasing agent membership in AGENT-TEST-Org-PushInbox; password grant with storeId B2B-store returned 200 and me.memberId equals the aliases.vcst.json contactId",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
     },
     {
       "id": "data.push.inbox.reader-mixed",
@@ -139,21 +171,26 @@
       "lifecycle": "FIXTURE",
       "shared_state": "Read flags: PUSH-019/022/036 each mark one message read and restore it. Never assert an exact count, and never run mark-all or clear-all against this inbox (that is data.push.recipient.bulk's job).",
       "acquisition": {
-        "strategy": "TRANSITION",
-        "executor": "case",
-        "from_state": {
-          "recipient": "data.push.recipient.reader"
-        },
-        "transition": "Admin POST /api/push-message {status: Sent, memberIds: [reader member id]} per missing message (PUSH_MSG_SEED contract), then markPushMessageRead on one of them as the reader"
+        "strategy": "CREATE",
+        "executor": "seed"
       },
+      "seed_capability": "seed:push",
       "td_alias": "PUSH_DATA_READER_INBOX.recipient",
       "cleanup": {
         "required": true,
         "via": "Cannot be undone: a Sent message can be neither edited nor deleted (push.irrevocable). Isolated by the dedicated reader account in its own organization."
       },
       "discriminates": "unread != total makes 'the Notifications heading and the bell badge show the UNREAD count' (PUSH-020/036) and 'Show unread only' decidable; with every message unread the heading equals both counts and the case passes whichever it shows. 11 visible messages against a page size of 10 makes pagination (PUSH-018) decidable.",
-      "limits": "No seeder reaches this state yet: the population is a case step or a future seed:push. Authored 2026-09-29 by /qa-generate-data (seeded=false); UNVERIFIED until /qa-seed-data provisions it.",
-      "status": "UNVERIFIED"
+      "limits": "seed:push reaches it by TOP-UP (counts the reader's visible AGENT-TEST rows, sends only the difference, keeps >= 1 read and >= 1 unread); a second run sends nothing. It counts only AGENT-TEST rows: tracked messages from other senders also land here (Track new recipients with a free-text memberQuery) and are never counted toward the thresholds. Authored 2026-09-29 by /qa-generate-data; seeded and verified live on vcst 2026-09-29.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:push + npm run seed:push:verify (vcst) [L1]",
+          "note": "seed:push sent 11 (10 plain + 1 link to {{FRONT_URL}}/account/orders), all visible to the reader within 1 s, then marked one read: visible=11 read=1 unread=10, link present. A second run (--only reader) planned and sent 0.",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
     },
     {
       "id": "data.push.inbox.bulk-fresh",
@@ -171,21 +208,26 @@
       ],
       "lifecycle": "SCENARIO",
       "acquisition": {
-        "strategy": "TRANSITION",
-        "executor": "case",
-        "from_state": {
-          "recipient": "data.push.recipient.bulk"
-        },
-        "transition": "Admin POST /api/push-message {status: Sent, memberIds: [bulk member id]} three times, then poll pushMessages(unreadOnly: true) as the bulk user until they appear"
+        "strategy": "CREATE",
+        "executor": "seed"
       },
+      "seed_capability": "seed:push",
       "td_alias": "PUSH_DATA_BULK.recipient",
       "cleanup": {
         "required": true,
         "via": "Cannot be undone (irrevocable Sent messages); mark-all-read and clear-all are the consumption itself. Isolated by the dedicated bulk account."
       },
       "discriminates": "Fresh unread, visible messages give mark-all-read something to flip and clear-all something to hide; after a previous run the inbox is all read and all hidden, and both cases would pass on a no-op.",
-      "limits": "Run PUSH-021 before PUSH-029 in the same run (clear-all hides what mark-all needs visible). Authored 2026-09-29 by /qa-generate-data (seeded=false); UNVERIFIED until /qa-seed-data provisions it.",
-      "status": "UNVERIFIED"
+      "limits": "Run PUSH-021 before PUSH-029 in the same run (clear-all hides what mark-all needs visible). Authored 2026-09-29 by /qa-generate-data; seeded and verified live on vcst 2026-09-29.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:push + npm run seed:push:verify (vcst) [L2]",
+          "note": "seed:push sent 3 fresh messages; all visible and unread to the bulk user within 4 s (batch_marker / batch_message_ids written to aliases.vcst.json)",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
     },
     {
       "id": "data.push.inbox.empty",
@@ -206,8 +248,16 @@
         "required": false
       },
       "discriminates": "Zero messages INCLUDING hidden ones is the only state that shows the empty-state text; an inbox emptied with clear-all still lists its messages on the page (push.manage.clear-all), so it cannot stand in.",
-      "limits": "Replaces {{USER_EMAIL}}, which is empty today but is used by many suites and could receive a broadcast. Authored 2026-09-29 by /qa-generate-data (seeded=false); UNVERIFIED until /qa-seed-data provisions it.",
-      "status": "UNVERIFIED"
+      "limits": "UNREACHABLE AS DESIGNED on vcst. Track new recipients adds any NEW member that matches a tracked message's memberQuery (domain map §1 link 7), and vcst holds 15 tracked Sent messages. Their free-text queries include \"test\", \"Test User\", \"admin\" and \"new\", so any AGENT-TEST / test-agent.com account matches \"test\" the moment it is created. seed:users therefore creates an account that is already non-empty. Resolution belongs to the fixture owner: an account whose name and email match none of the tracked queries (which conflicts with the AGENT-TEST naming the teardown sweep relies on), OR re-point PUSH-025 to a state that tolerates foreign tracked rows. Either way it stays fragile while anyone can create a new tracked message with a broad query. Replaces {{USER_EMAIL}}, which is empty today but is used by many suites and could receive a broadcast.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "npm run seed:users + npm run seed:push:verify (vcst) [L3]",
+          "note": "seed:users created agent-test-push-empty@test-agent.com at 14:36Z; its inbox already held 1 message (pushMessages(withHidden: true).totalCount = 1): the Sent message 31ad4bc9 \"Welcome\", which has Track new recipients on and memberQuery \"test\". Creating the member triggered the recipient top-up. Sent messages cannot be edited or deleted, so this account cannot reach the required state again.",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "DRIFT"
     }
   ],
   "profiles": [

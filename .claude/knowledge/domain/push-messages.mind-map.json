@@ -1136,11 +1136,17 @@
       "name": "A member who newly matches receives the message",
       "branch_kind": "happy",
       "technique": "ST",
-      "status": "UNVERIFIED",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "DOC",
           "ref": "domain-map:push@rev1 §1 link 7",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CB05268E",
+          "note": "on vcst a new member matching a tracked Sent message memberQuery (\"test\") became its recipient at creation; observed on 5 freshly seeded accounts",
           "date": "2026-09-29"
         }
       ],
@@ -1148,7 +1154,7 @@
         "job",
         "event"
       ],
-      "notes": "End-to-end top-up needs a member create/modify (domain map G6)."
+      "notes": "Top-up fires on the member-created event, not only on the recurring job: the account was a recipient within seconds. Consequence: on an environment holding broad tracked queries no new account can start with an empty inbox (data.push.inbox.empty is DRIFT)."
     },
     {
       "id": "push.track-new.add-only",

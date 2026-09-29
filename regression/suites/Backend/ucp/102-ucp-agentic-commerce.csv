@@ -1124,4 +1124,276 @@ checkout_and_handoff
 [COUNT label=cart1] body.cart.line_items.length = 1 {OBSERVED} -- full available stock reserved into ONE line, cleanly, before any depletion
 [ERRORS label=cah1] HTTP 200 {SPEC}
 [DATA label=cah1] body.ok = true {OBSERVED}
-[DATA label=cah1] body.continue_url matches /ucp_session=[A-Za-z0-9_-]+$/ {OBSERVED} -- a non-empty session token of the expected shape was minted -- the earlier [MCP-CAPTURE] would already fail loudly (§3.5) if this were null","[EVIDENCE] TS-17's full scenario (drive live stock below the cart's already-reserved quantity via a separate consuming order, THEN open continue_url, THEN confirm the storefront surfaces the conflict) is deliberately NOT automated here. Two reasons, both load-bearing: (1) QA-LOW-001 is a SHARED disposable fixture other suites/lanes read concurrently (test-data/aliases.json note: 'must NOT go OOS — top up if it drops') — mutating its live stock mid-case, even with a Cleanup restore, risks a concurrently-running lane reading a transiently-wrong stock level; a dedicated single-purpose low-stock fixture would be needed first. (2) 'a separate consuming order' means a completed storefront checkout+payment journey, which is a UI flow this machine-lane grammar cannot drive (no [MCP-*]/[REST-*] tag places a real paid order). Routed as a manual/SBTM follow-up against TS-17 rather than faked with an unverified assertion (per the vs. ORACLE judge: an assertion built on an assumed-not-observed effect is worse than an honest gap).","cart1 or cah1 failing at exactly available stock (would mean even the UNCONTESTED reachable half is broken, and TS-17's full scenario is moot until this half is fixed)","[TEARDOWN] none — anonymous cart, no owner to sweep","VCST-5378 · Archetype:LIFECYCLE · Technique:FLOW | Promoted: REG-2026-09-23-M7 (2026-09-23) | Audited: 2026-09-29 (TCA-2026-09-29); Source: vc-module-ucp/src/VirtoCommerce.UCP.Data/Services/UcpCheckoutService.cs:136; Docs: N/A — project-specific: unreleased behaviour on an open PR build, not described by the PlatformDeveloperGuide UCP (Preview) pages",Automated
+[DATA label=cah1] body.continue_url matches /ucp_session=[A-Za-z0-9_-]+$/ {OBSERVED} -- a non-empty session token of the expected shape was minted -- the earlier [MCP-CAPTURE] would already fail loudly (§3.5) if this were null","[EVIDENCE] UPDATE VCST-6054: the depleted-before-restore half is now authored as UCPA-042 on a dedicated mutable fixture, so the shared-fixture objection below no longer blocks it; the paid-order variant stays manual. Original note. TS-17's full scenario (drive live stock below the cart's already-reserved quantity via a separate consuming order, THEN open continue_url, THEN confirm the storefront surfaces the conflict) is deliberately NOT automated here. Two reasons, both load-bearing: (1) QA-LOW-001 is a SHARED disposable fixture other suites/lanes read concurrently (test-data/aliases.json note: 'must NOT go OOS — top up if it drops') — mutating its live stock mid-case, even with a Cleanup restore, risks a concurrently-running lane reading a transiently-wrong stock level; a dedicated single-purpose low-stock fixture would be needed first. (2) 'a separate consuming order' means a completed storefront checkout+payment journey, which is a UI flow this machine-lane grammar cannot drive (no [MCP-*]/[REST-*] tag places a real paid order). Routed as a manual/SBTM follow-up against TS-17 rather than faked with an unverified assertion (per the vs. ORACLE judge: an assertion built on an assumed-not-observed effect is worse than an honest gap).","cart1 or cah1 failing at exactly available stock (would mean even the UNCONTESTED reachable half is broken, and TS-17's full scenario is moot until this half is fixed)","[TEARDOWN] none — anonymous cart, no owner to sweep","VCST-5378 · Archetype:LIFECYCLE · Technique:FLOW | Promoted: REG-2026-09-23-M7 (2026-09-23) | Audited: 2026-09-29 (TCA-2026-09-29); Source: vc-module-ucp/src/VirtoCommerce.UCP.Data/Services/UcpCheckoutService.cs:136; Docs: N/A — project-specific: unreleased behaviour on an open PR build, not described by the PlatformDeveloperGuide UCP  | Synced: VCST-6054 (2026-09-29) - gap note points to UCPA-042",Automated
+UCPA-037,"update_cart over available_quantity on an EXISTING cart is refused with the line's own line_item_id, and the refusal is NOT atomic — get_cart still shows the rejected quantity with per-line inventory_status and cart.inventory_errors",UCP > Cart > Stock Boundary,Critical,BL-CART-002,ECL-2.1,"REQUIRES the VCST-6054 inventory refusal contract — vc-module-ucp PR #9, first deployed as UCP 3.1007.0-pr-9-91ca; on an older UCP build this case fails by design because the pre-fix envelope answered HTTP 200 success. vcst-qa on a build carrying that PR. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Anonymous flow: buyer_id is captured from create_cart and passed to every later call, never assumed to thread implicitly. Fixture: @td(PROD_LOW_STOCK.sku), read-only — this case never changes stock. The over-stock quantity is DERIVED from the captured available_quantity by concatenating the captured digits with themselves, since the runner has no arithmetic operator for request bodies.",sku=@td(PROD_LOW_STOCK.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-CAPTURE search1.products.0.availability.available_quantity → AVAILABLE_QTY]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": {{AVAILABLE_QTY}} }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-CAPTURE cart1.cart.buyer_id → BUYER_ID]
+[MCP-CAPTURE cart1.cart.line_items.0.id → LINE_ID]
+[MCP-OP upd1]
+update_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""line_items"": [{ ""id"": ""{{LINE_ID}}"", ""quantity"": {{AVAILABLE_QTY}}{{AVAILABLE_QTY}} }] }
+[MCP-EXEC upd1]
+[MCP-OP get1]
+get_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"" }
+[MCP-EXEC get1]","[ERRORS label=cart1] HTTP 200 {OBSERVED} -- the cart is valid at exactly the available stock before the update
+[COUNT label=cart1] body.cart.inventory_errors.length = 0 {OBSERVED}
+[ERRORS label=upd1] HTTP 409 {OBSERVED} -- the refusal is a real error, not a success envelope
+[DATA label=upd1] body.is_error = true {OBSERVED}
+[DATA label=upd1] body.code = insufficient_stock {OBSERVED}
+[DATA label=upd1] body.details.line_item_id = {{LINE_ID}} {OBSERVED} -- the refusal names the EXISTING line, not a new one
+[DATA label=upd1] body.details.product_id = {{PRODUCT_ID}} {OBSERVED}
+[DATA label=upd1] body.details.requested_quantity = {{AVAILABLE_QTY}}{{AVAILABLE_QTY}} {OBSERVED}
+[DATA label=upd1] body.details.available_quantity = {{AVAILABLE_QTY}} {OBSERVED}
+[DATA label=upd1] body.details.retryable = true {OBSERVED}
+[DATA label=upd1] body.details.cart_id = {{CART_ID}} {OBSERVED}
+[DATA label=upd1] body.details.operation_rejected = true {OBSERVED} -- operation_rejected is a refusal flag, not a promise of rollback
+[ERRORS label=get1] HTTP 200 {OBSERVED} -- the cart is still readable after the refusal
+[DATA label=get1] body.cart.line_items.0.quantity = {{AVAILABLE_QTY}}{{AVAILABLE_QTY}} {OBSERVED} -- NOT atomic: XCart kept the rejected quantity on the existing line
+[DATA label=get1] body.cart.line_items.0.requested_quantity = {{AVAILABLE_QTY}}{{AVAILABLE_QTY}} {OBSERVED}
+[DATA label=get1] body.cart.line_items.0.available_quantity = {{AVAILABLE_QTY}} {OBSERVED}
+[DATA label=get1] body.cart.line_items.0.inventory_status = insufficient_stock {OBSERVED}
+[DATA label=get1] body.cart.inventory_errors.0.code = insufficient_stock {OBSERVED}
+[DATA label=get1] body.cart.inventory_errors.0.details.line_item_id = {{LINE_ID}} {OBSERVED}
+[NULL label=get1] body.cart.continue_url {OBSERVED} -- an invalid cart carries no continue_url",[NETWORK] no 5xx on any call: the refusal is a clean 409 tool error and get_cart stays a 200 read,update_cart answering HTTP 200 success while the line silently holds a quantity above stock; the refusal without line_item_id or with a NEW line id; get_cart showing the OLD quantity (rollback that the contract does not promise) or an empty inventory_errors; a continue_url on an invalid cart,"[TEARDOWN] none — anonymous cart, no owner to sweep",VCST-6054 · Archetype:LIFECYCLE · Technique:ST | Authored: TLC-VCST-6054 (2026-09-29),Draft
+UCPA-038,"Checkout guard — a cart left over-stock by update_cart is refused by create_checkout, update_checkout, checkout_and_handoff, handoff_checkout and the REST checkout and handoff routes, each with the same inventory code and no continue_url",UCP > Cart > Checkout Inventory Guard,Critical,BL-CART-002,ECL-2.1,"REQUIRES the VCST-6054 inventory refusal contract — vc-module-ucp PR #9, first deployed as UCP 3.1007.0-pr-9-91ca; on an older UCP build this case fails by design because the pre-fix envelope answered HTTP 200 success. vcst-qa on a build carrying that PR. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Anonymous flow: buyer_id is captured from create_cart and passed to every later call, never assumed to thread implicitly. Fixture: @td(PROD_LOW_STOCK.sku), read-only — this case never changes stock. The invalid cart is built in this case through the non-atomic update_cart path proven by the neighbouring cart-refusal case. The checkout id equals the cart id. REST routes carry the ambient context object from the suite notes.",sku=@td(PROD_LOW_STOCK.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-CAPTURE search1.products.0.availability.available_quantity → AVAILABLE_QTY]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": {{AVAILABLE_QTY}} }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-CAPTURE cart1.cart.buyer_id → BUYER_ID]
+[MCP-CAPTURE cart1.cart.line_items.0.id → LINE_ID]
+[MCP-OP upd1]
+update_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""line_items"": [{ ""id"": ""{{LINE_ID}}"", ""quantity"": {{AVAILABLE_QTY}}{{AVAILABLE_QTY}} }] }
+[MCP-EXEC upd1]
+[MCP-OP cot1]
+create_checkout
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"" }
+[MCP-EXEC cot1]
+[MCP-OP uck1]
+update_checkout
+{ ""checkout_id"": ""{{CART_ID}}"", ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""buyer_email"": ""qa@example.com"" }
+[MCP-EXEC uck1]
+[MCP-OP cah1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah1]
+[MCP-OP hoc1]
+handoff_checkout
+{ ""checkout_id"": ""{{CART_ID}}"", ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"" }
+[MCP-EXEC hoc1]
+[REST-OP rest_chk]
+POST {{FRONT_URL}}/ucp/v1/checkouts
+Content-Type: application/json
+Body: {""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""context"": {""currency"": ""{{CURRENCY_CODE}}"", ""language"": ""{{CULTURE_NAME}}""}}
+[REST-EXEC rest_chk]
+[REST-OP rest_hoc]
+POST {{FRONT_URL}}/ucp/v1/checkouts/{{CART_ID}}/handoff
+Content-Type: application/json
+Body: {""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""context"": {""currency"": ""{{CURRENCY_CODE}}"", ""language"": ""{{CULTURE_NAME}}""}}
+[REST-EXEC rest_hoc]","[ERRORS label=upd1] HTTP 409 {OBSERVED} -- the cart is now over-stock, which is the precondition for every refusal below
+[ERRORS label=cot1] HTTP 409 {OBSERVED} -- create_checkout refuses the invalid cart
+[DATA label=cot1] body.is_error = true {OBSERVED}
+[DATA label=cot1] body.code = insufficient_stock {OBSERVED}
+[DATA label=cot1] body.details.cart_id = {{CART_ID}} {OBSERVED}
+[DATA label=cot1] body.details.line_item_id = {{LINE_ID}} {OBSERVED}
+[DATA label=cot1] body.details.operation_rejected = true {OBSERVED}
+[NULL label=cot1] body.continue_url {OBSERVED}
+[ERRORS label=uck1] HTTP 409 {OBSERVED} -- update_checkout refuses the invalid cart
+[DATA label=uck1] body.is_error = true {OBSERVED}
+[DATA label=uck1] body.code = insufficient_stock {OBSERVED}
+[DATA label=uck1] body.details.cart_id = {{CART_ID}} {OBSERVED}
+[DATA label=uck1] body.details.line_item_id = {{LINE_ID}} {OBSERVED}
+[DATA label=uck1] body.details.operation_rejected = true {OBSERVED}
+[NULL label=uck1] body.continue_url {OBSERVED}
+[ERRORS label=cah1] HTTP 409 {OBSERVED} -- checkout_and_handoff refuses and mints no handoff
+[DATA label=cah1] body.is_error = true {OBSERVED}
+[DATA label=cah1] body.code = insufficient_stock {OBSERVED}
+[DATA label=cah1] body.details.cart_id = {{CART_ID}} {OBSERVED}
+[DATA label=cah1] body.details.line_item_id = {{LINE_ID}} {OBSERVED}
+[DATA label=cah1] body.details.operation_rejected = true {OBSERVED}
+[NULL label=cah1] body.continue_url {OBSERVED}
+[ERRORS label=hoc1] HTTP 409 {OBSERVED} -- handoff_checkout refuses the invalid cart
+[DATA label=hoc1] body.is_error = true {OBSERVED}
+[DATA label=hoc1] body.code = insufficient_stock {OBSERVED}
+[DATA label=hoc1] body.details.cart_id = {{CART_ID}} {OBSERVED}
+[DATA label=hoc1] body.details.line_item_id = {{LINE_ID}} {OBSERVED}
+[DATA label=hoc1] body.details.operation_rejected = true {OBSERVED}
+[NULL label=hoc1] body.continue_url {OBSERVED}
+[ERRORS label=rest_chk] HTTP 409 {OBSERVED} -- the REST checkout route refuses with the same code
+[DATA label=rest_chk] body.code = insufficient_stock {OBSERVED}
+[DATA label=rest_chk] body.details.cart_id = {{CART_ID}} {OBSERVED}
+[DATA label=rest_chk] body.details.line_item_id = {{LINE_ID}} {OBSERVED}
+[DATA label=rest_chk] body.details.operation_rejected = true {OBSERVED}
+[NULL label=rest_chk] body.continue_url {OBSERVED}
+[ERRORS label=rest_hoc] HTTP 409 {OBSERVED} -- the REST handoff route refuses with the same code
+[DATA label=rest_hoc] body.code = insufficient_stock {OBSERVED}
+[DATA label=rest_hoc] body.details.cart_id = {{CART_ID}} {OBSERVED}
+[DATA label=rest_hoc] body.details.line_item_id = {{LINE_ID}} {OBSERVED}
+[DATA label=rest_hoc] body.details.operation_rejected = true {OBSERVED}
+[NULL label=rest_hoc] body.continue_url {OBSERVED}",[NETWORK] no 5xx on any of the six checkout paths: every one is a clean 409,"any checkout path returning 200 with a continue_url for a cart holding a quantity above stock, so the buyer would land on a storefront checkout that cannot be fulfilled; a path answering with a DIFFERENT code than the other five; an unhandled 500","[TEARDOWN] none — anonymous cart, no owner to sweep",VCST-6054 · Archetype:SILENT · Technique:DT | Authored: TLC-VCST-6054 (2026-09-29),Draft
+UCPA-039,Correcting the over-stock line back to available_quantity clears the cart's inventory errors and makes get_cart and checkout_and_handoff succeed on the SAME cart — no order is placed,UCP > Cart > Checkout Inventory Guard,High,BL-CART-002,ECL-2.1,"REQUIRES the VCST-6054 inventory refusal contract — vc-module-ucp PR #9, first deployed as UCP 3.1007.0-pr-9-91ca; on an older UCP build this case fails by design because the pre-fix envelope answered HTTP 200 success. vcst-qa on a build carrying that PR. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Anonymous flow: buyer_id is captured from create_cart and passed to every later call, never assumed to thread implicitly. Fixture: @td(PROD_LOW_STOCK.sku), read-only — this case never changes stock. The cart is first pushed over-stock through update_cart, then repaired in place. Only the handoff is minted; the storefront restore and any order placement are out of scope.",sku=@td(PROD_LOW_STOCK.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-CAPTURE search1.products.0.availability.available_quantity → AVAILABLE_QTY]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": {{AVAILABLE_QTY}} }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-CAPTURE cart1.cart.buyer_id → BUYER_ID]
+[MCP-CAPTURE cart1.cart.line_items.0.id → LINE_ID]
+[MCP-OP upd1]
+update_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""line_items"": [{ ""id"": ""{{LINE_ID}}"", ""quantity"": {{AVAILABLE_QTY}}{{AVAILABLE_QTY}} }] }
+[MCP-EXEC upd1]
+[MCP-OP cah1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah1]
+[MCP-OP fix1]
+update_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""line_items"": [{ ""id"": ""{{LINE_ID}}"", ""quantity"": {{AVAILABLE_QTY}} }] }
+[MCP-EXEC fix1]
+[MCP-OP get2]
+get_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"" }
+[MCP-EXEC get2]
+[MCP-OP cah2]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""buyer_id"": ""{{BUYER_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah2]
+[MCP-CAPTURE cah2.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION]","[ERRORS label=upd1] HTTP 409 {OBSERVED} -- the cart is over-stock before the repair
+[ERRORS label=cah1] HTTP 409 {OBSERVED} -- the guard is closed while the cart is invalid
+[ERRORS label=fix1] HTTP 200 {OBSERVED} -- the repair back to the available quantity is accepted
+[COUNT label=fix1] body.cart.inventory_errors.length = 0 {OBSERVED}
+[DATA label=fix1] body.cart.line_items.0.quantity = {{AVAILABLE_QTY}} {OBSERVED}
+[ERRORS label=get2] HTTP 200 {OBSERVED}
+[COUNT label=get2] body.cart.inventory_errors.length = 0 {OBSERVED} -- the stale error list is gone
+[DATA label=get2] body.cart.id = {{CART_ID}} {OBSERVED} -- the SAME cart was repaired, not replaced
+[DATA label=get2] body.cart.line_items.0.quantity = {{AVAILABLE_QTY}} {OBSERVED}
+[ERRORS label=cah2] HTTP 200 {OBSERVED}
+[DATA label=cah2] body.ok = true {OBSERVED}
+[DATA label=cah2] body.cart_id = {{CART_ID}} {OBSERVED}
+[DATA label=cah2] body.continue_url matches /ucp_session=[A-Za-z0-9_-]+$/ {OBSERVED} -- a session token of the expected shape is minted once the cart is valid",,the repaired cart still refused by checkout_and_handoff because a stale inventory_errors list survived the repair; get_cart still reporting an error after the quantity is back within stock; the repair creating a NEW cart instead of fixing the line,"[TEARDOWN] none — anonymous cart, no owner to sweep; the minted handoff is never opened and expires on its own",VCST-6054 · Archetype:LIFECYCLE · Technique:FLOW | Authored: TLC-VCST-6054 (2026-09-29),Draft
+UCPA-040,"create_cart for a zero-stock product is refused as out_of_stock — available_quantity 0 and retryable false, a different shape than the insufficient_stock shortage",UCP > Cart > Stock Boundary,Critical,BL-CART-002,ECL-2.1,"REQUIRES the VCST-6054 inventory refusal contract — vc-module-ucp PR #9, first deployed as UCP 3.1007.0-pr-9-91ca; on an older UCP build this case fails by design because the pre-fix envelope answered HTTP 200 success. vcst-qa on a build carrying that PR. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Fixture: @td(PROD_OOS.sku), permanently zero stock and read-only — this case never changes stock. Anonymous flow. The requested quantity is the minimum non-zero request, because any request above zero exceeds a stock of zero.",sku=@td(PROD_OOS.sku),"[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-CAPTURE search1.products.0.availability.available_quantity → AVAILABLE_QTY]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": 1 }] }
+[MCP-EXEC cart1]","[ERRORS label=search1] HTTP 200 {OBSERVED}
+[DATA label=search1] body.products.0.availability.available_quantity = 0 {OBSERVED} -- the fixture really holds zero stock, so the refusal below is decidable
+[ERRORS label=cart1] HTTP 409 {OBSERVED} -- the refusal is a real error, not a success envelope
+[DATA label=cart1] body.is_error = true {OBSERVED}
+[DATA label=cart1] body.code = out_of_stock {OBSERVED} -- zero stock is its own code, not insufficient_stock
+[DATA label=cart1] body.details.product_id = {{PRODUCT_ID}} {OBSERVED}
+[DATA label=cart1] body.details.requested_quantity = 1 {OBSERVED}
+[DATA label=cart1] body.details.available_quantity = {{AVAILABLE_QTY}} {OBSERVED} -- present and zero, unlike inventory_unavailable which omits it
+[DATA label=cart1] body.details.retryable = false {OBSERVED} -- a smaller quantity cannot fix a product with no stock
+[DATA label=cart1] body.details.operation_rejected = true {OBSERVED}",,"HTTP 200 success with an empty or silently dropped line for a zero-stock product; code insufficient_stock instead of out_of_stock; retryable true, which would send an agent into a retry loop with smaller quantities; available_quantity absent","[TEARDOWN] none — refused add, no cart state to sweep",VCST-6054 · Archetype:BOUNDARY · Technique:EP | Authored: TLC-VCST-6054 (2026-09-29),Draft
+UCPA-041,"create_cart where the minimum order quantity is ABOVE the stock is refused as inventory_unavailable — not retryable, and available_quantity is OMITTED rather than reported as 0",UCP > Cart > Stock Boundary,High,BL-CART-002,ECL-2.1,"REQUIRES the VCST-6054 inventory refusal contract — vc-module-ucp PR #9, first deployed as UCP 3.1007.0-pr-9-91ca; on an older UCP build this case fails by design because the pre-fix envelope answered HTTP 200 success. vcst-qa on a build carrying that PR. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Anonymous flow. Fixture: @td(PROD_MIN_ABOVE_STOCK.sku), a STATIC product whose minimum order quantity is strictly above its stock, so it can never be ordered; this case never changes stock. The requested quantity is the fixture's own minimum, the smallest quantity the product allows.","sku=@td(PROD_MIN_ABOVE_STOCK.sku), min_qty=@td(PROD_MIN_ABOVE_STOCK.min_qty), stock=@td(PROD_MIN_ABOVE_STOCK.stock)","[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": {{min_qty}} }] }
+[MCP-EXEC cart1]","[ERRORS label=cart1] HTTP 409 {OBSERVED} -- the refusal is a real error, not a success envelope
+[DATA label=cart1] body.is_error = true {OBSERVED}
+[DATA label=cart1] body.code = inventory_unavailable {OBSERVED} -- a minimum above stock is its own code, neither insufficient_stock nor out_of_stock
+[DATA label=cart1] body.details.product_id = {{PRODUCT_ID}} {OBSERVED}
+[DATA label=cart1] body.details.requested_quantity = {{min_qty}} {OBSERVED}
+[DATA label=cart1] body.details.retryable = false {OBSERVED} -- no quantity can satisfy a minimum that exceeds stock
+[DATA label=cart1] body.details.operation_rejected = true {OBSERVED}
+[NULL label=cart1] body.details.available_quantity {OBSERVED} -- omitted, not reported as 0, because 0 would misstate a product that has stock",,"HTTP 200 success with the line silently dropped; code insufficient_stock or out_of_stock for a product that has stock but an unreachable minimum; retryable true, which invites an agent to loop; available_quantity reported as 0","[TEARDOWN] none — refused add, no cart state to sweep",VCST-6054 · Archetype:BOUNDARY · Technique:BVA | Authored: TLC-VCST-6054 (2026-09-29),Draft
+UCPA-042,"Stock dropping AFTER a valid handoff was minted is refused by create_checkout, checkout_and_handoff and the storefront restore, all with insufficient_stock, and a refused restore does NOT consume the token",UCP > Handoff > Stock Conflict (TS-17),Critical,BL-CART-002,ECL-2.2,"REQUIRES the VCST-6054 inventory refusal contract — vc-module-ucp PR #9, first deployed as UCP 3.1007.0-pr-9-91ca; on an older UCP build this case fails by design because the pre-fix envelope answered HTTP 200 success. vcst-qa on a build carrying that PR. MCP endpoint {{FRONT_URL}}/ucp/mcp — STOREFRONT host only (Platform host cannot mint a matching-audience token; see suite notes). Token recipe, ambient REST context and the SEARCH_TERM rule are in the suite notes — do not restate them per case. Authenticated flow as @td(UCP_CONTRACT_BUYER.email), because an anonymous handoff can only be restored by the same anonymous identity and this case must switch to the platform administrator in the middle to change stock. Fixture: @td(PROD_STOCK_DROP.sku), a SHARED MUTABLE product owned by this case for its duration: baseline stock, a cart quantity at or below it and a dropped stock strictly below the cart quantity all come from the alias. Stock is changed with PUT /api/inventory/plenty on the fulfillment center @td(FC_EAST.id) and restored by a step in the case and again by Cleanup, so an aborted run leaves the baseline. Never run in parallel with another consumer of this fixture. No order is placed. Closes the documented gap of the stock-depleted-before-restore half of the neighbouring TS-17 case.","sku=@td(PROD_STOCK_DROP.sku), baseline=@td(PROD_STOCK_DROP.stock), cart_qty=@td(PROD_STOCK_DROP.cart_qty), dropped=@td(PROD_STOCK_DROP.dropped_stock)","[AUTH role=UCP_CONTRACT_BUYER]
+[MCP-OP search1]
+search_products
+{ ""store_id"": ""{{STORE_ID}}"", ""query"": ""{{sku}}"", ""limit"": 5 }
+[MCP-EXEC search1]
+[MCP-CAPTURE search1.products.0.id → PRODUCT_ID]
+[MCP-CAPTURE search1.products.0.availability.available_quantity → AVAILABLE_QTY]
+[MCP-OP cart1]
+create_cart
+{ ""store_id"": ""{{STORE_ID}}"", ""line_items"": [{ ""product_id"": ""{{PRODUCT_ID}}"", ""quantity"": {{cart_qty}} }] }
+[MCP-EXEC cart1]
+[MCP-CAPTURE cart1.cart.id → CART_ID]
+[MCP-CAPTURE cart1.cart.line_items.0.quantity → LINE_QTY]
+[MCP-OP cah1]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah1]
+[MCP-CAPTURE cah1.continue_url matching /ucp_session=([A-Za-z0-9_-]+)/ → UCP_SESSION]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP drop]
+PUT {{BACK_URL}}/api/inventory/plenty
+Content-Type: application/json
+Body: [{""fulfillmentCenterId"": ""@td(FC_EAST.id)"", ""productId"": ""{{PRODUCT_ID}}"", ""inStockQuantity"": {{dropped}}, ""reservedQuantity"": 0, ""status"": ""Enabled""}]
+[REST-EXEC drop]
+[WAIT seconds=45]
+[AUTH role=UCP_CONTRACT_BUYER]
+[MCP-OP cot1]
+create_checkout
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"" }
+[MCP-EXEC cot1]
+[MCP-OP cah2]
+checkout_and_handoff
+{ ""store_id"": ""{{STORE_ID}}"", ""cart_id"": ""{{CART_ID}}"", ""shipping_address"": { ""first_name"": ""QA"", ""last_name"": ""Agent"", ""line1"": ""1 Test Way"", ""city"": ""Seattle"", ""region"": ""WA"", ""postal_code"": ""98101"", ""country_code"": ""USA"" } }
+[MCP-EXEC cah2]
+[REST-OP restore1]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION}}""}
+[REST-EXEC restore1]
+[REST-OP restore2]
+POST {{FRONT_URL}}/ucp/v1/internal/handoff/restore
+Content-Type: application/json
+Body: {""ucp_session"": ""{{UCP_SESSION}}""}
+[REST-EXEC restore2]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP back]
+PUT {{BACK_URL}}/api/inventory/plenty
+Content-Type: application/json
+Body: [{""fulfillmentCenterId"": ""@td(FC_EAST.id)"", ""productId"": ""{{PRODUCT_ID}}"", ""inStockQuantity"": {{baseline}}, ""reservedQuantity"": 0, ""status"": ""Enabled""}]
+[REST-EXEC back]
+[AUTH role=UCP_CONTRACT_BUYER]","[DATA label=search1] body.products.0.availability.available_quantity = {{baseline}} {OBSERVED} -- the fixture starts at its baseline stock
+[ERRORS label=cah1] HTTP 200 {OBSERVED} -- a valid handoff is minted while stock covers the cart
+[ERRORS label=drop] HTTP 200 {OBSERVED} -- the administrator lowered the stock below the cart quantity
+[ERRORS label=cot1] HTTP 409 {OBSERVED}
+[DATA label=cot1] body.code = insufficient_stock {OBSERVED} -- create_checkout refuses once stock no longer covers the cart
+[DATA label=cot1] body.details.requested_quantity = {{LINE_QTY}} {OBSERVED} -- the quantity the cart really holds, captured from the cart itself
+[DATA label=cot1] body.details.available_quantity = {{dropped}} {OBSERVED}
+[ERRORS label=cah2] HTTP 409 {OBSERVED}
+[DATA label=cah2] body.code = insufficient_stock {OBSERVED} -- checkout_and_handoff mints no new handoff
+[NULL label=cah2] body.continue_url {OBSERVED}
+[ERRORS label=restore1] HTTP 409 {OBSERVED} -- the storefront restore of the EARLIER token is refused for stock
+[DATA label=restore1] body.code = insufficient_stock {OBSERVED}
+[ERRORS label=restore2] HTTP 409 {OBSERVED} -- a second attempt is refused for stock again, not as an invalid session, so the first refusal did NOT consume the token
+[DATA label=restore2] body.code = insufficient_stock {OBSERVED}
+[ERRORS label=back] HTTP 200 {OBSERVED} -- the administrator restored the baseline stock",,"the restore or a checkout path answering 200 after stock dropped below the cart quantity, so the buyer reaches a storefront checkout that cannot be fulfilled; the refused restore answering 400 on its second attempt, which means the refusal consumed the token and the buyer lost a cart they could have repaired; a stock change that has not landed within the wait, which is a lag finding and not a contract finding","[AUTH role=ADMIN_DEFAULT]
+[REST PUT {{BACK_URL}}/api/inventory/plenty]
+[{""fulfillmentCenterId"": ""@td(FC_EAST.id)"", ""productId"": ""{{PRODUCT_ID}}"", ""inStockQuantity"": {{baseline}}, ""reservedQuantity"": 0, ""status"": ""Enabled""}]
+[REST DELETE {{BACK_URL}}/api/carts?ids={{CART_ID}}]",VCST-6054 · VCST-5378 · Archetype:LIFECYCLE · Technique:ST | Authored: TLC-VCST-6054 (2026-09-29),Draft

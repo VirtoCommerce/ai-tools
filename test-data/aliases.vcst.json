@@ -2437,5 +2437,32 @@
   },
   "PROD_STOCK_DROP": {
     "id": "08807dbf-2e34-4d0f-854e-27abe0a75e39"
+  },
+  "PUSH_RECIPIENT_READER": {
+    "platform_id": "63fbba88-adf0-4025-9145-4782a66f4ff5",
+    "userId": "63fbba88-adf0-4025-9145-4782a66f4ff5",
+    "contactId": "1c985350-9945-4461-87cc-50b76c7db777"
+  },
+  "PUSH_RECIPIENT_BYSTANDER": {
+    "platform_id": "d4b5e572-3607-4bdb-b60c-f38f843d0a96",
+    "userId": "d4b5e572-3607-4bdb-b60c-f38f843d0a96",
+    "contactId": "a92758cf-4c3e-47ad-ada2-dca74bfa9082"
+  },
+  "PUSH_RECIPIENT_BULK": {
+    "platform_id": "427cf3ee-c4ad-46c9-8040-a7822bef6bf4",
+    "userId": "427cf3ee-c4ad-46c9-8040-a7822bef6bf4",
+    "contactId": "fab4e786-3db8-43c5-9efe-52d9ed72c9ef"
+  },
+  "PUSH_RECIPIENT_API": {
+    "platform_id": "d504cb3e-5520-4531-b31e-196bc54207e7",
+    "userId": "d504cb3e-5520-4531-b31e-196bc54207e7",
+    "contactId": "d0e48056-1afc-41eb-ae7b-28a92e23dcb2"
+  },
+  "PUSH_DATA_READER_INBOX": {
+    "link_message_id": "759e4012-ee56-4bfe-9347-0899a96845a5"
+  },
+  "PUSH_DATA_BULK": {
+    "batch_marker": "AGENT-TEST-bulk-20260929T1446",
+    "batch_message_ids": "eeff03dc-3e43-489f-adc8-45f9eef9d6be;2a70f33f-8083-4874-a527-80a68ba00f04;2cbca8a9-6a5c-4acd-a1d5-6abbc52f83b0"
   }
 }
