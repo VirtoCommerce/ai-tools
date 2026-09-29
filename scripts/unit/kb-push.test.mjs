@@ -179,7 +179,7 @@ const linesOfSession = (state, session) => [...state.files]
  * something is, because that is a fact the commit cannot state. Tests that pin what the FLUSH LINE
  * carries queue one of these, so there is a flush line to read.
  */
-const converting = () => captureLine(makeEntry({ id: 'KB-99999999', subject: 'a fact, seen again', anchors: ['/cart'] }));
+const converting = () => captureLine(makeEntry({ id: 'KB-99999999', subject: 'A fact.', anchors: ['/cart'] }));
 
 /** The published `session` line describing `id`, read from THAT session's file — where it now lives. */
 const sessionLine = (state, id) => linesOfSession(state, id).find((l) => l.kind === 'session' && l.session === id);
@@ -547,11 +547,11 @@ test('a foreign queue file whose name cannot be a session key is not swept', () 
 test('a capture whose fact arrived in the base since it was queued becomes a CONFIRM', () => withQueue(async ({ dir, env }) => {
   // Session A captured this at 10:00 and pushed. Session B's cached index predates that, so B's
   // session-time check found nothing at 10:05. This is what closes the race.
-  const theirs = makeEntry({ id: 'KB-AAAAAAAA', subject: 'their wording of it', anchors: ['/company/members'], scope: ['surface=storefront-ui'] });
+  const theirs = makeEntry({ id: 'KB-AAAAAAAA', subject: 'members Active column reads contact status', anchors: ['/company/members'], scope: ['surface=storefront-ui'] });
   const state = makeBase([theirs]);
   const api = fakeApi(state);
 
-  const mine = makeEntry({ id: 'KB-BBBBBBBB', subject: 'my wording of it', anchors: ['/company/members'], scope: ['surface=storefront-ui'] });
+  const mine = makeEntry({ id: 'KB-BBBBBBBB', subject: 'Members: Active column reads contact status.', anchors: ['/company/members'], scope: ['surface=storefront-ui'] });
   await writeQueue(dir, SESSION, [captureLine(mine)]);
 
   const r = await run(env, api);
@@ -567,7 +567,7 @@ test('a capture whose fact arrived in the base since it was queued becomes a CON
   const refused = lines.find((l) => l.kind === 'capture-refused');
   assert.deepEqual(
     { dupeOf: refused.dupeOf, why: refused.why, when: refused.when },
-    { dupeOf: 'KB-AAAAAAAA', why: 'anchors+scope', when: 'push' },
+    { dupeOf: 'KB-AAAAAAAA', why: 'anchors+scope+claim', when: 'push' },
   );
   assert.equal(lines.find((l) => l.kind === 'flush').convertedToConfirm, 1);
 }));
@@ -581,6 +581,24 @@ test('a DIFFERENT scope on the same anchor is a different fact, and still gets w
   const r = await run(env, fakeApi(state));
   assert.equal(r.converted, 0);
   assert.ok(state.files.has('v2/entries/KB-BBBBBBBB.md'), 'the same coordinate on two surfaces is two facts');
+}));
+
+test('a DIFFERENT claim at the same anchors and scope is written as its own entry and confirms NOTHING (VCST-6102)', () => withQueue(async ({ dir, env }) => {
+  // 2026-09-28: an expired-password capture was converted into a confirmation of KB-C60BA776 (a Sales
+  // Rep blade fact) because both anchored at one coordinate. The claim was lost; the incumbent gained trust.
+  const theirs = makeEntry({ id: 'KB-AAAAAAAA', subject: 'Sales Rep details blade requires first/last name', anchors: ['/api/members'], scope: ['surface=admin-spa'] });
+  const state = makeBase([theirs]);
+  const before = state.files.get('v2/entries/KB-AAAAAAAA.md');
+  const mine = makeEntry({ id: 'KB-BBBBBBBB', subject: 'vcptcore-qa admin password is expired', anchors: ['/api/members'], scope: ['surface=admin-spa'] });
+  await writeQueue(dir, SESSION, [captureLine(mine)]);
+
+  const r = await run(env, fakeApi(state));
+  assert.equal(r.state, 'pushed', r.why);
+  assert.equal(r.converted, 0);
+  assert.ok(state.files.has('v2/entries/KB-BBBBBBBB.md'), 'the new claim is written');
+  assert.equal(state.files.get('v2/entries/KB-AAAAAAAA.md'), before, 'the incumbent gained no evidence');
+  const index = JSON.parse(state.files.get('v2/index.json'));
+  assert.deepEqual(index.entries.map((e) => [e.id, e.trust]).sort(), [['KB-AAAAAAAA', 1], ['KB-BBBBBBBB', 1]]);
 }));
 
 test('a SAME-subject id collision at different anchors is REFUSED at push — never merged, prose never lost silently', () => withQueue(async ({ dir, env }) => {
@@ -649,8 +667,8 @@ test('an id collision between DIFFERENT subjects is refused, never merged', () =
 test('two captures of one fact in ONE session: the second converts against the first', () => withQueue(async ({ dir, env }) => {
   // The session-time check only ever looks at the BASE, so it cannot catch this one.
   const state = makeBase([makeEntry({ id: 'KB-99999999', subject: 'unrelated', anchors: ['/z'] })]);
-  const one = makeEntry({ id: 'KB-AAAAAAAA', subject: 'first wording', anchors: ['/dup'], scope: ['surface=storefront-ui'] });
-  const two = makeEntry({ id: 'KB-BBBBBBBB', subject: 'second wording', anchors: ['/dup'], scope: ['surface=storefront-ui'] });
+  const one = makeEntry({ id: 'KB-AAAAAAAA', subject: 'one fact at dup', anchors: ['/dup'], scope: ['surface=storefront-ui'] });
+  const two = makeEntry({ id: 'KB-BBBBBBBB', subject: 'One fact, at dup.', anchors: ['/dup'], scope: ['surface=storefront-ui'] });
   await writeQueue(dir, SESSION, [captureLine(one), captureLine(two)]);
 
   const r = await run(env, fakeApi(state));
@@ -694,7 +712,7 @@ test('422: the ref moved — re-read, re-apply, retry, and the other session\'s 
 
 test('a capture that the OTHER session already made is converted on the retry, not duplicated', () => withQueue(async ({ dir, env }) => {
   const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
-  const theirs = makeEntry({ id: 'KB-AAAAAAAA', subject: 'their wording', anchors: ['/race'], scope: ['surface=storefront-ui'] });
+  const theirs = makeEntry({ id: 'KB-AAAAAAAA', subject: 'a raced fact', anchors: ['/race'], scope: ['surface=storefront-ui'] });
 
   const api = fakeApi(state, {
     onUpdateRef: (attempt, s) => {
@@ -709,7 +727,7 @@ test('a capture that the OTHER session already made is converted on the retry, n
     },
   });
 
-  const mine = makeEntry({ id: 'KB-BBBBBBBB', subject: 'my wording', anchors: ['/race'], scope: ['surface=storefront-ui'] });
+  const mine = makeEntry({ id: 'KB-BBBBBBBB', subject: 'A raced fact!', anchors: ['/race'], scope: ['surface=storefront-ui'] });
   await writeQueue(dir, SESSION, [captureLine(mine)]);
 
   const r = await run(env, api);
