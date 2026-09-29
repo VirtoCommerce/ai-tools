@@ -56,6 +56,10 @@ The SECOND RULE is why `discriminates` is mandatory; DISPOSABLE FIXTURES is why 
 | `DYNAMIC` | random-data, never asserted on | per call |
 | `DERIVED` | produced by an earlier action; **must** name `source` | inherits its producer's |
 
+**Choosing between `FIXTURE`, `SCENARIO` and `STEP`** is decided by who can take the state away, not by
+convenience or by what already has a seeder: [`test-data-authoring.md`](../../knowledge/execution/test-data-authoring.md)
+§FIFTH RULE — seed or create in the case.
+
 ## Modes
 
 | Mode | Procedure |
