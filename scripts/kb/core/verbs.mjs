@@ -730,19 +730,19 @@ async function refuseAtDoor(result, input, { env, via, call, topic, repair = {} 
  * of 28 `capture-invalid` on 2026-09-28, and a subject or question starting with a route is mangled
  * the same way. The rewrite is exactly "the MSYS root, prefixed" (`undoMsysRewrite`), so taking it off
  * restores what was typed. An anchor still local afterwards is a real local path, and
- * `anchorProblems` refuses it as before.
+ * `anchorProblems` refuses it as before. `confirm`/`dispute` pass their own published fields.
  */
 const TEXT_FIELDS = ['subject', 'question', 'claim'];
 
-function repairShellRewrite(input, env) {
+function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
   const undo = (v) => (typeof v === 'string' ? undoMsysRewrite(v, env) : v);
   const out = { ...input };
-  for (const f of TEXT_FIELDS) out[f] = undo(input[f]);
+  for (const f of fields) out[f] = undo(input[f]);
   if (Array.isArray(input.anchors)) {
     out.anchors = input.anchors.map((a) => (typeof a === 'string' ? undo(a)
       : typeof a?.coordinate === 'string' ? { ...a, coordinate: undo(a.coordinate) } : a));
   }
-  const changed = TEXT_FIELDS.some((f) => out[f] !== input[f])
+  const changed = fields.some((f) => out[f] !== input[f])
     || (out.anchors ?? []).some((a, i) => JSON.stringify(a) !== JSON.stringify(input.anchors[i]));
   return { input: out, repair: changed ? { repaired: 'msys' } : {} };
 }
@@ -922,10 +922,10 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────
 
-async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
+async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null, repair = {} } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind, id, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
+    await log({ kind, id, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
@@ -969,6 +969,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     //
     // It is still in `payload` (local, never published) and still on the entry. Nothing is lost.
     ...(kind === 'confirm' ? { trust: row.trust + 1 } : {}),
+    ...repair,
     ...context({ via, call, topic }),
     payload: { id: row.id, path: row.path, item },
   }, { env });
@@ -980,8 +981,15 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   return { state: 'queued', id: row.id, row, item, queuedTo: written.path, logWrite: written };
 }
 
-export const confirm = (id, input, opened, opts) => appendEvidence('confirm', id, input, opened, opts);
-export const dispute = (id, input, opened, opts) => appendEvidence('dispute', id, input, opened, opts);
+// `--saw` and `--note` land on the entry, which is public, and Git Bash rewrites them like any other
+// argument that starts with "/" (VCST-6102). Same repair and same marker as `capture`.
+async function evidenceVerb(kind, id, input, opened, opts = {}) {
+  const { input: fixed, repair } = repairShellRewrite(input, opts.env ?? process.env, ['saw', 'note']);
+  return { ...(await appendEvidence(kind, id, fixed, opened, { ...opts, repair })), ...repair };
+}
+
+export const confirm = (id, input, opened, opts) => evidenceVerb('confirm', id, input, opened, opts);
+export const dispute = (id, input, opened, opts) => evidenceVerb('dispute', id, input, opened, opts);
 
 // ── stat ──────────────────────────────────────────────────────────────────────────────────────
 

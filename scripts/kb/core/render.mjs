@@ -198,6 +198,12 @@ function relatedLines(related) {
 }
 
 export function evidenceLines(verb, r) {
+  const lines = evidenceBody(verb, r);
+  if (r.repaired === 'msys') lines.splice(1, 0, `  (your shell rewrote a leading "/" into a local path; it was undone. ${MSYS_REMEDY})`);
+  return lines;
+}
+
+function evidenceBody(verb, r) {
   if (r.state === 'invalid') return [`kb ${verb}: ${r.why}`];
   if (r.state !== 'queued') {
     const lines = [`kb ${verb}: ${HEADLINE[r.state] ?? r.state}`];

@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, kbDisabled, pendingMutations, queuePath, readQueue, hasSessionId, hookEnv, processKey, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
 import { localReader } from '../kb/core/reader.mjs';
-import { captureLines } from '../kb/core/render.mjs';
+import { captureLines, evidenceLines } from '../kb/core/render.mjs';
 import { ask, askAbout, capture, confirm, dispute, show, stat, toLogLine } from '../kb/core/verbs.mjs';
 
 /** A process with no session: its pid plus a random tail, so two machines cannot share one. */
@@ -343,6 +343,24 @@ test('dispute without --saw is refused: a contradiction with no observation is n
   const r = await dispute('KB-06664A3A', { deployment: 'qa' }, opened(), { env });
   assert.equal(r.state, 'invalid');
   assert.match(r.why, /--saw/);
+}));
+
+test('dispute --saw and confirm --note are repaired from a Git Bash rewrite — both land on a public entry (VCST-6102)', () => withQueue(async (dir, env) => {
+  const d = await dispute('KB-06664A3A', { deployment: 'qa', saw: 'C:/Program Files/Git/search sorted by the displayed price here' }, opened(), { env });
+  assert.equal(d.state, 'queued');
+  assert.equal(d.repaired, 'msys');
+  assert.equal(d.item.note, '/search sorted by the displayed price here');
+  assert.match(evidenceLines('dispute', d)[1], /MSYS_NO_PATHCONV=1/);
+
+  const c = await confirm('KB-06664A3A', { deployment: 'qa', note: 'C:/Program Files/Git/search still sorts by index' }, opened(), { env });
+  assert.equal(c.item.note, '/search still sorts by index');
+
+  const { lines } = await readQueue({ env });
+  assert.deepEqual(lines.map((l) => l.repaired), ['msys', 'msys'], 'the marker is on each public line');
+  assert.ok(!/Program Files/.test(JSON.stringify(lines)), 'not in the payload either');
+
+  const clean = await confirm('KB-06664A3A', { deployment: 'qa', note: 'plain note' }, opened(), { env });
+  assert.ok(!('repaired' in clean));
 }));
 
 test('capture refuses an unusable anchor before it reaches the base', () => withQueue(async (dir, env) => {
