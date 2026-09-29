@@ -39,7 +39,7 @@ import { buildIndex, buildRow, entryPath } from './index-build.mjs';
 import { normalizeRow } from './index-load.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
 import {
-  DISABLED_WHY, HELD_WHY, MUTATIONS, isSynthetic, pushConfirmRequired, kbDisabled, log, orderQueue, queueDir, queuePath, readQueue, recordPush,
+  DISABLED_WHY, HELD_WHY, MUTATIONS, composeLine, isSynthetic, pushConfirmRequired, kbDisabled, log, orderQueue, queueDir, queuePath, readQueue, recordPush,
   releaseConsumed, runOf, sessionId,
 } from './queue.mjs';
 import {
@@ -657,7 +657,9 @@ export function commitMessage({ session, captures, confirms, disputes, logs }) {
  */
 export async function flush(opts = {}) {
   const r = await flushOnce(opts);
-  if (!['dry-run', 'declined', 'disabled'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
+  // Keyed on the REQUEST, not the result: a dry run can end in `nothing`, `no-base` or
+  // `foreign-base` too, and none of those may overwrite the status of the last real push.
+  if (!opts.dryRun && !['declined', 'disabled'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
   return r;
 }
 
@@ -705,6 +707,10 @@ async function flushOnce({
   // Only when we are taking our own file at all: under an opportunistic foreign-only sweep
   // (`includeMine: false`) a line written here would sit unsent, and the next flush would write a
   // second one beside it.
+  //
+  // A DRY RUN composes these lines in memory and leaves the state files where they are (VCST-6103):
+  // the preview shows what a push would add, and changes nothing a later push would see.
+  const previewed = [];
   let ownLine = null;
   let ownState = null;
   if (includeMine) {
@@ -713,17 +719,19 @@ async function flushOnce({
     // would always answer yes, and our counters would ride every harvesting push (review 3).
     const heldWork = ownQueueHolds(env);
     // The harvest writes lines and DELETES state files, so a dry run — which must change nothing —
-    // does not run it (review 4).
-    for (const state of dryRun ? [] : idleReaches(dir, { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
+    // only reads them (review 4, VCST-6103).
+    for (const state of idleReaches(dir, { session, now: now().getTime(), idleMs: REACH_IDLE_MS })) {
       // Its own last send may already carry everything it did (VCST-6091): then there is nothing new
       // to say, and the state is dropped without a second, identical line.
-      if (!unsent(dir, state)) { dropReach(dir, state.session); continue; }
+      if (!unsent(dir, state)) { if (!dryRun) dropReach(dir, state.session); continue; }
       // `who` AND `run` come off the STATE, never off this process: this line describes a session
       // that has already ended, and we may well be a different person under a different run. Where
       // the state never learned a handle, ours is used ONLY if the state file is provably ours
       // (`ownedByMe`); otherwise `null` — no identity beats the wrong one (`core/who.mjs`).
       const who = state.who ?? (ownedByMe(reachPath(dir, state.session), { env }) ? undefined : null);
-      const written = await log(reachLine(state), { env, who, run: state.run ?? null });
+      const marks = { env, who, run: state.run ?? null };
+      if (dryRun) { previewed.push(composeLine(reachLine(state), marks)); continue; }
+      const written = await log(reachLine(state), marks);
       // Dropped only once the line is safely appended. A state file removed after a failed write is
       // a session that silently never existed — the exact hole this whole mechanism was built to
       // close, reintroduced at the last step.
@@ -734,14 +742,15 @@ async function flushOnce({
     // way this line could cost more than it measures:
     //   * a TOKEN — without one nothing is sent;
     //   * our own queue already HOLDS work, or our own cadence is due — so a push that exists only
-    //     because another session's file is busy does not become a commit per turn;
-    //   * not a dry run.
+    //     because another session's file is busy does not become a commit per turn.
+    // A dry run builds it too (VCST-6103): the line never leaves memory, and a preview that left it
+    // out would let the next real push commit a line its reader never saw.
     // AND IT NEVER TOUCHES THE QUEUE (review 4). The line rides this push IN MEMORY and the send mark is
     // written only once the commit has landed, so a declined, failed or dry push adds nothing of OURS
     // to the queue and leaves the mark as it was — and a push that never happens queues nothing to
     // grow. (The harvest above is a different matter and predates this: outside a dry run it still
     // moves idle states' lines into our queue before any gate. They go out with the next push.)
-    const mine = dryRun || !token ? null : readReach(dir, session);
+    const mine = token ? readReach(dir, session) : null;
     if (mine && workIn(mine) > 0 && unsent(dir, mine)
       && (heldWork || ownReachDue(dir, session, { now: now().getTime(), state: mine, attempts: false }))) {
       const who = mine.who ?? cachedWho({ dir, env });
@@ -761,7 +770,8 @@ async function flushOnce({
   const loaded = [];
   for (const f of files) {
     const q = await readQueue({ env, path: f.path });
-    if (q.lines.length) loaded.push({ ...f, lines: orderQueue(q.lines), malformed: q.malformed, raw: q.raw, signable: f.mine || ownedByMe(f.path, { env }) });
+    const lines = f.mine ? [...q.lines, ...previewed] : q.lines;
+    if (lines.length) loaded.push({ ...f, lines: orderQueue(lines), malformed: q.malformed, raw: q.raw, signable: f.mine || ownedByMe(f.path, { env }) });
   }
   if (ownLine) {
     const own = loaded.find((f) => f.mine);
@@ -770,7 +780,8 @@ async function flushOnce({
     else loaded.push({ path: queuePath(env), session, mine: true, lines: [ownLine], raw: null, signable: true, virtual: true });
   }
   if (!loaded.length) {
-    await touchStamp({ env, now });
+    // The stamp paces the next sweep; a preview that moved it would postpone a real push by 30 min.
+    if (!dryRun) await touchStamp({ env, now });
     return { state: 'nothing', session, why: 'the queue is empty' };
   }
 
@@ -824,11 +835,16 @@ async function flushOnce({
     const built = await buildPush({ api, prefix, full, loaded, allLines, counts, session, at, attempt, dropped, secrets, synthetic: isSynthetic(env), run: runOf(env), who: cachedWho({ dir: queueDir(env), env }) });
     if (built.state !== 'ready') { last = built; break; }
 
+    // A dry run returns BEFORE the gate: it is a preview, so it never asks "publish this?", and a "no"
+    // would turn it into `declined` and hide the plan it was run to show (VCST-6103).
+    // `held` answers the question a preview's reader actually has — will this go out without me?
+    // Only KB_PUSH_CONFIRM holds a queue; otherwise any later sweep, CLI or MCP, may publish it.
+    // THIS process's env, though: the MCP server sweeping the same queue reads its own (review).
+    if (dryRun) return { state: 'dry-run', session, plan: built.plan, held: pushConfirmRequired(env) };
     if (gate) {
       const yes = await gate(built.plan);
       if (!yes) return { state: 'declined', session, plan: built.plan, why: 'the operator declined this push; the queue is untouched' };
     }
-    if (dryRun) return { state: 'dry-run', session, plan: built.plan };
 
     const landed = await land({ api, plan: built.plan });
     if (landed.ok) {
@@ -870,17 +886,16 @@ async function flushOnce({
   // A FAILED PUSH LEAVES THE QUEUE INTACT, and says so in the queue itself: one line saying the
   // attempt at T failed, which ships with the next sweep beside the line saying it later landed.
   // Nothing is patched retroactively — the sequence is the record.
+  //
+  // Except after a DRY RUN, which attempted nothing (VCST-6103): a `flush ok:false` line would ship
+  // with the next real push as a failure that never happened, and `kb stat` would report it.
+  const why = last?.detail ?? last?.why ?? 'unknown';
+  const reason = last?.reason ?? null;
+  const failed = { state: 'failed', session, attempts: attempt, why, reason, queued: allLines.length, kept: loaded.map((f) => f.path) };
+  if (dryRun) return { ...failed, dryRun: true };
   await touchStamp({ env, now });
-  await log({ kind: 'flush', ok: false, attempts: attempt, why: last?.detail ?? last?.why ?? 'unknown', reason: last?.reason ?? null }, { env });
-  return {
-    state: 'failed',
-    session,
-    attempts: attempt,
-    why: last?.detail ?? last?.why ?? 'unknown',
-    reason: last?.reason ?? null,
-    queued: allLines.length,
-    kept: loaded.map((f) => f.path),
-  };
+  await log({ kind: 'flush', ok: false, attempts: attempt, why, reason }, { env });
+  return failed;
 }
 
 /**
@@ -936,6 +951,19 @@ export async function sweepIfDue({ env = process.env, base = null, token = null,
     await recordPush(r, { env, at: now() });
     return r;
   }
+}
+
+/**
+ * May the post-verb sweep run after an invocation with these flags?
+ *
+ * Not after `--dry-run`, on ANY verb (VCST-6103): the sweep publishes this session's own queue once
+ * it is `OWN_FLUSH_AFTER_MS` old, so `push --dry-run` printed "nothing was sent" and then pushed the
+ * very plan it had just shown. A preview is run by exactly the person who wanted to read the prose
+ * before it reached a public repo. And not after `--no-sweep`, which until then silenced only the
+ * flush inside `push` and left this one running.
+ */
+export function postVerbSweepAllowed(flags = {}) {
+  return !flags['dry-run'] && !flags['no-sweep'];
 }
 
 /** Re-read the base at its current head and compose everything the commit will contain. */

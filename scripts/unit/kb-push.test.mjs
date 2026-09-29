@@ -20,9 +20,10 @@ import { parseEntry, stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from '../kb/core/index-build.mjs';
 import {
   RETENTION_DAYS, SWEEP_AFTER_MS, appendEvidence, commitMessage, expiredLogs, flush, fullestSessionLines, logPath,
-  logTargetOf, outsideBase, ownFlushDue, ownedByMe, published, queueFiles, sameEvidence, shouldSweep, unionLines,
+  logTargetOf, outsideBase, ownFlushDue, ownedByMe, postVerbSweepAllowed, published, queueFiles, sameEvidence, shouldSweep,
+  unionLines,
 } from '../kb/core/push.mjs';
-import { orderQueue, queueBacklog, queuePath, readPushStatus, releaseConsumed } from '../kb/core/queue.mjs';
+import { orderQueue, pushStatusPath, queueBacklog, queuePath, readPushStatus, readQueue, releaseConsumed } from '../kb/core/queue.mjs';
 import { reachPath, sentPath } from '../kb/core/reach.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 // THE READER, IN THE WRITER'S TEST, DELIBERATELY. STEP 3c's whole claim is that the path gained a
@@ -1191,6 +1192,18 @@ test('the sweep is paced by a stamp, and the stamp is written even when the push
   assert.equal(await shouldSweep({ env, now: () => new Date(Date.now() + SWEEP_AFTER_MS * 2) }), true);
 }));
 
+test('a --dry-run or --no-sweep invocation gets NO post-verb sweep — a preview must send nothing (VCST-6103)', () => {
+  // The hole: `push --dry-run` said "nothing was sent", then the post-verb sweep found this
+  // session's own queue past OWN_FLUSH_AFTER_MS and published the plan it had just shown.
+  assert.equal(postVerbSweepAllowed({ 'dry-run': true }), false);
+  assert.equal(postVerbSweepAllowed({ 'no-sweep': true }), false, '--no-sweep silences this sweep too, not only the one inside push');
+  assert.equal(postVerbSweepAllowed({ 'dry-run': true, base: '/x' }), false, 'on any verb, reindex --dry-run included');
+  // ...and every other invocation keeps the retry the sweep exists for.
+  assert.equal(postVerbSweepAllowed({}), true);
+  assert.equal(postVerbSweepAllowed({ json: true, topic: 'checkout' }), true);
+  assert.equal(postVerbSweepAllowed(), true);
+});
+
 // ─── small, load-bearing ──────────────────────────────────────────────────────────────────────
 
 test('the commit message says what it did, mechanically', () => {
@@ -1212,6 +1225,60 @@ test('a dry run sends nothing and shows everything', () => withQueue(async ({ di
     ['v2/entries/KB-22222222.md', 'v2/index.json', `v2/${logPath(SESSION, AT)}`].sort());
   assert.equal(api.calls.includes('createBlob'), false);
   assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), true, 'and the queue is untouched');
+}));
+
+test('a dry run PREVIEWS an idle session line without converting it, and moves no stamp (VCST-6103)', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  const api = fakeApi(state);
+  const quiet = reachPath(dir, 'quiet001');
+  await writeFile(quiet, JSON.stringify({ session: 'quiet001', cursor: 0, tools: 300, turns: 9, touchAt: [], firstAt: '2026-09-18T08:00:00Z', lastAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  const old = new Date(AT.getTime() - 60 * 60 * 1000);
+  await utimes(quiet, old, old);
+
+  const r = await run(env, api, { dryRun: true });
+  assert.equal(r.state, 'dry-run');
+  assert.ok(r.plan.writes.some((w) => w.path.includes('quiet001')), 'the plan shows the session line a real push would send');
+  assert.equal(existsSync(quiet), true, 'and leaves its state file for that push');
+  assert.equal(existsSync(join(dir, `${SESSION}.jsonl`)), false, 'nothing was appended to the queue');
+  // Measured at AT, the instant a real flush would have stamped: a moved stamp reads "too soon".
+  assert.equal(await shouldSweep({ env, now: () => AT }), true, 'the sweep stamp did not move');
+  assert.equal(api.calls.includes('createBlob'), false);
+}));
+
+test('an EMPTY dry run moves no stamp and writes no push status — a preview must not postpone the next sweep', () => withQueue(async ({ env }) => {
+  const r = await run(env, fakeApi(makeBase([])), { dryRun: true });
+  assert.equal(r.state, 'nothing');
+  assert.equal(await shouldSweep({ env, now: () => AT }), true);
+  assert.equal(existsSync(pushStatusPath(env)), false, 'the status of the last REAL push is not overwritten');
+}));
+
+test('a dry run that stops before the plan — no base, foreign base — writes no push status either', () => withQueue(async ({ env }) => {
+  assert.equal((await flush({ env, base: '/a/local/dir', dryRun: true })).state, 'no-base');
+  assert.equal((await flush({ env, base: 'https://raw.githubusercontent.com/someone/else/main', dryRun: true })).state, 'foreign-base');
+  assert.equal(existsSync(pushStatusPath(env)), false);
+}));
+
+test('a FAILED dry run has the same shape as a failed push, plus `dryRun`, and records nothing', () => withQueue(async ({ dir, env }) => {
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'x', matched: [], state: 'miss' }]);
+  const down = { getRef: async () => ({ ok: false, reason: 'unreachable', detail: 'HTTP 503' }) };
+  const r = await run(env, down, { dryRun: true });
+  assert.equal(r.state, 'failed');
+  assert.equal(r.dryRun, true);
+  assert.equal(r.attempts, 1, 'a consumer that reads `attempts` off any failure gets a number');
+  assert.deepEqual(r.kept, [queuePath(env)]);
+  assert.equal(existsSync(pushStatusPath(env)), false);
+  const { lines } = await readQueue({ env, path: queuePath(env) });
+  assert.ok(!lines.some((l) => l.kind === 'flush'), 'no `flush ok:false` line for a push that was never attempted');
+}));
+
+test('a dry run never reaches the gate — a preview does not ask "publish this?" (VCST-6103)', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeQueue(dir, SESSION, [captureLine(makeEntry({ id: 'KB-22222222', subject: 'a new fact', anchors: ['/mine'] }))]);
+  let asked = 0;
+  const r = await run(env, fakeApi(state), { dryRun: true, gate: async () => { asked += 1; return false; } });
+  assert.equal(r.state, 'dry-run', 'a "no" would have turned it into `declined` and hidden the plan');
+  assert.equal(asked, 0);
+  assert.ok(r.plan.writes.length > 0);
 }));
 
 test('the gate can decline, and declining changes nothing', () => withQueue(async ({ dir, env }) => {
@@ -1713,6 +1780,18 @@ test('review 4.4: a DECLINED push leaves no counters line in the queue and no se
   const r = await run(env, fakeApi(state), { gate: async (plan) => { offered = plan; return false; } });
   assert.equal(r.state, 'declined');
   assert.ok(offered.writes.some((w) => w.text.includes('"kind":"session"')), 'the counters WERE in what was offered');
+  assert.equal(await readFile(join(dir, `${SESSION}.jsonl`), 'utf8'), before, 'the queue is exactly as it was');
+  assert.equal(existsSync(sentPath(dir, SESSION)), false, 'and nothing is marked sent');
+}));
+
+test('a dry run previews our counters exactly as a push would, and marks nothing sent (VCST-6103)', () => withQueue(async ({ dir, env }) => {
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact', anchors: ['/cart'] })]);
+  await writeFile(reachPath(dir, SESSION), JSON.stringify({ session: SESSION, cursor: 0, tools: 30, turns: 3, touchAt: [], firstAt: '2026-09-18T09:00:00Z' }), 'utf8');
+  await writeQueue(dir, SESSION, [{ at: '2026-09-18T10:02:00Z', kind: 'ask', q: 'x', matched: [], state: 'miss' }]);
+  const before = await readFile(join(dir, `${SESSION}.jsonl`), 'utf8');
+  const r = await run(env, fakeApi(state), { dryRun: true });
+  assert.equal(r.state, 'dry-run');
+  assert.ok(r.plan.writes.some((w) => w.text.includes('"kind":"session"')), 'the counters the next push would commit are shown');
   assert.equal(await readFile(join(dir, `${SESSION}.jsonl`), 'utf8'), before, 'the queue is exactly as it was');
   assert.equal(existsSync(sentPath(dir, SESSION)), false, 'and nothing is marked sent');
 }));
