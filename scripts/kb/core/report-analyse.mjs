@@ -992,9 +992,8 @@ export function reach(lines, { since = null } = {}) {
       // in `_session`, on a line from before `session` was written — WITH ITS START, because two groups
       // can share that key and two rows under one label read as one session twice (review 3).
       session: legacy ? `${l.session ?? l._session}@${began.slice(0, 16)}` : id,
-      // Totals over the session; the subagents' share beside them, and whatever was carried over a
-      // replaced transcript. A line from before 2026-09-23 carries no `agent*` fields and reads as the
-      // parent alone — which is what it measured.
+      // Totals over the session; the subagents' share beside them. A line from before 2026-09-23
+      // carries no `agent*` fields and reads as the parent alone — which is what it measured.
       tools: lineWork(l),
       turns: Number(l.turns ?? 0),
       touches: lineTouches(l),

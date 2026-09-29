@@ -189,14 +189,8 @@ export function countToolUses(chunk, { from = 0 } = {}) {
 export function advanceReach({ dir, session, transcriptPath, at = new Date(), who = null, run = '', synthetic = false } = {}) {
   if (!dir || !session || !transcriptPath || !existsSync(transcriptPath)) return null;
   const held = readReach(dir, session);
-  // A state dropped after publication left its CARRIED totals in the tombstone (`dropReach`): a
-  // session harvested and then resumed is rebuilt from its current transcript, and without them the
-  // calls from before an earlier replacement would vanish and its older, fuller line would win every
-  // comparison (VCST-6091 review 4).
-  const tomb = held ? null : readTombstone(dir, session);
   const prior = held ?? {
     session, cursor: 0, tools: 0, turns: 0, touchAt: [], firstAt: null, lastAt: null,
-    ...(tomb?.carriedTools || tomb?.carriedTouches ? { carriedTools: tomb.carriedTools, carriedTouches: tomb.carriedTouches } : {}),
   };
 
   let size;
@@ -212,25 +206,11 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   // old cursor applied to that file skipped its first calls. The state already records its path.
   const moved = Boolean(held && prior.transcriptPath && prior.transcriptPath !== transcriptPath);
   const restarted = moved || size < prior.cursor;
-  // BUT THE WORK ALREADY DONE IS CARRIED, not forgotten (VCST-6091 review). The ordinals restart with
-  // the document they point into; the session's TOTALS do not, because the calls made before the
-  // replacement really happened. Without the carry, a session's work fell at the replacement, its
-  // fuller earlier line won every comparison (`fullestSessionLines`, `reach()`), and nothing it did
-  // afterwards was ever visible. `carriedTools`/`carriedTouches` hold everything before the newest
-  // document, so the session's work never decreases.
-  //
-  // ONLY THE PARENT'S OWN CALLS ARE CARRIED. The subagent transcripts are separate files that were not
-  // replaced, and this same turn recounts them from their start (`advanceSubagents(null, …)` below),
-  // so carrying their totals as well counted every subagent call twice (VCST-6091 review 3). A MOVED
-  // transcript is the exception: its subagents live beside the OLD file and are never read again, so
-  // theirs are carried as well.
-  const gone = moved ? subagentTotals(prior.subagents) : { agentTools: 0, agentTouches: 0 };
-  const carried = restarted
-    ? {
-      tools: Number(prior.carriedTools ?? 0) + Number(prior.tools ?? 0) + gone.agentTools,
-      touches: Number(prior.carriedTouches ?? 0) + (Array.isArray(prior.touchAt) ? prior.touchAt.length : 0) + gone.agentTouches,
-    }
-    : { tools: Number(prior.carriedTools ?? 0), touches: Number(prior.carriedTouches ?? 0) };
+  // THE WORK BEFORE A REPLACEMENT IS NOT CARRIED, deliberately (VCST-6091). A carry was built and
+  // reviewed four times; each round found a new edge — subagents counted twice, a drop-and-resume
+  // losing it, a moved file — for a case measured once. So a replacement resets the counters as it
+  // always did, the `restart` line below says so in the log, and the session's fuller EARLIER line is
+  // what `reach()` shows for it. Revisit only if the live log shows replacements are common.
   const from = restarted ? 0 : prior.cursor;
   const base = restarted ? { ...prior, tools: 0, touchAt: [] } : prior;
 
@@ -276,7 +256,6 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
     firstAt: prior.firstAt ?? (from === 0 ? firstStamp(chunk) : null) ?? at.toISOString(),
     lastAt: at.toISOString(),
     subagents: advanceSubagents(restarted ? null : prior.subagents, transcriptPath),
-    ...(carried.tools || carried.touches ? { carriedTools: carried.tools, carriedTouches: carried.touches } : {}),
     // LOCAL ONLY — `reachLine` never copies it. Kept so `idleReaches` can see that a session whose
     // own turns have stopped is still WORKING through a subagent (PLAN §23.11).
     transcriptPath,
@@ -357,28 +336,22 @@ export const reachLine = (state) => ({
   turns: state.turns,
   touchAt: state.touchAt,
   ...subagentTotals(state.subagents),
-  // Everything before a replaced transcript, as two totals: the ordinals above point into the
-  // current document only, and these are what it cannot hold (`advanceReach`).
-  ...(state.carriedTools || state.carriedTouches
-    ? { carriedTools: Number(state.carriedTools ?? 0), carriedTouches: Number(state.carriedTouches ?? 0) }
-    : {}),
   firstAt: state.firstAt,
   lastAt: state.lastAt,
 });
 
 /**
- * A published `session` line's whole WORK: its own calls, its subagents', and what it carried over a
- * replaced transcript. THE ONE DEFINITION — the writer's merge (`fullestSessionLines`), the publish
- * filter (`published`), the send marks and the report (`reach()`) all compare by it, and three copies
- * of one sum is how the carried calls would have been added in one place and forgotten in two.
+ * A published `session` line's whole WORK: its own calls and its subagents'. THE ONE DEFINITION —
+ * the writer's merge (`fullestSessionLines`), the publish filter (`published`), the send marks and
+ * the report (`reach()`) all compare by it; three copies of one sum drift apart.
  */
 export function lineWork(l) {
-  return Number(l?.tools ?? 0) + Number(l?.agentTools ?? 0) + Number(l?.carriedTools ?? 0);
+  return Number(l?.tools ?? 0) + Number(l?.agentTools ?? 0);
 }
 
-/** A published `session` line's base calls, by the same rule: ordinals, subagents' and carried. */
+/** A published `session` line's base calls, by the same rule: its own ordinals and its subagents'. */
 export function lineTouches(l) {
-  return (Array.isArray(l?.touchAt) ? l.touchAt.length : 0) + Number(l?.agentTouches ?? 0) + Number(l?.carriedTouches ?? 0);
+  return (Array.isArray(l?.touchAt) ? l.touchAt.length : 0) + Number(l?.agentTouches ?? 0);
 }
 
 /** The bare `p<pid>` key a process with no session id got before VCST-6091 (now `p<pid>-<hex>`). */
@@ -421,32 +394,12 @@ export function sessionKeyOf(l) {
  * session harvested after 30 idle minutes may resume; its next turn finds no state and would read
  * exactly like a scratchpad that was wiped. "Dropped after publication, by design" and "gone for no
  * known reason" are different findings, so the drop is what records which one happened.
- *
- * AND IT HOLDS THE CARRIED TOTALS, the one part of a state its transcript cannot give back: a resumed
- * session is rebuilt by re-reading its CURRENT transcript, which knows nothing of the documents an
- * earlier replacement discarded (`advanceReach`, VCST-6091 review 4).
  */
 export function dropReach(dir, session) {
-  const state = readReach(dir, session);
-  const carried = state?.carriedTools || state?.carriedTouches
-    ? JSON.stringify({ carriedTools: Number(state.carriedTools ?? 0), carriedTouches: Number(state.carriedTouches ?? 0) })
-    : '';
   try { rmSync(reachPath(dir, session), { force: true }); } catch { /* already gone */ }
   try { rmSync(sentPath(dir, session), { force: true }); } catch { /* nothing was sent */ }
   try { rmSync(triedPath(dir, session), { force: true }); } catch { /* nothing was tried */ }
-  try { writeFileSync(tombstonePath(dir, session), carried, 'utf8'); } catch { /* costs a label, not a count */ }
-}
-
-/** What a tombstone carried over, or null when there is no tombstone. An empty one carried nothing. */
-function readTombstone(dir, session) {
-  const p = tombstonePath(dir, session);
-  if (!existsSync(p)) return null;
-  try {
-    const text = readFileSync(p, 'utf8').trim();
-    return text ? JSON.parse(text) : {};
-  } catch {
-    return {};
-  }
+  try { writeFileSync(tombstonePath(dir, session), '', 'utf8'); } catch { /* costs a label, not a count */ }
 }
 
 // ── a session publishes its OWN counters (VCST-6091) ─────────────────────────────────────────

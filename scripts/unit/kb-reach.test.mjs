@@ -566,24 +566,24 @@ test('legacy pid-keyed session lines are counted as the sessions they were, not 
   assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p1003@2026-09-28T08:00', 'p1003@2026-09-28T08:55']);
 });
 
-test('review 7: a replaced transcript CARRIES its work — the session never shrinks, so its new work is published', () => {
-  // Resetting to zero made the session's work fall at the replacement; its fuller earlier line then
-  // won every comparison and nothing it did afterwards was ever visible (review rounds 1 and 2).
+test('a replaced transcript RESETS the counters and says so — no carry, by decision (VCST-6091)', () => {
+  // A carry across replacements was built and reviewed four times, each round finding a new edge, for
+  // a case measured once. So a replacement resets as it always did, and the `restart` line is the
+  // record. The session's fuller earlier line is what the report shows for it.
   const dir = mkdtempSync(join(tmpdir(), 'kb-reach-replaced-'));
   try {
     const t = join(dir, 'transcript.jsonl');
     writeFileSync(t, `${turn('Read', 'Read', 'mcp__kb__kb_ask')}${turn('Edit')}`, 'utf8');
     advanceReach({ dir, session: 'repl0001', transcriptPath: t });
     markSent(dir, 'repl0001', readReach(dir, 'repl0001'));
-    assert.equal(sentMark(dir, 'repl0001').work, 4);
 
     writeFileSync(t, `${turn('Read')}`, 'utf8');                      // replaced: shorter than the cursor
     const after = advanceReach({ dir, session: 'repl0001', transcriptPath: t });
-    assert.deepEqual(after.touchAt, [], 'ordinals restart with the document they point into');
-    const line = reachLine(after);
-    assert.equal(lineWork(line), 5, '4 carried + 1 new: the work never decreases');
-    assert.equal(lineTouches(line), 1, 'and the base call made before the replacement is kept');
-    assert.equal(unsent(dir, after), true, 'so the new work is news');
+    assert.deepEqual([after.tools, after.touchAt], [1, []], 'counted from the new document only');
+    assert.equal(lineWork(reachLine(after)), 1);
+    const restarts = readFileSync(join(dir, 'repl0001.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.deepEqual(restarts.map((l) => [l.kind, l.why, l.priorTools]), [['restart', 'transcript-replaced', 4]]);
+    assert.equal(unsent(dir, after), true, 'its turns still grew, so it is still news');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -611,8 +611,8 @@ test('review 2.5: a legacy row whose key lives only in `_session` is still named
 });
 
 test('one definition of work and of session identity, shared by writer and report', () => {
-  assert.equal(lineWork({ tools: 3, agentTools: 4, carriedTools: 5 }), 12);
-  assert.equal(lineTouches({ touchAt: [1, 2], agentTouches: 1, carriedTouches: 3 }), 6);
+  assert.equal(lineWork({ tools: 3, agentTools: 4 }), 7);
+  assert.equal(lineTouches({ touchAt: [1, 2], agentTouches: 1 }), 3);
   assert.equal(sessionKeyOf({ session: 'f3d05dd3', firstAt: 'x' }), 'f3d05dd3');
   assert.equal(sessionKeyOf({ session: 'p24300-ab12', firstAt: 'x' }), 'p24300-ab12', 'a new process key is unique already');
   assert.notEqual(sessionKeyOf({ session: 'p24300', who: 'a', firstAt: '1' }), sessionKeyOf({ session: 'p24300', who: 'b', firstAt: '2' }));
@@ -630,7 +630,7 @@ test('review 1: a collapsed legacy group still joins its asks and counts them as
   assert.equal(r.unaccounted, 0);
 });
 
-test('review 3.1: a replaced transcript carries the PARENT only — subagent files are recounted, not carried too', () => {
+test('review 3.1: a replaced transcript recounts its subagents ONCE', () => {
   const dir = mkdtempSync(join(tmpdir(), 'kb-reach-sub-'));
   try {
     const t = join(dir, 'sess.jsonl');
@@ -642,7 +642,7 @@ test('review 3.1: a replaced transcript carries the PARENT only — subagent fil
     assert.equal(workIn(readReach(dir, 'sub00001')), 3 + 3, 'three parent calls, three subagent calls');
     writeFileSync(t, `${turn('Read')}`, 'utf8');                      // the parent's transcript is replaced
     const after = advanceReach({ dir, session: 'sub00001', transcriptPath: t });
-    assert.equal(workIn(after), 3 + 1 + 3, '3 carried + 1 new, and the subagent’s 3 counted ONCE');
+    assert.equal(workIn(after), 1 + 3, 'the new document’s 1, and the subagent’s 3 counted once');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -681,23 +681,6 @@ test('review 3.7: a legacy ask credited to a group outside the window is unaccou
   assert.equal(r.unaccounted, 1, 'counted somewhere, as the same case with a real key would be');
 });
 
-test('review 4.1: a state dropped and rebuilt keeps what it had carried over a replacement', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-tomb-'));
-  try {
-    const t = join(dir, 'tomb.jsonl');
-    writeFileSync(t, `${turn('Read', 'Read', 'Read')}${turn('Edit')}`, 'utf8');
-    advanceReach({ dir, session: 'tomb0001', transcriptPath: t });
-    writeFileSync(t, `${turn('Read')}`, 'utf8');                      // replaced: 4 calls carried
-    advanceReach({ dir, session: 'tomb0001', transcriptPath: t });
-    dropReach(dir, 'tomb0001');                                       // harvested as finished…
-    writeFileSync(t, `${turn('Read')}${turn('Bash')}`, 'utf8');       // …and it resumes
-    const rebuilt = advanceReach({ dir, session: 'tomb0001', transcriptPath: t });
-    assert.equal(workIn(rebuilt), 4 + 2, 'the carried 4 survive the drop');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
 test('review 4.3: a different transcript file under the same key is a replacement, even when larger', () => {
   const dir = mkdtempSync(join(tmpdir(), 'kb-reach-moved-'));
   try {
@@ -708,7 +691,8 @@ test('review 4.3: a different transcript file under the same key is a replacemen
     writeFileSync(b, `${turn('Read', 'Read')}${turn('Edit', 'Bash')}${turn('Grep')}`, 'utf8');
     const after = advanceReach({ dir, session: 'move0001', transcriptPath: b });
     assert.equal(after.tools, 5, 'the new file is read from its start, not from the old cursor');
-    assert.equal(workIn(after), 1 + 5, 'and the old file’s call is carried');
+    const logged = readFileSync(join(dir, 'move0001.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.deepEqual(logged.map((l) => l.why), ['transcript-moved'], 'and the log says what happened');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
