@@ -305,6 +305,26 @@
       "notes": "Live cron is overridden on vcst-qa (domain map D11), so timing here is not the shipped default."
     },
     {
+      "id": "push.send.zero-recipients",
+      "type": "branch",
+      "name": "A Send with no recipients is accepted and stays Sent with nobody to deliver to",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1E9580BB",
+          "note": "POST /api/push-message status Sent, memberIds [] and no memberQuery: 200, still Sent after the job window, search-recipients totalCount 0",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Nothing refuses an empty audience, and the result is an irrevocable Sent message. Whether it should be refused is a product question; no source says it should."
+    },
+    {
       "id": "push.message.state.draft",
       "type": "state",
       "name": "Draft",
@@ -1695,6 +1715,11 @@
     {
       "from": "push.inbox",
       "to": "push.inbox.empty-state",
+      "type": "contains"
+    },
+    {
+      "from": "push.send",
+      "to": "push.send.zero-recipients",
       "type": "contains"
     }
   ],

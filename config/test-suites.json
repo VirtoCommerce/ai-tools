@@ -1719,9 +1719,10 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 18,
+        "machine": 15,
         "browser": 0,
-        "manual": 0
+        "manual": 0,
+        "deprecated": 3
       }
     },
     {

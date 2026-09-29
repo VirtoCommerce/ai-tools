@@ -224,13 +224,29 @@ PUSH-024,Storefront Notifications — Targeting: User Receives Only Own Messages
 [STATE] User B does NOT see the push message targeted only to User A's role/ID
 [DOM] User B's notification list excludes the targeted message","[API] GET {{BACK_URL}}/api/platform/pushnotifications for User B's token does not return the targeted message
 [CONSOLE] no JS errors for either user session","User B sees User A's targeted messages (security/isolation failure), targeted message absent for User A, 4xx on either user's notification fetch","Sign out as User B after test; no data mutation",ECL-7.3 | Behavior:push.inbox.own-only | DataProfile:profile.push.own-only,Not Automated
-PUSH-025,Storefront Notifications — Empty State When No Notifications Exist,Storefront > Notifications,Medium,,,User authenticated; user account has NO push messages (inbox is empty); Data: @td(PUSH_RECIPIENT_EMPTY.email) — never target this account; one Sent message ends the empty state for good.,"front_url={{FRONT_URL}}, recipient=@td(PUSH_RECIPIENT_EMPTY.email)","[NAV] {{FRONT_URL}}/account/notifications
-[PRE:SIGNIN_AS:PUSH_RECIPIENT_EMPTY]
-[WAIT] notifications page loads","[DOM] empty state text 'You do not have any new notifications at this time' is visible on the page
+PUSH-025,Storefront Notifications — Empty State for an Account No Message Has Reached (Created on the Fly),Storefront > Notifications,Medium,,,"Admin API reachable. The account is created by this case: a stored account cannot stay empty on an environment that holds Sent messages with 'Track new recipients' and broad member queries, because a member matching one of those queries becomes a recipient the moment it is created (KB-CB05268E). The generated name and email must therefore contain none of the tokens the environment's tracked memberQueries use.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, store_id={{STORE_ID}}, password={{DEFAULT_TEST_PASSWORD}}, email=random-data: pushinbox-<timestamp>-<random>@qa.example (the default @qa.test domain contains a tracked token), name=random-data randomPersonName() re-drawn until clear of every tracked token","--- ADMIN: collect the tracked member queries ---
+[API] POST {{BACK_URL}}/api/push-message/search  body: {""trackNewRecipients"":true,""statuses"":[""Sent""],""take"":100} -> collect every memberQuery value
+--- ADMIN: create the account on the fly ---
+[ACT] generate a first name plus last name with random-data randomPersonName()
+[ACT] generate the email pushinbox-<timestamp>-<random>@qa.example
+[ACT] re-draw the name or the email while either contains a collected memberQuery token (case-insensitive)
+[API] POST {{BACK_URL}}/api/members  body: {""memberType"":""Contact"",""firstName"":""<first>"",""lastName"":""<last>"",""fullName"":""<first> <last>"",""emails"":[""<email>""]} -> 200, capture the contact id
+[API] POST {{BACK_URL}}/api/platform/security/users/create  body: {""userName"":""<email>"",""email"":""<email>"",""password"":""{{DEFAULT_TEST_PASSWORD}}"",""memberId"":""<contact id>"",""storeId"":""{{STORE_ID}}"",""userType"":""Customer"",""status"":""Approved"",""emailConfirmed"":true} -> succeeded true
+[WAIT] 20 seconds, the track-new-recipients top-up window
+[API] POST {{BACK_URL}}/graphql as the new account (password grant, storeId {{STORE_ID}}): { pushMessages(first: 1, withHidden: true) { totalCount } } -> totalCount 0; if it is above 0 a tracked query caught the account, report BLOCKED (not FAIL) and name the query
+--- STOREFRONT ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] sign in as the generated account (password {{DEFAULT_TEST_PASSWORD}})
+[WAIT] authenticated header visible
+[NAV] {{FRONT_URL}}/account/notifications
+[WAIT] notifications page loads
+[ACT] click the header bell 'Notifications'
+[WAIT] the bell dropdown opens","[DOM] empty state text 'You do not have any new notifications at this time' is visible on the page
 [DOM] notification list is empty — no notification items rendered
+[DOM] the bell dropdown shows 'No new notifications at the moment.' and no 'Clear all' action is present
 [DOM] no error messages or broken layout elements","[API] GET {{BACK_URL}}/api/platform/pushnotifications for this user returns empty array
 [NETWORK] no 4xx/5xx on page load
-[CONSOLE] no JS errors on empty notifications page","Blank white page with no empty state message, spinner does not resolve, 500 error, error message shown instead of friendly empty state","Sign out after test",ECL-14.3 | Behavior:push.inbox.empty-state | DataProfile:profile.push.empty-state,Not Automated
+[CONSOLE] no JS errors on empty notifications page","Blank white page with no empty state message, spinner does not resolve, 500 error, error message shown instead of friendly empty state",[API] DELETE {{BACK_URL}}/api/platform/security/users?names=<email> -> 200; [API] DELETE {{BACK_URL}}/api/members?ids=<contact id> -> 204,ECL-14.3 | Behavior:push.inbox.empty-state | DataProfile:profile.push.empty-state | KB-CB05268E | verified live vcst 2026-09-29 (on-the-fly account: pushMessages withHidden totalCount 0 after 20s),Not Automated
 PUSH-029,Storefront — Clear All Notifications (Bell Dropdown) and Mark Single as Unread,Storefront > Notifications > Bell Dropdown,High,,ECL-7.3,User authenticated with ≥3 notifications (mix of read and unread); bell dropdown accessible in header; Data: npm run seed:push sends 3 fresh unread messages to @td(PUSH_RECIPIENT_BULK.email) every run; run PUSH-021 before PUSH-029.,"front_url={{FRONT_URL}}, recipient=@td(PUSH_RECIPIENT_BULK.email)","[NAV] {{FRONT_URL}}
 [PRE:SIGNIN_AS:PUSH_RECIPIENT_BULK]
 [WAIT] header bell icon visible with notification indicator

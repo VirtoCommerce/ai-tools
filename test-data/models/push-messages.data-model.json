@@ -232,32 +232,32 @@
     {
       "id": "data.push.inbox.empty",
       "entity": "User",
-      "purpose": "A personal storefront account that no push message has ever targeted (068 PUSH-025).",
+      "purpose": "A personal storefront account that no push message has ever reached, created by the case itself (068 PUSH-025).",
       "required_state": {
         "account_type": "Personal",
-        "pushMessages(withHidden: true).totalCount": "0"
+        "pushMessages(withHidden: true).totalCount": "0",
+        "identity": "name and email contain no token of any tracked Sent memberQuery"
       },
-      "lifecycle": "FIXTURE",
-      "shared_state": "One targeted send ends the state for good: a Sent message cannot be deleted and clear-all only hides it, while the Notifications page lists hidden messages too. No case may target this account.",
+      "lifecycle": "STEP",
       "acquisition": {
-        "strategy": "CREATE"
+        "strategy": "CREATE",
+        "executor": "case"
       },
-      "seed_capability": "seed:users",
-      "td_alias": "PUSH_DATA_EMPTY.recipient",
       "cleanup": {
-        "required": false
+        "required": true,
+        "via": "The case Cleanup deletes the login (DELETE /api/platform/security/users?names=) and the contact (DELETE /api/members?ids=)."
       },
       "discriminates": "Zero messages INCLUDING hidden ones is the only state that shows the empty-state text; an inbox emptied with clear-all still lists its messages on the page (push.manage.clear-all), so it cannot stand in.",
-      "limits": "UNREACHABLE AS DESIGNED on vcst. Track new recipients adds any NEW member that matches a tracked message's memberQuery (domain map §1 link 7), and vcst holds 15 tracked Sent messages. Their free-text queries include \"test\", \"Test User\", \"admin\" and \"new\", so any AGENT-TEST / test-agent.com account matches \"test\" the moment it is created. seed:users therefore creates an account that is already non-empty. Resolution belongs to the fixture owner: an account whose name and email match none of the tracked queries (which conflicts with the AGENT-TEST naming the teardown sweep relies on), OR re-point PUSH-025 to a state that tolerates foreign tracked rows. Either way it stays fragile while anyone can create a new tracked message with a broad query. Replaces {{USER_EMAIL}}, which is empty today but is used by many suites and could receive a broadcast.",
+      "limits": "A stored account cannot hold this state: a Sent message with Track new recipients and a broad memberQuery reaches every matching member at creation (KB-CB05268E) — the seeded PD-04 account (PUSH_RECIPIENT_EMPTY) was reached within seconds and is retired. The case therefore creates the account right before it reads the inbox, and reports BLOCKED if a tracked query still catches it.",
       "evidence": [
         {
           "class": "OBSERVED",
-          "ref": "npm run seed:users + npm run seed:push:verify (vcst) [L3]",
-          "note": "seed:users created agent-test-push-empty@test-agent.com at 14:36Z; its inbox already held 1 message (pushMessages(withHidden: true).totalCount = 1): the Sent message 31ad4bc9 \"Welcome\", which has Track new recipients on and memberQuery \"test\". Creating the member triggered the recipient top-up. Sent messages cannot be edited or deleted, so this account cannot reach the required state again.",
+          "ref": "kb:KB-CB05268E",
+          "note": "negative control 2026-09-29: an account created with no tracked token in its name or email had pushMessages(withHidden:true).totalCount 0 after 20s",
           "date": "2026-09-29"
         }
       ],
-      "status": "DRIFT"
+      "status": "CONFIRMED"
     }
   ],
   "profiles": [
@@ -342,5 +342,6 @@
         "data.push.recipient.reader"
       ]
     }
-  ]
+  ],
+  "amended": "2026-09-29"
 }

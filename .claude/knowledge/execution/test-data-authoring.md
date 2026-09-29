@@ -361,6 +361,69 @@ Four rules:
 When triaging a suite failure, check fixture generation and consumption timestamps **before**
 reaching for a product explanation; here that ordering settled 5 of 11 failures in a single query.
 
+## FIFTH RULE — seed or create in the case: who can take the state away
+
+Cited from [`.claude/rules/test-data.md`](../../rules/test-data.md) §FIFTH RULE; this section is its
+only full statement. The lifecycle values it chooses between are defined in
+[`/qa-test-data-model`](../../skills/qa-test-data-model/SKILL.md) §Lifecycle. Which *layer* resolves a
+value (`{{VAR}}` / `@td()` / `live-discover` / `random-data`) is a different question, answered by
+[`live-discovery.md`](live-discovery.md) §Decision tree.
+
+**A seeded fixture is only as durable as the least stable thing that can reach it.** If something
+other than the tests can move it out of the state a case needs, re-seeding or redesigning the fixture
+only moves the fragility. The case has to create the state itself.
+
+### The decision — ask in order, the first "yes" decides
+
+| # | Question | Yes ⇒ | Typical states |
+|---|---|---|---|
+| 1 | Can something **other than the tests** move it out of the required state? Examples: tracked or auto-enrolment member queries, broadcasts, background jobs, expiry, another suite on pooled state | `STEP`: the case creates it right before the step that reads it | empty inbox, never ordered, first-time user, zero notifications |
+| 2 | Does the case itself **use it up irreversibly**? | `SCENARIO`: fresh per run, with a run handle (`STEP` if a single step uses it up) | completed mission, redeemed coupon, frozen progress, a placed order |
+| 3 | Is it read-only for the case, left alone by the environment, and costly, slow or async to build? | `FIXTURE`: seed it and name its `shared_state` | catalog + index, price list, inventory, org tree, configurable product |
+
+**Mixing is the normal shape.** Seed the costly parents as `FIXTURE`s (store, catalog, organization)
+and create only the fragile leaf in the case (the user, the cart, the message).
+
+### Recipe — a case-created (`STEP`) entity
+
+1. **Identity from `random-data`, chosen to avoid whatever the environment matches on.** Read the
+   matchers first (the tracked queries, the enrolment rules). A generic default can match on its own,
+   as PD-04 below shows.
+2. **Create it in `Steps`, not in `Preconditions`.** A precondition states a state; it does not
+   execute anything.
+3. **Guard the state straight after creating it.** If the environment has already touched it, report
+   `BLOCKED` (environment) with the observed value, never `FAIL`. The creation is the failed attempt
+   that makes `BLOCKED` legitimate.
+4. **Delete it in `Cleanup`**, with the `AGENT-TEST-` prefix as the sweep backstop if cleanup fails.
+5. **Log the created ids to evidence** (DISPOSABLE FIXTURES rule 1: an observation must outlive its
+   fixture).
+6. **Run the recipe live once before writing it into a case.** Include a negative control: an entity
+   created the same way stays untouched for as long as the case needs.
+
+### When NOT to create it in the case
+
+- **Creation is async.** If the entity is not readable until indexing or a background job finishes,
+  seed it. Then check before the run that it is still in the recorded state (the state-liveness gap
+  in §DISPOSABLE FIXTURES).
+- **The lane lacks the rights.** A storefront-only lane that cannot call the admin API needs a seeded
+  entity or a delegated step.
+- **It takes more than a few calls.** A multi-entity build belongs in a seeder (`/qa-generate-data`),
+  not in `Steps`.
+
+### The incident — PD-04, 2026-09-29
+
+`068` needed an account whose storefront notification inbox had never been reached. It was seeded as
+`PUSH_RECIPIENT_EMPTY` (PD-04). A Sent push message with *Track new recipients* and a broad
+`memberQuery` reaches every matching member when that member is created (KB-CB05268E). The seeded
+account was reached within seconds, and no stored account could ever show an empty inbox.
+`td:validate` and the alias registry stayed green, and `models:check` would have too. The fixture was
+retired. `PUSH-025` now creates the account itself: it reads the tracked queries, draws an identity
+free of their tokens (the default `@qa.test` email domain contained one), guards
+`pushMessages(withHidden: true).totalCount = 0`, and deletes the login and contact in Cleanup. The
+declaration is `data.push.inbox.empty` in `test-data/models/push-messages.data-model.json`
+(`lifecycle: STEP`, `executor: case`). A negative control confirmed the recipe: an account created
+this way still had 0 messages after 20 s.
+
 ## GOLDEN RULE — the pattern and the incident
 
 Cited from [`.claude/rules/test-data.md`](../../rules/test-data.md) §GOLDEN RULE, which states the rule
@@ -495,6 +558,7 @@ Traceability).
 | `td:validate:org-contract` (`pricing/validate-org-contract-data.mjs` → `pricing/org-contract-specs.mjs`) | VCST-5378 B2B **contract pricing + assortment scoping** (`npm run seed:org-contract`, live proof `seed:org-contract:verify`, teardown `seed:org-contract:teardown`). A **VACUITY** guard first, because this fixture family exists to close a vacuity: `.claude/knowledge/domain/ucp.md` §7 recorded contract pricing as NOT VERIFIABLE, and re-measured live 2026-09-22 `QA-TIER-001` read **29.99 anonymously and 29.99 org-authenticated** — equal values on both sides of the distinction under test (`.claude/rules/test-data.md` SECOND RULE), so every case built on it was a vacuous pass. The guard FAILS when the contract price stops diverging from the anonymous ladder **at any tier break**, when a break has no contract amount (the contract buyer would silently rejoin the anonymous price above that threshold), when the gap falls under 20% (a reviewer could read it as tax/rounding/FX), when a contract amount collides with any anonymous amount, when the contract ladder stops falling, when the org-only product loses its personalization tag (an untagged product is visible to everyone, so the "invisible anonymously" half asserts nothing), and when the last recorded live read-back shows the same price — or the same visibility — in both contexts. Second, the **cross-seeder** check no other gate can see: `b2b/organizations.csv` ORG-001 must DECLARE the contract group in its `groups` column, because `user-provision.orgBody()` rewrites an organisation's groups from that column on every `seed:b2b`, so a re-seed would silently un-contract the org with every guard still green. Third, the ordinary hygiene: five aliases registered `_inline` with `_notes`, prices/slug/url/tag equal to the values DERIVED from `standard-specs.SPEC_OVERLAYS` + the contract code (never hand-maintained), runtime GUIDs EMPTY in the committed base (DV-021), and no password literal. **MECHANISM, established live, not assumed:** `POST /api/contracts/prices/linkpricelist` derives a Base (prio 10000) + Priority (prio 10001) assignment, both conditioned on a `UserGroupsContainsCondition` equal to the contract CODE, plus a second pricelist for per-product contract prices; `DELETE /api/contracts` does **NOT** cascade to either, so teardown sweeps them by name. **LIMITATION, measured:** xAPI takes price-evaluation user groups from the **CONTACT**, not from its ORGANISATION — putting the org on the contract moves `POST /api/pricing/evaluate` but leaves the storefront on the list price, so the fixture also seeds a dedicated buyer contact carrying the same group. That asymmetry is a candidate product finding, not a fixture workaround. |
 | [`/qa-generate-data`](../skills/qa-generate-data/SKILL.md) | Authors fixtures from scratch with no system GUIDs (blank `*_guid`/`platform_id`, `seeded=false`), business-key aliases, `AGENT-TEST-` prefix; ends on a mandatory `validate-td-refs.ts` green gate |
 | [`test-data-engineer`](../agents/test-data-engineer.md) agent | The canonical author **and live runner** of seeders/fixtures/validators. Its mandatory process + self-review Judge enforce: no runtime GUID in a committed fixture, writeback to `aliases.<env>.json`, a matching `td:validate:<domain>` guard, teardown symmetry, and `scripts/unit/` tests green — then it **runs the real seed + `td:reconcile`** on a non-prod env (Node + Platform-API, no browser), delegating only browser-based storefront/suite verification |
+| [`/qa-test-data-model`](../../skills/qa-test-data-model/SKILL.md) `build` step 2 + `audit` | FIFTH RULE: chooses `FIXTURE` / `SCENARIO` / `STEP` by who can take the state away (§FIFTH RULE); `audit` flags an environment-destroyable fixture |
 | Regression suite CSVs | `Test_Data` columns use `{{VAR}}` and `@td()` exclusively |
 | `scripts/graphql/graphql-runner.ts` | Resolves `@td()` natively before sending GraphQL ops; rejects unresolved tokens at lint time |
 
