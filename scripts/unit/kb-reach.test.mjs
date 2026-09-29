@@ -14,8 +14,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync, appendFileSync, utimesSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  OWN_REACH_EVERY_MS, REACH_IDLE_MS, advanceReach, countToolUses, dropReach, idleReaches, markSent, ownReachDue,
-  promptsIn, readReach, reachLine, reachPath, sentPath, sentWork, unsent,
+  OWN_REACH_EVERY_MS, REACH_IDLE_MS, advanceReach, countToolUses, dropReach, idleReaches, lineTouches, lineWork, markSent,
+  ownReachDue, promptsIn, readReach, reachLine, reachPath, sentMark, sentPath, sessionKeyOf, unsent,
 } from '../kb/core/reach.mjs';
 import { reach } from '../kb/core/report-analyse.mjs';
 import { LOGGED } from '../kb/core/queue.mjs';
@@ -504,6 +504,8 @@ test('the Stop hook keys reach on the QUEUE’s session id, never on the payload
   assert.match(src, /const env = hookEnv\(process\.env, payload\)/, 'the payload reaches the key only through hookEnv');
   assert.match(src, /sessionId\(env\)/, 'the id comes from the same derivation the queue uses');
   assert.doesNotMatch(src, /payload[?.]*\.session_id/, 'the hook never reads the payload id itself');
+  // And its own cadence never spawns a push that has no token to push with (VCST-6091 review 2).
+  assert.match(src, /ownReachDue\(dir, session\) && Boolean\(writeToken\(env\)\.token\)/);
 });
 
 test('a session sends its own counters at once, then only when they grew and the interval passed (VCST-6091)', () => {
@@ -515,7 +517,7 @@ test('a session sends its own counters at once, then only when they grew and the
     assert.equal(ownReachDue(dir, 'own00001', { now }), true, 'never sent: at once');
 
     markSent(dir, 'own00001', readReach(dir, 'own00001'));
-    assert.equal(sentWork(dir, 'own00001'), 19);
+    assert.equal(sentMark(dir, 'own00001').work, 19);
     assert.equal(ownReachDue(dir, 'own00001', { now }), false, 'nothing new since the send');
 
     writeFileSync(reachPath(dir, 'own00001'), JSON.stringify({ session: 'own00001', cursor: 20, tools: 25, turns: 7, touchAt: [] }), 'utf8');
@@ -530,7 +532,7 @@ test('a session sends its own counters at once, then only when they grew and the
 
     // Dropping a finished state forgets what was sent, so a resumed session starts over cleanly.
     dropReach(dir, 'own00001');
-    assert.equal(sentWork(dir, 'own00001'), 0);
+    assert.equal(sentMark(dir, 'own00001').work, 0);
     assert.equal(ownReachDue(dir, 'own00001', { now }), false, 'no state, nothing to send');
     assert.equal(readReach(dir, 'own00001'), null);
     assert.throws(() => readFileSync(sentPath(dir, 'own00001')), /ENOENT/, 'the sent note went with the state');
@@ -558,20 +560,56 @@ test('legacy pid-keyed session lines are counted as the sessions they were, not 
   assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p1003', 'p1003']);
 });
 
-test('review 7: a replaced transcript forgets what was sent, so its new work is published', () => {
+test('review 7: a replaced transcript CARRIES its work — the session never shrinks, so its new work is published', () => {
+  // Resetting to zero made the session's work fall at the replacement; its fuller earlier line then
+  // won every comparison and nothing it did afterwards was ever visible (review rounds 1 and 2).
   const dir = mkdtempSync(join(tmpdir(), 'kb-reach-replaced-'));
   try {
     const t = join(dir, 'transcript.jsonl');
-    writeFileSync(t, `${turn('Read', 'Read', 'Read')}\n${turn('Edit')}\n`, 'utf8');
+    writeFileSync(t, `${turn('Read', 'Read', 'mcp__kb__kb_ask')}${turn('Edit')}`, 'utf8');
     advanceReach({ dir, session: 'repl0001', transcriptPath: t });
     markSent(dir, 'repl0001', readReach(dir, 'repl0001'));
-    writeFileSync(t, `${turn('Read')}\n`, 'utf8');                    // replaced: shorter than the cursor
-    advanceReach({ dir, session: 'repl0001', transcriptPath: t });
-    assert.equal(sentWork(dir, 'repl0001'), 0, 'the old mark is gone');
-    assert.equal(unsent(dir, readReach(dir, 'repl0001')), true);
+    assert.equal(sentMark(dir, 'repl0001').work, 4);
+
+    writeFileSync(t, `${turn('Read')}`, 'utf8');                      // replaced: shorter than the cursor
+    const after = advanceReach({ dir, session: 'repl0001', transcriptPath: t });
+    assert.deepEqual(after.touchAt, [], 'ordinals restart with the document they point into');
+    const line = reachLine(after);
+    assert.equal(lineWork(line), 5, '4 carried + 1 new: the work never decreases');
+    assert.equal(lineTouches(line), 1, 'and the base call made before the replacement is kept');
+    assert.equal(unsent(dir, after), true, 'so the new work is news');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('review 2.3: one legacy pid in two groups gives each ask to ONE group, by operator and time', () => {
+  const s = (session, tools, who, firstAt) => ({ kind: 'session', session, tools, turns: 1, touchAt: [], firstAt, who });
+  const r = reach([
+    s('p2001', 30, 'octo-a', '2026-09-25T08:00:00Z'),
+    s('p2001', 12, 'octo-b', '2026-09-28T06:00:00Z'),
+    { kind: 'ask', _session: 'p2001', who: 'octo-a', at: '2026-09-25T08:30:00Z' },
+    { kind: 'ask', _session: 'p2001', who: 'octo-b', at: '2026-09-28T06:10:00Z' },
+    { kind: 'ask', _session: 'p2001', who: 'octo-b', at: '2026-09-28T06:20:00Z' },
+  ]);
+  const byTools = Object.fromEntries(r.rows.map((x) => [x.tools, x.asks]));
+  assert.deepEqual(byTools, { 30: 1, 12: 2 }, 'three asks, three counted — not six');
+});
+
+test('review 2.5: a legacy row whose key lives only in `_session` is still named, and sorts', () => {
+  const r = reach([
+    { kind: 'session', _session: 'p3001', tools: 5, turns: 1, touchAt: [], firstAt: '2026-09-20T08:00:00Z', who: 'octo-a' },
+    { kind: 'session', session: 'f3d05dd3', tools: 5, turns: 1, touchAt: [], firstAt: '2026-09-20T09:00:00Z' },
+  ]);
+  assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p3001']);
+});
+
+test('one definition of work and of session identity, shared by writer and report', () => {
+  assert.equal(lineWork({ tools: 3, agentTools: 4, carriedTools: 5 }), 12);
+  assert.equal(lineTouches({ touchAt: [1, 2], agentTouches: 1, carriedTouches: 3 }), 6);
+  assert.equal(sessionKeyOf({ session: 'f3d05dd3', firstAt: 'x' }), 'f3d05dd3');
+  assert.equal(sessionKeyOf({ session: 'p24300-ab12', firstAt: 'x' }), 'p24300-ab12', 'a new process key is unique already');
+  assert.notEqual(sessionKeyOf({ session: 'p24300', who: 'a', firstAt: '1' }), sessionKeyOf({ session: 'p24300', who: 'b', firstAt: '2' }));
 });
 
 test('review 1: a collapsed legacy group still joins its asks and counts them as accounted', () => {

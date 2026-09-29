@@ -231,6 +231,13 @@ export function shortSession(hostId) {
  * `CLAUDE_CODE_SESSION_ID` is the TRANSCRIPT id, which is also what a hook payload carries as
  * `session_id`. So a `Stop` hook with no env var can hand its payload's id in under this name, and
  * derive the same key the session's own CLI and MCP processes do (`kb-flush.mjs`).
+ *
+ * KNOWN LIMIT, NOT FIXED HERE: `/clear` or `/resume` in the CLI gives the session a new id. Bash
+ * children and the hook see the new one; an MCP server keeps the id it was spawned with. So after a
+ * `/clear`, MCP-door asks are filed under the previous key while the new transcript is counted under
+ * the new one. That is one mis-filed join per clear, against the per-call split this replaces. The
+ * repair is to re-key an MCP line at push time from its `toolUseId`, which `caller.mjs` already
+ * locates in the transcripts; the env gives the MCP server no way to learn the new id itself.
  */
 export const SESSION_ENV = Object.freeze(['CLAUDE_CODE_HOST_SESSION_ID', 'CLAUDE_SESSION_ID', 'CLAUDE_CODE_SESSION_ID']);
 

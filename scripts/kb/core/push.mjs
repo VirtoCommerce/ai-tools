@@ -42,7 +42,10 @@ import {
   DISABLED_WHY, HELD_WHY, MUTATIONS, isSynthetic, pushConfirmRequired, kbDisabled, log, orderQueue, queueDir, queuePath, readQueue, recordPush,
   releaseConsumed, runOf, sessionId,
 } from './queue.mjs';
-import { REACH_IDLE_MS, dropReach, idleReaches, markSent, ownReachDue, reachLine, reachPath, readReach, unsent, workIn } from './reach.mjs';
+import {
+  REACH_IDLE_MS, dropReach, idleReaches, lineWork, markSent, ownReachDue, reachLine, reachPath, readReach, sessionKeyOf, unsent,
+  workIn,
+} from './reach.mjs';
 import { toLogLine } from './verbs.mjs';
 import { cachedWho } from './who.mjs';
 import { stampCallersFromTranscripts } from './caller.mjs';
@@ -188,7 +191,7 @@ export function published(line) {
     return line.ok === false || Boolean(line.redacted || line.problems || line.note || line.retries
       || line.convertedToConfirm || line.swept?.length);
   }
-  if (line?.kind === 'session') return workOf(line) > 0;
+  if (line?.kind === 'session') return lineWork(line) > 0;
   return true;
 }
 
@@ -198,14 +201,18 @@ export function published(line) {
  *
  * NOT "the queue is one user's", which was this PR's first answer and is false on Linux: `tmpdir()`
  * is the shared `/tmp` there, so one queue directory can hold several users' files (VCST-6091
- * review). On POSIX the file's owner is compared with our uid. On Windows `tmpdir()` is the user's own
- * profile, and there is no uid to compare, so ownership is the directory's. A file that cannot be
- * stat'ed is not ours: an unsigned line stays unsigned.
+ * review). On POSIX the file's owner is compared with our uid. On Windows there is no uid to compare,
+ * so ownership is the directory's — which holds only for the DEFAULT one, the user's own profile temp.
+ * A `KB_QUEUE_DIR` can point anywhere, a shared folder included, so under one nothing foreign is
+ * ours. A file that cannot be stat'ed is not ours either: an unsigned line stays unsigned.
  */
-export function ownedByMe(path, { uid = typeof process.getuid === 'function' ? process.getuid() : null } = {}) {
+export function ownedByMe(path, {
+  uid = typeof process.getuid === 'function' ? process.getuid() : null,
+  env = process.env,
+} = {}) {
   try {
     const s = statSync(path);
-    return uid === null ? true : s.uid === uid;
+    return uid === null ? !env.KB_QUEUE_DIR : s.uid === uid;
   } catch {
     return false;
   }
@@ -215,9 +222,6 @@ export function ownedByMe(path, { uid = typeof process.getuid === 'function' ? p
 function ownQueueHolds(env) {
   try { return statSync(queuePath(env)).size > 0; } catch { return false; }
 }
-
-/** A `session` line's whole work: its own calls and its subagents'. The measure "fuller" compares. */
-const workOf = (l) => Number(l?.tools ?? 0) + Number(l?.agentTools ?? 0);
 
 /**
  * Keep ONE `session` line per session in a file: the fullest (most work, ties to the later
@@ -241,23 +245,28 @@ export function fullestSessionLines(rawLines) {
     try { l = JSON.parse(raw); } catch { /* not ours to judge — kept as it is */ }
     return { raw, l };
   });
+  // Grouped by `sessionKeyOf`, the report's own rule: a legacy `p<pid>` key is two people as often as
+  // one, and merging by the key alone deleted one of them from the public log (VCST-6091 review).
+  const keyOf = (l) => (l?.kind === 'session' && typeof l.session === 'string' ? sessionKeyOf(l) : null);
   for (const { l } of parsed) {
-    if (l?.kind !== 'session' || typeof l.session !== 'string') continue;
-    const prior = best.get(l.session);
-    const fuller = !prior || workOf(l) > workOf(prior)
-      || (workOf(l) === workOf(prior) && String(l.lastAt ?? l.at ?? '') > String(prior.lastAt ?? prior.at ?? ''));
-    if (fuller) best.set(l.session, l);
+    const key = keyOf(l);
+    if (!key) continue;
+    const prior = best.get(key);
+    const fuller = !prior || lineWork(l) > lineWork(prior)
+      || (lineWork(l) === lineWork(prior) && String(l.lastAt ?? l.at ?? '') > String(prior.lastAt ?? prior.at ?? ''));
+    if (fuller) best.set(key, l);
     const began = typeof l.firstAt === 'string' ? l.firstAt : '';
-    if (began && (!earliest.has(l.session) || began < earliest.get(l.session))) earliest.set(l.session, began);
+    if (began && (!earliest.has(key) || began < earliest.get(key))) earliest.set(key, began);
   }
   const placed = new Set();
   const out = [];
   for (const { raw, l } of parsed) {
-    if (l?.kind !== 'session' || typeof l.session !== 'string') { out.push(raw); continue; }
-    if (placed.has(l.session)) continue;
-    placed.add(l.session);
-    const kept = best.get(l.session);
-    const began = earliest.get(l.session);
+    const key = keyOf(l);
+    if (!key) { out.push(raw); continue; }
+    if (placed.has(key)) continue;
+    placed.add(key);
+    const kept = best.get(key);
+    const began = earliest.get(key);
     const line = began && began !== kept.firstAt ? { ...kept, firstAt: began } : kept;
     out.push(JSON.stringify(line) === JSON.stringify(l) ? raw : JSON.stringify(line));
   }

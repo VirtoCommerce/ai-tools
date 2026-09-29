@@ -17,6 +17,7 @@
 
 import { canonicalStand } from './canonical.mjs';
 import { MIN_COVERAGE, MIN_WORDS } from './rank.mjs';
+import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach.mjs';
 
 /** Log kinds this analysis knows about. Anything else is counted and otherwise ignored. */
 export const KNOWN_KINDS = Object.freeze([
@@ -887,25 +888,6 @@ export function kindTally(lines) {
  * a ratio out of a missing measurement -- the same discipline `unreachable` gets in the miss panel,
  * where the base was not read and so the ask says nothing about coverage.
  */
-/** The bare `p<pid>` key a process with no session id got before VCST-6091 (now `p<pid>-<hex>`). */
-const LEGACY_PROCESS_KEY = /^p\d+$/;
-
-/**
- * Which SESSION a `session` line belongs to, for grouping.
- *
- * Its own key — except the bare pid keys published before VCST-6091. Those were minted afresh by
- * every `Stop` hook, so ONE session appears as one line per turn, each recounting its transcript from
- * the start: 126 lines, 125 of them `turns: 1`, over 13 real sessions, for one operator on
- * 2026-09-28. And a pid is not unique across machines, so one key can hold two people. What IS stable
- * across those lines is the transcript's own start (`firstAt`, read from the transcript itself) and
- * the operator, so that pair is the session. The lines themselves are left as published.
- */
-export function sessionKeyOf(l) {
-  const id = l?.session ?? l?._session;
-  if (!id) return null;
-  return LEGACY_PROCESS_KEY.test(id) && l.firstAt ? `pid~${l.who ?? '?'}~${l.firstAt}` : id;
-}
-
 /**
  * `since` — THE WINDOW, and this panel is the one place it has to be applied by hand.
  *
@@ -951,8 +933,9 @@ export function reach(lines, { since = null } = {}) {
     const began = String(l.firstAt ?? l.at ?? '');
     const prior = best.get(id);
     // The WHOLE session's work, subagents included (PLAN §23.11) — which is also what "fuller" must
-    // compare, or a resumed parent with fewer own calls would lose to a stale line.
-    const tools = Number(l.tools ?? 0) + Number(l.agentTools ?? 0);
+    // compare, or a resumed parent with fewer own calls would lose to a stale line. One definition,
+    // shared with the writer (`lineWork`).
+    const tools = lineWork(l);
     const fuller = !prior || tools > prior.tools
       || (tools === prior.tools && String(l.lastAt ?? l.at ?? '') > String(prior.line.lastAt ?? prior.line.at ?? ''));
     const start = prior && prior.began && (!began || prior.began < began) ? prior.began : began;
@@ -963,29 +946,55 @@ export function reach(lines, { since = null } = {}) {
     best.set(id, fuller ? { line: l, tools, began: start, keys } : { ...prior, began: start, keys });
   }
 
+  // A LEGACY KEY'S ASKS GO TO EXACTLY ONE GROUP. One `p<pid>` can sit in two groups — two people, or
+  // one person's pid reused — and summing its asks into every group holding it counted them twice
+  // (VCST-6091 review). An ask carries its own `who` and `at`, so it goes to the group of the same
+  // operator that had started by then, the latest such; failing that, to the first group holding the
+  // key. A real key keeps the plain lookup.
+  const legacyGroups = new Map();
+  for (const [id, g] of best) {
+    if (!id.startsWith('pid~')) continue;
+    for (const k of g.keys) {
+      if (!legacyGroups.has(k)) legacyGroups.set(k, []);
+      legacyGroups.get(k).push({ id, who: g.line.who ?? '?', began: g.began });
+    }
+  }
+  const legacyAsks = new Map();
+  for (const l of lines) {
+    if (l.kind !== 'ask' || !isLegacyProcessKey(l._session) || !legacyGroups.has(l._session)) continue;
+    const groups = legacyGroups.get(l._session);
+    const at = String(l.at ?? '');
+    const mine = groups.filter((g) => g.who === (l.who ?? '?') && (!at || !g.began || g.began <= at));
+    const to = mine.sort((a, b) => b.began.localeCompare(a.began))[0] ?? groups[0];
+    legacyAsks.set(to.id, (legacyAsks.get(to.id) ?? 0) + 1);
+  }
+
   const rows = [];
   const seen = new Set();
   for (const [id, { line: l, began, keys }] of best) {
     if (since && began && began < since) continue;
     for (const k of keys) seen.add(k);
+    const legacy = id.startsWith('pid~');
     const touchAt = Array.isArray(l.touchAt) ? l.touchAt : [];
     const agentTools = Number(l.agentTools ?? 0);
     const agentTouches = Number(l.agentTouches ?? 0);
     rows.push({
-      // A collapsed legacy group is shown under the key its fullest line carried, never the grouping key.
-      session: id.startsWith('pid~') ? l.session : id,
-      // Totals over the session; the subagents' share beside them. A line from before 2026-09-23
-      // carries no `agent*` fields and reads as the parent alone — which is what it measured.
-      tools: Number(l.tools ?? 0) + agentTools,
+      // A collapsed legacy group is shown under the key its fullest line carried, never the grouping
+      // key — and that key may live only in `_session`, on a line from before `session` was written.
+      session: legacy ? (l.session ?? l._session) : id,
+      // Totals over the session; the subagents' share beside them, and whatever was carried over a
+      // replaced transcript. A line from before 2026-09-23 carries no `agent*` fields and reads as the
+      // parent alone — which is what it measured.
+      tools: lineWork(l),
       turns: Number(l.turns ?? 0),
-      touches: touchAt.length + agentTouches,
+      touches: lineTouches(l),
       agents: Number(l.agents ?? 0),
       agentTools,
       agentTouches,
       // Ordinals into the PARENT's transcript, so they describe the parent only.
       firstTouch: touchAt.length ? touchAt[0] : null,
       lastTouch: touchAt.length ? touchAt[touchAt.length - 1] : null,
-      asks: [...keys].reduce((n, k) => n + (asksBySession.get(k) ?? 0), 0),
+      asks: legacy ? (legacyAsks.get(id) ?? 0) : (asksBySession.get(id) ?? 0),
       at: began || '',
     });
   }

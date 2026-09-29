@@ -1616,7 +1616,7 @@ test('review 3: with no token, our counters are not queued at all — the queue 
 test('review 4: an unsigned line is signed only from a file this user owns', () => withQueue(async ({ dir }) => {
   const mine = join(dir, 'owned.jsonl');
   await writeFile(mine, 'x\n', 'utf8');
-  assert.equal(ownedByMe(mine, { uid: null }), true, 'Windows: the temp directory is the user’s own');
+  assert.equal(ownedByMe(mine, { uid: null, env: {} }), true, 'Windows: the default temp directory is the user’s own');
   const { uid } = await import('node:fs').then((fs) => fs.statSync(mine));
   assert.equal(ownedByMe(mine, { uid }), true);
   assert.equal(ownedByMe(mine, { uid: uid + 1 }), false, 'POSIX, another user’s file in a shared /tmp');
@@ -1645,3 +1645,16 @@ test('review 9: a start is kept only if its DAY survives the push-time retention
   assert.equal(logTargetOf(line, { session: 'x', fallback: pushed }), 'log/20260928-aaaa1111.jsonl');
   assert.deepEqual(expiredLogs([`log/${logTargetOf(line, { session: 'x', fallback: pushed }).slice(4)}`], { at: pushed }), []);
 });
+
+test('review 2.1: the writer keeps two people sharing one legacy pid key — it groups as the report does', () => {
+  const a = JSON.stringify({ kind: 'session', session: 'p24300', tools: 29, firstAt: '2026-09-28T06:30:00Z', who: 'octo-b' });
+  const b = JSON.stringify({ kind: 'session', session: 'p24300', tools: 12, agentTools: 97, firstAt: '2026-09-25T19:20:00Z', who: 'octo-a' });
+  assert.equal(fullestSessionLines([a, b]).length, 2, 'neither person is deleted from the public log');
+});
+
+test('review 2.7: on Windows a custom KB_QUEUE_DIR makes nothing foreign ours', () => withQueue(async ({ dir }) => {
+  const f = join(dir, 'theirs.jsonl');
+  await writeFile(f, 'x\n', 'utf8');
+  assert.equal(ownedByMe(f, { uid: null, env: {} }), true, 'the default: the user’s own profile temp');
+  assert.equal(ownedByMe(f, { uid: null, env: { KB_QUEUE_DIR: dir } }), false, 'a directory that may be shared');
+}));

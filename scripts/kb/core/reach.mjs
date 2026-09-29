@@ -201,10 +201,16 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   // a document that no longer exists, so the first call of the new transcript is reported as call
   // 4 of a file that has three: `firstTouch`, the one field worth having, becomes fiction.
   const restarted = size < prior.cursor;
-  // The counters start again from zero, so what the session last SENT no longer measures anything:
-  // left in place it would hold every later send back until the new count overtook the old one, and
-  // a replaced transcript that never grew that far would never be published again (VCST-6091 review).
-  if (restarted) { try { rmSync(sentPath(dir, session), { force: true }); } catch { /* nothing sent */ } }
+  // BUT THE WORK ALREADY DONE IS CARRIED, not forgotten (VCST-6091 review). The ordinals restart with
+  // the document they point into; the session's TOTALS do not, because the calls made before the
+  // replacement really happened. Without the carry, a session's work fell at the replacement, its
+  // fuller earlier line won every comparison (`fullestSessionLines`, `reach()`), and nothing it did
+  // afterwards was ever visible. `carriedTools`/`carriedTouches` hold everything before the newest
+  // document, so the session's work never decreases.
+  const priorLine = restarted ? reachLine(prior) : null;
+  const carried = restarted
+    ? { tools: lineWork(priorLine), touches: lineTouches(priorLine) }
+    : { tools: Number(prior.carriedTools ?? 0), touches: Number(prior.carriedTouches ?? 0) };
   const from = restarted ? 0 : prior.cursor;
   const base = restarted ? { ...prior, tools: 0, touchAt: [] } : prior;
 
@@ -249,6 +255,7 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
     firstAt: prior.firstAt ?? (from === 0 ? firstStamp(chunk) : null) ?? at.toISOString(),
     lastAt: at.toISOString(),
     subagents: advanceSubagents(restarted ? null : prior.subagents, transcriptPath),
+    ...(carried.tools || carried.touches ? { carriedTools: carried.tools, carriedTouches: carried.touches } : {}),
     // LOCAL ONLY — `reachLine` never copies it. Kept so `idleReaches` can see that a session whose
     // own turns have stopped is still WORKING through a subagent (PLAN §23.11).
     transcriptPath,
@@ -329,9 +336,54 @@ export const reachLine = (state) => ({
   turns: state.turns,
   touchAt: state.touchAt,
   ...subagentTotals(state.subagents),
+  // Everything before a replaced transcript, as two totals: the ordinals above point into the
+  // current document only, and these are what it cannot hold (`advanceReach`).
+  ...(state.carriedTools || state.carriedTouches
+    ? { carriedTools: Number(state.carriedTools ?? 0), carriedTouches: Number(state.carriedTouches ?? 0) }
+    : {}),
   firstAt: state.firstAt,
   lastAt: state.lastAt,
 });
+
+/**
+ * A published `session` line's whole WORK: its own calls, its subagents', and what it carried over a
+ * replaced transcript. THE ONE DEFINITION — the writer's merge (`fullestSessionLines`), the publish
+ * filter (`published`), the send marks and the report (`reach()`) all compare by it, and three copies
+ * of one sum is how the carried calls would have been added in one place and forgotten in two.
+ */
+export function lineWork(l) {
+  return Number(l?.tools ?? 0) + Number(l?.agentTools ?? 0) + Number(l?.carriedTools ?? 0);
+}
+
+/** A published `session` line's base calls, by the same rule: ordinals, subagents' and carried. */
+export function lineTouches(l) {
+  return (Array.isArray(l?.touchAt) ? l.touchAt.length : 0) + Number(l?.agentTouches ?? 0) + Number(l?.carriedTouches ?? 0);
+}
+
+/** The bare `p<pid>` key a process with no session id got before VCST-6091 (now `p<pid>-<hex>`). */
+const LEGACY_PROCESS_KEY = /^p\d+$/;
+
+/** Is this one of the pre-VCST-6091 bare pid keys? */
+export const isLegacyProcessKey = (id) => LEGACY_PROCESS_KEY.test(String(id ?? ''));
+
+/**
+ * Which SESSION a `session` line belongs to. THE ONE DEFINITION, for the writer that merges lines in a
+ * file and the report that groups them — two rules would let the writer delete what the report
+ * keeps apart (VCST-6091 review: the writer grouped by key alone and dropped one of two people's
+ * lines sharing `p24300`).
+ *
+ * Its own key — except the bare pid keys published before VCST-6091. Those were minted afresh by
+ * every `Stop` hook, so ONE session appears as one line per turn, each recounting its transcript from
+ * the start: 126 lines, 125 of them `turns: 1`, over 13 real sessions, for one operator on
+ * 2026-09-28. And a pid is not unique across machines, so one key can hold two people. What IS stable
+ * across those lines is the transcript's own start (`firstAt`, read from the transcript itself) and
+ * the operator, so that pair is the session.
+ */
+export function sessionKeyOf(l) {
+  const id = l?.session ?? l?._session;
+  if (!id) return null;
+  return isLegacyProcessKey(id) && l.firstAt ? `pid~${l.who ?? '?'}~${l.firstAt}` : id;
+}
 
 /**
  * Drop a published state — and leave a TOMBSTONE saying so.
@@ -366,10 +418,8 @@ export const OWN_REACH_EVERY_MS = 30 * 60 * 1000;
 /** `<session>.reach.sent` — what the last published line carried: `<work> <turns>`. Not `.reach.json`. */
 export const sentPath = (dir, session) => join(dir, `${session}.reach.sent`);
 
-/** A state's whole work, subagents included: the number a published line is compared by. */
-export function workIn(state) {
-  return Number(state?.tools ?? 0) + Object.values(state?.subagents ?? {}).reduce((n, a) => n + Number(a?.tools ?? 0), 0);
-}
+/** A state's whole work: exactly what its published line would carry (`lineWork`). */
+export const workIn = (state) => lineWork(reachLine(state ?? {}));
 
 /** What the last published line for this session carried; zeros if none was sent. */
 export function sentMark(dir, session) {
@@ -380,9 +430,6 @@ export function sentMark(dir, session) {
     return { work: 0, turns: 0 };
   }
 }
-
-/** The work the last published line for this session carried, or 0 if none was sent. */
-export const sentWork = (dir, session) => sentMark(dir, session).work;
 
 /** Record what a line queued for publication carried. Best effort, like every other note. */
 export function markSent(dir, session, state) {

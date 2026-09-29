@@ -34,6 +34,7 @@ import { fileURLToPath } from 'node:url';
 import { REACH_IDLE_MS, advanceReach, idleReaches, ownReachDue } from '../../scripts/kb/core/reach.mjs';
 import { hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, runOf, sessionId } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
+import { writeToken } from '../../scripts/kb/core/token.mjs';
 
 function queueHasWork(dir) {
   try {
@@ -95,7 +96,10 @@ function main() {
   // AND THIS SESSION'S OWN COUNTERS, when it has nothing else to send (VCST-6091): at once the first
   // time, then at most every `OWN_REACH_EVERY_MS`. Without it a session that never asked reached the
   // base only when a later session on this machine happened to sweep it — days later, or never.
-  const mine = ownReachDue(dir, session);
+  // ONLY WITH A TOKEN: without one the push queues nothing and marks nothing sent, so `ownReachDue`
+  // would stay true and every turn would start a detached push that does nothing (VCST-6091 review).
+  // `writeToken` reads env files and nothing else, which the hook's budget allows.
+  const mine = ownReachDue(dir, session) && Boolean(writeToken(env).token);
   if (!queueHasWork(dir) && !stale && !mine) return;
   // KB_PUSH_CONFIRM=1: a detached child has nobody to ask, so it would only hold. Not spawned.
   if (pushConfirmRequired(process.env)) return;
