@@ -96,7 +96,7 @@ Deliver a concise verdict to the user: counts per bucket, the report path, and t
 ## Rules
 - **Never file a tracker ticket (Jira / Azure Boards), never call `/qa-fix`, never merge anything.** Detect, classify, verify, fix *tests*, draft *bugs* — then STOP for a human.
 - **Never edit a CSV directly** — all test-case fixes go through `/qa-review-tests --fix` (confirmation + diff).
-- **Triage FAIL + BLOCKED + SKIPPED** (only PASS and PENDING are excluded). A BLOCKED is not a terminal verdict: it gets its documented investigation here (why it was blocked — env / precondition / data / real bug; provenance `feedback_blocked_is_not_terminal`); a SKIPPED is checked for a removed/renamed feature (stale test) vs an intentional gate.
+- **Triage FAIL + BLOCKED + SKIPPED** (only PASS and PENDING are excluded). A BLOCKED is not a terminal verdict: it gets its documented investigation here (why it was blocked — env / precondition / data / real bug); a SKIPPED is checked for a removed/renamed feature (stale test) vs an intentional gate.
 - **Ambiguous → REAL_BUG / LOW confidence → human review.** Never relabel an uncertain failure as a test-defect to clear the board.
 - **Read the evidence.** Open the screenshot for visual/element failures; use the trace's `networkFailures[]`/`consoleErrors[]` for network/JS failures; reference the HAR only when the trace is thin.
 - **Report policy:** the triage report lives inside `reports/regression/{RUN_ID}/`; reference artifacts by path (`.claude/rules/reports.md` §8). Long reasoning goes to the user via the verdict, not to disk.

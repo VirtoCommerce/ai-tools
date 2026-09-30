@@ -104,7 +104,7 @@ Edit `.claude/knowledge/domain/sitemap.md`, touching **only** what the diff flag
 | §11 "All products" dropdown / inline nav | `navCategories[]` |
 | §14 estimates | counts derived above |
 
-Discipline (honor `.claude/rules/reports.md` brevity + `feedback_env_resilience`):
+Discipline (honor `.claude/rules/reports.md` brevity; assert shape, not values that drift with the catalog):
 - **Bump the rev** (`rev N` → `rev N+1`) and the **Generated** date in the header + the footer "Last Updated".
 - **Append one changelog row-set** under a new `## Changelog (vs. <prev date> rev N)` block — deltas only (added/removed/renamed slugs, version bumps). Do not rewrite prior changelog blocks.
 - Keep the **guest-crawl caveat** and the **"not re-verified this rev"** note honest — say which sections you actually touched.

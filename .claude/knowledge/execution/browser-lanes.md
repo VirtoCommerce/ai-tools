@@ -109,7 +109,7 @@ Four conditions travel with it, and the third decides whether this path is avail
   inbox and the recovery path is Admin SPA → Security → Users → *Resend link* → Notifications → Preview →
   extract the `confirmemail?UserId=…&Token=…` URL (`email_verification_testing_workflow` memory) — which
   needs an **admin** session, i.e. straight back to the credential problem on this lane. Check the
-  setting before committing to this route (`feedback_check_store_settings_before_blocked`).
+  setting before committing to this route.
 - **Prefix it `AGENT-TEST` explicitly.** `uniqueEmail()` in `scripts/lib/random-data.ts` defaults to
   `agent-<ts>-<id>@qa.test`, but every teardown sweep keys on `AGENT-TEST` (`seed-bopis.mjs`,
   `reconcile-test-data.mjs` — *"only deletes locations whose LIVE name starts with AGENT-TEST"*), so the
