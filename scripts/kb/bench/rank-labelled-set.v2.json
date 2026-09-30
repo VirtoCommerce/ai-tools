@@ -46,6 +46,66 @@
     },
     "note": "The one remaining wrong pick is W-L5 -> KB-C1024558: that entry says how to tell a coupon discount from an automatic one, not whether the summary shows them on separate lines. Controls picked: C-smoke-path (KB-50EBEEE9, 2 of 3 runs) and W-L8 (KB-25388E6C / KB-409CE7C7, the borderline control)."
   },
+  "baselineFloor1": {
+    "recorded": "THE PRODUCTION BAR M4 replaces: floor-1, what main runs (rank.mjs scoreRows + admissible, top 3 bodies). Measured 2026-09-30 on vc-knowledge branch vcst-6122-schema2 @ f188eb8 (334 retrievable rows) with scripts/kb/bench/verdict-bench.mjs --decider floor-1. The answer is the FIRST hit; top3 counts a right entry anywhere in the returned list and is not an answer. floor-1 reads subject + question only, never the card. Tokens = chars/4 of the rendered ask text. Test split not opened: it is measured once, at the gate.",
+    "dev": {
+      "answerPrecision": "5/16",
+      "controlsNone": "12/19",
+      "targetsAnswered": "5/37",
+      "top3": "7/37",
+      "paraphraseRecallAt10": "20/24",
+      "targetsRecallAt10": "31/37",
+      "ambiguous": "0 (floor-1 has no ambiguous state)",
+      "meanTokens": 450,
+      "wrongAnswers": [
+        "T-coupon-input",
+        "W-L5",
+        "W-C2",
+        "P-BAEBCDA7-2",
+        "C-smoke-path",
+        "C-bopis-pickup",
+        "W-S3",
+        "W-S13",
+        "W-C1",
+        "W-C3",
+        "N-roster-export"
+      ]
+    },
+    "calibration": {
+      "answerPrecision": "2/9",
+      "controlsNone": "5/10",
+      "targetsAnswered": "2/22",
+      "top3": "2/22",
+      "paraphraseRecallAt10": "8/14",
+      "targetsRecallAt10": "14/22",
+      "ambiguous": "0 (floor-1 has no ambiguous state)",
+      "meanTokens": 380,
+      "wrongAnswers": [
+        "W-L3",
+        "W-C4",
+        "W-S14",
+        "W-S15",
+        "W-L2",
+        "W-C5",
+        "N-points-filter"
+      ]
+    },
+    "wave1Misses": {
+      "answered": [
+        "W-L6"
+      ],
+      "inTop10NotAnswered": [
+        "W-L1",
+        "W-P3"
+      ],
+      "notInTop10": [
+        "W-P1",
+        "W-P6"
+      ]
+    },
+    "causes": "dev + calibration, 88 rows. Targets: 18 with the right entry ranked FIRST and refused by the coverage floor; 16 at rank 2-10; 8 below 10; 4 sharing no word; 7 answered right (3 by anchor, 4 by words); 6 answered wrong (5 by anchor, 1 by words). Controls: 17 none; 12 answered (7 by anchor, 5 by words). 15 active entries carry /cart (14 on 8c8f844), and an anchor passes unconditionally, so a question naming /cart is answered by whichever of them shares the most common words.",
+    "agreesWithReference": "admission is floor-1b's, so controls answered is directly comparable: dev 7/19 here vs 8/19 on 8c8f844, calibration 5/10 vs 5/10; top3 7/37 and 2/22, same as floor1bTop3."
+  },
   "targets": [
     {
       "id": "T-gift-long",
