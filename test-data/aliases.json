@@ -2445,7 +2445,7 @@
       "org_id": "org_id",
       "roles": "roles"
     },
-    "notes": "Default B2B org user for bucket-D preflight `[PRE:SIGNIN_AS:ORG_USER_DEFAULT]`. Resolves to USR-015 (acme_store_maintainer_1@acme.com / {{DEFAULT_TEST_PASSWORD}}) seeded in QA env. Resolve the password ONLY through @td(ORG_USER_DEFAULT.password) (the users.csv {{DEFAULT_TEST_PASSWORD}} token) — this alias has no password_env, and .env ORG_USER_EMAIL / ORG_USER_PASSWORD belong to a DIFFERENT account on vcst (pairing this email with ORG_USER_PASSWORD returns 400; measured 2026-09-30, REG-2026-09-30-1536 SRCH-021). Added 2026-04-24 as part of preflight-tag rollout."
+    "notes": "Default B2B org user for bucket-D preflight `[PRE:SIGNIN_AS:ORG_USER_DEFAULT]`. Resolves to USR-015 (acme_store_maintainer_1@acme.com / {{DEFAULT_TEST_PASSWORD}}) seeded in QA env. Matches .env ORG_USER_EMAIL / ORG_USER_PASSWORD. Added 2026-04-24 as part of preflight-tag rollout."
   },
   "ORG_XSS": {
     "file": "security/xss-payloads",
@@ -8365,5 +8365,74 @@
       "org": "org"
     },
     "_notes": "050l recipient in its own org; its cases self-seed their message (PUSH_MSG_SEED). Replaces TECHFLOW_ADMIN."
+  },
+  "PUSH_AUDIENCE_PARENT_ORG": {
+    "_inline": true,
+    "_notes": "Push Messages audience-builder fixture (VCST-5944). Seeded by scripts/seed-data/push-messages/seed-push-audience.mjs (idempotent, teardown-symmetric); guard npm run td:validate:push-audience. Business keys below are committed; the runtime platform GUID (id/platform_id) lives ONLY in aliases.<env>.json. WHY: a stock env has 61 orgs and ZERO with a parent, and its single Employee holds no login, so BOTH \"a company includes the companies under it\" and \"All registered customers (membertype:Contact) excludes an Employee holding a login\" are undecidable there. Selecting PUSH_AUDIENCE_PARENT_ORG must preview 3 recipients — a non-recursive expansion returns 1, one blind to the login gate returns 4. Selected alone, it must resolve to the WHOLE subtree (3). A non-recursive expansion returns 1.",
+    "name": "AGENT-TEST-PUSH-PARENT",
+    "id": "",
+    "platform_id": ""
+  },
+  "PUSH_AUDIENCE_CHILD_ORG": {
+    "_inline": true,
+    "_notes": "Push Messages audience-builder fixture (VCST-5944). Seeded by scripts/seed-data/push-messages/seed-push-audience.mjs (idempotent, teardown-symmetric); guard npm run td:validate:push-audience. Business keys below are committed; the runtime platform GUID (id/platform_id) lives ONLY in aliases.<env>.json. WHY: a stock env has 61 orgs and ZERO with a parent, and its single Employee holds no login, so BOTH \"a company includes the companies under it\" and \"All registered customers (membertype:Contact) excludes an Employee holding a login\" are undecidable there. Selecting PUSH_AUDIENCE_PARENT_ORG must preview 3 recipients — a non-recursive expansion returns 1, one blind to the login gate returns 4. Selected alone it must resolve to 2 — the control that proves the parent 3 came from expansion, not from a miscount.",
+    "name": "AGENT-TEST-PUSH-CHILD",
+    "id": "",
+    "platform_id": ""
+  },
+  "PUSH_AUDIENCE_PARENT_CONTACT": {
+    "_inline": true,
+    "_notes": "Push Messages audience-builder fixture (VCST-5944). Seeded by scripts/seed-data/push-messages/seed-push-audience.mjs (idempotent, teardown-symmetric); guard npm run td:validate:push-audience. Business keys below are committed; the runtime platform GUID (id/platform_id) lives ONLY in aliases.<env>.json. WHY: a stock env has 61 orgs and ZERO with a parent, and its single Employee holds no login, so BOTH \"a company includes the companies under it\" and \"All registered customers (membertype:Contact) excludes an Employee holding a login\" are undecidable there. Selecting PUSH_AUDIENCE_PARENT_ORG must preview 3 recipients — a non-recursive expansion returns 1, one blind to the login gate returns 4. Directly in the parent — the ONLY recipient a non-recursive implementation finds.",
+    "name": "Parent One",
+    "email": "agent-test-push-parent-1@yopmail.com",
+    "memberType": "Contact",
+    "hasLogin": "true",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "id": "",
+    "platform_id": ""
+  },
+  "PUSH_AUDIENCE_CHILD_CONTACT_1": {
+    "_inline": true,
+    "_notes": "Push Messages audience-builder fixture (VCST-5944). Seeded by scripts/seed-data/push-messages/seed-push-audience.mjs (idempotent, teardown-symmetric); guard npm run td:validate:push-audience. Business keys below are committed; the runtime platform GUID (id/platform_id) lives ONLY in aliases.<env>.json. WHY: a stock env has 61 orgs and ZERO with a parent, and its single Employee holds no login, so BOTH \"a company includes the companies under it\" and \"All registered customers (membertype:Contact) excludes an Employee holding a login\" are undecidable there. Selecting PUSH_AUDIENCE_PARENT_ORG must preview 3 recipients — a non-recursive expansion returns 1, one blind to the login gate returns 4. Reachable from the parent ONLY by descending into the child company.",
+    "name": "Child One",
+    "email": "agent-test-push-child-1@yopmail.com",
+    "memberType": "Contact",
+    "hasLogin": "true",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "id": "",
+    "platform_id": ""
+  },
+  "PUSH_AUDIENCE_CHILD_CONTACT_2": {
+    "_inline": true,
+    "_notes": "Push Messages audience-builder fixture (VCST-5944). Seeded by scripts/seed-data/push-messages/seed-push-audience.mjs (idempotent, teardown-symmetric); guard npm run td:validate:push-audience. Business keys below are committed; the runtime platform GUID (id/platform_id) lives ONLY in aliases.<env>.json. WHY: a stock env has 61 orgs and ZERO with a parent, and its single Employee holds no login, so BOTH \"a company includes the companies under it\" and \"All registered customers (membertype:Contact) excludes an Employee holding a login\" are undecidable there. Selecting PUSH_AUDIENCE_PARENT_ORG must preview 3 recipients — a non-recursive expansion returns 1, one blind to the login gate returns 4. Second child recipient — makes parent(3) / child(2) / non-recursive(1) three DISTINCT numbers.",
+    "name": "Child Two",
+    "email": "agent-test-push-child-2@yopmail.com",
+    "memberType": "Contact",
+    "hasLogin": "true",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "id": "",
+    "platform_id": ""
+  },
+  "PUSH_AUDIENCE_CHILD_CONTACT_NOLOGIN": {
+    "_inline": true,
+    "_notes": "Push Messages audience-builder fixture (VCST-5944). Seeded by scripts/seed-data/push-messages/seed-push-audience.mjs (idempotent, teardown-symmetric); guard npm run td:validate:push-audience. Business keys below are committed; the runtime platform GUID (id/platform_id) lives ONLY in aliases.<env>.json. WHY: a stock env has 61 orgs and ZERO with a parent, and its single Employee holds no login, so BOTH \"a company includes the companies under it\" and \"All registered customers (membertype:Contact) excludes an Employee holding a login\" are undecidable there. Selecting PUSH_AUDIENCE_PARENT_ORG must preview 3 recipients — a non-recursive expansion returns 1, one blind to the login gate returns 4. Has NO security account, so it must NOT be a recipient. Its presence is what makes the login gate falsifiable (4 vs 3).",
+    "name": "Child Nologin",
+    "email": "agent-test-push-child-nologin@yopmail.com",
+    "memberType": "Contact",
+    "hasLogin": "false",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "id": "",
+    "platform_id": ""
+  },
+  "PUSH_AUDIENCE_EMPLOYEE": {
+    "_inline": true,
+    "_notes": "Push Messages audience-builder fixture (VCST-5944). Seeded by scripts/seed-data/push-messages/seed-push-audience.mjs (idempotent, teardown-symmetric); guard npm run td:validate:push-audience. Business keys below are committed; the runtime platform GUID (id/platform_id) lives ONLY in aliases.<env>.json. WHY: a stock env has 61 orgs and ZERO with a parent, and its single Employee holds no login, so BOTH \"a company includes the companies under it\" and \"All registered customers (membertype:Contact) excludes an Employee holding a login\" are undecidable there. Selecting PUSH_AUDIENCE_PARENT_ORG must preview 3 recipients — a non-recursive expansion returns 1, one blind to the login gate returns 4. An Employee WITH a login: findable by membertype:Employee, and it must be ABSENT from membertype:Contact. Deliberately OUTSIDE the company tree so it cannot perturb the parent/child counts.",
+    "name": "Push Employee",
+    "email": "agent-test-push-employee@yopmail.com",
+    "memberType": "Employee",
+    "hasLogin": "true",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "id": "",
+    "platform_id": ""
   }
 }

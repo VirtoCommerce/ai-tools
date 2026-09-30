@@ -1,0 +1,580 @@
+{
+  "ticket": "VCST-5944",
+  "title": "[Push Messages] Improve Recipients list UX",
+  "date": "2026-09-24",
+  "sprint": "Sprint26-18",
+  "type": "Story",
+  "flow": "feature-test",
+  "path": "FULL",
+  "shape_class": null,
+  "verdict": "PASS (recommended, not yet published)",
+  "verdict_reason": "On 3.1006.0-pr-28-8de4 every finding reported to the ticket is resolved and verified, and the two the product owner raised directly (loading blur, \"Also\" label) are confirmed fixed by measurement. What remains is one High and several Medium defects found by the full UI operator matrix and the visual pass - none of them reported to the ticket yet - plus an accessibility FAIL and a vc-shell defect that is out of this ticket scope. Jira comment 110794 is STALE: it describes the wildcard operators as non-functional, which the ElasticSearch8 switch has since made untrue.",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "narrow_story_tokens": {
+      "priority_p2_p3": true,
+      "single_layer": false,
+      "single_domain": true,
+      "refines_existing_mechanism": false,
+      "obvious_surface": true,
+      "reach_within_diff": true
+    },
+    "escalated_reason": "Story defaults FULL; fails the narrow-Story downgrade on two tokens - cross-layer (C# Core/Data + new REST endpoint + Vue 3 Admin sub-app) and a net-new chain link (preview-recipients + the four-mode audience builder)."
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "confirmed": false,
+      "applied": true
+    },
+    {
+      "at": "5f",
+      "from": "Testing",
+      "to": "Reopen",
+      "transition": "Need fixes",
+      "confirmed": true,
+      "applied": false,
+      "note": "NOT APPLIED - verdict withdrawn pending re-verification against the updated PR head."
+    }
+  ],
+  "build": {
+    "env": "vcptcore_qa1",
+    "back_url": "https://vcptcore-qa1.govirto.com",
+    "front_url": "https://vcptcore-qa1-storefront.govirto.com",
+    "deployed": {
+      "VirtoCommerce.PushMessages": "3.1006.0-pr-28-8de4",
+      "Platform": "3.1074.0-pr-3114-5829",
+      "@vc-shell/framework": "2.6.1"
+    },
+    "declared": "PR #28 prerelease build",
+    "pr": {
+      "repo": "VirtoCommerce/vc-module-push-messages",
+      "number": 28,
+      "state": "open",
+      "merged": false,
+      "head": "176458e23c6a845ff17f34c35baf3903aba733d5",
+      "base": "dev",
+      "files": 34,
+      "additions": 4039,
+      "deletions": 226,
+      "head_at_test": "176458e23c6a845ff17f34c35baf3903aba733d5",
+      "head_now": "8de424a97dee6a9e0847d9070448d3e4a3ca2523",
+      "updated_now": "2026-09-28T09:51:25Z",
+      "note": "2026-09-30: re-pinned to pr-28-21fe (PR head 21fe5c6f) via vc-deploy-dev PR #6662 and deployed. Five commits since the previous tested build address the five findings reported in Jira comment 110636, one per finding, plus a vc-shell 2.6.1 bump."
+    },
+    "member_index_provider": "ElasticAppSearchProvider",
+    "search_provider": "ElasticSearch8Provider (switched from ElasticAppSearch 2026-09-30 via vc-deploy-dev PR #6665; all 7 indexes rebuilt)"
+  },
+  "axes": {
+    "layer": {
+      "value": "cross-layer",
+      "members": [
+        "module",
+        "api",
+        "admin-spa"
+      ],
+      "surface_source": [
+        "pr-diff:repo-identity",
+        "ticket-components"
+      ]
+    },
+    "visual_surface": {
+      "value": true,
+      "surface_source": [
+        "pr-diff:.vue/.scss",
+        "derived-layer:admin-spa",
+        "ticket-design-mockups"
+      ]
+    },
+    "contract_surface": {
+      "value": true,
+      "surface_source": [
+        "pr-diff:*.Web/Controllers/PushMessageController.cs",
+        "new-rest-endpoint"
+      ],
+      "note": "REST, not GraphQL; the storefront xAPI surface is untouched (mechanical base-class refactor only)."
+    },
+    "coverage_surface": {
+      "value": true,
+      "surface_source": [
+        "ticket-domains:push-messages",
+        "suite-manifest:068,050l"
+      ],
+      "tc_scope_result": "2 suites, 40 rows scanned, 0 at risk; observables 'recipient count', 'audience resolution', 'delivery' matched nothing"
+    },
+    "data_surface": {
+      "value": true,
+      "surface_source": [
+        "chain-divergence:recursive-expansion",
+        "chain-divergence:employee-with-login"
+      ],
+      "note": "Seeded via npm run seed:push-audience. NOTE: the orchestrator's pre-flight claim of 'zero nested orgs' was WRONG - /api/members/search returns parentId in the record shape but leaves it empty for every org, so nesting was invisible to that probe. Nested orgs already existed. The seed was still justified by the purpose-built three-distinct-outcomes tree and by the employee-with-login, which genuinely did not exist."
+    },
+    "domain_map": {
+      "value": "ABSENT",
+      "recommended": true,
+      "surface_source": [
+        ".claude/knowledge/domain/ - no push-messages.md"
+      ]
+    }
+  },
+  "oracles": {
+    "bl_applied": [
+      "BL-NOTIF-004"
+    ],
+    "bl_absent_for_mechanism": true,
+    "bl_gap_note": "BL-NOTIF-001..007 exist for the Notifications domain but NONE covers recipient/audience resolution or preview-vs-sent parity. Proposed candidate routed to /qa-review-oracles: 'for identical criteria the previewed recipient count equals the count actually sent'.",
+    "ecl_applied": [
+      "provider-gated feature divergence",
+      "silent empty-filter match-all",
+      "set union vs replace"
+    ]
+  },
+  "ac_reconciliation": {
+    "conditions_total": 40,
+    "conditions_with_evidence": 40,
+    "ac_coverage_pct": 100,
+    "dod_total": 0,
+    "dod_met": 0,
+    "dod_pct": null,
+    "dod_note": "The ticket declares no Definition of Done.",
+    "derived_acs": [
+      {
+        "ac": "A user-friendly recipient selector replaces the raw query",
+        "verdict": "SATISFIED live",
+        "evidence": "C4-C8: all four modes render with the design labels"
+      },
+      {
+        "ac": "The count shown is the RECIPIENT count, not the member-document count",
+        "verdict": "SATISFIED live",
+        "evidence": "C16, C19 arithmetic reconciles; C18 login-less contacts excluded"
+      },
+      {
+        "ac": "The previewed number and the sent number cannot diverge",
+        "verdict": "SATISFIED live",
+        "evidence": "C28-C31 proven twice on two audience shapes, row-by-row via search-recipients, plus a storefront inbox confirmation"
+      },
+      {
+        "ac": "A saved message reopens as the conditions that produced it",
+        "verdict": "SATISFIED live",
+        "evidence": "C23-C26 all four modes, each verified per BL-NOTIF-004 by fresh API re-read"
+      },
+      {
+        "ac": "Lists and conditions combine",
+        "verdict": "SATISFIED live",
+        "evidence": "C27 union confirmed in stored data and generated query; caption presentation defective (BUG-C)"
+      },
+      {
+        "ac": "Reviewer-requested renames (Alla Volkova, 17 Sep)",
+        "verdict": "SATISFIED live",
+        "evidence": "C1-C3 all three literal strings confirmed"
+      }
+    ]
+  },
+  "checklist": {
+    "total": 41,
+    "pass": 33,
+    "fail": 5,
+    "na": 1,
+    "deferred_to_visual_lane": 1
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "summary": "In Advanced query mode the 'Query is valid' hint is unconditional, so a phrase that silently matches the whole member base is affirmed as valid",
+      "provenance": "SPLIT — root cause PRE-EXISTING, the affirmation IN-SCOPE",
+      "severity": "Medium",
+      "file": true,
+      "evidence": "emails:\"a\" -> 136 recipients / 240 matched / 63 companies expanded vs 129 for a deliberate membertype:Contact; identical figures for '(((' and '*:*' because all three collapse to the same empty filter set. ATTRIBUTION CORRECTED 2026-09-28: the match-all collapse is PRE-EXISTING platform parser behaviour, NOT introduced by PR #28 - vcst-qa (PushMessages 3.1005.0, ElasticSearch8Provider) returns 1321 for the same malformed inputs vs 1104 for a deliberate membertype:Contact. What IS new is the affirmation: the hint renders on v-if=\"rawQuery\" with no validity check, and the old build had no preview endpoint at all (405). Mitigating: the count itself is shown truthfully, so an author who reads the number sees the real figure."
+    },
+    {
+      "id": "F2",
+      "summary": "Six OR-joined clauses (the conditions builder's 'Match ANY' with six rows) make preview-recipients return HTTP 500, and the inline estimate panel presents it as an ordinary empty audience",
+      "provenance": "SPLIT — provider limit PRE-EXISTING, the surfacing IN-SCOPE",
+      "severity": "Medium",
+      "file": true,
+      "evidence": "TRIGGER CORRECTED 2026-09-28: it is CLAUSE COUNT, not query length. The previously recorded '419 chars -> 200, 420 -> 500' does NOT reproduce - every length 400..1024 returns 200, and a single 1000-char quoted value returns 200. Measured first-500 thresholds: OR-joined clauses at 6 (146 chars), space/AND-joined at 33, free-text terms at 59, comma multi-value (one clause) never up to 60. Confirmed live in the UI: 5 rows under ANY -> 200 with a real zero; 6 rows -> 500 {\"message\":\"Response status code does not indicate success: 400 (Bad Request).\"}. ATTRIBUTION: the 400 is an ElasticAppSearch provider limit and reproduces on the PRE-EXISTING /api/members/search endpoint too; vcst (ElasticSearch8) handles 20 OR clauses fine. IN-SCOPE half: the new conditions builder makes it reachable in six clicks, the new endpoint leaks it as a 500 with an internal message, the always-visible inline panel shows a normal-looking '0 recipients', and Save stays enabled. NOT silent everywhere: clicking 'Preview recipients' does show 'Could not load the recipients. Try again.' UI-STRING CORRECTION: 'Query is valid - 0 recipients' belongs to Advanced query mode only; conditions mode shows no such hint."
+    },
+    {
+      "id": "F3",
+      "summary": "Reported silent truncation of memberQuery to 1024 does NOT reproduce; over the limit the API returns HTTP 500 leaking a raw SQL error",
+      "provenance": "PRE-EXISTING (API-only) — the reported defect did NOT reproduce",
+      "severity": "Low",
+      "file": false,
+      "evidence": "DISPROVEN 2026-09-28 by direct API probe: 500 chars -> 200 stored 500; 1024 -> 200 stored 1024; 1025 -> HTTP 500; 1119 -> HTTP 500. No truncation at any length. The 500 body leaks schema: \"String or binary data would be truncated in table 'vcptcore-qa1-platform_vcptcore.dbo.PushMessage', column 'MemberQuery'\". The originally reported '1119 sent, 1024 stored, HTTP 200' is explained by the textarea's own maxlength=\"1024\", i.e. normal browser input capping, not a server defect. Reachable only through the API since the UI caps input. Model and schema are untouched by PR #28, so this is pre-existing."
+    },
+    {
+      "id": "F4",
+      "summary": "The Preview recipients dialog silently truncates at 50 rows with no pagination, count or load-more",
+      "provenance": "IN-SCOPE",
+      "severity": "Medium",
+      "file": true,
+      "evidence": "Announces 'Resolved from the audience as it stands - 126 recipients.' then requests take:50 and renders rows 0-49. Index 49 is the last row, immediately followed by Close. This is the feature's own verification affordance."
+    },
+    {
+      "id": "F5",
+      "summary": "An incomplete condition row is silently dropped and the count shows the WIDER audience",
+      "provenance": "IN-SCOPE",
+      "severity": "Medium",
+      "file": true,
+      "evidence": "Rows 'Customer type is Contact' + 'Name is <empty>' under ALL -> 126, i.e. the Contact-only audience. No 'Enter a value' prompt; the row still renders as an active AND-constraint. Error is always in the permissive direction."
+    },
+    {
+      "id": "F6",
+      "summary": "The audience caption desyncs from the actual audience and understates who will receive, persisting into the sent (audit) view",
+      "provenance": "IN-SCOPE",
+      "severity": "Medium",
+      "file": true,
+      "evidence": "Three reproductions; the most consequential: a reopened conditions+list message shows 'Sending to John Mitchell.' while the condition row 'Customer type is Employee' is visible and people-in-scope reads 2. Stored data and Show generated query are correct - presentation only."
+    },
+    {
+      "id": "F7",
+      "summary": "The recipient picker offers identically-labelled options with no discriminator",
+      "provenance": "IN-SCOPE",
+      "severity": "Medium",
+      "file": true,
+      "evidence": "'John Mitchell' returns two people rendered as the same string, sharing an email; one resolves to 1 recipient and the other to 0. The Company/Person badge and per-chip count appear only after selection."
+    },
+    {
+      "id": "F8",
+      "summary": "Business-rule rejections return HTTP 500 instead of 4xx (PUT/DELETE on a Sent message)",
+      "provenance": "PRE-EXISTING",
+      "severity": "Low",
+      "file": false,
+      "evidence": "Guard itself is correct - C35/C36 pass because of it. Only the status code is wrong. Not attributed to PR #28."
+    },
+    {
+      "id": "F9",
+      "summary": "WCAG 2.2 AA failures across the Audience section",
+      "provenance": "IN-SCOPE",
+      "severity": "Medium",
+      "file": true,
+      "standalone": true,
+      "does_not_fail_verdict": true,
+      "evidence": "1.3.1/4.1.2 unnamed radios and no role=radiogroup; 4.1.2 unnamed field/operator comboboxes, unlabelled value textbox, ALL/ANY toggle without aria-pressed, nameless icon-only remove buttons; 4.1.3 no live region on the count or the validity hint; 1.4.3 three contrast failures (2.52:1 x2, 4.37:1). Per close-out 5c, BL-A11Y on a feature ticket files standalone at real severity and does not fail this verdict."
+    },
+    {
+      "id": "F10",
+      "summary": "peopleFromCompanies counted a nested company as a person, inflating the expansion breakdown - MISSED BY THIS RUN, found by the developer",
+      "provenance": "IN-SCOPE",
+      "severity": "Medium",
+      "file": false,
+      "fixed_upstream": "3cdfe73a on PR #28 (2026-09-25), not yet deployed",
+      "evidence": "The seeded parent org reported peopleFromCompanies 5 for a subtree of 4 contacts + 1 child organization - the child org itself counted as a person. This run recorded that number and judged the arithmetic 'internally consistent' because C16/C19 only checked peopleInScope + extraLogins = totalCount; peopleFromCompanies was never audited against a nested tree. The seeded fixture had exactly the shape that exposes it. Recorded as a gap in this run's own coverage, not as a credit."
+    }
+  ],
+  "declared_open_decisions": [
+    {
+      "id": "a",
+      "summary": "startsWith/endsWith/contains emit a quoted wildcard only the ElasticSearch filter builder honours",
+      "status": "CONFIRMED and BROADER than declared",
+      "detail": "The developer's note named ElasticSearch and Lucene. The deployed provider on this env is ElasticAppSearchProvider, which it never mentions, and all three operators resolve to 0 there. The 'Email domain' starter chip is built entirely on endsWith and returns 0 for a domain with ~30+ matching contacts - so the advertised happy path, not a power-user edge case. Offered unconditionally with no warning or disabled state."
+    },
+    {
+      "id": "b",
+      "summary": "'Everyone' emits the fixed phrase membertype:Contact, excluding an Employee holding a login",
+      "status": "CONFIRMED, now observable",
+      "detail": "The seeded Employee holds a working login, is reachable via membertype:Employee and received a real send, yet is absent from all 129 Everyone rows. No UI text discloses this; the label is an unqualified 'All registered customers'. Before the seeded fixture both numbers were 0 and the claim could not fail."
+    }
+  ],
+  "visual": {
+    "ran": true,
+    "design_sync": "SKIPPED - /design-consent unavailable in a non-interactive lane; diffed against the ticket mockups instead",
+    "verdict": {
+      "vs_rules": "N/A",
+      "vs_design": "DRIFT",
+      "vs_wcag": "FAIL",
+      "vs_system": "PASS"
+    },
+    "advisory": [
+      "Match by conditions inverts the primary affordance - the builder is hidden behind a 'Custom conditions' chip and renders below the chips",
+      "The green checkmarked 'Query is valid' affirmation ships as plain grey vc-hint text, no icon or border",
+      "'Show available fields' is missing from Advanced query - the design's direct answer to the 'undocumented query field' complaint this ticket exists for",
+      "The estimate card is flattened in Specific people or companies mode",
+      "KNOWN_DIVERGENCE: the shared recipient-picker string is reviewer-mandated; the additive meaning is no longer stated in the label",
+      "UNSPEC: radio options carry leading icons absent from the mockups"
+    ]
+  },
+  "regression": {
+    "c1_ticket_scope": "skipped - no cases authored this run; the FULL authoring track (Artifact A) was not executed",
+    "c2_release_scope": "not run - removed from this pipeline 2026-09-10",
+    "feature_release_gate": "not-assessed",
+    "existing_coverage": "Suites 068 (22 cases) and 050l (18 cases); tc:scope scanned all 40 rows, 0 at risk. None asserts recipient count, audience resolution or delivery."
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "id": "F8",
+      "severity": "Low",
+      "reason": "Below the severity floor (Low/P3 is recorded, never filed) and PRE-EXISTING."
+    }
+  ],
+  "artifacts": {
+    "test_model": "reports/ba/test-models/VCST-5944-2026-09-24.md",
+    "checklist": "reports/tickets/Sprint26-18/VCST-5944/testing-checklist.md",
+    "design_report": "reports/tickets/Sprint26-18/VCST-5944/design-report.md",
+    "screenshots": "reports/tickets/Sprint26-18/VCST-5944/screenshots/",
+    "design_spec": "reports/tickets/Sprint26-18/VCST-5944/design-spec/",
+    "prior_art": "reports/ba/Push messages/push-messages-recipients-query-VP-9292.md"
+  },
+  "environment_residue": {
+    "undeletable_sent_messages": [
+      "AGENT-TEST-5944-C27",
+      "AGENT-TEST-5944-C28b",
+      "AGENT-TEST-5944-C33"
+    ],
+    "seeded_fixtures": "left in place; teardown: TEST_ENV=vcptcore_qa1 npm run seed:push-audience:teardown"
+  },
+  "timing": {
+    "reachability_minutes": 3
+  },
+  "reverification": {
+    "at": "2026-09-28",
+    "build": "3.1006.0-pr-28-2027 (PR head 20277f58)",
+    "method": "API re-probe of every finding that could be settled without a browser; UI-only questions delegated to a focused browser pass.",
+    "fixed_confirmed": [
+      {
+        "id": "F10",
+        "what": "Nested company counted as a person in the expansion breakdown",
+        "evidence": "Seeded parent org peopleFromCompanies dropped 5 -> 4 (4 contacts + 1 child org; the child org is no longer counted as a person). Child org unchanged at 3. totalCount still 3, so the recipient SET never changed - only the breakdown counter.",
+        "commit": "3cdfe73a"
+      },
+      {
+        "id": "F2-presentation",
+        "what": "A search-index rejection presented as an ordinary empty audience",
+        "evidence": "Source at head: the hint is now v-if=\"rawQuery && !estimateFailed\", a new ESTIMATE.FAILED string exists (\"Recipients can't be counted for this audience - the search index rejected the query.\"), and estimateFailed feeds update:invalid so Save/Send are held. Backend still returns 500 at 6 OR clauses - by design, the fix is the presentation.",
+        "commit": "3c4f2677"
+      }
+    ],
+    "survives": [
+      {
+        "id": "F1",
+        "what": "\"Query is valid\" still affirms a parseable phrase that silently matches the whole member base",
+        "evidence": "emails:\"a\" -> HTTP 200, 136 recipients / 240 matched / 63 companies expanded, vs 129 for a deliberate membertype:Contact. Because it is a 200 and not an error, the new estimateFailed guard does not fire, so the QUERY_FIELD.VALID string is unchanged and still renders. The fix closed 4xx/5xx, not \"parses fine but means something else\"."
+      },
+      {
+        "id": "F4",
+        "what": "Preview dialog still capped at 50 rows",
+        "evidence": "fetchPage(payload, take = 50) unchanged at head; the template now passes :total-count=\"previewRows.length\", so the table reports its own row count as the total rather than the real audience size."
+      },
+      {
+        "id": "decision-a",
+        "what": "Wildcard operators resolve to 0 on ElasticAppSearch",
+        "evidence": "emails:\"a*\", emails:\"*gmail.com\", emails:\"*test*\" all -> 0 on the new build. Unchanged; the Email domain starter chip is built on endsWith."
+      },
+      {
+        "id": "decision-b",
+        "what": "\"Everyone\" excludes an Employee holding a login",
+        "evidence": "membertype:Employee -> totalCount 1, peopleInScope 1; the seeded employee appears in NO row of the 129-strong membertype:Contact result. Unchanged."
+      }
+    ],
+    "not_yet_settled": "UI-only questions delegated to a browser pass: the literal wording at 6 ANY rows, whether Save/Send are genuinely disabled, the preview dialog total-count label, and the two newest popup fixes (one scrollbar, no raw ids in company choices, no runaway table width).",
+    "ui_pass": {
+      "lane": "playwright-edge",
+      "build": "3.1006.0-pr-28-2027",
+      "Q1_rejected_query": {
+        "verdict": "FIXED",
+        "evidence": "At 6 ANY rows the panel shows verbatim \"Recipients can't be counted for this audience — the search index rejected the query. Check it in Show generated query.\"; the headline is an em dash, NOT 0; the Preview-recipients button is removed. preview-recipients observed 200 at 5 clauses / 500 at 6. Save proven INERT by clicking it: no POST/PUT /api/push-message fired, the blade kept \"Has unsaved changes\", the list count did not move. Method note: this component library never emits [disabled] (the definitionally-inert \"Delete selected\" button also lacks it), so the signal is the presence/absence of [cursor=pointer], A/B-tested by removing and re-adding the 6th row. Send was NOT clicked - its inertness is inferred from an identical rendered state, not observed."
+      },
+      "Q2_false_valid": {
+        "verdict": "SURVIVES",
+        "evidence": "Advanced query, `emails:\"a` -> literal hint \"Query is valid — 136 recipients.\", headline 136, breakdown 240 matched / 63 companies expanded / 135 in scope. Deliberate `membertype:Contact` -> \"Query is valid — 129 recipients.\", headline 129. So the malformed input is affirmatively declared valid AND reports MORE recipients than the well-formed one. The new estimateFailed guard keys off transport failure; this is a 200, so it does not fire."
+      },
+      "Q3_preview_cap": {
+        "verdict": "SURVIVES, and worse than \"mislabelled\" - there is NO label",
+        "evidence": "Lead line \"Resolved from the audience as it stands — 129 recipients.\"; exactly 50 data rows rendered (counted from the a11y tree: 51 row entries incl. header). The dialog table has NO total indicator at all - neither 50 nor 129 - while the Push Messages list table on the same screen does carry a \"1–10 of 10\" footer plus pagination. No paging, no \"showing 50 of N\", no load-more; scrolling to the bottom fired no further request and the DOM still held 50 rows."
+      },
+      "Q4_newest_ui_fixes": {
+        "one_scrollbar": "HOLDS - a single vertical scrollbar, on the table body only; the dialog shell does not scroll.",
+        "company_names_not_guids": "HOLDS - every option human-readable; a regex scan of the full a11y tree for 8-4-4-4-12 and bare 32-hex found zero, both while open and after selecting. Caveat: two opens sampled, so a sub-perceptual flash cannot be excluded.",
+        "runaway_width": "NOT VERIFIABLE ON THIS LANE - width was stable across close/reopen and a full scroll (column origins byte-identical), BUT this lane paints OVERLAY scrollbars that reserve no layout width, and the bug is described as a feedback loop that needs real space-taking scrollbars. The precondition was absent, so a stable width is consistent with the fix but does not demonstrate it. Re-run on a configuration with classic scrollbars to settle it."
+      },
+      "environment_note": "A browser left open across the deploy can hold a STALE cached index.html for the embedded app and then request asset hashes the server no longer serves (~55 404s, app stuck on a loading bar). It looks exactly like a broken deploy. Close and reopen the browser. Observed this run: the cached document asked for …92550.js while the server serves …90571.js."
+    },
+    "ui_pass_2": {
+      "F5_incomplete_row": {
+        "verdict": "STILL REPRODUCES — and escalated from display to PERSISTENCE",
+        "evidence": "Match=ALL, row1 \"Customer type is Contact\" + row2 \"Name is <empty>\": headline identical with one row or both (129 / 173 / 128 / +1) and the caption names only the Contact condition, while the empty row still renders as an active AND-constraint. NEITHER validation string reached the DOM (checked on add AND after focus+blur of the empty value). Save is NOT held: [cursor=pointer] present, and clicking it fired POST /api/push-message -> 200 with persisted memberQuery \"membertype:Contact\" — so the empty row is dropped from the STORED audience, not just the estimate. Mitigating: the count shown IS what would be sent, so preview/send parity is not broken; the author is misled about which CONDITIONS apply, not about how many people."
+      },
+      "F6_caption": {
+        "verdict": "PARTIALLY FIXED — edit path correct, hydrate-from-saved path still wrong",
+        "evidence": "Before save the caption is now correct: \"Customers where Customer type is Employee, plus John Mitchell.\" After Save, and again after close+reopen, it reverts to \"Sending to John Mitchell.\" while the condition row is visibly present and people-in-scope reads 2. Precise localisation: editing the condition on the reopened blade (Employee -> Contact, no save) makes the caption correct again, so the fix landed on the EDIT path only and the load-from-saved path still emits the person-only caption. Show generated query is correct in every state."
+      },
+      "F7_picker": {
+        "verdict": "STILL REPRODUCES — and the one discriminator that existed is gone",
+        "evidence": "\"John Mitchell\" returns 8 fuzzy options including TWO identical \"John Mitchell\" and two identical \"Emily Johnson\"; \"AcmeCorp\" returns 2 identical; \"AcmeWest\" returns 4 identical. Each option is the bare display name: no email (the old build reportedly showed one), no Person/Company badge, no icon, no count, no parent company, no tooltip. Type and resolved count appear ONLY after selection, in the chip."
+      },
+      "COUNTED_ONCE": "Not observed rendering in either scenario exercised (non-overlapping Employee+person, and overlapping Contact+John Mitchell). Not claimed absent — the triggering state was not found.",
+      "teardown": "Both drafts (AGENT-TEST-5944-v3-q1, -v3-caption) deleted and verified by API: search for \"AGENT-TEST-5944-v3\" -> totalCount 0, list back to its pre-run 10. Nothing sent."
+    },
+    "not_verifiable_on_this_lane": [
+      "Runaway preview-table width (commit 20277f58) — the lane paints overlay scrollbars that reserve no width, and the bug needs classic space-taking scrollbars. Re-run elsewhere to settle."
+    ],
+    "not_rechecked": [
+      "Accessibility (WCAG) — the visual lane ran against -pr-28-1764 and was not repeated on -2027. Its findings are presumed to stand but are NOT re-verified."
+    ],
+    "net_state": {
+      "fixed": [
+        "Rejected-query handling: em-dash headline + explicit message + Save proven inert",
+        "Nested company no longer counted as a person in the expansion breakdown (5 -> 4)",
+        "Audience caption on the edit path",
+        "Company condition values show names, never GUIDs",
+        "Single scrollbar in the preview popup"
+      ],
+      "survives": [
+        "F1 \"Query is valid\" affirms a phrase that silently matches the whole member base",
+        "F4 preview capped at 50 rows with NO total indicator at all",
+        "F5 incomplete condition row dropped from the STORED memberQuery, no validation, Save not held",
+        "F6 caption omits the condition when rendered from saved state, and persists into the sent view",
+        "F7 picker offers indistinguishable options, now without even an email"
+      ],
+      "decisions": [
+        "(a) wildcard operators resolve to 0 on ElasticAppSearch; the Email-domain starter chip is built on endsWith",
+        "(b) \"Everyone\" excludes an Employee holding a login, with no UI disclosure"
+      ]
+    }
+  },
+  "tracker": {
+    "comment_id": "110794"
+  },
+  "reverification_21fe": {
+    "at": "2026-09-30",
+    "build": "3.1006.0-pr-28-21fe",
+    "results": [
+      {
+        "finding": "1 — malformed query declared valid + silent match-all",
+        "verdict": "FIXED",
+        "commit": "1f116d06",
+        "evidence": "API: emails:\"a / ((( / *:* now return HTTP 400 \"The member query \\\"…\\\" cannot be parsed. (Parameter 'memberQuery')\". UI: headline is an em dash, no count claimed; the inline error reads \"Recipients can't be counted for this audience — the search index rejected the query.\"; the string \"Query is valid\" does not appear while the query is malformed. Save and Send render aria-disabled and a click is refused (\"element is not enabled\"); no POST/PUT /api/push-message fired. NO OVER-REJECTION: 11 valid phrase shapes still return 200 (full-text, ranges, negation, comma multi-value, explicit OR, quoted role, empty string); junkfield:xyz stays 200/0, correct because it parses and simply matches nobody."
+      },
+      {
+        "finding": "2 — preview capped at 50 with no indication",
+        "verdict": "FIXED",
+        "commits": [
+          "32439a8b",
+          "21fe5c6f"
+        ],
+        "evidence": "Pagination present (First/Prev/1-5/Next/Last), 20 rows per page, page 1 labelled \"1–20 of 134\", page 2 \"21–40 of 134\" (the true-offset format the vc-shell bump targeted, not \"16–35\"), last page \"121–134 of 134\" with 14 rows. 5x20+14 = 134 = the blade headline. API skip/take verified independently."
+      },
+      {
+        "finding": "3 — unfinished condition row dropped from the saved query",
+        "verdict": "FIXED",
+        "commit": "b7a8a373",
+        "evidence": "A red hint renders under the offending row: \"This condition has no value.\" Save and Send are aria-disabled and the click is refused; no POST/PUT fires. Deleting the row re-enables both immediately, so the hold is attributable to that row. NOTE the hint wording differs from the strings in the bundle (Enter a value / Pick a field and an operator…) — those were not reached on this path. RESIDUE: the estimate still ignores the incomplete row (reads the Contact-only 134 with a caption naming only that condition); what changed is that the state can no longer be SAVED."
+      },
+      {
+        "finding": "4 — caption lost the condition after save/reopen",
+        "verdict": "FIXED",
+        "commit": "b7a8a373",
+        "evidence": "\"Customers where Customer type is Employee, plus John Doe.\" identical in all three states — before save, after save, and after close+reopen — with the headline 2 recipients (3 matched / 2 in scope) throughout. On reopen the mode, ALL toggle, condition row and person chip all come back intact."
+      },
+      {
+        "finding": "5 — picker offered indistinguishable options",
+        "verdict": "FIXED in substance; the residual case is TEST-DATA duplication on this env, not a product defect",
+        "commit": "3cf133d1",
+        "evidence": "Option rows now carry a real ARIA status badge (\"Person\"/\"Company\") plus the member email, which separates records whose emails differ. The remaining identical rows were chased to source: /api/members/search shows FOUR DISTINCT organization records all named AGENT-TEST-Org-AcmeWest-20260310 sharing acme-west@test-agent.com (ids 1f569105 / 5d91e88e / 29f8e4f4 / cd3e2237, created 2026-06-23, 07-01, 07-01, 08-20; three parented to AcmeCorp 7c901bc8, one standalone), and TWO distinct contacts named John Mitchell sharing one email (9e4157f4 created 06-23, 28df4ed6 created 07-01). So they are genuinely different members that are identical on every FIELD THE PICKER SHOWS. Re-grading this as an environment-hygiene problem: our own AGENT-TEST fixtures have been seeded 2-4 times over. A parent-company column would separate 3 of the 4 AcmeWest rows but not the three siblings."
+      }
+    ],
+    "regression": {
+      "verdict": "PASS",
+      "evidence": "All four modes render and switch with no new console errors. Everyone round-trip: saved and reopened as Everyone, not as a raw query. PREVIEW-VS-SENT PARITY (the ticket central claim) HOLDS: previewed \"1 recipient\", sent, search-recipients returned totalCount 1 with the matching row. Console: 6 errors for the session, all accounted for (known 401/404 noise, third-party analytics, and the deliberate 400 from the malformed-query test)."
+    },
+    "still_open": [
+      "OR-clause provider limit: 6 OR-joined clauses still surface as HTTP 500 leaking \"Response status code does not indicate success: 400 (Bad Request)\" at the API. Pre-existing ElasticAppSearch limit, already presented correctly in the UI.",
+      "Declared decision (a): wildcard operators resolve to 0 on this provider; the Email domain starter chip is built on endsWith.",
+      "Declared decision (b): \"Everyone\" excludes an Employee holding a login, with no UI disclosure.",
+      "Accessibility: audited on -1764, never re-checked on a later build."
+    ],
+    "residue": "Sent message AGENT-TEST-5944-v4-parity (id 275d55c3-890a-41d5-a1d1-aefdae23faa3, 1 recipient) cannot be deleted - the product refuses to delete a Sent message. Drafts -v4-caption and -v4-everyone were deleted."
+  },
+  "final_state": {
+    "at": "2026-10-01",
+    "build": "3.1006.0-pr-28-8de4 (PR head 8de424a9)",
+    "cases": {
+      "authored": 14,
+      "automated": 14,
+      "suites": {
+        "068": "PUSH-042..051 (UI)",
+        "050l": "PUSH-052..055 (API)"
+      },
+      "run_id_promoted": "REG-2026-09-30-push5944"
+    },
+    "fixed_and_verified": [
+      "All five findings from Jira comment 110636 - verified on -21fe",
+      "Loading blur pinned to the estimate panel - verified on -8de4 by measurement: overlay position:absolute inset:0, firstElementChild of the panel, offsetParent is the panel; overlay rect matches the panel inner box to the 1px border in 4 configurations (2 modes x 2 viewports), loading state caught in 6-25 frames each",
+      "Picker labelled \"Also add specific recipients (people or whole companies)\" in conditions and query modes, plain form in Specific-people mode, no picker in Everyone - verbatim confirmed",
+      "Wildcard operators and the 6-OR-clause 500 - resolved by the ElasticSearch8 switch, not by a code change"
+    ],
+    "provider_switch_effects": {
+      "starts with / ends with / contains": "0 -> 15 / 18 / 15",
+      "six OR-joined clauses": "HTTP 500 -> 200",
+      "exact equality": "ElasticAppSearch returned a FALSE positive for emails:\"kutasina.elena@gmail.com\" (1); ES8 correctly returns 0 - no member holds that address, only +userN variants",
+      "audience resolution (parent 3 / child 2 / no-login 0)": "unchanged - id-based, not text-matched"
+    },
+    "open_findings": [
+      {
+        "id": "BADGE",
+        "severity": "Medium",
+        "where": "VirtoCommerce/vc-shell",
+        "summary": "The QA environment badge renders twice on an embedded app - once by the platform shell, once by the vc-shell framework inside the iframe",
+        "evidence": "vc-environment-banner lives in the framework bundle (push-messages vc-shell-framework56652.js, vc-sales-rep …49902.js), absent from vc-news and tasks which ship an older framework build. The vc-app root computes isEmbedded from EmbeddedMode=true and omits it from the render condition (!isIgnored && environmentName). Label derives from window.location.hostname, which is why prod is unaffected. Independently re-verified by walking 58/50 module imports per app.",
+        "caveat": "Read from the deployed minified bundle - {OBSERVED} on this stand, not from vc-shell source. Confirm against the matching tag before patching."
+      },
+      {
+        "id": "F2",
+        "severity": "High",
+        "summary": "\"is any of\" cannot produce a multi-value phrase on dropdown-backed enum fields",
+        "evidence": "Customer type and Status stay single-select under \"is any of\": a second pick REPLACES the first (Contact then Organization emits membertype:Organization, count 146 -> 68). The multi-value shape works at the API - status:Approved,New returns 137 vs 128 and 18 separately - so the operator is offered but the control cannot satisfy it. Role, Company and all free-text fields accumulate correctly. Secondary: the value renders as a raw JSON array literal [ \"Contact\" ]."
+      },
+      {
+        "id": "F4",
+        "severity": "Medium",
+        "summary": "Typing a date into Registered leaks a raw JavaScript stack trace and the error banner never clears",
+        "evidence": "RangeError: Invalid time value ... vc-shell-framework, shown verbatim to the operator. The banner persists for the life of the blade - after a successful calendar pick and even after the condition field is changed away. Calendar picking works."
+      },
+      {
+        "id": "F1",
+        "severity": "Medium",
+        "summary": "A comma in a text value silently removes the three wildcard operators from the dropdown - not disabled, not annotated; clearing the comma restores them"
+      },
+      {
+        "id": "F5",
+        "severity": "Medium",
+        "summary": "Tag, Business category and Preferred language offer no value list and no wildcard operators, so existing values are undiscoverable from the UI - \"no such tag\" is indistinguishable from a typo"
+      },
+      {
+        "id": "F3",
+        "severity": "Low",
+        "summary": "roleid mixes GUID and slug identifiers in one phrase - platform storage, a docs note rather than a fix"
+      },
+      {
+        "id": "F6",
+        "severity": "Low",
+        "summary": "Both comboboxes in a condition row announce as \"Field\" to a screen reader"
+      },
+      {
+        "id": "F7",
+        "severity": "Low",
+        "summary": "Belongs to a company offers raw true/false where every other picker shows human labels"
+      },
+      {
+        "id": "A11Y",
+        "severity": "Medium",
+        "summary": "WCAG 2.2 AA still FAILS and one contrast is newly worse",
+        "evidence": "No role=radiogroup; field/operator comboboxes and the value textbox unnamed; ALL/ANY toggle without aria-pressed; icon-only remove buttons nameless; no live region on the count or the validity hint. Contrast 2.52:1 x2 and 4.37:1 stand, plus a NEW 4.4:1 on the selected card title. Audited on -1764 and re-audited on -21fe."
+      }
+    ],
+    "not_settled": [
+      "Blur: the ORIGINAL misalignment was never reproduced by a QA pass - it was reported by the product owner and fixed by the developer, and only the FIXED state is measured here.",
+      "Focus management: Enter on \"Edit as query\" and \"Back to conditions\" drops focus to BODY, and the preview dialog does not restore focus on Escape (WCAG 2.4.3). Found during the visual pass, not filed.",
+      "Starter chips number SEVEN on this build; prior art for this ticket records four. Needs reconciling.",
+      "PUSH-050 was not re-run on -8de4 - it performs an irreversible send and the build delta (overlay positioning, a label) cannot affect delivery parity. It passed on -es8.",
+      "PUSH-042..048 were exercised on -8de4 but their verdicts were lost when the runner stalled; they are carried from the -es8 run rather than credited from screenshots."
+    ],
+    "environment_residue": "Sent push messages cannot be deleted. This work left several AGENT-TEST messages on vcptcore-qa1 across runs."
+  }
+}
