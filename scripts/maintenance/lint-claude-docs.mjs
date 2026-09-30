@@ -79,7 +79,7 @@ export const PROMPT_BASELINE_PATH = 'scripts/maintenance/.prompt-size-baseline.j
 //                  it, so `§Effort routing records that the…` missed "## Effort routing, and why…".
 //                  9 were phantom, 9 were genuinely stale citations and were repointed.
 // 0 is the real number for all three, and a ratchet at 0 is the only one that catches the next one.
-// DOC-007 was introduced 2026-09-30 at 292 and brought to 0 the same day by the memory-ref cleanups.
+// DOC-007 was introduced 2026-09-30 at 292, lowered to 84 (#349) and brought to 0 the same day by the memory-ref cleanups.
 // 0 is the only baseline that catches the next one — never raise it.
 export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 0 };
 
