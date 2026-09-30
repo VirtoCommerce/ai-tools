@@ -146,7 +146,8 @@ the surface the story shipped, so it fails the ticket by the rules already here 
 ## 5-file. File bugs — with confirmation, and a severity floor
 
 File the confirmed, non-duplicate real bugs from 5-triage, each carrying a `## Fix Routing` hint. **Ask before
-filing.**
+filing.** Each filed bug carries `found-by-agent` + `found-in-testing` — or `reported-by-human` for a finding the
+user brought in (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files).
 
 **`--iterate`: 5-file runs PER ROUND, for new findings only.** A round that files nothing cannot fix
 anything — `/vc-fix:qa-fix` needs a filed ticket — so skipping 5-file in round 2 dead-ends the loop at its own

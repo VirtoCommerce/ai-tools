@@ -212,6 +212,29 @@ An incidental bug is never a sub-task — it wasn't caused by this ticket's chan
 relationship would misrepresent it; it gets its own standalone ticket with a plain "related" link, same as
 the in-scope case's fallback path.
 
+### Labels on bugs Claude files
+
+Every Jira **Bug** Claude creates says who found it and, for an agent finding, during what.
+The PreToolUse hook `.claude/hooks/enforce-bug-labels.mjs` (logic: `scripts/lib/jira-bug-labels.mjs`)
+refuses the create call without a valid set and names what is missing.
+
+| Who found it | Labels |
+|---|---|
+| Claude, while testing a ticket (`/qa-test`, `/qa-test-fast`, exploratory) | `found-by-agent` + `found-in-testing` |
+| Claude, in a regression run (`/qa-regression`, `ci:regression`, triage of a run) | `found-by-agent` + `found-in-regression` |
+| A person — the user saying "I found this, file it", a Teams/partner report | `reported-by-human` |
+
+The labels go in `additional_fields.labels`; keep any labels already there.
+
+**Found by the agent means Claude saw the failure itself in this session.** That is a verdict,
+screenshot, API response or trace from its own run. If a person described the bug — even when they
+ask Claude to file it, and even when Claude then reproduces it — the label is `reported-by-human`.
+If the origin is unclear, it is `reported-by-human` too. Undercounting agent findings is harmless;
+crediting agents with a person's finding corrupts the metric (`docs/bug-detection-requirements.md` §10).
+
+A label that turns out wrong is corrected in Jira by hand. These labels are VC-internal; the hook runs
+only in this repo and never on a client's tracker.
+
 ### Comment & body style — clear, brief, understandable
 
 Format is not enough — the content must be **easy to read fast**. Every comment or field body you

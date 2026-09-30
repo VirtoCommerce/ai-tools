@@ -32,6 +32,15 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-jira-markdown.mjs\""
           }
         ]
+      },
+      {
+        "matcher": "mcp__(atlassian|Atlassian_Rovo|Atlassian_MCP|claude_ai_Atlassian)__(createJiraIssue|executeWrite)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-bug-labels.mjs\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
