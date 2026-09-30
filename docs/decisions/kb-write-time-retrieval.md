@@ -131,8 +131,10 @@ client names, no client jargon.
 
 ## Decision 5 — facets are closed and derived where possible
 
-- `surface` becomes a closed set — `storefront-ui | xapi | rest | admin-ui` — with a migration table
-  for today's ten spellings. Other `appliesTo` axes stay as they are.
+- `surface` becomes a closed set — `storefront-ui | xapi | rest | admin-ui | ucp | vendor-ui` — with a
+  migration table for today's eighteen spellings (`background-jobs` → `rest`; `api` names UCP on some
+  entries and REST on others, so M2 resolves it per entry). Six, not four: UCP and the vendor portal
+  are surfaces of their own (operator, 2026-09-30). Other `appliesTo` axes stay as they are.
 - Anchors keep their case and gain a `kind` (`graphql-op`, `graphql-field`, `rest`, `page`, `setting`,
   `blade`). The kind is **derived** by `scripts/kb/core/coordinates.mjs`, never typed by the agent.
 

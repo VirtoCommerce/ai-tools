@@ -200,3 +200,39 @@ export function anchorProblems(anchors, { namespaces } = {}) {
 }
 
 export { namespaceOf, normalizeAnchor };
+
+// ── what kind of place an anchor names (VCST-6122 Decision 5) ─────────────────────────────────
+
+/** The closed set `anchorKind` returns from. `null` means "none of these", never "unknown yet". */
+export const ANCHOR_KINDS = ['rest', 'page', 'blade', 'graphql-op', 'graphql-field', 'setting'];
+
+const VERB_ROUTE = /^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\/\S*$/i;
+const GRAPHQL_ROOT = /^(?:Query|Mutation|Mutations|Subscription)\.[A-Za-z_]\w*$/;
+const GRAPHQL_PATH = /^(?:Query|Mutation|Mutations|Subscription)(?:\.[A-Za-z_]\w*){2,}$/;
+const TYPE_FIELD = /^[A-Z][A-Za-z0-9]*\.[a-z_][A-Za-z0-9_]*$/;
+const SETTING = /^[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*){2,}$/;
+
+/**
+ * The kind of an anchor, DERIVED from the coordinate as written and never typed by the agent: a
+ * kind a writer declares is a second copy of what the string already says, and the copy is the
+ * part that drifts. Read from the raw text, because normalisation lowercases and `Query.cart` and
+ * `CartType.coupons` differ only in case.
+ *
+ * A route without a verb is a REST route only under `/api/` or `/connect/`; any other leading-slash
+ * path is a storefront page. `#!/...` is the Admin SPA's hash route, and a menu path
+ * (`Admin SPA: Orders > …`) names a blade as well. `Query.cart.availablePaymentMethods` is a field
+ * reached through an operation, so it is a field, not the operation.
+ *
+ * @returns {string|null} one of ANCHOR_KINDS, or null
+ */
+export function anchorKind(raw) {
+  const s = String(typeof raw === 'string' ? raw : raw?.coordinate ?? '').trim();
+  if (!s) return null;
+  if (VERB_ROUTE.test(s)) return 'rest';
+  if (s.startsWith('#!/') || LOOKS_LIKE_A_MENU_PATH.test(s)) return 'blade';
+  if (s.startsWith('/')) return /^\/(?:api|connect)(?:\/|$)/i.test(s) ? 'rest' : 'page';
+  if (GRAPHQL_ROOT.test(s)) return 'graphql-op';
+  if (GRAPHQL_PATH.test(s) || TYPE_FIELD.test(s)) return 'graphql-field';
+  if (SETTING.test(s)) return 'setting';
+  return null;
+}
