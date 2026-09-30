@@ -22,6 +22,9 @@
  *   DOC-004     a cited `file.md` … §Section with no such heading in that file                    (ratchet)
  *   DOC-006     a DERIVED count (suites / test cases / selection groups) transcribed into the
  *               always-loaded set, where it silently rots                                        (ratchet)
+ *   DOC-007     a citation of the per-user memory directory — a `feedback_*` / `reference_*` /
+ *               `project_*` slug, `MEMORY.md`, "in MEMORY". It resolves on one laptop only; product
+ *               behaviour belongs in the kb, team rules in a tracked file (CLAUDE.md)             (ratchet)
  *
  * DOC-002/003/004 generalise `scripts/qa-test/doclint.mjs` (which stays scoped to /qa-test and owns the
  * qa-test-specific DOC-001/005/006) to CLAUDE.md + every .claude/**\/*.md. They are RATCHETS, same shape as
@@ -76,7 +79,21 @@ export const PROMPT_BASELINE_PATH = 'scripts/maintenance/.prompt-size-baseline.j
 //                  it, so `§Effort routing records that the…` missed "## Effort routing, and why…".
 //                  9 were phantom, 9 were genuinely stale citations and were repointed.
 // 0 is the real number for all three, and a ratchet at 0 is the only one that catches the next one.
-export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0 };
+// DOC-007 was introduced 2026-09-30 at the corpus's count on that day; the cleanup PRs bring it down.
+// Lower it as they land — never raise it.
+export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 292 };
+
+/**
+ * DOC-007 — a pointer into the per-user memory directory. The slug families are the ones the harness
+ * writes; `user_` is deliberately NOT one of them, because product error codes use it
+ * (`user_is_locked_in_organization`). A generic mention (`feedback_*`) is policy text, not a citation,
+ * and does not match: a slug needs at least two concrete words after the prefix, which also keeps
+ * two-word identifiers such as a `project_name` template variable out.
+ */
+export const MEMORY_REF_RE = /\b(?:feedback|reference|project)_[a-z0-9]+(?:_[a-z0-9]+)+\b|\bMEMORY\.md\b|\bin MEMORY\b/g;
+export function memoryRefs(line) {
+  return [...String(line).matchAll(MEMORY_REF_RE)].map((m) => m[0]);
+}
 
 /** Codes reported for information but never ratcheted — see DOC-003E on `isEphemeralPath`. */
 export const INFORMATIONAL = new Set(['DOC-003E']);
@@ -410,6 +427,7 @@ export function lint(root = '.') {
             add('DOC-006', f, i + 1, `derived count transcribed: "${m[1]} ${m[2]}" — print it with the script that derives it (npm run suites:lint, or ls .claude/{agents,skills,commands})`);
           }
         }
+        if (!exempt) for (const ref of memoryRefs(l)) add('DOC-007', f, i + 1, `private-memory citation: ${ref} — product behaviour goes to the kb (kb_capture), team rules to a tracked file`);
         for (const m of l.matchAll(PATH_RE)) {
           if (exempt) break;
           const label = m[1].replace(/\/$/, '');
