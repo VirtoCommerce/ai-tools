@@ -1,4 +1,4 @@
-# Testing checklist — VCST-2945 (Barcode scanner search setup)
+# Testing checklist — VCST-2945 (Barcode scanner search PASS · box empty, scan button visible, 3-card list; SearchProducts query:"" + barcode term only · d-D1-desktop-barcode-plus-q-box-empty.png PASS · 390 px overlay box empty, scan visible · d-D2-390-overlay-box-empty-scan-visible.png PASS · empty Enter → /search (no q, no barcode); new term → /search?q=<t2> keyword search · d-D3-*.png PASS · URL replaced by the PDP, box empty, Back no loop · d-D4-single-hit-pdp-box-empty.png PASS · parity holds on all 3: empty → keyword + box <t>; whitespace → lookup + box empty (value untrimmed, known Low); [empty, shared] → keyword + box <t> · d-D5a/b/c-*.png PASS · ?q= shows term + hides scan; clear → button back; D1→submit t3 → box t3; /catalog → box empty · d-D6-catalog-box-empty-scan-back.png PASS · scanner OFF: box empty, no button desktop + 390, list of 3 still renders · d-D7-*.png PASS · 122 GraphQL POSTs, no errors[]; no non-image 4xx/5xx; console: 2 image DNS errors (catalog data) · d-lane-storefront-2026-09-30.har.gz ||||||||setup)
 
 **Run:** /qa-test-fast FASTG-VCST-2945-2026-09-28 · vcst-qa · Platform 3.1073.0-pr-3121-9965 · Catalog 3.1046.0-pr-909-2839 · XCatalog 3.1022.0-pr-113-f4a8 · theme 2.59.0-pr-2501-7e0c (PR heads = deployed; same build as the FULL run earlier today)
 **Model:** `reports/ba/test-models/VCST-2945-2026-09-28.md` (Rounds 1–3) · **Mind map:** `.claude/knowledge/domain/search.mind-map.json` · **Domain map:** PRESENT (`search.md`, srch rev 1)
@@ -84,3 +84,26 @@ Charter = the model's unresolved items: S#18/S#19 storefront consequence ({HYPOT
 ## Result — 2026-09-28 (FASTG-VCST-2945-2026-09-28)
 - Checklist: 39 PASS / 3 FAIL (A8 known Low; A18 + C12 = VCST-6094) / 1 BLOCKED (C17 FIXTURE-GAP).
 - Exploratory: reports/exploratory/SBTM-VCST-2945-2026-09-28-2.md — S#31 analytics observed (matches r7), S#19 observed, S#18 by source, S#32 WAIVED (IntentSearch not installed); candidates X1–X4.
+
+---
+
+## Round — 2026-09-30 delta re-test (`/qa-test VCST-2945 --iterate --max-rounds 2`)
+
+**Build delta vs 2026-09-28:** backend unchanged (Catalog `3.1046.0-pr-909-2839`, XCatalog `3.1022.0-pr-113-f4a8` = same PR heads). Theme `2.59.0-pr-2501-7e0c` → **`2.59.0-pr-2501-3a82`** (commit `3a82025` "fix: vcst-6098" + a `dev` merge `044c`). Platform `3.1074.0-pr-3125-c3b8`. Deployed theme confirmed in the storefront bundle.
+**Scope (operator decision):** delta only. Rows A*/B*/C* above carry forward as evidence for the unchanged backend. **VCST-6094 is reclassified PRE-EXISTING / by-design** (operator decision; Elasticsearch expands `*`/`?` in every term filter — `code:"*"` on B2B-store returns 4566 live; PR descriptions no longer promise literal matching) — no item re-tests it.
+**Fix under test:** `useSearchPhraseInUrl()` — both header bars show `""` while `toFirstString(barcode)` is truthy, "decided as the results page decides" (`isBarcodeLookup`). So the oracle for the edge rows is **parity**: *the box shows `q` iff the page ran a keyword search.*
+**Window:** lane D is the ONLY writer of B2B-store barcode settings; restore `{"scannerEnabled":true,"fields":[]}`, re-GET, record both timestamps. Hard-reload after every write. SRCH-014..023 run AFTER this window closes (they write the same settings).
+
+| # | Condition | Expected | Oracle | Data | Result |
+|---|---|---|---|---|---|
+| D1 | [VCST-6098 STR] Exact `[gtin]`; `/search?barcode=<GTIN_SHARED>&q=<term>` desktop 1920 | box EMPTY, scan button visible, 3-card barcode list, `q` not sent in `products` | {SPEC} 3a82025 · VCST-6098 expected | @td(BARCODE_GTIN_SHARED.gtin) · random-data AGENT-TEST- term | |
+| D2 | D1 at 390 px, search overlay opened | overlay box EMPTY, scan button visible | {SPEC} both bars | as D1 | |
+| D3 | From D1: Enter in the empty box; then type a new term + Enter | empty Enter does not navigate to `?q=<ignored term>`; new term → `?q=<new>` keyword search (record URL) | {SPEC} VCST-6098 | as D1 + a 2nd random term | |
+| D4 | Single hit `?barcode=<GTIN_UNIQUE>&q=<term>` | PDP opens (C15 unchanged); header box on the PDP empty | {SPEC} pr2501 r4 | @td(BARCODE_GTIN_UNIQUE.gtin) | |
+| D5 | Parity edges: `?barcode=&q=<t>` · `?barcode=%20%20&q=<t>` · `?barcode=&barcode=<GTIN_SHARED>&q=<t>` | for each: box shows `<t>` **iff** the page ran a keyword search; record page mode + box value | {SPEC} "decided as the results page decides" | literal URL shapes + as D1 | |
+| D6 | Non-regression: `/search?q=<t>` → box shows `<t>`, scan button hidden; clear box → button back. Client-side from D1 submit `<t2>` → box `<t2>`; then `/catalog` → box empty | as stated | {SPEC} existing behaviour | random-data terms | |
+| D7 | Scanner OFF (`scannerEnabled:false`, fields `[gtin]`) + `?barcode=<GTIN_SHARED>&q=<t>` | box EMPTY, NO scan button, barcode list still shown (C11 rule) | {SPEC} pr2501 + 3a82025 | as D1 | |
+| D8 | Console / network across D1–D7 | no new console errors; GraphQL `errors[]` empty; no non-image 4xx/5xx | always-on | observes D traffic | |
+| R | Scoped regression SRCH-014..SRCH-023 (`004-search-core.csv`) on the new theme — not C1 (this run authored/changed no case); covers the `dev`-merge blast radius on the barcode surface | cases pass | suite oracles | suite @td() | |
+
+**Not covered, deliberately:** backend rows (unchanged build — 09-28 evidence stands) · VCST-6094 (reclassified) · VCST-6095/6096/6097 a11y (no fix in `3a82025`; not re-run) · C17 paging (FIXTURE-GAP stands) · camera scan (no lane).
