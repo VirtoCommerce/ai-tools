@@ -6,7 +6,7 @@
 
 ## Core principle — read live tokens, never hardcode
 
-Coffee is a **multi-preset theme** (6 light + 3 dark variants — see memory `reference_theme_presets`). Exact color hex, typography stack, and shadow values rotate per preset and per store config. **Hardcoded values in this file would be wrong half the time.** Always read tokens from the live page.
+Coffee is a **multi-preset theme** (6 light + 3 dark variants). Exact color hex, typography stack, and shadow values rotate per preset and per store config. **Hardcoded values in this file would be wrong half the time.** Always read tokens from the live page.
 
 ### Live-token extraction snippet
 
