@@ -115,6 +115,29 @@ it past that point, a failed or gate-refused build leaves `state: ABSENT` and pr
 is never a finding about the product. `npm run domain:check` encodes the same asymmetry: **stale fails,
 missing passes.**
 
+**The mind-map sidecar rides on this axis, and adds no axis and no lane.** The same 2g read checks for
+`.claude/knowledge/domain/<name>.mind-map.json` (`/qa-test-mind-map`) beside the map. It records
+`domain_map.mind_map` = that path, or `null`. When it is present, four steps read it:
+
+- `1e` Part 0 cites its node ids ([`test-model.md`](../qa-test-model/test-model.md)).
+- `1e-plan` rows carry `behavior` / `dataProfile`.
+- Step 3 stamps them ([`authoring.md`](authoring.md) §Carry the model's design decision into the row).
+- `5-docs-map` hands back what the run established ([`reporting.md`](reporting.md) §5-docs-map).
+
+**When it is absent, the lane is the domain map's, one step later.** A missing mind map on a domain whose
+map is `PRESENT` (including one `1c-map` built in this run) is **built on FULL after the verdict** —
+`5-mind-map`, `/qa-test-mind-map build <slug> --from <ticket>` ([`reporting.md`](reporting.md)
+§5-mind-map) — and **recommended in one line on FAST**. No domain map ⇒ no mind map: the build derives
+its nodes from the map's chain. Why after the verdict and not beside `1c-map`: the build's last step
+stamps `Behavior:` into suite rows, and before Artifact A's append that would put two writers on one
+CSV; and after 5-triage its evidence is the run's own verified observations rather than guesses. Nothing
+about it blocks, and a build that fails records `mind_map_build: FAILED` and changes nothing.
+**Why the absence is no longer silent (2026-09-28):** the old rule — *absent ⇒ nothing changes* — was the
+domain map's recommendation-only design in its original form, and it fails for the same reason: VCST-2945
+derived a full barcode behaviour graph in its Test Model, authored 26 cases with no `Behavior:` stamp to
+carry it, and left the next search ticket to re-derive it all. `npm run models:check` keeps its own
+asymmetry unchanged: a missing model passes.
+
 **Two-moment axis, like `coverage_surface`.** At `1b` 2g the all-layer question is answered
 **provisionally** — from `1a`'s domains plus whether the domain has a back-office surface at all — because
 the ticket's value chain does not exist until `1e`. It is **confirmed at `1e`** against Part 0. And it

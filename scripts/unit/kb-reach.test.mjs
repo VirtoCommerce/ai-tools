@@ -14,7 +14,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync, appendFileSync, utimesSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  REACH_IDLE_MS, advanceReach, countToolUses, dropReach, idleReaches, promptsIn, readReach, reachLine, reachPath,
+  OWN_REACH_EVERY_MS, REACH_IDLE_MS, advanceReach, countToolUses, dropReach, idleReaches, lineTouches, lineWork, markSent,
+  markTried, ownReachDue, promptsIn, readReach, reachLine, reachPath, sentMark, sentPath, sessionKeyOf, unsent, workIn,
 } from '../kb/core/reach.mjs';
 import { reach } from '../kb/core/report-analyse.mjs';
 import { LOGGED } from '../kb/core/queue.mjs';
@@ -494,7 +495,219 @@ test('the Stop hook keys reach on the QUEUE’s session id, never on the payload
   //
   // A source guard and not a behavioural one because the hook is a script: it runs on import and
   // exits the process, so there is nothing to call. What is pinned is the one line that decides it.
+  //
+  // SINCE VCST-6091 the payload's id MAY reach the derivation, but only through `hookEnv`, which
+  // hands it in under `CLAUDE_CODE_SESSION_ID` and only when no session variable is usable -- the
+  // CLI and IDE case, where that IS the id the session's own processes carry. `hookEnv`'s behaviour
+  // is pinned in kb-queue.test.mjs; this pins that the hook goes through it and nowhere else.
   const src = readFileSync(join(import.meta.dirname, '..', '..', '.claude', 'hooks', 'kb-flush.mjs'), 'utf8');
-  assert.match(src, /sessionId\(process\.env\)/, 'the id comes from the same derivation the queue uses');
-  assert.doesNotMatch(src, /payload[?.]*\.session_id/, 'the payload supplies the transcript path and nothing else');
+  assert.match(src, /const env = hookEnv\(process\.env, payload\)/, 'the payload reaches the key only through hookEnv');
+  assert.match(src, /sessionId\(env\)/, 'the id comes from the same derivation the queue uses');
+  assert.doesNotMatch(src, /payload[?.]*\.session_id/, 'the hook never reads the payload id itself');
+  // With no session id at all, nothing is counted under a per-turn process key (review 4).
+  assert.match(src, /const keyed = hasSessionId\(env\)/);
+  assert.match(src, /if \(keyed && payload\?\.transcript_path\)/);
+  // Its own cadence is paced by the ATTEMPT, marked before the token is looked for (reviews 3, 4)…
+  assert.match(src, /const due = keyed && ownReachDue\(dir, session, \{ state: advanced \}\);\s*if \(due\) markTried\(dir, session\);/);
+  // …and never spawns a push that has no token to push with (review 2).
+  assert.match(src, /const mine = due && Boolean\(writeToken\(env\)\.token\)/);
+});
+
+test('a session sends its own counters at once, then only when they grew and the interval passed (VCST-6091)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-own-'));
+  try {
+    const now = Date.now();
+    writeFileSync(reachPath(dir, 'own00001'), JSON.stringify({ session: 'own00001', cursor: 10, tools: 19, turns: 6, touchAt: [] }), 'utf8');
+    // A session with work and no kb call at all: exactly the one that used to wait for a stranger.
+    assert.equal(ownReachDue(dir, 'own00001', { now }), true, 'never sent: at once');
+
+    markSent(dir, 'own00001', readReach(dir, 'own00001'));
+    assert.equal(sentMark(dir, 'own00001').work, 19);
+    assert.equal(ownReachDue(dir, 'own00001', { now }), false, 'nothing new since the send');
+
+    writeFileSync(reachPath(dir, 'own00001'), JSON.stringify({ session: 'own00001', cursor: 20, tools: 25, turns: 7, touchAt: [] }), 'utf8');
+    assert.equal(ownReachDue(dir, 'own00001', { now }), false, 'grew, but the last send is recent');
+    assert.equal(ownReachDue(dir, 'own00001', { now: now + OWN_REACH_EVERY_MS + 1_000 }), true, 'grew, and the interval passed');
+
+    // TURNS COUNT TOO: a session's last turns can make no tool call, and their `turns`/`lastAt` are
+    // news its last send did not carry (VCST-6091 review).
+    markSent(dir, 'own00001', readReach(dir, 'own00001'));
+    writeFileSync(reachPath(dir, 'own00001'), JSON.stringify({ session: 'own00001', cursor: 30, tools: 25, turns: 9, touchAt: [] }), 'utf8');
+    assert.equal(unsent(dir, readReach(dir, 'own00001')), true, 'same work, more turns: still unsent');
+
+    // Dropping a finished state forgets what was sent, so a resumed session starts over cleanly.
+    dropReach(dir, 'own00001');
+    assert.equal(sentMark(dir, 'own00001').work, 0);
+    assert.equal(ownReachDue(dir, 'own00001', { now }), false, 'no state, nothing to send');
+    assert.equal(readReach(dir, 'own00001'), null);
+    assert.throws(() => readFileSync(sentPath(dir, 'own00001')), /ENOENT/, 'the sent note went with the state');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('legacy pid-keyed session lines are counted as the sessions they were, not one per turn (VCST-6091)', () => {
+  // Before the fix every Stop hook minted a new `p<pid>` and recounted its transcript from zero, so
+  // one real session became one line per turn. The transcript's own start and the operator group them.
+  const turnLine = (session, tools, lastAt, who = 'octo-a', firstAt = '2026-09-28T08:00:00Z') =>
+    ({ kind: 'session', session, tools, turns: 1, touchAt: [], firstAt, lastAt, who });
+  const r = reach([
+    turnLine('p1001', 10, '2026-09-28T08:05:00Z'),
+    turnLine('p1002', 25, '2026-09-28T08:10:00Z'),
+    turnLine('p1003', 40, '2026-09-28T08:20:00Z'),
+    // The same pid on ANOTHER operator's machine is another session.
+    turnLine('p1003', 7, '2026-09-28T09:00:00Z', 'octo-b', '2026-09-28T08:55:00Z'),
+    // A real key is left exactly as it is.
+    { kind: 'session', session: 'f3d05dd3', tools: 5, turns: 2, touchAt: [1], firstAt: '2026-09-28T07:00:00Z', lastAt: '2026-09-28T07:30:00Z' },
+  ]);
+  assert.equal(r.accounted, 3, 'three sessions, not five');
+  assert.equal(r.tools, 40 + 7 + 5, 'each counted once, at its fullest — not 10 + 25 + 40');
+  // Two groups sharing a pid are two labels, each with its start (review 3), never one label twice.
+  assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p1003@2026-09-28T08:00', 'p1003@2026-09-28T08:55']);
+});
+
+test('a replaced transcript RESETS the counters and says so — no carry, by decision (VCST-6091)', () => {
+  // A carry across replacements was built and reviewed four times, each round finding a new edge, for
+  // a case measured once. So a replacement resets as it always did, and the `restart` line is the
+  // record. The session's fuller earlier line is what the report shows for it.
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-replaced-'));
+  try {
+    const t = join(dir, 'transcript.jsonl');
+    writeFileSync(t, `${turn('Read', 'Read', 'mcp__kb__kb_ask')}${turn('Edit')}`, 'utf8');
+    advanceReach({ dir, session: 'repl0001', transcriptPath: t });
+    markSent(dir, 'repl0001', readReach(dir, 'repl0001'));
+
+    writeFileSync(t, `${turn('Read')}`, 'utf8');                      // replaced: shorter than the cursor
+    const after = advanceReach({ dir, session: 'repl0001', transcriptPath: t });
+    assert.deepEqual([after.tools, after.touchAt], [1, []], 'counted from the new document only');
+    assert.equal(lineWork(reachLine(after)), 1);
+    const restarts = readFileSync(join(dir, 'repl0001.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.deepEqual(restarts.map((l) => [l.kind, l.why, l.priorTools]), [['restart', 'transcript-replaced', 4]]);
+    assert.equal(unsent(dir, after), true, 'its turns still grew, so it is still news');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('review 2.3: one legacy pid in two groups gives each ask to ONE group, by operator and time', () => {
+  const s = (session, tools, who, firstAt) => ({ kind: 'session', session, tools, turns: 1, touchAt: [], firstAt, who });
+  const r = reach([
+    s('p2001', 30, 'octo-a', '2026-09-25T08:00:00Z'),
+    s('p2001', 12, 'octo-b', '2026-09-28T06:00:00Z'),
+    { kind: 'ask', _session: 'p2001', who: 'octo-a', at: '2026-09-25T08:30:00Z' },
+    { kind: 'ask', _session: 'p2001', who: 'octo-b', at: '2026-09-28T06:10:00Z' },
+    { kind: 'ask', _session: 'p2001', who: 'octo-b', at: '2026-09-28T06:20:00Z' },
+  ]);
+  const byTools = Object.fromEntries(r.rows.map((x) => [x.tools, x.asks]));
+  assert.deepEqual(byTools, { 30: 1, 12: 2 }, 'three asks, three counted — not six');
+});
+
+test('review 2.5: a legacy row whose key lives only in `_session` is still named, and sorts', () => {
+  const r = reach([
+    { kind: 'session', _session: 'p3001', tools: 5, turns: 1, touchAt: [], firstAt: '2026-09-20T08:00:00Z', who: 'octo-a' },
+    { kind: 'session', session: 'f3d05dd3', tools: 5, turns: 1, touchAt: [], firstAt: '2026-09-20T09:00:00Z' },
+  ]);
+  assert.deepEqual(r.rows.map((x) => x.session).sort(), ['f3d05dd3', 'p3001@2026-09-20T08:00']);
+});
+
+test('one definition of work and of session identity, shared by writer and report', () => {
+  assert.equal(lineWork({ tools: 3, agentTools: 4 }), 7);
+  assert.equal(lineTouches({ touchAt: [1, 2], agentTouches: 1 }), 3);
+  assert.equal(sessionKeyOf({ session: 'f3d05dd3', firstAt: 'x' }), 'f3d05dd3');
+  assert.equal(sessionKeyOf({ session: 'p24300-ab12', firstAt: 'x' }), 'p24300-ab12', 'a new process key is unique already');
+  assert.notEqual(sessionKeyOf({ session: 'p24300', who: 'a', firstAt: '1' }), sessionKeyOf({ session: 'p24300', who: 'b', firstAt: '2' }));
+});
+
+test('review 1: a collapsed legacy group still joins its asks and counts them as accounted', () => {
+  const r = reach([
+    { kind: 'session', session: 'p1001', tools: 10, turns: 1, touchAt: [], firstAt: '2026-09-28T08:00:00Z', who: 'octo-a' },
+    { kind: 'session', session: 'p1002', tools: 20, turns: 1, touchAt: [], firstAt: '2026-09-28T08:00:00Z', who: 'octo-a' },
+    { kind: 'ask', _session: 'p1001' },
+    { kind: 'ask', _session: 'p1002' },
+  ]);
+  assert.equal(r.accounted, 1);
+  assert.equal(r.rows[0].asks, 2, 'asks under every member key');
+  assert.equal(r.unaccounted, 0);
+});
+
+test('review 3.1: a replaced transcript recounts its subagents ONCE', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-sub-'));
+  try {
+    const t = join(dir, 'sess.jsonl');
+    const subDir = join(dir, 'sess', 'subagents');
+    mkdirSync(subDir, { recursive: true });
+    writeFileSync(join(subDir, 'agent-1.jsonl'), `${turn('Read', 'Read', 'Read')}`, 'utf8');
+    writeFileSync(t, `${turn('Read', 'Edit')}${turn('Bash')}`, 'utf8');
+    advanceReach({ dir, session: 'sub00001', transcriptPath: t });
+    assert.equal(workIn(readReach(dir, 'sub00001')), 3 + 3, 'three parent calls, three subagent calls');
+    writeFileSync(t, `${turn('Read')}`, 'utf8');                      // the parent's transcript is replaced
+    const after = advanceReach({ dir, session: 'sub00001', transcriptPath: t });
+    assert.equal(workIn(after), 1 + 3, 'the new document’s 1, and the subagent’s 3 counted once');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('review 3.2: the hook’s own attempt paces it, and does not stop the push it started', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-tried-'));
+  try {
+    const now = Date.now();
+    writeFileSync(reachPath(dir, 'try00001'), JSON.stringify({ session: 'try00001', cursor: 1, tools: 9, turns: 2, touchAt: [] }), 'utf8');
+    assert.equal(ownReachDue(dir, 'try00001', { now }), true);
+    markTried(dir, 'try00001');                                       // the push then stops early, marking nothing
+    assert.equal(ownReachDue(dir, 'try00001', { now }), false, 'the next turn does not start another');
+    assert.equal(ownReachDue(dir, 'try00001', { now, attempts: false }), true, 'but the push that was started still sends');
+    assert.equal(ownReachDue(dir, 'try00001', { now: now + OWN_REACH_EVERY_MS + 1_000 }), true, 'and the cadence resumes');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('review 3.5: one legacy session is ONE group even when some of its lines are unsigned', () => {
+  const s = (session, tools, who) => ({ kind: 'session', session, tools, turns: 1, touchAt: [], firstAt: '2026-09-28T08:00:00.123Z', ...(who ? { who } : {}) });
+  const r = reach([s('p4001', 10), s('p4002', 20, 'octo-a'), s('p4003', 30)]);
+  assert.equal(r.accounted, 1);
+  assert.equal(r.tools, 30);
+});
+
+test('review 3.7: a legacy ask credited to a group outside the window is unaccounted, not lost', () => {
+  const r = reach([
+    { kind: 'session', session: 'p5001', tools: 5, turns: 1, touchAt: [], firstAt: '2026-09-01T08:00:00Z', who: 'octo-a' },
+    { kind: 'session', session: 'p5001', tools: 7, turns: 1, touchAt: [], firstAt: '2026-09-28T08:00:00Z', who: 'octo-b' },
+    { kind: 'ask', _session: 'p5001', who: 'octo-a', at: '2026-09-01T08:30:00Z' },
+  ], { since: '2026-09-20T00:00:00Z' });
+  assert.equal(r.accounted, 1);
+  assert.equal(r.rows[0].asks, 0);
+  assert.equal(r.unaccounted, 1, 'counted somewhere, as the same case with a real key would be');
+});
+
+test('review 4.3: a different transcript file under the same key is a replacement, even when larger', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-reach-moved-'));
+  try {
+    const a = join(dir, 'a.jsonl');
+    const b = join(dir, 'b.jsonl');
+    writeFileSync(a, `${turn('Read')}`, 'utf8');
+    advanceReach({ dir, session: 'move0001', transcriptPath: a });
+    writeFileSync(b, `${turn('Read', 'Read')}${turn('Edit', 'Bash')}${turn('Grep')}`, 'utf8');
+    const after = advanceReach({ dir, session: 'move0001', transcriptPath: b });
+    assert.equal(after.tools, 5, 'the new file is read from its start, not from the old cursor');
+    const logged = readFileSync(join(dir, 'move0001.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.deepEqual(logged.map((l) => l.why), ['transcript-moved'], 'and the log says what happened');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('review 4.9: a legacy line with no firstAt is a group of its own, so its asks are counted once', () => {
+  // The double count needs the key in BOTH shapes: a line without `firstAt` (plain lookup) and one with
+  // it (a legacy group). Both then claimed the same two asks.
+  const r = reach([
+    { kind: 'session', session: 'p6001', tools: 4, turns: 1, touchAt: [] },
+    { kind: 'session', session: 'p6001', tools: 6, turns: 1, touchAt: [], firstAt: '2026-09-28T08:00:00Z' },
+    { kind: 'ask', _session: 'p6001', at: '2026-09-28T09:00:00Z' },
+    { kind: 'ask', _session: 'p6001', at: '2026-09-28T09:10:00Z' },
+  ]);
+  assert.equal(r.accounted, 2);
+  assert.equal(r.rows.reduce((n, x) => n + x.asks, 0), 2, 'two asks, two counted — not four');
+  assert.equal(r.unaccounted, 0);
 });

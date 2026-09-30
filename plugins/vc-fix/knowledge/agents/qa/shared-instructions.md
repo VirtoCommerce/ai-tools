@@ -81,8 +81,6 @@ Before you report a task complete, **verify your own output** — a tool call su
 - **Reconcile against the source of truth.** Confirm assertions, data, and selectors against live/source per the Live-Verification Policy below — never against memory or a stale reference.
 - **Report honestly.** State what you verified and how. If a step failed or was skipped, say so with the evidence; never hedge a claim you did not actually confirm.
 
-Codified in memory `feedback_agents_self_check_and_verify`.
-
 ## Evidence Collection Standards
 
 - **Screenshots**: FAIL state + critical-flow final state only. Skip passing-step captures. Budget per scope defined in evidence-capture-policy.md §1.
@@ -163,7 +161,7 @@ For any "wrong field mapping" / "missing UI control" / "disabled element" / "rea
 2. **Verify the underlying record** — for field-mapping bugs, confirm the entity's field value via the platform REST API or `getByPath` capture, not just from rendered text.
 3. **Check feature flags & roles** — `$cfg.*` flags (`storefront-config-flags.md`), permission grants on Roles (not users), org-vs-personal account differences.
 
-Codified in memory: `feedback_verify_source_data_before_bug`, `feedback_verify_design_intent_before_bug`. Embedded in the `/qa-bug` skill — when invoked standalone, agents must still run these checks.
+Embedded in the `/qa-bug` skill — when invoked standalone, agents must still run these checks.
 
 ### 5. Ask VirtoOZ before you guess how the product is SUPPOSED to behave
 
@@ -291,7 +289,7 @@ You MUST drive the browser like a real customer:
 - **Click** buttons, links, and UI elements — never navigate by injecting URLs unless the test specifically targets direct navigation
 - **Type** into fields with fill/type tools — never set values via JavaScript
 - **Wait** for elements to appear before interacting — never assume instant rendering
-- **Scroll** to off-screen elements before clicking; on mobile (≤500 px) **open the hamburger** before claiming a control is missing (see `feedback_mobile_hamburger_inventory`)
+- **Scroll** to off-screen elements before clicking; on mobile (≤500 px) **open the hamburger** before claiming a control is missing
 - **Hover** over menus and dropdowns to trigger them
 - Use **keyboard shortcuts** (Enter / Tab / Escape) where a real user would
 - Never skip steps by navigating directly to the result page
@@ -306,7 +304,7 @@ You MUST drive the browser like a real customer:
 
 qa-backend-expert posted a direct `POST /api/loyalty-programs` with `name:null`, got a 500 + DB-name leak, and filed it as "no client validation, silent failure" on the Admin SPA. The Save button is **disabled** when Name is empty (`ng-invalid-required`, `menu-item __disabled`). The 500 is a real API-hardening bug, but the UI claim was false and wasted a review cycle. Real-user repro first; only then file an API-only ticket separately if the API behavior is independently wrong.
 
-This rule applies to **all** QA agents in this plugin without exception. See memories `feedback_real_user_interaction`, `feedback_no_force_disabled_controls`.
+This rule applies to **all** QA agents in this plugin without exception.
 
 ## Platform Constraints
 

@@ -40,6 +40,7 @@
  *
  * Exit code: 0 if no finding at/above --fail-on (default High); 1 otherwise.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, readdirSync, statSync } from "fs";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";

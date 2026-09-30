@@ -15,6 +15,57 @@ The full `vc-qa` plugin adds three more categories not shipped here — test cas
 
 **Not a report category — self-diagnostics artifacts.** The self-diagnostics subsystem writes to `<outputRoot>/.vc-fix/diagnostics/` — the passive collector's `<session_id>.jsonl` (+ `.state.json`), the `/vc-self-check` `DIAG-*.md`, and the `deliver` `DELIVERY-*.md`. These are **gitignored diagnostic artifacts**, NOT one of the report categories above; the `DIAG-*.md`/`DELIVERY-*.md` still obey the monitoring-summary size discipline (§2, target 15–40, cap ~100). They are **ephemeral, not archived**: the lifecycle is log → analyze (`/vc-self-check`) → contribute (`deliver` PR/issue) → **delete**. Once a finding is contributed upstream the PR/issue is the source of truth, so `deliver` removes the processed session's own artifacts (only that session — never others); nothing is deleted when nothing was delivered. So they don't accumulate and need no manual cleanup.
 
+## 1a. `reports/bugs/open/` is foldered by severity — and the folder is a VIEW, never the source of truth
+
+```
+reports/bugs/
+  open/
+    critical-high/   Critical · Blocker · P0 · High · P1
+    medium/          Medium · Moderate · P2
+    low/             Low · P3
+    QUESTION-*.md    open design questions — not bugs, not severity-sorted (stay at open/ root)
+  fixed/  closed/  rejected/            FLAT — severity is a triage axis on work still to do
+  screenshots/                          evidence, never a lifecycle dir
+```
+
+A flat directory lists alphabetically, so a P0 revenue leak and a P3 aria-hidden nit sit adjacent, and
+the only question an open backlog is ever read for — *what must ship first* — costs a full read of
+every file. `Critical`↔`P0`, `High`↔`P1`, `Medium`↔`P2`, `Low`↔`P3` are the same spellings used
+everywhere else here, not a second vocabulary.
+
+Four rules, each of which was a live fork upstream:
+
+- **The severity DECLARED IN THE REPORT is the source of truth; the folder mirrors it.** Every report
+  states its severity in its title tag (`` `[Medium]` ``, `— P1`) or a `**Severity:**` line, and §3
+  requires it. A disagreement between the two is read as a **misfiled folder**, never as a
+  re-grading — re-grading means editing the report, then moving the file. Nothing derives severity
+  from the path, deliberately: a path-derived grade would make a `mv` a silent severity change.
+- **A straddling grade files at the LOWER bucket and says so in the report.** `Low–Medium` → `low/`.
+  The bucket is for scheduling, and over-filing a cosmetic finding into `critical-high/` is what
+  trains everyone to stop reading it.
+- **`fixed/` / `closed/` / `rejected/` stay FLAT.** They are history, read by lifecycle and by date,
+  never by "what do we do first"; foldering them would add a hop to every `/qa-verify-fix` move for
+  no reader.
+- **Any reader of the bugs tree must walk it RECURSIVELY.** A consumer that globs
+  `reports/bugs/open/*.md` reads **zero** files once the severity folders exist, and does so
+  *silently* — `open` is a known lifecycle dir, so an unknown-directory warning never fires. Use
+  `open/**/*.md`. This bit the upstream repo's own defect-attribution scan; assume your own tooling
+  has the same bug until you have checked it.
+
+**Per-ticket folders may hold more than one file** (e.g. an a11y or bundle-size audit alongside
+`/qa-verify-fix`'s own report) because each covers a distinct check run against the same ticket —
+that is not the same failure as splitting one report across files. Each file still obeys its own cap
+in §2; don't open a new file for a check that fits inside an existing one in the same folder.
+
+**Two structured per-ticket artifacts are allowed alongside the narrative report, and are NOT counted
+against its line cap** — both are written by [`/qa-verify-fix`](../../commands/qa-verify-fix.md),
+which is their contract; this rule exists so the policy and that command agree:
+
+| Artifact | What it is | Rules |
+|---|---|---|
+| `verification-summary.json` | Small structured verdict record (ticket, verdict, build, deployment, evidence paths) | Structured only, no narrative prose. It does not replace the narrative `verification-report.md` — write both |
+| `evidence.html` | The RED→GREEN evidence page linked from the tracker comment | **Reference the sibling screenshots (`<img src="screenshots/NAME.png">`) — never inline them as `data:` base64 in the committed copy.** A single inlined PNG cost 124 KB on one 124 000-char line, duplicating a PNG already tracked in the same folder byte-for-byte and making the diff unreviewable. Keep the committed page **under ~40 KB** |
+
 ## 2. Hard Size Caps (lines)
 
 | Report type | Target | Hard cap |

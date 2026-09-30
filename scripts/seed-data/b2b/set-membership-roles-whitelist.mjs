@@ -35,6 +35,7 @@
  *      the sales-rep half is resolved by PERMISSION; a zero-length sales-rep set aborts the run
  *      rather than quietly writing only the org roles.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { fileURLToPath } from 'node:url';
 import { resolve, join } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';

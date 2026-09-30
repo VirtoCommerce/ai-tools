@@ -134,7 +134,7 @@ agent that then authors only the gaps, and there is no handoff to lose.
 exact set is the `REPAIR`/`RE-BASE` ids. This is why the merge does not cost FAST its coverage axis.
 
 **Neither phase gates `3-exec`**, the gate that releases the first test. The whole step runs past it —
-which is the 2026-09-10 re-reading that took Artifact A off the critical path ([`SKILL.md`](SKILL.md)
+which is the 2026-09-10 re-reading that took Artifact A off the critical path ([`sequencing.md`](sequencing.md)
 §Ordering), now inherited by the triage that used to sit in front of the checklist.
 
 **Two rules the merge creates, and they are the ones to hold:**
@@ -158,6 +158,12 @@ then made by an agent that has seen them live.
 
 `npm run tc:scope` produces the worklist; classifying each hit is judgment, and it is
 `test-management-specialist`'s (§2a-own). The vocabulary is closed and every hit takes exactly one value.
+
+**When the domain has a mind map, its suspect cases join the worklist** (`TM-017`, handed over by
+pre-flight 1a, [`preflight.md`](preflight.md)). A case stamped on a DRIFT, OBSOLETE or changed node is a
+hit even when `tc:scope` did not find it, and it takes one of the same four values. The slice's
+unstamped nodes (`TM-014`) are not hits: they are the gap list the authoring half starts from, once
+`2a` has confirmed that no existing case decides them.
 
 | Disposition | The row is | Action | Timing |
 |---|---|---|---|

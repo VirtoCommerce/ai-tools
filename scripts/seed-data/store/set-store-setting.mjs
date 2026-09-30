@@ -33,6 +33,7 @@
  * It does NOT add/remove settings, and it does not touch anything but `settings[].value`.
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   DRY_RUN, VERBOSE, STORE_ID, api, auth, assertSafeTarget, log,
 } from '../../lib/seed-common.mjs';

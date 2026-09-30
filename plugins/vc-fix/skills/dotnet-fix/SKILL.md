@@ -33,7 +33,7 @@ pass the build/test gate. This is **Gate 3** of `.claude/rules/quality-gates.md`
    dotnet test tests/VirtoCommerce.<Name>.Tests --nologo -p:NuGetAudit=false
    ```
    (vc-platform: build the solution but test only the affected test project — never `dotnet test` at
-   the platform root.) These mirror `repoProfile` commands from `ci/lib/repo-router.ts`.
+   the platform root.) These mirror `repoProfile` commands from `skills/qa-fix-routing/repo-router.ts`.
 5. **Self-scan the diff** (`git diff`) for accidental churn — formatting, usings, unrelated files —
    then hand it to `backend-reviewer` (Gate 4) before any PR is opened.
 

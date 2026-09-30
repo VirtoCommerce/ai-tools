@@ -32,6 +32,7 @@
  * the generated `release-ledger.md` / `sitemap.md` sit in the same directory without being audited as maps.
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, basename } from "node:path";
 import { fileURLToPath } from "node:url";

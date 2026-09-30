@@ -203,7 +203,7 @@ design-system class: [`design-system-consistency.md`](../qa-design/design-system
 hosted Storybook, which is exactly why the exclusion has to be written down — the §5c detection signals
 would otherwise swallow it. No Coffee theme, no gated-preset set, no `BL-UI` invariant scope, no storefront
 selectors, no regression suites. A vc-shell UI task is not a `ui-kit` shape class ticket; see
-[`vc-shell-fix/SKILL.md`](../vc-shell-fix/SKILL.md) and the `reference_vc_shell_vendor_portal_testing`
+[`plugins/vc-fix/skills/vc-shell-fix/SKILL.md`](../../../plugins/vc-fix/skills/vc-shell-fix/SKILL.md) and the `reference_vc_shell_vendor_portal_testing`
 memory.
 
 **It does not own the visual axis, the BL-UI invariants, or the design-system methodology.** Those keep

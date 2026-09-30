@@ -40,6 +40,7 @@
  * Exit codes: 0 planned · 1 the suite cannot be planned (unknown id, unreadable CSV)
  * · 2 the CSV header is not the canonical 15 columns.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";

@@ -47,6 +47,7 @@
  * skipped, or never recorded). 2 is deliberately distinct from 1 — an absent run
  * is not a failing pass rate, and must never be reported as a regression failure.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync } from "fs";
 import { fileURLToPath } from "url";
 import { resolve, join } from "path";

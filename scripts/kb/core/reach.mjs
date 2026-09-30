@@ -200,7 +200,17 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   // AND THAT MEANS THE COUNTERS TOO. Resetting the cursor alone leaves the ordinals continuing from
   // a document that no longer exists, so the first call of the new transcript is reported as call
   // 4 of a file that has three: `firstTouch`, the one field worth having, becomes fiction.
-  const restarted = size < prior.cursor;
+  //
+  // AND A DIFFERENT FILE UNDER THE SAME KEY IS A REPLACEMENT TOO, whatever its size (review 4): the
+  // desktop app keeps its host id across a `/clear` while the transcript moves to a new file, and the
+  // old cursor applied to that file skipped its first calls. The state already records its path.
+  const moved = Boolean(held && prior.transcriptPath && prior.transcriptPath !== transcriptPath);
+  const restarted = moved || size < prior.cursor;
+  // THE WORK BEFORE A REPLACEMENT IS NOT CARRIED, deliberately (VCST-6091). A carry was built and
+  // reviewed four times; each round found a new edge — subagents counted twice, a drop-and-resume
+  // losing it, a moved file — for a case measured once. So a replacement resets the counters as it
+  // always did, the `restart` line below says so in the log, and the session's fuller EARLIER line is
+  // what `reach()` shows for it. Revisit only if the live log shows replacements are common.
   const from = restarted ? 0 : prior.cursor;
   const base = restarted ? { ...prior, tools: 0, touchAt: [] } : prior;
 
@@ -220,7 +230,8 @@ export function advanceReach({ dir, session, transcriptPath, at = new Date(), wh
   // Named by what was OBSERVED, never by a guessed cause: a shrinking transcript is "replaced",
   // not "compacted".
   const dropped = !held && consumeTombstone(dir, session);
-  const why = restarted ? 'transcript-replaced'
+  const why = moved ? 'transcript-moved'
+    : restarted ? 'transcript-replaced'
     : dropped ? 'state-dropped'
       : !held && promptsIn(chunk.slice(0, consumed)) > 1 ? 'state-absent'
         : null;
@@ -330,6 +341,53 @@ export const reachLine = (state) => ({
 });
 
 /**
+ * A published `session` line's whole WORK: its own calls and its subagents'. THE ONE DEFINITION —
+ * the writer's merge (`fullestSessionLines`), the publish filter (`published`), the send marks and
+ * the report (`reach()`) all compare by it; three copies of one sum drift apart.
+ */
+export function lineWork(l) {
+  return Number(l?.tools ?? 0) + Number(l?.agentTools ?? 0);
+}
+
+/** A published `session` line's base calls, by the same rule: its own ordinals and its subagents'. */
+export function lineTouches(l) {
+  return (Array.isArray(l?.touchAt) ? l.touchAt.length : 0) + Number(l?.agentTouches ?? 0);
+}
+
+/** The bare `p<pid>` key a process with no session id got before VCST-6091 (now `p<pid>-<hex>`). */
+const LEGACY_PROCESS_KEY = /^p\d+$/;
+
+/** Is this one of the pre-VCST-6091 bare pid keys? */
+export const isLegacyProcessKey = (id) => LEGACY_PROCESS_KEY.test(String(id ?? ''));
+
+/**
+ * Which SESSION a `session` line belongs to. THE ONE DEFINITION, for the writer that merges lines in a
+ * file and the report that groups them — two rules would let the writer delete what the report
+ * keeps apart (VCST-6091 review: the writer grouped by key alone and dropped one of two people's
+ * lines sharing `p24300`).
+ *
+ * Its own key — except the bare pid keys published before VCST-6091. Those were minted afresh by
+ * every `Stop` hook, so ONE session appears as one line per turn, each recounting its transcript from
+ * the start: 126 lines, 125 of them `turns: 1`, over 13 real sessions, for one operator on
+ * 2026-09-28. And a pid is not unique across machines, so one key can hold two people. What IS stable
+ * across those lines is the transcript's own start (`firstAt`, read from the transcript itself, to
+ * the millisecond), so that is the session.
+ *
+ * NOT THE OPERATOR AS WELL, which the first version added and review 3 took out: a cold identity
+ * cache leaves some of one session's lines unsigned, and keying by `who` split that one session into
+ * a signed group and an unsigned one. Two people's transcripts starting in the same millisecond is
+ * not a case worth a second key; one session's lines disagreeing about `who` is measured and common.
+ */
+export function sessionKeyOf(l) {
+  const id = l?.session ?? l?._session;
+  if (!id) return null;
+  if (!isLegacyProcessKey(id)) return id;
+  // A legacy line with no `firstAt` is still a legacy GROUP — of one key — so its asks are settled by
+  // the same one-group rule as every other legacy key's, never also by the plain lookup (review 4).
+  return l.firstAt ? `pid~${l.firstAt}` : `pid~key~${id}`;
+}
+
+/**
  * Drop a published state — and leave a TOMBSTONE saying so.
  *
  * The tombstone is what tells the second of §23.6's three discontinuities apart from the third. A
@@ -339,7 +397,98 @@ export const reachLine = (state) => ({
  */
 export function dropReach(dir, session) {
   try { rmSync(reachPath(dir, session), { force: true }); } catch { /* already gone */ }
+  try { rmSync(sentPath(dir, session), { force: true }); } catch { /* nothing was sent */ }
+  try { rmSync(triedPath(dir, session), { force: true }); } catch { /* nothing was tried */ }
   try { writeFileSync(tombstonePath(dir, session), '', 'utf8'); } catch { /* costs a label, not a count */ }
+}
+
+// ── a session publishes its OWN counters (VCST-6091) ─────────────────────────────────────────
+//
+// Until 2026-09-29 a session's counters were published only by a LATER session, once this one had
+// been idle for `REACH_IDLE_MS` — and never by itself. So a session's reach arrived whenever somebody
+// next opened a session on that machine: two sessions of Friday 2026-09-25 reached the base on
+// Monday morning. Worse for the one case this measurement exists for: a session that never asks has
+// no queue work, so it never pushed at all, and depended entirely on a stranger.
+//
+// Now the session sends its own line: with every push it makes anyway, and — when it has nothing
+// else to send — at most once per `OWN_REACH_EVERY_MS`. Each publication is a fuller copy of the
+// last, and the publisher keeps one per file (`fullestSessionLines` in push.mjs). The idle harvest
+// stays as the backstop for whatever happened after the last send.
+
+/** How often a session with no other queue work pushes its own counters. */
+export const OWN_REACH_EVERY_MS = 30 * 60 * 1000;
+
+/** `<session>.reach.sent` — what the last published line carried: `<work> <turns>`. Not `.reach.json`. */
+export const sentPath = (dir, session) => join(dir, `${session}.reach.sent`);
+
+/** A state's whole work: exactly what its published line would carry (`lineWork`). */
+export const workIn = (state) => lineWork(reachLine(state ?? {}));
+
+/** What the last published line for this session carried; zeros if none was sent. */
+export function sentMark(dir, session) {
+  try {
+    const [work, turns] = readFileSync(sentPath(dir, session), 'utf8').trim().split(/\s+/).map(Number);
+    return { work: work || 0, turns: turns || 0 };
+  } catch {
+    return { work: 0, turns: 0 };
+  }
+}
+
+/** Record what a line queued for publication carried. Best effort, like every other note. */
+export function markSent(dir, session, state) {
+  try { writeFileSync(sentPath(dir, session), `${workIn(state)} ${Number(state?.turns ?? 0)}\n`, 'utf8'); } catch { /* republished next time — merged, not doubled */ }
+}
+
+/**
+ * Does this state say anything its last published line did not?
+ *
+ * MORE WORK OR MORE TURNS. Work alone missed the tail of a session whose last turns made no tool call:
+ * its `turns` and `lastAt` were never published, because the harvest saw no new work and dropped it.
+ */
+export function unsent(dir, state) {
+  const mark = sentMark(dir, state.session);
+  return workIn(state) > mark.work || Number(state.turns ?? 0) > mark.turns;
+}
+
+/** `<session>.reach.tried` — when the hook last started a push for our own counters. */
+export const triedPath = (dir, session) => join(dir, `${session}.reach.tried`);
+
+/**
+ * Record that the hook started a push for our own counters, WHATEVER that push then does.
+ *
+ * The send mark alone could not pace the hook: it is written deep inside the push, so a push that
+ * stops early — a refused or unwritable base, a held queue — never writes it, `ownReachDue` stays
+ * true, and every turn starts another push that stops the same way (VCST-6091 review 3). The attempt
+ * is the cadence, the way `.last-flush` already is for the sweep.
+ */
+export function markTried(dir, session) {
+  try { writeFileSync(triedPath(dir, session), '', 'utf8'); } catch { /* costs one early retry, no more */ }
+}
+
+/** Milliseconds since the path was last written, or Infinity if it never was. */
+function ageOf(path, now) {
+  try { return now - statSync(path).mtimeMs; } catch { return Infinity; }
+}
+
+/**
+ * Should this session push its own counters now, with nothing else to send?
+ *
+ * Only when there is something unsent, and neither the last send nor the last attempt is younger than
+ * `everyMs`. The first publication is immediate, so a short session is in the base while it is still
+ * running rather than whenever the next session starts. `state` is the caller's copy when it already
+ * holds one — the hook has just written it — so the file is not read again.
+ *
+ * `attempts: false` is the PUSH's question. The hook marks the attempt immediately before it starts
+ * the push, so a push that counted attempts would find one a millisecond old and publish nothing —
+ * the very push the attempt was made for.
+ */
+export function ownReachDue(dir, session, {
+  now = Date.now(), everyMs = OWN_REACH_EVERY_MS, state = readReach(dir, session), attempts = true,
+} = {}) {
+  if (!state || workIn(state) === 0) return false;
+  if (!unsent(dir, state)) return false;
+  const sent = ageOf(sentPath(dir, session), now);
+  return (attempts ? Math.min(sent, ageOf(triedPath(dir, session), now)) : sent) >= everyMs;
 }
 
 /** `<session>.reach.dropped` — not `.reach.json`, so `idleReaches` steps over it. */

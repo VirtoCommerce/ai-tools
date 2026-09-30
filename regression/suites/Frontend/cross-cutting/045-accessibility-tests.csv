@@ -184,10 +184,10 @@
 - Mobile viewport active (375×812 or 390×844)","store={{FRONT_URL}}","[NAV] Resize browser to mobile viewport (375px wide) via DevTools device emulation or browser_resize
 [NAV] Navigate to {{FRONT_URL}} catalog page and cart page
 [ACT] Inspect interactive elements: buttons, links, quantity controls, close/dismiss icons
-[ASSERT] Verify each touch target measures at least 44×44px via DevTools computed styles
-[ASSERT] Verify adequate spacing between adjacent touch targets to prevent mis-taps","[DOM] All interactive touch targets ≥ 44×44px (width and height in computed styles)
+[ASSERT] Verify each touch target measures at least 24×24px via DevTools computed styles
+[ASSERT] Verify adequate spacing between adjacent touch targets to prevent mis-taps","[DOM] All interactive touch targets ≥ 24×24px (width and height in computed styles)
 [STATE] Adjacent targets have sufficient spacing — no targets overlapping or directly adjacent with less than 8px gap
-[STATE] Elements easy to tap accurately without activating neighbouring elements","[CONSOLE] no layout errors at mobile viewport","touch target measures below 44×44px; targets too close causing mis-taps; overflow or clipping at mobile viewport","Restore desktop viewport after test","WCAG 2.5.5","Manual"
+[STATE] Elements easy to tap accurately without activating neighbouring elements","[CONSOLE] no layout errors at mobile viewport","touch target measures below 24×24px; targets too close causing mis-taps; overflow or clipping at mobile viewport","Restore desktop viewport after test","WCAG 2.5.8","Manual"
 "A11Y-VCP-001","VcVariantPicker - States","Component > Picker","High","BL-A11Y-002",,"- Product page with variant picker (VcVariantPicker component) loaded","store={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}} that has variant options (size, color, etc.)
 [ACT] browser_snapshot to inspect VcVariantPicker DOM at rest (default state)
 [ASSERT] Verify unselected options are visible and distinguishable

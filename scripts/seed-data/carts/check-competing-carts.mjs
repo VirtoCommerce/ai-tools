@@ -18,6 +18,7 @@
  * Exit codes:  0 = clean · 1 = exposed account(s) found · 2 = operational failure
  * Read-only unless --apply is passed. --apply refuses on ENV_RISK=production.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync } from 'node:fs';
 import { authenticate, getApi, findUserByEmail, ENV_RISK, TEST_ENV, ROOT } from '../../lib/user-provision.mjs';
 import { USER_ROLES, resolveRole } from '../../lib/user-roles.mjs';

@@ -49,7 +49,7 @@ Chrome on Android (physical device or BrowserStack emulator); mobile viewport ac
 [WAIT] checkout completes successfully","[DOM] mobile layout shows the hamburger menu icon, single-column stacked content sections, and no horizontal scrollbar at the viewport width
 [DOM] List/Map toggle switches views without error
 [DOM] store selection tappable and checkout proceeds
-[DOM] all touch targets are at least 44x44px
+[DOM] all touch targets are at least 24x24px
 [STATE] order confirmation visible","[CONSOLE] no JS errors during mobile navigation or checkout
 [NETWORK] all API calls 2xx on mobile network profile","JS error in browser console; layout broken or overflow at any viewport; touch gesture not recognized; checkout flow broken on mobile","Remove test order from admin if created","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
 "BROWSER-CHROME-004","Chrome Android - Touch Events","Chrome > Mobile","High","","ECL-7.4","[PRE:SIGNIN_AS:USER_DEFAULT]
@@ -67,7 +67,7 @@ Chrome on Android device or BrowserStack; BOPIS modal accessible; {{FRONT_URL}} 
 [STATE] list scroll is smooth with momentum scrolling
 [STATE] pinch-zoom changes map zoom level visually
 [STATE] virtual keyboard appears on field tap; no layout shift breaks form
-[DOM] touch targets are at least 44x44px for all interactive elements","[CONSOLE] no touch event handler errors or JS exceptions
+[DOM] touch targets are at least 24x24px for all interactive elements","[CONSOLE] no touch event handler errors or JS exceptions
 [NETWORK] no failed requests triggered by touch interactions","touch gesture not recognized; layout broken or overflow at any viewport; JS error in browser console; keyboard does not appear on field tap","none","VCST-4499 TC-013 | Oracle: .claude/knowledge/automation/browser-quirks.md","Manual"
 "BROWSER-SAFARI-001","Safari Desktop - Full Flow","Safari > Desktop","Critical","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]

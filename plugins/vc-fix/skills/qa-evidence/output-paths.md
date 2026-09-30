@@ -55,7 +55,7 @@ whose file cannot be located is reported as missing, never assumed present.
 |---------------|------|----------|
 | **Test documentation** (plans, cases, execution reports, testrail CSVs) | `reports/tickets/SprintXX-XX/VCST-XXXX/` | `test-plan.md`, `test-cases.md`, `test-execution-report.md`, `testrail-import.csv` |
 | **Test screenshots** (evidence captured during test execution) | `reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
-| **Bug reports — open** (active bugs) | `reports/bugs/open/` | `BUG-Checkout-Payment-Overlap-iOS.md` |
+| **Bug reports — open** (active bugs) | `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (`.claude/rules/reports.md` §1a) | `BUG-Checkout-Payment-Overlap-iOS.md` |
 | **Bug reports — fixed** (verified fixes, kept for regression reference) | `reports/bugs/fixed/` | `BUG-Cart-Total-Reset-VCST-4700.md` |
 | **Bug reports — closed** (won't fix, false positive, cannot reproduce) | `reports/bugs/closed/` | `BUG-GA4-add-payment-info.md` |
 | **Bug evidence** (screenshots & API traces for bugs) | `reports/bugs/screenshots/<bug-slug>/` and `reports/bugs/api-traces/` | `payment-form-broken-ios.png`, `graphql-error-response.json` |
@@ -75,7 +75,7 @@ whose file cannot be located is reported as missing, never assumed present.
 
 ## Naming Conventions
 
-- **Bug reports:** `reports/bugs/open/BUG-{Short-Description}.md` (e.g., `BUG-Guest-Checkout-Email-Validation.md`)
+- **Bug reports:** `reports/bugs/open/<bucket>/BUG-{Short-Description}.md` (e.g., `BUG-Guest-Checkout-Email-Validation.md`)
 - **Bug reports with a tracker ref:** `reports/bugs/open/BUG-{Description}-{KEY}.md` — `{KEY}` is the tracker's own key format (Jira `VCST-XXXX`, Azure Boards a bare numeric `12345`)
 - **Bug lifecycle:** `open/` → (verified fix) → `fixed/` | (false positive/won't fix) → `closed/`
 - **Ticket evidence:** `reports/tickets/{KEY}/test-report.md` (e.g. `VCST-XXXX/` on Jira, `12345/` on Azure Boards)

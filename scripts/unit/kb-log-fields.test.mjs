@@ -308,7 +308,11 @@ test('a capture refused AT THE DOOR is logged — kinds of problem, never the re
     const [l] = lines;
     assert.equal(l.kind, 'capture-invalid');
     assert.equal(l.subject, 'a fact with a mangled anchor');
-    assert.deepEqual(l.problems.sort(), ['local-path', 'unstructured']);
+    // The MSYS prefix is undone first (VCST-6102), so `/cart` is judged as `/cart` and only `/` fails.
+    assert.deepEqual(l.problems.sort(), ['unstructured']);
+    assert.equal(l.repaired, 'msys');
+    // The SHAPE of the unstructured anchor, never its text: `/` is a path of zero segments.
+    assert.deepEqual(l.shapes, [{ type: 'path', segments: 0 }]);
     assert.ok(!JSON.stringify(l).includes('Program Files'), 'the rejected coordinate stays on the laptop');
     assert.ok(!('payload' in l) && !('id' in l), 'nothing was queued for the base');
   });

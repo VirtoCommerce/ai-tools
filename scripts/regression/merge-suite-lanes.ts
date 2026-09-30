@@ -22,6 +22,7 @@
  * written) · 2 the lanes plan is missing, so there is no authoritative case set to merge
  * against.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";

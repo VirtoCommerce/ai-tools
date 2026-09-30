@@ -28,6 +28,7 @@
  *   1 — DRIFT: they disagree (or the constant could not be parsed out of the source)
  *   2 — source unreachable. NEVER silently passes: an unreachable source is not agreement.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync } from "fs";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";

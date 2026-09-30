@@ -145,7 +145,7 @@ Then in Claude Code: `Navigate to the storefront URL and take a screenshot`. If 
 
 ### How Testing Works
 
-Five pipelines, each with an interactive + headless-CI twin:
+Five pipelines:
 
 1. **Interactive MCP-driven** (primary) — tell Claude Code what to test: `/qa-smoke storefront`, `/qa-test VCST-1234`, `Use qa-frontend-expert to verify checkout`. Real browser via Playwright MCP → HAR/screenshots/console → reports.
 2. **CI regression** — `ci/run-regression.ts` runs CSV suites headless in Docker (`npm run ci:*`).
@@ -153,7 +153,7 @@ Five pipelines, each with an interactive + headless-CI twin:
 4. **Full-cycle** — `ci/run-full-cycle.ts`: sync stale cases → review → regression (`npm run ci:cycle`).
 5. **Monitoring** (`/qa-monitoring`) + **auto-fix** (`/qa-fix`) — App Insights triage / bug-fix-to-PR (gate ladder G0–G7, never auto-merges).
 
-> `ci/` ships with the plugin (it's tracked) and also runs in GitHub Actions. Only transient sub-paths (`.fix-workspace/`, the module-registry cache, heavy run artifacts) are gitignored.
+> `ci/` ships with the plugin (it's tracked) and also runs in GitHub Actions. Only transient sub-paths (`.fix-workspace/`, heavy run artifacts) are gitignored.
 
 ### Commands, Skills & Agents
 
@@ -201,7 +201,7 @@ vc-mcp-testing-module/
 │   ├── architecture/     #   TIER.md classification
 │   └── ROUTING.md        #   "New here?" entry point
 ├── config/               # vc-qa: Playwright browser configs + test-suites.json manifest
-├── ci/                   # vc-qa: CI / full-cycle / auto-fix / monitoring pipelines (tracked)
+├── ci/                   # vc-qa: CI / full-cycle / monitoring pipelines (tracked)
 ├── vc/                   # vc-qa: VC internal per-env data (+ shared/docs/prompts/ templates) — customers ignore
 ├── regression/suites/    # vc-qa: CSV suites under Frontend/ + Backend/, module-aligned dirs (`npm run suites:lint` prints the totals)
 ├── tests/                # vc-qa: Test cases by sprint/JIRA ticket

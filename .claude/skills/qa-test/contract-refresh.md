@@ -1,7 +1,7 @@
 # The contract-refresh axis — refresh the GraphQL schema and fixtures BEFORE anyone reads them
 
 **This file is the only place the `/qa-test` contract-refresh axis is specified.**
-`commands/qa-test.md`, `skills/qa-test/SKILL.md`, `authoring.md` and `test-model.md` **cite it and never
+`commands/qa-test.md`, `skills/qa-test/SKILL.md`, `authoring.md` and `qa-test-model/test-model.md` **cite it and never
 restate it** — the same single-source-of-truth discipline `ticket-routing.md` holds for flow routing and
 [`visual-axis.md`](visual-axis.md) holds for the design/a11y lane.
 
@@ -92,7 +92,7 @@ failed `schema:refresh` would mask whatever the fixture gate had to say, and §3
 
 Do not read the 17% as the reason to do it. The reason is that a serial pair here is one extra
 round-trip on the critical path *before* `1c` can dispatch, and round-trips — not script seconds — are
-what this pipeline pays in ([`SKILL.md`](SKILL.md) §Concurrency).
+what this pipeline pays in ([`sequencing.md`](sequencing.md) §Concurrency).
 
 **`npm run schema:check` is not a substitute for either.** It introspects, renders, and writes nothing —
 a *liveness* check. It never compares against the committed snapshot, so it cannot detect drift and a

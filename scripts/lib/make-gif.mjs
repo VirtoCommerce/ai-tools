@@ -24,6 +24,7 @@
  * The §5.2 budget (1 GIF/bug, <=8 frames, >=1.5s/frame, <=960px, <=5MB) is reported as warnings on
  * stderr, never as a hard failure — the policy says a miss is a gap to log, not a build break.
  */
+import "./sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync } from "node:fs";
 import { inflateSync } from "node:zlib";
 

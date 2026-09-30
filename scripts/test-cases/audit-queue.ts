@@ -34,6 +34,7 @@
  * Exit code: 0 normally; 1 only when the manifest/suite files cannot be read
  * (never "no work to do" — an empty queue is a valid success).
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync } from "fs";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";

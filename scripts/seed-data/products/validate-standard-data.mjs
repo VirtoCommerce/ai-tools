@@ -39,10 +39,16 @@
  *      (re-derived in integer cents), and a `requireMidpoint` row still sits on the 4-decimal rounding
  *      midpoint. Guards the VCST-5691 fixtures (PROD-108 / PROD-109): a one-cent price edit silently
  *      turns PRICE-065 / PRICE-066 into vacuous passes and nothing else would notice.
+ *  14. test-products.csv: every STOCK_GATE_FIXTURES row keeps the ordering that separates the UCP
+ *      refusal codes (VCST-6054) — PROD-112 min_quantity > stock_qty >= 1 (inventory_unavailable, not
+ *      out_of_stock); PROD-113 1 <= dropped_stock < cart_qty <= stock_qty and min <= dropped
+ *      (insufficient_stock after acceptance). Also: min_quantity is a positive integer, never set in
+ *      both the column and SPEC_OVERLAYS, and cart_qty / dropped_stock appear only on declared rows.
  *
  * Usage:  npm run td:validate:standard   (exit 1 on any hard problem)
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -50,6 +56,7 @@ import { parse } from 'csv-parse/sync';
 import {
   CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES, DISCOUNT_RATIO_FIXTURES, DISCOUNT_PERCENT_DECIMALS,
   STACKING_FIXTURES, stackingExpectation, validateStackingShape,
+  STOCK_GATE_FIXTURES, validateStockGateShape,
   productSlug, storefrontPathForAdHoc, slugify,
   discountRatioScaled, isRoundingMidpoint, expectedDiscountPercent, roundHalfToEven,
 } from './standard-specs.mjs';
@@ -323,6 +330,29 @@ console.log(`
     }
   }
 }
+// 14. Stock-gate fixtures (VCST-6054). UCP's three refusal codes are only distinguishable while each
+// row keeps its ORDERING: min_quantity > stock_qty >= 1 for inventory_unavailable, and
+// 1 <= dropped_stock < cart_qty <= stock_qty (min <= dropped) for the post-acceptance insufficient_stock.
+// Equalise any pair and the case passes whichever rule the module implements.
+console.log(`\n[14] ${CSV_SOURCE.file}: stock-gate fixtures keep the ordering that separates the UCP refusal codes`);
+{
+  const byId = Object.fromEntries(tp.map((r) => [r[CSV_SOURCE.map.csvId], r]));
+  const minCol = CSV_SOURCE.map.minQuantity;
+  for (const r of tp) {
+    const raw = String(r[minCol] ?? '').trim();
+    if (raw && !(/^\d+$/.test(raw) && Number(raw) >= 1)) fail(`${CSV_SOURCE.file} row ${r[CSV_SOURCE.map.csvId]}: min_quantity "${raw}" must be a positive integer (it is seeded as the product's minQuantity)`);
+  }
+  const gateProblems = validateStockGateShape(byId);
+  for (const gp of gateProblems) fail(gp);
+  if (!gateProblems.length) {
+    for (const [id, fx] of Object.entries(STOCK_GATE_FIXTURES)) {
+      const r = byId[id];
+      const m = CSV_SOURCE.map;
+      ok(`${id} (${r[m.code]}) ${fx.kind} → ${fx.expectCode}: stock ${r[m.stock]} / min ${r[m.minQuantity] || 1}${r[m.cartQty] ? ` / cart ${r[m.cartQty]} / dropped ${r[m.droppedStock]}` : ''}`);
+    }
+  }
+}
+
 console.log('\n=== standard-products drift/leak check ===');
 console.log(`  standard.csv rows: ${std.length} | ${CSV_SOURCE.file} rows: ${tp.length} | seeded: ${seededIds.size} | discovered: ${DISCOVERED_FIXTURES.length}`);
 console.log(`  hard problems: ${problems.length} | warnings: ${notes.length}`);

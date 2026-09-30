@@ -57,15 +57,18 @@ Team framework: `knowledge/agents/ba/shared-instructions.md` (VirtoOZ-first sour
 
 The **only write-capable team** — clone / branch / commit / push / open PR on external VirtoCommerce
 product repos via local `git`/`gh`. QA agents stay read-only on GitHub; write scope is isolated here.
-Driven by `/qa-fix` (interactive twin of `ci/run-fix-cycle.ts`), reusing `ci/config/fix-repos.json` +
-`ci/lib/repo-router.ts` + `ci/lib/module-registry.ts`. One developer + one reviewer **per repo kind**,
+**These four agents and their six skills live ONLY in [`plugins/vc-fix/`](../../plugins/vc-fix/) — the `.claude/`
+duplicates were removed 2026-09-25 (they had forked; `/qa-fix`, the only caller, is plugin-only).** The table below
+is the reference for what each does; `/plugin install vc-fix@vc-tools` is what puts them in the picker.
+
+Driven by `/qa-fix`, reusing the routing in `plugins/vc-fix/skills/qa-fix-routing/`. One developer + one reviewer **per repo kind**,
 picked by the routed repo's `kind`. Gate ladder + no-auto-merge: `.claude/knowledge/execution/quality-gates.md`.
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| **fullstack-backend** | opus | Fixes ONE `vc-module-*` / `vc-platform` repo (.NET 10 / C# + the module's Admin SPA Angular). Reproduce-as-test → minimal fix → open PR. Interactive twin of `ci/agents/fix-backend-agent.md`. Skills: `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`. |
+| **fullstack-backend** | opus | Fixes ONE `vc-module-*` / `vc-platform` repo (.NET 10 / C# + the module's Admin SPA Angular). Reproduce-as-test → minimal fix → open PR. Skills: `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`. |
 | **backend-reviewer** | sonnet | Gate-4 reviewer of the C#/Angular local diff before the PR: single-repo, no test edits, no breaking changes, BL-* preserved, minimal & idiomatic. |
-| **fullstack-frontend** | opus | Fixes the `vc-frontend` storefront (Vue 3 / TS / Vite + in-repo UI kit + Storybook), **and** a `module` repo's declared embedded frontend sub-app on the same stack (e.g. `vc-module-pagebuilder`'s `src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/`), scoped to the sub-app path within that module's single-repo checkout. Reproduce-as-vitest-test (or, for a module sub-app, its own `tsx --test`/ephemeral harness) → minimal fix → open PR. Interactive twin of `ci/agents/fix-frontend-agent.md`. Skills: `/vue-unit-test`, `/vue-fix` (`/storybook-test` optional), `/vc-shell-fix` (module-embedded sub-app). |
+| **fullstack-frontend** | opus | Fixes the `vc-frontend` storefront (Vue 3 / TS / Vite + in-repo UI kit + Storybook), **and** a `module` repo's declared embedded frontend sub-app on the same stack (e.g. `vc-module-pagebuilder`'s `src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/`), scoped to the sub-app path within that module's single-repo checkout. Reproduce-as-vitest-test (or, for a module sub-app, its own `tsx --test`/ephemeral harness) → minimal fix → open PR. Skills: `/vue-unit-test`, `/vue-fix` (`/storybook-test` optional), `/vc-shell-fix` (module-embedded sub-app). |
 | **frontend-reviewer** | sonnet | Gate-4 reviewer of the Vue/TS local diff before the PR: single-repo (or single-sub-app scope for a module-embedded fix), no test/story edits, no leaked scratch-harness tooling, no breaking prop/event/slot or GraphQL contract, BL-UI preserved, minimal & idiomatic. |
 
 **Developer team tools & constraints:**
@@ -115,4 +118,4 @@ Each agent MUST use its own separate browser session. Agents sharing a browser w
 - When delegating to sub-agents/specialist agents, verify the agent has the required tool permissions BEFORE dispatching.
 - If a delegated agent fails with an internal error (e.g., classifyHandoffIfNeeded), immediately fall back to working directly rather than retrying the same broken delegation.
 - For multi-suite regression runs, plan for rate limits: batch in groups of 3 (matching browser pool slots) rather than launching all simultaneously.
-- **Independent operations go out in ONE message; the unit you are saving is a round-trip, not a second.** Deterministic scripts here cost 1–2 s, so batching turns beats optimising script wall-clock by a wide margin. **But parallelism has a measured cost too, so it is a per-case judgment, never a default** — two writers on one suite CSV, two suites on one disposable fixture set, and a verifier beside its own doer each lose work. Reordering something that costs milliseconds to look concurrent is churn. The measured timings, the worked dependency waves and the full never-parallelise table: [`.claude/skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §Concurrency.
+- **Independent operations go out in ONE message; the unit you are saving is a round-trip, not a second.** Deterministic scripts here cost 1–2 s, so batching turns beats optimising script wall-clock by a wide margin. **But parallelism has a measured cost too, so it is a per-case judgment, never a default** — two writers on one suite CSV, two suites on one disposable fixture set, and a verifier beside its own doer each lose work. Reordering something that costs milliseconds to look concurrent is churn. The measured timings, the worked dependency waves and the full never-parallelise table: [`.claude/skills/qa-test/sequencing.md`](../skills/qa-test/sequencing.md) §Concurrency.

@@ -1,6 +1,6 @@
 /**
- * Type declarations for project-profile.mjs so the TypeScript side (ci/lib/*,
- * ci/run-fix-cycle.ts) gets real types under strict mode instead of implicit any.
+ * Type declarations for project-profile.mjs so the TypeScript side
+ * gets real types under strict mode instead of implicit any.
  * Keep in sync with PROFILE_DEFAULTS in project-profile.mjs.
  */
 export interface ProfileRepo {
@@ -8,7 +8,7 @@ export interface ProfileRepo {
   kind?: "frontend" | "module" | "platform";
   host?: "github" | "azure-repos";
   defaultBranch?: string;
-  /** Per-repo toolchain overrides (else the kind default) — see ClientRepoMeta in ci/lib/repo-router.ts. */
+  /** Per-repo toolchain overrides (else the kind default) — see ClientRepoMeta in plugins/vc-fix/skills/qa-fix-routing/repo-router.ts. */
   installCmd?: string;
   buildCmd?: string;
   typecheckCmd?: string;

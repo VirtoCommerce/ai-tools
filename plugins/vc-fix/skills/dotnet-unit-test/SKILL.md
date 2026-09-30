@@ -11,7 +11,7 @@ fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladde
 
 ## When to use
 - A backend bug in a `vc-module-*` / `vc-platform` repo has been routed and the source is checked out
-  in `.fix-workspace/<repo>/` (via `ci/lib/repo-router.ts` `checkoutForFix`).
+  in `.fix-workspace/<repo>/` (via `skills/qa-fix-routing/repo-router.ts` `checkoutForFix`).
 - Before writing any production-code fix — the test comes first.
 
 ## Steps
@@ -73,4 +73,4 @@ fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladde
 - `xunit-patterns.md` — verified test stack + xUnit/Moq recipes for VC services/handlers/resolvers
 - `knowledge/architecture/vc-module-architecture.md` — repo layout, build/test profiles
 - `.claude/rules/quality-gates.md` — G2 (red), G3 (green + existing tests untouched)
-- Build/test commands: `REPO_PROFILES` in `ci/lib/repo-router.ts`
+- Build/test commands: `REPO_PROFILES` in `skills/qa-fix-routing/repo-router.ts`

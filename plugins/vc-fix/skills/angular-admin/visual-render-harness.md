@@ -133,11 +133,6 @@ npx --yes http-server .fix-workspace/_scratch/VCST-XXXX -p 8099 -c-1
 If the bug **cannot** be reproduced in the harness (needs live data, cross-blade interaction, or a runtime
 service), **escalate** to the heavy fallback below rather than skipping the proof.
 
-> **CI mode (headless `ci/run-fix-cycle.ts`):** the fix agent has no browser MCP — it renders the same
-> harness **via Bash** with the Playwright that ships in the CI image (`mcr.microsoft.com/playwright`): serve
-> the scratch dir with `http-server`, then a small Node script (`chromium.launch()` → `page.goto` →
-> `page.screenshot()`) captures the red/green PNGs. Same evidence in the (draft) PR body.
-
 ---
 
 ## Live in-browser verification (pre-PR) — when the fix changes document flow

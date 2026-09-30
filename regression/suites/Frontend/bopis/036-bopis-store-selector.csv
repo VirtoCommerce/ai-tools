@@ -60,7 +60,7 @@ Mobile device (375x667); iOS Safari or Chrome Android; PR #2138 deployed","url={
 [ACT] click 'Pick up here' button
 [WAIT] modal closes and pickup location shown in cart","[DOM] mobile single-column layout renders
 [STATE] toggle switches views instantly with only one view visible at a time
-[DOM] touch targets adequate (min 44x44px) for toggle and close buttons
+[DOM] touch targets adequate (min 24x24px) for toggle and close buttons
 [DOM] pickup location confirmed in cart after selection on mobile","[API] mutation errors[] is empty for selectPickupLocation
 [CONSOLE] no TypeError or JS errors during modal interactions","Mobile toggle not switching views; Both list and map visible simultaneously on mobile; Touch targets too small; Modal not closeable on mobile","Clear pickup location or remove items from cart","VCST-4499 TC-003","Automated"
 "BOPIS-004","Search - Location Name","BOPIS > Search","High","BL-BOPIS-007","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
@@ -502,13 +502,13 @@ Mobile viewport (375x667); Product detail page with BOPIS widget","url={{FRONT_U
 [WAIT] modal opens in mobile-friendly layout
 [ASSERT] map accessible on mobile (may be below list)
 [ASSERT] location list accessible
-[ASSERT] close button tap target >= 44x44px
+[ASSERT] close button tap target >= 24x24px
 [ACT] tap a location to view details
 [ACT] tap close button
 [WAIT] modal closes","[STATE] BOPIS widget not overflowing at 375px width
 [DOM] CTA button tap target adequate on mobile
 [STATE] modal opens in mobile-friendly layout
-[DOM] close button tap target meets 44x44px minimum
+[DOM] close button tap target meets 24x24px minimum
 [STATE] touch interactions work (tap locations, close modal)","[CONSOLE] no TypeError or JS errors at mobile viewport","BOPIS widget overflowing at 375px; CTA button tap target too small; Modal not mobile-optimized; Close button not accessible on mobile","Close modal; navigate away","VCST-4584","Manual"
 "BOPIS-087","Pickup Location Modal — Load More Button Pagination (pageInfo.hasNextPage-Driven)","BOPIS > Location Selector > Pagination","Medium","BL-BOPIS-008","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]

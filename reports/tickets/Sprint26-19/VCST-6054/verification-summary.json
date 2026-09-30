@@ -1,0 +1,139 @@
+{
+  "ticket": "VCST-6054",
+  "flow": "verify-fix",
+  "ticket_type": "Bug",
+  "path": null,
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-09-29",
+  "environment": "vcst-qa (TEST_ENV=vcst)",
+  "build": {
+    "platform": "3.1073.0-pr-3121-9965-vcst-4464-onx-mcp-auth-99655e69",
+    "theme": null,
+    "relevant_modules": {
+      "VirtoCommerce.UCP": "3.1007.0-pr-9-91ca",
+      "VirtoCommerce.XCart": "3.1037.0-pr-141-fb27",
+      "VirtoCommerce.Inventory": "3.1008.0",
+      "VirtoCommerce.Xapi": "3.1023.0"
+    },
+    "pr_build": "vc-module-ucp#9 @ 91ca741 (OPEN, CI green) — declared in vc-deploy-dev vcst-qa and confirmed deployed via /api/platform/modules"
+  },
+  "agent_used": "qa-backend-expert (direct HTTP, no browser); test-data-engineer (disposable fixture)",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-regression-run: suite 102 UCPA-032/033 PASS on UCP 3.1006.0-pr-7-612c in REG-2026-09-23-M7 (success envelope, empty cart, PRODUCT_FFC_QTY only in messages[]); same cases FAIL on the fixed build in VF-VCST-6054-2026-09-29 (HTTP 409)",
+  "checklist_total": 12,
+  "checklist_passed": 12,
+  "checklist_failed": 0,
+  "checklist": [
+    {
+      "item": "create_cart over stock — insufficient_stock, isError, requested/available, retryable, operation_rejected; REST 409",
+      "result": "PASS 3/3"
+    },
+    {
+      "item": "ticket-exact shortage stock 2 qty 5 (disposable)",
+      "result": "PASS 3/3"
+    },
+    {
+      "item": "update_cart over stock on existing line — line_item_id; get_cart inventory fields, no continue_url",
+      "result": "PASS 3/3"
+    },
+    {
+      "item": "invalid cart blocks create_checkout / update_checkout / checkout_and_handoff / handoff_checkout / REST checkout+handoff / handoff restore",
+      "result": "PASS 3/3"
+    },
+    {
+      "item": "correction to available qty — cart, checkout, handoff succeed (no order placed)",
+      "result": "PASS 3/3"
+    },
+    {
+      "item": "zero stock — out_of_stock, available 0, retryable false",
+      "result": "PASS 3/3"
+    },
+    {
+      "item": "stock drop after valid checkout — requested 2 available 1, all paths refused",
+      "result": "PASS 3/3"
+    },
+    {
+      "item": "min qty above stock — inventory_unavailable, retryable false, available_quantity omitted",
+      "result": "PASS 3/3"
+    },
+    {
+      "item": "non-inventory refusals not mislabelled (qty 0 invalid_request; unknown product id)",
+      "result": "PASS"
+    },
+    {
+      "item": "at-stock create_cart + handoff unchanged (UCPA-031, UCPA-036)",
+      "result": "PASS"
+    },
+    {
+      "item": "MCP contract — instructions describe codes + non-atomic caveat; no sensitive leakage",
+      "result": "PASS"
+    },
+    {
+      "item": "agent-interpretation of refusal payloads (STR step 4)",
+      "result": "PASS with notes"
+    }
+  ],
+  "regression_issues": [],
+  "stale_cases": [
+    {
+      "suite": "regression/suites/Backend/ucp/102-ucp-agentic-commerce.csv",
+      "ids": [
+        "UCPA-032",
+        "UCPA-033",
+        "UCPA-035"
+      ],
+      "reason": "assert the pre-fix success envelope; RE-BASE after PR #9 merges (/qa-review-tests --fix)"
+    },
+    {
+      "file": ".claude/knowledge/api/ucp-schema.md",
+      "reason": "error-code list lacks out_of_stock / insufficient_stock / inventory_unavailable (npm run ucp:schema:check DRIFT); refresh after merge"
+    }
+  ],
+  "side_effects": [
+    "Refused create_cart for a new anonymous buyer returns cart_id without buyer_id; get_cart then 400s; the cart is empty (Low)",
+    "retryable:true on insufficient_stock relies on initialize instructions to mean 'retry with a corrected quantity' (note)"
+  ],
+  "incidental_observations": [
+    "VCST-6056 (combined quantity across duplicate line entries) appears fixed on the same build — out of scope, not verified",
+    "REST GET /ucp/v1/carts/{id} binds no buyer_id, so anonymous REST clients cannot read inventory_errors (pre-existing, MCP get_cart works)",
+    "A promotion gift line added to the anonymous B2B-store cart is absent from UCP line_items (intent unknown)"
+  ],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "path": "reports/bugs/open/low/BUG-ucp-refused-create-cart-returns-unreadable-cart-id-VCST-6054.md"
+    }
+  ],
+  "business_rules_verified": [
+    "BL-CART-002"
+  ],
+  "tracker_transition": [
+    {
+      "at": "step-3",
+      "role": "testing",
+      "state": "Testing",
+      "done": true
+    },
+    {
+      "at": "step-6",
+      "role": "tested",
+      "state": "Tested",
+      "done": true
+    }
+  ],
+  "tracker": {
+    "comment_id": "110708"
+  },
+  "fixtures": {
+    "disposable": "AGENT-TEST-UCP-6054-STOCK — created for items 6/7, deleted; residue check 0 products / 0 inventory rows",
+    "shared_read_only": [
+      "PROD_LOW_STOCK",
+      "PROD_OOS"
+    ],
+    "carts_cleaned": 53
+  },
+  "evidence": "reports/tickets/Sprint26-19/VCST-6054/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-6054/"
+}

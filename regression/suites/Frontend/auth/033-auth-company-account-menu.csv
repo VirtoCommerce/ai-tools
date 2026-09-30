@@ -75,9 +75,9 @@
 [ACT] Navigate to 'Orders' via mobile menu
 [ASSERT] Orders page loads correctly on mobile","[DOM] Account menu accessible on 375px viewport
 [DOM] Grouped structure (Purchasing; User) maintained on mobile
-[DOM] Touch targets minimum 44x44px
+[DOM] Touch targets minimum 24x24px
 [STATE] Mobile menu opens and closes correctly
-[NAV] Navigation from mobile menu routes correctly","[CONSOLE] no TypeError or JS errors","Account menu inaccessible on mobile; group structure lost on mobile; touch targets below 44px; navigation from mobile menu broken; console TypeError","Logout after test","VCST-4589","Manual"
+[NAV] Navigation from mobile menu routes correctly","[CONSOLE] no TypeError or JS errors","Account menu inaccessible on mobile; group structure lost on mobile; touch targets below 24px; navigation from mobile menu broken; console TypeError","Logout after test","VCST-4589","Manual"
 "AUTH-035","Members Page Display","Authentication > Company Members","Critical","BL-B2B-001","","User logged in as company Admin or Maintainer","url={{FRONT_URL}}/company/members;email={{ORG_USER_EMAIL}};password={{ORG_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Log in as company Admin or Maintainer
 [NAV] Navigate to {{FRONT_URL}}/company/members or via Company > Members in account menu

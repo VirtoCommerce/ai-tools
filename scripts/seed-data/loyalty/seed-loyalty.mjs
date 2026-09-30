@@ -29,6 +29,7 @@
  *   node scripts/seed-loyalty.mjs --dry-run -v
  *   node scripts/seed-loyalty.mjs --teardown      # delete AGENT-TEST-* loyalty programs
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE, ONLY,
   log, verbose, assertSafeTarget, auth, api, loadCsv, csvBool,

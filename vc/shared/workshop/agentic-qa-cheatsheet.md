@@ -276,7 +276,7 @@ node -e "console.log(Object.keys(require('./package.json').scripts).join('\n'))"
 | Family | What it does |
 |--------|--------------|
 | `env:check` | Validate the active env layer — **run this before anything else** |
-| `ci:*` | Headless pipelines: `ci:smoke`, `ci:critical`, `ci:frontend`, `ci:backend`, `ci:full`, `ci:regression`, `ci:cycle*`, `ci:fix*`, `ci:monitor*`, `ci:audit*`, `ci:notify` |
+| `ci:*` | Headless pipelines: `ci:smoke`, `ci:critical`, `ci:frontend`, `ci:backend`, `ci:full`, `ci:regression`, `ci:cycle*`, `ci:monitor*`, `ci:audit*`, `ci:notify` |
 | `seed:*` | Seed / teardown per domain (`seed:bootstrap`, `seed:b2b`, `seed:loyalty`, `seed:teardown`, `seed:dry-run`, …) |
 | `suites:*` | Manifest health: `suites:lint` (prints the suite + case totals), `suites:gates`, `suites:lanes`, `suites:filter` |
 | `td:*` | Test-data guards: `td:validate`, `td:validate:<domain>`, `td:reconcile`, `td:mutation-check` |

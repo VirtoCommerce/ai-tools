@@ -27,6 +27,7 @@
  *   2. it changes NOTHING else — every other server, and the file's own formatting, survive;
  *   3. a second run is a no-op that says so.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 

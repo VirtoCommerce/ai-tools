@@ -1,19 +1,19 @@
 ---
 applicability: reference
-applicability_rationale: "VC module repo anatomy + .NET 10 / xUnit / Angular conventions. Universal across VC customers' vc-module-* repos; repo list + routing are data (ci/config/fix-repos.json), not hardcoded here."
+applicability_rationale: "VC module repo anatomy + .NET 10 / xUnit / Angular conventions. Universal across VC customers' vc-module-* repos; repo list + routing are data (skills/qa-fix-routing/fix-repos.json), not hardcoded here."
 ---
 
 # Virto Commerce Module Architecture — for the auto-fix pipeline
 
-> LAYER 2 knowledge for the `developers/` team (`fullstack-backend`, `backend-reviewer`) and the CI
-> `ci/agents/fix-*` agents. How a `vc-module-*` repo is laid out, how to find the failing code, how to
+> LAYER 2 knowledge for the `developers/` team (`fullstack-backend`, `backend-reviewer`). How a
+> `vc-module-*` repo is laid out, how to find the failing code, how to
 > write the red→green test, and which commands prove the fix. **The repo list and module→repo routing
-> are NOT here** — they are live data in `ci/config/fix-repos.json` + `ci/lib/repo-router.ts` +
-> `ci/lib/module-registry.ts`. Read those; don't duplicate them.
+> are NOT here** — they are live data in `skills/qa-fix-routing/fix-repos.json` + `skills/qa-fix-routing/repo-router.ts` +
+> `skills/qa-fix-routing/module-registry.ts`. Read those; don't duplicate them.
 
-## 1. Repo kinds & build/test profiles (authoritative: `ci/lib/repo-router.ts`)
+## 1. Repo kinds & build/test profiles (authoritative: `skills/qa-fix-routing/repo-router.ts`)
 
-`REPO_PROFILES` in `ci/lib/repo-router.ts` is the single source for install/build/typecheck/lint/test
+`REPO_PROFILES` in `skills/qa-fix-routing/repo-router.ts` is the single source for install/build/typecheck/lint/test
 commands. Do not invent commands — read the profile for the routed repo's `kind`.
 
 | Kind | Repos | Lang | Install | Build | Test (red→green gate) |
@@ -105,16 +105,15 @@ A module's `module.manifest` `Dependencies[]` resolve as **published NuGet packa
 them from this checkout. If the root cause is in a dependency (symptom in `XCart`, bug in `Catalog`
 Core), **do not patch around it** — report cross-module and STOP (needs human version-bump → publish →
 bump dependents). The live dependency/impact graph is read from the Platform API via
-`ci/lib/module-registry.ts` (`GET /api/platform/modules`, `getdependents`).
+`skills/qa-fix-routing/module-registry.ts` (`GET /api/platform/modules`, `getdependents`).
 
-## 6. Branch / PR / verification conventions (shared with CI)
+## 6. Branch / PR / verification conventions
 
 - **Workspace:** `.fix-workspace/<repo>/` (gitignored). **One** repo per run.
 - **Branch:** `claude/qa-autofix/VCST-XXXX` (from `checkoutForFix`). **Commit:** Conventional Commits +
   JIRA key, e.g. `fix(pricing): apply coupon to post-tier amount (VCST-1234)`.
-- **PR:** `gh pr create` (interactive `/qa-fix`: a normal PR for human review; CI `run-fix-cycle.ts`:
-  `--draft`), title `fix(<scope>): <imperative> (VCST-XXXX)`, body = RCA + JIRA link + red→green test +
-  verification checklist + "DO NOT MERGE until human review" (see the CI fix agents' PR-body template).
+- **PR:** `gh pr create` (`/qa-fix`: a normal PR for human review), title `fix(<KEY>): <imperative>`, body from the one PR body template — consumer sections, collapsed
+  red→green evidence, the repo's own References block, "do not auto-merge" footer (template: `knowledge/agents/developers/pr-body-template.md`).
   Backend PRs add the **"needs deploy verification"** note — the live symptom is re-confirmed post-merge
   via the regression pipeline + `/qa-verify-fix`. **Never** auto-merge.
 - **Gates:** see `.claude/rules/quality-gates.md` (G0–G7). **Never** `merge_pull_request` / `gh pr merge`.

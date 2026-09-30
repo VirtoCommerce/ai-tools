@@ -46,6 +46,7 @@
  * Exit codes: 0 on a non-empty extract; 2 on a filter that matches nothing (a silent empty brief is
  * worse than a loud failure — an agent handed zero invariants would report "no invariant applies").
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from "fs";
 import { join } from "path";
 import { DOMAIN_RE, ENTRY_RE } from "./lint-bl.ts";

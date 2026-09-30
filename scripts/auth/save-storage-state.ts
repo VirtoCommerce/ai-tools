@@ -17,6 +17,7 @@
  * storageState is browser-agnostic for a given origin, so the chromium-generated
  * files load into the firefox/edge MCP contexts too.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
