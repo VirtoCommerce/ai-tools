@@ -1,6 +1,6 @@
 ---
 name: qa-review-oracles
-description: "[QA Method] Triangulate an oracle against docs + live + source code, auto-apply confirmed changes, and reconcile test-case citations. Two axes: bl (business-logic.md invariants) and ecl (e-commerce-edge-cases-library.md sections). Delegates the live axis to qa-testing-expert; runs triangulation via ba-system-analyzer."
+description: "[QA Method] Triangulate an oracle against docs + live + source code, auto-apply confirmed changes (bl: only from a human source), and reconcile test-case citations. Two axes: bl (business-logic.md invariants) and ecl (e-commerce-edge-cases-library.md sections). Delegates the live axis to qa-testing-expert; runs triangulation via ba-system-analyzer."
 argument-hint: "[bl|ecl|all] <scope> [--dry-run]"
 disable-model-invocation: true
 ---
@@ -46,7 +46,7 @@ Omitting the axis means `all`. **`/qa-review-bl` is a retained alias** for `/qa-
 | Business value (what a violation costs) | the entry's own **severity tag** (`P0-*` high · `P1-*` medium · `P2-ux` low · absent unknown) | the severity of the **`BL-*` invariant the section declares** — its own `BL Invariant` column where it has one (chapter 14 only), else its **Appendix D** row; declares none ⇒ `unknown` (never proxied from prose or `Frequency`, and an Appendix D cell opening with an em dash declares nothing) |
 | Product value (what leans on it) | citing-case demand + a `BL-CROSS` level | citing-case demand + `[OBSERVED]` share + a High-`Frequency` level (exposure, not cost) |
 | Promotion queue | `npm run oracles:rank -- --axis=bl` | `npm run oracles:rank -- --axis=ecl` |
-| Proposals file | `reports/ba/bl-proposals-<date>.md` | `reports/ba/ecl-proposals-<date>.md` |
+| Proposals file | **none** — M0, below | `reports/ba/ecl-proposals-<date>.md` |
 | Audit report | `reports/knowledge/BL-AUDIT-<date>.md` | `reports/knowledge/ECL-AUDIT-<date>.md` |
 
 Everything below applies to **both** axes unless a row above says otherwise.
@@ -59,13 +59,15 @@ Everything below applies to **both** axes unless a row above says otherwise.
 | **DRIFT** | 3 axes agree with each other but the entry text is stale | Auto-apply the corrected text + `Amended:` stamp |
 | **MISSING** | Behavior is documented **and** coded **and** live, but no entry exists | Auto-apply a new entry at the next free ID (body only) |
 | **DUPLICATE** | Two entries carry the same signal | Merge into the survivor, delete the loser, **report both IDs** |
-| **CONTRADICTORY** | Axes disagree (docs say X, live shows Y) | **NOT confirmed** → proposals file |
-| **UNGROUNDED** | ≥1 *applicable* axis produced no evidence, or was unverifiable this run | **NOT confirmed** → proposals file |
-| **STALE/RETIRE** | Behavior removed everywhere | Draft a retire proposal → proposals file (retiring is destructive; stays human-gated) |
+| **CONTRADICTORY** | Axes disagree (docs say X, live shows Y) | **NOT confirmed** → not applied |
+| **UNGROUNDED** | ≥1 *applicable* axis produced no evidence, or was unverifiable this run | **NOT confirmed** → not applied |
+| **STALE/RETIRE** | Behavior removed everywhere | Never auto-applied (retiring is destructive) |
 
-> **"Confirmed" = CONFIRMED / DRIFT / MISSING / DUPLICATE where every *applicable* axis is evidenced and the axes agree.** Everything else routes to the proposals file. That is not a human gate on confirmed items — it is the definition of "not confirmed."
+> **"Confirmed" = CONFIRMED / DRIFT / MISSING / DUPLICATE where every *applicable* axis is evidenced and the axes agree.** Everything else is not applied: it goes to the audit report (ECL: also its proposals file).
 >
-> **Applicable-axes waiver (structurally-unavailable axis).** The bar is docs + live + source when all three *can* exist. An axis that is **structurally unavailable** — most importantly **no docs for a brand-new / undocumented / pre-GA module** — is **waived (N/A)**, not scored as UNGROUNDED. The bar then becomes the axes that CAN be verified, and **at least two must remain and agree** (a lone surviving axis never canonicalizes). Waiving is only for a *structurally* absent axis (the doc/feature does not exist yet), never for an axis you simply didn't check. Every waived axis is stamped `N/A (<reason>)`. A candidate whose applicable axes **contradict** (commonly **deploy lag** — a merged fix not on the pinned artifact) or that has an **unverifiable** applicable axis is **held as a draft with a re-audit trigger**, not applied — a *not-yet*, not a failure.
+> **BL axis — M0 freeze.** Code + live agreeing never confirms a `bl` DRIFT/MISSING: it needs a human source (docs, AC, Jira resolution), the docs/AC axis is never waived, and no `bl-proposals-*` file is written. Routing: `bl-audit-criteria.md` §M0 freeze.
+>
+> **Applicable-axes waiver (structurally-unavailable axis) — ECL only under M0.** The bar is docs + live + source when all three *can* exist. An axis that is **structurally unavailable** — most importantly **no docs for a brand-new / undocumented / pre-GA module** — is **waived (N/A)**, not scored as UNGROUNDED. The bar then becomes the axes that CAN be verified, and **at least two must remain and agree** (a lone surviving axis never canonicalizes). Waiving is only for a *structurally* absent axis (the doc/feature does not exist yet), never for an axis you simply didn't check. Every waived axis is stamped `N/A (<reason>)`. A candidate whose applicable axes **contradict** (commonly **deploy lag** — a merged fix not on the pinned artifact) or that has an **unverifiable** applicable axis is **held as a draft with a re-audit trigger**, not applied — a *not-yet*, not a failure.
 >
 > **Two independent gates, and they answer different questions.** The taxonomy above is the
 > **truth** gate — is the entry real? A confirmed verdict is necessary, not sufficient: a **MISSING**
@@ -152,7 +154,7 @@ Collect the verdicts from all parallel agents, then apply **serially, one entry 
   - Stamp `Amended: <date> (auto-applied, triangulated — <BL|ECL>-AUDIT-<date>)` and refresh the `Source:` anchor.
   - For MISSING, assign the next free ID under the correct heading; **never renumber survivors**.
   - Keep evidence **env-agnostic** — no env names, URLs or slugs; say "the environment".
-- **CONTRADICTORY / UNGROUNDED / STALE-RETIRE** → the axis's proposals file for human decision. Do NOT edit the oracle.
+- **CONTRADICTORY / UNGROUNDED / STALE-RETIRE** → audit report (ECL: also its proposals file). Do NOT edit the oracle.
 - `--dry-run` → compute verdicts + the intended diff, write NOTHING.
 
 ### Step 4: Reconcile test-case citations
@@ -167,7 +169,7 @@ Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the 
 
 ## Rules
 
-- **Auto-apply is gated by evidence, never by silence.** A change lands ONLY as CONFIRMED/DRIFT/MISSING/DUPLICATE with concrete, agreeing evidence from every applicable axis. No evidence on an applicable axis ⇒ not confirmed ⇒ proposals file. (This deliberately replaces the former "never auto-edit business-logic.md / human per-entry approval" rule: safety comes from the evidence bar, not a human gate.)
+- **Auto-apply is gated by evidence, never by silence.** A change lands ONLY as CONFIRMED/DRIFT/MISSING/DUPLICATE with concrete, agreeing evidence from every applicable axis. No evidence on an applicable axis ⇒ not confirmed ⇒ not applied. For `bl`, code + live agreeing is never enough (M0).
 - **Truth and value are separate gates, in that order.** Evidence decides whether an entry is real;
   value decides whether a real one is worth carrying — and value has **two axes an entry must satisfy
   together**, business and product. The value gate NEVER promotes an unconfirmed entry, and it NEVER
@@ -178,7 +180,7 @@ Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the 
 - **Rank before you scope, and carry the Value column.** Auditing in file order spends the budget
   where the value is not. The queue is deterministic (`oracle-significance.ts`), so a promotion
   decision is re-derivable rather than argued from memory. The **Value** column is mandatory in the
-  proposals file and the audit report — and **derived there, never stored in the oracle**: product
+  audit report (and an ECL proposals file) — and **derived there, never stored in the oracle**: product
   value moves with every suite edit, so a number transcribed into `business-logic.md` would be wrong
   by the next commit and wrong silently (`.claude/rules/test-data.md` §GOLDEN RULE).
 - **Never infer a value signal from prose.** Only closed vocabularies score — the BL severity tag,
@@ -190,8 +192,8 @@ Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the 
 - **Env-agnostic** and data-agnostic — no hardcoded IDs/SKUs/prices/emails/URLs in any applied entry, even inside an evidence note.
 - **Never edit a CSV from this skill.** Citation remaps are `/qa-review-tests --fix`'s write, under `test-management-specialist`.
 - **Reversible.** Every applied edit is recorded in the audit report and lives in a git-tracked file; keep edits minimal and per-entry so one can be reverted alone.
-- **Retiring is destructive** → always a human proposal, never auto-applied.
-- **P0-security invariants** clear the *same* evidence bar — but given blast radius, if the live axis cannot safely be observed (e.g. a real privilege-escalation probe), treat the axis as absent ⇒ UNGROUNDED ⇒ proposals file.
+- **Retiring is destructive** → never auto-applied.
+- **P0-security invariants** clear the *same* evidence bar — but given blast radius, if the live axis cannot safely be observed (e.g. a real privilege-escalation probe), treat the axis as absent ⇒ UNGROUNDED ⇒ not applied.
 
 ## Agent Delegation
 
@@ -208,4 +210,4 @@ Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the 
 
 - **`/qa-review-tests`** — the downstream reconciliation (Step 4). Its **Dimension 6** is the judgment twin of this skill's BLC-002/ECLC-001: the lints prove a citation *exists*; Dimension 6 proves it is *right* (a loyalty case citing `ECL-13.2` "Subscription & Recurring Billing" resolves fine, so no gate can object). Its **Dimension 11** (`--triangulate`) is the same three-axis mechanism applied to test-case assertions — deliberately NOT folded in here, because its write target is CSVs, not an oracle.
 - **`/qa-test-lifecycle`** — runs the `bl` axis as its always-on BL-audit phase (**4c**), scoped to the `BL-*` a run surfaced; its Phase 6 G6 gate reads the audit outcome.
-- **`/ba-analyze`** — the other producer of oracle candidates; unconfirmed items from both flows share the proposals files.
+- **`/ba-analyze`** — the other producer of oracle candidates; under M0 neither flow writes a BL proposals file.

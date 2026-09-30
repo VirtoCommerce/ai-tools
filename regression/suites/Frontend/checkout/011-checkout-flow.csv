@@ -178,7 +178,7 @@ User at checkout shipping address step, phone number field available","url={{FRO
 [STATE] Error clears on valid phone entry
 [DOM] Error message is descriptive (invalid format)","[CONSOLE] No JS exceptions during phone validation
 [API] No submission API call with invalid phone data","Phone field accepts any string without validation; error persists after valid phone entered","none","Coverage Gap Analysis","Automated"
-"CHK-029","Checkout Validation - XSS Prevention in Address Fields","Checkout > Validation","High","BL-CHK-001; BL-SEC-001","ECL-5.1; ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"CHK-029","Checkout Validation - XSS Prevention in Address Fields","Checkout > Validation","High","BL-CHK-001","ECL-5.1; ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User at checkout shipping address step, cart has at least one item","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Navigate to checkout shipping address step
 [ACT] Enter First Name: '<script>alert(1)</script>'

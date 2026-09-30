@@ -1,5 +1,5 @@
 ---
-description: "Audit a shared QA oracle against docs + live + source code, auto-apply confirmed changes, and reconcile test-case citations. Two axes: bl (business-logic.md invariants) and ecl (e-commerce-edge-cases-library.md sections). Gated by a 3-source evidence bar (not human approval); unconfirmed items route to the proposals file."
+description: "Audit a shared QA oracle against docs + live + source code, auto-apply confirmed changes, and reconcile test-case citations. Two axes: bl (business-logic.md invariants) and ecl (e-commerce-edge-cases-library.md sections). Gated by a 3-source evidence bar; bl edits need a human source (M0) and no bl proposals file is written."
 argument-hint: "[bl|ecl|all] <scope> [--dry-run]"
 
 ---
@@ -74,7 +74,7 @@ The triangulation is read-only and per-entry, so **run it in parallel** — but 
 - uses a **distinct test/org user** if the live axis needs auth (a shared org cart contaminates);
 - gathers all three axes (docs `/vc-docs` + source GitHub MCP — no browser; live observation on its assigned slot), assigns a verdict (CONFIRMED / DRIFT / MISSING / DUPLICATE / CONTRADICTORY / UNGROUNDED / STALE-RETIRE), and **returns the verdict + evidence tuple + the proposed edit** — it does **NOT** write the oracle itself.
 
-**3b — Fan-in (single writer, serialized):** the orchestrator collects all batches' verdicts, then applies edits **sequentially, one entry at a time, in one process** — concurrent writes to the same file race and corrupt it. Auto-apply CONFIRMED/DRIFT/MISSING/DUPLICATE (body-only, `Amended:` + `Source:` stamp, env-agnostic; MISSING reads the current max id fresh before each insert so parallel-discovered entries can't collide). Unconfirmed → the axis's proposals file.
+**3b — Fan-in (single writer, serialized):** the orchestrator collects all batches' verdicts, then applies edits **sequentially, one entry at a time, in one process** — concurrent writes to the same file race and corrupt it. Auto-apply CONFIRMED/DRIFT/MISSING/DUPLICATE (body-only, `Amended:` + `Source:` stamp, env-agnostic; MISSING reads the current max id fresh before each insert so parallel-discovered entries can't collide). Unconfirmed → the audit report (ECL: also its proposals file). **BL — M0 freeze:** DRIFT/MISSING need a human source (docs, AC, Jira resolution); code + live agreeing is not enough — `.claude/skills/qa-review-oracles/bl-audit-criteria.md` §M0 freeze.
 
 **3c — The value gate (growth only): valuable for the BUSINESS *and* for the PRODUCT.** A confirmed verdict is necessary, not sufficient. A **MISSING** entry — the only verdict that makes the oracle bigger — must clear both axes. Re-score it with the severity tag the triangulation just assigned (ECL: with the `BL-*` invariant the pattern endangers linked in its row) and read the gate verbatim:
 ```
@@ -105,17 +105,17 @@ Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the 
 
 ## Rules
 
-- **Auto-apply is gated by a 3-source evidence bar, never by silence.** A change lands only as CONFIRMED/DRIFT/MISSING/DUPLICATE with concrete, agreeing docs + source + live evidence. Missing/conflicting applicable axis ⇒ not confirmed ⇒ proposals file.
+- **Auto-apply is gated by a 3-source evidence bar, never by silence.** A change lands only as CONFIRMED/DRIFT/MISSING/DUPLICATE with concrete, agreeing docs + source + live evidence. Missing/conflicting applicable axis ⇒ not confirmed ⇒ not applied.
 - **Truth and value are two gates, in that order.** Evidence decides whether an entry is real; value (`scripts/knowledge/oracle-significance.ts`, `npm run oracles:rank`) decides whether a real one is worth carrying — on **two axes it must satisfy together**, business and product. It never promotes an unconfirmed entry and never blocks a correction to an existing one — it bounds GROWTH only. **A `low` entry is not a delete list**: low value is not positive evidence the entry is dead.
 - **No entry enters an oracle without a declared business value** — a severity tag (BL) or the `BL-*` invariant the pattern endangers (ECL). An entry nobody can price is one no downstream skill can weigh.
-- **The Value column is derived at decision time, never stored in the oracle.** Product value moves with every suite edit, so a transcribed number would be wrong by the next commit and wrong silently (`.claude/rules/test-data.md` §GOLDEN RULE). It belongs in the proposals file and the audit report — snapshots of one decision at one date.
+- **The Value column is derived at decision time, never stored in the oracle.** Product value moves with every suite edit, so a transcribed number would be wrong by the next commit and wrong silently (`.claude/rules/test-data.md` §GOLDEN RULE). It belongs in the audit report (and an ECL proposals file) — snapshots of one decision at one date.
 - **Never infer a value signal from prose.** Only closed vocabularies score — the BL severity tag, the ECL `Frequency`/`Status` columns. An unreadable cell contributes zero and caps the tier; it is never guessed.
 - **IDs are a citation contract — never renumber a surviving entry, never reuse a retired id.** Renumbering silently repoints every citation that was correct, and no gate can detect it because the new refs still resolve.
 - **Deletion needs positive evidence** that the thing is dead or redundant — never mere absence of proof it is alive. This bites hardest on `ecl`, where "I could not reproduce it" is the *normal* state for an edge case.
 - **Body-only edits.** Never rewrite a meta table as a side effect; ECL's Appendix D is updated deliberately, as its own edit.
 - **Env- and data-agnostic** entries — no env names/URLs/slugs/SKUs/prices.
 - **Never edit a CSV from this command** — citation remaps go through `/qa-review-tests --fix`.
-- **Retiring an entry is always a human proposal**, never auto-applied.
+- **Retiring an entry is never auto-applied.**
 - **REAL-USER rule** on the live axis — no `browser_evaluate`/`run_code_unsafe` bypass.
 - **Parallel fan-out, single-writer fan-in.** Up to 3 `ba-system-analyzer` agents concurrently (disjoint batches, one isolated browser slot + distinct test user each) for the read-only triangulation; then apply from **one serialized writer** (this command). Max 3 concurrent browser agents ([agents.md](../rules/agents.md)).
 - `--dry-run` writes nothing — use it to preview a domain or chapter before applying.
