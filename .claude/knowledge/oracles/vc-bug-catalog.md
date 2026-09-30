@@ -76,13 +76,13 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 ### VC-CART-001 — Apollo cache stale after `addItem`
 - **Pattern:** `data.addItem.items[]` returns empty due to async cart-projection settle; UI may show stale cart count
 - **Detection probe:** Add an item; immediately read `cart()` query response and Apollo cache. Items should appear within 1–2 follow-up reads.
-- **Cross-ref:** `reference_additem_async_settle` in MEMORY; canonical capture pattern is via follow-up mutation response, NOT addItem response itself
+- **Cross-ref:** `reference_additem_async_settle` in MEMORY; canonical capture pattern is via follow-up mutation response, NOT addItem response itself · Related: Jira VCST-5238 (Apollo cache error on missing `currencyCode`).
 - **Archetype:** `STALE`
 
 ### VC-CART-002 — B2B line-item consolidation
 - **Pattern:** B2B store consolidates same `productId` added twice into ONE line item with summed quantity (consumer store would create two)
 - **Detection probe:** Add product X with qty 2. Add product X again with qty 3. Verify cart shows ONE line item with qty 5 (NOT two lines).
-- **Cross-ref:** `reference_b2b_lineitem_consolidation` in MEMORY. Use `subTotal` arithmetic for multi-add assertions, NOT `itemsCount`.
+- **Cross-ref:** `reference_b2b_lineitem_consolidation` in MEMORY. Use `subTotal` arithmetic for multi-add assertions, NOT `itemsCount`. · **Bulk path does NOT sum:** Quick/Bulk order keeps only the first quantity for a duplicate SKU (Jira VCST-4936, VP-9062) — run the probe on the bulk-order path too.
 - **Archetype:** `BY-DESIGN`
 
 ### VC-CART-003 — ApolloError on cart shipment is stale legacy-cart data
@@ -100,7 +100,7 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 ### VC-CART-005 — Cart total drift across rapid edits
 - **Pattern:** Multiple quick adds/removes can leave the visible total out of sync with the server total for 1–2 seconds during async settle
 - **Detection probe:** Add 5 items in rapid succession; verify `subTotal` after a 2-second wait equals server-recomputed total. Use Obsessive-Compulsive Tour.
-- **Cross-ref:** ECL §1.3 stale-cart-total
+- **Cross-ref:** ECL §1.3 stale-cart-total · Server-side cause too: no-op cart lock without Redis (Jira VCST-5083) — drift is not only client-side settle.
 - **Archetype:** `RACE`
 
 ### VC-CART-006 — Quantity stepper as Add-to-Cart on B2B store
@@ -108,6 +108,18 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Detection probe:** On B2B-store PDP, verify (+) on the stepper triggers add to cart. Guest carts work and merge on sign-in.
 - **Cross-ref:** `feedback_qty_stepper_as_add_to_cart` in MEMORY
 - **Archetype:** `BY-DESIGN`
+
+### VC-CART-007 — Cart projection/cache not invalidated when the cart changes via another path
+- **Pattern:** A cart saved via REST or re-loaded serves stale xCart data — applied promotions missing after refresh; per-line `validationErrors` emptied while cart-level validation still reports the failure.
+- **Detection probe:** Change the cart via REST, then read `cart` in xAPI; refresh and compare the promotions shown; after any edit compare per-line `isValid` with cart-level `validationErrors`.
+- **Cross-ref:** Jira VCST-5505, VCST-4318, VCST-5234 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `STALE`
+
+### VC-CART-008 — Cart merge (guest → account, save-for-later) loses line semantics
+- **Pattern:** The merge path folds lines the direct-add path keeps apart — a gift line becomes a paid unit at full price; configurable lines do not merge correctly.
+- **Detection probe:** Build the same cart as a guest who then signs in, and by adding directly as the account; line list, gift flags and totals must match.
+- **Cross-ref:** Jira VCST-5801, VCST-5053, VCST-4205 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `PARITY`
 
 ---
 
@@ -137,6 +149,12 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Cross-ref:** VCST-6029 §Not a data bug
 - **Archetype:** `CONVENTION`
 
+### VC-CAT-005 — Bulk "select all" differs from N-1 or page selection
+- **Pattern:** Bulk actions mishandle the selection: selecting all does nothing while N-1 works; a cross-page select shows the page count; export ignores the selection.
+- **Detection probe:** Run the same bulk action with all items, N-1 items and a cross-page selection; the affected count must equal the selection count.
+- **Cross-ref:** Jira VCST-4076, VP-8849, VCST-5223, VCST-4786, VP-9028 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `BOUNDARY`
+
 ---
 
 ## VC-PROMO — Promotions, Coupons, Pricing
@@ -153,6 +171,18 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Cross-ref:** `project_promotion_engine` in MEMORY
 - **Archetype:** `BY-DESIGN`
 
+### VC-PROMO-003 — A coupon operation silently loses the working discount
+- **Pattern:** Apply is remove-then-validate with no rollback; "copy" upper-cases a case-sensitive code.
+- **Detection probe:** Apply a valid coupon, then an invalid one — the first must survive; copy the code from the UI, apply it, check the discount.
+- **Cross-ref:** Jira VCST-5518, VCST-5233 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `SILENT`
+
+### VC-PROMO-004 — Per-unit rounding does not equal the line total
+- **Pattern:** Discounted unit price × quantity ≠ rounded extended price; discount percentages truncated to 2 decimals.
+- **Detection probe:** Price like 26.25 × qty 3 with a percentage coupon: assert extended = round(unit) × qty (or the documented rule); repeat in a non-USD currency.
+- **Cross-ref:** Jira VP-7425, VP-9242 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `MONEY`
+
 ---
 
 ## VC-CFG — Configurable Products
@@ -160,7 +190,7 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 ### VC-CFG-001 — Text-section `maxLength` only applies to Custom input
 - **Pattern:** Text-section validation `maxLength` applies only to user Custom input — NOT to preset option labels. Presets should serialize by `optionId` reference, NOT as `customText`.
 - **Detection probe:** Submit a Text section with a preset option whose label exceeds maxLength. It should succeed (preset is by ID, not by raw text). Then submit Custom text exceeding maxLength — should fail.
-- **Cross-ref:** `project_configurable_text_section_validation` in MEMORY. VCST-4987 fix pending.
+- **Cross-ref:** `project_configurable_text_section_validation` in MEMORY. VCST-4987 fixed (Done).
 - **Archetype:** `BOUNDARY`
 
 ### VC-CFG-002 — `CFG_TEXT_DRIVEN_COND` has null maxLength
@@ -178,7 +208,7 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 ### VC-CFG-004 — `POST /api/catalog/products/configurations` silent field-name acceptance
 - **Pattern:** Body field is `sections` (NOT `configurationSections`) and must include `isActive: true`. Wrong field name silently saves empty `sections: []` and auto-deactivates, returns 200.
 - **Detection probe:** After creating a configuration via API, GET it back and verify `sections.length > 0` and `isActive === true`. Don't trust the 200.
-- **Cross-ref:** `reference_configurations_post_body` in MEMORY
+- **Cross-ref:** `reference_configurations_post_body` in MEMORY · Sibling incidents (same silent-acceptance shape on xAPI configured-item mutations): Jira VCST-4960, VCST-4961.
 - **Archetype:** `SILENT`
 
 ---
@@ -208,6 +238,12 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Detection probe:** Use both names when searching code or admin UI for impersonation-related issues
 - **Cross-ref:** `reference_impersonation_permission_naming` in MEMORY
 - **Archetype:** `CONVENTION`
+
+### VC-B2B-005 — Org-scoped check resolves the wrong org, or skips the store/org filter
+- **Pattern:** One locked membership blocks sign-in on every store; a locked-out member still reads organization orders; an org switch leaves a stale current organization or grants a global role; wishlist lookups ignore `storeId`.
+- **Detection probe:** Contact with two orgs, one membership locked: compare `organization(id)` with `organizationOrders` for the same principal; diff account roles before/after an org switch.
+- **Cross-ref:** Jira VCST-5496, VCST-5933, VCST-5401, VCST-4044, VCST-4165, VCST-5705, VP-8927 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `SCOPE`
 
 ---
 
@@ -241,6 +277,18 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Cross-ref:** `reference_email_verification_workflow` in MEMORY
 - **Archetype:** `CONVENTION`
 
+### VC-AUTH-004 — A security rule enforced on one surface only
+- **Pattern:** Lockout applies to storefront logins but not the Manager login; client-side validation has no server-side twin (script in registration, coupon charset, required meta fields).
+- **Detection probe:** Repeat each rule through every entry point — storefront, Admin, raw GraphQL and REST bypassing the UI.
+- **Cross-ref:** Jira VCST-4999, VCST-4691, VP-9000, VCST-4767, VP-8231 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `PARITY`
+
+### VC-AUTH-005 — An expired session answers 302/HTML instead of 401
+- **Pattern:** API calls after expiry are redirected to the login page; clients misparse it — the designer renders itself recursively, error toasts bury the sign-out notice.
+- **Detection probe:** Expire the token, call the API and open the designer: expect 401 and exactly one sign-out notification.
+- **Cross-ref:** Jira VCST-5618, VCST-5598, VCST-5847, VCST-5688 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `FALLBACK`
+
 ---
 
 ## VC-CHECKOUT — Checkout & Payment
@@ -254,14 +302,20 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 ### VC-CHECKOUT-002 — `/checkout/review` is gated by `checkout_multistep_enabled`
 - **Pattern:** When `checkout_multistep_enabled` is off, `/cart` redirects from `/checkout/review`. Not a page-removed bug.
 - **Detection probe:** Check the config flag before reporting a missing review page
-- **Cross-ref:** `project_checkout_multistep_gate` in MEMORY
+- **Cross-ref:** `project_checkout_multistep_gate` in MEMORY · **Real defect under the flag:** Place Order blocked with multistep ON (Jira VCST-5369) — checking the flag is not enough.
 - **Archetype:** `CONFIG`
 
 ### VC-CHECKOUT-003 — Skyflow vault rejects all non-canonical cards
 - **Pattern:** Skyflow's test vault accepts only the canonical card from `feedback_payment_flow_learnings`; any other test card will be rejected even if it's a valid Visa/MC test number
 - **Detection probe:** Use the canonical card for Skyflow tests; substitute with cards from other processor canon for cross-processor tests
-- **Cross-ref:** `feedback_payment_flow_learnings` in MEMORY
+- **Cross-ref:** `feedback_payment_flow_learnings` in MEMORY · Related: Jira VCST-5329 (Skyflow bearer token failure, likely env credentials).
 - **Archetype:** `CONVENTION`
+
+### VC-CHECKOUT-004 — Card form does not validate CVV length per brand
+- **Pattern:** A 3-digit CVV on Amex enables Place order on more than one processor's form.
+- **Detection probe:** For each processor, try each brand with CVV length 3 and 4.
+- **Cross-ref:** Jira VCST-5202, VCST-5344 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `BOUNDARY`
 
 ---
 
@@ -315,6 +369,12 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Cross-ref:** `reports/bugs/open/medium/BUG-compare-table-long-value-overlays-adjacent-column-VCST-6029.md`; BL-UI-001..006 via VC-UI-005
 - **Archetype:** `RENDER`
 
+### VC-UI-007 — Non-en locale shows raw keys, untranslated strings or broken plurals
+- **Pattern:** Settings, account sidebar, facet booleans and editor dialogs show raw i18n keys or English; plurals render as "1 orders" / "1 variations".
+- **Detection probe:** Run under `de`; scan for dotted keys, English leftovers, and counts 1 and 2.
+- **Cross-ref:** Jira VCST-4851, VCST-5611, VCST-5668, VCST-5681, VCST-5684, VCST-5683, VCST-6046, VP-8886 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `MONEY`
+
 ---
 
 ## VC-SHELL — vc-shell Admin Framework (Vendor Portal & embedded admin apps)
@@ -362,6 +422,36 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Cross-ref:** `feedback_graphql_full_field_selection` in MEMORY
 - **Archetype:** `CONVENTION`
 
+### VC-API-006 — A lookup reads only the first page (Take=20/50) and treats it as the whole set
+- **Pattern:** A list, resolver or picker fetches one page with no pager or continuation: item N+1 is invisible, or a "default" item is missed once the owner has more than a page of siblings.
+- **Detection probe:** Seed page size + 1 records; compare the rendered/resolved union against `totalCount`; the record ranked page size + 1 must be reachable and selectable. See also VC-SHELL-001.
+- **Cross-ref:** Jira VCST-5014, VP-9133, VP-9025, VP-9073, VCST-4707, VP-8230 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `BOUNDARY`
+
+### VC-API-007 — `sort` argument accepted but ignored, or lost on a secondary path
+- **Pattern:** The schema declares `sort`, but the resolver drops it, drops it for nested children, or resets it when a keyword or filter is added.
+- **Detection probe:** Send `sort: X:asc` then `X:desc` — orders must differ and be monotonic; repeat with a keyword, a filter, and on nested children.
+- **Cross-ref:** Jira VCST-5022, VCST-5289, VCST-4835, VCST-4884, VP-9036, VP-9053, VCST-4992, VCST-3636, VCST-4909 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `SILENT`
+
+### VC-API-008 — An omitted or nested field on update is overwritten, reset or orphaned
+- **Pattern:** Update copies over or resets fields the caller did not send (lockout end, created date, address key, nested product id) → silent loss, duplicate rows, or an orphan no read path can see.
+- **Detection probe:** GET the entity, PUT/PATCH one field, GET again and diff every other field; repeat the edit N times and count child rows.
+- **Cross-ref:** Jira VCST-4934, VCST-5534, VP-8202, VCST-4830, VP-8818 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `FALLBACK`
+
+### VC-API-009 — A success-shaped write that did nothing, or only half of it
+- **Pattern:** 200/204 or `errors:[]` but nothing persisted or deleted, invalid refs accepted, or 200 with `errors[]` and a nulled subtree; reverse: 409 after the row was really deleted, cascade skipped.
+- **Detection probe:** After every mutation read back through a different path (REST vs GraphQL vs Admin UI); send a fabricated GUID reference and expect a validation error.
+- **Cross-ref:** Jira VCST-4962, VCST-4960, VCST-4961, VCST-5391, VCST-5607, VCST-5656, VCST-5000 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `SILENT`
+
+### VC-API-010 — A null or odd-typed input becomes an unhandled 500 instead of a 4xx
+- **Pattern:** A null field, missing store id, number-typed property or string→bool setting throws and surfaces as 500 — sometimes taking down a whole page (dashboard, page context).
+- **Detection probe:** Per endpoint, null/omit each input field in turn and send a number where a decimal or bool is expected: expect 400 naming the field, never 500.
+- **Cross-ref:** Jira VCST-5623, VCST-5212, VCST-5218, VCST-4128, VCST-5011, VP-9128, VCST-5554, VCST-4885, VCST-5575, VCST-5759, VCST-4110, VCST-5849 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `FALLBACK`
+
 ---
 
 ## VC-LOY — Loyalty
@@ -393,6 +483,96 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Detection probe:** Test block-add via library, not direct API; expect tune-icon menu, not right-click
 - **Cross-ref:** `feedback_designer_block_workflow` in MEMORY
 - **Archetype:** `CONVENTION`
+
+### VC-CMS-003 — Rename, publish or open of a Page Builder page loses content or keeps the old name
+- **Pattern:** Renaming a published page then save + publish drops all content; pages go blank after opening in the designer; breadcrumb and title keep the old name.
+- **Detection probe:** Rename a published page, save, publish, fetch; diff content blocks, breadcrumb and `<title>`.
+- **Cross-ref:** Jira VCST-5417, VP-9220, VCST-5274, VP-9195 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `LIFECYCLE`
+
+---
+
+## VC-SEARCH — Search & Indexing
+
+### VC-SEARCH-001 — An index build is empty or partial but reports success
+- **Pattern:** A cached empty change list, a swallowed provider 404 or an empty build request yields "Indexation completed" with 0 documents; storefront then 404s or returns nothing.
+- **Detection probe:** After every rebuild compare the index document count with the DB count; run a rebuild inside the incremental-job window.
+- **Cross-ref:** Jira VCST-5615, VCST-4779, VP-8813, VCST-5069, VCST-5091 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `SILENT`
+
+### VC-SEARCH-002 — Incremental indexing misses changes made via a sub-entity or bulk path
+- **Pattern:** A change logged against a child object or made by bulk import never re-enters the index.
+- **Detection probe:** Change user groups, or import via API, then run only the incremental job — the storefront must reflect the change.
+- **Cross-ref:** Jira VP-8854, VP-8924, VCST-5416 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `STALE`
+
+### VC-SEARCH-003 — Search-provider semantics differ (wildcards, date literals, index names)
+- **Pattern:** Moving between providers (ES → ES8, OpenSearch, Azure AI Search) changes partial matching, rejects time-zone-less dates, or targets the wrong index name.
+- **Detection probe:** Run one query set (wildcard, date range, suggestions, delete) on every supported provider and compare results.
+- **Cross-ref:** Jira VP-8858, VP-9076, VCST-5497, VP-9230, VCST-5559, VP-9047 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `CONFIG`
+
+### VC-SEARCH-004 — Non-default language falls back to default-language data
+- **Pattern:** Multilanguage property filters return 0, category search ignores localized content, designer/news preview renders the default culture.
+- **Detection probe:** Switch to a non-default culture: facet count must equal results after clicking the facet; page preview must use the page's own language.
+- **Cross-ref:** Jira VCST-5324, VP-9213, VP-8968, VCST-5219, VP-9189, VP-9154 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `MONEY`
+
+---
+
+## VC-PLATFORM — Platform Runtime, Upgrade & Scale
+
+### VC-PLATFORM-001 — Concurrent writers with no lock — last one wins, or the index is destroyed
+- **Pattern:** Parallel imports, overlapping index builds and cart mutations (no-op lock without Redis) run unsynchronised → lost updates, an empty/deleted index, a crashed indexer.
+- **Detection probe:** Start two operations on the same key (imports on one SKU, full rebuild + incremental, two cart mutations): final state must follow submission order; index count stays > 0.
+- **Cross-ref:** Jira VCST-5083, VCST-5189, VP-9179, VCST-6085, VCST-5416, VCST-4453, VP-9162 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `RACE`
+
+### VC-PLATFORM-002 — An upgrade or bundle bump breaks what used to work
+- **Pattern:** Removed/obsolete API, incompatible dependency major, a module failing to load, lost URL/SEO mode or lost admin counts after moving to the next stable bundle or runtime. Largest cluster of support escapes.
+- **Detection probe:** Upgrade the previous stable bundle to the new one on the same data and extensions; diff module load, SEO resolution, admin blades and custom extensions before/after.
+- **Cross-ref:** Jira VCST-5005, VP-9129, VCST-4760, VCST-4897, VCST-5148, VCST-5542, VP-8948, VP-8949, VP-9008, VP-8876, VP-9051, VP-9187, VCST-4475, VP-7325 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `CONFIG`
+
+### VC-PLATFORM-003 — A DB provider or SQL compatibility level the tests never vary
+- **Pattern:** Works on SQL Server at the default compatibility level; fails on MySQL/PostgreSQL or ignores `SqlServer:CompatibilityLevel`.
+- **Detection probe:** Run the CRUD + delete smoke on MySQL and PostgreSQL, and on SQL Server with a lowered compatibility level.
+- **Cross-ref:** Jira VCST-5080, VCST-5090, VCST-5285, VCST-4416, VCST-4426 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `CONFIG`
+
+### VC-PLATFORM-004 — A write during a read is served stale
+- **Pattern:** A cache change token minted after the load, reads routed to a replica, or widget caches cleared only by a hard reload serve superseded data after a write.
+- **Detection probe:** Write then read immediately (same request chain and across replicas); mutate an order and check the dashboard widget without reloading.
+- **Cross-ref:** Jira VCST-5627, VP-8937, VP-8944, VCST-5589, VP-8864 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `STALE`
+
+### VC-PLATFORM-005 — Dates computed in server time (UTC) shift by a day
+- **Pattern:** Birth-date and time pickers, date properties, order created date and "today" statistics use UTC instead of the user's time zone.
+- **Detection probe:** User/browser at UTC-8 and UTC+10; enter/read a date near midnight; compare UI, API and stored values.
+- **Cross-ref:** Jira VCST-4221, VCST-4989, VCST-5592, VP-8970, VP-9027, VP-8978, VCST-5678 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `MONEY`
+
+### VC-PLATFORM-006 — Degradation at production scale
+- **Pattern:** Fine at QA volumes, times out or saturates with hundreds of stores, tens of thousands of pages, large categories, dictionary filters or a huge operation log.
+- **Detection probe:** Run key flows on a fixture ×10–×100 the QA volume; compare p95 against the baseline.
+- **Cross-ref:** Jira VCST-4291, VCST-4476, VCST-5361, VP-6671, VP-8974, VP-8986, VP-8997, VP-9002, VP-9211, VP-9264 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `BOUNDARY`
+
+### VC-PLATFORM-007 — Large uploads hang or are aborted
+- **Pattern:** Uploads above ~30 MB (backup ~100 MB) hit a global request timeout or body limit; progress sits at 100% or nothing happens.
+- **Detection probe:** Upload at the size limit and one step past it, in Assets and Backup restore: expect success or an explicit size error.
+- **Cross-ref:** Jira VCST-5392, VCST-6045, VP-9223 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `BOUNDARY`
+
+---
+
+## VC-ANALYTICS — Analytics & Tracking
+
+### VC-ANALYTICS-001 — GA4 dataLayer diverges from cart truth
+- **Pattern:** `clear_cart` never fires, `purchase` is not capturable, affiliation shows "?", configured products report the base price.
+- **Detection probe:** Compare each event's value and items against the cart/order API for the same action.
+- **Cross-ref:** Jira VCST-4799, VCST-4800, VCST-4801, VCST-4856 · Jira harvest 2026-09-30 (closed bugs: `support` 365d + VCST 180d; summary + excerpt level)
+- **Archetype:** `PARITY`
 
 ---
 
