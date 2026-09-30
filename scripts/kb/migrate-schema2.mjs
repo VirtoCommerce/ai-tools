@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 // `npm run kb:migrate-schema2 -- --base <checkout> --plans <file> [--apply]` (VCST-6122 M2).
+// `npm run kb:migrate-schema2 -- --stamp <dir the planner read> --plans <file>` records, in each plan,
+// the hash of the entry version it was written from (`basedOn`); run it right after the planner.
 //
 // Applies migration plans to a LOCAL CHECKOUT of the base -- never to a URL, and it never commits:
 // the base is public, so the diff is reviewed in git and pushed by hand, to a branch first. Without
@@ -15,15 +17,17 @@ import { join } from 'node:path';
 
 import { parseEntry } from './core/frontmatter.mjs';
 import { buildIndex, buildRow } from './core/index-build.mjs';
-import { migrate } from './core/migrate-schema2.mjs';
+import { entryHash, migrate } from './core/migrate-schema2.mjs';
 
 function parseArgs(argv) {
-  const f = { base: null, plans: [], apply: false };
+  const f = { base: null, plans: [], apply: false, stamp: null };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--base') f.base = argv[++i];
     else if (argv[i] === '--plans') f.plans.push(argv[++i]);
     else if (argv[i] === '--apply') f.apply = true;
+    else if (argv[i] === '--stamp') f.stamp = argv[++i];
   }
+  if (f.stamp && f.plans.length) return f;
   if (!f.base || !f.plans.length) throw new Error('usage: --base <local checkout> --plans <file> [--plans <file> …] [--apply]');
   if (/^https?:/i.test(f.base)) throw new Error('--base must be a local checkout, not a URL: the diff is reviewed in git before anything is pushed');
   return f;
@@ -31,6 +35,15 @@ function parseArgs(argv) {
 
 function main() {
   const flags = parseArgs(process.argv.slice(2));
+  if (flags.stamp) {
+    for (const file of flags.plans) {
+      const plans = JSON.parse(readFileSync(file, 'utf8'));
+      for (const p of plans) p.basedOn = entryHash(readFileSync(join(flags.stamp, 'entries', `${p.id}.md`), 'utf8'));
+      writeFileSync(file, `${JSON.stringify(plans, null, 1)}\n`);
+      console.log(`stamped ${plans.length} plan(s) in ${file} from ${flags.stamp}`);
+    }
+    return;
+  }
   const read = (rel) => readFileSync(join(flags.base, rel), 'utf8');
   const files = new Map(readdirSync(join(flags.base, 'entries')).filter((n) => n.endsWith('.md'))
     .map((n) => [`entries/${n}`, read(`entries/${n}`)]));

@@ -15,11 +15,16 @@
 //   3. A CARD USES THE VOCABULARY. A concept the vocabulary does not hold is refused, never written:
 //      a new concept is a vocabulary edit, reviewed like an entry (Decision 4).
 
+import { createHash } from 'node:crypto';
+
 import { mintId } from './canonical.mjs';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
 import { SURFACES } from './index-load.mjs';
 
 export const MIN_QUESTIONS = 3;
+
+/** The version of an entry a plan was written from: its text with line endings normalised. */
+export const entryHash = (text) => createHash('sha256').update(String(text).replace(/\r\n/g, '\n')).digest('hex').slice(0, 16);
 
 const surfaceItems = (surfaces) => surfaces.map((value) => ({ axis: 'surface', value }));
 const withSurfaces = (appliesTo, surfaces) => [
@@ -73,6 +78,11 @@ export function migrate(files, plans, vocabulary) {
     if (seen.has(plan.id)) { problems.push(`${plan.id}: planned twice`); continue; }
     seen.add(plan.id);
     if (parent.data.status !== 'active') { problems.push(`${plan.id}: status is ${parent.data.status}, only active entries migrate`); continue; }
+    // A plan is written from one version of the entry and carries its hash. The base moves on while
+    // plans are written -- confirms, disputes, anchor corrections -- and a split child's body is a
+    // COPY of the parent's prose, so applying a plan to a newer entry would silently publish the old
+    // text. A stale plan is refused; re-plan that one entry.
+    if (plan.basedOn !== entryHash(parent.text)) { problems.push(`${plan.id}: the entry changed since its plan was written (basedOn ${plan.basedOn ?? 'missing'}), re-plan it`); continue; }
 
     if (plan.action === 'keep') {
       problems.push(...cardProblems(plan.id, plan, concepts));
