@@ -102,7 +102,8 @@ tickets, code review requests, PR links, chit-chat, system events.
 ## Phase 4 — File
 
 `createJiraIssue` — `projectKey` from the profile, `issueTypeName: "Bug"`,
-`contentFormat: "markdown"`.
+`contentFormat: "markdown"`, and the label `reported-by-human` next to the labels below — a person
+found it (tracker-ops.md §Labels on bugs Claude files).
 
 **summary** — a specific one-line defect description in English, component or area first
 (`"Notifications: preview does not render interpolated values on OPUS"`). Never the raw

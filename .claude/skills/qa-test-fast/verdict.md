@@ -24,6 +24,8 @@ Call `/vc-fix:qa-bug "<one-line defect>"` once per product bug. Give it, **as fi
 - the checklist item id or charter item it came from
 - the ledger ids of the data involved
 - the build versions from Step 0
+- `found-by:agent-testing <ticket-key>` — left out only for a bug the user brought in, which `qa-bug` then
+  records as a human's (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files)
 
 `qa-bug` then does what this flow must not do by hand: duplicate check, 4-layer validation, source and
 log research, owning-repo resolution (the `/qa-fix` handoff block), and the report file. **Cite the

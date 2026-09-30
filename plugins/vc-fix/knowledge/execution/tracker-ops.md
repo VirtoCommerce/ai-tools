@@ -185,6 +185,30 @@ them. Always resolve the *destination status* by role, then map it to the live w
      `qaRoleStatesComplete` is `true` — do not apply the fix-side policy to a QA-side transition without
      checking this flag first.
 
+## 2a. Labels on bugs Claude files
+
+Every Jira **Bug** Claude creates — and every **Sub-task** that is a bug (§5b in-scope filing) — says who found it
+and, for an agent finding, during what.
+In the VirtoCommerce QA repo a PreToolUse hook refuses the create call without a valid set.
+
+| Who found it | Labels |
+|---|---|
+| Claude, while testing a ticket (`/qa-test`, `/qa-test-fast`, exploratory) | `found-by-agent` + `found-in-testing` |
+| Claude, in a regression run (`/qa-regression`, `ci:regression`, triage of a run) | `found-by-agent` + `found-in-regression` |
+| A person — the user saying "I found this, file it", a Teams/partner report | `reported-by-human` |
+
+The labels go in the create call's `labels` parameter where the tool has one (the claude.ai connector), else
+in `additional_fields.labels`; keep any labels already there.
+
+**Found by the agent means Claude saw the failure itself in this session.** That is a verdict,
+screenshot, API response or trace from its own run. If a person described the bug — even when they
+ask Claude to file it, and even when Claude then reproduces it — the label is `reported-by-human`.
+If the origin is unclear, it is `reported-by-human` too. Undercounting agent findings is harmless;
+crediting agents with a person's finding corrupts the metric.
+
+A label that turns out wrong is corrected in Jira by hand. **These labels are VC-internal: apply them only on
+VC's own Jira, never on a client project's tracker.**
+
 ## 3. Which git/PR mechanism? — from `contributionPlan(repo)`
 
 After Gate 1 resolves the one repo, read `contributionPlan(routeRepo)` (`skills/qa-fix-routing/repo-router.ts`)

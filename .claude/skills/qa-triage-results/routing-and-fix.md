@@ -35,7 +35,9 @@ so three of its steps must be steered — say all three in the brief:
 - **Step 1 (reproduce)** — pass the Phase 4 live-repro evidence (STR, screenshots, trace, HAR path)
   and say the bug is already reproduced; it must reuse that evidence, not dispatch a second repro.
 - **Step 4 (write the report)** — write it to `reports/bugs/open/<severity>/` per the map above,
-  not the flat `open/` its template names.
+  not the flat `open/` its template names, and pass `found-by:agent-regression <RUN_ID>` so the report carries
+  `**Found by:** agent — regression <RUN_ID>` and whoever files it later labels it `found-by-agent` + `found-in-regression`
+  (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files).
 - **Step 5 (create the tracker ticket)** — **skip it: stop after Step 4 and do not ask.** Step 5
   puts "Create a bug-tracker ticket?" to the human via `AskUserQuestion`, so the orchestrator
   cannot answer it for them, and a "Yes" would file a ticket from a flow that never files.
