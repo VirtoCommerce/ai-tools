@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { mintId } from '../kb/core/canonical.mjs';
 import { parseEntry, stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
 import { buildIndex, buildRow } from '../kb/core/index-build.mjs';
-import { migrate } from '../kb/core/migrate-schema2.mjs';
+import { entryHash, migrate } from '../kb/core/migrate-schema2.mjs';
 
 const VOCAB = { concepts: [{ id: 'coupon' }, { id: 'cart' }, { id: 'account-coupons' }] };
 const EVIDENCE = [
@@ -22,10 +22,11 @@ const PARENT = `${stringifyFrontmatter({
   evidence: EVIDENCE,
 })}\nTwo facts in one body.\n`;
 const files = () => new Map([['entries/KB-00000001.md', PARENT]]);
+const BASED = entryHash(PARENT);
 const Q = ['one?', 'two?', 'three?'];
 const child = (subject, anchors, concepts) => ({ subject, question: 'q?', anchors, surface: ['xapi'], body: `${subject}.`, questions: Q, concepts });
 const SPLIT = {
-  id: 'KB-00000001', action: 'split', why: 'two facts',
+  id: 'KB-00000001', action: 'split', why: 'two facts', basedOn: BASED,
   children: [
     child('coupon codes apply case-insensitively', ['Mutation.addCoupon'], ['coupon']),
     child('the account coupons page shows codes uppercased', ['/account/coupons'], ['account-coupons']),
@@ -33,7 +34,7 @@ const SPLIT = {
 };
 
 test('a kept entry gains its card and canonical surfaces, and keeps its body byte for byte', () => {
-  const r = migrate(files(), [{ id: 'KB-00000001', action: 'keep', surface: ['xapi', 'storefront-ui'], questions: Q, concepts: ['coupon'] }], VOCAB);
+  const r = migrate(files(), [{ id: 'KB-00000001', action: 'keep', basedOn: BASED, surface: ['xapi', 'storefront-ui'], questions: Q, concepts: ['coupon'] }], VOCAB);
   assert.deepEqual(r.problems, []);
   const { data, body } = parseEntry(r.writes.get('entries/KB-00000001.md'));
   assert.deepEqual(data.questions.map((q) => q.text), Q);
@@ -86,4 +87,11 @@ test('the index is schema 2 exactly when a row carries a schema-2 field', () => 
   const r = migrate(files(), [SPLIT], VOCAB);
   const rows = [...r.writes].map(([path, text]) => buildRow(parseEntry(text).data, path));
   assert.equal(buildIndex(rows, { generated: 'T' }).schema, 2);
+});
+
+test('a plan written from an older version of the entry is refused, so a stale body is never published', () => {
+  const moved = new Map([['entries/KB-00000001.md', PARENT.replace('Two facts', 'Two facts, confirmed again,')]]);
+  assert.ok(migrate(moved, [SPLIT], VOCAB).problems.some((p) => /changed since its plan was written/.test(p)));
+  const crlf = new Map([['entries/KB-00000001.md', PARENT.replace(/\n/g, '\r\n')]]);
+  assert.deepEqual(migrate(crlf, [SPLIT], VOCAB).problems, [], 'a CRLF checkout is the same version');
 });
