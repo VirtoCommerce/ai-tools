@@ -53,7 +53,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | `--run-id <RUN_ID\|latest>` | Ground Phase 6P in a **completed regression run**, so it can reach `Draft → Automated` via `tc:promote` instead of stopping at `Reviewed`. Without it there is no runner verdict to cite and 6P promotes to `Reviewed` only. Combines with `--promote-only` (the usual pairing after a `/qa-test` run: `--promote-only --run-id latest`) |
 | `--ci` | CI mode: skip browser verification, apply all updates without confirmation, output machine-readable JSON. **Never promotes** (6P requires human/`qa-lead` approval) |
 
-> **BL audit is automatic, not a flag.** Phases 2–3 always collect the `BL-*` a run touches (stale refs + new-rule candidates); **Phase 4c always runs, scoped to exactly those candidates** — triangulating each against docs + live + source via `/qa-review-bl` and auto-applying the confirmed ones. No candidates ⇒ 4c is a no-op. For a broader sweep (a whole domain, not just what this run touched), use standalone `/qa-review-bl domain <name>`. (The former `--update-bl` opt-in flag is retired — the audit is safe by default because it's gated by an **applicable-axes evidence bar** — docs + live + source, with a structurally-unavailable axis such as docs-for-a-new-module *waived*, promoting only when every applicable axis agrees and at least two remain — so there's nothing to opt into.)
+> **BL audit is automatic, not a flag.** Phases 2–3 always collect the `BL-*` a run touches (stale refs + new-rule candidates); **Phase 4c always runs, scoped to exactly those candidates** — triangulating each via `/qa-review-bl` and auto-applying only what a human source grounds (M0 freeze, Phase 4c). No candidates ⇒ 4c is a no-op. For a broader sweep (a whole domain, not just what this run touched), use standalone `/qa-review-bl domain <name>`. (The former `--update-bl` opt-in flag is retired — a code + live agreement never edits a rule, so there is nothing to opt into.)
 
 ---
 
@@ -131,8 +131,7 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
 3. For each linked PR: run the PR analysis above
 4. Map JIRA components to VC modules
 5. **Detect a legacy/handoff promotion source (this is what makes Phase 6P reachable — a current `/qa-test` run produces none).** Glob
-   `reports/tickets/*/VCST-XXXX/test-cases.csv` — **across all sprints**, per
-   `feedback_duplicate_check_across_all_sprints`; a ticket tested before a sprint rollover lives under the
+   `reports/tickets/*/VCST-XXXX/test-cases.csv` — **across all sprints**; a ticket tested before a sprint rollover lives under the
    older folder. When a match exists, read its sibling `summary.json` and add to the scope:
    ```
    "promotionSource": {
@@ -189,7 +188,7 @@ Step 5 — Also check test repo changes:
    ```bash
    gh api repos/VirtoCommerce/vc-platform/releases/tags/<version>
    ```
-   Tags are bare semver for `vc-platform` / `vc-module-*` / `vc-frontend` (`3.1054.0`, `2.56.0`) but `v`-prefixed for `vc-shell` (`v2.5.0`) — normalize before querying. If `GITHUB_TOKEN` is set but invalid, `gh` fails with `401 Bad credentials` on every call; prefix with `env -u GITHUB_TOKEN` to fall through to the `gh` keyring account (see the `reference_github_token_routing` memory).
+   Tags are bare semver for `vc-platform` / `vc-module-*` / `vc-frontend` (`3.1054.0`, `2.56.0`) but `v`-prefixed for `vc-shell` (`v2.5.0`) — normalize before querying. If `GITHUB_TOKEN` is set but invalid, `gh` fails with `401 Bad credentials` on every call; prefix with `env -u GITHUB_TOKEN` to fall through to the `gh` keyring account.
    - Module release bodies are one terse HTML bullet (`<h3>🎯 Development</h3><ul><li>Documents library (#12)</li></ul>`) — authoritative for *when*, near-useless for *what*. Only `vc-frontend` and `vc-shell` carry prose, and those carry `VCST-*` keys per PR, which is what lets a change be traced back to a ticket.
 3. **Extract** new features, breaking changes, deprecated APIs, module updates — mostly already structured by step 1. **Note the boundary:** the ledger is `exhaustive: false`, so an absent feature is *unknown*, not *nonexistent*; and it records what was **released upstream**, never what is **deployed** on the env under test (`agent-dispatch.md § Build Verification`).
 
@@ -372,7 +371,7 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
    - If query/mutation doesn't exist in schema → do NOT generate a case for it
 7. **BL candidate collection (always):**
    - For each generated case whose gap maps to a testable business rule not already in `business-logic.md`, record a BL **candidate** (`BL-<DOMAIN>-<NNN>` shape, severity, **Rule**/**Verify**/**Violation signal**/**Agents**, `PROPOSED-` prefix, mandatory source).
-   - Add to `blProposals.new[]` in the delegation output. Phase 3 does NOT edit `business-logic.md` — candidates are handed to the **BL-audit phase (4c)**, which triangulates each against docs + live + source and auto-applies only the confirmed ones.
+   - Add to `blProposals.new[]` in the delegation output. Phase 3 does NOT edit `business-logic.md` — candidates are handed to the **BL-audit phase (4c)**, which triangulates each and auto-applies only what a human source (docs, AC, Jira resolution) grounds (M0).
 8. **Present to user** as Feature Test Matrix for approval before proceeding
 
 ---
@@ -462,13 +461,11 @@ domain <name>`. Invoke **`/qa-review-bl`** on the surfaced candidates, delegatin
 `ba-system-analyzer` (parallel fan-out, single-writer apply):
 
 - Each candidate `BL-*` is triangulated against the three axes — **docs + live + source code**.
-- **Evidence bar = applicable-axes.** An axis that is *structurally unavailable* is **waived (N/A)**, not counted as a miss — most importantly, a **brand-new / undocumented / pre-GA module has no docs**, so the docs axis is waived. The bar is then the axes that CAN be verified, and **at least two must remain** (a single surviving axis is never enough to canonicalize).
-- **CONFIRMED / DRIFT / MISSING** → auto-applied to `business-logic.md` (body-only, `Amended:`/`Promoted:`+`Source:` stamp, env-agnostic) **only when every applicable (non-waived) axis is met AND the axes agree**.
-- **Held as a draft (not applied)** when an applicable axis **contradicts** another — e.g. live shows the opposite of source, commonly a **deploy-lag artifact** (the fix is merged but not on the pinned build) — or when an applicable axis is **unverifiable this run** (e.g. blocked on a missing fixture). A contradiction/gap is not a failure; it is a *not-yet*.
-- **CONTRADICTORY / UNGROUNDED / STALE-RETIRE**, plus any candidate that fails the applicable-axes bar → drafted to `reports/ba/bl-proposals-<date>.md`, each with its evidence + a **re-audit trigger** (the concrete condition that would let it promote later — docs published, module on a stable release, the contradicting fix deployed, or the blocking fixture authored). Retiring is never auto-applied.
+- **M0 freeze** (`.claude/skills/qa-review-oracles/bl-audit-criteria.md` §M0 freeze): **DRIFT / MISSING** are auto-applied (body-only, `Amended:`/`Promoted:`+`Source:` stamp, env-agnostic) **only with a human source** — docs, the ticket's AC, or a Jira resolution — and agreeing axes. The docs/AC axis is never waived; code + live agreeing is one observation, not a confirmation.
+- **Otherwise nothing is written to the oracle and no proposals file is created.** Live contradicting an entry → a **finding** in this run's report (bug path); behaviour no entry covers → `kb_capture`; contradictions, gaps and retirements → the audit report only. Retiring is never auto-applied.
 - The run's `reports/knowledge/BL-AUDIT-<date>.md` is the audit trail; its outcome feeds the Phase 6 **G6** gate.
 
-This is gated by an **evidence bar, not human approval** — the **applicable-axes** rule above (docs + live + source when all three exist; the verifiable subset, minimum two and all agreeing, when an axis is structurally waived). See the `/qa-review-bl` skill + `.claude/knowledge/execution/quality-gates.md`.
+No human review queue: the only human input is the source itself (docs, AC, Jira resolution). See the `/qa-review-bl` skill + `.claude/knowledge/execution/quality-gates.md`.
 
 ---
 
@@ -592,7 +589,7 @@ agent, tags, `requiresModules`). **Never invent a module/repo name** to force a 
 stays in the ticket folder and is reported.
 
 **4 — Write via the deterministic appender only.** Hand-rolling the append silently merges two 15-column
-rows into one ~29-field record (`feedback_csv_append_newline_corruption`):
+rows into one ~29-field record:
 
 ```bash
 npx tsx scripts/test-cases/append-test-cases-to-suite.ts <target-suite.csv> --rows <approved-rows.csv> --check-global-ids --dry-run
@@ -604,8 +601,7 @@ round-trip verifies the appended block.
 
 **`--check-global-ids` is mandatory here and is not the default.** Without it the appender enforces ID
 uniqueness **only within the target suite** — it cannot see an ID that already lives in a *different*
-suite, and that is exactly the collision that overwrites the other suite's per-case failure evidence
-(`reference_case_ids_must_be_globally_unique`). The flag scans every CSV under `regression/suites/` and
+suite, and that is exactly the collision that overwrites the other suite's per-case failure evidence. The flag scans every CSV under `regression/suites/` and
 rejects a colliding **incoming** ID. On a collision, **re-ID the incoming case** — never renumber the
 existing one, never reuse a retired ID.
 
@@ -748,41 +744,12 @@ Manifest: `config/test-suites.json` testCount updated for [suite ids]; `suites:l
 - [list of CSV files with change summary]
 
 ## BL Audit (when the run surfaced BL candidates)
-- Triangulated K invariants — X CONFIRMED/DRIFT/MISSING **auto-applied** to `business-logic.md`; Y drafted to `reports/ba/bl-proposals-<date>.md` (unconfirmed/contradictory/retire). Audit trail: `reports/knowledge/BL-AUDIT-<date>.md`. (Omit this section if 4c had no candidates.)
+- Triangulated K invariants — X **auto-applied** to `business-logic.md` (human source cited); Y findings for the bug path; Z observations sent to the `kb`. Audit trail: `reports/knowledge/BL-AUDIT-<date>.md`. (Omit this section if 4c had no candidates.)
 
 ## Next Steps
 - [ ] Address "Must Fix" items
 - [ ] Run `/qa-regression` with reviewed suite(s)
 - [ ] File JIRA tickets for environment issues
-- [ ] Review `reports/ba/bl-proposals-<date>.md` — the items the audit could NOT confirm (human decision); confirmed items already landed in `business-logic.md`
-```
-
-### `bl-proposals.md` (only when 4c could not confirm an item)
-
-```markdown
-# Business Logic Proposals — {RUN_ID}
-
-These are drafts. They are NOT applied to `knowledge/oracles/business-logic.md`.
-Review, edit as needed, assign final `BL-*` IDs, and commit manually.
-
-## New Invariants Proposed
-
-### PROPOSED-BL-<DOMAIN>-<NNN>: <short title> `[P0-revenue | P1-data | P2-ux]`
-- **Rule:** ...
-- **Verify:** ...
-- **Violation signal:** ...
-- **Agents:** ...
-- **Source:** JIRA VCST-XXXX AC#3 | Context7 query on /virtocommerce/vc-docs:<topic> | changelog 3.850.0 | PR #NNN
-- **Triggered by case(s):** [TC-IDs that exposed the gap]
-
-## Stale BL-* Flagged
-
-### BL-<DOMAIN>-<NNN>: <existing title>
-- **Current Rule:** [as written today]
-- **Observed behavior:** [what Context7 / the change inventory shows instead]
-- **Source of change:** [PR / changelog / Context7 quote]
-- **Affected cases:** [TC-IDs still referencing this BL]
-- **Suggested action:** update Rule / deprecate / split into two invariants
 ```
 
 No `lifecycle-summary.json` is written either — nothing downstream parses it today (CI's `run-full-cycle.ts`
@@ -991,7 +958,7 @@ Output: per-case verification:
 - **Never hand-roll a CSV append** — `regression/suites/` writes go through
   `npx tsx scripts/test-cases/append-test-cases-to-suite.ts --check-global-ids` (dry-run first), then
   `npm run suites:sync` + `npm run suites:lint`. A missing boundary newline merges two 15-column rows into
-  one broken record (`feedback_csv_append_newline_corruption`), and a manifest left unsynced means the
+  one broken record, and a manifest left unsynced means the
   suite runs with a stale `testCount`.
 - **An incoming case ID must collide with nothing under `regression/suites/`** — and a plain append run
   does **not** prove that: without `--check-global-ids` the appender only checks the target suite, so a
@@ -1012,4 +979,4 @@ Output: per-case verification:
 - **Report always written** — even with `--report-only`, produce the full report
 - **Build verification before pipeline** — always run pre-flight build verification and include version info in report
 - **GraphQL schema refresh** — when scope includes GraphQL suites, run `npm run schema:refresh` in Pre-Flight and validate all queries/mutations against `graphql-schema.md`
-- **BL updates run through the audit (Phase 4c → `/qa-review-bl`), automatically.** Phase 4c always runs, scoped to the `BL-*` this run surfaced (no candidates ⇒ no-op); there is no opt-in flag. Auto-apply is gated by an **applicable-axes evidence bar, not human approval**: triangulate **docs + live + source**; an axis that is *structurally unavailable* (e.g. **no docs for a new / undocumented / pre-GA module**) is **waived (N/A)**, and a candidate is **auto-applied (body-only, env-agnostic) only when every applicable axis is met and the axes agree** (at least two must remain; a lone axis is never enough). A candidate whose applicable axes **disagree** (e.g. live contradicts source — commonly deploy lag: a merged fix not yet on the pinned artifact) or that has an **unverifiable** axis this run (blocked on a fixture) is **held as a draft** in `reports/ba/bl-proposals-<date>.md` with a **re-audit trigger** — not applied, not a failure. Every entry — applied or drafted — cites its sources; env-agnostic, no env names/URLs/slugs.
+- **BL updates run through the audit (Phase 4c → `/qa-review-bl`), automatically.** Phase 4c always runs, scoped to the `BL-*` this run surfaced (no candidates ⇒ no-op); there is no opt-in flag. Under the **M0 freeze** a candidate is auto-applied only with a **human source** (docs, AC, Jira resolution) and agreeing axes; code + live alone never changes a rule, and **no proposals file is written** — see Phase 4c. Every applied entry cites its sources; env-agnostic, no env names/URLs/slugs.

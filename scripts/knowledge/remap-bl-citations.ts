@@ -121,6 +121,20 @@ export const ser = (p: Parsed, nl: string) =>
  * every `header.indexOf(…)` on column 0 returns -1) and go back ON before writing (these
  * files carry it; this tool is not the place to decide they shouldn't).
  */
+/**
+ * Remove one id from a `Business_Rule` cell together with ONE adjacent separator. The corpus
+ * separates ids with `; ` (and occasionally `, `); the first version only knew `,`, so dropping
+ * the second id of `"BL-CHK-001; BL-SEC-001"` left `"BL-CHK-001;"` — a dangling separator the
+ * next reader parses as an empty citation (measured 2026-09-30, two cells).
+ */
+export function dropCitation(cell: string, target: string): string {
+  return cell
+    .replace(new RegExp(`\\s*[,;]?\\s*\\b${target}\\b`, "g"), "")
+    .replace(/^\s*[,;]\s*/, "")
+    .replace(/\s*[,;]\s*$/, "")
+    .trim();
+}
+
 export function readSuite(file: string): { text: string; bom: string } {
   const raw = fs.readFileSync(file, "utf8");
   return raw.charCodeAt(0) === 0xfeff ? { text: raw.slice(1), bom: "﻿" } : { text: raw, bom: "" };
@@ -261,7 +275,7 @@ for (const file of files) {
     const cell = r[ci] ?? "";
     if (!citedIn(cell).includes(target)) continue;
     const next = replacement === null
-      ? cell.replace(new RegExp(`\\s*,?\\s*\\b${target}\\b`, "g"), "").replace(/^\s*,\s*/, "").trim()
+      ? dropCitation(cell, target)
       : cell.replace(new RegExp(`\\b${target}\\b`, "g"), replacement);
     r[ci] = next;
     hits.push(r[ii]);
