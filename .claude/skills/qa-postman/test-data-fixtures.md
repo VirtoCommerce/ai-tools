@@ -129,9 +129,7 @@ Most resilient — use the seeding helpers (e.g., `/qa-seed-data` skill) to crea
 
 Two facts about VC catalog data that bite collection authors:
 
-1. **Storefront search/PDP requires the B2B virtual catalog root.** Direct GraphQL `products` queries must filter by `category.subtree:<B2B_VIRTUAL_CATALOG_ID>`. The active root ID **moves over time** — re-verify before hardcoding.
-   - As of 2026-04-30 the active ID is `9238c387-d779-40cb-b27d-5496a670a924`.
-   - Cross-check via `test-data/aliases.json` BOPIS entry's `testProductCatalogId` field, or live `categories(storeId:"B2B-store", first:1)` query.
+1. **Storefront search/PDP requires the B2B virtual catalog root.** Direct GraphQL `products` queries must filter by `category.subtree:@td(VIRTUAL_CATALOG_B2B.id)`. The root **moves over time** and differs per environment, so never write the ID itself — the alias resolves it (`test-data/aliases.json`, overridden per env by `aliases.<TEST_ENV>.json`). Recipe: `.claude/knowledge/execution/live-discovery.md` §Recipe 1 — pin the virtual-catalog root, then query products under it.
 2. **Products seeded into the physical catalog return 404 on storefront** until linked into the B2B virtual catalog. Symptom looks like an indexer issue but it isn't — the product just hasn't been linked yet.
 
 
