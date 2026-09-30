@@ -107,7 +107,7 @@ test("a LEGACY enum-only open issue receives FULL evidence on the first +1 comme
     // #174-shape: our self-check title prefix + the key as text, but NO per-finding marker and NO
     // Where marker — the legacy bridge matches it, and it carries no evidence.
     const legacy = {
-      number: 174, html_url: "https://github.com/VirtoCommerce/vc-mcp-testing-module/issues/174", state: "open",
+      number: 174, html_url: "https://github.com/VirtoCommerce/ai-tools/issues/174", state: "open",
       title: "[vc-fix self-check] project-init/tracker_field_contract DEGRADED",
       body: "Bundled report. skill project-init subject tracker_field_contract. S2.",
     };
@@ -129,7 +129,7 @@ test("an issue that ALREADY carries the Where marker gets only a short counter",
     seedProfile(home);
     const { marker } = buildWhereBlock(FINDING);
     const tracked = {
-      number: 180, html_url: "https://github.com/VirtoCommerce/vc-mcp-testing-module/issues/180", state: "open",
+      number: 180, html_url: "https://github.com/VirtoCommerce/ai-tools/issues/180", state: "open",
       title: "[vc-fix self-check] project-init/tracker_field_contract DEGRADED",
       body: `<!-- vc-fix-finding: project-init/tracker_field_contract -->\n${marker}\n## Where\n- Location: discover-tracker.mjs`,
     };

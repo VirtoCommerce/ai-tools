@@ -100,7 +100,7 @@ async function listPresetFiles() {
     return readdirSync(dir).filter((f) => f.endsWith('.json'));
   }
   const url = `https://api.github.com/repos/${REPO}/contents/${PRESET_DIR}?ref=${encodeURIComponent(REF)}`;
-  const res = await fetch(url, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'vc-mcp-testing-module' } });
+  const res = await fetch(url, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'ai-tools' } });
   if (!res.ok) throw new Error(`GET ${url} → ${res.status}`);
   const body = await res.json();
   if (!Array.isArray(body)) throw new Error(`${url} did not return a directory listing`);

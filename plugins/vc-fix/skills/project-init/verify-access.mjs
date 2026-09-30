@@ -414,7 +414,7 @@ async function main() {
   // 1b. The ACTIVE plugin install resolves at runtime + the routing helper is present.
   //     /qa-fix / /qa-bug launch `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …` where
   //     $pluginRoot is resolved from `claude plugin list --json` (the enabled
-  //     vc-fix@vc-tools installPath — knowledge/execution/plugin-root.md), NOT a baked
+  //     vc-fix@ai-tools installPath, or vc-fix@vc-tools for a pre-rename install — knowledge/execution/plugin-root.md), NOT a baked
   //     profile field. Confirm that resolver works and points at a real install with the
   //     helper; fall back to this script's own location (import.meta.url) when the `claude`
   //     CLI isn't on PATH in the shell.
@@ -424,7 +424,8 @@ async function main() {
     const raw = execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString();
     cliOk = true; // the CLI ran; activeRoot may still be "" if no enabled vc-fix entry matched
     const arr = JSON.parse(raw);
-    const e = arr.find((x) => x.id === "vc-fix@vc-tools" && x.enabled) || arr.find((x) => x.id === "vc-fix@vc-tools");
+    const ids = ["vc-fix@ai-tools", "vc-fix@vc-tools"]; // vc-tools = the marketplace name before 2026-09-30
+    const e = arr.find((x) => ids.includes(x.id) && x.enabled) || arr.find((x) => ids.includes(x.id));
     activeRoot = e?.installPath || "";
   } catch {
     /* claude CLI unavailable / not on PATH — fall back to self-location below */
@@ -435,7 +436,7 @@ async function main() {
   } else if (!activeRoot && existsSync(resolve(selfRoot, "skills", "qa-fix-routing", "ado.mjs"))) {
     // Distinguish CLI-missing from CLI-ran-but-no-match: the fallback + fix advice differ.
     const why = cliOk
-      ? "`claude plugin list` ran but found no enabled vc-fix@vc-tools install (running from a checkout, or the plugin is disabled)"
+      ? "`claude plugin list` ran but found no enabled vc-fix@ai-tools install (running from a checkout, or the plugin is disabled)"
       : "`claude plugin list` unavailable in this shell — commands must use the cache-dir fallback (plugin-root.md)";
     add("Plugin root (claude plugin list)", "WARN", `${why}. Helper present at ${selfRoot}`);
   } else {

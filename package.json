@@ -1,5 +1,5 @@
 {
-  "name": "vc-mcp-testing-module",
+  "name": "ai-tools",
   "version": "0.8.1",
   "description": "",
   "main": "config.js",
@@ -307,16 +307,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VirtoCommerce/vc-mcp-testing-module.git"
+    "url": "git+https://github.com/VirtoCommerce/ai-tools.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/VirtoCommerce/vc-mcp-testing-module/issues"
+    "url": "https://github.com/VirtoCommerce/ai-tools/issues"
   },
-  "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
+  "homepage": "https://github.com/VirtoCommerce/ai-tools#readme",
   "dependencies": {
     "@azure/identity": "^4.13.1",
     "@playwright/mcp": "^0.0.77",

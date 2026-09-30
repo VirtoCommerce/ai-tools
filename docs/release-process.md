@@ -195,8 +195,8 @@ tagged content snapshot instead of the version `plugin.json` now claims to be at
 `version` bump that *tightens* the range (e.g. to `>=0.9.0`) will hard-fail install with no matching
 tag until this step runs. This already happened once during `vc-perf`'s initial development (a
 same-content relabel to `0.2.0` wasn't re-tagged, so `claude plugin update` couldn't see the new
-content) — see PR [#136](https://github.com/VirtoCommerce/vc-mcp-testing-module/pull/136) and issue
-[#156](https://github.com/VirtoCommerce/vc-mcp-testing-module/issues/156).
+content) — see PR [#136](https://github.com/VirtoCommerce/ai-tools/pull/136) and issue
+[#156](https://github.com/VirtoCommerce/ai-tools/issues/156).
 
 A CI/release check that fails when a plugin's `plugin.json` version has no matching
 `{name}--v{version}` tag would close this gap for good (tracked separately in #156) — this step is

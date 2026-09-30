@@ -7,7 +7,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 **Standing up a deployment?** `/project-init` → `/qa-env-check` → `/qa-smoke`.
 **New to the repo, already configured?** `/qa-onboarding` → `/qa-env-check` → `/qa-smoke`.
 
-> **The bug-lifecycle commands come from the `vc-fix` plugin, not from `.claude/commands/`:** `/project-init`, `/qa-env-check`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback` live in `plugins/vc-fix/commands/` and appear in the `/` menu once the plugin is installed (`/plugin install vc-fix@vc-tools`; the team has it enabled at user level). The `.claude/` copies were removed on 2026-09-08 — they were the older Jira-only versions and had silently forked from the tracker-agnostic plugin (audit D1); the plugin copy is the only copy now.
+> **The bug-lifecycle commands come from the `vc-fix` plugin, not from `.claude/commands/`:** `/project-init`, `/qa-env-check`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback` live in `plugins/vc-fix/commands/` and appear in the `/` menu once the plugin is installed (`/plugin install vc-fix@ai-tools`; the team has it enabled at user level). The `.claude/` copies were removed on 2026-09-08 — they were the older Jira-only versions and had silently forked from the tracker-agnostic plugin (audit D1); the plugin copy is the only copy now.
 
 > This file is an INDEX, not a contract. Where a decision has a single source of truth, it is named
 > in §Single Sources of Truth below — read that file, don't re-derive the rule from this table.
@@ -121,7 +121,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 > **These six skills and the four developer agents live ONLY in `plugins/vc-fix/`.** The `.claude/` copies were
 > removed 2026-09-25 for the same reason the bug-lifecycle commands were on 2026-09-08 (see the note at the top of
 > this file): they had silently forked, and `/qa-fix` — the only caller — is plugin-only. They appear in the `/` menu
-> once `vc-fix@vc-tools` is installed.
+> once `vc-fix@ai-tools` is installed.
 
 - `/dotnet-unit-test` — Reproduce a backend bug as a failing xUnit test (red → green)
 - `/dotnet-fix` — Minimal, idiomatic .NET 10 fix in one VC module
@@ -180,7 +180,7 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 `agent-dispatch.md`).
 
 ### Plugins (distributed separately — NOT part of this `.claude/` surface)
-- **`vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice shipped to teammates/customers via the `vc-tools` marketplace: `/project-init`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`. Self-contained; the canonical copy of the self-diagnostics subsystem
+- **`vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice shipped to teammates/customers via the `ai-tools` marketplace: `/project-init`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`. Self-contained; the canonical copy of the self-diagnostics subsystem
 - **`vc-perf`** (`plugins/vc-perf/`) — the three-layer performance loop (`/perf-init`, `/perf-benchmark`, `/perf-loop`, `/perf-fix`, `/perf-verify`). Depends on `vc-fix`; advisory only, never a CI gate
 
 ## Single Sources of Truth (read these, don't re-derive)
