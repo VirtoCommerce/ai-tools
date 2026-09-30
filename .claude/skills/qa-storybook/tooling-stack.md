@@ -41,7 +41,7 @@ Without these, baselines flicker and CI flakes:
 
 ## Hosted Storybook ≠ dev build
 
-Hosted Storybook is `vite build` (production), so `import.meta.env.DEV === false`. DEV-only `console.warn` gates are **dead code** there. Verify deprecation warnings via `npm run dev` or a Vitest unit test that stubs `import.meta.env` — never via hosted Storybook. (Project memory: `feedback_storybook_is_production_build`. False finding VCST-4892 NEW-4 was retracted over this.)
+Hosted Storybook is `vite build` (production), so `import.meta.env.DEV === false`. DEV-only `console.warn` gates are **dead code** there. Verify deprecation warnings via `npm run dev` or a Vitest unit test that stubs `import.meta.env` — never via hosted Storybook. (False finding VCST-4892 NEW-4 was retracted over this.)
 
 ## CI gating — what to fail PRs on
 
@@ -64,5 +64,5 @@ If a finding is reproducible in a story, it belongs to qa-storybook. If it only 
 
 - Storybook URLs: `STORYBOOK_URL` (QA), `STORYBOOK_DEV_URL` (dev).
 - 55 components total, Atomic Design tiers (atoms / molecules / organisms).
-- **Coffee** and **Red** are the A11y-gated themes (memory: `feedback_a11y_gated_themes`) — gate a11y assertions on those two, treat the remaining presets as visual-only. Pick a preset with the `themePreset` Storybook global (`?globals=themePreset:red;darkMode:light`); it loads via async dynamic import, so poll `--color-primary-500` until it matches (Red = `#e52121`) before asserting.
+- **Coffee** and **Red** are the A11y-gated themes — gate a11y assertions on those two, treat the remaining presets as visual-only. Pick a preset with the `themePreset` Storybook global (`?globals=themePreset:red;darkMode:light`); it loads via async dynamic import, so poll `--color-primary-500` until it matches (Red = `#e52121`) before asserting.
 - Critical UI scope (regression-enforced): VcButton, VcProductCard, VcLineItem, VcTable, VcDialog, Popover, VcSidebar — see `knowledge/oracles/critical-ui-scope.md`.
