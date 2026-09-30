@@ -96,8 +96,7 @@ never re-graded at 5-file to move a finding across the line.
 
 ### 6. Dedup — every finding, regardless of source
 
-Glob `reports/bugs/**` + all `reports/tickets/Sprint*/`, and search the tracker (per
-`feedback_duplicate_check_across_all_sprints`). A match = PRE-EXISTING. A `/qa-triage-results`-confirmed bug
+Glob `reports/bugs/**` + all `reports/tickets/Sprint*/`, and search the tracker. A match = PRE-EXISTING. A `/qa-triage-results`-confirmed bug
 still needs this tracker-wide check before 5-file can file it.
 
 **`--iterate` — the one exception, and it matters because this item runs AFTER item 4.** A match on a

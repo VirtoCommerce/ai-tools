@@ -1,7 +1,7 @@
 // Storefront failed browser AJAX/XHR calls (failed xAPI / REST from the SPA),
 // grouped by signature. Storefront App Insights resource. The URL path is normalized
 // to a template — query string stripped, GUID/numeric id segments collapsed to
-// {id} — so the signature does not drift with test data (feedback_env_resilience).
+// {id} — so the signature does not drift with test data.
 // Window via API `timespan`.
 dependencies
 | where client_Type == "Browser" and success == false

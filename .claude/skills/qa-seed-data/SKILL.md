@@ -207,7 +207,7 @@ B2B organization with user hierarchy (`seed-company-users.mjs b2b`):
 - Ensures a contact + storefront login (security account) per `user_email`
 - Creates one `OrganizationMembership` per (user, org) with its `role_id` → seeds **cross-org members** (same user in N orgs with distinct roles, e.g. TechFlow=maintainer + BuildRight=employee)
 - Idempotent (reuses existing user/memberships); included in `b2b`/`all`; the unified teardown removes the seeded logins + memberships
-- API contract: REST body uses `userId` + `roles:[{roleId,roleName}]` (NOT `memberId`/`roleIds`) — see `reference_organization_membership_api_contract` memory
+- API contract: REST body uses `userId` + `roles:[{roleId,roleName}]` (NOT `memberId`/`roleIds`)
 
 ### `pricing`
 Pricing module deep test:
@@ -222,13 +222,13 @@ Loyalty programs for earn/redeem testing (`seed-loyalty.mjs`, VCST-5104/5135):
 - Populates each program's **product factors** from `test-data/loyalty/program-factors.csv` (a ProductPoints program earns nothing without factors). Factors are resolved SKU→productId at runtime — no hardcoded GUIDs — via `PUT /api/loyalty-program-product-factors/factors`
 - VIP/Wholesale storefront logins seeded by `npm run seed:loyalty:users` (= `seed-company-users.mjs loyalty`)
 - **Idempotent** — a program whose name already exists is reused; factors are re-applied (PUT replaces the set, repairing factors without duplicating programs)
-- Earning model: single highest-priority eligible+active+in-window program wins globally (no stacking) — see `project_loyalty_productpoints_resolution_model` memory. Balances cannot be reset via API (`project_loyalty_balance_cannot_be_reset`)
+- Earning model: single highest-priority eligible+active+in-window program wins globally (no stacking). Balances cannot be reset via API
 - Teardown: `npm run seed:loyalty:teardown` deletes `AGENT-TEST-*` loyalty programs
 
 ### `promotions`
 Marketing promotions for cart/coupon testing (`seed-promotions.mjs`):
 - Promotions + reward trees + coupons from `test-data/promotions/*.csv`
-- Reward set via GET-merge-PUT of `dynamicExpression`; relative date tokens resolved to ISO; coupons added via the separate `POST /api/marketing/promotions/coupons/add` (inline `coupons[]` is silently ignored — see `reference_marketing_coupons_api_contract`)
+- Reward set via GET-merge-PUT of `dynamicExpression`; relative date tokens resolved to ISO; coupons added via the separate `POST /api/marketing/promotions/coupons/add` (inline `coupons[]` is silently ignored)
 - Supports `--only P01`, `--dry-run`, `--teardown`
 
 ### `bopis`
@@ -266,7 +266,7 @@ Scans for entities matching `AGENT-TEST-*` naming convention and deletes them in
 - If seed fails mid-execution, run teardown for the partial data before retrying
 - For Postman troubleshooting (auth errors, variable resolution, ID format) — see [`qa-postman/common-mistakes.md`](../qa-postman/common-mistakes.md)
 - After every successful seed, write the new entity IDs back into [`test-data/`](../../../test-data) (CSV files referenced by `aliases.json`) so downstream regression suites resolve them via `@td()` — see [`qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) for the resolver contract
-- **Never hardcode environment GUIDs** (catalog roots, store IDs, FFC IDs, virtual-catalog IDs) inside the seed collection or any helper script — read them from `test-data/aliases.json` (e.g. `@td(VIRTUAL_CATALOG_B2B.id)`, `@td(B2B_STORE.id)`) or via the `01-Infrastructure` discovery folder. See `.claude/rules/test-data.md` and `feedback_no_hardcoded_guids_in_scripts.md`.
+- **Never hardcode environment GUIDs** (catalog roots, store IDs, FFC IDs, virtual-catalog IDs) inside the seed collection or any helper script — read them from `test-data/aliases.json` (e.g. `@td(VIRTUAL_CATALOG_B2B.id)`, `@td(B2B_STORE.id)`) or via the `01-Infrastructure` discovery folder. See `.claude/rules/test-data.md`.
 - **Inventory status matters.** New products MUST be seeded with `inventoryStatus: "Enabled"` — xAPI `addItem` silently returns `itemsCount=0` (no error) when status is `Disabled`, masquerading as a cart-layer bug. See `test-data-generation.md` §Inventory.
 - **Storefront visibility requires the B2B virtual catalog.** A product in a fresh physical catalog returns 404 on the B2B storefront until it is linked into `@td(VIRTUAL_CATALOG_B2B.id)`. Include the link step in `02-Catalog` or `03-Products`.
-- **Passwords come from `.env`, not the skill.** The example bodies show `TestPassword123!`/`TestPass123!` for readability only — actual seed runs must read credentials from `.env` (`ADMIN_PASSWORD`, `USER_PASSWORD`) or `test-data/users/agent-user-pool.csv` for agent slots. See `feedback_agents_read_env_creds.md` + `user_test_accounts.md`.
+- **Passwords come from `.env`, not the skill.** The example bodies show `TestPassword123!`/`TestPass123!` for readability only — actual seed runs must read credentials from `.env` (`ADMIN_PASSWORD`, `USER_PASSWORD`) or `test-data/users/agent-user-pool.csv` for agent slots.
