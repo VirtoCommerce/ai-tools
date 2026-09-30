@@ -19,6 +19,7 @@
 
 process.env.KB_SYNTHETIC = '1';
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFile } from 'node:fs/promises';
 
 import { openBase } from './core/base.mjs';
