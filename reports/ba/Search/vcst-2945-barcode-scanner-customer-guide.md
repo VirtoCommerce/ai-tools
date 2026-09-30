@@ -37,6 +37,10 @@ the item in your hand takes you straight to its page, instead of running a gener
     branch) are hidden while a scan result is showing — they don't apply to a single scanned code.
     Sorting the list still works.
 
+While scan results are showing, the search bar stays empty and the **scanner** icon stays in it, so
+you can scan the next item right away. Typing a word and pressing Enter starts a normal keyword search
+instead.
+
 ### When the scanner isn't available
 
 Some stores turn the scanner off entirely, or keep it on with plain keyword matching. When it's off,
