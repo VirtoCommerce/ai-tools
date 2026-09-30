@@ -254,7 +254,7 @@ full `vc-qa` plugin scope, for concurrent regression suites). Use the credential
 ```
 Testing Complete: [Feature]
 
-**Feature:** [name]  |  **Ticket:** [VCST-XXXX]  |  **Environment:** [QA]
+**Feature:** [name]  |  **Ticket:** [<ticket-key>]  |  **Environment:** [QA]
 
 | Area | Status | Issues |
 |------|--------|--------|
@@ -264,7 +264,7 @@ Testing Complete: [Feature]
 Bugs: [list with severity]
 Decision: [APPROVED / CONDITIONS / BLOCKED]
 Blocking: [none or list]
-Full report: reports/tickets/SprintXX-XX/VCST-XXXX/test-execution-report.md
+Full report: reports/tickets/SprintXX-XX/<ticket-key>/test-execution-report.md
 ```
 
 **Approval criteria:**

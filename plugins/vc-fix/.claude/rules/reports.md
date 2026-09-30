@@ -150,7 +150,7 @@ from *"the evidence was dropped"*.
 | Regression suite (20+ tests) | failures + 1 summary per area | 15–20 |
 | Exploratory session | anomalies only | 10 |
 
-**Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/`, `reports/tickets/VCST-XXXX/screenshots/`) stay tracked.
+**Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/<ticket-key>/screenshots/`, `reports/tickets/<ticket-key>/screenshots/`) stay tracked.
 
 ### 5.2 Motion evidence — a GIF when the defect IS the transition
 

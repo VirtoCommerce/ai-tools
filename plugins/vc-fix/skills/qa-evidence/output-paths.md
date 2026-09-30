@@ -53,14 +53,14 @@ whose file cannot be located is reported as missing, never assumed present.
 
 | Artifact Type | Path | Examples |
 |---------------|------|----------|
-| **Test documentation** (plans, cases, execution reports, testrail CSVs) | `reports/tickets/SprintXX-XX/VCST-XXXX/` | `test-plan.md`, `test-cases.md`, `test-execution-report.md`, `testrail-import.csv` |
-| **Test screenshots** (evidence captured during test execution) | `reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
+| **Test documentation** (plans, cases, execution reports, testrail CSVs) | `reports/tickets/SprintXX-XX/<ticket-key>/` | `test-plan.md`, `test-cases.md`, `test-execution-report.md`, `testrail-import.csv` |
+| **Test screenshots** (evidence captured during test execution) | `reports/tickets/SprintXX-XX/<ticket-key>/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
 | **Bug reports — open** (active bugs) | `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (`.claude/rules/reports.md` §1a) | `BUG-Checkout-Payment-Overlap-iOS.md` |
 | **Bug reports — fixed** (verified fixes, kept for regression reference) | `reports/bugs/fixed/` | `BUG-Cart-Total-Reset-VCST-4700.md` |
 | **Bug reports — closed** (won't fix, false positive, cannot reproduce) | `reports/bugs/closed/` | `BUG-GA4-add-payment-info.md` |
 | **Bug evidence** (screenshots & API traces for bugs) | `reports/bugs/screenshots/<bug-slug>/` and `reports/bugs/api-traces/` | `payment-form-broken-ios.png`, `graphql-error-response.json` |
 | **Browser capture landing zone** (raw `browser_take_screenshot` output — gitignored, disposable) | `reports/bugs/screenshots/_incoming/{browser}/` | pinned as the Playwright MCP `--output-dir`; Step 4a moves the keepers out |
-| **Ticket test evidence** (ad-hoc evidence with no sprint context) | `reports/tickets/VCST-XXXX/` | `test-report.md`, `screenshots/*.png` — use only for hotfix or ad-hoc verification outside a sprint |
+| **Ticket test evidence** (ad-hoc evidence with no sprint context) | `reports/tickets/<ticket-key>/` | `test-report.md`, `screenshots/*.png` — use only for hotfix or ad-hoc verification outside a sprint |
 | **Regression reports** (suite-level & consolidated reports) | `reports/regression/` | `frontend-regression-report-2026-02-09.md` |
 | **Full regression runs** (multi-suite reports) | `reports/regression/REG-YYYY-MM-DD-HHMM/` | suite reports, `REGRESSION-REPORT.md` |
 | **Smoke test runs** (`/qa-smoke` Track A + Track B) | `reports/regression/SMOKE-YYYY-MM-DD-HHMM/` | `smoke-report.md`, `suite-01-trackA-results.json`, `suite-01-trackB-results.json`, `trackA-evidence/`, `trackB-evidence/` |
@@ -75,9 +75,9 @@ whose file cannot be located is reported as missing, never assumed present.
 ## Naming Conventions
 
 - **Bug reports:** `reports/bugs/open/<bucket>/BUG-{Short-Description}.md` (e.g., `BUG-Guest-Checkout-Email-Validation.md`)
-- **Bug reports with a tracker ref:** `reports/bugs/open/BUG-{Description}-{KEY}.md` — `{KEY}` is the tracker's own key format (Jira `VCST-XXXX`, Azure Boards a bare numeric `12345`)
+- **Bug reports with a tracker ref:** `reports/bugs/open/BUG-{Description}-{KEY}.md` — `{KEY}` is the tracker's own key format (Jira `ABC-123`, Azure Boards a bare numeric `12345`)
 - **Bug lifecycle:** `open/` → (verified fix) → `fixed/` | (false positive/won't fix) → `closed/`
-- **Ticket evidence:** `reports/tickets/{KEY}/test-report.md` (e.g. `VCST-XXXX/` on Jira, `12345/` on Azure Boards)
+- **Ticket evidence:** `reports/tickets/{KEY}/test-report.md` (e.g. `ABC-123/` on Jira, `12345/` on Azure Boards)
 - **Screenshots:** `{component-name}-{state}-{viewport}.png` or `{test-case-id}-{description}.png`
 - **Test execution reports:** `test-execution-report.md` (one per ticket folder)
 - **Regression reports:** `{suite-name}-report.md` or `{area}-regression-report-YYYY-MM-DD.md`
@@ -91,7 +91,7 @@ whose file cannot be located is reported as missing, never assumed present.
 ## Folder Structure Per Ticket
 
 ```
-reports/tickets/SprintXX-XX/VCST-XXXX-feature-name/
+reports/tickets/SprintXX-XX/<ticket-key>-feature-name/
 ├── test-plan.md
 ├── test-cases.md
 ├── test-execution-report.md
@@ -109,6 +109,6 @@ reports/tickets/SprintXX-XX/VCST-XXXX-feature-name/
   browser output (HAR, videos, console logs, un-kept captures) — never the path a report cites
 - `reports/` is tracked in git -- use it for all documentation artifacts (the top-level `tests/` dir now holds only repo unit tests, not QA evidence)
 - Never save test documentation into `test-results/` and never save raw browser dumps into `reports/`
-- **Never create `reports/VCST-XXXX/` directly** — ticket folders belong under `reports/tickets/SprintXX-XX/VCST-XXXX/` (sprint context) or `reports/tickets/VCST-XXXX/` (ad-hoc, no sprint subfolder)
-- **Default for `/qa-bug` / `/qa-fix` / `/qa-verify-fix` evidence:** use `reports/tickets/VCST-XXXX/` for ad-hoc evidence with no sprint context
+- **Never create `reports/<ticket-key>/` directly** — ticket folders belong under `reports/tickets/SprintXX-XX/<ticket-key>/` (sprint context) or `reports/tickets/<ticket-key>/` (ad-hoc, no sprint subfolder)
+- **Default for `/qa-bug` / `/qa-fix` / `/qa-verify-fix` evidence:** use `reports/tickets/<ticket-key>/` for ad-hoc evidence with no sprint context
 - See `reports/README.md` for full naming convention reference

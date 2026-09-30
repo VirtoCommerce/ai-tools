@@ -29,7 +29,7 @@ diverge from it.
 | vc-frontend storefront anatomy, Vue 3 / TS / vitest / Storybook conventions | `knowledge/architecture/vc-frontend-architecture.md` |
 | BL-* invariants / historical failures | `business-logic.md`, `vc-bug-catalog.md` |
 | Workspace | `.fix-workspace/<repo>/` (gitignored) |
-| Branch | `claude/qa-autofix/VCST-XXXX` |
+| Branch | `claude/qa-autofix/<ticket-key>` |
 | Output | `reports/fixes/FIX-*/` |
 
 ## Checkout hygiene — absolute paths only, never a `cd`-chain
@@ -173,7 +173,7 @@ Load the token once per shell command (it does not persist between Bash calls) a
 ```bash
 FIX=$(grep '^GITHUB_FIX_BUGS_TOKEN=' .env.local | sed 's/^GITHUB_FIX_BUGS_TOKEN=//' | awk '{print $1}')
 GH_TOKEN="$FIX" gh repo clone VirtoCommerce/<repo> ...          # clone  (gh honours GH_TOKEN)
-GH_TOKEN="$FIX" git -c credential.helper='!gh auth git-credential' push -u origin claude/qa-autofix/VCST-XXXX
+GH_TOKEN="$FIX" git -c credential.helper='!gh auth git-credential' push -u origin claude/qa-autofix/<ticket-key>
 GH_TOKEN="$FIX" gh pr create ...                                # PR
 ```
 The explicit `-c credential.helper='!gh auth git-credential'` on `git push` is **required**: this
@@ -211,7 +211,7 @@ GH_LOGIN=$(GH_TOKEN="$FIX" gh api user --jq .login)
 GH_NAME=$(GH_TOKEN="$FIX" gh api user --jq '.name // .login')
 GH_UID=$(GH_TOKEN="$FIX" gh api user --jq .id)
 git -c user.name="$GH_NAME" -c user.email="${GH_UID}+${GH_LOGIN}@users.noreply.github.com" \
-  commit -m "fix(<scope>): <imperative summary> (VCST-XXXX)
+  commit -m "fix(<scope>): <imperative summary> (<ticket-key>)
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -222,9 +222,9 @@ this identity was applied, **re-author and force-push** (`git commit --amend --r
 `git rebase --root --exec` for multiple) so CLA can re-evaluate.
 
 ### Ticket key format follows the tracker (not always `VCST-`)
-The examples below say `VCST-XXXX`, but the **key format depends on the deployment's tracker**: a client
+`<ticket-key>` in the examples is the tracker's own key, and its **format depends on the deployment's tracker**: a client
 Jira uses its own prefix (`ABC-123`), and **Azure Boards work items are bare numeric ids** (`12345`, no
-letter prefix). Use whatever key/id the tracker gave you verbatim — the branch (`claude/qa-autofix/<key>`),
+letter prefix). Use whatever key/id the tracker gave you verbatim — the branch (`claude/qa-autofix/<ticket-key>`),
 commit reference, and PR title all take it as-is. For **cross-linking** into the tracker from a commit/PR:
 Jira auto-links the bare key (`ABC-123`); Azure Boards links a work item via `AB#12345`. Don't assume a
 `VCST-` prefix anywhere.
@@ -295,7 +295,7 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
 3. **Minimal diff.** No refactors, no nuget/dep bumps, no formatting churn, no unrelated files.
    **Comments: brief, only when necessary.** Don't narrate the change or restate what the code
    already says; add a comment only for genuinely non-obvious *why* (a subtle guard, a workaround, a
-   BL-* / edge-case rationale). No "// added for VCST-XXXX", no step-by-step play-by-play, no
+   BL-* / edge-case rationale). No "// added for <ticket-key>", no step-by-step play-by-play, no
    re-commenting untouched code. Match the density of the surrounding file.
 4. **No breaking changes.** No public REST/GraphQL/DTO/contract change, DB schema/migration, domain
    event shape, or `module.manifest` change. Any of these → STOP (Gate 0 boundary).

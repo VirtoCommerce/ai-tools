@@ -1,7 +1,7 @@
 ---
 name: qa-checklist
 description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses 63 built-in domain checklists (33 storefront + 29 backend/admin + 1 GraphQL) + custom creation."
-argument-hint: "domain name | feature | VCST-XXXX | new <domain> | admin <module>"
+argument-hint: "domain name | feature | <ticket-key> | new <domain> | admin <module>"
 disable-model-invocation: true
 
 ---

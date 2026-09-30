@@ -87,7 +87,7 @@ harness.
   BAIL-back (`FIX_STATUS: FAILED`, reason: no test harness) rather than scaffolding a risky one.
 - **Module Admin UI (AngularJS):** NO in-repo JS harness exists in any `vc-module-*` (no package.json
   / Karma / specs under `Web/Scripts/` — org-wide survey 2026-06). Red→green is proven via an
-  uncommitted Node scratch harness in `.fix-workspace/_scratch/VCST-XXXX/` (stub `angular`, require
+  uncommitted Node scratch harness in `.fix-workspace/_scratch/<ticket-key>/` (stub `angular`, require
   the real blade/service file, assert the seam); evidence goes in the PR body. Never scaffold a JS
   test harness into the module. See `/angular-admin` `scratch-harness-patterns.md`. **Layout/CSS/visual
   bugs:** mirror the platform's canonical classes (`/angular-admin` `admin-spa-ui-conventions.md` — there is
@@ -110,7 +110,7 @@ bump dependents). The live dependency/impact graph is read from the Platform API
 ## 6. Branch / PR / verification conventions
 
 - **Workspace:** `.fix-workspace/<repo>/` (gitignored). **One** repo per run.
-- **Branch:** `claude/qa-autofix/VCST-XXXX` (from `checkoutForFix`). **Commit:** Conventional Commits +
+- **Branch:** `claude/qa-autofix/<ticket-key>` (from `checkoutForFix`). **Commit:** Conventional Commits +
   JIRA key, e.g. `fix(pricing): apply coupon to post-tier amount (VCST-1234)`.
 - **PR:** `gh pr create` (`/qa-fix`: a normal PR for human review), title `fix(<KEY>): <imperative>`, body from the one PR body template — consumer sections, collapsed
   red→green evidence, the repo's own References block, "do not auto-merge" footer (template: `knowledge/agents/developers/pr-body-template.md`).

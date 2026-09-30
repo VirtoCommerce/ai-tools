@@ -31,7 +31,7 @@ Routing, the repo allowlist, and the org are **config** (`skills/qa-fix-routing/
 via `FIX_REPO_ORG` for customer forks / other projects) — `/qa-fix` reads them via
 `skills/qa-fix-routing/repo-router.ts` (`suggestRepo` / `isAllowedRepo` / `repoProfile` / `checkoutForFix`) and the
 live module graph (`skills/qa-fix-routing/module-registry.ts`). Workspace `.fix-workspace/`, branch
-`claude/qa-autofix/VCST-XXXX`, output `reports/fixes/FIX-*/`.
+`claude/qa-autofix/<ticket-key>`, output `reports/fixes/FIX-*/`.
 
 > **Profile-driven, not Jira/GitHub-hardcoded.** Which **bug tracker** (Jira / Azure Boards) and
 > **code host** (GitHub / Azure Repos) every phase talks to comes from `project-profile.json`
@@ -234,7 +234,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
 > `/angular-admin` (backend) or `/vue-unit-test` (+ `/storybook-test` for UI-kit interaction bugs,
 > optional) (frontend) or `/vc-shell-fix` (a module-embedded sub-app override matched at Gate 1).
 
-- Clone the one routed repo into `.fix-workspace/` on branch `claude/qa-autofix/VCST-XXXX` (reuse
+- Clone the one routed repo into `.fix-workspace/` on branch `claude/qa-autofix/<ticket-key>` (reuse
   `checkoutForFix`; base = detected default branch). Use the repo's own test command (`repoProfile`).
 - Add a NEW failing test encoding the STR/RCA → confirm **RED**, **in the medium the symptom is observed
   in** — a rendered-DOM symptom needs a rendered-DOM red (`quality-gates.md` G2 MEDIUM RULE). The
@@ -369,7 +369,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   `PASS_PROXY` survived in the artifact) — (ticket, repo, kind, branch, PR URL, gate
   results, confidence). Print the PR link. **End.** Never merge, never auto-advance past On Review.
   Post-merge/deploy verification (and the move toward Ready for QA / Tested on QA) is the separate
-  `/qa-verify-fix VCST-XXXX`.
+  `/qa-verify-fix <ticket-key>`.
 - **Signal completion (self-diagnostics — the LAST action, on EVERY terminal exit).** After the report /
   PR link above — and **equally** on any earlier Gate 0/1 **BAIL / STOP** (a clean bail is a completed
   run) — run this once (best-effort, silent, never blocks; `$pluginRoot` was already resolved in Phase 1):
@@ -386,7 +386,7 @@ Run `/qa-fix` unattended as a **Claude Code Routine** (`/schedule`) rather than 
 routine runs headless on a cron (min 1h) over the code-host + tracker connectors and can invoke this
 command (e.g. *"scan the tracker for the `qa-autofix` label/tag, run `/qa-fix` on the top N eligible,
 open PRs"* — Jira JQL or Azure Boards WIQL per `tracker.kind`).
-This is why the work branch is **`claude/`-prefixed** (`claude/qa-autofix/VCST-XXXX`): routines may
+This is why the work branch is **`claude/`-prefixed** (`claude/qa-autofix/<ticket-key>`): routines may
 only push `claude/*` branches by default.
 
 ## Rules
@@ -396,7 +396,7 @@ only push `claude/*` branches by default.
   skill; `backend-reviewer` adds only the VC-specific gate checklist on top.
 - Reuse `skills/qa-fix-routing/fix-repos.json` + `skills/qa-fix-routing/repo-router.ts` + `skills/qa-fix-routing/module-registry.ts` — do not
   reinvent routing/checkout. Other org / customer fork → `FIX_REPO_ORG`. Workspace `.fix-workspace/`,
-  branch `claude/qa-autofix/VCST-XXXX`, output `reports/fixes/FIX-*/`.
+  branch `claude/qa-autofix/<ticket-key>`, output `reports/fixes/FIX-*/`.
 - Never modify existing tests (ADD only). Never auto-merge. Never echo any PAT. **Remote-write auth is
   per host** (`tracker-ops.md` §3): GitHub PAT host → `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`),
   not the ambient read-only token; GitHub `gh-cli` host → the ambient logged-in `gh`; Azure Repos →

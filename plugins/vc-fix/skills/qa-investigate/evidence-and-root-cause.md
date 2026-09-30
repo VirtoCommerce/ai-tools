@@ -104,7 +104,7 @@ Fill every section; an empty "Alternatives ruled out" or a claim with no evidenc
 investigation, not a root cause.
 
 ```markdown
-## Root-Cause Worksheet — VCST-XXXX
+## Root-Cause Worksheet — <ticket-key>
 
 ### 1. Symptom (one line, observable)
 <what a user sees — not the cause>

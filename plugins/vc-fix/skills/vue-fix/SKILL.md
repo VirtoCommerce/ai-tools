@@ -9,7 +9,7 @@ Turn the red reproduction test (`/vue-unit-test`) green with the **smallest corr
 the typecheck + lint + test (+ build) gate. This is **Gate 3** of `.claude/rules/quality-gates.md`.
 
 ## Preconditions
-- Source checked out in `.fix-workspace/vc-frontend/` on branch `claude/qa-autofix/VCST-XXXX` (base `dev`).
+- Source checked out in `.fix-workspace/vc-frontend/` on branch `claude/qa-autofix/<ticket-key>` (base `dev`).
 - A NEW failing vitest test exists (Gate 2) or trivial-skip is justified.
 
 ## Steps

@@ -1,7 +1,7 @@
 ---
 name: qa-investigate
 description: "[QA Method] Bug investigation: reproduce, isolate root cause, gather evidence, common VC patterns."
-argument-hint: "bug description | VCST-XXXX"
+argument-hint: "bug description | <ticket-key>"
 disable-model-invocation: true
 ---
 

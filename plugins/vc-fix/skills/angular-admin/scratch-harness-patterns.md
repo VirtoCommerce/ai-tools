@@ -2,7 +2,7 @@
 
 No `vc-module-*` repo has a JS test harness (no package.json / Karma / specs under `Web/Scripts/`),
 so Gate 2 evidence comes from a **throwaway Node script** that loads the real AngularJS file with a
-stubbed `angular` global. It lives in `.fix-workspace/_scratch/VCST-XXXX/` and is **never committed**
+stubbed `angular` global. It lives in `.fix-workspace/_scratch/<ticket-key>/` and is **never committed**
 — the PR carries only its output (red run + green run) in the body.
 
 This recipe was verified against a real blade controller (vc-module-inventory
@@ -19,7 +19,7 @@ stubbed collaborators.
 ## The harness (`repro.cjs` — extension matters: the workspace inherits `"type": "module"`)
 
 ```js
-// .fix-workspace/_scratch/VCST-XXXX/repro.cjs   — run: node repro.cjs
+// .fix-workspace/_scratch/<ticket-key>/repro.cjs   — run: node repro.cjs
 const assert = require('node:assert');
 const util = require('node:util');
 
@@ -61,7 +61,7 @@ $scope.blade.refresh();
 // Assert the EXPECTED (post-fix) behavior — this must FAIL before the fix:
 assert.strictEqual(fetched, 'FC-1', 'refresh() loads the blade entity by id');
 assert.strictEqual($scope.blade.isLoading, false, 'loading flag cleared after fetch');
-console.log('GREEN — VCST-XXXX repro passes');
+console.log('GREEN — <ticket-key> repro passes');
 ```
 
 Red = non-zero exit with the AssertionError; green = exit 0. Save both transcripts for the PR body:
@@ -71,7 +71,7 @@ Red = non-zero exit with the AssertionError; green = exit 0. Save both transcrip
 $ node repro.cjs          # before fix
 AssertionError: loading flag cleared after fetch   ← red
 $ node repro.cjs          # after fix
-GREEN — VCST-XXXX repro passes
+GREEN — <ticket-key> repro passes
 ```
 
 ## Gotchas (each one cost a real debugging round)

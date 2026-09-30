@@ -67,8 +67,8 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 |---------|---------|
 | `/project-init` | Onboard this plugin: env name, bug tracker (Jira/Azure Boards), code host (GitHub/Azure Repos), auth, discover client/platform repo split, write `project-profile.json` + `.env.<env>` + `.mcp.json`, verify access. Day-2 modes (skip the interview): **`--add-env`** adds another environment (URLs + per-env access creds) to an onboarded project; **`--check`** reconciles the profile to the current schema after an upgrade, then verifies |
 | `/qa-bug [description]` | Reproduce, document, and optionally file a bug |
-| `/qa-fix VCST-XXXX` | Autonomous fix of an already-filed bug: triage → root-cause + single-repo route → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review (never auto-merges) |
-| `/qa-verify-fix VCST-XXXX` | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition the ticket |
+| `/qa-fix <ticket-key>` | Autonomous fix of an already-filed bug: triage → root-cause + single-repo route → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review (never auto-merges) |
+| `/qa-verify-fix <ticket-key>` | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition the ticket |
 | `/qa-monitoring [layer]` | Online bug monitoring from App Insights: query → dedup (fingerprint) → triage → live repro → report. Detect-and-report only — never files a ticket or auto-fixes |
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers |
 | `/vc-self-check` | Self-diagnostics (Tier B): read this session's passive telemetry (`hooks/session-telemetry.mjs` → `.vc-fix/diagnostics/`) + transcript + the `knowledge/diagnostics/skill-expectations.md` oracle → per-skill verdict + severity + proposed fix → LOCAL `DIAG-*.md`. `deliver` sub-step contributes a scrubbed, consent-gated PR/issue to VirtoCommerce. Never modifies the install; model-invocable (no `disable-model-invocation`) so the end-of-turn tail-trigger can auto-run it silently; recursion blocked by span-drop + `selfCheckSeen` + per-signature dedup |
@@ -86,7 +86,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 ```
                         USER
               ┌──────────┼──────────┬──────────────┐
-       /project-init   /qa-bug   /qa-fix VCST-XXXX   /qa-verify-fix VCST-XXXX
+       /project-init   /qa-bug   /qa-fix <ticket-key>   /qa-verify-fix <ticket-key>
                           │           │                        │
                     qa-testing-  triage (G0/G1) via       qa-backend-expert /
                     expert /     skills/qa-fix-routing/    qa-frontend-expert

@@ -106,7 +106,7 @@ Invoke the development skills:
 8. **Commit & push & PR** — `git commit` (Conventional Commits + JIRA key), **authored as the human
    token-owner with Claude as `Co-Authored-By`** (CLA Assistant blocks bot-authored commits — exact
    `git -c user.name/user.email …` pattern in `shared-instructions.md` §Commit identity) → `git push -u
-   origin claude/qa-autofix/VCST-XXXX` → `gh pr create` (a normal PR for human review — **not**
+   origin claude/qa-autofix/<ticket-key>` → `gh pr create` (a normal PR for human review — **not**
    auto-merged). Write `PR_BODY.md` (template below). **Target follows the repo's ownership** (see
    `shared-instructions.md` §Where the fix goes): a **client** module → PR on the client repo (GitHub or
    Azure Repos); a **platform** module with operator=client → a **fork** PR (`--head <forkOwner>:<branch>`);
