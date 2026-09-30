@@ -259,6 +259,19 @@ export function findSettingsSecrets(settingsJsonText) {
  *   "settings" — a credential here is BY DESIGN (this is the value's new home), so only EXPOSURE
  *                is a finding. A secret at rest in an ignored, untracked file is the target state.
  */
+/** The ids vc-fix can be installed under, in PRIORITY order: `vc-tools` is the marketplace's name
+ *  before the 2026-09-30 rename, so a pre-rename install still resolves, but never ahead of a new one. */
+export const VC_FIX_PLUGIN_IDS = ["vc-fix@ai-tools", "vc-fix@vc-tools"];
+
+/** Pick the vc-fix install from `claude plugin list --json`: the highest-priority id with an ENABLED
+ *  entry, else the highest-priority id with any entry. `enabledIds` lists every id that is enabled —
+ *  more than one means two copies' hooks.json each start a telemetry collector (CLAUDE.md, VCST-5582 H). */
+export function pickPluginInstall(list, ids = VC_FIX_PLUGIN_IDS) {
+  const find = (id, enabledOnly) => list.find((x) => x.id === id && (!enabledOnly || x.enabled));
+  const first = (enabledOnly) => ids.map((id) => find(id, enabledOnly)).find(Boolean);
+  return { entry: first(true) || first(false) || null, enabledIds: ids.filter((id) => find(id, true)) };
+}
+
 export function gradeSecretHygiene({ kind, file, hits, weak = [], unparsable, inRepo, ignored, tracked }) {
   const exposed = inRepo && (tracked || !ignored);
   const why = tracked ? "tracked by git" : "not gitignored";
@@ -414,19 +427,20 @@ async function main() {
   // 1b. The ACTIVE plugin install resolves at runtime + the routing helper is present.
   //     /qa-fix / /qa-bug launch `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …` where
   //     $pluginRoot is resolved from `claude plugin list --json` (the enabled
-  //     vc-fix@ai-tools installPath, or vc-fix@vc-tools for a pre-rename install — knowledge/execution/plugin-root.md), NOT a baked
+  //     vc-fix install, by VC_FIX_PLUGIN_IDS priority — knowledge/execution/plugin-root.md), NOT a baked
   //     profile field. Confirm that resolver works and points at a real install with the
   //     helper; fall back to this script's own location (import.meta.url) when the `claude`
   //     CLI isn't on PATH in the shell.
   let activeRoot = "";
   let cliOk = false;
+  let enabledIds = [];
   try {
     const raw = execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString();
     cliOk = true; // the CLI ran; activeRoot may still be "" if no enabled vc-fix entry matched
     const arr = JSON.parse(raw);
-    const ids = ["vc-fix@ai-tools", "vc-fix@vc-tools"]; // vc-tools = the marketplace name before 2026-09-30
-    const e = arr.find((x) => ids.includes(x.id) && x.enabled) || arr.find((x) => ids.includes(x.id));
-    activeRoot = e?.installPath || "";
+    const picked = pickPluginInstall(arr);
+    activeRoot = picked.entry?.installPath || "";
+    enabledIds = picked.enabledIds;
   } catch {
     /* claude CLI unavailable / not on PATH — fall back to self-location below */
   }
@@ -436,12 +450,16 @@ async function main() {
   } else if (!activeRoot && existsSync(resolve(selfRoot, "skills", "qa-fix-routing", "ado.mjs"))) {
     // Distinguish CLI-missing from CLI-ran-but-no-match: the fallback + fix advice differ.
     const why = cliOk
-      ? "`claude plugin list` ran but found no enabled vc-fix@ai-tools install (running from a checkout, or the plugin is disabled)"
+      ? `\`claude plugin list\` ran but found no enabled ${VC_FIX_PLUGIN_IDS.join(" / ")} install (running from a checkout, or the plugin is disabled)`
       : "`claude plugin list` unavailable in this shell — commands must use the cache-dir fallback (plugin-root.md)";
     add("Plugin root (claude plugin list)", "WARN", `${why}. Helper present at ${selfRoot}`);
   } else {
     add("Plugin root (claude plugin list)", "FAIL",
       "could not resolve the active vc-fix install (qa-fix-routing/ado.mjs missing) — re-install the plugin; see knowledge/execution/plugin-root.md");
+  }
+  if (enabledIds.length > 1) {
+    add("Plugin root (single install)", "WARN",
+      `${enabledIds.join(" and ")} are both enabled — each one's hooks.json starts its own telemetry collector, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${enabledIds.slice(1).join(", ")}) and restart Claude Code`);
   }
 
   // 2. Core env vars

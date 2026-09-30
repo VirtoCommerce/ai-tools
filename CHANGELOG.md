@@ -8,14 +8,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## The repository and the marketplace are renamed `ai-tools` — catalog `0.10.0` — 2026-09-30
+## The repository and the marketplace are renamed `ai-tools` — catalog `0.10.0`, `vc-fix` `0.9.3`, `vc-perf` `0.3.1` — 2026-09-30
 
 **BREAKING:** the marketplace `vc-tools` is now **`ai-tools`**, so plugin ids change from `vc-fix@vc-tools` /
-`vc-perf@vc-tools` to `vc-fix@ai-tools` / `vc-perf@ai-tools`. Plugin versions and tags are unchanged. The
-`claude plugin list` resolvers (`plugins/*/knowledge/…/plugin-root.md`, `project-init/verify-access.mjs`)
-accept both ids, so an install made before the rename keeps resolving.
-**Migration:** `/plugin marketplace add VirtoCommerce/ai-tools`, then `/plugin install vc-fix@ai-tools`
-(and `vc-perf@ai-tools` if you use it), then uninstall the old `…@vc-tools` entries and restart Claude Code.
+`vc-perf@vc-tools` to `vc-fix@ai-tools` / `vc-perf@ai-tools`. Both plugins bump a patch version, because their
+code changed (the `deliver` target, the install resolvers) and an unchanged version would never reach an
+existing install. The `claude plugin list` resolvers (`plugins/*/knowledge/…/plugin-root.md`,
+`project-init/verify-access.mjs` `pickPluginInstall`) accept both ids and always prefer `…@ai-tools`,
+whatever order the CLI prints them in. `/project-init`'s readiness table WARNs when both ids are enabled,
+because each copy's `hooks.json` starts its own telemetry collector (the duplicate-collector fault in
+`CLAUDE.md`, VCST-5582 H).
+**Migration — uninstall first, so two copies never run together:** `/plugin uninstall vc-fix@vc-tools` (and
+`vc-perf@vc-tools`), then `/plugin marketplace add VirtoCommerce/ai-tools`, `/plugin install vc-fix@ai-tools`
+(and `vc-perf@ai-tools` if you use it), then restart Claude Code.
 
 **Changed:** GitHub repo `VirtoCommerce/vc-mcp-testing-module` → `VirtoCommerce/ai-tools`. Every live reference
 now uses the new name: the marketplace-add command in the READMEs, onboarding and workshop material,
