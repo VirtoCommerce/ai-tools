@@ -360,7 +360,7 @@ Next: review the plan, then either:
 - The sprint window for PRs is the **JIRA sprint dates**, not arbitrary dates. Honor `--from` / `--to` only when explicitly given.
 - **Bugs and Stories only** drive scope (Section 2.1 / 2.2). Tasks/TechDebt go to Section 2.3 only if they touch UI selectors or data-test-ids (test-impact). Otherwise → Section 2.4 Out of Scope.
 - **Group risk by domain**, not by ticket. The plan stays readable.
-- **Never assert exact prices, IDs, SKUs, order numbers** in the plan — refer to test data files / `@td(ALIAS.field)` resolver per `feedback_flexible_test_cases.md`.
+- **Never assert exact prices, IDs, SKUs, order numbers** in the plan — refer to test data files / `@td(ALIAS.field)` resolver.
 - **Read URLs from `config.js` / `.env`** — never hardcode `vcst-qa.virtocommerce.com` in the plan body; use `{FRONT_URL}` / `{BACK_URL}`.
 - **No fabricated suite IDs.** Every suite in Section 5.1 must exist in `config/test-suites.json`. If a domain has no existing suite, list it in 5.2 (Coverage Gap) and propose a target suite.
 - **Charters are DERIVED, never invented.** Section 5.3 is a filter over Sections 3 + 5.2 per `.claude/skills/qa-sbtm/sprint-charter-selection.md` — never a domain absent from §3, never a suite absent from §5.1. Same discipline as the no-fabricated-suite-IDs rule above.

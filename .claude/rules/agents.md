@@ -51,7 +51,7 @@ Team framework: `knowledge/agents/ba/shared-instructions.md` (VirtoOZ-first sour
 - All BA agents use **GitHub MCP** to search VirtoCommerce module repos (`org:VirtoCommerce vc-module-*`) and **VirtoOZ MCP** (via `/vc-docs`) to ground terminology/voice
 - `ba-system-analyzer` and `ba-api-specialist` use browsers for live UI analysis (see assignments below)
 - `ba-story-writer` consumes other agents' output (no browser/GitHub); `ba-doc-writer` uses a browser **only** to capture real screenshots for Customer/Admin docs
-- **Documentation audiences:** `ba-doc-writer` writes for four audiences — Customer (StorefrontUserGuide style), Admin (PlatformUserGuide style), Developer (PlatformDeveloperGuide style), and **Sales** (virtocommerce.com benefit-led marketing). Invoked via `/ba-analyze docs [audience]`. Virto's customers/partners are B2B enterprise organizations — see `reference_virto_customer_base` memory.
+- **Documentation audiences:** `ba-doc-writer` writes for four audiences — Customer (StorefrontUserGuide style), Admin (PlatformUserGuide style), Developer (PlatformDeveloperGuide style), and **Sales** (virtocommerce.com benefit-led marketing). Invoked via `/ba-analyze docs [audience]`. Virto's customers/partners are B2B enterprise organizations.
 
 ## Developers Team (+ shared-instructions)
 
