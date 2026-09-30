@@ -58,6 +58,7 @@
  * Exit 0 = at least one case promotable (dry run) or promoted; 1 = run usable but nothing
  * promotable; 2 = refused (run unusable / a suite unreadable / a write verification failed).
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync, statSync, writeFileSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";

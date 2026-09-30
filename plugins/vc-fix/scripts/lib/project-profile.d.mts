@@ -1,6 +1,6 @@
 /**
- * Type declarations for project-profile.mjs so the TypeScript side (ci/lib/*,
- * ci/run-fix-cycle.ts) gets real types under strict mode instead of implicit any.
+ * Type declarations for project-profile.mjs so the TypeScript side
+ * (skills/qa-fix-routing/*) gets real types under strict mode instead of implicit any.
  * Keep in sync with PROFILE_DEFAULTS in project-profile.mjs.
  */
 export interface ProfileRepo {

@@ -17,6 +17,7 @@
  *
  * Exit 1 on any violation.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,6 +30,9 @@ import {
   SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT, SALESREP_FULL_REQUIRED_PERMISSIONS, assertSalesRepFullRolePermissions,
   CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXCLUDED_PERMISSION,
   CATALOG_READONLY_EXCLUDED_PERMISSIONS, assertCatalogReadOnlyRolePermissions,
+  BROWSEFILTERS_READONLY_ROLE, BROWSEFILTERS_READONLY_ACCOUNT, BROWSEFILTERS_READONLY_EXCLUDED_PERMISSION, assertBrowseFiltersReadOnlyRolePermissions,
+  BROWSEFILTERS_NONE_ROLE, BROWSEFILTERS_NONE_ACCOUNT, BROWSEFILTERS_NONE_EXCLUDED_PERMISSION, assertBrowseFiltersNoneRolePermissions,
+  BROWSEFILTERS_READ_PERMISSION,
   findGuidLeaks,
 } from './backoffice-rbac-specs.mjs';
 
@@ -99,6 +103,21 @@ catch (e) { fail(e.message); }
 try { assertCatalogReadOnlyRolePermissions(); ok(`role "${CATALOG_READONLY_ROLE.role_name}" is read-only catalog (PLAT-079) — holds catalog:access + catalog:read, excludes ${CATALOG_READONLY_EXCLUDED_PERMISSIONS.join(', ')}`); }
 catch (e) { fail(e.message); }
 
+try { assertBrowseFiltersReadOnlyRolePermissions(); ok(`role "${BROWSEFILTERS_READONLY_ROLE.role_name}" holds ${BROWSEFILTERS_READ_PERMISSION}, excludes ${BROWSEFILTERS_READONLY_EXCLUDED_PERMISSION} (VCST-2945 barcode settings: GET 200, PUT 403)`); }
+catch (e) { fail(e.message); }
+
+try { assertBrowseFiltersNoneRolePermissions(); ok(`role "${BROWSEFILTERS_NONE_ROLE.role_name}" holds no BrowseFilters permission (VCST-2945: GET, fields and PUT all 403)`); }
+catch (e) { fail(e.message); }
+
+// The two VCST-2945 roles must differ by EXACTLY catalog:BrowseFilters:Read — any other difference
+// would let a 200-vs-403 result be caused by something other than the permission under test.
+{
+  const a = new Set(BROWSEFILTERS_READONLY_ROLE.permissions); const b = new Set(BROWSEFILTERS_NONE_ROLE.permissions);
+  const diff = [...a].filter((x) => !b.has(x)).concat([...b].filter((x) => !a.has(x)));
+  if (diff.length === 1 && diff[0] === BROWSEFILTERS_READ_PERMISSION) ok(`BrowseFilters roles differ by exactly ${BROWSEFILTERS_READ_PERMISSION}`);
+  else fail(`BrowseFilters roles must differ by exactly ${BROWSEFILTERS_READ_PERMISSION}, they differ by [${diff.join(", ")}]`);
+}
+
 // 2. no GUID in the spec module (single scan covers both fixtures)
 const specSrc = readFileSync(join(ROOT, 'scripts/seed-data/platform/backoffice-rbac-specs.mjs'), 'utf8');
 const specLeaks = findGuidLeaks(specSrc);
@@ -113,6 +132,8 @@ checkAlias(SALESREP_ACCOUNTOPS_ROLE, SALESREP_ACCOUNTOPS_ACCOUNT, SALESREP_ACCOU
 checkAlias(SALESREP_MEMBERONLY_ROLE, SALESREP_MEMBERONLY_ACCOUNT, SALESREP_MEMBERONLY_EXCLUDED_PERMISSION);
 checkAlias(SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT, null); // positive control — no boundary perm
 checkAlias(CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXCLUDED_PERMISSION);
+checkAlias(BROWSEFILTERS_READONLY_ROLE, BROWSEFILTERS_READONLY_ACCOUNT, BROWSEFILTERS_READONLY_EXCLUDED_PERMISSION);
+checkAlias(BROWSEFILTERS_NONE_ROLE, BROWSEFILTERS_NONE_ACCOUNT, BROWSEFILTERS_NONE_EXCLUDED_PERMISSION);
 
 console.log(`\n${problems.length ? `FAILED — ${problems.length} problem(s)` : 'OK'}`);
 process.exit(problems.length ? 1 : 0);

@@ -14,6 +14,7 @@
 //      404'd and `?? null` swallowed it into `orgRowCount: null`, which reads as "no rows" —
 //      indistinguishable from an empty ledger, which is exactly the precondition LOYORG-E2E-002
 //      turns on.
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import '../../config.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

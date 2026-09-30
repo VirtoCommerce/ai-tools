@@ -180,6 +180,21 @@ test("buildRows stamps a Probe only when the plan supplies one, and validates it
   assert.ok(bad.errors.some((e) => e.includes("is not a VC-*-NNN id")));
 });
 
+test("buildRows persists Behavior/DataProfile stamps the models checker reads, and validates their shape", () => {
+  const ok = buildRows(
+    plan({ cases: [planCase({ behavior: "loy.mission.reversal", dataProfile: "profile.loy.reversal" })] }),
+    VOCAB,
+    noSweeps,
+  );
+  assert.deepEqual(ok.errors, []);
+  assert.match(ok.rows[0].References, /Behavior:loy\.mission\.reversal · DataProfile:profile\.loy\.reversal/);
+  assert.doesNotMatch(buildRows(plan({ cases: [planCase()] }), VOCAB, noSweeps).rows[0].References, /Behavior:/);
+
+  const bad = buildRows(plan({ cases: [planCase({ behavior: "Reversal", dataProfile: "loy.reversal" })] }), VOCAB, noSweeps);
+  assert.ok(bad.errors.some((e) => e.includes("not a dotted mind-map node id")));
+  assert.ok(bad.errors.some((e) => e.includes("not a profile.<slug>.<name> id")));
+});
+
 test("buildRows rejects an archetype outside the live vocabulary", () => {
   const { errors } = buildRows(plan({ cases: [planCase({ archetype: "FLAKY" })] }), VOCAB, noSweeps);
   assert.ok(errors.some((e) => e.includes("not in the vc-bug-catalog vocabulary")));

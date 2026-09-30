@@ -5,11 +5,10 @@ description: Repo/tracker routing library for the vc-fix plugin — decides whic
 
 # qa-fix-routing — repo + tracker routing library
 
-Self-contained TypeScript library extracted from `ci/lib/` so the `vc-fix` plugin
-does not depend on the `ci/` directory (the headless CI regression/fix pipeline)
-persisting or being installed. `/qa-fix` and `/project-init` invoke these modules
-directly (via a `tsx`/`node` one-off script, same pattern the original `ci/lib`
-files used) rather than authoring routing logic inline.
+Self-contained TypeScript library, so the `vc-fix` plugin does not depend on the
+`ci/` directory persisting or being installed. `/qa-fix` and `/project-init` invoke
+these modules directly (via a `tsx`/`node` one-off script) rather than authoring
+routing logic inline.
 
 ## Files
 
@@ -24,11 +23,9 @@ files used) rather than authoring routing logic inline.
 | `trackers/` | `Tracker` interface + `jira-tracker.ts` + `azure-tracker.ts` implementations + `index.ts` factory. |
 | `fix-repos.json` | Data: allowed-repo patterns/denylist/explicit kinds + routing keyword table. Override path via `FIX_REPOS_CONFIG`; org override via `FIX_REPO_ORG`. |
 
-## Why extracted (not referencing `ci/lib/` in place)
+## Why self-contained
 
-The original `ci/lib/repo-router.ts` etc. back the headless `ci/run-fix-cycle.ts`
-CI twin. `vc-fix` only needs the routing/checkout logic, not the CI orchestration
-— so it carries its own copy here. The `fix-repos.json` / `.module-registry.cache.json`
+The `fix-repos.json` / `.module-registry.cache.json`
 default paths resolve off this directory's own path (`SKILL_DIR`, from `skill-dir.ts`)
 rather than `process.cwd()` — still overridable via `FIX_REPOS_CONFIG` /
 `MODULE_REGISTRY_CACHE`. If `ci/` is ever removed from this repo, or this plugin

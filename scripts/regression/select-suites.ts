@@ -17,7 +17,7 @@
  * interesting diff is usually in another checkout. `--diff <range>` reads THIS repo (useful when
  * test cases themselves changed); `--changed-files <file>` and repeated `--path` take a list from
  * anywhere, which is how a product PR's file list gets in. `--repo` names the repository those
- * paths belong to, as `ci/config/fix-repos.json` names it — without it the paths cannot be placed.
+ * paths belong to, as `plugins/vc-fix/skills/qa-fix-routing/fix-repos.json` names it — without it the paths cannot be placed.
  *
  * Exit codes: 0 a selection was produced · 1 bad usage · 2 the manifest could not be read.
  *
@@ -28,6 +28,7 @@
  * cost for an unmeasured risk.
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 

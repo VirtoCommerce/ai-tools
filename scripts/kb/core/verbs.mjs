@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 import { canonicalStand, mintId } from './canonical.mjs';
 import { parseEntry } from './frontmatter.mjs';
-import { anchorProblems, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
+import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
 import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
@@ -777,20 +777,56 @@ async function openedThisSession({ env }) {
  * which names a directory on the writer's machine. The kind says what went wrong; the text that
  * went wrong stays on the laptop. `subject` travels, as it does on every capture line.
  */
-async function refuseAtDoor(result, input, { env, via, call, topic }) {
+async function refuseAtDoor(result, input, { env, via, call, topic, repair = {} }) {
+  // An `unstructured` verdict is either a rule too strict or a coordinate chosen badly, and the kind
+  // alone cannot say which (VCST-6102). The SHAPE can — segment count and path/dotted/prose — and
+  // it is numbers and an enum, so no part of the rejected value reaches the public log.
+  const shapes = (result.problems ?? []).filter((p) => p.kind === 'unstructured').map((p) => anchorShape(p.normalized));
   await log({
     kind: 'capture-invalid',
     subject: String(input.subject ?? '').trim(),
     why: result.why,
     ...(result.problems?.length ? { problems: [...new Set(result.problems.map((p) => p.kind))] } : {}),
+    ...(shapes.length ? { shapes } : {}),
+    ...repair,
     ...(await precedingAsk({ env, input }).then((after) => (after ? { after } : {}))),
     ...context({ via, call, topic }),
   }, { env });
   return result;
 }
 
-export async function capture(input, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
-  const door = { env, via, call, topic };
+/**
+ * Undo the MSYS rewrite on every capture field that gets published (VCST-6102). Under Git Bash an
+ * argument that STARTS with "/" reaches node as `C:/Program Files/Git/...`: `--anchor /api/x/y` was 16
+ * of 28 `capture-invalid` on 2026-09-28, and a subject or question starting with a route is mangled
+ * the same way. The rewrite is exactly "the MSYS root, prefixed" (`undoMsysRewrite`), so taking it off
+ * restores what was typed. An anchor still local afterwards is a real local path, and
+ * `anchorProblems` refuses it as before. `confirm`/`dispute` pass their own published fields.
+ */
+const TEXT_FIELDS = ['subject', 'question', 'claim'];
+
+function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
+  // Each of these is ONE argument, so only a root at its very start is the shell's doing.
+  const undo = (v) => (typeof v === 'string' ? undoMsysRewrite(v, env, { wholeArgument: true }) : v);
+  const out = { ...input };
+  for (const f of fields) out[f] = undo(input[f]);
+  if (Array.isArray(input.anchors)) {
+    out.anchors = input.anchors.map((a) => (typeof a === 'string' ? undo(a)
+      : typeof a?.coordinate === 'string' ? { ...a, coordinate: undo(a.coordinate) } : a));
+  }
+  const changed = fields.some((f) => out[f] !== input[f])
+    || (out.anchors ?? []).some((a, i) => JSON.stringify(a) !== JSON.stringify(input.anchors[i]));
+  return { input: out, repair: changed ? { repaired: 'msys' } : {} };
+}
+
+/** The marker rides on EVERY result from one place, rather than being threaded through each return. */
+export async function capture(input, opened, opts = {}) {
+  const { input: fixed, repair } = repairShellRewrite(input, opts.env ?? process.env);
+  return { ...(await captureRepaired(fixed, opened, { ...opts, repair })), ...repair };
+}
+
+async function captureRepaired(input, opened, { env = process.env, via = null, call = null, topic = null, repair = {} } = {}) {
+  const door = { env, via, call, topic, repair };
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
   if (missing.length) return refuseAtDoor({ state: 'invalid', why: `capture needs: ${missing.join(', ')}` }, input, door);
@@ -803,7 +839,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
   const late = anchorProblems(input.anchors, { namespaces: namespaceRoots(cat.rows) });
@@ -817,18 +853,19 @@ export async function capture(input, opened, { env = process.env, via = null, ca
 
   // THE DEDUP CHECK. Runs here against the session's index, and AGAIN at push time against the
   // freshly re-read one -- which is what makes it race-free rather than merely likely (PLAN §2).
-  const dupe = findDuplicate(cat.rows, { anchors: input.anchors, scope });
+  // Anchors + scope + CLAIM (VCST-6102): the same coordinate with a different subject is a new fact.
+  const dupe = findDuplicate(cat.rows, { anchors: input.anchors, scope, subject: input.subject });
   if (dupe) {
     await log({
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
-      why: 'anchors+scope', when: 'call', ...(after ? { after } : {}), ...context({ via, call, topic }),
+      why: 'anchors+scope+claim', when: 'call', ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
     }, { env });
     return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
   }
 
   const id = mintId(input.subject);
   // THE SUBJECT IS TAKEN, at other coordinates — the case `findDuplicate` cannot see because it
-  // compares anchors and scope only, while the id is a pure function of the subject. Accepting it
+  // requires the same anchors and scope as well as the claim, while the id is a pure function of the subject. Accepting it
   // as `queued` told the writer it landed and then lost the claim at push (PR #313 review 2).
   const holder = cat.rows.find((r) => r.id === id);
   if (holder) {
@@ -836,7 +873,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
     await log({
       kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
-      ...(after ? { after } : {}), ...context({ via, call, topic }),
+      ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
     }, { env });
     return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
   }
@@ -922,6 +959,7 @@ export async function capture(input, opened, { env = process.env, via = null, ca
     // question in this log is written by our own sessions about our own QA stands, which is the
     // same standing `q` on `ask` has always had.
     question: input.question,
+    ...repair,
     ...(after ? { after } : {}),
     // WHAT was surfaced, not how many. It shipped as a count on 2026-09-19 and was too thin within
     // hours of meeting real traffic: a session was shown three related entries, then DISPUTED one --
@@ -956,10 +994,10 @@ export async function capture(input, opened, { env = process.env, via = null, ca
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────
 
-async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
+async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null, repair = {} } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind, id, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
+    await log({ kind, id, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
@@ -1003,6 +1041,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     //
     // It is still in `payload` (local, never published) and still on the entry. Nothing is lost.
     ...(kind === 'confirm' ? { trust: row.trust + 1 } : {}),
+    ...repair,
     ...context({ via, call, topic }),
     payload: { id: row.id, path: row.path, item },
   }, { env });
@@ -1014,8 +1053,15 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   return { state: 'queued', id: row.id, row, item, queuedTo: written.path, logWrite: written };
 }
 
-export const confirm = (id, input, opened, opts) => appendEvidence('confirm', id, input, opened, opts);
-export const dispute = (id, input, opened, opts) => appendEvidence('dispute', id, input, opened, opts);
+// `--saw` and `--note` land on the entry, which is public, and Git Bash rewrites them like any other
+// argument that starts with "/" (VCST-6102). Same repair and same marker as `capture`.
+async function evidenceVerb(kind, id, input, opened, opts = {}) {
+  const { input: fixed, repair } = repairShellRewrite(input, opts.env ?? process.env, ['saw', 'note']);
+  return { ...(await appendEvidence(kind, id, fixed, opened, { ...opts, repair })), ...repair };
+}
+
+export const confirm = (id, input, opened, opts) => evidenceVerb('confirm', id, input, opened, opts);
+export const dispute = (id, input, opened, opts) => evidenceVerb('dispute', id, input, opened, opts);
 
 // ── stat ──────────────────────────────────────────────────────────────────────────────────────
 

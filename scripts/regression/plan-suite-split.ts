@@ -35,6 +35,7 @@
 //   npm run suites:split -- <SUITE_ID> [--max-cases 60] [--depth 2] [--names slug-a,slug-b]
 //   npm run suites:split:apply -- <SUITE_ID> [...]
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { parse as parseCsv } from "csv-parse/sync";

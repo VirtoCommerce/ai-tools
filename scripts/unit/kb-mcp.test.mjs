@@ -188,9 +188,11 @@ test('a capture the base already holds is REFUSED — and a refusal is not an er
   const q = scratch('dupe');
   try {
     const r = await call(fixtureServer(q.dir), 'kb_capture', {
-      subject: 'members list Active column means something else entirely',
+      // KB-27B4CD10's own claim, re-cased and re-punctuated. A DIFFERENT subject here used to be
+      // refused too, which was VCST-6102; a different fact at these coordinates is now queued.
+      subject: 'Storefront members: Active column reads contact status, not account state',
       question: 'what does Active mean',
-      claim: 'A second entry about the same coordinates.',
+      claim: 'The same fact, observed again.',
       deployment: 'vcst_qa',
       anchors: ['/company/members', 'Query.organizationContacts'],
       scope: ['surface=storefront-ui', 'surface=storefront-xapi'],

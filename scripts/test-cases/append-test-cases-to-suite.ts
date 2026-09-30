@@ -38,6 +38,7 @@
  *
  * Exit code 0 = appended (or dry-run clean); 1 = validation/verify failure (nothing written).
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "fs";
 import { join, resolve } from "path";
 import { fileURLToPath } from "url";

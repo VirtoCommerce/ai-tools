@@ -36,8 +36,7 @@ orchestration, no BA team, no Storybook/a11y/design-system tooling. Those live o
 
 The **only write-capable team** (clone / branch / commit / push / open PR via local `git`/`gh`). QA
 agents stay read-only. Driven by `/qa-fix`; reuses the self-contained `skills/qa-fix-routing/`
-skill (an extract of `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts` etc. from the full
-`vc-qa` plugin's `ci/` directory — not shipped here). **One developer + one reviewer per repo
+skill. **One developer + one reviewer per repo
 kind**, picked by the routed repo's `kind`. Gate ladder: `.claude/rules/quality-gates.md`. **Never
 auto-merges.** No browser.
 

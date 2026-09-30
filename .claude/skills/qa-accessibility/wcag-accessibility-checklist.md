@@ -30,7 +30,7 @@ superset). For an EU-reachable storefront, treat AA violations on public routes 
 |---|---|---|---|
 | **2.4.11 Focus Not Obscured (Minimum)** | AA | **Manual** | Sticky header / footer / cookie banner must not cover the focused field — common on `/checkout` and `/cart` |
 | **2.5.7 Dragging Movements** | AA | **Manual** | Quantity steppers, address-map pins, carousels need single-pointer alternative |
-| **2.5.8 Target Size (Minimum)** | AA | **Partial (axe nascent)** | Interactive targets ≥ **24×24 CSS px**. 44×44 stays as mobile guidance (and 2.5.5 AAA). |
+| **2.5.8 Target Size (Minimum)** | AA | **Partial (axe nascent)** | Interactive targets — **touch targets included, on every viewport** — ≥ **24×24 CSS px**. That is the AA pass/fail line. 44×44 is 2.5.5 **AAA** only: advisory, never a FAIL. |
 | **3.2.6 Consistent Help** | A | **Manual** | If Help/Chat appears on multiple pages, same relative location |
 | **3.3.7 Redundant Entry** | A | **Manual** | Don't re-ask for info already given in the same flow (billing = shipping must auto-fill) |
 | **3.3.8 Accessible Authentication (Minimum)** | AA | **Manual** | No cognitive-function puzzles unless alternative exists; password managers must work |
@@ -120,7 +120,8 @@ UI components and navigation must be operable.
   sortable list, map pin, range input) must have a single-pointer alternative (button +/-, type-to-set)
 [] **2.5.8 Target Size Minimum (AA, NEW in 2.2) [PARTIAL-AUTO]** — interactive targets ≥ 24×24 CSS px,
   OR an equivalent invisible hit area, OR spacing ≥ 24 px between centers. Exceptions: inline text
-  links, user-agent-controlled controls, essential presentation. Mobile guidance remains 44×44.
+  links, user-agent-controlled controls, essential presentation. The same 24×24 floor applies to touch targets on mobile — a 24–43 px control
+  PASSES AA; 44×44 (2.5.5) is AAA, advisory only, never filed as an AA failure.
 [] Functionality operable with single pointer (no required multi-touch gestures)
 
 PRINCIPLE 3: UNDERSTANDABLE

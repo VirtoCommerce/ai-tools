@@ -83,7 +83,9 @@ rate via
 ### 2. Post the tracker comment (before the status transition — that is 5-status)
 
 Markdown, never wiki markup; outcome-first, evidence referenced not inlined
-(`.claude/knowledge/execution/tracker-ops.md` §5a):
+(`.claude/knowledge/execution/tracker-ops.md` §5a). **Post it with `npm run tracker:comment` and record the
+id in `summary.json.tracker.comment_id`; every later write this run makes to the ticket AMENDS that
+comment, never a second one** (`tracker-ops.md` §0):
 
 ```
 QA Complete — [X] cases, [Y] passed, [Z] failed.
@@ -106,8 +108,9 @@ costs a ticket nobody knows to include.
 The `Not filed` line is **mandatory and says `None` when there are none** — an omitted line is
 indistinguishable from a run that found no Low issues.
 
-**`--iterate`:** this full template is posted **once, at loop exit**. Rounds 1…N−1 post the much
-shorter **round delta** instead ([`modes.md`](modes.md) §5-loop §The round-delta comment) — the full
+**`--iterate`:** this full template is posted **once, at loop exit**. Rounds 1…N−1 write the much
+shorter **round delta** into that same comment instead — round 1 posts it, later rounds and the exit
+template amend it ([`modes.md`](modes.md) §5-loop §The round-delta comment) — the full
 template every round buries the ticket under near-identical comments, while posting nothing leaves a
 prerelease deployed to the shared test env with no trace. The delta carries the same mandatory
 `Not filed` accounting.
@@ -202,8 +205,8 @@ Strictly **after** the report is posted. **Single source of truth for the whole 
 | Verdict | Transition | Also required |
 |---|---|---|
 | PASS / PASS WITH NOTES | `Finish test` → TESTED | `PASS WITH NOTES` is a PASS; the notes live in the comment, never in a different transition |
-| FAIL | `Need fixes` → REOPEN | The comment lists every failure and every filed bug link, posted **before** the transition |
-| **BLOCKED** | **none — deliberately** | A **mandatory comment** naming the blocker (env / data / dependency / not-deployed), what it blocks, and that the ticket awaits a re-run. It stays in-testing |
+| FAIL | `Need fixes` → REOPEN | The 5-report comment (amended, never a second one) lists every failure and every filed bug link, posted **before** the transition |
+| **BLOCKED** | **none — deliberately** | A **mandatory comment** — the 5-report comment, amended — naming the blocker (env / data / dependency / not-deployed), what it blocks, and that the ticket awaits a re-run. It stays in-testing |
 
 **Why BLOCKED transitions nothing, and why it needed a row.** This table had two rows for a four-value
 verdict vocabulary, so a blocked run left the ticket in in-testing with no comment obligation and no rule
@@ -233,7 +236,7 @@ transitions need. The ticket therefore stays in-testing across rounds, so the St
 if round 1 skipped it, the exit round does it here, exactly as the paragraph above already requires.
 
 **A BUG the loop verified is a different ticket, and it has its own hop** — taken by the inline
-`/qa-verify-fix` at round entry, capped at `TESTED`, and only when that bug's fix is merged and present in
+`/vc-fix:qa-verify-fix` at round entry, capped at `TESTED`, and only when that bug's fix is merged and present in
 the round's probed build; everything else the loop left in in-testing closes out here at 5-status alongside the
 ticket ([`modes.md`](modes.md) §Round entry ·
 [`ticket-status-transitions.md`](../../knowledge/execution/ticket-status-transitions.md) §5a). It does not
@@ -249,9 +252,9 @@ VERIFIED/REOPEN verdict, and `hotfix-verify` handed off before 1b.
   documentation to the ticket** (§5-docs) and `5-docs-map` writes back to the domain map (non-blocking). New cases
   stay `Draft` — promotion is [`/qa-test-lifecycle`](../../commands/qa-test-lifecycle.md)'s pass, not this one.
   **Then point at the release note** — see §Release note below.
-- **FAIL → REOPEN** → `/qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge +
-  deploy → `/qa-verify-fix <ticket-key>`. A too-complex/multi-repo bug (G0 BAIL) is handed to a human,
-  resuming at `/qa-verify-fix`. Once the fix is deployed, a re-run of `/qa-test <ticket-key>` auto-routes the
+- **FAIL → REOPEN** → `/vc-fix:qa-fix <ticket-key>` (autonomous G0–G7, never auto-merges) → human review + merge +
+  deploy → `/vc-fix:qa-verify-fix <ticket-key>`. A too-complex/multi-repo bug (G0 BAIL) is handed to a human,
+  resuming at `/vc-fix:qa-verify-fix`. Once the fix is deployed, a re-run of `/qa-test <ticket-key>` auto-routes the
   Bug to the `verify-fix` flow, since its status is now `fix-ready`.
 - **BLOCKED** → resolve the blocker (env/data/dependency) and **re-run `/qa-test <ticket-key>`** from the
   top; no partial credit.
@@ -326,7 +329,8 @@ table).
 Audiences come from the **§9.1 layer→audience row**, read for a different purpose — do not re-derive the
 layer and do not build a second map.
 
-**Ask before posting.** The comment is an external write to the tracker; confirmation is required here
+**Ask before posting.** This is the run's one sanctioned second comment (`tracker-ops.md` §0 rule 4) —
+the ask names it as a separate documentation comment, and a decline posts nothing. The comment is an external write to the tracker; confirmation is required here
 exactly as it is at 5-file and 5-status, and a subagent never posts it unprompted
 (`.claude/rules/agents.md` §Agent Delegation, and the standing subagent external-write rule).
 
@@ -421,6 +425,44 @@ nobody looked at.
   `npm run context:check`.
 - **Nothing here blocks.** A failed amendment records `domain_map.amend_outcome: FAILED` with the reason
   and leaves the map untouched; the run's verdict was final at 5-verdict.
+
+### The mind map — hand back, never amend inline
+
+When `domain_map.mind_map` is set, this step does **not** edit the graph. Behaviour is a re-derivation,
+which the closed list above already refuses to a run. It records instead, in
+`domain_map.mind_map_findings[]`:
+
+- **a stamped case whose verdict contradicts its node.** Examples: a FAIL on a `CONFIRMED` node, or a
+  PASS on a `DRIFT` node whose observed side the case now disproves. Each is a DRIFT candidate.
+- **a scenario from `1e-plan` that fit no node.** Each is a missing-behaviour candidate.
+- **every in-scope DRIFT node the run observed**, as `HOLDS` or `RESOLVED` with the evidence. A DRIFT
+  that holds and whose route `TM-018` flags as unfiled was a bug candidate at 5-triage, like any other
+  failure. The key 5-file returned for it is the finding's proposed route.
+
+Each finding carries the case id and the run id. The next `/qa-test-mind-map update --from <ticket>`
+consumes them, and this step writes nothing else.
+
+### 5-mind-map — build the missing mind map (FULL, after 5-docs-map)
+
+**Trigger — all three, or no build:** path **FULL** · `domain_map.state` is `PRESENT` (a map `1c-map` built
+this run counts) · `domain_map.mind_map` is `null`. An existing mind map is never rebuilt here — it is
+handed back through `mind_map_findings[]` above. **FAST:** one line in the chat report —
+*"No mind map for `<slug>`: run `/qa-test-mind-map build <slug> --from <ticket>`"* — and nothing else.
+
+**Invoke the skill, never a paraphrase of it:** `/qa-test-mind-map build <slug> --from <ticket>`, whose
+`build.md` owns the procedure and whose `models:check` owns the gate. What this pipeline adds to the brief:
+the run's evidence by path (Test Model incl. its 3x amendments, the executed checklist with verdicts, the C1
+run folder, `summary.json`) and **one restriction** — step 10 stamps `Behavior:` **only on the cases this
+run authored**, because this run is those rows' single writer and no other suite's. Draft cases are not
+observation evidence (the skill's own rule), so the brief cites the lanes' live verdicts instead.
+
+**It runs after 5-status and 5-docs-map for the same reason 5-docs-map does:** nothing this run wrote back
+can have shaped the verdict. It never blocks and never amends the verdict; a red `models:check` that the
+build cannot fix records `FAILED` and leaves no half-written map. A new domain behaviour it could not
+ground stays `UNVERIFIED` — the map's honesty rules are the skill's, unchanged.
+
+**Record** `domain_map.mind_map_build` = `BUILT` / `FAILED` / `not-triggered` (+ reason), and on `BUILT` set
+`domain_map.mind_map` to the new path and list the stamped case ids.
 
 ### Record it
 

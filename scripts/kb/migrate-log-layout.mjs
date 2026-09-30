@@ -19,6 +19,7 @@
 // so the report's parser can drop them once this has run without breaking a re-run of this tool —
 // which is what a stale checkout still writing the old layout would need.
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { pathToFileURL } from 'node:url';
 import { execSync } from 'node:child_process';
 

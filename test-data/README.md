@@ -111,7 +111,8 @@ test-data/
 │   ├── *.png, *.jpg, *.webp        # Image files
 │   ├── *.pdf, *.xlsx               # Document files
 │   ├── *.mp4                       # Video files
-│   └── *.svg, *.avif               # Other formats
+│   ├── *.svg, *.avif               # Other formats
+│   └── barcodes/                   # VCST-2945 scannable barcode PNGs (see §14b)
 ├── graphql/                         # Curated xAPI GraphQL fixture library — see graphql/README.md
 │   ├── index.json                  # Registry: path, category, role, requiredVars, gqlVars, usedBy
 │   ├── queries/                    # Schema-validated query bodies (copy into [GQL-OP] cells)
@@ -264,6 +265,19 @@ Source of truth: `scripts/seed-data/compare/compare-specs.mjs` (the CSV mirrors 
 2. A product **created** carrying a property literally named `Price` never enters the search index at all — a controlled four-way probe (four fresh products, one reindex, polled to 80 s) gave `none=1  Price=0  SKU=1  Availability=1`. The product exists in the catalog and is simply absent from xAPI, so the storefront cannot see it. `PROD_PROP_PRICE` is therefore seeded in **two phases**: created bare, indexed, then given its properties (adding the same property to an already-indexed document does survive). The seeder probes xAPI for the document and reports a timeout as a FAILED fixture, never as a pause.
 
 Because that product is invisible to the search index, the seeder resolves it by its **overlay id** when the code lookup misses — otherwise a re-seed would create a duplicate and teardown would walk past it while still reporting zero residue. For the same class of reason the seeder resolves its own CATEGORIES by a DB-backed browse instead of `ensureCategoryPath`, whose keyword lookup lags a write: three `Compare Fixtures` roots accumulated across three runs before that was fixed, and one fixture landed in a different `Group A` than its five tab-mates.
+### 14b. Barcode scanner search (no CSV — `scripts/seed-data/catalog/barcode-specs.mjs`)
+Fixtures for the store-level barcode search configuration (VCST-2945): a dedicated store `AGENT-TEST-BARCODE` on the store's own catalog (API/xAPI cases write ITS barcode settings — never `{{STORE_ID}}`'s), two Product-type ShortText properties (`AGENT_TEST_BARCODE_UPC`, `AGENT_TEST_BARCODE_STALE`) and the products `PRODUCTS` declares in `Test Fixtures`, each designed so exact and full-text matching give DIFFERENT observations: a unique GTIN, a GTIN also written as a word in a decoy's name, a GTIN shared by three products, a code-only scan value for the OR case, a property value, an MPN on an out-of-stock variation, a mixed-case code with a non-matching prefix, a QR-like value with `"` and `:`, a per-seed product whose GTIN a test changes, and a dedicated per-seed product holding the only value of `AGENT_TEST_BARCODE_STALE` (a case may delete that property and watch the scan go 1 → 0 without touching `BARCODE_PROP`). `BARCODE_CASE.valueFlipped` is derived (`flipCase`), never typed. GTINs use the GS1 restricted range `2…`. Every seed resets `AGENT-TEST-BARCODE` to `scannerEnabled=true, fields=[]`. Event-based indexation is off on vcst-qa, so a deleted product keeps its index document: teardown purges the documents of what it deletes (a windowed change-feed index request, since a `documentIds` request only builds documents), a seed sweeps ghosts left by earlier runs, and a case that changes a fixture must request the indexation for its own change.
+
+Barcode PNGs live in `uploads/barcodes/` (EAN-13 / Code 128 / QR, decode-verified with zxing-wasm before commit; each carries a `barcode-value` tEXt stamp the guard compares to the spec). Seed: `npm run seed:barcode` (+ `npm run seed:rbac -- --only BROWSEFILTERS_READ_ONLY,BROWSEFILTERS_NONE` for the two back-office accounts); guard: `npm run td:validate:barcode`. Aliases: `BARCODE_STORE`, `BARCODE_GTIN_UNIQUE`, `BARCODE_FULLTEXT_DISCRIM`, `BARCODE_GTIN_SHARED`, `BARCODE_CODE_OR`, `BARCODE_PROP`, `BARCODE_VARIATION_MPN`, `BARCODE_CASE`, `BARCODE_SPECIAL`, `BARCODE_REINDEX`, `BARCODE_STALE_FIELD`, `BROWSEFILTERS_READ_ONLY`, `BROWSEFILTERS_NONE`.
+
+**Scoped restore for a case that deletes the stale property mid-run:** `TEST_ENV=<env> npm run seed:barcode -- --only stale-field` (about 2–10 s). It touches ONLY these:
+- `AGENT_TEST_BARCODE_STALE`, re-used, or re-created if it was deleted.
+- `@td(BARCODE_STALE_FIELD.value)` on its dedicated product `@td(BARCODE_STALE_FIELD.sku)`.
+- That one product's index document: a documentIds reindex, polled until `<name>:"<value>"` on `AGENT-TEST-BARCODE` answers 1, and re-requested once if the job lock swallowed the first request.
+- `BARCODE_STALE_FIELD.id` and `.propertyId` in `aliases.<env>.json`. The property id CHANGES on re-create, so re-read it afterwards.
+
+It never touches either store's barcode settings, any other product, prices or stock. Both stores are fingerprinted before and after, and any difference fails the run. It refuses with "run the full seed" when the product or the store itself is missing. Use it instead of the full `seed:barcode` between two sub-flows of one case: the full seed resets `AGENT-TEST-BARCODE`'s settings, reconciles and reindexes every fixture, and runs the multi-minute proof.
+
 ### 15. Loyalty missions (no CSV — `scripts/seed-data/loyalty/missions-specs.mjs`)
 The VCST-5319 mission fixtures have **no committed data file**: the side-effect-free spec module IS the
 source of truth, and everything runtime (mission GUIDs, the resolved currency/locale codes, the banner

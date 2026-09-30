@@ -25,6 +25,7 @@
  *  [7] no seeded review body or userName leaks a real person's identity — every row must use
  *      the AGENT-TEST convention so `--teardown` sweeps it and nothing collides with real data.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
