@@ -73,7 +73,7 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 - Coupon code at boundary (apply max discount, apply expired code, apply code twice) (ECL-1.3)
 - Cart modification during checkout (open second tab, remove item, return to payment) `[new]`
 - Zero-quantity line item (modify quantity to 0 via URL parameter or API) `[new]`
-- Switch payment processor mid-flow (CyberSource embedded vs Skyflow redirect vs Datatrans modal — different flows per `feedback_payment_flow_learnings`) (ECL-14.6)
+- Switch payment processor mid-flow (CyberSource embedded vs Skyflow redirect vs Datatrans modal — different flows) (ECL-14.6)
 - Place order with stale cart (sale ended, price changed between cart view and confirm) (ECL-2.3)
 
 ---
@@ -105,7 +105,7 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 - Organization switching mid-flow (start quote in Org A, switch to Org B — cart state?)
 - Approval timeout (what happens if approver never acts?)
 - Concurrent approvals (two managers approve the same quote simultaneously)
-- B2B line-item consolidation: add same product twice — verify single line item with summed qty per `reference_b2b_lineitem_consolidation`
+- B2B line-item consolidation: add same product twice — verify single line item with summed qty
 - Contract-pricing override: order an item with a negotiated price — verify contract wins over catalog price
 
 ---
@@ -137,8 +137,8 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 - Filter combinations (apply 5+ filters simultaneously, then clear one at a time)
 - Export of large datasets (export 10,000 products to CSV — timeout? memory?)
 - Unsaved changes navigation (edit product, navigate away without saving — warning?)
-- Role-change reflection: change a user's role in Admin → verify storefront permissions update without re-login (cross-ref `feedback_admin_permissions_via_roles`)
-- Stale admin-SPA cache after deploy: open after a backend module update — verify version banner or auto-reload (cross-ref `feedback_mcp_browser_cache`)
+- Role-change reflection: change a user's role in Admin → verify storefront permissions update without re-login
+- Stale admin-SPA cache after deploy: open after a backend module update — verify version banner or auto-reload
 
 ---
 
@@ -172,8 +172,8 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 - Rate limiting behavior (send 100 requests in 1 second — does rate limit engage?)
 - Mixed valid/invalid items in batch operations (bulk add 5 products, 2 with invalid SKUs)
 - IDOR: query someone else's cart by ID; create xQuote against an org you don't belong to
-- Field-name typo silent acceptance: `POST /api/catalog/products/configurations` with `configurationSections` instead of `sections` (cross-ref `reference_configurations_post_body`)
-- `addItem` async settle: verify `data.addItem.items[]` empty response is handled correctly downstream (cross-ref `reference_additem_async_settle`)
+- Field-name typo silent acceptance: `POST /api/catalog/products/configurations` with `configurationSections` instead of `sections`
+- `addItem` async settle: verify `data.addItem.items[]` empty response is handled correctly downstream
 
 ---
 
@@ -212,7 +212,7 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 - Apply a coupon code one day after `end_date` → expected: "promo expired" error distinguishable from "invalid code"
 
 **Test ideas — Flag Combinations:**
-- Two promotions active simultaneously, both applying to the same cart item — which discount wins? (BestRewardPromotionPolicy prefers coupon-backed per `project_promotion_engine`)
+- Two promotions active simultaneously, both applying to the same cart item — which discount wins? (BestRewardPromotionPolicy prefers coupon-backed)
 - A store-level "Promotions enabled = off" flag vs. an individual promotion that is "active" — which takes precedence?
 - B2B org-specific pricing flag off + storefront promotion flag on — what price does the cart show?
 - Disable a parent module flag (Marketing) — verify all child toggles (Coupons, Loyalty, Banners) are also inactive
@@ -266,7 +266,7 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 - Persona: Screen-Reader User
 - Time Box: 30 minutes
 - Risk Level: Medium-High (legal/regulatory exposure)
-- Environment: {{FRONT_URL}}, theme=Coffee or Red (the two WCAG-gated themes per `feedback_a11y_gated_themes`)
+- Environment: {{FRONT_URL}}, theme=Coffee or Red (the two WCAG-gated themes)
 - Edge-Case Refs: ECL-15.1
 ```
 
@@ -334,7 +334,7 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 ```
 
 **Test ideas:**
-- Verify hamburger menu enumerates all top-nav items + any controls that were in the desktop header (cross-ref `feedback_mobile_hamburger_inventory`)
+- Verify hamburger menu enumerates all top-nav items + any controls that were in the desktop header
 - Touch targets: every tappable element must be ≥24x24 px (WCAG 2.5.8 AA)
 - Pinch-zoom: verify viewport allows zoom (no `user-scalable=no`)
 - Swipe gestures on PDP image carousel: swipe left/right; verify it doesn't trigger nav drawer
@@ -378,7 +378,7 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 - Auto-suggest: type 3 characters; verify suggestions appear and clicking one navigates correctly
 - No results: search for `?q=zzzzzzz`; verify a helpful empty state, not a blank page
 - Pagination beyond results: navigate to page 999 of a 5-page result set
-- B2B virtual catalog scoping: verify search results are scoped to the user's virtual catalog (per `feedback_storefront_virtual_catalog_link`)
+- B2B virtual catalog scoping: verify search results are scoped to the user's virtual catalog
 
 ---
 
@@ -404,12 +404,12 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 - After a deploy, force-refresh and verify the build version updates (DevTools → Application → Service Workers → Update on reload)
 - Modify localStorage `cartId` to a random GUID; reload; verify graceful recovery (§3.2 in `modern-web-attack-surface.md`)
 - Delete the auth cookie without logging out; verify the next action redirects cleanly
-- Apollo cache after `addItem`: verify cart query refetches and updates UI (cross-ref `reference_additem_async_settle`)
+- Apollo cache after `addItem`: verify cart query refetches and updates UI
 - Two tabs with the same cart: edit in Tab A, observe Tab B's state on next action; verify reconciliation or stale-state warning
 - Sign out in Tab A; verify Tab B detects within 1 minute (or on next user action)
 - After a backend module redeploy (e.g., hotfix), confirm admin SPA shows the new version without hard refresh
 - Apollo error after a successful mutation: simulate a `500` response to a follow-up query; verify the mutation's optimistic UI doesn't roll back to a wrong state
-- Test ApolloError on cart shipment for a legacy-cart user; verify it's recognized as stale-data, not a code bug (cross-ref `feedback_apollo_cart_shipment_stale_data`)
+- Test ApolloError on cart shipment for a legacy-cart user; verify it's recognized as stale-data, not a code bug
 - ServiceWorker self-update: deploy a new build mid-session; verify the next navigation prompts an update or hot-swaps
 
 ---

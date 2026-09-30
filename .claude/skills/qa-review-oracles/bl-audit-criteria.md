@@ -99,8 +99,7 @@ all present axes describe the same behavior and match the BL `Rule` text.
 ## 4. Edit-safety rules (when auto-applying)
 
 1. **Entry body only.** Edit inside a `### BL-*` block. Never touch the meta
-   Severity-Tags table or a `## Domain` heading as a side effect
-   (`feedback_bl_promotion_table_separately`).
+   Severity-Tags table or a `## Domain` heading as a side effect.
 2. **Minimal, per-entry diffs.** One invariant per edit so any single change is
    revertible from `git diff`.
 3. **Stamp provenance on every applied entry:**
@@ -108,7 +107,7 @@ all present axes describe the same behavior and match the BL `Rule` text.
    - refresh `- **Source:**` with the `file:line` anchor (+ a docs reference).
 4. **MISSING → next free ID.** Read the oracle for the current max `BL-<DOMAIN>-NNN`,
    use `+1`, zero-padded to 3 digits; place it under the matching `## Domain` heading.
-5. **Env-agnostic** (`feedback_bl_oracle_env_agnostic`). No env names, URLs, store
+5. **Env-agnostic**. No env names, URLs, store
    slugs, or route patterns anywhere in the entry — including the evidence note. Say
    "the environment".
 6. **Preserve existing structure.** Keep the canonical field order

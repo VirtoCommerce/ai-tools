@@ -108,7 +108,7 @@ Everything below applies to **both** axes unless a row above says otherwise.
 
 ### Step 1: Triangulate each in-scope entry — PARALLEL fan-out (ba-system-analyzer)
 
-Triangulation is read-only and per-entry, so **run it in parallel**. Split the in-scope entries into disjoint batches (by domain/chapter, then chunk) and dispatch **up to 3 `ba-system-analyzer` agents concurrently** (one Agent-tool call per batch, all in a single message — matches the 3-slot browser pool, `.claude/rules/agents.md`). Each parallel agent gets its **own isolated browser slot** (`playwright-firefox` / `playwright-chrome` / `playwright-edge` — never shared) and a **distinct test/org user** if the live axis needs auth (a shared org cart contaminates — `feedback_concurrent_runners_distinct_org_users_taskstop`). A parallel agent **gathers evidence + assigns a verdict + returns the proposed edit only — it does NOT write the oracle** (that is the serialized Step 3).
+Triangulation is read-only and per-entry, so **run it in parallel**. Split the in-scope entries into disjoint batches (by domain/chapter, then chunk) and dispatch **up to 3 `ba-system-analyzer` agents concurrently** (one Agent-tool call per batch, all in a single message — matches the 3-slot browser pool, `.claude/rules/agents.md`). Each parallel agent gets its **own isolated browser slot** (`playwright-firefox` / `playwright-chrome` / `playwright-edge` — never shared) and a **distinct test/org user** if the live axis needs auth (a shared org cart contaminates). A parallel agent **gathers evidence + assigns a verdict + returns the proposed edit only — it does NOT write the oracle** (that is the serialized Step 3).
 
 Each agent captures the three axes with concrete evidence, never a bare opinion (per-domain/chapter source map is in the criteria file):
 
@@ -186,8 +186,8 @@ Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the 
   never guessed. (The ECL `Impact` column is free text and is deliberately unscored.)
 - **Parallel fan-out, single-writer fan-in.** Triangulate in parallel (≤3 browser agents, disjoint batches, isolated sessions); apply from **one** serialized writer.
 - **IDs are a citation contract.** ~65 test cases point at ECL section numbers and hundreds at BL IDs. **Never renumber a surviving entry**, never reuse a retired ID. Renumbering silently repoints every citation that was correct.
-- **Body-only edits.** Never rewrite a meta table as a side effect (`feedback_bl_promotion_table_separately`).
-- **Env-agnostic** (`feedback_bl_oracle_env_agnostic`) and data-agnostic — no hardcoded IDs/SKUs/prices/emails/URLs in any applied entry, even inside an evidence note.
+- **Body-only edits.** Never rewrite a meta table as a side effect.
+- **Env-agnostic** and data-agnostic — no hardcoded IDs/SKUs/prices/emails/URLs in any applied entry, even inside an evidence note.
 - **Never edit a CSV from this skill.** Citation remaps are `/qa-review-tests --fix`'s write, under `test-management-specialist`.
 - **Reversible.** Every applied edit is recorded in the audit report and lives in a git-tracked file; keep edits minimal and per-entry so one can be reverted alone.
 - **Retiring is destructive** → always a human proposal, never auto-applied.

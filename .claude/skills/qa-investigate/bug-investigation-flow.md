@@ -50,7 +50,7 @@ Insights resource pair all differ per env.** A bug confirmed on the wrong env is
    default `vcst`. State it explicitly at the start of the investigation ("Investigating on `TEST_ENV=vcst`").
 2. **Resolve the endpoints** for that env (config.js loads `.env.${TEST_ENV}`): `FRONT_URL`, `BACK_URL`,
    `STORE_ID`, `ENV_RISK`. Run `/qa-env-check endpoints` to confirm they're reachable and healthy
-   (`{BACK_URL}/health` — see memory `Platform health endpoint`). A red endpoint = stop and report infra,
+   (`{BACK_URL}/health`). A red endpoint = stop and report infra,
    don't chase a "bug".
 3. **Note `ENV_RISK`.** If the env is production-class, treat all reproduction as read-only — no seeding,
    no state mutation, no destructive repro.

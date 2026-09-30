@@ -325,7 +325,7 @@ Ensures all referenced data is valid and resolvable.
 
 ### DV-013: Hardcoded entity ID / GUID `[High]`
 - **Detection:** Steps, Assertions, Preconditions, or Test_Data contain a UUID/GUID literal (`[0-9a-f]{8}-[0-9a-f]{4}-...`) or numeric entity ID that refers to a product, catalog, category, user, organization, or order. Exception: documented **environment constants** in `knowledge/domain/catalog.md` or `knowledge/domain/store-settings.md` (e.g., virtual-catalog root `fc596540...`, store ID `B2B-store`) are allowed because they are stable across deploys.
-- **Impact:** QA environment is re-seeded frequently; hardcoded GUIDs become "not found" → false BLOCKED/FAIL. Root cause from the Golden Rule memory: #1 source of false failures.
+- **Impact:** QA environment is re-seeded frequently; hardcoded GUIDs become "not found" → false BLOCKED/FAIL. Per the GOLDEN RULE (`.claude/rules/test-data.md`): #1 source of false failures.
 - **Bad:** `productId: 58b856c7-da60-460f-afe0-3b2e7a03a2d6`
 - **Good:** "any in-stock product from B2B virtual catalog (`category.subtree:fc596540...`) — resolve first card on category page at runtime" OR `@td(PRODUCT_BIKE.id)` via the `@td()` resolver.
 - **Enforced by:** `npx tsx scripts/test-data/validate-td-refs.ts` **fails the build** on any bare UUID/32-hex literal not wrapped in `@td()`/`{{VAR}}` (sentinel `00000000-…` and documented env constants allowlisted; `--warn-only` downgrades to a warning for WIP). The same GUID arriving one indirection away — via a fixture column — is **DV-020**.
