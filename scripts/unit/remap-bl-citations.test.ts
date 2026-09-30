@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parse, ser, readSuite } from "../knowledge/remap-bl-citations.ts";
+import { parse, ser, readSuite, dropCitation } from "../knowledge/remap-bl-citations.ts";
 
 const BOM = "﻿";
 const H = `"ID","Title","Business_Rule"`;
@@ -105,4 +105,13 @@ test("LF-only files keep LF (075-loyalty.csv is the one in the corpus)", () => {
   const parsed = parse(src);
   assert.equal(ser(parsed, "\n") + "\n", src);
   assert.equal(parsed.rows.length, 2);
+});
+
+test("dropCitation removes one id and exactly one adjacent separator, for ; and , alike", () => {
+  assert.equal(dropCitation("BL-CHK-001; BL-SEC-001", "BL-SEC-001"), "BL-CHK-001");
+  assert.equal(dropCitation("BL-SEC-001; BL-CHK-001", "BL-SEC-001"), "BL-CHK-001");
+  assert.equal(dropCitation("BL-A-001; BL-SEC-001; BL-B-002", "BL-SEC-001"), "BL-A-001; BL-B-002");
+  assert.equal(dropCitation("BL-A-001, BL-SEC-001", "BL-SEC-001"), "BL-A-001");
+  assert.equal(dropCitation("BL-SEC-001", "BL-SEC-001"), "");
+  assert.equal(dropCitation("BL-SEC-0011; BL-SEC-001", "BL-SEC-001"), "BL-SEC-0011");
 });

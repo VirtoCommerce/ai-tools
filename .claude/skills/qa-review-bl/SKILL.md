@@ -1,6 +1,6 @@
 ---
 name: qa-review-bl
-description: "[QA Method] Pipeline entry point for the BL-invariant audit — ALIAS of /qa-review-oracles bl. Called automatically by /qa-test-lifecycle Phase 4c on the BL-* candidates a run surfaced (triangulate against docs + live + source, auto-apply confirmed changes to business-logic.md, reconcile test-case citations). For a manual oracle audit, use /qa-review-oracles."
+description: "[QA Method] Pipeline entry point for the BL-invariant audit — ALIAS of /qa-review-oracles bl. Called automatically by /qa-test-lifecycle Phase 4c on the BL-* candidates a run surfaced (triangulate against docs + live + source; auto-apply to business-logic.md only what a human source grounds — M0; reconcile test-case citations). For a manual oracle audit, use /qa-review-oracles."
 argument-hint: "all | domain <name> | BL-<ID> | diff [--dry-run]"
 ---
 

@@ -401,7 +401,7 @@ Multi-org user with default org configured","url={{FRONT_URL}},org_user={{MULTI_
 6. [ASSERT] Verify same default org is loaded as before","[STATE] Default org is the same across sign-out/sign-in cycles
 [DOM] Org switcher shows same org name after re-login
 [STATE] Default org setting persists server-side","[CONSOLE] no uncaught JS errors","Different org loaded after re-login; default org setting lost; org selector shown despite default configured","none","Coverage Gap Analysis","Draft"
-"B2C-ORG-039","Company Info - Add Address XSS Prevention in City, Address, and Description Fields","B2C Features > Organization > Company Info","High","BL-B2B-005; BL-SEC-001","ECL-5.1; ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
+"B2C-ORG-039","Company Info - Add Address XSS Prevention in City, Address, and Description Fields","B2C Features > Organization > Company Info","High","BL-B2B-005","ECL-5.1; ECL-14.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Org user logged in, /company/info page accessible, user has permission to add address. Note: org address form has NO phone, first name, or last name fields — only Description, Country, ZIP, State, City, Address, Apt.","url={{FRONT_URL}},org_user={{MULTI_ORG_USER_EMAIL}},org_password={{MULTI_ORG_USER_PASSWORD}}","1. [NAV] Navigate to /company/info
 2. [WAIT] Company Info page loads
 3. [ASSERT] Verify company name and Addresses section visible
