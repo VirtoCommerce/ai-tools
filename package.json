@@ -145,6 +145,7 @@
     "td:validate:sales-rep-tasks": "node scripts/seed-data/sales-rep/validate-sales-rep-tasks-data.mjs",
     "td:validate:sales-rep-demo": "node scripts/seed-data/sales-rep/validate-sales-rep-demo-data.mjs",
     "td:validate:marketing": "node scripts/seed-data/promotions/validate-marketing-data.mjs",
+    "detect:mutate": "npx tsx scripts/detection/mutation-trial.ts",
     "graphql:validate": "npx tsx scripts/graphql/graphql-runner.ts --all-fixtures",
     "graphql:validate:refresh": "npx tsx scripts/graphql/graphql-runner.ts --all-fixtures --refresh-schema",
     "graphql:lint-labels": "npx tsx scripts/graphql/review-graphql-labels.ts",

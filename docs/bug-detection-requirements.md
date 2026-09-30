@@ -421,3 +421,107 @@ IDs are a citation contract, the converter must not change them; the `vc-fix` co
 | 2026-09-30 | Document translated from Russian to English at the owner's request; content unchanged. |
 | 2026-09-30 | **M0 done (#351).** A `bl` `DRIFT`/`MISSING` edit now needs a human source; with none, a contradiction is a finding and uncovered behaviour goes to the `kb`. No proposal files are written, and the output path is removed from the report policies. The six existing `bl-proposals-*` files are deleted now instead of in M4, and the one-off review pass is skipped by the owner's decision. The false `BL-SEC-001…005` citations are dropped, so `BLC-002` = 0. |
 | 2026-09-30 | Owner's addition: bugs also live in gaps — scenarios no case exercises. D13 added (escape traceability 17%: 74 of 448 closed bugs are referenced by a suite) and REQ-12 (computed scenario space, escape-derived gaps, production signals first, exploratory aimed at gaps, no human queue). |
+| 2026-09-30 | §10 added: success criteria and three trials. Trial 1 (30 `Support` bugs, two independent raters): of 14 product defects, 1–2 are caught by the suites today and 12–13 were reproducible on a QA environment. Trial 2 harness `npm run detect:mutate` added (response mutants through the existing GraphQL runner). |
+
+## 10. Trials and baseline figures
+
+Success is judged on three levels. Outcome: fewer bugs found by customers. Leading: the suites catch
+known bug classes. Signal quality: rejected reports and false failures must not rise. Every figure
+below is a snapshot as of 2026-09-30, with the query or command that recomputes it.
+
+### 10.1 Baseline from Jira (projects VCST + VP, bugs resolved 2026-04-01 … 2026-09-30, `Cancelled` excluded)
+
+| Figure | Value | Recompute |
+|---|---|---|
+| Bugs closed | **341** | `type = Bug AND statusCategory = Done AND status != Cancelled AND resolved >= "2026-04-01"` |
+| … reported by customers (label `Support`) | **155 (45%)** | + `AND labels = Support` |
+| … reported by the QA owner (manual + agents) | **100 (29%)** | the same query without `Support`, grouped by reporter |
+| … reported by anyone else | **86 (25%)** | the remainder |
+| … labelled `qa-found` | **16 (5%)** | + `AND labels = qa-found` — the label is applied inconsistently (5 of the QA owner's last 60 bugs carry it), so it **undercounts** QA findings and is not usable as the metric until it is applied to every QA-found bug |
+| Bugs filed by the QA owner since 2026-04-01 | **134**: complex 36 (27%), simple functional 47 (35%), accessibility 34, visual 14, i18n 3 | `reporter = <QA owner> AND type = Bug AND created >= "2026-04-01"`, classified from summaries |
+| … of them cancelled | **21**, of which **10 complex** | complex findings are rejected more often — the signal-quality metric must watch this |
+
+### 10.2 Trial 1 — would the suites have caught what customers found?
+
+**Method.** 30 bugs drawn at random (seed `20260930`) from the 155 `Support` bugs above. Two raters
+classified each one independently against `regression/suites/**`. The two raters were independent
+agents, and the rubric is in the trial brief. Per bug they recorded:
+- a category (product defect / ops / client customisation / not a bug);
+- for product defects, whether a case would fail on the described behaviour: `COVERED` / `PARTIAL` / `NOT_COVERED`. A case that only asserts presence counts as `PARTIAL`.
+
+**Agreement.** Category 29/30; coverage 11/14.
+
+| Result | Value |
+|---|---|
+| Product defects | **14 of 30 (47%)**. The rest: ops 11, not a bug 3, client customisation 1, disputed 1. |
+| Caught by the suites **today** | **1–2 of 14** (strict / lenient reading). At least one of the matching cases cites the fix of the very bug it matches, so it was probably written afterwards. |
+| Partial: the surface is visited but the breaking condition is not checked | 6–7 of 14 |
+| No case at all | 5–7 of 14 |
+| Reproducible on a standard QA environment | **12–13 of 14** — these were catchable in principle |
+
+**What broke them.** Archetypes were `FALLBACK` 3, `PARITY` 3 and `BOUNDARY` 2, plus one each of
+`SILENT`, `MONEY`, `RACE`, `CONFIG`, `SCOPE`, `LIFECYCLE` and `RENDER`. The breaking dimensions:
+- a non-default culture or language (twice);
+- a timezone;
+- sort combined with search;
+- a list longer than one page;
+- an optional amount omitted on a repeated call;
+- a concurrent save;
+- an upstream 404 swallowed;
+- the same policy on a second login path;
+- a dependency upgraded in a bundle.
+
+These are exactly the dimensions REQ-03 and REQ-12 target. The QA findings in §10.1, by contrast, are
+27% complex.
+
+**Limit.** This clone's git history starts on 2026-09-15, so whether a matching case existed before the
+bug was reported cannot be proven from the repository. "Today" means the suite as of 2026-09-30.
+
+### 10.3 Trial 2 — do the suites catch known bug classes? (`npm run detect:mutate`)
+
+**What it does.**
+- `npm run detect:mutate -- <suiteId>` replays a suite's machine-lane cases through the existing
+  GraphQL runner.
+- A Node preload (`scripts/detection/mutant-preload.mjs`) edits live GraphQL responses. The runner is not modified.
+- Ten mutants (`scripts/detection/mutants.mjs`), each modelling a class of bug customers have reported:
+  - `TRUNCATE_PAGE` — the catalog paging escape;
+  - `EMPTY_PAGE`;
+  - `COUNT_DRIFT`;
+  - `DUPLICATE_ITEM`;
+  - `SORT_REVERSED`;
+  - `MONEY_ZERO`;
+  - `CURRENCY_SWAP`;
+  - `FLAG_FLIP`;
+  - `QUANTITY_PLUS_ONE`;
+  - `SILENT_ERROR` — `200` with a non-empty `errors[]`.
+
+**How it runs.**
+1. A clean pass (optionally `--repeat N`) excludes cases that do not pass on the unmodified build.
+   It also probes which mutants each case's responses can express.
+2. Each mutant is replayed only on the cases it can affect.
+
+**Output.** One verdict per mutant:
+- `KILLED` — a case failed;
+- `SURVIVED` — cases saw the mutated response and still passed;
+- `NOT_EXERCISED` — no case reads that shape, i.e. a gap.
+
+Score = killed / exercised. Written as JSON + Markdown under `reports/coverage/COV-<stamp>-mutation-<suite>/`.
+
+**Status.**
+- The harness is built and unit-tested (`scripts/unit/detection-mutants.test.mjs`).
+- Suite `050a` has 64 machine-lane cases.
+- The run needs a QA environment and credentials, i.e. a regression-capable machine. The cloud
+  session that built it has no network route to the QA stand.
+- **First figure to record:** `npm run detect:mutate -- 050a --repeat 2`. This is the "before"; the same
+  command after the Phase 1 pilot is the "after".
+
+### 10.4 What is reported, and when
+
+| When | What | Target |
+|---|---|---|
+| Now (this document) | §10.1 baseline, §10.2 trial 1 | — |
+| Before the pilot | trial 2 on `050a` ("before") | recorded, no target |
+| After the pilot (1–2 weeks) | trial 2 on `050a` and the new checks ("after"); trial 1 re-rated on a fresh sample | hypothesis: ≥ 8 of 10 mutants killed; set as a target only after the "before" figure exists |
+| Monthly | §10.1 recomputed | `Support` share falls; QA-reported share and escape traceability (D13) rise; cancelled-complex share does not rise |
+
+Targets are not promised before the baseline exists; a hypothesis is recorded instead.
