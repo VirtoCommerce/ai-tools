@@ -1,44 +1,39 @@
-# VCST-2945 — FAIL
-All barcode setup and lookup behaviour was tested across the admin blade, REST, xAPI and storefront, on the same PR build as the earlier FULL run (Catalog 3.1046.0-pr-909-2839, XCatalog 3.1022.0-pr-113-f4a8, theme 2.59.0-pr-2501-7e0c). Every AC works live except one: exact match still treats `*` and `?` as wildcards, so a partial code opens a product (VCST-6094).
-Page: https://claude.ai/artifact/AUiEMFz1aRUYKwPt3xiBTi
+# VCST-2945 — PASS WITH NOTES (2026-09-30 delta re-test)
+The only change since the 2026-09-28 runs is the storefront: theme `2.59.0-pr-2501-7e0c` → `2.59.0-pr-2501-3a82` (fix for VCST-6098 + a `dev` merge). The backend PR builds are the same ones tested on 09-28 (Catalog 3.1046.0-pr-909-2839, XCatalog 3.1022.0-pr-113-f4a8), so their evidence carries forward. VCST-6098 is fixed, the barcode storefront cases pass on the new build, and VCST-6094 is now treated as pre-existing platform behaviour.
 
-| AC | Result | Evidence |
+| AC / item | Result | Evidence |
 |---|---|---|
-| T1 Barcode scanner setting in Store search configuration; on/off hides the scan button | PASS | screenshots/fast-A1-blade-fulltext.png · fast-C11-desktop-disabled-no-scan-button.png |
-| T2 Choose Full text or field(s): delivered as a mode plus a multi-field list (DRIFT against the one-field wording) | PASS | fast-A2-reopen-exact-gtin-code-checked-first.png |
-| T3.1 Full text: scan runs `?q=`, unchanged | PASS | fast-C0-mobile-overlay-scan-button-defaults.png (C0, C2) |
-| T3.2 MPN: exact on manufacturerPartNumber, variation included | PASS | fast-C5-variation-mpn-pdp.png (A16, C5) |
-| T3.3 GTIN: exact on gtin (the AC says `mpn:` — a typo) | PASS | A13 transcript · C1 HAR |
-| T3.4 SKU: exact on code | PASS | A14 transcript · C7 HAR |
-| T3.5 Custom short-text property | PASS | A15 transcript · C7 HAR |
-| AC-4 No match: "No products found for barcode", Reset | PASS | fast-C4-unknown-code-empty-state.png |
-| PR spec: "Matching is exact" | **FAIL** | fast-C12-VCST-6094-prefix-wildcard-opens-pdp.png · A18 transcript |
+| T1–T3.5, AC-4 (admin blade, REST, xAPI) | PASS — carried from 2026-09-28, backend unchanged | testing-checklist.md rows A*/B* |
+| VCST-6098: header box with `?barcode&q` | **FIXED** — box empty, scan button visible, desktop + 390 px | screenshots/d-D1-*.png · d-D2-*.png |
+| Box follows the page's lookup-vs-keyword decision (empty / whitespace / repeated `barcode`) | PASS — parity on all 3 shapes | d-D5a/b/c-*.png |
+| Plain keyword search, scanner OFF, single-hit PDP | PASS | d-D4 · d-D6 · d-D7 |
+| Console / GraphQL / network (122 GraphQL calls) | PASS — no `errors[]`, no 4xx/5xx | d-lane-storefront-2026-09-30.har.gz |
+| Storefront barcode cases SRCH-014..023 on the new theme | 10/10 PASS | REG-2026-09-30-1536 |
+| VCST-6094 "exact match treats `*`/`?` as wildcards" | PRE-EXISTING / by design — operator decision | `code:"*"` also returns 4566 on B2B-store |
 
 ## Bugs
-- Medium — Exact match treats `*` / `?` as wildcards; a partial code opens a product — reports/bugs/open/medium/BUG-barcode-exact-match-honours-wildcards-partial-code-opens-product.md (VCST-6094, re-confirmed)
-- Low — On a barcode lookup with a leftover `q`, the header box shows the ignored keyword and hides the scan button — reports/bugs/open/low/BUG-storefront-barcode-lookup-header-shows-ignored-q.md (VCST-6098)
-- Low, pre-existing — On `/search`, results `view_item_list` is sent as `Category "undefined"` — reports/bugs/open/low/BUG-storefront-search-results-analytics-list-name-category-undefined.md (VCST-6099)
-- Low, pre-existing — Search-bar `view_item_list` is pushed on page load with no dropdown open — reports/bugs/open/low/BUG-storefront-search-bar-view-item-list-on-page-load.md (VCST-6100)
-- Low — Blade shows the scanner OFF when `/fields` fails; now also seen on a network error, not only a 403 — reports/bugs/open/low/BUG-barcode-blade-shows-scanner-off-without-browsefilters-read.md (not filed)
-- Low — Whitespace-only `?barcode=` is not trimmed — reports/bugs/open/low/BUG-storefront-barcode-whitespace-value-not-trimmed.md (not filed)
+- Filed this run: none.
+- Verified fixed: VCST-6098.
+- Reclassified: VCST-6094 → pre-existing. Elasticsearch expands wildcards in every term filter on the platform, and the PR descriptions no longer promise literal matching. This still conflicts with BL-SRCH-005, platform-wide.
+- Still open, not re-run: VCST-6095/6096/6097 (a11y, no fix in `3a82025`), VCST-6099/6100 (analytics, pre-existing).
+- Not filed (below severity floor): blade shows scanner OFF when `/fields` fails; whitespace-only `?barcode=` not trimmed.
 
-## Not tested, and why
-- C17 paging reset on a second barcode: no field value on B2B-store has more than one page (16) of hits. FIXTURE-GAP.
-- C6 paging controls during a lookup: same data gap. Sort and grid/list were observed.
-- The scan itself (camera or Browse upload): no fake-media lane, and Browse stays disabled without a camera. Entry was by the `?barcode=` URL.
-- A11y re-check (VCST-6095/6096/6097): same build as the filing run and no fix deployed.
-- Redirect/request race (r6): not deterministically drivable through MCP.
-- Intent-search filters during a lookup: VirtoCommerce.IntentSearch is not installed on vcst.
-- AC-14 older backend and the Lucene provider: no lane.
-- Exploratory box: returned at about 25 of 45 minutes, under the 30-minute floor. Every charter source was covered or marked NOT REACHED with a reason.
-- Candidate cases for a later `/qa-test-lifecycle`:
-  - `?barcode&q` header state
-  - currency without a price list ⇒ "not found"
-  - analytics payloads for 0/1/N hits
-  - a stale-only config also zeroes a valid GTIN
+## Notes
+- The frontend PR #2501 `auto-tests` CI is red on all 6 matrix jobs. This is outside this run, but it blocks merge.
+- Not re-run, by operator choice (backend unchanged): reachability pass, Test Model, exploratory session, case authoring, design/a11y lane. No new regression cases.
+- App Insights correlation skipped: Azure credentials expired.
+- Test-case quality, to route to `/qa-review-tests`:
+  - SRCH-018 hardcodes a `/product/<id>` URL.
+  - SRCH-020 has no `code=` value.
+  - SRCH-022's history check is weak.
+  - SRCH-021: the `ORG_USER_PASSWORD` secret fails for its account.
+- Still not tested: C17 paging (fixture gap), a real camera scan, older backend, Lucene.
 
 ## Data
-Created 2 AGENT-TEST- entities, removed 1: the cart line was removed; the search-history keyword `AGENT-TEST-hist-c9x` cannot be deleted from the storefront. The A9 property and the A21 GTIN were mutated and restored with `seed:barcode`. Settings restored and re-read: B2B-store barcode-search (18:20:17Z) and BARCODE_STORE barcode-search (18:27:40Z).
+No entities were created. The B2B-store barcode settings were written and restored twice, GET-confirmed at 15:33:05Z and 15:50:14Z: `{"scannerEnabled":true,"fields":[]}`.
 
-## Context used
-Model reports/ba/test-models/VCST-2945-2026-09-28.md (Round 3) · Checklist reports/tickets/Sprint26-19/VCST-2945/testing-checklist.md · Domain map PRESENT (search.md rev 1) · Mind map .claude/knowledge/domain/search.mind-map.json (updated) · Exploratory reports/exploratory/SBTM-VCST-2945-2026-09-28-2.md · PRs vc-module-catalog#909, vc-module-x-catalog#113, vc-frontend#2501
+## Context
+- Checklist: testing-checklist.md §Round 2026-09-30
+- Summary: summary.json
+- Model: reports/ba/test-models/VCST-2945-2026-09-28.md
+- PRs: vc-module-catalog#909, vc-module-x-catalog#113, vc-frontend#2501
