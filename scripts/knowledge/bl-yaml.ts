@@ -26,7 +26,9 @@
  *
  * Usage:
  *   npm run bl:convert -- --check                    # round-trip every domain; exit 1 on any mismatch
- *   npm run bl:convert -- --domain srch --write      # write bl/<domain>.yaml + its history file
+ *   npm run bl:convert -- --domain srch --write      # write bl/<domain>.yaml + its history file; refuses a
+ *                                                    # domain that fails the round trip, and existing files
+ *                                                    # unless --force is given
  *   npm run bl:convert -- --render <file.yaml>       # the domain's markdown section, to stdout
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -94,7 +96,8 @@ function fold(parts: readonly { label: string; text: string }[], base: string): 
 }
 
 export function classifySource(text: string): SourceKind {
-  if (/\bVCST-\d+\b/.test(text) && /\b(AC|acceptance criteri)/i.test(text)) return "ac";
+  // `AC` only as a whole upper-case word: case-insensitively, `\bac` also hits "access", "account", "active".
+  if (/\bVCST-\d+\b/.test(text) && (/\bAC\b/.test(text) || /\bacceptance criteri/i.test(text))) return "ac";
   if (/\.(cs|ts|tsx|js|mjs|vue|cshtml|json|graphql)\b|\bvc-(module|frontend|platform)|\bsrc\//.test(text)) return "code";
   if (/^\s*(live|observed)\b/i.test(text)) return "live";
   return "other";
@@ -133,23 +136,32 @@ function historyAnchor(slug: string, id: string): string {
   return `${HISTORY_DIR}/${slug}.md#${id.toLowerCase()}`;
 }
 
+/**
+ * A `### BL-…:` heading's text after the colon, split three ways: the title (before the severity tag), the
+ * severity, and the heading note — every tag in front of the severity plus everything after it, verbatim.
+ * With no valid severity tag the title is the whole text and the note is its tags, so no tag is dropped
+ * either way. The converter and the round-trip comparator share this split.
+ */
+export function splitHeading(tail: string): { title: string; priority: string; note: string } {
+  const tags = [...tail.matchAll(BRACKET_TAG_RE)];
+  const prio = tags.find((t) => VALID_TAGS.has(t[1].trim()));
+  const head = prio ? tail.slice(0, prio.index) : tail;
+  const after = prio ? tail.slice(prio.index! + prio[0].length).trim() : "";
+  const tagsBefore = tags.filter((t) => t.index! < head.length).map((t) => t[0]);
+  return {
+    title: head.replace(BRACKET_TAG_RE, "").replace(/\s+/g, " ").trim(),
+    priority: prio ? prio[1].trim() : "",
+    note: [tagsBefore.join(" "), after].filter(Boolean).join(" "),
+  };
+}
+
 /** Convert one entry: its `### BL-…` heading line plus the body lines under it. */
 function convertEntry(heading: string, body: string[], slug: string, roster: readonly string[]) {
   const m = heading.match(ENTRY_RE)!;
   const id = m[1];
-  const tail = m[2];
+  const { title, priority, note } = splitHeading(m[2]);
   const history: string[] = [];
-
-  const tags = [...tail.matchAll(BRACKET_TAG_RE)];
-  const prio = tags.find((t) => VALID_TAGS.has(t[1].trim()));
-  const priority = prio ? prio[1].trim() : "";
-  const title = (prio ? tail.slice(0, prio.index) : tail).replace(BRACKET_TAG_RE, "").trim();
-  if (prio) {
-    const after = tail.slice(prio.index! + prio[0].length).trim();
-    const otherTags = tags.filter((t) => t !== prio).map((t) => t[0]);
-    const note = [otherTags.join(" "), after].filter(Boolean).join(" ");
-    if (note) history.push(`- **Heading note:** ${note}`);
-  }
+  if (note) history.push(`- **Heading note:** ${note}`);
 
   // Split the body into top-level field blocks; lines before the first field are prose.
   const blocks: { label: string; lines: string[] }[] = [];
@@ -169,9 +181,11 @@ function convertEntry(heading: string, body: string[], slug: string, roster: rea
     const lines = trimBlock(b.lines);
     const text = lines.join("\n").trimEnd();
     const raw = [`- **${b.label}:** ${lines[0] ?? ""}`.trimEnd(), ...lines.slice(1)].join("\n");
+    const own = [{ label: b.label, text }];
     if (CORE_FIELDS.some((f) => isField(b.label, f))) core.push({ label: b.label, text });
-    else if (b.label === "Source" && text) source.push({ kind: classifySource(text), ref: text });
-    else if (b.label === "Docs" && text && !NO_DOC_RE.test(text.replace(/[*_`]/g, "").trim())) source.push({ kind: "doc", ref: text });
+    // A qualified label (`Source (read-side anchor, …)`) is a source too; its qualifier stays in front of the ref.
+    else if (isField(b.label, "Source") && text) source.push({ kind: classifySource(text), ref: fold(own, "Source") });
+    else if (isField(b.label, "Docs") && text && !NO_DOC_RE.test(text.replace(/[*_`]/g, "").trim())) source.push({ kind: "doc", ref: fold(own, "Docs") });
     else {
       if (b.label === "Agents") agents.push(...agentsIn(text, roster));
       history.push(raw);
@@ -209,12 +223,20 @@ export function convertOracle(text: string, roster: readonly string[]): Converte
     while (j < lines.length && !/^#{1,2}\s/.test(lines[j])) j++;
     const section = lines.slice(i + 1, j);
 
+    // A non-rule `###` (a `### Note`) ends the entry above it, as `sliceOracle` ends it; it and its lines join
+    // the domain intro verbatim — kept, still rendered into business-logic.md, never folded into a rule. It
+    // moves to the top of the domain's section when that section is regenerated.
     const intro: string[] = [];
     const entries: { heading: string; body: string[] }[] = [];
+    let inNote = false;
     for (const line of section) {
-      if (ENTRY_RE.test(line)) entries.push({ heading: line, body: [] });
-      else if (/^###\s/.test(line)) throw new Error(`bl:convert: non-rule heading inside "${heading}": ${line}`);
-      else if (entries.length) entries[entries.length - 1].body.push(line);
+      if (ENTRY_RE.test(line)) {
+        entries.push({ heading: line, body: [] });
+        inNote = false;
+      } else if (/^###\s/.test(line)) {
+        intro.push("", line);
+        inNote = true;
+      } else if (entries.length && !inNote) entries[entries.length - 1].body.push(line);
       else intro.push(line);
     }
 
@@ -248,7 +270,7 @@ export function renderDomain(file: BlDomainFile): string {
   if (file.domain.intro) parts.push(file.domain.intro);
   for (const r of file.rules) {
     const lines = [
-      `### ${r.id}: ${r.title} \`[${r.priority}]\``,
+      `### ${r.id}: ${r.title}${r.priority ? ` \`[${r.priority}]\`` : ""}`,
       `- **Rule:** ${r.rule}`,
       `- **Verify:** ${verifyLine(r.check)}`,
       `- **Violation signal:** ${r.violation_signal}`,
@@ -292,6 +314,11 @@ function gateText(inv: Invariant, base: string): string {
   return fold(Object.entries(inv.fields).map(([label, text]) => ({ label, text })), base);
 }
 
+/** A title as `parseOracle` reads it: tags stripped, everything from a `→` on dropped. */
+function gateTitle(title: string): string {
+  return title.replace(BRACKET_TAG_RE, "").replace(/→.*$/, "").trim();
+}
+
 /** Every difference between two oracle texts in what `bl:lint` parses: ids, order, titles, severities, texts. */
 export function compareOracles(beforeText: string | Invariant[], afterText: string): string[] {
   const problems: string[] = [];
@@ -303,7 +330,11 @@ export function compareOracles(beforeText: string | Invariant[], afterText: stri
   for (const b of before) {
     const a = byId.get(b.id);
     if (!a) continue;
-    for (const k of ["title", "severity", "domain"] as const) if (a[k] !== b[k]) problems.push(`${b.id}: ${k} "${b[k]}" → "${a[k]}"`);
+    // The heading note moves to history by design, so the title the gate must read afterwards is its reading
+    // of the heading WITHOUT that note, not of the whole original heading.
+    const title = gateTitle(splitHeading(b.heading).title);
+    if (a.title !== title) problems.push(`${b.id}: title "${title}" → "${a.title}"`);
+    for (const k of ["severity", "domain"] as const) if (a[k] !== b[k]) problems.push(`${b.id}: ${k} "${b[k]}" → "${a[k]}"`);
     for (const f of CORE_FIELDS) if (gateText(a, f) !== gateText(b, f)) problems.push(`${b.id}: ${f} text differs`);
   }
   return problems;
@@ -331,7 +362,7 @@ export function roundTrip(
 }
 
 function main(argv: string[]) {
-  rejectUnknownFlags(argv, ["--check", "--write", "--domain", "--render"], ["--domain", "--render"]);
+  rejectUnknownFlags(argv, ["--check", "--write", "--force", "--domain", "--render"], ["--domain", "--render"]);
   const renderPath = flagValue(argv, "--render");
   if (renderPath) {
     process.stdout.write(renderDomain(fromYaml(readFileSync(renderPath, "utf-8"))));
@@ -348,10 +379,24 @@ function main(argv: string[]) {
       console.error(`bl:convert: --write needs --domain <${domains.map((x) => x.slug).join("|")}>`);
       return 2;
     }
-    mkdirSync(YAML_DIR, { recursive: true });
-    mkdirSync(HISTORY_DIR, { recursive: true });
     const yamlPath = `${YAML_DIR}/${d.slug}.yaml`;
     const historyPath = `${HISTORY_DIR}/${d.slug}.md`;
+    // A migrated domain's YAML carries its M2/M3 triage (trust, code_ref, verified), and a fresh conversion
+    // resets all of it to UNREVIEWED. Overwriting is an explicit act, never a re-run's side effect.
+    const existing = [yamlPath, historyPath].filter((p) => existsSync(p));
+    if (existing.length && !argv.includes("--force")) {
+      console.error(`bl:convert: ${existing.join(" and ")} already exist; re-converting resets every record to trust: UNREVIEWED. Pass --force to overwrite.`);
+      return 2;
+    }
+    // The --check gate scoped to this domain: nothing schema-invalid or lossy is written.
+    const problems = roundTrip([d], parseOracle(text).filter((x) => x.domain === d.file.domain.heading));
+    if (problems.length) {
+      console.error(`bl:convert: ${d.slug} does not round-trip; nothing written`);
+      for (const p of problems) console.error(`  ✗ ${p}`);
+      return 1;
+    }
+    mkdirSync(YAML_DIR, { recursive: true });
+    mkdirSync(HISTORY_DIR, { recursive: true });
     writeFileSync(yamlPath, `# yaml-language-server: $schema=${posix.relative(YAML_DIR, SCHEMA_PATH)}\n${toYaml(d.file)}`);
     writeFileSync(historyPath, renderHistory(d));
     console.log(`wrote ${yamlPath} (${d.file.rules.length} rules) and ${historyPath}`);

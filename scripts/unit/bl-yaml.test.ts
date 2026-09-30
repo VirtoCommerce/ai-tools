@@ -54,7 +54,10 @@ test("no line of an entry is lost: each lands in a record field or in its histor
   }
   for (const s of sliceOracle(text)) {
     const r = rules.get(s.id)!;
-    const hay = [r.title, r.rule, r.check.ref ?? "", r.violation_signal, ...r.source.map((x) => x.ref), hist.get(s.id) ?? ""].join("\n");
+    const hay = [r.title, `\`[${r.priority}]\``, r.rule, r.check.ref ?? "", r.violation_signal, ...r.source.map((x) => x.ref), hist.get(s.id) ?? ""].join("\n");
+    // The heading too: every word of its title, severity tag and note must land somewhere.
+    const tail = s.markdown.split("\n")[0].replace(/\r$/, "").replace(/^###\s+BL-[A-Z0-9]+-\d+[A-Z]?\s*:\s*/, "");
+    for (const word of tail.split(/\s+/).filter(Boolean)) assert.ok(hay.includes(word), `${s.id}: heading word not carried over: ${word}`);
     for (const raw of s.markdown.split("\n").slice(1)) {
       const line = raw.replace(/\r$/, "");
       if (!line.trim() || line.trim() === "---") continue;
@@ -114,8 +117,47 @@ test("a qualified Rule pair, a heading note, a no-doc Docs line and dropped fiel
   assert.deepEqual(compareOracles(FIXTURE, renderDomain(fromYaml(toYaml(d.file)))), []);
 });
 
+const EDGES = `## Domain 1: Things (BL-THING)
+
+### BL-THING-001: Foo \`[DEPRECATED]\`
+- **Rule:** A.
+- **Verify:** B.
+- **Violation signal:** C.
+- **Agents:** qa-backend-expert
+
+### BL-THING-002: Bar \`[P1-data]\` (amended 2026-10-01)
+- **Rule:** A.
+- **Verify:** B.
+- **Violation signal:** C.
+- **Source (read-side anchor, re-read 2026-09-14):** \`ThingController.cs\`
+
+### Note
+- **Aside:** belongs to no rule.
+`;
+
+test("no severity tag, a note after the tag, a qualified Source and a ### Note are kept and round-trip", () => {
+  const [d] = convertOracle(EDGES, roster);
+  const [untagged, noted] = d.file.rules;
+  const hist = (id: string) => d.history.find((h) => h.id === id)?.text ?? "";
+  assert.equal(untagged.title, "Foo");
+  assert.equal(untagged.priority, "");
+  assert.match(hist(untagged.id), /Heading note:\*\* `\[DEPRECATED\]`/);
+  assert.equal(noted.title, "Bar");
+  assert.match(hist(noted.id), /Heading note:\*\* \(amended 2026-10-01\)/);
+  assert.deepEqual(noted.source, [{ kind: "code", ref: "(read-side anchor, re-read 2026-09-14) `ThingController.cs`" }]);
+  assert.match(d.file.domain.intro ?? "", /### Note\n- \*\*Aside:\*\* belongs to no rule\./);
+  assert.ok(!hist(noted.id).includes("Aside"), "the ### Note leaked into the rule above it");
+  // The note after the tag is not a title change; the missing severity is a schema problem, not a crash.
+  const problems = roundTrip([d], EDGES, validate);
+  assert.ok(!problems.some((p) => /title|text differs/.test(p)), problems.join("\n"));
+  assert.ok(problems.some((p) => /schema/.test(p)), problems.join("\n"));
+});
+
 test("sources are classified by their wording", () => {
   assert.equal(classifySource("VCST-1234 AC #2"), "ac");
+  // The real BL-SR-014 shape: "access" is not "AC", so a code-only source stays code.
+  assert.equal(classifySource("`SalesRepController.cs`, `ModuleConstants.cs` (sales-rep:access). VCST-5293."), "code");
+  assert.equal(classifySource("VCST-1 the account is active"), "other");
   assert.equal(classifySource("vc-frontend `useCart.ts`"), "code");
   assert.equal(classifySource("live 2026-09-01 on vcst"), "live");
   assert.equal(classifySource("team decision"), "other");

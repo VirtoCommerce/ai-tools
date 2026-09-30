@@ -69,6 +69,7 @@ export interface Invariant {
   domainPrefix: string; // e.g. "BL-CART"
   seq: number;
   title: string;
+  heading: string; // the heading's raw text after `BL-…:`, tags and notes included (bl:convert compares titles on it)
   severity: string; // raw tag or "" if missing/malformed
   domain: string; // the `## Domain` heading text
   fields: Record<string, string>; // Rule / Verify / Violation signal / Agents / Source / Suite coverage / Amended / Promoted / ...
@@ -180,6 +181,7 @@ export function parseOracle(text: string): Invariant[] {
         domainPrefix: prefix,
         seq,
         title,
+        heading: tail,
         severity: severityTag,
         domain,
         fields: {},
@@ -191,6 +193,12 @@ export function parseOracle(text: string): Invariant[] {
       continue;
     }
     if (!cur) continue;
+    // A non-rule `###` (a `### Note` inside a domain) ends the entry, as it does in `sliceOracle`, so the
+    // note's lines are not read as continuations of the entry's last field.
+    if (/^###\s/.test(raw)) {
+      flush();
+      continue;
+    }
     const bullet = parseFieldBullet(raw);
     if (bullet) {
       curField = bullet[0];
