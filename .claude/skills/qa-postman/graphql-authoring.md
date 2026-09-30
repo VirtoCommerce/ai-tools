@@ -167,7 +167,7 @@ pm.test('GraphQL returns validation error', function () {
 
 ## 7. Common GraphQL Gotchas (project-specific)
 
-These are documented in shared memory (`feedback_graphql_*` entries) — read them before authoring:
+Read these before authoring:
 
 - **`products` filter requires `category.subtree:<B2B_VIRTUAL_CATALOG_ID>`** as a base filter. The active virtual catalog root ID changes — re-verify before hardcoding. Current (2026-04-30): `9238c387-d779-40cb-b27d-5496a670a924`. Cross-check `test-data/aliases.json` BOPIS entry's `testProductCatalogId` field.
 - **Cart mutations need `userId`.** See order-creation-matrix.md for the exact requirements.

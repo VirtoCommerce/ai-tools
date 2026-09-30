@@ -21,7 +21,7 @@ exact module set a task needs.
 | **backend** | `backend-only` | platform + db + es + redis (kibana OFF unless `-IncludeKibana`); **no frontend** | /health + OAuth token | API / Admin / module work — lighter |
 | **frontend** | `frontend-only` | **only** the vc-frontend container; nginx proxied to a **remote** env | storefront 200 + proxied `/graphql` returns the env's data + **theme build-marker** | Storefront/theme (the fix) against real remote data — the Gate-6 hybrid |
 
-`frontend-only` is the hybrid from the `local-frontend-proxied-to-qa-backend` memory, productised: local theme (the fix) + a remote env's real data/config. The repo stays clean — the WorkDir and vc-build's `.nuke` live under a stable temp path (`%TEMP%/vc-local-env`, override `-BaseTempDir`), not the git tree.
+`frontend-only` is the hybrid setup: local theme (the fix) + a remote env's real data/config. The repo stays clean — the WorkDir and vc-build's `.nuke` live under a stable temp path (`%TEMP%/vc-local-env`, override `-BaseTempDir`), not the git tree.
 
 Engine: VirtoCommerce **start-local** (Docker Compose + PowerShell 7). This skill never
 re-implements it — it generates the manifest, drives start-local non-interactively, and

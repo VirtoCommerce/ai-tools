@@ -165,7 +165,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
     ```
 
 3. **Resolve current sprint** — use `reports/tickets/Sprint-current` if present, else the latest `SprintXX-XX` folder; create if missing. This is `{SPRINT}` for output paths (`reports/tickets/{SPRINT}/`). Resolve **before** the duplicate check.
-4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` (per `feedback_duplicate_check_across_all_sprints`) for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
+4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
 
 ---
 

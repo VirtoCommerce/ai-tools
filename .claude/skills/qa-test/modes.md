@@ -203,8 +203,7 @@ with the failure list, which is the moment the loop actually hands off. Every su
 `status_transitions[]` with the bug key, like any other (§8 of that file).
 
 **And `/vc-fix:qa-verify-fix`'s own matrix stops at `TESTED` too.** Its all-pass row used to read
-`TESTED (Finish test) → DONE (Move to Done)`, which no run may do — corrected in place; the standing
-`feedback_verify_fix_stops_at_tested` guidance was already the operative rule.
+`TESTED (Finish test) → DONE (Move to Done)`, which no run may do — corrected in place; stopping at `TESTED` was already the operative rule.
 
 #### The exit round
 

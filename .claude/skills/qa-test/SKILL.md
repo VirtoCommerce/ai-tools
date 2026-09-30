@@ -181,7 +181,7 @@ hardcode IDs, `.claude/rules/test-data.md`); the **`BL-*`** rule text + **`ECL-*
 `npm run ecl:extract -- --domain <d>` emit the oracles' own markdown verbatim — what may travel as text
 and what must stay a path is [`dispatch-pack.md`](dispatch-pack.md));
 the browser server; env URLs; the screenshot path; and the evidence-capture policy. **Artifact C1 is NOT in
-the agent prompt** — it goes to `/qa-regression` (`feedback_long_runner_sessions_unreliable`).
+the agent prompt** — it goes to `/qa-regression`.
 
 **Artifact A is NOT in the agent prompt either, since 2026-09-10.** It used to be, and `4c`'s C1 run
 executed the same rows — so every authored case ran twice, and only C1 emits the `RUN_ID` promotion needs,
