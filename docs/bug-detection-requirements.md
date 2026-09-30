@@ -1,393 +1,394 @@
-# Обнаружение сложных багов — диагноз и требования
+# Complex-bug detection — diagnosis and requirements
 
-**Статус:** черновик, v0.1 · **Открыт:** 2026-09-30 · **Владелец:** QA (Elena Mutykova)
-**Назначение:** живой документ требований к дальнейшей работе. Дополняется по мере решений;
-каждое решение — строкой в §9 «Журнал».
+**Status:** draft, v0.1 · **Opened:** 2026-09-30 · **Owner:** QA (Elena Mutykova)
+**Purpose:** a living requirements document for the work ahead. It grows as decisions are made;
+every decision gets a line in §9 "Decision log".
 
-Все цифры ниже — **снимок на 2026-09-30**, не константы. Команда пересчёта указана рядом;
-при обновлении документа пересчитывать, а не переписывать вручную.
+Every number below is a **snapshot as of 2026-09-30**, not a constant. The command that recomputes it
+is given next to it; when updating this document, recompute rather than retype.
 
 ---
 
-## 1. Проблема
+## 1. Problem
 
-Агенты находят в основном видимые дефекты (вёрстка, a11y, валидация). Сложные баги — сквозные,
-«тихие», на стыке слоёв, гонки, устаревшие данные — уходят. Бизнес-правила (BL), тестовые модели
-и mind map на это почти не влияют.
+Agents mostly find visible defects (layout, a11y, validation). Complex bugs — cross-cutting,
+"silent", at layer boundaries, races, stale data — escape. Business rules (BL), test models
+and mind maps barely change this.
 
-**Эталонный пропуск:** `reports/bugs/open/critical-high/BUG-xapi-catalog-paging-drops-unhydrated-products.md` —
-каталог показывает 3 товара из 3 569 на сортировке по умолчанию. Нашла фронтенд-команда, не агенты.
-Все 808 строк сьюта `050a` проходят на сломанной сборке: проверки `items.length >= 1`,
-нет реального размера страницы, нет обхода страниц со сверкой с `totalCount`.
+**Reference escape:** `reports/bugs/open/critical-high/BUG-xapi-catalog-paging-drops-unhydrated-products.md` —
+the catalog shows 3 products out of 3,569 on the default sort. Found by the frontend team, not by agents.
+All 808 rows of suite `050a` pass on the broken build: the assertions are `items.length >= 1`,
+no case uses the real page size, and no case walks the pages and reconciles them against `totalCount`.
 
-## 2. Диагноз (снимок 2026-09-30)
+## 2. Diagnosis (snapshot 2026-09-30)
 
-| # | Наблюдение | Цифра | Как пересчитать |
+| # | Observation | Figure | How to recompute |
 |---|---|---|---|
-| D1 | Находим «видимое», не сложное | топ-архетип багов `RENDER`; по `STALE`/`LIFECYCLE`/`CONFIG` — 0 багов | `grep -rhoE '\*\*Archetype:?\*\*:? *\`?[A-Z-]+' reports/bugs` |
-| D2 | Модель дефектов не доходит до кейсов | архетип у 314 из 4 886 кейсов (~6%); `RACE` 6, `STALE` 16 | grep `Archetype` по `regression/suites/` |
-| D3 | Проверки «на наличие» | ~650 кейсов только presence (грубый regex, без учёта цели кейса — часть из них законные happy path / visual); из BL-ссылающихся — 518 | скрипт-оценка, см. REQ-02 (нужен точный) |
-| D4 | Ссылка на правило ≠ проверка | 2 971 кейс цитирует BL | grep `BL-[A-Z]+-\d+` по сьютам |
-| D5 | Треть прогонов без вердикта | 6 267 исполнений / 35 прогонов: pass 57%, fail 10%, **blocked 22%, skipped 9%** | `reports/regression/history.json` |
-| D6 | Глубокие баги находят расследованием | TypeLoad модулей, resolver missions, каталог — `Found by: manual`/мониторинг | `grep -rl 'Found by:\*\* manual' reports/bugs` |
-| D7 | Неподтверждённые правила дают ложные баги | BL цитируют 7 из 18 отклонённых; пример `BL-LOY-016` выведен из смысла, не из AC → «by design» | `reports/bugs/rejected/` |
-| D8 | Модели не учатся на пропусках | mind map search (2026-09-28, 110 узлов) — 0 узлов про пагинацию/`totalCount`, хотя баг каталога заведён 2026-09-15 | grep по `.claude/knowledge/domain/search.mind-map.json` |
-| D9 | Mind map описывает «как работает», не «как ломается» | нет поля отказа/архетипа в узлах; `CONFIRMED` = «видели, что работает» | схема `templates/mind-map.schema.json` |
-| D10 | Инструкций слишком много | ~2,7 млн симв. промптов + 2,1 млн `knowledge/`; `business-logic.md` 434 тыс. симв. (~110k токенов); старт `/qa-test` ≈143 тыс. симв., 179 директив MUST/NEVER | `wc -c`, `context:check` |
-| D11 | Энергия уходит в мета-систему | из 58 коммитов ~26 про саму систему (kb, prompt-review, диагностика), ~18 про тестирование продукта | `git log --format=%s` |
-| D12 | Нет метрики «ловим ли мы баги» | mutation score / replay исправленных багов не измеряется | — |
+| D1 | We find the "visible", not the complex | top bug archetype is `RENDER`; 0 bugs for `STALE`/`LIFECYCLE`/`CONFIG` | `grep -rhoE '\*\*Archetype:?\*\*:? *\`?[A-Z-]+' reports/bugs` |
+| D2 | The fault model does not reach the cases | archetype on 314 of 4,886 cases (~6%); `RACE` 6, `STALE` 16 | grep `Archetype` across `regression/suites/` |
+| D3 | Presence-only assertions | ~650 presence-only cases (rough regex that ignores the case's purpose — some are legitimate happy-path / visual cases); 518 of them cite BL | estimate script, see REQ-02 (an exact one is needed) |
+| D4 | Citing a rule ≠ checking it | 2,971 cases cite BL | grep `BL-[A-Z]+-\d+` across the suites |
+| D5 | A third of executions give no verdict | 6,267 executions / 35 runs: pass 57%, fail 10%, **blocked 22%, skipped 9%** | `reports/regression/history.json` |
+| D6 | Deep bugs are found by investigation | module TypeLoad, missions resolver, catalog paging — `Found by: manual` / monitoring | `grep -rl 'Found by:\*\* manual' reports/bugs` |
+| D7 | Unconfirmed rules produce false bugs | 7 of 18 rejected reports cite BL; e.g. `BL-LOY-016` was inferred from wording, not from AC → "by design" | `reports/bugs/rejected/` |
+| D8 | Models do not learn from escapes | search mind map (2026-09-28, 110 nodes) has 0 nodes on paging/`totalCount`, although the catalog bug was filed 2026-09-15 | grep `.claude/knowledge/domain/search.mind-map.json` |
+| D9 | The mind map describes "how it works", not "how it breaks" | nodes have no failure/archetype field; `CONFIRMED` = "seen working" | schema `templates/mind-map.schema.json` |
+| D10 | Too many instructions | ~2.7M chars of prompts + 2.1M in `knowledge/`; `business-logic.md` 434K chars (~110k tokens); a `/qa-test` start ≈143K chars, 179 MUST/NEVER directives | `wc -c`, `context:check` |
+| D11 | Effort goes into the meta-system | of 58 commits, ~26 are about the system itself (kb, prompt-review, diagnostics), ~18 about testing the product | `git log --format=%s` |
+| D12 | No "do we catch bugs" metric | mutation score / replay of fixed bugs is not measured | — |
 
-**Что уже работает (сохранить):** тестовая модель VCST-4933 явно записала «AC8: нет проверки
-конкурентности» — и это привело к реальному багу гонки `VCST-4933-01-silent-lost-update`.
-Модель помогает, когда она **про отказы** и её вывод **сразу исполняется**. BL полезны как
-ожидаемый результат при расследовании (цитируются в 64 реальных багах).
+**What already works (keep it):** the VCST-4933 test model explicitly recorded "AC8: no concurrency
+check" — and that led to a real race bug, `VCST-4933-01-silent-lost-update`.
+A model helps when it is **about failures** and its output is **executed right away**. BL are useful as
+the expected result during an investigation (cited in 64 real bugs).
 
-**Корень:** LLM плохо знает «правильный ответ» и склонна подтверждать увиденное. У нас LLM и
-исполняет кейс, и выносит вердикт, а знания об отказах хранятся в прозе, а не в проверках.
+**Root cause:** an LLM is poor at knowing the "right answer" and tends to confirm what it sees. Here the LLM
+both executes the case and gives the verdict, and knowledge about failures lives in prose, not in checks.
 
-## 3. Внешние источники (кратко)
+## 3. External sources (summary)
 
-Проверено по поисковой выдаче 2026-09-30; arxiv напрямую недоступен из среды — по аннотациям.
+Checked against search results on 2026-09-30; arxiv is not directly reachable from the environment — abstracts only.
 
-- **LLM предлагает, детерминированный механизм решает** — Meta TestGen-LLM (arXiv 2402.09171), Meta ACH mutation-guided (2501.12862), OSS-Fuzz + LLM (Google Security Blog, 2024-11), Agentic PBT (2510.09907, 56% подтверждённых отчётов).
-- **Проблема оракула** — LLM пишут проверки под текущее, а не задуманное поведение (arXiv 2410.21136).
-- **Свободный браузерный агент без оракулов** — 85% ложных срабатываний (WebProber, 2509.05197); явные пред/постусловия — 96% precision/recall (WebTestPilot, 2602.11724).
-- **ИИ не место в рантайме тестов** — Octomind, «AI doesn't belong in test runtime».
-- **Сложность вредит** — IFScale (2507.11538: 68% при 500 инструкциях), Chroma «Context Rot» (2025), «Lost in the Middle» (2307.03172), MAST (2503.13657: ~79% сбоев мультиагентов — спецификация и координация), Anthropic «Building effective agents», Cognition «Don't build multi-agents», Claude Code best practices («If your CLAUDE.md is too long, Claude ignores half of it»; «hooks are deterministic»).
-- **Измерять силу тестов мутантами** — Google «Practical Mutation Testing at Scale» (2102.11378).
-- Пробел: исследований именно про поиск гонок/stale/cross-layer агентами в e-commerce не найдено.
+- **LLM proposes, a deterministic mechanism decides** — Meta TestGen-LLM (arXiv 2402.09171), Meta ACH mutation-guided (2501.12862), OSS-Fuzz + LLM (Google Security Blog, 2024-11), Agentic PBT (2510.09907, 56% of reports confirmed).
+- **The oracle problem** — LLMs write assertions for current behaviour, not intended behaviour (arXiv 2410.21136).
+- **A free-roaming browser agent without oracles** — 85% false positives (WebProber, 2509.05197); explicit pre/post-conditions — 96% precision/recall (WebTestPilot, 2602.11724).
+- **AI does not belong in the test runtime** — Octomind, "AI doesn't belong in test runtime".
+- **Complexity hurts** — IFScale (2507.11538: 68% at 500 instructions), Chroma "Context Rot" (2025), "Lost in the Middle" (2307.03172), MAST (2503.13657: ~79% of multi-agent failures are specification and coordination), Anthropic "Building effective agents", Cognition "Don't build multi-agents", Claude Code best practices ("If your CLAUDE.md is too long, Claude ignores half of it"; "hooks are deterministic").
+- **Measure test strength with mutants** — Google "Practical Mutation Testing at Scale" (2102.11378).
+- Gap: no study found specifically on agents finding races / stale data / cross-layer bugs in e-commerce.
 
-## 4. Принципы
+## 4. Principles
 
-- **P1. Проверка, а не правило.** Знание об отказе считается внедрённым, только когда оно исполняется кодом и может упасть.
-- **P2. LLM пишет — код решает.** ИИ — на этапе авторства и расследования; вердикт — детерминированная проверка.
-- **P3. Сравнение вместо суждения.** Оракул — сверка двух источников (страницы vs `totalCount`, UI vs API, до vs после, USD vs EUR), а не «выглядит правильно».
-- **P4. Сначала измерить.** Любое изменение оценивается метрикой обнаружения (REQ-01), а не ощущением.
-- **P5. Пропуск меняет систему.** Каждый пропущенный баг обязан оставить исполняемый след.
-- **P6. Меньше текста.** Новый инцидент → проверка/хук/lint, не новый абзац.
+- **P1. A check, not a rule.** Knowledge about a failure counts as adopted only when code executes it and it can fail.
+- **P2. The LLM writes — code decides.** AI at authoring and investigation time; the verdict is a deterministic check.
+- **P3. Comparison over judgement.** The oracle reconciles two sources (pages vs `totalCount`, UI vs API, before vs after, USD vs EUR), not "looks right".
+- **P4. Measure first.** Every change is judged by the detection metric (REQ-01), not by feel.
+- **P5. An escape changes the system.** Every escaped bug must leave an executable trace.
+- **P6. Less text.** A new incident → a check / hook / lint, not a new paragraph.
 
-## 5. Требования
+## 5. Requirements
 
-Приоритет: **P0** — делать первым, **P1** — следом, **P2** — после пилота. Статус: `NEW` / `IN-PROGRESS` / `DONE` / `DROPPED`.
+Priority: **P0** — do first, **P1** — next, **P2** — after the pilot. Status: `NEW` / `IN-PROGRESS` / `DONE` / `DROPPED`.
 
-### REQ-01 · Метрика обнаружения · P0 · NEW
-**Зачем:** D12 — сейчас нельзя сказать, ловим ли мы баги.
-**Что:** два измерения силы набора тестов.
-1. *Replay исправленных багов:* для багов из `reports/bugs/fixed/` — упал бы релевантный кейс на поведении до фикса.
-2. *Мутанты ответов:* детерминированная подмена ответов GraphQL/REST через `page.route` (обрезать страницу, сменить валюту, `200` + `errors[]`, устаревшее значение, дубль эффекта).
-**Критерии приёмки:**
-- скрипт выдаёт mutation score по домену и список «не пойманных» мутантов;
-- для пилотного домена есть базовая цифра до изменений;
-- метрика пересчитывается командой, а не пишется в прозу.
+### REQ-01 · Detection metric · P0 · NEW
+**Why:** D12 — right now we cannot say whether we catch bugs.
+**What:** two measures of test-suite strength.
+1. *Replay of fixed bugs:* for the bugs in `reports/bugs/fixed/` — would the relevant case have failed on the pre-fix behaviour.
+2. *Response mutants:* deterministic substitution of GraphQL/REST responses via `page.route` (truncate a page, switch currency, `200` + `errors[]`, a stale value, a duplicated effect).
+**Acceptance criteria:**
+- a script outputs the mutation score per domain and the list of "not caught" mutants;
+- the pilot domain has a baseline figure before any change;
+- the metric is recomputed by a command, not written into prose.
 
-### REQ-02 · Сила проверки соответствует цели кейса · P0 · NEW
-**Зачем:** D3, эталонный пропуск.
-**Что НЕ меняется:** happy path и визуальные/UI-кейсы **остаются и пишутся дальше** — особенно для frontend.
-Проверка «виден / отображается» — законный оракул для вопроса «видит ли пользователь это».
-Проблема не в них, а в **несоответствии цели и проверки**: функциональное утверждение
-(«пагинация работает», «сумма верна», «фильтр сужает список») проверено только наличием.
+### REQ-02 · Assertion strength matches the case's purpose · P0 · NEW
+**Why:** D3, the reference escape.
+**What does NOT change:** happy-path and visual/UI cases **stay and keep being written** — especially for the frontend.
+"Is visible / is displayed" is a legitimate oracle for the question "does the user see this".
+The problem is not them but a **mismatch between purpose and assertion**: a functional claim
+("paging works", "the total is right", "the filter narrows the list") checked only by presence.
 
-**Что:**
-1. У кейса явная **цель** (колонка или метка): `HAPPY` (путь проходит) · `VISUAL` (как выглядит: вёрстка, токены, скриншот-diff, a11y) · `FUNC` (правильность данных/логики).
-2. Точный классификатор assertion-ов (`PRES` / `REL` / `INV` / `DER` / `SHAPE`) в `suites:lint` — сначала **только отчёт**.
-3. Правило силы — **только для `FUNC`**: хотя бы одна не-`PRES` проверка (сверка, до/после, UI vs API, `totalCount`).
-4. `HAPPY` и `VISUAL` правилом силы не ограничиваются. Рекомендация, не требование: если сверка бесплатна на том же шаге — добавить её (например, happy path каталога: число карточек на первой странице == размер страницы, пока `totalCount` больше).
+**What:**
+1. Each case has an explicit **purpose** (column or tag): `HAPPY` (the path completes) · `VISUAL` (how it looks: layout, tokens, screenshot diff, a11y) · `FUNC` (correctness of data/logic).
+2. An exact assertion classifier (`PRES` / `REL` / `INV` / `DER` / `SHAPE`) in `suites:lint` — **report only** at first.
+3. The strength rule applies **to `FUNC` only**: at least one non-`PRES` assertion (reconciliation, before/after, UI vs API, `totalCount`).
+4. `HAPPY` and `VISUAL` are not constrained by the strength rule. A recommendation, not a requirement: if a reconciliation is free on the same step, add it (e.g. the catalog happy path: cards on the first page == page size while `totalCount` is larger).
 
-**Критерии приёмки:**
-- у кейсов проставлена цель; отчёт показывает `FUNC`-кейсы только с `PRES`;
-- gate (Фаза 2) срабатывает только на новые `FUNC`-кейсы без не-`PRES` проверки; существующие — в baseline, число может только уменьшаться;
-- ни один `HAPPY`/`VISUAL`-кейс не блокируется правилом силы;
-- точная цифра D3 (в разрезе целей) заменяет грубую оценку в §2.
+**Acceptance criteria:**
+- cases carry a purpose; the report lists `FUNC` cases that have only `PRES`;
+- the gate (Phase 2) fires only on new `FUNC` cases with no non-`PRES` assertion; existing ones go into a baseline that may only shrink;
+- no `HAPPY`/`VISUAL` case is blocked by the strength rule;
+- an exact D3 figure (broken down by purpose) replaces the rough estimate in §2.
 
-### REQ-03 · Библиотека сквозных инвариантов в коде · P0 · NEW
-**Зачем:** D1, D2, D8 — сложные баги живут между фичами.
-**Что:** переиспользуемые проверки, применяемые по типу поверхности, а не по фиче. Начальный набор:
-- `PAGE-WALK` — обход всех страниц, объединение == `totalCount`, полные страницы при реальном размере;
-- `SORT-SET` — разные сортировки дают одно множество;
-- `LAYER-PARITY` — UI == GraphQL == REST (== Admin) для одного значения;
-- `SILENT-200` — `200` с непустым `errors[]` = падение;
-- `MONEY-VARIANT` — тот же сценарий в не-USD валюте и не-`en` культуре;
-- `REPLAY` — повтор с тем же ключом → один эффект;
-- `RACE-N` — N параллельных запросов, инвариант сохраняется (история операций + проверка согласованности);
-- `STALE-RW` — запись одним путём → чтение другим → свежо.
-**Критерии приёмки:** каждый инвариант — код + unit-тест на деривацию; подключается к кейсу/узлу одной меткой; ловит соответствующий мутант REQ-01.
+### REQ-03 · Library of cross-cutting invariants in code · P0 · NEW
+**Why:** D1, D2, D8 — complex bugs live between features.
+**What:** reusable checks applied by surface type, not by feature. Initial set:
+- `PAGE-WALK` — walk all pages, union == `totalCount`, full pages at the real page size;
+- `SORT-SET` — different sorts return the same set;
+- `LAYER-PARITY` — UI == GraphQL == REST (== Admin) for the same value;
+- `SILENT-200` — `200` with a non-empty `errors[]` = failure;
+- `MONEY-VARIANT` — the same scenario in a non-USD currency and a non-`en` culture;
+- `REPLAY` — a repeat with the same key → one effect;
+- `RACE-N` — N concurrent requests, the invariant holds (operation history + consistency check);
+- `STALE-RW` — write via one path → read via another → fresh.
+**Acceptance criteria:** each invariant is code + a unit test on the derivation; attached to a case/node by one tag; catches its matching REQ-01 mutant.
 
-### REQ-04 · Исполняемые и ранжированные по доверию BL · P1 · IN-PROGRESS → реализуется новой схемой BL (§7)
-**Зачем:** D4, D7, D10.
-**Что:**
-- у каждого BL — уровень доверия: `DECLARED` (документ/AC) · `OBSERVED` · `INFERRED` (выведен агентом);
-- по `INFERRED` баг не заводится — пометка в отчёте прогона; неподтверждённое источником за N дней удаляется само (§7.0);
-- топ-20–30 BL (P0 и сквозные) переводятся из `Verify`/`Violation signal` в исполняемые проверки;
-- `business-logic.md` сжимается до «правило · проверка · сигнал нарушения», история — в `docs/decisions/`.
-**Критерии приёмки:** доля отклонённых багов со ссылкой на BL снижается; исполняемые BL видны в REQ-01.
+### REQ-04 · Executable, trust-ranked BL · P1 · IN-PROGRESS → implemented by the new BL scheme (§7)
+**Why:** D4, D7, D10.
+**What:**
+- every BL has a trust level: `DECLARED` (doc/AC) · `OBSERVED` · `INFERRED` (derived by an agent);
+- no bug is filed on an `INFERRED` rule — it is a note in the run report; a rule unconfirmed by a source within N days is removed automatically (§7.0);
+- the top 20–30 BL (P0 and cross-cutting) are turned from `Verify`/`Violation signal` into executable checks;
+- `business-logic.md` is compressed to "rule · check · violation signal"; history moves to `docs/decisions/`.
+**Acceptance criteria:** the share of rejected bugs citing BL goes down; executable BL are visible in REQ-01.
 
-### REQ-05 · Слой отказов в mind map · P1 · NEW
-**Зачем:** D8, D9.
-**Что:**
-- у узла — применимые архетипы и ссылка на проверку (REQ-03) для каждого;
-- покрытие считается по «узел × архетип»;
-- `CONFIRMED` разделяется на «наблюдали» (поверхность) и «ожидаемо» (механика из DOC/AC); расхождение — находка.
-**Критерии приёмки:** схема обновлена; `models:check` показывает пустые клетки «узел × архетип».
+### REQ-05 · A failure layer in the mind map · P1 · NEW
+**Why:** D8, D9.
+**What:**
+- each node lists its applicable archetypes and a check reference (REQ-03) for each;
+- coverage is counted per "node × archetype";
+- `CONFIRMED` is split into "observed" (surface) and "expected" (mechanism from DOC/AC); a mismatch is a finding.
+**Acceptance criteria:** schema updated; `models:check` shows the empty "node × archetype" cells.
 
-### REQ-06 · Петля пропусков (escape loop) · P1 · NEW
-**Зачем:** D6, D8, P5.
-**Что:** любой баг, не пойманный кейсом (`— none (not case-attributable)`), обязан содержать раздел «почему не поймали» и ссылку на добавленный инвариант/узел/проверку.
-**Критерии приёмки:** gate падает, если для домена есть такой баг без узла/архетипа в его mind map или без проверки REQ-03.
+### REQ-06 · Escape loop · P1 · NEW
+**Why:** D6, D8, P5.
+**What:** every bug not caught by a case (`— none (not case-attributable)`) must carry a "why it was missed" section and a reference to the invariant/node/check that was added.
+**Acceptance criteria:** the gate fails if a domain has such a bug with no node/archetype in its mind map or no REQ-03 check.
 
-### REQ-07 · Снижение BLOCKED/SKIPPED · P1 · NEW
-**Зачем:** D5 — треть кейсов не доходит до вердикта.
-**Что:** доля BLOCKED/SKIPPED по сьютам как метрика; preflight данных до прогона; изменчивое состояние создаётся в кейсе (FIFTH RULE).
-**Критерии приёмки:** отчёт по сьютам с долей blocked; цель по доле — зафиксировать после первого замера.
+### REQ-07 · Fewer BLOCKED/SKIPPED · P1 · NEW
+**Why:** D5 — a third of cases never reach a verdict.
+**What:** BLOCKED/SKIPPED share per suite as a metric; data preflight before the run; mutable state is created inside the case (FIFTH RULE).
+**Acceptance criteria:** a per-suite report with the blocked share; the target share is set after the first measurement.
 
-### REQ-08 · Упрощение инструкций · P1 · NEW
-**Зачем:** D10, D11.
-**Что:**
-- мораторий на новые правила прозой: инцидент → lint/hook/проверка или ничего;
-- ревизия существующих правил тестом «ошибётся ли агент, если убрать строку?»;
-- целевой бюджет always-loaded слоя в 3–4 раза меньше текущего.
-**Критерии приёмки:** `context:check` с новым бюджетом; список удалённых/превращённых в проверки правил.
+### REQ-08 · Simplify the instructions · P1 · NEW
+**Why:** D10, D11.
+**What:**
+- a moratorium on new prose rules: incident → lint/hook/check or nothing;
+- review existing rules with the test "would the agent make a mistake if this line were removed?";
+- a target always-loaded budget 3–4× smaller than today's.
+**Acceptance criteria:** `context:check` with the new budget; a list of rules removed or turned into checks.
 
-### REQ-09 · Меньше передач между агентами · P2 · NEW
-**Зачем:** MAST; потери контекста между моделью, чек-листом, кейсами и прогоном.
-**Что:** модель отказов, её проверка и исполнение — у одного агента; отдельно только независимый верификатор. Оркестрация — там, где задачи реально параллельны (регрессия по сьютам).
-**Критерии приёмки:** схема ролей на 1 странице; сравнение по REQ-01 до/после.
+### REQ-09 · Fewer handoffs between agents · P2 · NEW
+**Why:** MAST; context lost between the model, checklist, cases and run.
+**What:** the fault model, its check and its execution belong to one agent; only an independent verifier is separate. Orchestration only where tasks are genuinely parallel (regression across suites).
+**Acceptance criteria:** a one-page role diagram; a REQ-01 comparison before/after.
 
-### REQ-10 · Вердикт — на машинных линиях · P2 · NEW
-**Зачем:** P2; D5; Octomind, WebTestPilot.
-**Что:** рост доли кейсов, исполняемых детерминированно (`[GQL-OP]`, Playwright-скрипты); браузерный агент — для исследования, визуала, UX.
-**Критерии приёмки:** доля машинных кейсов по домену как метрика; время полного прогона.
+### REQ-10 · Verdicts on machine lanes · P2 · NEW
+**Why:** P2; D5; Octomind, WebTestPilot.
+**What:** a growing share of cases executed deterministically (`[GQL-OP]`, Playwright scripts); the browser agent is for exploration, visual and UX.
+**Acceptance criteria:** share of machine-executed cases per domain as a metric; full-run duration.
 
-### REQ-11 · Свежесть BL: устаревание обнаруживается событием, а не аудитом · P1 · IN-PROGRESS → реализуется новой схемой BL (§7)
-**Зачем:** BL устаревают молча. Сейчас у правила нет структурированной «даты и версии проверки» и
-ссылки на код; проверка свежести — ручной 3-источниковый аудит `/qa-review-oracles` по всему файлу.
-Снимок 2026-09-30 (`npm run bl:lint`): ссылки на несуществующие `BL-SEC-001…005` в 19 кейсах
-(ложная трассируемость); у части правил нет ни одного кейса.
-**Что:**
-1. **Метаданные у каждого BL** (машиночитаемо): `module` (репозиторий/модуль), `code_ref` (файл или символ, где правило реализовано), `verified` (дата + версия модуля), `trust` (REQ-04: `DECLARED`/`OBSERVED`/`INFERRED`).
-2. **Статус `SUSPECT` ставится автоматически** по событию:
-   - вышел релиз или смержен PR в модуле, где изменён `code_ref` (источник — уже существующее обнаружение изменений `/qa-test-lifecycle` / `full-cycle`);
-   - упал кейс, ссылающийся на BL, — при триаже вариант «правило устарело» рассматривается наравне с «баг» и «дефект теста»;
-   - закрыт баг в Jira по домену правила (поток из каталога багов);
-   - `verified` старше порога (например 90 дней) — только для `OBSERVED`/`INFERRED`.
-3. **Аудит — только по списку `SUSPECT`**, маленькими пачками, а не по всему файлу. Правило вне `SUSPECT` не перепроверяется.
-4. **Исполняемый BL — сам себе проверка свежести** (REQ-04): прогон на новой сборке либо проходит (правило живо, `verified` обновляется автоматически), либо падает (баг или правило устарело — решает триаж).
-5. **`DECLARED` меняется только новым человеческим источником** (новый тикет с AC, обновлённая документация, резолюция бага) — автоматически, без отдельного ревью (§7.0). Код и стенд смысл правила не меняют.
-**Критерии приёмки:**
-- `bl:lint` сообщает: BL без метаданных, `SUSPECT`, просроченные `verified`, ссылки на несуществующие BL;
-- команда выдаёт очередь `SUSPECT` с причиной (какой PR/релиз/падение/баг);
-- время от изменения кода до пометки `SUSPECT` — не больше одного прогона `full-cycle`;
-- ложная трассируемость (`BLC-002`) = 0.
+### REQ-11 · BL freshness: staleness is detected by events, not by audit · P1 · IN-PROGRESS → implemented by the new BL scheme (§7)
+**Why:** BL go stale silently. Today a rule has no structured "verified date and version" and
+no code reference; freshness checking is a manual 3-source `/qa-review-oracles` audit of the whole file.
+Snapshot 2026-09-30 (`npm run bl:lint`): references to non-existent `BL-SEC-001…005` in 19 cases
+(false traceability); some rules have no case at all.
+**What:**
+1. **Metadata on every BL** (machine-readable): `module` (repo/module), `code_ref` (file or symbol that implements the rule), `verified` (date + module version), `trust` (REQ-04: `DECLARED`/`OBSERVED`/`INFERRED`).
+2. **`SUSPECT` status is set automatically** on an event:
+   - a release ships or a PR is merged in a module where `code_ref` changed (source: the existing change detection in `/qa-test-lifecycle` / `full-cycle`);
+   - a case citing the BL fails — triage considers "the rule is stale" on a par with "bug" and "test defect";
+   - a Jira bug in the rule's domain is closed (the feed from the bug catalog);
+   - `verified` is older than a threshold (e.g. 90 days) — for `OBSERVED`/`INFERRED` only.
+3. **Audit only the `SUSPECT` list**, in small batches, not the whole file. A rule outside `SUSPECT` is not re-checked.
+4. **An executable BL is its own freshness check** (REQ-04): a run on a new build either passes (the rule is alive, `verified` is updated automatically) or fails (a bug or a stale rule — triage decides).
+5. **`DECLARED` changes only with a new human source** (a new ticket with AC, updated docs, a bug resolution) — automatically, with no separate review (§7.0). Code and the live stand do not change a rule's meaning.
+**Acceptance criteria:**
+- `bl:lint` reports: BL without metadata, `SUSPECT`, expired `verified`, references to non-existent BL;
+- a command outputs the `SUSPECT` queue with the reason (which PR / release / failure / bug);
+- time from a code change to the `SUSPECT` mark is no more than one `full-cycle` run;
+- false traceability (`BLC-002`) = 0.
 
-## 6. План работ — что убрать, что добавить
+## 6. Work plan — what to remove, what to add
 
-Правило плана: **ничего не удаляется без замера.** Каждое удаление или слияние проверяется
-метрикой REQ-01: она не должна ухудшиться. Поэтому метрика идёт первой. Сроки — оценка, уточняются
-после Фазы 0.
+Plan rule: **nothing is removed without a measurement.** Every removal or merge is checked against
+the REQ-01 metric: it must not get worse. That is why the metric comes first. Dates are estimates, refined
+after Phase 0.
 
-### 6.1 Добавить
+### 6.1 Add
 
-| Что | Требование | Фаза |
+| What | Requirement | Phase |
 |---|---|---|
-| Метрика обнаружения: replay исправленных багов + мутанты ответов | REQ-01 | 0 |
-| Цель кейса (`HAPPY`/`VISUAL`/`FUNC`) + классификатор assertion-ов — сначала только отчёт | REQ-02 | 0 |
-| Доля BLOCKED/SKIPPED по сьютам | REQ-07 | 0 |
-| Библиотека сквозных инвариантов в коде | REQ-03 | 1 |
-| Слой отказов в mind map (архетипы + проверки на узел) | REQ-05 | 1 |
-| Gate: ratchet на `FUNC`-кейсы только с `PRES` (happy path и visual не затрагиваются) | REQ-02 | 2 |
-| Gate: петля пропусков | REQ-06 | 2 |
-| Новая схема BL — миграция M0–M5 (§7.6) | REQ-04, REQ-11 | 0–3 |
+| Detection metric: replay of fixed bugs + response mutants | REQ-01 | 0 |
+| Case purpose (`HAPPY`/`VISUAL`/`FUNC`) + assertion classifier — report only at first | REQ-02 | 0 |
+| BLOCKED/SKIPPED share per suite | REQ-07 | 0 |
+| Library of cross-cutting invariants in code | REQ-03 | 1 |
+| Failure layer in the mind map (archetypes + checks per node) | REQ-05 | 1 |
+| Gate: ratchet on `FUNC` cases with only `PRES` (happy path and visual unaffected) | REQ-02 | 2 |
+| Gate: escape loop | REQ-06 | 2 |
+| New BL scheme — migration M0–M5 (§7.6) | REQ-04, REQ-11 | 0–3 |
 
-### 6.2 Убрать или заморозить
+### 6.2 Remove or freeze
 
-Кандидаты, не решения: каждый пункт подтверждается замером и решением в §9.
+Candidates, not decisions: each item is confirmed by a measurement and a decision in §9.
 
-| Что | Почему | Действие | Фаза |
+| What | Why | Action | Phase |
 |---|---|---|---|
-| Новые правила прозой после инцидентов | D10, IFScale: каждое новое правило ослабляет остальные | **мораторий сразу**: инцидент → проверка/lint/hook или ничего | 0 |
-| Развитие мета-системы (kb, prompt-review, self-diagnostics, бюджеты промптов) | D11: ~половина коммитов, на обнаружение не влияет | **заморозить** новые фичи до результатов пилота; поддержка — только исправления | 0 |
-| Разборы инцидентов внутри always-loaded слоя и промптов | D10: история — не инструкция | перенести в `docs/decisions/`, в промпте оставить одну строку правила | 3 |
-| История и обоснования в `business-logic.md` | 434 тыс. симв., агент видит кусками | сжать до «правило · проверка · сигнал» | 2 |
-| Четыре артефакта моделирования: domain map, test model, mind map, data model | пересекаются; знание теряется между ними (D8) | свести к одной модели домена со слоем отказов + отдельной моделью тикета «про отказы» | 3 |
-| Пересекающиеся skills: `qa-test` / `qa-test-fast` / `qa-test-lifecycle`; `qa-checklist` / `qa-test-cases-generator`; `qa-sbtm` / `qa-exploratory`; алиас `qa-review-bl` | дубли инструкций, растут параллельно | составить карту пересечений, слить или удалить по итогам | 3 |
-| Лишние передачи между агентами в `/qa-test` | MAST: сбои на координации | модель → проверка → исполнение у одного агента + независимый верификатор | 3 |
-| Поля и шаги, которые никто не заполняет (например `timing.steps` — всегда `0`) | мёртвый процесс | заполнять автоматически или удалить | 3 |
+| New prose rules after incidents | D10, IFScale: every new rule weakens the others | **moratorium now**: incident → check/lint/hook or nothing | 0 |
+| Meta-system development (kb, prompt-review, self-diagnostics, prompt budgets) | D11: ~half the commits, no effect on detection | **freeze** new features until the pilot results; maintenance = fixes only | 0 |
+| Incident write-ups inside the always-loaded tier and prompts | D10: history is not an instruction | move to `docs/decisions/`, keep one rule line in the prompt | 3 |
+| History and rationale in `business-logic.md` | 434K chars, the agent sees it in fragments | compress to "rule · check · signal" | 2 |
+| Four modelling artifacts: domain map, test model, mind map, data model | they overlap; knowledge is lost between them (D8) | merge into one domain model with a failure layer + a separate failure-oriented ticket model | 3 |
+| Overlapping skills: `qa-test` / `qa-test-fast` / `qa-test-lifecycle`; `qa-checklist` / `qa-test-cases-generator`; `qa-sbtm` / `qa-exploratory`; the `qa-review-bl` alias | duplicated instructions growing in parallel | map the overlaps; merge or remove based on the result | 3 |
+| Unnecessary handoffs between agents in `/qa-test` | MAST: failures happen at coordination | model → check → execution in one agent + an independent verifier | 3 |
+| Fields and steps nobody fills in (e.g. `timing.steps` — always `0`) | dead process | fill automatically or remove | 3 |
 
-### 6.3 Фазы
+### 6.3 Phases
 
-| Фаза | Срок (оценка) | Содержание | Выход (решение перед следующей фазой) |
+| Phase | Timing (estimate) | Content | Exit (decision before the next phase) |
 |---|---|---|---|
-| **0. Замер и заморозка** | неделя 1 | REQ-01 базовая цифра по catalog-search; отчёт классификатора REQ-02; доля blocked; мораторий и заморозка из §6.2 | базовые цифры записаны в §2 |
-| **1. Пилот** | неделя 1–2 | §6.4 | ловят ли новые проверки больше мутантов, чем `050a` → да: масштабировать, нет: пересмотреть подход |
-| **2. Gates и масштаб** | недели 3–4 | REQ-02 ratchet для `FUNC`, REQ-06, REQ-04; инварианты на 2–3 домена (cart/checkout, orders, B2B scope) | mutation score растёт на новых доменах |
-| **3. Упрощение** | недели 5–6 | REQ-08, REQ-09, слияния из §6.2 | метрика REQ-01 не ухудшилась; инструкции в 3–4 раза меньше |
+| **0. Measure and freeze** | week 1 | REQ-01 baseline for catalog-search; REQ-02 classifier report; blocked share; moratorium and freeze from §6.2 | baseline figures recorded in §2 |
+| **1. Pilot** | weeks 1–2 | §6.4 | do the new checks catch more mutants than `050a` → yes: scale up, no: rethink the approach |
+| **2. Gates and scale** | weeks 3–4 | REQ-02 ratchet for `FUNC`, REQ-06, REQ-04; invariants on 2–3 domains (cart/checkout, orders, B2B scope) | mutation score grows on the new domains |
+| **3. Simplify** | weeks 5–6 | REQ-08, REQ-09, merges from §6.2 | REQ-01 metric did not get worse; instructions 3–4× smaller |
 
-### 6.4 Пилот (Фаза 1)
+### 6.4 Pilot (Phase 1)
 
-**Домен:** catalog-search. **Длительность:** 1–2 дня.
-**Объём:** REQ-01 (5 мутантов ответов) + REQ-03 (`PAGE-WALK`, `SORT-SET`, `LAYER-PARITY`, `SILENT-200`, `MONEY-VARIANT`) + REQ-05 (слой отказов в `search.mind-map.json`, узлы по уже найденным багам поиска/каталога).
-**Успех:** новые проверки ловят мутант «обрезанная страница» и воспроизводят баг каталога; сравнение mutation score со сьютом `050a`.
+**Domain:** catalog-search. **Duration:** 1–2 days.
+**Scope:** REQ-01 (5 response mutants) + REQ-03 (`PAGE-WALK`, `SORT-SET`, `LAYER-PARITY`, `SILENT-200`, `MONEY-VARIANT`) + REQ-05 (failure layer in `search.mind-map.json`, nodes for the search/catalog bugs already found).
+**Success:** the new checks catch the "truncated page" mutant and reproduce the catalog bug; mutation score compared with suite `050a`.
 
-## 7. Новая схема BL (BL 2.0) и план миграции
+## 7. New BL scheme (BL 2.0) and migration plan
 
-**Решение 2026-09-30 (владелец):** текущая система работы с BL заменяется. Цель — **правило + исполняемая
-проверка вместо энциклопедии**. Реализует REQ-04 (доверие, исполняемость) и REQ-11 (свежесть).
+**Decision 2026-09-30 (owner):** the current way of working with BL is replaced. The goal is a **rule plus an executable
+check instead of an encyclopedia**. It implements REQ-04 (trust, executability) and REQ-11 (freshness).
 
-### 7.0 Главное ограничение — никаких очередей для людей
+### 7.0 The main constraint — no queues for people
 
-**Решение 2026-09-30 (владелец):** отдельно смотреть предложения, PR по правилам или очередь `SUSPECT`
-никто не будет — времени нет. Любая схема, которая ждёт человека, превращается в свалку: за две недели
-накопилось 6 файлов `bl-proposals-*`, каждый с разделом «вопрос, который это разблокирует», а за всю
-историю из таких файлов утверждено 4 правки.
+**Decision 2026-09-30 (owner):** nobody will separately review proposals, BL PRs or a `SUSPECT` queue —
+there is no time. Any scheme that waits for a person turns into a dump: in two weeks
+6 `bl-proposals-*` files piled up, each with a "the question that releases this" section, and over the whole
+history 4 edits from such files were ever approved.
 
-Поэтому BL 2.0 работает **без отдельного человеческого ревью**:
+So BL 2.0 works **with no separate human review**:
 
-1. **Человек участвует только там, где он уже участвует:** пишет AC в тикете, решает судьбу бага в Jira
-   (Fixed / By design / Won't fix), пишет документацию. Эти решения **уже приняты** — система их
-   считывает и превращает в правила автоматически, со ссылкой на источник.
-2. **Правило автоматически создаётся или меняется только из человеческого источника:** AC тикета,
-   страница документации, резолюция бага. Такое правило — `DECLARED`. Новый источник новее старого
-   (новый тикет по той же теме, обновлённая документация) — правило обновляется автоматически.
-3. **Наблюдение (код + стенд) правило не создаёт и не меняет.** Оно записывается как наблюдение
-   (домен-карта / база наблюдений `kb`), а не как BL. Вердикты `DRIFT`/`MISSING` по коду и стенду убираются.
-4. **Расхождение прогона с правилом — это падение теста, а не предложение.** Оно идёт по обычному
-   пути бага. Решение по багу в Jira (Fixed / By design) — и есть решение по правилу: при «By design»
-   правило обновляется автоматически из резолюции.
-5. **Ничего не копится.** Файлов предложений нет. `SUSPECT` разрешается автоматически: проверка
-   перезапускается на новой сборке — прошла → `ACTIVE` с новой `verified`; упала → баг. Правило
-   `INFERRED`/`OBSERVED`, которое не подтвердилось человеческим источником за N дней, удаляется само.
+1. **People take part only where they already do:** they write AC in a ticket, decide a bug's fate in Jira
+   (Fixed / By design / Won't fix), write documentation. Those decisions **are already made** — the system
+   reads them and turns them into rules automatically, with a link to the source.
+2. **A rule is created or changed automatically, and only from a human source:** ticket AC,
+   a documentation page, a bug resolution. Such a rule is `DECLARED`. A newer source than the old one
+   (a new ticket on the same topic, updated docs) updates the rule automatically.
+3. **An observation (code + live) never creates or changes a rule.** It is recorded as an observation
+   (domain map / the `kb` observation base), not as BL. `DRIFT`/`MISSING` verdicts from code and live are removed.
+4. **A run disagreeing with a rule is a failing test, not a proposal.** It follows the normal
+   bug path. The Jira decision on the bug (Fixed / By design) is the decision on the rule: on "By design"
+   the rule is updated automatically from the resolution.
+5. **Nothing accumulates.** There are no proposal files. `SUSPECT` resolves automatically: the check
+   is re-run on a new build — passes → `ACTIVE` with a new `verified`; fails → a bug. An
+   `INFERRED`/`OBSERVED` rule not confirmed by a human source within N days is removed automatically.
 
-### 7.1 Было → стало
+### 7.1 Before → after
 
-| | Сейчас | BL 2.0 |
+| | Today | BL 2.0 |
 |---|---|---|
-| Хранение | один `business-logic.md` (сотни тысяч символов), проза | по файлу на домен, машиночитаемая запись; markdown — **генерируется** |
-| Запись правила | правило + проверка + история + даты + обоснования в одном тексте | короткая запись с полями (§7.2); история — отдельно |
-| Кто меняет | агент авто-применяет по «трём источникам», включая код + стенд | **автоматически, но только из человеческого источника**: AC тикета, документация, резолюция бага в Jira; наблюдения правила не меняют |
-| Доверие | не различается | `DECLARED` · `OBSERVED` · `INFERRED` (при миграции — `UNREVIEWED`) |
-| Свежесть | ручной аудит всего файла | `SUSPECT` по событиям → **автоматический перезапуск проверки**; упала → баг |
-| Покрытие | кейс цитирует ID текстом | кейс ссылается на **проверку**; покрытие считается по проверкам |
-| Отбор | всё подряд | остаются P0, сквозные, `DECLARED` или с проверкой; прочее — справка в описании домена |
+| Storage | a single `business-logic.md` (hundreds of thousands of chars), prose | one file per domain, machine-readable records; markdown is **generated** |
+| Rule entry | rule + check + history + dates + rationale in one text | a short record with fields (§7.2); history kept separately |
+| Who changes it | an agent auto-applies by "three sources", including code + live | **automatically, but only from a human source**: ticket AC, docs, a Jira bug resolution; observations do not change rules |
+| Trust | not distinguished | `DECLARED` · `OBSERVED` · `INFERRED` (`UNREVIEWED` during migration) |
+| Freshness | manual audit of the whole file | `SUSPECT` on events → **automatic check re-run**; fails → a bug |
+| Coverage | a case cites the ID as text | a case references the **check**; coverage is counted by checks |
+| Selection | everything | P0, cross-cutting, `DECLARED` or with a check stay; the rest becomes reference material in the domain description |
 
-### 7.2 Запись правила
+### 7.2 Rule record
 
-Файл: `.claude/knowledge/oracles/bl/<domain>.yaml` (по одному на домен). Схема: `templates/bl.schema.json`.
+File: `.claude/knowledge/oracles/bl/<domain>.yaml` (one per domain). Schema: `templates/bl.schema.json`.
 
 ```yaml
-- id: BL-CART-004                 # ID не меняется и не переиспользуется (контракт цитирования)
-  title: Короткое имя правила
-  rule: >-                        # 1–2 предложения, без истории
-    Что должно выполняться.
-  priority: P0-revenue            # существующие теги P0-revenue | P0-security | P1-data | P1-ux | P2-ux
-  trust: DECLARED                 # DECLARED | OBSERVED | INFERRED | UNREVIEWED (только на время миграции)
-  source:                         # откуда правило; для DECLARED обязательно doc или ac
+- id: BL-CART-004                 # the ID never changes and is never reused (citation contract)
+  title: Short rule name
+  rule: >-                        # 1–2 sentences, no history
+    What must hold.
+  priority: P0-revenue            # existing tags P0-revenue | P0-security | P1-data | P1-ux | P2-ux
+  trust: DECLARED                 # DECLARED | OBSERVED | INFERRED | UNREVIEWED (migration only)
+  source:                         # where the rule comes from; DECLARED requires doc or ac
     - { kind: doc, ref: "StorefrontUserGuide §…" }
     - { kind: ac,  ref: VCST-1234 }
   scope:
     module: VirtoCommerce.Cart
-    code_ref: "src/…/CartService.cs#AddItemAsync"   # где правило реализовано
+    code_ref: "src/…/CartService.cs#AddItemAsync"   # where the rule is implemented
   check:
     kind: executable              # executable | manual | none
-    ref: "scripts/invariants/…"   # для manual — один абзац шагов
-  violation_signal: Одна строка — как выглядит нарушение.
+    ref: "scripts/invariants/…"   # for manual — one paragraph of steps
+  violation_signal: One line — what a violation looks like.
   verified: { date: 2026-09-30, version: "Cart 3.1042.0", by: "REG-… | manual" }
   status: ACTIVE                  # ACTIVE | SUSPECT | RETIRED
-  suspect_reason: null            # PR / релиз / падение кейса / баг, из-за которого SUSPECT
-  owner: <команда> # кому уходит баг при падении проверки (не ревьюер)
-  history: docs/decisions/bl/BL-CART-004.md       # опционально: разборы, обоснования, прошлые версии
+  suspect_reason: null            # the PR / release / case failure / bug that made it SUSPECT
+  owner: <team> # who receives the bug when the check fails (not a reviewer)
+  history: docs/decisions/bl/BL-CART-004.md       # optional: write-ups, rationale, past versions
 ```
 
-Поля, которые **не переносятся в запись** и уходят в `history`: `Promoted`, `Amended`, `Live`,
-`Severity rationale`, `Suite coverage` (последнее — вычисляется, не пишется). `Agents` не хранится:
-выводится из домена.
+Fields that are **not carried into the record** and move to `history`: `Promoted`, `Amended`, `Live`,
+`Severity rationale`, `Suite coverage` (the last is computed, not written). `Agents` is not stored:
+it is derived from the domain.
 
-### 7.3 Жизненный цикл
+### 7.3 Lifecycle
 
-1. **Создание и изменение — автоматически, только из человеческого источника** (§7.0): AC тикета, документация, резолюция бага. Агент записывает правило со ссылкой на источник; CI валидирует схему. Отдельного ревью нет.
-2. **`INFERRED` не основание для бага.** Нарушение `INFERRED`-правила — пометка в отчёте прогона, не баг-репорт; без подтверждения источником за N дней правило удаляется.
-3. **`SUSPECT` ставится автоматически** (REQ-11): изменён `code_ref` в смерженном PR/релизе; упал кейс со ссылкой на правило; закрыт баг по домену; `verified` старше порога (для `OBSERVED`/`INFERRED`).
-4. **Исполняемая проверка обновляет `verified` сама** при успешном прогоне на новой сборке.
-5. **`RETIRED`** — правило снято, ID сохраняется навсегда; кейсы со ссылкой на него — ошибка `bl:lint`.
-6. **Один автор на домен на время изменения** — как для сьютов (`regression.md`): YAML домена не правят двое одновременно.
+1. **Creation and change — automatic, only from a human source** (§7.0): ticket AC, docs, a bug resolution. The agent writes the rule with a link to the source; CI validates the schema. There is no separate review.
+2. **`INFERRED` is not grounds for a bug.** A violation of an `INFERRED` rule is a note in the run report, not a bug report; without confirmation by a source within N days the rule is removed.
+3. **`SUSPECT` is set automatically** (REQ-11): `code_ref` changed in a merged PR/release; a case citing the rule failed; a bug in the domain was closed; `verified` is older than the threshold (for `OBSERVED`/`INFERRED`).
+4. **An executable check updates `verified` itself** on a successful run against a new build.
+5. **`RETIRED`** — the rule is withdrawn, the ID is kept forever; cases citing it are a `bl:lint` error.
+6. **One author per domain during a change** — as with suites (`regression.md`): no two people edit a domain's YAML at once.
 
-### 7.3a Когда правила появляются и меняются — сейчас и в BL 2.0
+### 7.3a When rules appear and change — today and in BL 2.0
 
-**Сейчас (снимок 2026-09-30).** Единственный путь записи — **после прогона**: `/qa-test-lifecycle`
-Phase 2 (кейс STALE/BROKEN → кандидат `{currentRule, observedBehavior}`) и Phase 3 (новый кейс без
-правила → `PROPOSED-BL`) → Phase 4c `/qa-review-bl` → авто-применение по вердиктам `CONFIRMED` /
-`DRIFT` / `MISSING`. `/ba-analyze`, `/qa-exploratory`, `/qa-test-plan` только пишут `bl-proposals-*`.
-Требования (AC тикета) как источник правила почти не используются: в `Source:` AC упомянут у 1 правила,
-код — у 133, live — у 45; «docs N/A» встречается 43 раза.
+**Today (snapshot 2026-09-30).** The only write path is **after a run**: `/qa-test-lifecycle`
+Phase 2 (a STALE/BROKEN case → candidate `{currentRule, observedBehavior}`) and Phase 3 (a new case with no
+rule → `PROPOSED-BL`) → Phase 4c `/qa-review-bl` → auto-apply on `CONFIRMED` /
+`DRIFT` / `MISSING` verdicts. `/ba-analyze`, `/qa-exploratory`, `/qa-test-plan` only write `bl-proposals-*`.
+Requirements (ticket AC) are almost never used as a rule's source: AC appears in `Source:` for 1 rule,
+code for 133, live for 45; "docs N/A" appears 43 times.
 
-**Почему это ломает поиск багов.** Ось docs для новых модулей отключается (waived), остаются
-**код + live**. Но любой баг по определению есть и в коде, и на стенде — эти оси всегда «согласны».
-Вердикт `DRIFT` («оси согласны, текст правила устарел») переписывает правило под текущее поведение.
-Так правило **подстраивается под реализацию** и перестаёт ловить регрессию — это проблема оракула
-(§3), встроенная в процесс.
+**Why this breaks bug finding.** For new modules the docs axis is waived, leaving
+**code + live**. But any bug is, by definition, present both in the code and on the stand — those axes always "agree".
+A `DRIFT` verdict ("the axes agree, the rule text is stale") rewrites the rule to match current behaviour.
+The rule thus **adapts to the implementation** and stops catching regressions — the oracle problem
+(§3), built into the process.
 
-**BL 2.0 — моменты:**
+**BL 2.0 — the moments:**
 
-| Момент | Что происходит | Статус записи |
+| Moment | What happens | Record status |
 |---|---|---|
-| Рефайнмент / приёмка тикета, построение тестовой модели (до тестирования) | правила **автоматически** из AC и документации | `DECLARED` |
-| Тестирование / прогон: поведение ≠ правилу | **падение теста → обычный путь бага**; правило не переписывается | правило → `SUSPECT` до решения по багу |
-| Тестирование: обнаружено поведение, которого нет в правилах | запись **наблюдения** (домен-карта / `kb`), не BL | — |
-| Изменение кода по `code_ref`, закрытый баг, возраст | автопометка | `SUSPECT` |
-| Решение по багу в Jira | Fixed → правило подтверждено; By design / Won't fix → правило обновляется из резолюции; изменение кода по `code_ref` → перезапуск проверки | `ACTIVE` / обновлено / `RETIRED` |
+| Refinement / ticket acceptance, building the test model (before testing) | rules created **automatically** from AC and docs | `DECLARED` |
+| Testing / run: behaviour ≠ rule | **failing test → the normal bug path**; the rule is not rewritten | rule → `SUSPECT` until the bug is decided |
+| Testing: behaviour found that no rule covers | recorded as an **observation** (domain map / `kb`), not as BL | — |
+| Code change at `code_ref`, a closed bug, age | automatic mark | `SUSPECT` |
+| The Jira decision on the bug | Fixed → rule confirmed; By design / Won't fix → rule updated from the resolution; code change at `code_ref` → check re-run | `ACTIVE` / updated / `RETIRED` |
 
-**Правило BL 2.0:** согласие кода и стенда **не является подтверждением правила** — это одно
-и то же наблюдение. Независимый источник для `DECLARED` — только требование (AC, документация,
-резолюция бага в Jira).
+**BL 2.0 rule:** code and live agreeing **is not confirmation of a rule** — they are the same
+observation. The only independent source for `DECLARED` is a requirement (AC, docs,
+a Jira bug resolution).
 
-### 7.4 Что остаётся правилом, а что уходит в справку
+### 7.4 What stays a rule and what becomes reference material
 
-Остаётся BL, если выполнено хотя бы одно: `priority` P0 · сквозной инвариант (REQ-03) · `trust: DECLARED` · есть `check`.
-Иначе — переносится в описание домена (`.claude/knowledge/domain/<slug>.md`, раздел «Справка») со ссылкой на прежний ID.
-Решение — по каждому правилу при триаже домена, **без автоматического удаления**.
+It stays BL if at least one holds: `priority` P0 · a cross-cutting invariant (REQ-03) · `trust: DECLARED` · it has a `check`.
+Otherwise it moves into the domain description (`.claude/knowledge/domain/<slug>.md`, a "Reference" section) with a pointer to the former ID.
+Decided per rule during the domain triage, **with no automatic deletion**.
 
-### 7.5 Что происходит с текущими инструментами
+### 7.5 What happens to today's tools
 
-| Инструмент | Судьба |
+| Tool | Fate |
 |---|---|
-| `business-logic.md` | генерируется из YAML (шапка «generated — do not edit»); после переключения потребителей — решить, оставить как вид или удалить |
-| `bl:extract`, `bl:lint`, `oracles:rank`, `bl:remap` | переписываются на чтение YAML; `bl:lint` добавляет проверки схемы, `SUSPECT`, просрочки, ссылок на несуществующие/`RETIRED` ID |
-| `/qa-review-oracles bl`, `/qa-review-bl` | вместо аудита с авто-применением по коду + стенду — синхронизация из человеческих источников (AC, документация, резолюции Jira) и перезапуск проверок `SUSPECT` |
-| Правило «трёх источников» и авто-применение | убираются |
-| `reports/ba/bl-proposals-*.md` | **удаляются**; новых файлов предложений нет. Перед удалением — одноразовый проход: то, что подтверждается AC/документацией/резолюцией, записывается как `DECLARED`, остальное отбрасывается |
-| Копия `plugins/vc-fix/knowledge/oracles/business-logic.md` | генерируется тем же генератором (или из выбранного подмножества) — чтобы плагин не расходился |
+| `business-logic.md` | generated from YAML (a "generated — do not edit" header); after consumers switch over — decide whether to keep it as a view or delete it |
+| `bl:extract`, `bl:lint`, `oracles:rank`, `bl:remap` | rewritten to read YAML; `bl:lint` adds checks for the schema, `SUSPECT`, expiry, references to non-existent/`RETIRED` IDs |
+| `/qa-review-oracles bl`, `/qa-review-bl` | instead of an audit that auto-applies from code + live — syncing from human sources (AC, docs, Jira resolutions) and re-running `SUSPECT` checks |
+| The "three sources" rule and auto-apply | removed |
+| `reports/ba/bl-proposals-*.md` | **deleted**; no new proposal files. Before deletion — a one-off pass: whatever is confirmed by AC/docs/a resolution is recorded as `DECLARED`, the rest is discarded |
+| The `plugins/vc-fix/knowledge/oracles/business-logic.md` copy | generated by the same generator (or from a chosen subset) so the plugin does not drift |
 
-### 7.6 Миграция
+### 7.6 Migration
 
-| Этап | Срок (оценка) | Что делаем | Готово, когда |
+| Stage | Timing (estimate) | What we do | Done when |
 |---|---|---|---|
-| **M0. Заморозка** | сразу, 1 день | выключить вердикты `DRIFT`/`MISSING` по коду + стенду в `/qa-review-oracles` и `/qa-test-lifecycle` 4c; запретить создание новых `bl-proposals-*`; исправить ложную трассируемость `BL-SEC-001…005` (`BLC-002`) | `BLC-002` = 0; ни одной правки BL без человеческого источника; новых файлов предложений нет |
-| **M1. Схема и конвертер** | неделя 1 | `templates/bl.schema.json`; конвертер `md → yaml` (механический: `Rule`, `Verify` → `check: manual`, `Violation signal`, `Source`/`Docs` → `source`, тег приоритета; остальное → `history`); генератор `yaml → md`; всем `trust: UNREVIEWED` | round-trip: сгенерированный md содержит те же ID и тексты правил; unit-тест на конвертер и генератор (деривация) |
-| **M2. Пилот-домен** | неделя 1–2 | catalog/search (совпадает с пилотом §6.4): триаж каждого правила (оставить / в справку / `RETIRED`), `trust`, `code_ref`, `verified`; топ-правила → исполняемые проверки REQ-03 | в домене нет `UNREVIEWED`; ≥ N правил с `check: executable` (N — решить) |
-| **M3. Остальные домены** | недели 2–4 | по приоритету: P0-домены первыми (cart/checkout, B2B/scope, pricing, security); `trust` проставляется автоматически по наличию AC/документации/резолюции в `source`; без источника → `INFERRED` | доля `UNREVIEWED` → 0; метрика: доля правил с проверкой и с человеческим источником |
-| **M4. Переключение потребителей** | недели 4–5 | скрипты читают YAML; `/qa-review-oracles` переписан на синхронизацию из источников + перезапуск `SUSPECT`; ссылки на путь `business-logic.md` заменены на `bl:extract`; одноразовый разбор и удаление `bl-proposals-*` | ни один потребитель не читает md напрямую; файлов предложений 0 |
-| **M5. Автоматика свежести** | неделя 5–6 | `SUSPECT` по PR/релизу (`code_ref`), падению кейса, закрытому багу, возрасту → автоматический перезапуск проверки; синхронизация резолюций Jira в правила | от изменения кода до перезапуска — не больше одного прогона `full-cycle`; очереди для человека нет |
+| **M0. Freeze** | now, 1 day | turn off `DRIFT`/`MISSING` verdicts from code + live in `/qa-review-oracles` and `/qa-test-lifecycle` 4c; forbid creating new `bl-proposals-*`; fix the false traceability of `BL-SEC-001…005` (`BLC-002`) | `BLC-002` = 0; no BL edit without a human source; no new proposal files |
+| **M1. Schema and converter** | week 1 | `templates/bl.schema.json`; a `md → yaml` converter (mechanical: `Rule`, `Verify` → `check: manual`, `Violation signal`, `Source`/`Docs` → `source`, the priority tag; the rest → `history`); a `yaml → md` generator; `trust: UNREVIEWED` for all | round-trip: the generated md has the same IDs and rule texts; a unit test on the converter and the generator (derivation) |
+| **M2. Pilot domain** | weeks 1–2 | catalog/search (same as the §6.4 pilot): triage each rule (keep / reference / `RETIRED`), `trust`, `code_ref`, `verified`; top rules → REQ-03 executable checks | no `UNREVIEWED` in the domain; ≥ N rules with `check: executable` (N to be decided) |
+| **M3. Remaining domains** | weeks 2–4 | by priority: P0 domains first (cart/checkout, B2B/scope, pricing, security); `trust` set automatically from the presence of AC/docs/a resolution in `source`; no source → `INFERRED` | `UNREVIEWED` share → 0; metric: share of rules with a check and with a human source |
+| **M4. Switch consumers** | weeks 4–5 | scripts read YAML; `/qa-review-oracles` rewritten to sync from sources + re-run `SUSPECT`; references to the `business-logic.md` path replaced by `bl:extract`; one-off review and deletion of `bl-proposals-*` | no consumer reads the md directly; 0 proposal files |
+| **M5. Freshness automation** | weeks 5–6 | `SUSPECT` on PR/release (`code_ref`), case failure, closed bug, age → automatic check re-run; Jira resolutions synced into rules | from a code change to the re-run is no more than one `full-cycle` run; no queue for people |
 
-**Риски:** на путь `business-logic.md` ссылаются десятки промптов и скриптов — снимается генерируемым видом до M4;
-ID — контракт цитирования, конвертер не должен их менять; копия в `vc-fix` расходится — генерируется из того же источника.
+**Risks:** dozens of prompts and scripts reference the `business-logic.md` path — mitigated by the generated view until M4;
+IDs are a citation contract, the converter must not change them; the `vc-fix` copy drifts — generated from the same source.
 
-## 8. Открытые вопросы
+## 8. Open questions
 
-1. Порядок: начинать с пилота (REQ-01+03) или сначала с разметки целей кейсов REQ-02?
-2. Где живёт библиотека инвариантов — `scripts/lib/` или раннер CSV (`[INV …]` в грамматике)?
-3. Бюджет always-loaded слоя (REQ-08): конкретное число.
-4. ~~Кто подтверждает `INFERRED` → `DECLARED`~~ — снято 2026-09-30: подтверждение только человеческим источником (AC, документация, резолюция Jira), отдельного подтверждающего нет.
-5. BL 2.0: порог возраста `verified` для `SUSPECT` (предложено 90 дней) и срок жизни неподтверждённого `INFERRED` (N дней).
-6. BL 2.0: оставить сгенерированный `business-logic.md` после M4 или удалить.
-7. BL 2.0: минимальное число исполняемых проверок в пилот-домене (N в M2).
-8. BL 2.0: копия в `vc-fix` — все правила или подмножество для клиентов.
+1. Order: start with the pilot (REQ-01+03) or first with tagging case purposes (REQ-02)?
+2. Where does the invariant library live — `scripts/lib/` or the CSV runner (`[INV …]` in the grammar)?
+3. Always-loaded budget (REQ-08): a concrete number.
+4. ~~Who confirms `INFERRED` → `DECLARED`~~ — closed 2026-09-30: confirmation comes only from a human source (AC, docs, a Jira resolution); there is no separate confirmer.
+5. BL 2.0: the `verified` age threshold for `SUSPECT` (90 days proposed) and the lifetime of an unconfirmed `INFERRED` rule (N days).
+6. BL 2.0: keep the generated `business-logic.md` after M4 or delete it.
+7. BL 2.0: the minimum number of executable checks in the pilot domain (N in M2).
+8. BL 2.0: the `vc-fix` copy — all rules or a subset for clients.
 
-## 9. Журнал
+## 9. Decision log
 
-| Дата | Событие |
+| Date | Event |
 |---|---|
-| 2026-09-30 | Документ открыт: диагноз D1–D12, внешние источники, требования REQ-01…REQ-10, пилот. |
-| 2026-09-30 | Добавлен план работ (§6): что добавить, что убрать или заморозить, четыре фазы. Удаления — только после замера REQ-01. |
-| 2026-09-30 | REQ-02 уточнён по решению владельца: happy path и visual/UI-кейсы остаются; правило силы проверки — только для кейсов с целью `FUNC`. |
-| 2026-09-30 | Добавлен REQ-11: свежесть BL — метаданные, автопометка `SUSPECT` по событиям, аудит только очереди. |
-| 2026-09-30 | Решение владельца: текущая система BL заменяется на BL 2.0 (§7) — запись с полями, доверие, свежесть по событиям, изменения только через PR; план миграции M0–M5. REQ-04 и REQ-11 реализуются через §7. |
-| 2026-09-30 | §7.3a: зафиксировано, в какой момент правила пишутся сейчас (после прогона, авто-применение `DRIFT` по коду+live) и в BL 2.0 (из требований до тестирования; расхождение на прогоне — находка, не авто-правка). |
-| 2026-09-30 | §7.0: решение владельца — никаких очередей для людей. Правила меняются автоматически, но только из человеческого источника (AC, документация, резолюция бага в Jira); наблюдения правила не меняют; расхождение — падение теста → путь бага; файлы предложений удаляются. |
+| 2026-09-30 | Document opened: diagnosis D1–D12, external sources, requirements REQ-01…REQ-10, pilot. |
+| 2026-09-30 | Work plan added (§6): what to add, what to remove or freeze, four phases. Removals only after the REQ-01 measurement. |
+| 2026-09-30 | REQ-02 refined by the owner's decision: happy-path and visual/UI cases stay; the assertion-strength rule applies only to cases with the `FUNC` purpose. |
+| 2026-09-30 | REQ-11 added: BL freshness — metadata, automatic `SUSPECT` marking on events, audit of the queue only. |
+| 2026-09-30 | Owner's decision: the current BL system is replaced by BL 2.0 (§7) — structured records, trust, event-driven freshness, changes only through PRs; migration plan M0–M5. REQ-04 and REQ-11 are implemented through §7. |
+| 2026-09-30 | §7.3a: recorded when rules are written today (after a run, auto-applied `DRIFT` from code + live) and in BL 2.0 (from requirements before testing; a run mismatch is a finding, not an automatic edit). |
+| 2026-09-30 | §7.0: owner's decision — no queues for people. Rules change automatically, but only from a human source (AC, docs, a Jira bug resolution); observations never change rules; a mismatch is a failing test → the bug path; proposal files are deleted. |
+| 2026-09-30 | Document translated from Russian to English at the owner's request; content unchanged. |
