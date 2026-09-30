@@ -21,11 +21,14 @@
  * parses it back, renders markdown, and runs `parseOracle` (the `bl:lint` parser) over both texts: the
  * ids, their order, titles, severities and the Rule / Verify / Violation-signal texts must match.
  *
- * The markdown stays the source of truth until a domain is migrated (M2 onwards); `--write` produces
- * that domain's files and says so, and `--render` turns a YAML file back into its markdown section.
+ * MIGRATED DOMAINS (M2 onwards). A domain with a `bl/<slug>.yaml` file is owned by that file: its section
+ * of business-logic.md is GENERATED from it (`npm run bl:render`) and never edited by hand. `--check`
+ * validates every such file against the schema and fails when the markdown section is not exactly its
+ * render; the round trip covers only the domains still written in markdown.
  *
  * Usage:
- *   npm run bl:convert -- --check                    # round-trip every domain; exit 1 on any mismatch
+ *   npm run bl:convert -- --check                    # migrated sections = their render; the rest round-trip
+ *   npm run bl:render                                # regenerate every migrated domain's section in place
  *   npm run bl:convert -- --domain srch --write      # write bl/<domain>.yaml + its history file; refuses a
  *                                                    # domain that fails the round trip, and existing files
  *                                                    # unless --force is given
@@ -65,7 +68,7 @@ export interface BlRule {
   trust: "DECLARED" | "OBSERVED" | "INFERRED" | "UNREVIEWED";
   source: BlSource[];
   scope?: { module?: string; code_ref?: string };
-  check: { kind: "executable" | "manual" | "none"; ref?: string };
+  check: { kind: "executable" | "manual" | "none"; ref?: string; steps?: string };
   violation_signal: string;
   verified?: { date: string; version?: string; by: string };
   status: "ACTIVE" | "SUSPECT" | "RETIRED";
@@ -260,7 +263,7 @@ export function convertOracle(text: string, roster: readonly string[]): Converte
 
 function verifyLine(check: BlRule["check"]): string {
   if (check.kind === "manual") return check.ref!;
-  if (check.kind === "executable") return `Executable check: \`${check.ref}\``;
+  if (check.kind === "executable") return `Executable check: \`${check.ref}\`.${check.steps ? ` By hand: ${check.steps}` : ""}`;
   return "No check.";
 }
 
@@ -319,6 +322,64 @@ function gateTitle(title: string): string {
   return title.replace(BRACKET_TAG_RE, "").replace(/→.*$/, "").trim();
 }
 
+/** The migrated domains: every `bl/<slug>.yaml`, keyed by slug. Their YAML is the source of truth. */
+export function readMigrated(dir = YAML_DIR): Map<string, BlDomainFile> {
+  const out = new Map<string, BlDomainFile>();
+  if (!existsSync(dir)) return out;
+  for (const f of readdirSync(dir).filter((x) => x.endsWith(".yaml")).sort()) out.set(f.slice(0, -5), fromYaml(readFileSync(`${dir}/${f}`, "utf-8")));
+  return out;
+}
+
+/**
+ * The oracle with each migrated domain's section replaced by its render. Everything else stays byte for byte:
+ * other domains, the preamble, the separator lines (`---`) after a section, and the file's line endings.
+ * `missing` lists the headings of migrated files that the oracle has no section for.
+ */
+export function renderOracle(text: string, migrated: Iterable<BlDomainFile>): { text: string; missing: string[] } {
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const lines = text.split(/\r?\n/);
+  const missing: string[] = [];
+  for (const file of migrated) {
+    const start = lines.findIndex((l) => DOMAIN_RE.test(l) && l.replace(/^##\s+/, "").trim() === file.domain.heading);
+    if (start < 0) {
+      missing.push(file.domain.heading);
+      continue;
+    }
+    let end = start + 1;
+    while (end < lines.length && !/^#{1,2}\s/.test(lines[end])) end++;
+    let body = end;
+    while (body > start + 1 && (!lines[body - 1].trim() || lines[body - 1].trim() === "---")) body--;
+    lines.splice(start, body - start, ...renderDomain(file).trimEnd().split("\n"));
+  }
+  return { text: lines.join(eol), missing };
+}
+
+/**
+ * The whole `--check` gate: every migrated YAML is schema-valid and its section is exactly its render; every
+ * domain still written in markdown round-trips. Empty = clean.
+ */
+export function checkOracle(
+  text: string,
+  roster: readonly string[],
+  migrated: ReadonlyMap<string, BlDomainFile>,
+  validate = schemaValidator(),
+): string[] {
+  const problems: string[] = [];
+  const owned = new Set([...migrated.values()].map((f) => f.domain.heading));
+  for (const [slug, file] of migrated) {
+    if (!validate(file)) problems.push(`bl/${slug}.yaml: schema: ${JSON.stringify(validate.errors?.slice(0, 3))}`);
+  }
+  const { text: rendered, missing } = renderOracle(text, migrated.values());
+  for (const h of missing) problems.push(`business-logic.md has no section "## ${h}" for its YAML file`);
+  if (rendered !== text) {
+    const differs = [...migrated].filter(([, f]) => renderOracle(text, [f]).text !== text).map(([slug]) => slug);
+    problems.push(`business-logic.md: the section of ${differs.join(", ")} is not the render of its YAML — edit bl/<slug>.yaml, then npm run bl:render`);
+  }
+  const domains = convertOracle(text, roster).filter((d) => !owned.has(d.file.domain.heading));
+  const source = parseOracle(text).filter((x) => !owned.has(x.domain));
+  return [...problems, ...roundTrip(domains, source, validate)];
+}
+
 /** Every difference between two oracle texts in what `bl:lint` parses: ids, order, titles, severities, texts. */
 export function compareOracles(beforeText: string | Invariant[], afterText: string): string[] {
   const problems: string[] = [];
@@ -362,7 +423,7 @@ export function roundTrip(
 }
 
 function main(argv: string[]) {
-  rejectUnknownFlags(argv, ["--check", "--write", "--force", "--domain", "--render"], ["--domain", "--render"]);
+  rejectUnknownFlags(argv, ["--check", "--write", "--force", "--domain", "--render", "--render-oracle"], ["--domain", "--render"]);
   const renderPath = flagValue(argv, "--render");
   if (renderPath) {
     process.stdout.write(renderDomain(fromYaml(readFileSync(renderPath, "utf-8"))));
@@ -370,6 +431,19 @@ function main(argv: string[]) {
   }
   const text = readFileSync(BL_PATH, "utf-8");
   const roster = readAgentRoster();
+  const migrated = readMigrated();
+
+  if (argv.includes("--render-oracle")) {
+    const r = renderOracle(text, migrated.values());
+    if (r.missing.length) {
+      console.error(`bl:render: no section in business-logic.md for ${r.missing.join("; ")}`);
+      return 1;
+    }
+    if (r.text !== text) writeFileSync(BL_PATH, r.text);
+    console.log(`bl:render: ${migrated.size} migrated domain(s) (${[...migrated.keys()].join(", ") || "none"}) ${r.text === text ? "already current" : "regenerated"} in ${BL_PATH}`);
+    return 0;
+  }
+
   const domains = convertOracle(text, roster);
 
   if (argv.includes("--write")) {
@@ -400,16 +474,20 @@ function main(argv: string[]) {
     writeFileSync(yamlPath, `# yaml-language-server: $schema=${posix.relative(YAML_DIR, SCHEMA_PATH)}\n${toYaml(d.file)}`);
     writeFileSync(historyPath, renderHistory(d));
     console.log(`wrote ${yamlPath} (${d.file.rules.length} rules) and ${historyPath}`);
-    console.log("business-logic.md is still the source of truth for this domain until its section is regenerated (M2).");
+    console.log(`bl/${d.slug}.yaml now owns this domain: triage it (trust, source, code_ref, check), then npm run bl:render.`);
     return 0;
   }
 
-  const problems = roundTrip(domains, text);
+  const problems = checkOracle(text, roster, migrated);
   const rules = domains.reduce((n, d) => n + d.file.rules.length, 0);
-  const withHistory = domains.reduce((n, d) => n + d.history.length, 0);
-  console.log(`bl:convert --check: ${domains.length} domains, ${rules} rules, ${withHistory} with a history block`);
+  console.log(`bl:convert --check: ${domains.length} domains, ${rules} rules; ${migrated.size} migrated to YAML`);
+  for (const [slug, f] of migrated) {
+    const unreviewed = f.rules.filter((r) => r.trust === "UNREVIEWED").length;
+    const executable = f.rules.filter((r) => r.check.kind === "executable").length;
+    console.log(`  ${slug}: ${f.rules.length} rules, ${unreviewed} UNREVIEWED, ${executable} with an executable check`);
+  }
   for (const p of problems) console.log(`  ✗ ${p}`);
-  console.log(problems.length ? `FAIL: ${problems.length} round-trip problem(s)` : "OK: ids, order, titles, severities and Rule / Verify / Violation-signal texts survive md → YAML → md");
+  console.log(problems.length ? `FAIL: ${problems.length} problem(s)` : "OK: migrated sections match their YAML; the other domains survive md → YAML → md");
   return problems.length ? 1 : 0;
 }
 

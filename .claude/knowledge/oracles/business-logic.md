@@ -722,73 +722,115 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Rule:** When a product's aggregated stock across all fulfillment centers reaches 0, the storefront must show "Sold out" (or equivalent), and the "Add to Cart" button must be disabled. The product remains visible but non-purchasable.
 - **Verify:** Set stock to 0 in Admin → storefront shows "Sold out" label → "Add to Cart" disabled/hidden → attempt via xAPI `addToCart` → error response.
 - **Violation signal:** "Add to Cart" still active when stock=0; product purchasable via API despite zero stock; no visual indicator of out-of-stock.
-- **Agents:** qa-frontend-expert (PDP, listing), qa-backend-expert (inventory API, xAPI)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Docs:** vc-docs storefront/user-guide/docs/shopping/back-in-stock-notifications.md — an out-of-stock product cannot be added: Add to Cart is replaced by "Notify me when in stock"
+- **Source:** VCST-3926 (Done) — cart quantity could be raised for an out-of-stock product; fixed
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-001`
 
 ### BL-CAT-002: Virtual catalog inherits physical catalog changes `[P1-data]`
 - **Rule:** A virtual catalog is a view over physical catalog data — not a copy. Any change to a product in the physical catalog (price, description, stock, images) is immediately reflected in all virtual catalogs that include it. There is no manual sync or publish step for catalog data propagation. Deletion of a product from the physical catalog removes it from all linked virtual catalogs.
 - **Verify:** Edit product name in physical catalog → open virtual catalog → name updated immediately. Delete product from physical catalog → virtual catalog no longer shows it. Add product to physical catalog in a linked category → appears in virtual catalog.
 - **Violation signal:** Virtual catalog shows stale data after physical catalog edit; deleted product still appears in virtual catalog; changes require manual sync.
-- **Agents:** qa-backend-expert (catalog API, Admin SPA)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Docs:** vc-docs platform/user-guide/docs/catalog/add-new-catalog.md — changes to items in a physical catalog are automatically reflected in all associated virtual catalogs
+- **Source:** VP-8460 (Done) — a product read through a virtual-catalog store returned price 0 / stock 0 while the physical product had values; fixed
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-002`
 
 ### BL-CAT-003: Search index lag window `[P2-ux]`
 - **Rule:** After an admin change (product create/update/delete, price change, stock update), there is a 30-60 second window where the Elasticsearch index still reflects old data. During this window, storefront search/listing may show stale results. However, PDP (direct product page) and cart always use live data. After reindex, search results must match the current state.
 - **Verify:** Change product name in Admin → immediately search on storefront → may show old name (acceptable within 60s). Wait 60s → search shows new name. Direct product URL shows new name immediately (not from search index).
 - **Violation signal:** Stale data persists beyond 120s (2 reindex cycles); PDP shows stale data (should be live); reindex doesn't resolve the discrepancy.
-- **Agents:** qa-frontend-expert (search + PDP), qa-backend-expert (search index API)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Docs:** vc-docs platform/user-guide/docs/catalog/product-indexing.md — reindexing runs in the background when product data changes (no time window stated)
+- **Source:** VP-7805 (Done) — an index out of sync with deleted products inflated totalCount; fixed (supports: reindex must resolve the gap)
+- **Trust:** INFERRED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-003`
 
 ### BL-CAT-004: Category visibility toggle `[P2-ux]`
 - **Rule:** Setting a category to "invisible" (visible=false) in Admin hides it from storefront navigation menus and category pages. However, products within a hidden category remain accessible via direct URL, search, and other categories they belong to. Subcategories of a hidden category also become hidden from navigation.
 - **Verify:** Hide category in Admin → storefront menu no longer shows it → products still accessible via search or direct URL → subcategories also hidden from nav. Unhide → category and subcategories return to nav.
 - **Violation signal:** Hidden category still in navigation menu; products in hidden category inaccessible via direct URL; subcategories still visible when parent is hidden.
-- **Agents:** qa-frontend-expert (storefront nav), qa-backend-expert (category API)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VP-7347 (Done) — a child of a hidden category was still returned as visible; fixed: subcategories inherit hidden
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-004`
 
 ### BL-CAT-005: Product requires virtual catalog assignment for storefront `[P1-data]`
 - **Rule:** A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the single catalog assigned to the store, which may be a physical catalog directly or a virtual catalog built over one or more physical catalogs. Products must be in a category within the store's assigned catalog (or its linked physical catalog) to be visible.
 - **Verify:** Create product in physical catalog only (not in store's virtual catalog) → storefront search returns nothing → add to virtual catalog category → product appears on storefront.
 - **Violation signal:** Product visible on storefront without virtual catalog assignment; product appears in wrong store's catalog; physical-only product accessible via search.
-- **Agents:** qa-backend-expert (catalog API), qa-frontend-expert (storefront search)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Docs:** vc-docs platform/user-guide/docs/catalog/import-products-to-catalog.md — to make products visible on the storefront, the catalog must be linked to the store's catalog
+- **Source:** kb KB-2D446A42 (single observation) — a store exposes a physical catalog's products through its virtual catalog
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-005`
 
 ### BL-CAT-006: Configurable product requires all sections filled `[P0-revenue]`
 - **Rule:** A configurable product (product with required configuration sections/options) cannot be added to cart until all required configuration sections are completed by the customer. The "Add to Cart" button must remain disabled until every required section has a selection. Optional sections may be left empty.
 - **Verify:** Open configurable product → "Add to Cart" disabled → fill first required section → still disabled (more sections required) → fill all required sections → "Add to Cart" enabled. Leave an optional section empty → still enabled.
 - **Violation signal:** "Add to Cart" enabled with incomplete required sections; configurable product added without configuration; configuration selections not reflected in cart line item.
-- **Agents:** qa-frontend-expert (PDP configuration UI), qa-backend-expert (addToCart validation)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Docs:** vc-docs platform/user-guide/docs/catalog/managing-product-configurations.md — required sections force a selection; optional sections get a "None" choice
+- **Source:** VCST-4829 (Cancelled) — asked for Add to Cart to be disabled until required sections are filled; cancelled because server-side validation already blocks the add
+- **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — VCST-4829 (Cancelled) endorses the server-side block but not the rule's "Add to Cart disabled" UI clause; the docs name a "Customize" button. Re-run the check on the current build; the rule text is updated from the resolution, not by hand.
+- **History:** `docs/decisions/bl/cat.md#bl-cat-006`
 
 ### BL-CAT-007: Multi-FFC inventory aggregation `[P1-data]`
 - **Rule:** A product's available stock on the storefront equals the sum of inventory across all fulfillment centers (FFCs) assigned to the store. If FFC-A has 10 units and FFC-B has 5 units, the storefront shows 15 available. Stock is decremented from the appropriate FFC based on fulfillment logic (closest to shipping address or priority order).
 - **Verify:** Set FFC-A = 10, FFC-B = 5 → storefront shows "In stock" with effective availability of 15. Place order for 12 → FFC-A decremented first (allocation logic). Check remaining: FFC-A + FFC-B totals correct.
 - **Violation signal:** Storefront shows stock from only one FFC; total doesn't match sum; decrement applied to wrong FFC; stock goes negative in one FFC while another has units.
-- **Agents:** qa-backend-expert (inventory API, FFC management), qa-frontend-expert (stock display)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VP-2011, VP-7769 (Done) — fulfillment-center stock edge cases; neither confirms that storefront stock is the sum across centers
+- **Trust:** INFERRED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-007`
 
 ### BL-CAT-008: Unit-of-measure CRUD integrity `[P2-ux]`
 - **Rule:** Creating, renaming, or deleting a unit-of-measure group or unit in the Catalog module persists atomically and leaves no orphaned data. Deleting a group removes its units; a deleted group/unit no longer appears in the list or in product UoM dropdowns; group integrity is preserved after a unit delete.
 - **Verify:** Create UoM group → appears in list (`POST /api/catalog/measures/search`); rename → list reflects new name; delete group → group and its units absent (`DELETE /api/catalog/measures?ids=…`; verify via `GET /api/catalog/measures/{id}`). Create unit in group → appears with name/short-name/conversion-factor; edit → persists; delete unit → removed, group intact (`GET /api/catalog/measures/{id}`). Note: units are **nested inside** the Measure (group) entity and saved via the group (`POST`/`PUT /api/catalog/measures`, partial `PATCH /api/catalog/measures/{id}`) — there is no separate unit endpoint.
 - **Violation signal:** Group/unit not created; edit not persisted; delete leaves orphaned units or stale API data; group integrity broken after a unit deletion.
-- **Agents:** qa-backend-expert (Admin SPA + REST `/api/catalog/measures`; permissions `Measures*`)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Docs:** vc-docs platform/user-guide/docs/catalog/managing-units-of-measure.md — dimensions and units can be created and deleted (integrity is not stated)
+- **Trust:** INFERRED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-008`
 
 ### BL-CAT-009: Category CRUD & cascade-delete integrity `[P1-data]`
 - **Rule:** Creating, editing, or deleting a category persists atomically. Required fields (Name, Code) are enforced on create. Deleting a category **cascades** to its subcategories and its descriptions, and unassigns (does not orphan) products per cascade rules. A cancelled delete makes no change.
 - **Verify:** Create category → appears in tree + `GET /api/catalog/categories`. Edit name → persists. Delete-confirm removes it + subcategories (`GET …/{subId}` → 404) + descriptions; Delete-cancel leaves it intact.
 - **Violation signal:** Required-field validation bypassed; category not in tree after save; subcategories/descriptions orphaned after delete; category deleted despite Cancel.
-- **Agents:** qa-backend-expert (Catalog API, Admin SPA)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VP-2628 (Done) — deleting a category with more than 2100 products returned 500 from the product-removal cascade; fixed
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-009`
 
 ### BL-CAT-010: Catalog link-permission enforcement (RBAC) `[P1-data]`
 - **Rule:** Linking a whole **category** into another category/catalog requires the `catalog:categories:link` permission; linking a **product/variation** requires `catalog:products:link`. Enforcement is **server-side** on `POST /api/catalog/listentrylinks` (403 without the permission) **and** reflected in the Admin mapping picker (category rows non-selectable without `categories:link`; product/item rows follow `products:link`). With full permissions both remain selectable (backward-compatible default).
 - **Verify:** Full-perm user → mapping picker shows category + item checkboxes. Role minus `categories:link` → category rows non-selectable, product rows still selectable; `POST /api/catalog/listentrylinks` with a category entry → 403, with a product entry → 2xx. Both permissions registered with human-readable descriptions (`GET /api/platform/security/permissions`).
 - **Violation signal:** Categories selectable / category link created despite missing `categories:link` (server enforcement absent); product link blocked when `products:link` retained (over-restriction); permission renders a raw i18n key instead of a description.
-- **Agents:** qa-backend-expert (CatalogModuleListEntryController, Admin SPA mapping picker, security permissions)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Docs:** vc-docs platform/user-guide/docs/security/roles-and-permissions.md — catalog:categories:link and catalog:products:link control linking in virtual catalog mapping
+- **Source:** VCST-5318 (Story, Done) — AC: categories not selectable without the permission, the API rejects category links, products stay linkable
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-010`
 
 ### BL-CAT-011: Cross-catalog move cascades CatalogId to owned entities, not linked `[P1-data]`
 - **Rule:** Moving a category **across** physical catalogs cascades the destination `CatalogId` to every **owned** descendant category and **owned** product in the moved subtree. An **intra-catalog** move leaves `CatalogId` unchanged (no spurious cascade). A **linked (non-owned)** product referenced by the moved subtree is never rewritten, relocated, duplicated, or deleted.
 - **Verify:** Cross-catalog move → parent + child + owned products report the destination `CatalogId` (`GET …/categories|products/{id}`; `POST /api/catalog/listentries/move`). Intra-catalog move → `CatalogId` unchanged. Linked foreign-catalog product → `CatalogId` stays its owner catalog.
 - **Violation signal:** Descendant/product retains source `CatalogId` after move → mis-indexed/orphaned; intra-catalog move changes `CatalogId` (over-eager cascade); linked non-owned product rewritten to the destination catalog.
-- **Agents:** qa-backend-expert (`POST /api/catalog/listentries/move`, catalog API)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5082 (Done) — cascade CatalogId to descendants and products on a cross-catalog category move
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-011`
 
 ### BL-CAT-012: Category dictionary-value & metadata management `[P2-ux]`
 - **Rule:** Adding or removing a category **tax-type dictionary value**, **SEO** record (store-scoped), **image**, or **localized description** persists to the category and is **scoped to the value acted on** — deleting one dictionary value must not remove other shared values. SEO/description changes render on the storefront, respecting locale.
 - **Verify:** Add a tax-type value → in dropdown + `GET …/{id}`. Delete a self-created value → only that value gone, shared values intact. Add SEO/image/description → persists + renders on the storefront for the correct locale.
 - **Violation signal:** Save fails silently; a shared/pre-existing dictionary value deleted instead of the target; SEO/description not rendered on storefront; localized description shown under the wrong locale.
-- **Agents:** qa-backend-expert (Catalog API, Admin SPA), qa-frontend-expert (storefront SEO/description render)
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Trust:** INFERRED
+- **History:** `docs/decisions/bl/cat.md#bl-cat-012`
 
 ---
 
@@ -875,37 +917,77 @@ These invariants span multiple modules and are where the most expensive producti
 
 ### BL-SRCH-001: Facet counts match filtered results `[P1-data]`
 - **Rule:** Facet counts displayed alongside filter options (brand, category, price range) must exactly match the number of products returned when that filter is applied. After applying filter "Brand: X (15)", exactly 15 products must appear in the filtered listing. Facet counts must update after each filter is applied (cascading facets).
-- **Verify:** Note facet count for Brand X = 15 → click filter → verify exactly 15 products listed. Apply a second filter (e.g., price range) → facet counts for all other facets update to reflect the combined filter.
+- **Verify:** Executable check: `scripts/invariants/page-walk.ts (npm run inv:run -- page-walk) with --filter <the facet term> --expected <its count>`. By hand: Note facet count for Brand X = 15 → click filter → verify exactly 15 products listed. Apply a second filter (e.g., price range) → facet counts for all other facets update to reflect the combined filter.
 - **Violation signal:** Facet shows 15 but filter returns 12 products; facet counts don't update after second filter; total count mismatches; empty facets still shown (count > 0 but no results).
-- **Agents:** qa-frontend-expert (catalog page), qa-backend-expert (xCatalog facet API)
+- **Agents:** qa-frontend-expert, qa-backend-expert, ui-ux-expert, qa-testing-expert
+- **Docs:** vc-docs platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Catalog/examples/facets.md — terms.count is the number of products the term applies to
 - **Source:** vc-module-x-catalog `ChildCategoriesQueryHandler` — server-side `TermFacetResult` term counts (`term_facets.terms.count`).
-- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
+- **Source:** VCST-1926 (Done) — a facet said 21 and 16 products came back; fixed. Also VCST-5324, VCST-3993 (Done)
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/srch.md#bl-srch-001`
 
 ### BL-SRCH-002: Zero-result query shows an intact empty state `[P2-ux]`
 - **Rule:** When a search query returns zero results, the search-results page (rendered by `category.vue` → `category-products.vue`) must render an intact empty state and never a blank grid, broken layout, or error. It must display (1) a clear no-results message via a `VcEmptyView` (variant `search`, icon `outline-stock`) using i18n key `pages.catalog.no_products_filtered_message` when a keyword/filters are active (else `pages.catalog.no_products_message`), with the searched term echoed in the page heading via i18n key `pages.search.header_empty`; and (2) a recovery action — a reset button (i18n key `pages.catalog.no_products_button`) that clears the keyword/filters (emits `resetFilterKeyword`). NOTE: vc-frontend does **NOT** implement spelling "Did you mean…" suggestions nor a popular-products/categories fallback — do not assert them.
 - **Verify:** Search for a nonsense term → the `VcEmptyView` no-results message shows with the term echoed in the heading → page layout intact → the reset button is present and clears the keyword/filters. (Do not assert a "Did you mean…" suggestion — it does not exist.)
 - **Violation signal:** Blank product grid; broken layout on zero results; no `VcEmptyView`/message on zero results; error/500 on uncommon search terms.
-- **Agents:** qa-frontend-expert (search results page), ui-ux-expert (UX evaluation)
+- **Agents:** qa-frontend-expert, qa-backend-expert, ui-ux-expert, qa-testing-expert
 - **Source:** vc-frontend `vc-empty-view.vue` (`VcEmptyViewVariantType "search"`); RESET SEARCH clears keyword/filters. Live zero-result state confirmed intact.
-- **Amended:** 2026-07-22 (triangulated — BL-AUDIT-2026-07-22; CONFIRMED 3/3, Source anchor recorded, Rule unchanged)
+- **Source:** VCST-4121 (Done) — the Reset search button was missing when filters returned no products; fixed
+- **Source:** kb KB-71011C1F (well attested) — zero hits show an empty state with Reset search (barcode route)
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/srch.md#bl-srch-002`
 
 ### BL-SRCH-003: Search index consistency after catalog change `[P1-data]`
 - **Rule:** After a product is created, updated, or deleted in Admin, the search index must reflect the change within the consistency window (BL-CROSS-009: 120s). Specifically: new product appears in search, updated product name/description changes in results, deleted product disappears from search. No ghost results for deleted products.
-- **Verify:** Create product → wait 120s → search by name → found. Update name → wait 120s → search by new name → found, old name → not found. Delete product → wait 120s → search → not found.
+- **Verify:** Executable check: `scripts/invariants/layer-parity.ts (npm run inv:run -- layer-parity)`. By hand: Create product → wait 120s → search by name → found. Update name → wait 120s → search by new name → found, old name → not found. Delete product → wait 120s → search → not found.
 - **Violation signal:** New product not findable after 120s; deleted product still in search results; updated fields not reflected in search; ghost/phantom results.
-- **Agents:** qa-backend-expert (search index API, Admin), qa-frontend-expert (storefront search)
+- **Agents:** qa-frontend-expert, qa-backend-expert, ui-ux-expert, qa-testing-expert
+- **Docs:** vc-docs platform/developer-guide/docs/Fundamentals/Indexed-Search/indexing/indexing-in-platform-manager.md — event-based indexing updates immediately on entity changes
+- **Source:** VP-7805 (Done) — deleted products stayed counted in the index; fixed (no ghost results)
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/srch.md#bl-srch-003`
 
 ### BL-SRCH-004: Search respects store and catalog scope `[P1-data]`
 - **Rule:** Search results are scoped to the current store's virtual catalog. Products from other stores or unlinked physical catalogs must never appear in search results. The search API requires `storeId` context — omitting it is an API contract violation.
 - **Verify:** Search on Store A → only products from Store A's virtual catalog appear. Product in Store B's catalog → not in Store A's search. xAPI query without `storeId` → error, not unscoped results.
 - **Violation signal:** Products from wrong store in search results; unscoped search returns cross-store data; xAPI returns results without storeId context.
-- **Agents:** qa-backend-expert (xCatalog API), qa-frontend-expert (storefront search)
+- **Agents:** qa-frontend-expert, qa-backend-expert, ui-ux-expert, qa-testing-expert
+- **Docs:** vc-docs platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Catalog/queries/products.md — storeId is a required argument
+- **Source:** VCST-3003 / VP-8726 (Done) — a bulk add resolved an item code from another catalog; indirect
+- **Trust:** INFERRED
+- **History:** `docs/decisions/bl/srch.md#bl-srch-004`
 
 ### BL-SRCH-005: Special characters in search queries `[P2-ux]`
 - **Rule:** Search must handle special characters safely: quotes, ampersands, angle brackets, Unicode, emoji, and SQL/NoSQL injection patterns. Special characters should be escaped or treated as literal text — never interpreted as query operators (unless explicitly supported like `"exact phrase"` search). No 500 errors, no information leakage.
 - **Verify:** Search for `<script>alert(1)</script>` → no XSS, shows "No results." Search for `'; DROP TABLE--` → no error, shows "No results." Search for product with `&` in name → found correctly.
 - **Violation signal:** 500 error on special characters; XSS executes; search syntax injection; product with special chars in name not findable.
-- **Agents:** qa-frontend-expert (search UI), qa-backend-expert (search API), qa-testing-expert (security scenarios)
+- **Agents:** qa-frontend-expert, qa-backend-expert, ui-ux-expert, qa-testing-expert
+- **Docs:** vc-docs platform/developer-guide/docs/Fundamentals/Indexed-Search/search-query-syntax-reference.md — unsafe characters are allowed inside a double-quoted block
+- **Source:** VP-2180 (Done) — search did not filter cross-site-scripting characters; fixed. Also VCST-3851 (Done): filtering failed on a facet value with * or ?
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/srch.md#bl-srch-005`
+
+### BL-SRCH-006: A listing walked page by page returns each item exactly once `[P1-data]`
+- **Rule:** Walking a product listing (search, category or filtered) to its end returns every item exactly once: no page repeats or skips items, every page but the last is full, and totalCount equals the number of items the pages return.
+- **Verify:** Executable check: `scripts/invariants/page-walk.ts (npm run inv:run -- page-walk)`. By hand: Page through a listing longer than one page to its end; count the items and compare with the total shown; no product appears twice.
+- **Violation signal:** A product appears on two pages; the last page is empty or missing; the total shown differs from the items the pages return; a middle page is short.
+- **Agents:** qa-frontend-expert, qa-backend-expert, ui-ux-expert, qa-testing-expert
+- **Source:** VP-7805 (Done) — totalCount came from the index while deleted products were removed from the items; it reported 40 with 20 items and paging broke
+- **Source:** VCST-3595 / VP-8806 (Done) — paging over an unstable order duplicated or skipped rows; fixed with a stable default sort
+- **Source:** VCST-1825 (Done) — the next page did not load for a category with exactly 20 products
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/srch.md#bl-srch-006`
+
+### BL-SRCH-007: A sort reorders a listing by the price it shows, without changing which items it holds `[P1-data]`
+- **Rule:** Applying a sort to a listing changes only the order: the sorted listing, walked to its end, holds exactly the items of the unsorted one, and a price sort orders by the price the listing displays (the active price list).
+- **Verify:** Executable check: `scripts/invariants/sort-set.ts (npm run inv:run -- sort-set) with --sort "price:asc"`. By hand: Walk a keyword or filtered listing unsorted and again sorted by price; the same products appear, in ascending displayed price.
+- **Violation signal:** A product disappears or appears twice after changing the sort; prices in a price-sorted listing are out of order; the order follows a price that is not the one shown.
+- **Agents:** qa-frontend-expert, qa-backend-expert, ui-ux-expert, qa-testing-expert
+- **Source:** VP-8332 (Done) — a product with prices in two price lists was sorted by the other list's price, not the displayed one
+- **Source:** VP-7840 (Done) — price sort used every assigned price list even when the request named one
+- **Source:** VCST-3595 / VP-8806 (Done) — an unstable order under paging duplicated or skipped rows
+- **Trust:** DECLARED
+- **History:** `docs/decisions/bl/srch.md#bl-srch-007`
 
 ---
 
