@@ -400,7 +400,7 @@ zero orders. Static/mock content, and the only dashboard element that ignores th
 "Account details" on every page including signed-out. Page: heading "Quote requests" · **Request Quote**
 button · search box ("Search by number or status", disabled until data loads) · table `Quote number ·
 Date · Status · Total`. Row click opens `/account/quotes/:id` in a **new browser tab** (same pattern as
-`VcTable` row-click elsewhere in the storefront — `reference_vctable_rowclick_newtab.md`).
+`VcTable` row-click elsewhere in the storefront — VC-UI-003 in `vc-bug-catalog.md`).
 
 **Observed per account (2026-09-16, read-only — no quote was created or mutated):**
 
@@ -541,7 +541,7 @@ uses `quote`/`quotes` throughout; the **Quote** row of the GraphQL xAPI module t
 **Org scoping — none observed in the schema.** None of the query or mutation signatures above take an
 `organizationId` argument; `quote`/`quotes` take `storeId`/`userId`/`currencyCode`/`cultureName` only.
 If quotes are org-scoped at all, the scoping is implicit (through `userId` → the user's current org via
-the ambient JWT context, per `reference_xapi_ambient_context_args.md`) rather than an explicit argument —
+the ambient JWT context) rather than an explicit argument —
 **`UNVERIFIED`**, this is exactly the gap G16 below names.
 
 **No `approveQuoteRequest`/`declineQuoteRequest` maps to a control this pass observed live** — the

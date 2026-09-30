@@ -131,8 +131,7 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
 3. For each linked PR: run the PR analysis above
 4. Map JIRA components to VC modules
 5. **Detect a legacy/handoff promotion source (this is what makes Phase 6P reachable — a current `/qa-test` run produces none).** Glob
-   `reports/tickets/*/VCST-XXXX/test-cases.csv` — **across all sprints**, per
-   `feedback_duplicate_check_across_all_sprints`; a ticket tested before a sprint rollover lives under the
+   `reports/tickets/*/VCST-XXXX/test-cases.csv` — **across all sprints**; a ticket tested before a sprint rollover lives under the
    older folder. When a match exists, read its sibling `summary.json` and add to the scope:
    ```
    "promotionSource": {
@@ -189,7 +188,7 @@ Step 5 — Also check test repo changes:
    ```bash
    gh api repos/VirtoCommerce/vc-platform/releases/tags/<version>
    ```
-   Tags are bare semver for `vc-platform` / `vc-module-*` / `vc-frontend` (`3.1054.0`, `2.56.0`) but `v`-prefixed for `vc-shell` (`v2.5.0`) — normalize before querying. If `GITHUB_TOKEN` is set but invalid, `gh` fails with `401 Bad credentials` on every call; prefix with `env -u GITHUB_TOKEN` to fall through to the `gh` keyring account (see the `reference_github_token_routing` memory).
+   Tags are bare semver for `vc-platform` / `vc-module-*` / `vc-frontend` (`3.1054.0`, `2.56.0`) but `v`-prefixed for `vc-shell` (`v2.5.0`) — normalize before querying. If `GITHUB_TOKEN` is set but invalid, `gh` fails with `401 Bad credentials` on every call; prefix with `env -u GITHUB_TOKEN` to fall through to the `gh` keyring account.
    - Module release bodies are one terse HTML bullet (`<h3>🎯 Development</h3><ul><li>Documents library (#12)</li></ul>`) — authoritative for *when*, near-useless for *what*. Only `vc-frontend` and `vc-shell` carry prose, and those carry `VCST-*` keys per PR, which is what lets a change be traced back to a ticket.
 3. **Extract** new features, breaking changes, deprecated APIs, module updates — mostly already structured by step 1. **Note the boundary:** the ledger is `exhaustive: false`, so an absent feature is *unknown*, not *nonexistent*; and it records what was **released upstream**, never what is **deployed** on the env under test (`agent-dispatch.md § Build Verification`).
 
@@ -590,7 +589,7 @@ agent, tags, `requiresModules`). **Never invent a module/repo name** to force a 
 stays in the ticket folder and is reported.
 
 **4 — Write via the deterministic appender only.** Hand-rolling the append silently merges two 15-column
-rows into one ~29-field record (`feedback_csv_append_newline_corruption`):
+rows into one ~29-field record:
 
 ```bash
 npx tsx scripts/test-cases/append-test-cases-to-suite.ts <target-suite.csv> --rows <approved-rows.csv> --check-global-ids --dry-run
@@ -602,8 +601,7 @@ round-trip verifies the appended block.
 
 **`--check-global-ids` is mandatory here and is not the default.** Without it the appender enforces ID
 uniqueness **only within the target suite** — it cannot see an ID that already lives in a *different*
-suite, and that is exactly the collision that overwrites the other suite's per-case failure evidence
-(`reference_case_ids_must_be_globally_unique`). The flag scans every CSV under `regression/suites/` and
+suite, and that is exactly the collision that overwrites the other suite's per-case failure evidence. The flag scans every CSV under `regression/suites/` and
 rejects a colliding **incoming** ID. On a collision, **re-ID the incoming case** — never renumber the
 existing one, never reuse a retired ID.
 
@@ -960,7 +958,7 @@ Output: per-case verification:
 - **Never hand-roll a CSV append** — `regression/suites/` writes go through
   `npx tsx scripts/test-cases/append-test-cases-to-suite.ts --check-global-ids` (dry-run first), then
   `npm run suites:sync` + `npm run suites:lint`. A missing boundary newline merges two 15-column rows into
-  one broken record (`feedback_csv_append_newline_corruption`), and a manifest left unsynced means the
+  one broken record, and a manifest left unsynced means the
   suite runs with a stale `testCount`.
 - **An incoming case ID must collide with nothing under `regression/suites/`** — and a plain append run
   does **not** prove that: without `--check-global-ids` the appender only checks the target suite, so a

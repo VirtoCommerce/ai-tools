@@ -71,7 +71,7 @@ The triangulation is read-only and per-entry, so **run it in parallel** — but 
 
 **3a — Fan-out (parallel, read-only):** split the in-scope entries into disjoint batches (by domain/chapter, then chunk) and dispatch **up to 3 `ba-system-analyzer` agents concurrently** — one Agent-tool call per batch, all in a single message. This matches the 3-slot browser pool ([agents.md](../rules/agents.md): batch browser work in groups of 3). Each parallel agent:
 - gets its **own isolated browser slot** — distinct servers across the batch (`playwright-firefox` / `playwright-chrome` / `playwright-edge`); never share a session;
-- uses a **distinct test/org user** if the live axis needs auth (a shared org cart contaminates — `feedback_concurrent_runners_distinct_org_users_taskstop`);
+- uses a **distinct test/org user** if the live axis needs auth (a shared org cart contaminates);
 - gathers all three axes (docs `/vc-docs` + source GitHub MCP — no browser; live observation on its assigned slot), assigns a verdict (CONFIRMED / DRIFT / MISSING / DUPLICATE / CONTRADICTORY / UNGROUNDED / STALE-RETIRE), and **returns the verdict + evidence tuple + the proposed edit** — it does **NOT** write the oracle itself.
 
 **3b — Fan-in (single writer, serialized):** the orchestrator collects all batches' verdicts, then applies edits **sequentially, one entry at a time, in one process** — concurrent writes to the same file race and corrupt it. Auto-apply CONFIRMED/DRIFT/MISSING/DUPLICATE (body-only, `Amended:` + `Source:` stamp, env-agnostic; MISSING reads the current max id fresh before each insert so parallel-discovered entries can't collide). Unconfirmed → the audit report (ECL: also its proposals file). **BL — M0 freeze:** DRIFT/MISSING need a human source (docs, AC, Jira resolution); code + live agreeing is not enough — `.claude/skills/qa-review-oracles/bl-audit-criteria.md` §M0 freeze.
@@ -112,8 +112,8 @@ Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the 
 - **Never infer a value signal from prose.** Only closed vocabularies score — the BL severity tag, the ECL `Frequency`/`Status` columns. An unreadable cell contributes zero and caps the tier; it is never guessed.
 - **IDs are a citation contract — never renumber a surviving entry, never reuse a retired id.** Renumbering silently repoints every citation that was correct, and no gate can detect it because the new refs still resolve.
 - **Deletion needs positive evidence** that the thing is dead or redundant — never mere absence of proof it is alive. This bites hardest on `ecl`, where "I could not reproduce it" is the *normal* state for an edge case.
-- **Body-only edits.** Never rewrite a meta table as a side effect (`feedback_bl_promotion_table_separately`); ECL's Appendix D is updated deliberately, as its own edit.
-- **Env- and data-agnostic** entries — no env names/URLs/slugs/SKUs/prices (`feedback_bl_oracle_env_agnostic`).
+- **Body-only edits.** Never rewrite a meta table as a side effect; ECL's Appendix D is updated deliberately, as its own edit.
+- **Env- and data-agnostic** entries — no env names/URLs/slugs/SKUs/prices.
 - **Never edit a CSV from this command** — citation remaps go through `/qa-review-tests --fix`.
 - **Retiring an entry is never auto-applied.**
 - **REAL-USER rule** on the live axis — no `browser_evaluate`/`run_code_unsafe` bypass.

@@ -140,8 +140,7 @@ ones. See `/ba-analyze` Step 4.5.
 Do **not** write to JIRA, Confluence, GitHub (issues/PRs/comments), or Teams unless the user explicitly
 requested it **in the current turn**. Drafting a story or doc to a local file in `reports/ba/` is the
 default; pushing it to an external system is a separate, explicitly-authorized action. Subagents must not
-bypass this via Bash→powershell indirection. Codified in memory `feedback_subagent_external_writes`,
-`feedback_subagent_interpreter_bypass`.
+bypass this via Bash→powershell indirection.
 
 **When the write IS authorized, the mechanics are not yours to invent.** Pushing a doc, guide, release
 note or analysis to a ticket follows `.claude/knowledge/execution/tracker-ops.md` — read it BEFORE the
@@ -173,7 +172,7 @@ proof the content is correct or complete. This is a hard rule for every BA agent
 - Report honestly what you verified versus what remains an open question — don't present an unverified
   assumption as a finding.
 
-Codified in memory `feedback_agents_self_check_and_verify`.
+
 
 ## Output policy
 
