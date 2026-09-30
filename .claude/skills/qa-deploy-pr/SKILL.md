@@ -108,9 +108,7 @@ delivery path from the account's *actual* permission on the deploy repo
 **Token routing (important).** Reads use the ambient fine-grained PAT (`GIT_TOKEN`), but that
 token lacks fork/PR rights on `vc-deploy-dev`. **Writes go through `gh` with the keyring
 classic `gho_` token** (`gh` invoked with `GITHUB_TOKEN`/`GH_TOKEN` unset) — the credential the
-rest of this repo uses for VirtoCommerce writes. The earlier
-`403 denied to Lenajava1` was the *fine-grained* PAT;
-the account actually has `write` via the classic token.
+rest of this repo uses for VirtoCommerce writes.
 
 **Minimal diff.** The manifest edit is done as **text surgery** on the raw file (remove the
 `GithubReleases {Id,Version}` block, add a `BlobName`-only AzureBlob entry / swap the theme
